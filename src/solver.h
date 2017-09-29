@@ -11,8 +11,6 @@ struct solver {
     int numberOfIterations;
     double pError;
     double roundStimSize;
-    uint8_t parallel;
-    uint8_t gpu;
     int method;
 
     // Time used for solving wave equation.

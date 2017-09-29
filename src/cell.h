@@ -9,26 +9,30 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define CELL_NODE_TYPE 'b'
+#define TRANSITION_NODE_TYPE 'b'
+
 struct basic_cell_data {
     char type;
-    uint8_t  level; //This should be enough for the refinement levels
-    float center_x, center_y, center_z; //TODO: @Check: always positive integer???
+    uint16_t  level; //This should be enough for the refinement levels
+    float center_x, center_y, center_z; //TODO: @Check: always positive integer??? Do transitions node need space coordinates??
 };
 
 struct cell_node {
+    struct basic_cell_data cell_data; //DO NOT CHANGE THIS STRUCT POSITION
 
-    struct basic_cell_data cell_data;
-
-    uint8_t active;
+    bool active;
 
     uint64_t bunch_number; // Bunch identifier
 
-    union cell *north; // Points to cell node or transition node above this cell. Z right
-    union cell *south; // Points to cell node or transition node below this cell. Z left
-    union cell *east;  // Points to cell node or transition node rightward this cell.Y right
-    union cell *west;  // Points to cell node or transition node leftward this cell. Y left
-    union cell *front; // Points to cell node or transition node in front of this cell. X right
-    union cell *back;  // Points to cell node or transition node behind this cell. X left
+
+    //TODO: These should by pointers to cells?
+    void *north; // Points to cell node or transition node above this cell. Z right
+    void *south; // Points to cell node or transition node below this cell. Z left
+    void *east;  // Points to cell node or transition node rightward this cell.Y right
+    void *west;  // Points to cell node or transition node leftward this cell. Y left
+    void *front; // Points to cell node or transition node in front of this cell. X right
+    void *back;  // Points to cell node or transition node behind this cell. X left
 
     struct cell_node *previous; // Previous cell in the Hilbert curve ordering.
     struct cell_node *next;     // Next cell of in the Hilbert curve ordering.
@@ -77,25 +81,24 @@ struct cell_node {
     double v;
     uint64_t gpu_sv_position;
     float face_length;
-    uint8_t can_change;
+    bool can_change;
 
     //ode *od; //TODO: @Incomplete: implement the ode's handling
 
-    uint8_t fibrotic;
-    uint8_t border_zone;
+    bool fibrotic;
+    bool border_zone;
     char scar_type;
 
 };
 
 struct transition_node {
+    struct basic_cell_data cell_data; //DO NOT CHANGE THIS STRUCT POSITION
 
-    struct basic_cell_data cell_data;
-
-    union cell *single_connector;
-    union cell *quadruple_connector1;
-    union cell *quadruple_connector2;
-    union cell *quadruple_connector3;
-    union cell *quadruple_connector4;
+    void *single_connector;
+    void *quadruple_connector1;
+    void *quadruple_connector2;
+    void *quadruple_connector3;
+    void *quadruple_connector4;
 
     /* Directions that a transition node may assume:
      * 'e': east
@@ -108,19 +111,11 @@ struct transition_node {
     char direction;
 };
 
-union cell {
-    struct cell_node *cell_node;
-    struct transition_node *transition_node;
-};
-
-
-void init_basic_cell_data(struct basic_cell_data *data, char type,
-                                      uint8_t level, float center_x,float center_y,
-                                      float center_z);
+void init_basic_cell_data(struct basic_cell_data *data, uint8_t level, float center_x, float center_y, float center_z);
 
 void init_basic_cell_data_with_default_values(struct basic_cell_data *data, char type);
 
-void init_cell_node(struct cell_node *cell_node, uint8_t init_ode);
+void init_cell_node(struct cell_node *cell_node, bool init_ode);
 
 void free_cell_node(struct cell_node *cell_node);
 
@@ -131,6 +126,18 @@ void lock_cell_node(struct cell_node *cell_node1);
 void unlock_cell_node(struct cell_node *cell_node1);
 
 void init_transition_node(struct transition_node *transition_node);
+
+
+void set_transition_node_data(struct transition_node *the_transtion_node, char direction, float center_x,
+                              float center_y, float center_z, void *single_connector,
+                              void * quadruple_connector1, void * quadruple_connector2,
+                              void * quadruple_connector3, void * quadruple_connector4 );
+
+void set_cell_node_data(struct cell_node *the_cell, float face_length, float half_face_length, uint64_t bunch_number,
+                        void *east, void *north, void *west, void *south, void *front, void *back,
+                        void *previous, void *next,
+                        uint64_t grid_position, uint8_t hilbert_shape_number,
+                        float center_x, float center_y, float center_z);
 
 
 #endif //MONOALG3D_CELL_H
