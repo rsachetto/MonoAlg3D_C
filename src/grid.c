@@ -3,6 +3,7 @@
 //
 
 #include "grid.h"
+#include "cell.h"
 
 void initialize_grid(struct grid *the_grid, float side_length) {
 
@@ -18,11 +19,10 @@ void construct_grid(struct grid *the_grid) {
     bool init_ode = the_grid->init_ode;
     float side_length = the_grid->side_length;
 
-    size_t cell_node_size = sizeof(struct cell_node);
-    size_t transition_node_size = sizeof(struct transition_node);
+    size_t cell_node_size = sizeof(struct cell);
 
     // Cell nodes.
-    struct cell_node
+    struct cell
             *front_northeast_cell,
             *front_northwest_cell,
             *front_southeast_cell,
@@ -33,28 +33,28 @@ void construct_grid(struct grid *the_grid) {
             *back_southwest_cell;
 
 
-    front_northeast_cell = (struct cell_node *) malloc(cell_node_size);
-    front_northwest_cell = (struct cell_node *) malloc(cell_node_size);
-    front_southeast_cell = (struct cell_node *) malloc(cell_node_size);
-    front_southwest_cell = (struct cell_node *) malloc(cell_node_size);
-    back_northeast_cell = (struct cell_node *) malloc(cell_node_size);
-    back_northwest_cell = (struct cell_node *) malloc(cell_node_size);
-    back_southeast_cell = (struct cell_node *) malloc(cell_node_size);
-    back_southwest_cell = (struct cell_node *) malloc(cell_node_size);
+    front_northeast_cell = (struct cell *) malloc(cell_node_size);
+    front_northwest_cell = (struct cell *) malloc(cell_node_size);
+    front_southeast_cell = (struct cell *) malloc(cell_node_size);
+    front_southwest_cell = (struct cell *) malloc(cell_node_size);
+    back_northeast_cell = (struct cell *) malloc(cell_node_size);
+    back_northwest_cell = (struct cell *) malloc(cell_node_size);
+    back_southeast_cell = (struct cell *) malloc(cell_node_size);
+    back_southwest_cell = (struct cell *) malloc(cell_node_size);
 
 
-    init_cell_node(front_northeast_cell, init_ode);
-    init_cell_node(front_northwest_cell, init_ode);
-    init_cell_node(front_southeast_cell, init_ode);
-    init_cell_node(front_southwest_cell, init_ode);
-    init_cell_node(back_northeast_cell, init_ode);
-    init_cell_node(back_northwest_cell, init_ode);
-    init_cell_node(back_southeast_cell, init_ode);
-    init_cell_node(back_southwest_cell, init_ode);
+    init_cell_with_cell_node(front_northeast_cell, init_ode);
+    init_cell_with_cell_node(front_northwest_cell, init_ode);
+    init_cell_with_cell_node(front_southeast_cell, init_ode);
+    init_cell_with_cell_node(front_southwest_cell, init_ode);
+    init_cell_with_cell_node(back_northeast_cell, init_ode);
+    init_cell_with_cell_node(back_northwest_cell, init_ode);
+    init_cell_with_cell_node(back_southeast_cell, init_ode);
+    init_cell_with_cell_node(back_southwest_cell, init_ode);
 
 
     // Transition nodes.
-    struct transition_node
+    struct cell
             *north_transition_node,
             *south_transition_node,
             *east_transition_node,
@@ -62,19 +62,19 @@ void construct_grid(struct grid *the_grid) {
             *front_transition_node,
             *back_transition_node;
 
-    north_transition_node = (struct transition_node *) malloc(transition_node_size);
-    south_transition_node = (struct transition_node *) malloc(transition_node_size);
-    east_transition_node = (struct transition_node *) malloc(transition_node_size);
-    west_transition_node = (struct transition_node *) malloc(transition_node_size);
-    front_transition_node = (struct transition_node *) malloc(transition_node_size);
-    back_transition_node = (struct transition_node *) malloc(transition_node_size);
+    north_transition_node = (struct cell *) malloc(cell_node_size);
+    south_transition_node = (struct cell *) malloc(cell_node_size);
+    east_transition_node = (struct cell *) malloc(cell_node_size);
+    west_transition_node = (struct cell *) malloc(cell_node_size);
+    front_transition_node = (struct cell *) malloc(cell_node_size);
+    back_transition_node = (struct cell *) malloc(cell_node_size);
 
-    init_transition_node(north_transition_node);
-    init_transition_node(south_transition_node);
-    init_transition_node(east_transition_node);
-    init_transition_node(west_transition_node);
-    init_transition_node(front_transition_node);
-    init_transition_node(back_transition_node);
+    init_cell_with_transition_node(north_transition_node);
+    init_cell_with_transition_node(south_transition_node);
+    init_cell_with_transition_node(east_transition_node);
+    init_cell_with_transition_node(west_transition_node);
+    init_cell_with_transition_node(front_transition_node);
+    init_cell_with_transition_node(back_transition_node);
 
 
     float half_side_length = side_length / 2.0f;
@@ -83,28 +83,28 @@ void construct_grid(struct grid *the_grid) {
     //              Initialization of transition nodes.
     //__________________________________________________________________________
     // East transition node.
-    set_transition_node_data(east_transition_node, 'e', half_side_length, side_length, half_side_length, NULL,
+    set_transition_node_data(east_transition_node, 'e', NULL,
                              front_southeast_cell, back_northeast_cell, front_northeast_cell, front_northwest_cell);
 
 
-    set_transition_node_data(north_transition_node, 'n', half_side_length, half_side_length, side_length, NULL,
+    set_transition_node_data(north_transition_node, 'n', NULL,
                              front_northwest_cell, front_northeast_cell, back_northeast_cell, back_northwest_cell);
 
 
-    set_transition_node_data(west_transition_node, 'w', half_side_length, 0.0, half_side_length, NULL,
+    set_transition_node_data(west_transition_node, 'w', NULL,
                              front_southwest_cell, back_southwest_cell, back_northwest_cell, front_northwest_cell);
 
     // South transition node.
-    set_transition_node_data(south_transition_node, 's', half_side_length, half_side_length, 0.0, NULL,
+    set_transition_node_data(south_transition_node, 's', NULL,
                              front_southwest_cell, front_southeast_cell, back_southeast_cell, back_southwest_cell);
 
     // Front transition node.
     // South transition node.
-    set_transition_node_data(front_transition_node, 'f', side_length, half_side_length, half_side_length, NULL,
+    set_transition_node_data(front_transition_node, 'f', NULL,
                              front_southwest_cell, front_southeast_cell, front_northeast_cell, front_northwest_cell);
 
     // Back transition node.
-    set_transition_node_data(back_transition_node, 'b', 0.0, half_side_length, half_side_length, NULL,
+    set_transition_node_data(back_transition_node, 'b', NULL,
                              back_southwest_cell, back_southeast_cell, back_northeast_cell, back_northwest_cell);
 
     //__________________________________________________________________________
@@ -276,20 +276,21 @@ void print_grid(struct grid* the_grid, FILE * output_file) {
 
     //TODO:check for activity here???
 
-    struct cell_node *grid_cell = the_grid->first_cell;
+    struct cell *grid_cell = the_grid->first_cell;
 
-    float center_x, center_y, center_z, half_face, v;
+    float center_x, center_y, center_z, half_face;
+    double v;
 
     while( grid_cell != 0 ) {
 
-        if(grid_cell->active) {
+        if(grid_cell->cell_node->active) {
 
-            center_x = grid_cell->cell_data.center_x;
-            center_y = grid_cell->cell_data.center_y;
-            center_z = grid_cell->cell_data.center_z;
+            center_x = grid_cell->cell_node->center_x;
+            center_y = grid_cell->cell_node->center_y;
+            center_z = grid_cell->cell_node->center_z;
 
-            v = grid_cell->v;
-            half_face = grid_cell->half_face_length;
+            v = grid_cell->cell_node->v;
+            half_face = grid_cell->cell_node->half_face_length;
 
             /*
             if(count > 0) {
@@ -305,7 +306,7 @@ void print_grid(struct grid* the_grid, FILE * output_file) {
             fprintf(output_file, "%lf,%lf,%lf,%lf,%lf\n", center_x, center_y, center_z, half_face, v);
 
         }
-        grid_cell = grid_cell->next;
+        grid_cell = grid_cell->cell_node->next;
     }
 
     //return act;
@@ -313,7 +314,7 @@ void print_grid(struct grid* the_grid, FILE * output_file) {
 
 void order_grid_cells(struct grid *the_grid, bool update_active) {
 
-    struct cell_node *grid_cell;
+    struct cell *grid_cell;
     grid_cell = the_grid->first_cell;
 
 
@@ -326,9 +327,9 @@ void order_grid_cells(struct grid *the_grid, bool update_active) {
     uint64_t counter = 0;
     while( grid_cell != 0 )
     {
-        if(grid_cell->active) {
+        if(grid_cell->cell_node->active) {
 
-            grid_cell->grid_position = counter;
+            grid_cell->cell_node->grid_position = counter;
 
             if (update_active) {
                 //TODO: @Incomplete
@@ -339,7 +340,7 @@ void order_grid_cells(struct grid *the_grid, bool update_active) {
             counter++;
         }
 
-        grid_cell = grid_cell->next;
+        grid_cell = grid_cell->cell_node->next;
     }
 
     the_grid->number_of_cells = counter;
@@ -349,7 +350,7 @@ void order_grid_cells(struct grid *the_grid, bool update_active) {
 void free_grid(struct grid *the_grid) {
 
     //TODO: @Incomplete
-    struct cell_node *grid_cell = the_grid->first_cell;
+    struct cell *grid_cell = the_grid->first_cell;
     uint64_t number_of_cells = the_grid->number_of_cells;
     /*
     // In order to release the memory allocated for the grid, the grid is
@@ -395,7 +396,7 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
     }
 
 
-    struct cell_node *grid_cell, *auxiliar_grid_cell;
+    struct cell *grid_cell, *auxiliar_grid_cell;
 
     double maximumFlux;
     bool continue_refining = true;
@@ -412,21 +413,21 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
         grid_cell = the_grid->first_cell;
         while( grid_cell != 0 ) {
 
-            maximumFlux = get_cell_maximum_flux(grid_cell);
+            maximumFlux = get_cell_maximum_flux(grid_cell->cell_node);
 
-            if( ( grid_cell->can_change && grid_cell->active ) &&
-                ( grid_cell->face_length > min_h ) &&
+            if( ( grid_cell->cell_node->can_change && grid_cell->cell_node->active ) &&
+                ( grid_cell->cell_node->face_length > min_h ) &&
                 ( maximumFlux >= refinement_bound ) )
             {
                 auxiliar_grid_cell = grid_cell;
-                grid_cell = grid_cell->next;
+                grid_cell = grid_cell->cell_node->next;
                 refine_cell(auxiliar_grid_cell, the_grid->gpu, the_grid->init_ode);
                 the_grid->number_of_cells += 7;
                 continue_refining = true;
                 refined_once = true;
             }
             else {
-                grid_cell = grid_cell->next;
+                grid_cell = grid_cell->cell_node->next;
             }
         }
     }
@@ -441,7 +442,7 @@ void refine_grid(struct grid* the_grid, int num_steps) {
         exit(10);
     }
 
-    struct cell_node *grid_cell, *auxiliar_grid_cell;
+    struct cell *grid_cell, *auxiliar_grid_cell;
 
     if(the_grid->gpu) {
         //TODO: GPU related code
@@ -453,13 +454,13 @@ void refine_grid(struct grid* the_grid, int num_steps) {
 
         grid_cell = the_grid->first_cell;
         while (grid_cell != 0) {
-            if (grid_cell->can_change && grid_cell->active) {
+            if (grid_cell->cell_node->can_change && grid_cell->cell_node->active) {
                 auxiliar_grid_cell = grid_cell;
-                grid_cell = grid_cell->next;
+                grid_cell = grid_cell->cell_node->next;
                 refine_cell(auxiliar_grid_cell, the_grid->gpu, the_grid->init_ode);
                 the_grid->number_of_cells += 7;
             } else {
-                grid_cell = grid_cell->next;
+                grid_cell = grid_cell->cell_node->next;
             }
         }
     }
@@ -473,9 +474,9 @@ void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number ) {
             exit(0);
         }
 
-        struct cell_node *grid_cell = the_grid->first_cell;
+        struct cell *grid_cell = the_grid->first_cell;
         for( uint64_t i = 0; i < cell_number; i++ ) {
-            grid_cell = grid_cell->next;
+            grid_cell = grid_cell->cell_node->next;
         }
 
         refine_cell( grid_cell, false, false );
@@ -485,7 +486,7 @@ void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number ) {
 
 void set_grid_flux(struct grid *the_grid) {
 
-    struct cell_node *grid_cell;
+    struct cell *grid_cell;
     bool parallel = the_grid->parallel;
 
     uint64_t active_cells = the_grid->number_of_cells;
@@ -493,14 +494,14 @@ void set_grid_flux(struct grid *the_grid) {
     if(!parallel) {
         grid_cell = the_grid->first_cell;
         while ( grid_cell != 0 ) {
-            grid_cell->north_flux = 0.0;
-            grid_cell->south_flux = 0.0;
-            grid_cell->east_flux = 0.0;
-            grid_cell->west_flux  = 0.0;
-            grid_cell->front_flux = 0.0;
-            grid_cell->back_flux  = 0.0;
+            grid_cell->cell_node->north_flux = 0.0;
+            grid_cell->cell_node->south_flux = 0.0;
+            grid_cell->cell_node->east_flux = 0.0;
+            grid_cell->cell_node->west_flux  = 0.0;
+            grid_cell->cell_node->front_flux = 0.0;
+            grid_cell->cell_node->back_flux  = 0.0;
 
-            grid_cell = grid_cell->next;
+            grid_cell = grid_cell->cell_node->next;
         }
     }
     else {
@@ -522,7 +523,7 @@ void set_grid_flux(struct grid *the_grid) {
     if(!parallel) {
         grid_cell = the_grid->first_cell;
         while ( grid_cell != 0 )	{
-            if(grid_cell -> active) {
+            if(grid_cell->cell_node->active) {
                 set_cell_flux(grid_cell, 's' ); // Computes south flux.
                 set_cell_flux(grid_cell, 'n' ); // Computes north flux.
                 set_cell_flux(grid_cell, 'e' ); // Computes east flux.
@@ -530,7 +531,7 @@ void set_grid_flux(struct grid *the_grid) {
                 set_cell_flux(grid_cell, 'f' ); // Computes front flux.
                 set_cell_flux(grid_cell, 'b' ); // Computes back flux.
             }
-            grid_cell = grid_cell->next;
+            grid_cell = grid_cell->cell_node->next;
         }
     }
     else {
