@@ -5,6 +5,7 @@
 #ifndef MONOALG3D_CELL_H
 #define MONOALG3D_CELL_H
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -139,6 +140,20 @@ void set_cell_node_data(struct cell_node *the_cell, float face_length, float hal
                         uint64_t grid_position, uint8_t hilbert_shape_number,
                         float center_x, float center_y, float center_z);
 
+
+void set_cell_flux( struct cell_node *the_cell, char direction );
+double get_cell_maximum_flux(struct cell_node* the_cell);
+
+void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
+                           float face_length, float half_face_length,
+                           float center_x, float center_y, float center_z,
+                           uint64_t  bunch_number, bool using_gpu);
+
+void set_refined_transition_node_data(struct transition_node *the_node, struct cell_node* other_node,
+                                      char direction, float center_x, float center_y, float center_z);
+
+void simplify_refinement( struct transition_node *transition_node );
+void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode );
 
 #endif //MONOALG3D_CELL_H
 

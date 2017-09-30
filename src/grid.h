@@ -17,7 +17,7 @@ struct grid {
     uint64_t number_of_cells;  // Number of cells of grid.
 
     uint64_t original_num_cells;
-    uint64_t numActiveCells;
+    uint64_t num_active_cells;
 
     //TODO: @Incomplete
     /*
@@ -36,9 +36,14 @@ struct grid {
 };
 
 
-void initialize_grid(struct grid *the_grid);
+void initialize_grid(struct grid *the_grid, float side_length);
 void construct_grid(struct grid *the_grid);
 void print_grid(struct grid* the_grid, FILE *output_file);
 void free_grid(struct grid *the_grid);
+void set_grid_flux(struct grid *the_grid);
+bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refinement_bound);
+void refine_grid(struct grid* the_grid, int num_steps);
+void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number );
+
 
 #endif //MONOALG3D_GRID_H
