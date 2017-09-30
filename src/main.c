@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <unitypes.h>
 #include "grid.h"
+#include "opts.h"
 
-int main() {
+int main(int argc, char **argv) {
 
     struct grid *the_grid;
 
     FILE *f1;
+
+    struct user_args user_args;
+
+    parse_options(argc, argv, &user_args);
 
 
     the_grid = (struct grid*)malloc(sizeof(struct grid));
@@ -43,6 +48,23 @@ int main() {
     f1 = fopen("V_t_6", "w");
     print_grid(the_grid, f1);
     fclose(f1);
+
+
+    derefine_all_grid(the_grid);
+    f1 = fopen("V_t_7", "w");
+    print_grid(the_grid, f1);
+    fclose(f1);
+
+    derefine_all_grid(the_grid);
+    f1 = fopen("V_t_8", "w");
+    print_grid(the_grid, f1);
+    fclose(f1);
+
+    derefine_all_grid(the_grid);
+    f1 = fopen("V_t_9", "w");
+    print_grid(the_grid, f1);
+    fclose(f1);
+
 
     free_grid(the_grid);
 

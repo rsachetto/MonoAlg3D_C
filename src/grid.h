@@ -5,14 +5,14 @@
 #ifndef MONOALG3D_GRID_H
 #define MONOALG3D_GRID_H
 
+#include "cell.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 struct grid {
 
-    struct cell *first_cell;     // First cell of grid.
+    struct cell_node *first_cell;     // First cell of grid.
     float side_length;        // Length of cube grid. Default = 1.0.
     uint64_t number_of_cells;  // Number of cells of grid.
 
@@ -45,5 +45,8 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
 void refine_grid(struct grid* the_grid, int num_steps);
 void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number );
 
+bool derefine_grid_with_bound(struct grid *the_grid, double derefinement_bound, double max_h);
+void derefine_all_grid (struct grid* the_grid);
+void derefine_grid_inactive_cells (struct grid* the_grid);
 
 #endif //MONOALG3D_GRID_H

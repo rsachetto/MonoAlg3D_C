@@ -1,0 +1,14 @@
+AccessModifierOffset: 0
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+BinPackParameters: true
+BreakBeforeBinaryOperators: false
+ColumnLimit: 100
+IndentWidth: 4
+Language: Cpp
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: Always
+SpaceInEmptyParentheses: false
+UseTab: Never
+TabWidth: 4
