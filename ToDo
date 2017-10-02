@@ -1,1 +1,3 @@
 - The EDO solution should be com completely separeated from the Grid (see GPU implementation)
+- Decide if we are going to user float or double for numerical operations (GPU is faster with float)
+- The stim should be a user provided function or a file; (maybe a parseable file??)

@@ -3,7 +3,7 @@ project(MonoAlg3D)
 
 set(CMAKE_C_STANDARD 99)
 
-find_package (Threads)
+find_package (Threads) #we look for a thread package
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -14,10 +14,11 @@ endif()
 set(SOURCE_FILES src/main.c
         src/grid/cell/cell.h src/grid/cell/cell.c
         src/grid/grid.c src/grid/grid.h
-        src/solver.h
+        src/edp_solver.h
         src/grid/grid_refinement.c src/grid/grid_derefinement.c
         src/grid/cell/cell_derefinement.c src/grid/cell/cell_refinement.c
-        src/opts.h src/grid/grid_domain.c src/utils/sort.c src/utils/utils.h src/utils/search.c src/utils/point_hash.c src/utils/point_hash.h)
+        src/opts.h src/grid/grid_domain.c src/utils/sort.c src/utils/utils.h src/utils/search.c
+        src/utils/point_hash.c src/utils/point_hash.h src/edo_solver.c src/edo_solver.h)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 target_link_libraries(MonoAlg3D ${CMAKE_THREAD_LIBS_INIT} m)

@@ -33,7 +33,6 @@ struct cell_node {
 
     float center_x, center_y, center_z;
 
-    // TODO: These should by pointers to cells?
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
     void *east;  // Points to cell node or transition node rightward this cell.Y right

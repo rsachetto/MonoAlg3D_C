@@ -18,6 +18,7 @@ void initialize_grid (struct grid *the_grid, float side_length) {
     the_grid->side_length = side_length;
     the_grid->number_of_cells = 1;
     the_grid->init_ode = false;
+    the_grid->init_ode = false;
 }
 
 void construct_grid (struct grid *the_grid) {
@@ -235,9 +236,8 @@ void order_grid_cells (struct grid *the_grid, bool update_active) {
     the_grid->number_of_cells = counter;
 }
 
-void free_grid (struct grid *the_grid) {
+void clean_grid(struct grid *the_grid) {
 
-    // TODO: @Incomplete
     struct cell_node *grid_cell = the_grid->first_cell;
     uint64_t number_of_cells = the_grid->number_of_cells;
 
@@ -264,4 +264,5 @@ void free_grid (struct grid *the_grid) {
         grid_cell = grid_cell->next;
     }
     free (grid_cell);
+
 }

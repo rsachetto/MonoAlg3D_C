@@ -11,9 +11,8 @@
 #define GROWTH_FACTOR (2)
 #define MAX_LOAD_FACTOR (1)
 
-/* dictionary initialization code used in both DictCreate and grow */
-struct point_hash* internal_hash_create(int size)
-{
+/* dictionary initialization code used in both create_hash and grow */
+struct point_hash* internal_hash_create(int size) {
     struct point_hash *d;
     int i;
 
@@ -57,9 +56,6 @@ void hash_destroy(struct point_hash * d) {
     free(d);
 }
 
-#define MULTIPLIER (97)
-
-
 
 static unsigned long hash_function(struct point_3d k)
 {
@@ -80,16 +76,12 @@ static void grow(struct point_hash *d)  {
     for(i = 0; i < d->size; i++) {
         for(e = d->table[i]; e != 0; e = e->next) {
             /* note: this recopies everything */
-            /* a more efficient implementation would
-             * patch out the strdups inside DictInsert
-             * to avoid this problem */
             hash_insert(d2, e->key, e->value);
         }
     }
 
     /* the hideous part */
     /* We'll swap the guts of d and d2 */
-    /* then call DictDestroy on d2 */
     swap = *d;
     *d = *d2;
     *d2 = swap;

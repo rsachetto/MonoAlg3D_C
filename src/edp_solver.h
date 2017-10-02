@@ -7,7 +7,7 @@
 
 #include <unitypes.h>
 
-struct solver {
+struct edp_solver {
     int numberOfIterations;
     double pError;
     double roundStimSize;

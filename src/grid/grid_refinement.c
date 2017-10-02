@@ -163,7 +163,7 @@ void set_grid_flux(struct grid *the_grid) {
     else {
 #pragma omp parallel for
         for (int i = 0; i < active_cells; i++) {
-            //TODO: @Incompelete (not parallel yet)
+            //TODO: @Incomplete (not parallel yet)
             /*
             set_cell_flux(activeCells[i], 's' ); // Computes south flux.
             set_cell_flux(activeCells[i], 'n' ); // Computes north flux.
