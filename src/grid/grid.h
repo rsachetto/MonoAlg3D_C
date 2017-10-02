@@ -5,7 +5,7 @@
 #ifndef MONOALG3D_GRID_H
 #define MONOALG3D_GRID_H
 
-#include "cell.h"
+#include "cell/cell.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,12 +32,13 @@ struct grid {
     bool init_ode;
     bool parallel;
     bool gpu;
-
 };
 
 
 void initialize_grid(struct grid *the_grid, float side_length);
 void construct_grid(struct grid *the_grid);
+void initialize_and_construct_grid(struct grid *the_grid, float side_length);
+
 void print_grid(struct grid* the_grid, FILE *output_file);
 void free_grid(struct grid *the_grid);
 void set_grid_flux(struct grid *the_grid);
@@ -48,5 +49,8 @@ void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number );
 bool derefine_grid_with_bound(struct grid *the_grid, double derefinement_bound, double max_h);
 void derefine_all_grid (struct grid* the_grid);
 void derefine_grid_inactive_cells (struct grid* the_grid);
+
+void set_rabbit_mesh (struct grid *the_grid, const char *mesh_file);
+void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_file);
 
 #endif //MONOALG3D_GRID_H

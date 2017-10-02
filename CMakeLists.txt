@@ -12,12 +12,12 @@ if (OPENMP_FOUND)
 endif()
 
 set(SOURCE_FILES src/main.c
-        src/cell.h src/cell.c
-        src/grid.c src/grid.h
+        src/grid/cell/cell.h src/grid/cell/cell.c
+        src/grid/grid.c src/grid/grid.h
         src/solver.h
-        src/grid_refinement.c src/grid_derefinement.c
-        src/cell_derefinement.c src/cell_refinement.c
-        src/opts.h)
+        src/grid/grid_refinement.c src/grid/grid_derefinement.c
+        src/grid/cell/cell_derefinement.c src/grid/cell/cell_refinement.c
+        src/opts.h src/grid/grid_domain.c src/utils/sort.c src/utils/utils.h src/utils/search.c src/utils/point_hash.c src/utils/point_hash.h)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
-target_link_libraries(MonoAlg3D ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(MonoAlg3D ${CMAKE_THREAD_LIBS_INIT} m)

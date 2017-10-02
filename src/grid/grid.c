@@ -4,6 +4,14 @@
 
 #include "grid.h"
 
+
+//TODO: maybe free the grid before?
+void initialize_and_construct_grid(struct grid *the_grid, float side_length) {
+
+    initialize_grid(the_grid, side_length);
+    construct_grid(the_grid);
+}
+
 void initialize_grid (struct grid *the_grid, float side_length) {
 
     the_grid->first_cell = 0;

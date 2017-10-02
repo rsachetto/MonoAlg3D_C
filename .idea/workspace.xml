@@ -11,19 +11,24 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="56fdea25-d77c-47e5-91f9-acd4f3cbd0a5" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.clang-format" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/cell_derefinement.c" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/cell_refinement.c" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/grid_derefinement.c" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/grid_refinement.c" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/opts.h" />
+    <list default="true" id="56fdea25-d77c-47e5-91f9-acd4f3cbd0a5" name="Default" comment="ey">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ToDo" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/grid/grid_domain.c" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/utils/point_hash.c" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/utils/point_hash.h" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/utils/search.c" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/utils/sort.c" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/utils/utils.h" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/cell.c" afterPath="$PROJECT_DIR$/src/grid/cell/cell.c" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/cell.h" afterPath="$PROJECT_DIR$/src/grid/cell/cell.h" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/cell_derefinement.c" afterPath="$PROJECT_DIR$/src/grid/cell/cell_derefinement.c" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/cell_refinement.c" afterPath="$PROJECT_DIR$/src/grid/cell/cell_refinement.c" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/grid.c" afterPath="$PROJECT_DIR$/src/grid/grid.c" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/grid.h" afterPath="$PROJECT_DIR$/src/grid/grid.h" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/grid_derefinement.c" afterPath="$PROJECT_DIR$/src/grid/grid_derefinement.c" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/src/grid_refinement.c" afterPath="$PROJECT_DIR$/src/grid/grid_refinement.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CMakeLists.txt" afterPath="$PROJECT_DIR$/CMakeLists.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/cell.c" afterPath="$PROJECT_DIR$/src/cell.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/cell.h" afterPath="$PROJECT_DIR$/src/cell.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/grid.c" afterPath="$PROJECT_DIR$/src/grid.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/grid.h" afterPath="$PROJECT_DIR$/src/grid.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main.c" afterPath="$PROJECT_DIR$/src/main.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
@@ -42,21 +47,9 @@
       <file leaf-file-name="CMakeLists.txt" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="323">
-              <caret line="19" column="18" lean-forward="false" selection-start-line="19" selection-start-column="18" selection-end-line="19" selection-end-column="18" />
+            <state relative-caret-position="298">
+              <caret line="22" column="60" lean-forward="false" selection-start-line="22" selection-start-column="60" selection-end-line="22" selection-end-column="60" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cell.h" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/cell.h">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-835">
-              <caret line="11" column="0" lean-forward="false" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-              <folding>
-                <element signature="e#94#114#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -64,8 +57,8 @@
       <file leaf-file-name="opts.h" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/opts.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="233">
-              <caret line="324" column="1" lean-forward="true" selection-start-line="324" selection-start-column="1" selection-end-line="324" selection-end-column="1" />
+            <state relative-caret-position="5508">
+              <caret line="324" column="1" lean-forward="false" selection-start-line="324" selection-start-column="1" selection-end-line="324" selection-end-column="1" />
               <folding>
                 <element signature="e#106#125#0" expanded="true" />
               </folding>
@@ -74,62 +67,22 @@
         </entry>
       </file>
       <file leaf-file-name="grid.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/grid.c">
+        <entry file="file://$PROJECT_DIR$/src/grid/grid.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="174" column="52" lean-forward="false" selection-start-line="174" selection-start-column="51" selection-end-line="174" selection-end-column="52" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="grid_refinement.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/grid_refinement.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1020">
-              <caret line="60" column="7" lean-forward="false" selection-start-line="60" selection-start-column="7" selection-end-line="60" selection-end-column="7" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="grid_derefinement.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/grid_derefinement.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-4982">
-              <caret line="12" column="95" lean-forward="false" selection-start-line="12" selection-start-column="95" selection-end-line="12" selection-end-column="95" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cell_derefinement.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/cell_derefinement.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="137">
-              <caret line="70" column="0" lean-forward="false" selection-start-line="70" selection-start-column="0" selection-end-line="70" selection-end-column="77" />
+            <state relative-caret-position="68">
+              <caret line="7" column="35" lean-forward="false" selection-start-line="7" selection-start-column="35" selection-end-line="7" selection-end-column="35" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
       <file leaf-file-name="grid.h" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/grid.h">
+        <entry file="file://$PROJECT_DIR$/src/grid/grid.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="455">
-              <caret line="49" column="58" lean-forward="false" selection-start-line="49" selection-start-column="58" selection-end-line="49" selection-end-column="58" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cell.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/cell.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="136">
-              <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+            <state relative-caret-position="247">
+              <caret line="53" column="84" lean-forward="false" selection-start-line="53" selection-start-column="84" selection-end-line="53" selection-end-column="84" />
               <folding>
-                <element signature="e#43#60#0" expanded="true" />
+                <element signature="e#94#116#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -138,11 +91,65 @@
       <file leaf-file-name="main.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="289">
-              <caret line="41" column="37" lean-forward="false" selection-start-line="41" selection-start-column="36" selection-end-line="41" selection-end-column="37" />
+            <state relative-caret-position="186">
+              <caret line="18" column="47" lean-forward="false" selection-start-line="18" selection-start-column="47" selection-end-line="18" selection-end-column="47" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="grid_domain.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/grid/grid_domain.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-590">
+              <caret line="158" column="20" lean-forward="false" selection-start-line="158" selection-start-column="20" selection-end-line="158" selection-end-column="20" />
+              <folding>
+                <element signature="e#43#75#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="point_hash.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/utils/point_hash.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="188">
+              <caret line="103" column="20" lean-forward="false" selection-start-line="103" selection-start-column="20" selection-end-line="103" selection-end-column="20" />
+              <folding>
+                <element signature="e#43#66#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="point_hash.h" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/utils/point_hash.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="205">
+              <caret line="23" column="11" lean-forward="false" selection-start-line="23" selection-start-column="11" selection-end-line="23" selection-end-column="11" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="search.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/utils/search.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="217">
+              <caret line="18" column="0" lean-forward="false" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="78" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="utils.h" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/utils/utils.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="170">
+              <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -151,23 +158,11 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>backTransitionNode</find>
-      <find>cellAfterBunch</find>
-      <find>centerZ</find>
-      <find>secondCell</find>
-      <find>fourthCell</find>
-      <find>fifthCell</find>
-      <find>seventhCell</find>
-      <find>eighthCell</find>
-      <find>halfface_length</find>
-      <find>bunchNumber</find>
-      <find>bunchLevel</find>
       <find>backSouthwestCell</find>
       <find>firstBunchCell</find>
       <find>sumOfhilbert_shape_numbers</find>
       <find>set_refined_transition_node_data</find>
       <find>se</find>
-      <find>backTransitionNode</find>
       <find>set_transition_node_data</find>
       <find>frontSouthwestCell</find>
       <find>updating</find>
@@ -181,19 +176,26 @@
       <find>derefine_</find>
       <find>Elem</find>
       <find>globalArgs.</find>
+      <find>centerZ</find>
+      <find>firstCell</find>
+      <find>sor</find>
+      <find>swap</find>
+      <find>fileName</find>
+      <find>inMesh</find>
+      <find>dict</find>
+      <find>point_hash</find>
+      <find>key =</find>
+      <find>TODO</find>
+      <find>asset</find>
+      <find>aser</find>
     </findStrings>
     <replaceStrings>
-      <replace>derefinement_bound</replace>
-      <replace>grid_cell</replace>
-      <replace>fifth+cell</replace>
-      <replace>highest_maximum</replace>
       <replace>derefinement_condition</replace>
       <replace>firstBunch_cell</replace>
       <replace>new_cell</replace>
       <replace>center_y</replace>
       <replace>back_transition_node</replace>
       <replace>cell_after_bunch</replace>
-      <replace>center_z</replace>
       <replace>second_cell</replace>
       <replace>fourth_cell</replace>
       <replace>fifth_cell</replace>
@@ -205,7 +207,6 @@
       <replace>back_southwest_cell</replace>
       <replace>first_bunch_cell</replace>
       <replace>sum_of_hilbert_shape_numbers</replace>
-      <replace>back_transition_node</replace>
       <replace>front_southwest_cell</replace>
       <replace>transition_node</replace>
       <replace>single_connector</replace>
@@ -213,6 +214,12 @@
       <replace>white_neighbor_cell</replace>
       <replace>quadruple_connector4</replace>
       <replace>globalArgs-&gt;</replace>
+      <replace>the_grid-&gt;firstCell</replace>
+      <replace>center_z</replace>
+      <replace>first_cell</replace>
+      <replace>file_name</replace>
+      <replace>inside_mesh</replace>
+      <replace>hash</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -231,9 +238,20 @@
         <option value="$PROJECT_DIR$/src/grid.c" />
         <option value="$PROJECT_DIR$/src/element.h" />
         <option value="$PROJECT_DIR$/src/cell.h" />
-        <option value="$PROJECT_DIR$/CMakeLists.txt" />
-        <option value="$PROJECT_DIR$/src/main.c" />
         <option value="$PROJECT_DIR$/src/opts.h" />
+        <option value="$PROJECT_DIR$/ToDo" />
+        <option value="$PROJECT_DIR$/src/utils/sort.c.c" />
+        <option value="$PROJECT_DIR$/src/utils/sort.c" />
+        <option value="$PROJECT_DIR$/src/utils/search.c" />
+        <option value="$PROJECT_DIR$/src/utils/utils.h" />
+        <option value="$PROJECT_DIR$/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/src/utils/hash.h" />
+        <option value="$PROJECT_DIR$/src/utils/point_hash.h" />
+        <option value="$PROJECT_DIR$/src/grid/grid.c" />
+        <option value="$PROJECT_DIR$/src/grid/grid.h" />
+        <option value="$PROJECT_DIR$/src/utils/point_hash.c" />
+        <option value="$PROJECT_DIR$/src/grid/grid_domain.c" />
+        <option value="$PROJECT_DIR$/src/main.c" />
       </list>
     </option>
   </component>
@@ -277,6 +295,18 @@
               <item name="MonoAlg3D_C" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="MonoAlg3D" type="dad4c3:CidrFilesViewHelper$MyProjectTreeStructure$1" />
+              <item name="MonoAlg3D_C" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="grid" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="MonoAlg3D" type="dad4c3:CidrFilesViewHelper$MyProjectTreeStructure$1" />
+              <item name="MonoAlg3D_C" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="utils" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -290,10 +320,12 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
+    <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/grid/cell" />
+      <recent name="$PROJECT_DIR$/src/grid" />
       <recent name="$PROJECT_DIR$/src" />
     </key>
   </component>
@@ -336,7 +368,8 @@
       <workItem from="1506719492459" duration="11642000" />
       <workItem from="1506734177366" duration="8084000" />
       <workItem from="1506787771173" duration="6190000" />
-      <workItem from="1506797987018" duration="10378000" />
+      <workItem from="1506797987018" duration="10444000" />
+      <workItem from="1506902443316" duration="9043000" />
     </task>
     <task id="LOCAL-00001" summary="First Commit">
       <created>1506705734446</created>
@@ -359,11 +392,18 @@
       <option name="project" value="LOCAL" />
       <updated>1506742261745</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="*void hack is back again :/">
+      <created>1506808430689</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1506808430689</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="56375000" />
+    <option name="totallyTimeSpent" value="65484000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -379,13 +419,13 @@
     <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3270869" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3492334" sideWeight="0.49754602" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.37989777" sideWeight="0.49754602" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32879046" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33782268" sideWeight="0.502454" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.26746166" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3299435" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3299435" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22803031" sideWeight="0.49430895" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.23181818" sideWeight="0.49430895" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3270869" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2621212" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39863715" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -410,7 +450,8 @@
     <MESSAGE value="First Commit" />
     <MESSAGE value="We have refiniment now!!" />
     <MESSAGE value="Change the *void hack. Is this better?? Maybe..." />
-    <option name="LAST_COMMIT_MESSAGE" value="Change the *void hack. Is this better?? Maybe..." />
+    <MESSAGE value="*void hack is back again :/" />
+    <option name="LAST_COMMIT_MESSAGE" value="*void hack is back again :/" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -425,76 +466,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/cell.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6953">
-          <caret line="409" column="0" lean-forward="false" selection-start-line="409" selection-start-column="0" selection-end-line="409" selection-end-column="0" />
-          <folding>
-            <element signature="e#43#60#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell_derefinement.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4862">
-          <caret line="286" column="59" lean-forward="false" selection-start-line="286" selection-start-column="59" selection-end-line="286" selection-end-column="59" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="6" column="41" lean-forward="false" selection-start-line="6" selection-start-column="40" selection-end-line="6" selection-end-column="41" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
-          <caret line="19" column="29" lean-forward="false" selection-start-line="19" selection-start-column="6" selection-end-line="19" selection-end-column="29" />
-          <folding>
-            <element signature="e#94#114#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="15" column="0" lean-forward="true" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="1" column="5" lean-forward="false" selection-start-line="1" selection-start-column="5" selection-end-line="1" selection-end-column="5" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/solver.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="12" column="25" lean-forward="false" selection-start-line="12" selection-start-column="25" selection-end-line="12" selection-end-column="25" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="7" column="65" lean-forward="true" selection-start-line="7" selection-start-column="65" selection-end-line="7" selection-end-column="65" />
-          <folding>
-            <element signature="e#43#60#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="17">
@@ -513,7 +484,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.h">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="714">
           <caret line="42" column="13" lean-forward="false" selection-start-line="42" selection-start-column="13" selection-end-line="42" selection-end-column="13" />
@@ -523,11 +494,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.h">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="731">
           <caret line="43" column="5" lean-forward="false" selection-start-line="43" selection-start-column="5" selection-end-line="43" selection-end-column="5" />
-          <folding />
+          <folding>
+            <element signature="e#94#116#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -535,7 +508,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="204">
           <caret line="12" column="25" lean-forward="false" selection-start-line="12" selection-start-column="25" selection-end-line="12" selection-end-column="25" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -549,7 +521,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="27897">
           <caret line="1641" column="20" lean-forward="true" selection-start-line="1641" selection-start-column="20" selection-end-line="1641" selection-end-column="20" />
@@ -559,7 +531,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="6613">
           <caret line="389" column="5" lean-forward="false" selection-start-line="389" selection-start-column="5" selection-end-line="389" selection-end-column="5" />
@@ -575,7 +547,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.h">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2295">
           <caret line="135" column="23" lean-forward="false" selection-start-line="135" selection-start-column="5" selection-end-line="135" selection-end-column="23" />
@@ -585,11 +557,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.h">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="561">
           <caret line="33" column="13" lean-forward="true" selection-start-line="33" selection-start-column="13" selection-end-line="33" selection-end-column="13" />
-          <folding />
+          <folding>
+            <element signature="e#94#116#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -597,7 +571,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="204">
           <caret line="12" column="25" lean-forward="false" selection-start-line="12" selection-start-column="25" selection-end-line="12" selection-end-column="25" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -611,7 +584,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3179">
           <caret line="187" column="0" lean-forward="false" selection-start-line="187" selection-start-column="0" selection-end-line="191" selection-end-column="71" />
@@ -621,7 +594,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
           <caret line="29" column="33" lean-forward="true" selection-start-line="29" selection-start-column="33" selection-end-line="29" selection-end-column="33" />
@@ -637,7 +610,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.h">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1944">
           <caret line="108" column="2" lean-forward="false" selection-start-line="108" selection-start-column="2" selection-end-line="108" selection-end-column="2" />
@@ -647,7 +620,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="72">
           <caret line="4" column="0" lean-forward="false" selection-start-line="4" selection-start-column="0" selection-end-line="4" selection-end-column="0" />
@@ -659,11 +632,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="288">
           <caret line="16" column="0" lean-forward="false" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="522">
           <caret line="29" column="5" lean-forward="false" selection-start-line="29" selection-start-column="5" selection-end-line="29" selection-end-column="5" />
@@ -683,11 +655,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.h">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1926">
           <caret line="107" column="82" lean-forward="true" selection-start-line="107" selection-start-column="82" selection-end-line="107" selection-end-column="82" />
-          <folding />
+          <folding>
+            <element signature="e#94#116#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -712,7 +686,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="204">
           <caret line="12" column="25" lean-forward="false" selection-start-line="12" selection-start-column="25" selection-end-line="12" selection-end-column="25" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -730,7 +703,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell_refinement.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell_refinement.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="256">
           <caret line="1114" column="112" lean-forward="false" selection-start-line="1114" selection-start-column="8" selection-end-line="1114" selection-end-column="112" />
@@ -738,31 +711,15 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell_derefinement.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell_derefinement.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="137">
+        <state relative-caret-position="1190">
           <caret line="70" column="0" lean-forward="false" selection-start-line="70" selection-start-column="0" selection-end-line="70" selection-end-column="77" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="455">
-          <caret line="49" column="58" lean-forward="false" selection-start-line="49" selection-start-column="58" selection-end-line="49" selection-end-column="58" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="174" column="52" lean-forward="false" selection-start-line="174" selection-start-column="51" selection-end-line="174" selection-end-column="52" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid_refinement.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid_refinement.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1020">
           <caret line="60" column="7" lean-forward="false" selection-start-line="60" selection-start-column="7" selection-end-line="60" selection-end-column="7" />
@@ -770,23 +727,16 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/grid_derefinement.c">
+    <entry file="file://$PROJECT_DIR$/src/grid/grid_derefinement.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-4982">
+        <state relative-caret-position="204">
           <caret line="12" column="95" lean-forward="false" selection-start-line="12" selection-start-column="95" selection-end-line="12" selection-end-column="95" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/element.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.c">
+    <entry file="file://$PROJECT_DIR$/src/element.c" />
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="136">
           <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
@@ -796,17 +746,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/element.h">
+    <entry file="file://$PROJECT_DIR$/src/element.h" />
+    <entry file="file://$PROJECT_DIR$/src/grid/cell/cell.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/cell.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-835">
+        <state relative-caret-position="187">
           <caret line="11" column="0" lean-forward="false" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
           <folding>
             <element signature="e#94#114#0" expanded="true" />
@@ -814,28 +757,114 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
-          <caret line="19" column="18" lean-forward="false" selection-start-line="19" selection-start-column="18" selection-end-line="19" selection-end-column="18" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/opts.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="233">
-          <caret line="324" column="1" lean-forward="true" selection-start-line="324" selection-start-column="1" selection-end-line="324" selection-end-column="1" />
+        <state relative-caret-position="5508">
+          <caret line="324" column="1" lean-forward="false" selection-start-line="324" selection-start-column="1" selection-end-line="324" selection-end-column="1" />
           <folding>
             <element signature="e#106#125#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/ToDo">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="83" lean-forward="true" selection-start-line="0" selection-start-column="83" selection-end-line="0" selection-end-column="83" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/lib/gcc/x86_64-pc-linux-gnu/7.2.0/include/float.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1670">
+          <caret line="104" column="20" lean-forward="false" selection-start-line="104" selection-start-column="20" selection-end-line="104" selection-end-column="31" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/utils/sort.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-191">
+          <caret line="29" column="53" lean-forward="false" selection-start-line="29" selection-start-column="53" selection-end-line="29" selection-end-column="53" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/utils/utils.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="298">
+          <caret line="22" column="60" lean-forward="false" selection-start-line="22" selection-start-column="60" selection-end-line="22" selection-end-column="60" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/utils/search.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="217">
+          <caret line="18" column="0" lean-forward="false" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="78" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="7" column="35" lean-forward="false" selection-start-line="7" selection-start-column="35" selection-end-line="7" selection-end-column="35" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/grid/grid.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="247">
+          <caret line="53" column="84" lean-forward="false" selection-start-line="53" selection-start-column="84" selection-end-line="53" selection-end-column="84" />
+          <folding>
+            <element signature="e#94#116#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/utils/point_hash.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="205">
+          <caret line="23" column="11" lean-forward="false" selection-start-line="23" selection-start-column="11" selection-end-line="23" selection-end-column="11" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/utils/point_hash.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="188">
+          <caret line="103" column="20" lean-forward="false" selection-start-line="103" selection-start-column="20" selection-end-line="103" selection-end-column="20" />
+          <folding>
+            <element signature="e#43#66#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/grid/grid_domain.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-590">
+          <caret line="158" column="20" lean-forward="false" selection-start-line="158" selection-start-column="20" selection-end-line="158" selection-end-column="20" />
+          <folding>
+            <element signature="e#43#75#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="41" column="37" lean-forward="false" selection-start-line="41" selection-start-column="36" selection-end-line="41" selection-end-column="37" />
+        <state relative-caret-position="186">
+          <caret line="18" column="47" lean-forward="false" selection-start-line="18" selection-start-column="47" selection-end-line="18" selection-end-column="47" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
