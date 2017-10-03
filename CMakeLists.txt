@@ -34,9 +34,11 @@ set(SOURCE_FILES src/main.c
         src/grid/cell/cell_derefinement.c src/grid/cell/cell_refinement.c
         src/utils/opts.h src/grid/grid_domain.c src/utils/sort.c src/utils/utils.h src/utils/search.c
         src/utils/point_hash.c src/utils/point_hash.h
-        src/solvers/edo_solver.c src/solvers/edo_solver.h
+        src/solvers/ode_solver.c src/solvers/ode_solver.h
         src/solvers/monodomain_solver.h src/solvers/monodomain_solver.c
-        src/utils/output_info.h src/gpu/gpu_common.cu src/gpu/gpu_common.h src/solvers/constants.h)
+        src/utils/output_utils.h src/utils/output_utils.c
+        src/solvers/constants.h
+        src/utils/stop_watch.h src/utils/stop_watch.c)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 

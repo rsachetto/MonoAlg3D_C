@@ -28,14 +28,8 @@ struct grid {
 */
     struct cell_node** active_cells;
 
-
     bool init_ode;
-    bool parallel;
-    bool gpu;
-    bool adaptive;
 
-    float refinement_bound;
-    float derefinement_bound;
 };
 
 
@@ -44,6 +38,8 @@ void construct_grid(struct grid *the_grid);
 void initialize_and_construct_grid(struct grid *the_grid, float side_length);
 
 void print_grid(struct grid* the_grid, FILE *output_file);
+bool print_grid_and_check_for_activity (struct grid *the_grid, FILE *output_file, int count);
+
 void clean_grid(struct grid *the_grid);
 void order_grid_cells (struct grid *the_grid);
 

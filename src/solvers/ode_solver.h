@@ -10,11 +10,15 @@
 #define EULER_METHOD 0
 #define EULER_METHOD_ADPT 1
 
-struct edo_solver {
+struct ode_solver {
 
     int number_of_equations;
     double initial_v;
+    double max_dt;
     double min_dt;
+    double rel_tol;
+    double abs_tol;
+
     int method;
 
     //used for the adaptive time step solver
@@ -33,6 +37,7 @@ struct edo_solver {
 
 };
 
-void set_edo_initial_conditions(struct edo_solver *solver);
+void set_ode_initial_conditions(struct ode_solver *solver);
+const char* get_ODE_method(int met);
 
 #endif //MONOALG3D_EDO_SOLVER_H

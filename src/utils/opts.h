@@ -108,7 +108,7 @@ void display_usage( char** argv ) {
     printf("Options:\n");
     printf("--final-time, -f [simulation final time]. Simulation final time. Default UNDEFINED.\n");
     printf("--save-to-file, -s. No argument required. Save the output. Default No save.\n");
-    printf("--stim-duration, -d [stim_dur]. Stimulus duration (ms). Default: 2 ms \n");
+    printf("--stim-duration, -d [stim_duration]. Stimulus duration (ms). Default: 2 ms \n");
     printf("--side-lenght, -l [length]. Tissue side lenght (micro m). Default: 12800 micro m \n");
     printf("--out-dir, -o [output-dir]. Simulation output directory. Default: ./ \n");
     printf("--adaptive, -a. No argument required. Use adaptivity. Default No use.\n");

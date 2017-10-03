@@ -285,7 +285,7 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, float start_h) 
         derefine_grid_inactive_cells (the_grid);
     }
 
-    if (the_grid->adaptive) {
+    //if (the_grid->adaptive) {
         // TODO: @incomplete: set fixed cells for activation time caculation (maybe a separate
         // funcition??)
         //        cout << "Setting fixed cells for Activation time calculation" << endl;
@@ -298,7 +298,7 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, float start_h) 
         //            }
         //            grid_cell = grid_cell->next;
         //        }
-    }
+    //}
     // exit(0);
 }
 

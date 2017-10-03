@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <unitypes.h>
 #include "grid/grid.h"
-#include "solvers/edo_solver.h"
+#include "solvers/ode_solver.h"
 #include "solvers/monodomain_solver.h"
-#include "utils/output_info.h"
+#include "utils/output_utils.h"
 #include "utils/opts.h"
 
 int main(int argc, char **argv) {
 
     struct grid *the_grid;
     struct monodomain_solver *edp_solver;
-    struct edo_solver *edo_solver;
-    struct output_info *output_info;
+    struct ode_solver *edo_solver;
+    struct output_utils *output_info;
 
 
     FILE *f1;
@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
 
     the_grid = (struct grid*)malloc(sizeof(struct grid));
     edp_solver = (struct monodomain_solver*)malloc(sizeof(struct monodomain_solver));
-    edo_solver = (struct edo_solver*)malloc(sizeof(struct edo_solver));
-    output_info = (struct output_info*)malloc(sizeof(struct output_info));
+    edo_solver = (struct ode_solver*)malloc(sizeof(struct ode_solver));
+    output_info = (struct output_utils*)malloc(sizeof(struct output_utils));
 
 
     //initialize_grid_with_mouse_mesh(the_grid, "../../Dropbox/Universidade/Pesquisa/alg/ALG3D/MonoAlg3D_v2_circle_images/meshes/mouse.alg");
@@ -52,10 +52,9 @@ int main(int argc, char **argv) {
 
     init_solver(edp_solver);
 
-    //TODO: we should think in a file format to handle mesh information
+    //TODO: this should be provided by a user provided function
     initialize_grid_with_plain_and_sphere_fibrotic_mesh (the_grid, 40000.0f, 100.0f, 2, 0.25, plain_center, sphere_radius, bz_size, bz_radius);
 
-    //TODO: now we have to implement this function
     solve_monodomain(the_grid, edp_solver, edo_solver, output_info);
 
 //    f1 = fopen("V_t_3", "w");

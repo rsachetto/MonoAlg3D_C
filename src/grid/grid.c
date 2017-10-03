@@ -166,8 +166,6 @@ void construct_grid (struct grid *the_grid) {
 
 void print_grid (struct grid *the_grid, FILE *output_file) {
 
-
-
     struct cell_node *grid_cell = the_grid->first_cell;
 
     float center_x, center_y, center_z, half_face;
@@ -184,8 +182,33 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
             v = grid_cell->v;
             half_face = grid_cell->half_face_length;
 
-            // TODO:check for activity here???
-            /*
+            fprintf (output_file, "%lf,%lf,%lf,%lf,%lf\n", center_x, center_y, center_z, half_face,
+                     v);
+        }
+        grid_cell = grid_cell->next;
+    }
+
+}
+
+bool print_grid_and_check_for_activity (struct grid *the_grid, FILE *output_file, int count) {
+
+    struct cell_node *grid_cell = the_grid->first_cell;
+
+    float center_x, center_y, center_z, half_face;
+    double v;
+    bool act;
+
+    while (grid_cell != 0) {
+
+        if (grid_cell->active) {
+
+            center_x = grid_cell->center_x;
+            center_y = grid_cell->center_y;
+            center_z = grid_cell->center_z;
+
+            v = grid_cell->v;
+            half_face = grid_cell->half_face_length;
+
             if(count > 0) {
                 if (grid_cell->v > -86.0) {
                     act = true;
@@ -194,7 +217,7 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
             else {
                 act = true;
             }
-             */
+
 
             fprintf (output_file, "%lf,%lf,%lf,%lf,%lf\n", center_x, center_y, center_z, half_face,
                      v);
@@ -202,7 +225,7 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
         grid_cell = grid_cell->next;
     }
 
-    // return act;
+     return act;
 }
 
 void order_grid_cells (struct grid *the_grid) {
