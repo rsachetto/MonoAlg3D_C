@@ -23,16 +23,19 @@ struct grid {
     /*
     vector <int> freeSVPositions;
 
-    int *cellsToSolve;
+    int *cells_to_solve;
     vector<int> refinedThisStep;
+*/
+    struct cell_node** active_cells;
 
-    vector<CellNode*> activeCells;
-     */
 
     bool init_ode;
     bool parallel;
     bool gpu;
     bool adaptive;
+
+    float refinement_bound;
+    float derefinement_bound;
 };
 
 
@@ -42,7 +45,10 @@ void initialize_and_construct_grid(struct grid *the_grid, float side_length);
 
 void print_grid(struct grid* the_grid, FILE *output_file);
 void clean_grid(struct grid *the_grid);
+void order_grid_cells (struct grid *the_grid);
+
 void set_grid_flux(struct grid *the_grid);
+
 bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refinement_bound);
 void refine_grid(struct grid* the_grid, int num_steps);
 void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number );

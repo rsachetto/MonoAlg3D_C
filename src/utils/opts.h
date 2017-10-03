@@ -125,7 +125,7 @@ void display_usage( char** argv ) {
     printf("--max-dt-edo, -v [dt]. Maximum ODE time discretization (using time adaptivity. Default: 0.05 \n");
     printf("--abs-tol, -g [absolute_tolerance]. Absolute tolerance to the euler with adaptive time step methods. Default: 1e-6. \n");
     printf("--rel-tol, -n [relative_tolerance]. Relative tolerance to the euler with adaptive time step methods. Default: 1e-6. \n");
-    printf("--method, -u [ode_method].EDO edp_solver method. Default: 0\n\tOptions:\n\t 0: Euler Method\n\t 1: Euler Method with adaptive time step (Formula)\n");
+    printf("--method, -u [ode_method].EDO monodomain_solver method. Default: 0\n\tOptions:\n\t 0: Euler Method\n\t 1: Euler Method with adaptive time step (Formula)\n");
     printf("--use-rabbit-heart, -w. Use rabbit mesh file (rabheart.alg). Default false\n");
     printf("--use-mouse-heart, -k. Use mouse mesh file (mouse.alg). Default false\n");
     printf("--use-human-heart, -H. Use human mesh file (human.alg). Default false\n");

@@ -19,6 +19,7 @@ void initialize_grid (struct grid *the_grid, float side_length) {
     the_grid->number_of_cells = 1;
     the_grid->init_ode = false;
     the_grid->init_ode = false;
+    the_grid->active_cells = NULL;
 }
 
 void construct_grid (struct grid *the_grid) {
@@ -204,36 +205,33 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
     // return act;
 }
 
-void order_grid_cells (struct grid *the_grid, bool update_active) {
+void order_grid_cells (struct grid *the_grid) {
 
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
 
-    if (update_active) {
-        // TODO: @Incomplete
-        // activeCells.clear();
-        // activeCells = (CellNode**) malloc(sizeof(CellNode*)*number_of_cells);
+
+    if(the_grid->active_cells != NULL) {
+        free(the_grid->active_cells);
     }
+
+    the_grid->active_cells = (struct cell_node**) malloc(sizeof(struct cell_node*)*the_grid->number_of_cells);
+
 
     uint64_t counter = 0;
     while (grid_cell != 0) {
         if (grid_cell->active) {
 
             grid_cell->grid_position = counter;
-
-            if (update_active) {
-                // TODO: @Incomplete
-                // activeCells[counter] = grid_cell;
-                // activeCells.push_back(grid_cell);
-            }
-
+            the_grid->active_cells[counter] = grid_cell;
             counter++;
         }
 
         grid_cell = grid_cell->next;
     }
 
-    the_grid->number_of_cells = counter;
+    the_grid->num_active_cells = counter;
+
 }
 
 void clean_grid(struct grid *the_grid) {

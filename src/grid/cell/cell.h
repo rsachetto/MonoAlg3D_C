@@ -87,6 +87,8 @@ struct cell_node {
 
     // Variables used by some applications of partial differential equations.
     double v;
+
+    //TODO: @Check. Do we need to be this big??
     uint64_t gpu_sv_position;
     float face_length;
     bool can_change;
