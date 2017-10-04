@@ -4,7 +4,7 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 BinPackParameters: true
 BreakBeforeBinaryOperators: false
-ColumnLimit: 100
+ColumnLimit: 120
 IndentWidth: 4
 Language: Cpp
 SpaceBeforeAssignmentOperators: true

@@ -8,11 +8,9 @@
 
 
 #include <stdio.h>
-#include "gpu_common.h"
 #include <cuda_runtime.h>
 
-
-void init_cuda_device(int device) {
+extern "C" void init_cuda_device(int device) {
     printf("Using GPU Ten Tusscher 3 Model\n");
 
     int count;

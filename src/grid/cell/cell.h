@@ -15,7 +15,7 @@
 
 struct element {
     double value;
-    int column; // Column of the matrix to which this element belongs.
+    uint64_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
 };
 
@@ -69,7 +69,7 @@ struct cell_node {
        corresponds to the diagonal element of the row. */
 
     // Element *firstElement; //TODO: @Check: I dont't know with we need a linked list here
-    struct element elements[5];
+    struct element *elements;
 
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient
@@ -125,15 +125,13 @@ void init_basic_cell_data (struct basic_cell_data *data, uint8_t level, float ce
 
 void init_basic_cell_data_with_default_values (struct basic_cell_data *data, char type);
 
-void init_cell_node (struct cell_node *cell_node, bool init_ode);
+void init_cell_node (struct cell_node *cell_node);
 
 void free_cell_node (struct cell_node *cell_node);
 
-void init_cell_node_ode (struct cell_node *cell_node);
+void lock_cell_node (struct cell_node *cell_node);
 
-void lock_cell_node (struct cell_node *cell_node1);
-
-void unlock_cell_node (struct cell_node *cell_node1);
+void unlock_cell_node (struct cell_node *cell_node);
 
 void init_transition_node (struct transition_node *transition_node);
 
@@ -153,19 +151,22 @@ double get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
                             float face_length, float half_face_length, float center_x,
-                            float center_y, float center_z, uint64_t bunch_number, bool using_gpu);
+                            float center_y, float center_z, uint64_t bunch_number);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
                                        struct cell_node *other_node, char direction);
 
 void simplify_refinement (struct transition_node *transition_node);
-void refine_cell (struct cell_node *cell, bool using_gpu, bool init_ode);
+void refine_cell (struct cell_node *cell);
 
 bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
 void simplify_deref (struct transition_node *transition_node);
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell, bool using_gpu);
+void derefine_cell_bunch (struct cell_node *first_bunch_cell);
+
+struct element* new_element_array();
+void init_element(struct element* el);
 
 #endif // MONOALG3D_CELL_H

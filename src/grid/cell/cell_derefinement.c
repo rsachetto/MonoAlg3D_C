@@ -68,14 +68,13 @@ bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_b
     return derefinement_condition;
 }
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell, bool using_gpu) {
+void derefine_cell_bunch (struct cell_node *first_bunch_cell) {
     if (first_bunch_cell == 0) {
         fprintf (stderr, "derefine_cell_bunch: Parameter first_bunch_cell is NULL. Exiting!!");
         exit (10);
     }
 
     size_t transition_node_size = sizeof (struct transition_node);
-    size_t cell_node_size = sizeof (struct cell_node);
 
     struct cell_node *cell_before_bunch = first_bunch_cell->previous;
     struct cell_node *cell_after_bunch =
@@ -98,27 +97,27 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, bool using_gpu) {
     // Front northeast node of the bunch becomes the derefined node.
     struct cell_node *new_cell = get_front_northeast_cell (first_bunch_cell);
 
-    if (using_gpu) {
-        // TODO: @Incomplete: gpu related code
-        /*
-        //Free Sv Map positions
-        freeSVPositions.push_back(static_cast<CellNode * >(new_cell->west)->gpuSVPosition);
-        freeSVPositions.push_back(static_cast<CellNode * >(new_cell->back)->gpuSVPosition);
-        freeSVPositions.push_back(static_cast<CellNode * >(new_cell->south)->gpuSVPosition);
-        freeSVPositions.push_back(
-                static_cast<CellNode * >(static_cast<CellNode *
-        >(new_cell->west)->back)->gpuSVPosition);
-        freeSVPositions.push_back(
-                static_cast<CellNode * >(static_cast<CellNode *
-        >(new_cell->west)->south)->gpuSVPosition);
-        freeSVPositions.push_back(
-                static_cast<CellNode * >(static_cast<CellNode *
-        >(new_cell->south)->back)->gpuSVPosition);
-        freeSVPositions.push_back(static_cast<CellNode * >(
-                static_cast<CellNode * >(static_cast<CellNode *
-        >(new_cell->west)->south)->back)->gpuSVPosition);
-        */
-    }
+
+    // TODO: @Incomplete: gpu related code
+    /*
+    //Free Sv Map positions
+    freeSVPositions.push_back(static_cast<CellNode * >(new_cell->west)->gpuSVPosition);
+    freeSVPositions.push_back(static_cast<CellNode * >(new_cell->back)->gpuSVPosition);
+    freeSVPositions.push_back(static_cast<CellNode * >(new_cell->south)->gpuSVPosition);
+    freeSVPositions.push_back(
+            static_cast<CellNode * >(static_cast<CellNode *
+    >(new_cell->west)->back)->gpuSVPosition);
+    freeSVPositions.push_back(
+            static_cast<CellNode * >(static_cast<CellNode *
+    >(new_cell->west)->south)->gpuSVPosition);
+    freeSVPositions.push_back(
+            static_cast<CellNode * >(static_cast<CellNode *
+    >(new_cell->south)->back)->gpuSVPosition);
+    freeSVPositions.push_back(static_cast<CellNode * >(
+            static_cast<CellNode * >(static_cast<CellNode *
+    >(new_cell->west)->south)->back)->gpuSVPosition);
+    */
+
     new_cell->previous = cell_before_bunch;
     new_cell->next = cell_after_bunch;
 

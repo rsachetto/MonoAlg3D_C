@@ -93,7 +93,7 @@ bool derefine_grid_with_bound(struct grid *the_grid, double derefinement_bound, 
                                 auxiliar_grid_cell =
                                     grid_cell->next->next->next->next->next->next->next->next;
 
-                                derefine_cell_bunch(grid_cell, the_grid->gpu);
+                                derefine_cell_bunch(grid_cell);
 
                                 the_grid->number_of_cells -= 7;
                                 grid_cell = auxiliar_grid_cell;
@@ -165,7 +165,7 @@ void derefine_all_grid (struct grid* the_grid) {
                         auxiliar_grid_cell =
                             grid_cell->next->next->next->next->next->next->next->next;
 
-                        derefine_cell_bunch (grid_cell, false);
+                        derefine_cell_bunch (grid_cell);
                         the_grid->number_of_cells -= 7;
                         grid_cell = auxiliar_grid_cell;
                         has_been_derefined = true;
@@ -234,7 +234,7 @@ void derefine_first_bunch (struct grid *the_grid) {
                             auxiliar_grid_cell =
                                 grid_cell->next->next->next->next->next->next->next->next;
 
-                            derefine_cell_bunch (grid_cell, false);
+                            derefine_cell_bunch (grid_cell);
                             the_grid->number_of_cells -= 7;
                             grid_cell = auxiliar_grid_cell;
                             has_been_derefined = true;
@@ -317,7 +317,7 @@ void derefine_grid_inactive_cells (struct grid* the_grid) {
                             auxiliar_grid_cell =
                                 grid_cell->next->next->next->next->next->next->next->next;
 
-                            derefine_cell_bunch(grid_cell, false);
+                            derefine_cell_bunch(grid_cell);
                             the_grid->number_of_cells -= 7;
                             grid_cell = auxiliar_grid_cell;
                             has_been_derefined = true;

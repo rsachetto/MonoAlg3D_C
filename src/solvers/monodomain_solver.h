@@ -67,4 +67,6 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver,
                         struct ode_solver *the_ode_solver, struct grid *the_grid,
                         struct output_utils *output_info);
 
+void print_grid_matrix(struct grid *the_grid, FILE* output_file);
+
 #endif // MONOALG3D_SOLVER_H

@@ -4,7 +4,7 @@
 
 #include "cell.h"
 
-void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
+void refine_cell( struct cell_node *cell)  {
     if( cell == NULL ) {
         fprintf(stderr, "refine_cell(): Parameter cell is NULL. Exiting");
         exit(10);
@@ -50,14 +50,13 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
     front_northeast_sub_cell->center_z = cell_center_z + cell_quarter_side;
     front_northeast_sub_cell->bunch_number       = old_bunch_number * 10 + 1;
 
-    if(using_gpu) {
-        //TODO: @Implement GPU code not implemented
-        //refinedThisStep.push_back(front_northeast_sub_cell->gpuSVPosition);
-    }
+
+    //TODO: @Implement GPU code not implemented
+    //refinedThisStep.push_back(front_northeast_sub_cell->gpuSVPosition);
 
     // Creation of back Northeast node.
     back_northeast_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_northeast_sub_cell, init_ode);
+    init_cell_node(back_northeast_sub_cell);
     set_refined_cell_data(back_northeast_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -65,13 +64,12 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y + cell_quarter_side,
                           cell_center_z + cell_quarter_side,
-                          old_bunch_number * 10 + 2, using_gpu
-    );
+                          old_bunch_number * 10 + 2);
 
 
     // Creation of back Northwest node.
     back_northwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_northwest_sub_cell, init_ode);
+    init_cell_node(back_northwest_sub_cell);
     set_refined_cell_data(back_northwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -79,12 +77,11 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z + cell_quarter_side,
-                          old_bunch_number * 10 + 3, using_gpu
-    );
+                          old_bunch_number * 10 + 3);
 
     // Creation of front Northwest node.
     front_northwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(front_northwest_sub_cell, init_ode);
+    init_cell_node(front_northwest_sub_cell);
     set_refined_cell_data(front_northwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -92,13 +89,12 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
                           cell_center_x + cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z + cell_quarter_side,
-                          old_bunch_number * 10 + 4, using_gpu
-    );
+                          old_bunch_number * 10 + 4);
 
 
     // Creation of front Southwest node.
     front_southwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(front_southwest_sub_cell, init_ode);
+    init_cell_node(front_southwest_sub_cell);
     set_refined_cell_data(front_southwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -106,13 +102,12 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
                           cell_center_x + cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 5, using_gpu
-    );
+                          old_bunch_number * 10 + 5);
 
 
     // Creation of back Southwest node.
     back_southwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_southwest_sub_cell, init_ode);
+    init_cell_node(back_southwest_sub_cell);
     set_refined_cell_data(back_southwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -120,14 +115,13 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 6, using_gpu
-    );
+                          old_bunch_number * 10 + 6);
 
 
 
     // Creation of back Southeast node.
     back_southeast_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_southeast_sub_cell, init_ode);
+    init_cell_node(back_southeast_sub_cell);
     set_refined_cell_data(back_southeast_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -135,13 +129,12 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y + cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 7, using_gpu
-    );
+                          old_bunch_number * 10 + 7);
 
 
     // Creation of front Southeast node.
     front_southeast_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(front_southeast_sub_cell, init_ode);
+    init_cell_node(front_southeast_sub_cell);
     set_refined_cell_data(front_southeast_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -149,8 +142,7 @@ void refine_cell( struct cell_node *cell, bool using_gpu, bool init_ode )  {
                           cell_center_x + cell_quarter_side,
                           cell_center_y + cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 8, using_gpu
-    );
+                          old_bunch_number * 10 + 8);
 
     // west transition node.
     west_transition_node = (struct transition_node*)malloc(transition_node_size);
@@ -1191,7 +1183,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
                            float face_length, float half_face_length,
                            float center_x, float center_y, float center_z,
-                           uint64_t  bunch_number, bool using_gpu) {
+                           uint64_t  bunch_number) {
 
 
     the_cell->cell_data.level = other_cell->cell_data.level;
@@ -1207,21 +1199,13 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
     the_cell->center_z = center_z;
     the_cell->bunch_number = bunch_number;
 
-    if (using_gpu) {
-        //TODO: @Implement GPU related code
+        //TODO: @Implement this code to deal with cell refinement as the ode solver is separated related code
         /*
        the_cell->gpuSVPosition = freeSVPositions.back();
        freeSVPositions.pop_back();
        refinedThisStep.push_back(the_cell->gpuSVPosition);
         */
-    }
-    else {
-        //TODO: @Incomplete: copy ODE stuff
-        /*
-        if(other_cell->od != NULL)
-            memcpy (the_cell->od, other_cell->od, sizeof(ode));
-        */
-    }
+
 }
 
 void set_refined_transition_node_data(struct transition_node *the_node, struct cell_node* other_node, char direction) {

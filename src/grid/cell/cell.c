@@ -4,9 +4,11 @@
 
 #include "cell.h"
 #include <math.h>
-#include <string.h>
 #include <pthread.h>
 
+
+//TODO: @check: if we change this we have to change all loops to control < MAX_ELEMENTS_PER_MATRIX_LINE
+#define MAX_ELEMENTS_PER_MATRIX_LINE 8
 
 void init_basic_cell_data_with_default_values(struct basic_cell_data *data, char type) {
 
@@ -15,7 +17,7 @@ void init_basic_cell_data_with_default_values(struct basic_cell_data *data, char
 
 }
 
-void init_cell_node(struct cell_node *cell_node, bool init_ode) {
+void init_cell_node(struct cell_node *cell_node) {
 
     init_basic_cell_data_with_default_values(&(cell_node->cell_data), CELL_NODE_TYPE);
 
@@ -60,79 +62,21 @@ void init_cell_node(struct cell_node *cell_node, bool init_ode) {
     cell_node->scar_type = 'n';
 
 
-    //cell_node->firstElement = NULL; //TODO: @Incomplete
+    cell_node->elements = NULL;
+    pthread_mutex_init(&(cell_node->updating), NULL);
 
-    //TODO: @Incomplete
-    /*
-    if(init_ode) {
-
-        //firstElement = new Element; //TODO: @Incomplete
-
-        od = (ode *) malloc(sizeof(ode));
-        if (!od) {
-            fprintf(stderr, "Error allocating memory for ode\n");
-            exit(0);
-        }
-
-        //pthread_mutex_init(&updating, NULL);
-
-    }
-    else {
-		od = NULL;
-	}
-     */
 
 }
 
 void free_cell_node(struct cell_node *cell_node) {
 
-    //TODO: @Incomplete
-    /*
-    if(od != NULL)
-        free(od);
-
-    if (firstElement) {
-        Element *aux = firstElement;
-        while(aux) {
-            Element *temp = aux;
-            aux = aux->next;
-            delete temp;
-        }
+    if(cell_node->elements != NULL) {
+        free(cell_node->elements);
     }
-  */
-
     pthread_mutex_destroy(&(cell_node->updating));
 
 
     free(cell_node);
-};
-
-void init_cell_node_ode(struct cell_node *cell_node) {
-
-
-    //TODO: @Incomplete
-    /*
-     pthread_mutex_init(&updating, NULL);
-
-	if (firstElement) {
-		Element *aux = firstElement;
-		while(aux) {
-			Element *temp = aux;
-			aux = aux->next;
-			delete temp;
-		}
-	}
-
-	firstElement = new Element;
-
-    if(od != NULL)
-        free(od);
-    od = (ode *) malloc(sizeof(ode));
-    if (!od) {
-        std::cout << "Error allocating memory for ode\n" << std::endl;
-        exit(0);
-    }
-     */
 }
 
 void lock_cell_node(struct cell_node *cell_node) {
@@ -252,7 +196,6 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
      * cell which is a cell node. */
     if (neighbour_level > the_cell_level ) {
         if((neighbour_cell_type == 'w') ) {
-            white_neighbor_cell = (struct transition_node*)(neighbour_grid_cell);
             has_found = false;
             while( !has_found ) {
                 if( neighbour_cell_type == 'w' ) {
@@ -275,7 +218,6 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
         //Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
     else {
         if(neighbour_level <= the_cell_level && (neighbour_cell_type == 'w') ) {
-            white_neighbor_cell = (struct transition_node*)(neighbour_grid_cell);
             has_found = false;
             while( !has_found ) {
                 if( neighbour_cell_type == 'w' ) {
@@ -401,6 +343,22 @@ double get_cell_maximum_flux(struct cell_node* the_cell) {
         maximumFlux = fabsf(the_cell->back_flux);
 
     return maximumFlux;
+}
+
+struct element* new_element_array() {
+
+    struct element* result = (struct element*)malloc(MAX_ELEMENTS_PER_MATRIX_LINE*sizeof(struct element));
+    for (int i = 0; i < MAX_ELEMENTS_PER_MATRIX_LINE; ++i) {
+        init_element(&(result[i]));
+    }
+
+    return result;
+}
+
+void init_element(struct element* el) {
+    el->value = 0.0;
+    el->column = 0;
+    el->cell = NULL;
 }
 
 int getFreeSvPosition(short *gridToSV, int size) {

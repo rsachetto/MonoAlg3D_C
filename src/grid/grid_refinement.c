@@ -29,10 +29,10 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
     bool refined_once = false;
     set_grid_flux(the_grid);
 
-    if(the_grid->gpu) {
-        //TODO: GPU related code
-        //refinedThisStep.clear();
-    }
+
+    //TODO: we have to manage this vector of refined cells
+    //refinedThisStep.clear();
+
 
     while( continue_refining ) {
         continue_refining = false;
@@ -47,7 +47,7 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
             {
                 auxiliar_grid_cell = grid_cell;
                 grid_cell = grid_cell->next;
-                refine_cell(auxiliar_grid_cell, the_grid->gpu, the_grid->init_ode);
+                refine_cell(auxiliar_grid_cell);
                 the_grid->number_of_cells += 7;
                 continue_refining = true;
                 refined_once = true;
@@ -70,10 +70,10 @@ void refine_grid(struct grid* the_grid, int num_steps) {
 
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
-    if(the_grid->gpu) {
-        //TODO: GPU related code
-        //refinedThisStep.clear();
-    }
+
+    //TODO: reset the refined cells
+    //refinedThisStep.clear();
+
 
     int i = 0;
     for(; i < num_steps; i++) {
@@ -83,7 +83,7 @@ void refine_grid(struct grid* the_grid, int num_steps) {
             if (grid_cell->can_change && grid_cell->active) {
                 auxiliar_grid_cell = grid_cell;
                 grid_cell = grid_cell->next;
-                refine_cell(auxiliar_grid_cell, the_grid->gpu, the_grid->init_ode);
+                refine_cell(auxiliar_grid_cell);
                 the_grid->number_of_cells += 7;
             } else {
                 grid_cell = grid_cell->next;
@@ -105,7 +105,7 @@ void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number ) {
         grid_cell = grid_cell->next;
     }
 
-    refine_cell( grid_cell, false, false );
+    refine_cell( grid_cell );
     the_grid->number_of_cells += 7;
 
 }
@@ -113,66 +113,31 @@ void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number ) {
 void set_grid_flux(struct grid *the_grid) {
 
     struct cell_node *grid_cell;
-    bool parallel = the_grid->parallel;
+
 
     uint64_t active_cells = the_grid->number_of_cells;
+    struct cell_node **ac = the_grid->active_cells;
 
-    if(!parallel) {
-        grid_cell = the_grid->first_cell;
-        while ( grid_cell != 0 ) {
-            grid_cell->north_flux = 0.0;
-            grid_cell->south_flux = 0.0;
-            grid_cell->east_flux = 0.0;
-            grid_cell->west_flux  = 0.0;
-            grid_cell->front_flux = 0.0;
-            grid_cell->back_flux  = 0.0;
 
-            grid_cell = grid_cell->next;
-        }
-    }
-    else {
-#pragma omp parallel for
-        for (int i = 0; i < active_cells; i++) {
-            //TODO: @Incompelete (not parallel yet)
-            /*
-            activeCells[i]->northFlux = 0.0;
-            activeCells[i]->southFlux = 0.0;
-            activeCells[i]->eastFlux  = 0.0;
-            activeCells[i]->westFlux  = 0.0;
-            activeCells[i]->frontFlux = 0.0;
-            activeCells[i]->backFlux  = 0.0;
-             */
-
-        }
+    #pragma omp parallel for
+    for (int i = 0; i < active_cells; i++) {
+        ac[i]->north_flux = 0.0;
+        ac[i]->south_flux = 0.0;
+        ac[i]->east_flux  = 0.0;
+        ac[i]->west_flux  = 0.0;
+        ac[i]->front_flux = 0.0;
+        ac[i]->back_flux = 0.0;
     }
 
-    if(!parallel) {
-        grid_cell = the_grid->first_cell;
-        while ( grid_cell != 0 )	{
-            if(grid_cell -> active) {
-                set_cell_flux(grid_cell, 's' ); // Computes south flux.
-                set_cell_flux(grid_cell, 'n' ); // Computes north flux.
-                set_cell_flux(grid_cell, 'e' ); // Computes east flux.
-                set_cell_flux(grid_cell, 'w' ); // Computes west flux.
-                set_cell_flux(grid_cell, 'f' ); // Computes front flux.
-                set_cell_flux(grid_cell, 'b' ); // Computes back flux.
-            }
-            grid_cell = grid_cell->next;
-        }
-    }
-    else {
-#pragma omp parallel for
-        for (int i = 0; i < active_cells; i++) {
-            //TODO: @Incomplete (not parallel yet)
-            /*
-            set_cell_flux(activeCells[i], 's' ); // Computes south flux.
-            set_cell_flux(activeCells[i], 'n' ); // Computes north flux.
-            set_cell_flux(activeCells[i], 'e' ); // Computes east flux.
-            set_cell_flux(activeCells[i], 'w' ); // Computes west flux.
-            set_cell_flux(activeCells[i], 'f' ); // Computes front flux.
-            set_cell_flux(activeCells[i], 'b' ); // Computes back flux.
-             */
 
-        }
+    #pragma omp parallel for
+    for (int i = 0; i < active_cells; i++) {
+        set_cell_flux(ac[i], 's' ); // Computes south flux.
+        set_cell_flux(ac[i], 'n' ); // Computes north flux.
+        set_cell_flux(ac[i], 'e' ); // Computes east flux.
+        set_cell_flux(ac[i], 'w' ); // Computes west flux.
+        set_cell_flux(ac[i], 'f' ); // Computes front flux.
+        set_cell_flux(ac[i], 'b' ); // Computes back flux.
     }
+
 }

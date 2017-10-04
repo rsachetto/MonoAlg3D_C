@@ -19,7 +19,7 @@ find_package(CUDA)
 
 SET(CUDA_NVCC_FLAGS "-Xcompiler -fopenmp" CACHE STRING "nvcc flags" FORCE)
 #HW capability 1.3
-#SET (CUDA_VERBOSE_BUILD ON CACHE BOOL "nvcc verbose" FORCE)
+SET (CUDA_VERBOSE_BUILD ON CACHE BOOL "nvcc verbose" FORCE)
 
 set(GPU_FILE src/gpu/gpu_common.cu src/gpu/gpu_common.h)
 
@@ -38,7 +38,8 @@ set(SOURCE_FILES src/main.c
         src/solvers/monodomain_solver.h src/solvers/monodomain_solver.c
         src/utils/output_utils.h src/utils/output_utils.c
         src/solvers/constants.h
-        src/utils/stop_watch.h src/utils/stop_watch.c)
+        src/utils/stop_watch.h src/utils/stop_watch.c
+        src/solvers/linear_system_solver.c src/solvers/linear_system_solver.h)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 

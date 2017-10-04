@@ -14,7 +14,7 @@ void initialize_and_construct_grid(struct grid *the_grid, float side_length) {
 
 void initialize_grid (struct grid *the_grid, float side_length) {
 
-    the_grid->first_cell = 0;
+    the_grid->first_cell = NULL;
     the_grid->side_length = side_length;
     the_grid->number_of_cells = 1;
     the_grid->init_ode = false;
@@ -44,14 +44,14 @@ void construct_grid (struct grid *the_grid) {
     back_southeast_cell = (struct cell_node *)malloc (cell_node_size);
     back_southwest_cell = (struct cell_node *)malloc (cell_node_size);
 
-    init_cell_node (front_northeast_cell, init_ode);
-    init_cell_node (front_northwest_cell, init_ode);
-    init_cell_node (front_southeast_cell, init_ode);
-    init_cell_node (front_southwest_cell, init_ode);
-    init_cell_node (back_northeast_cell, init_ode);
-    init_cell_node (back_northwest_cell, init_ode);
-    init_cell_node (back_southeast_cell, init_ode);
-    init_cell_node (back_southwest_cell, init_ode);
+    init_cell_node (front_northeast_cell);
+    init_cell_node (front_northwest_cell);
+    init_cell_node (front_southeast_cell);
+    init_cell_node (front_southwest_cell);
+    init_cell_node (back_northeast_cell);
+    init_cell_node (back_northwest_cell);
+    init_cell_node (back_southeast_cell);
+    init_cell_node (back_southwest_cell);
 
     // Transition nodes.
     struct transition_node *north_transition_node, *south_transition_node, *east_transition_node,

@@ -51,9 +51,12 @@ int main(int argc, char **argv) {
     float bz_size = bz_radius - sphere_radius;
 
     init_solver(edp_solver);
+    edp_solver->num_threads = 1;
+    edp_solver->dt = 0.02;
 
     //TODO: this should be provided by a user provided function
-    initialize_grid_with_plain_and_sphere_fibrotic_mesh (the_grid, 40000.0f, 100.0f, 2, 0.25, plain_center, sphere_radius, bz_size, bz_radius);
+    //initialize_grid_with_plain_and_sphere_fibrotic_mesh (the_grid, 40000.0f, 100.0f, 1, 0.0, plain_center, sphere_radius, bz_size, bz_radius);
+    initialize_grid_with_plain_mesh(the_grid, 1000.0, 100.0f, 3);
 
     solve_monodomain(the_grid, edp_solver, edo_solver, output_info);
 
