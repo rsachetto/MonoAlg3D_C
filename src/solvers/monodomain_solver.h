@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include <unitypes.h>
 
-// TODO: should we separate edp solver from monodomain?
 struct monodomain_solver {
     int numer_of_iterations;
 
@@ -26,7 +25,6 @@ struct monodomain_solver {
     double stim_current;
     uint64_t *cells_to_solve;
 
-    // TODO: this should be in the monodomain solver maybe???
     double beta, cm; // micrometers
     double initial_V;
     double sigma_x;

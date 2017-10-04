@@ -391,18 +391,6 @@ void set_plain_fibrosis(struct grid* the_grid, float phi) {
         grid_cell = grid_cell->next;
     }
 
-    //TODO: we want this seperated from the grid
-    /*
-    grid_cell = firstCell;
-
-    while( grid_cell != 0 ) {
-
-        if(grid_cell->active) {
-            grid_cell->initODE();
-        }
-        grid_cell = grid_cell->next;
-    }
-     */
 }
 
 void set_plain_sphere_fibrosis(struct grid* the_grid, float phi,  float plain_center, float sphere_radius, float bz_size,
