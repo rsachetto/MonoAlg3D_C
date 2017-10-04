@@ -137,9 +137,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     total_mat_time = stop_stop_watch (&part_mat);
 
-    print_grid_matrix (the_grid, stderr);
-    exit (0);
-
     if (the_monodomain_solver->max_iterations > 0) {
         max_its = the_monodomain_solver->max_iterations;
     } else {
