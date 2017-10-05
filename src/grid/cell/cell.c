@@ -7,8 +7,7 @@
 #include <pthread.h>
 
 
-//TODO: @check: if we change this we have to change all loops to control < MAX_ELEMENTS_PER_MATRIX_LINE
-#define MAX_ELEMENTS_PER_MATRIX_LINE 8
+
 
 void init_basic_cell_data_with_default_values(struct basic_cell_data *data, char type) {
 

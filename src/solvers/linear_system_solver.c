@@ -39,13 +39,12 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
         ac[i]->Ax = 0.0;
         element = cell_elements[0];
 
-        int el_count = 1;
+        int el_count = 0;
 
-        while( element.cell != 0 )
+        while( element.cell != 0 && el_count < MAX_ELEMENTS_PER_MATRIX_LINE)
         {
             ac[i]->Ax += element.value * element.cell->v;
-            element = cell_elements[el_count];
-            el_count++;
+            element = cell_elements[++el_count];
         }
 
         ac[i]->r = ac[i]->b - ac[i]->Ax;
@@ -83,13 +82,12 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
                 struct element *cell_elements = ac[i]->elements;
                 element = cell_elements[0];
 
-                int el_count = 1;
+                int el_count = 0;
 
-                while( element.cell != 0 )
+                while( element.cell != 0 && el_count < MAX_ELEMENTS_PER_MATRIX_LINE)
                 {
                     ac[i]->Ax += element.value * element.cell->v;
-                    element = cell_elements[el_count];
-                    el_count++;
+                    element = cell_elements[++el_count];
                 }
 
                 pTAp += ac[i]->p * ac[i]->Ax;

@@ -10,7 +10,6 @@
 #include <inttypes.h>
 #include <omp.h>
 #include <sys/stat.h>
-#include <assert.h>
 
 void init_solver (struct monodomain_solver *the_solver) {
     the_solver->cells_to_solve = NULL;
@@ -134,6 +133,10 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     set_initial_conditions (the_monodomain_solver, the_grid);
     set_discretization_matrix (the_monodomain_solver, the_grid);
+
+    //TODO: @DEBUG: remove 
+    //print_grid_matrix(the_grid, stderr);
+    //exit(0);
 
     total_mat_time = stop_stop_watch (&part_mat);
 
@@ -555,9 +558,8 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 
             int el_counter = 0;
 
-            while (element.cell != NULL && element.column != position) {
-                el_counter++;
-                element = cell_elements[el_counter];
+            while (element.cell != NULL && element.column != position && el_counter < MAX_ELEMENTS_PER_MATRIX_LINE) {
+                element = cell_elements[++el_counter];
             }
 
             // TODO: Cada elemento pode ter um sigma diferente
@@ -600,9 +602,8 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 
             el_counter = 0;
 
-            while (element.cell != NULL && element.column != position) {
-                el_counter++;
-                element = cell_elements[el_counter];
+            while (element.cell != NULL && element.column != position && el_counter < MAX_ELEMENTS_PER_MATRIX_LINE) {
+                element = cell_elements[++el_counter];
             }
 
             if (element.cell == NULL) {
@@ -725,17 +726,18 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
                      grid_cell->grid_position + 1);
 
 
-            int el_count = 1;
+            int el_count = 0;
+            element = grid_cell->elements[el_count];
+            while ((element.cell != NULL) && (el_count < MAX_ELEMENTS_PER_MATRIX_LINE)) {
 
-            while (element.cell != NULL) {
                 fprintf (output_file,
                          " %.6lf ("
                          "%" PRIu64 ","
                          "%" PRIu64 ") ",
                          element.value, grid_cell->grid_position + 1, (element.column) + 1);
 
-                element = grid_cell->elements[el_count];
-                el_count++;
+                element = grid_cell->elements[++el_count];
+
             }
             fprintf (output_file, "\n");
         }

@@ -13,6 +13,9 @@
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
 
+//TODO: @check: if we change this we have to change all loops to control < MAX_ELEMENTS_PER_MATRIX_LINE
+#define MAX_ELEMENTS_PER_MATRIX_LINE 7
+
 struct element {
     double value;
     uint64_t column; // Column of the matrix to which this element belongs.
