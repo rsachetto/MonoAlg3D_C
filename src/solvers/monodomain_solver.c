@@ -134,7 +134,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     set_initial_conditions (the_monodomain_solver, the_grid);
     set_discretization_matrix (the_monodomain_solver, the_grid);
 
-    //TODO: @DEBUG: remove 
+    //TODO: @DEBUG: remove
     //print_grid_matrix(the_grid, stderr);
     //exit(0);
 
@@ -719,7 +719,6 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
     struct element element;
     while (grid_cell != 0) {
         if (grid_cell->active) {
-            element = grid_cell->elements[0];
             fprintf (output_file,
                      "Row "
                      "%" PRIu64 ": ",
