@@ -3,22 +3,24 @@
 //
 
 #include "cell.h"
-#include <math.h>
 #include <pthread.h>
 
 
-
-
-void init_basic_cell_data_with_default_values(struct basic_cell_data *data, char type) {
-
+void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
     data->type = type;
     data->level   = 1;
+}
+
+struct cell_node* new_cell_node() {
+    struct cell_node* result = malloc(sizeof(struct cell_node));
+    init_cell_node(result);
+    return result;
 
 }
 
 void init_cell_node(struct cell_node *cell_node) {
 
-    init_basic_cell_data_with_default_values(&(cell_node->cell_data), CELL_NODE_TYPE);
+    init_basic_cell_data_with_type(&(cell_node->cell_data), CELL_NODE_TYPE);
 
     cell_node->center_x = 0.0;
     cell_node->center_y = 0.0;
@@ -39,7 +41,7 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->next        = NULL;
 
     cell_node->grid_position        = 0;
-    cell_node->gpu_sv_position      = 0;
+    cell_node->sv_position      = 0;
     cell_node->hilbert_shape_number = 0;
     cell_node->face_length          = 1.0;
     cell_node->half_face_length     = 0.5;
@@ -86,9 +88,15 @@ void unlock_cell_node(struct cell_node *cell_node) {
     pthread_mutex_unlock(&(cell_node->updating));
 }
 
+struct transition_node* new_transition_node() {
+    struct transition_node* result = malloc(sizeof(struct transition_node));
+    init_transition_node(result);
+    return result;
+}
+
 void init_transition_node(struct transition_node *transition_node) {
 
-    init_basic_cell_data_with_default_values(&(transition_node->cell_data), TRANSITION_NODE_TYPE);
+    init_basic_cell_data_with_type(&(transition_node->cell_data), TRANSITION_NODE_TYPE);
 
     transition_node->single_connector      = NULL;
     transition_node->quadruple_connector1  = NULL;
@@ -120,11 +128,11 @@ void set_transition_node_data(struct transition_node *the_transtion_node,  uint1
     the_transtion_node->quadruple_connector4 = quadruple_connector4;
 }
 
-void set_cell_node_data(struct cell_node *the_cell, float face_length, float half_face_length, uint64_t bunch_number,
+void set_cell_node_data(struct cell_node *the_cell, Real face_length, Real half_face_length, uint64_t bunch_number,
                         void *east, void *north, void *west, void *south, void *front, void *back,
                         void *previous, void *next,
                         uint64_t grid_position, uint8_t hilbert_shape_number,
-                        float center_x, float center_y, float center_z)
+                        Real center_x, Real center_y, Real center_z)
 {
     the_cell->face_length = face_length;
     the_cell->half_face_length = half_face_length;
@@ -179,8 +187,8 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
             exit(0);
     }
 
-    float leastDistance = the_cell->half_face_length;
-    double localFlux;
+    Real leastDistance = the_cell->half_face_length;
+    Real localFlux;
     bool has_found;
 
 
@@ -323,9 +331,9 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
     }
 }
 
-double get_cell_maximum_flux(struct cell_node* the_cell) {
+Real get_cell_maximum_flux(struct cell_node* the_cell) {
 
-    double maximumFlux = fabsf(the_cell->east_flux);
+    Real maximumFlux = fabsf(the_cell->east_flux);
     if( fabsf(the_cell->north_flux) > maximumFlux )
         maximumFlux = fabsf(the_cell->north_flux);
 

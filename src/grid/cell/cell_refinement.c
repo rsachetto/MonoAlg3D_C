@@ -31,7 +31,7 @@ void refine_cell( struct cell_node *cell)  {
 
     int number_of_hilbert_shape;
 
-    float cell_center_x    = cell->center_x,
+    Real cell_center_x    = cell->center_x,
             cell_center_y   = cell->center_y,
             cell_center_z   = cell->center_z,
             cell_half_side    = cell->half_face_length,
@@ -55,8 +55,7 @@ void refine_cell( struct cell_node *cell)  {
     //refinedThisStep.push_back(front_northeast_sub_cell->gpuSVPosition);
 
     // Creation of back Northeast node.
-    back_northeast_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_northeast_sub_cell);
+    back_northeast_sub_cell = new_cell_node();
     set_refined_cell_data(back_northeast_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -68,8 +67,7 @@ void refine_cell( struct cell_node *cell)  {
 
 
     // Creation of back Northwest node.
-    back_northwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_northwest_sub_cell);
+    back_northwest_sub_cell = new_cell_node();
     set_refined_cell_data(back_northwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -80,8 +78,7 @@ void refine_cell( struct cell_node *cell)  {
                           old_bunch_number * 10 + 3);
 
     // Creation of front Northwest node.
-    front_northwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(front_northwest_sub_cell);
+    front_northwest_sub_cell = new_cell_node();
     set_refined_cell_data(front_northwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -93,8 +90,7 @@ void refine_cell( struct cell_node *cell)  {
 
 
     // Creation of front Southwest node.
-    front_southwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(front_southwest_sub_cell);
+    front_southwest_sub_cell = new_cell_node();
     set_refined_cell_data(front_southwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -106,8 +102,7 @@ void refine_cell( struct cell_node *cell)  {
 
 
     // Creation of back Southwest node.
-    back_southwest_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_southwest_sub_cell);
+    back_southwest_sub_cell = new_cell_node();
     set_refined_cell_data(back_southwest_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -120,8 +115,7 @@ void refine_cell( struct cell_node *cell)  {
 
 
     // Creation of back Southeast node.
-    back_southeast_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(back_southeast_sub_cell);
+    back_southeast_sub_cell = new_cell_node();
     set_refined_cell_data(back_southeast_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -133,8 +127,7 @@ void refine_cell( struct cell_node *cell)  {
 
 
     // Creation of front Southeast node.
-    front_southeast_sub_cell = (struct cell_node*) malloc(cell_node_size);
-    init_cell_node(front_southeast_sub_cell);
+    front_southeast_sub_cell = new_cell_node();
     set_refined_cell_data(front_southeast_sub_cell,
                           front_northeast_sub_cell,
                           cell_half_side,
@@ -145,35 +138,29 @@ void refine_cell( struct cell_node *cell)  {
                           old_bunch_number * 10 + 8);
 
     // west transition node.
-    west_transition_node = (struct transition_node*)malloc(transition_node_size);
-    init_transition_node(west_transition_node);
+    west_transition_node = new_transition_node();
     set_refined_transition_node_data(west_transition_node, front_northeast_sub_cell, 'w');
 
 
     // north transition node.
-    north_transition_node = (struct transition_node*)malloc(transition_node_size);
-    init_transition_node(north_transition_node);
+    north_transition_node = new_transition_node();
     set_refined_transition_node_data(north_transition_node, front_northeast_sub_cell, 'n');
 
     // south transition node.
-    south_transition_node = (struct transition_node*)malloc(transition_node_size);
-    init_transition_node(south_transition_node);
+    south_transition_node = new_transition_node();
     set_refined_transition_node_data(south_transition_node, front_northeast_sub_cell, 's');
 
     // east transition node.
-    east_transition_node = (struct transition_node*)malloc(transition_node_size);
-    init_transition_node(east_transition_node);
+    east_transition_node = new_transition_node();
     set_refined_transition_node_data(east_transition_node, front_northeast_sub_cell, 'e');
 
 
     // front transition node.
-    front_transition_node = (struct transition_node*)malloc(transition_node_size);
-    init_transition_node(front_transition_node);
+    front_transition_node = new_transition_node();
     set_refined_transition_node_data(front_transition_node, front_northeast_sub_cell, 'f');
 
     // back transitionition node.
-    back_transition_node = (struct transition_node*)malloc(transition_node_size);
-    init_transition_node(back_transition_node);
+    back_transition_node = new_transition_node();
     set_refined_transition_node_data(back_transition_node, front_northeast_sub_cell, 'b');
 
     // Linking of new cell nodes and transition nodes.
@@ -1181,8 +1168,8 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
-                           float face_length, float half_face_length,
-                           float center_x, float center_y, float center_z,
+                           Real face_length, Real half_face_length,
+                           Real center_x, Real center_y, Real center_z,
                            uint64_t  bunch_number) {
 
 

@@ -10,10 +10,10 @@
 #include <unistd.h>
 #include <math.h>
 
-int get_num_refinement_steps_to_discretization (double side_len, double h) {
+int get_num_refinement_steps_to_discretization (Real side_len, Real h) {
 
     int num_steps = 0;
-    double aux = side_len;
+    Real aux = side_len;
 
     while (aux > h) {
         num_steps++;
@@ -37,7 +37,7 @@ void set_benchmark_domain (struct grid *the_grid) {
     }
 }
 
-void set_plain_domain (struct grid *the_grid, float sizeX, float sizeY, float sizeZ) {
+void set_plain_domain (struct grid *the_grid, Real sizeX, Real sizeY, Real sizeZ) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
     while (grid_cell != 0) {
@@ -56,20 +56,20 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
         exit (0);
     }
 
-    double **a = (double **)malloc (sizeof (double *) * size);
+    Real **a = (Real **)malloc (sizeof (Real *) * size);
     for (int i = 0; i < size; i++) {
-        a[i] = (double *)malloc (sizeof (double) * 3);
+        a[i] = (Real *)malloc (sizeof (Real) * 3);
         if (a[i] == NULL) {
             printf ("Failed to allocate memory\n");
             exit (0);
         }
     }
-    double b;
+    Real b;
 
-    double maxy = 0.0;
-    double maxz = 0.0;
-    double miny = DBL_MAX;
-    double minz = DBL_MAX;
+    Real maxy = 0.0;
+    Real maxz = 0.0;
+    Real miny = DBL_MAX;
+    Real minz = DBL_MAX;
     int fibrosis;
 
     int i = 0;
@@ -99,10 +99,10 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
     }
     sort_vector (a, size);
 
-    double maxx = a[size - 1][0];
-    double minx = a[0][0];
+    Real maxx = a[size - 1][0];
+    Real minx = a[0][0];
 
-    double x, y, z;
+    Real x, y, z;
     while (grid_cell != 0) {
         x = grid_cell->center_x;
         y = grid_cell->center_y;
@@ -135,8 +135,8 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
 }
 
 void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size,
-                                  double minx, double maxx, double miny, double maxy, double minz,
-                                  double maxz) {
+                                  Real minx, Real maxx, Real miny, Real maxy, Real minz,
+                                  Real maxz) {
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen (file_name, "r");
 
@@ -145,15 +145,15 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
         exit (0);
     }
 
-    double **a = (double **)malloc (sizeof (double *) * size);
+    Real **a = (Real **)malloc (sizeof (Real *) * size);
     for (int i = 0; i < size; i++) {
-        a[i] = (double *)malloc (sizeof (double) * 3);
+        a[i] = (Real *)malloc (sizeof (Real) * 3);
         if (a[i] == NULL) {
             printf ("Failed to allocate memory\n");
             exit (0);
         }
     }
-    double b;
+    Real b;
 
     int fibrosis;
 
@@ -176,7 +176,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
     }
     sort_vector (a, size);
 
-    double x, y, z;
+    Real x, y, z;
     while (grid_cell != 0) {
         x = grid_cell->center_x;
         y = grid_cell->center_y;
@@ -212,8 +212,8 @@ void set_human_mesh (struct grid *the_grid, const char *file_name) {
     set_custom_mesh (the_grid, file_name, 2025252);
 }
 
-void set_human_sub_mesh (struct grid *the_grid, const char *file_name, double minx, double maxx,
-                         double miny, double maxy, double minz, double maxz) {
+void set_human_sub_mesh (struct grid *the_grid, const char *file_name, Real minx, Real maxx,
+                         Real miny, Real maxy, Real minz, Real maxz) {
     set_custom_mesh_with_bounds (the_grid, file_name, 2025252, minx, maxx, miny, maxy, minz, maxz);
 }
 
@@ -256,9 +256,9 @@ void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_fi
     }
 }
 
-void initialize_grid_with_benchmark_mesh (struct grid *the_grid, float start_h) {
+void initialize_grid_with_benchmark_mesh (struct grid *the_grid, Real start_h) {
 
-    float side_length;
+    Real side_length;
 
     printf ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
     if ((start_h == 100.0) || (start_h == 200.0)) {
@@ -302,10 +302,10 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, float start_h) 
     // exit(0);
 }
 
-void initialize_grid_with_plain_mesh (struct grid *the_grid, float desired_side_lenght, float start_h, int num_layers) {
+void initialize_grid_with_plain_mesh (struct grid *the_grid, Real desired_side_lenght, Real start_h, int num_layers) {
 
-    float real_side_lenght = start_h * 2.0f;
-    float max_h = start_h * num_layers;
+    Real real_side_lenght = start_h * 2.0f;
+    Real max_h = start_h * num_layers;
 
     while (real_side_lenght < desired_side_lenght) {
         real_side_lenght *= 2.0f;
@@ -321,7 +321,7 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, float desired_side_
     initialize_and_construct_grid(the_grid, real_side_lenght);
 
     if ((real_side_lenght / 2.0f) > max_h) {
-        float aux = real_side_lenght/2.0f;
+        Real aux = real_side_lenght/2.0f;
 
         for (int i = 0; i < num_steps - 3; i++) {
             set_plain_domain(the_grid, real_side_lenght, real_side_lenght, aux);
@@ -346,7 +346,7 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, float desired_side_
 
 }
 
-void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, float side_length, float start_h, float num_layers, float phi) {
+void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, Real side_length, Real start_h, Real num_layers, Real phi) {
 
 
     initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
@@ -357,10 +357,10 @@ void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, float side
 }
 
 
-void initialize_grid_with_plain_and_sphere_fibrotic_mesh (struct grid *the_grid, float side_length,
-                                                          float start_h, float num_layers, float phi,
-                                                          float plain_center, float sphere_radius, float bz_size,
-                                                          float bz_radius) {
+void initialize_grid_with_plain_and_sphere_fibrotic_mesh (struct grid *the_grid, Real side_length,
+                                                          Real start_h, Real num_layers, Real phi,
+                                                          Real plain_center, Real sphere_radius, Real bz_size,
+                                                          Real bz_radius) {
 
     initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
     set_plain_sphere_fibrosis(the_grid, phi, plain_center,sphere_radius,bz_size, bz_radius);
@@ -368,7 +368,7 @@ void initialize_grid_with_plain_and_sphere_fibrotic_mesh (struct grid *the_grid,
 
 }
 
-void set_plain_fibrosis(struct grid* the_grid, float phi) {
+void set_plain_fibrosis(struct grid* the_grid, Real phi) {
 
     printf("Making %.2lf %% of cells inactive\n", phi*100.0);
 
@@ -383,7 +383,7 @@ void set_plain_fibrosis(struct grid* the_grid, float phi) {
     while( grid_cell != 0 ) {
 
         if(grid_cell->active) {
-            double p = (double) (rand()) / (RAND_MAX);
+            Real p = (Real) (rand()) / (RAND_MAX);
             if (p < phi) grid_cell->active = false;
             grid_cell->fibrotic = true;
 
@@ -393,8 +393,8 @@ void set_plain_fibrosis(struct grid* the_grid, float phi) {
 
 }
 
-void set_plain_sphere_fibrosis(struct grid* the_grid, float phi,  float plain_center, float sphere_radius, float bz_size,
-                               float bz_radius) {
+void set_plain_sphere_fibrosis(struct grid* the_grid, Real phi,  Real plain_center, Real sphere_radius, Real bz_size,
+                               Real bz_radius) {
 
     printf("Making %.2lf %% of cells inactive\n", phi*100.0f);
 
@@ -403,15 +403,15 @@ void set_plain_sphere_fibrosis(struct grid* the_grid, float phi,  float plain_ce
 
     printf("Using %u as seed\n", fib_seed);
 
-    float bz_radius_2 = powf(bz_radius, 2.0f);
-    float sphere_radius_2 = powf(sphere_radius, 2.0f);
+    Real bz_radius_2 = powf(bz_radius, 2.0f);
+    Real sphere_radius_2 = powf(sphere_radius, 2.0f);
 
     struct cell_node *grid_cell;
 
     grid_cell = the_grid->first_cell;
     while (grid_cell != 0) {
 
-        double distance = pow(grid_cell->center_x - plain_center, 2.0) +
+        Real distance = pow(grid_cell->center_x - plain_center, 2.0) +
                           pow(grid_cell->center_y - plain_center, 2.0);
 
         if (grid_cell->active) {
@@ -432,17 +432,17 @@ void set_plain_sphere_fibrosis(struct grid* the_grid, float phi,  float plain_ce
 
         if (grid_cell->active) {
             if (grid_cell->fibrotic) {
-                double p = (double) (rand()) / (RAND_MAX);
+                Real p = (Real) (rand()) / (RAND_MAX);
                 if (p < phi)
                     grid_cell->active = false;
                 grid_cell->can_change = false;
             } else if (grid_cell->border_zone) {
-                double distance_from_center = sqrtf(
+                Real distance_from_center = sqrtf(
                         (grid_cell->center_x - plain_center) * (grid_cell->center_x - plain_center) +
                         (grid_cell->center_y - plain_center) * (grid_cell->center_y - plain_center));
                 distance_from_center = (distance_from_center - sphere_radius) / bz_size;
-                double phi_local = phi - phi * distance_from_center;
-                double p = (double) (rand()) / (RAND_MAX);
+                Real phi_local = phi - phi * distance_from_center;
+                Real p = (Real) (rand()) / (RAND_MAX);
                 if (p < phi_local)
                     grid_cell->active = false;
                 grid_cell->can_change = false;

@@ -5,8 +5,10 @@
 #ifndef MONOALG3D_HASH_H
 #define MONOALG3D_HASH_H
 
+#include "constants.h"
+
 struct point_3d {
-    double x, y, z;
+    Real x, y, z;
 };
 
 struct elt {

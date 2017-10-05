@@ -4,9 +4,9 @@
 
 #include "linear_system_solver.h"
 
-uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool use_jacobi, double *error) {
+uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool use_jacobi, Real *error) {
 
-    double  rTr,
+    Real  rTr,
             r1Tr1,
             pTAp,
             alpha,

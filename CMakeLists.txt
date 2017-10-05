@@ -3,6 +3,9 @@ project(MonoAlg3D)
 
 set(CMAKE_C_STANDARD 99)
 
+set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
+set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/model_lib )
+
 if(EXISTS "/etc/manjaro-release")
     set(CMAKE_C_COMPILER "/opt/cuda/bin/gcc")
 endif(EXISTS "/etc/manjaro-release")
@@ -16,6 +19,8 @@ if (OPENMP_FOUND)
 endif()
 
 find_package(CUDA)
+
+add_subdirectory(src/models)
 
 SET(CUDA_NVCC_FLAGS "-Xcompiler -fopenmp" CACHE STRING "nvcc flags" FORCE)
 #HW capability 1.3
@@ -37,9 +42,9 @@ set(SOURCE_FILES src/main.c
         src/solvers/ode_solver.c src/solvers/ode_solver.h
         src/solvers/monodomain_solver.h src/solvers/monodomain_solver.c
         src/utils/output_utils.h src/utils/output_utils.c
-        src/solvers/constants.h
+        src/utils/constants.h
         src/utils/stop_watch.h src/utils/stop_watch.c
-        src/solvers/linear_system_solver.c src/solvers/linear_system_solver.h)
+        src/solvers/linear_system_solver.c src/solvers/linear_system_solver.h src/models/model_common.h)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 

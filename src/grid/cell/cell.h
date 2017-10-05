@@ -9,15 +9,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../../utils/constants.h"
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
 
-//TODO: @check: if we change this we have to change all loops to control < MAX_ELEMENTS_PER_MATRIX_LINE
 #define MAX_ELEMENTS_PER_MATRIX_LINE 7
 
 struct element {
-    double value;
+    Real value;
     uint64_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
 };
@@ -34,7 +34,7 @@ struct cell_node {
 
     uint64_t bunch_number; // Bunch identifier
 
-    float center_x, center_y, center_z;
+    Real center_x, center_y, center_z;
 
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
@@ -55,11 +55,11 @@ struct cell_node {
     uint8_t hilbert_shape_number;
 
     // Cell geometry.
-    float half_face_length;
+    Real half_face_length;
 
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
-    float north_flux, // Flux coming from north direction.
+    Real north_flux, // Flux coming from north direction.
         south_flux,   // Flux coming from south direction.
         east_flux,    // Flux coming from east direction.
         west_flux,    // Flux coming from west direction.
@@ -75,21 +75,21 @@ struct cell_node {
    method.
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
-    double Ax; /* Element of vector Ax = b associated to this cell. Also plays the role of Ap.*/
-    double r;  /* Element of the vector r = b - Ax associated to this cell. */
-    double p;  /* Element of the search direction vector in the conjugate gradient algorithm. */
-    double p1; /* p's upgrade in the conjugate gradient algorithm. */
-    double z;  // Jacobi preconditioner
-    double b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
+    Real Ax; /* Element of vector Ax = b associated to this cell. Also plays the role of Ap.*/
+    Real r;  /* Element of the vector r = b - Ax associated to this cell. */
+    Real p;  /* Element of the search direction vector in the conjugate gradient algorithm. */
+    Real p1; /* p's upgrade in the conjugate gradient algorithm. */
+    Real z;  // Jacobi preconditioner
+    Real b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
 
     pthread_mutex_t updating;
 
     // Variables used by some applications of partial differential equations.
-    double v;
+    Real v;
 
     //TODO: @Check. Do we need to be this big??
-    uint64_t gpu_sv_position;
-    float face_length;
+    uint64_t sv_position;
+    Real face_length;
     bool can_change;
 
     bool fibrotic;
@@ -117,10 +117,9 @@ struct transition_node {
     char direction;
 };
 
-void init_basic_cell_data (struct basic_cell_data *data, uint8_t level, float center_x,
-                           float center_y, float center_z);
+void init_basic_cell_data_with_type(struct basic_cell_data *data, char type);
 
-void init_basic_cell_data_with_default_values (struct basic_cell_data *data, char type);
+struct cell_node* new_cell_node();
 
 void init_cell_node (struct cell_node *cell_node);
 
@@ -130,6 +129,8 @@ void lock_cell_node (struct cell_node *cell_node);
 
 void unlock_cell_node (struct cell_node *cell_node);
 
+struct transition_node* new_transition_node();
+
 void init_transition_node (struct transition_node *transition_node);
 
 void set_transition_node_data (struct transition_node *the_transtion_node, uint16_t level,
@@ -137,18 +138,18 @@ void set_transition_node_data (struct transition_node *the_transtion_node, uint1
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);
 
-void set_cell_node_data (struct cell_node *the_cell, float face_length, float half_face_length,
+void set_cell_node_data (struct cell_node *the_cell, Real face_length, Real half_face_length,
                          uint64_t bunch_number, void *east, void *north, void *west, void *south,
                          void *front, void *back, void *previous, void *next,
-                         uint64_t grid_position, uint8_t hilbert_shape_number, float center_x,
-                         float center_y, float center_z);
+                         uint64_t grid_position, uint8_t hilbert_shape_number, Real center_x,
+                         Real center_y, Real center_z);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
-double get_cell_maximum_flux (struct cell_node *the_cell);
+Real get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            float face_length, float half_face_length, float center_x,
-                            float center_y, float center_z, uint64_t bunch_number);
+                            Real face_length, Real half_face_length, Real center_x,
+                            Real center_y, Real center_z, uint64_t bunch_number);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
                                        struct cell_node *other_node, char direction);
@@ -156,7 +157,7 @@ void set_refined_transition_node_data (struct transition_node *the_node,
 void simplify_refinement (struct transition_node *transition_node);
 void refine_cell (struct cell_node *cell);
 
-bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
+bool cell_needs_derefinement (struct cell_node *grid_cell, Real derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
 void simplify_deref (struct transition_node *transition_node);

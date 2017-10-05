@@ -5,7 +5,9 @@
 #ifndef MONOALG3D_UTILS_H_H
 #define MONOALG3D_UTILS_H_H
 
-void sort_vector(double **a, int length);
-int inside_mesh(double **a, double x, double y, double z, int first, int last);
+#include "constants.h"
+
+void sort_vector(Real **a, int length);
+int inside_mesh(Real **a, Real x, Real y, Real z, int first, int last);
 
 #endif //MONOALG3D_UTILS_H_H
