@@ -37,20 +37,21 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
 
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
+
         element = cell_elements[0];
 
-        int el_count = 0;
+        int el_count = 1;
 
-        while( element.cell != 0 && el_count < MAX_ELEMENTS_PER_MATRIX_LINE)
-        {
+        while( (el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (element.cell != 0)) {
             ac[i]->Ax += element.value * element.cell->v;
-            element = cell_elements[++el_count];
+            element = cell_elements[el_count];
+            el_count++;
         }
 
         ac[i]->r = ac[i]->b - ac[i]->Ax;
 
         if(use_jacobi) {
-            ac[i]->z = (1.0/cell_elements[0].value) * ac[i]->r; // preconditioner
+            ac[i]->z = (1.0f/cell_elements[0].value) * ac[i]->r; // preconditioner
             rTz += ac[i]->r * ac[i]->z;
             ac[i]->p = ac[i]->z;
         }
@@ -82,12 +83,13 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
                 struct element *cell_elements = ac[i]->elements;
                 element = cell_elements[0];
 
-                int el_count = 0;
+                int el_count = 1;
 
-                while( element.cell != 0 && el_count < MAX_ELEMENTS_PER_MATRIX_LINE)
+                while( el_count < MAX_ELEMENTS_PER_MATRIX_LINE && element.cell != 0 )
                 {
                     ac[i]->Ax += element.value * element.cell->v;
-                    element = cell_elements[++el_count];
+                    element = cell_elements[el_count];
+                    el_count++;
                 }
 
                 pTAp += ac[i]->p * ac[i]->Ax;
@@ -120,7 +122,7 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
                 ac[i]->r -= alpha * ac[i]->Ax;
 
                 if(use_jacobi) {
-                    ac[i]->z = (1.0/ac[i]->elements[0].value) * ac[i]->r;
+                    ac[i]->z = (1.0f/ac[i]->elements[0].value) * ac[i]->r;
                     r1Tz1 += ac[i]->z * ac[i]->r;
                 }
 

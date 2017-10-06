@@ -71,6 +71,8 @@ void set_model_initial_conditions(Real *sv) {
 void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real stim_start, Real stim_dur,
                          Real time, int neq, void *extra_data)  {
 
+    assert(sv);
+
     Real rY[neq], rDY[neq];
 
     for(int i = 0; i < neq; i++)

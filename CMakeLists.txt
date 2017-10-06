@@ -12,11 +12,11 @@ endif(EXISTS "/etc/manjaro-release")
 
 find_package (Threads) #we look for a thread package
 
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
+#find_package(OpenMP)
+#if (OPENMP_FOUND)
+#    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+#endif()
 
 find_package(CUDA)
 
@@ -44,9 +44,13 @@ set(SOURCE_FILES src/main.c
         src/utils/output_utils.h src/utils/output_utils.c
         src/utils/constants.h
         src/utils/stop_watch.h src/utils/stop_watch.c
-        src/solvers/linear_system_solver.c src/solvers/linear_system_solver.h src/models/model_common.h)
+        src/solvers/linear_system_solver.c src/solvers/linear_system_solver.h
+        src/models/model_common.h src/tests/test_benchmark.c src/tests/test_benchmark.h
+        src/string/sds.c src/string/sds.h src/string/sdsalloc.h)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 
 ADD_DEPENDENCIES(MonoAlg3D CudaLib)
+
+#TODO: remove efence
 target_link_libraries(MonoAlg3D CudaLib ${CMAKE_THREAD_LIBS_INIT} m)

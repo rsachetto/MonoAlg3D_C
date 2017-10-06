@@ -68,4 +68,6 @@ void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the
 void set_ode_extra_data(struct grid* the_grid, struct ode_solver *the_ode_solver);
 void set_spatial_stim(struct grid* the_grid, struct ode_solver *the_ode_solver);
 
+void solve_odes(struct ode_solver* the_ode_solver, struct grid* the_grid, Real cur_time, int num_steps, bool adaptive);
+
 #endif // MONOALG3D_SOLVER_H

@@ -6,14 +6,15 @@
 #define MONOALG3D_OUTPUT_INFO_H
 
 #include <stdbool.h>
+#include "../string/sds.h"
 
 struct output_utils {
     int print_rate;
-
-    //TODO: we should be very carefull when allocating this strings
-    char *output_dir_name;
+    sds output_dir_name;
 };
 
+struct output_utils *new_output_utils(int print_rate, const char *output_dir);
+void free_output_utils(struct output_utils* info);
 bool dir_exists(const char *path);
 
 #endif //MONOALG3D_OUTPUT_INFO_H

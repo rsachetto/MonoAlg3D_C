@@ -4,24 +4,22 @@
 
 #include "monodomain_solver.h"
 #include "../gpu/gpu_common.h"
-#include "../utils/stop_watch.h"
 #include "../utils/constants.h"
+#include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
 #include <inttypes.h>
 #include <omp.h>
 #include <sys/stat.h>
 
-
-static inline Real ALPHA(Real beta, Real cm, Real dt, Real h) {
-    return  ( ((beta * cm)/dt ) * UM2_TO_CM2 ) * powf(h,3.0f);
+static inline Real ALPHA (Real beta, Real cm, Real dt, Real h) {
+    return (((beta * cm) / dt) * UM2_TO_CM2) * powf (h, 3.0f);
 }
 
+// TODO: make proper initialization and new functions
+struct monodomain_solver *new_monodomain_solver (int num_threads, Real beta, Real cm, Real dt, Real sigma_x,
+                                                 Real sigma_y, Real sigma_z) {
 
-//TODO: make proper initialization and new functions
-struct monodomain_solver* new_monodomain_solver(int num_threads, Real beta, Real cm, Real dt,
-                                                Real sigma_x, Real sigma_y, Real sigma_z) {
-
-    struct monodomain_solver* result = (struct monodomain_solver*) malloc(sizeof(struct monodomain_solver));
+    struct monodomain_solver *result = (struct monodomain_solver *)malloc (sizeof (struct monodomain_solver));
 
     result->beta = beta;
     result->cm = 1.0;
@@ -33,7 +31,6 @@ struct monodomain_solver* new_monodomain_solver(int num_threads, Real beta, Real
     result->num_threads = num_threads;
 
     return result;
-
 }
 
 void init_solver (struct monodomain_solver *the_solver) {
@@ -41,9 +38,19 @@ void init_solver (struct monodomain_solver *the_solver) {
     the_solver->beta = 0.14;
     the_solver->cm = 1.0;
 
-    the_solver->sigma_y = 0.0001334f / 2.5f;
-    the_solver->sigma_x = the_solver->sigma_y;
-    the_solver->sigma_z = the_solver->sigma_y;
+    the_solver->sigma_y = 0.0001334f;
+    the_solver->sigma_x = 0.0000176;
+    the_solver->sigma_z = the_solver->sigma_x;
+
+    the_solver->refine_each = 1;
+    the_solver->derefine_each = 1;
+
+    the_solver->tolerance = 1e-16;
+    the_solver->use_jacobi = true;
+
+    //    the_solver->sigma_y = 0.0001334f / 2.5f;
+    //    the_solver->sigma_x = the_solver->sigma_y;
+    //    the_solver->sigma_z = the_solver->sigma_y;
 }
 
 void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
@@ -58,12 +65,15 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     if (np == 0)
         np = 1;
+
+#if defined(_OPENMP)
     omp_set_num_threads (np);
+#endif
 
     Real initial_v;
     bool redo_matrix = false;
-    Real *sv = NULL;
-    size_t pitch = 0;
+//    Real *sv = NULL;
+//    size_t pitch = 0;
 
     bool activity = false;
 
@@ -87,28 +97,21 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     Real h;
     int initRef;
-    order_grid_cells (the_grid);
-    the_grid->original_num_cells = the_grid->num_active_cells;
 
     Real dt_edp = the_monodomain_solver->dt;
     Real dt_edo = the_ode_solver->min_dt;
     Real finalT = the_monodomain_solver->final_time;
 
-    Real beta = the_monodomain_solver->beta;
-    Real cm = the_monodomain_solver->cm;
-
     // TODO: create a file for stimulus definition!!
-    Real stim_start = the_ode_solver->stim_start;
     Real stim_dur = the_ode_solver->stim_duration;
-    Real i_stim = the_ode_solver->stim_current;
-
     int edo_method = the_ode_solver->method;
 
     if (gpu) {
         init_cuda_device (the_ode_solver->gpu_id);
     }
 
-    //TODO: check. I thing we can do this always
+    order_grid_cells (the_grid);
+    // TODO: check. I thing we can do this always
     save_old_cell_positions (the_grid);
     update_cells_to_solve (the_grid, the_ode_solver);
 
@@ -116,8 +119,31 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     set_ode_initial_conditions_for_all_volumes (the_ode_solver, the_grid->num_active_cells);
     initial_v = the_ode_solver->model_data.initial_v;
 
+    if (the_monodomain_solver->max_iterations > 0) {
+        max_its = the_monodomain_solver->max_iterations;
+    } else {
+        max_its = (int)the_grid->number_of_cells;
+    }
+
+    print_solver_info (the_monodomain_solver, the_ode_solver, the_grid, output_info);
+
+    int ode_step = 1;
+    if (edo_method == EULER_METHOD) {
+        if (dt_edp >= dt_edo) {
+            ode_step = (int)(dt_edp / dt_edo);
+            printf ("Solving EDO %d times before solving PDE\n", ode_step);
+        } else {
+            printf ("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
+                    "step: %lf\n",
+                    dt_edo);
+            dt_edp = dt_edo;
+        }
+    }
+
+    fflush (stdout);
+
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
-            total_deref_time = 0;
+         total_deref_time = 0;
     uint64_t total_cg_it = 0;
     struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time;
 
@@ -130,44 +156,16 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     init_stop_watch (&ref_time);
     init_stop_watch (&deref_time);
 
-    printf ("Assembling Monodomain Matrix\n");
+    printf ("Assembling Monodomain Matrix Begin\n");
     start_stop_watch (&part_mat);
-
-    set_initial_conditions (the_monodomain_solver, the_grid, initial_v);
+    set_initial_conditions (the_monodomain_solver, the_grid, the_ode_solver->model_data.initial_v);
     set_discretization_matrix (the_monodomain_solver, the_grid);
-
-    //TODO: @DEBUG: remove
-    //print_grid_matrix(the_grid, stderr);
-    //exit(0);
-
     total_mat_time = stop_stop_watch (&part_mat);
+    printf ("Assembling Monodomain Matrix End\n");
 
-    if (the_monodomain_solver->max_iterations > 0) {
-        max_its = the_monodomain_solver->max_iterations;
-    } else {
-        max_its = (int)the_grid->number_of_cells;
-    }
-
-    Real max_edo_step = the_ode_solver->max_dt; // max time step allowed
-
-    Real abstol = the_ode_solver->abs_tol, reltol = the_ode_solver->rel_tol;
-
-    print_solver_info (the_monodomain_solver, the_ode_solver, the_grid, output_info);
-
-    int ode_step = 1;
-    if (edo_method == EULER_METHOD) {
-        if (dt_edp >= dt_edo) {
-            ode_step = (int)(dt_edp / dt_edo);
-            printf ("Solving EDO %d times before solving PDE\n", ode_step);
-        } else {
-            printf ("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
-                            "step: %lf\n",
-                    dt_edo);
-            dt_edp = dt_edo;
-        }
-    }
-
-    fflush (stdout);
+    // TODO: @DEBUG: remove
+    // print_grid_matrix(the_grid, stderr);
+    // exit(0);
 
     start_stop_watch (&solver_time);
 
@@ -177,6 +175,10 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     Real cg_error;
     uint64_t cg_iterations;
 
+    // TODO: we need to handle stim on diferent edp times (pulses)
+    set_spatial_stim (the_grid, the_ode_solver);
+    set_ode_extra_data (the_grid, the_ode_solver);
+
     while (cur_time < finalT) {
 
         if (save_to_file) {
@@ -184,10 +186,15 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
             if (count % print_rate == 0) {
                 start_stop_watch (&write_time);
 
-                sprintf (output_info->output_dir_name, "%s/V_t_%d", output_info->output_dir_name, count);
-                FILE *f1 = fopen (output_info->output_dir_name, "w");
+                sds tmp;
+                sds c = sdsfromlonglong (count);
+                tmp = sdscat (sdsdup (output_info->output_dir_name), "/V_t_");
+                tmp = sdscat (tmp, c);
+                FILE *f1 = fopen (tmp, "w");
                 activity = print_grid_and_check_for_activity (the_grid, f1, count);
-                fclose(f1);
+                fclose (f1);
+                sdsfree (tmp);
+                sdsfree (c);
 
                 total_write_time += stop_stop_watch (&write_time);
 
@@ -204,7 +211,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         // TODO: @Incomplete: handle with the ODE and GPU stuff
         if (cur_time > 0.0) {
-            update_ode_state_vector(the_ode_solver, the_grid, adaptive);
+            update_ode_state_vector (the_ode_solver, the_grid, adaptive);
         }
 
         start_stop_watch (&ode_time);
@@ -214,15 +221,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
         //    stim_start = second_stim;
         //}
 
-
-        //TODO: we need to handle stim on diferent edp times (pulses)
-        set_spatial_stim(the_grid, the_ode_solver);
-        set_ode_extra_data(the_grid, the_ode_solver);
-
-
-        //TODO: call solve_odes()....
-
-
+        solve_odes (the_ode_solver, the_grid, cur_time, ode_step, adaptive);
 
         ode_total_time += stop_stop_watch (&ode_time);
 
@@ -235,8 +234,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         if (count % print_rate == 0) {
             printf ("t = %lf, Iterations ="
-                            "%" PRIu64 ", Error Norm = %e, Number of Cells:"
-                            "%" PRIu64 "\n",
+                    "%" PRIu64 ", Error Norm = %e, Number of Cells:"
+                    "%" PRIu64 "\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells);
         }
 
@@ -259,6 +258,10 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
             if (redo_matrix) {
                 order_grid_cells (the_grid);
+
+                // TODO: we need to handle stim on diferent edp times (pulses)
+                set_spatial_stim (the_grid, the_ode_solver);
+                set_ode_extra_data (the_grid, the_ode_solver);
 
                 if (gpu) {
                     update_cells_to_solve (the_grid, the_ode_solver);
@@ -290,23 +293,22 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     printf ("CG Total Iterations: %ld\n", total_cg_it);
 }
 
-//TODO: this should be handled by a user provided library
-void set_spatial_stim(struct grid* the_grid, struct ode_solver *the_ode_solver) {
+// TODO: this should be handled by a user provided library
+void set_spatial_stim (struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
     uint64_t n_active = the_grid->num_active_cells;
-    struct cell_node** ac = the_grid->active_cells;
+    struct cell_node **ac = the_grid->active_cells;
     Real side_length = the_grid->side_length;
     Real i_stim = the_ode_solver->stim_current;
 
-    if(the_ode_solver->stim_currents != NULL) {
-        free(the_ode_solver->stim_currents);
+    if (the_ode_solver->stim_currents != NULL) {
+        free (the_ode_solver->stim_currents);
     }
 
-    the_ode_solver->stim_currents = (Real*) malloc(sizeof(Real)*n_active);
+    the_ode_solver->stim_currents = (Real *)malloc (sizeof (Real) * n_active);
     Real *stims = the_ode_solver->stim_currents;
 
-
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < n_active; i++) {
 
         bool stim;
@@ -321,77 +323,77 @@ void set_spatial_stim(struct grid* the_grid, struct ode_solver *the_ode_solver) 
             stims[i] = 0.0;
         }
     }
-
 }
 
-//TODO: this should be handled by a user provided library
-void set_ode_extra_data(struct grid* the_grid, struct ode_solver *the_ode_solver) {
+// TODO: this should be handled by a user provided library
+void set_ode_extra_data (struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
-//    uint64_t n_active = the_grid->num_active_cells;
-//    struct cell_node** ac = the_grid->active_cells;
-//    Real side_length = the_grid->side_length;
-//
-//    if(the_ode_solver->stim_currents != NULL) {
-//        free(the_ode_solver->stim_currents);
-//    }
-//
-//    the_ode_solver->edo_extra_data = malloc(sizeof(Real)*n_active);
-//    Real *fibs = (Real*)the_ode_solver->edo_extra_data;
-//
-//
-//    #pragma omp parallel for
-//    for (int i = 0; i < n_active; i++) {
-//
-//        if(ac[i]->fibrotic) {
-//            fibs[i] = 0;
-//        }
-//        else if(ac[i]->borderZone) {
-//
-//            Real center_x = ac[i]->center_x;
-//            Real center_y = ac[i]->center_y;
-//            Real center_z = ac[i]->center_z;
-//
-//            if(globalArgs.use_plain_with_sphere) {
-//                Real distanceFromCenter = sqrt((center_x - plainCenter)*(center_x - plainCenter) + (center_y - plainCenter)*(center_y - plainCenter));
-//                distanceFromCenter = (distanceFromCenter - fibRadius)/bz_size;
-//                fibs[i] = distanceFromCenter;
-//            }
-//
-//            else if(globalArgs.use_human) {
-//                Real distanceFromCenter;
-//
-//                if(ac[i]->scarType == 's') {
-//                    scarcenter_x = 52469;
-//                    scarcenter_y = 83225;
-//                    scarcenter_z = 24791;
-//                    distanceFromCenter = sqrt((center_x - scarcenter_x)*(center_x - scarcenter_x) + (center_y - scarcenter_y)*(center_y - scarcenter_y)  + (center_z - scarcenter_z)*(center_z - scarcenter_z));
-//                    distanceFromCenter = distanceFromCenter/bz_size_small;
-//                }
-//                else if(ac[i]->scarType == 'b') {
-//                    scarcenter_x = 95300;
-//                    scarcenter_y = 81600;
-//                    scarcenter_z = 36800;
-//                    distanceFromCenter = sqrt((center_x - scarcenter_x)*(center_x - scarcenter_x) + (center_y - scarcenter_y)*(center_y - scarcenter_y)  + (center_z - scarcenter_z)*(center_z - scarcenter_z));
-//                    distanceFromCenter = distanceFromCenter/bz_size_big;
-//                }
-//                else {
-//                    distanceFromCenter = 1;
-//                }
-//
-//                fibs[i] = distanceFromCenter;
-//            }
-//
-//        }
-//        else {
-//            fibs[i] = 1;
-//        }
-//
-//    }
-
+    //    uint64_t n_active = the_grid->num_active_cells;
+    //    struct cell_node** ac = the_grid->active_cells;
+    //    Real side_length = the_grid->side_length;
+    //
+    //    if(the_ode_solver->stim_currents != NULL) {
+    //        free(the_ode_solver->stim_currents);
+    //    }
+    //
+    //    the_ode_solver->edo_extra_data = malloc(sizeof(Real)*n_active);
+    //    Real *fibs = (Real*)the_ode_solver->edo_extra_data;
+    //
+    //
+    //    #pragma omp parallel for
+    //    for (int i = 0; i < n_active; i++) {
+    //
+    //        if(ac[i]->fibrotic) {
+    //            fibs[i] = 0;
+    //        }
+    //        else if(ac[i]->borderZone) {
+    //
+    //            Real center_x = ac[i]->center_x;
+    //            Real center_y = ac[i]->center_y;
+    //            Real center_z = ac[i]->center_z;
+    //
+    //            if(globalArgs.use_plain_with_sphere) {
+    //                Real distanceFromCenter = sqrt((center_x - plainCenter)*(center_x - plainCenter) + (center_y -
+    //                plainCenter)*(center_y - plainCenter)); distanceFromCenter = (distanceFromCenter -
+    //                fibRadius)/bz_size; fibs[i] = distanceFromCenter;
+    //            }
+    //
+    //            else if(globalArgs.use_human) {
+    //                Real distanceFromCenter;
+    //
+    //                if(ac[i]->scarType == 's') {
+    //                    scarcenter_x = 52469;
+    //                    scarcenter_y = 83225;
+    //                    scarcenter_z = 24791;
+    //                    distanceFromCenter = sqrt((center_x - scarcenter_x)*(center_x - scarcenter_x) + (center_y -
+    //                    scarcenter_y)*(center_y - scarcenter_y)  + (center_z - scarcenter_z)*(center_z -
+    //                    scarcenter_z)); distanceFromCenter = distanceFromCenter/bz_size_small;
+    //                }
+    //                else if(ac[i]->scarType == 'b') {
+    //                    scarcenter_x = 95300;
+    //                    scarcenter_y = 81600;
+    //                    scarcenter_z = 36800;
+    //                    distanceFromCenter = sqrt((center_x - scarcenter_x)*(center_x - scarcenter_x) + (center_y -
+    //                    scarcenter_y)*(center_y - scarcenter_y)  + (center_z - scarcenter_z)*(center_z -
+    //                    scarcenter_z)); distanceFromCenter = distanceFromCenter/bz_size_big;
+    //                }
+    //                else {
+    //                    distanceFromCenter = 1;
+    //                }
+    //
+    //                fibs[i] = distanceFromCenter;
+    //            }
+    //
+    //        }
+    //        else {
+    //            fibs[i] = 1;
+    //        }
+    //
+    //    }
 }
 
-
-void solve_odes(struct ode_solver* the_ode_solver, struct grid* the_grid, Real cur_time, int num_steps, bool adaptive) {
+void solve_odes (struct ode_solver *the_ode_solver, struct grid *the_grid, Real cur_time, int num_steps,
+                 bool adaptive) {
 
     uint8_t edo_method = the_ode_solver->method;
     bool gpu = the_ode_solver->gpu;
@@ -413,10 +415,9 @@ void solve_odes(struct ode_solver* the_ode_solver, struct grid* the_grid, Real c
                 //                  sv);
             }
         } else {
-            solve_odes_cpu(the_ode_solver, n_active, cur_time, num_steps);
+            solve_odes_cpu (the_ode_solver, n_active, cur_time, num_steps);
             // parallelSolveODEs (cur_time, beta, cm, dt_edo, dt_edp, i_stim, ode_step);
         }
-
 
         // TODO: @Incomplete: handle with the ODE and GPU stuff
     } else if (edo_method == EULER_METHOD_ADPT) {
@@ -441,11 +442,10 @@ void solve_odes(struct ode_solver* the_ode_solver, struct grid* the_grid, Real c
         } else {
             // parallelSolveODEsAdpt (cur_time, beta, cm, dt_edp, i_stim);
         }
-
     }
 }
 
-void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid, bool adaptive) {
+void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *the_grid, bool adaptive) {
 
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
@@ -459,9 +459,9 @@ void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the
             // updateSvGPU (numActiveCells, activeCells.data (), sv);
         }
     } else {
-        while( grid_cell != 0 ) {
-            if ( grid_cell->active ) {
-                the_ode_solver->sv[grid_cell->grid_position*n_edos] = grid_cell->v;
+        while (grid_cell != 0) {
+            if (grid_cell->active) {
+                the_ode_solver->sv[grid_cell->grid_position * n_edos] = grid_cell->v;
             }
             grid_cell = grid_cell->next;
         }
@@ -471,9 +471,9 @@ void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the
 void save_old_cell_positions (struct grid *the_grid) {
 
     uint64_t n_active = the_grid->num_active_cells;
-    struct cell_node** ac = the_grid->active_cells;
+    struct cell_node **ac = the_grid->active_cells;
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (uint64_t i = 0; i < n_active; i++) {
         ac[i]->sv_position = the_grid->active_cells[i]->grid_position;
     }
@@ -489,7 +489,7 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
 
     solver->cells_to_solve = (uint64_t *)malloc (the_grid->num_active_cells * sizeof (uint64_t));
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (uint64_t i = 0; i < n_active; i++) {
         solver->cells_to_solve[i] = the_grid->active_cells[i]->sv_position;
     }
@@ -617,7 +617,7 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             }
         }
     }
-        // Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
+    // Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
     else {
         if (neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
             has_found = false;
@@ -653,15 +653,21 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             struct element *cell_elements = grid_cell->elements;
             // Descobrimos a coluna que temos que preencher com o vizinho
             struct element element;
-            element = cell_elements[0];
+
             position = black_neighbor_cell->grid_position;
 
             lock_cell_node (grid_cell);
 
-            int el_counter = 0;
+            int el_counter = 1;
+            element = cell_elements[el_counter];
 
-            while (element.cell != NULL && element.column != position && el_counter < MAX_ELEMENTS_PER_MATRIX_LINE) {
+            // TODO: maybe we should check for the el_counter size here
+            while (el_counter < MAX_ELEMENTS_PER_MATRIX_LINE && element.cell != NULL && element.column != position) {
                 element = cell_elements[++el_counter];
+            }
+
+            if (el_counter == MAX_ELEMENTS_PER_MATRIX_LINE) {
+                printf ("%d %d\n ", el_counter, position);
             }
 
             // TODO: Cada elemento pode ter um sigma diferente
@@ -698,13 +704,13 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 
             cell_elements = black_neighbor_cell->elements;
             position = grid_cell->grid_position;
-            element = cell_elements[0];
 
             lock_cell_node (black_neighbor_cell);
 
-            el_counter = 0;
+            el_counter = 1;
+            element = cell_elements[el_counter];
 
-            while (element.cell != NULL && element.column != position && el_counter < MAX_ELEMENTS_PER_MATRIX_LINE) {
+            while (el_counter < MAX_ELEMENTS_PER_MATRIX_LINE && element.cell != NULL && element.column != position) {
                 element = cell_elements[++el_counter];
             }
 
@@ -745,8 +751,9 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                         struct grid *the_grid, struct output_utils *output_info) {
     printf ("System parameters: \n");
+#if defined(_OPENMP)
     printf ("Using OpenMP with %d threads\n", omp_get_num_threads ());
-
+#endif
     if (the_ode_solver->gpu) {
         printf ("Using GPU to solve ODEs\n");
     }
@@ -763,10 +770,10 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     printf ("Width = %lf um, height = %lf um, Depth = %lf \n", the_grid->side_length, the_grid->side_length,
             the_grid->side_length);
     printf ("Initial N. of Elements = "
-                    "%" PRIu64 "\n",
+            "%" PRIu64 "\n",
             the_grid->num_active_cells);
     printf ("PDE time step = %lf\n", the_monodomain_solver->dt);
-    printf ("ODE solver edo_method: %s\n", get_ode_method_name(the_ode_solver->method));
+    printf ("ODE solver edo_method: %s\n", get_ode_method_name (the_ode_solver->method));
     printf ("ODE min time step = %lf\n", the_ode_solver->min_dt);
     if ((the_ode_solver->method == EULER_METHOD_ADPT)) {
         printf ("ODE max time step = %lf\n", the_ode_solver->max_dt);
@@ -823,22 +830,22 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
         if (grid_cell->active) {
             fprintf (output_file,
                      "Row "
-                             "%" PRIu64 ": ",
+                     "%" PRIu64 ": ",
                      grid_cell->grid_position + 1);
 
+            element = grid_cell->elements[0];
+            int el_count = 1;
 
-            int el_count = 0;
-            element = grid_cell->elements[el_count];
-            while ((element.cell != NULL) && (el_count < MAX_ELEMENTS_PER_MATRIX_LINE)) {
+            while ((el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (element.cell != NULL)) {
 
                 fprintf (output_file,
                          " %.6lf ("
-                                 "%" PRIu64 ","
-                                 "%" PRIu64 ") ",
+                         "%" PRIu64 ","
+                         "%" PRIu64 ") ",
                          element.value, grid_cell->grid_position + 1, (element.column) + 1);
 
-                element = grid_cell->elements[++el_count];
-
+                element = grid_cell->elements[el_count];
+                el_count++;
             }
             fprintf (output_file, "\n");
         }

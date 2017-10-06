@@ -23,17 +23,18 @@ struct grid {
     /*
     vector <int> freeSVPositions;
 
-    int *cells_to_solve;
     vector<int> refinedThisStep;
 */
-    struct cell_node** active_cells;
+    struct cell_node* *active_cells;
 
     bool init_ode;
 
 };
 
 
+
 void initialize_grid(struct grid *the_grid, Real side_length);
+void clean_and_free_grid(struct grid* the_grid);
 void construct_grid(struct grid *the_grid);
 void initialize_and_construct_grid(struct grid *the_grid, Real side_length);
 

@@ -74,9 +74,7 @@ void refine_grid(struct grid* the_grid, int num_steps) {
     //TODO: reset the refined cells
     //refinedThisStep.clear();
 
-
-    int i = 0;
-    for(; i < num_steps; i++) {
+    for(int i = 0; i < num_steps; i++) {
 
         grid_cell = the_grid->first_cell;
         while (grid_cell != 0) {

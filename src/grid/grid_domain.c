@@ -280,10 +280,9 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, Real start_h) {
     printf ("Cleaning grid\n");
     int i;
 
-    for (i = 0; i < num_steps; i++) {
-
-        derefine_grid_inactive_cells (the_grid);
-    }
+   // for (i = 0; i < num_steps; i++) {
+   //     derefine_grid_inactive_cells (the_grid);
+   // }
 
     //if (the_grid->adaptive) {
         // TODO: @incomplete: set fixed cells for activation time caculation (maybe a separate

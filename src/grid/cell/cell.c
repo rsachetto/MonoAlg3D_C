@@ -12,7 +12,7 @@ void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
 }
 
 struct cell_node* new_cell_node() {
-    struct cell_node* result = malloc(sizeof(struct cell_node));
+    struct cell_node* result = (struct cell_node*)malloc(sizeof(struct cell_node));
     init_cell_node(result);
     return result;
 
@@ -41,7 +41,7 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->next        = NULL;
 
     cell_node->grid_position        = 0;
-    cell_node->sv_position      = 0;
+    cell_node->sv_position          = 0;
     cell_node->hilbert_shape_number = 0;
     cell_node->face_length          = 1.0;
     cell_node->half_face_length     = 0.5;
@@ -74,6 +74,7 @@ void free_cell_node(struct cell_node *cell_node) {
     if(cell_node->elements != NULL) {
         free(cell_node->elements);
     }
+
     pthread_mutex_destroy(&(cell_node->updating));
 
 
@@ -89,7 +90,7 @@ void unlock_cell_node(struct cell_node *cell_node) {
 }
 
 struct transition_node* new_transition_node() {
-    struct transition_node* result = malloc(sizeof(struct transition_node));
+    struct transition_node* result = (struct transition_node*) malloc(sizeof(struct transition_node));
     init_transition_node(result);
     return result;
 }
