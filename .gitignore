@@ -100,3 +100,4 @@ fabric.properties
 
 bin/
 model_lib/
+tmp/
