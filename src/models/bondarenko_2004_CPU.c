@@ -6,7 +6,6 @@
 void RHS_cpu(Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, void *extra_data);
 
 
-
 struct cell_model_data *new_model_data() {
 
     struct cell_model_data* result = (struct cell_model_data*)malloc(sizeof(struct cell_model_data));
@@ -17,7 +16,7 @@ void init_cell_model_data(struct cell_model_data* cell_model) {
 
     assert(cell_model);
 
-    cell_model->initial_v = -82.4202f;
+    cell_model->initial_v = -82.4202;
     cell_model->number_of_ode_equations = 41;
 
 }

@@ -17,7 +17,7 @@
 #define MAX_ELEMENTS_PER_MATRIX_LINE 7
 
 struct element {
-    Real value;
+    double value;
     uint64_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
 };
@@ -34,7 +34,7 @@ struct cell_node {
 
     uint64_t bunch_number; // Bunch identifier
 
-    Real center_x, center_y, center_z;
+    double center_x, center_y, center_z;
 
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
@@ -55,11 +55,11 @@ struct cell_node {
     uint8_t hilbert_shape_number;
 
     // Cell geometry.
-    Real half_face_length;
+    double half_face_length;
 
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
-    Real north_flux, // Flux coming from north direction.
+    double north_flux, // Flux coming from north direction.
         south_flux,   // Flux coming from south direction.
         east_flux,    // Flux coming from east direction.
         west_flux,    // Flux coming from west direction.
@@ -75,21 +75,21 @@ struct cell_node {
    method.
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
-    Real Ax; /* Element of vector Ax = b associated to this cell. Also plays the role of Ap.*/
-    Real r;  /* Element of the vector r = b - Ax associated to this cell. */
-    Real p;  /* Element of the search direction vector in the conjugate gradient algorithm. */
-    Real p1; /* p's upgrade in the conjugate gradient algorithm. */
-    Real z;  // Jacobi preconditioner
-    Real b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
+    double Ax; /* Element of vector Ax = b associated to this cell. Also plays the role of Ap.*/
+    double r;  /* Element of the vector r = b - Ax associated to this cell. */
+    double p;  /* Element of the search direction vector in the conjugate gradient algorithm. */
+    double p1; /* p's upgrade in the conjugate gradient algorithm. */
+    double z;  // Jacobi preconditioner
+    double b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
 
     pthread_mutex_t updating;
 
     // Variables used by some applications of partial differential equations.
-    Real v;
+    double v;
 
     //TODO: @Check. Do we need to be this big??
     uint64_t sv_position;
-    Real face_length;
+    double face_length;
     bool can_change;
 
     bool fibrotic;

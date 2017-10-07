@@ -10,8 +10,9 @@
 #include <inttypes.h>
 #include <omp.h>
 #include <sys/stat.h>
+#include <assert.h>
 
-static inline Real ALPHA (Real beta, Real cm, Real dt, Real h) {
+static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * powf (h, 3.0f);
 }
 
@@ -22,7 +23,7 @@ struct monodomain_solver *new_monodomain_solver (int num_threads, Real beta, Rea
     struct monodomain_solver *result = (struct monodomain_solver *)malloc (sizeof (struct monodomain_solver));
 
     result->beta = beta;
-    result->cm = 1.0;
+    result->cm = 1.0f;
     result->dt = dt;
 
     result->sigma_x = sigma_x;
@@ -45,7 +46,7 @@ void init_solver (struct monodomain_solver *the_solver) {
     the_solver->refine_each = 1;
     the_solver->derefine_each = 1;
 
-    the_solver->tolerance = 1e-16;
+    the_solver->tolerance = 1e-6;
     the_solver->use_jacobi = true;
 
     //    the_solver->sigma_y = 0.0001334f / 2.5f;
@@ -70,7 +71,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     omp_set_num_threads (np);
 #endif
 
-    Real initial_v;
+    double initial_v;
     bool redo_matrix = false;
 //    Real *sv = NULL;
 //    size_t pitch = 0;
@@ -89,8 +90,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     Real refinement_bound = the_monodomain_solver->refinement_bound;
     Real derefinement_bound = the_monodomain_solver->derefinement_bound;
 
-    Real min_h = the_monodomain_solver->min_h;
-    Real max_h = the_monodomain_solver->max_h;
+    double min_h = the_monodomain_solver->min_h;
+    double max_h = the_monodomain_solver->max_h;
 
     bool adaptive = the_monodomain_solver->adaptive;
     bool save_to_file = (output_info->output_dir_name != NULL);
@@ -98,9 +99,9 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     Real h;
     int initRef;
 
-    Real dt_edp = the_monodomain_solver->dt;
-    Real dt_edo = the_ode_solver->min_dt;
-    Real finalT = the_monodomain_solver->final_time;
+    double dt_edp = the_monodomain_solver->dt;
+    double dt_edo = the_ode_solver->min_dt;
+    double finalT = the_monodomain_solver->final_time;
 
     // TODO: create a file for stimulus definition!!
     Real stim_dur = the_ode_solver->stim_duration;
@@ -163,16 +164,29 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     total_mat_time = stop_stop_watch (&part_mat);
     printf ("Assembling Monodomain Matrix End\n");
 
-    // TODO: @DEBUG: remove
-    // print_grid_matrix(the_grid, stderr);
-    // exit(0);
+    // TODO: @DEBUG: remove //
+    FILE *a = fopen("M1.txt", "w");
+    FILE *b = fopen("b.txt", "w");
+    print_grid_matrix(the_grid, a);
+    print_grid_vector(the_grid, b, 'b');
+    fclose(a);
+    fclose(b);
+    double cg_error1;
+    uint64_t cg_iterations1 = conjugate_gradient (the_grid, max_its, cg_tol, jacobi, &cg_error1);
+    FILE *c = fopen("x1.txt", "w");
+    print_grid_vector(the_grid, c, 'x');
+    fclose(c);
+    exit(0);
+     //////////////////////////////////////////////////////q
+
+
 
     start_stop_watch (&solver_time);
 
     Real cur_time = 0.0;
     int print_rate = output_info->print_rate;
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
-    Real cg_error;
+    double cg_error;
     uint64_t cg_iterations;
 
     // TODO: we need to handle stim on diferent edp times (pulses)
@@ -495,14 +509,14 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
     }
 }
 
-void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, Real initial_v) {
+void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, double initial_v) {
 
-    Real alpha, h;
+    double alpha, h;
     struct cell_node **ac = the_grid->active_cells;
     uint64_t active_cells = the_grid->num_active_cells;
-    Real beta = the_solver->beta;
-    Real cm = the_solver->cm;
-    Real dt = the_solver->dt;
+    double beta = the_solver->beta;
+    double cm = the_solver->cm;
+    double dt = the_solver->dt;
 
 #pragma omp parallel for private(alpha, h)
     for (int i = 0; i < active_cells; i++) {
@@ -520,7 +534,7 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
 
     initialize_diagonal_elements (the_solver, the_grid);
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
@@ -545,12 +559,12 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
 
 void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct grid *the_grid) {
 
-    Real alpha, h;
+    double alpha, h;
     uint64_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    Real beta = the_solver->beta;
-    Real cm = the_solver->cm;
-    Real dt = the_solver->dt;
+    double beta = the_solver->beta;
+    double cm = the_solver->cm;
+    double dt = the_solver->dt;
 
 #pragma omp parallel for private(alpha, h)
     for (int i = 0; i < num_active_cells; i++) {
@@ -566,7 +580,7 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
             free (ac[i]->elements);
         }
 
-        ac[i]->elements = new_element_array ();
+        ac[i]->elements = new_element_array();
 
         ac[i]->elements[0] = element;
     }
@@ -577,21 +591,21 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 
     uint64_t position;
     bool has_found;
-    Real h;
+    double h;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
 
-    Real sigmaX = the_solver->sigma_x;
-    Real sigmaY = the_solver->sigma_y;
-    Real sigmaZ = the_solver->sigma_z;
+    double sigmaX = the_solver->sigma_x;
+    double sigmaY = the_solver->sigma_y;
+    double sigmaZ = the_solver->sigma_z;
 
-    Real sigmaX1 = (2.0f * sigmaX * sigmaX) / (sigmaX + sigmaX);
-    Real sigmaX2 = (2.0f * sigmaX * sigmaX) / (sigmaX + sigmaX);
-    Real sigmaY1 = (2.0f * sigmaY * sigmaY) / (sigmaY + sigmaY);
-    Real sigmaY2 = (2.0f * sigmaY * sigmaY) / (sigmaY + sigmaY);
-    Real sigmaZ1 = (2.0f * sigmaZ * sigmaZ) / (sigmaZ + sigmaZ);
-    Real sigmaZ2 = (2.0f * sigmaZ * sigmaZ) / (sigmaZ + sigmaZ);
+    double sigmaX1 = (2.0f * sigmaX * sigmaX) / (sigmaX + sigmaX);
+    double sigmaX2 = (2.0f * sigmaX * sigmaX) / (sigmaX + sigmaX);
+    double sigmaY1 = (2.0f * sigmaY * sigmaY) / (sigmaY + sigmaY);
+    double sigmaY2 = (2.0f * sigmaY * sigmaY) / (sigmaY + sigmaY);
+    double sigmaZ1 = (2.0f * sigmaZ * sigmaZ) / (sigmaZ + sigmaZ);
+    double sigmaZ2 = (2.0f * sigmaZ * sigmaZ) / (sigmaZ + sigmaZ);
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
      * cell which is a cell node. */
@@ -622,7 +636,7 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
         if (neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
             has_found = false;
             while (!has_found) {
-                if (neighbour_grid_cell_type == 'w') {
+                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
                     white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
                     if (white_neighbor_cell->single_connector == 0) {
                         has_found = true;
@@ -638,7 +652,7 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
     }
 
     // Tratamos somente os pontos interiores da malha.
-    if (neighbour_grid_cell_type == 'b') {
+    if (neighbour_grid_cell_type == CELL_NODE_TYPE) {
 
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
@@ -650,11 +664,11 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
                 h = grid_cell->face_length;
             }
 
+
             struct element *cell_elements = grid_cell->elements;
+            position = black_neighbor_cell->grid_position;
             // Descobrimos a coluna que temos que preencher com o vizinho
             struct element element;
-
-            position = black_neighbor_cell->grid_position;
 
             lock_cell_node (grid_cell);
 
@@ -666,9 +680,7 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
                 element = cell_elements[++el_counter];
             }
 
-            if (el_counter == MAX_ELEMENTS_PER_MATRIX_LINE) {
-                printf ("%d %d\n ", el_counter, position);
-            }
+            assert(el_counter < MAX_ELEMENTS_PER_MATRIX_LINE);
 
             // TODO: Cada elemento pode ter um sigma diferente
             if (element.cell == NULL) {
@@ -680,7 +692,7 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
                     cell_elements[0].value += (sigmaZ1 * h);
                 } else if (direction == 's') { // Z direction
                     new_element.value = -sigmaZ2 * h;
-                    cell_elements[0].value += (sigmaZ2 * h);
+                    cell_elements[0].value += sigmaZ2*h;
                 } else if (direction == 'e') { // Y direction
                     new_element.value = -sigmaY1 * h;
                     cell_elements[0].value += (sigmaY1 * h);
@@ -718,7 +730,6 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 
                 struct element new_element;
                 new_element.column = position;
-
                 if (direction == 'n') { // Z direction
                     new_element.value = -sigmaZ1 * h;
                     cell_elements[0].value += (sigmaZ1 * h);
@@ -826,30 +837,60 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
     struct element element;
+    struct element *cell_elements;
+
     while (grid_cell != 0) {
         if (grid_cell->active) {
-            fprintf (output_file,
-                     "Row "
-                     "%" PRIu64 ": ",
-                     grid_cell->grid_position + 1);
 
-            element = grid_cell->elements[0];
+            cell_elements = grid_cell->elements;
+            element = cell_elements[0];
+
+            fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.10lf\n",
+                    grid_cell->grid_position + 1,
+                    (element.column) + 1,
+                    element.value);
+
             int el_count = 1;
 
-            while ((el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (element.cell != NULL)) {
+            while ((el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (cell_elements[el_count].cell != NULL)) {
 
-                fprintf (output_file,
+                element = grid_cell->elements[el_count];
+                fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.6lf\n",
+                        grid_cell->grid_position + 1,
+                        (element.column) + 1,
+                        element.value);
+
+                /*fprintf (output_file,
                          " %.6lf ("
                          "%" PRIu64 ","
                          "%" PRIu64 ") ",
-                         element.value, grid_cell->grid_position + 1, (element.column) + 1);
+                         element.value, grid_cell->grid_position + 1, (element.column) + 1);*/
 
-                element = grid_cell->elements[el_count];
                 el_count++;
             }
-            fprintf (output_file, "\n");
+            //fprintf (output_file, "\n");
         }
         grid_cell = grid_cell->next;
     }
-    fprintf (output_file, "________________________________________________________________________\n");
+    //fprintf (output_file, "________________________________________________________________________\n");
+}
+
+void print_grid_vector(struct grid* the_grid, FILE *output_file, char name)
+{
+    struct cell_node *grid_cell;
+    grid_cell = the_grid->first_cell;
+
+    while( grid_cell != 0 )
+    {
+        if( grid_cell->active )
+        {
+            if(name == 'b')
+                fprintf(output_file, "%lf\n", grid_cell->b);
+            else if (name == 'x')
+                fprintf(output_file, "%lf\n", grid_cell->v);
+        }
+        grid_cell = grid_cell->next;
+
+    }
+
 }

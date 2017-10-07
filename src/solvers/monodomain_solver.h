@@ -20,12 +20,12 @@ struct monodomain_solver {
     int max_iterations;
     Real final_time;
 
-    Real beta, cm; // micrometers
-    Real sigma_x;
-    Real sigma_y;
-    Real sigma_z;
+    double beta, cm; // micrometers
+    double sigma_x;
+    double sigma_y;
+    double sigma_z;
 
-    Real start_h, max_h, min_h;
+    double start_h, max_h, min_h;
     bool adaptive;
     int refine_each;
     int derefine_each;
@@ -35,7 +35,7 @@ struct monodomain_solver {
     bool abort_on_no_activity;
 
     // Time used for solving wave equation.
-    Real dt;
+    double dt;
     bool use_jacobi;
 
 
@@ -47,7 +47,7 @@ void init_solver (struct monodomain_solver *the_solver);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
-void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, Real initial_v);
+void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, double initial_v);
 
 void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct grid *the_grid);
 
@@ -62,6 +62,7 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver,
                         struct output_utils *output_info);
 
 void print_grid_matrix(struct grid *the_grid, FILE* output_file);
+void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 
 void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid, bool adaptive);
 

@@ -4,9 +4,9 @@
 
 #include "linear_system_solver.h"
 
-uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool use_jacobi, Real *error) {
+uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool use_jacobi, double *error) {
 
-    Real  rTr,
+    double    rTr,
             r1Tr1,
             pTAp,
             alpha,
@@ -29,27 +29,25 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
     rTr = 0.0;
     rTz = 0.0;
 
-    int i;
     struct element element;
 
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
-    for (i = 0; i < num_active_cells; i++) {
+    for (int i = 0; i < num_active_cells; i++) {
 
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
-        element = cell_elements[0];
+        //element = cell_elements[0];
 
-        int el_count = 1;
+        int el_count = 0;
 
-        while( (el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (element.cell != 0)) {
-            ac[i]->Ax += element.value * element.cell->v;
+        while( (el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (cell_elements[el_count].cell != NULL)) {
             element = cell_elements[el_count];
+            ac[i]->Ax += element.value * element.cell->v;
             el_count++;
         }
 
         ac[i]->r = ac[i]->b - ac[i]->Ax;
-
         if(use_jacobi) {
             ac[i]->z = (1.0f/cell_elements[0].value) * ac[i]->r; // preconditioner
             rTz += ac[i]->r * ac[i]->z;
@@ -64,31 +62,29 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
     }
 
     *error = rTr;
-
     //__________________________________________________________________________
     //Conjugate gradient iterations.
     if( *error >= precision )
     {
         while( number_of_iterations < max_its )
         {
-            *error = 0.0;
             //__________________________________________________________________
             // Computes Ap and pTAp. Uses Ax to store Ap.
             pTAp = 0.0;
 
             #pragma omp parallel for private(element) reduction(+ : pTAp)
-            for (i = 0; i < num_active_cells; i++) {
+            for (int i = 0; i < num_active_cells; i++) {
 
                 ac[i]->Ax = 0.0;
                 struct element *cell_elements = ac[i]->elements;
-                element = cell_elements[0];
+                //element = cell_elements[0];
 
-                int el_count = 1;
+                int el_count = 0;
 
-                while( el_count < MAX_ELEMENTS_PER_MATRIX_LINE && element.cell != 0 )
+                while( (el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (cell_elements[el_count].cell != NULL) )
                 {
-                    ac[i]->Ax += element.value * element.cell->v;
                     element = cell_elements[el_count];
+                    ac[i]->Ax += element.value * element.cell->v;
                     el_count++;
                 }
 
@@ -109,16 +105,15 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
             //TODO: can we merge this for loops??
             // Computes new value of solution: u = u + alpha*p.
             #pragma omp parallel for
-            for (i = 0; i < num_active_cells; i++) {
+            for (int i = 0; i < num_active_cells; i++) {
                 ac[i]->v += alpha * ac[i]->p;
             }
-
 
             r1Tr1 = 0.0;
             r1Tz1 = 0.0;
 
             #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
-            for (i = 0; i < num_active_cells; i++) {
+            for (int i = 0; i < num_active_cells; i++) {
                 ac[i]->r -= alpha * ac[i]->Ax;
 
                 if(use_jacobi) {
@@ -137,8 +132,6 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
                 beta = r1Tr1/rTr;
             }
 
-            // ROD
-            //normR = r1Tr1;
             *error = r1Tr1;
             number_of_iterations++;
             if( *error <= precision ) {
@@ -147,7 +140,7 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, Real tol, bool u
             //__________________________________________________________________
             //Computes vector p1 = r1 + beta*p and uses it to upgrade p.
             #pragma omp parallel for
-            for (i = 0; i < num_active_cells; i++) {
+            for (int i = 0; i < num_active_cells; i++) {
                 if(use_jacobi) {
                     ac[i]->p1 = ac[i]->z + beta * ac[i]->p;
                 }

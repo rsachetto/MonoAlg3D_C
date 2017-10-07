@@ -43,12 +43,15 @@ void run_benchmark() {
     edp_solver->max_h = max_h;
     edp_solver->final_time = dt*1.0f;
     edp_solver->abort_on_no_activity = false;
+    edp_solver->use_jacobi = true;
 
     edp_solver->max_iterations = 200;
 
 
-    initialize_grid_with_benchmark_mesh(the_grid, start_h);
-//
+    //initialize_grid_with_benchmark_mesh(the_grid, start_h);
+    initialize_and_construct_grid(the_grid, 12800.0);
+    refine_grid(the_grid, 1);
+
 //    FILE *f1 = fopen("V_t_1", "w");
 //    print_grid(the_grid, f1);
 //    fclose(f1);
