@@ -6,8 +6,6 @@
 #include "utils/output_utils.h"
 #include "utils/opts.h"
 
-#include "tests/teste_cg.h"
-
 int main(int argc, char **argv) {
 
     struct grid *the_grid;

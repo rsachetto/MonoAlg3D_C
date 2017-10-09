@@ -1,72 +1,69 @@
 //
 // Created by sachetto on 06/10/17.
 //
-
-#include "teste_cg.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "../solvers/linear_system_solver.h"
 #include "../solvers/ode_solver.h"
 #include "../utils/output_utils.h"
-#include "../solvers/linear_system_solver.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <criterion/criterion.h>
 
-double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
+double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines);
 
-double ** read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
+double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *nnz);
 
-struct grid* construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b ) {
+struct grid *construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b) {
 
     uint64_t n_cells;
     size_t len = 0;
-    ssize_t  read;
+    ssize_t read;
     char *sep = " ";
     int count = 0;
     int num_lines_m = 0;
     int num_lines_v = 0;
     int nnz = 0;
 
-    double **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
-    double *vector = read_octave_vector_file_to_array(vector_b, &num_lines_v);
+    double **matrix = read_octave_mat_file_to_array (matrix_a, &num_lines_m, &nnz);
+    double *vector = read_octave_vector_file_to_array (vector_b, &num_lines_v);
 
-    cr_assert_eq(num_lines_m, num_lines_v);
-    cr_assert(nnz);
+    cr_assert_eq (num_lines_m, num_lines_v);
+    cr_assert (nnz);
 
     int max_el = num_lines_m;
 
-    initialize_and_construct_grid(grid, 1.0, num_lines_m);
+    initialize_and_construct_grid (grid, 1.0, num_lines_m);
 
     n_cells = grid->number_of_cells;
-    while(n_cells < num_lines_m) {
-        refine_grid(grid, 1);
+    while (n_cells < num_lines_m) {
+        refine_grid (grid, 1);
         n_cells = grid->number_of_cells;
     }
 
     struct cell_node *cell = grid->first_cell;
-    while(cell) {
+    while (cell) {
         cell->active = false;
         cell = cell->next;
     }
 
-
     int item_count = 0;
     cell = grid->first_cell;
-    while(item_count < num_lines_m) {
+    while (item_count < num_lines_m) {
         cell->active = true;
         cell = cell->next;
         item_count++;
     }
 
-    order_grid_cells(grid);
+    order_grid_cells (grid);
 
-    cr_assert_eq(num_lines_m, grid->num_active_cells);
+    cr_assert_eq (num_lines_m, grid->num_active_cells);
 
     cell = grid->first_cell;
     uint64_t cell_position;
 
     double m_value;
 
-    for(int i = 0; i < num_lines_m; i++) {
+    for (int i = 0; i < num_lines_m; i++) {
 
         cell_position = cell->grid_position;
         m_value = matrix[cell_position][cell_position];
@@ -75,24 +72,25 @@ struct grid* construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *v
         el.column = cell_position;
         el.cell = cell;
 
-        cell->elements = new_element_array(max_el);
+        cell->elements = new_element_array (max_el);
         cell->elements[0] = el;
 
         int next_element = 1;
 
-        for(int j = 0; j < num_lines_m; j++) {
-            if(cell_position != j) {
-                //we should find a better way to compare the floating points
+        for (int j = 0; j < num_lines_m; j++) {
+            if (cell_position != j) {
+                // we should find a better way to compare the floating points
                 m_value = matrix[cell_position][j];
 
                 if (m_value != 0.0) {
                     struct element el2;
                     el2.value = m_value;
-                    el2.column = (uint64_t) j;
+                    el2.column = (uint64_t)j;
 
                     struct cell_node *aux = grid->first_cell;
                     while (aux) {
-                        if (aux->grid_position == j) break;
+                        if (aux->grid_position == j)
+                            break;
                         aux = aux->next;
                     }
                     el2.cell = aux;
@@ -106,26 +104,24 @@ struct grid* construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *v
     }
 
     cell = grid->first_cell;
-    for(int i = 0; i < num_lines_v; i++) {
+    for (int i = 0; i < num_lines_v; i++) {
         cell->b = vector[cell->grid_position];
         cell->v = 1.0;
         cell = cell->next;
     }
 
-    //print_grid_matrix(grid, stdout);
-    //print_grid_vector(grid, stdout, 'b');
+    // print_grid_matrix(grid, stdout);
+    // print_grid_vector(grid, stdout, 'b');
 
-
-    for(int i = 0; i < num_lines_m; i++) {
-        free(matrix[i]);
+    for (int i = 0; i < num_lines_m; i++) {
+        free (matrix[i]);
     }
 
-    free(matrix);
-    free(vector);
-
+    free (matrix);
+    free (vector);
 }
 
-double ** read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
+double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *nnz) {
     const char *sep = " ";
     char *line_a = NULL;
     ssize_t read;
@@ -133,54 +129,53 @@ double ** read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *
     int count;
 
     do {
-        read = getline(&line_a, &len, matrix_file);
-        sds *tmp = sdssplitlen(line_a, (int)strlen(line_a), sep, (int)strlen(sep), &count);
-        if(count) {
-            if(strcmp(tmp[1], "columns:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
+        read = getline (&line_a, &len, matrix_file);
+        sds *tmp = sdssplitlen (line_a, (int)strlen (line_a), sep, (int)strlen (sep), &count);
+        if (count) {
+            if (strcmp (tmp[1], "columns:") == 0) {
+                (*num_lines) = atoi (tmp[2]);
             }
-            if(strcmp(tmp[1], "nnz:") == 0) {
-                (*nnz) = atoi(tmp[2]);
+            if (strcmp (tmp[1], "nnz:") == 0) {
+                (*nnz) = atoi (tmp[2]);
             }
-
         }
-        sdsfreesplitres(tmp, count);
-    } while((line_a)[0] == '#');
+        sdsfreesplitres (tmp, count);
+    } while ((line_a)[0] == '#');
 
-    double **matrix = (double**) malloc(*num_lines*sizeof(double*));
+    double **matrix = (double **)malloc (*num_lines * sizeof (double *));
 
-    for(int i = 0; i < *num_lines; i++) {
-        matrix[i] = (double*)calloc(*num_lines, sizeof(double));
+    for (int i = 0; i < *num_lines; i++) {
+        matrix[i] = (double *)calloc (*num_lines, sizeof (double));
     }
 
     int item_count = 0;
     int m_line, m_column;
     double m_value;
 
-    while(item_count < *nnz) {
+    while (item_count < *nnz) {
 
-        sds *tmp = sdssplitlen(line_a, (int)strlen(line_a), sep, (int)strlen(sep), &count);
-        //printf("%s", line_a);
-        if(tmp[0][0] != '\n') {
-            m_line = atoi(tmp[0]);
-            m_column = atoi(tmp[1]);
-            m_value = atof(tmp[2]);
+        sds *tmp = sdssplitlen (line_a, (int)strlen (line_a), sep, (int)strlen (sep), &count);
+        // printf("%s", line_a);
+        if (tmp[0][0] != '\n') {
+            m_line = atoi (tmp[0]);
+            m_column = atoi (tmp[1]);
+            m_value = atof (tmp[2]);
 
-            matrix[m_line-1][m_column-1] = m_value;
+            matrix[m_line - 1][m_column - 1] = m_value;
         }
-        sdsfreesplitres(tmp, count);
+        sdsfreesplitres (tmp, count);
 
         item_count++;
-        read = getline(&line_a, &len, matrix_file);
+        read = getline (&line_a, &len, matrix_file);
     }
 
-    if(line_a) free(line_a);
+    if (line_a)
+        free (line_a);
 
     return matrix;
-
 }
 
-double * read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
+double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines) {
 
     ssize_t read;
     size_t len;
@@ -189,114 +184,71 @@ double * read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
     char *sep = " ";
 
     do {
-        read = getline(&line_b, &len, vec_file);
-        sds *tmp = sdssplitlen(line_b, (int)strlen(line_b), sep, (int)strlen(sep), &count);
-        if(count) {
-            if(strcmp(tmp[1], "rows:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
+        read = getline (&line_b, &len, vec_file);
+        sds *tmp = sdssplitlen (line_b, (int)strlen (line_b), sep, (int)strlen (sep), &count);
+        if (count) {
+            if (strcmp (tmp[1], "rows:") == 0) {
+                (*num_lines) = atoi (tmp[2]);
             }
-
         }
-        sdsfreesplitres(tmp, count);
-    } while((line_b)[0] == '#');
+        sdsfreesplitres (tmp, count);
+    } while ((line_b)[0] == '#');
 
-    double *vector = (double*) malloc(*num_lines*sizeof(double));
+    double *vector = (double *)malloc (*num_lines * sizeof (double));
 
     int item_count = 0;
-    while((item_count < *num_lines) && read) {
-        sds *tmp = sdssplitlen(line_b, (int)strlen(line_b), sep, (int)strlen(sep), &count);
+    while ((item_count < *num_lines) && read) {
+        sds *tmp = sdssplitlen (line_b, (int)strlen (line_b), sep, (int)strlen (sep), &count);
 
-        if(tmp[0][0] != '\n') {
-            vector[item_count] = atof(tmp[1]);
+        if (tmp[0][0] != '\n') {
+            vector[item_count] = atof (tmp[1]);
         }
 
-        sdsfreesplitres(tmp, count);
+        sdsfreesplitres (tmp, count);
 
         item_count++;
-        read = getline(&line_b, &len, vec_file);
+        read = getline (&line_b, &len, vec_file);
     }
 
-    if(line_b) free(line_b);
+    if (line_b)
+        free (line_b);
 
     return vector;
-
 }
 
-
-Test(misc, cg_jacobi) {
-    FILE *A = fopen("src/tests/A.txt", "r");
-    FILE *B = fopen("src/tests/B.txt", "r");
-    FILE *X = fopen("src/tests/X.txt", "r");
+void run_cg (bool jacobi) {
+    FILE *A = fopen ("src/tests/A.txt", "r");
+    FILE *B = fopen ("src/tests/B.txt", "r");
+    FILE *X = fopen ("src/tests/X.txt", "r");
     double error;
 
-    struct grid *grid = (struct grid*)malloc(sizeof(struct grid));
-    cr_assert(grid);
+    struct grid *grid = (struct grid *)malloc (sizeof (struct grid));
+    cr_assert (grid);
 
-    construct_grid_from_file(grid, A, B);
-    conjugate_gradient(grid, 200, 1e-16, true, &error);
+    construct_grid_from_file (grid, A, B);
+    conjugate_gradient (grid, 200, 1e-16, jacobi, &error);
 
     int n_lines1;
     uint64_t n_lines2;
 
-    double *x = read_octave_vector_file_to_array(X, &n_lines1);
-    double *x_grid = grid_vector_to_array(grid, 'x', &n_lines2);
+    double *x = read_octave_vector_file_to_array (X, &n_lines1);
+    double *x_grid = grid_vector_to_array (grid, 'x', &n_lines2);
 
-    cr_assert_eq(n_lines1, n_lines2);
+    cr_assert_eq (n_lines1, n_lines2);
 
-    for(int i = 0; i < n_lines1; i++) {
-        cr_assert_float_eq(x[i], x_grid[i], 1e-10);
+    for (int i = 0; i < n_lines1; i++) {
+        cr_assert_float_eq (x[i], x_grid[i], 1e-10);
     }
 
-    clean_and_free_grid(grid);
-    fclose(A);
-    fclose(B);
+    clean_and_free_grid (grid);
+    fclose (A);
+    fclose (B);
 }
 
-Test(misc, cg_no_jacobi) {
-    FILE *A = fopen("src/tests/A.txt", "r");
-    FILE *B = fopen("src/tests/B.txt", "r");
-    FILE *X = fopen("src/tests/X.txt", "r");
-    double error;
-
-    struct grid *grid = (struct grid*)malloc(sizeof(struct grid));
-    cr_assert(grid);
-
-    construct_grid_from_file(grid, A, B);
-    conjugate_gradient(grid, 200, 1e-16, false, &error);
-
-    int n_lines1;
-    uint64_t n_lines2;
-
-    double *x = read_octave_vector_file_to_array(X, &n_lines1);
-    double *x_grid = grid_vector_to_array(grid, 'x', &n_lines2);
-
-    cr_assert_eq(n_lines1, n_lines2);
-
-    for(int i = 0; i < n_lines1; i++) {
-        cr_assert_float_eq(x[i], x_grid[i], 1e-10);
-    }
-
-    clean_and_free_grid(grid);
-    fclose(A);
-    fclose(B);
+Test (misc, cg_jacobi) {
+    run_cg (true);
 }
 
-
-/*Test(misc, cg1) {
-    FILE *A = fopen("src/tests/A.txt", "r");
-    FILE *B = fopen("src/tests/B.txt", "r");
-    cr_assert(A);
-    cr_assert(B);
-
-    construct_grid_from_file(A, B);
-    fclose(A);
-}*/
-
-
-
-void run_cg1() {
-
-
-
-
+Test (misc, cg_no_jacobi) {
+    run_cg (false);
 }

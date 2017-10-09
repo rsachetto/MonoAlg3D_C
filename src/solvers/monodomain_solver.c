@@ -162,23 +162,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     total_mat_time = stop_stop_watch (&part_mat);
     printf ("Assembling Monodomain Matrix End\n");
 
-    // TODO: @DEBUG: remove //
-    FILE *a = fopen("M1.txt", "w");
-    FILE *b = fopen("b.txt", "w");
-    print_grid_matrix(the_grid, a);
-    print_grid_vector(the_grid, b, 'b');
-    fclose(a);
-    fclose(b);
-    double cg_error1;
-    uint64_t cg_iterations1 = conjugate_gradient (the_grid, max_its, cg_tol, jacobi, &cg_error1);
-    FILE *c = fopen("x1.txt", "w");
-    print_grid_vector(the_grid, c, 'x');
-    fclose(c);
-    exit(0);
-     //////////////////////////////////////////////////////q
-
-
-
     start_stop_watch (&solver_time);
 
     double cur_time = 0.0;
