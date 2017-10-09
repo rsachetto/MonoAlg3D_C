@@ -1,0 +1,156 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:gomp_malloc
+   fun:gomp_init_num_threads
+   fun:initialize_env
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:/usr/lib/ld-2.26.so
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:realloc
+   fun:gomp_realloc
+   fun:gomp_team_start
+   fun:GOMP_parallel
+   fun:save_old_cell_positions
+   fun:solve_monodomain
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/usr/lib/libdl-2.26.so
+   fun:dlopen
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:__libc_csu_init
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:_dl_map_object
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   obj:/usr/lib/libdl-2.26.so
+   fun:_dl_catch_error
+   obj:/usr/lib/libdl-2.26.so
+   fun:dlopen
+   fun:init_ode_solver_with_cell_model
+   fun:new_ode_solver
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   obj:/usr/lib/libdl-2.26.so
+   fun:_dl_catch_error
+   obj:/usr/lib/libdl-2.26.so
+   fun:dlopen
+   fun:init_ode_solver_with_cell_model
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_check_map_versions
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   obj:/usr/lib/libdl-2.26.so
+   fun:_dl_catch_error
+   obj:/usr/lib/libdl-2.26.so
+   fun:dlopen
+   fun:init_ode_solver_with_cell_model
+   fun:new_ode_solver
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:gomp_malloc
+   fun:gomp_get_thread_pool
+   fun:get_last_team
+   fun:gomp_new_team
+   fun:GOMP_parallel
+   fun:save_old_cell_positions
+   fun:solve_monodomain
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:gomp_malloc
+   fun:gomp_new_icv
+   fun:gomp_icv
+   fun:omp_set_num_threads
+   fun:solve_monodomain
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:gomp_team_start
+   fun:GOMP_parallel
+   fun:save_old_cell_positions
+   fun:solve_monodomain
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   obj:/usr/lib/libdl-2.26.so
+   fun:_dl_catch_error
+   obj:/usr/lib/libdl-2.26.so
+   fun:dlopen
+   fun:init_ode_solver_with_cell_model
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:gomp_malloc
+   fun:gomp_new_team
+   fun:GOMP_parallel
+   fun:save_old_cell_positions
+   fun:solve_monodomain
+   fun:main
+}

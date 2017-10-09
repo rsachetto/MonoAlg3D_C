@@ -71,6 +71,7 @@ dkms.conf
 
 # CMake
 cmake-build-debug/
+cmake-build-release/
 
 # Mongo Explorer plugin:
 .idea/**/mongoSettings.xml
@@ -102,4 +103,3 @@ bin/
 model_lib/
 tmp/
 tests_bin/
-scripts/*
