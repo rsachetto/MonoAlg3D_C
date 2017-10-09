@@ -319,6 +319,7 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
     //fprintf (output_file, "________________________________________________________________________\n");
 }
 
+
 void print_grid_vector(struct grid* the_grid, FILE *output_file, char name)
 {
     struct cell_node *grid_cell;
@@ -336,5 +337,29 @@ void print_grid_vector(struct grid* the_grid, FILE *output_file, char name)
         grid_cell = grid_cell->next;
 
     }
+
+}
+
+double * grid_vector_to_array(struct grid* the_grid, char name, uint64_t *num_lines) {
+    struct cell_node *grid_cell;
+    grid_cell = the_grid->first_cell;
+
+    *num_lines = the_grid->num_active_cells;
+    double *vector = (double*) malloc(*num_lines*sizeof(double));
+
+    while( grid_cell != 0 )
+    {
+        if( grid_cell->active )
+        {
+            if(name == 'b')
+                vector[grid_cell->grid_position] = grid_cell->b;
+            else if (name == 'x')
+                vector[grid_cell->grid_position] = grid_cell->v;
+        }
+        grid_cell = grid_cell->next;
+
+    }
+
+    return vector;
 
 }

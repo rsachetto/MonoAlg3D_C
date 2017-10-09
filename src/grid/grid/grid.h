@@ -57,6 +57,7 @@ void derefine_grid_inactive_cells (struct grid* the_grid);
 
 void print_grid_matrix(struct grid *the_grid, FILE* output_file);
 void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
+double * grid_vector_to_array(struct grid* the_grid, char name, uint64_t *num_lines);
 
 void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_file);
 void initialize_grid_with_rabbit_mesh (struct grid *the_grid, const char *mesh_file);
