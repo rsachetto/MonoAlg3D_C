@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include <criterion/criterion.h>
+#include <omp.h>
 
 double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines);
 
@@ -222,10 +223,32 @@ void run_cg (bool jacobi) {
     FILE *X = fopen ("src/tests/X.txt", "r");
     double error;
 
+    cr_assert(A);
+    cr_assert(B);
+    cr_assert(X);
+
+
     struct grid *grid = (struct grid *)malloc (sizeof (struct grid));
     cr_assert (grid);
 
     construct_grid_from_file (grid, A, B);
+
+    int nt = 1;
+
+#if defined(_OPENMP)
+    omp_set_num_threads(6);
+    nt = omp_get_max_threads();
+#endif
+
+
+    if(jacobi) {
+        printf("Testing CG with jacobi preconditioner using %d treads\n", nt);
+    }
+
+    else {
+        printf("Testing CG using %d treads\n", nt);
+    }
+
     conjugate_gradient (grid, 200, 1e-16, jacobi, &error);
 
     int n_lines1;

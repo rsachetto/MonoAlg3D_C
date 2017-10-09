@@ -6,6 +6,7 @@ set(SOURCE_FILES_UTILS
         stop_watch.h stop_watch.c
         string/sds.c
         string/sds.h
-        string/sdsalloc.h)
+        string/sdsalloc.h
+        sort.c)
 
 ADD_LIBRARY(utils STATIC ${SOURCE_FILES_UTILS})

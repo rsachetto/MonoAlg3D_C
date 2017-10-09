@@ -4,7 +4,6 @@
 
 #include "linear_system_solver.h"
 
-//TODO: maybe we can simplify this
 uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool use_jacobi, double *error) {
 
     double    rTr,
@@ -21,7 +20,7 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
     struct cell_node** ac = the_grid->active_cells;
 
     *error = 1.0;
-    uint64_t number_of_iterations = 0;
+    uint64_t number_of_iterations = 1;
     int max_el = the_grid->num_cell_neighbours;
 
     //__________________________________________________________________________
@@ -35,7 +34,6 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
 
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (int i = 0; i < num_active_cells; i++) {
-
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
@@ -78,7 +76,6 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
 
                 ac[i]->Ax = 0.0;
                 struct element *cell_elements = ac[i]->elements;
-                //element = cell_elements[0];
 
                 int el_count = 0;
 

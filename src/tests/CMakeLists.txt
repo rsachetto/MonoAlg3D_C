@@ -1,9 +1,10 @@
-set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 
-set(SOURCE_FILES_TEST teste_cg.c)
+FIND_PACKAGE(Criterion)
 
-add_executable(TestSuite ${SOURCE_FILES_TEST})
-
-ADD_DEPENDENCIES(TestSuite CudaLib utils alg solvers)
-
-target_link_libraries(TestSuite alg solvers utils CudaLib ${CMAKE_THREAD_LIBS_INIT} m criterion)
+if(CRITERION_FOUND)
+    set(SOURCE_FILES_TEST teste_cg.c)
+    add_executable(TestSuite ${SOURCE_FILES_TEST})
+    ADD_DEPENDENCIES(TestSuite CudaLib utils alg solvers)
+    target_link_libraries(TestSuite alg solvers utils CudaLib ${CMAKE_THREAD_LIBS_INIT} m criterion)
+endif()

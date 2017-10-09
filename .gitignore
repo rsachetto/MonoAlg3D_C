@@ -102,3 +102,4 @@ bin/
 model_lib/
 tmp/
 tests_bin/
+scripts/*

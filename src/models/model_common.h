@@ -12,7 +12,7 @@
 
 struct cell_model_data {
     int number_of_ode_equations;
-    double initial_v;
+    Real initial_v;
     void *extra_data; //TODO: maybe we will need this?
 };
 #endif //MONOALG3D_MODEL_COMMON_H

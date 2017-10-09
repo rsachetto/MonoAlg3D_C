@@ -14,9 +14,6 @@
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
 
-//TODO: we need to change this to a parameter
-//#define MAX_ELEMENTS_PER_MATRIX_LINE 99
-
 struct element {
     double value;
     uint64_t column; // Column of the matrix to which this element belongs.

@@ -219,7 +219,7 @@ void set_human_sub_mesh (struct grid *the_grid, const char *file_name, double mi
 
 void initialize_grid_with_rabbit_mesh (struct grid *the_grid, const char *mesh_file) {
 
-    initialize_and_construct_grid (the_grid, 32000.0);
+    initialize_and_construct_grid (the_grid, 32000.0, the_grid->num_cell_neighbours);
     refine_grid (the_grid, 6);
 
     printf ("Loading Rabbit Heart Mesh\n");
@@ -240,7 +240,7 @@ void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_fi
         exit (10);
     }
 
-    initialize_and_construct_grid (the_grid, 6400.0);
+    initialize_and_construct_grid (the_grid, 6400.0, the_grid->num_cell_neighbours);
 
     refine_grid (the_grid, 5);
 
@@ -271,7 +271,7 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, double start_h)
         exit (10);
     }
 
-    initialize_and_construct_grid (the_grid, side_length);
+    initialize_and_construct_grid (the_grid, side_length, 7);
     int num_steps = get_num_refinement_steps_to_discretization (side_length, start_h);
 
     refine_grid (the_grid, num_steps);
@@ -303,7 +303,7 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, double start_h)
 
 void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side_lenght, double start_h, int num_layers) {
 
-    double double_side_lenght = start_h * 2.0f;
+    double real_side_lenght = start_h * 2.0f;
     double max_h = start_h * num_layers;
 
     while (real_side_lenght < desired_side_lenght) {
@@ -317,7 +317,7 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side
 
     the_grid->init_ode = false;
 
-    initialize_and_construct_grid(the_grid, real_side_lenght);
+    initialize_and_construct_grid(the_grid, real_side_lenght, 7);
 
     if ((real_side_lenght / 2.0f) > max_h) {
         double aux = real_side_lenght/2.0f;
@@ -436,7 +436,7 @@ void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_
                     grid_cell->active = false;
                 grid_cell->can_change = false;
             } else if (grid_cell->border_zone) {
-                double distance_from_center = sqrtf(
+                double distance_from_center = sqrt(
                         (grid_cell->center_x - plain_center) * (grid_cell->center_x - plain_center) +
                         (grid_cell->center_y - plain_center) * (grid_cell->center_y - plain_center));
                 distance_from_center = (distance_from_center - sphere_radius) / bz_size;

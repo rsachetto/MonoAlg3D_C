@@ -190,7 +190,7 @@ bool print_grid_and_check_for_activity (struct grid *the_grid, FILE *output_file
                 act = true;
             }
 
-            fprintf (output_file, "%lf,%lf,%lf,%lf,%lf\n", center_x, center_y, center_z, half_face, v);
+            fprintf (output_file, "%lf,%lf,%lf,%lf,%.4lf\n", center_x, center_y, center_z, half_face, v);
         }
         grid_cell = grid_cell->next;
     }

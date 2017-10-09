@@ -16,7 +16,6 @@ struct grid {
     double side_length;        // Length of cube grid. Default = 1.0.
     uint64_t number_of_cells;  // Number of cells of grid.
 
-    uint64_t original_num_cells;
     uint64_t num_active_cells;
     uint8_t num_cell_neighbours;
 

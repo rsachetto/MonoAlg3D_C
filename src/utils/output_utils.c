@@ -22,7 +22,11 @@ struct output_utils *new_output_utils(int print_rate, const char *output_dir) {
 
     struct output_utils * output_info = (struct output_utils*)malloc(sizeof(struct output_utils));
     output_info->print_rate = print_rate;
-    output_info->output_dir_name = sdsnew(output_dir);
+
+    if(output_dir)
+        output_info->output_dir_name = sdsnew(output_dir);
+    else
+        output_info->output_dir_name = NULL;
 
     return output_info;
 }

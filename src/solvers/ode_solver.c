@@ -123,6 +123,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint6
     }
 }
 
+//TODO: maybe we should only accept the sv and ditch the cells_to_solve?
 void solve_odes_cpu(struct ode_solver *the_ode_solver, uint64_t  n_active, Real cur_time, int num_steps) {
 
     solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
@@ -137,16 +138,17 @@ void solve_odes_cpu(struct ode_solver *the_ode_solver, uint64_t  n_active, Real 
     Real stim_dur = the_ode_solver->stim_duration;
     void *extra_data = the_ode_solver->edo_extra_data;
 
+    Real time = cur_time;
+
+    #pragma omp parallel for private(sv_id, time)
     for(int i = 0; i < n_active; i++) {
         sv_id = the_ode_solver->cells_to_solve[i];
 
         for (int j = 0; j < num_steps; ++j) {
             solve_odes_pt(dt, sv + (sv_id*n_odes), stims[i], stim_start, stim_dur, cur_time, n_odes, extra_data);
-            cur_time += dt;
+            time += dt;
         }
-
     }
-
 }
 
 
