@@ -4,11 +4,9 @@
 
 #include "monodomain_solver.h"
 #include "../gpu/gpu_common.h"
-#include "../utils/constants.h"
 #include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
 #include <inttypes.h>
-#include <omp.h>
 #include <sys/stat.h>
 #include <assert.h>
 
@@ -17,8 +15,8 @@ static inline double ALPHA (double beta, double cm, double dt, double h) {
 }
 
 // TODO: make proper initialization and new functions
-struct monodomain_solver *new_monodomain_solver (int num_threads, Real beta, Real cm, Real dt, Real sigma_x,
-                                                 Real sigma_y, Real sigma_z) {
+struct monodomain_solver *new_monodomain_solver (int num_threads, double beta, double cm, double dt, double sigma_x,
+                                                 double sigma_y, double sigma_z) {
 
     struct monodomain_solver *result = (struct monodomain_solver *)malloc (sizeof (struct monodomain_solver));
 
@@ -60,7 +58,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
 
-    Real cg_tol = the_monodomain_solver->tolerance;
+    double cg_tol = the_monodomain_solver->tolerance;
 
     int np = the_monodomain_solver->num_threads;
 
@@ -87,8 +85,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     int count = 0;
 
-    Real refinement_bound = the_monodomain_solver->refinement_bound;
-    Real derefinement_bound = the_monodomain_solver->derefinement_bound;
+    double refinement_bound = the_monodomain_solver->refinement_bound;
+    double derefinement_bound = the_monodomain_solver->derefinement_bound;
 
     double min_h = the_monodomain_solver->min_h;
     double max_h = the_monodomain_solver->max_h;
@@ -96,7 +94,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     bool adaptive = the_monodomain_solver->adaptive;
     bool save_to_file = (output_info->output_dir_name != NULL);
 
-    Real h;
+    double h;
     int initRef;
 
     double dt_edp = the_monodomain_solver->dt;
@@ -104,7 +102,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     double finalT = the_monodomain_solver->final_time;
 
     // TODO: create a file for stimulus definition!!
-    Real stim_dur = the_ode_solver->stim_duration;
+    double stim_dur = the_ode_solver->stim_duration;
     int edo_method = the_ode_solver->method;
 
     if (gpu) {
@@ -183,7 +181,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     start_stop_watch (&solver_time);
 
-    Real cur_time = 0.0;
+    double cur_time = 0.0;
     int print_rate = output_info->print_rate;
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
     double cg_error;
@@ -312,8 +310,8 @@ void set_spatial_stim (struct grid *the_grid, struct ode_solver *the_ode_solver)
 
     uint64_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    Real side_length = the_grid->side_length;
-    Real i_stim = the_ode_solver->stim_current;
+    double side_length = the_grid->side_length;
+    double i_stim = the_ode_solver->stim_current;
 
     if (the_ode_solver->stim_currents != NULL) {
         free (the_ode_solver->stim_currents);
@@ -566,6 +564,8 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
     double cm = the_solver->cm;
     double dt = the_solver->dt;
 
+    uint8_t max_elements = the_grid->num_cell_neighbours;
+
 #pragma omp parallel for private(alpha, h)
     for (int i = 0; i < num_active_cells; i++) {
         h = ac[i]->face_length;
@@ -580,7 +580,7 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
             free (ac[i]->elements);
         }
 
-        ac[i]->elements = new_element_array();
+        ac[i]->elements = new_element_array(max_elements);
 
         ac[i]->elements[0] = element;
     }
@@ -676,11 +676,11 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             element = cell_elements[el_counter];
 
             // TODO: maybe we should check for the el_counter size here
-            while (el_counter < MAX_ELEMENTS_PER_MATRIX_LINE && element.cell != NULL && element.column != position) {
+            while (element.cell != NULL && element.column != position) {
                 element = cell_elements[++el_counter];
             }
 
-            assert(el_counter < MAX_ELEMENTS_PER_MATRIX_LINE);
+            assert(el_counter < 7);
 
             // TODO: Cada elemento pode ter um sigma diferente
             if (element.cell == NULL) {
@@ -722,9 +722,11 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             el_counter = 1;
             element = cell_elements[el_counter];
 
-            while (el_counter < MAX_ELEMENTS_PER_MATRIX_LINE && element.cell != NULL && element.column != position) {
+            while (el_counter && element.cell != NULL && element.column != position) {
                 element = cell_elements[++el_counter];
             }
+
+            assert(el_counter < 7);
 
             if (element.cell == NULL) {
 
@@ -825,72 +827,4 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     } else {
         printf ("The solution will not be saved\n");
     }
-}
-
-// Prints grid discretization matrix.
-void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
-    if (!output_file) {
-        fprintf (stderr, "print_grid_matrix: output_file is NULL! Open it first!");
-        return;
-    }
-
-    struct cell_node *grid_cell;
-    grid_cell = the_grid->first_cell;
-    struct element element;
-    struct element *cell_elements;
-
-    while (grid_cell != 0) {
-        if (grid_cell->active) {
-
-            cell_elements = grid_cell->elements;
-            element = cell_elements[0];
-
-            fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.10lf\n",
-                    grid_cell->grid_position + 1,
-                    (element.column) + 1,
-                    element.value);
-
-            int el_count = 1;
-
-            while ((el_count < MAX_ELEMENTS_PER_MATRIX_LINE) && (cell_elements[el_count].cell != NULL)) {
-
-                element = grid_cell->elements[el_count];
-                fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.6lf\n",
-                        grid_cell->grid_position + 1,
-                        (element.column) + 1,
-                        element.value);
-
-                /*fprintf (output_file,
-                         " %.6lf ("
-                         "%" PRIu64 ","
-                         "%" PRIu64 ") ",
-                         element.value, grid_cell->grid_position + 1, (element.column) + 1);*/
-
-                el_count++;
-            }
-            //fprintf (output_file, "\n");
-        }
-        grid_cell = grid_cell->next;
-    }
-    //fprintf (output_file, "________________________________________________________________________\n");
-}
-
-void print_grid_vector(struct grid* the_grid, FILE *output_file, char name)
-{
-    struct cell_node *grid_cell;
-    grid_cell = the_grid->first_cell;
-
-    while( grid_cell != 0 )
-    {
-        if( grid_cell->active )
-        {
-            if(name == 'b')
-                fprintf(output_file, "%lf\n", grid_cell->b);
-            else if (name == 'x')
-                fprintf(output_file, "%lf\n", grid_cell->v);
-        }
-        grid_cell = grid_cell->next;
-
-    }
-
 }

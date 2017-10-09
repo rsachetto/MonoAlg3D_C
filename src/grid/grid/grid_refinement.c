@@ -14,7 +14,7 @@
  * @param min_h Minimum refinement level required for the graph.
  * @param refinement_bound Minimum flux required for each cell of graph.
  */
-bool refine_grid_with_bound(struct grid* the_grid, Real min_h, Real refinement_bound) {
+bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refinement_bound) {
 
     if( min_h <= 0.0 ) {
         fprintf(stderr,"refine_grid(): Parameter min_h must be positive, passed %lf.", min_h);
@@ -24,7 +24,7 @@ bool refine_grid_with_bound(struct grid* the_grid, Real min_h, Real refinement_b
 
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
-    Real maximumFlux;
+    double maximumFlux;
     bool continue_refining = true;
     bool refined_once = false;
     set_grid_flux(the_grid);

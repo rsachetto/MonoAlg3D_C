@@ -8,7 +8,7 @@
 #include "constants.h"
 
 struct point_3d {
-    Real x, y, z;
+    double x, y, z;
 };
 
 struct elt {

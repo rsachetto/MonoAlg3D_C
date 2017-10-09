@@ -128,7 +128,7 @@ void solve_odes_cpu(struct ode_solver *the_ode_solver, uint64_t  n_active, Real 
     solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
     uint64_t sv_id;
 
-    double dt = the_ode_solver->min_dt;
+    Real dt = the_ode_solver->min_dt;
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     Real *stims = the_ode_solver->stim_currents;
     Real *sv = the_ode_solver->sv;

@@ -5,7 +5,7 @@
 #ifndef MONOALG3D_SOLVER_H
 #define MONOALG3D_SOLVER_H
 
-#include "../grid/grid.h"
+#include "../grid/grid/grid.h"
 #include "../utils/output_utils.h"
 #include "ode_solver.h"
 #include <stdbool.h>
@@ -15,10 +15,10 @@ struct monodomain_solver {
 
     //TODO: @Check: maybe this solver need a alg grid?
 
-    Real tolerance;
+    double tolerance;
     int num_threads;
     int max_iterations;
-    Real final_time;
+    double final_time;
 
     double beta, cm; // micrometers
     double sigma_x;
@@ -29,8 +29,8 @@ struct monodomain_solver {
     bool adaptive;
     int refine_each;
     int derefine_each;
-    Real refinement_bound;
-    Real derefinement_bound;
+    double refinement_bound;
+    double derefinement_bound;
 
     bool abort_on_no_activity;
 
@@ -60,9 +60,6 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
 void print_solver_info (struct monodomain_solver *the_monodomain_solver,
                         struct ode_solver *the_ode_solver, struct grid *the_grid,
                         struct output_utils *output_info);
-
-void print_grid_matrix(struct grid *the_grid, FILE* output_file);
-void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 
 void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid, bool adaptive);
 

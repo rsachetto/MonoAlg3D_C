@@ -14,7 +14,8 @@
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
 
-#define MAX_ELEMENTS_PER_MATRIX_LINE 7
+//TODO: we need to change this to a parameter
+//#define MAX_ELEMENTS_PER_MATRIX_LINE 99
 
 struct element {
     double value;
@@ -31,6 +32,8 @@ struct cell_node {
     struct basic_cell_data cell_data; // DO NOT CHANGE THIS STRUCT POSITION
 
     bool active;
+
+    uint8_t max_elements_per_line;
 
     uint64_t bunch_number; // Bunch identifier
 
@@ -138,18 +141,18 @@ void set_transition_node_data (struct transition_node *the_transtion_node, uint1
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);
 
-void set_cell_node_data (struct cell_node *the_cell, Real face_length, Real half_face_length,
+void set_cell_node_data (struct cell_node *the_cell, double face_length, double half_face_length,
                          uint64_t bunch_number, void *east, void *north, void *west, void *south,
                          void *front, void *back, void *previous, void *next,
-                         uint64_t grid_position, uint8_t hilbert_shape_number, Real center_x,
-                         Real center_y, Real center_z);
+                         uint64_t grid_position, uint8_t hilbert_shape_number, double center_x,
+                         double center_y, double center_z);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
-Real get_cell_maximum_flux (struct cell_node *the_cell);
+double get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            Real face_length, Real half_face_length, Real center_x,
-                            Real center_y, Real center_z, uint64_t bunch_number);
+                            double face_length, double half_face_length, double center_x,
+                            double center_y, double center_z, uint64_t bunch_number);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
                                        struct cell_node *other_node, char direction);
@@ -157,14 +160,14 @@ void set_refined_transition_node_data (struct transition_node *the_node,
 void simplify_refinement (struct transition_node *transition_node);
 void refine_cell (struct cell_node *cell);
 
-bool cell_needs_derefinement (struct cell_node *grid_cell, Real derefinement_bound);
+bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
 void simplify_deref (struct transition_node *transition_node);
 
 void derefine_cell_bunch (struct cell_node *first_bunch_cell);
 
-struct element* new_element_array();
+struct element* new_element_array(uint8_t max_elements);
 void init_element(struct element* el);
 
 #endif // MONOALG3D_CELL_H

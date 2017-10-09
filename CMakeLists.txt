@@ -18,39 +18,29 @@ find_package (Threads) #we look for a thread package
 #    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 #endif()
 
-find_package(CUDA)
+FIND_PACKAGE(CUDA)
 
-add_subdirectory(src/models)
+ADD_SUBDIRECTORY(src/models)
+ADD_SUBDIRECTORY(src/gpu)
+ADD_SUBDIRECTORY(src/utils)
+ADD_SUBDIRECTORY(src/grid)
+#Maibe solver should not be a independent library as it depends on utils and gpu
+ADD_SUBDIRECTORY(src/solvers)
 
-SET(CUDA_NVCC_FLAGS "-Xcompiler -fopenmp" CACHE STRING "nvcc flags" FORCE)
-#HW capability 1.3
-SET (CUDA_VERBOSE_BUILD ON CACHE BOOL "nvcc verbose" FORCE)
-
-set(GPU_FILE src/gpu/gpu_common.cu src/gpu/gpu_common.h)
-
-SET(LIB_TYPE STATIC) #set the lib type
-CUDA_ADD_LIBRARY(CudaLib ${LIB_TYPE} ${GPU_FILE})
-
-set(SOURCE_FILES src/main.c
-        src/grid/cell/cell.h src/grid/cell/cell.c
-        src/grid/grid.c src/grid/grid.h
-        src/solvers/monodomain_solver.h
-        src/grid/grid_refinement.c src/grid/grid_derefinement.c
-        src/grid/cell/cell_derefinement.c src/grid/cell/cell_refinement.c
-        src/utils/opts.h src/grid/grid_domain.c src/utils/sort.c src/utils/utils.h src/utils/search.c
-        src/utils/point_hash.c src/utils/point_hash.h
-        src/solvers/ode_solver.c src/solvers/ode_solver.h
-        src/solvers/monodomain_solver.h src/solvers/monodomain_solver.c
-        src/utils/output_utils.h src/utils/output_utils.c
-        src/utils/constants.h
-        src/utils/stop_watch.h src/utils/stop_watch.c
-        src/solvers/linear_system_solver.c src/solvers/linear_system_solver.h
-        src/models/model_common.h src/tests/test_benchmark.c src/tests/test_benchmark.h
-        src/string/sds.c src/string/sds.h src/string/sdsalloc.h)
+set(SOURCE_FILES src/main.c)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 
-ADD_DEPENDENCIES(MonoAlg3D CudaLib)
+ADD_DEPENDENCIES(MonoAlg3D CudaLib utils alg solvers)
 
-#TODO: remove efence
-target_link_libraries(MonoAlg3D CudaLib ${CMAKE_THREAD_LIBS_INIT} m)
+target_link_libraries(MonoAlg3D alg solvers utils CudaLib ${CMAKE_THREAD_LIBS_INIT} m)
+
+set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
+
+set(SOURCE_FILES_TEST src/tests/teste_cg.h src/tests/teste_cg.c)
+
+add_executable(TestSuite ${SOURCE_FILES_TEST})
+#
+ADD_DEPENDENCIES(TestSuite CudaLib utils alg solvers)
+#
+target_link_libraries(TestSuite alg solvers utils CudaLib ${CMAKE_THREAD_LIBS_INIT} m criterion)

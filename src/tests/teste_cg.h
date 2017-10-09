@@ -5,6 +5,6 @@
 #ifndef MONOALG3D_TEST_BENCHMARK_H
 #define MONOALG3D_TEST_BENCHMARK_H
 
-void run_benchmark();
+void run_cg1();
 
 #endif //MONOALG3D_TEST_BENCHMARK_H

@@ -19,24 +19,24 @@
 
 struct user_args {
     bool saveToFile;				/*-s option */
-    Real stim_dur;				/*-d option */
-    Real final_time;				/*-f option */
-    Real sideLenght;			    /*-l option */
+    double stim_dur;				/*-d option */
+    double final_time;				/*-f option */
+    double sideLenght;			    /*-l option */
     const char *outDirName;	        /*-o option */
     bool adaptive;	                /*-a option */
     int print_rate;	            	/*-p option */
-    Real start_h;					/*-i option*/
-    Real min_h;					/*-m option*/
-    Real max_h;					/*-x option*/
+    double start_h;					/*-i option*/
+    double min_h;					/*-m option*/
+    double max_h;					/*-x option*/
     int max_its;					/*-t option*/
-    Real ref_bound;				/*-r option*/
-    Real deref_bound;				/*-b option*/
-    Real stim_cur;				/*-c option*/
-    Real dt;						/*-z option*/
-    Real min_dt_edo;				/*-e option*/
-    Real max_dt_edo;				/*-v option*/
-    Real abs_tol; 				/*-g option*/
-    Real rel_tol;					/*-n option*/
+    double ref_bound;				/*-r option*/
+    double deref_bound;				/*-b option*/
+    double stim_cur;				/*-c option*/
+    double dt;						/*-z option*/
+    double min_dt_edo;				/*-e option*/
+    double max_dt_edo;				/*-v option*/
+    double abs_tol; 				/*-g option*/
+    double rel_tol;					/*-n option*/
     bool use_rabbit;				/*-w option*/
     bool use_mouse; 				/*-k option*/
     bool use_human; 				/*-H option*/
@@ -49,7 +49,7 @@ struct user_args {
     bool use_jacobi;
     int refine_each;
     int derefine_each;
-    Real phi;
+    double phi;
     int gpu_id;                     /*-G option*/
     bool stim_file;                 /*-S option*/
     bool humanSub;                  /*-U option*/

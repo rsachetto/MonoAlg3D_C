@@ -4,7 +4,6 @@
 
 #include <sys/stat.h>
 #include <malloc.h>
-#include <string.h>
 #include "output_utils.h"
 
 bool dir_exists(const char *path) {

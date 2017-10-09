@@ -31,7 +31,7 @@ void refine_cell( struct cell_node *cell)  {
 
     int number_of_hilbert_shape;
 
-    Real cell_center_x    = cell->center_x,
+    double cell_center_x    = cell->center_x,
             cell_center_y   = cell->center_y,
             cell_center_z   = cell->center_z,
             cell_half_side    = cell->half_face_length,
@@ -1168,8 +1168,8 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
-                           Real face_length, Real half_face_length,
-                           Real center_x, Real center_y, Real center_z,
+                           double face_length, double half_face_length,
+                           double center_x, double center_y, double center_z,
                            uint64_t  bunch_number) {
 
 

@@ -3,13 +3,14 @@
 //
 
 #include "grid.h"
-#include "../utils/constants.h"
-void initialize_and_construct_grid (struct grid *the_grid, Real side_length) {
-    initialize_grid (the_grid, side_length);
+#include "../../utils/constants.h"
+#include <inttypes.h>
+void initialize_and_construct_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
+    initialize_grid (the_grid, side_length, num_cell_neighbours);
     construct_grid (the_grid);
 }
 
-void initialize_grid (struct grid *the_grid, Real side_length) {
+void initialize_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
 
     the_grid->first_cell = NULL;
     the_grid->side_length = side_length;
@@ -17,12 +18,13 @@ void initialize_grid (struct grid *the_grid, Real side_length) {
     the_grid->init_ode = false;
     the_grid->init_ode = false;
     the_grid->active_cells = NULL;
+    the_grid->num_cell_neighbours = num_cell_neighbours;
 }
 
 void construct_grid (struct grid *the_grid) {
 
     bool init_ode = the_grid->init_ode;
-    Real side_length = the_grid->side_length;
+    double side_length = the_grid->side_length;
 
     size_t cell_node_size = sizeof (struct cell_node);
     size_t transition_node_size = sizeof (struct transition_node);
@@ -51,8 +53,8 @@ void construct_grid (struct grid *the_grid) {
     front_transition_node = new_transition_node ();
     back_transition_node = new_transition_node ();
 
-    Real half_side_length = side_length / 2.0f;
-    Real quarter_side_length = side_length / 4.0f;
+    double half_side_length = side_length / 2.0f;
+    double quarter_side_length = side_length / 4.0f;
     //__________________________________________________________________________
     //              Initialization of transition nodes.
     //__________________________________________________________________________
@@ -141,8 +143,8 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    Real center_x, center_y, center_z, half_face;
-    Real v;
+    double center_x, center_y, center_z, half_face;
+    double v;
 
     while (grid_cell != 0) {
 
@@ -165,8 +167,8 @@ bool print_grid_and_check_for_activity (struct grid *the_grid, FILE *output_file
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    Real center_x, center_y, center_z, half_face;
-    Real v;
+    double center_x, center_y, center_z, half_face;
+    double v;
     bool act = false;
 
     while (grid_cell != 0) {
@@ -251,7 +253,7 @@ void clean_grid (struct grid *the_grid) {
         while (grid_cell) {
 
             struct cell_node *next = grid_cell->next;
-            free(grid_cell);
+            free_cell_node(grid_cell);
             grid_cell = next;
 
         }
@@ -266,4 +268,73 @@ void clean_and_free_grid(struct grid* the_grid) {
     }
 
     free (the_grid);
+}
+
+// Prints grid discretization matrix.
+void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
+    if (!output_file) {
+        fprintf (stderr, "print_grid_matrix: output_file is NULL! Open it first!");
+        return;
+    }
+
+    struct cell_node *grid_cell;
+    grid_cell = the_grid->first_cell;
+    struct element element;
+    struct element *cell_elements;
+    int max_el = the_grid->num_cell_neighbours;
+
+    while (grid_cell != 0) {
+        if (grid_cell->active) {
+
+            cell_elements = grid_cell->elements;
+            element = cell_elements[0];
+
+            fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.15lf\n",
+                    grid_cell->grid_position + 1,
+                    (element.column) + 1,
+                    element.value);
+
+            int el_count = 1;
+
+            while ((el_count < max_el) && (cell_elements[el_count].cell != NULL)) {
+
+                element = grid_cell->elements[el_count];
+                fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.15lf\n",
+                        grid_cell->grid_position + 1,
+                        (element.column) + 1,
+                        element.value);
+
+                /*fprintf (output_file,
+                         " %.6lf ("
+                         "%" PRIu64 ","
+                         "%" PRIu64 ") ",
+                         element.value, grid_cell->grid_position + 1, (element.column) + 1);*/
+
+                el_count++;
+            }
+            //fprintf (output_file, "\n");
+        }
+        grid_cell = grid_cell->next;
+    }
+    //fprintf (output_file, "________________________________________________________________________\n");
+}
+
+void print_grid_vector(struct grid* the_grid, FILE *output_file, char name)
+{
+    struct cell_node *grid_cell;
+    grid_cell = the_grid->first_cell;
+
+    while( grid_cell != 0 )
+    {
+        if( grid_cell->active )
+        {
+            if(name == 'b')
+                fprintf(output_file, "%.15lf\n", grid_cell->b);
+            else if (name == 'x')
+                fprintf(output_file, "%.15lf\n", grid_cell->v);
+        }
+        grid_cell = grid_cell->next;
+
+    }
+
 }

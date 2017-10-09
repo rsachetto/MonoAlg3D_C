@@ -4,7 +4,7 @@
 
 #include "utils.h"
 
-int binary_search(Real **a, Real num, int first, int last, int column) {
+int binary_search(double **a, double num, int first, int last, int column) {
     int middle = first + ((last-first)/2);
     if (a[middle][column] == num)
         return middle;
@@ -16,12 +16,12 @@ int binary_search(Real **a, Real num, int first, int last, int column) {
         return binary_search(a,num,first,middle-1,column);
 }
 
-int inside_mesh(Real **a, Real x, Real y, Real z, int first, int last) {
+int inside_mesh(double **a, double x, double y, double z, int first, int last) {
     int xval = binary_search(a,x,first,last,0);
     if (xval == -1)
         return -1;
     else {
-        Real xnum = a[xval][0];
+        double xnum = a[xval][0];
         int i = xval;
         while (a[i][0] == xnum && i != first)
             i--;
@@ -42,7 +42,7 @@ int inside_mesh(Real **a, Real x, Real y, Real z, int first, int last) {
         if (yval == -1)
             return -1;
         else {
-            Real ynum = a[yval][1];
+            double ynum = a[yval][1];
             int k = yval;
             while (a[k][1] == ynum && k != first)
                 k--;

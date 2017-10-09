@@ -129,11 +129,11 @@ void set_transition_node_data(struct transition_node *the_transtion_node,  uint1
     the_transtion_node->quadruple_connector4 = quadruple_connector4;
 }
 
-void set_cell_node_data(struct cell_node *the_cell, Real face_length, Real half_face_length, uint64_t bunch_number,
+        void set_cell_node_data(struct cell_node *the_cell, double face_length, double half_face_length, uint64_t bunch_number,
                         void *east, void *north, void *west, void *south, void *front, void *back,
                         void *previous, void *next,
                         uint64_t grid_position, uint8_t hilbert_shape_number,
-                        Real center_x, Real center_y, Real center_z)
+                        double center_x, double center_y, double center_z)
 {
     the_cell->face_length = face_length;
     the_cell->half_face_length = half_face_length;
@@ -188,8 +188,8 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
             exit(0);
     }
 
-    Real leastDistance = the_cell->half_face_length;
-    Real localFlux;
+    double leastDistance = the_cell->half_face_length;
+    double localFlux;
     bool has_found;
 
 
@@ -332,9 +332,9 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
     }
 }
 
-Real get_cell_maximum_flux(struct cell_node* the_cell) {
+double get_cell_maximum_flux(struct cell_node* the_cell) {
 
-    Real maximumFlux = fabsf(the_cell->east_flux);
+    double maximumFlux = fabsf(the_cell->east_flux);
     if( fabsf(the_cell->north_flux) > maximumFlux )
         maximumFlux = fabsf(the_cell->north_flux);
 
@@ -353,10 +353,10 @@ Real get_cell_maximum_flux(struct cell_node* the_cell) {
     return maximumFlux;
 }
 
-struct element* new_element_array() {
+struct element* new_element_array(uint8_t max_elements) {
 
-    struct element* result = (struct element*)malloc(MAX_ELEMENTS_PER_MATRIX_LINE*sizeof(struct element));
-    for (int i = 0; i < MAX_ELEMENTS_PER_MATRIX_LINE; ++i) {
+    struct element* result = (struct element*)malloc(max_elements*sizeof(struct element));
+    for (uint8_t i = 0; i < max_elements; ++i) {
         init_element(&(result[i]));
     }
 

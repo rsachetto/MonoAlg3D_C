@@ -14,7 +14,7 @@
 * @throw NullPointer If a null cell node is given as argument, a NullPointer
 * exception is thrown.
 */
-bool cell_needs_derefinement (struct cell_node *grid_cell, Real derefinement_bound) {
+bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound) {
 
     if (grid_cell == NULL) {
         fprintf (stderr, "cell_needs_derefinement: Parameter grid_cell is NULL.");
@@ -29,16 +29,16 @@ bool cell_needs_derefinement (struct cell_node *grid_cell, Real derefinement_bou
     struct cell_node *seventh_cell = sixth_cell->next;
     struct cell_node *eighth_cell = seventh_cell->next;
 
-    Real maximum1 = get_cell_maximum_flux (first_cell);
-    Real maximum2 = get_cell_maximum_flux (second_cell);
-    Real maximum3 = get_cell_maximum_flux (third_cell);
-    Real maximum4 = get_cell_maximum_flux (fourth_cell);
-    Real maximum5 = get_cell_maximum_flux (fifth_cell);
-    Real maximum6 = get_cell_maximum_flux (sixth_cell);
-    Real maximum7 = get_cell_maximum_flux (seventh_cell);
-    Real maximum8 = get_cell_maximum_flux (eighth_cell);
+    double maximum1 = get_cell_maximum_flux (first_cell);
+    double maximum2 = get_cell_maximum_flux (second_cell);
+    double maximum3 = get_cell_maximum_flux (third_cell);
+    double maximum4 = get_cell_maximum_flux (fourth_cell);
+    double maximum5 = get_cell_maximum_flux (fifth_cell);
+    double maximum6 = get_cell_maximum_flux (sixth_cell);
+    double maximum7 = get_cell_maximum_flux (seventh_cell);
+    double maximum8 = get_cell_maximum_flux (eighth_cell);
 
-    Real highest_maximum = maximum1;
+    double highest_maximum = maximum1;
     if (maximum2 > highest_maximum)
         highest_maximum = maximum2;
 
@@ -85,7 +85,7 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell) {
     uint64_t bunch_number = first_bunch_cell->bunch_number;
 
     // New cell variable (Arithmetic mean between all cells of the bunch).
-    Real u = 0;
+    double u = 0;
 
     struct cell_node *auxiliar = first_bunch_cell;
     for (int i = 0; i < 8; i++) {
@@ -126,9 +126,9 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell) {
     if (new_cell->next != 0)
         new_cell->next->previous = new_cell;
 
-    Real aux_center_x = ((struct cell_node *)(new_cell->back))->center_x;
-    Real aux_center_y = ((struct cell_node *)(new_cell->west))->center_y;
-    Real aux_center_z = ((struct cell_node *)(new_cell->south))->center_z;
+    double aux_center_x = ((struct cell_node *)(new_cell->back))->center_x;
+    double aux_center_y = ((struct cell_node *)(new_cell->west))->center_y;
+    double aux_center_z = ((struct cell_node *)(new_cell->south))->center_z;
 
     // New geometric variables.
     new_cell->center_x = (new_cell->center_x + aux_center_x) / 2.0f;
@@ -239,17 +239,17 @@ struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell) 
     struct cell_node *seventh_cell = sixth_cell->next;
     struct cell_node *eighth_cell = seventh_cell->next;
 
-    Real coordinateSum1 = first_cell->center_x + first_cell->center_y + first_cell->center_z;
-    Real coordinateSum2 = second_cell->center_x + second_cell->center_y + second_cell->center_z;
-    Real coordinateSum3 = third_cell->center_x + third_cell->center_y + third_cell->center_z;
-    Real coordinateSum4 = fourth_cell->center_x + fourth_cell->center_y + fourth_cell->center_z;
-    Real coordinateSum5 = fifth_cell->center_x + fifth_cell->center_y + fifth_cell->center_z;
-    Real coordinateSum6 = sixth_cell->center_x + sixth_cell->center_y + sixth_cell->center_z;
-    Real coordinateSum7 =
+    double coordinateSum1 = first_cell->center_x + first_cell->center_y + first_cell->center_z;
+    double coordinateSum2 = second_cell->center_x + second_cell->center_y + second_cell->center_z;
+    double coordinateSum3 = third_cell->center_x + third_cell->center_y + third_cell->center_z;
+    double coordinateSum4 = fourth_cell->center_x + fourth_cell->center_y + fourth_cell->center_z;
+    double coordinateSum5 = fifth_cell->center_x + fifth_cell->center_y + fifth_cell->center_z;
+    double coordinateSum6 = sixth_cell->center_x + sixth_cell->center_y + sixth_cell->center_z;
+    double coordinateSum7 =
         seventh_cell->center_x + seventh_cell->center_y + seventh_cell->center_z;
-    Real coordinateSum8 = eighth_cell->center_x + eighth_cell->center_y + eighth_cell->center_z;
+    double coordinateSum8 = eighth_cell->center_x + eighth_cell->center_y + eighth_cell->center_z;
 
-    Real maximum;
+    double maximum;
     struct cell_node *front_northeast_cell = first_cell;
     maximum = coordinateSum1;
     if (coordinateSum2 > maximum) {
