@@ -13,7 +13,7 @@
 #include <omp.h>
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
-    return (((beta * cm) / dt) * UM2_TO_CM2) * powf (h, 3.0f);
+    return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);
 }
 
 // TODO: make proper initialization and new functions
@@ -163,7 +163,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     printf ("Assembling Monodomain Matrix Begin\n");
     start_stop_watch (&part_mat);
-    set_initial_conditions (the_monodomain_solver, the_grid, the_ode_solver->model_data.initial_v);
+    set_initial_conditions (the_monodomain_solver, the_grid, initial_v);
     set_discretization_matrix (the_monodomain_solver, the_grid);
     total_mat_time = stop_stop_watch (&part_mat);
     printf ("Assembling Monodomain Matrix End\n");

@@ -26,16 +26,15 @@ ADD_SUBDIRECTORY(src/models)
 ADD_SUBDIRECTORY(src/gpu)
 ADD_SUBDIRECTORY(src/utils)
 ADD_SUBDIRECTORY(src/grid)
-#Maibe solver should not be a independent library as it depends on utils and gpu
 ADD_SUBDIRECTORY(src/solvers)
-
+ADD_SUBDIRECTORY(src/ini_parser)
 set(SOURCE_FILES src/main.c)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 
-ADD_DEPENDENCIES(MonoAlg3D CudaLib utils alg solvers)
+ADD_DEPENDENCIES(MonoAlg3D CudaLib utils alg solvers ini_parser)
 
-target_link_libraries(MonoAlg3D alg solvers utils CudaLib ${CMAKE_THREAD_LIBS_INIT} m)
+target_link_libraries(MonoAlg3D alg solvers utils CudaLib ini_parser ${CMAKE_THREAD_LIBS_INIT} m)
 
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )

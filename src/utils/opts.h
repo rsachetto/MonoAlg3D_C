@@ -22,7 +22,7 @@ struct user_args {
     double stim_dur;				/*-d option */
     double final_time;				/*-f option */
     double sideLenght;			    /*-l option */
-    const char *outDirName;	        /*-o option */
+    const char *out_dir_name;	    /*-o option */
     bool adaptive;	                /*-a option */
     int print_rate;	            	/*-p option */
     double start_h;					/*-i option*/
@@ -41,7 +41,7 @@ struct user_args {
     bool use_mouse; 				/*-k option*/
     bool use_human; 				/*-H option*/
     bool use_plain; 				/*-P option*/
-    bool use_plain_with_sphere; 				/*-S option*/
+    bool use_plain_with_sphere;     /*-S option*/
     int method;                     /*-u option*/
     int parallel;                  /*-q option*/
     bool gpu;                       /*-j option*/
@@ -151,7 +151,7 @@ void parse_options(int argc, char**argv, struct user_args *user_args) {
 
     /* Initialize user_args before we get to work. */
     user_args->saveToFile = false;
-    user_args->outDirName = "./";
+    user_args->out_dir_name = "./";
     user_args->sideLenght = 12800.0;
     user_args->adaptive = false;
     user_args->parallel = 0;
@@ -229,7 +229,7 @@ void parse_options(int argc, char**argv, struct user_args *user_args) {
                 user_args->print_rate = atoi(optarg);
                 break;
             case 'o':
-                user_args->outDirName = optarg;
+                user_args->out_dir_name = optarg;
                 break;
             case 'f':
                 user_args->final_time = atof(optarg);

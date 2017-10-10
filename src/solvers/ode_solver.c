@@ -8,7 +8,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
-struct ode_solver* new_ode_solver(const char *model_library_path) {
+struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
     result->sv = NULL;
     result->stim_currents = NULL;
@@ -20,8 +20,7 @@ struct ode_solver* new_ode_solver(const char *model_library_path) {
     result->set_ode_initial_conditions_fn = NULL;
     result->solve_model_ode_cpu_fn = NULL;
 
-    result->model_library_path = strdup(model_library_path);
-    init_ode_solver_with_cell_model(result);
+    //init_ode_solver_with_cell_model(result);
     return result;
 }
 
@@ -42,8 +41,8 @@ void free_ode_solver(struct ode_solver *solver) {
         free(solver->cells_to_solve);
     }
 
-    if(solver->model_library_path) {
-        free(solver->model_library_path);
+    if(solver->model_data.model_library_path) {
+        free(solver->model_data.model_library_path);
     }
 
     if(solver->handle) {
@@ -60,9 +59,15 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
     char *error;
     void *handle = solver->handle;
 
-    printf("Opening %s as model lib\n", solver->model_library_path);
+    if(!solver->model_data.model_library_path) {
+        fprintf(stderr, "model_library_path not provided. Exiting!\n");
+        exit(1);
+    }
 
-    handle = dlopen (solver->model_library_path, RTLD_LAZY);
+
+    printf("Opening %s as model lib\n", solver->model_data.model_library_path);
+
+    handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
     if (!handle) {
         fputs (dlerror(), stderr);
         exit(1);
@@ -71,21 +76,25 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
     solver->get_cell_model_data_fn = dlsym(handle, "init_cell_model_data");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
-        fprintf(stderr, "init_cell_model_data function not found in the provided model library");
-        exit(1);
+        fprintf(stderr, "init_cell_model_data function not found in the provided model library\n");
+        if(!isfinite(solver->model_data.initial_v)) {
+            fprintf(stderr, "intial_v not provided in the [cell_model] of the config file! Exiting\n");
+            exit(1);
+        }
+
     }
 
     solver->set_ode_initial_conditions_fn = dlsym(handle, "set_model_initial_conditions");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
-        fprintf(stderr, "set_model_initial_conditions function not found in the provided model library");
+        fprintf(stderr, "set_model_initial_conditions function not found in the provided model library\n");
         exit(1);
     }
 
     solver->solve_model_ode_cpu_fn = dlsym(handle, "solve_model_ode_cpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
-        fprintf(stderr, "solve_model_ode_cpu function not found in the provided model library");
+        fprintf(stderr, "solve_model_ode_cpu function not found in the provided model library\n");
         exit(1);
     }
 
@@ -97,7 +106,10 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
 void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint64_t num_cells) {
 
-    (*(solver->get_cell_model_data_fn))(&(solver->model_data));
+    bool get_initial_v = !isfinite(solver->model_data.initial_v);
+    bool get_neq = solver->model_data.number_of_ode_equations == -1;
+
+    (*(solver->get_cell_model_data_fn))(&(solver->model_data), get_initial_v, get_neq);
 
     set_ode_initial_conditions_fn_pt soi_fn_pt = solver->set_ode_initial_conditions_fn;
 
@@ -159,4 +171,23 @@ const char* get_ode_method_name(int met) {
         case 1: return "Euler Method with adaptive time step (Formula)";
         default: printf("Invalid Method!!\n");  exit(0);
     }
+}
+
+int parse_ode_ini_file(void* user, const char* section, const char* name, const char* value)
+{
+    struct ode_solver* pconfig = (struct ode_solver*)user;
+    pconfig->model_data.number_of_ode_equations = -1;
+    pconfig->model_data.initial_v = INFINITY;
+
+#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+    if (MATCH("cell_model", "library_file_path")) {
+        pconfig->model_data.model_library_path = strdup(value);
+    } else if (MATCH("cell_model", "initial_v")) {
+        pconfig->model_data.initial_v = (Real)atof(value);
+    } else if (MATCH("cell_model", "num_equations_cell_model")) {
+        pconfig->model_data.number_of_ode_equations = atoi(value);
+    } else {
+        return 0;  /* unknown section/name, error */
+    }
+    return 1;
 }

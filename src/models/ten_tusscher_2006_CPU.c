@@ -13,12 +13,14 @@ struct cell_model_data *new_model_data() {
 
 }
 
-void init_cell_model_data(struct cell_model_data* cell_model) {
+void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
 
     assert(cell_model);
 
-    cell_model->initial_v = -85.23f;
-    cell_model->number_of_ode_equations = 19;
+    if(get_initial_v)
+        cell_model->initial_v = -85.23f;
+    if(get_neq)
+        cell_model->number_of_ode_equations = 19;
 
 }
 

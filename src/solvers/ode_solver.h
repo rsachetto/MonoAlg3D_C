@@ -14,7 +14,7 @@
 
 typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real , Real , Real , Real , int , void *);
 typedef void (*set_ode_initial_conditions_fn_pt)(Real *);
-typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*);
+typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 
 struct ode_solver {
 
@@ -24,7 +24,6 @@ struct ode_solver {
     Real min_dt;
     Real rel_tol;
     Real abs_tol;
-    char *model_library_path;
 
     uint8_t method;
 
@@ -53,21 +52,16 @@ struct ode_solver {
     solve_model_ode_cpu_fn_pt solve_model_ode_cpu_fn;
 
 
-    //Use dinamic libraries to load from a .so model file
-        //https://www.dwheeler.com/program-library/Program-Library-HOWTO/x172.html
-    //https://www.cprogramming.com/tutorial/shared-libraries-linux-gcc.html
-
-
 };
 
 void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint64_t num_volumes);
 const char* get_ode_method_name(int met);
 
-struct ode_solver* new_ode_solver(const char *model_library_path);
+struct ode_solver* new_ode_solver();
 void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
 void solve_odes_cpu(struct ode_solver *the_ode_solver, uint64_t  n_active, Real cur_time, int num_steps);
-
+int parse_ode_ini_file(void* user, const char* section, const char* name, const char* value);
 
 
 #endif //MONOALG3D_EDO_SOLVER_H

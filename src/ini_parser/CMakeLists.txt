@@ -1,0 +1,3 @@
+set(SOURCE_FILES_INI ini.c ini.h)
+
+ADD_LIBRARY(ini_parser STATIC ${SOURCE_FILES_INI})
