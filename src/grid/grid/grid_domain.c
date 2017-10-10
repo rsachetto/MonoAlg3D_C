@@ -240,7 +240,7 @@ void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_fi
         exit (10);
     }
 
-    initialize_and_construct_grid (the_grid, 6400.0, the_grid->num_cell_neighbours);
+    initialize_and_construct_grid (the_grid, 6400.0, 7);
 
     refine_grid (the_grid, 5);
 

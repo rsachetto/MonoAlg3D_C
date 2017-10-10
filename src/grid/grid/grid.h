@@ -27,6 +27,7 @@ struct grid {
     struct cell_node* *active_cells;
 
     bool init_ode;
+    bool adaptive;
 
 };
 

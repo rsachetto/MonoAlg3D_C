@@ -117,7 +117,7 @@ void set_grid_flux(struct grid *the_grid) {
     struct cell_node *grid_cell;
 
 
-    uint64_t active_cells = the_grid->number_of_cells;
+    uint64_t active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
 

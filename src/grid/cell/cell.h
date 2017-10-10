@@ -18,7 +18,7 @@
 
 struct element {
     double value;
-    uint64_t column; // Column of the matrix to which this element belongs.
+    uint32_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
 };
 
@@ -31,8 +31,6 @@ struct cell_node {
     struct basic_cell_data cell_data; // DO NOT CHANGE THIS STRUCT POSITION
 
     bool active;
-
-    uint8_t max_elements_per_line;
 
     uint64_t bunch_number; // Bunch identifier
 
@@ -50,7 +48,7 @@ struct cell_node {
 
     // Indicates position of cell on grid according to  ordering provided by
     // the modified Hilbert curve.
-    uint64_t grid_position;
+    uint32_t grid_position;
 
     // Variable used to storage the form of the  Hilbert curve in the  bunch
     // created when this cell is refined.
@@ -139,11 +137,11 @@ void set_transition_node_data (struct transition_node *the_transtion_node, uint1
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);
 
-void set_cell_node_data (struct cell_node *the_cell, double face_length, double half_face_length,
-                         uint64_t bunch_number, void *east, void *north, void *west, void *south,
-                         void *front, void *back, void *previous, void *next,
-                         uint64_t grid_position, uint8_t hilbert_shape_number, double center_x,
-                         double center_y, double center_z);
+void set_cell_node_data(struct cell_node *the_cell, double face_length, double half_face_length,
+                        uint64_t bunch_number, void *east, void *north, void *west, void *south,
+                        void *front, void *back, void *previous, void *next,
+                        uint32_t grid_position, uint8_t hilbert_shape_number, double center_x,
+                        double center_y, double center_z);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
 double get_cell_maximum_flux (struct cell_node *the_cell);

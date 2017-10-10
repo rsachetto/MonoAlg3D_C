@@ -19,20 +19,21 @@ int main(int argc, char **argv) {
     struct output_utils *output_info;
 
     Real dt = 0.02f;
-    double start_h = 500.0f;
-    double max_h = 500.0f;
+    double start_h = 200.0f;
+    double max_h = 400.0f;
     double min_h = start_h;
 
     the_grid = (struct grid*)malloc(sizeof(struct grid));
     edp_solver = (struct monodomain_solver*)malloc(sizeof(struct monodomain_solver));
 
-    output_info = new_output_utils(100, NULL);
+    output_info = new_output_utils(1, NULL);
 
     ode_solver = new_ode_solver();
     if (ini_parse("example_configs/tenTusscher_config_example.ini", parse_ode_ini_file, ode_solver) < 0) {
         printf("Can't load 'tenTusscher_config_example.ini'\n");
         return 1;
     }
+
     init_ode_solver_with_cell_model(ode_solver);
 
     ode_solver->gpu = false;
@@ -48,17 +49,20 @@ int main(int argc, char **argv) {
     edp_solver->use_jacobi = true;
     edp_solver->num_threads = 4;
     edp_solver->dt = dt;
-    edp_solver->adaptive = false;
     edp_solver->start_h = start_h;
     edp_solver->min_h = min_h;
     edp_solver->max_h = max_h;
     edp_solver->final_time = 2.0;
     edp_solver->abort_on_no_activity = false;
     edp_solver->use_jacobi = true;
+    edp_solver->refinement_bound = 0.11;
+    edp_solver->derefinement_bound = 0.10;
+
 
     edp_solver->max_iterations = 200;
 
     initialize_grid_with_benchmark_mesh(the_grid, start_h);
+    the_grid->adaptive = true;
 
     solve_monodomain(the_grid, edp_solver, ode_solver, output_info);
 

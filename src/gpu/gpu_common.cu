@@ -8,7 +8,6 @@
 
 
 #include <stdio.h>
-#include <cuda_runtime.h>
 
 extern "C" void init_cuda_device(int device) {
     printf("Using GPU Ten Tusscher 3 Model\n");

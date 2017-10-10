@@ -97,34 +97,31 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *fre
     // Front northeast node of the bunch becomes the derefined node.
     struct cell_node *new_cell = get_front_northeast_cell (first_bunch_cell);
 
+    if(free_sv_positions) {
 
-    // TODO: @Incomplete: gpu related code
+        //Free Sv Map positions//////////////////////////////////
+        struct cell_node *w = (struct cell_node *) new_cell->west;
+        struct cell_node *b = (struct cell_node *) new_cell->back;
+        struct cell_node *s = (struct cell_node *) new_cell->south;
 
-    //Free Sv Map positions
-     //free_sv_positions.push_back(static_cast<CellNode * >(new_cell->west)->gpuSVPosition);
-    uint32_vector_push_back(free_sv_positions, ((struct cell_node*)new_cell->west)->sv_position);
+        struct cell_node *wb = (struct cell_node *) w->back;
+        struct cell_node *ws = (struct cell_node *) w->south;
+        struct cell_node *sb = (struct cell_node *) s->back;
 
-    /*
-  free_sv_positions.push_back(static_cast<CellNode * >(new_cell->back)->gpuSVPosition);
-
-
-  free_sv_positions.push_back(static_cast<CellNode * >(new_cell->south)->gpuSVPosition);
+        struct cell_node *wsb = ws->back;
 
 
-  free_sv_positions.push_back(
-          static_cast<CellNode * >(static_cast<CellNode *
-  >(new_cell->west)->back)->gpuSVPosition);
-  free_sv_positions.push_back(
-          static_cast<CellNode * >(static_cast<CellNode *
-  >(new_cell->west)->south)->gpuSVPosition);
-  free_sv_positions.push_back(
-          static_cast<CellNode * >(static_cast<CellNode *
-  >(new_cell->south)->back)->gpuSVPosition);
-  free_sv_positions.push_back(static_cast<CellNode * >(
-          static_cast<CellNode * >(static_cast<CellNode *
-  >(new_cell->west)->south)->back)->gpuSVPosition);
-  */
+        uint32_vector_push_back(free_sv_positions, w->sv_position);
+        uint32_vector_push_back(free_sv_positions, b->sv_position);
+        uint32_vector_push_back(free_sv_positions, s->sv_position);
 
+        uint32_vector_push_back(free_sv_positions, wb->sv_position);
+        uint32_vector_push_back(free_sv_positions, ws->sv_position);
+        uint32_vector_push_back(free_sv_positions, sb->sv_position);
+        uint32_vector_push_back(free_sv_positions, wsb->sv_position);
+        /////////////////////////////////////////////////////////////
+
+    }
     new_cell->previous = cell_before_bunch;
     new_cell->next = cell_after_bunch;
 

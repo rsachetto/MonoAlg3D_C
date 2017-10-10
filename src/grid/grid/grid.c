@@ -212,7 +212,7 @@ void order_grid_cells (struct grid *the_grid) {
 
     the_grid->active_cells = (struct cell_node **)malloc (sizeof (struct cell_node *) * the_grid->number_of_cells);
 
-    uint64_t counter = 0;
+    uint32_t counter = 0;
     while (grid_cell != 0) {
         if (grid_cell->active) {
 
@@ -313,7 +313,7 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
             cell_elements = grid_cell->elements;
             element = cell_elements[0];
 
-            fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.15lf\n",
+            fprintf(output_file, "%" PRIu32 " " "%" PRIu32 " %.15lf\n",
                     grid_cell->grid_position + 1,
                     (element.column) + 1,
                     element.value);
@@ -323,7 +323,7 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
             while ((el_count < max_el) && (cell_elements[el_count].cell != NULL)) {
 
                 element = grid_cell->elements[el_count];
-                fprintf(output_file, "%" PRIu64 " " "%" PRIu64 " %.15lf\n",
+                fprintf(output_file, "%" PRIu32 " " "%" PRIu32 " %.15lf\n",
                         grid_cell->grid_position + 1,
                         (element.column) + 1,
                         element.value);

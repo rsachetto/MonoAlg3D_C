@@ -129,11 +129,12 @@ void set_transition_node_data(struct transition_node *the_transtion_node,  uint1
     the_transtion_node->quadruple_connector4 = quadruple_connector4;
 }
 
-        void set_cell_node_data(struct cell_node *the_cell, double face_length, double half_face_length, uint64_t bunch_number,
-                        void *east, void *north, void *west, void *south, void *front, void *back,
-                        void *previous, void *next,
-                        uint64_t grid_position, uint8_t hilbert_shape_number,
-                        double center_x, double center_y, double center_z)
+        void set_cell_node_data(struct cell_node *the_cell, double face_length, double half_face_length,
+                                uint64_t bunch_number,
+                                void *east, void *north, void *west, void *south, void *front, void *back,
+                                void *previous, void *next,
+                                uint32_t grid_position, uint8_t hilbert_shape_number,
+                                double center_x, double center_y, double center_z)
 {
     the_cell->face_length = face_length;
     the_cell->half_face_length = half_face_length;
@@ -334,21 +335,21 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
 
 double get_cell_maximum_flux(struct cell_node* the_cell) {
 
-    double maximumFlux = fabsf(the_cell->east_flux);
-    if( fabsf(the_cell->north_flux) > maximumFlux )
-        maximumFlux = fabsf(the_cell->north_flux);
+    double maximumFlux = fabs(the_cell->east_flux);
+    if( fabs(the_cell->north_flux) > maximumFlux )
+        maximumFlux = fabs(the_cell->north_flux);
 
-    if( fabsf(the_cell->south_flux) > maximumFlux )
-        maximumFlux = fabsf(the_cell->south_flux);
+    if( fabs(the_cell->south_flux) > maximumFlux )
+        maximumFlux = fabs(the_cell->south_flux);
 
-    if( fabsf(the_cell->west_flux) > maximumFlux )
-        maximumFlux = fabsf(the_cell->west_flux);
+    if( fabs(the_cell->west_flux) > maximumFlux )
+        maximumFlux = fabs(the_cell->west_flux);
 
-    if( fabsf(the_cell->front_flux) > maximumFlux )
-        maximumFlux = fabsf(the_cell->front_flux);
+    if( fabs(the_cell->front_flux) > maximumFlux )
+        maximumFlux = fabs(the_cell->front_flux);
 
-    if( fabsf(the_cell->back_flux) > maximumFlux )
-        maximumFlux = fabsf(the_cell->back_flux);
+    if( fabs(the_cell->back_flux) > maximumFlux )
+        maximumFlux = fabs(the_cell->back_flux);
 
     return maximumFlux;
 }

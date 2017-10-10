@@ -3,10 +3,12 @@
 //
 
 #include "ode_solver.h"
+#include "../utils/vector/uint32_vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <omp.h>
 
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
@@ -135,7 +137,6 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint6
     }
 }
 
-//TODO: maybe we should only accept the sv and ditch the cells_to_solve?
 void solve_odes_cpu(struct ode_solver *the_ode_solver, uint64_t  n_active, Real cur_time, int num_steps) {
 
     solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
@@ -163,6 +164,32 @@ void solve_odes_cpu(struct ode_solver *the_ode_solver, uint64_t  n_active, Real 
     }
 }
 
+
+void update_state_vectors_after_refinement(Real *sv, uint32_vector *refined_this_step, int neq) {
+
+    size_t num_refined_cells = uint32_vector_size(refined_this_step);
+    Real *sv_src, *sv_dst;
+
+    #pragma omp parallel for private(sv_src, sv_dst)
+    for(size_t i = 0; i < num_refined_cells; i++) {
+
+        size_t index_id = i*8;
+
+        if(index_id < num_refined_cells) {
+            uint32_t index = uint32_vector_at(refined_this_step, index_id);
+            sv_src = &sv[index];
+
+            for(int j = 1; j < 8; j++) {
+                sv_dst = &sv[index_id+j];
+                memcpy(sv_dst, sv_src, neq*sizeof(Real));
+            }
+
+        }
+
+    }
+
+
+}
 
 const char* get_ode_method_name(int met) {
 
