@@ -50,9 +50,8 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
 
 void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct grid *the_grid);
 
-void fill_discretization_matrix_elements (struct monodomain_solver *the_solver,
-                                          struct cell_node *grid_cell, void *neighbor_grid_cell,
-                                          char direction);
+void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, struct cell_node *grid_cell,
+                                         void *neighbor_grid_cell, char direction, uint8_t max_elements);
 
 void set_discretization_matrix (struct monodomain_solver *the_solver, struct grid *the_grid);
 

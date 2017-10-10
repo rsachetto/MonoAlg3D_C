@@ -19,14 +19,14 @@ int main(int argc, char **argv) {
     struct output_utils *output_info;
 
     Real dt = 0.02f;
-    double start_h = 200.0f;
-    double max_h = 400.0f;
+    double start_h = 500.0f;
+    double max_h = 1000.0f;
     double min_h = start_h;
 
     the_grid = (struct grid*)malloc(sizeof(struct grid));
     edp_solver = (struct monodomain_solver*)malloc(sizeof(struct monodomain_solver));
 
-    output_info = new_output_utils(1, NULL);
+    output_info = new_output_utils(1, "./tmp");
 
     ode_solver = new_ode_solver();
     if (ini_parse("example_configs/tenTusscher_config_example.ini", parse_ode_ini_file, ode_solver) < 0) {

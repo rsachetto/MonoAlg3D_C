@@ -69,7 +69,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     omp_set_num_threads (np);
 #endif
 
-    double initial_v;
     bool redo_matrix = false;
     //    Real *sv = NULL;
     //    size_t pitch = 0;
@@ -107,7 +106,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     double stim_dur = the_ode_solver->stim_duration;
     int edo_method = the_ode_solver->method;
     double dt_edo = the_ode_solver->min_dt;
-    int neq = the_ode_solver->model_data.number_of_ode_equations;
 
     if (gpu) {
         init_cuda_device (the_ode_solver->gpu_id);
@@ -122,7 +120,9 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     printf ("Setting ODE's initial conditions\n");
     set_ode_initial_conditions_for_all_volumes (the_ode_solver, the_grid->num_active_cells);
-    initial_v = the_ode_solver->model_data.initial_v;
+
+    double initial_v = the_ode_solver->model_data.initial_v;
+    int neq = the_ode_solver->model_data.number_of_ode_equations;
 
     if (the_monodomain_solver->max_iterations > 0) {
         max_its = the_monodomain_solver->max_iterations;
@@ -527,6 +527,7 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
 
     uint64_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
+    uint8_t max_elements = the_grid->num_cell_neighbours;
 
     initialize_diagonal_elements (the_solver, the_grid);
 
@@ -534,22 +535,22 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
     for (int i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->south, 's', max_elements);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->north, 'n', max_elements);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->east, 'e', max_elements);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->west, 'w', max_elements);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->front, 'f', max_elements);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->back, 'b', max_elements);
     }
 }
 
@@ -584,8 +585,8 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
     }
 }
 
-void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, struct cell_node *grid_cell,
-                                          void *neighbour_grid_cell, char direction) {
+void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, struct cell_node *grid_cell,
+                                         void *neighbour_grid_cell, char direction, uint8_t max_elements) {
 
     uint32_t position;
     bool has_found;
@@ -664,24 +665,18 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 
             struct element *cell_elements = grid_cell->elements;
             position = black_neighbor_cell->grid_position;
-            // Descobrimos a coluna que temos que preencher com o vizinho
-            struct element element;
 
             lock_cell_node (grid_cell);
 
             int el_counter = 1;
-            element = cell_elements[el_counter];
 
-            // TODO: maybe we should check for the el_counter size here
-            while (element.cell != NULL && element.column != position) {
-                element = cell_elements[++el_counter];
+            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
+                   cell_elements[el_counter].column != position) {
+                el_counter++;
             }
 
-       //     printf("%d\n", el_counter);
-           // assert (el_counter < 7);
-
             // TODO: Cada elemento pode ter um sigma diferente
-            if (element.cell == NULL) {
+            if (el_counter < max_elements && cell_elements[el_counter].cell == NULL) {
 
                 struct element new_element;
                 new_element.column = position;
@@ -718,15 +713,14 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             lock_cell_node (black_neighbor_cell);
 
             el_counter = 1;
-            element = cell_elements[el_counter];
+            //element = cell_elements[el_counter];
 
-            while (el_counter && element.cell != NULL && element.column != position) {
-                element = cell_elements[++el_counter];
+            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
+                    cell_elements[el_counter].column != position) {
+                el_counter++;
             }
 
-            assert (el_counter < 7);
-
-            if (element.cell == NULL) {
+            if (el_counter < max_elements && cell_elements[el_counter].cell == NULL) {
 
                 struct element new_element;
                 new_element.column = position;
