@@ -26,8 +26,6 @@ int main(int argc, char **argv) {
     the_grid = (struct grid*)malloc(sizeof(struct grid));
     edp_solver = (struct monodomain_solver*)malloc(sizeof(struct monodomain_solver));
 
-
-
     output_info = new_output_utils(100, NULL);
 
     ode_solver = new_ode_solver();
@@ -54,7 +52,7 @@ int main(int argc, char **argv) {
     edp_solver->start_h = start_h;
     edp_solver->min_h = min_h;
     edp_solver->max_h = max_h;
-    edp_solver->final_time = 10.0;
+    edp_solver->final_time = 2.0;
     edp_solver->abort_on_no_activity = false;
     edp_solver->use_jacobi = true;
 
@@ -69,6 +67,7 @@ int main(int argc, char **argv) {
     free_ode_solver(ode_solver);
 
     free(edp_solver);
+    free(options);
 
     return 0;
 }

@@ -277,8 +277,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
                     update_cells_to_solve (the_grid, the_ode_solver);
 
                     // TODO: We need the decide how to handle this function
-                    // if (refinedThisStep.size () > 0) {
-                    //    updateAfterRefinement (sv, refinedThisStep.size (), &refinedThisStep[0],
+                    // if (refined_this_step.size () > 0) {
+                    //    updateAfterRefinement (sv, refined_this_step.size (), &refined_this_step[0],
                     // pitch, edo_method);
                     //}
                 }

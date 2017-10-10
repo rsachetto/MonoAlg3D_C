@@ -3,6 +3,7 @@
 //
 
 #include "grid.h"
+#include "../../utils/vector/uint32_vector.h"
 
 /**
  * Decides if the grid should be refined by traversing the whole grid, according
@@ -29,9 +30,10 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
     bool refined_once = false;
     set_grid_flux(the_grid);
 
+    uint32_vector *refined = the_grid->refined_this_step;
+    uint32_vector *free_sv_pos = the_grid->free_sv_positions;
 
-    //TODO: we have to manage this vector of refined cells
-    //refinedThisStep.clear();
+    uint32_vector_clear(refined);
 
 
     while( continue_refining ) {
@@ -47,7 +49,7 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
             {
                 auxiliar_grid_cell = grid_cell;
                 grid_cell = grid_cell->next;
-                refine_cell(auxiliar_grid_cell);
+                refine_cell(auxiliar_grid_cell, free_sv_pos, refined);
                 the_grid->number_of_cells += 7;
                 continue_refining = true;
                 refined_once = true;
@@ -71,8 +73,10 @@ void refine_grid(struct grid* the_grid, int num_steps) {
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
 
-    //TODO: reset the refined cells
-    //refinedThisStep.clear();
+    uint32_vector *refined = the_grid->refined_this_step;
+    uint32_vector *free_sv_pos = the_grid->free_sv_positions;
+
+    uint32_vector_clear(refined);
 
     for(int i = 0; i < num_steps; i++) {
 
@@ -81,7 +85,7 @@ void refine_grid(struct grid* the_grid, int num_steps) {
             if (grid_cell->can_change && grid_cell->active) {
                 auxiliar_grid_cell = grid_cell;
                 grid_cell = grid_cell->next;
-                refine_cell(auxiliar_grid_cell);
+                refine_cell(auxiliar_grid_cell, NULL, NULL);
                 the_grid->number_of_cells += 7;
             } else {
                 grid_cell = grid_cell->next;
@@ -103,7 +107,7 @@ void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number ) {
         grid_cell = grid_cell->next;
     }
 
-    refine_cell( grid_cell );
+    refine_cell( grid_cell, NULL ,NULL);
     the_grid->number_of_cells += 7;
 
 }

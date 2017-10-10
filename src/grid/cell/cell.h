@@ -9,7 +9,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../utils/constants.h"
+#include "../../solvers/constants.h"
+#include "../../utils/vector/int_vector.h"
+#include "../../utils/vector/uint32_vector.h"
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
@@ -75,20 +77,19 @@ struct cell_node {
    method.
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
-    double Ax; /* Element of vector Ax = b associated to this cell. Also plays the role of Ap.*/
-    double r;  /* Element of the vector r = b - Ax associated to this cell. */
-    double p;  /* Element of the search direction vector in the conjugate gradient algorithm. */
+    double Ax; /* Element of int_vector Ax = b associated to this cell. Also plays the role of Ap.*/
+    double r;  /* Element of the int_vector r = b - Ax associated to this cell. */
+    double p;  /* Element of the search direction int_vector in the conjugate gradient algorithm. */
     double p1; /* p's upgrade in the conjugate gradient algorithm. */
     double z;  // Jacobi preconditioner
-    double b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
+    double b;  /* In Ax = b, corresponds to the element in int_vector b associated to this cell. */
 
     pthread_mutex_t updating;
 
     // Variables used by some applications of partial differential equations.
     double v;
 
-    //TODO: @Check. Do we need to be this big??
-    uint64_t sv_position;
+    uint32_t sv_position;
     double face_length;
     bool can_change;
 
@@ -149,20 +150,22 @@ double get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
                             double face_length, double half_face_length, double center_x,
-                            double center_y, double center_z, uint64_t bunch_number);
+                            double center_y, double center_z, uint64_t bunch_number,
+                            uint32_vector *free_sv_positions, uint32_vector *refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
                                        struct cell_node *other_node, char direction);
 
 void simplify_refinement (struct transition_node *transition_node);
-void refine_cell (struct cell_node *cell);
+void refine_cell (struct cell_node *cell, uint32_vector *free_sv_positions,
+                  uint32_vector *refined_this_step);
 
 bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
 void simplify_deref (struct transition_node *transition_node);
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell);
+void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *free_sv_positions);
 
 struct element* new_element_array(uint8_t max_elements);
 void init_element(struct element* el);

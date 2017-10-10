@@ -3,8 +3,10 @@
 //
 
 #include "cell.h"
+#include "../../utils/vector/int_vector.h"
+#include "../../utils/vector/uint32_vector.h"
 
-void refine_cell( struct cell_node *cell)  {
+void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint32_vector *refined_this_step)  {
     if( cell == NULL ) {
         fprintf(stderr, "refine_cell(): Parameter cell is NULL. Exiting");
         exit(10);
@@ -50,9 +52,8 @@ void refine_cell( struct cell_node *cell)  {
     front_northeast_sub_cell->center_z = cell_center_z + cell_quarter_side;
     front_northeast_sub_cell->bunch_number       = old_bunch_number * 10 + 1;
 
-
-    //TODO: @Implement GPU code not implemented
-    //refinedThisStep.push_back(front_northeast_sub_cell->gpuSVPosition);
+    if(refined_this_step != NULL)
+        uint32_vector_push_back(refined_this_step, front_northeast_sub_cell->sv_position);
 
     // Creation of back Northeast node.
     back_northeast_sub_cell = new_cell_node();
@@ -63,7 +64,7 @@ void refine_cell( struct cell_node *cell)  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y + cell_quarter_side,
                           cell_center_z + cell_quarter_side,
-                          old_bunch_number * 10 + 2);
+                          old_bunch_number * 10 + 2, free_sv_positions, refined_this_step);
 
 
     // Creation of back Northwest node.
@@ -75,7 +76,7 @@ void refine_cell( struct cell_node *cell)  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z + cell_quarter_side,
-                          old_bunch_number * 10 + 3);
+                          old_bunch_number * 10 + 3, free_sv_positions, refined_this_step);
 
     // Creation of front Northwest node.
     front_northwest_sub_cell = new_cell_node();
@@ -86,7 +87,7 @@ void refine_cell( struct cell_node *cell)  {
                           cell_center_x + cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z + cell_quarter_side,
-                          old_bunch_number * 10 + 4);
+                          old_bunch_number * 10 + 4, free_sv_positions, refined_this_step);
 
 
     // Creation of front Southwest node.
@@ -98,7 +99,7 @@ void refine_cell( struct cell_node *cell)  {
                           cell_center_x + cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 5);
+                          old_bunch_number * 10 + 5, free_sv_positions, refined_this_step);
 
 
     // Creation of back Southwest node.
@@ -110,7 +111,7 @@ void refine_cell( struct cell_node *cell)  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y - cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 6);
+                          old_bunch_number * 10 + 6, free_sv_positions, refined_this_step);
 
 
 
@@ -123,7 +124,7 @@ void refine_cell( struct cell_node *cell)  {
                           cell_center_x - cell_quarter_side,
                           cell_center_y + cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 7);
+                          old_bunch_number * 10 + 7, free_sv_positions, refined_this_step);
 
 
     // Creation of front Southeast node.
@@ -135,7 +136,7 @@ void refine_cell( struct cell_node *cell)  {
                           cell_center_x + cell_quarter_side,
                           cell_center_y + cell_quarter_side,
                           cell_center_z - cell_quarter_side,
-                          old_bunch_number * 10 + 8);
+                          old_bunch_number * 10 + 8, free_sv_positions, refined_this_step);
 
     // west transition node.
     west_transition_node = new_transition_node();
@@ -1170,7 +1171,8 @@ void simplify_refinement( struct transition_node *transition_node ) {
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
                            double face_length, double half_face_length,
                            double center_x, double center_y, double center_z,
-                           uint64_t  bunch_number) {
+                           uint64_t  bunch_number, uint32_vector *free_sv_positions,
+                           uint32_vector *refined_this_step) {
 
 
     the_cell->cell_data.level = other_cell->cell_data.level;
@@ -1186,12 +1188,11 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
     the_cell->center_z = center_z;
     the_cell->bunch_number = bunch_number;
 
-        //TODO: @Implement this code to deal with cell refinement as the ode solver is separated related code
-        /*
-       the_cell->gpuSVPosition = freeSVPositions.back();
-       freeSVPositions.pop_back();
-       refinedThisStep.push_back(the_cell->gpuSVPosition);
-        */
+    if(free_sv_positions != NULL)
+        the_cell->sv_position = uint32_vector_pop_back(free_sv_positions);
+
+    if(refined_this_step != NULL)
+        uint32_vector_push_back(refined_this_step, the_cell->sv_position);
 
 }
 

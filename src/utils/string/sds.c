@@ -1022,7 +1022,7 @@ sds *sdssplitargs(const char *line, int *argc) {
                 }
                 if (*p) p++;
             }
-            /* add the token to the vector */
+            /* add the token to the int_vector */
             vector = s_realloc(vector,((*argc)+1)*sizeof(char*));
             vector[*argc] = current;
             (*argc)++;

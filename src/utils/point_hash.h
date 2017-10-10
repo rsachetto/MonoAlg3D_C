@@ -5,7 +5,7 @@
 #ifndef MONOALG3D_HASH_H
 #define MONOALG3D_HASH_H
 
-#include "constants.h"
+#include "../solvers/constants.h"
 
 struct point_3d {
     double x, y, z;

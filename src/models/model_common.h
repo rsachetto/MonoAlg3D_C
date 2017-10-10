@@ -8,7 +8,7 @@
 #ifndef MONOALG3D_MODEL_COMMON_H
 #define MONOALG3D_MODEL_COMMON_H
 
-#include "../utils/constants.h"
+#include "../solvers/constants.h"
 #include <stdbool.h>
 
 struct cell_model_data {

@@ -6,6 +6,8 @@
 #define MONOALG3D_GRID_H
 
 #include "../cell/cell.h"
+#include "../../utils/vector/int_vector.h"
+#include "../../utils/vector/uint32_vector.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,12 +21,9 @@ struct grid {
     uint64_t num_active_cells;
     uint8_t num_cell_neighbours;
 
-    //TODO: @Incomplete
-    /*
-    vector <int> freeSVPositions;
+    uint32_vector *free_sv_positions;
+    uint32_vector *refined_this_step;
 
-    vector<int> refinedThisStep;
-*/
     struct cell_node* *active_cells;
 
     bool init_ode;

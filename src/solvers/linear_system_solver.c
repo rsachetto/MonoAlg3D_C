@@ -24,7 +24,7 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
     int max_el = the_grid->num_cell_neighbours;
 
     //__________________________________________________________________________
-    //Computes vector A*x, residue r = b - Ax, scalar rTr = r^T * r and
+    //Computes int_vector A*x, residue r = b - Ax, scalar rTr = r^T * r and
     //sets initial search direction p.
 
     rTr = 0.0;
@@ -137,7 +137,7 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
                 break;
             }
             //__________________________________________________________________
-            //Computes vector p1 = r1 + beta*p and uses it to upgrade p.
+            //Computes int_vector p1 = r1 + beta*p and uses it to upgrade p.
             #pragma omp parallel for
             for (int i = 0; i < num_active_cells; i++) {
                 if(use_jacobi) {

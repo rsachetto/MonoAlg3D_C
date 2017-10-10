@@ -68,7 +68,7 @@ bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_b
     return derefinement_condition;
 }
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell) {
+void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *free_sv_positions) {
     if (first_bunch_cell == 0) {
         fprintf (stderr, "derefine_cell_bunch: Parameter first_bunch_cell is NULL. Exiting!!");
         exit (10);
@@ -99,24 +99,31 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell) {
 
 
     // TODO: @Incomplete: gpu related code
-    /*
+
     //Free Sv Map positions
-    freeSVPositions.push_back(static_cast<CellNode * >(new_cell->west)->gpuSVPosition);
-    freeSVPositions.push_back(static_cast<CellNode * >(new_cell->back)->gpuSVPosition);
-    freeSVPositions.push_back(static_cast<CellNode * >(new_cell->south)->gpuSVPosition);
-    freeSVPositions.push_back(
-            static_cast<CellNode * >(static_cast<CellNode *
-    >(new_cell->west)->back)->gpuSVPosition);
-    freeSVPositions.push_back(
-            static_cast<CellNode * >(static_cast<CellNode *
-    >(new_cell->west)->south)->gpuSVPosition);
-    freeSVPositions.push_back(
-            static_cast<CellNode * >(static_cast<CellNode *
-    >(new_cell->south)->back)->gpuSVPosition);
-    freeSVPositions.push_back(static_cast<CellNode * >(
-            static_cast<CellNode * >(static_cast<CellNode *
-    >(new_cell->west)->south)->back)->gpuSVPosition);
-    */
+     //free_sv_positions.push_back(static_cast<CellNode * >(new_cell->west)->gpuSVPosition);
+    uint32_vector_push_back(free_sv_positions, ((struct cell_node*)new_cell->west)->sv_position);
+
+    /*
+  free_sv_positions.push_back(static_cast<CellNode * >(new_cell->back)->gpuSVPosition);
+
+
+  free_sv_positions.push_back(static_cast<CellNode * >(new_cell->south)->gpuSVPosition);
+
+
+  free_sv_positions.push_back(
+          static_cast<CellNode * >(static_cast<CellNode *
+  >(new_cell->west)->back)->gpuSVPosition);
+  free_sv_positions.push_back(
+          static_cast<CellNode * >(static_cast<CellNode *
+  >(new_cell->west)->south)->gpuSVPosition);
+  free_sv_positions.push_back(
+          static_cast<CellNode * >(static_cast<CellNode *
+  >(new_cell->south)->back)->gpuSVPosition);
+  free_sv_positions.push_back(static_cast<CellNode * >(
+          static_cast<CellNode * >(static_cast<CellNode *
+  >(new_cell->west)->south)->back)->gpuSVPosition);
+  */
 
     new_cell->previous = cell_before_bunch;
     new_cell->next = cell_after_bunch;

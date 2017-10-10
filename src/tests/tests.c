@@ -4,6 +4,7 @@
 #include "../solvers/linear_system_solver.h"
 #include "../solvers/ode_solver.h"
 #include "../utils/output_utils.h"
+#include "../utils/vector/int_vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -268,10 +269,32 @@ void run_cg (bool jacobi) {
     fclose (B);
 }
 
-Test (misc, cg_jacobi) {
+Test (solvers, cg_jacobi) {
     run_cg (true);
 }
 
-Test (misc, cg_no_jacobi) {
+Test (solvers, cg_no_jacobi) {
     run_cg (false);
+}
+
+Test (utils, vector) {
+
+    int_vector *v;
+
+    v = int_vector_create(1);
+
+    cr_assert_eq(v->size ,0);
+    cr_assert_eq(v->capacity ,1);
+
+    int_vector_insert(v, 2, 2);
+
+    cr_assert_eq(int_vector_at(v, 2),0); //error, inserting after size
+
+    int_vector_push_back(v, 2);
+    cr_assert_eq(v->size ,1);
+
+    cr_assert_eq(int_vector_at(v, 0),2);
+
+
+
 }

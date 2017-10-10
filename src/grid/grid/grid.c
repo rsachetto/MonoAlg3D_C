@@ -3,7 +3,7 @@
 //
 
 #include "grid.h"
-#include "../../utils/constants.h"
+#include "../../solvers/constants.h"
 #include <inttypes.h>
 void initialize_and_construct_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
     initialize_grid (the_grid, side_length, num_cell_neighbours);
@@ -19,6 +19,9 @@ void initialize_grid (struct grid *the_grid, double side_length, uint8_t num_cel
     the_grid->init_ode = false;
     the_grid->active_cells = NULL;
     the_grid->num_cell_neighbours = num_cell_neighbours;
+    the_grid->refined_this_step = uint32_vector_create(128);
+    the_grid->free_sv_positions = uint32_vector_create(128);
+
 }
 
 void construct_grid (struct grid *the_grid) {
@@ -258,13 +261,34 @@ void clean_grid (struct grid *the_grid) {
 
         }
     }
-    //free (grid_cell);
+
+
+
+    if (the_grid->refined_this_step) {
+        uint32_vector_clear(the_grid->refined_this_step);
+    }
+
+    if (the_grid->free_sv_positions) {
+        uint32_vector_clear(the_grid->free_sv_positions);
+    }
+
 }
 
 void clean_and_free_grid(struct grid* the_grid) {
     clean_grid(the_grid);
+
     if (the_grid->active_cells) {
         free (the_grid->active_cells);
+    }
+
+    if (the_grid->refined_this_step) {
+        uint32_vector_clear_and_free_data(the_grid->refined_this_step);
+        free (the_grid->refined_this_step);
+    }
+
+    if (the_grid->free_sv_positions) {
+        uint32_vector_clear_and_free_data(the_grid->free_sv_positions);
+        free (the_grid->free_sv_positions);
     }
 
     free (the_grid);
