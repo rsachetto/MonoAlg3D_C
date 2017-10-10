@@ -67,7 +67,7 @@ void set_spatial_stim(struct grid* the_grid, struct ode_solver *the_ode_solver);
 void solve_odes(struct ode_solver* the_ode_solver, struct grid* the_grid, Real cur_time, int num_steps, bool adaptive);
 
 void update_monodomain(uint64_t initial_number_of_cells, uint64_t num_active_cells, struct cell_node **active_cells, double beta,
-                       double cm, double dt_edp, Real *sv, int n_equations_cell_mode, bool use_gpu);
+                       double cm, double dt_edp, Real *sv, int n_equations_cell_model, bool use_gpu);
 
 
 #endif // MONOALG3D_SOLVER_H

@@ -193,70 +193,59 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
     double localFlux;
     bool has_found;
 
-
-    //the basic cell data is always on the fisrt memory position of any cell type
-    struct basic_cell_data *bcd = (struct basic_cell_data*)neighbour_grid_cell;
-    uint16_t neighbour_level =  bcd->level;
-    char neighbour_cell_type = bcd->type;
-
-    uint16_t the_cell_level = the_cell->cell_data.level;
-
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
-     * cell which is a cell node. */
-    if (neighbour_level > the_cell_level ) {
-        if((neighbour_cell_type == 'w') ) {
+      * cell which is a cell node. */
+    // Acha uma célula real que está no caixo enviado como vizinho
+    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
+    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+
+    if (neighbour_grid_cell_level > the_cell->cell_data.level) {
+        if ((neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
             has_found = false;
-            while( !has_found ) {
-                if( neighbour_cell_type == 'w' ) {
-                    white_neighbor_cell = (struct transition_node*)(neighbour_grid_cell);
-                    if( white_neighbor_cell->single_connector == NULL ) {
+            while (!has_found) {
+                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
+                    if (white_neighbor_cell->single_connector == NULL) {
                         has_found = true;
-                    }
-                    else {
+                    } else {
                         neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
-                        neighbour_cell_type = ((struct basic_cell_data*)neighbour_grid_cell)->type;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
                     }
-                }
-                else {
+                } else {
                     break;
                 }
             }
-
         }
     }
-        //Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
+        // Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
     else {
-        if(neighbour_level <= the_cell_level && (neighbour_cell_type == 'w') ) {
+        if (neighbour_grid_cell_level <= the_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
             has_found = false;
-            while( !has_found ) {
-                if( neighbour_cell_type == 'w' ) {
-                    white_neighbor_cell = (struct transition_node*)(neighbour_grid_cell);
-                    if( white_neighbor_cell->single_connector == NULL ) {
+            while (!has_found) {
+                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
+                    if (white_neighbor_cell->single_connector == 0) {
                         has_found = true;
-                    }
-                    else {
+                    } else {
                         neighbour_grid_cell = white_neighbor_cell->single_connector;
-                        neighbour_cell_type = ((struct basic_cell_data*)neighbour_grid_cell)->type;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
                     }
-                }
-                else {
+                } else {
                     break;
                 }
             }
         }
     }
 
-    neighbour_cell_type = ((struct basic_cell_data*)neighbour_grid_cell)->type;
-    bool active = ((struct cell_node*)neighbour_grid_cell)->active;
-    //Tratamos somente os pontos interiores da malha.
-    if( ( neighbour_cell_type == 'b' ) && ( active == true ) )	{
+    // Tratamos somente os pontos interiores da malha.
+    if (neighbour_grid_cell_type == CELL_NODE_TYPE) {
 
         black_neighbor_cell = (struct cell_node*)(neighbour_grid_cell);
 
         if ( black_neighbor_cell->half_face_length < leastDistance )
             leastDistance = black_neighbor_cell->half_face_length;
 
-        localFlux = ( the_cell->v - black_neighbor_cell->v ) / ( 2 * leastDistance );
+        localFlux = ( the_cell->v - black_neighbor_cell->v ) * ( 2.0 * leastDistance );
 
         lock_cell_node(the_cell);
 

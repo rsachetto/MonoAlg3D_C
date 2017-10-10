@@ -3,7 +3,6 @@
 //
 
 #include "grid.h"
-#include "../../utils/vector/uint32_vector.h"
 
 /**
  * Decides if the grid should be refined by traversing the whole grid, according
@@ -15,17 +14,16 @@
  * @param min_h Minimum refinement level required for the graph.
  * @param refinement_bound Minimum flux required for each cell of graph.
  */
-bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refinement_bound) {
+bool refine_grid_with_bound(struct grid* the_grid, double refinement_bound,  double min_h) {
 
     if( min_h <= 0.0 ) {
         fprintf(stderr,"refine_grid(): Parameter min_h must be positive, passed %lf.", min_h);
         return false;
     }
 
-
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
-    double maximumFlux;
+    double maximum_flux;
     bool continue_refining = true;
     bool refined_once = false;
     set_grid_flux(the_grid);
@@ -35,17 +33,16 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
 
     uint32_vector_clear(refined);
 
-
     while( continue_refining ) {
         continue_refining = false;
         grid_cell = the_grid->first_cell;
         while( grid_cell != 0 ) {
 
-            maximumFlux = get_cell_maximum_flux(grid_cell);
+            maximum_flux = get_cell_maximum_flux(grid_cell);
 
             if( ( grid_cell->can_change && grid_cell->active ) &&
                 ( grid_cell->face_length > min_h ) &&
-                ( maximumFlux >= refinement_bound ) )
+                ( maximum_flux >= refinement_bound ) )
             {
                 auxiliar_grid_cell = grid_cell;
                 grid_cell = grid_cell->next;
@@ -59,7 +56,6 @@ bool refine_grid_with_bound(struct grid* the_grid, double min_h, double refineme
             }
         }
     }
-    //ordergrid_cells();
     return refined_once;
 }
 

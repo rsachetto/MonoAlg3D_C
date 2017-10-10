@@ -110,7 +110,6 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *fre
 
         struct cell_node *wsb = ws->back;
 
-
         uint32_vector_push_back(free_sv_positions, w->sv_position);
         uint32_vector_push_back(free_sv_positions, b->sv_position);
         uint32_vector_push_back(free_sv_positions, s->sv_position);

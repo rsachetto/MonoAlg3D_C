@@ -58,7 +58,6 @@ int main(int argc, char **argv) {
     edp_solver->refinement_bound = 0.11;
     edp_solver->derefinement_bound = 0.10;
 
-
     edp_solver->max_iterations = 200;
 
     initialize_grid_with_benchmark_mesh(the_grid, start_h);

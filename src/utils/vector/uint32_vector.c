@@ -17,7 +17,7 @@ static int auto_capacity(uint32_vector *v, size_t *new_capacity);
  * @return A pointer to the new vector object, or NULL on failure
  * @remarks If capacity is 0, an empty vector will be created
  */
-extern uint32_vector *uint32_vector_create(size_t capacity)
+ uint32_vector *uint32_vector_create(size_t capacity)
 {
     uint32_vector *v = malloc(sizeof *v);
 
@@ -46,7 +46,7 @@ extern uint32_vector *uint32_vector_create(size_t capacity)
  * @param[in] v The vector being copied
  * @return A pointer to the new vector object, or NULL on failure
  */
-extern uint32_vector *uint32_vector_clone(uint32_vector *v)
+ uint32_vector *uint32_vector_clone(uint32_vector *v)
 {
     uint32_vector *p = uint32_vector_create(v->capacity);
 
@@ -63,7 +63,7 @@ extern uint32_vector *uint32_vector_clone(uint32_vector *v)
  * @brief Clears a vector object created by vector_new() to an empty state
  * @param[in] v A pointer to the vector being destroyed
  */
-extern void uint32_vector_clear(uint32_vector *v)
+ void uint32_vector_clear(uint32_vector *v)
 {
     v->size = 0;
 }
@@ -72,7 +72,7 @@ extern void uint32_vector_clear(uint32_vector *v)
  * @brief Clears a vector object created by vector_new() to an empty state
  * @param[in] v A pointer to the vector being destroyed
  */
-extern void uint32_vector_clear_and_free_data(uint32_vector *v)
+ void uint32_vector_clear_and_free_data(uint32_vector *v)
 {
     v->size = 0;
     v->capacity = 0;
@@ -88,7 +88,7 @@ extern void uint32_vector_clear_and_free_data(uint32_vector *v)
  *          2) No-op if the capacity is unchanged, with a success return
  *          3) Resizing may invalidate pointers into the vector
  */
-extern int uint32_vector_resize(uint32_vector *v, size_t capacity)
+ int uint32_vector_resize(uint32_vector *v, size_t capacity)
 {
     if (capacity == 0)
         return 0;
@@ -118,7 +118,7 @@ extern int uint32_vector_resize(uint32_vector *v, size_t capacity)
  * @param[in] v A pointer to the vector
  * @return The number of items inserted into the vector
  */
-extern size_t uint32_vector_size(uint32_vector *v)
+ size_t uint32_vector_size(uint32_vector *v)
 {
     return v->size;
 }
@@ -129,7 +129,7 @@ extern size_t uint32_vector_size(uint32_vector *v)
  * @param[in] index The index of the requested item
  * @return A generic pointer to the item
  */
-extern data_type_32 uint32_vector_at(uint32_vector *v, size_t index)
+ data_type_32 uint32_vector_at(uint32_vector *v, size_t index)
 {
     return v->base[index];
 }
@@ -146,7 +146,7 @@ extern data_type_32 uint32_vector_at(uint32_vector *v, size_t index)
  *          4) The capacity of the vector may increase by more than 1
  *          5) All items from index to v->size may be shifted to make room
  */
-extern int uint32_vector_insert(uint32_vector *v, data_type_32 item, size_t index)
+ int uint32_vector_insert(uint32_vector *v, data_type_32 item, size_t index)
 {
     data_type_32 *src, *dst;
 
@@ -186,7 +186,7 @@ extern int uint32_vector_insert(uint32_vector *v, data_type_32 item, size_t inde
  * @return True/non-zero if the insert succeeded, false/zero otherwise
  *
  */
-extern int uint32_vector_push_back(uint32_vector *v, data_type_32 item)
+ int uint32_vector_push_back(uint32_vector *v, data_type_32 item)
 {
 
     if (v->size == v->capacity) {
@@ -215,7 +215,7 @@ extern int uint32_vector_push_back(uint32_vector *v, data_type_32 item)
  * @return The item in the end of the vector
  *
  */
-extern data_type_32 uint32_vector_pop_back(uint32_vector *v)
+ data_type_32 uint32_vector_pop_back(uint32_vector *v)
 {
     //TODO: do we need to check the size??
     --v->size;
@@ -230,7 +230,7 @@ extern data_type_32 uint32_vector_pop_back(uint32_vector *v)
  * @return True/non-zero if the value was found and removed, false/zero otherwise
  * @remarks All items following the found value may be shifted to fill in the hole
  */
-extern int uint32_vector_remove(uint32_vector *v, size_t index)
+ int uint32_vector_remove(uint32_vector *v, size_t index)
 {
     if (index >= v->size)
         return 0;
@@ -257,7 +257,7 @@ extern int uint32_vector_remove(uint32_vector *v, size_t index)
  * @return True/non-zero if the value was found and removed, false/zero otherwise
  * @remarks All items following the found value may be shifted to fill in the hole
  */
-extern int uint32_vector_remove_if(uint32_vector *v, int (*pred)(data_type_32 item))
+ int uint32_vector_remove_if(uint32_vector *v, int (*pred)(data_type_32 item))
 {
     size_t index = uint32_vector_find_if(v, pred);
 
@@ -273,7 +273,7 @@ extern int uint32_vector_remove_if(uint32_vector *v, int (*pred)(data_type_32 it
  * @param[in] item the value being searched for
  * @return The index of the found value, or (size_t)-1 if not found
  *  */
-extern size_t uint32_vector_find(uint32_vector *v, data_type_32  value)
+ size_t uint32_vector_find(uint32_vector *v, data_type_32  value)
 {
     size_t i;
 
@@ -291,7 +291,7 @@ extern size_t uint32_vector_find(uint32_vector *v, data_type_32  value)
  * @param[in] pred A predicate for determining the first matching item
  * @return The index of the found value, or (size_t)-1 if not found
  */
-extern size_t uint32_vector_find_if(uint32_vector *v, int (*pred)(data_type_32 item))
+ size_t uint32_vector_find_if(uint32_vector *v, int (*pred)(data_type_32 item))
 {
     size_t i;
 

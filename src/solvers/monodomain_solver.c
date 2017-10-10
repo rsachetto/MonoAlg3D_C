@@ -7,10 +7,8 @@
 #include "../gpu/gpu_common.h"
 #include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
-#include <assert.h>
 #include <inttypes.h>
 #include <sys/stat.h>
-#include <omp.h>
 
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
@@ -248,21 +246,28 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
 
+        cur_time += dt_edp;
+
         if (adaptive) {
             redo_matrix = false;
+            //TODO: we should let the user decide the time to start refining
             if (cur_time > (stim_dur / 2.0)) {
 
                 if (count % refine_each == 0) {
                     start_stop_watch (&ref_time);
-                    redo_matrix = refine_grid_with_bound (the_grid, min_h, refinement_bound);
+                    redo_matrix = refine_grid_with_bound (the_grid, refinement_bound, min_h);
+                    printf("AFTER REFINEMENT:%d %d %d\n",redo_matrix, the_grid->number_of_cells, uint32_vector_size(refined_this_step));
                     total_ref_time += stop_stop_watch (&ref_time);
                 }
 
                 if (count % derefine_each == 0) {
                     start_stop_watch (&deref_time);
                     redo_matrix |= derefine_grid_with_bound (the_grid, derefinement_bound, max_h);
+                    printf("AFTER DEREF: %d %d\n", the_grid->number_of_cells, uint32_vector_size(refined_this_step));
                     total_deref_time += stop_stop_watch (&deref_time);
                 }
+
+
             }
 
             if (redo_matrix) {
@@ -288,8 +293,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
                 total_mat_time += stop_stop_watch (&part_mat);
             }
         }
-
-        cur_time += dt_edp;
     }
 
     printf ("Resolution Time: %ld μs\n", stop_stop_watch (&solver_time));
@@ -472,7 +475,7 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
     } else {
         #pragma omp parallel for
         for (uint64_t i = 0; i < n_active; i++) {
-            sv[ac[i]->grid_position * n_edos] = (Real)ac[i]->v;
+            sv[ac[i]->sv_position * n_edos] = (Real)ac[i]->v;
         }
     }
 }
@@ -499,7 +502,7 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
 
     solver->cells_to_solve = (uint64_t *)malloc (the_grid->num_active_cells * sizeof (uint64_t));
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (uint64_t i = 0; i < n_active; i++) {
         solver->cells_to_solve[i] = ac[i]->sv_position;
     }
@@ -754,7 +757,7 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
 }
 
 void update_monodomain (uint64_t initial_number_of_cells, uint64_t num_active_cells, struct cell_node **active_cells,
-                        double beta, double cm, double dt_edp, Real *sv, int n_equations_cell_mode, bool use_gpu) {
+                        double beta, double cm, double dt_edp, Real *sv, int n_equations_cell_model, bool use_gpu) {
 
     double h, alpha;
     Real *vms = NULL;
@@ -766,7 +769,7 @@ void update_monodomain (uint64_t initial_number_of_cells, uint64_t num_active_ce
         cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost);
     }
 
-#pragma omp parallel for private(h, alpha)
+    #pragma omp parallel for private(h, alpha)
     for (int i = 0; i < num_active_cells; i++) {
         h = active_cells[i]->face_length;
         alpha = ALPHA (beta, cm, dt_edp, h);
@@ -774,7 +777,7 @@ void update_monodomain (uint64_t initial_number_of_cells, uint64_t num_active_ce
         if (use_gpu) {
             active_cells[i]->b = vms[active_cells[i]->sv_position] * alpha;
         } else {
-            active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_mode] * alpha;
+            active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
         }
     }
 
