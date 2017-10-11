@@ -18,7 +18,7 @@ void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v
 
 }
 
-void set_model_initial_conditions(Real *sv) {
+void set_model_initial_conditions_cpu(Real *sv) {
 
     sv[0] = -85.23f;   // V;       millivolt
     sv[1] = 0.00621f;  // Xr1;     dimensionless

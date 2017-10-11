@@ -102,11 +102,12 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     double dt_edo = the_ode_solver->min_dt;
 
     if (gpu) {
+        //TODO: this can be called by the ode solver itself using a funcion provided by the user
         init_cuda_device (the_ode_solver->gpu_id);
     }
 
     order_grid_cells (the_grid);
-    uint64_t original_num_cells = the_grid->num_active_cells;
+    uint32_t original_num_cells = the_grid->num_active_cells;
 
     // TODO: check. I thing we can do this always
     save_old_cell_positions (the_grid);

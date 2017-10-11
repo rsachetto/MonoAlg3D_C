@@ -10,8 +10,6 @@
 #include <stdio.h>
 
 extern "C" void init_cuda_device(int device) {
-    printf("Using GPU Ten Tusscher 3 Model\n");
-
     int count;
 
     cudaGetDeviceCount(&count);

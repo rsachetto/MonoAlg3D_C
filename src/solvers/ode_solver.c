@@ -17,7 +17,7 @@ struct ode_solver* new_ode_solver() {
     result->handle = NULL;
 
     result->get_cell_model_data_fn = NULL;
-    result->set_ode_initial_conditions_fn = NULL;
+    result->set_ode_initial_conditions_cpu_fn = NULL;
     result->solve_model_ode_cpu_fn = NULL;
 
     //init_ode_solver_with_cell_model(result);
@@ -57,7 +57,6 @@ void free_ode_solver(struct ode_solver *solver) {
 void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
     char *error;
-    void *handle = solver->handle;
 
     if(!solver->model_data.model_library_path) {
         fprintf(stderr, "model_library_path not provided. Exiting!\n");
@@ -67,13 +66,14 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
     printf("Opening %s as model lib\n", solver->model_data.model_library_path);
 
-    handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
-    if (!handle) {
+    solver->handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
+    if (!solver->handle) {
         fputs (dlerror(), stderr);
+        fprintf(stderr, "\n");
         exit(1);
     }
 
-    solver->get_cell_model_data_fn = dlsym(handle, "init_cell_model_data");
+    solver->get_cell_model_data_fn = dlsym(solver->handle, "init_cell_model_data");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "init_cell_model_data function not found in the provided model library\n");
@@ -84,17 +84,31 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
     }
 
-    solver->set_ode_initial_conditions_fn = dlsym(handle, "set_model_initial_conditions");
+    solver->set_ode_initial_conditions_cpu_fn = dlsym(solver->handle, "set_model_initial_conditions_cpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "set_model_initial_conditions function not found in the provided model library\n");
         exit(1);
     }
 
-    solver->solve_model_ode_cpu_fn = dlsym(handle, "solve_model_ode_cpu");
+    solver->solve_model_ode_cpu_fn = dlsym(solver->handle, "solve_model_ode_cpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "solve_model_ode_cpu function not found in the provided model library\n");
+        exit(1);
+    }
+
+    solver->set_ode_initial_conditions_gpu_fn = dlsym(solver->handle, "set_model_initial_conditions_gpu");
+    if ((error = dlerror()) != NULL)  {
+        fputs(error, stderr);
+        fprintf(stderr, "set_model_initial_conditions_gpu function not found in the provided model library\n");
+        exit(1);
+    }
+
+    solver->solve_model_ode_gpu_fn = dlsym(solver->handle, "solve_model_ode_gpu");
+    if ((error = dlerror()) != NULL)  {
+        fputs(error, stderr);
+        fprintf(stderr, "solve_model_ode_gpu function not found in the provided model library\n");
         exit(1);
     }
 
@@ -111,7 +125,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
 
     (*(solver->get_cell_model_data_fn))(&(solver->model_data), get_initial_v, get_neq);
 
-    set_ode_initial_conditions_fn_pt soi_fn_pt = solver->set_ode_initial_conditions_fn;
+
 
     if (solver->gpu) {
         if (solver->method == EULER_METHOD) {
@@ -122,6 +136,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
             //pitch = setIC_ode_gpu_adapt(&sv, originalNumCells, dt_edo);
         }
     } else {
+        set_ode_initial_conditions_cpu_fn_pt soic_fn_pt = solver->set_ode_initial_conditions_cpu_fn;
         int n_odes = solver->model_data.number_of_ode_equations;
 
         if(solver->sv != NULL) {
@@ -129,8 +144,10 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
         }
 
         solver->sv = (Real*)malloc(n_odes*num_cells*sizeof(Real));
-        for(u_int64_t i = 0; i < num_cells; i++) {
-            soi_fn_pt(solver->sv + (i*n_odes));
+
+        #pragma omp parallel for
+        for(u_int32_t i = 0; i < num_cells; i++) {
+            soic_fn_pt(solver->sv + (i*n_odes));
         }
     }
 }

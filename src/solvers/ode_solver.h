@@ -13,9 +13,16 @@
 #define EULER_METHOD 0
 #define EULER_METHOD_ADPT 1
 
-typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real , Real , Real , Real , int , void *);
-typedef void (*set_ode_initial_conditions_fn_pt)(Real *);
 typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
+
+//CPU FUNCTIONS
+typedef void (*set_ode_initial_conditions_cpu_fn_pt)(Real *);
+typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real , Real , Real , Real , int , void *);
+
+//GPU FUNCTIONS
+typedef void (*set_ode_initial_conditions_gpu_fn_pt)(Real **, int , uint32_t );
+typedef void (*solve_model_ode_gpu_fn_pt)(Real, Real *, Real *, uint32_t *, size_t , Real, Real, Real, int, int, void *);
+
 
 struct ode_solver {
 
@@ -49,8 +56,10 @@ struct ode_solver {
 
     //User provided functions
     get_cell_model_data_fn_pt get_cell_model_data_fn;
-    set_ode_initial_conditions_fn_pt set_ode_initial_conditions_fn;
+    set_ode_initial_conditions_cpu_fn_pt set_ode_initial_conditions_cpu_fn;
+    set_ode_initial_conditions_gpu_fn_pt set_ode_initial_conditions_gpu_fn;
     solve_model_ode_cpu_fn_pt solve_model_ode_cpu_fn;
+    solve_model_ode_gpu_fn_pt solve_model_ode_gpu_fn;
 
 
 };
