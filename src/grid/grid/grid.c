@@ -26,11 +26,7 @@ void initialize_grid (struct grid *the_grid, double side_length, uint8_t num_cel
 
 void construct_grid (struct grid *the_grid) {
 
-    bool init_ode = the_grid->init_ode;
     double side_length = the_grid->side_length;
-
-    size_t cell_node_size = sizeof (struct cell_node);
-    size_t transition_node_size = sizeof (struct transition_node);
 
     // Cell nodes.
     struct cell_node *front_northeast_cell, *front_northwest_cell, *front_southeast_cell, *front_southwest_cell,
@@ -206,16 +202,17 @@ void order_grid_cells (struct grid *the_grid) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
 
+
+    //////TODO: I don't thing we need to realloc this array every time as it can always fit the biggest possible grid
     if (the_grid->active_cells != NULL) {
         free (the_grid->active_cells);
     }
-
     the_grid->active_cells = (struct cell_node **)malloc (sizeof (struct cell_node *) * the_grid->number_of_cells);
+    ///////////////////
 
     uint32_t counter = 0;
     while (grid_cell != 0) {
         if (grid_cell->active) {
-
             grid_cell->grid_position = counter;
             the_grid->active_cells[counter] = grid_cell;
             counter++;

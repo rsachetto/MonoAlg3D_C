@@ -15,13 +15,9 @@ double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines);
 
 double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *nnz);
 
-struct grid *construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b) {
+void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b) {
 
-    uint64_t n_cells;
-    size_t len = 0;
-    ssize_t read;
-    char *sep = " ";
-    int count = 0;
+    uint32_t n_cells;
     int num_lines_m = 0;
     int num_lines_v = 0;
     int nnz = 0;
@@ -34,7 +30,7 @@ struct grid *construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *
 
     int max_el = num_lines_m;
 
-    initialize_and_construct_grid (grid, 1.0, num_lines_m);
+    initialize_and_construct_grid (grid, 1.0, (uint8_t )num_lines_m);
 
     n_cells = grid->number_of_cells;
     while (n_cells < num_lines_m) {
@@ -126,12 +122,11 @@ struct grid *construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *
 double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *nnz) {
     const char *sep = " ";
     char *line_a = NULL;
-    ssize_t read;
     size_t len;
     int count;
 
     do {
-        read = getline (&line_a, &len, matrix_file);
+        getline (&line_a, &len, matrix_file);
         sds *tmp = sdssplitlen (line_a, (int)strlen (line_a), sep, (int)strlen (sep), &count);
         if (count) {
             if (strcmp (tmp[1], "columns:") == 0) {
@@ -168,7 +163,7 @@ double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *
         sdsfreesplitres (tmp, count);
 
         item_count++;
-        read = getline (&line_a, &len, matrix_file);
+        getline (&line_a, &len, matrix_file);
     }
 
     if (line_a)

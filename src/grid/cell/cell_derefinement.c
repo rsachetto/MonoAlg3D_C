@@ -74,8 +74,6 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *fre
         exit (10);
     }
 
-    size_t transition_node_size = sizeof (struct transition_node);
-
     struct cell_node *cell_before_bunch = first_bunch_cell->previous;
     struct cell_node *cell_after_bunch =
         first_bunch_cell->next->next->next->next->next->next->next->next;

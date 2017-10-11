@@ -9,7 +9,7 @@
 #include "linear_system_solver.h"
 #include <inttypes.h>
 #include <sys/stat.h>
-
+#include <omp.h>
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);
@@ -75,8 +75,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     int max_its;
 
-    // TODO: I dont think we need this flag anymore
-    bool parallel = (np != 0);
     bool gpu = the_ode_solver->gpu;
     bool jacobi = the_monodomain_solver->use_jacobi;
 
@@ -91,8 +89,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     bool adaptive = the_grid->adaptive;
     bool save_to_file = (output_info->output_dir_name != NULL);
 
-    double h;
-    int initRef;
 
     double dt_edp = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
@@ -174,7 +170,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
     double cg_error;
-    uint64_t cg_iterations;
+    uint32_t cg_iterations;
 
     // TODO: we need to handle stim on diferent edp times (pulses)
     set_spatial_stim (the_grid, the_ode_solver);
@@ -241,8 +237,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         if (count % print_rate == 0) {
             printf ("t = %lf, Iterations = "
-                    "%" PRIu64 ", Error Norm = %e, Number of Cells:"
-                    "%" PRIu64 ", Elapsed time: %ld μs\n",
+                    "%" PRIu32 ", Error Norm = %e, Number of Cells:"
+                    "%" PRIu32 ", Elapsed time: %ld μs\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
 
@@ -256,14 +252,12 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
                 if (count % refine_each == 0) {
                     start_stop_watch (&ref_time);
                     redo_matrix = refine_grid_with_bound (the_grid, refinement_bound, min_h);
-                    printf("AFTER REFINEMENT:%d %d %d\n",redo_matrix, the_grid->number_of_cells, uint32_vector_size(refined_this_step));
                     total_ref_time += stop_stop_watch (&ref_time);
                 }
 
                 if (count % derefine_each == 0) {
                     start_stop_watch (&deref_time);
                     redo_matrix |= derefine_grid_with_bound (the_grid, derefinement_bound, max_h);
-                    printf("AFTER DEREF: %d %d\n", the_grid->number_of_cells, uint32_vector_size(refined_this_step));
                     total_deref_time += stop_stop_watch (&deref_time);
                 }
 
@@ -310,7 +304,6 @@ void set_spatial_stim (struct grid *the_grid, struct ode_solver *the_ode_solver)
 
     uint64_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    double side_length = the_grid->side_length;
     Real i_stim = the_ode_solver->stim_current;
 
     if (the_ode_solver->stim_currents != NULL) {
@@ -322,7 +315,7 @@ void set_spatial_stim (struct grid *the_grid, struct ode_solver *the_ode_solver)
 
     bool stim;
 
-#pragma omp parallel for private(stim)
+    #pragma omp parallel for private(stim)
     for (int i = 0; i < n_active; i++) {
 
         stim = ac[i]->center_x > 5500.0;
@@ -493,18 +486,19 @@ void save_old_cell_positions (struct grid *the_grid) {
 
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
 
-    uint64_t n_active = the_grid->num_active_cells;
+    uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
     if (solver->cells_to_solve) {
         free (solver->cells_to_solve);
     }
 
-    solver->cells_to_solve = (uint64_t *)malloc (the_grid->num_active_cells * sizeof (uint64_t));
+    solver->cells_to_solve = (uint32_t *)malloc (the_grid->num_active_cells * sizeof (uint32_t));
+    uint32_t *cts = solver->cells_to_solve;
 
-    #pragma omp parallel for
-    for (uint64_t i = 0; i < n_active; i++) {
-        solver->cells_to_solve[i] = ac[i]->sv_position;
+#pragma omp parallel for
+    for (uint32_t i = 0; i < n_active; i++) {
+        cts[i] = ac[i]->sv_position;
     }
 }
 
@@ -805,9 +799,7 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
 
     printf ("Width = %lf um, height = %lf um, Depth = %lf \n", the_grid->side_length, the_grid->side_length,
             the_grid->side_length);
-    printf ("Initial N. of Elements = "
-            "%" PRIu64 "\n",
-            the_grid->num_active_cells);
+    printf ("Initial N. of Elements = " "%" PRIu32 "\n", the_grid->num_active_cells);
     printf ("PDE time step = %lf\n", the_monodomain_solver->dt);
     printf ("ODE solver edo_method: %s\n", get_ode_method_name (the_ode_solver->method));
     printf ("ODE min time step = %lf\n", the_ode_solver->min_dt);

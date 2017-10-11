@@ -104,7 +104,7 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
 }
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint64_t num_cells) {
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint32_t num_cells) {
 
     bool get_initial_v = !isfinite(solver->model_data.initial_v);
     bool get_neq = solver->model_data.number_of_ode_equations == -1;
@@ -162,23 +162,23 @@ void solve_odes_cpu(struct ode_solver *the_ode_solver, uint64_t  n_active, Real 
     }
 }
 
-
+//TODO: change this to the monodomain solver file
 void update_state_vectors_after_refinement(Real *sv, uint32_vector *refined_this_step, int neq) {
 
     size_t num_refined_cells = uint32_vector_size(refined_this_step)/8;
     Real *sv_src, *sv_dst;
 
-#pragma omp parallel for private(sv_src, sv_dst)
+    #pragma omp parallel for private(sv_src, sv_dst)
     for(size_t i = 0; i < num_refined_cells; i++) {
 
         size_t index_id = i*8;
 
         uint32_t index = uint32_vector_at(refined_this_step, index_id);
-        sv_src = &sv[index];
+        sv_src = &sv[index*neq];
 
         for(int j = 1; j < 8; j++) {
             index = uint32_vector_at(refined_this_step, index_id+j);
-            sv_dst = &sv[index];
+            sv_dst = &sv[index*neq];
             memcpy(sv_dst, sv_src, neq*sizeof(Real));
         }
 

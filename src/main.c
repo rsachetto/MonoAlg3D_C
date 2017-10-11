@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     the_grid = (struct grid*)malloc(sizeof(struct grid));
     edp_solver = (struct monodomain_solver*)malloc(sizeof(struct monodomain_solver));
 
-    output_info = new_output_utils(1, "./tmp");
+    output_info = new_output_utils(50, "./tmp");
 
     ode_solver = new_ode_solver();
     if (ini_parse("example_configs/tenTusscher_config_example.ini", parse_ode_ini_file, ode_solver) < 0) {
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     edp_solver->start_h = start_h;
     edp_solver->min_h = min_h;
     edp_solver->max_h = max_h;
-    edp_solver->final_time = 2.0;
+    edp_solver->final_time = 10.0;
     edp_solver->abort_on_no_activity = false;
     edp_solver->use_jacobi = true;
     edp_solver->refinement_bound = 0.11;

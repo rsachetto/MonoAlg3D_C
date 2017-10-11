@@ -37,7 +37,7 @@ struct ode_solver {
     Real stim_start;
     Real stim_duration;
     Real stim_current;
-    uint64_t *cells_to_solve;
+    uint32_t *cells_to_solve;
 
     bool gpu;
     int gpu_id;
@@ -55,7 +55,7 @@ struct ode_solver {
 
 };
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint64_t num_volumes);
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint32_t num_volumes);
 const char* get_ode_method_name(int met);
 
 void update_state_vectors_after_refinement(Real *sv, uint32_vector *refined_this_step, int neq);

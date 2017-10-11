@@ -4,7 +4,7 @@
 
 #include "linear_system_solver.h"
 
-uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool use_jacobi, double *error) {
+uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool use_jacobi, double *error) {
 
     double    rTr,
             r1Tr1,
@@ -16,11 +16,11 @@ uint64_t conjugate_gradient(struct grid* the_grid, int max_its, double tol, bool
             r1Tz1;
 
 
-    uint64_t num_active_cells = the_grid->num_active_cells;
+    uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node** ac = the_grid->active_cells;
 
     *error = 1.0;
-    uint64_t number_of_iterations = 1;
+    uint32_t number_of_iterations = 1;
     int max_el = the_grid->num_cell_neighbours;
 
     //__________________________________________________________________________

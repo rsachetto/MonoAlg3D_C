@@ -5,13 +5,6 @@
 
 void RHS_cpu(Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, void *extra_data);
 
-
-struct cell_model_data *new_model_data() {
-
-    struct cell_model_data* result = (struct cell_model_data*)malloc(sizeof(struct cell_model_data));
-
-}
-
 void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
 
     assert(cell_model);

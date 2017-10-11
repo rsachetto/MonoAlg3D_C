@@ -14,6 +14,8 @@ int binary_search(double **a, double num, int first, int last, int column) {
         return binary_search(a,num,middle+1,last,column);
     else if (a[middle][column] > num)
         return binary_search(a,num,first,middle-1,column);
+
+    return -1;
 }
 
 int inside_mesh(double **a, double x, double y, double z, int first, int last) {

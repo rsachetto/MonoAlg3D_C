@@ -16,9 +16,9 @@ struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.
     double side_length;        // Length of cube grid. Default = 1.0.
-    uint64_t number_of_cells;  // Number of cells of grid.
+    uint32_t number_of_cells;  // Number of cells of grid.
 
-    uint64_t num_active_cells;
+    uint32_t num_active_cells;
     uint8_t num_cell_neighbours;
 
     uint32_vector *free_sv_positions;
@@ -48,7 +48,7 @@ void set_grid_flux(struct grid *the_grid);
 
 bool refine_grid_with_bound(struct grid* the_grid, double refinement_bound, double min_h);
 void refine_grid(struct grid* the_grid, int num_steps);
-void refine_grid_cell_at(struct grid* the_grid, uint64_t cell_number );
+void refine_grid_cell_at(struct grid *the_grid, uint32_t cell_number);
 
 bool derefine_grid_with_bound(struct grid *the_grid, double derefinement_bound, double max_h);
 void derefine_all_grid (struct grid* the_grid);

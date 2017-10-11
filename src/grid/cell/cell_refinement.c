@@ -12,9 +12,6 @@ void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint
         exit(10);
     }
 
-    size_t cell_node_size = sizeof(struct cell_node);
-    size_t transition_node_size = sizeof(struct transition_node);
-
     struct transition_node *east_transition_node,
             *north_transition_node,
             *west_transition_node,
@@ -52,8 +49,9 @@ void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint
     front_northeast_sub_cell->center_z = cell_center_z + cell_quarter_side;
     front_northeast_sub_cell->bunch_number       = old_bunch_number * 10 + 1;
 
-    if(refined_this_step != NULL)
+    if(refined_this_step != NULL) {
         uint32_vector_push_back(refined_this_step, front_northeast_sub_cell->sv_position);
+    }
 
     // Creation of back Northeast node.
     back_northeast_sub_cell = new_cell_node();

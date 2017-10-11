@@ -358,13 +358,3 @@ void init_element(struct element* el) {
     el->column = 0;
     el->cell = NULL;
 }
-
-int getFreeSvPosition(short *gridToSV, int size) {
-    for (int i = 0; i < size; ++i) {
-        if(gridToSV[i] == -1) {
-            gridToSV[i] = 0;
-            return i;
-        }
-    }
-    return 0;
-}
