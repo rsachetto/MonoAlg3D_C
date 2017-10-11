@@ -22,21 +22,24 @@ if (OPENMP_FOUND)
 endif()
 
 FIND_PACKAGE(CUDA)
+if (CUDA_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I ${CUDA_INCLUDE_DIRS} -DCOMPILE_CUDA")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I ${CUDA_INCLUDE_DIRS} -DCOMPILE_CUDA")
+endif()
 
 ADD_SUBDIRECTORY(src/models)
-ADD_SUBDIRECTORY(src/gpu)
 ADD_SUBDIRECTORY(src/utils)
 ADD_SUBDIRECTORY(src/grid)
 ADD_SUBDIRECTORY(src/solvers)
 ADD_SUBDIRECTORY(src/ini_parser)
+
 set(SOURCE_FILES src/main.c)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 
-ADD_DEPENDENCIES(MonoAlg3D CudaLib utils alg solvers ini_parser)
+ADD_DEPENDENCIES(MonoAlg3D utils alg solvers ini_parser)
 
-target_link_libraries(MonoAlg3D alg solvers utils CudaLib ini_parser ${CMAKE_THREAD_LIBS_INIT} m)
-
+target_link_libraries(MonoAlg3D alg solvers utils ini_parser ${CMAKE_THREAD_LIBS_INIT} ${CUDA_LIBRARIES} dl m)
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 

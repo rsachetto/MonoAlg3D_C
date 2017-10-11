@@ -34,6 +34,8 @@ __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
                           Real stim_start, Real stim_dur, Real time,
                           int num_steps, int neq, void *extra_data);
 
+__global__ void update_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq);
+
 inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, Real time, Real stim_start, Real stim_dur, int threadID_, Real dt);
 
 void check_err(cudaError_t err) {
@@ -44,7 +46,7 @@ void check_err(cudaError_t err) {
 
 }
 
-extern "C" void set_model_initial_conditions_gpu(Real **sv, int neq, uint32_t num_volumes) {
+extern "C" void set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes, int neq) {
 
     printf("Using ten Tusscher GPU model\n");
 
@@ -62,12 +64,12 @@ extern "C" void set_model_initial_conditions_gpu(Real **sv, int neq, uint32_t nu
 }
 
 extern "C" void solve_model_ode_gpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
-                                    size_t num_cells_to_solve, Real stim_start, Real stim_dur,
+                                    uint32_t num_cells_to_solve, Real stim_start, Real stim_dur,
                                     Real time, int num_steps, int neq, void *extra_data) {
 
 
     // execution configuration
-    const int GRID  = (num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
+    const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t stim_currents_size = sizeof(Real)*num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
@@ -366,5 +368,50 @@ inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, Real ti
     rDY_[10] = fCass_inf + (fCass-fCass_inf)*expf(-dt/tau_fCass);
     rDY_[11] = s_inf + (s-s_inf)*expf(-dt/tau_s);
     rDY_[12] = r_inf + (r-r_inf)*expf(-dt/tau_r);
+
+}
+
+extern "C" void update_gpu_after_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq) {
+
+    // execution configuration
+    const int GRID  = ((int)number_of_cells + BLOCK_SIZE - 1)/BLOCK_SIZE;
+
+    size_t size = number_of_cells*sizeof(uint32_t);
+
+    uint32_t *cells_d;
+    check_err(cudaMalloc((void**)&cells_d, size));
+    check_err(cudaMemcpy(cells_d, cells, size, cudaMemcpyHostToDevice));
+
+        update_refinement<<<GRID, BLOCK_SIZE>>>(sv, cells_d, number_of_cells, neq);
+
+    check_err(cudaFree(cells_d));
+}
+
+__global__ void update_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq) {
+
+    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+    int index;
+    int i = 0;
+    int index_id = threadID*8;
+
+    if(index_id < number_of_cells) {
+
+        index = cells[index_id];
+        Real *src = (Real*)malloc(sizeof(Real)*neq);
+
+        for(int k = 0; k < neq; k++) {
+            src[i] = *((Real*)((char*)sv + pitch * k) + index);
+        }
+
+        for(i = 1; i < 8; i++) {
+
+            index = cells[index_id+i];
+
+            for(int k = 0; k < neq; k++) {
+                *((Real*)((char*)sv + pitch * k) + index) = src[i];
+            }
+
+        }
+    }
 
 }

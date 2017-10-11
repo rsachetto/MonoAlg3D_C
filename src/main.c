@@ -63,6 +63,13 @@ int main(int argc, char **argv) {
     initialize_grid_with_benchmark_mesh(the_grid, start_h);
     the_grid->adaptive = true;
 
+#ifndef COMPILE_CUDA
+    if(ode_solver->gpu) {
+        printf("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        ode_solver->gpu = false;
+    }
+#endif
+
     solve_monodomain(the_grid, edp_solver, ode_solver, output_info);
 
     free_output_utils(output_info);
