@@ -7,11 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <assert.h>
 
 #ifdef COMPILE_CUDA
 #include <cuda_runtime.h>
-#include <assert.h>
-
 #endif
 
 struct ode_solver* new_ode_solver() {
@@ -147,6 +146,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
 
     if (solver->gpu) {
 #ifdef COMPILE_CUDA
+
         set_ode_initial_conditions_gpu_fn_pt soicg_fn_pt = solver->set_ode_initial_conditions_gpu_fn;
 
         if(!soicg_fn_pt) {
@@ -160,7 +160,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
             cudaFree(solver->sv);
         }
 
-        soicg_fn_pt(&solver->sv, num_cells, n_odes);
+        soicg_fn_pt(&(solver->sv), num_cells, n_odes);
 
 #endif
     } else {
@@ -187,11 +187,11 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
     }
 }
 
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint64_t n_active, Real cur_time, int num_steps) {
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, Real cur_time, int num_steps) {
 
     assert(the_ode_solver->sv);
 
-    uint64_t sv_id;
+    uint32_t sv_id;
 
     Real dt = the_ode_solver->min_dt;
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
@@ -211,7 +211,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint64_t n_active
         solve_odes_pt(dt, sv, stims, the_ode_solver->cells_to_solve,
                 n_active, stim_start, stim_dur, time, num_steps, n_odes, extra_data);
 
-    #endif
+#endif
     }
     else {
         solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
@@ -266,15 +266,6 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
         }
     }
 
-}
-
-const char* get_ode_method_name(int met) {
-
-    switch(met) {
-        case 0: return "Euler Method";
-        case 1: return "Euler Method with adaptive time step (Formula)";
-        default: printf("Invalid Method!!\n");  exit(0);
-    }
 }
 
 int parse_ode_ini_file(void* user, const char* section, const char* name, const char* value)

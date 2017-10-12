@@ -3,7 +3,6 @@
 //
 
 #include "grid.h"
-#include "../../solvers/constants.h"
 #include <inttypes.h>
 void initialize_and_construct_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
     initialize_grid (the_grid, side_length, num_cell_neighbours);
@@ -15,8 +14,6 @@ void initialize_grid (struct grid *the_grid, double side_length, uint8_t num_cel
     the_grid->first_cell = NULL;
     the_grid->side_length = side_length;
     the_grid->number_of_cells = 0;
-    the_grid->init_ode = false;
-    the_grid->init_ode = false;
     the_grid->active_cells = NULL;
     the_grid->num_cell_neighbours = num_cell_neighbours;
     the_grid->refined_this_step = uint32_vector_create(128);
@@ -227,7 +224,7 @@ void order_grid_cells (struct grid *the_grid) {
 void clean_grid (struct grid *the_grid) {
 
 
-    uint64_t number_of_cells = the_grid->number_of_cells;
+    uint32_t number_of_cells = the_grid->number_of_cells;
 
     // In order to release the memory allocated for the grid, the grid is
     // derefined to level 1. Thus, the grid shape is known and each node can
@@ -361,7 +358,7 @@ void print_grid_vector(struct grid* the_grid, FILE *output_file, char name)
 
 }
 
-double * grid_vector_to_array(struct grid* the_grid, char name, uint64_t *num_lines) {
+double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
 

@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     the_grid = (struct grid*)malloc(sizeof(struct grid));
     edp_solver = (struct monodomain_solver*)malloc(sizeof(struct monodomain_solver));
 
-    output_info = new_output_utils(50, "./tmp");
+    output_info = new_output_utils(10, "./tmp");
 
     ode_solver = new_ode_solver();
     if (ini_parse("example_configs/tenTusscher_config_example.ini", parse_ode_ini_file, ode_solver) < 0) {
@@ -36,11 +36,10 @@ int main(int argc, char **argv) {
 
     init_ode_solver_with_cell_model(ode_solver);
 
-    ode_solver->gpu = false;
+
     ode_solver->min_dt = dt;
     ode_solver->stim_duration = 2.0;
     ode_solver->stim_start = 0.0;
-    ode_solver->method = EULER_METHOD;
     ode_solver->stim_current = -50.0f;
 
     init_solver(edp_solver);
@@ -61,7 +60,9 @@ int main(int argc, char **argv) {
     edp_solver->max_iterations = 200;
 
     initialize_grid_with_benchmark_mesh(the_grid, start_h);
+
     the_grid->adaptive = true;
+    ode_solver->gpu = true;
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {

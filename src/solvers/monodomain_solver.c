@@ -6,11 +6,12 @@
 #include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
 #include <inttypes.h>
-#include <sys/stat.h>
 #include <omp.h>
+#include <sys/stat.h>
 
 #ifdef COMPILE_CUDA
-#include <cuda_runtime.h>
+#include "../models/model_gpu_utils.cuh"
+
 #endif
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
@@ -89,7 +90,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     bool adaptive = the_grid->adaptive;
     bool save_to_file = (output_info->output_dir_name != NULL);
 
-
     double dt_edp = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
 
@@ -98,19 +98,17 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
     // TODO: create a file for stimulus definition!!
     double stim_dur = the_ode_solver->stim_duration;
-    int edo_method = the_ode_solver->method;
     double dt_edo = the_ode_solver->min_dt;
 
 #ifdef COMPILE_CUDA
     if (gpu) {
         int device_count;
         int device = the_ode_solver->gpu_id;
-
-        cudaGetDeviceCount(&device_count);
+        check_cuda_error (cudaGetDeviceCount (&device_count));
         struct cudaDeviceProp prop;
-        cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id);
-        printf("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
-        cudaSetDevice(device);
+        check_cuda_error (cudaGetDeviceProperties (&prop, the_ode_solver->gpu_id));
+        printf ("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
+        check_cuda_error (cudaSetDevice (device));
     }
 #endif
 
@@ -134,23 +132,22 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     print_solver_info (the_monodomain_solver, the_ode_solver, the_grid, output_info);
 
     int ode_step = 1;
-    if (edo_method == EULER_METHOD) {
-        if (dt_edp >= dt_edo) {
-            ode_step = (int)(dt_edp / dt_edo);
-            printf ("Solving EDO %d times before solving PDE\n", ode_step);
-        } else {
-            printf ("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
-                            "step: %lf\n",
-                    dt_edo);
-            dt_edp = dt_edo;
-        }
+
+    if (dt_edp >= dt_edo) {
+        ode_step = (int)(dt_edp / dt_edo);
+        printf ("Solving EDO %d times before solving PDE\n", ode_step);
+    } else {
+        printf ("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
+                "step: %lf\n",
+                dt_edo);
+        dt_edp = dt_edo;
     }
 
     fflush (stdout);
 
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
-            total_deref_time = 0, cg_partial;
-    uint64_t total_cg_it = 0;
+         total_deref_time = 0, cg_partial;
+    uint32_t total_cg_it = 0;
     struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time;
 
     init_stop_watch (&solver_time);
@@ -215,14 +212,13 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         count++;
 
-        // TODO: @Incomplete: handle with the ODE and GPU stuff
         if (cur_time > 0.0) {
-            update_ode_state_vector (the_ode_solver, the_grid, adaptive);
+            update_ode_state_vector (the_ode_solver, the_grid, original_num_cells);
         }
 
         start_stop_watch (&ode_time);
 
-        solve_odes (the_ode_solver, the_grid, cur_time, ode_step, adaptive);
+        solve_all_volumes_odes (the_ode_solver, the_grid->num_active_cells, cur_time, ode_step);
 
         // TODO: this funtion should handle all update_monodomain cases:
         update_monodomain (original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_edp,
@@ -242,8 +238,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         if (count % print_rate == 0) {
             printf ("t = %lf, Iterations = "
-                            "%" PRIu32 ", Error Norm = %e, Number of Cells:"
-                            "%" PRIu32 ", Elapsed time: %ld μs\n",
+                    "%" PRIu32 ", Error Norm = %e, Number of Cells:"
+                    "%" PRIu32 ", Elapsed time: %ld μs\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
 
@@ -251,7 +247,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         if (adaptive) {
             redo_matrix = false;
-            //TODO: we should let the user decide the time to start refining
+            // TODO: we should let the user decide the time to start refining
             if (cur_time > (stim_dur / 2.0)) {
 
                 if (count % refine_each == 0) {
@@ -265,8 +261,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
                     redo_matrix |= derefine_grid_with_bound (the_grid, derefinement_bound, max_h);
                     total_deref_time += stop_stop_watch (&deref_time);
                 }
-
-
             }
 
             if (redo_matrix) {
@@ -279,8 +273,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
                 update_cells_to_solve (the_grid, the_ode_solver);
 
                 // TODO: We need the decide how to handle the GPU case for this function
-                if (uint32_vector_size(refined_this_step) > 0) {
-                    update_state_vectors_after_refinement(the_ode_solver, refined_this_step);
+                if (uint32_vector_size (refined_this_step) > 0) {
+                    update_state_vectors_after_refinement (the_ode_solver, refined_this_step);
                     //    updateAfterRefinement (sv, refined_this_step.size (), &refined_this_step[0],
                     // pitch, edo_method);
                 }
@@ -301,13 +295,13 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     printf ("Refine time: %ld μs\n", total_ref_time);
     printf ("Derefine time: %ld μs\n", total_deref_time);
     printf ("Write time: %ld μs\n", total_write_time);
-    printf ("CG Total Iterations: %ld\n", total_cg_it);
+    printf ("CG Total Iterations: %u\n", total_cg_it);
 }
 
 // TODO: this should be handled by a user provided library
 void set_spatial_stim (struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
-    uint64_t n_active = the_grid->num_active_cells;
+    uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     Real i_stim = the_ode_solver->stim_current;
 
@@ -403,46 +397,9 @@ void set_ode_extra_data (struct grid *the_grid, struct ode_solver *the_ode_solve
     //    }
 }
 
-//TODO: change this function to call the solver directly
-void solve_odes (struct ode_solver *the_ode_solver, struct grid *the_grid, Real cur_time, int num_steps,
-                 bool adaptive) {
+void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *the_grid, uint32_t max_number_of_cells) {
 
-    uint8_t edo_method = the_ode_solver->method;
-    bool gpu = the_ode_solver->gpu;
-    uint64_t n_active = the_grid->num_active_cells;
-
-    // TODO: @Incomplete: handle with the ODE and GPU stuff
-    if (edo_method == EULER_METHOD) {
-        solve_all_volumes_odes(the_ode_solver, n_active, cur_time, num_steps);
-        // TODO: @Incomplete: handle with the ODE and GPU stuff
-    } else if (edo_method == EULER_METHOD_ADPT) {
-
-        if (gpu) {
-            if (adaptive) {
-                // solveODEsDtDxAdptGPU (sv, cur_time, beta, cm, dt_edp, i_stim, stim_start,
-                //                      stim_dur, globalArgs.min_dt_edo,
-                //                      globalArgs.max_dt_edo, pitch);
-
-                // updateMonodomainDxAdpt (originalNumCells, numActiveCells,
-                //                       activeCells.data (), beta, cm, dt_edp, sv);
-
-            } else {
-                // solveODEsDtAdptGPU (sv, cur_time, beta, cm, dt_edp, i_stim, stim_start,
-                //                    stim_dur, globalArgs.min_dt_edo,
-                //                    globalArgs.max_dt_edo, pitch);
-                // updateMonodomain (numActiveCells, activeCells.data (), beta, cm, dt_edp,
-                //                  sv);
-            }
-
-        } else {
-            // parallelSolveODEsAdpt (cur_time, beta, cm, dt_edp, i_stim);
-        }
-    }
-}
-
-void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *the_grid, bool adaptive) {
-
-    uint64_t n_active = the_grid->num_active_cells;
+    uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
     int n_edos = the_ode_solver->model_data.number_of_ode_equations;
@@ -450,14 +407,24 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
     Real *sv = the_ode_solver->sv;
 
     if (the_ode_solver->gpu) {
-        if (adaptive) {
-            // updateSvGPUDxAdpt (originalNumCells, numActiveCells, activeCells.data (), sv);
-        } else {
-            // updateSvGPU (numActiveCells, activeCells.data (), sv);
+#ifdef COMPILE_CUDA
+        Real *vms;
+        size_t mem_size = max_number_of_cells * sizeof (Real);
+
+        vms = (Real *)malloc (mem_size);
+        check_cuda_error (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
+
+#pragma omp parallel for
+        for (int i = 0; i < n_active; i++) {
+            vms[ac[i]->sv_position] = (Real)ac[i]->v;
         }
+
+        check_cuda_error (cudaMemcpy (sv, vms, mem_size, cudaMemcpyHostToDevice));
+        free (vms);
+#endif
     } else {
 #pragma omp parallel for
-        for (uint64_t i = 0; i < n_active; i++) {
+        for (uint32_t i = 0; i < n_active; i++) {
             sv[ac[i]->sv_position * n_edos] = (Real)ac[i]->v;
         }
     }
@@ -465,11 +432,11 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
 
 void save_old_cell_positions (struct grid *the_grid) {
 
-    uint64_t n_active = the_grid->num_active_cells;
+    uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
 #pragma omp parallel for
-    for (uint64_t i = 0; i < n_active; i++) {
+    for (uint32_t i = 0; i < n_active; i++) {
         ac[i]->sv_position = ac[i]->grid_position;
     }
 }
@@ -496,7 +463,7 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
 
     double alpha, h;
     struct cell_node **ac = the_grid->active_cells;
-    uint64_t active_cells = the_grid->num_active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
     double beta = the_solver->beta;
     double cm = the_solver->cm;
     double dt = the_solver->dt;
@@ -512,7 +479,7 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
 
 void set_discretization_matrix (struct monodomain_solver *the_solver, struct grid *the_grid) {
 
-    uint64_t num_active_cells = the_grid->num_active_cells;
+    uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     uint8_t max_elements = the_grid->num_cell_neighbours;
 
@@ -522,29 +489,29 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
     for (int i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->south, 's', max_elements);
+        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->south, 's', max_elements);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->north, 'n', max_elements);
+        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->north, 'n', max_elements);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->east, 'e', max_elements);
+        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->east, 'e', max_elements);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->west, 'w', max_elements);
+        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->west, 'w', max_elements);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->front, 'f', max_elements);
+        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->front, 'f', max_elements);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->back, 'b', max_elements);
+        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->back, 'b', max_elements);
     }
 }
 
 void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct grid *the_grid) {
 
     double alpha, h;
-    uint64_t num_active_cells = the_grid->num_active_cells;
+    uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     double beta = the_solver->beta;
     double cm = the_solver->cm;
@@ -572,8 +539,8 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
     }
 }
 
-void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, struct cell_node *grid_cell,
-                                         void *neighbour_grid_cell, char direction, uint8_t max_elements) {
+void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, struct cell_node *grid_cell,
+                                          void *neighbour_grid_cell, char direction, uint8_t max_elements) {
 
     uint32_t position;
     bool has_found;
@@ -617,7 +584,7 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
             }
         }
     }
-        // Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
+    // Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
     else {
         if (neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
             has_found = false;
@@ -700,7 +667,7 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
             lock_cell_node (black_neighbor_cell);
 
             el_counter = 1;
-            //element = cell_elements[el_counter];
+            // element = cell_elements[el_counter];
 
             while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
                    cell_elements[el_counter].column != position) {
@@ -740,7 +707,7 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
     }
 }
 
-void update_monodomain (uint64_t initial_number_of_cells, uint64_t num_active_cells, struct cell_node **active_cells,
+void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                         double beta, double cm, double dt_edp, Real *sv, int n_equations_cell_model, bool use_gpu) {
 
     double h, alpha;
@@ -751,7 +718,7 @@ void update_monodomain (uint64_t initial_number_of_cells, uint64_t num_active_ce
 
     if (use_gpu) {
         vms = (Real *)malloc (mem_size);
-        cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost);
+        check_cuda_error (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
 #endif
 
@@ -768,7 +735,6 @@ void update_monodomain (uint64_t initial_number_of_cells, uint64_t num_active_ce
             active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
         }
     }
-
 #ifdef COMPILE_CUDA
     free (vms);
 #endif
@@ -795,15 +761,18 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
 
     printf ("Width = %lf um, height = %lf um, Depth = %lf \n", the_grid->side_length, the_grid->side_length,
             the_grid->side_length);
-    printf ("Initial N. of Elements = " "%" PRIu32 "\n", the_grid->num_active_cells);
+    printf ("Initial N. of Elements = "
+            "%" PRIu32 "\n",
+            the_grid->num_active_cells);
     printf ("PDE time step = %lf\n", the_monodomain_solver->dt);
-    printf ("ODE solver edo_method: %s\n", get_ode_method_name (the_ode_solver->method));
+    // TODO: return the method on the model_data struct??
+    // printf ("ODE solver edo_method: %s\n", get_ode_method_name (the_ode_solver->method));
     printf ("ODE min time step = %lf\n", the_ode_solver->min_dt);
-    if ((the_ode_solver->method == EULER_METHOD_ADPT)) {
-        printf ("ODE max time step = %lf\n", the_ode_solver->max_dt);
-        printf ("Absolute tolerance for edo = %lf\n", the_ode_solver->abs_tol);
-        printf ("Relative tolerance for edo = %lf\n", the_ode_solver->rel_tol);
-    }
+    /*    if ((the_ode_solver->method == EULER_METHOD_ADPT)) {
+            printf ("ODE max time step = %lf\n", the_ode_solver->max_dt);
+            printf ("Absolute tolerance for edo = %lf\n", the_ode_solver->abs_tol);
+            printf ("Relative tolerance for edo = %lf\n", the_ode_solver->rel_tol);
+        }*/
 
     printf ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
     printf ("Stimulus start = %lf\n", the_ode_solver->stim_start);

@@ -89,11 +89,11 @@ void refine_grid_cell_at(struct grid *the_grid, uint32_t cell_number) {
 
     if( (cell_number > the_grid->number_of_cells) || (cell_number < 0) ) {
         fprintf(stderr, "refine_grid_cell_at: cell_number %u is out of bounds. Exiting!", cell_number);
-        exit(0);
+        exit(10);
     }
 
     struct cell_node *grid_cell = the_grid->first_cell;
-    for( uint64_t i = 0; i < cell_number; i++ ) {
+    for( uint32_t i = 0; i < cell_number; i++ ) {
         grid_cell = grid_cell->next;
     }
 
@@ -104,7 +104,7 @@ void refine_grid_cell_at(struct grid *the_grid, uint32_t cell_number) {
 
 void set_grid_flux(struct grid *the_grid) {
 
-    uint64_t active_cells = the_grid->num_active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
 

@@ -10,8 +10,6 @@
 #include "../utils/vector/uint32_vector.h"
 #include "../models/model_common.h"
 
-#define EULER_METHOD 0
-#define EULER_METHOD_ADPT 1
 
 typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 
@@ -34,12 +32,9 @@ struct ode_solver {
     Real rel_tol;
     Real abs_tol;
 
-    uint8_t method;
-
     //used for the adaptive time step solver
     Real previous_dt;
     Real time_new;
-
 
     // TODO: create a file for stimulus definition!!
     Real stim_start;
@@ -73,7 +68,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 struct ode_solver* new_ode_solver();
 void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint64_t n_active, Real cur_time, int num_steps);
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, Real cur_time, int num_steps);
 int parse_ode_ini_file(void* user, const char* section, const char* name, const char* value);
 
 

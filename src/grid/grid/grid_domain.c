@@ -314,8 +314,6 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_lenght, start_h);
 
-    the_grid->init_ode = false;
-
     initialize_and_construct_grid(the_grid, real_side_lenght, 7);
 
     if ((real_side_lenght / 2.0f) > max_h) {

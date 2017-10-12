@@ -186,7 +186,7 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
             break;
         default:
             fprintf(stderr, "Invalid cell direction %c! Exiting...", direction);
-            exit(0);
+            exit(10);
     }
 
     double leastDistance = the_cell->half_face_length;

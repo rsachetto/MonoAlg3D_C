@@ -2,11 +2,7 @@
 // Created by sachetto on 06/10/17.
 //
 #include "../solvers/linear_system_solver.h"
-#include "../solvers/ode_solver.h"
 #include "../utils/output_utils.h"
-#include "../utils/vector/int_vector.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <criterion/criterion.h>
 #include <omp.h>
@@ -57,7 +53,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
     cr_assert_eq (num_lines_m, grid->num_active_cells);
 
     cell = grid->first_cell;
-    uint64_t cell_position;
+    uint32_t cell_position;
 
     double m_value;
 
@@ -83,7 +79,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
                 if (m_value != 0.0) {
                     struct element el2;
                     el2.value = m_value;
-                    el2.column = (uint64_t)j;
+                    el2.column = (uint32_t)j;
 
                     struct cell_node *aux = grid->first_cell;
                     while (aux) {
@@ -152,7 +148,6 @@ double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *
     while (item_count < *nnz) {
 
         sds *tmp = sdssplitlen (line_a, (int)strlen (line_a), sep, (int)strlen (sep), &count);
-        // printf("%s", line_a);
         if (tmp[0][0] != '\n') {
             m_line = atoi (tmp[0]);
             m_column = atoi (tmp[1]);
@@ -248,7 +243,7 @@ void run_cg (bool jacobi) {
     conjugate_gradient (grid, 200, 1e-16, jacobi, &error);
 
     int n_lines1;
-    uint64_t n_lines2;
+    uint32_t n_lines2;
 
     double *x = read_octave_vector_file_to_array (X, &n_lines1);
     double *x_grid = grid_vector_to_array (grid, 'x', &n_lines2);
