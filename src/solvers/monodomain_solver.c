@@ -11,7 +11,6 @@
 
 #ifdef COMPILE_CUDA
 #include "../models/model_gpu_utils.cuh"
-
 #endif
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {

@@ -35,7 +35,7 @@ __global__ void print_svs(Real *sv, int numCells, int neq) {
     }
 }
 
-extern "C" void set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes, int neq) {
+extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes, int neq) {
 
     printf("Using ten Tusscher GPU model\n");
 
@@ -52,6 +52,7 @@ extern "C" void set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();
+    return pitch_h;
 
 }
 
@@ -367,9 +368,9 @@ inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, Real ti
     rDY_[12] = r_inf + (r-r_inf)*expf(-dt/tau_r);
 }
 
-extern "C" void update_gpu_after_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq) {
+/*extern "C" void update_gpu_after_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq) {
 
-    // execution configuration
+*//*    // execution configuration
     const int GRID  = ((int)number_of_cells + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t size = number_of_cells*sizeof(uint32_t);
@@ -382,34 +383,57 @@ extern "C" void update_gpu_after_refinement(Real *sv, uint32_t *cells, size_t nu
 
     check_cuda_error( cudaPeekAtLastError() );
 
-    check_cuda_error(cudaFree(cells_d));
-}
+    check_cuda_error(cudaFree(cells_d));*//*
 
+    Real *sv_src;
+    Real *sv_dst;
+
+    for (size_t i = 0; i < number_of_cells/8; i++) {
+
+        size_t index_id = i * 8;
+
+        uint32_t index = cells[index_id];
+        sv_src = &sv[index];
+
+        for (int j = 1; j < 8; j++) {
+            index = cells[index_id + j];
+            sv_dst = &sv[index];
+            cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(Real), (size_t )neq, cudaMemcpyDeviceToDevice);
+        }
+
+
+    }
+
+
+}*/
+
+/*
 __global__ void update_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq) {
 
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
-    int index;
+    int index_dst;
     int i = 0;
     int index_id = threadID*8;
+    int index_src;
 
     if(index_id < number_of_cells) {
 
-        index = cells[index_id];
-        Real *src = (Real*)malloc(sizeof(Real)*neq);
-
-        for(int k = 0; k < neq; k++) {
-            src[i] = *((Real*)((char*)sv + pitch * k) + index);
-        }
+        index_src = cells[index_id];
+//        Real *src = (Real*)malloc(sizeof(Real)*neq);
+//
+//        for(int k = 0; k < neq; k++) {
+//            src[i] = *((Real*)((char*)sv + pitch * k) + index_dst);
+//        }
 
         for(i = 1; i < 8; i++) {
 
-            index = cells[index_id+i];
+            index_dst = cells[index_id+i];
 
             for(int k = 0; k < neq; k++) {
-                *((Real*)((char*)sv + pitch * k) + index) = src[i];
+                *((Real*)((char*)sv + pitch * k) + index_dst) = *((Real*)((char*)sv + pitch * k) + index_src);
             }
 
         }
     }
 
-}
+}*/

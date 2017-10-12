@@ -61,11 +61,12 @@ void initialize_grid_with_rabbit_mesh (struct grid *the_grid, const char *mesh_f
 void initialize_grid_with_benchmark_mesh (struct grid *the_grid, double start_h);
 
 void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side_lenght, double start_h, int num_layers);
-void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, double side_length, double start_h, double num_layers, double phi);
-void initialize_grid_with_plain_and_sphere_fibrotic_mesh (struct grid *the_grid, double side_length,
-                                                          double start_h, double num_layers, double phi,
-                                                          double plain_center, double sphere_radius, double bz_size,
-                                                          double bz_radius);
+void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, double side_length, double start_h, int num_layers,
+                                              double phi);
+void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, double side_length,
+                                                         double start_h, int num_layers, double phi,
+                                                         double plain_center, double sphere_radius, double bz_size,
+                                                         double bz_radius);
 void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_center, double sphere_radius, double bz_size,
                                double bz_radius);
 void set_plain_fibrosis(struct grid* the_grid, double phi);

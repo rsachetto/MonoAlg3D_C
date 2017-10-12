@@ -60,7 +60,7 @@ void hash_destroy(struct point_hash * d) {
 static unsigned long hash_function(struct point_3d k)
 {
 
-    return (unsigned long)(k.x * 18397) + (k.y * 20483) + (k.z * 29303);
+    return (unsigned long)((k.x * 18397) + (k.y * 20483) + (k.z * 29303));
 
 }
 

@@ -342,7 +342,8 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side
 
 }
 
-void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, double side_length, double start_h, double num_layers, double phi) {
+void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, double side_length, double start_h, int num_layers,
+                                              double phi) {
 
 
     initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
@@ -353,10 +354,10 @@ void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, double sid
 }
 
 
-void initialize_grid_with_plain_and_sphere_fibrotic_mesh (struct grid *the_grid, double side_length,
-                                                          double start_h, double num_layers, double phi,
-                                                          double plain_center, double sphere_radius, double bz_size,
-                                                          double bz_radius) {
+void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, double side_length,
+                                                         double start_h, int num_layers, double phi,
+                                                         double plain_center, double sphere_radius, double bz_size,
+                                                         double bz_radius) {
 
     initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
     set_plain_sphere_fibrosis(the_grid, phi, plain_center,sphere_radius,bz_size, bz_radius);
@@ -399,8 +400,8 @@ void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_
 
     printf("Using %u as seed\n", fib_seed);
 
-    double bz_radius_2 = powf(bz_radius, 2.0f);
-    double sphere_radius_2 = powf(sphere_radius, 2.0f);
+    double bz_radius_2 = pow(bz_radius, 2.0f);
+    double sphere_radius_2 = pow(sphere_radius, 2.0f);
 
     struct cell_node *grid_cell;
 

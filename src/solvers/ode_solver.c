@@ -28,7 +28,7 @@ struct ode_solver* new_ode_solver() {
 
     result->set_ode_initial_conditions_gpu_fn = NULL;
     result->solve_model_ode_gpu_fn = NULL;
-    result->update_gpu_fn = NULL;
+    //result->update_gpu_fn = NULL;
 
     //init_ode_solver_with_cell_model(result);
     return result;
@@ -124,15 +124,13 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
     }
 
 
-    solver->update_gpu_fn = dlsym(solver->handle, "update_gpu_after_refinement");
+    /*solver->update_gpu_fn = dlsym(solver->handle, "update_gpu_after_refinement");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "update_gpu_after_refinement function not found in the provided model library\n");
         exit(1);
-    }
+    }*/
 #endif
-    //TODO: we need to think about this handler stuff
-    //dlclose(handle);
 
 }
 
@@ -160,8 +158,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
             cudaFree(solver->sv);
         }
 
-        soicg_fn_pt(&(solver->sv), num_cells, n_odes);
-
+        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells, n_odes);
 #endif
     } else {
 
@@ -233,23 +230,41 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
     assert(ode_solver);
     assert(ode_solver->sv);
 
-    size_t num_refined_cells = uint32_vector_size(refined_this_step);
+    size_t num_refined_cells = uint32_vector_size(refined_this_step)/8;
 
     Real *sv = ode_solver->sv;
     int neq = ode_solver->model_data.number_of_ode_equations;
-
+    Real *sv_src;
+    Real *sv_dst;
 
     if(ode_solver->gpu) {
     #ifdef COMPILE_CUDA
-        ode_solver->update_gpu_fn(sv, refined_this_step->base, num_refined_cells, neq);
+
+        size_t pitch_h = ode_solver->pitch;
+        #pragma omp parallel for private(sv_src, sv_dst)
+        for (size_t i = 0; i < num_refined_cells; i++) {
+
+            size_t index_id = i * 8;
+
+            uint32_t index = uint32_vector_at(refined_this_step, index_id);
+            sv_src = &sv[index];
+
+            for (int j = 1; j < 8; j++) {
+                index = uint32_vector_at(refined_this_step, index_id + j);
+                sv_dst = &sv[index];
+                cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(Real), (size_t )neq, cudaMemcpyDeviceToDevice);
+            }
+
+
+        }
+        //ode_solver->update_gpu_fn(sv, refined_this_step->base, num_refined_cells, neq);
+
     #endif
     }
     else {
 
-        Real *sv_src, *sv_dst;
-
         #pragma omp parallel for private(sv_src, sv_dst)
-        for (size_t i = 0; i < num_refined_cells/8; i++) {
+        for (size_t i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * 8;
 

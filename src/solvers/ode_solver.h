@@ -18,9 +18,9 @@ typedef void (*set_ode_initial_conditions_cpu_fn_pt)(Real *);
 typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real , Real , Real , Real , int , void *);
 
 //GPU FUNCTIONS
-typedef void (*set_ode_initial_conditions_gpu_fn_pt)(Real **, uint32_t , int );
+typedef size_t (*set_ode_initial_conditions_gpu_fn_pt)(Real **, uint32_t , int );
 typedef void (*solve_model_ode_gpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t , Real, Real, Real, int, int, void *);
-typedef void (*update_gpu_fn_pt)(Real *, uint32_t *, size_t , int );
+//typedef void (*update_gpu_fn_pt)(Real *, uint32_t *, size_t , int );
 
 
 struct ode_solver {
@@ -50,13 +50,15 @@ struct ode_solver {
     void *edo_extra_data;
     struct cell_model_data model_data;
 
+    size_t pitch;
+
     //User provided functions
     get_cell_model_data_fn_pt get_cell_model_data_fn;
     set_ode_initial_conditions_cpu_fn_pt set_ode_initial_conditions_cpu_fn;
     set_ode_initial_conditions_gpu_fn_pt set_ode_initial_conditions_gpu_fn;
     solve_model_ode_cpu_fn_pt solve_model_ode_cpu_fn;
     solve_model_ode_gpu_fn_pt solve_model_ode_gpu_fn;
-    update_gpu_fn_pt update_gpu_fn;
+    //update_gpu_fn_pt update_gpu_fn;
 
 
 };

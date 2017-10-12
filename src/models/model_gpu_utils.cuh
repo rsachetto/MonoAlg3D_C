@@ -19,6 +19,7 @@ extern __cuda_fake_struct blockIdx;
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "cuda_runtime.h"
 
 void gpu_assert(cudaError_t code, const char *file, int line);
 
