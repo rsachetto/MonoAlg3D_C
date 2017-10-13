@@ -4,7 +4,9 @@
 
 #include <sys/stat.h>
 #include <malloc.h>
+#include <assert.h>
 #include "output_utils.h"
+#include "config_parser.h"
 
 bool dir_exists(const char *path) {
     struct stat info;
@@ -18,22 +20,29 @@ bool dir_exists(const char *path) {
 }
 
 
-struct output_utils *new_output_utils(int print_rate, const char *output_dir) {
+struct output_utils *new_output_utils() {
 
     struct output_utils * output_info = (struct output_utils*)malloc(sizeof(struct output_utils));
-    output_info->print_rate = print_rate;
-
-    if(output_dir)
-        output_info->output_dir_name = sdsnew(output_dir);
-    else
-        output_info->output_dir_name = NULL;
-
     return output_info;
 }
 
 void free_output_utils(struct output_utils* info) {
+
+    assert(info);
+
     if(info->output_dir_name) {
         sdsfree(info->output_dir_name);
     }
     free(info);
+}
+
+void configure_output_from_options(struct output_utils *output_utils,
+                                              struct user_options *options) {
+
+    assert(output_utils);
+    assert(options);
+
+    output_utils->print_rate = options->print_rate;
+    output_utils->output_dir_name = sdsnew(options->out_dir_name);
+
 }

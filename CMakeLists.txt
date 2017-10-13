@@ -30,7 +30,7 @@ endif()
 ADD_SUBDIRECTORY(src/utils)
 ADD_SUBDIRECTORY(src/grid)
 ADD_SUBDIRECTORY(src/solvers)
-ADD_SUBDIRECTORY(src/ini_parser)
+ADD_SUBDIRECTORY(src/utils/ini_parser)
 
 set(SOURCE_FILES src/main.c)
 

@@ -2,58 +2,74 @@
 // Created by sachetto on 03/10/17.
 //
 
-#include "monodomain_solver.h"
-#include "../utils/stop_watch.h"
-#include "linear_system_solver.h"
+
 #include <inttypes.h>
 #include <omp.h>
 #include <sys/stat.h>
+#include <assert.h>
 
 #ifdef COMPILE_CUDA
 #include "../utils/gpu/gpu_utils.h"
 #endif
 
+#include "monodomain_solver.h"
+#include "../utils/stop_watch.h"
+#include "linear_system_solver.h"
+#include "../utils/config_parser.h"
+
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);
 }
 
-// TODO: make proper initialization and new functions
-struct monodomain_solver *new_monodomain_solver (int num_threads, double beta, double cm, double dt, double sigma_x,
-                                                 double sigma_y, double sigma_z) {
+struct monodomain_solver *new_monodomain_solver() {
 
     struct monodomain_solver *result = (struct monodomain_solver *)malloc (sizeof (struct monodomain_solver));
 
-    result->beta = beta;
-    result->cm = 1.0f;
-    result->dt = dt;
+    result->beta = 0.14;
+    result->cm = 1.0;
 
-    result->sigma_x = sigma_x;
-    result->sigma_y = sigma_y;
-    result->sigma_z = sigma_z;
-    result->num_threads = num_threads;
+    //TODO: make this an section in the config file
+    result->sigma_y = 0.0001334f;
+    result->sigma_x = 0.0000176;
+    result->sigma_z = result->sigma_x;
 
     return result;
 }
 
-void init_solver (struct monodomain_solver *the_solver) {
+void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
+                                              struct user_options *options) {
 
-    the_solver->beta = 0.14;
-    the_solver->cm = 1.0;
+    assert(the_monodomain_solver);
+    assert(options);
 
-    the_solver->sigma_y = 0.0001334f;
-    the_solver->sigma_x = 0.0000176;
-    the_solver->sigma_z = the_solver->sigma_x;
+    the_monodomain_solver->tolerance = options->cg_tol;
+    the_monodomain_solver->num_threads = options->num_threads;
+    the_monodomain_solver->max_iterations = options->max_its;
+    the_monodomain_solver->final_time = options->final_time;
 
-    the_solver->refine_each = 1;
-    the_solver->derefine_each = 1;
 
-    //    the_solver->sigma_y = 0.0001334f / 2.5f;
-    //    the_solver->sigma_x = the_solver->sigma_y;
-    //    the_solver->sigma_z = the_solver->sigma_y;
+    the_monodomain_solver->start_h = options->start_h;
+    the_monodomain_solver->max_h = options->max_h;
+    the_monodomain_solver->min_h = the_monodomain_solver->start_h;;
+    the_monodomain_solver->refine_each = options->refine_each;
+    the_monodomain_solver->derefine_each = options->derefine_each;
+    the_monodomain_solver->refinement_bound = options->ref_bound;
+    the_monodomain_solver->derefinement_bound = options->deref_bound;
+
+    the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
+
+    the_monodomain_solver->dt = options->dt_edp;
+    the_monodomain_solver->use_jacobi = options->use_jacobi;
+
 }
 
 void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
                        struct ode_solver *the_ode_solver, struct output_utils *output_info) {
+
+    assert(the_grid);
+    assert(the_monodomain_solver);
+    assert(the_ode_solver);
+    assert(output_info);
 
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
@@ -751,6 +767,7 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
 
     printf ("Time discretization: %lf\n", the_monodomain_solver->dt);
     printf ("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
+    printf ("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
     printf ("Initial Space Discretization: %lf um\n", the_monodomain_solver->start_h);
 
     if (the_grid->adaptive) {
@@ -798,7 +815,7 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
             printf ("%s does not exist! Creating\n", out_dir);
 
             if (mkdir (out_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-                fprintf (stderr, "Error creating directory %s. Exiting!", out_dir);
+                fprintf (stderr, "Error creating directory %s. Exiting!\n", out_dir);
                 exit (10);
             }
         }

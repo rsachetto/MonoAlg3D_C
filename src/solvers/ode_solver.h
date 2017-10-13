@@ -9,6 +9,7 @@
 #include <unitypes.h>
 #include "../utils/vector/uint32_vector.h"
 #include "../models/model_common.h"
+#include "../utils/config_parser.h"
 
 typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 
@@ -70,7 +71,7 @@ struct ode_solver* new_ode_solver();
 void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, Real cur_time, int num_steps);
-int parse_ode_ini_file(void* user, const char* section, const char* name, const char* value);
+void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
 
 
 

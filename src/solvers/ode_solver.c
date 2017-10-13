@@ -11,9 +11,9 @@
 
 #ifdef COMPILE_CUDA
 #include "../utils/gpu/gpu_utils.h"
-#endif
+#include "../utils/config_parser.h"
 
-#include "../ini_parser/ini_file_sections.h"
+#endif
 
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
@@ -22,8 +22,6 @@ struct ode_solver* new_ode_solver() {
     result->edo_extra_data = NULL;
     result->cells_to_solve = NULL;
     result->handle = NULL;
-    result->gpu = false;
-    result->gpu_id = 0;
 
     result->get_cell_model_data_fn = NULL;
     result->set_ode_initial_conditions_cpu_fn = NULL;
@@ -32,6 +30,8 @@ struct ode_solver* new_ode_solver() {
     result->set_ode_initial_conditions_gpu_fn = NULL;
     result->solve_model_ode_gpu_fn = NULL;
     //result->update_gpu_fn = NULL;
+    result->model_data.initial_v = INFINITY;
+    result->model_data.number_of_ode_equations = -1;
 
     //init_ode_solver_with_cell_model(result);
     return result;
@@ -259,6 +259,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
 
         }
+        //TODO: test if is faster to update the GPU using a kernel or a host function with cudaMemcpy2D
         //ode_solver->update_gpu_fn(sv, refined_this_step->base, num_refined_cells, neq);
 
     #endif
@@ -285,33 +286,11 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
 }
 
-int parse_ode_ini_file(void* user, const char* section, const char* name, const char* value)
-{
-    struct ode_solver* pconfig = (struct ode_solver*)user;
-    pconfig->model_data.number_of_ode_equations = -1;
-    pconfig->model_data.initial_v = INFINITY;
+void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
+    solver->gpu_id = options->gpu_id;
+    solver->min_dt = (Real)options->dt_edo;
+    solver->gpu = options->gpu;
 
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH(ODE_SECTION, "library_file_path")) {
-        pconfig->model_data.model_library_path = strdup(value);
-    } else if (MATCH(ODE_SECTION, "initial_v")) {
-        pconfig->model_data.initial_v = (Real)atof(value);
-    } else if (MATCH(ODE_SECTION, "num_equations_cell_model")) {
-        pconfig->model_data.number_of_ode_equations = atoi(value);
-    }
-    else if (MATCH(ODE_SECTION, "dt")) {
-        pconfig->min_dt = (Real)atof(value);
-    }
-    else if (MATCH(ODE_SECTION, "use_gpu")) {
-        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
-            pconfig->gpu = true;
-        }
-        else {
-            pconfig->gpu = false;
-        }
-    }
-    else {
-        return 0;  /* unknown section/name, error */
-    }
-    return 1;
+    solver->model_data.model_library_path = strdup(options->model_file_path);
+
 }

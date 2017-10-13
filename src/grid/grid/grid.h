@@ -8,6 +8,7 @@
 #include "../cell/cell.h"
 #include "../../utils/vector/int_vector.h"
 #include "../../utils/vector/uint32_vector.h"
+#include "../../utils/config_parser.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,7 +31,7 @@ struct grid {
 };
 
 
-
+struct grid* new_grid();
 void initialize_grid(struct grid *the_grid, double side_length, uint8_t num_cell_neighbours);
 void clean_and_free_grid(struct grid* the_grid);
 void construct_grid(struct grid *the_grid);
@@ -70,5 +71,7 @@ void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, 
 void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_center, double sphere_radius, double bz_size,
                                double bz_radius);
 void set_plain_fibrosis(struct grid* the_grid, double phi);
+
+void configure_grid_from_options(struct grid* grid, struct user_options *options);
 
 #endif //MONOALG3D_GRID_H

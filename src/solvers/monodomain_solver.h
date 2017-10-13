@@ -13,8 +13,6 @@
 
 struct monodomain_solver {
 
-    //TODO: @Check: maybe this solver need a alg grid?
-
     double tolerance;
     int num_threads;
     int max_iterations;
@@ -40,9 +38,12 @@ struct monodomain_solver {
 
 };
 
+struct monodomain_solver *new_monodomain_solver ();
+void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
+                                              struct user_options *options);
+
 void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
                        struct ode_solver *the_edo_solver, struct output_utils *output_info);
-void init_solver (struct monodomain_solver *the_solver);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);

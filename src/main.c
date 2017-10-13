@@ -3,67 +3,52 @@
 #include "grid/grid/grid.h"
 #include "solvers/ode_solver.h"
 #include "solvers/monodomain_solver.h"
-#include "utils/opts.h"
-#include "ini_parser/ini.h"
+#include "utils/config_parser.h"
+#include "utils/ini_parser/ini.h"
 
 int main(int argc, char **argv) {
 
     struct user_options* options;
-    options = (struct user_options*)malloc(sizeof(struct user_options));
+
+    //We load the default options first
+    options = new_user_options();
     
     struct grid *the_grid;
     struct monodomain_solver *edp_solver;
     struct ode_solver *ode_solver;
     struct output_utils *output_info;
 
-    //Real dt = 0.02f;
-    //double start_h = 500.0f;
-    //double max_h = 1000.0f;
-    //double min_h = start_h;
-
-    the_grid = (struct grid*)malloc(sizeof(struct grid));
-    edp_solver = (struct monodomain_solver*)malloc(sizeof(struct monodomain_solver));
-
+    the_grid   = new_grid();
+    edp_solver = new_monodomain_solver();
     ode_solver = new_ode_solver();
-    if (ini_parse("example_configs/tenTusscher_config_example.ini", parse_ode_ini_file, ode_solver) < 0) {
-        printf("Can't load 'tenTusscher_config_example.ini'\n");
-        return 1;
+    output_info = new_output_utils();
+
+
+    //First we have to get the config file path
+    get_config_file(argc, argv, options);
+
+    if(options->config_file) {
+        //Here we parse the config file
+        if (ini_parse(options->config_file, parse_config_file, options) < 0) {
+            fprintf(stderr, "Error: Can't load the config file %s\n", options->config_file);
+            return 1    ;
+        }
     }
 
-    //The command line options always subscribe the config file
+    //The command line options always overwrite the config file
     parse_options(argc, argv, options);
 
-    output_info = new_output_utils(10, "./tmp");
+    configure_ode_solver_from_options(ode_solver, options);
+    configure_monodomain_solver_from_options(edp_solver, options);
+    configure_output_from_options(output_info, options);
+    configure_grid_from_options(the_grid, options);
 
     init_ode_solver_with_cell_model(ode_solver);
 
-
-    //ode_solver->min_dt = dt;
-    //ode_solver->stim_duration = 2.0;
-    //ode_solver->stim_start = 0.0;
-    //ode_solver->stim_current = -50.0f;
-    //ode_solver->gpu = true;
-
-    init_solver(edp_solver);
-
-    //edp_solver->tolerance = 1e-16;
-    //edp_solver->use_jacobi = true;
-    //edp_solver->num_threads = 4;
-    //edp_solver->dt = dt;
-    //edp_solver->start_h = start_h;
-    //edp_solver->min_h = min_h;
-    //edp_solver->max_h = max_h;
-    //edp_solver->final_time = 10.0;
-    //edp_solver->abort_on_no_activity = false;
-    //edp_solver->refinement_bound = 0.11;
-    //edp_solver->derefinement_bound = 0.10;
-
-    //edp_solver->max_iterations = 200;
-
-    initialize_grid_with_benchmark_mesh(the_grid, options->start_h);
-
-    //the_grid->adaptive = true;
-
+    //TODO: we have to define how to handle the stimuli
+    ode_solver->stim_duration = 2.0;
+    ode_solver->stim_start = 0.0;
+    ode_solver->stim_current = -50.0f;
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
@@ -71,6 +56,9 @@ int main(int argc, char **argv) {
         ode_solver->gpu = false;
     }
 #endif
+
+    //TODO: this should be an user provided function!
+    initialize_grid_with_benchmark_mesh(the_grid, edp_solver->start_h);
 
     solve_monodomain(the_grid, edp_solver, ode_solver, output_info);
 

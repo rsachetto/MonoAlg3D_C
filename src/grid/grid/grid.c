@@ -4,24 +4,39 @@
 
 #include "grid.h"
 #include <inttypes.h>
+#include <assert.h>
+
+struct grid* new_grid() {
+    struct grid* result = (struct grid*) malloc(sizeof(struct grid));
+    result->first_cell = NULL;
+    result->active_cells = NULL;
+    result->refined_this_step = uint32_vector_create(128);
+    result->free_sv_positions = uint32_vector_create(128);
+
+    return result;
+}
+
 void initialize_and_construct_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
+    assert(the_grid);
+
     initialize_grid (the_grid, side_length, num_cell_neighbours);
     construct_grid (the_grid);
 }
 
 void initialize_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
 
-    the_grid->first_cell = NULL;
+    assert(the_grid);
+
     the_grid->side_length = side_length;
     the_grid->number_of_cells = 0;
-    the_grid->active_cells = NULL;
     the_grid->num_cell_neighbours = num_cell_neighbours;
-    the_grid->refined_this_step = uint32_vector_create(128);
-    the_grid->free_sv_positions = uint32_vector_create(128);
+
 
 }
 
 void construct_grid (struct grid *the_grid) {
+
+    assert(the_grid);
 
     double side_length = the_grid->side_length;
 
@@ -223,7 +238,7 @@ void order_grid_cells (struct grid *the_grid) {
 
 void clean_grid (struct grid *the_grid) {
 
-
+    assert(the_grid);
     uint32_t number_of_cells = the_grid->number_of_cells;
 
     // In order to release the memory allocated for the grid, the grid is
@@ -269,6 +284,9 @@ void clean_grid (struct grid *the_grid) {
 }
 
 void clean_and_free_grid(struct grid* the_grid) {
+
+    assert(the_grid);
+
     clean_grid(the_grid);
 
     if (the_grid->active_cells) {
@@ -290,10 +308,9 @@ void clean_and_free_grid(struct grid* the_grid) {
 
 // Prints grid discretization matrix.
 void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
-    if (!output_file) {
-        fprintf (stderr, "print_grid_matrix: output_file is NULL! Open it first!");
-        return;
-    }
+
+    assert(the_grid);
+    assert(output_file);
 
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
@@ -380,4 +397,12 @@ double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_li
 
     return vector;
 
+}
+
+void configure_grid_from_options(struct grid* grid, struct user_options *options) {
+    assert(grid);
+    assert(options);
+
+    grid->adaptive = options->adaptive;
+    grid->side_length = options->side_lenght;
 }
