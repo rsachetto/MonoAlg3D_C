@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 
 #ifdef COMPILE_CUDA
-#include "../models/model_gpu_utils.cuh"
+#include "../utils/gpu/gpu_utils.h"
 #endif
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
@@ -103,11 +103,11 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     if (gpu) {
         int device_count;
         int device = the_ode_solver->gpu_id;
-        check_cuda_error (cudaGetDeviceCount (&device_count));
+        check_cuda_errors(cudaGetDeviceCount (&device_count));
         struct cudaDeviceProp prop;
-        check_cuda_error (cudaGetDeviceProperties (&prop, the_ode_solver->gpu_id));
+        check_cuda_errors(cudaGetDeviceProperties (&prop, the_ode_solver->gpu_id));
         printf ("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
-        check_cuda_error (cudaSetDevice (device));
+        check_cuda_errors(cudaSetDevice (device));
     }
 #endif
 
@@ -344,7 +344,7 @@ void set_ode_extra_data (struct grid *the_grid, struct ode_solver *the_ode_solve
     //    Real *fibs = (Real*)the_ode_solver->edo_extra_data;
     //
     //
-    //    #pragma omp parallel for
+    //    #pragma omp num_threads for
     //    for (int i = 0; i < n_active; i++) {
     //
     //        if(ac[i]->fibrotic) {
@@ -411,14 +411,14 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
         size_t mem_size = max_number_of_cells * sizeof (Real);
 
         vms = (Real *)malloc (mem_size);
-        check_cuda_error (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
+        check_cuda_errors(cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
 #pragma omp parallel for
         for (int i = 0; i < n_active; i++) {
             vms[ac[i]->sv_position] = (Real)ac[i]->v;
         }
 
-        check_cuda_error (cudaMemcpy (sv, vms, mem_size, cudaMemcpyHostToDevice));
+        check_cuda_errors(cudaMemcpy (sv, vms, mem_size, cudaMemcpyHostToDevice));
         free (vms);
 #endif
     } else {
@@ -717,7 +717,7 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
 
     if (use_gpu) {
         vms = (Real *)malloc (mem_size);
-        check_cuda_error (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
+        check_cuda_errors(cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
 #endif
 

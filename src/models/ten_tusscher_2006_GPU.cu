@@ -3,7 +3,7 @@
 #include "../solvers/constants.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "model_gpu_utils.cuh"
+#include "model_gpu_utils.h"
 
 //TODO: the device and the kernels have to see this value
 static __device__ size_t pitch;

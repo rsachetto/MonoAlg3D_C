@@ -10,8 +10,10 @@
 #include <assert.h>
 
 #ifdef COMPILE_CUDA
-#include <cuda_runtime.h>
+#include "../utils/gpu/gpu_utils.h"
 #endif
+
+#include "../ini_parser/ini_file_sections.h"
 
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
@@ -20,6 +22,7 @@ struct ode_solver* new_ode_solver() {
     result->edo_extra_data = NULL;
     result->cells_to_solve = NULL;
     result->handle = NULL;
+    result->gpu = false;
     result->gpu_id = 0;
 
     result->get_cell_model_data_fn = NULL;
@@ -72,7 +75,6 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
         fprintf(stderr, "model_library_path not provided. Exiting!\n");
         exit(1);
     }
-
 
     printf("Opening %s as model lib\n", solver->model_data.model_library_path);
 
@@ -155,7 +157,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
         }
 
         if(solver->sv != NULL) {
-            cudaFree(solver->sv);
+            check_cuda_errors(cudaFree(solver->sv));
         }
 
         solver->pitch = soicg_fn_pt(&(solver->sv), num_cells, n_odes);
@@ -252,7 +254,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
             for (int j = 1; j < 8; j++) {
                 index = uint32_vector_at(refined_this_step, index_id + j);
                 sv_dst = &sv[index];
-                cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(Real), (size_t )neq, cudaMemcpyDeviceToDevice);
+                check_cuda_errors(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(Real), (size_t )neq, cudaMemcpyDeviceToDevice));
             }
 
 
@@ -290,13 +292,25 @@ int parse_ode_ini_file(void* user, const char* section, const char* name, const 
     pconfig->model_data.initial_v = INFINITY;
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("cell_model", "library_file_path")) {
+    if (MATCH(ODE_SECTION, "library_file_path")) {
         pconfig->model_data.model_library_path = strdup(value);
-    } else if (MATCH("cell_model", "initial_v")) {
+    } else if (MATCH(ODE_SECTION, "initial_v")) {
         pconfig->model_data.initial_v = (Real)atof(value);
-    } else if (MATCH("cell_model", "num_equations_cell_model")) {
+    } else if (MATCH(ODE_SECTION, "num_equations_cell_model")) {
         pconfig->model_data.number_of_ode_equations = atoi(value);
-    } else {
+    }
+    else if (MATCH(ODE_SECTION, "dt")) {
+        pconfig->min_dt = (Real)atof(value);
+    }
+    else if (MATCH(ODE_SECTION, "use_gpu")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->gpu = true;
+        }
+        else {
+            pconfig->gpu = false;
+        }
+    }
+    else {
         return 0;  /* unknown section/name, error */
     }
     return 1;

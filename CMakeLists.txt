@@ -27,7 +27,6 @@ if (CUDA_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I ${CUDA_INCLUDE_DIRS} -DCOMPILE_CUDA")
 endif()
 
-ADD_SUBDIRECTORY(src/models)
 ADD_SUBDIRECTORY(src/utils)
 ADD_SUBDIRECTORY(src/grid)
 ADD_SUBDIRECTORY(src/solvers)
@@ -40,6 +39,8 @@ add_executable(MonoAlg3D ${SOURCE_FILES})
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers ini_parser)
 
 target_link_libraries(MonoAlg3D alg solvers utils ini_parser ${CMAKE_THREAD_LIBS_INIT} ${CUDA_LIBRARIES} dl m)
+
+ADD_SUBDIRECTORY(src/models)
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 

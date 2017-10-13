@@ -10,7 +10,6 @@
 #include "../utils/vector/uint32_vector.h"
 #include "../models/model_common.h"
 
-
 typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 
 //CPU FUNCTIONS
