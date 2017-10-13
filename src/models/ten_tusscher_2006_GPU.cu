@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include "model_gpu_utils.h"
 
-//TODO: the device and the kernels have to see this value
 static __device__ size_t pitch;
 static size_t pitch_h;
 

@@ -235,7 +235,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         solve_all_volumes_odes (the_ode_solver, the_grid->num_active_cells, cur_time, ode_step);
 
-        // TODO: this funtion should handle all update_monodomain cases:
         update_monodomain (original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_edp,
                            the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
 
@@ -287,11 +286,8 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
                 update_cells_to_solve (the_grid, the_ode_solver);
 
-                // TODO: We need the decide how to handle the GPU case for this function
                 if (uint32_vector_size (refined_this_step) > 0) {
                     update_state_vectors_after_refinement (the_ode_solver, refined_this_step);
-                    //    updateAfterRefinement (sv, refined_this_step.size (), &refined_this_step[0],
-                    // pitch, edo_method);
                 }
 
                 start_stop_watch (&part_mat);
@@ -644,7 +640,7 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
                 el_counter++;
             }
 
-            // TODO: Cada elemento pode ter um sigma diferente
+            // TODO: maybe each element can have a different sigma!
             if (el_counter < max_elements && cell_elements[el_counter].cell == NULL) {
 
                 struct element new_element;
