@@ -2,7 +2,7 @@
 // Created by sachetto on 06/10/17.
 //
 #include "../main/linear_system_solver.h"
-#include "../utils/output_utils.h"
+#include "../main/output_utils.h"
 
 #include <criterion/criterion.h>
 #include <omp.h>

@@ -6,16 +6,16 @@
 #include <dlfcn.h>
 #include <string.h>
 
-void init_stim_functions(struct stim_config *config) {
+void init_stim_functions(struct stim_config *config, char* stim_name) {
 
     char *error;
 
     if(config->stim_library_file == NULL) {
-        printf("Using the default library for stimuli funcions\n");
+        printf("Using the default library for stimuli functions for %s\n", stim_name);
         config->stim_library_file = strdup("./shared_libs/libdefault_stimuli.so");
     }
     else {
-        printf("Opening %s as stimuli lib\n", config->stim_library_file);
+        printf("Opening %s as stimuli lib for %s\n", config->stim_library_file, stim_name);
 
     }
 

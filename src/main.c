@@ -2,7 +2,7 @@
 #include "alg/grid/grid.h"
 #include "main/ode_solver.h"
 #include "main/monodomain_solver.h"
-#include "utils/ini_parser/ini.h"
+#include "ini_parser/ini.h"
 #include "main/config_parser.h"
 
 int main(int argc, char **argv) {
@@ -32,7 +32,10 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
     }
-
+    else {
+        fprintf(stderr, "Error: no config file provided! Some configurations are only available via config file!\n");
+        return EXIT_FAILURE;
+    }
 
     //The command line options always overwrite the config file
     parse_options(argc, argv, options);
@@ -44,7 +47,8 @@ int main(int argc, char **argv) {
 
     init_ode_solver_with_cell_model(ode_solver);
 
-    FOR_EACH_KEY_APPLY_FN_IN_VALUE(options->stim_configs, init_stim_functions);
+    STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(options->stim_configs, init_stim_functions);
+    init_domain_functions(options->domain_config);
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
@@ -53,8 +57,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    //TODO: this should be an user provided function!
-    initialize_grid_with_benchmark_mesh(the_grid, edp_solver->start_h);
+    options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config->config);
 
     solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options->stim_configs);
 
@@ -65,7 +68,7 @@ int main(int argc, char **argv) {
     free(edp_solver);
     free(options);
 
-    FOR_EACH_KEY_APPLY_FN_IN_VALUE(options->stim_configs, free_stim_config);
+    STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(options->stim_configs, free_stim_config);
     free(options);
 
     return EXIT_SUCCESS;

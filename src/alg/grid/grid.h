@@ -6,7 +6,7 @@
 #define MONOALG3D_GRID_H
 
 #include "../cell/cell.h"
-#include "../../utils/vector/uint32_vector.h"
+#include "../../vector/uint32_vector.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -55,20 +55,5 @@ void print_grid_matrix(struct grid *the_grid, FILE* output_file);
 void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines);
 
-void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_file);
-void initialize_grid_with_rabbit_mesh (struct grid *the_grid, const char *mesh_file);
-void initialize_grid_with_benchmark_mesh (struct grid *the_grid, double start_h);
-
-void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side_lenght, double start_h, int num_layers);
-void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, double side_length, double start_h, int num_layers,
-                                              double phi);
-void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, double side_length,
-                                                         double start_h, int num_layers, double phi,
-                                                         double plain_center, double sphere_radius, double bz_size,
-                                                         double bz_radius);
-void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_center, double sphere_radius, double bz_size,
-                               double bz_radius);
-void set_plain_fibrosis(struct grid* the_grid, double phi);
-
-
+void save_grid_domain (struct grid * the_grid, const char *file_name);
 #endif //MONOALG3D_GRID_H

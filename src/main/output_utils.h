@@ -6,7 +6,7 @@
 #define MONOALG3D_OUTPUT_INFO_H
 
 #include <stdbool.h>
-#include "string/sds.h"
+#include "../string/sds.h"
 
 struct output_utils {
     int print_rate;

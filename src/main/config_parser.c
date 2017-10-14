@@ -1,5 +1,5 @@
 #include "config_parser.h"
-#include "../utils/ini_parser/ini_file_sections.h"
+#include "../ini_parser/ini_file_sections.h"
 
 #include <string.h>
 #include <assert.h>
@@ -122,6 +122,7 @@ struct user_options *new_user_options () {
     user_args->sigma_z_was_set = false;
 
     user_args->stim_configs = stim_config_hash_create();
+    user_args->domain_config = new_domain_config();
 
     return user_args;
 }
@@ -141,6 +142,9 @@ void get_config_file (int argc, char **argv, struct user_options *user_args) {
         }
         opt = getopt_long (argc, argv, optString, longOpts, &longIndex);
     }
+
+    // We reset the index after parsing the config_file
+    optind = 1;
 }
 
 void issue_overwrite_warning (const char *var, const char *old_value, const char *new_value, const char *config_file) {
@@ -153,8 +157,7 @@ void issue_overwrite_warning (const char *var, const char *old_value, const char
 void parse_options (int argc, char **argv, struct user_options *user_args) {
     int opt = 0;
 
-    // We reset the index after parsing the config_file
-    optind = 1;
+
 
     int longIndex;
 
@@ -367,94 +370,92 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
 int parse_config_file (void *user, const char *section, const char *name, const char *value) {
     struct user_options *pconfig = (struct user_options *)user;
 
-    if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "cg_tolerance")) {
+    if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "cg_tolerance")) {
         pconfig->cg_tol = atof (value);
         pconfig->cg_tol_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "max_cg_its")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "max_cg_its")) {
         pconfig->max_its = atoi (value);
         pconfig->max_its_was_set = true;
 
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "use_preconditioner")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "use_preconditioner")) {
         if (strcmp (value, "true") == 0 || strcmp (value, "yes") == 0) {
             pconfig->use_jacobi = true;
         } else {
             pconfig->use_jacobi = false;
         }
         pconfig->use_jacobi_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "num_threads")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "num_threads")) {
         pconfig->num_threads = atoi (value);
         pconfig->num_threads_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "dt_edp")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "dt_edp")) {
         pconfig->dt_edp = atof (value);
         pconfig->dt_edp_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "simulation_time")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "simulation_time")) {
         pconfig->final_time = atof (value);
         pconfig->final_time_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "sigma_x")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_x")) {
         pconfig->sigma_x = atof (value);
         pconfig->sigma_x_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "sigma_y")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_y")) {
         pconfig->sigma_y = atof (value);
         pconfig->sigma_y_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "sigma_z")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_z")) {
         pconfig->sigma_z = atof (value);
         pconfig->sigma_z_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "abort_on_no_activity")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "abort_on_no_activity")) {
         if (strcmp (value, "true") == 0 || strcmp (value, "yes") == 0) {
             pconfig->abort_no_activity = true;
         } else {
             pconfig->abort_no_activity = false;
         }
         pconfig->abort_no_activity_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "use_adaptivity")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "use_adaptivity")) {
         if (strcmp (value, "true") == 0 || strcmp (value, "yes") == 0) {
             pconfig->adaptive = true;
         } else {
             pconfig->adaptive = false;
         }
         pconfig->adaptive_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "number_of_stims")) {
-        // TODO: we have to decide how to handle the stims
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "print_rate")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "print_rate")) {
         pconfig->print_rate = atoi (value);
         pconfig->print_rate_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (MAIN_SECTION, "output_dir")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "output_dir")) {
         pconfig->out_dir_name = strdup (value);
         pconfig->out_dir_name_was_set = true;
     }
-    else if (MATCH_SECTION_VALUE_AND_NAME (ALG_SECTION, "start_discretization")) {
+    else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "start_discretization")) {
         pconfig->start_h = atof (value);
         pconfig->start_h_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ALG_SECTION, "maximum_discretization")) {
+    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "maximum_discretization")) {
         pconfig->max_h = atof (value);
         pconfig->max_h_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ALG_SECTION, "refinement_bound")) {
+    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refinement_bound")) {
         pconfig->ref_bound = atof (value);
         pconfig->ref_bound_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ALG_SECTION, "derefinement_bound")) {
+    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "derefinement_bound")) {
         pconfig->deref_bound = atof (value);
         pconfig->deref_bound_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ALG_SECTION, "refine_each")) {
+    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refine_each")) {
         pconfig->refine_each = atoi (value);
         pconfig->refine_each_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ALG_SECTION, "derefine_each")) {
+    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "derefine_each")) {
         pconfig->derefine_each = atoi (value);
         pconfig->derefine_each_was_set = true;
     }
-    else if (MATCH_SECTION_VALUE_AND_NAME (ODE_SECTION, "dt_edo")) {
+    else if (MATCH_SECTION_AND_NAME (ODE_SECTION, "dt_edo")) {
         pconfig->dt_edo = atof (value);
         pconfig->dt_edo_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ODE_SECTION, "use_gpu")) {
+    } else if (MATCH_SECTION_AND_NAME (ODE_SECTION, "use_gpu")) {
         if (strcmp (value, "true") == 0 || strcmp (value, "yes") == 0) {
             pconfig->gpu = true;
         } else {
             pconfig->gpu = false;
         }
         pconfig->gpu_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ODE_SECTION, "gpu_id")) {
+    } else if (MATCH_SECTION_AND_NAME (ODE_SECTION, "gpu_id")) {
         pconfig->gpu_id = atoi (value);
         pconfig->gpu_id_was_set = true;
-    } else if (MATCH_SECTION_VALUE_AND_NAME (ODE_SECTION, "model_file_path")) {
+    } else if (MATCH_SECTION_AND_NAME (ODE_SECTION, "model_file_path")) {
         pconfig->model_file_path = strdup (value);
         pconfig->model_file_path_was_set = true;
     }
@@ -467,20 +468,33 @@ int parse_config_file (void *user, const char *section, const char *name, const 
 
         if(MATCH_NAME("stim_start")) {
             tmp->stim_start = (Real)atof(value);
-        }
-        if(MATCH_NAME("stim_duration")) {
+        } else if(MATCH_NAME("stim_duration")) {
             tmp->stim_duration = (Real)atof(value);
-        }
-        if(MATCH_NAME("stim_current")) {
+        }else if(MATCH_NAME("stim_current")) {
             tmp->stim_current = (Real)atof(value);
-        }
-        if(MATCH_NAME("stim_function")) {
+        } else if(MATCH_NAME("stim_function")) {
             tmp->stim_function = strdup(value);
+        } else if(MATCH_NAME("stim_library_file")) {
+            tmp->stim_library_file = strdup(value);
         }
-
+    }
+    else if(MATCH_SECTION(DOMAIN_SECTION)) {
+        if(MATCH_NAME("name")) {
+            pconfig->domain_config->domain_name = strdup(value);
+        }
+        if(MATCH_NAME("domain_function")) {
+            pconfig->domain_config->domain_function = strdup(value);
+        }
+        else if(MATCH_NAME("domain_library_file")) {
+            pconfig->domain_config->domain_library_file = strdup(value);
+        }
+        else {
+            string_hash_insert(pconfig->domain_config->config, name, value);
+        }
     }
 
     else {
+        fprintf(stderr, "Invalid name %s or section %s on the config file!\n", name, section);
         return 0; /* unknown section/name, error */
     }
 

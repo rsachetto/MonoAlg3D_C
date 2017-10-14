@@ -9,7 +9,7 @@
 #include <assert.h>
 
 #ifdef COMPILE_CUDA
-#include "../utils/gpu/gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 #endif
 
 #include "monodomain_solver.h"
@@ -160,7 +160,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     double cg_error;
     uint32_t cg_iterations;
 
-    // TODO: we need to handle stim on diferent edp times (pulses)
     set_spatial_stim (the_grid, stimuli_configs);
     set_ode_extra_data (the_grid, the_ode_solver);
 
@@ -249,7 +248,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
             if (redo_matrix) {
                 order_grid_cells (the_grid);
 
-                // TODO: we need to handle stim on diferent edp times (pulses)
                 set_spatial_stim (the_grid, stimuli_configs);
                 set_ode_extra_data (the_grid, the_ode_solver);
 

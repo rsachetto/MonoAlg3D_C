@@ -7,10 +7,17 @@
 
 #include "stim_config.h"
 
-#define FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                                          \
+#define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                                          \
     for (int i = 0; i < d->size; i++) {                                                                                   \
         for (struct stim_config_elt *e = d->table[i % d->size]; e != 0; e = e->next) {                                      \
             fn (e->value);                                                                                             \
+        }                                                                                                              \
+    }
+
+#define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(d, fn2)                                                                          \
+    for (int i = 0; i < d->size; i++) {                                                                                   \
+        for (struct stim_config_elt *e = d->table[i % d->size]; e != 0; e = e->next) {                                      \
+            fn2 (e->value, e->key);                                                                                             \
         }                                                                                                              \
     }
 

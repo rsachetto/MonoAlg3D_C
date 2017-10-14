@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 #include <unitypes.h>
-#include "../utils/vector/uint32_vector.h"
+#include "../vector/uint32_vector.h"
 #include "../models/model_common.h"
 #include "stim_config_hash.h"
 

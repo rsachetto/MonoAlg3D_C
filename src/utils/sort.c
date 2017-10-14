@@ -4,7 +4,7 @@
 
 
 #include "utils.h"
-#define SWAP(x, y, T) do { T SWAP = x; x = y; y = SWAP; } while (0)
+#define SWAP(x, y, T) do { T SWAP = (x); (x) = (y); (y) = SWAP; } while (0)
 
 int partition(double **a, int column, int first, int last) {
     //

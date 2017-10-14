@@ -5,11 +5,19 @@
 #ifndef MONOALG3D_STRING_HASH_H
 #define MONOALG3D_STRING_HASH_H
 
+#define STRING_HASH_PRINT_KEY_VALUE(d)                                                                          \
+    for (int i = 0; i < (d)->size; i++) {                                                                                   \
+        for (struct string_elt *e = (d)->table[i % (d)->size]; e != 0; e = e->next) {                                      \
+            printf("%s -> %s\n", e->key, e->value);                                                                                             \
+        }                                                                                                              \
+    }
+
 struct string_elt {
     struct string_elt *next;
     char *key;
     char *value;
 };
+
 
 struct string_hash {
     int size; /* size of the pointer table */

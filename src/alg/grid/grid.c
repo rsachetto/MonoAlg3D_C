@@ -399,3 +399,16 @@ double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_li
 
 }
 
+void save_grid_domain (struct grid * the_grid, const char *file_name) {
+    struct cell_node *grid_cell = the_grid->first_cell;
+    FILE *f = fopen (file_name, "w");
+
+    while (grid_cell != 0) {
+        if (grid_cell->active) {
+            fprintf (f, "%lf,%lf,%lf,%lf\n", grid_cell->center_x, grid_cell->center_y,
+                     grid_cell->center_z, grid_cell->half_face_length);
+        }
+        grid_cell = grid_cell->next;
+    }
+    fclose (f);
+}

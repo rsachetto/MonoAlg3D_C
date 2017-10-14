@@ -6,7 +6,7 @@
 #define MONOALG3D_SOLVER_H
 
 #include "../alg/grid/grid.h"
-#include "../utils/output_utils.h"
+#include "output_utils.h"
 #include "ode_solver.h"
 #include <stdbool.h>
 #include <unitypes.h>

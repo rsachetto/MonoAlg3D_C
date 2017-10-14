@@ -21,7 +21,7 @@ struct stim_config {
     set_spatial_stim_fn_pt set_spatial_stim_fn;
 };
 
-void init_stim_functions(struct stim_config *config);
+void init_stim_functions(struct stim_config *config, char* stim_name);
 struct stim_config* new_stim_config();
 void print_stim_config_values(struct stim_config* s);
 void free_stim_config(struct stim_config* s);

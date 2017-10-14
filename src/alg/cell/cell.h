@@ -9,8 +9,8 @@
 #include <unitypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../utils/vector/int_vector.h"
-#include "../../utils/vector/uint32_vector.h"
+#include "../../vector/int_vector.h"
+#include "../../vector/uint32_vector.h"
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'

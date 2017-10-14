@@ -8,7 +8,7 @@
 #include <assert.h>
 
 #ifdef COMPILE_CUDA
-#include "../utils/gpu/gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 #endif
 
 struct ode_solver* new_ode_solver() {

@@ -2,13 +2,16 @@
 // Created by sachetto on 01/10/17.
 //
 
-#include "../../utils/hash/point_hash.h"
-#include "../../utils/utils.h"
-#include "grid.h"
+#include "grid_domain.h"
+
+#include "../hash/point_hash.h"
+#include "../utils/utils.h"
 #include <float.h>
 #include <time.h>
 #include <unistd.h>
 #include <math.h>
+#include <assert.h>
+
 
 int get_num_refinement_steps_to_discretization (double side_len, double h) {
 
@@ -216,7 +219,9 @@ void set_human_sub_mesh (struct grid *the_grid, const char *file_name, double mi
     set_custom_mesh_with_bounds (the_grid, file_name, 2025252, minx, maxx, miny, maxy, minz, maxz);
 }
 
-void initialize_grid_with_rabbit_mesh (struct grid *the_grid, const char *mesh_file) {
+void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct string_hash *domain_config) {
+
+    char *mesh_file = string_hash_search(domain_config, "mesh_file");
 
     initialize_and_construct_grid (the_grid, 32000.0, the_grid->num_cell_neighbours);
     refine_grid (the_grid, 6);
@@ -230,14 +235,14 @@ void initialize_grid_with_rabbit_mesh (struct grid *the_grid, const char *mesh_f
     for (i = 0; i < 6; i++) {
         derefine_grid_inactive_cells (the_grid);
     }
+    free(mesh_file);
 }
 
-void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_file) {
+void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct string_hash *domain_config) {
 
-    if (the_grid == NULL) {
-        fprintf (stderr, "set_mouse_mesh: the_grid is NULL. Exiting!");
-        exit (10);
-    }
+    char *mesh_file = string_hash_search(domain_config, "mesh_file");
+
+    assert(the_grid);
 
     initialize_and_construct_grid (the_grid, 6400.0, 7);
 
@@ -255,9 +260,97 @@ void initialize_grid_with_mouse_mesh (struct grid *the_grid, const char *mesh_fi
     }
 }
 
-void initialize_grid_with_benchmark_mesh (struct grid *the_grid, double start_h) {
+void set_cell_not_changeable(struct cell_node *c, double initialDiscretization) {
+
+    double P1x, P1y, P1z;
+    double P2x, P2y, P2z;
+    double P3x, P3y, P3z;
+    double P4x, P4y, P4z;
+    double P5x, P5y, P5z;
+    double P6x, P6y, P6z;
+    double P7x, P7y, P7z;
+    double P8x, P8y, P8z;
+    double Cx, Cy, Cz;
+
+    if(initialDiscretization == 100.0) {
+        P1x = 6950; P1y = 50;    P1z = 50;
+        P2x = 6950; P2y = 19950; P2z = 50;
+        P3x = 6950; P3y = 50;    P3z = 2950;
+        P4x = 6950; P4y = 19950; P4z = 2950;
+        P5x = 50;   P5y = 50 ;   P5z = 50;
+        P6x = 50;   P6y = 19950; P6z = 50;
+        P7x = 50;   P7y = 50;    P7z = 2950;
+        P8x = 50;   P8y = 19950; P8z = 2950;
+        Cx = 3450;  Cy  = 9950;    Cz = 1450;
+    }
+
+    else if (initialDiscretization == 200.0) {
+        P1x = 6900; P1y = 100; P1z = 100;
+        P2x = 6900; P2y = 19900; P2z = 100;
+        P3x = 6900; P3y = 100; P3z = 2900;
+        P4x = 6900; P4y = 19900; P4z = 2900;
+        P5x = 100; P5y = 100; P5z = 100;
+        P6x = 100; P6y = 19900; P6z = 100;
+        P7x = 100; P7y = 100; P7z = 2900;
+        P8x = 100; P8y = 19900; P8z = 2900;
+        Cx = 3500; Cy = 9900; Cz = 1500;
+    }
+
+    else if (initialDiscretization == 125.0) {
+        P1x = 6937.5; P1y = 62.5; P1z = 62.5;
+        P2x = 6937.5; P2y = 19937.5; P2z = 62.5;
+        P3x = 6937.5; P3y = 62.5; P3z = 2937.5;
+        P4x = 6937.5; P4y = 19937.5; P4z = 2937.5;
+        P5x = 62.5; P5y = 62.5; P5z = 62.5;
+        P6x = 62.5; P6y = 19937.5; P6z = 62.5;
+        P7x = 3937.5; P7y = 19937.5; P7z = 62.5;
+        P8x = 62.5; P8y = 19937.5; P8z = 2937.5;
+        Cx = 3437.5; Cy = 9937.5; Cz = 1562.5;
+    }
+
+    else if (initialDiscretization == 250.0) {
+        P1x = 6875; P1y = 125; P1z = 125;
+        P2x = 6875; P2y = 19875; P2z = 125;
+        P3x = 6875; P3y = 125; P3z = 2875;
+        P4x = 6875; P4y = 19875; P4z = 2875;
+        P5x = 125; P5y = 125; P5z = 125;
+        P6x = 125; P6y = 19875; P6z = 125;
+        P7x = 125; P7y = 125; P7z = 2875;
+        P8x = 125; P8y = 19875; P8z = 2875;
+        Cx = 3375; Cy = 9875; Cz = 1125;
+    }
+
+    else {
+        P1x = -1; P1y = -1; P1z = -1;
+        P2x = -1; P2y = -1; P2z = -1;
+        P3x = -1; P3y = -1; P3z = -1;
+        P4x = -1; P4y = -1; P4z = -1;
+        P5x = -1; P5y = -1; P5z = -1;
+        P6x = -1; P6y = -1; P6z = -1;
+        P7x = -1; P7y = -1; P7z = -1;
+        P8x = -1; P8y = -1; P8z = -1;
+        Cx = -1; Cy = -1; Cz = -1;
+    }
+    bool cannotChange = ( ( c->center_x == P1x ) && ( c->center_y == P1y ) && ( c->center_z == P1z ) );
+    cannotChange |= ( ( c->center_x == P2x ) && ( c->center_y == P2y ) && ( c->center_z == P2z ) );
+    cannotChange |= ( ( c->center_x == P3x ) && ( c->center_y == P3y ) && ( c->center_z == P3z ) );
+    cannotChange |= ( ( c->center_x == P4x ) && ( c->center_y == P4y ) && ( c->center_z == P4z ) );
+    cannotChange |= ( ( c->center_x == P5x ) && ( c->center_y == P5y ) && ( c->center_z == P5z ) );
+    cannotChange |= ( ( c->center_x == P6x ) && ( c->center_y == P6y ) && ( c->center_z == P6z ) );
+    cannotChange |= ( ( c->center_x == P7x ) && ( c->center_y == P7y ) && ( c->center_z == P7z ) );
+    cannotChange |= ( ( c->center_x == P8x ) && ( c->center_y == P8y ) && ( c->center_z == P8z ) );
+    cannotChange |= ( ( c->center_x == Cx )  && ( c->center_y == Cy )  && ( c->center_z == Cz ) );
+
+    c->can_change = !cannotChange;
+
+}
+
+void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct string_hash *domain_config) {
 
     double side_length;
+    char* start_h_char = string_hash_search(domain_config, "start_discretization");
+
+    double start_h = atof(start_h_char);
 
     printf ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
     if ((start_h == 100.0) || (start_h == 200.0)) {
@@ -283,21 +376,19 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, double start_h)
         derefine_grid_inactive_cells (the_grid);
     }
 
-    //if (the_grid->adaptive) {
-        // TODO: @incomplete: set fixed cells for activation time caculation (maybe a separate
-        // funcition??)
-        //        cout << "Setting fixed cells for Activation time calculation" << endl;
-        //        CellNode *grid_cell;
-        //        grid_cell = firstCell;
-        //
-        //        while( grid_cell != 0 ) {
-        //            if(grid_cell->active) {
-        //                setCellNotChangeable(grid_cell, globalArgs.start_h);
-        //            }
-        //            grid_cell = grid_cell->next;
-        //        }
-    //}
-    // exit(0);
+    if (the_grid->adaptive) {
+        struct cell_node *grid_cell;
+        grid_cell = the_grid->first_cell;
+
+        while( grid_cell != 0 ) {
+            if(grid_cell->active) {
+                //setCellNotChangeable(grid_cell, globalArgs.start_h);
+            }
+            grid_cell = grid_cell->next;
+        }
+    }
+
+
 }
 
 void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side_lenght, double start_h, int num_layers) {
@@ -449,18 +540,4 @@ void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_
     }
 
 
-}
-
-void save_grid_domain (struct grid * the_grid, const char *file_name) {
-    struct cell_node *grid_cell = the_grid->first_cell;
-    FILE *f = fopen (file_name, "w");
-
-    while (grid_cell != 0) {
-        if (grid_cell->active) {
-            fprintf (f, "%lf,%lf,%lf,%lf\n", grid_cell->center_x, grid_cell->center_y,
-                     grid_cell->center_z, grid_cell->half_face_length);
-        }
-        grid_cell = grid_cell->next;
-    }
-    fclose (f);
 }

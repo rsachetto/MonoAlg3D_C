@@ -3,8 +3,8 @@
 //
 
 #include "cell.h"
-#include "../../utils/vector/int_vector.h"
-#include "../../utils/vector/uint32_vector.h"
+#include "../../vector/int_vector.h"
+#include "../../vector/uint32_vector.h"
 
 void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint32_vector *refined_this_step)  {
     if( cell == NULL ) {

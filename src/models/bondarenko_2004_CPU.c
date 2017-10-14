@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 
-void RHS_cpu(Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, void *extra_data);
+void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, void *extra_data);
 
 void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
 
@@ -79,7 +79,7 @@ void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real stim_start, 
 }
 
 
-void RHS_cpu(Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, void *extra_data) {
+void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, void *extra_data) {
 
     // State variables
     const Real V_old_ = sv[0];	 // initial value = -82.4202 millivolt

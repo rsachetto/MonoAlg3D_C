@@ -16,7 +16,9 @@
 #include "../alg/grid/grid.h"
 #include "ode_solver.h"
 #include "monodomain_solver.h"
-#include "../utils/output_utils.h"
+#include "output_utils.h"
+#include "stim_config_hash.h"
+#include "domain_config.h"
 
 
 #define SIGMA_X 400
@@ -73,9 +75,11 @@ struct user_options {
     double sigma_z;
     bool sigma_z_was_set;
 
-    struct stim_config_hash *stim_configs;
-
     char *config_file;              /*-c option*/
+
+    struct stim_config_hash *stim_configs;
+    struct domain_config *domain_config;
+
 
 };
 
