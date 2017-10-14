@@ -47,6 +47,7 @@ target_link_libraries(MonoAlg3D alg solvers utils gpu_utils hashes ini_parser st
 ADD_SUBDIRECTORY(src/models)
 ADD_SUBDIRECTORY(src/stimuli_library)
 ADD_SUBDIRECTORY(src/domains_library)
+ADD_SUBDIRECTORY(src/extra_data_library)
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 

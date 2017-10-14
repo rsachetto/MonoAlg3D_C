@@ -8,6 +8,11 @@
 
 void init_stim_functions(struct stim_config *config, char* stim_name) {
 
+    if(!config->configured) {
+        printf("No stimuli configured! None will be applied!\n");
+        return;
+    }
+
     char *error;
 
     if(config->stim_library_file == NULL) {
@@ -40,6 +45,7 @@ struct stim_config* new_stim_config() {
     result->stim_library_file = NULL;
     result->set_spatial_stim_fn = NULL;
     result->spatial_stim_currents = NULL;
+    result->configured = false;
     return result;
 }
 

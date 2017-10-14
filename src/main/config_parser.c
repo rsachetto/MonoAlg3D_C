@@ -121,8 +121,12 @@ struct user_options *new_user_options () {
     user_args->sigma_z = 0.0000176;
     user_args->sigma_z_was_set = false;
 
+    user_args->start_adapting_at = 1.0;
+    user_args->start_adapting_at_was_set = false;
+
     user_args->stim_configs = stim_config_hash_create();
     user_args->domain_config = new_domain_config();
+    user_args->extra_data_config = new_extra_data_config();
 
     return user_args;
 }
@@ -314,23 +318,30 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
             case SIGMA_X:
                 if (user_args->sigma_x_was_set) {
                     sprintf (old_value, "%lf", user_args->sigma_x);
-                    issue_overwrite_warning ("cg_tolerance", old_value, optarg, user_args->config_file);
+                    issue_overwrite_warning ("sigma_x", old_value, optarg, user_args->config_file);
                 }
                 user_args->sigma_x = atof (optarg);
                 break;
             case SIGMA_Y:
                 if (user_args->sigma_y_was_set) {
                     sprintf (old_value, "%lf", user_args->sigma_y);
-                    issue_overwrite_warning ("cg_tolerance", old_value, optarg, user_args->config_file);
+                    issue_overwrite_warning ("sigma_y", old_value, optarg, user_args->config_file);
                 }
                 user_args->sigma_y = atof (optarg);
                 break;
             case SIGMA_Z:
                 if (user_args->sigma_z) {
                     sprintf (old_value, "%lf", user_args->sigma_z);
-                    issue_overwrite_warning ("cg_tolerance", old_value, optarg, user_args->config_file);
+                    issue_overwrite_warning ("sigma_z", old_value, optarg, user_args->config_file);
                 }
                 user_args->sigma_z = atof (optarg);
+                break;
+            case START_REFINING:
+                if (user_args->start_adapting_at_was_set) {
+                    sprintf (old_value, "%lf", user_args->start_adapting_at);
+                    issue_overwrite_warning ("start_adapting_at", old_value, optarg, user_args->config_file);
+                }
+                user_args->start_adapting_at = atof (optarg);
                 break;
             case 'G':
                 if (user_args->gpu_id_was_set) {
@@ -402,6 +413,9 @@ int parse_config_file (void *user, const char *section, const char *name, const 
     } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_z")) {
         pconfig->sigma_z = atof (value);
         pconfig->sigma_z_was_set = true;
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "start_adapting_at")) {
+        pconfig->start_adapting_at = atof (value);
+        pconfig->start_adapting_at_was_set = true;
     } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "abort_on_no_activity")) {
         if (strcmp (value, "true") == 0 || strcmp (value, "yes") == 0) {
             pconfig->abort_no_activity = true;
@@ -455,47 +469,61 @@ int parse_config_file (void *user, const char *section, const char *name, const 
     } else if (MATCH_SECTION_AND_NAME (ODE_SECTION, "gpu_id")) {
         pconfig->gpu_id = atoi (value);
         pconfig->gpu_id_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (ODE_SECTION, "model_file_path")) {
+    } else if (MATCH_SECTION_AND_NAME (ODE_SECTION, "library_file")) {
         pconfig->model_file_path = strdup (value);
         pconfig->model_file_path_was_set = true;
     }
     else if(SECTION_STARTS_WITH(STIM_SECTION)) {
         struct stim_config *tmp = stim_config_hash_search(pconfig->stim_configs, section);
+
         if( tmp == NULL) {
             tmp = new_stim_config();
+            tmp->configured = true;
             stim_config_hash_insert(pconfig->stim_configs, section, tmp);
         }
 
-        if(MATCH_NAME("stim_start")) {
+        if(MATCH_NAME("start")) {
             tmp->stim_start = (Real)atof(value);
-        } else if(MATCH_NAME("stim_duration")) {
+        } else if(MATCH_NAME("duration")) {
             tmp->stim_duration = (Real)atof(value);
-        }else if(MATCH_NAME("stim_current")) {
+        }else if(MATCH_NAME("current")) {
             tmp->stim_current = (Real)atof(value);
-        } else if(MATCH_NAME("stim_function")) {
+        } else if(MATCH_NAME("function")) {
             tmp->stim_function = strdup(value);
-        } else if(MATCH_NAME("stim_library_file")) {
+        } else if(MATCH_NAME("library_file")) {
             tmp->stim_library_file = strdup(value);
         }
     }
     else if(MATCH_SECTION(DOMAIN_SECTION)) {
+        pconfig->domain_config->configured = true;
         if(MATCH_NAME("name")) {
             pconfig->domain_config->domain_name = strdup(value);
         }
-        if(MATCH_NAME("domain_function")) {
+        if(MATCH_NAME("function")) {
             pconfig->domain_config->domain_function = strdup(value);
         }
-        else if(MATCH_NAME("domain_library_file")) {
+        else if(MATCH_NAME("library_file")) {
             pconfig->domain_config->domain_library_file = strdup(value);
         }
         else {
             string_hash_insert(pconfig->domain_config->config, name, value);
         }
     }
-
+    else if(MATCH_SECTION(EXTRA_DATA_SECTION)) {
+        pconfig->extra_data_config->configured = true;
+        if(MATCH_NAME("function")) {
+            pconfig->extra_data_config->extra_data_function = strdup(value);
+        }
+        else if(MATCH_NAME("library_file")) {
+            pconfig->extra_data_config->extra_data_library_file = strdup(value);
+        }
+        else {
+            string_hash_insert(pconfig->extra_data_config->config, name, value);
+        }
+    }
     else {
-        fprintf(stderr, "Invalid name %s or section %s on the config file!\n", name, section);
-        return 0; /* unknown section/name, error */
+        fprintf(stderr, "Invalid name %s in section %s on the config file!\n", name, section);
+        return 0;
     }
 
     return 1;
@@ -530,7 +558,6 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
     the_monodomain_solver->max_iterations = options->max_its;
     the_monodomain_solver->final_time = options->final_time;
 
-
     the_monodomain_solver->start_h = options->start_h;
     the_monodomain_solver->max_h = options->max_h;
     the_monodomain_solver->min_h = the_monodomain_solver->start_h;;
@@ -547,6 +574,7 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
     the_monodomain_solver->sigma_x = options->sigma_x;
     the_monodomain_solver->sigma_y = options->sigma_y;
     the_monodomain_solver->sigma_z = options->sigma_z;
+    the_monodomain_solver->start_adapting_at = options->start_adapting_at;
 
 }
 

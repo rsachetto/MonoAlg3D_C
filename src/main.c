@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
 
     STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(options->stim_configs, init_stim_functions);
     init_domain_functions(options->domain_config);
+    init_extra_data_functions(options->extra_data_config);
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
 
     options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config->config);
 
-    solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options->stim_configs);
+    solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options->stim_configs, options->extra_data_config);
 
     free_output_utils(output_info);
     clean_and_free_grid(the_grid);

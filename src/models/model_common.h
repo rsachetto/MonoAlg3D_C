@@ -16,6 +16,5 @@ struct cell_model_data {
     int number_of_ode_equations;
     Real initial_v;
     char *model_library_path;
-    void *extra_data; //TODO: maybe we will need this?
 };
 #endif //MONOALG3D_MODEL_COMMON_H

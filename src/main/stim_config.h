@@ -19,6 +19,7 @@ struct stim_config {
     Real *spatial_stim_currents;
     char *stim_library_file;
     set_spatial_stim_fn_pt set_spatial_stim_fn;
+    bool configured;
 };
 
 void init_stim_functions(struct stim_config *config, char* stim_name);

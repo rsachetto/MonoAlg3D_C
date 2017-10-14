@@ -8,6 +8,12 @@
 
 void init_domain_functions(struct domain_config *config) {
 
+    if(!config->configured) {
+        printf("No domain function provided! Exiting!\n");
+        exit(EXIT_FAILURE);
+    }
+
+
     char *error;
 
     if(config->domain_library_file == NULL) {
@@ -41,6 +47,7 @@ struct domain_config* new_domain_config() {
     result->set_spatial_domain_fn = NULL;
     result->domain_name = NULL;
     result->config = string_hash_create();
+    result->configured = false;
     return result;
 }
 

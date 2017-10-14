@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <unitypes.h>
 #include "stim_config_hash.h"
+#include "extra_data_config.h"
 
 struct monodomain_solver {
 
@@ -30,6 +31,8 @@ struct monodomain_solver {
     double refinement_bound;
     double derefinement_bound;
 
+    double start_adapting_at;
+
     bool abort_on_no_activity;
 
     // Time used for solving wave equation.
@@ -43,7 +46,7 @@ struct monodomain_solver *new_monodomain_solver ();
 
 void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
                       struct ode_solver *the_edo_solver, struct output_utils *output_info,
-                      struct stim_config_hash *stimuli_configs);
+                      struct stim_config_hash *stimuli_configs, struct extra_data_config *extra_data_config);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
@@ -62,7 +65,7 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver,
 
 void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid, uint32_t max_number_of_cells);
 
-void set_ode_extra_data(struct grid* the_grid, struct ode_solver *the_ode_solver);
+void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver);
 void set_spatial_stim(struct grid* the_grid, struct stim_config_hash *stim_configs);
 
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,

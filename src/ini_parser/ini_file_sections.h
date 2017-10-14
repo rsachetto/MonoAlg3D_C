@@ -10,6 +10,7 @@
 #define ALG_SECTION "alg"
 #define STIM_SECTION "stim"
 #define DOMAIN_SECTION "domain"
+#define EXTRA_DATA_SECTION "extra_data"
 
 #define MATCH_SECTION_AND_NAME(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define MATCH_SECTION(s) strcmp(section, s) == 0

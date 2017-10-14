@@ -19,11 +19,13 @@
 #include "output_utils.h"
 #include "stim_config_hash.h"
 #include "domain_config.h"
+#include "extra_data_config.h"
 
 
-#define SIGMA_X 400
-#define SIGMA_Y 500
-#define SIGMA_Z 600
+#define SIGMA_X 1400
+#define SIGMA_Y 1500
+#define SIGMA_Z 1600
+#define START_REFINING 1700
 
 struct user_options {
     double final_time;				/*-f option */
@@ -74,11 +76,14 @@ struct user_options {
     bool sigma_y_was_set;
     double sigma_z;
     bool sigma_z_was_set;
+    double start_adapting_at;
+    bool start_adapting_at_was_set;
 
     char *config_file;              /*-c option*/
 
     struct stim_config_hash *stim_configs;
     struct domain_config *domain_config;
+    struct extra_data_config *extra_data_config;
 
 
 };
@@ -109,6 +114,7 @@ static const struct option longOpts[] = {
         { "sigma_x", required_argument, NULL, SIGMA_X},
         { "sigma_y", required_argument, NULL, SIGMA_Y},
         { "sigma_z", required_argument, NULL, SIGMA_Z},
+        { "start_adapting_at", required_argument, NULL, START_REFINING},
         { "help", no_argument, NULL, 'h' },
         { NULL, no_argument, NULL, 0 }
 };

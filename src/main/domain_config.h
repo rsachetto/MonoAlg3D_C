@@ -17,6 +17,7 @@ struct domain_config {
     char *domain_name;
     struct string_hash *config;
     set_spatial_domain_fn_pt set_spatial_domain_fn;
+    bool configured;
 };
 
 void init_domain_functions(struct domain_config *config);

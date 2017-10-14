@@ -33,7 +33,7 @@ struct monodomain_solver *new_monodomain_solver() {
 
 void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
                       struct ode_solver *the_ode_solver, struct output_utils *output_info,
-                      struct stim_config_hash *stimuli_configs) {
+                      struct stim_config_hash *stimuli_configs, struct extra_data_config *extra_data_config) {
 
     assert(stimuli_configs);
 
@@ -41,6 +41,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     assert(the_monodomain_solver);
     assert(the_ode_solver);
     assert(output_info);
+
+    bool has_extra_data = extra_data_config->configured;
 
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
@@ -74,6 +76,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     double max_h = the_monodomain_solver->max_h;
 
     bool adaptive = the_grid->adaptive;
+    double start_adpt_at = the_monodomain_solver->start_adapting_at;
     bool save_to_file = (output_info->output_dir_name != NULL);
 
     double dt_edp = the_monodomain_solver->dt;
@@ -161,7 +164,9 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     uint32_t cg_iterations;
 
     set_spatial_stim (the_grid, stimuli_configs);
-    set_ode_extra_data (the_grid, the_ode_solver);
+
+    if(has_extra_data)
+        set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 
     uint32_vector *refined_this_step = the_grid->refined_this_step;
 
@@ -229,8 +234,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
         if (adaptive) {
             redo_matrix = false;
-            // TODO: we should let the user decide the time to start refining
-            if (cur_time > (1.0)) {
+            if (cur_time >= start_adpt_at) {
 
                 if (count % refine_each == 0) {
                     start_stop_watch (&ref_time);
@@ -249,7 +253,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
                 order_grid_cells (the_grid);
 
                 set_spatial_stim (the_grid, stimuli_configs);
-                set_ode_extra_data (the_grid, the_ode_solver);
+                if(has_extra_data)
+                    extra_data_config->set_extra_data_fn(the_grid, extra_data_config->config);
 
                 update_cells_to_solve (the_grid, the_ode_solver);
 
@@ -293,71 +298,14 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
 
 }
 
-// TODO: this should be handled by a user provided library
-void set_ode_extra_data (struct grid *the_grid, struct ode_solver *the_ode_solver) {
+void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
-    //    uint64_t n_active = the_grid->num_active_cells;
-    //    struct cell_node** ac = the_grid->active_cells;
-    //    Real side_length = the_grid->side_length;
-    //
-    //    if(the_ode_solver->stim_currents != NULL) {
-    //        free(the_ode_solver->stim_currents);
-    //    }
-    //
-    //    the_ode_solver->edo_extra_data = malloc(sizeof(Real)*n_active);
-    //    Real *fibs = (Real*)the_ode_solver->edo_extra_data;
-    //
-    //
-    //    #pragma omp num_threads for
-    //    for (int i = 0; i < n_active; i++) {
-    //
-    //        if(ac[i]->fibrotic) {
-    //            fibs[i] = 0;
-    //        }
-    //        else if(ac[i]->borderZone) {
-    //
-    //            Real center_x = ac[i]->center_x;
-    //            Real center_y = ac[i]->center_y;
-    //            Real center_z = ac[i]->center_z;
-    //
-    //            if(globalArgs.use_plain_with_sphere) {
-    //                Real distanceFromCenter = sqrt((center_x - plainCenter)*(center_x - plainCenter) + (center_y -
-    //                plainCenter)*(center_y - plainCenter)); distanceFromCenter = (distanceFromCenter -
-    //                fibRadius)/bz_size; fibs[i] = distanceFromCenter;
-    //            }
-    //
-    //            else if(globalArgs.use_human) {
-    //                Real distanceFromCenter;
-    //
-    //                if(ac[i]->scarType == 's') {
-    //                    scarcenter_x = 52469;
-    //                    scarcenter_y = 83225;
-    //                    scarcenter_z = 24791;
-    //                    distanceFromCenter = sqrt((center_x - scarcenter_x)*(center_x - scarcenter_x) + (center_y -
-    //                    scarcenter_y)*(center_y - scarcenter_y)  + (center_z - scarcenter_z)*(center_z -
-    //                    scarcenter_z)); distanceFromCenter = distanceFromCenter/bz_size_small;
-    //                }
-    //                else if(ac[i]->scarType == 'b') {
-    //                    scarcenter_x = 95300;
-    //                    scarcenter_y = 81600;
-    //                    scarcenter_z = 36800;
-    //                    distanceFromCenter = sqrt((center_x - scarcenter_x)*(center_x - scarcenter_x) + (center_y -
-    //                    scarcenter_y)*(center_y - scarcenter_y)  + (center_z - scarcenter_z)*(center_z -
-    //                    scarcenter_z)); distanceFromCenter = distanceFromCenter/bz_size_big;
-    //                }
-    //                else {
-    //                    distanceFromCenter = 1;
-    //                }
-    //
-    //                fibs[i] = distanceFromCenter;
-    //            }
-    //
-    //        }
-    //        else {
-    //            fibs[i] = 1;
-    //        }
-    //
-    //    }
+    if(the_ode_solver->edo_extra_data) {
+        free(the_ode_solver->edo_extra_data);
+    }
+
+    the_ode_solver->edo_extra_data = config->set_extra_data_fn(the_grid, config->config);
+
 }
 
 void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *the_grid, uint32_t max_number_of_cells) {
@@ -721,6 +669,7 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     if (the_grid->adaptive) {
         printf ("Minimum Space Discretization: %lf um\n", the_monodomain_solver->min_h);
         printf ("Maximum Space Discretization: %lf um\n", the_monodomain_solver->max_h);
+        printf ("The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
     }
 
     printf ("Sigma X = %lf, Sigma Y = %lf, Sigma Z = %lf\n",

@@ -14,7 +14,6 @@
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
     result->sv = NULL;
-    result->edo_extra_data = NULL;
     result->cells_to_solve = NULL;
     result->handle = NULL;
 
@@ -27,6 +26,8 @@ struct ode_solver* new_ode_solver() {
     //result->update_gpu_fn = NULL;
     result->model_data.initial_v = INFINITY;
     result->model_data.number_of_ode_equations = -1;
+
+    result->edo_extra_data = NULL;
 
     //init_ode_solver_with_cell_model(result);
     return result;
