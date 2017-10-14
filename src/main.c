@@ -65,6 +65,9 @@ int main(int argc, char **argv) {
     free(edp_solver);
     free(options);
 
+    FOR_EACH_KEY_APPLY_FN_IN_VALUE(options->stim_configs, free_stim_config);
+    free(options);
+
     return EXIT_SUCCESS;
 }
 

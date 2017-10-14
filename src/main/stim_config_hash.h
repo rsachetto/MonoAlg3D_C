@@ -28,7 +28,7 @@ struct stim_config_hash {
 
 
 /* create a new empty dictionary */
-struct stim_config_hash *stim_config_hash_create ();
+struct stim_config_hash *stim_config_hash_create();
 
 /* destroy a dictionary */
 void stim_config_hash_destroy (struct stim_config_hash *);

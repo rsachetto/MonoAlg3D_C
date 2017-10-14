@@ -13,11 +13,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
-#include "stim_config_hash.h"
 #include "../alg/grid/grid.h"
 #include "ode_solver.h"
 #include "monodomain_solver.h"
 #include "../utils/output_utils.h"
+
 
 #define SIGMA_X 400
 #define SIGMA_Y 500

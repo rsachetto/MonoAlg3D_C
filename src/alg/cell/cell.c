@@ -4,7 +4,7 @@
 
 #include "cell.h"
 #include <pthread.h>
-
+#include <math.h>
 
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
     data->type = type;

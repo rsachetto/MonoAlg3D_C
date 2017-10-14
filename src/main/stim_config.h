@@ -6,7 +6,7 @@
 #define MONOALG3D_STIM_CONFIG_H
 
 #include "../alg/grid/grid.h"
-#include "ode_solver.h"
+#include "../main/constants.h"
 
 typedef void (*set_spatial_stim_fn_pt)(struct grid *, Real, Real *);
 
