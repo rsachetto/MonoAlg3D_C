@@ -399,10 +399,3 @@ double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_li
 
 }
 
-void configure_grid_from_options(struct grid* grid, struct user_options *options) {
-    assert(grid);
-    assert(options);
-
-    grid->adaptive = options->adaptive;
-    grid->side_length = options->side_lenght;
-}

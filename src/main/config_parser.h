@@ -5,14 +5,23 @@
  *      Author: sachetto
  */
 
-#ifndef OPTS_H_
-#define OPTS_H_
+#ifndef MONOALG3D_CONFIG_PARSER_H
+#define MONOALG3D_CONFIG_PARSER_H
 
 #include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+#include "stim_config_hash.h"
+#include "../alg/grid/grid.h"
+#include "ode_solver.h"
+#include "monodomain_solver.h"
+#include "../utils/output_utils.h"
+
+#define SIGMA_X 400
+#define SIGMA_Y 500
+#define SIGMA_Z 600
 
 struct user_options {
     double final_time;				/*-f option */
@@ -57,8 +66,16 @@ struct user_options {
     bool cg_tol_was_set;
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
-    char *config_file;              /*-c option*/
+    double sigma_x;
+    bool sigma_x_was_set;
+    double sigma_y;
+    bool sigma_y_was_set;
+    double sigma_z;
+    bool sigma_z_was_set;
 
+    struct stim_config_hash *stim_configs;
+
+    char *config_file;              /*-c option*/
 
 };
 
@@ -85,6 +102,9 @@ static const struct option longOpts[] = {
         { "derefine_each", required_argument, NULL, 'D'},
         { "gpu_id", required_argument, NULL, 'G'},
         { "model_file_path", required_argument, NULL, 'k'},
+        { "sigma_x", required_argument, NULL, SIGMA_X},
+        { "sigma_y", required_argument, NULL, SIGMA_Y},
+        { "sigma_z", required_argument, NULL, SIGMA_Z},
         { "help", no_argument, NULL, 'h' },
         { NULL, no_argument, NULL, 0 }
 };
@@ -97,4 +117,14 @@ void parse_options(int argc, char**argv, struct user_options *user_args);
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 
-#endif /* OPTS_H_ */
+void configure_grid_from_options(struct grid* grid, struct user_options *options);
+void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
+void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
+                                              struct user_options *options);
+
+void configure_output_from_options(struct output_utils *output_utils,
+                                   struct user_options *options);
+
+
+
+#endif /* MONOALG3D_CONFIG_PARSER_H */

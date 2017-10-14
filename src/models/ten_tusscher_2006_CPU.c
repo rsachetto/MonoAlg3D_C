@@ -174,7 +174,8 @@ void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real stim_start, Rea
     Real INaCa = (K_NaCa * ((expf((gamma * V * F) / (R * T)) * powf(Na_i, 3.0f) * Cao) - (expf(((gamma - 1.0f) * V * F) / (R * T)) * powf(Nao, 3) * Ca_i * alpha))) / ((powf(Km_Nai, 3.0f) + powf(Nao, 3.0f)) * (Km_Ca + Cao) * (1.0f + (K_sat * expf(((gamma - 1.0f) * V * F) / (R * T)))));
 
     // Stimulus
-    Real var_membrane__i_Stim = ((time>=stim_start)&&(time<=stim_start+stim_dur)) ? stim_current: 0.0f;
+    //Real var_membrane__i_Stim = ((time>=stim_start)&&(time<=stim_start+stim_dur)) ? stim_current: 0.0f;
+    Real var_membrane__i_Stim = stim_current;
 
     Real xr1_inf   = 1.0f / (1.0f + expf(((-26.0f) - V) / 7.0f));
     Real alpha_xr1 = 450.0f / (1.0f + expf(((-45.0f) - V) / 10.0f));

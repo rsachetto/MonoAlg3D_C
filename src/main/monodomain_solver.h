@@ -5,11 +5,12 @@
 #ifndef MONOALG3D_SOLVER_H
 #define MONOALG3D_SOLVER_H
 
-#include "../grid/grid/grid.h"
+#include "../alg/grid/grid.h"
 #include "../utils/output_utils.h"
 #include "ode_solver.h"
 #include <stdbool.h>
 #include <unitypes.h>
+#include "stim_config_hash.h"
 
 struct monodomain_solver {
 
@@ -39,11 +40,10 @@ struct monodomain_solver {
 };
 
 struct monodomain_solver *new_monodomain_solver ();
-void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
-                                              struct user_options *options);
 
-void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
-                       struct ode_solver *the_edo_solver, struct output_utils *output_info);
+void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
+                      struct ode_solver *the_edo_solver, struct output_utils *output_info,
+                      struct stim_config_hash *stimuli_configs);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
@@ -63,7 +63,7 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver,
 void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid, uint32_t max_number_of_cells);
 
 void set_ode_extra_data(struct grid* the_grid, struct ode_solver *the_ode_solver);
-void set_spatial_stim(struct grid* the_grid, struct ode_solver *the_ode_solver);
+void set_spatial_stim(struct grid* the_grid, struct stim_config_hash *stim_configs);
 
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                        double beta,

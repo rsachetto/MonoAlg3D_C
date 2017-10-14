@@ -6,10 +6,9 @@
 #define MONOALG3D_CELL_H
 
 #include <stdbool.h>
-#include <stdint.h>
+#include <unitypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../solvers/constants.h"
 #include "../../utils/vector/int_vector.h"
 #include "../../utils/vector/uint32_vector.h"
 

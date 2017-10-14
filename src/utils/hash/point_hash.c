@@ -7,12 +7,10 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#define INITIAL_SIZE (1024)
-#define GROWTH_FACTOR (2)
-#define MAX_LOAD_FACTOR (1)
+#include "hash_common.h"
 
 /* dictionary initialization code used in both create_hash and grow */
-struct point_hash* internal_hash_create(int size) {
+struct point_hash* internal_point_hash_create(int size) {
     struct point_hash *d;
     int i;
 
@@ -31,12 +29,12 @@ struct point_hash* internal_hash_create(int size) {
     return d;
 }
 
-struct point_hash* hash_create()
+struct point_hash* point_hash_create()
 {
-    return internal_hash_create(INITIAL_SIZE);
+    return internal_point_hash_create(INITIAL_SIZE);
 }
 
-void hash_destroy(struct point_hash * d) {
+void point_hash_destroy(struct point_hash * d) {
     int i;
     struct elt *e;
     struct elt *next;
@@ -57,7 +55,7 @@ void hash_destroy(struct point_hash * d) {
 }
 
 
-static unsigned long hash_function(struct point_3d k)
+static unsigned long point_hash_function(struct point_3d k)
 {
 
     return (unsigned long)((k.x * 18397) + (k.y * 20483) + (k.z * 29303));
@@ -71,12 +69,12 @@ static void grow(struct point_hash *d)  {
     int i;
     struct elt *e;
 
-    d2 = internal_hash_create(d->size * GROWTH_FACTOR);
+    d2 = internal_point_hash_create(d->size * GROWTH_FACTOR);
 
     for(i = 0; i < d->size; i++) {
         for(e = d->table[i]; e != 0; e = e->next) {
             /* note: this recopies everything */
-            hash_insert(d2, e->key, e->value);
+            point_hash_insert(d2, e->key, e->value);
         }
     }
 
@@ -86,11 +84,11 @@ static void grow(struct point_hash *d)  {
     *d = *d2;
     *d2 = swap;
 
-    hash_destroy(d2);
+    point_hash_destroy(d2);
 }
 
 /* insert a new key-value pair into an existing dictionary */
-void hash_insert(struct point_hash* d, struct point_3d key, int value)
+void point_hash_insert(struct point_hash* d, struct point_3d key, int value)
 {
     struct elt *e;
     unsigned long h;
@@ -105,7 +103,7 @@ void hash_insert(struct point_hash* d, struct point_3d key, int value)
 
     e->value = value;
 
-    h = hash_function(key) % d->size;
+    h = point_hash_function(key) % d->size;
 
     e->next = d->table[h];
     d->table[h] = e;
@@ -124,10 +122,10 @@ bool point_equals(struct point_3d a, struct point_3d b) {
 
 /* return the most recently inserted value associated with a key */
 /* or 0 if no matching key is present */
-int hash_search(struct point_hash* d, struct point_3d key) {
+int point_hash_search(struct point_hash* d, struct point_3d key) {
     struct elt *e;
 
-    for(e = d->table[hash_function(key) % d->size]; e != 0; e = e->next) {
+    for(e = d->table[point_hash_function(key) % d->size]; e != 0; e = e->next) {
         if(point_equals(e->key, key)) {
             /* got it */
             return e->value;
@@ -139,12 +137,12 @@ int hash_search(struct point_hash* d, struct point_3d key) {
 
 /* delete the most recently inserted record with the given key */
 /* if there is no such record, has no effect */
-void hash_delete(struct point_hash *d, struct point_3d key)
+void point_hash_delete(struct point_hash *d, struct point_3d key)
 {
     struct elt **prev;          /* what to change when elt is deleted */
     struct elt *e;              /* what to delete */
 
-    for(prev = &(d->table[hash_function(key) % d->size]);
+    for(prev = &(d->table[point_hash_function(key) % d->size]);
         *prev != 0;
         prev = &((*prev)->next)) {
         if(point_equals((*prev)->key, key)) {

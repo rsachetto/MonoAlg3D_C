@@ -6,9 +6,7 @@
 #define MONOALG3D_GRID_H
 
 #include "../cell/cell.h"
-#include "../../utils/vector/int_vector.h"
 #include "../../utils/vector/uint32_vector.h"
-#include "../../utils/config_parser.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -72,6 +70,5 @@ void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_
                                double bz_radius);
 void set_plain_fibrosis(struct grid* the_grid, double phi);
 
-void configure_grid_from_options(struct grid* grid, struct user_options *options);
 
 #endif //MONOALG3D_GRID_H

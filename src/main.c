@@ -1,10 +1,9 @@
 #include <stdio.h>
-#include <unitypes.h>
-#include "grid/grid/grid.h"
-#include "solvers/ode_solver.h"
-#include "solvers/monodomain_solver.h"
-#include "utils/config_parser.h"
+#include "alg/grid/grid.h"
+#include "main/ode_solver.h"
+#include "main/monodomain_solver.h"
 #include "utils/ini_parser/ini.h"
+#include "main/config_parser.h"
 
 int main(int argc, char **argv) {
 
@@ -23,7 +22,6 @@ int main(int argc, char **argv) {
     ode_solver = new_ode_solver();
     output_info = new_output_utils();
 
-
     //First we have to get the config file path
     get_config_file(argc, argv, options);
 
@@ -31,9 +29,10 @@ int main(int argc, char **argv) {
         //Here we parse the config file
         if (ini_parse(options->config_file, parse_config_file, options) < 0) {
             fprintf(stderr, "Error: Can't load the config file %s\n", options->config_file);
-            return 1    ;
+            return EXIT_FAILURE;
         }
     }
+
 
     //The command line options always overwrite the config file
     parse_options(argc, argv, options);
@@ -45,10 +44,7 @@ int main(int argc, char **argv) {
 
     init_ode_solver_with_cell_model(ode_solver);
 
-    //TODO: we have to define how to handle the stimuli
-    ode_solver->stim_duration = 2.0;
-    ode_solver->stim_start = 0.0;
-    ode_solver->stim_current = -50.0f;
+    FOR_EACH_KEY_APPLY_FN_IN_VALUE(options->stim_configs, init_stim_functions);
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
@@ -60,7 +56,7 @@ int main(int argc, char **argv) {
     //TODO: this should be an user provided function!
     initialize_grid_with_benchmark_mesh(the_grid, edp_solver->start_h);
 
-    solve_monodomain(the_grid, edp_solver, ode_solver, output_info);
+    solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options->stim_configs);
 
     free_output_utils(output_info);
     clean_and_free_grid(the_grid);
@@ -69,6 +65,6 @@ int main(int argc, char **argv) {
     free(edp_solver);
     free(options);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 

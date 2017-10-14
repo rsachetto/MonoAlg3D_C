@@ -3,22 +3,17 @@
 //
 
 #include "ode_solver.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
 #include <assert.h>
 
 #ifdef COMPILE_CUDA
 #include "../utils/gpu/gpu_utils.h"
-#include "../utils/config_parser.h"
-
 #endif
 
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
     result->sv = NULL;
-    result->stim_currents = NULL;
     result->edo_extra_data = NULL;
     result->cells_to_solve = NULL;
     result->handle = NULL;
@@ -40,10 +35,6 @@ struct ode_solver* new_ode_solver() {
 void free_ode_solver(struct ode_solver *solver) {
     if(solver->sv) {
         free(solver->sv);
-    }
-
-    if(solver->stim_currents) {
-        free(solver->stim_currents);
     }
 
     if(solver->edo_extra_data) {
@@ -186,7 +177,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
     }
 }
 
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, Real cur_time, int num_steps) {
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, Real cur_time, int num_steps, struct stim_config_hash *stim_configs) {
 
     assert(the_ode_solver->sv);
 
@@ -194,32 +185,58 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     Real dt = the_ode_solver->min_dt;
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
-    Real *stims = the_ode_solver->stim_currents;
     Real *sv = the_ode_solver->sv;
 
-    Real stim_start = the_ode_solver->stim_start;
-    Real stim_dur = the_ode_solver->stim_duration;
     void *extra_data = the_ode_solver->edo_extra_data;
 
     Real time = cur_time;
 
+    Real *merged_stims = (Real*)calloc(sizeof(Real),n_active);
+
+
+    struct stim_config *tmp = NULL;
+    Real stim_curr = 0.0;
+    Real stim_start, stim_dur;
+
+
+    for (int k = 0; k < stim_configs->size; k++) {
+        for (struct stim_config_elt *e = stim_configs->table[k % stim_configs->size]; e != 0; e = e->next) {
+            tmp = e->value;
+            stim_start = tmp->stim_start;
+            stim_dur = tmp->stim_duration;
+            for (int j = 0; j < num_steps; ++j) {
+                if( ( time>=stim_start ) && ( time<=stim_start+stim_dur ) ) {
+                    #pragma omp parallel for
+                    for (int i = 0; i < n_active; i++) {
+                        merged_stims[i] = tmp->spatial_stim_currents[i];
+                    }
+                }
+                time += dt;
+            }
+            time = cur_time;
+        }
+    }
+
+    time = cur_time;
+
     if(the_ode_solver->gpu) {
-    #ifdef COMPILE_CUDA
+#ifdef COMPILE_CUDA
 
         solve_model_ode_gpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_gpu_fn;
-        solve_odes_pt(dt, sv, stims, the_ode_solver->cells_to_solve,
-                n_active, stim_start, stim_dur, time, num_steps, n_odes, extra_data);
+        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve,
+                      n_active, 0.0, 0.0, time, num_steps, n_odes, extra_data);
 
 #endif
     }
     else {
         solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
-        #pragma omp parallel for private(sv_id, time)
+#pragma omp parallel for private(sv_id, time)
         for (int i = 0; i < n_active; i++) {
+
             sv_id = the_ode_solver->cells_to_solve[i];
 
             for (int j = 0; j < num_steps; ++j) {
-                solve_odes_pt(dt, sv + (sv_id * n_odes), stims[i], stim_start, stim_dur, cur_time, n_odes, extra_data);
+                solve_odes_pt(dt, sv + (sv_id * n_odes), merged_stims[i], 0.0, 0.0, cur_time, n_odes, extra_data);
                 time += dt;
             }
         }
@@ -240,10 +257,10 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
     Real *sv_dst;
 
     if(ode_solver->gpu) {
-    #ifdef COMPILE_CUDA
+#ifdef COMPILE_CUDA
 
         size_t pitch_h = ode_solver->pitch;
-        #pragma omp parallel for private(sv_src, sv_dst)
+#pragma omp parallel for private(sv_src, sv_dst)
         for (size_t i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * 8;
@@ -262,11 +279,11 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
         //TODO: test if is faster to update the GPU using a kernel or a host function with cudaMemcpy2D
         //ode_solver->update_gpu_fn(sv, refined_this_step->base, num_refined_cells, neq);
 
-    #endif
+#endif
     }
     else {
 
-        #pragma omp parallel for private(sv_src, sv_dst)
+#pragma omp parallel for private(sv_src, sv_dst)
         for (size_t i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * 8;
@@ -283,14 +300,5 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
         }
     }
-
-}
-
-void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
-    solver->gpu_id = options->gpu_id;
-    solver->min_dt = (Real)options->dt_edo;
-    solver->gpu = options->gpu;
-
-    solver->model_data.model_library_path = strdup(options->model_file_path);
 
 }

@@ -59,6 +59,6 @@ crashlytics-build.properties
 fabric.properties
 
 bin/
-model_lib/
+shared_libs/
 tmp/
 tests_bin/

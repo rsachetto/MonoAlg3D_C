@@ -6,15 +6,16 @@
 #define MONOALG3D_U32_vector_H
 
 #include <stddef.h>
+#include <unitypes.h>
 
-typedef u_int32_t data_type_32;
+typedef uint32_t data_type_32;
 
 /**
  * @brief A structure representing the vector object
  */
 typedef struct uint32_vector_t {
     data_type_32 *base; /**< Raw memory for items */
-    size_t size;     /**< The number of inserted items */
+     size_t size;     /**< The number of inserted items */
     size_t capacity; /**< The number of potential items before a resize */
 } uint32_vector;
 

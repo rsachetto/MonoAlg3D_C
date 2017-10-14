@@ -1,10 +1,14 @@
 set(SOURCE_FILES_UTILS
         utils.h
-        config_parser.h
-        config_parser.c
+        ini_parser/ini_file_sections.h
+        ini_parser/ini.c
+        ini_parser/ini.h
         search.c
-        point_hash.c
-        point_hash.h
+        hash/hash_common.h
+        hash/point_hash.c
+        hash/point_hash.h
+        hash/string_hash.c
+        hash/string_hash.h
         output_utils.h
         output_utils.c
         stop_watch.h

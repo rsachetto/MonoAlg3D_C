@@ -2,12 +2,13 @@
 // Created by sachetto on 01/10/17.
 //
 
-#include "../../utils/point_hash.h"
+#include "../../utils/hash/point_hash.h"
 #include "../../utils/utils.h"
 #include "grid.h"
 #include <float.h>
 #include <time.h>
 #include <unistd.h>
+#include <math.h>
 
 int get_num_refinement_steps_to_discretization (double side_len, double h) {
 
@@ -73,7 +74,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
 
     int i = 0;
 
-    struct point_hash *p_hash = hash_create ();
+    struct point_hash *p_hash = point_hash_create ();
     struct point_3d point3d;
 
     while (i < size) {
@@ -91,8 +92,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
         point3d.y = a[i][1];
         point3d.z = a[i][2];
 
-        // myMap[TPoint3D(a[i])] = fibrosis;
-        hash_insert (p_hash, point3d, fibrosis);
+        point_hash_insert (p_hash, point3d, fibrosis);
 
         i++;
     }
@@ -111,8 +111,8 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
         point3d.y = y;
         point3d.z = z;
 
-        grid_cell->fibrotic = (hash_search (p_hash, point3d) == 1);
-        grid_cell->border_zone = (hash_search (p_hash, point3d) == 2);
+        grid_cell->fibrotic = (point_hash_search (p_hash, point3d) == 1);
+        grid_cell->border_zone = (point_hash_search (p_hash, point3d) == 2);
 
         if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
 
@@ -130,7 +130,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
         free (a[l]);
     }
     free (a);
-    hash_destroy (p_hash);
+    point_hash_destroy (p_hash);
 }
 
 void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size,
@@ -158,7 +158,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
 
     int i = 0;
 
-    struct point_hash *p_hash = hash_create ();
+    struct point_hash *p_hash = point_hash_create ();
     struct point_3d point3d;
 
     while (i < size) {
@@ -169,7 +169,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
         point3d.z = a[i][2];
 
         // myMap[TPoint3D(a[i])] = fibrosis;
-        hash_insert (p_hash, point3d, fibrosis);
+        point_hash_insert (p_hash, point3d, fibrosis);
 
         i++;
     }
@@ -185,8 +185,8 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
         point3d.y = y;
         point3d.z = z;
 
-        grid_cell->fibrotic = (hash_search (p_hash, point3d) == 1);
-        grid_cell->border_zone = (hash_search (p_hash, point3d) == 2);
+        grid_cell->fibrotic = (point_hash_search (p_hash, point3d) == 1);
+        grid_cell->border_zone = (point_hash_search (p_hash, point3d) == 2);
 
         if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
 
@@ -204,7 +204,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
         free (a[j]);
     }
     free (a);
-    hash_destroy (p_hash);
+    point_hash_destroy (p_hash);
 }
 
 void set_human_mesh (struct grid *the_grid, const char *file_name) {

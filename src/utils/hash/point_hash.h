@@ -22,20 +22,20 @@ struct point_hash {
 };
 
 /* create a new empty dictionary */
-struct point_hash* hash_create();
+struct point_hash* point_hash_create();
 
 /* destroy a dictionary */
-void hash_destroy(struct point_hash*);
+void point_hash_destroy(struct point_hash*);
 
 /* insert a new key-value pair into an existing dictionary */
-void hash_insert(struct point_hash*, struct point_3d key, int value);
+void point_hash_insert(struct point_hash*, struct point_3d key, int value);
 
 /* return the most recently inserted value associated with a key */
 /* or 0 if no matching key is present */
-int hash_search(struct point_hash*, struct point_3d key);
+int point_hash_search(struct point_hash*, struct point_3d key);
 
 /* delete the most recently inserted record with the given key */
 /* if there is no such record, has no effect */
-void hash_delete(struct point_hash*, struct point_3d key);
+void point_hash_delete(struct point_hash*, struct point_3d key);
 
 #endif //MONOALG3D_HASH_H

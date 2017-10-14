@@ -15,7 +15,7 @@
 #include "monodomain_solver.h"
 #include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
-#include "../utils/config_parser.h"
+
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);
@@ -28,43 +28,14 @@ struct monodomain_solver *new_monodomain_solver() {
     result->beta = 0.14;
     result->cm = 1.0;
 
-    //TODO: make this an section in the config file
-    result->sigma_y = 0.0001334f;
-    result->sigma_x = 0.0000176;
-    result->sigma_z = result->sigma_x;
-
     return result;
 }
 
-void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
-                                              struct user_options *options) {
+void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
+                      struct ode_solver *the_ode_solver, struct output_utils *output_info,
+                      struct stim_config_hash *stimuli_configs) {
 
-    assert(the_monodomain_solver);
-    assert(options);
-
-    the_monodomain_solver->tolerance = options->cg_tol;
-    the_monodomain_solver->num_threads = options->num_threads;
-    the_monodomain_solver->max_iterations = options->max_its;
-    the_monodomain_solver->final_time = options->final_time;
-
-
-    the_monodomain_solver->start_h = options->start_h;
-    the_monodomain_solver->max_h = options->max_h;
-    the_monodomain_solver->min_h = the_monodomain_solver->start_h;;
-    the_monodomain_solver->refine_each = options->refine_each;
-    the_monodomain_solver->derefine_each = options->derefine_each;
-    the_monodomain_solver->refinement_bound = options->ref_bound;
-    the_monodomain_solver->derefinement_bound = options->deref_bound;
-
-    the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
-
-    the_monodomain_solver->dt = options->dt_edp;
-    the_monodomain_solver->use_jacobi = options->use_jacobi;
-
-}
-
-void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
-                       struct ode_solver *the_ode_solver, struct output_utils *output_info) {
+    assert(stimuli_configs);
 
     assert(the_grid);
     assert(the_monodomain_solver);
@@ -111,8 +82,6 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     double beta = the_monodomain_solver->beta;
     double cm = the_monodomain_solver->cm;
 
-    // TODO: create a file for stimulus definition!!
-    double stim_dur = the_ode_solver->stim_duration;
     double dt_edo = the_ode_solver->min_dt;
 
 #ifdef COMPILE_CUDA
@@ -192,7 +161,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     uint32_t cg_iterations;
 
     // TODO: we need to handle stim on diferent edp times (pulses)
-    set_spatial_stim (the_grid, the_ode_solver);
+    set_spatial_stim (the_grid, stimuli_configs);
     set_ode_extra_data (the_grid, the_ode_solver);
 
     uint32_vector *refined_this_step = the_grid->refined_this_step;
@@ -233,7 +202,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
 
         start_stop_watch (&ode_time);
 
-        solve_all_volumes_odes (the_ode_solver, the_grid->num_active_cells, cur_time, ode_step);
+        solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
 
         update_monodomain (original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_edp,
                            the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
@@ -262,7 +231,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
         if (adaptive) {
             redo_matrix = false;
             // TODO: we should let the user decide the time to start refining
-            if (cur_time > (stim_dur / 2.0)) {
+            if (cur_time > (1.0)) {
 
                 if (count % refine_each == 0) {
                     start_stop_watch (&ref_time);
@@ -281,7 +250,7 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
                 order_grid_cells (the_grid);
 
                 // TODO: we need to handle stim on diferent edp times (pulses)
-                set_spatial_stim (the_grid, the_ode_solver);
+                set_spatial_stim (the_grid, stimuli_configs);
                 set_ode_extra_data (the_grid, the_ode_solver);
 
                 update_cells_to_solve (the_grid, the_ode_solver);
@@ -309,36 +278,21 @@ void solve_monodomain (struct grid *the_grid, struct monodomain_solver *the_mono
     printf ("CG Total Iterations: %u\n", total_cg_it);
 }
 
-// TODO: this should be handled by a user provided library
-void set_spatial_stim (struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
-    uint32_t n_active = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-    Real i_stim = the_ode_solver->stim_current;
+void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_configs) {
 
-    if (the_ode_solver->stim_currents != NULL) {
-        free (the_ode_solver->stim_currents);
-    }
+    struct stim_config *tmp = NULL;
+    int n_active = the_grid->num_active_cells;
 
-    the_ode_solver->stim_currents = (Real *)malloc (sizeof (Real) * n_active);
-    Real *stims = the_ode_solver->stim_currents;
-
-    bool stim;
-
-#pragma omp parallel for private(stim)
-    for (int i = 0; i < n_active; i++) {
-
-        stim = ac[i]->center_x > 5500.0;
-        stim &= ac[i]->center_x < 7000.0;
-        stim &= ac[i]->center_y < 1500.0;
-        stim &= ac[i]->center_z < 1500.0;
-
-        if (stim) {
-            stims[i] = i_stim;
-        } else {
-            stims[i] = 0.0;
+    for (int i = 0; i < stim_configs->size; i++) {
+        for (struct stim_config_elt *e = stim_configs->table[i % stim_configs->size]; e != 0; e = e->next) {
+            tmp = e->value;
+            if(tmp->spatial_stim_currents) free(tmp->spatial_stim_currents);
+            tmp->spatial_stim_currents = (Real*)malloc(sizeof(Real)*n_active);
+            tmp->set_spatial_stim_fn(the_grid, tmp->stim_current, tmp->spatial_stim_currents);
         }
     }
+
 }
 
 // TODO: this should be handled by a user provided library
@@ -771,8 +725,11 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
         printf ("Maximum Space Discretization: %lf um\n", the_monodomain_solver->max_h);
     }
 
-    printf ("Width = %lf um, height = %lf um, Depth = %lf \n", the_grid->side_length, the_grid->side_length,
-            the_grid->side_length);
+    printf ("Sigma X = %lf, Sigma Y = %lf, Sigma Z = %lf\n",
+            the_monodomain_solver->sigma_x,
+            the_monodomain_solver->sigma_y,
+            the_monodomain_solver->sigma_z);
+
     printf ("Initial N. of Elements = "
             "%" PRIu32 "\n",
             the_grid->num_active_cells);
@@ -787,9 +744,9 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
         }*/
 
     printf ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
-    printf ("Stimulus start = %lf\n", the_ode_solver->stim_start);
-    printf ("Stimulus duration = %lf\n", the_ode_solver->stim_duration);
-    printf ("Stimulus value = %lf\n", the_ode_solver->stim_current);
+    //printf ("Stimulus start = %lf\n", the_ode_solver->stim_start);
+    //printf ("Stimulus duration = %lf\n", the_ode_solver->stim_duration);
+    //printf ("Stimulus value = %lf\n", the_ode_solver->stim_current);
     printf ("Maximum CG iterations = %d\n", the_monodomain_solver->max_iterations);
     printf ("CG tolerance = %e\n", the_monodomain_solver->tolerance);
     if (the_monodomain_solver->use_jacobi) {

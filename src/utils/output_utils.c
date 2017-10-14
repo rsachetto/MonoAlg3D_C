@@ -6,7 +6,6 @@
 #include <malloc.h>
 #include <assert.h>
 #include "output_utils.h"
-#include "config_parser.h"
 
 bool dir_exists(const char *path) {
     struct stat info;
@@ -34,15 +33,4 @@ void free_output_utils(struct output_utils* info) {
         sdsfree(info->output_dir_name);
     }
     free(info);
-}
-
-void configure_output_from_options(struct output_utils *output_utils,
-                                              struct user_options *options) {
-
-    assert(output_utils);
-    assert(options);
-
-    output_utils->print_rate = options->print_rate;
-    output_utils->output_dir_name = sdsnew(options->out_dir_name);
-
 }
