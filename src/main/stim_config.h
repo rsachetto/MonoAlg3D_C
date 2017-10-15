@@ -9,7 +9,7 @@
 #include "../main/constants.h"
 #include "config_common.h"
 
-typedef void (*set_spatial_stim_fn_pt)(struct grid *, Real, Real *);
+typedef void (*set_spatial_stim_fn_pt)(struct grid *, Real, Real *, struct string_hash *);
 
 struct stim_config {
 

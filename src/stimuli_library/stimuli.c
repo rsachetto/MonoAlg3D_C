@@ -6,7 +6,7 @@
 //TODO: maybe we need to provide a free config for the spatial stim
 #include <unitypes.h>
 #include "stimuli.h"
-void set_benchmark_spatial_stim (struct grid *the_grid, Real stim_current, Real *spatial_currents) {
+void set_benchmark_spatial_stim (struct grid *the_grid, Real stim_current, Real *spatial_currents, struct string_hash *config) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
@@ -29,7 +29,7 @@ void set_benchmark_spatial_stim (struct grid *the_grid, Real stim_current, Real 
     }
 }
 
-void set_benchmark_spatial_stim2 (struct grid *the_grid, Real stim_current, Real *spatial_currents) {
+void set_benchmark_spatial_stim2 (struct grid *the_grid, Real stim_current, Real *spatial_currents, struct string_hash *config) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;

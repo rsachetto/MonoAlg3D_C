@@ -292,7 +292,7 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
             tmp = e->value;
             if(tmp->spatial_stim_currents) free(tmp->spatial_stim_currents);
             tmp->spatial_stim_currents = (Real*)malloc(sizeof(Real)*n_active);
-            tmp->set_spatial_stim_fn(the_grid, tmp->stim_current, tmp->spatial_stim_currents);
+            tmp->set_spatial_stim_fn(the_grid, tmp->stim_current, tmp->spatial_stim_currents, tmp->config_data.config);
         }
     }
 
