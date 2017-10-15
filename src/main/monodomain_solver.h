@@ -12,6 +12,7 @@
 #include <unitypes.h>
 #include "stim_config_hash.h"
 #include "extra_data_config.h"
+#include "config_parser.h"
 
 struct monodomain_solver {
 
@@ -25,7 +26,6 @@ struct monodomain_solver {
     double sigma_y;
     double sigma_z;
 
-    double start_h, max_h, min_h;
     int refine_each;
     int derefine_each;
     double refinement_bound;
@@ -46,7 +46,7 @@ struct monodomain_solver *new_monodomain_solver ();
 
 void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
                       struct ode_solver *the_edo_solver, struct output_utils *output_info,
-                      struct stim_config_hash *stimuli_configs, struct extra_data_config *extra_data_config);
+                      struct user_options *configs);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
@@ -59,9 +59,8 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
 
 void set_discretization_matrix (struct monodomain_solver *the_solver, struct grid *the_grid);
 
-void print_solver_info (struct monodomain_solver *the_monodomain_solver,
-                        struct ode_solver *the_ode_solver, struct grid *the_grid,
-                        struct output_utils *output_info);
+void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
+                       struct grid *the_grid, struct output_utils *output_info, double start_h, double max_h);
 
 void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid, uint32_t max_number_of_cells);
 
@@ -72,5 +71,8 @@ void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cel
                        double beta,
                        double cm, double dt_edp, Real *sv, int n_equations_cell_model, bool use_gpu);
 
+
+void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
+                                              struct user_options *options);
 
 #endif // MONOALG3D_SOLVER_H

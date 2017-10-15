@@ -33,14 +33,18 @@ struct monodomain_solver *new_monodomain_solver() {
 
 void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
                       struct ode_solver *the_ode_solver, struct output_utils *output_info,
-                      struct stim_config_hash *stimuli_configs, struct extra_data_config *extra_data_config) {
+                      struct user_options *configs) {
 
-    assert(stimuli_configs);
+    assert(configs);
 
     assert(the_grid);
     assert(the_monodomain_solver);
     assert(the_ode_solver);
     assert(output_info);
+
+    struct stim_config_hash *stimuli_configs = configs->stim_configs;
+    struct extra_data_config *extra_data_config = configs->extra_data_config;
+    struct domain_config * domain_config = configs->domain_config;
 
     bool has_extra_data = extra_data_config->config_data.configured;
 
@@ -72,8 +76,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     double refinement_bound = the_monodomain_solver->refinement_bound;
     double derefinement_bound = the_monodomain_solver->derefinement_bound;
 
-    double min_h = the_monodomain_solver->min_h;
-    double max_h = the_monodomain_solver->max_h;
+    double start_h = domain_config->start_h;
+    double max_h = domain_config->max_h;
 
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
@@ -116,7 +120,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         max_its = (int)the_grid->number_of_cells;
     }
 
-    print_solver_info (the_monodomain_solver, the_ode_solver, the_grid, output_info);
+    print_solver_info(the_monodomain_solver, the_ode_solver, the_grid, output_info, start_h, max_h);
 
     int ode_step = 1;
 
@@ -238,7 +242,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
                 if (count % refine_each == 0) {
                     start_stop_watch (&ref_time);
-                    redo_matrix = refine_grid_with_bound (the_grid, refinement_bound, min_h);
+                    redo_matrix = refine_grid_with_bound (the_grid, refinement_bound, start_h);
                     total_ref_time += stop_stop_watch (&ref_time);
                 }
 
@@ -290,7 +294,7 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
     for (int i = 0; i < stim_configs->size; i++) {
         for (struct stim_config_elt *e = stim_configs->table[i % stim_configs->size]; e != 0; e = e->next) {
             tmp = e->value;
-            if(tmp->spatial_stim_currents) free(tmp->spatial_stim_currents);
+            free(tmp->spatial_stim_currents);
             tmp->spatial_stim_currents = (Real*)malloc(sizeof(Real)*n_active);
             tmp->set_spatial_stim_fn(the_grid, tmp->stim_current, tmp->spatial_stim_currents, tmp->config_data.config);
         }
@@ -300,10 +304,7 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
 
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
-    if(the_ode_solver->edo_extra_data) {
-        free(the_ode_solver->edo_extra_data);
-    }
-
+    free(the_ode_solver->edo_extra_data);
     the_ode_solver->edo_extra_data = config->set_extra_data_fn(the_grid, config->config_data.config);
 
 }
@@ -651,8 +652,8 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
 #endif
 }
 
-void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                        struct grid *the_grid, struct output_utils *output_info) {
+void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
+                       struct grid *the_grid, struct output_utils *output_info, double start_h, double max_h) {
     printf ("System parameters: \n");
 #if defined(_OPENMP)
     printf ("Using OpenMP with %d threads\n", omp_get_max_threads ());
@@ -664,11 +665,10 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     printf ("Time discretization: %lf\n", the_monodomain_solver->dt);
     printf ("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
     printf ("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
-    printf ("Initial Space Discretization: %lf um\n", the_monodomain_solver->start_h);
+    printf ("Initial Space Discretization: %lf um\n", start_h);
 
     if (the_grid->adaptive) {
-        printf ("Minimum Space Discretization: %lf um\n", the_monodomain_solver->min_h);
-        printf ("Maximum Space Discretization: %lf um\n", the_monodomain_solver->max_h);
+        printf ("Maximum Space Discretization: %lf um\n", max_h);
         printf ("The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
     }
 
@@ -725,4 +725,32 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     } else {
         printf ("The solution will not be saved\n");
     }
+}
+
+void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
+                                              struct user_options *options) {
+
+    assert(the_monodomain_solver);
+    assert(options);
+
+    the_monodomain_solver->tolerance = options->cg_tol;
+    the_monodomain_solver->num_threads = options->num_threads;
+    the_monodomain_solver->max_iterations = options->max_its;
+    the_monodomain_solver->final_time = options->final_time;
+
+    the_monodomain_solver->refine_each = options->refine_each;
+    the_monodomain_solver->derefine_each = options->derefine_each;
+    the_monodomain_solver->refinement_bound = options->ref_bound;
+    the_monodomain_solver->derefinement_bound = options->deref_bound;
+
+    the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
+
+    the_monodomain_solver->dt = options->dt_edp;
+    the_monodomain_solver->use_jacobi = options->use_jacobi;
+
+    the_monodomain_solver->sigma_x = options->sigma_x;
+    the_monodomain_solver->sigma_y = options->sigma_y;
+    the_monodomain_solver->sigma_z = options->sigma_z;
+    the_monodomain_solver->start_adapting_at = options->start_adapting_at;
+
 }

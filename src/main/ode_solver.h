@@ -10,12 +10,13 @@
 #include "../vector/uint32_vector.h"
 #include "../models/model_common.h"
 #include "stim_config_hash.h"
+#include "config_parser.h"
 
 typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 
 //CPU FUNCTIONS
 typedef void (*set_ode_initial_conditions_cpu_fn_pt)(Real *);
-typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real , Real , Real , Real , int , void *);
+typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real, Real , int , void *);
 
 //GPU FUNCTIONS
 typedef size_t (*set_ode_initial_conditions_gpu_fn_pt)(Real **, uint32_t , int );
@@ -67,7 +68,7 @@ void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, Real cur_time, int num_steps,
                             struct stim_config_hash *stim_configs);
-
+void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
 
 
 #endif //MONOALG3D_EDO_SOLVER_H

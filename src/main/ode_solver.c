@@ -192,6 +192,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     Real time = cur_time;
 
+
     Real *merged_stims = (Real*)calloc(sizeof(Real),n_active);
 
 
@@ -237,11 +238,13 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
             sv_id = the_ode_solver->cells_to_solve[i];
 
             for (int j = 0; j < num_steps; ++j) {
-                solve_odes_pt(dt, sv + (sv_id * n_odes), merged_stims[i], 0.0, 0.0, cur_time, n_odes, extra_data);
+                solve_odes_pt(dt, sv + (sv_id * n_odes), merged_stims[i], cur_time, n_odes, extra_data);
                 time += dt;
             }
         }
     }
+
+    free(merged_stims);
 }
 
 //TODO: change this to the monodomain solver file
@@ -284,7 +287,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
     }
     else {
 
-#pragma omp parallel for private(sv_src, sv_dst)
+        #pragma omp parallel for private(sv_src, sv_dst)
         for (size_t i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * 8;
@@ -301,5 +304,14 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
         }
     }
+
+}
+
+void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
+    solver->gpu_id = options->gpu_id;
+    solver->min_dt = (Real)options->dt_edo;
+    solver->gpu = options->gpu;
+
+    solver->model_data.model_library_path = strdup(options->model_file_path);
 
 }

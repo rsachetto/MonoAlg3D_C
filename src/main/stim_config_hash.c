@@ -42,10 +42,8 @@ void stim_config_hash_destroy (struct stim_config_hash *d) {
     for (i = 0; i < d->size; i++) {
         for (e = d->table[i]; e != 0; e = next) {
             next = e->next;
-
-            // If we use a pointer we need a free, but now we dont need
-            // free(e->key);
-
+            free(e->key);
+            //we dont free the value as it does not belong to us!
             free (e);
         }
     }

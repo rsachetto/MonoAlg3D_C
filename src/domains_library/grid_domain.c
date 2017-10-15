@@ -6,6 +6,7 @@
 
 #include "../hash/point_hash.h"
 #include "../utils/utils.h"
+#include "../main/domain_config.h"
 #include <float.h>
 #include <time.h>
 #include <unistd.h>
@@ -219,9 +220,9 @@ void set_human_sub_mesh (struct grid *the_grid, const char *file_name, double mi
     set_custom_mesh_with_bounds (the_grid, file_name, 2025252, minx, maxx, miny, maxy, minz, maxz);
 }
 
-void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct string_hash *domain_config) {
+void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_config *domain_config) {
 
-    char *mesh_file = string_hash_search(domain_config, "mesh_file");
+    char *mesh_file = string_hash_search(domain_config->config_data.config, "mesh_file");
 
     initialize_and_construct_grid (the_grid, 32000.0, the_grid->num_cell_neighbours);
     refine_grid (the_grid, 6);
@@ -238,9 +239,9 @@ void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct string_hash
     free(mesh_file);
 }
 
-void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct string_hash *domain_config) {
+void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct domain_config *domain_config) {
 
-    char *mesh_file = string_hash_search(domain_config, "mesh_file");
+    char *mesh_file = string_hash_search(domain_config->config_data.config, "mesh_file");
 
     assert(the_grid);
 
@@ -343,14 +344,15 @@ void set_cell_not_changeable(struct cell_node *c, double initialDiscretization) 
 
     c->can_change = !cannotChange;
 
+
+
 }
 
-void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct string_hash *domain_config) {
+void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct domain_config *domain_config) {
 
     double side_length;
-    char* start_h_char = string_hash_search(domain_config, "start_discretization");
 
-    double start_h = atof(start_h_char);
+    double start_h = domain_config->start_h;
 
     printf ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
     if ((start_h == 100.0) || (start_h == 200.0)) {
@@ -382,7 +384,7 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct string_h
 
         while( grid_cell != 0 ) {
             if(grid_cell->active) {
-                //setCellNotChangeable(grid_cell, globalArgs.start_h);
+                set_cell_not_changeable(grid_cell, start_h);
             }
             grid_cell = grid_cell->next;
         }

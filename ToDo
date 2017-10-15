@@ -1,2 +1,4 @@
 - Implement pacing in the stimulus protocol
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)
+- Check for the number of stimuli and the time for the last stimulus (largests start+duration) berfore calling the function to apply then
+- Remove extra parametres in the solve ode functions

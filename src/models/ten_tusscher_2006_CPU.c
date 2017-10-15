@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, Real dt);
+void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real time, Real dt);
 
 
 void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
@@ -41,8 +41,7 @@ void set_model_initial_conditions_cpu(Real *sv) {
     sv[18] = 136.89f;   // K_i;     millimolar
 }
 
-void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real stim_start, Real stim_dur,
-                         Real time, int neq, void *extra_data)  {
+void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real time, int neq, void *extra_data)  {
 
     assert(sv);
     extra_data = NULL;
@@ -52,7 +51,7 @@ void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real stim_start, 
     for(int i = 0; i < neq; i++)
         rY[i] = sv[i];
 
-    RHS_cpu(rY, rDY, stim_current, stim_start, stim_dur, time, dt);
+    RHS_cpu(rY, rDY, stim_current, time, dt);
 
     //THIS MODEL USES THE Rush Larsen Method TO SOLVE THE EDOS
     sv[0] = dt*rDY[0] + rY[0];
@@ -80,7 +79,7 @@ void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real stim_start, 
 }
 
 
-void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real stim_start, Real stim_dur, Real time, Real dt) {
+void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real time, Real dt) {
 
     // State variables
     const Real V = sv[0];      // Membrane variable
@@ -174,7 +173,6 @@ void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real stim_start, Rea
     Real INaCa = (K_NaCa * ((expf((gamma * V * F) / (R * T)) * powf(Na_i, 3.0f) * Cao) - (expf(((gamma - 1.0f) * V * F) / (R * T)) * powf(Nao, 3) * Ca_i * alpha))) / ((powf(Km_Nai, 3.0f) + powf(Nao, 3.0f)) * (Km_Ca + Cao) * (1.0f + (K_sat * expf(((gamma - 1.0f) * V * F) / (R * T)))));
 
     // Stimulus
-    //Real var_membrane__i_Stim = ((time>=stim_start)&&(time<=stim_start+stim_dur)) ? stim_current: 0.0f;
     Real var_membrane__i_Stim = stim_current;
 
     Real xr1_inf   = 1.0f / (1.0f + expf(((-26.0f) - V) / 7.0f));

@@ -14,19 +14,18 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
     }
 
     char *error;
-    char *library_path = config->config_data.library_file_path;
+    char *default_library_name = "./shared_libs/libdefault_stimuli.so";
     char *function_name = config->config_data.function_name;
 
-    if(library_path == NULL) {
+    if(config->config_data.library_file_path == NULL) {
         printf("Using the default library for stimuli functions for %s\n", stim_name);
-        library_path = strdup("./shared_libs/libdefault_stimuli.so");
+        config->config_data.library_file_path = strdup(default_library_name);
     }
     else {
-        printf("Opening %s as stimuli lib for %s\n", library_path, stim_name);
-
+        printf("Opening %s as stimuli lib for %s\n", config->config_data.library_file_path, stim_name);
     }
 
-    config->config_data.handle = dlopen (library_path, RTLD_LAZY);
+    config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
     if (!config->config_data.handle) {
         fputs (dlerror(), stderr);
         fprintf(stderr, "\n");
@@ -59,6 +58,7 @@ void print_stim_config_values(struct stim_config* s) {
 void free_stim_config(struct stim_config* s) {
     free(s->config_data.function_name);
     free(s->config_data.library_file_path);
+    free(s->spatial_stim_currents);
     dlclose(s->config_data.handle);
     string_hash_destroy(s->config_data.config);
     free(s);

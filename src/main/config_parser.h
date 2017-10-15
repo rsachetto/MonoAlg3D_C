@@ -14,8 +14,6 @@
 #include <stdbool.h>
 #include <math.h>
 #include "../alg/grid/grid.h"
-#include "ode_solver.h"
-#include "monodomain_solver.h"
 #include "output_utils.h"
 #include "stim_config_hash.h"
 #include "domain_config.h"
@@ -38,9 +36,7 @@ struct user_options {
     bool adaptive_was_set;
     int print_rate;	            	/*-p option */
     bool print_rate_was_set;
-    double start_h;					/*-s option*/
     bool start_h_was_set;
-    double max_h;					/*-x option*/
     bool max_h_was_set;
     int max_its;					/*-m option*/
     bool max_its_was_set;
@@ -128,13 +124,11 @@ void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
-void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
-void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
-                                              struct user_options *options);
 
 void configure_output_from_options(struct output_utils *output_utils,
                                    struct user_options *options);
 
+void free_user_options(struct user_options *s);
 
 
 #endif /* MONOALG3D_CONFIG_PARSER_H */

@@ -68,12 +68,6 @@ struct user_options *new_user_options () {
     user_args->print_rate = 1;
     user_args->print_rate_was_set = false;
 
-    user_args->start_h = 100.0;
-    user_args->start_h_was_set = false;
-
-    user_args->max_h = 200.0;
-    user_args->max_h_was_set = false;
-
     user_args->max_its = 50;
     user_args->max_its_was_set = false;
 
@@ -128,6 +122,12 @@ struct user_options *new_user_options () {
     user_args->domain_config = new_domain_config();
     user_args->extra_data_config = new_extra_data_config();
 
+    user_args->domain_config->start_h = 100.0;
+    user_args->start_h_was_set = false;
+
+    user_args->domain_config->max_h = 200.0;
+    user_args->max_h_was_set = false;
+
     return user_args;
 }
 
@@ -160,8 +160,6 @@ void issue_overwrite_warning (const char *var, const char *old_value, const char
 
 void parse_options (int argc, char **argv, struct user_options *user_args) {
     int opt = 0;
-
-
 
     int longIndex;
 
@@ -252,17 +250,17 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 break;
             case 's':
                 if (user_args->start_h_was_set) {
-                    sprintf (old_value, "%lf", user_args->start_h);
+                    sprintf (old_value, "%lf", user_args->domain_config->start_h);
                     issue_overwrite_warning ("start_discretization", old_value, optarg, user_args->config_file);
                 }
-                user_args->start_h = atof (optarg);
+                user_args->domain_config->start_h = atof (optarg);
                 break;
             case 'x':
                 if (user_args->max_h_was_set) {
-                    sprintf (old_value, "%lf", user_args->max_h);
+                    sprintf (old_value, "%lf", user_args->domain_config->max_h);
                     issue_overwrite_warning ("maximum_discretization", old_value, optarg, user_args->config_file);
                 }
-                user_args->max_h = atof (optarg);
+                user_args->domain_config->max_h = atof (optarg);
                 break;
             case 'r':
                 if (user_args->ref_bound_was_set) {
@@ -437,13 +435,7 @@ int parse_config_file (void *user, const char *section, const char *name, const 
         pconfig->out_dir_name = strdup (value);
         pconfig->out_dir_name_was_set = true;
     }
-    else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "start_discretization")) {
-        pconfig->start_h = atof (value);
-        pconfig->start_h_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "maximum_discretization")) {
-        pconfig->max_h = atof (value);
-        pconfig->max_h_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refinement_bound")) {
+    else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refinement_bound")) {
         pconfig->ref_bound = atof (value);
         pconfig->ref_bound_was_set = true;
     } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "derefinement_bound")) {
@@ -499,10 +491,18 @@ int parse_config_file (void *user, const char *section, const char *name, const 
     }
     else if(MATCH_SECTION(DOMAIN_SECTION)) {
         pconfig->domain_config->config_data.configured = true;
-        if(MATCH_NAME("name")) {
+
+        if (MATCH_NAME ("start_discretization")) {
+            pconfig->domain_config->start_h = atof (value);
+            pconfig->start_h_was_set = true;
+        } else if (MATCH_NAME ("maximum_discretization")) {
+            pconfig->domain_config->max_h = atof (value);
+            pconfig->max_h_was_set = true;
+        }
+        else if(MATCH_NAME("name")) {
             pconfig->domain_config->domain_name = strdup(value);
         }
-        if(MATCH_NAME("function")) {
+        else if(MATCH_NAME("function")) {
             pconfig->domain_config->config_data.function_name = strdup(value);
         }
         else if(MATCH_NAME("library_file")) {
@@ -532,52 +532,12 @@ int parse_config_file (void *user, const char *section, const char *name, const 
     return 1;
 }
 
-
 void configure_grid_from_options(struct grid* grid, struct user_options *options) {
     assert(grid);
     assert(options);
 
     grid->adaptive = options->adaptive;
     grid->side_length = options->side_lenght;
-}
-
-void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
-    solver->gpu_id = options->gpu_id;
-    solver->min_dt = (Real)options->dt_edo;
-    solver->gpu = options->gpu;
-
-    solver->model_data.model_library_path = strdup(options->model_file_path);
-
-}
-
-void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
-                                              struct user_options *options) {
-
-    assert(the_monodomain_solver);
-    assert(options);
-
-    the_monodomain_solver->tolerance = options->cg_tol;
-    the_monodomain_solver->num_threads = options->num_threads;
-    the_monodomain_solver->max_iterations = options->max_its;
-    the_monodomain_solver->final_time = options->final_time;
-
-    the_monodomain_solver->start_h = options->start_h;
-    the_monodomain_solver->max_h = options->max_h;
-    the_monodomain_solver->min_h = the_monodomain_solver->start_h;;
-    the_monodomain_solver->refine_each = options->refine_each;
-    the_monodomain_solver->derefine_each = options->derefine_each;
-    the_monodomain_solver->refinement_bound = options->ref_bound;
-    the_monodomain_solver->derefinement_bound = options->deref_bound;
-
-    the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
-
-    the_monodomain_solver->dt = options->dt_edp;
-    the_monodomain_solver->use_jacobi = options->use_jacobi;
-
-    the_monodomain_solver->sigma_x = options->sigma_x;
-    the_monodomain_solver->sigma_y = options->sigma_y;
-    the_monodomain_solver->sigma_z = options->sigma_z;
-    the_monodomain_solver->start_adapting_at = options->start_adapting_at;
 
 }
 
@@ -590,4 +550,14 @@ void configure_output_from_options(struct output_utils *output_utils,
     output_utils->print_rate = options->print_rate;
     output_utils->output_dir_name = sdsnew(options->out_dir_name);
 
+}
+
+void free_user_options(struct user_options *s) {
+    free(s->model_file_path);
+    free(s->out_dir_name);
+    STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(s->stim_configs, free_stim_config);
+    stim_config_hash_destroy(s->stim_configs);
+    free_extra_data_config(s->extra_data_config);
+    free_domain_config(s->domain_config);
+    free(s);
 }

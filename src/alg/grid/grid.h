@@ -23,6 +23,8 @@ struct grid {
     uint32_vector *free_sv_positions;
     uint32_vector *refined_this_step;
 
+    double start_h, max_h, min_h;
+
     struct cell_node* *active_cells;
     bool adaptive;
 

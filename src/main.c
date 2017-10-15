@@ -48,7 +48,10 @@ int main(int argc, char **argv) {
     init_ode_solver_with_cell_model(ode_solver);
 
     STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(options->stim_configs, init_stim_functions);
+
     init_domain_functions(options->domain_config);
+    options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config);
+
     init_extra_data_functions(options->extra_data_config);
 
 #ifndef COMPILE_CUDA
@@ -58,19 +61,15 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config->config_data.config);
-
-    solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options->stim_configs, options->extra_data_config);
+    solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options);
 
     free_output_utils(output_info);
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
 
     free(edp_solver);
-    free(options);
 
-    STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(options->stim_configs, free_stim_config);
-    free(options);
+    free_user_options(options);
 
     return EXIT_SUCCESS;
 }
