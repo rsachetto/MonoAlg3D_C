@@ -247,7 +247,6 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     free(merged_stims);
 }
 
-//TODO: change this to the monodomain solver file
 void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32_vector *refined_this_step) {
 
     assert(ode_solver);

@@ -9,8 +9,8 @@
 #include <unitypes.h>
 #include "../vector/uint32_vector.h"
 #include "../models/model_common.h"
-#include "stim_config_hash.h"
-#include "config_parser.h"
+#include "config/stim_config_hash.h"
+#include "config/config_parser.h"
 
 typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 

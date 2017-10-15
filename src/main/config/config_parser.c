@@ -1,5 +1,5 @@
 #include "config_parser.h"
-#include "../ini_parser/ini_file_sections.h"
+#include "../../ini_parser/ini_file_sections.h"
 
 #include <string.h>
 #include <assert.h>

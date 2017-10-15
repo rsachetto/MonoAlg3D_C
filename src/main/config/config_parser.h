@@ -13,8 +13,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
-#include "../alg/grid/grid.h"
-#include "output_utils.h"
+#include "../../alg/grid/grid.h"
+#include "../output_utils.h"
 #include "stim_config_hash.h"
 #include "domain_config.h"
 #include "extra_data_config.h"

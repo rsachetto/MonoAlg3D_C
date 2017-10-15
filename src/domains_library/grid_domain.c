@@ -6,7 +6,7 @@
 
 #include "../hash/point_hash.h"
 #include "../utils/utils.h"
-#include "../main/domain_config.h"
+#include "../main/config/domain_config.h"
 #include <float.h>
 #include <time.h>
 #include <unistd.h>
@@ -393,7 +393,18 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct domain_c
 
 }
 
-void initialize_grid_with_plain_mesh (struct grid *the_grid, double desired_side_lenght, double start_h, int num_layers) {
+void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_config* config) {
+
+    double start_h = config->start_h;
+
+    char *config_char = string_hash_search(config->config_data.config, "num_layers");
+    int num_layers = atoi(config_char);
+    free(config_char);
+
+    config_char = string_hash_search(config->config_data.config, "side_lenght");
+    double desired_side_lenght = atof(config_char);
+    free(config_char);
+
 
     double real_side_lenght = start_h * 2.0f;
     double max_h = start_h * num_layers;
@@ -439,7 +450,7 @@ void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, double side
                                               double phi) {
 
 
-    initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
+   // initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
     set_plain_fibrosis(the_grid, phi);
 
 
@@ -452,7 +463,7 @@ void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, 
                                                          double plain_center, double sphere_radius, double bz_size,
                                                          double bz_radius) {
 
-    initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
+    //initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
     set_plain_sphere_fibrosis(the_grid, phi, plain_center,sphere_radius,bz_size, bz_radius);
 
 

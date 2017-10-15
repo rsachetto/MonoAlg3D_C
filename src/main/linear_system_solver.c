@@ -99,18 +99,15 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
             }
             //__________________________________________________________________
 
-            //TODO: can we merge this for loops??
-            // Computes new value of solution: u = u + alpha*p.
-            #pragma omp parallel for
-            for (int i = 0; i < num_active_cells; i++) {
-                ac[i]->v += alpha * ac[i]->p;
-            }
 
             r1Tr1 = 0.0;
             r1Tz1 = 0.0;
 
+            // Computes new value of solution: u = u + alpha*p.
             #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
             for (int i = 0; i < num_active_cells; i++) {
+                ac[i]->v += alpha * ac[i]->p;
+
                 ac[i]->r -= alpha * ac[i]->Ax;
 
                 if(use_jacobi) {

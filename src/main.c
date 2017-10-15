@@ -3,7 +3,7 @@
 #include "main/ode_solver.h"
 #include "main/monodomain_solver.h"
 #include "ini_parser/ini.h"
-#include "main/config_parser.h"
+#include "main/config/config_parser.h"
 
 int main(int argc, char **argv) {
 

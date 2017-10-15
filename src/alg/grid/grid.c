@@ -216,10 +216,11 @@ void order_grid_cells (struct grid *the_grid) {
 
 
     //////TODO: I don't thing we need to realloc this array every time as it can always fit the biggest possible grid
-    if (the_grid->active_cells != NULL) {
-        free (the_grid->active_cells);
+    if (the_grid->active_cells == NULL) {
+//        free (the_grid->active_cells);
+        the_grid->active_cells = (struct cell_node **)malloc (sizeof (struct cell_node *) * the_grid->number_of_cells);
+
     }
-    the_grid->active_cells = (struct cell_node **)malloc (sizeof (struct cell_node *) * the_grid->number_of_cells);
     ///////////////////
 
     uint32_t counter = 0;

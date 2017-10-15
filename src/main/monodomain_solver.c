@@ -652,6 +652,7 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
 #endif
 }
 
+//TODO: we have to pass more info to this function to print more information and print to a file as well
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                        struct grid *the_grid, struct output_utils *output_info, double start_h, double max_h) {
     printf ("System parameters: \n");

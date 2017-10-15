@@ -5,8 +5,8 @@
 #ifndef MONOALG3D_STIM_CONFIG_H
 #define MONOALG3D_STIM_CONFIG_H
 
-#include "../alg/grid/grid.h"
-#include "../main/constants.h"
+#include "../../alg/grid/grid.h"
+#include "../constants.h"
 #include "config_common.h"
 
 typedef void (*set_spatial_stim_fn_pt)(struct grid *, Real, Real *, struct string_hash *);

@@ -1,15 +1,15 @@
 set(SOURCE_FILES_SOLVER
         output_utils.h
         output_utils.c
-        config_common.c config_common.h
-        stim_config_hash.c stim_config_hash.h
-        stim_config.h stim_config.c
-        domain_config.c domain_config.h
-        extra_data_config.c extra_data_config.h
+        config/config_common.c config/config_common.h
+        config/stim_config_hash.c config/stim_config_hash.h
+        config/stim_config.h config/stim_config.c
+        config/domain_config.c config/domain_config.h
+        config/extra_data_config.c config/extra_data_config.h
         ode_solver.c ode_solver.h
         monodomain_solver.h monodomain_solver.c
         linear_system_solver.c linear_system_solver.h
-        config_parser.c config_parser.h
+        config/config_parser.c config/config_parser.h
         constants.h)
 
 ADD_LIBRARY(solvers STATIC ${SOURCE_FILES_SOLVER})

@@ -61,6 +61,7 @@ void free_extra_data_config(struct extra_data_config* s) {
     free(s->config_data.library_file_path);
     free(s->config_data.function_name);
     string_hash_destroy(s->config_data.config);
-    dlclose(s->config_data.handle);
+    if(s->config_data.handle)
+        dlclose(s->config_data.handle);
     free(s);
 }

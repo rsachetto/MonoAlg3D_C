@@ -10,9 +10,9 @@
 #include "ode_solver.h"
 #include <stdbool.h>
 #include <unitypes.h>
-#include "stim_config_hash.h"
-#include "extra_data_config.h"
-#include "config_parser.h"
+#include "config/stim_config_hash.h"
+#include "config/extra_data_config.h"
+#include "config/config_parser.h"
 
 struct monodomain_solver {
 

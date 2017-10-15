@@ -67,6 +67,7 @@ void free_domain_config(struct domain_config* s) {
     free(s->config_data.function_name);
     string_hash_destroy(s->config_data.config);
     free(s->domain_name);
-    dlclose(s->config_data.handle);
+    if(s->config_data.handle)
+        dlclose(s->config_data.handle);
     free(s);
 }

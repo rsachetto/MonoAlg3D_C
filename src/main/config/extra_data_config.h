@@ -5,8 +5,8 @@
 #ifndef MONOALG3D_EXTRA_DATA_CONFIG_H
 #define MONOALG3D_EXTRA_DATA_CONFIG_H
 
-#include "../alg/grid/grid.h"
-#include "../hash/string_hash.h"
+#include "../../alg/grid/grid.h"
+#include "../../hash/string_hash.h"
 #include "config_common.h"
 
 typedef void * (*set_extra_data_fn_pt)(struct grid *, struct string_hash *);
