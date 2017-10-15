@@ -15,8 +15,7 @@ void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_conf
 void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct domain_config *domain_config);
 
 void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_config *domain_config);
-void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, double side_length, double start_h, int num_layers,
-                                              double phi);
+void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, struct domain_config* config);
 void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, double side_length,
                                                          double start_h, int num_layers, double phi,
                                                          double plain_center, double sphere_radius, double bz_size,

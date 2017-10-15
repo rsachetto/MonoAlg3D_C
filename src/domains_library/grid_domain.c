@@ -446,14 +446,14 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_confi
 
 }
 
-void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, double side_length, double start_h, int num_layers,
-                                              double phi) {
+void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, struct domain_config* config) {
 
+    char *config_char = string_hash_search(config->config_data.config, "phi");
+    double phi = atof(config_char);
+    free(config_char);
 
-   // initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
+    initialize_grid_with_plain_mesh(the_grid, config);
     set_plain_fibrosis(the_grid, phi);
-
-
 
 }
 
