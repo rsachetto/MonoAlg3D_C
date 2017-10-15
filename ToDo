@@ -1,4 +1,2 @@
-- The EDO solver method should not influence the main program (time adaptive or not)
-- The grid mesh should be provided by dynamic libraries.
 - Implement pacing in the stimulus protocol
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)

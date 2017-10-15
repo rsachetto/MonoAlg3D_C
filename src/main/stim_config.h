@@ -7,19 +7,19 @@
 
 #include "../alg/grid/grid.h"
 #include "../main/constants.h"
+#include "config_common.h"
 
 typedef void (*set_spatial_stim_fn_pt)(struct grid *, Real, Real *);
 
 struct stim_config {
-    void *handle;
+
+    struct config_common config_data;
+
     Real stim_start;
     Real stim_duration;
     Real stim_current;
-    char *stim_function;
     Real *spatial_stim_currents;
-    char *stim_library_file;
     set_spatial_stim_fn_pt set_spatial_stim_fn;
-    bool configured;
 };
 
 void init_stim_functions(struct stim_config *config, char* stim_name);

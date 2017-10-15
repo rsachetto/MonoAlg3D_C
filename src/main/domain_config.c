@@ -8,33 +8,35 @@
 
 void init_domain_functions(struct domain_config *config) {
 
-    if(!config->configured) {
+    if(!config->config_data.configured) {
         printf("No domain function provided! Exiting!\n");
         exit(EXIT_FAILURE);
     }
 
 
     char *error;
+    char *library_path = config->config_data.library_file_path;
+    char *function_name = config->config_data.function_name;
 
-    if(config->domain_library_file == NULL) {
+    if(config->config_data.library_file_path == NULL) {
         printf("Using the default library for domain functions for %s\n", config->domain_name);
-        config->domain_library_file = strdup("./shared_libs/libdefault_domains.so");
+        library_path = strdup("./shared_libs/libdefault_domains.so");
     }
     else {
-        printf("Opening %s as stimuli lib\n", config->domain_library_file);
+        printf("Opening %s as stimuli lib\n", library_path);
 
     }
 
-    config->handle = dlopen (config->domain_library_file, RTLD_LAZY);
-    if (!config->handle) {
+    config->config_data.handle = dlopen (library_path, RTLD_LAZY);
+    if (!config->config_data.handle) {
         fputs (dlerror(), stderr);
         fprintf(stderr, "\n");
         exit(1);
     }
 
-    config->set_spatial_domain_fn = dlsym(config->handle, config->domain_function);
+    config->set_spatial_domain_fn = dlsym(config->config_data.handle, function_name);
     if ((error = dlerror()) != NULL)  {
-        fprintf(stderr, "\n%s function not found in the provided domain library\n", config->domain_function);
+        fprintf(stderr, "\n%s function not found in the provided domain library\n", function_name);
         exit(EXIT_FAILURE);
     }
 
@@ -42,30 +44,29 @@ void init_domain_functions(struct domain_config *config) {
 
 struct domain_config* new_domain_config() {
     struct domain_config *result = (struct domain_config*) malloc(sizeof(struct domain_config));
-    result->domain_function = NULL;
-    result->domain_library_file = NULL;
+
+    init_config_common_data(&(result->config_data));
+
     result->set_spatial_domain_fn = NULL;
     result->domain_name = NULL;
-    result->config = string_hash_create();
-    result->configured = false;
     return result;
 }
 
 void print_domain_config_values(struct domain_config* s) {
 
     printf("domain_name: %s\n",s->domain_name);
-    printf("domain_function: %s\n",s->domain_function);
-    printf("domain_library_file: %s\n",s->domain_library_file);
+    printf("domain_function: %s\n",s->config_data.function_name);
+    printf("domain_library_file: %s\n",s->config_data.library_file_path);
     printf("domain_config:\n");
 
-    STRING_HASH_PRINT_KEY_VALUE(s->config);
+    STRING_HASH_PRINT_KEY_VALUE(s->config_data.config);
 }
 
 void free_domain_config(struct domain_config* s) {
-    free(s->domain_library_file);
-    free(s->domain_function);
-    string_hash_destroy(s->config);
+    free(s->config_data.library_file_path);
+    free(s->config_data.function_name);
+    string_hash_destroy(s->config_data.config);
     free(s->domain_name);
-    dlclose(s->handle);
+    dlclose(s->config_data.handle);
     free(s);
 }

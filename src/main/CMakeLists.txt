@@ -1,6 +1,7 @@
 set(SOURCE_FILES_SOLVER
         output_utils.h
         output_utils.c
+        config_common.c config_common.h
         stim_config_hash.c stim_config_hash.h
         stim_config.h stim_config.c
         domain_config.c domain_config.h

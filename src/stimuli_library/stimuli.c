@@ -2,6 +2,8 @@
 // Created by sachetto on 13/10/17.
 //
 
+
+//TODO: maybe we need to provide a free config for the spatial stim
 #include <unitypes.h>
 #include "stimuli.h"
 void set_benchmark_spatial_stim (struct grid *the_grid, Real stim_current, Real *spatial_currents) {

@@ -478,7 +478,7 @@ int parse_config_file (void *user, const char *section, const char *name, const 
 
         if( tmp == NULL) {
             tmp = new_stim_config();
-            tmp->configured = true;
+            tmp->config_data.configured = true;
             stim_config_hash_insert(pconfig->stim_configs, section, tmp);
         }
 
@@ -489,36 +489,39 @@ int parse_config_file (void *user, const char *section, const char *name, const 
         }else if(MATCH_NAME("current")) {
             tmp->stim_current = (Real)atof(value);
         } else if(MATCH_NAME("function")) {
-            tmp->stim_function = strdup(value);
+            tmp->config_data.function_name = strdup(value);
         } else if(MATCH_NAME("library_file")) {
-            tmp->stim_library_file = strdup(value);
+            tmp->config_data.library_file_path = strdup(value);
+        }
+        else {
+            string_hash_insert(tmp->config_data.config, name, value);
         }
     }
     else if(MATCH_SECTION(DOMAIN_SECTION)) {
-        pconfig->domain_config->configured = true;
+        pconfig->domain_config->config_data.configured = true;
         if(MATCH_NAME("name")) {
             pconfig->domain_config->domain_name = strdup(value);
         }
         if(MATCH_NAME("function")) {
-            pconfig->domain_config->domain_function = strdup(value);
+            pconfig->domain_config->config_data.function_name = strdup(value);
         }
         else if(MATCH_NAME("library_file")) {
-            pconfig->domain_config->domain_library_file = strdup(value);
+            pconfig->domain_config->config_data.library_file_path = strdup(value);
         }
         else {
-            string_hash_insert(pconfig->domain_config->config, name, value);
+            string_hash_insert(pconfig->domain_config->config_data.config, name, value);
         }
     }
     else if(MATCH_SECTION(EXTRA_DATA_SECTION)) {
-        pconfig->extra_data_config->configured = true;
+        pconfig->extra_data_config->config_data.configured = true;
         if(MATCH_NAME("function")) {
-            pconfig->extra_data_config->extra_data_function = strdup(value);
+            pconfig->extra_data_config->config_data.function_name = strdup(value);
         }
         else if(MATCH_NAME("library_file")) {
-            pconfig->extra_data_config->extra_data_library_file = strdup(value);
+            pconfig->extra_data_config->config_data.library_file_path = strdup(value);
         }
         else {
-            string_hash_insert(pconfig->extra_data_config->config, name, value);
+            string_hash_insert(pconfig->extra_data_config->config_data.config, name, value);
         }
     }
     else {

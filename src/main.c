@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config->config);
+    options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config->config_data.config);
 
     solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options->stim_configs, options->extra_data_config);
 

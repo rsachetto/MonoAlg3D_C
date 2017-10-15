@@ -7,16 +7,13 @@
 
 #include "../alg/grid/grid.h"
 #include "../hash/string_hash.h"
+#include "config_common.h"
 
 typedef void * (*set_extra_data_fn_pt)(struct grid *, struct string_hash *);
 
 struct extra_data_config {
-    void *handle;
-    char *extra_data_function;
-    char *extra_data_library_file;
-    struct string_hash *config;
+    struct config_common config_data;
     set_extra_data_fn_pt set_extra_data_fn;
-    bool configured;
 };
 
 void init_extra_data_functions(struct extra_data_config *config);
