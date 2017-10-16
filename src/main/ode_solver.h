@@ -16,11 +16,13 @@ typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 
 //CPU FUNCTIONS
 typedef void (*set_ode_initial_conditions_cpu_fn_pt)(Real *);
-typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real, Real , int , void *);
+typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int , int , void *);
+
 
 //GPU FUNCTIONS
 typedef size_t (*set_ode_initial_conditions_gpu_fn_pt)(Real **, uint32_t , int );
-typedef void (*solve_model_ode_gpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t , Real, Real, Real, int, int, void *);
+typedef void (*solve_model_ode_gpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int, int, void *, size_t);
+
 //typedef void (*update_gpu_fn_pt)(Real *, uint32_t *, size_t , int );
 
 
@@ -44,6 +46,7 @@ struct ode_solver {
 
     Real *sv;
     void *edo_extra_data;
+    size_t extra_data_size;
     struct cell_model_data model_data;
 
     size_t pitch;

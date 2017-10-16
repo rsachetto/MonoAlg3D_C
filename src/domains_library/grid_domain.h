@@ -7,7 +7,7 @@
 
 void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_center, double sphere_radius, double bz_size,
                                double bz_radius);
-void set_plain_fibrosis(struct grid* the_grid, double phi);
+void set_plain_fibrosis(struct grid* the_grid, double phi, unsigned fib_seed);
 int get_num_refinement_steps_to_discretization (double side_len, double h);
 
 void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct domain_config *domain_config);

@@ -2,12 +2,13 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unitypes.h>
+#include <omp.h>
 
+void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real dt);
+void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, int neq);
 
-void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real time, Real dt);
-
-
-void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
+        void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
 
     assert(cell_model);
 
@@ -41,17 +42,32 @@ void set_model_initial_conditions_cpu(Real *sv) {
     sv[18] = 136.89f;   // K_i;     millimolar
 }
 
-void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real time, int neq, void *extra_data)  {
+void solve_model_odes_cpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
+                          uint32_t num_cells_to_solve,int num_steps, int neq, void *extra_data) {
+
+    uint32_t sv_id;
+
+    #pragma omp parallel for private(sv_id)
+    for (int i = 0; i < num_cells_to_solve; i++) {
+        sv_id = cells_to_solve[i];
+
+        for (int j = 0; j < num_steps; ++j) {
+            solve_model_ode_cpu(dt, sv + (sv_id * neq), stim_currents[i], neq);
+
+        }
+    }
+}
+
+void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, int neq)  {
 
     assert(sv);
-    extra_data = NULL;
 
     Real rY[neq], rDY[neq];
 
     for(int i = 0; i < neq; i++)
         rY[i] = sv[i];
 
-    RHS_cpu(rY, rDY, stim_current, time, dt);
+    RHS_cpu(rY, rDY, stim_current, dt);
 
     //THIS MODEL USES THE Rush Larsen Method TO SOLVE THE EDOS
     sv[0] = dt*rDY[0] + rY[0];
@@ -79,7 +95,7 @@ void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real time, int ne
 }
 
 
-void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real time, Real dt) {
+void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real dt) {
 
     // State variables
     const Real V = sv[0];      // Membrane variable

@@ -33,9 +33,15 @@ void init_domain_functions(struct domain_config *config) {
         exit(1);
     }
 
-    config->set_spatial_domain_fn = dlsym(config->config_data.handle, function_name);
-    if ((error = dlerror()) != NULL)  {
-        fprintf(stderr, "\n%s function not found in the provided domain library\n", function_name);
+    if(function_name){
+        config->set_spatial_domain_fn = dlsym(config->config_data.handle, function_name);
+        if ((error = dlerror()) != NULL)  {
+            fprintf(stderr, "\n%s function not found in the provided domain library\n", function_name);
+            exit(EXIT_FAILURE);
+        }
+    }
+    else {
+        fprintf(stderr, "No function name for domain library provided. Exiting!\n");
         exit(EXIT_FAILURE);
     }
 

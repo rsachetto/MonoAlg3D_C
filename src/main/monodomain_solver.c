@@ -258,7 +258,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
                 set_spatial_stim (the_grid, stimuli_configs);
                 if(has_extra_data)
-                    extra_data_config->set_extra_data_fn(the_grid, extra_data_config->config_data.config);
+                    set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 
                 update_cells_to_solve (the_grid, the_ode_solver);
 
@@ -305,7 +305,7 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
     free(the_ode_solver->edo_extra_data);
-    the_ode_solver->edo_extra_data = config->set_extra_data_fn(the_grid, config->config_data.config);
+    the_ode_solver->edo_extra_data = config->set_extra_data_fn(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
 
 }
 

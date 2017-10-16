@@ -12,12 +12,11 @@ __global__ void kernel_set_model_inital_conditions(Real *sv, int num_volumes);
 
 __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          Real stim_start, Real stim_dur, Real time,
-                          int num_steps, int neq, void *extra_data);
+                          int num_steps, int neq);
 
 __global__ void update_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq);
 
-inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, Real time, Real stim_start, Real stim_dur, int threadID_, Real dt);
+inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, int threadID_, Real dt);
 
 //TODO: DEBUG: REMOVE
 __global__ void print_svs(Real *sv, int numCells, int neq) {
@@ -56,9 +55,8 @@ extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volum
 }
 
 
-extern "C" void solve_model_ode_gpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
-                                    uint32_t num_cells_to_solve, Real stim_start, Real stim_dur,
-                                    Real time, int num_steps, int neq, void *extra_data) {
+extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
+                                    uint32_t num_cells_to_solve,int num_steps, int neq, void *extra_data, size_t extra_data_bytes_size) {
 
 
     // execution configuration
@@ -75,8 +73,7 @@ extern "C" void solve_model_ode_gpu(Real dt, Real *sv, Real *stim_currents, uint
     check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
     check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
 
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve,
-            stim_start, stim_dur, time, num_steps, neq, extra_data);
+    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, neq);
 
     check_cuda_error( cudaPeekAtLastError() );
 
@@ -120,12 +117,10 @@ __global__ void kernel_set_model_inital_conditions(Real *sv, int num_volumes)
 // Solving the model for each cell in the tissue matrix ni x nj
 __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          Real stim_start, Real stim_dur, Real time,
-                          int num_steps, int neq, void *extra_data)
+                          int num_steps, int neq)
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
-    Real t = time;
 
     // Each thread solves one cell model
     if(threadID < num_cells_to_solve) {
@@ -134,7 +129,7 @@ __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
 
         for (int n = 0; n < num_steps; ++n) {
 
-            RHS_gpu(sv, rDY, stim_currents[threadID], t, stim_start, stim_dur, sv_id, dt);
+            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt);
 
             *((Real*)((char*)sv) + sv_id) = dt*rDY[0] + *((Real*)((char*)sv) + sv_id);
 
@@ -146,7 +141,6 @@ __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
                 *((Real *) ((char *) sv + pitch * i) + sv_id) = dt * rDY[i] + *((Real *) ((char *) sv + pitch * i) + sv_id);
             }
             
-            t += dt;
         }
         free(rDY);
 
@@ -154,7 +148,7 @@ __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
 }
 
 
-inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, Real time, Real stim_start, Real stim_dur, int threadID_, Real dt) {
+inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, int threadID_, Real dt) {
 
     // State variables
     const Real V = *((Real*)((char*)sv_ + pitch * 0) + threadID_);      // Membrane variable

@@ -32,11 +32,18 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
         exit(1);
     }
 
-    config->set_spatial_stim_fn = dlsym(config->config_data.handle, function_name);
-    if ((error = dlerror()) != NULL)  {
-        fprintf(stderr, "\n%s function not found in the provided stimuli library\n", function_name);
+    if(function_name) {
+        config->set_spatial_stim_fn = dlsym(config->config_data.handle, function_name);
+        if ((error = dlerror()) != NULL) {
+            fprintf(stderr, "\n%s function not found in the provided stimuli library\n", function_name);
+            exit(EXIT_FAILURE);
+        }
+    }
+    else {
+        fprintf(stderr, "No function name for sitimuli library provided. Exiting!\n");
         exit(EXIT_FAILURE);
     }
+
 
 }
 

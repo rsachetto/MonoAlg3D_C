@@ -452,8 +452,16 @@ void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, struct doma
     double phi = atof(config_char);
     free(config_char);
 
+    config_char = string_hash_search(config->config_data.config, "seed");
+    unsigned seed = 0;
+    if(config_char) {
+        seed = (unsigned )atoi(config_char);
+        free(config_char);
+    }
+
+
     initialize_grid_with_plain_mesh(the_grid, config);
-    set_plain_fibrosis(the_grid, phi);
+    set_plain_fibrosis(the_grid, phi, seed);
 
 }
 
@@ -469,14 +477,17 @@ void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, 
 
 }
 
-void set_plain_fibrosis(struct grid* the_grid, double phi) {
+void set_plain_fibrosis(struct grid* the_grid, double phi, unsigned fib_seed) {
 
     printf("Making %.2lf %% of cells inactive\n", phi*100.0);
 
     struct cell_node *grid_cell;
 
-    unsigned fib_seed = (unsigned) time(NULL) + getpid();
+    if(fib_seed == 0)
+        fib_seed = (unsigned) time(NULL) + getpid();
+
     srand(fib_seed);
+
 
     printf("Using %u as seed\n", fib_seed);
 

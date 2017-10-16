@@ -28,6 +28,7 @@ struct ode_solver* new_ode_solver() {
     result->model_data.number_of_ode_equations = -1;
 
     result->edo_extra_data = NULL;
+    result->edo_extra_data = 0;
 
     //init_ode_solver_with_cell_model(result);
     return result;
@@ -95,10 +96,10 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
         exit(1);
     }
 
-    solver->solve_model_ode_cpu_fn = dlsym(solver->handle, "solve_model_ode_cpu");
+    solver->solve_model_ode_cpu_fn = dlsym(solver->handle, "solve_model_odes_cpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
-        fprintf(stderr, "solve_model_ode_cpu function not found in the provided model library\n");
+        fprintf(stderr, "\nsolve_model_odes_cpu function not found in the provided model library\n");
         exit(1);
     }
 
@@ -110,10 +111,10 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
         exit(1);
     }
 
-    solver->solve_model_ode_gpu_fn = dlsym(solver->handle, "solve_model_ode_gpu");
+    solver->solve_model_ode_gpu_fn = dlsym(solver->handle, "solve_model_odes_gpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
-        fprintf(stderr, "solve_model_ode_gpu function not found in the provided model library\n");
+        fprintf(stderr, "\nsolve_model_odes_gpu function not found in the provided model library\n");
         exit(1);
     }
 
@@ -182,13 +183,13 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     assert(the_ode_solver->sv);
 
-    uint32_t sv_id;
 
     Real dt = the_ode_solver->min_dt;
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     Real *sv = the_ode_solver->sv;
 
     void *extra_data = the_ode_solver->edo_extra_data;
+    size_t extra_data_size = the_ode_solver->extra_data_size;
 
     Real time = cur_time;
 
@@ -225,23 +226,16 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 #ifdef COMPILE_CUDA
 
         solve_model_ode_gpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_gpu_fn;
-        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve,
-                      n_active, 0.0, 0.0, time, num_steps, n_odes, extra_data);
+        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, n_odes, extra_data,
+                      extra_data_size);
 
 #endif
     }
     else {
         solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
-#pragma omp parallel for private(sv_id, time)
-        for (int i = 0; i < n_active; i++) {
+        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, n_odes, extra_data);
 
-            sv_id = the_ode_solver->cells_to_solve[i];
 
-            for (int j = 0; j < num_steps; ++j) {
-                solve_odes_pt(dt, sv + (sv_id * n_odes), merged_stims[i], cur_time, n_odes, extra_data);
-                time += dt;
-            }
-        }
     }
 
     free(merged_stims);

@@ -4,6 +4,7 @@
 
 #include "extra_data_config.h"
 #include <dlfcn.h>
+#include <string.h>
 
 void init_extra_data_functions(struct extra_data_config *config) {
 
@@ -13,28 +14,35 @@ void init_extra_data_functions(struct extra_data_config *config) {
     }
 
     char *error;
-    char *library_path = config->config_data.library_file_path;
     char *function_name = config->config_data.function_name;
 
-    if(library_path == NULL) {
-        fprintf(stderr, "extra_data_library_path not provided. Ignoring!\n");
-        config->config_data.configured = false;
-        return;
+    char *default_function = "./shared_libs/libdefault_extra_data.so";
+
+    if(config->config_data.library_file_path == NULL) {
+        printf("Using the default library for extra data functions\n");
+        config->config_data.library_file_path = strdup(default_function);
+    }
+    else {
+        printf("Opening %s as ODE extra data lib\n", config->config_data.library_file_path);
+
     }
 
-    printf("Opening %s as ODE extra data lib\n", library_path);
-
-
-    config->config_data.handle = dlopen (library_path, RTLD_LAZY);
+    config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
     if (!config->config_data.handle) {
         fputs (dlerror(), stderr);
         fprintf(stderr, "\n");
         exit(1);
     }
 
-    config->set_extra_data_fn = dlsym(config->config_data.handle, function_name);
-    if ((error = dlerror()) != NULL)  {
-        fprintf(stderr, "\n%s function not found in the provided extra data library\n", function_name);
+    if(function_name) {
+        config->set_extra_data_fn = dlsym(config->config_data.handle, function_name);
+        if ((error = dlerror()) != NULL) {
+            fprintf(stderr, "\n%s function not found in the provided extra data library\n", function_name);
+            exit(EXIT_FAILURE);
+        }
+    }
+    else {
+        fprintf(stderr, "No function name for extra data library provided. Exiting!\n");
         exit(EXIT_FAILURE);
     }
 
