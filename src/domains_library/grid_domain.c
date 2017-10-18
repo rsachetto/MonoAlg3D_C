@@ -223,12 +223,14 @@ void set_human_sub_mesh (struct grid *the_grid, const char *file_name, double mi
 
 void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_config *domain_config) {
 
+    domain_config->start_h = 250.0;
+
     char *mesh_file = string_hash_search(domain_config->config_data.config, "mesh_file");
     if(mesh_file == NULL) {
         report_parameter_error_on_function("initialize_grid_with_rabbit_mesh", "mesh_file");
     }
 
-    initialize_and_construct_grid (the_grid, 32000.0, the_grid->num_cell_neighbours);
+    initialize_and_construct_grid (the_grid, 32000.0, 7);
     refine_grid (the_grid, 6);
 
     print_to_stdout_and_file ("Loading Rabbit Heart Mesh\n");
