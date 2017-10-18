@@ -120,7 +120,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         max_its = (int)the_grid->number_of_cells;
     }
 
-    print_solver_info(the_monodomain_solver, the_ode_solver, the_grid, output_info, start_h, max_h);
+    print_solver_info(the_monodomain_solver, the_ode_solver, the_grid, output_info, configs);
 
     int ode_step = 1;
 
@@ -654,7 +654,7 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
 
 //TODO: we have to pass more info to this function to print more information and print to a file as well
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                       struct grid *the_grid, struct output_utils *output_info, double start_h, double max_h) {
+                       struct grid *the_grid, struct output_utils *output_info, struct user_options *options) {
     printf ("System parameters: \n");
 #if defined(_OPENMP)
     printf ("Using OpenMP with %d threads\n", omp_get_max_threads ());
@@ -663,38 +663,20 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         printf ("Using GPU to solve ODEs\n");
     }
 
-    printf ("Time discretization: %lf\n", the_monodomain_solver->dt);
     printf ("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
     printf ("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
-    printf ("Initial Space Discretization: %lf um\n", start_h);
 
-    if (the_grid->adaptive) {
-        printf ("Maximum Space Discretization: %lf um\n", max_h);
-        printf ("The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
-    }
-
-    printf ("Sigma X = %lf, Sigma Y = %lf, Sigma Z = %lf\n",
+    printf ("Sigma X = %.10lf, Sigma Y = %.10lf, Sigma Z = %.10lf\n",
             the_monodomain_solver->sigma_x,
             the_monodomain_solver->sigma_y,
             the_monodomain_solver->sigma_z);
 
     printf ("Initial N. of Elements = "
-            "%" PRIu32 "\n",
+                    "%" PRIu32 "\n",
             the_grid->num_active_cells);
     printf ("PDE time step = %lf\n", the_monodomain_solver->dt);
-    // TODO: return the method on the model_data struct??
-    // printf ("ODE solver edo_method: %s\n", get_ode_method_name (the_ode_solver->method));
     printf ("ODE min time step = %lf\n", the_ode_solver->min_dt);
-    /*    if ((the_ode_solver->method == EULER_METHOD_ADPT)) {
-            printf ("ODE max time step = %lf\n", the_ode_solver->max_dt);
-            printf ("Absolute tolerance for edo = %lf\n", the_ode_solver->abs_tol);
-            printf ("Relative tolerance for edo = %lf\n", the_ode_solver->rel_tol);
-        }*/
-
     printf ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
-    //printf ("Stimulus start = %lf\n", the_ode_solver->stim_start);
-    //printf ("Stimulus duration = %lf\n", the_ode_solver->stim_duration);
-    //printf ("Stimulus value = %lf\n", the_ode_solver->stim_current);
     printf ("Maximum CG iterations = %d\n", the_monodomain_solver->max_iterations);
     printf ("CG tolerance = %e\n", the_monodomain_solver->tolerance);
     if (the_monodomain_solver->use_jacobi) {
@@ -711,21 +693,90 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     printf ("Print Rate = %d\n", output_info->print_rate);
 
     if (output_info->output_dir_name != NULL) {
-        char *out_dir = output_info->output_dir_name;
-        if (!dir_exists (out_dir)) {
-            printf ("%s does not exist! Creating\n", out_dir);
 
-            if (mkdir (out_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-                fprintf (stderr, "Error creating directory %s. Exiting!\n", out_dir);
-                exit (10);
-            }
-        }
+        create_dir_if_no_exists(output_info->output_dir_name);
 
-        printf ("Saving to plain text output in %s dir\n", out_dir);
+        printf ("Saving to plain text output in %s dir\n", output_info->output_dir_name);
 
     } else {
         printf ("The solution will not be saved\n");
     }
+
+
+    if(options->stim_configs) {
+        printf("======================================================================\n");
+
+        if (options->stim_configs->size == 1)
+            printf("Stimulus configuration:\n");
+        else {
+            printf("Stimuli configuration:\n");
+        }
+
+
+        struct stim_config *tmp = NULL;
+
+        for (int i = 0; i < options->stim_configs->size; i++) {
+            for (struct stim_config_elt *e = options->stim_configs->table[i % options->stim_configs->size];
+                 e != 0; e = e->next) {
+
+                printf("Stimulus name: %s\n", e->key);
+                printf("Stimulus start: %lf\n", e->value->stim_start);
+                printf("Stimulus duration: %lf\n", e->value->stim_duration);
+                printf("Stimulus current: %lf\n", e->value->stim_current);
+                printf("Stimulus library: %s\n", e->value->config_data.library_file_path);
+                printf("Stimulus function: %s\n", e->value->config_data.function_name);
+                struct string_hash *tmp = e->value->config_data.config;
+                if (tmp->n == 1) {
+                    printf("Stimulus extra parameter:\n");
+                } else if (tmp->n > 1) {
+                    printf("Stimulus extra parameters:\n");
+
+                }
+
+                STRING_HASH_PRINT_KEY_VALUE(tmp);
+
+                printf("======================================================================\n");
+
+            }
+        }
+    }
+
+    printf("Domain configuration:\n");
+    printf("Domain name: %s\n", options->domain_config->domain_name);
+    printf("Domain initial Space Discretization: %lf um\n", options->domain_config->start_h);
+
+    if (the_grid->adaptive) {
+        printf("Domain maximum Space Discretization: %lf um\n", options->domain_config->max_h);
+        printf("The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
+    }
+
+    if(options->domain_config->config_data.config->n == 1) {
+        printf("Domain extra parameter:\n");
+    }
+    else if(options->domain_config->config_data.config->n > 1) {
+        printf("Domain extra parameters:\n");
+
+    }
+
+    STRING_HASH_PRINT_KEY_VALUE(options->domain_config->config_data.config);
+    printf("======================================================================\n");
+
+    if(options->extra_data_config) {
+        printf("Extra data ODE function configuration:\n");
+
+
+        if (options->domain_config->config_data.config->n == 1) {
+            printf("Extra data parameter:\n");
+        } else if (options->domain_config->config_data.config->n > 1) {
+            printf("Extra data parameters:\n");
+
+        }
+
+        STRING_HASH_PRINT_KEY_VALUE(options->extra_data_config->config_data.config);
+        printf("======================================================================\n");
+    }
+
+
 }
 
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,

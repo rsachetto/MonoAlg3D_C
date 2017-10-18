@@ -6,7 +6,7 @@
 
 #include "../hash/point_hash.h"
 #include "../utils/utils.h"
-#include "../main/config/domain_config.h"
+#include "../utils/erros_helpers.h"
 #include <float.h>
 #include <time.h>
 #include <unistd.h>
@@ -398,10 +398,16 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_confi
     double start_h = config->start_h;
 
     char *config_char = string_hash_search(config->config_data.config, "num_layers");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_benchmark_mesh", "num_layers");
+    }
     int num_layers = atoi(config_char);
     free(config_char);
 
     config_char = string_hash_search(config->config_data.config, "side_length");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_benchmark_mesh", "side_length");
+    }
     double desired_side_length = atof(config_char);
     free(config_char);
 
@@ -449,6 +455,9 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_confi
 void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, struct domain_config* config) {
 
     char *config_char = string_hash_search(config->config_data.config, "phi");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_plain_fibrotic_mesh", "phi");
+    }
     double phi = atof(config_char);
     free(config_char);
 
@@ -469,23 +478,39 @@ void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, struct doma
 void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, struct domain_config* config) {
 
     char *config_char = string_hash_search(config->config_data.config, "phi");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "phi");
+    }
+
     double phi = atof(config_char);
     free(config_char);
 
     config_char = string_hash_search(config->config_data.config, "plain_center");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "plain_center");
+    }
     double plain_center = atof(config_char);
     free(config_char);
 
     config_char = string_hash_search(config->config_data.config, "sphere_radius");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "sphere_radius");
+    }
     double sphere_radius = atof(config_char);
     free(config_char);
 
     config_char = string_hash_search(config->config_data.config, "border_zone_size");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "border_zone_size");
+    }
     double border_zone_size = atof(config_char);
     free(config_char);
 
 
     config_char = string_hash_search(config->config_data.config, "border_zone_radius");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "border_zone_radius");
+    }
     double border_zone_radius = atof(config_char);
     free(config_char);
 

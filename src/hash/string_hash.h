@@ -8,7 +8,7 @@
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                          \
     for (int i = 0; i < (d)->size; i++) {                                                                                   \
         for (struct string_elt *e = (d)->table[i % (d)->size]; e != 0; e = e->next) {                                      \
-            printf("%s -> %s\n", e->key, e->value);                                                                                             \
+            printf("%s = %s\n", e->key, e->value);                                                                                             \
         }                                                                                                              \
     }
 

@@ -4,6 +4,8 @@
 
 #include <unitypes.h>
 #include "stimuli.h"
+#include "../utils/erros_helpers.h"
+
 void set_benchmark_spatial_stim (struct grid *the_grid, Real stim_current, Real *spatial_currents, struct string_hash *config) {
 
     uint32_t n_active = the_grid->num_active_cells;
@@ -33,6 +35,9 @@ void stim_if_x_less_than (struct grid *the_grid, Real stim_current, Real *spatia
     struct cell_node **ac = the_grid->active_cells;
 
     char *config_char = string_hash_search(config, "x_limit");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("stim_if_x_less_than", "x_limit");
+    }
     double x_limit = atof(config_char);
     free(config_char);
 

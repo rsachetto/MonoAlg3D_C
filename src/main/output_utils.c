@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <malloc.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "output_utils.h"
 
 bool dir_exists(const char *path) {
@@ -33,4 +34,15 @@ void free_output_utils(struct output_utils* info) {
         sdsfree(info->output_dir_name);
     }
     free(info);
+}
+
+void create_dir_if_no_exists(const char *out_dir) {
+    if (!dir_exists (out_dir)) {
+        printf ("%s does not exist! Creating\n", out_dir);
+
+        if (mkdir (out_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+            fprintf (stderr, "Error creating directory %s. Exiting!\n", out_dir);
+            exit (EXIT_FAILURE);
+        }
+    }
 }

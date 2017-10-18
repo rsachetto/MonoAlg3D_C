@@ -4,9 +4,9 @@
 
 #include "extra_data.h"
 
-#include "../hash/point_hash.h"
-#include "../utils/utils.h"
+#include "../utils/erros_helpers.h"
 #include <math.h>
+
 
 void * set_extra_data_for_fibrosis_sphere(struct grid *the_grid, struct string_hash *extra_data_config, size_t *extra_data_bytes) {
 
@@ -19,20 +19,32 @@ void * set_extra_data_for_fibrosis_sphere(struct grid *the_grid, struct string_h
     struct cell_node ** ac = the_grid->active_cells;
 
     char *config_char = string_hash_search(extra_data_config, "atpi");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "atpi");
+    }
     float atpi = (float)atof(config_char);
     free(config_char);
 
     fibs[0] = atpi;
 
     config_char = string_hash_search(extra_data_config, "plain_center");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "plain_center");
+    }
     float plain_center = (float)atof(config_char);
     free(config_char);
 
     config_char = string_hash_search(extra_data_config, "border_zone_size");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "border_zone_size");
+    }
     float bz_size = (float)atof(config_char);
     free(config_char);
 
     config_char = string_hash_search(extra_data_config, "sphere_radius");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "sphere_radius");
+    }
     float fib_radius = (float)atof(config_char);
     free(config_char);
 
@@ -74,6 +86,9 @@ void * set_extra_data_for_fibrosis_plain(struct grid *the_grid, struct string_ha
 
     struct cell_node ** ac = the_grid->active_cells;
     char *config_char = string_hash_search(extra_data_config, "atpi");
+    if(config_char == NULL) {
+        report_parameter_error_on_function("set_extra_data_for_fibrosis_plain", "atpi");
+    }
     float atpi = (float)atof(config_char);
     free(config_char);
 
