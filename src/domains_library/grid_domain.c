@@ -57,7 +57,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
     FILE *file = fopen (file_name, "r");
 
     if (!file) {
-        printf ("Error opening mesh described in %s!!\n", file_name);
+        print_to_stdout_and_file ("Error opening mesh described in %s!!\n", file_name);
         exit (0);
     }
 
@@ -65,7 +65,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
     for (int i = 0; i < size; i++) {
         a[i] = (double *)malloc (sizeof (double) * 3);
         if (a[i] == NULL) {
-            printf ("Failed to allocate memory\n");
+            print_to_stdout_and_file ("Failed to allocate memory\n");
             exit (0);
         }
     }
@@ -145,7 +145,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
     FILE *file = fopen (file_name, "r");
 
     if (!file) {
-        printf ("Error opening mesh described in %s!!\n", file_name);
+        print_to_stdout_and_file ("Error opening mesh described in %s!!\n", file_name);
         exit (0);
     }
 
@@ -153,7 +153,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
     for (int i = 0; i < size; i++) {
         a[i] = (double *)malloc (sizeof (double) * 3);
         if (a[i] == NULL) {
-            printf ("Failed to allocate memory\n");
+            print_to_stdout_and_file ("Failed to allocate memory\n");
             exit (0);
         }
     }
@@ -224,15 +224,18 @@ void set_human_sub_mesh (struct grid *the_grid, const char *file_name, double mi
 void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_config *domain_config) {
 
     char *mesh_file = string_hash_search(domain_config->config_data.config, "mesh_file");
+    if(mesh_file == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_rabbit_mesh", "mesh_file");
+    }
 
     initialize_and_construct_grid (the_grid, 32000.0, the_grid->num_cell_neighbours);
     refine_grid (the_grid, 6);
 
-    printf ("Loading Rabbit Heart Mesh\n");
-    ;
+    print_to_stdout_and_file ("Loading Rabbit Heart Mesh\n");
+
     set_custom_mesh (the_grid, mesh_file, 470197);
 
-    printf ("Cleaning grid\n");
+    print_to_stdout_and_file ("Cleaning grid\n");
     int i;
     for (i = 0; i < 6; i++) {
         derefine_grid_inactive_cells (the_grid);
@@ -243,6 +246,11 @@ void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_conf
 void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct domain_config *domain_config) {
 
     char *mesh_file = string_hash_search(domain_config->config_data.config, "mesh_file");
+    if(mesh_file == NULL) {
+        report_parameter_error_on_function("initialize_grid_with_mouse_mesh", "mesh_file");
+    }
+
+    double start_h = domain_config->start_h;
 
     assert(the_grid);
 
@@ -250,16 +258,26 @@ void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct domain_confi
 
     refine_grid (the_grid, 5);
 
-    printf ("Loading Mouse Heart Mesh\n");
-    ;
+    print_to_stdout_and_file ("Loading Mouse Heart Mesh\n");
+    
     set_custom_mesh (the_grid, mesh_file, 96195);
 
-    printf ("Cleaning grid\n");
+    print_to_stdout_and_file ("Cleaning grid\n");
 
     int i;
     for (i = 0; i < 5; i++) {
         derefine_grid_inactive_cells (the_grid);
     }
+
+    if(start_h == 50.0) {
+        print_to_stdout_and_file("Refining Mesh to 50um\n");
+        refine_grid(the_grid, 1);
+    }
+    else if (start_h == 25.0) {
+        print_to_stdout_and_file("Refining Mesh to 25um\n");
+        refine_grid(the_grid, 1);
+    }
+
 }
 
 void set_cell_not_changeable(struct cell_node *c, double initialDiscretization) {
@@ -355,7 +373,7 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct domain_c
 
     double start_h = domain_config->start_h;
 
-    printf ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
+    print_to_stdout_and_file ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
     if ((start_h == 100.0) || (start_h == 200.0)) {
         side_length = 25600.0;
     } else if (start_h == 125.0 || start_h == 250.0 || start_h == 500.0) {
@@ -372,7 +390,7 @@ void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct domain_c
     refine_grid (the_grid, num_steps);
     set_benchmark_domain (the_grid);
 
-    printf ("Cleaning grid\n");
+    print_to_stdout_and_file ("Cleaning grid\n");
     int i;
 
     for (i = 0; i < num_steps; i++) {

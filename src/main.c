@@ -38,12 +38,10 @@ int main(int argc, char **argv) {
     //The command line options always overwrite the config file
     parse_options(argc, argv, options);
 
-    create_dir_if_no_exists(options->out_dir_name);
 
     if(options->out_dir_name) {
-        time_t rawtime;
         char buffer [FILENAME_MAX];
-
+        create_dir_if_no_exists(options->out_dir_name);
         sprintf(buffer,"%s/outputlog.txt", options->out_dir_name);
         open_logfile(buffer);
     }
