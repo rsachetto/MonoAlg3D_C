@@ -466,13 +466,39 @@ void initialize_grid_with_plain_fibrotic_mesh(struct grid *the_grid, struct doma
 }
 
 
-void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, double side_length,
-                                                         double start_h, int num_layers, double phi,
-                                                         double plain_center, double sphere_radius, double bz_size,
-                                                         double bz_radius) {
+void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, struct domain_config* config) {
 
-    //initialize_grid_with_plain_mesh(the_grid, side_length, start_h, num_layers);
-    set_plain_sphere_fibrosis(the_grid, phi, plain_center,sphere_radius,bz_size, bz_radius);
+    char *config_char = string_hash_search(config->config_data.config, "phi");
+    double phi = atof(config_char);
+    free(config_char);
+
+    config_char = string_hash_search(config->config_data.config, "plain_center");
+    double plain_center = atof(config_char);
+    free(config_char);
+
+    config_char = string_hash_search(config->config_data.config, "sphere_radius");
+    double sphere_radius = atof(config_char);
+    free(config_char);
+
+    config_char = string_hash_search(config->config_data.config, "border_zone_size");
+    double border_zone_size = atof(config_char);
+    free(config_char);
+
+
+    config_char = string_hash_search(config->config_data.config, "border_zone_radius");
+    double border_zone_radius = atof(config_char);
+    free(config_char);
+
+    config_char = string_hash_search(config->config_data.config, "seed");
+    unsigned seed = 0;
+    if(config_char) {
+        seed = (unsigned )atoi(config_char);
+        free(config_char);
+    }
+
+
+    initialize_grid_with_plain_mesh(the_grid, config);
+    set_plain_sphere_fibrosis(the_grid, phi, plain_center,sphere_radius,border_zone_size, border_zone_radius, seed);
 
 
 }
@@ -506,17 +532,19 @@ void set_plain_fibrosis(struct grid* the_grid, double phi, unsigned fib_seed) {
 }
 
 void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_center, double sphere_radius, double bz_size,
-                               double bz_radius) {
+                               double bz_radius,  unsigned fib_seed) {
 
     printf("Making %.2lf %% of cells inactive\n", phi*100.0f);
 
-    unsigned fib_seed = (unsigned) time(NULL) + getpid();
+    if(fib_seed == 0)
+        fib_seed = (unsigned) time(NULL) + getpid();
+
     srand(fib_seed);
 
     printf("Using %u as seed\n", fib_seed);
 
-    double bz_radius_2 = pow(bz_radius, 2.0f);
-    double sphere_radius_2 = pow(sphere_radius, 2.0f);
+    double bz_radius_2 = pow(bz_radius, 2.0);
+    double sphere_radius_2 = pow(sphere_radius, 2.0);
 
     struct cell_node *grid_cell;
 

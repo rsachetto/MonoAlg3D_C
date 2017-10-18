@@ -28,36 +28,34 @@ void * set_extra_data_for_fibrosis_sphere(struct grid *the_grid, struct string_h
     float plain_center = (float)atof(config_char);
     free(config_char);
 
-    config_char = string_hash_search(extra_data_config, "bz_size");
+    config_char = string_hash_search(extra_data_config, "border_zone_size");
     float bz_size = (float)atof(config_char);
     free(config_char);
 
-    config_char = string_hash_search(extra_data_config, "fib_radius");
+    config_char = string_hash_search(extra_data_config, "sphere_radius");
     float fib_radius = (float)atof(config_char);
     free(config_char);
-
 
     #pragma omp parallel for
     for (int i = 0; i < num_active_cells; i++) {
 
-        bool stim;
-
         if(ac[i]->fibrotic) {
-            fibs[i] = 0.0;
+            fibs[i+1] = 0.0;
         }
         else if(ac[i]->border_zone) {
 
             float center_x = (float)ac[i]->center_x;
             float center_y = (float)ac[i]->center_y;
+            //TODO: Maybe we want the distance from the Z as well
             float center_z = (float)ac[i]->center_z;
 
                 float distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
                 distanceFromCenter = (distanceFromCenter - fib_radius)/bz_size;
-                fibs[i] = distanceFromCenter;
+                fibs[i+1] = distanceFromCenter;
 
         }
         else {
-            fibs[i] = 1.0;
+            fibs[i+1] = 1.0;
         }
 
     }

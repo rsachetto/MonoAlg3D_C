@@ -159,7 +159,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     start_stop_watch (&solver_time);
 
-    Real cur_time = 0.0;
+    double cur_time = 0.0;
 
     int print_rate = output_info->print_rate;
 
@@ -230,7 +230,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         if (count % print_rate == 0) {
             printf ("t = %lf, Iterations = "
                     "%" PRIu32 ", Error Norm = %e, Number of Cells:"
-                    "%" PRIu32 ", Elapsed time: %ld μs\n",
+                    "%" PRIu32 ", Iterations time: %ld μs\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
 

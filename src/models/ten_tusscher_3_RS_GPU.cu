@@ -73,8 +73,6 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
         fibs = (Real*)calloc(num_cells_to_solve, sizeof(Real));
     }
 
-    printf("%lf\n", fibs[0]);
-
     check_cuda_error(cudaMalloc((void **) &fibrosis_device, extra_data_bytes_size-sizeof(Real)));
     check_cuda_error(cudaMemcpy(fibrosis_device, fibs, extra_data_bytes_size-sizeof(Real), cudaMemcpyHostToDevice));
 

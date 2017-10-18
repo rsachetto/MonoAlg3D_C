@@ -47,11 +47,16 @@ int main(int argc, char **argv) {
 
     init_ode_solver_with_cell_model(ode_solver);
 
+    //Init all stimuli
     STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(options->stim_configs, init_stim_functions);
-    init_extra_data_functions(options->extra_data_config);
 
+    //Configure the functions and set the mesh domain
     init_domain_functions(options->domain_config);
     options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config);
+
+    //The extra data is always called after the domain is set. So if any extra information is needed
+    //it can be set in the domain configuratipn
+    init_extra_data_functions(options->extra_data_config);
 
 
 #ifndef COMPILE_CUDA
