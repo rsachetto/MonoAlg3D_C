@@ -43,7 +43,7 @@ void point_hash_destroy(struct point_hash * d) {
         for(e = d->table[i]; e != 0; e = next) {
             next = e->next;
 
-            //If we use a pointer we need a free, but now we dont need
+            //If we use a pointer we need a free, but now we don't need
             //free(e->key);
 
             free(e);

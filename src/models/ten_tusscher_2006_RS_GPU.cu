@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "model_gpu_utils.h"
+#include "../utils/logfile_utils.h"
 
 static __device__ size_t pitch;
 static size_t pitch_h;
@@ -35,7 +36,7 @@ __global__ void print_svs(Real *sv, int numCells, int neq) {
 
 extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes, int neq) {
 
-    printf("Using ten Tusscher GPU model\n");
+    print_to_stdout_and_file("Using ten Tusscher GPU model\n");
 
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;

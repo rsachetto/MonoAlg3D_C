@@ -8,7 +8,7 @@
 #include "../../alg/grid/grid.h"
 #include "config_common.h"
 
-typedef struct domain_config domain_config_type;
+struct domain_config;
 
 typedef void (*set_spatial_domain_fn_pt)(struct grid *, struct domain_config *);
 

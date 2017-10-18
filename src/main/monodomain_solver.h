@@ -45,8 +45,7 @@ struct monodomain_solver {
 struct monodomain_solver *new_monodomain_solver ();
 
 void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
-                      struct ode_solver *the_edo_solver, struct output_utils *output_info,
-                      struct user_options *configs);
+                      struct ode_solver *the_edo_solver, struct user_options *configs);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
@@ -60,7 +59,7 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
 void set_discretization_matrix (struct monodomain_solver *the_solver, struct grid *the_grid);
 
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                       struct grid *the_grid, struct output_utils *output_info, struct user_options *options);
+                       struct grid *the_grid, struct user_options *options);
 
 void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid, uint32_t max_number_of_cells);
 

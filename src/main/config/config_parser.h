@@ -93,8 +93,6 @@ int parse_config_file(void* user, const char* section, const char* name, const c
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
 
-void configure_output_from_options(struct output_utils *output_utils,
-                                   struct user_options *options);
 
 void free_user_options(struct user_options *s);
 

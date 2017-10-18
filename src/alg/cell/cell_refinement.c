@@ -3,8 +3,6 @@
 //
 
 #include "cell.h"
-#include "../../vector/int_vector.h"
-#include "../../vector/uint32_vector.h"
 
 void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint32_vector *refined_this_step)  {
     if( cell == NULL ) {
@@ -158,7 +156,7 @@ void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint
     front_transition_node = new_transition_node();
     set_refined_transition_node_data(front_transition_node, front_northeast_sub_cell, 'f');
 
-    // back transitionition node.
+    // back transition node.
     back_transition_node = new_transition_node();
     set_refined_transition_node_data(back_transition_node, front_northeast_sub_cell, 'b');
 

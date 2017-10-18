@@ -5,20 +5,20 @@
 #include "stim_config.h"
 #include <dlfcn.h>
 #include <string.h>
+#include "../../utils/logfile_utils.h"
 
 void init_stim_functions(struct stim_config *config, char* stim_name) {
 
-    char *error;
     char *default_library_name = "./shared_libs/libdefault_stimuli.so";
     char *function_name = config->config_data.function_name;
 
     if(config->config_data.library_file_path == NULL) {
-        printf("Using the default library for stimuli functions for %s\n", stim_name);
+        print_to_stdout_and_file("Using the default library for stimuli functions for %s\n", stim_name);
         config->config_data.library_file_path = strdup(default_library_name);
         config->config_data.library_file_path_was_set = true;
     }
     else {
-        printf("Opening %s as stimuli lib for %s\n", config->config_data.library_file_path, stim_name);
+        print_to_stdout_and_file("Opening %s as stimuli lib for %s\n", config->config_data.library_file_path, stim_name);
     }
 
     config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
@@ -30,7 +30,7 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
 
     if(function_name) {
         config->set_spatial_stim_fn = dlsym(config->config_data.handle, function_name);
-        if ((error = dlerror()) != NULL) {
+        if (dlerror() != NULL) {
             fprintf(stderr, "\n%s function not found in the provided stimuli library\n", function_name);
             exit(EXIT_FAILURE);
         }
@@ -56,10 +56,10 @@ struct stim_config* new_stim_config() {
 }
 
 void print_stim_config_values(struct stim_config* s) {
-    printf("stim_start %lf\n", s->stim_start);
-    printf("stim_duration %lf\n", s->stim_duration);
-    printf("stim_current %lf\n", s->stim_current);
-    printf("stim_function %s\n", s->config_data.function_name);
+    print_to_stdout_and_file("stim_start %lf\n", s->stim_start);
+    print_to_stdout_and_file("stim_duration %lf\n", s->stim_duration);
+    print_to_stdout_and_file("stim_current %lf\n", s->stim_current);
+    print_to_stdout_and_file("stim_function %s\n", s->config_data.function_name);
 }
 
 void free_stim_config(struct stim_config* s) {

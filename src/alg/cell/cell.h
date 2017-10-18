@@ -131,7 +131,7 @@ struct transition_node* new_transition_node();
 
 void init_transition_node (struct transition_node *transition_node);
 
-void set_transition_node_data (struct transition_node *the_transtion_node, uint16_t level,
+void set_transition_node_data (struct transition_node *the_transition_node, uint16_t level,
                                char direction, void *single_connector, void *quadruple_connector1,
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);

@@ -1,7 +1,6 @@
 #include "model_common.h"
 #include <assert.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <unitypes.h>
 
 #define ENDO

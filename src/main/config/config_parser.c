@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include "../../utils/logfile_utils.h"
 
 static const struct option long_options[] = {
         { "config_file", required_argument, NULL, 'c' },
@@ -195,7 +196,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
 
     if(sc == NULL) {
         sc = new_stim_config();
-        printf("Creating new stimulus name %s from command line options!\n", stim_name);
+        print_to_stdout_and_file("Creating new stimulus name %s from command line options!\n", stim_name);
         stim_config_hash_insert(stim_configs, stim_name, sc);
     }
 
@@ -215,7 +216,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         if(strcmp(key, "start") == 0) {
             if(sc->stim_start_was_set) {
                 sprintf (old_value, "%lf", sc->stim_start);
-                printf("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("start", old_value, value, config_file);
             }
             sc->stim_start = (Real)strtod(value, NULL);
@@ -223,7 +224,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         else if (strcmp(key, "duration") == 0) {
             if(sc->stim_duration_was_set) {
                 sprintf (old_value, "%lf", sc->stim_duration);
-                printf("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("duration", old_value, value, config_file);
             }
 
@@ -232,14 +233,14 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         else if (strcmp(key, "current") == 0) {
             if(sc->stim_current_was_set) {
                 sprintf (old_value, "%lf", sc->stim_current);
-                printf("WARNING: For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("WARNING: For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("current", old_value, value, config_file);
             }
             sc->stim_current = (Real)strtod(value, NULL);
         }
         else if (strcmp(key, "function") == 0) {
             if(sc->config_data.function_name_was_set) {
-                printf("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("function", sc->config_data.function_name, value, config_file);
             }
             free(sc->config_data.function_name);
@@ -247,7 +248,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         }
         else if (strcmp(key, "library_file") == 0) {
             if(sc->config_data.library_file_path_was_set) {
-                printf("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("library_file", sc->config_data.library_file_path, value, config_file);
             }
             free(sc->config_data.library_file_path);
@@ -303,7 +304,7 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
 
         if(strcmp(key, "name") == 0) {
             if(dc->domain_name_was_set) {
-                printf("WARNING: For domain configuration: \n");
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning ("name", dc->domain_name, value, config_file);
             }
             free(dc->domain_name);
@@ -312,7 +313,7 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
         else if (strcmp(key, "start_discretization") == 0) {
             if(dc->start_h_was_set) {
                 sprintf (old_value, "%lf", dc->start_h);
-                printf("WARNING: For domain configuration: \n");
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning ("start_discretization", old_value, value, config_file);
             }
             dc->start_h = (Real)strtod(value, NULL);
@@ -320,14 +321,14 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
         else if (strcmp(key, "maximum_discretization") == 0) {
             if(dc->max_h_was_set) {
                 sprintf (old_value, "%lf", dc->max_h);
-                printf("WARNING: For domain configuration: \n");
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning ("maximum_discretization", old_value, value, config_file);
             }
             dc->max_h = (Real)strtod(value, NULL);
         }
         else if (strcmp(key, "function") == 0) {
             if(dc->config_data.function_name_was_set) {
-                printf("WARNING: For domain configuration: \n");
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning ("function", dc->config_data.function_name, value, config_file);
             }
             free(dc->config_data.function_name);
@@ -335,7 +336,7 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
         }
         else if (strcmp(key, "library_file") == 0) {
             if(dc->config_data.library_file_path_was_set) {
-                printf("WARNING: For domain configuration: \n");
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning ("library_file", dc->config_data.library_file_path, value, config_file);
             }
             free(dc->config_data.library_file_path);
@@ -391,7 +392,7 @@ void set_extra_data_config(const char *args, struct extra_data_config *dc, const
 
         if (strcmp(key, "function") == 0) {
             if(dc->config_data.function_name_was_set) {
-                printf("WARNING: For extra_data configuration: \n");
+                print_to_stdout_and_file("WARNING: For extra_data configuration: \n");
                 issue_overwrite_warning ("function", dc->config_data.function_name, value, config_file);
             }
             free(dc->config_data.function_name);
@@ -399,7 +400,7 @@ void set_extra_data_config(const char *args, struct extra_data_config *dc, const
         }
         else if (strcmp(key, "library_file") == 0) {
             if(dc->config_data.library_file_path_was_set) {
-                printf("WARNING: For extra_data configuration: \n");
+                print_to_stdout_and_file("WARNING: For extra_data configuration: \n");
                 issue_overwrite_warning ("library_file", dc->config_data.library_file_path, value, config_file);
             }
             free(dc->config_data.library_file_path);
@@ -633,21 +634,21 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 break;
             case DOMAIN_OPT:
                 if(user_args->domain_config == NULL) {
-                    printf("Creating new domain config from command line!\n");
+                    print_to_stdout_and_file("Creating new domain config from command line!\n");
                     user_args->domain_config = new_domain_config();
                 }
                 set_domain_config(optarg, user_args->domain_config, user_args->config_file );
                 break;
             case EXTRA_DATA_OPT:
                 if(user_args->extra_data_config == NULL) {
-                    printf("Creating new extra data config from command line!\n");
+                    print_to_stdout_and_file("Creating new extra data config from command line!\n");
                     user_args->extra_data_config = new_extra_data_config();
                 }
                 set_extra_data_config(optarg, user_args->extra_data_config, user_args->config_file );
                 break;
             case STIM_OPT:
                 if(user_args->stim_configs == NULL) {
-                    printf("Creating new stim config from command line!\n");
+                    print_to_stdout_and_file("Creating new stim config from command line!\n");
                     user_args->stim_configs = stim_config_hash_create();
                 }
                 set_stim_config(optarg, user_args->stim_configs, user_args->config_file );
@@ -857,16 +858,6 @@ void configure_grid_from_options(struct grid* grid, struct user_options *options
     grid->adaptive = options->adaptive;
 }
 
-void configure_output_from_options(struct output_utils *output_utils,
-                                   struct user_options *options) {
-
-    assert(output_utils);
-    assert(options);
-
-    output_utils->print_rate = options->print_rate;
-    output_utils->output_dir_name = sdsnew(options->out_dir_name);
-
-}
 
 void free_user_options(struct user_options *s) {
     free(s->model_file_path);

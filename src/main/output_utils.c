@@ -19,23 +19,6 @@ bool dir_exists(const char *path) {
         return false;
 }
 
-
-struct output_utils *new_output_utils() {
-
-    struct output_utils * output_info = (struct output_utils*)malloc(sizeof(struct output_utils));
-    return output_info;
-}
-
-void free_output_utils(struct output_utils* info) {
-
-    assert(info);
-
-    if(info->output_dir_name) {
-        sdsfree(info->output_dir_name);
-    }
-    free(info);
-}
-
 void create_dir_if_no_exists(const char *out_dir) {
     if (!dir_exists (out_dir)) {
         printf ("%s does not exist! Creating\n", out_dir);

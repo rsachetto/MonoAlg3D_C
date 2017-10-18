@@ -12,6 +12,13 @@
         }                                                                                                              \
     }
 
+#define STRING_HASH_PRINT_KEY_VALUE_LOG(d)                                                                          \
+    for (int i = 0; i < (d)->size; i++) {                                                                                   \
+        for (struct string_elt *e = (d)->table[i % (d)->size]; e != 0; e = e->next) {                                      \
+            print_to_stdout_and_file("%s = %s\n", e->key, e->value);                                                                                             \
+        }                                                                                                              \
+    }
+
 struct string_elt {
     struct string_elt *next;
     char *key;

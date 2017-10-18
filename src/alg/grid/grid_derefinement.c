@@ -28,7 +28,6 @@ bool derefine_grid_with_bound (struct grid *the_grid, double derefinement_bound,
     grid_cell = the_grid->first_cell;
     while (grid_cell != 0) {
         has_been_derefined = false;
-        // tem que verificar se os caras do caixo podem ser desrefinados
         if (grid_cell->can_change && grid_cell->face_length < max_h && grid_cell->active) {
 
             /* Verifies if each one of the next seven cells has  are

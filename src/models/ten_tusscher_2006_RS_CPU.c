@@ -1,9 +1,7 @@
 #include "model_common.h"
 #include <assert.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <unitypes.h>
-#include <omp.h>
 
 void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real dt);
 void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, int neq);

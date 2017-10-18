@@ -3,7 +3,6 @@
 //
 
 #include "grid.h"
-#include <inttypes.h>
 #include <assert.h>
 
 struct grid* new_grid() {
@@ -336,19 +335,12 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
                         (element.column) + 1,
                         element.value);
 
-                /*fprintf (output_file,
-                         " %.6lf ("
-                         "%" PRIu64 ","
-                         "%" PRIu64 ") ",
-                         element.value, grid_cell->grid_position + 1, (element.column) + 1);*/
 
                 el_count++;
             }
-            //fprintf (output_file, "\n");
         }
         grid_cell = grid_cell->next;
     }
-    //fprintf (output_file, "________________________________________________________________________\n");
 }
 
 

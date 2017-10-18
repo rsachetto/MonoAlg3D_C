@@ -9,6 +9,8 @@
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
+#include "../utils/logfile_utils.h"
+
 #endif
 
 struct ode_solver* new_ode_solver() {
@@ -69,7 +71,7 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
         exit(1);
     }
 
-    printf("Opening %s as model lib\n", solver->model_data.model_library_path);
+    print_to_stdout_and_file("Opening %s as model lib\n", solver->model_data.model_library_path);
 
     solver->handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
     if (!solver->handle) {

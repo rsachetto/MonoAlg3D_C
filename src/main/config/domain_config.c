@@ -5,21 +5,22 @@
 #include "domain_config.h"
 #include <dlfcn.h>
 #include <string.h>
+#include "../../utils/logfile_utils.h"
+#include "../output_utils.h"
 
 void init_domain_functions(struct domain_config *config) {
 
     //TODO: this could go to the config common part
-    char *error;
     char *function_name = config->config_data.function_name;
     char *default_function = "./shared_libs/libdefault_domains.so";
 
     if(config->config_data.library_file_path == NULL) {
-        printf("Using the default library for domain functions for %s\n", config->domain_name);
+        print_to_stdout_and_file("Using the default library for domain functions for %s\n", config->domain_name);
         config->config_data.library_file_path = strdup(default_function);
         config->config_data.library_file_path_was_set = true;
     }
     else {
-        printf("Opening %s as stimuli lib\n", config->config_data.library_file_path);
+        print_to_stdout_and_file("Opening %s as stimuli lib\n", config->config_data.library_file_path);
 
     }
 
@@ -32,7 +33,7 @@ void init_domain_functions(struct domain_config *config) {
 
     if(function_name){
         config->set_spatial_domain_fn = dlsym(config->config_data.handle, function_name);
-        if ((error = dlerror()) != NULL)  {
+        if (dlerror() != NULL)  {
             fprintf(stderr, "\n%s function not found in the provided domain library\n", function_name);
             exit(EXIT_FAILURE);
         }

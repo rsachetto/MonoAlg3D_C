@@ -84,7 +84,6 @@ void * set_extra_data_for_fibrosis_plain(struct grid *the_grid, struct string_ha
 
     float *fibs = (float*)calloc(num_active_cells+1, sizeof(float));
 
-    struct cell_node ** ac = the_grid->active_cells;
     char *config_char = string_hash_search(extra_data_config, "atpi");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_plain", "atpi");

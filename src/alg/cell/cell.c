@@ -109,24 +109,24 @@ void init_transition_node(struct transition_node *transition_node) {
 }
 
 
-void set_transition_node_data(struct transition_node *the_transtion_node,  uint16_t level, char direction,
+void set_transition_node_data(struct transition_node *the_transition_node,  uint16_t level, char direction,
                               void *single_connector,
                               void * quadruple_connector1, void * quadruple_connector2,
                               void * quadruple_connector3, void * quadruple_connector4 ) {
 
-    the_transtion_node->cell_data.level = level;
+    the_transition_node->cell_data.level = level;
 
-    the_transtion_node->direction = direction;
+    the_transition_node->direction = direction;
 
-    the_transtion_node->single_connector = single_connector;
+    the_transition_node->single_connector = single_connector;
 
-    the_transtion_node->quadruple_connector1 = quadruple_connector1;
+    the_transition_node->quadruple_connector1 = quadruple_connector1;
 
-    the_transtion_node->quadruple_connector2 = quadruple_connector2;
+    the_transition_node->quadruple_connector2 = quadruple_connector2;
 
-    the_transtion_node->quadruple_connector3 = quadruple_connector3;
+    the_transition_node->quadruple_connector3 = quadruple_connector3;
 
-    the_transtion_node->quadruple_connector4 = quadruple_connector4;
+    the_transition_node->quadruple_connector4 = quadruple_connector4;
 }
 
         void set_cell_node_data(struct cell_node *the_cell, double face_length, double half_face_length,
@@ -195,7 +195,6 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
       * cell which is a cell node. */
-    // Acha uma célula real que está no caixo enviado como vizinho
     uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
     char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
@@ -217,7 +216,6 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
             }
         }
     }
-        // Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
     else {
         if (neighbour_grid_cell_level <= the_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
             has_found = false;
@@ -237,7 +235,6 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
         }
     }
 
-    // Tratamos somente os pontos interiores da malha.
     if (neighbour_grid_cell_type == CELL_NODE_TYPE) {
 
         black_neighbor_cell = (struct cell_node*)(neighbour_grid_cell);

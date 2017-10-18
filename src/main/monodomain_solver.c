@@ -5,8 +5,8 @@
 
 #include <inttypes.h>
 #include <omp.h>
-#include <sys/stat.h>
 #include <assert.h>
+#include <string.h>
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -15,6 +15,7 @@
 #include "monodomain_solver.h"
 #include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
+#include "../utils/logfile_utils.h"
 
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
@@ -32,15 +33,13 @@ struct monodomain_solver *new_monodomain_solver() {
 }
 
 void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
-                      struct ode_solver *the_ode_solver, struct output_utils *output_info,
-                      struct user_options *configs) {
+                      struct ode_solver *the_ode_solver,  struct user_options *configs) {
 
     assert(configs);
 
     assert(the_grid);
     assert(the_monodomain_solver);
     assert(the_ode_solver);
-    assert(output_info);
 
     struct stim_config_hash *stimuli_configs = configs->stim_configs;
     struct extra_data_config *extra_data_config = configs->extra_data_config;
@@ -81,7 +80,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
-    bool save_to_file = (output_info->output_dir_name != NULL);
+    bool save_to_file = (configs->out_dir_name != NULL);
 
     double dt_edp = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
@@ -98,7 +97,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         check_cuda_errors(cudaGetDeviceCount (&device_count));
         struct cudaDeviceProp prop;
         check_cuda_errors(cudaGetDeviceProperties (&prop, the_ode_solver->gpu_id));
-        printf ("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
+        print_to_stdout_and_file ("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
         check_cuda_errors(cudaSetDevice (device));
     }
 #endif
@@ -109,7 +108,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     save_old_cell_positions (the_grid);
     update_cells_to_solve (the_grid, the_ode_solver);
 
-    printf ("Setting ODE's initial conditions\n");
+    print_to_stdout_and_file ("Setting ODE's initial conditions\n");
     set_ode_initial_conditions_for_all_volumes (the_ode_solver, the_grid->num_active_cells);
 
     double initial_v = the_ode_solver->model_data.initial_v;
@@ -120,15 +119,15 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         max_its = (int)the_grid->number_of_cells;
     }
 
-    print_solver_info(the_monodomain_solver, the_ode_solver, the_grid, output_info, configs);
+    print_solver_info(the_monodomain_solver, the_ode_solver, the_grid, configs);
 
     int ode_step = 1;
 
     if (dt_edp >= dt_edo) {
         ode_step = (int)(dt_edp / dt_edo);
-        printf ("Solving EDO %d times before solving PDE\n", ode_step);
+        print_to_stdout_and_file ("Solving EDO %d times before solving PDE\n", ode_step);
     } else {
-        printf ("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
+        print_to_stdout_and_file ("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
                 "step: %lf\n",
                 dt_edo);
         dt_edp = dt_edo;
@@ -150,18 +149,18 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     init_stop_watch (&ref_time);
     init_stop_watch (&deref_time);
 
-    printf ("Assembling Monodomain Matrix Begin\n");
+    print_to_stdout_and_file ("Assembling Monodomain Matrix Begin\n");
     start_stop_watch (&part_mat);
     set_initial_conditions (the_monodomain_solver, the_grid, initial_v);
     set_discretization_matrix (the_monodomain_solver, the_grid);
     total_mat_time = stop_stop_watch (&part_mat);
-    printf ("Assembling Monodomain Matrix End\n");
+    print_to_stdout_and_file ("Assembling Monodomain Matrix End\n");
 
     start_stop_watch (&solver_time);
 
     double cur_time = 0.0;
 
-    int print_rate = output_info->print_rate;
+    int print_rate = configs->print_rate;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
     double cg_error;
@@ -181,9 +180,9 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
             if (count % print_rate == 0) {
                 start_stop_watch (&write_time);
 
-                sds tmp;
+                sds tmp = sdsnew(configs->out_dir_name);
                 sds c = sdsfromlonglong (count);
-                tmp = sdscat (sdsdup (output_info->output_dir_name), "/V_t_");
+                tmp = sdscat (tmp, "/V_t_");
                 tmp = sdscat (tmp, c);
                 FILE *f1 = fopen (tmp, "w");
                 activity = print_grid_and_check_for_activity (the_grid, f1, count);
@@ -195,7 +194,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
                 if (abort_on_no_activity) {
                     if (!activity) {
-                        printf ("No activity, aborting simulation\n");
+                        print_to_stdout_and_file ("No activity, aborting simulation\n");
                         break;
                     }
                 }
@@ -228,7 +227,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         total_cg_it += cg_iterations;
 
         if (count % print_rate == 0) {
-            printf ("t = %lf, Iterations = "
+            print_to_stdout_and_file ("t = %lf, Iterations = "
                     "%" PRIu32 ", Error Norm = %e, Number of Cells:"
                     "%" PRIu32 ", Iterations time: %ld μs\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
@@ -275,14 +274,14 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         }
     }
 
-    printf ("Resolution Time: %ld μs\n", stop_stop_watch (&solver_time));
-    printf ("ODE Total Time: %ld μs\n", ode_total_time);
-    printf ("CG Total Time: %ld μs\n", cg_total_time);
-    printf ("Mat time: %ld μs\n", total_mat_time);
-    printf ("Refine time: %ld μs\n", total_ref_time);
-    printf ("Derefine time: %ld μs\n", total_deref_time);
-    printf ("Write time: %ld μs\n", total_write_time);
-    printf ("CG Total Iterations: %u\n", total_cg_it);
+    print_to_stdout_and_file ("Resolution Time: %ld μs\n", stop_stop_watch (&solver_time));
+    print_to_stdout_and_file ("ODE Total Time: %ld μs\n", ode_total_time);
+    print_to_stdout_and_file ("CG Total Time: %ld μs\n", cg_total_time);
+    print_to_stdout_and_file ("Mat time: %ld μs\n", total_mat_time);
+    print_to_stdout_and_file ("Refine time: %ld μs\n", total_ref_time);
+    print_to_stdout_and_file ("Derefine time: %ld μs\n", total_deref_time);
+    print_to_stdout_and_file ("Write time: %ld μs\n", total_write_time);
+    print_to_stdout_and_file ("CG Total Iterations: %u\n", total_cg_it);
 }
 
 
@@ -474,7 +473,6 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
      * cell which is a cell node. */
-    // Acha uma célula real que está no caixo enviado como vizinho
     uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
     char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
@@ -496,7 +494,6 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             }
         }
     }
-    // Aqui, a célula vizinha tem um nivel de refinamento menor, entao eh mais simples.
     else {
         if (neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
             has_found = false;
@@ -571,7 +568,6 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             }
             unlock_cell_node (grid_cell);
 
-            // preenchemos a outra parte (a matrix é simetrica)
 
             cell_elements = black_neighbor_cell->elements;
             position = grid_cell->grid_position;
@@ -579,7 +575,6 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             lock_cell_node (black_neighbor_cell);
 
             el_counter = 1;
-            // element = cell_elements[el_counter];
 
             while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
                    cell_elements[el_counter].column != position) {
@@ -654,126 +649,122 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
 
 //TODO: we have to pass more info to this function to print more information and print to a file as well
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                       struct grid *the_grid, struct output_utils *output_info, struct user_options *options) {
-    printf ("System parameters: \n");
+                       struct grid *the_grid, struct user_options *options) {
+    print_to_stdout_and_file ("System parameters: \n");
 #if defined(_OPENMP)
-    printf ("Using OpenMP with %d threads\n", omp_get_max_threads ());
+    print_to_stdout_and_file ("Using OpenMP with %d threads\n", omp_get_max_threads ());
 #endif
     if (the_ode_solver->gpu) {
-        printf ("Using GPU to solve ODEs\n");
+        print_to_stdout_and_file ("Using GPU to solve ODEs\n");
     }
 
-    printf ("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
-    printf ("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
+    print_to_stdout_and_file ("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
+    print_to_stdout_and_file ("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
 
-    printf ("Sigma X = %.10lf, Sigma Y = %.10lf, Sigma Z = %.10lf\n",
+    print_to_stdout_and_file ("Sigma X = %.10lf, Sigma Y = %.10lf, Sigma Z = %.10lf\n",
             the_monodomain_solver->sigma_x,
             the_monodomain_solver->sigma_y,
             the_monodomain_solver->sigma_z);
 
-    printf ("Initial N. of Elements = "
+    print_to_stdout_and_file ("Initial N. of Elements = "
                     "%" PRIu32 "\n",
             the_grid->num_active_cells);
-    printf ("PDE time step = %lf\n", the_monodomain_solver->dt);
-    printf ("ODE min time step = %lf\n", the_ode_solver->min_dt);
-    printf ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
-    printf ("Maximum CG iterations = %d\n", the_monodomain_solver->max_iterations);
-    printf ("CG tolerance = %e\n", the_monodomain_solver->tolerance);
+    print_to_stdout_and_file ("PDE time step = %lf\n", the_monodomain_solver->dt);
+    print_to_stdout_and_file ("ODE min time step = %lf\n", the_ode_solver->min_dt);
+    print_to_stdout_and_file ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
+    print_to_stdout_and_file ("Maximum CG iterations = %d\n", the_monodomain_solver->max_iterations);
+    print_to_stdout_and_file ("CG tolerance = %e\n", the_monodomain_solver->tolerance);
     if (the_monodomain_solver->use_jacobi) {
-        printf ("Using Jacobi preconditioner\n");
+        print_to_stdout_and_file ("Using Jacobi preconditioner\n");
     }
     if (the_grid->adaptive) {
-        printf ("Using adaptativity\n");
-        printf ("Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
-        printf ("Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
-        printf ("Refining each %d time steps\n", the_monodomain_solver->refine_each);
-        printf ("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
+        print_to_stdout_and_file ("Using adaptativity\n");
+        print_to_stdout_and_file ("Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
+        print_to_stdout_and_file ("Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
+        print_to_stdout_and_file ("Refining each %d time steps\n", the_monodomain_solver->refine_each);
+        print_to_stdout_and_file ("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
     }
 
-    printf ("Print Rate = %d\n", output_info->print_rate);
+    print_to_stdout_and_file ("Print Rate = %d\n", options->print_rate);
 
-    if (output_info->output_dir_name != NULL) {
-
-        create_dir_if_no_exists(output_info->output_dir_name);
-
-        printf ("Saving to plain text output in %s dir\n", output_info->output_dir_name);
-
+    if (options->out_dir_name != NULL) {
+        print_to_stdout_and_file ("Saving to plain text output in %s dir\n", options->out_dir_name);
     } else {
-        printf ("The solution will not be saved\n");
+        print_to_stdout_and_file ("The solution will not be saved\n");
     }
 
 
     if(options->stim_configs) {
-        printf("======================================================================\n");
+        print_to_stdout_and_file("======================================================================\n");
 
         if (options->stim_configs->size == 1)
-            printf("Stimulus configuration:\n");
+            print_to_stdout_and_file("Stimulus configuration:\n");
         else {
-            printf("Stimuli configuration:\n");
+            print_to_stdout_and_file("Stimuli configuration:\n");
         }
 
-
-        struct stim_config *tmp = NULL;
 
         for (int i = 0; i < options->stim_configs->size; i++) {
             for (struct stim_config_elt *e = options->stim_configs->table[i % options->stim_configs->size];
                  e != 0; e = e->next) {
 
-                printf("Stimulus name: %s\n", e->key);
-                printf("Stimulus start: %lf\n", e->value->stim_start);
-                printf("Stimulus duration: %lf\n", e->value->stim_duration);
-                printf("Stimulus current: %lf\n", e->value->stim_current);
-                printf("Stimulus library: %s\n", e->value->config_data.library_file_path);
-                printf("Stimulus function: %s\n", e->value->config_data.function_name);
+                print_to_stdout_and_file("Stimulus name: %s\n", e->key);
+                print_to_stdout_and_file("Stimulus start: %lf\n", e->value->stim_start);
+                print_to_stdout_and_file("Stimulus duration: %lf\n", e->value->stim_duration);
+                print_to_stdout_and_file("Stimulus current: %lf\n", e->value->stim_current);
+                print_to_stdout_and_file("Stimulus library: %s\n", e->value->config_data.library_file_path);
+                print_to_stdout_and_file("Stimulus function: %s\n", e->value->config_data.function_name);
                 struct string_hash *tmp = e->value->config_data.config;
                 if (tmp->n == 1) {
-                    printf("Stimulus extra parameter:\n");
+                    print_to_stdout_and_file("Stimulus extra parameter:\n");
                 } else if (tmp->n > 1) {
-                    printf("Stimulus extra parameters:\n");
+                    print_to_stdout_and_file("Stimulus extra parameters:\n");
 
                 }
 
-                STRING_HASH_PRINT_KEY_VALUE(tmp);
+                STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
 
-                printf("======================================================================\n");
+                print_to_stdout_and_file("======================================================================\n");
 
             }
         }
     }
 
-    printf("Domain configuration:\n");
-    printf("Domain name: %s\n", options->domain_config->domain_name);
-    printf("Domain initial Space Discretization: %lf um\n", options->domain_config->start_h);
+    print_to_stdout_and_file("Domain configuration:\n");
+    print_to_stdout_and_file("Domain name: %s\n", options->domain_config->domain_name);
+    print_to_stdout_and_file("Domain initial Space Discretization: %lf um\n", options->domain_config->start_h);
 
     if (the_grid->adaptive) {
-        printf("Domain maximum Space Discretization: %lf um\n", options->domain_config->max_h);
-        printf("The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
+        print_to_stdout_and_file("Domain maximum Space Discretization: %lf um\n", options->domain_config->max_h);
+        print_to_stdout_and_file("The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
     }
 
     if(options->domain_config->config_data.config->n == 1) {
-        printf("Domain extra parameter:\n");
+        print_to_stdout_and_file("Domain extra parameter:\n");
     }
     else if(options->domain_config->config_data.config->n > 1) {
-        printf("Domain extra parameters:\n");
+        print_to_stdout_and_file("Domain extra parameters:\n");
 
     }
 
-    STRING_HASH_PRINT_KEY_VALUE(options->domain_config->config_data.config);
-    printf("======================================================================\n");
+    STRING_HASH_PRINT_KEY_VALUE_LOG(options->domain_config->config_data.config);
+    print_to_stdout_and_file("======================================================================\n");
 
     if(options->extra_data_config) {
-        printf("Extra data ODE function configuration:\n");
+        print_to_stdout_and_file("Extra data ODE function configuration:\n");
 
+        print_to_stdout_and_file("Extra data library: %s\n",options->extra_data_config->config_data.library_file_path);
+        print_to_stdout_and_file("Extra data function: %s\n", options->extra_data_config->config_data.library_file_path);
 
         if (options->domain_config->config_data.config->n == 1) {
-            printf("Extra data parameter:\n");
+            print_to_stdout_and_file("Extra data parameter:\n");
         } else if (options->domain_config->config_data.config->n > 1) {
-            printf("Extra data parameters:\n");
+            print_to_stdout_and_file("Extra data parameters:\n");
 
         }
 
-        STRING_HASH_PRINT_KEY_VALUE(options->extra_data_config->config_data.config);
-        printf("======================================================================\n");
+        STRING_HASH_PRINT_KEY_VALUE_LOG(options->extra_data_config->config_data.config);
+        print_to_stdout_and_file("======================================================================\n");
     }
 
 

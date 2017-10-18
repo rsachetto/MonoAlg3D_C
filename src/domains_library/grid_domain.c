@@ -7,6 +7,7 @@
 #include "../hash/point_hash.h"
 #include "../utils/utils.h"
 #include "../utils/erros_helpers.h"
+#include "../utils/logfile_utils.h"
 #include <float.h>
 #include <time.h>
 #include <unistd.h>
@@ -419,8 +420,8 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_confi
         real_side_length *= 2.0f;
     }
 
-    printf("Initial cube side length: %lfum x %lfum x %lfum\n", real_side_length, real_side_length, real_side_length);
-    printf("Loading plain mesh with %lfum x %lfum x %lfum using dx %lfum\n", desired_side_length, desired_side_length, max_h, start_h);
+    print_to_stdout_and_file("Initial cube side length: %lf µm x %lf µm x %lf µm\n", real_side_length, real_side_length, real_side_length);
+    print_to_stdout_and_file("Loading plain mesh with %lf µm x %lf µm x %lf µm using dx %lf µm\n", desired_side_length, desired_side_length, max_h, start_h);
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_length, start_h);
 
@@ -530,7 +531,7 @@ void initialize_grid_with_plain_and_sphere_fibrotic_mesh(struct grid *the_grid, 
 
 void set_plain_fibrosis(struct grid* the_grid, double phi, unsigned fib_seed) {
 
-    printf("Making %.2lf %% of cells inactive\n", phi*100.0);
+    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi*100.0);
 
     struct cell_node *grid_cell;
 
@@ -540,7 +541,7 @@ void set_plain_fibrosis(struct grid* the_grid, double phi, unsigned fib_seed) {
     srand(fib_seed);
 
 
-    printf("Using %u as seed\n", fib_seed);
+    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
     while( grid_cell != 0 ) {
@@ -559,14 +560,14 @@ void set_plain_fibrosis(struct grid* the_grid, double phi, unsigned fib_seed) {
 void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_center, double sphere_radius, double bz_size,
                                double bz_radius,  unsigned fib_seed) {
 
-    printf("Making %.2lf %% of cells inactive\n", phi*100.0f);
+    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi*100.0f);
 
     if(fib_seed == 0)
         fib_seed = (unsigned) time(NULL) + getpid();
 
     srand(fib_seed);
 
-    printf("Using %u as seed\n", fib_seed);
+    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     double bz_radius_2 = pow(bz_radius, 2.0);
     double sphere_radius_2 = pow(sphere_radius, 2.0);

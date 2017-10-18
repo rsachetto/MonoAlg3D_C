@@ -3,6 +3,7 @@
 //
 #include "../main/linear_system_solver.h"
 #include "../main/output_utils.h"
+#include "../utils/logfile_utils.h"
 
 #include <criterion/criterion.h>
 #include <omp.h>

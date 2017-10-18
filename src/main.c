@@ -3,7 +3,7 @@
 #include "main/ode_solver.h"
 #include "main/monodomain_solver.h"
 #include "ini_parser/ini.h"
-#include "main/config/config_parser.h"
+#include "utils/logfile_utils.h"
 
 int main(int argc, char **argv) {
 
@@ -15,12 +15,10 @@ int main(int argc, char **argv) {
     struct grid *the_grid;
     struct monodomain_solver *edp_solver;
     struct ode_solver *ode_solver;
-    struct output_utils *output_info;
 
     the_grid   = new_grid();
     edp_solver = new_monodomain_solver();
     ode_solver = new_ode_solver();
-    output_info = new_output_utils();
 
     //First we have to get the config file path
     get_config_file(argc, argv, options);
@@ -40,9 +38,18 @@ int main(int argc, char **argv) {
     //The command line options always overwrite the config file
     parse_options(argc, argv, options);
 
+    create_dir_if_no_exists(options->out_dir_name);
+
+    if(options->out_dir_name) {
+        time_t rawtime;
+        char buffer [FILENAME_MAX];
+
+        sprintf(buffer,"%s/outputlog.txt", options->out_dir_name);
+        open_logfile(buffer);
+    }
+
     configure_ode_solver_from_options(ode_solver, options);
     configure_monodomain_solver_from_options(edp_solver, options);
-    configure_output_from_options(output_info, options);
     configure_grid_from_options(the_grid, options);
 
     init_ode_solver_with_cell_model(ode_solver);
@@ -58,7 +65,7 @@ int main(int argc, char **argv) {
         options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config);
     }
     else {
-        printf("No domain configuration provided! Exiting!\n");
+        print_to_stdout_and_file("No domain configuration provided! Exiting!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -68,20 +75,20 @@ int main(int argc, char **argv) {
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
-        printf("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
         ode_solver->gpu = false;
     }
 #endif
 
-    solve_monodomain(the_grid, edp_solver, ode_solver, output_info, options);
+    solve_monodomain(the_grid, edp_solver, ode_solver, options);
 
-    free_output_utils(output_info);
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
 
     free(edp_solver);
 
     free_user_options(options);
+    close_logfile();
 
     return EXIT_SUCCESS;
 }
