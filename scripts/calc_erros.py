@@ -27,9 +27,9 @@ for f1, f2 in zip(files1, files2):
     x =np.array(data_list1)
     y =np.array(data_list2)
 
-
-    data_final.append((np.sqrt(sum( np.power(x-y,2) )) / np.sqrt( sum( np.power(y,2))))*100.0)
+    error = (np.sqrt(sum( np.power(x-y,2) )) / np.sqrt( sum( np.power(y,2))))*100.0
+    data_final.append(error)
 
 
 z = np.array(data_final)
-print (np.sqrt(sum( np.power(z-z,2) )) / np.sqrt( sum( np.power(z,2))))*100.0
+print z.mean(axis=None)

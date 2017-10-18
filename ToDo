@@ -2,3 +2,5 @@
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)
 - Check for the number of stimuli and the time for the last stimulus (largests start+duration) berfore calling the function to apply then
 - Make a header file with all functions that the user needs to implement in the cell models
+- Improve the command line parser to receive commands like --domain phi=0.4,anything=1 --domain bla=bla (we have to check if optparse alows repetition of command line
+switches; 
