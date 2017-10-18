@@ -779,6 +779,23 @@ int sdscmp(const sds s1, const sds s2) {
     return cmp;
 }
 
+
+/* Split 's' with separator in 'sep'. An array
+ * of sds strings is returned. *count will be set
+ * by reference to the number of tokens returned.
+ *
+ * On out of memory, zero length string, zero length
+ * separator, NULL is returned.
+ *
+ * Note that 'sep' is able to split a string using
+ * a multi-character separator. For example
+ * sdssplit("foo_-_bar","_-_"); will return two
+ * elements "foo" and "bar".
+ */
+sds *sdssplit(const char *s, const char *sep, int *count) {
+    return sdssplitlen(s, (int)strlen(s), sep, (int)strlen(sep), count);
+}
+
 /* Split 's' with separator in 'sep'. An array
  * of sds strings is returned. *count will be set
  * by reference to the number of tokens returned.

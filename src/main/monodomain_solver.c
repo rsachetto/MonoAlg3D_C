@@ -46,7 +46,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     struct extra_data_config *extra_data_config = configs->extra_data_config;
     struct domain_config * domain_config = configs->domain_config;
 
-    bool has_extra_data = extra_data_config->config_data.configured;
+    bool has_extra_data = (extra_data_config != NULL);
 
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;

@@ -42,4 +42,6 @@ char *string_hash_search (struct string_hash *, const char *key);
 /* if there is no such record, has no effect */
 void string_hash_delete (struct string_hash *, const char *key);
 
+void string_hash_insert_or_overwrite(struct string_hash *d, const char *key, const char *value);
+
 #endif // MONOALG3D_STRING_HASH_H

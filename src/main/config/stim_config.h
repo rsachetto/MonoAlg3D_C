@@ -16,8 +16,12 @@ struct stim_config {
     struct config_common config_data;
 
     Real stim_start;
+    bool stim_start_was_set;
     Real stim_duration;
+    bool stim_duration_was_set;
     Real stim_current;
+    bool stim_current_was_set;
+
     Real *spatial_stim_currents;
     set_spatial_stim_fn_pt set_spatial_stim_fn;
 };

@@ -8,11 +8,6 @@
 
 void init_stim_functions(struct stim_config *config, char* stim_name) {
 
-    if(!config->config_data.configured) {
-        printf("No stimuli configured! None will be applied!\n");
-        return;
-    }
-
     char *error;
     char *default_library_name = "./shared_libs/libdefault_stimuli.so";
     char *function_name = config->config_data.function_name;
@@ -20,6 +15,7 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
     if(config->config_data.library_file_path == NULL) {
         printf("Using the default library for stimuli functions for %s\n", stim_name);
         config->config_data.library_file_path = strdup(default_library_name);
+        config->config_data.library_file_path_was_set = true;
     }
     else {
         printf("Opening %s as stimuli lib for %s\n", config->config_data.library_file_path, stim_name);
@@ -52,6 +48,10 @@ struct stim_config* new_stim_config() {
     init_config_common_data(&(result->config_data));
     result->set_spatial_stim_fn = NULL;
     result->spatial_stim_currents = NULL;
+
+    result->stim_current_was_set = false;
+    result->stim_duration_was_set = false;
+    result->stim_start_was_set = false;
     return result;
 }
 

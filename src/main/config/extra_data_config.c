@@ -8,11 +8,6 @@
 
 void init_extra_data_functions(struct extra_data_config *config) {
 
-    if(!config->config_data.configured) {
-        printf("No extra data function configured!\n");
-        return;
-    }
-
     char *error;
     char *function_name = config->config_data.function_name;
 
@@ -21,6 +16,7 @@ void init_extra_data_functions(struct extra_data_config *config) {
     if(config->config_data.library_file_path == NULL) {
         printf("Using the default library for extra data functions\n");
         config->config_data.library_file_path = strdup(default_function);
+        config->config_data.library_file_path_was_set = true;
     }
     else {
         printf("Opening %s as ODE extra data lib\n", config->config_data.library_file_path);

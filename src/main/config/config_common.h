@@ -11,8 +11,9 @@
 struct config_common {
     void *handle;
     char *function_name;
+    bool function_name_was_set;
     char *library_file_path;
-    bool configured;
+    bool library_file_path_was_set;
     struct string_hash *config;
 };
 

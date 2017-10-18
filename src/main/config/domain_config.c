@@ -8,11 +8,7 @@
 
 void init_domain_functions(struct domain_config *config) {
 
-    if(!config->config_data.configured) {
-        printf("No domain function provided! Exiting!\n");
-        exit(EXIT_FAILURE);
-    }
-
+    //TODO: this could go to the config common part
     char *error;
     char *function_name = config->config_data.function_name;
     char *default_function = "./shared_libs/libdefault_domains.so";
@@ -20,6 +16,7 @@ void init_domain_functions(struct domain_config *config) {
     if(config->config_data.library_file_path == NULL) {
         printf("Using the default library for domain functions for %s\n", config->domain_name);
         config->config_data.library_file_path = strdup(default_function);
+        config->config_data.library_file_path_was_set = true;
     }
     else {
         printf("Opening %s as stimuli lib\n", config->config_data.library_file_path);
@@ -51,6 +48,10 @@ struct domain_config* new_domain_config() {
     struct domain_config *result = (struct domain_config*) malloc(sizeof(struct domain_config));
 
     init_config_common_data(&(result->config_data));
+
+    result->start_h_was_set = false;
+    result->max_h_was_set = false;
+    result->domain_name_was_set = false;
 
     result->set_spatial_domain_fn = NULL;
     result->domain_name = NULL;

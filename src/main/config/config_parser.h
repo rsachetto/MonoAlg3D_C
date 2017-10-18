@@ -24,20 +24,19 @@
 #define SIGMA_Y 1500
 #define SIGMA_Z 1600
 #define START_REFINING 1700
+#define DOMAIN_OPT 1800
+#define EXTRA_DATA_OPT 1900
+#define STIM_OPT 2000
 
 struct user_options {
     double final_time;				/*-f option */
     bool final_time_was_set;
-    double side_lenght;			    /*-l option */
-    bool side_lenght_was_set;
     char *out_dir_name;	            /*-o option */
     bool out_dir_name_was_set;
     bool adaptive;	                /*-a option */
     bool adaptive_was_set;
     int print_rate;	            	/*-p option */
     bool print_rate_was_set;
-    bool start_h_was_set;
-    bool max_h_was_set;
     int max_its;					/*-m option*/
     bool max_its_was_set;
     double ref_bound;				/*-r option*/
@@ -74,7 +73,6 @@ struct user_options {
     bool sigma_z_was_set;
     double start_adapting_at;
     bool start_adapting_at_was_set;
-
     char *config_file;              /*-c option*/
 
     struct stim_config_hash *stim_configs;
@@ -84,36 +82,6 @@ struct user_options {
 
 };
 
-static const struct option longOpts[] = {
-        { "config_file", required_argument, NULL, 'c' },
-        { "side_lenght", required_argument, NULL, 'l' },
-        { "output_dir", required_argument , NULL, 'o' },
-        { "use_adaptivity", no_argument, NULL, 'a' },
-        { "abort_on_no_activity", no_argument, NULL, 'b' },
-        { "num_threads", required_argument, NULL, 'n' },
-        { "use_gpu", no_argument, NULL, 'g' },
-        { "print_rate",required_argument , NULL, 'p' },
-        { "start_discretization", required_argument, NULL, 's' },
-        { "maximum_discretization", required_argument, NULL, 'x' },
-        { "max_cg_its", required_argument, NULL, 'm' },
-        { "cg_tolerance", required_argument, NULL, 't' },
-        { "refinement_bound", required_argument, NULL, 'r' },
-        { "derefinement_bound", required_argument, NULL, 'd' },
-        { "dt_edp", required_argument, NULL, 'z' },
-        { "dt_edo", required_argument, NULL, 'e' },
-        { "simulation_time", required_argument, NULL, 'f' },
-        { "use_preconditioner", no_argument, NULL, 'j' },
-        { "refine_each", required_argument, NULL, 'R'},
-        { "derefine_each", required_argument, NULL, 'D'},
-        { "gpu_id", required_argument, NULL, 'G'},
-        { "model_file_path", required_argument, NULL, 'k'},
-        { "sigma_x", required_argument, NULL, SIGMA_X},
-        { "sigma_y", required_argument, NULL, SIGMA_Y},
-        { "sigma_z", required_argument, NULL, SIGMA_Z},
-        { "start_adapting_at", required_argument, NULL, START_REFINING},
-        { "help", no_argument, NULL, 'h' },
-        { NULL, no_argument, NULL, 0 }
-};
 
 /* Display program usage, and exit.
  */
@@ -130,5 +98,6 @@ void configure_output_from_options(struct output_utils *output_utils,
 
 void free_user_options(struct user_options *s);
 
+void issue_overwrite_warning (const char *var, const char *old_value, const char *new_value, const char *config_file);
 
 #endif /* MONOALG3D_CONFIG_PARSER_H */

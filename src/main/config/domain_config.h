@@ -15,7 +15,9 @@ typedef void (*set_spatial_domain_fn_pt)(struct grid *, struct domain_config *);
 struct domain_config {
     struct config_common config_data;
     char *domain_name;
-    double start_h, max_h, min_h;
+    bool domain_name_was_set;
+    double start_h, max_h;
+    bool start_h_was_set, max_h_was_set;
     set_spatial_domain_fn_pt set_spatial_domain_fn;
 };
 

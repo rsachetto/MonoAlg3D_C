@@ -89,6 +89,21 @@ static void grow (struct string_hash *d) {
     string_hash_destroy (d2);
 }
 
+void string_hash_insert_or_overwrite(struct string_hash *d, const char *key, const char *value) {
+
+    char* new_key = string_hash_search(d, key);
+
+    //Key found, delete it first
+    if(new_key != NULL) {
+        string_hash_delete(d, key);
+    }
+
+    string_hash_insert(d, key, value);
+
+
+}
+
+
 /* insert a new key-value pair into an existing dictionary */
 void string_hash_insert (struct string_hash *d, const char *key, const char *value) {
     struct string_elt *e;

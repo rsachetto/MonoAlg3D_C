@@ -401,30 +401,30 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_confi
     int num_layers = atoi(config_char);
     free(config_char);
 
-    config_char = string_hash_search(config->config_data.config, "side_lenght");
-    double desired_side_lenght = atof(config_char);
+    config_char = string_hash_search(config->config_data.config, "side_length");
+    double desired_side_length = atof(config_char);
     free(config_char);
 
 
-    double real_side_lenght = start_h * 2.0f;
+    double real_side_length = start_h * 2.0f;
     double max_h = start_h * num_layers;
 
-    while (real_side_lenght < desired_side_lenght) {
-        real_side_lenght *= 2.0f;
+    while (real_side_length < desired_side_length) {
+        real_side_length *= 2.0f;
     }
 
-    printf("Initial cube side length: %lfum x %lfum x %lfum\n", real_side_lenght, real_side_lenght, real_side_lenght);
-    printf("Loading plain mesh with %lfum x %lfum x %lfum using dx %lfum\n", desired_side_lenght, desired_side_lenght, max_h, start_h);
+    printf("Initial cube side length: %lfum x %lfum x %lfum\n", real_side_length, real_side_length, real_side_length);
+    printf("Loading plain mesh with %lfum x %lfum x %lfum using dx %lfum\n", desired_side_length, desired_side_length, max_h, start_h);
 
-    int num_steps = get_num_refinement_steps_to_discretization(real_side_lenght, start_h);
+    int num_steps = get_num_refinement_steps_to_discretization(real_side_length, start_h);
 
-    initialize_and_construct_grid(the_grid, real_side_lenght, 7);
+    initialize_and_construct_grid(the_grid, real_side_length, 7);
 
-    if ((real_side_lenght / 2.0f) > max_h) {
-        double aux = real_side_lenght/2.0f;
+    if ((real_side_length / 2.0f) > max_h) {
+        double aux = real_side_length/2.0f;
 
         for (int i = 0; i < num_steps - 3; i++) {
-            set_plain_domain(the_grid, real_side_lenght, real_side_lenght, aux);
+            set_plain_domain(the_grid, real_side_length, real_side_length, aux);
             refine_grid(the_grid, 1);
             aux = aux / 2.0f;
         }
@@ -436,7 +436,7 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_confi
         refine_grid(the_grid, num_steps);
     }
 
-    set_plain_domain(the_grid, desired_side_lenght, desired_side_lenght, max_h);
+    set_plain_domain(the_grid, desired_side_length, desired_side_length, max_h);
 
     int i;
     for (i = 0; i < num_steps; i++) {

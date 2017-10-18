@@ -179,7 +179,8 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
     }
 }
 
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, Real cur_time, int num_steps, struct stim_config_hash *stim_configs) {
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, double cur_time, int num_steps,
+                            struct stim_config_hash *stim_configs) {
 
     assert(the_ode_solver->sv);
 
@@ -191,14 +192,11 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     void *extra_data = the_ode_solver->edo_extra_data;
     size_t extra_data_size = the_ode_solver->extra_data_size;
 
-    Real time = cur_time;
-
+    double time = cur_time;
 
     Real *merged_stims = (Real*)calloc(sizeof(Real),n_active);
 
-
     struct stim_config *tmp = NULL;
-    Real stim_curr = 0.0;
     Real stim_start, stim_dur;
 
 
@@ -220,7 +218,6 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
         }
     }
 
-    time = cur_time;
 
     if(the_ode_solver->gpu) {
 #ifdef COMPILE_CUDA
