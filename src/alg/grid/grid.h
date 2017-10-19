@@ -46,6 +46,8 @@ void set_grid_flux(struct grid *the_grid);
 bool refine_grid_with_bound(struct grid* the_grid, double refinement_bound, double min_h);
 void refine_grid(struct grid* the_grid, int num_steps);
 void refine_grid_cell_at(struct grid *the_grid, uint32_t cell_number);
+void refine_fibrotic_cells(struct grid *the_grid);
+void refine_border_zone_cells(struct grid *the_grid);
 
 bool derefine_grid_with_bound(struct grid *the_grid, double derefinement_bound, double max_h);
 void derefine_all_grid (struct grid* the_grid);
@@ -56,4 +58,7 @@ void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines);
 
 void save_grid_domain (struct grid * the_grid, const char *file_name);
+
+
+
 #endif //MONOALG3D_GRID_H

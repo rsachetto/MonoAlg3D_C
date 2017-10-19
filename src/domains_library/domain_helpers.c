@@ -48,7 +48,7 @@ void set_plain_domain (struct grid *the_grid, double sizeX, double sizeY, double
     }
 }
 
-void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
+void set_custom_mesh(struct grid *the_grid, const char *file_name, int size, bool read_fibrosis) {
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen (file_name, "r");
 
@@ -79,7 +79,12 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
     struct point_3d point3d;
 
     while (i < size) {
-        fscanf (file, "%lf,%lf,%lf,%lf,%d\n", &a[i][0], &a[i][1], &a[i][2], &b, &fibrosis);
+        if (read_fibrosis) {
+            fscanf(file, "%lf,%lf,%lf,%lf,%d\n", &a[i][0], &a[i][1], &a[i][2], &b, &fibrosis);
+        }
+        else {
+            fscanf(file, "%lf,%lf,%lf,%lf\n", &a[i][0], &a[i][1], &a[i][2], &b);
+        }
         if (a[i][1] > maxy)
             maxy = a[i][1];
         if (a[i][2] > maxz)
@@ -93,7 +98,9 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
         point3d.y = a[i][1];
         point3d.z = a[i][2];
 
-        point_hash_insert (p_hash, point3d, fibrosis);
+        if(read_fibrosis) {
+            point_hash_insert(p_hash, point3d, fibrosis);
+        }
 
         i++;
     }
@@ -112,8 +119,10 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
         point3d.y = y;
         point3d.z = z;
 
-        grid_cell->fibrotic = (point_hash_search (p_hash, point3d) == 1);
-        grid_cell->border_zone = (point_hash_search (p_hash, point3d) == 2);
+        if(read_fibrosis) {
+            grid_cell->fibrotic = (point_hash_search(p_hash, point3d) == 1);
+            grid_cell->border_zone = (point_hash_search(p_hash, point3d) == 2);
+        }
 
         if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
 
@@ -136,7 +145,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size) {
 
 void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size,
                                   double minx, double maxx, double miny, double maxy, double minz,
-                                  double maxz) {
+                                  double maxz,  bool read_fibrosis) {
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen (file_name, "r");
 
@@ -378,6 +387,132 @@ void set_plain_sphere_fibrosis(struct grid* the_grid, double phi,  double plain_
             }
         }
         grid_cell = grid_cell->next;
+    }
+
+
+}
+
+void set_human_mesh_fibrosis(struct grid * grid, double phi, const char *scar_file, unsigned seed, double scar_center_x, double scar_center_y, double scar_center_z) {
+
+    if(seed == 0)
+        seed = (unsigned)time(NULL)+getpid();
+
+    srand(seed);
+
+    print_to_stdout_and_file("Using %u as seed\n", seed);
+
+    double bz_size = 0;
+    double dist;
+
+    print_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
+    struct cell_node *gridCell = grid->first_cell;
+
+    while( gridCell != NULL ) {
+
+        if(gridCell->active) {
+            if(gridCell->fibrotic) {
+                gridCell->can_change = false;
+                double p = (double) (rand()) / (RAND_MAX);
+                if (p < phi) gridCell->active = false;
+            }
+            else if(gridCell->border_zone) {
+                double centerX = gridCell->center_x;
+                double centerY = gridCell->center_y;
+                double centerZ = gridCell->center_z;
+                dist =  sqrt((centerX - scar_center_x)*(centerX - scar_center_x) + (centerY - scar_center_y)*(centerY - scar_center_y)  + (centerZ - scar_center_z)*(centerZ - scar_center_z)  );
+                if(dist > bz_size) {
+                    bz_size = dist;
+                }
+            }
+
+        }
+        gridCell = gridCell->next;
+    }
+
+
+    gridCell = grid->first_cell;
+    while( gridCell != NULL ) {
+
+        if(gridCell->active) {
+            if(gridCell->border_zone) {
+                double centerX = gridCell->center_x;
+                double centerY = gridCell->center_y;
+                double centerZ = gridCell->center_z;
+                dist =  sqrt((centerX - scar_center_x)*(centerX - scar_center_x) + (centerY - scar_center_y)*(centerY - scar_center_y)  + (centerZ - scar_center_z)*(centerZ - scar_center_z)  );
+                dist = dist/bz_size;
+                double phi_local = phi - phi*dist;
+                double p = (double) (rand()) / (RAND_MAX);
+                if (p < phi_local) gridCell->active = false;
+                gridCell->can_change = false;
+
+            }
+        }
+        gridCell = gridCell->next;
+    }
+
+    if(scar_file) {
+
+        int minx = 79100;
+        int maxx = 121000;
+        int miny = 66700;
+        int maxy = 106000;
+        int minz = 11200;
+        int maxz = 61400;
+
+        FILE *file = fopen("scar.pts","r");
+
+        if(!file) {
+            printf("Error opening mesh described in V_t_0!!\n");
+            exit(0);
+        }
+
+        int size = 2172089;
+
+        double **a = (double**) malloc(sizeof(double*)*size);
+        for(int i=0; i< size; i++){
+            a[i] = (double*) malloc(sizeof(double) * 3);
+            if(a[i] == NULL) {
+                printf("Failed to allocate memory\n");
+                exit(0);
+            }
+        }
+        double b;
+
+        int d;
+
+        int i = 0;
+
+        while ( !feof(file) ) {
+            fscanf(file, "%lf,%lf,%lf,%d,%lf\n",&a[i][0],&a[i][1],&a[i][2],&d,&b);
+            i++;
+        }
+        sort_vector(a, size);
+
+
+        gridCell = grid->first_cell;
+        while( gridCell != 0 ) {
+
+            double centerX = gridCell->center_x;
+            double centerY = gridCell->center_y;
+            double centerZ = gridCell->center_z;
+
+            //inside big scar
+            if( centerX < maxx && centerY < maxy && centerZ < maxz && centerX > minx && centerY > miny && centerZ > minz ) {
+                int index = inside_mesh(a, centerX, centerY, centerZ, 0, size - 1);
+                bool a = gridCell->active;
+                gridCell->active = index != -1;
+            }
+
+            gridCell = gridCell->next;
+        }
+
+
+        fclose(file);
+        for(int j=0; j < size; j++){
+            free(a[j]);
+        }
+
+        free(a);
     }
 
 

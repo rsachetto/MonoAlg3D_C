@@ -2,13 +2,12 @@
 // Created by sachetto on 30/09/17.
 //
 
+#include <assert.h>
 #include "cell.h"
 
 void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint32_vector *refined_this_step)  {
-    if( cell == NULL ) {
-        fprintf(stderr, "refine_cell(): Parameter cell is NULL. Exiting");
-        exit(10);
-    }
+
+    assert(cell);
 
     struct transition_node *east_transition_node,
             *north_transition_node,

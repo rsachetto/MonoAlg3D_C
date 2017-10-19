@@ -8,17 +8,24 @@
 #include "../utils/erros_helpers.h"
 #include "../utils/logfile_utils.h"
 #include <assert.h>
-
+#include <string.h>
 
 
 void initialize_grid_with_human_mesh (struct grid *the_grid, struct domain_config *domain_config) {
 
-    domain_config->start_h = 250.0;
+    domain_config->start_h = 800.0;
+    bool fibrotic = false;
 
     char *mesh_file = string_hash_search(domain_config->config_data.config, "mesh_file");
     if(mesh_file == NULL) {
         report_parameter_error_on_function("initialize_grid_with_human_mesh", "mesh_file");
     }
+
+    char *fibrotic_char = string_hash_search(domain_config->config_data.config, "fibrotic");
+    if(fibrotic_char != NULL) {
+        fibrotic = ((strcmp(fibrotic_char, "yes") == 0) || (strcmp(fibrotic_char, "true") == 0));
+    }
+
 
     double minx = -1;
     double maxx = -1;
@@ -57,18 +64,18 @@ void initialize_grid_with_human_mesh (struct grid *the_grid, struct domain_confi
         maxz  = atof(config_char);
     free(config_char);
 
-    initialize_and_construct_grid (the_grid, 64000.0, 7);
+    initialize_and_construct_grid (the_grid, 204800, 7);
     refine_grid (the_grid, 7);
 
 
-    bool full_mesh = ((minx >= 0) && (maxx >= 0) && (miny >= 0) && (maxy >= 0) && (minz >= 0) && (maxz >= 0));
+    bool full_mesh = !((minx >= 0) && (maxx >= 0) && (miny >= 0) && (maxy >= 0) && (minz >= 0) && (maxz >= 0));
     if(full_mesh) {
         print_to_stdout_and_file ("Loading Human Heart Mesh\n");
-        set_custom_mesh (the_grid, mesh_file, 2025252);
+        set_custom_mesh(the_grid, mesh_file, 2025252, fibrotic);
     }
     else {
         print_to_stdout_and_file ("Loading Human Heart Sub Mesh\n");
-        set_custom_mesh_with_bounds (the_grid, mesh_file, 2025252, minx, maxx, miny, maxy, minz, maxz);
+        set_custom_mesh_with_bounds (the_grid, mesh_file, 2025252, minx, maxx, miny, maxy, minz, maxz, fibrotic);
     }
 
     print_to_stdout_and_file ("Cleaning grid\n");
@@ -76,7 +83,21 @@ void initialize_grid_with_human_mesh (struct grid *the_grid, struct domain_confi
     for (i = 0; i < 7; i++) {
         derefine_grid_inactive_cells (the_grid);
     }
+
+    if(fibrotic) {
+        refine_fibrotic_cells(the_grid);
+        refine_fibrotic_cells(the_grid);
+        refine_fibrotic_cells(the_grid);
+
+        refine_border_zone_cells(the_grid);
+        refine_border_zone_cells(the_grid);
+        refine_border_zone_cells(the_grid);
+        //set_human_mesh_fibrosis(the_grid, phi, scar_file, seed, scar_center_x, scar_center_y, scar_center_z);
+    }
     free(mesh_file);
+
+
+
 }
 
 void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_config *domain_config) {
@@ -93,7 +114,7 @@ void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_conf
 
     print_to_stdout_and_file ("Loading Rabbit Heart Mesh\n");
 
-    set_custom_mesh (the_grid, mesh_file, 470197);
+    set_custom_mesh(the_grid, mesh_file, 470197, false);
 
     print_to_stdout_and_file ("Cleaning grid\n");
     int i;
@@ -119,8 +140,8 @@ void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct domain_confi
     refine_grid (the_grid, 5);
 
     print_to_stdout_and_file ("Loading Mouse Heart Mesh\n");
-    
-    set_custom_mesh (the_grid, mesh_file, 96195);
+
+    set_custom_mesh(the_grid, mesh_file, 96195, false);
 
     print_to_stdout_and_file ("Cleaning grid\n");
 

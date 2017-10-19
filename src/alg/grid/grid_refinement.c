@@ -2,6 +2,7 @@
 // Created by sachetto on 30/09/17.
 //
 
+#include <assert.h>
 #include "grid.h"
 
 /**
@@ -108,7 +109,7 @@ void set_grid_flux(struct grid *the_grid) {
     struct cell_node **ac = the_grid->active_cells;
 
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < active_cells; i++) {
         ac[i]->north_flux = 0.0;
         ac[i]->south_flux = 0.0;
@@ -119,7 +120,7 @@ void set_grid_flux(struct grid *the_grid) {
     }
 
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < active_cells; i++) {
         set_cell_flux(ac[i], 's' ); // Computes south flux.
         set_cell_flux(ac[i], 'n' ); // Computes north flux.
@@ -130,3 +131,45 @@ void set_grid_flux(struct grid *the_grid) {
     }
 
 }
+
+void refine_fibrotic_cells(struct grid *the_grid) {
+
+
+    assert(the_grid);
+
+    struct cell_node *grid_cell, *auxiliar_grid_cell;
+
+    grid_cell = the_grid->first_cell;
+    while ( grid_cell != 0 )	{
+        if(grid_cell->active && grid_cell->fibrotic) {
+            auxiliar_grid_cell = grid_cell;
+            grid_cell = grid_cell->next;
+            refine_cell( auxiliar_grid_cell, NULL, NULL);
+            the_grid->number_of_cells += 7;
+        }
+        else {
+            grid_cell = grid_cell->next;
+        }
+    }
+}
+
+void refine_border_zone_cells(struct grid *the_grid) {
+
+    assert(the_grid);
+
+    struct cell_node *grid_cell, *auxiliar_grid_cell;
+
+    grid_cell = the_grid->first_cell;
+    while ( grid_cell != 0 )	{
+        if(grid_cell->active && grid_cell->border_zone) {
+            auxiliar_grid_cell = grid_cell;
+            grid_cell = grid_cell->next;
+            refine_cell( auxiliar_grid_cell, NULL, NULL);
+            the_grid->number_of_cells += 7;
+        }
+        else {
+            grid_cell = grid_cell->next;
+        }
+    }
+}
+
