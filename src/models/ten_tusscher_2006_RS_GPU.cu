@@ -6,6 +6,8 @@
 #include "model_gpu_utils.h"
 #include "../utils/logfile_utils.h"
 
+#define NEQ 19
+
 static __device__ size_t pitch;
 static size_t pitch_h;
 
@@ -13,28 +15,28 @@ __global__ void kernel_set_model_inital_conditions(Real *sv, int num_volumes);
 
 __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          int num_steps, int neq);
+                          int num_steps);
 
-__global__ void update_refinement(Real *sv, uint32_t *cells, size_t number_of_cells, int neq);
+__global__ void update_refinement(Real *sv, uint32_t *cells, size_t number_of_cells);
 
 inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, int threadID_, Real dt);
 
-//TODO: DEBUG: REMOVE
-__global__ void print_svs(Real *sv, int numCells, int neq) {
+////TODO: DEBUG: REMOVE
+//__global__ void print_svs(Real *sv, int numCells) {
+//
+//    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+//    if(threadID == 0) {
+//        for (int i = 0; i < numCells; ++i) {
+//            for (int j = 0; j < NEQ; ++j) {
+//                printf("%lf\n", *((Real*)((char*)sv + pitch * j)+i));
+//
+//            }
+//
+//        }
+//    }
+//}
 
-    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
-    if(threadID == 0) {
-        for (int i = 0; i < numCells; ++i) {
-            for (int j = 0; j < neq; ++j) {
-                printf("%lf\n", *((Real*)((char*)sv + pitch * j)+i));
-
-            }
-
-        }
-    }
-}
-
-extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes, int neq) {
+extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes) {
 
     print_to_stdout_and_file("Using ten Tusscher GPU model\n");
 
@@ -43,7 +45,7 @@ extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volum
 
     size_t size = num_volumes*sizeof(Real);
 
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )neq));
+    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
 
@@ -57,7 +59,7 @@ extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volum
 
 
 extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
-                                    uint32_t num_cells_to_solve,int num_steps, int neq, void *extra_data, size_t extra_data_bytes_size) {
+                                    uint32_t num_cells_to_solve,int num_steps, void *extra_data, size_t extra_data_bytes_size) {
 
 
     // execution configuration
@@ -78,7 +80,7 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
         check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
-    solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, neq);
+    solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps);
 
     check_cuda_error( cudaPeekAtLastError() );
 
@@ -122,7 +124,7 @@ __global__ void kernel_set_model_inital_conditions(Real *sv, int num_volumes)
 // Solving the model for each cell in the tissue matrix ni x nj
 __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          int num_steps, int neq)
+                          int num_steps)
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
@@ -134,7 +136,7 @@ __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
         else
             sv_id = threadID;
 
-        Real *rDY = (Real *)malloc(neq*sizeof(Real));
+        Real rDY[NEQ];
 
         for (int n = 0; n < num_steps; ++n) {
 

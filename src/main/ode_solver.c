@@ -235,8 +235,6 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     else {
         solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
         solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
-
-
     }
 
     free(merged_stims);

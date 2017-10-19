@@ -3,10 +3,12 @@
 #include <stdlib.h>
 #include <unitypes.h>
 
-void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real dt);
-void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, int neq);
+#define NEQ 19
 
-        void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
+void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real dt);
+void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current);
+
+void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
 
     assert(cell_model);
 
@@ -41,7 +43,7 @@ void set_model_initial_conditions_cpu(Real *sv) {
 }
 
 void solve_model_odes_cpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
-                          uint32_t num_cells_to_solve,int num_steps, int neq, void *extra_data) {
+                          uint32_t num_cells_to_solve,int num_steps, void *extra_data) {
 
     uint32_t sv_id;
 
@@ -50,19 +52,19 @@ void solve_model_odes_cpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cell
         sv_id = cells_to_solve[i];
 
         for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * neq), stim_currents[i], neq);
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
 
         }
     }
 }
 
-void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, int neq)  {
+void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current)  {
 
     assert(sv);
 
-    Real rY[neq], rDY[neq];
+    Real rY[NEQ], rDY[NEQ];
 
-    for(int i = 0; i < neq; i++)
+    for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
 
     RHS_cpu(rY, rDY, stim_current, dt);
