@@ -190,7 +190,6 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     assert(the_ode_solver->sv);
 
-
     Real dt = the_ode_solver->min_dt;
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     Real *sv = the_ode_solver->sv;

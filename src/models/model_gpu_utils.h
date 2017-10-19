@@ -23,7 +23,8 @@ extern __cuda_fake_struct blockIdx;
 #include "cuda_runtime.h"
 
 #define check_cuda_error(ans) { gpu_assert((ans), __FILE__, __LINE__); }
-void gpu_assert(cudaError_t code, const char *file, int line)
+
+inline void gpu_assert(cudaError_t code, const char *file, int line)
 {
     if (code != cudaSuccess)
     {
