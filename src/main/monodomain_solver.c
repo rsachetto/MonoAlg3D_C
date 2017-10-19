@@ -106,8 +106,10 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     uint32_t original_num_cells = the_grid->num_active_cells;
 
     save_old_cell_positions (the_grid);
-    if(adaptive)
-        update_cells_to_solve (the_grid, the_ode_solver);
+
+    if(adaptive) {
+        update_cells_to_solve(the_grid, the_ode_solver);
+    }
 
     print_to_stdout_and_file ("Setting ODE's initial conditions\n");
     set_ode_initial_conditions_for_all_volumes (the_ode_solver, the_grid->num_active_cells);

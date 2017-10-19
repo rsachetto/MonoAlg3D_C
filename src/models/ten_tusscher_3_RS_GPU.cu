@@ -51,11 +51,11 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
     size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
 
     Real *stims_currents_device;
-    uint32_t *cells_to_solve_device;
     check_cuda_error(cudaMalloc((void **) &stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
-    if(cells_to_solve) {
+    uint32_t *cells_to_solve_device = NULL;
+    if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
@@ -82,7 +82,7 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
     check_cuda_error(cudaFree(stims_currents_device));
     check_cuda_error(cudaFree(fibrosis_device));
 
-    if(cells_to_solve) check_cuda_error(cudaFree(cells_to_solve_device));
+    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
     if(!extra_data) free(fibs);
 }
 
@@ -118,15 +118,13 @@ __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
 
-
-
     // Each thread solves one cell model
     if(threadID < num_cells_to_solve) {
         if(cells_to_solve)
             sv_id = cells_to_solve[threadID];
         else
             sv_id = threadID;
-        
+
         Real *rDY = (Real *)malloc(neq*sizeof(Real));
 
         for (int n = 0; n < num_steps; ++n) {

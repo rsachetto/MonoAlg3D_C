@@ -63,16 +63,17 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
     // execution configuration
     const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
+
     size_t stim_currents_size = sizeof(Real)*num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
 
     Real *stims_currents_device;
-    uint32_t *cells_to_solve_device;
     check_cuda_error(cudaMalloc((void **) &stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
 
     //the array cells to solve is passed when we are using and adapative mesh
+    uint32_t *cells_to_solve_device = NULL;
     if(cells_to_solve) {
         check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
@@ -82,7 +83,7 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
     check_cuda_error( cudaPeekAtLastError() );
 
     check_cuda_error(cudaFree(stims_currents_device));
-    check_cuda_error(cudaFree(cells_to_solve_device));
+    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
 
 }
 
@@ -132,7 +133,7 @@ __global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
             sv_id = cells_to_solve[threadID];
         else
             sv_id = threadID;
-        
+
         Real *rDY = (Real *)malloc(neq*sizeof(Real));
 
         for (int n = 0; n < num_steps; ++n) {
