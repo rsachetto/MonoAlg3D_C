@@ -38,7 +38,11 @@ struct ode_solver* new_ode_solver() {
 
 void free_ode_solver(struct ode_solver *solver) {
     if(solver->sv) {
-        free(solver->sv);
+        if(solver->gpu)
+            cudaFree(solver->sv);
+        else
+            free(solver->sv);
+
     }
 
     if(solver->edo_extra_data) {

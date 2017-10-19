@@ -754,7 +754,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Extra data ODE function configuration:\n");
 
         print_to_stdout_and_file("Extra data library: %s\n",options->extra_data_config->config_data.library_file_path);
-        print_to_stdout_and_file("Extra data function: %s\n", options->extra_data_config->config_data.library_file_path);
+        print_to_stdout_and_file("Extra data function: %s\n", options->extra_data_config->config_data.function_name);
 
         if (options->domain_config->config_data.config->n == 1) {
             print_to_stdout_and_file("Extra data parameter:\n");
