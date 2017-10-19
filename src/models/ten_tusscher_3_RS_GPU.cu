@@ -58,9 +58,6 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
     check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
     check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
 
-    check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
-    check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
-
     Real atpi = 6.8;
     Real *fibrosis_device;
     Real *fibs = NULL;
@@ -82,6 +79,7 @@ extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uin
 
     check_cuda_error(cudaFree(stims_currents_device));
     check_cuda_error(cudaFree(cells_to_solve_device));
+    check_cuda_error(cudaFree(fibrosis_device));
 
     if(!extra_data) free(fibs);
 }
