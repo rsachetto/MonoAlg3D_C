@@ -48,8 +48,12 @@ void solve_model_odes_cpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cell
     uint32_t sv_id;
 
     #pragma omp parallel for private(sv_id)
-    for (int i = 0; i < num_cells_to_solve; i++) {
-        sv_id = cells_to_solve[i];
+    for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
+
+        if(cells_to_solve)
+            sv_id = cells_to_solve[i];
+        else
+            sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) {
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
