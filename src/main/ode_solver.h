@@ -16,12 +16,11 @@ typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
 
 //CPU FUNCTIONS
 typedef void (*set_ode_initial_conditions_cpu_fn_pt)(Real *);
-typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int , int , void *);
-
+typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int , void *);
 
 //GPU FUNCTIONS
-typedef size_t (*set_ode_initial_conditions_gpu_fn_pt)(Real **, uint32_t , int );
-typedef void (*solve_model_ode_gpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int, int, void *, size_t);
+typedef size_t (*set_ode_initial_conditions_gpu_fn_pt)(Real **, uint32_t);
+typedef void (*solve_model_ode_gpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int,  void *, size_t);
 
 //typedef void (*update_gpu_fn_pt)(Real *, uint32_t *, size_t , int );
 

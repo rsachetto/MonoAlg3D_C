@@ -159,7 +159,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
             check_cuda_errors(cudaFree(solver->sv));
         }
 
-        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells, n_odes);
+        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells);
 #endif
     } else {
 
@@ -227,14 +227,14 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     if(the_ode_solver->gpu) {
 #ifdef COMPILE_CUDA
         solve_model_ode_gpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_gpu_fn;
-        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, n_odes, extra_data,
+        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
                       extra_data_size);
 
 #endif
     }
     else {
         solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
-        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, n_odes, extra_data);
+        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
 
 
     }
