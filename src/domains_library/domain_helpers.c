@@ -80,9 +80,6 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size, bo
         tag[k] = 'n';
     }
 
-    //    struct point_hash *p_hash = point_hash_create ();
-    //    struct point_3d point3d;
-
     int i = 0;
     while (i < size) {
 
@@ -102,13 +99,6 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size, bo
         if (mesh_points[i][2] < minz)
             minz = mesh_points[i][2];
 
-        //        if(read_fibrosis) {
-        //            point3d.x = a[i][0];
-        //            point3d.y = a[i][1];
-        //            point3d.z = a[i][2];
-        //
-        //            point_hash_insert(p_hash, point3d, fibrosis);
-        //        }
 
         i++;
     }
@@ -124,14 +114,6 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size, bo
         y = grid_cell->center_y;
         z = grid_cell->center_z;
 
-        //        if(read_fibrosis) {
-        //            point3d.x = x;
-        //            point3d.y = y;
-        //            point3d.z = z;
-        //
-        //            grid_cell->fibrotic = (point_hash_search(p_hash, point3d) == 1);
-        //            grid_cell->border_zone = (point_hash_search(p_hash, point3d) == 2);
-        //        }
 
         if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
             grid_cell->active = false;
@@ -164,7 +146,6 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size, bo
     free (tag);
     free (fibrosis);
 
-    // point_hash_destroy (p_hash);
 }
 
 void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size, double minx, double maxx,

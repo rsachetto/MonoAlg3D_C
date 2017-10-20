@@ -37,7 +37,9 @@ static const struct option long_options[] = {
         { NULL, no_argument, NULL, 0 }
 };
 
-static const char *opt_string = "yc:k:p:abn:gp:m:t:r:d:z:e:f:l:R:D:G:h";
+//static const char *opt_string = "c:k:p:abn:gp:m:t:r:d:z:e:f:l:R:D:G:h";
+static const char *opt_string =   "c:o:abn:gp:m:t:r:d:z:e:f:jR:D:G:k:yh";
+
 
 /* Display program usage, and exit.
  */
@@ -641,7 +643,7 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
             case 'y':
                 if (user_args->binary_was_set) {
                     sprintf (old_value, "%d", user_args->binary);
-                    issue_overwrite_warning ("binary", old_value, optarg, user_args->config_file);
+                    issue_overwrite_warning ("binary_output", old_value, optarg, user_args->config_file);
                 }
                 user_args->binary = true;
                 break;

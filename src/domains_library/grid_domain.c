@@ -103,8 +103,8 @@ void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_conf
         report_parameter_error_on_function ("initialize_grid_with_rabbit_mesh", "mesh_file");
     }
 
-    initialize_and_construct_grid (the_grid, 32000.0, 7);
-    refine_grid (the_grid, 6);
+    initialize_and_construct_grid (the_grid, 64000.0, 7);
+    refine_grid (the_grid, 7);
 
     print_to_stdout_and_file ("Loading Rabbit Heart Mesh\n");
 
