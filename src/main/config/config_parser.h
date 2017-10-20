@@ -65,6 +65,9 @@ struct user_options {
     bool cg_tol_was_set;
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
+    bool binary;                    /*-y option*/
+    bool binary_was_set;
+
     double sigma_x;
     bool sigma_x_was_set;
     double sigma_y;

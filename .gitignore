@@ -62,3 +62,5 @@ bin/
 shared_libs/
 tmp/
 tests_bin/
+.vscode/
+build/

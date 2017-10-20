@@ -25,6 +25,7 @@ static const struct option long_options[] = {
         { "derefine_each", required_argument, NULL, 'D'},
         { "gpu_id", required_argument, NULL, 'G'},
         { "model_file_path", required_argument, NULL, 'k'},
+        { "binary_output", no_argument, NULL, 'y'},
         { "sigma_x", required_argument, NULL, SIGMA_X},
         { "sigma_y", required_argument, NULL, SIGMA_Y},
         { "sigma_z", required_argument, NULL, SIGMA_Z},
@@ -36,7 +37,7 @@ static const struct option long_options[] = {
         { NULL, no_argument, NULL, 0 }
 };
 
-static const char *opt_string = "c:k:p:abn:gp:m:t:r:d:z:e:f:l:R:D:G:h";
+static const char *opt_string = "yc:k:p:abn:gp:m:t:r:d:z:e:f:l:R:D:G:h";
 
 /* Display program usage, and exit.
  */
@@ -63,6 +64,7 @@ void display_usage (char **argv) {
     printf ("--dt_edo | -e [dt]. Minimum ODE time discretization (using time adaptivity. Default: 0.01 \n");
     printf ("--num_threads | -n [num-threads]. Solve using OpenMP. Default: 1 \n");
     printf ("--use_gpu | -g. Solve ODEs using GPU. Default: No \n");
+    printf ("--binary_output | -y. Save output files in binary format. Default: No \n");
     printf ("--use_preconditioner | -j Use Jacobi Preconditioner. Default: No \n");
     printf ("--refine_each | -R [ts], Refine each ts timesteps. Default: 1 \n");
     printf ("--derefine_each | -D [ts], Derefine each ts timesteps. Default: 1 \n");
@@ -144,6 +146,10 @@ struct user_options *new_user_options () {
 
     user_args->start_adapting_at = 1.0;
     user_args->start_adapting_at_was_set = false;
+
+    user_args->binary = false;
+    user_args->binary_was_set = false;
+
 
     user_args->stim_configs = NULL;
     user_args->domain_config = NULL;
@@ -632,6 +638,13 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 }
                 user_args->use_jacobi = true;
                 break;
+            case 'y':
+                if (user_args->binary_was_set) {
+                    sprintf (old_value, "%d", user_args->binary);
+                    issue_overwrite_warning ("binary", old_value, optarg, user_args->config_file);
+                }
+                user_args->binary = true;
+                break;
             case DOMAIN_OPT:
                 if(user_args->domain_config == NULL) {
                     print_to_stdout_and_file("Creating new domain config from command line!\n");
@@ -724,6 +737,13 @@ int parse_config_file (void *user, const char *section, const char *name, const 
     } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "output_dir")) {
         pconfig->out_dir_name = strdup(value);
         pconfig->out_dir_name_was_set = true;
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "binary_output")) {
+        if (strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->binary = true;
+        } else {
+            pconfig->binary = false;
+        }
+        pconfig->binary_was_set = true;
     } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refinement_bound")) {
         pconfig->ref_bound = strtod(value, NULL);
         pconfig->ref_bound_was_set = true;

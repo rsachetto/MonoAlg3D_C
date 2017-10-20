@@ -36,7 +36,9 @@ void construct_grid(struct grid *the_grid);
 void initialize_and_construct_grid(struct grid *the_grid, double side_length, uint8_t num_cell_neighbours);
 
 void print_grid(struct grid* the_grid, FILE *output_file);
-bool print_grid_and_check_for_activity (struct grid *the_grid, FILE *output_file, int count);
+void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary);
+
+bool print_grid_and_check_for_activity(struct grid *the_grid, FILE *output_file, int count, bool binary);
 
 void clean_grid(struct grid *the_grid);
 void order_grid_cells (struct grid *the_grid);

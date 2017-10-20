@@ -176,6 +176,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     uint32_vector *refined_this_step = the_grid->refined_this_step;
 
+    bool save_in_binary = configs->binary;
+
     while (cur_time < finalT) {
 
         if (save_to_file) {
@@ -188,7 +190,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
                 tmp = sdscat (tmp, "/V_t_");
                 tmp = sdscat (tmp, c);
                 FILE *f1 = fopen (tmp, "w");
-                activity = print_grid_and_check_for_activity (the_grid, f1, count);
+                activity = print_grid_and_check_for_activity(the_grid, f1, count, save_in_binary);
                 fclose (f1);
                 sdsfree (tmp);
                 sdsfree (c);
@@ -691,7 +693,13 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file ("Print Rate = %d\n", options->print_rate);
 
     if (options->out_dir_name != NULL) {
-        print_to_stdout_and_file ("Saving to plain text output in %s dir\n", options->out_dir_name);
+        if(options->binary) {
+            print_to_stdout_and_file("Saving using binary output in %s dir\n", options->out_dir_name);
+
+        }
+        else {
+            print_to_stdout_and_file("Saving to plain text output in %s dir\n", options->out_dir_name);
+        }
     } else {
         print_to_stdout_and_file ("The solution will not be saved\n");
     }

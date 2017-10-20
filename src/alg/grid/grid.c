@@ -41,7 +41,7 @@ void construct_grid (struct grid *the_grid) {
 
     // Cell nodes.
     struct cell_node *front_northeast_cell, *front_northwest_cell, *front_southeast_cell, *front_southwest_cell,
-        *back_northeast_cell, *back_northwest_cell, *back_southeast_cell, *back_southwest_cell;
+            *back_northeast_cell, *back_northwest_cell, *back_southeast_cell, *back_southwest_cell;
 
     front_northeast_cell = new_cell_node ();
     front_northwest_cell = new_cell_node ();
@@ -54,7 +54,7 @@ void construct_grid (struct grid *the_grid) {
 
     // Transition nodes.
     struct transition_node *north_transition_node, *south_transition_node, *east_transition_node, *west_transition_node,
-        *front_transition_node, *back_transition_node;
+            *front_transition_node, *back_transition_node;
 
     north_transition_node = new_transition_node ();
     south_transition_node = new_transition_node ();
@@ -173,7 +173,7 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
     }
 }
 
-bool print_grid_and_check_for_activity (struct grid *the_grid, FILE *output_file, int count) {
+bool print_grid_and_check_for_activity(struct grid *the_grid, FILE *output_file, int count, bool binary) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
@@ -200,12 +200,60 @@ bool print_grid_and_check_for_activity (struct grid *the_grid, FILE *output_file
                 act = true;
             }
 
-            fprintf (output_file, "%lf,%lf,%lf,%lf,%.4lf\n", center_x, center_y, center_z, half_face, v);
+            if(binary) {
+                fwrite (&center_x, sizeof(center_x), 1, output_file);
+                fwrite (&center_y, sizeof(center_y), 1, output_file);
+                fwrite (&center_z, sizeof(center_z), 1, output_file);
+                fwrite (&half_face, sizeof(half_face), 1, output_file);
+                fwrite (&v, sizeof(v), 1, output_file);
+            }
+            else {
+                fprintf(output_file, "%lf,%lf,%lf,%lf,%.4lf\n", center_x, center_y, center_z, half_face, v);
+            }
         }
         grid_cell = grid_cell->next;
     }
 
     return act;
+}
+
+void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary) {
+
+    struct cell_node *grid_cell = the_grid->first_cell;
+
+    double center_x, center_y, center_z, half_face;
+    double v;
+
+    while (grid_cell != 0) {
+
+        v = -1.0;
+        if (grid_cell->active) {
+
+            center_x = grid_cell->center_x;
+            center_y = grid_cell->center_y;
+            center_z = grid_cell->center_z;
+
+            if(grid_cell->fibrotic)
+                v = 1.0;
+            else if(grid_cell->border_zone)
+                v = 2.0;
+
+            half_face = grid_cell->half_face_length;
+
+            if(binary) {
+                fwrite (&center_x, sizeof(center_x), 1, output_file);
+                fwrite (&center_y, sizeof(center_y), 1, output_file);
+                fwrite (&center_z, sizeof(center_z), 1, output_file);
+                fwrite (&half_face, sizeof(half_face), 1, output_file);
+                fwrite (&v, sizeof(v), 1, output_file);
+            }
+            else {
+                fprintf (output_file, "%lf,%lf,%lf,%lf,%.4lf\n", center_x, center_y, center_z, half_face, v);
+            }
+        }
+        grid_cell = grid_cell->next;
+    }
+
 }
 
 void order_grid_cells (struct grid *the_grid) {

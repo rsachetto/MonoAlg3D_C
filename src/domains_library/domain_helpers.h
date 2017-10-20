@@ -14,8 +14,9 @@ void set_plain_domain (struct grid *the_grid, double sizeX, double sizeY, double
 
 void set_custom_mesh(struct grid *the_grid, const char *file_name, int size, bool read_fibrosis);
 
-void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size, double minx, double maxx,
-                                  double miny, double maxy, double minz, double maxz, bool read_fibrosis);
+void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size,
+                                  double minx, double maxx, double miny, double maxy, double minz,
+                                  double maxz,  bool read_fibrosis);
 
 void set_cell_not_changeable (struct cell_node *c, double initialDiscretization);
 

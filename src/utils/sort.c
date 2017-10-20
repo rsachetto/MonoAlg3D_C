@@ -68,7 +68,7 @@ void quicksort(double **a, int column, int first, int last) {
 
 void sort_vector(double **a, int length) {
 
-    quicksort(a, 0, 0, length - 1); // perform quicksort algorithm
+    quicksort(a, 0, 0, length - 1); // perform quicksort algorithm ordering using the X coordinate
 
     int j = 0;
     while ( j < length ) {
