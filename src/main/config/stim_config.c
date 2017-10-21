@@ -29,7 +29,7 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
     }
 
     if(function_name) {
-        config->set_spatial_stim_fn = dlsym(config->config_data.handle, function_name);
+        config->set_spatial_stim = dlsym(config->config_data.handle, function_name);
         if (dlerror() != NULL) {
             fprintf(stderr, "\n%s function not found in the provided stimuli library\n", function_name);
             exit(EXIT_FAILURE);
@@ -46,7 +46,7 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
 struct stim_config* new_stim_config() {
     struct stim_config *result = (struct stim_config*) malloc(sizeof(struct stim_config));
     init_config_common_data(&(result->config_data));
-    result->set_spatial_stim_fn = NULL;
+    result->set_spatial_stim = NULL;
     result->spatial_stim_currents = NULL;
 
     result->stim_current_was_set = false;

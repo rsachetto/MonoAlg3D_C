@@ -31,7 +31,7 @@ void init_extra_data_functions(struct extra_data_config *config) {
     }
 
     if(function_name) {
-        config->set_extra_data_fn = dlsym(config->config_data.handle, function_name);
+        config->set_extra_data = dlsym(config->config_data.handle, function_name);
         if (dlerror() != NULL) {
             fprintf(stderr, "\n%s function not found in the provided extra data library\n", function_name);
             exit(EXIT_FAILURE);
@@ -48,7 +48,7 @@ struct extra_data_config* new_extra_data_config() {
     struct extra_data_config *result = (struct extra_data_config*) malloc(sizeof(struct extra_data_config));
     init_config_common_data(&(result->config_data));
 
-    result->set_extra_data_fn = NULL;
+    result->set_extra_data = NULL;
     return result;
 }
 

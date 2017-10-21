@@ -32,7 +32,7 @@ void init_domain_functions(struct domain_config *config) {
     }
 
     if(function_name){
-        config->set_spatial_domain_fn = dlsym(config->config_data.handle, function_name);
+        config->set_spatial_domain = dlsym(config->config_data.handle, function_name);
         if (dlerror() != NULL)  {
             fprintf(stderr, "\n%s function not found in the provided domain library\n", function_name);
             exit(EXIT_FAILURE);
@@ -54,7 +54,7 @@ struct domain_config* new_domain_config() {
     result->max_h_was_set = false;
     result->domain_name_was_set = false;
 
-    result->set_spatial_domain_fn = NULL;
+    result->set_spatial_domain = NULL;
     result->domain_name = NULL;
     return result;
 }

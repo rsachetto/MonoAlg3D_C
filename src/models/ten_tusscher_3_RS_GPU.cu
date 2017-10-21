@@ -4,24 +4,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "model_gpu_utils.h"
+#include "model_common.h"
 
-#define ENDO
-#define NEQ 12
+#include "ten_tusscher_3_RS.h"
 
-
-static __device__ size_t pitch;
-static size_t pitch_h;
-
-__global__ void kernel_set_model_inital_conditions(Real *sv, int num_volumes);
-
-__global__ void solve_gpu(Real dt, Real *sv, Real* stim_currents,
-                          uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          int num_steps, Real *fibrosis, Real atpi);
-
-inline __device__ void RHS_gpu(Real *sv_, Real *rDY_, Real stim_current, int threadID_, Real dt, Real fibrosis, Real atpi);
-
-
-extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volumes) {
+extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
@@ -40,11 +27,7 @@ extern "C" size_t set_model_initial_conditions_gpu(Real **sv, uint32_t num_volum
 
 }
 
-
-extern "C" void solve_model_odes_gpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
-                                    uint32_t num_cells_to_solve, int num_steps, void *extra_data,
-                                    size_t extra_data_bytes_size) {
-
+extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
 
     // execution configuration
     const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;

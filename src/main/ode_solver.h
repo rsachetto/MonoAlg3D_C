@@ -8,21 +8,13 @@
 #include <stdbool.h>
 #include <unitypes.h>
 #include "../vector/uint32_vector.h"
-#include "../models/model_common.h"
 #include "config/stim_config_hash.h"
 #include "config/config_parser.h"
 
-typedef void (*get_cell_model_data_fn_pt)(struct cell_model_data*, bool, bool);
+#include "../models/model_common.h"
 
-//CPU FUNCTIONS
-typedef void (*set_ode_initial_conditions_cpu_fn_pt)(Real *);
-typedef void (*solve_model_ode_cpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int , void *);
 
-//GPU FUNCTIONS
-typedef size_t (*set_ode_initial_conditions_gpu_fn_pt)(Real **, uint32_t);
-typedef void (*solve_model_ode_gpu_fn_pt)(Real, Real *, Real *, uint32_t *, uint32_t, int,  void *, size_t);
 
-//typedef void (*update_gpu_fn_pt)(Real *, uint32_t *, size_t , int );
 
 
 struct ode_solver {
@@ -51,11 +43,11 @@ struct ode_solver {
     size_t pitch;
 
     //User provided functions
-    get_cell_model_data_fn_pt get_cell_model_data_fn;
-    set_ode_initial_conditions_cpu_fn_pt set_ode_initial_conditions_cpu_fn;
-    set_ode_initial_conditions_gpu_fn_pt set_ode_initial_conditions_gpu_fn;
-    solve_model_ode_cpu_fn_pt solve_model_ode_cpu_fn;
-    solve_model_ode_gpu_fn_pt solve_model_ode_gpu_fn;
+    get_cell_model_data_fn *get_cell_model_data;
+    set_ode_initial_conditions_cpu_fn *set_ode_initial_conditions_cpu;
+    set_ode_initial_conditions_gpu_fn *set_ode_initial_conditions_gpu;
+    solve_model_ode_cpu_fn *solve_model_ode_cpu;
+    solve_model_ode_gpu_fn *solve_model_ode_gpu;
     //update_gpu_fn_pt update_gpu_fn;
 
 

@@ -3,19 +3,26 @@
 //
 
 #include <unitypes.h>
-#include "stimuli.h"
+#include <stdbool.h>
 #include "../utils/erros_helpers.h"
 #include "../utils/logfile_utils.h"
 #include "../utils/utils.h"
+#include "../main/constants.h"
+#include "../hash/string_hash.h"
+#include "stdlib.h"
+#include "../alg/grid/grid.h"
+#include "../main/config/stim_config.h"
 
-void set_benchmark_spatial_stim (struct grid *the_grid, Real stim_current, Real *spatial_currents, struct string_hash *config) {
+SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
     bool stim;
+    Real stim_current = config->stim_current;
+    Real stim_value;
 
-#pragma omp parallel for private(stim)
+#pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
 
         stim = ac[i]->center_x > 5500.0;
@@ -24,19 +31,21 @@ void set_benchmark_spatial_stim (struct grid *the_grid, Real stim_current, Real 
         stim &= ac[i]->center_z < 1500.0;
 
         if (stim) {
-            spatial_currents[i] = stim_current;
+            stim_value = stim_current;
         } else {
-            spatial_currents[i] = 0.0;
+            stim_value = 0.0;
         }
+
+        config->spatial_stim_currents[i] = stim_value;
     }
 }
 
-void stim_if_x_less_than (struct grid *the_grid, Real stim_current, Real *spatial_currents, struct string_hash *config) {
+SET_SPATIAL_STIM(stim_if_x_less_than) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(config, "x_limit");
+    char *config_char = string_hash_search(config->config_data.config, "x_limit");
     if(config_char == NULL) {
         report_parameter_error_on_function("stim_if_x_less_than", "x_limit");
     }
@@ -44,23 +53,27 @@ void stim_if_x_less_than (struct grid *the_grid, Real stim_current, Real *spatia
     free(config_char);
 
     bool stim;
+    Real stim_current = config->stim_current;
+    Real stim_value;
 
-    #pragma omp parallel for private(stim)
+    #pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
         stim = ac[i]->center_x < x_limit;
 
         if (stim) {
-            spatial_currents[i] = stim_current;
+            stim_value = stim_current;
         } else {
-            spatial_currents[i] = 0.0;
+            stim_value = 0.0;
         }
+
+        config->spatial_stim_currents[i] = stim_value;
 
     }
 }
 
-void set_stim_from_file(struct grid *the_grid, Real stim_current, Real *spatial_currents, struct string_hash *config) {
+SET_SPATIAL_STIM(set_stim_from_file) {
 
-    char *stim_file = string_hash_search(config, "stim_file");
+    char *stim_file = string_hash_search(config->config_data.config, "stim_file");
     if(stim_file == NULL) {
         report_parameter_error_on_function("set_stim_from_file", "stim_file");
     }
@@ -70,6 +83,9 @@ void set_stim_from_file(struct grid *the_grid, Real stim_current, Real *spatial_
     int s_size;
 
     bool stim;
+    Real stim_current = config->stim_current;
+    Real stim_value;
+
 
     FILE *s_file = fopen(stim_file,"r");
 
@@ -95,7 +111,7 @@ void set_stim_from_file(struct grid *the_grid, Real stim_current, Real *spatial_
 
     fclose(s_file);
 
-    #pragma omp parallel for private(stim)
+    #pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
 
         double center_x = ac[i]->center_x;
@@ -106,20 +122,23 @@ void set_stim_from_file(struct grid *the_grid, Real stim_current, Real *spatial_
         stim = (index != -1);
 
         if (stim) {
-            spatial_currents[i] = stim_current;
+            stim_value = stim_current;
         } else {
-            spatial_currents[i] = 0.0;
+            stim_value = 0.0;
         }
+
+        config->spatial_stim_currents[i] = stim_value;
+
     }
 
 }
 
-void stim_if_x_greater_equal_than (struct grid *the_grid, Real stim_current, Real *spatial_currents, struct string_hash *config) {
+SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(config, "x_limit");
+    char *config_char = string_hash_search(config->config_data.config, "x_limit");
     if(config_char == NULL) {
         report_parameter_error_on_function("stim_if_x_more_than", "x_limit");
     }
@@ -127,16 +146,20 @@ void stim_if_x_greater_equal_than (struct grid *the_grid, Real stim_current, Rea
     free(config_char);
 
     bool stim;
+    Real stim_current = config->stim_current;
+    Real stim_value;
 
 #pragma omp parallel for private(stim)
     for (int i = 0; i < n_active; i++) {
         stim = ac[i]->center_x >= x_limit;
 
         if (stim) {
-            spatial_currents[i] = stim_current;
+            stim_value = stim_current;
         } else {
-            spatial_currents[i] = 0.0;
+            stim_value = 0.0;
         }
+
+        config->spatial_stim_currents[i] = stim_value;
 
     }
 }

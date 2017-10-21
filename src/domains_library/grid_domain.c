@@ -2,201 +2,15 @@
 // Created by sachetto on 01/10/17.
 //
 
-#include "grid_domain.h"
 #include "domain_helpers.h"
 
 #include "../utils/erros_helpers.h"
 #include "../utils/logfile_utils.h"
+#include "../main/config/domain_config.h"
 #include <assert.h>
 #include <string.h>
 
-void initialize_grid_with_human_mesh (struct grid *the_grid, struct domain_config *domain_config) {
-
-    domain_config->start_h = 800.0;
-    bool fibrotic = false;
-
-    char *mesh_file = string_hash_search (domain_config->config_data.config, "mesh_file");
-    if (mesh_file == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_human_mesh", "mesh_file");
-    }
-
-    char *fibrotic_char = string_hash_search (domain_config->config_data.config, "fibrotic");
-    if (fibrotic_char != NULL) {
-        fibrotic = ((strcmp (fibrotic_char, "yes") == 0) || (strcmp (fibrotic_char, "true") == 0));
-    }
-
-    double minx = -1;
-    double maxx = -1;
-    double miny = -1;
-    double maxy = -1;
-    double minz = -1;
-    double maxz = -1;
-
-    char *config_char = string_hash_search (domain_config->config_data.config, "min_x");
-    if (config_char)
-        minx = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (domain_config->config_data.config, "max_x");
-    if (config_char)
-        maxx = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (domain_config->config_data.config, "min_y");
-    if (config_char)
-        miny = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (domain_config->config_data.config, "max_y");
-    if (config_char)
-        maxy = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (domain_config->config_data.config, "min_z");
-    if (config_char)
-        minz = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (domain_config->config_data.config, "max_z");
-    if (config_char)
-        maxz = atof (config_char);
-    free (config_char);
-
-    initialize_and_construct_grid (the_grid, 204800, 7);
-    refine_grid (the_grid, 7);
-
-    bool full_mesh = !((minx >= 0) && (maxx >= 0) && (miny >= 0) && (maxy >= 0) && (minz >= 0) && (maxz >= 0));
-    if (full_mesh) {
-        print_to_stdout_and_file ("Loading Human Heart Mesh\n");
-        set_custom_mesh (the_grid, mesh_file, 2025252, fibrotic);
-    } else {
-        print_to_stdout_and_file ("Loading Human Heart Sub Mesh\n");
-        set_custom_mesh_with_bounds (the_grid, mesh_file, 2025252, minx, maxx, miny, maxy, minz, maxz, fibrotic);
-    }
-
-    print_to_stdout_and_file ("Cleaning grid\n");
-    int i;
-    for (i = 0; i < 7; i++) {
-        derefine_grid_inactive_cells (the_grid);
-    }
-
-    if (fibrotic) {
-        refine_fibrotic_cells (the_grid);
-        refine_fibrotic_cells (the_grid);
-        refine_fibrotic_cells (the_grid);
-
-        refine_border_zone_cells (the_grid);
-        refine_border_zone_cells (the_grid);
-        refine_border_zone_cells (the_grid);
-        // set_human_mesh_fibrosis(the_grid, phi, scar_file, seed, scar_center_x, scar_center_y, scar_center_z);
-    }
-
-    free (mesh_file);
-}
-
-void initialize_grid_with_rabbit_mesh (struct grid *the_grid, struct domain_config *domain_config) {
-
-    domain_config->start_h = 250.0;
-
-    char *mesh_file = string_hash_search (domain_config->config_data.config, "mesh_file");
-    if (mesh_file == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_rabbit_mesh", "mesh_file");
-    }
-
-    initialize_and_construct_grid (the_grid, 64000.0, 7);
-    refine_grid (the_grid, 7);
-
-    print_to_stdout_and_file ("Loading Rabbit Heart Mesh\n");
-
-    set_custom_mesh (the_grid, mesh_file, 470197, false);
-
-    print_to_stdout_and_file ("Cleaning grid\n");
-    int i;
-    for (i = 0; i < 6; i++) {
-        derefine_grid_inactive_cells (the_grid);
-    }
-    free (mesh_file);
-}
-
-void initialize_grid_with_mouse_mesh (struct grid *the_grid, struct domain_config *domain_config) {
-
-    char *mesh_file = string_hash_search (domain_config->config_data.config, "mesh_file");
-    if (mesh_file == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_mouse_mesh", "mesh_file");
-    }
-
-    double start_h = domain_config->start_h;
-
-    assert (the_grid);
-
-    initialize_and_construct_grid (the_grid, 6400.0, 7);
-
-    refine_grid (the_grid, 5);
-
-    print_to_stdout_and_file ("Loading Mouse Heart Mesh\n");
-
-    set_custom_mesh (the_grid, mesh_file, 96195, false);
-
-    print_to_stdout_and_file ("Cleaning grid\n");
-
-    int i;
-    for (i = 0; i < 5; i++) {
-        derefine_grid_inactive_cells (the_grid);
-    }
-
-    if (start_h == 50.0) {
-        print_to_stdout_and_file ("Refining Mesh to 50um\n");
-        refine_grid (the_grid, 1);
-    } else if (start_h == 25.0) {
-        print_to_stdout_and_file ("Refining Mesh to 25um\n");
-        refine_grid (the_grid, 1);
-    }
-}
-
-void initialize_grid_with_benchmark_mesh (struct grid *the_grid, struct domain_config *domain_config) {
-
-    double side_length;
-
-    double start_h = domain_config->start_h;
-
-    print_to_stdout_and_file ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
-    if ((start_h == 100.0) || (start_h == 200.0)) {
-        side_length = 25600.0;
-    } else if (start_h == 125.0 || start_h == 250.0 || start_h == 500.0) {
-        side_length = 32000.0;
-    } else {
-        fprintf (stderr, "initialize_grid_with_benchmark_mesh: invalid value of start_h (initial "
-                         "discretization). Exiting!");
-        exit (10);
-    }
-
-    initialize_and_construct_grid (the_grid, side_length, 7);
-    int num_steps = get_num_refinement_steps_to_discretization (side_length, start_h);
-
-    refine_grid (the_grid, num_steps);
-    set_benchmark_domain (the_grid);
-
-    print_to_stdout_and_file ("Cleaning grid\n");
-    int i;
-
-    for (i = 0; i < num_steps; i++) {
-        derefine_grid_inactive_cells (the_grid);
-    }
-
-    if (the_grid->adaptive) {
-        struct cell_node *grid_cell;
-        grid_cell = the_grid->first_cell;
-
-        while (grid_cell != 0) {
-            if (grid_cell->active) {
-                set_cell_not_changeable (grid_cell, start_h);
-            }
-            grid_cell = grid_cell->next;
-        }
-    }
-}
-
-void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_config *config) {
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_mesh) {
 
     double start_h = config->start_h;
 
@@ -253,7 +67,193 @@ void initialize_grid_with_plain_mesh (struct grid *the_grid, struct domain_confi
     }
 }
 
-void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, struct domain_config *config) {
+SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
+
+    config->start_h = 800.0;
+    bool fibrotic = false;
+
+    char *mesh_file = string_hash_search (config->config_data.config, "mesh_file");
+    if (mesh_file == NULL) {
+        report_parameter_error_on_function ("initialize_grid_with_human_mesh", "mesh_file");
+    }
+
+    char *fibrotic_char = string_hash_search (config->config_data.config, "fibrotic");
+    if (fibrotic_char != NULL) {
+        fibrotic = ((strcmp (fibrotic_char, "yes") == 0) || (strcmp (fibrotic_char, "true") == 0));
+    }
+
+    double minx = -1;
+    double maxx = -1;
+    double miny = -1;
+    double maxy = -1;
+    double minz = -1;
+    double maxz = -1;
+
+    char *config_char = string_hash_search (config->config_data.config, "min_x");
+    if (config_char)
+        minx = atof (config_char);
+    free (config_char);
+
+    config_char = string_hash_search (config->config_data.config, "max_x");
+    if (config_char)
+        maxx = atof (config_char);
+    free (config_char);
+
+    config_char = string_hash_search (config->config_data.config, "min_y");
+    if (config_char)
+        miny = atof (config_char);
+    free (config_char);
+
+    config_char = string_hash_search (config->config_data.config, "max_y");
+    if (config_char)
+        maxy = atof (config_char);
+    free (config_char);
+
+    config_char = string_hash_search (config->config_data.config, "min_z");
+    if (config_char)
+        minz = atof (config_char);
+    free (config_char);
+
+    config_char = string_hash_search (config->config_data.config, "max_z");
+    if (config_char)
+        maxz = atof (config_char);
+    free (config_char);
+
+    initialize_and_construct_grid (the_grid, 204800, 7);
+    refine_grid (the_grid, 7);
+
+    bool full_mesh = !((minx >= 0) && (maxx >= 0) && (miny >= 0) && (maxy >= 0) && (minz >= 0) && (maxz >= 0));
+    if (full_mesh) {
+        print_to_stdout_and_file ("Loading Human Heart Mesh\n");
+        set_custom_mesh (the_grid, mesh_file, 2025252, fibrotic);
+    } else {
+        print_to_stdout_and_file ("Loading Human Heart Sub Mesh\n");
+        set_custom_mesh_with_bounds (the_grid, mesh_file, 2025252, minx, maxx, miny, maxy, minz, maxz, fibrotic);
+    }
+
+    print_to_stdout_and_file ("Cleaning grid\n");
+    int i;
+    for (i = 0; i < 7; i++) {
+        derefine_grid_inactive_cells (the_grid);
+    }
+
+    if (fibrotic) {
+        refine_fibrotic_cells (the_grid);
+        refine_fibrotic_cells (the_grid);
+        refine_fibrotic_cells (the_grid);
+
+        refine_border_zone_cells (the_grid);
+        refine_border_zone_cells (the_grid);
+        refine_border_zone_cells (the_grid);
+        // set_human_mesh_fibrosis(the_grid, phi, scar_file, seed, scar_center_x, scar_center_y, scar_center_z);
+    }
+
+    free (mesh_file);
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
+
+    config->start_h = 250.0;
+
+    char *mesh_file = string_hash_search (config->config_data.config, "mesh_file");
+    if (mesh_file == NULL) {
+        report_parameter_error_on_function ("initialize_grid_with_rabbit_mesh", "mesh_file");
+    }
+
+    initialize_and_construct_grid (the_grid, 64000.0, 7);
+    refine_grid (the_grid, 7);
+
+    print_to_stdout_and_file ("Loading Rabbit Heart Mesh\n");
+
+    set_custom_mesh (the_grid, mesh_file, 470197, false);
+
+    print_to_stdout_and_file ("Cleaning grid\n");
+    int i;
+    for (i = 0; i < 6; i++) {
+        derefine_grid_inactive_cells (the_grid);
+    }
+    free (mesh_file);
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
+
+    char *mesh_file = string_hash_search (config->config_data.config, "mesh_file");
+    if (mesh_file == NULL) {
+        report_parameter_error_on_function ("initialize_grid_with_mouse_mesh", "mesh_file");
+    }
+
+    double start_h = config->start_h;
+
+    assert (the_grid);
+
+    initialize_and_construct_grid (the_grid, 6400.0, 7);
+
+    refine_grid (the_grid, 5);
+
+    print_to_stdout_and_file ("Loading Mouse Heart Mesh\n");
+
+    set_custom_mesh (the_grid, mesh_file, 96195, false);
+
+    print_to_stdout_and_file ("Cleaning grid\n");
+
+    int i;
+    for (i = 0; i < 5; i++) {
+        derefine_grid_inactive_cells (the_grid);
+    }
+
+    if (start_h == 50.0) {
+        print_to_stdout_and_file ("Refining Mesh to 50um\n");
+        refine_grid (the_grid, 1);
+    } else if (start_h == 25.0) {
+        print_to_stdout_and_file ("Refining Mesh to 25um\n");
+        refine_grid (the_grid, 1);
+    }
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
+
+    double side_length;
+
+    double start_h = config->start_h;
+
+    print_to_stdout_and_file ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
+    if ((start_h == 100.0) || (start_h == 200.0)) {
+        side_length = 25600.0;
+    } else if (start_h == 125.0 || start_h == 250.0 || start_h == 500.0) {
+        side_length = 32000.0;
+    } else {
+        fprintf (stderr, "initialize_grid_with_benchmark_mesh: invalid value of start_h (initial "
+                         "discretization). Exiting!");
+        exit (10);
+    }
+
+    initialize_and_construct_grid (the_grid, side_length, 7);
+    int num_steps = get_num_refinement_steps_to_discretization (side_length, start_h);
+
+    refine_grid (the_grid, num_steps);
+    set_benchmark_domain (the_grid);
+
+    print_to_stdout_and_file ("Cleaning grid\n");
+    int i;
+
+    for (i = 0; i < num_steps; i++) {
+        derefine_grid_inactive_cells (the_grid);
+    }
+
+    if (the_grid->adaptive) {
+        struct cell_node *grid_cell;
+        grid_cell = the_grid->first_cell;
+
+        while (grid_cell != 0) {
+            if (grid_cell->active) {
+                set_cell_not_changeable (grid_cell, start_h);
+            }
+            grid_cell = grid_cell->next;
+        }
+    }
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
 
     char *config_char = string_hash_search (config->config_data.config, "phi");
     if (config_char == NULL) {
@@ -273,7 +273,7 @@ void initialize_grid_with_plain_fibrotic_mesh (struct grid *the_grid, struct dom
     set_plain_fibrosis (the_grid, phi, seed);
 }
 
-void initialize_grid_with_plain_and_sphere_fibrotic_mesh (struct grid *the_grid, struct domain_config *config) {
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
 
     char *config_char = string_hash_search (config->config_data.config, "phi");
     if (config_char == NULL) {

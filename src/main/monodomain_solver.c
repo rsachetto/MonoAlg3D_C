@@ -300,7 +300,7 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
             tmp = e->value;
             free(tmp->spatial_stim_currents);
             tmp->spatial_stim_currents = (Real*)malloc(sizeof(Real)*n_active);
-            tmp->set_spatial_stim_fn(the_grid, tmp->stim_current, tmp->spatial_stim_currents, tmp->config_data.config);
+            tmp->set_spatial_stim(the_grid, tmp);
         }
     }
 
@@ -309,7 +309,7 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
     free(the_ode_solver->edo_extra_data);
-    the_ode_solver->edo_extra_data = config->set_extra_data_fn(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
+    the_ode_solver->edo_extra_data = config->set_extra_data(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
 
 }
 

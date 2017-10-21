@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     //Configure the functions and set the mesh domain
     if(options->domain_config) {
         init_domain_functions(options->domain_config);
-        options->domain_config->set_spatial_domain_fn(the_grid, options->domain_config);
+        options->domain_config->set_spatial_domain(the_grid, options->domain_config);
     }
     else {
         print_to_stdout_and_file("No domain configuration provided! Exiting!\n");

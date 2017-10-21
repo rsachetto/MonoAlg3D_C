@@ -9,7 +9,10 @@
 #include "../constants.h"
 #include "config_common.h"
 
-typedef void (*set_spatial_stim_fn_pt)(struct grid *, Real, Real *, struct string_hash *);
+struct stim_config;
+
+#define SET_SPATIAL_STIM(name) void name(struct grid *the_grid, struct stim_config *config)
+typedef SET_SPATIAL_STIM(set_spatial_stim_fn);
 
 struct stim_config {
 
@@ -23,7 +26,7 @@ struct stim_config {
     bool stim_current_was_set;
 
     Real *spatial_stim_currents;
-    set_spatial_stim_fn_pt set_spatial_stim_fn;
+    set_spatial_stim_fn *set_spatial_stim;
 };
 
 void init_stim_functions(struct stim_config *config, char* stim_name);

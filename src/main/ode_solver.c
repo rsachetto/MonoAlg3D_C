@@ -19,12 +19,12 @@ struct ode_solver* new_ode_solver() {
     result->cells_to_solve = NULL;
     result->handle = NULL;
 
-    result->get_cell_model_data_fn = NULL;
-    result->set_ode_initial_conditions_cpu_fn = NULL;
-    result->solve_model_ode_cpu_fn = NULL;
+    result->get_cell_model_data = NULL;
+    result->set_ode_initial_conditions_cpu = NULL;
+    result->solve_model_ode_cpu = NULL;
 
-    result->set_ode_initial_conditions_gpu_fn = NULL;
-    result->solve_model_ode_gpu_fn = NULL;
+    result->set_ode_initial_conditions_gpu = NULL;
+    result->solve_model_ode_gpu = NULL;
     //result->update_gpu_fn = NULL;
     result->model_data.initial_v = INFINITY;
     result->model_data.number_of_ode_equations = -1;
@@ -84,7 +84,7 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
         exit(1);
     }
 
-    solver->get_cell_model_data_fn = dlsym(solver->handle, "init_cell_model_data");
+    solver->get_cell_model_data = dlsym(solver->handle, "init_cell_model_data");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "init_cell_model_data function not found in the provided model library\n");
@@ -95,14 +95,14 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
     }
 
-    solver->set_ode_initial_conditions_cpu_fn = dlsym(solver->handle, "set_model_initial_conditions_cpu");
+    solver->set_ode_initial_conditions_cpu = dlsym(solver->handle, "set_model_initial_conditions_cpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "set_model_initial_conditions function not found in the provided model library\n");
         exit(1);
     }
 
-    solver->solve_model_ode_cpu_fn = dlsym(solver->handle, "solve_model_odes_cpu");
+    solver->solve_model_ode_cpu = dlsym(solver->handle, "solve_model_odes_cpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "\nsolve_model_odes_cpu function not found in the provided model library\n");
@@ -110,14 +110,14 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
     }
 
 #ifdef COMPILE_CUDA
-    solver->set_ode_initial_conditions_gpu_fn = dlsym(solver->handle, "set_model_initial_conditions_gpu");
+    solver->set_ode_initial_conditions_gpu = dlsym(solver->handle, "set_model_initial_conditions_gpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "set_model_initial_conditions_gpu function not found in the provided model library\n");
         exit(1);
     }
 
-    solver->solve_model_ode_gpu_fn = dlsym(solver->handle, "solve_model_odes_gpu");
+    solver->solve_model_ode_gpu = dlsym(solver->handle, "solve_model_odes_gpu");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         fprintf(stderr, "\nsolve_model_odes_gpu function not found in the provided model library\n");
@@ -140,13 +140,13 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
     bool get_initial_v = !isfinite(solver->model_data.initial_v);
     bool get_neq = solver->model_data.number_of_ode_equations == -1;
 
-    (*(solver->get_cell_model_data_fn))(&(solver->model_data), get_initial_v, get_neq);
+    (*(solver->get_cell_model_data))(&(solver->model_data), get_initial_v, get_neq);
     int n_odes = solver->model_data.number_of_ode_equations;
 
     if (solver->gpu) {
 #ifdef COMPILE_CUDA
 
-        set_ode_initial_conditions_gpu_fn_pt soicg_fn_pt = solver->set_ode_initial_conditions_gpu_fn;
+        set_ode_initial_conditions_gpu_fn *soicg_fn_pt = solver->set_ode_initial_conditions_gpu;
 
         if(!soicg_fn_pt) {
             fprintf(stderr, "The ode solver was set to use the GPU, \n "
@@ -163,7 +163,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
 #endif
     } else {
 
-        set_ode_initial_conditions_cpu_fn_pt soicc_fn_pt = solver->set_ode_initial_conditions_cpu_fn;
+        set_ode_initial_conditions_cpu_fn *soicc_fn_pt = solver->set_ode_initial_conditions_cpu;
 
         if(!soicc_fn_pt) {
             fprintf(stderr, "The ode solver was set to use the CPU, \n "
@@ -226,14 +226,14 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     if(the_ode_solver->gpu) {
 #ifdef COMPILE_CUDA
-        solve_model_ode_gpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_gpu_fn;
+        solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
         solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
                       extra_data_size);
 
 #endif
     }
     else {
-        solve_model_ode_cpu_fn_pt solve_odes_pt = the_ode_solver->solve_model_ode_cpu_fn;
+        solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
         solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
     }
 

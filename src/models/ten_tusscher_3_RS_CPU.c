@@ -1,26 +1,21 @@
 #include "model_common.h"
 #include <assert.h>
 #include <stdlib.h>
-#include <unitypes.h>
+#include "ten_tusscher_3_RS.h"
 
-#define ENDO
-#define NEQ 12
 
-void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real dt, Real fibrosis, Real atpi);
-void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real fibrosis, Real atpi );
-
-void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
+GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     assert(cell_model);
 
     if(get_initial_v)
-        cell_model->initial_v = -86.2f;
+        cell_model->initial_v = INITAL_V;
     if(get_neq)
         cell_model->number_of_ode_equations = NEQ;
 
 }
 
-void set_model_initial_conditions_cpu(Real *sv) {
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
     sv[0] = -85.23f;   // V;       millivolt
     sv[1] = 0.0f; //M
@@ -36,8 +31,7 @@ void set_model_initial_conditions_cpu(Real *sv) {
     sv[11] = 0.0; //Xr2_INF}
 }
 
-void solve_model_odes_cpu(Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve,
-                          uint32_t num_cells_to_solve, int num_steps, void *extra_data) {
+SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
     uint32_t sv_id;
     Real atpi;

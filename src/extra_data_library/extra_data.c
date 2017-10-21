@@ -2,23 +2,21 @@
 // Created by sachetto on 01/10/17.
 //
 
-#include "extra_data.h"
-
 #include "../utils/erros_helpers.h"
+#include "../main/config/extra_data_config.h"
 #include <math.h>
 
-
-void * set_extra_data_for_fibrosis_sphere(struct grid *the_grid, struct string_hash *extra_data_config, size_t *extra_data_bytes) {
+SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_bytes = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(float)*(num_active_cells+1);
 
-    float *fibs = (float*)malloc(*extra_data_bytes);
+    float *fibs = (float*)malloc(*extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(extra_data_config, "atpi");
+    char *config_char = string_hash_search(config, "atpi");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "atpi");
     }
@@ -27,21 +25,21 @@ void * set_extra_data_for_fibrosis_sphere(struct grid *the_grid, struct string_h
 
     fibs[0] = atpi;
 
-    config_char = string_hash_search(extra_data_config, "plain_center");
+    config_char = string_hash_search(config, "plain_center");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "plain_center");
     }
     float plain_center = (float)atof(config_char);
     free(config_char);
 
-    config_char = string_hash_search(extra_data_config, "border_zone_size");
+    config_char = string_hash_search(config, "border_zone_size");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "border_zone_size");
     }
     float bz_size = (float)atof(config_char);
     free(config_char);
 
-    config_char = string_hash_search(extra_data_config, "sphere_radius");
+    config_char = string_hash_search(config, "sphere_radius");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "sphere_radius");
     }
@@ -76,15 +74,15 @@ void * set_extra_data_for_fibrosis_sphere(struct grid *the_grid, struct string_h
     return (void*)fibs;
 }
 
-void * set_extra_data_for_fibrosis_plain(struct grid *the_grid, struct string_hash *extra_data_config, size_t *extra_data_bytes) {
+SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_bytes = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(float)*(num_active_cells+1);
 
     float *fibs = (float*)calloc(num_active_cells+1, sizeof(float));
 
-    char *config_char = string_hash_search(extra_data_config, "atpi");
+    char *config_char = string_hash_search(config, "atpi");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_plain", "atpi");
     }
@@ -96,17 +94,17 @@ void * set_extra_data_for_fibrosis_plain(struct grid *the_grid, struct string_ha
     return (void*)fibs;
 }
 
-void * set_extra_data_for_human_full_mesh(struct grid *the_grid, struct string_hash *extra_data_config, size_t *extra_data_bytes) {
+SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_bytes = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(float)*(num_active_cells+1);
 
-    float *fibs = (float*)malloc(*extra_data_bytes);
+    float *fibs = (float*)malloc(*extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(extra_data_config, "atpi");
+    char *config_char = string_hash_search(config, "atpi");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "atpi");
     }
@@ -115,21 +113,21 @@ void * set_extra_data_for_human_full_mesh(struct grid *the_grid, struct string_h
 
     fibs[0] = atpi;
 
-    config_char = string_hash_search(extra_data_config, "plain_center");
+    config_char = string_hash_search(config, "plain_center");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "plain_center");
     }
     float plain_center = (float)atof(config_char);
     free(config_char);
 
-    config_char = string_hash_search(extra_data_config, "border_zone_size");
+    config_char = string_hash_search(config, "border_zone_size");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "border_zone_size");
     }
     float bz_size = (float)atof(config_char);
     free(config_char);
 
-    config_char = string_hash_search(extra_data_config, "sphere_radius");
+    config_char = string_hash_search(config, "sphere_radius");
     if(config_char == NULL) {
         report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "sphere_radius");
     }

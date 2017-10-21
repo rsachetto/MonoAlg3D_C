@@ -10,7 +10,8 @@
 
 struct domain_config;
 
-typedef void (*set_spatial_domain_fn_pt)(struct grid *, struct domain_config *);
+#define SET_SPATIAL_DOMAIN(name) void name(struct grid *the_grid, struct domain_config *config)
+typedef SET_SPATIAL_DOMAIN(set_spatial_domain_fn);
 
 struct domain_config {
     struct config_common config_data;
@@ -18,7 +19,7 @@ struct domain_config {
     bool domain_name_was_set;
     double start_h, max_h;
     bool start_h_was_set, max_h_was_set;
-    set_spatial_domain_fn_pt set_spatial_domain_fn;
+    set_spatial_domain_fn *set_spatial_domain;
 };
 
 void init_domain_functions(struct domain_config *config);

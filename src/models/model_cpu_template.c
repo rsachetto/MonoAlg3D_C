@@ -12,7 +12,7 @@ void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v
     assert(cell_model);
 
     if(get_initial_v)
-        cell_model->initial_v = -85.23f;
+        cell_model->initial_v = INITIAL_V;
     if(get_neq)
         cell_model->number_of_ode_equations = 19;
 

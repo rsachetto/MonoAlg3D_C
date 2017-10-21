@@ -8,7 +8,6 @@
 #include "../utils/utils.h"
 #include <float.h>
 #include <math.h>
-#include <string.h>
 #include <time.h>
 #include <unistd.h>
 

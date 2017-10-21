@@ -1,13 +1,16 @@
 SET(LIB_TYPE SHARED) #set the lib type
 
+
 ############## TEN TUSCHER 2006 ##############################
 set(MODEL_FILE_CPU "ten_tusscher_2006_RS_CPU.c")
 set(MODEL_FILE_GPU "ten_tusscher_2006_RS_GPU.cu")
+set(COMMON_HEADERS model_common.h ten_tusscher_3_RS.h)
+
 
 if(CUDA_FOUND)
-    CUDA_ADD_LIBRARY(ten_tusscher_2006 ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+    CUDA_ADD_LIBRARY(ten_tusscher_2006 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
 else()
-    ADD_LIBRARY(ten_tusscher_2006 ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+    ADD_LIBRARY(ten_tusscher_2006 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 #########################################################
 

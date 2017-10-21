@@ -9,11 +9,12 @@
 #include "../../hash/string_hash.h"
 #include "config_common.h"
 
-typedef void * (*set_extra_data_fn_pt)(struct grid *, struct string_hash *, size_t *);
+#define SET_EXTRA_DATA(name) void *name (struct grid * the_grid, struct string_hash *config, size_t *extra_data_size)
+typedef SET_EXTRA_DATA(set_extra_data_fn);
 
 struct extra_data_config {
     struct config_common config_data;
-    set_extra_data_fn_pt set_extra_data_fn;
+    set_extra_data_fn *set_extra_data;
 };
 
 void init_extra_data_functions(struct extra_data_config *config);
