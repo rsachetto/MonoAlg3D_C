@@ -17,7 +17,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    sv[0] = -85.23f;   // V;       millivolt
+    sv[0] = -86.2f;   // V;       millivolt
     sv[1] = 0.0f; //M
     sv[2] = 0.75; //H
     sv[3] = 0.75; //J
@@ -34,16 +34,16 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
     uint32_t sv_id;
-    Real atpi;
-    Real *fibrosis;
+    real atpi;
+    real *fibrosis;
 
     if(extra_data) {
-        atpi = *((Real*)extra_data);
-        fibrosis = ((Real*)extra_data)+1;
+        atpi = *((real*)extra_data);
+        fibrosis = ((real*)extra_data)+1;
     }
     else {
         atpi = 6.8;
-        fibrosis=calloc(num_cells_to_solve, sizeof(Real));
+        fibrosis=calloc(num_cells_to_solve, sizeof(real));
     }
 
 
@@ -62,11 +62,11 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 }
 
 
-void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real fibrosis, Real atpi )  {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real atpi )  {
 
     assert(sv);
 
-    Real rY[NEQ], rDY[NEQ];
+    real rY[NEQ], rDY[NEQ];
 
     for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
@@ -89,173 +89,173 @@ void solve_model_ode_cpu(Real dt, Real *sv, Real stim_current, Real fibrosis, Re
 }
 
 
-void RHS_cpu(const Real *sv, Real *rDY_, Real stim_current, Real dt, Real fibrosis, Real atpi) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real atpi) {
 
     // State variables
-    const Real svolt = sv[0];      // Membrane variable
+    const real svolt = sv[0];      // Membrane variable
 
-    const Real sm   = sv[1];
-    const Real sh   = sv[2];
-    const Real sj   = sv[3];
-    const Real sxr1 = sv[4];
-    const Real sxs  = sv[5];
-    const Real ss   = sv[6];
-    const Real  sf   = sv[7];
-    const Real sf2  = sv[8];
+    const real sm   = sv[1];
+    const real sh   = sv[2];
+    const real sj   = sv[3];
+    const real sxr1 = sv[4];
+    const real sxs  = sv[5];
+    const real ss   = sv[6];
+    const real  sf   = sv[7];
+    const real sf2  = sv[8];
 
-    const Real D_INF  = sv[9];
-    const Real Xr2_INF  = sv[10];
-    const Real R_INF  = sv[11];
+    const real D_INF  = sv[9];
+    const real Xr2_INF  = sv[10];
+    const real R_INF  = sv[11];
 
 
-    const Real natp = 0.24;          // K dependence of ATP-sensitive K current
-    const Real nicholsarea = 0.00005; // Nichol's areas (cm^2)
-    const Real hatp = 2;             // Hill coefficient
+    const real natp = 0.24;          // K dependence of ATP-sensitive K current
+    const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
+    const real hatp = 2;             // Hill coefficient
 
-    Real Ko   = 5.4;
+    real Ko   = 5.4;
 
-    Real atpi_change = 6.8f - atpi;
+    real atpi_change = 6.8f - atpi;
 
     atpi = atpi + atpi_change*fibrosis;
 
-    //Real katp = 0.306;
-    const Real katp = -0.0942857142857f*atpi + 0.683142857143f; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
+    //real katp = 0.306;
+    const real katp = -0.0942857142857f*atpi + 0.683142857143f; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
 
 
-    const Real patp =  1.0f/(1.0f + powf((atpi/katp),hatp));
-    const Real gkatp    =  0.000195f/nicholsarea;
-    const Real gkbaratp =  gkatp*patp*powf((Ko/4),natp);
+    const real patp =  1.0f/(1.0f + powf((atpi/katp),hatp));
+    const real gkatp    =  0.000195f/nicholsarea;
+    const real gkbaratp =  gkatp*patp*powf((Ko/4),natp);
 
-    const Real katp2= 1.4;
-    const Real hatp2 = 2.6;
-    const Real pcal = 1.0f/(1.0f + powf((katp2/atpi),hatp2));
+    const real katp2= 1.4;
+    const real hatp2 = 2.6;
+    const real pcal = 1.0f/(1.0f + powf((katp2/atpi),hatp2));
 
-    const Real Cao=2.0;
-    const Real Nao=140.0;
-    const Real Cai=0.00007;
-    const Real Nai=7.67;
-    const Real Ki=138.3;
+    const real Cao=2.0;
+    const real Nao=140.0;
+    const real Cai=0.00007;
+    const real Nai=7.67;
+    const real Ki=138.3;
 
 //Constants
-    const Real R=8314.472;
-    const Real F=96485.3415f;
-    const Real T=310.0;
-    const Real RTONF=(R*T)/F;
+    const real R=8314.472;
+    const real F=96485.3415f;
+    const real T=310.0;
+    const real RTONF=(R*T)/F;
 
 //Parameters for currents
 //Parameters for IKr
-    const Real Gkr=0.101;
+    const real Gkr=0.101;
 //Parameters for Iks
-    const Real pKNa=0.03;
+    const real pKNa=0.03;
 #ifdef EPI
-    const Real Gks=0.257;
+    const real Gks=0.257;
 #endif
 #ifdef ENDO
-    const Real Gks=0.392;
+    const real Gks=0.392;
 #endif
 #ifdef MCELL
-    const Real Gks=0.098;
+    const real Gks=0.098;
 #endif
 //Parameters for Ik1
-    const Real GK1=5.405;
+    const real GK1=5.405;
 //Parameters for Ito
 #ifdef EPI
-    const Real Gto=0.294;
+    const real Gto=0.294;
 #endif
 #ifdef ENDO
-    const Real Gto=0.073;
+    const real Gto=0.073;
 #endif
 #ifdef MCELL
-    const Real Gto=0.294;
+    const real Gto=0.294;
 #endif
 //Parameters for INa
-    const Real GNa=14.838;
+    const real GNa=14.838;
 //Parameters for IbNa
-    const Real GbNa=0.00029;
+    const real GbNa=0.00029;
 //Parameters for INaK
-    const Real KmK=1.0;
-    const Real KmNa=40.0;
-    const Real knak=2.724;
+    const real KmK=1.0;
+    const real KmNa=40.0;
+    const real knak=2.724;
 //Parameters for ICaL
-    const Real GCaL=0.2786f*pcal;
+    const real GCaL=0.2786f*pcal;
 //Parameters for IbCa
-    const Real GbCa=0.000592;
+    const real GbCa=0.000592;
 //Parameters for INaCa
-    const Real knaca=1000;
-    const Real KmNai=87.5;
-    const Real KmCa=1.38;
-    const Real ksat=0.1;
-    const Real n=0.35;
+    const real knaca=1000;
+    const real KmNai=87.5;
+    const real KmCa=1.38;
+    const real ksat=0.1;
+    const real n=0.35;
 //Parameters for IpCa
-    const Real GpCa=0.1238;
-    const Real KpCa=0.0005;
+    const real GpCa=0.1238;
+    const real KpCa=0.0005;
 //Parameters for IpK;
-    const Real GpK=0.0293;
+    const real GpK=0.0293;
 
 
-    const Real Ek=RTONF*(logf((Ko/Ki)));
-    const Real Ena=RTONF*(logf((Nao/Nai)));
-    const Real Eks=RTONF*(logf((Ko+pKNa*Nao)/(Ki+pKNa*Nai)));
-    const Real Eca=0.5f*RTONF*(logf((Cao/Cai)));
-    Real IKr;
-    Real IKs;
-    Real IK1;
-    Real Ito;
-    Real INa;
-    Real IbNa;
-    Real ICaL;
-    Real IbCa;
-    Real INaCa;
-    Real IpCa;
-    Real IpK;
-    Real INaK;
-    Real IKatp;
+    const real Ek=RTONF*(logf((Ko/Ki)));
+    const real Ena=RTONF*(logf((Nao/Nai)));
+    const real Eks=RTONF*(logf((Ko+pKNa*Nao)/(Ki+pKNa*Nai)));
+    const real Eca=0.5f*RTONF*(logf((Cao/Cai)));
+    real IKr;
+    real IKs;
+    real IK1;
+    real Ito;
+    real INa;
+    real IbNa;
+    real ICaL;
+    real IbCa;
+    real INaCa;
+    real IpCa;
+    real IpK;
+    real INaK;
+    real IKatp;
 
-    Real Ak1;
-    Real Bk1;
-    Real rec_iK1;
-    Real rec_ipK;
-    Real rec_iNaK;
-    Real AM;
-    Real BM;
-    Real AH_1;
-    Real BH_1;
-    Real AH_2;
-    Real BH_2;
-    Real AJ_1;
-    Real BJ_1;
-    Real AJ_2;
-    Real BJ_2;
-    Real M_INF;
-    Real H_INF;
-    Real J_INF;
-    Real TAU_M;
-    Real TAU_H;
-    Real TAU_J;
-    Real axr1;
-    Real bxr1;
-    Real Xr1_INF;
-    Real Xr2_INF_new;
-    Real TAU_Xr1;
-    Real Axs;
-    Real Bxs;
-    Real Xs_INF;
-    Real TAU_Xs;
-    Real R_INF_new;
-    Real S_INF;
-    Real TAU_S;
-    Real Af;
-    Real Bf;
-    Real Cf;
-    Real Af2;
-    Real Bf2;
-    Real Cf2;
-    Real D_INF_new;
-    Real TAU_F;
-    Real F_INF;
-    Real TAU_F2;
-    Real F2_INF;
-    Real sItot;
+    real Ak1;
+    real Bk1;
+    real rec_iK1;
+    real rec_ipK;
+    real rec_iNaK;
+    real AM;
+    real BM;
+    real AH_1;
+    real BH_1;
+    real AH_2;
+    real BH_2;
+    real AJ_1;
+    real BJ_1;
+    real AJ_2;
+    real BJ_2;
+    real M_INF;
+    real H_INF;
+    real J_INF;
+    real TAU_M;
+    real TAU_H;
+    real TAU_J;
+    real axr1;
+    real bxr1;
+    real Xr1_INF;
+    real Xr2_INF_new;
+    real TAU_Xr1;
+    real Axs;
+    real Bxs;
+    real Xs_INF;
+    real TAU_Xs;
+    real R_INF_new;
+    real S_INF;
+    real TAU_S;
+    real Af;
+    real Bf;
+    real Cf;
+    real Af2;
+    real Bf2;
+    real Cf2;
+    real D_INF_new;
+    real TAU_F;
+    real F_INF;
+    real TAU_F2;
+    real F2_INF;
+    real sItot;
 
 
     //Needed to compute currents

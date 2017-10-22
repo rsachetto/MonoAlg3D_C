@@ -7,38 +7,32 @@
 #include "../utils/erros_helpers.h"
 #include "../utils/logfile_utils.h"
 #include "../main/config/domain_config.h"
+#include "../libraries_common/config_helpers.h"
 #include <assert.h>
-#include <string.h>
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_mesh) {
 
     double start_h = config->start_h;
 
-    char *config_char = string_hash_search (config->config_data.config, "num_layers");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_benchmark_mesh", "num_layers");
-    }
-    int num_layers = atoi (config_char);
-    free (config_char);
+    int num_layers = 1;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, num_layers, config->config_data.config, "num_layers");
 
-    config_char = string_hash_search (config->config_data.config, "side_length");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_benchmark_mesh", "side_length");
-    }
-    double desired_side_length = atof (config_char);
-    free (config_char);
+
+    double side_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, side_length, config->config_data.config, "side_length");
+
 
     double real_side_length = start_h * 2.0f;
     double max_h = start_h * num_layers;
 
-    while (real_side_length < desired_side_length) {
+    while (real_side_length < side_length) {
         real_side_length *= 2.0f;
     }
 
     print_to_stdout_and_file ("Initial cube side length: %lf µm x %lf µm x %lf µm\n", real_side_length,
                               real_side_length, real_side_length);
-    print_to_stdout_and_file ("Loading plain mesh with %lf µm x %lf µm x %lf µm using dx %lf µm\n", desired_side_length,
-                              desired_side_length, max_h, start_h);
+    print_to_stdout_and_file ("Loading plain mesh with %lf µm x %lf µm x %lf µm using dx %lf µm\n", side_length,
+                              side_length, max_h, start_h);
 
     int num_steps = get_num_refinement_steps_to_discretization (real_side_length, start_h);
 
@@ -59,7 +53,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_mesh) {
         refine_grid (the_grid, num_steps);
     }
 
-    set_plain_domain (the_grid, desired_side_length, desired_side_length, max_h);
+    set_plain_domain (the_grid, side_length, side_length, max_h);
 
     int i;
     for (i = 0; i < num_steps; i++) {
@@ -72,12 +66,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     config->start_h = 800.0;
     bool fibrotic = false;
 
-    char *mesh_file = string_hash_search (config->config_data.config, "mesh_file");
-    if (mesh_file == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_human_mesh", "mesh_file");
-    }
+    char *mesh_file = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
-    char *fibrotic_char = string_hash_search (config->config_data.config, "fibrotic");
+    char *fibrotic_char;
+    GET_PARAMETER_VALUE_CHAR(fibrotic_char, config->config_data.config, "fibrotic");
     if (fibrotic_char != NULL) {
         fibrotic = ((strcmp (fibrotic_char, "yes") == 0) || (strcmp (fibrotic_char, "true") == 0));
     }
@@ -89,35 +82,13 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     double minz = -1;
     double maxz = -1;
 
-    char *config_char = string_hash_search (config->config_data.config, "min_x");
-    if (config_char)
-        minx = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (config->config_data.config, "max_x");
-    if (config_char)
-        maxx = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (config->config_data.config, "min_y");
-    if (config_char)
-        miny = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (config->config_data.config, "max_y");
-    if (config_char)
-        maxy = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (config->config_data.config, "min_z");
-    if (config_char)
-        minz = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (config->config_data.config, "max_z");
-    if (config_char)
-        maxz = atof (config_char);
-    free (config_char);
+    bool success;
+    GET_PARAMETER_NUMERIC_VALUE(double, minx, config->config_data.config, "min_x", success);
+    GET_PARAMETER_NUMERIC_VALUE(double, minx, config->config_data.config, "max_x", success);
+    GET_PARAMETER_NUMERIC_VALUE(double, minx, config->config_data.config, "min_y", success);
+    GET_PARAMETER_NUMERIC_VALUE(double, minx, config->config_data.config, "max_y", success);
+    GET_PARAMETER_NUMERIC_VALUE(double, minx, config->config_data.config, "min_z", success);
+    GET_PARAMETER_NUMERIC_VALUE(double, minx, config->config_data.config, "max_z", success);
 
     initialize_and_construct_grid (the_grid, 204800, 7);
     refine_grid (the_grid, 7);
@@ -155,10 +126,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 
     config->start_h = 250.0;
 
-    char *mesh_file = string_hash_search (config->config_data.config, "mesh_file");
-    if (mesh_file == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_rabbit_mesh", "mesh_file");
-    }
+    char *mesh_file = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
     initialize_and_construct_grid (the_grid, 64000.0, 7);
     refine_grid (the_grid, 7);
@@ -177,10 +146,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
-    char *mesh_file = string_hash_search (config->config_data.config, "mesh_file");
-    if (mesh_file == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_mouse_mesh", "mesh_file");
-    }
+    char *mesh_file = NULL;
+
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
     double start_h = config->start_h;
 
@@ -255,19 +223,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
 
-    char *config_char = string_hash_search (config->config_data.config, "phi");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_plain_fibrotic_mesh", "phi");
-    }
-    double phi = atof (config_char);
-    free (config_char);
+    bool success;
 
-    config_char = string_hash_search (config->config_data.config, "seed");
+    double phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, phi, config->config_data.config, "phi");
+
     unsigned seed = 0;
-    if (config_char) {
-        seed = (unsigned)atoi (config_char);
-        free (config_char);
-    }
+    GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data.config, "seed", success);
+    if(!success) seed = 0;
 
     initialize_grid_with_plain_mesh (the_grid, config);
     set_plain_fibrosis (the_grid, phi, seed);
@@ -275,48 +238,26 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
 
-    char *config_char = string_hash_search (config->config_data.config, "phi");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "phi");
-    }
+    double phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, phi, config->config_data.config, "phi" );
 
-    double phi = atof (config_char);
-    free (config_char);
+    double plain_center = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, plain_center, config->config_data.config, "plain_center" );
 
-    config_char = string_hash_search (config->config_data.config, "plain_center");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "plain_center");
-    }
-    double plain_center = atof (config_char);
-    free (config_char);
+    double sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, sphere_radius, config->config_data.config, "sphere_radius" );
 
-    config_char = string_hash_search (config->config_data.config, "sphere_radius");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "sphere_radius");
-    }
-    double sphere_radius = atof (config_char);
-    free (config_char);
+    double border_zone_size = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, border_zone_size, config->config_data.config, "border_zone_size" );
 
-    config_char = string_hash_search (config->config_data.config, "border_zone_size");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_plain_and_sphere_fibrotic_mesh", "border_zone_size");
-    }
-    double border_zone_size = atof (config_char);
-    free (config_char);
+    double border_zone_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, border_zone_radius, config->config_data.config, "border_zone_radius");
 
-    config_char = string_hash_search (config->config_data.config, "border_zone_radius");
-    if (config_char == NULL) {
-        report_parameter_error_on_function ("initialize_grid_with_plain_and_sphere_fibrotic_mesh",
-                                            "border_zone_radius");
-    }
-    double border_zone_radius = atof (config_char);
-    free (config_char);
-
-    config_char = string_hash_search (config->config_data.config, "seed");
+    bool success;
     unsigned seed = 0;
-    if (config_char) {
-        seed = (unsigned)atoi (config_char);
-        free (config_char);
+    GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data.config, "seed", success);
+    if (!success) {
+        seed = 0;
     }
 
     initialize_grid_with_plain_mesh (the_grid, config);

@@ -3,7 +3,7 @@
 //
 
 // Every model need to implement the functions described in this model file in order to be loaded correctly from the
-// edo solver. This models should compile without using any dependency of our codebase
+// edo solver. This models_library should compile without using any dependency of our codebase
 
 #ifndef MONOALG3D_MODEL_COMMON_H
 #define MONOALG3D_MODEL_COMMON_H
@@ -14,7 +14,7 @@
 
 struct cell_model_data {
     int number_of_ode_equations;
-    Real initial_v;
+    real initial_v;
     char *model_library_path;
 };
 
@@ -22,23 +22,23 @@ struct cell_model_data {
 typedef GET_CELL_MODEL_DATA (get_cell_model_data_fn);
 
 // CPU FUNCTIONS
-#define SET_ODE_INITIAL_CONDITIONS_CPU(name) void name (Real *sv)
+#define SET_ODE_INITIAL_CONDITIONS_CPU(name) void name (real *sv)
 typedef SET_ODE_INITIAL_CONDITIONS_CPU (set_ode_initial_conditions_cpu_fn);
 
 #define SOLVE_MODEL_ODES_CPU(name)                                                                                     \
-    void name (Real dt, Real *sv, Real *stim_currents, const uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
+    void name (real dt, real *sv, real *stim_currents, const uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
                int num_steps, void *extra_data)
 typedef SOLVE_MODEL_ODES_CPU (solve_model_ode_cpu_fn);
 
 // GPU FUNCTIONS
-#define SET_ODE_INITIAL_CONDITIONS_GPU(name) size_t name (Real **sv, uint32_t num_volumes)
+#define SET_ODE_INITIAL_CONDITIONS_GPU(name) size_t name (real **sv, uint32_t num_volumes)
 typedef SET_ODE_INITIAL_CONDITIONS_GPU (set_ode_initial_conditions_gpu_fn);
 
 #define SOLVE_MODEL_ODES_GPU(name)                                                                                     \
-    void name (Real dt, Real *sv, Real *stim_currents, uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
+    void name (real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
                int num_steps, void *extra_data, size_t extra_data_bytes_size)
 typedef SOLVE_MODEL_ODES_GPU(solve_model_ode_gpu_fn);
 
-// typedef void (*update_gpu_fn_pt)(Real *, uint32_t *, size_t , int );
+// typedef void (*update_gpu_fn_pt)(real *, uint32_t *, size_t , int );
 
 #endif // MONOALG3D_MODEL_COMMON_H

@@ -60,7 +60,7 @@ fabric.properties
 
 bin/
 shared_libs/
-tmp/
+tmp*/
 tests_bin/
 .vscode/
 build/

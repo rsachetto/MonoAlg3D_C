@@ -4,14 +4,16 @@
 
 #include <unitypes.h>
 #include <stdbool.h>
+#include <stdlib.h>
+
 #include "../utils/erros_helpers.h"
 #include "../utils/logfile_utils.h"
 #include "../utils/utils.h"
 #include "../main/constants.h"
 #include "../hash/string_hash.h"
-#include "stdlib.h"
 #include "../alg/grid/grid.h"
 #include "../main/config/stim_config.h"
+#include "../libraries_common/config_helpers.h"
 
 SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
 
@@ -19,10 +21,16 @@ SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
     struct cell_node **ac = the_grid->active_cells;
 
     bool stim;
-    Real stim_current = config->stim_current;
-    Real stim_value;
+    real stim_current = config->stim_current;
+    real stim_value;
 
-#pragma omp parallel for private(stim, stim_value)
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
+
+    #pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
 
         stim = ac[i]->center_x > 5500.0;
@@ -45,17 +53,18 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(config->config_data.config, "x_limit");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("stim_if_x_less_than", "x_limit");
-    }
-    double x_limit = atof(config_char);
-    free(config_char);
-
     bool stim;
-    Real stim_current = config->stim_current;
-    Real stim_value;
+    real stim_current = config->stim_current;
+    real stim_value;
 
+    double x_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, x_limit, config->config_data.config, "x_limit");
+
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
     #pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
         stim = ac[i]->center_x < x_limit;
@@ -73,19 +82,17 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
 
 SET_SPATIAL_STIM(set_stim_from_file) {
 
-    char *stim_file = string_hash_search(config->config_data.config, "stim_file");
-    if(stim_file == NULL) {
-        report_parameter_error_on_function("set_stim_from_file", "stim_file");
-    }
+    char *stim_file = NULL;
+
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(stim_file, config->config_data.config, "stim_file");
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     int s_size;
 
     bool stim;
-    Real stim_current = config->stim_current;
-    Real stim_value;
-
+    real stim_current = config->stim_current;
+    real stim_value;
 
     FILE *s_file = fopen(stim_file,"r");
 
@@ -110,6 +117,12 @@ SET_SPATIAL_STIM(set_stim_from_file) {
     sort_vector(cell_stims, s_size);
 
     fclose(s_file);
+
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
 
     #pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
@@ -138,18 +151,20 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(config->config_data.config, "x_limit");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("stim_if_x_more_than", "x_limit");
-    }
-    double x_limit = atof(config_char);
-    free(config_char);
+    double x_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, x_limit, config->config_data.config, "x_limit");
 
     bool stim;
-    Real stim_current = config->stim_current;
-    Real stim_value;
+    real stim_current = config->stim_current;
+    real stim_value;
 
-#pragma omp parallel for private(stim)
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
+
+    #pragma omp parallel for private(stim)
     for (int i = 0; i < n_active; i++) {
         stim = ac[i]->center_x >= x_limit;
 

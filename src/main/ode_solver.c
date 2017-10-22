@@ -176,7 +176,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
             free(solver->sv);
         }
 
-        solver->sv = (Real*)malloc(n_odes*num_cells*sizeof(Real));
+        solver->sv = (real*)malloc(n_odes*num_cells*sizeof(real));
 
         #pragma omp parallel for
         for(u_int32_t i = 0; i < num_cells; i++) {
@@ -190,19 +190,19 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     assert(the_ode_solver->sv);
 
-    Real dt = the_ode_solver->min_dt;
+    real dt = the_ode_solver->min_dt;
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
-    Real *sv = the_ode_solver->sv;
+    real *sv = the_ode_solver->sv;
 
     void *extra_data = the_ode_solver->edo_extra_data;
     size_t extra_data_size = the_ode_solver->extra_data_size;
 
     double time = cur_time;
 
-    Real *merged_stims = (Real*)calloc(sizeof(Real),n_active);
+    real *merged_stims = (real*)calloc(sizeof(real),n_active);
 
     struct stim_config *tmp = NULL;
-    Real stim_start, stim_dur;
+    real stim_start, stim_dur;
 
 
     for (int k = 0; k < stim_configs->size; k++) {
@@ -247,10 +247,10 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
     size_t num_refined_cells = uint32_vector_size(refined_this_step)/8;
 
-    Real *sv = ode_solver->sv;
+    real *sv = ode_solver->sv;
     int neq = ode_solver->model_data.number_of_ode_equations;
-    Real *sv_src;
-    Real *sv_dst;
+    real *sv_src;
+    real *sv_dst;
 
     if(ode_solver->gpu) {
 #ifdef COMPILE_CUDA
@@ -267,7 +267,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
             for (int j = 1; j < 8; j++) {
                 index = uint32_vector_at(refined_this_step, index_id + j);
                 sv_dst = &sv[index];
-                check_cuda_errors(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(Real), (size_t )neq, cudaMemcpyDeviceToDevice));
+                check_cuda_errors(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t )neq, cudaMemcpyDeviceToDevice));
             }
 
 
@@ -290,7 +290,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
             for (int j = 1; j < 8; j++) {
                 index = uint32_vector_at(refined_this_step, index_id + j);
                 sv_dst = &sv[index * neq];
-                memcpy(sv_dst, sv_src, neq * sizeof(Real));
+                memcpy(sv_dst, sv_src, neq * sizeof(real));
             }
 
 
@@ -301,7 +301,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
     solver->gpu_id = options->gpu_id;
-    solver->min_dt = (Real)options->dt_edo;
+    solver->min_dt = (real)options->dt_edo;
     solver->gpu = options->gpu;
 
     solver->model_data.model_library_path = strdup(options->model_file_path);

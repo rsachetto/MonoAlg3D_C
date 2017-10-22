@@ -227,7 +227,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
                 print_to_stdout_and_file("For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("start", old_value, value, config_file);
             }
-            sc->stim_start = (Real)strtod(value, NULL);
+            sc->stim_start = (real)strtod(value, NULL);
         }
         else if (strcmp(key, "duration") == 0) {
             if(sc->stim_duration_was_set) {
@@ -236,7 +236,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
                 issue_overwrite_warning ("duration", old_value, value, config_file);
             }
 
-            sc->stim_duration = (Real)strtod(value, NULL);
+            sc->stim_duration = (real)strtod(value, NULL);
         }
         else if (strcmp(key, "current") == 0) {
             if(sc->stim_current_was_set) {
@@ -244,7 +244,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
                 print_to_stdout_and_file("WARNING: For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("current", old_value, value, config_file);
             }
-            sc->stim_current = (Real)strtod(value, NULL);
+            sc->stim_current = (real)strtod(value, NULL);
         }
         else if (strcmp(key, "function") == 0) {
             if(sc->config_data.function_name_was_set) {
@@ -324,7 +324,7 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
                 print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning ("start_discretization", old_value, value, config_file);
             }
-            dc->start_h = (Real)strtod(value, NULL);
+            dc->start_h = (real)strtod(value, NULL);
         }
         else if (strcmp(key, "maximum_discretization") == 0) {
             if(dc->max_h_was_set) {
@@ -332,7 +332,7 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
                 print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning ("maximum_discretization", old_value, value, config_file);
             }
-            dc->max_h = (Real)strtod(value, NULL);
+            dc->max_h = (real)strtod(value, NULL);
         }
         else if (strcmp(key, "function") == 0) {
             if(dc->config_data.function_name_was_set) {
@@ -791,13 +791,13 @@ int parse_config_file (void *user, const char *section, const char *name, const 
         }
 
         if(MATCH_NAME("start")) {
-            tmp->stim_start = (Real)strtod(value, NULL);
+            tmp->stim_start = (real)strtod(value, NULL);
             tmp->stim_start_was_set = true;
         } else if(MATCH_NAME("duration")) {
-            tmp->stim_duration = (Real)strtod(value, NULL);
+            tmp->stim_duration = (real)strtod(value, NULL);
             tmp->stim_duration_was_set = true;
         }else if(MATCH_NAME("current")) {
-            tmp->stim_current = (Real)strtod(value, NULL);
+            tmp->stim_current = (real)strtod(value, NULL);
             tmp->stim_current_was_set = true;
         } else if(MATCH_NAME("function")) {
             tmp->config_data.function_name = strdup(value);

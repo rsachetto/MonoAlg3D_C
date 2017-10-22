@@ -11,6 +11,6 @@
 #define BLOCK_SIZE 256
 
 // Precision to be used for the calculations
-typedef float Real;
+typedef float real;
 
 #endif //MONOALG3D_CONSTANTS_H

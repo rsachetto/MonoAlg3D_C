@@ -4,7 +4,8 @@
 
 #include "../utils/erros_helpers.h"
 #include "../main/config/extra_data_config.h"
-#include <math.h>
+#include "../main/constants.h"
+#include "../libraries_common/config_helpers.h"
 
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
@@ -16,35 +17,20 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
     struct cell_node ** ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(config, "atpi");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "atpi");
-    }
-    float atpi = (float)atof(config_char);
-    free(config_char);
+    real atpi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, atpi, config, "atpi");
+
+    float plain_center = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config, "plain_center");
+
+    float border_zone_size = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config, "border_zone_size");
+
+    float sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config, "sphere_radius");
 
     fibs[0] = atpi;
 
-    config_char = string_hash_search(config, "plain_center");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "plain_center");
-    }
-    float plain_center = (float)atof(config_char);
-    free(config_char);
-
-    config_char = string_hash_search(config, "border_zone_size");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "border_zone_size");
-    }
-    float bz_size = (float)atof(config_char);
-    free(config_char);
-
-    config_char = string_hash_search(config, "sphere_radius");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "sphere_radius");
-    }
-    float fib_radius = (float)atof(config_char);
-    free(config_char);
 
     #pragma omp parallel for
     for (int i = 0; i < num_active_cells; i++) {
@@ -59,9 +45,9 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
             //TODO: Maybe we want the distance from the Z as well
             float center_z = (float)ac[i]->center_z;
 
-                float distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
-                distanceFromCenter = (distanceFromCenter - fib_radius)/bz_size;
-                fibs[i+1] = distanceFromCenter;
+            float distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
+            distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;
+            fibs[i+1] = distanceFromCenter;
 
         }
         else {
@@ -82,12 +68,8 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     float *fibs = (float*)calloc(num_active_cells+1, sizeof(float));
 
-    char *config_char = string_hash_search(config, "atpi");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_plain", "atpi");
-    }
-    float atpi = (float)atof(config_char);
-    free(config_char);
+    real atpi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, atpi, config, "atpi");
 
     fibs[0] = atpi;
 
@@ -104,60 +86,91 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     struct cell_node ** ac = the_grid->active_cells;
 
-    char *config_char = string_hash_search(config, "atpi");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "atpi");
-    }
-    float atpi = (float)atof(config_char);
-    free(config_char);
-
+    real atpi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,atpi,  config, "atpi");
     fibs[0] = atpi;
 
-    config_char = string_hash_search(config, "plain_center");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "plain_center");
-    }
-    float plain_center = (float)atof(config_char);
-    free(config_char);
+    double small_scar_center_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config, "small_scar_center_x");
 
-    config_char = string_hash_search(config, "border_zone_size");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "border_zone_size");
-    }
-    float bz_size = (float)atof(config_char);
-    free(config_char);
+    double small_scar_center_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config, "small_scar_center_y");
 
-    config_char = string_hash_search(config, "sphere_radius");
-    if(config_char == NULL) {
-        report_parameter_error_on_function("set_extra_data_for_fibrosis_sphere", "sphere_radius");
-    }
-    float fib_radius = (float)atof(config_char);
-    free(config_char);
+    double small_scar_center_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config, "small_scar_center_z");
 
-#pragma omp parallel for
+    double big_scar_center_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config, "big_scar_center_x");
+
+    double big_scar_center_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config, "big_scar_center_y");
+
+    double big_scar_center_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config, "big_scar_center_z");
+
+    double bz_size_big = 0;
+    double bz_size_small = 0;
+    double dist_big = 0;
+    double dist_small = 0;
+    
+    #pragma omp parallel for private(dist_big, dist_small) reduction(max: bz_size_big, bz_size_small)
     for (int i = 0; i < num_active_cells; i++) {
 
-        if(ac[i]->fibrotic) {
-            fibs[i+1] = 0.0;
+        if (ac[i]->active && ac[i]->border_zone) {
+            double center_x = ac[i]->center_x;
+            double center_y = ac[i]->center_y;
+            double center_z = ac[i]->center_z;
+            if(ac[i]->scar_type == 'b') {
+                dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
+                                (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
+                                (center_z - big_scar_center_z) * (center_z - big_scar_center_z));
+                if (dist_big > bz_size_big) {
+                    bz_size_big = dist_big;
+                }
+            }
+            else if(ac[i]->scar_type == 's') {
+                dist_small = sqrt((center_x - small_scar_center_x) * (center_x - small_scar_center_x) +
+                                  (center_y - small_scar_center_y) * (center_y - small_scar_center_y) +
+                                  (center_z - small_scar_center_z) * (center_z - small_scar_center_z));
+                if (dist_small > bz_size_small) {
+                    bz_size_small = dist_small;
+                }
+            }
         }
-        else if(ac[i]->border_zone) {
-
-            float center_x = (float)ac[i]->center_x;
-            float center_y = (float)ac[i]->center_y;
-            //TODO: Maybe we want the distance from the Z as well
-            float center_z = (float)ac[i]->center_z;
-
-            float distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
-            distanceFromCenter = (distanceFromCenter - fib_radius)/bz_size;
-            fibs[i+1] = distanceFromCenter;
-
-        }
-        else {
-            fibs[i+1] = 1.0;
-        }
-
     }
 
+    #pragma omp parallel for private(dist_big, dist_small)
+    for (int i = 0; i < num_active_cells; i++) {
+
+        if (ac[i]->active) {
+            if(ac[i]->fibrotic) {
+                fibs[i+1] = 0.0;
+            }
+            else if (ac[i]->border_zone) {
+                double center_x = ac[i]->center_x;
+                double center_y = ac[i]->center_y;
+                double center_z = ac[i]->center_z;
+                if(ac[i]->scar_type == 'b') {
+                    dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
+                                    (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
+                                    (center_z - big_scar_center_z) * (center_z - big_scar_center_z));
+                    dist_big = dist_big / bz_size_big;
+                    fibs[i+1] = (real)dist_big;
+                    
+                }
+                else if(ac[i]->scar_type == 's') {
+                    dist_small = sqrt((center_x - small_scar_center_x) * (center_x - small_scar_center_x) +
+                                      (center_y - small_scar_center_y) * (center_y - small_scar_center_y) +
+                                      (center_z - small_scar_center_z) * (center_z - small_scar_center_z));
+                    dist_small = dist_small / bz_size_small;
+                    fibs[i+1] = (real)dist_small;
+                }
+                else {
+                    fibs[i+1] = 1.0f;
+                }
+            }
+        }
+    }
 
     return (void*)fibs;
 }

@@ -10,7 +10,6 @@
 
 void init_domain_functions(struct domain_config *config) {
 
-    //TODO: this could go to the config common part
     char *function_name = config->config_data.function_name;
     char *default_function = "./shared_libs/libdefault_domains.so";
 

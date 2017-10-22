@@ -25,6 +25,8 @@ void set_plain_fibrosis (struct grid *the_grid, double phi, unsigned fib_seed);
 void set_plain_sphere_fibrosis (struct grid *the_grid, double phi, double plain_center, double sphere_radius,
                                 double bz_size, double bz_radius, unsigned fib_seed);
 
-void set_human_mesh_fibrosis(struct grid * grid, double phi, const char *scar_file, unsigned seed, double scar_center_x, double scar_center_y, double scar_center_z);
+void set_human_mesh_fibrosis(struct grid *grid, double phi, const char *scar_file, unsigned seed, double big_scar_center_x,
+                             double big_scar_center_y, double big_scar_center_z, double small_scar_center_x,
+                             double small_scar_center_y, double small_scar_center_z);
 
 #endif // MONOALG3D_DOMAIN_HELPERS_H

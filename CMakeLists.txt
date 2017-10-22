@@ -44,7 +44,7 @@ ADD_DEPENDENCIES(MonoAlg3D utils alg solvers gpu_utils hashes ini_parser string 
 
 target_link_libraries(MonoAlg3D alg solvers utils gpu_utils hashes ini_parser string vector ${CMAKE_THREAD_LIBS_INIT} ${CUDA_LIBRARIES} dl m)
 
-ADD_SUBDIRECTORY(src/models)
+ADD_SUBDIRECTORY(src/models_library)
 ADD_SUBDIRECTORY(src/stimuli_library)
 ADD_SUBDIRECTORY(src/domains_library)
 ADD_SUBDIRECTORY(src/extra_data_library)

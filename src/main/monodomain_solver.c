@@ -298,8 +298,6 @@ void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_conf
     for (int i = 0; i < stim_configs->size; i++) {
         for (struct stim_config_elt *e = stim_configs->table[i % stim_configs->size]; e != 0; e = e->next) {
             tmp = e->value;
-            free(tmp->spatial_stim_currents);
-            tmp->spatial_stim_currents = (Real*)malloc(sizeof(Real)*n_active);
             tmp->set_spatial_stim(the_grid, tmp);
         }
     }
@@ -320,19 +318,19 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
 
     int n_edos = the_ode_solver->model_data.number_of_ode_equations;
 
-    Real *sv = the_ode_solver->sv;
+    real *sv = the_ode_solver->sv;
 
     if (the_ode_solver->gpu) {
 #ifdef COMPILE_CUDA
-        Real *vms;
-        size_t mem_size = max_number_of_cells * sizeof (Real);
+        real *vms;
+        size_t mem_size = max_number_of_cells * sizeof (real);
 
-        vms = (Real *)malloc (mem_size);
+        vms = (real *)malloc (mem_size);
         check_cuda_errors(cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
 #pragma omp parallel for
         for (int i = 0; i < n_active; i++) {
-            vms[ac[i]->sv_position] = (Real)ac[i]->v;
+            vms[ac[i]->sv_position] = (real)ac[i]->v;
         }
 
         check_cuda_errors(cudaMemcpy (sv, vms, mem_size, cudaMemcpyHostToDevice));
@@ -341,7 +339,7 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
     } else {
 #pragma omp parallel for
         for (uint32_t i = 0; i < n_active; i++) {
-            sv[ac[i]->sv_position * n_edos] = (Real)ac[i]->v;
+            sv[ac[i]->sv_position * n_edos] = (real)ac[i]->v;
         }
     }
 }
@@ -620,16 +618,16 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
 }
 
 void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
-                        double beta, double cm, double dt_edp, Real *sv, int n_equations_cell_model, bool use_gpu) {
+                        double beta, double cm, double dt_edp, real *sv, int n_equations_cell_model, bool use_gpu) {
 
     double h, alpha;
 
 #ifdef COMPILE_CUDA
-    Real *vms = NULL;
-    size_t mem_size = initial_number_of_cells * sizeof (Real);
+    real *vms = NULL;
+    size_t mem_size = initial_number_of_cells * sizeof (real);
 
     if (use_gpu) {
-        vms = (Real *)malloc (mem_size);
+        vms = (real *)malloc (mem_size);
         check_cuda_errors(cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
 #endif
@@ -652,7 +650,6 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
 #endif
 }
 
-//TODO: we have to pass more info to this function to print more information and print to a file as well
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                        struct grid *the_grid, struct user_options *options) {
     print_to_stdout_and_file ("System parameters: \n");

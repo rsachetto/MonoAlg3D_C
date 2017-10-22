@@ -11,31 +11,27 @@
 #include "config/stim_config_hash.h"
 #include "config/config_parser.h"
 
-#include "../models/model_common.h"
-
-
-
-
+#include "../models_library/model_common.h"
 
 struct ode_solver {
 
     void *handle;
 
-    Real max_dt;
-    Real min_dt;
-    Real rel_tol;
-    Real abs_tol;
+    real max_dt;
+    real min_dt;
+    real rel_tol;
+    real abs_tol;
 
     //used for the adaptive time step solver
-    Real previous_dt;
-    Real time_new;
+    real previous_dt;
+    real time_new;
 
     uint32_t *cells_to_solve;
 
     bool gpu;
     int gpu_id;
 
-    Real *sv;
+    real *sv;
     void *edo_extra_data;
     size_t extra_data_size;
     struct cell_model_data model_data;
