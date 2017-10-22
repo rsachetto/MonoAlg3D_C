@@ -66,7 +66,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     config->start_h = 800.0;
     bool fibrotic = false;
 
-    char *mesh_file = NULL;
+    char *mesh_file;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
     char *fibrotic_char;

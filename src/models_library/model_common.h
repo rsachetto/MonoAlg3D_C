@@ -41,4 +41,19 @@ typedef SOLVE_MODEL_ODES_GPU(solve_model_ode_gpu_fn);
 
 // typedef void (*update_gpu_fn_pt)(real *, uint32_t *, size_t , int );
 
+////TODO: DEBUG: REMOVE
+//__global__ void print_svs(real *sv, int numCells) {
+//
+//    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+//    if(threadID == 0) {
+//        for (int i = 0; i < numCells; ++i) {
+//            for (int j = 0; j < NEQ; ++j) {
+//                printf("%lf\n", *((real*)((char*)sv + pitch * j)+i));
+//
+//            }
+//
+//        }
+//    }
+//}
+
 #endif // MONOALG3D_MODEL_COMMON_H

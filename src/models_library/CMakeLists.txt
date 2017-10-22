@@ -16,13 +16,15 @@ endif(CUDA_FOUND)
 
 
 ############## BONDARENKO ##############################
-set(MODEL_FILE_CPU "bondarenko_2004_CPU.c")
+set(MODEL_FILE_CPU "bondarenko_2004.c")
 set(MODEL_FILE_GPU "bondarenko_2004_GPU.cu")
+set(COMMON_HEADERS model_common.h ten_tusscher_2006.h)
+
 
 if(CUDA_FOUND)
-    CUDA_ADD_LIBRARY(bondarenko_2004 ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+    CUDA_ADD_LIBRARY(bondarenko_2004 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
 else()
-    ADD_LIBRARY(bondarenko_2004 ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+    ADD_LIBRARY(bondarenko_2004 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 #########################################################
 

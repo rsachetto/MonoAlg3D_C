@@ -1,22 +1,20 @@
-#include "model_common.h"
 #include <assert.h>
 #include <stdlib.h>
 
+#include "bondarenko_2004.h"
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real stim_start, real stim_dur, real time, void *extra_data);
-
-void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
+GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     assert(cell_model);
 
     if(get_initial_v)
-        cell_model->initial_v = -82.4202f;
+        cell_model->initial_v = INITIAL_V;
     if(get_neq)
         cell_model->number_of_ode_equations = 41;
 
 }
 
-void set_model_initial_conditions(real *sv) {
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions) {
 
         sv[0] = -82.4202f;	 // V millivolt
         sv[1] = 0.115001f;	 // Cai msvromolar
@@ -61,25 +59,42 @@ void set_model_initial_conditions(real *sv) {
         sv[40] = 0.319129e-4f;	 // I_K dimensionless
 }
 
+SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real stim_start, real stim_dur,
-                         real time, int neq, void *extra_data)  {
+    uint32_t sv_id;
+
+#pragma omp parallel for private(sv_id)
+    for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
+
+        if(cells_to_solve)
+            sv_id = cells_to_solve[i];
+        else
+            sv_id = i;
+
+        for (int j = 0; j < num_steps; ++j) {
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
+
+        }
+    }
+}
+
+void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
 
     assert(sv);
 
-    real rY[neq], rDY[neq];
+    real rY[NEQ], rDY[NEQ];
 
-    for(int i = 0; i < neq; i++)
+    for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
 
-    RHS_cpu(rY, rDY, stim_current, stim_start, stim_dur, time, extra_data);
+    RHS_cpu(rY, rDY, stim_current);
 
-    for(int i = 0; i < neq; i++)
+    for(int i = 0; i < NEQ; i++)
         sv[i] = dt*rDY[i] + rY[i];
 }
 
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real stim_start, real stim_dur, real time, void *extra_data) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
 
     // State variables
     const real V_old_ = sv[0];	 // initial value = -82.4202 millivolt
@@ -194,7 +209,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real stim_start, rea
     const real E_Cl = -40.0f;	 // millivolt
 
     // Algebraic Equations
-    real calc_i_stim = ((time>=stim_start)&&(time<=stim_start+stim_dur)) ? stim_current: 0.0f;	//0
+    real calc_i_stim = stim_current;	//0
     
     real calc_Bi = powf((1.0f+((CMDN_tot*Km_CMDN)/powf((Km_CMDN+Cai_old_),2.0f))),(-1.0f));	//6
     real calc_Bss = powf((1.0f+((CMDN_tot*Km_CMDN)/powf((Km_CMDN+Cass_old_),2.0f))),(-1.0f));	//7

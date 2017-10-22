@@ -9,7 +9,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
     assert(cell_model);
 
     if(get_initial_v)
-        cell_model->initial_v = INITAL_V;
+        cell_model->initial_v = INITIAL_V;
     if(get_neq)
         cell_model->number_of_ode_equations = NEQ;
 

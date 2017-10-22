@@ -77,6 +77,14 @@ void display_usage (char **argv) {
     exit (EXIT_FAILURE);
 }
 
+
+void issue_overwrite_warning (const char *var, const char *old_value, const char *new_value, const char *config_file) {
+    fprintf (stderr,
+             "WARNING: option %s was set in the file %s to %s and is being overwritten "
+                     "by the command line flag to %s!\n",
+             var, config_file, old_value, new_value);
+}
+
 struct user_options *new_user_options () {
 
     struct user_options *user_args = (struct user_options *)malloc (sizeof (struct user_options));
@@ -224,7 +232,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         if(strcmp(key, "start") == 0) {
             if(sc->stim_start_was_set) {
                 sprintf (old_value, "%lf", sc->stim_start);
-                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("WARNING: For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("start", old_value, value, config_file);
             }
             sc->stim_start = (real)strtod(value, NULL);
@@ -232,7 +240,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         else if (strcmp(key, "duration") == 0) {
             if(sc->stim_duration_was_set) {
                 sprintf (old_value, "%lf", sc->stim_duration);
-                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("WARNING: For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("duration", old_value, value, config_file);
             }
 
@@ -248,7 +256,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         }
         else if (strcmp(key, "function") == 0) {
             if(sc->config_data.function_name_was_set) {
-                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("WARNING: For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("function", sc->config_data.function_name, value, config_file);
             }
             free(sc->config_data.function_name);
@@ -256,7 +264,7 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
         }
         else if (strcmp(key, "library_file") == 0) {
             if(sc->config_data.library_file_path_was_set) {
-                print_to_stdout_and_file("For stimulus %s:\n", stim_name);
+                print_to_stdout_and_file("WARNING: For stimulus %s:\n", stim_name);
                 issue_overwrite_warning ("library_file", sc->config_data.library_file_path, value, config_file);
             }
             free(sc->config_data.library_file_path);
@@ -453,12 +461,6 @@ void get_config_file (int argc, char **argv, struct user_options *user_args) {
     optind = 1;
 }
 
-void issue_overwrite_warning (const char *var, const char *old_value, const char *new_value, const char *config_file) {
-    fprintf (stderr,
-             "WARNING: option %s was set in the file %s to %s and is being overwritten "
-                     "by the command line flag to %s!\n",
-             var, config_file, old_value, new_value);
-}
 
 void parse_options (int argc, char **argv, struct user_options *user_args) {
 

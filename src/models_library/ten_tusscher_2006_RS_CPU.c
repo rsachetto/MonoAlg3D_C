@@ -1,25 +1,22 @@
-#include "model_common.h"
 #include <assert.h>
 #include <stdlib.h>
-#include <unitypes.h>
+#include "ten_tusscher_2006.h"
+#include "../utils/logfile_utils.h"
 
-#define NEQ 19
-
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt);
-void solve_model_ode_cpu(real dt, real *sv, real stim_current);
-
-void init_cell_model_data(struct cell_model_data* cell_model, bool get_initial_v, bool get_neq) {
+GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     assert(cell_model);
 
     if(get_initial_v)
-        cell_model->initial_v = -85.23f;
+        cell_model->initial_v = INITIAL_V;
     if(get_neq)
         cell_model->number_of_ode_equations = 19;
 
 }
 
-void set_model_initial_conditions_cpu(real *sv) {
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
+
+    print_to_stdout_and_file("Using ten Tusscher 3 CPU model\n");
 
     sv[0] = -85.23f;   // V;       millivolt
     sv[1] = 0.00621f;  // Xr1;     dimensionless
@@ -42,8 +39,7 @@ void set_model_initial_conditions_cpu(real *sv) {
     sv[18] = 136.89f;   // K_i;     millimolar
 }
 
-void solve_model_odes_cpu(real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve,
-                          uint32_t num_cells_to_solve,int num_steps, void *extra_data) {
+SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 

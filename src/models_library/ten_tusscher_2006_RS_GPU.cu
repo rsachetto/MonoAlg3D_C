@@ -2,43 +2,14 @@
 #include <unitypes.h>
 #include "../main/constants.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include "model_gpu_utils.h"
 #include "../utils/logfile_utils.h"
 
-#define NEQ 19
+#include "ten_tusscher_2006.h"
 
-static __device__ size_t pitch;
-static size_t pitch_h;
+extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
-__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes);
-
-__global__ void solve_gpu(real dt, real *sv, real* stim_currents,
-                          uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          int num_steps);
-
-__global__ void update_refinement(real *sv, uint32_t *cells, size_t number_of_cells);
-
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt);
-
-////TODO: DEBUG: REMOVE
-//__global__ void print_svs(real *sv, int numCells) {
-//
-//    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
-//    if(threadID == 0) {
-//        for (int i = 0; i < numCells; ++i) {
-//            for (int j = 0; j < NEQ; ++j) {
-//                printf("%lf\n", *((real*)((char*)sv + pitch * j)+i));
-//
-//            }
-//
-//        }
-//    }
-//}
-
-extern "C" size_t set_model_initial_conditions_gpu(real **sv, uint32_t num_volumes) {
-
-    print_to_stdout_and_file("Using ten Tusscher GPU model\n");
+    print_to_stdout_and_file("Using ten Tusscher 2006 GPU model\n");
 
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
@@ -58,8 +29,7 @@ extern "C" size_t set_model_initial_conditions_gpu(real **sv, uint32_t num_volum
 }
 
 
-extern "C" void solve_model_odes_gpu(real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve,
-                                    uint32_t num_cells_to_solve,int num_steps, void *extra_data, size_t extra_data_bytes_size) {
+extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
 
 
     // execution configuration
@@ -88,7 +58,6 @@ extern "C" void solve_model_odes_gpu(real dt, real *sv, real *stim_currents, uin
     if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
 
 }
-
 
 __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 {
