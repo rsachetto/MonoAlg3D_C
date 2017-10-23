@@ -2,7 +2,6 @@
 // Created by sachetto on 18/10/17.
 //
 
-#include <stdlib.h>
 #include <stdarg.h>
 
 #include "logfile_utils.h"

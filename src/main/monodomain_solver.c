@@ -161,7 +161,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     start_stop_watch (&solver_time);
 
-    double cur_time = 0.0;
 
     int print_rate = configs->print_rate;
 
@@ -178,7 +177,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     bool save_in_binary = configs->binary;
 
-    while (cur_time < finalT) {
+    double cur_time = 0.0;
+    while (cur_time <= finalT) {
 
         if (save_to_file) {
 
@@ -205,8 +205,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
                 }
             }
         }
-
-        count++;
 
         if (cur_time > 0.0) {
             update_ode_state_vector (the_ode_solver, the_grid, original_num_cells);
@@ -238,7 +236,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
 
-        cur_time += dt_edp;
 
         if (adaptive) {
             redo_matrix = false;
@@ -277,6 +274,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
                 total_mat_time += stop_stop_watch (&part_mat);
             }
         }
+        count++;
+        cur_time += dt_edp;
     }
 
     print_to_stdout_and_file ("Resolution Time: %ld μs\n", stop_stop_watch (&solver_time));

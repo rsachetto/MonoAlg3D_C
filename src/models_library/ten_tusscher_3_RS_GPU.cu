@@ -6,7 +6,6 @@
 #include "model_gpu_utils.h"
 
 #include "ten_tusscher_3_RS.h"
-#include "../utils/logfile_utils.h"
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 

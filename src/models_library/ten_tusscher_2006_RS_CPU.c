@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "ten_tusscher_2006.h"
-#include "../utils/logfile_utils.h"
+
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
@@ -14,9 +14,8 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 }
 
+//TODO: this should be called only once for the whole mesh, like in the GPU code
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
-
-    print_to_stdout_and_file("Using ten Tusscher 3 CPU model\n");
 
     sv[0] = -85.23f;   // V;       millivolt
     sv[1] = 0.00621f;  // Xr1;     dimensionless

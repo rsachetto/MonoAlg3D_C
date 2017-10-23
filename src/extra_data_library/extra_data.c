@@ -76,6 +76,23 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
     return (void*)fibs;
 }
 
+SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+
+    *extra_data_size = sizeof(float)*(num_active_cells+1);
+
+    float *fibs = (float*)malloc(*extra_data_size);
+
+    fibs[0] = 6.8;
+
+    for(int i = 1; i < num_active_cells+1; i++) {
+        fibs[i] = 1.0;
+    }
+
+    return (void*)fibs;
+}
+
 SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -154,16 +171,14 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
                     dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
                                     (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
                                     (center_z - big_scar_center_z) * (center_z - big_scar_center_z));
-                    dist_big = dist_big / bz_size_big;
-                    fibs[i+1] = (real)dist_big;
+                    fibs[i+1] = (real)(dist_big / bz_size_big);
                     
                 }
                 else if(ac[i]->scar_type == 's') {
                     dist_small = sqrt((center_x - small_scar_center_x) * (center_x - small_scar_center_x) +
                                       (center_y - small_scar_center_y) * (center_y - small_scar_center_y) +
                                       (center_z - small_scar_center_z) * (center_z - small_scar_center_z));
-                    dist_small = dist_small / bz_size_small;
-                    fibs[i+1] = (real)dist_small;
+                    fibs[i+1] = (real)(dist_small / bz_size_small);
                 }
                 else {
                     fibs[i+1] = 1.0f;

@@ -477,7 +477,7 @@ void set_plain_sphere_fibrosis (struct grid *the_grid, double phi, double plain_
     }
 }
 
-void set_human_mesh_fibrosis (struct grid *grid, double phi, const char *scar_file, unsigned seed, double big_scar_center_x,
+void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, double big_scar_center_x,
                               double big_scar_center_y, double big_scar_center_z, double small_scar_center_x,
                               double small_scar_center_y, double small_scar_center_z) {
 
@@ -545,8 +545,9 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, const char *scar_fi
                     double phi_local = phi - phi * dist_big;
 
                     double p = (double) (rand()) / (RAND_MAX);
-                    if (p < phi_local)
+                    if (p < phi_local) {
                         gridCell->active = false;
+                    }
                     gridCell->can_change = false;
                 }
                 else if(gridCell->scar_type == 's') {
@@ -557,8 +558,9 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, const char *scar_fi
                     double phi_local = phi - phi * dist_small;
 
                     double p = (double) (rand()) / (RAND_MAX);
-                    if (p < phi_local)
+                    if (p < phi_local) {
                         gridCell->active = false;
+                    }
                     gridCell->can_change = false;
                 }
             }

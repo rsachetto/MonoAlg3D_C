@@ -3,9 +3,9 @@
 #include "../main/constants.h"
 #include <stdlib.h>
 #include "model_gpu_utils.h"
-#include "../utils/logfile_utils.h"
 
 #include "ten_tusscher_2006.h"
+
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
