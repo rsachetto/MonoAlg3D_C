@@ -195,14 +195,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_edge) {
 
     //BIG SCAR
     if(size_code == 0) {
-        scar_center_x = 95300;
-        scar_center_y = 81600;
-        scar_center_z = 36800;
+        scar_center_x = 95300.0;
+        scar_center_y = 81600.0;
+        scar_center_z = 36800.0;
     }
     else {
-        scar_center_x = 52469;
-        scar_center_y = 83225;
-        scar_center_z = 24791;
+        scar_center_x = 52469.0;
+        scar_center_y = 83225.0;
+        scar_center_z = 24791.0;
     }
 
 
