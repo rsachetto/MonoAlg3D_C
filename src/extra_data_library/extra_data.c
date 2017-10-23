@@ -189,3 +189,97 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     return (void*)fibs;
 }
+
+SET_EXTRA_DATA(set_extra_data_for_scar_edge) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+
+    *extra_data_size = sizeof(float)*(num_active_cells+1);
+
+    float *fibs = (float*)malloc(*extra_data_size);
+
+    struct cell_node ** ac = the_grid->active_cells;
+
+    real atpi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,atpi,  config, "atpi");
+    fibs[0] = atpi;
+
+    char *scar_size;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (scar_size, config, "scar_size");
+
+    uint8_t size_code;
+
+    if(strcmp(scar_size, "big") == 0) {
+        size_code = 0;
+    }
+    else if(strcmp(scar_size, "small") == 0) {
+        size_code = 1;
+    }
+    else {
+        printf("Function: set_extra_data_for_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n", scar_size);
+        exit(EXIT_FAILURE);
+    }
+
+    double scar_center_x;
+    double scar_center_y;
+    double scar_center_z;
+
+    ////Fibrosis configuration
+    //BIG SCAR
+    if(size_code == 0) {
+        scar_center_x = 95300;
+        scar_center_y = 81600;
+        scar_center_z = 36800;
+    }
+    else {
+        scar_center_x = 52469;
+        scar_center_y = 83225;
+        scar_center_z = 24791;
+    }
+
+
+    double bz_size = 0.0;
+    double dist;
+
+    #pragma omp parallel for private(dist) reduction(max: bz_size)
+    for (int i = 0; i < num_active_cells; i++) {
+        if(ac[i]->active) {
+            if(ac[i]->border_zone) {
+                double center_x = ac[i]->center_x;
+                double center_y = ac[i]->center_y;
+                double center_z = ac[i]->center_z;
+                dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
+                if(dist > bz_size) {
+                    bz_size = dist;
+                }
+            }
+
+        }
+    }
+
+    #pragma omp parallel for private(dist)
+    for (int i = 0; i < num_active_cells; i++) {
+
+        if(ac[i]->active) {
+            if(ac[i]->fibrotic) {
+                fibs[i+1] = 0.0;
+            }
+            else if(ac[i]->border_zone) {
+                double center_x = ac[i]->center_x;
+                double center_y = ac[i]->center_y;
+                double center_z = ac[i]->center_z;
+                dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
+                dist = dist/bz_size;
+
+                fibs[i+1] = (real)dist;
+
+            }
+            else {
+                fibs[i+1] = 1.0f;
+            }
+
+        }
+    }
+
+    return (void*)fibs;
+}

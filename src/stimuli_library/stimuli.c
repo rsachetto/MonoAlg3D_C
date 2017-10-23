@@ -164,9 +164,9 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
 
     config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
 
-    #pragma omp parallel for private(stim)
+    #pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
-        stim = ac[i]->center_x >= x_limit;
+        stim = (ac[i]->center_x >= x_limit);
 
         if (stim) {
             stim_value = stim_current;

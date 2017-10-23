@@ -3,7 +3,6 @@
 //
 
 #include "domain_helpers.h"
-#include "../hash/point_hash.h"
 #include "../utils/logfile_utils.h"
 #include "../utils/utils.h"
 #include <float.h>
@@ -146,6 +145,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size, bo
 
 void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size, double minx, double maxx,
                                   double miny, double maxy, double minz, double maxz, bool read_fibrosis) {
+
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen (file_name, "r");
 
@@ -154,36 +154,35 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
         exit (0);
     }
 
-    double **a = (double **)malloc (sizeof (double *) * size);
+    double **mesh_points = (double **)malloc (sizeof (double *) * size);
     for (int i = 0; i < size; i++) {
-        a[i] = (double *)malloc (sizeof (double) * 3);
-        if (a[i] == NULL) {
+        mesh_points[i] = (double *)malloc (sizeof (double) * 4);
+        if (mesh_points[i] == NULL) {
             print_to_stdout_and_file ("Failed to allocate memory\n");
             exit (0);
         }
     }
-    double b;
+    double dummy; // we don't use this value here
+    int *fibrosis = (int *)malloc (sizeof (int) * size);
 
-    int fibrosis;
+    char *tag = (char *)malloc (size);
+    for (int k = 0; k < size; k++) {
+        tag[k] = 'n';
+    }
 
     int i = 0;
-
-    struct point_hash *p_hash = point_hash_create ();
-    struct point_3d point3d;
-
     while (i < size) {
-        fscanf (file, "%lf,%lf,%lf,%lf,%d\n", &a[i][0], &a[i][1], &a[i][2], &b, &fibrosis);
 
-        point3d.x = a[i][0];
-        point3d.y = a[i][1];
-        point3d.z = a[i][2];
+        fscanf (file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
+                &fibrosis[i], &tag[i]);
 
-        // myMap[TPoint3D(a[i])] = fibrosis;
-        point_hash_insert (p_hash, point3d, fibrosis);
-
+        // we save the old index to reference fibrosis[i] and tags[i]. T
+        // this is needed because the array mesh_points is sorted after reading the mesh file.
+        mesh_points[i][3] = i;
         i++;
     }
-    sort_vector (a, size);
+    sort_vector (mesh_points, size); // we need to sort because inside_mesh perform a binary search
+    int index;
 
     double x, y, z;
     while (grid_cell != 0) {
@@ -191,30 +190,36 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
         y = grid_cell->center_y;
         z = grid_cell->center_z;
 
-        point3d.x = x;
-        point3d.y = y;
-        point3d.z = z;
-
-        grid_cell->fibrotic = (point_hash_search (p_hash, point3d) == 1);
-        grid_cell->border_zone = (point_hash_search (p_hash, point3d) == 2);
-
         if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
-
             grid_cell->active = false;
         } else {
-            int index = inside_mesh (a, x, y, z, 0, size - 1);
-            grid_cell->active = index != -1;
+            index = inside_mesh (mesh_points, x, y, z, 0, size - 1);
+
+            if (index != -1) {
+                grid_cell->active = true;
+                if (read_fibrosis) {
+                    int old_index = (int)mesh_points[index][3];
+                    grid_cell->fibrotic = (fibrosis[old_index] == 1);
+                    grid_cell->border_zone = (fibrosis[old_index] == 2);
+                    grid_cell->scar_type = tag[old_index];
+                }
+            } else {
+                grid_cell->active = false;
+            }
         }
         grid_cell = grid_cell->next;
     }
+
     fclose (file);
+
     // deallocate memory
-    int j;
-    for (j = 0; j < size; j++) {
-        free (a[j]);
+    for (int l = 0; l < size; l++) {
+        free (mesh_points[l]);
     }
-    free (a);
-    point_hash_destroy (p_hash);
+
+    free (mesh_points);
+    free (tag);
+    free (fibrosis);
 }
 
 void set_cell_not_changeable (struct cell_node *c, double initialDiscretization) {

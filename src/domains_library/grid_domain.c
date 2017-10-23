@@ -9,6 +9,8 @@
 #include "../utils/erros_helpers.h"
 #include "../utils/logfile_utils.h"
 #include <assert.h>
+#include <time.h>
+#include <unistd.h>
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
 
@@ -59,7 +61,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
     }
 }
 
-SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh) {
+SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
 
     config->start_h = 800.0;
     bool fibrotic = false;
@@ -73,32 +75,12 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh) {
         fibrotic = ((strcmp (fibrotic_char, "yes") == 0) || (strcmp (fibrotic_char, "true") == 0));
     }
 
-    double minx = -1;
-    double maxx = -1;
-    double miny = -1;
-    double maxy = -1;
-    double minz = -1;
-    double maxz = -1;
-
-    bool success;
-    GET_PARAMETER_NUMERIC_VALUE (double, minx, config->config_data.config, "min_x", success);
-    GET_PARAMETER_NUMERIC_VALUE (double, minx, config->config_data.config, "max_x", success);
-    GET_PARAMETER_NUMERIC_VALUE (double, minx, config->config_data.config, "min_y", success);
-    GET_PARAMETER_NUMERIC_VALUE (double, minx, config->config_data.config, "max_y", success);
-    GET_PARAMETER_NUMERIC_VALUE (double, minx, config->config_data.config, "min_z", success);
-    GET_PARAMETER_NUMERIC_VALUE (double, minx, config->config_data.config, "max_z", success);
 
     initialize_and_construct_grid (the_grid, 204800, 7);
     refine_grid (the_grid, 7);
 
-    bool full_mesh = !((minx >= 0) && (maxx >= 0) && (miny >= 0) && (maxy >= 0) && (minz >= 0) && (maxz >= 0));
-    if (full_mesh) {
-        print_to_stdout_and_file ("Loading Human Heart Mesh\n");
-        set_custom_mesh (the_grid, mesh_file, 2025252, fibrotic);
-    } else {
-        print_to_stdout_and_file ("Loading Human Heart Sub Mesh\n");
-        set_custom_mesh_with_bounds (the_grid, mesh_file, 2025252, minx, maxx, miny, maxy, minz, maxz, fibrotic);
-    }
+    print_to_stdout_and_file ("Loading Human Heart Mesh\n");
+    set_custom_mesh (the_grid, mesh_file, 2025252, fibrotic);
 
     print_to_stdout_and_file ("Cleaning grid\n");
     int i;
@@ -130,6 +112,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, phi, config->config_data.config, "phi");
 
         unsigned seed = 0;
+        bool success = false;
         GET_PARAMETER_NUMERIC_VALUE (unsigned, seed, config->config_data.config, "seed", success);
         if (!success)
             seed = 0;
@@ -148,6 +131,135 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh) {
 
     free (mesh_file);
 }
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_scar_edge) {
+    char *mesh_file;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (mesh_file, config->config_data.config, "mesh_file");
+
+    char *scar_size;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (scar_size, config->config_data.config, "scar_size");
+
+    double phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, phi, config->config_data.config, "phi");
+
+    unsigned fib_seed = 0;
+    bool success;
+    GET_PARAMETER_NUMERIC_VALUE(unsigned, fib_seed, config->config_data.config, "seed", success);
+
+    if (!success)
+        fib_seed = (unsigned)time (NULL) + getpid ();
+
+    srand (fib_seed);
+
+    config->start_h = 800.0;
+    uint8_t size_code;
+
+    initialize_and_construct_grid (the_grid, 204800, 7);
+    refine_grid (the_grid, 7);
+
+    if(strcmp(scar_size, "big") == 0) {
+        print_to_stdout_and_file("Loading Human Heart Edge with big scar\n");
+        set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 79100, 121000, 66700, 106000, 11200, 61400, true);
+        size_code = 0;
+    }
+    else if(strcmp(scar_size, "small") == 0) {
+        print_to_stdout_and_file("Loading Human Heart Edge with small scar\n");
+        set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 30400, 81600, 59200, 103000, 13600, 48000, true);
+        size_code = 1;
+    }
+    else {
+        printf("Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n", scar_size);
+        exit(EXIT_FAILURE);
+    }
+
+
+    print_to_stdout_and_file ("Cleaning grid\n");
+    int i;
+    for (i = 0; i < 7; i++) {
+        derefine_grid_inactive_cells (the_grid);
+    }
+
+    refine_fibrotic_cells (the_grid);
+    refine_fibrotic_cells (the_grid);
+    refine_fibrotic_cells (the_grid);
+
+    refine_border_zone_cells (the_grid);
+    refine_border_zone_cells (the_grid);
+    refine_border_zone_cells (the_grid);
+
+    double scar_center_x;
+    double scar_center_y;
+    double scar_center_z;
+
+    ////Fibrosis configuration
+
+    //BIG SCAR
+    if(size_code == 0) {
+        scar_center_x = 95300;
+        scar_center_y = 81600;
+        scar_center_z = 36800;
+    }
+    else {
+        scar_center_x = 52469;
+        scar_center_y = 83225;
+        scar_center_z = 24791;
+    }
+
+
+    double bz_size = 0.0;
+    double dist;
+
+    print_to_stdout_and_file ("Using %u as seed\n", fib_seed);
+    print_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
+    struct cell_node *grid_cell = the_grid->first_cell;
+    
+    while( grid_cell != 0 ) {
+
+        if(grid_cell->active) {
+            if(grid_cell->fibrotic) {
+                grid_cell->can_change = false;
+                double p = (double) (rand()) / (RAND_MAX);
+                if (p < phi) grid_cell->active = false;
+            }
+            else if(grid_cell->border_zone) {
+                double center_x = grid_cell->center_x;
+                double center_y = grid_cell->center_y;
+                double center_z = grid_cell->center_z;
+                dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
+                if(dist > bz_size) {
+                    bz_size = dist;
+                }
+            }
+
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    grid_cell = the_grid->first_cell;
+    while( grid_cell != 0 ) {
+
+        if(grid_cell->active) {
+            if(grid_cell->border_zone) {
+                double center_x = grid_cell->center_x;
+                double center_y = grid_cell->center_y;
+                double center_z = grid_cell->center_z;
+                dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
+                dist = dist/bz_size;
+
+                double phi_local = phi - phi*dist;
+                double p = (double) (rand()) / (RAND_MAX);
+
+                if (p < phi_local) grid_cell->active = false;
+
+                grid_cell->can_change = false;
+
+            }
+
+        }
+        grid_cell = grid_cell->next;
+    }
+}
+
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_rabbit_mesh) {
 
