@@ -41,6 +41,38 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     assert(the_monodomain_solver);
     assert(the_ode_solver);
 
+    long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
+            total_deref_time = 0, cg_partial, total_config_time = 0;
+    uint32_t total_cg_it = 0;
+    struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time, config_time;
+
+    init_stop_watch(&config_time);
+
+    start_stop_watch(&config_time);
+
+    //MAIN CONFIGURATION
+    init_ode_solver_with_cell_model(the_ode_solver);
+
+    if(configs->stim_configs) {
+        //Init all stimuli
+        STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(configs->stim_configs, init_stim_functions);
+    }
+
+    //Configure the functions and set the mesh domain
+    if(configs->domain_config) {
+        init_domain_functions(configs->domain_config);
+        configs->domain_config->set_spatial_domain(the_grid, configs->domain_config);
+    }
+    else {
+        print_to_stdout_and_file("No domain configuration provided! Exiting!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(configs->extra_data_config) {
+        init_extra_data_functions(configs->extra_data_config);
+    }
+    //////////////////////////////
+
     struct stim_config_hash *stimuli_configs = configs->stim_configs;
     struct extra_data_config *extra_data_config = configs->extra_data_config;
     struct domain_config * domain_config = configs->domain_config;
@@ -122,6 +154,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         max_its = (int)the_grid->number_of_cells;
     }
 
+    total_config_time = stop_stop_watch(&config_time);
+
     print_solver_info(the_monodomain_solver, the_ode_solver, the_grid, configs);
 
     int ode_step = 1;
@@ -138,10 +172,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     fflush (stdout);
 
-    long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
-         total_deref_time = 0, cg_partial;
-    uint32_t total_cg_it = 0;
-    struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time;
 
     init_stop_watch (&solver_time);
     init_stop_watch (&ode_time);
@@ -285,6 +315,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     print_to_stdout_and_file ("Refine time: %ld μs\n", total_ref_time);
     print_to_stdout_and_file ("Derefine time: %ld μs\n", total_deref_time);
     print_to_stdout_and_file ("Write time: %ld μs\n", total_write_time);
+    print_to_stdout_and_file ("Initial configuration time: %ld μs\n", total_config_time);
     print_to_stdout_and_file ("CG Total Iterations: %u\n", total_cg_it);
 }
 

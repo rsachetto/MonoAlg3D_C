@@ -50,26 +50,6 @@ int main(int argc, char **argv) {
     configure_monodomain_solver_from_options(edp_solver, options);
     configure_grid_from_options(the_grid, options);
 
-    init_ode_solver_with_cell_model(ode_solver);
-
-    if(options->stim_configs) {
-        //Init all stimuli
-        STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(options->stim_configs, init_stim_functions);
-    }
-
-    //Configure the functions and set the mesh domain
-    if(options->domain_config) {
-        init_domain_functions(options->domain_config);
-        options->domain_config->set_spatial_domain(the_grid, options->domain_config);
-    }
-    else {
-        print_to_stdout_and_file("No domain configuration provided! Exiting!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if(options->extra_data_config) {
-        init_extra_data_functions(options->extra_data_config);
-    }
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
