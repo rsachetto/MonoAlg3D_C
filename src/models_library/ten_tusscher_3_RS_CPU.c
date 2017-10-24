@@ -59,6 +59,8 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
         }
     }
+
+    if(extra_data == NULL) free(fibrosis);
 }
 
 

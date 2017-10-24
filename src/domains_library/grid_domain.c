@@ -258,6 +258,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
         }
         grid_cell = grid_cell->next;
     }
+
+    free(mesh_file);
+    free(scar_size);
 }
 
 
