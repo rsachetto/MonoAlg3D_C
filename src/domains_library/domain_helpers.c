@@ -47,7 +47,7 @@ void set_plain_domain (struct grid *the_grid, double sizeX, double sizeY, double
     }
 }
 
-void set_custom_mesh (struct grid *the_grid, const char *file_name, int size, bool read_fibrosis) {
+void set_custom_mesh (struct grid *the_grid, const char *file_name, size_t size, bool read_fibrosis) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen (file_name, "r");
@@ -143,7 +143,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, int size, bo
     free (fibrosis);
 }
 
-void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, int size, double minx, double maxx,
+void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, size_t size, double minx, double maxx,
                                   double miny, double maxy, double minz, double maxz, bool read_fibrosis) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
@@ -156,7 +156,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
 
     double **mesh_points = (double **)malloc (sizeof (double *) * size);
     for (int i = 0; i < size; i++) {
-        mesh_points[i] = (double *)malloc (sizeof (double) * 4);
+        mesh_points[i] = (double *)calloc (4, sizeof (double));
         if (mesh_points[i] == NULL) {
             print_to_stdout_and_file ("Failed to allocate memory\n");
             exit (0);
