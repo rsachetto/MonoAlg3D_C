@@ -47,20 +47,22 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
-    real atpi = 6.8;
+    real atpi = 6.8f;
     real *fibrosis_device;
     real *fibs = NULL;
 
     if(extra_data) {
         atpi = ((real*)extra_data)[0];
         fibs = ((real*)extra_data)+1;
+        extra_data_bytes_size = extra_data_bytes_size-sizeof(real);
     }
     else {
+        extra_data_bytes_size = num_cells_to_solve*sizeof(real);
         fibs = (real*)calloc(num_cells_to_solve, sizeof(real));
     }
 
-    check_cuda_error(cudaMalloc((void **) &fibrosis_device, extra_data_bytes_size-sizeof(real)));
-    check_cuda_error(cudaMemcpy(fibrosis_device, fibs, extra_data_bytes_size-sizeof(real), cudaMemcpyHostToDevice));
+    check_cuda_error(cudaMalloc((void **) &fibrosis_device, extra_data_bytes_size));
+    check_cuda_error(cudaMemcpy(fibrosis_device, fibs, extra_data_bytes_size, cudaMemcpyHostToDevice));
 
     solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, fibrosis_device, atpi);
 
@@ -157,7 +159,8 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     atpi = atpi + atpi_change*fibrosis;
 
     //real katp = 0.306;
-    const real katp = -0.0942857142857f*atpi + 0.683142857143f; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry    
+    //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
+    const real katp = -0.0942857142857f*atpi + 0.683142857143f;
 
 
     const real patp =  1.0f/(1.0f + powf((atpi/katp),hatp));
