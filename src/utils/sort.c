@@ -54,7 +54,7 @@ void quicksort(double **a, int column, int first, int last) {
     // post: a[first..last] has been sorted
     //
 
-    int loc;
+    int loc = 0;
 
     // partition everything, partition left, partition right
     // continue until only one element, now in correct index

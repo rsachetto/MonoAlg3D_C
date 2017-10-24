@@ -132,7 +132,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
     free (mesh_file);
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_scar_edge) {
+SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     char *mesh_file;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (mesh_file, config->config_data.config, "mesh_file");
 
