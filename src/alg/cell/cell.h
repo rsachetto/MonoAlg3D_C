@@ -11,15 +11,10 @@
 #include <stdlib.h>
 #include "../../vector/int_vector.h"
 #include "../../vector/uint32_vector.h"
+#include "../../vector/element_vector.h"
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
-
-struct element {
-    double value;
-    uint32_t column; // Column of the matrix to which this element belongs.
-    struct cell_node *cell;
-};
 
 struct basic_cell_data {
     char type;
@@ -66,8 +61,8 @@ struct cell_node {
         back_flux;    // Flux coming from back direction.
 
     //______________________________________________________________________________
-    /* The matrix row. The elements[0]corresponds to the diagonal element of the row. */
-    struct element *elements;
+    /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
+    element_vector *elements;
 
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient
@@ -164,7 +159,5 @@ void simplify_deref (struct transition_node *transition_node);
 
 void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *free_sv_positions);
 
-struct element* new_element_array(uint8_t max_elements);
-void init_element(struct element* el);
 
 #endif // MONOALG3D_CELL_H

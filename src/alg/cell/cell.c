@@ -339,19 +339,3 @@ double get_cell_maximum_flux(struct cell_node* the_cell) {
 
     return maximumFlux;
 }
-
-struct element* new_element_array(uint8_t max_elements) {
-
-    struct element* result = (struct element*)malloc(max_elements*sizeof(struct element));
-    for (uint8_t i = 0; i < max_elements; ++i) {
-        init_element(&(result[i]));
-    }
-
-    return result;
-}
-
-void init_element(struct element* el) {
-    el->value = 0.0;
-    el->column = 0;
-    el->cell = NULL;
-}

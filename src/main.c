@@ -58,10 +58,10 @@ int main(int argc, char **argv) {
     }
 #endif
 
-//    FILE *teste = fopen("V_t_0", "w");
+    //FILE *teste = fopen("V_t_0", "w");
 //    print_grid_with_scar_info(the_grid, teste, false);
-//    fclose(teste);
-//    exit(0);
+    //fclose(teste);
+    //exit(0);
     solve_monodomain(the_grid, edp_solver, ode_solver, options);
 
     clean_and_free_grid(the_grid);

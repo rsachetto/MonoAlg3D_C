@@ -21,7 +21,6 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
 
     *error = 1.0;
     uint32_t number_of_iterations = 1;
-    int max_el = the_grid->num_cell_neighbours;
 
     //__________________________________________________________________________
     //Computes int_vector A*x, residue r = b - Ax, scalar rTr = r^T * r and
@@ -34,20 +33,21 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
 
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (int i = 0; i < num_active_cells; i++) {
-        struct element *cell_elements = ac[i]->elements;
+        element_vector *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
         int el_count = 0;
+        size_t max_el = cell_elements->size;
 
-        while( (el_count < max_el) && (cell_elements[el_count].cell != NULL)) {
-            element = cell_elements[el_count];
+        while( (el_count < max_el) && (cell_elements->base[el_count].cell != NULL)) {
+            element = cell_elements->base[el_count];
             ac[i]->Ax += element.value * element.cell->v;
             el_count++;
         }
 
         ac[i]->r = ac[i]->b - ac[i]->Ax;
         if(use_jacobi) {
-            double value = cell_elements[0].value;
+            double value = cell_elements->base[0].value;
             if(value == 0.0) value = 1.0;
             ac[i]->z = (1.0/value) * ac[i]->r; // preconditioner
             rTz += ac[i]->r * ac[i]->z;
@@ -75,13 +75,14 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
             for (int i = 0; i < num_active_cells; i++) {
 
                 ac[i]->Ax = 0.0;
-                struct element *cell_elements = ac[i]->elements;
+                element_vector *cell_elements = ac[i]->elements;
 
                 int el_count = 0;
 
-                while( (el_count < max_el) && (cell_elements[el_count].cell != NULL) )
+                size_t max_el = cell_elements->size;
+                while( (el_count < max_el) && (cell_elements->base[el_count].cell != NULL) )
                 {
-                    element = cell_elements[el_count];
+                    element = cell_elements->base[el_count];
                     ac[i]->Ax += element.value * element.cell->p;
                     el_count++;
                 }
@@ -111,7 +112,7 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
                 ac[i]->r -= alpha * ac[i]->Ax;
 
                 if(use_jacobi) {
-                    double value = ac[i]->elements[0].value;
+                    double value = ac[i]->elements->base[0].value;
                     if(value == 0.0) value = 1.0;
                     ac[i]->z = (1.0/value) * ac[i]->r;
                     r1Tz1 += ac[i]->z * ac[i]->r;

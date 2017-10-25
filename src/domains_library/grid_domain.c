@@ -36,7 +36,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
 
     int num_steps = get_num_refinement_steps_to_discretization (real_side_length, start_h);
 
-    initialize_and_construct_grid (the_grid, real_side_length, 7);
+    initialize_and_construct_grid (the_grid, real_side_length);
 
     if ((real_side_length / 2.0f) > max_h) {
         double aux = real_side_length / 2.0f;
@@ -76,7 +76,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
     }
 
 
-    initialize_and_construct_grid (the_grid, 204800, 7);
+    initialize_and_construct_grid (the_grid, 204800);
     refine_grid (the_grid, 7);
 
     print_to_stdout_and_file ("Loading Human Heart Mesh\n");
@@ -154,7 +154,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     config->start_h = 800.0;
     uint8_t size_code;
 
-    initialize_and_construct_grid (the_grid, 204800, 7);
+    initialize_and_construct_grid (the_grid, 204800);
     refine_grid (the_grid, 7);
 
     if(strcmp(scar_size, "big") == 0) {
@@ -271,7 +271,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_rabbit_mesh) {
     char *mesh_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (mesh_file, config->config_data.config, "mesh_file");
 
-    initialize_and_construct_grid (the_grid, 64000.0, 7);
+    initialize_and_construct_grid (the_grid, 64000.0);
     refine_grid (the_grid, 7);
 
     print_to_stdout_and_file ("Loading Rabbit Heart Mesh\n");
@@ -296,7 +296,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_mouse_mesh) {
 
     assert (the_grid);
 
-    initialize_and_construct_grid (the_grid, 6400.0, 7);
+    initialize_and_construct_grid (the_grid, 6400.0);
 
     refine_grid (the_grid, 5);
 
@@ -337,7 +337,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
         exit (10);
     }
 
-    initialize_and_construct_grid (the_grid, side_length, 7);
+    initialize_and_construct_grid (the_grid, side_length);
     int num_steps = get_num_refinement_steps_to_discretization (side_length, start_h);
 
     refine_grid (the_grid, num_steps);

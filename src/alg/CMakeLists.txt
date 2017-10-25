@@ -6,6 +6,7 @@ set(SOURCE_FILES_ALG
         cell/cell.h
         cell/cell.c
         cell/cell_derefinement.c
-        cell/cell_refinement.c)
+        cell/cell_refinement.c
+        )
 
 ADD_LIBRARY(alg SHARED ${SOURCE_FILES_ALG})

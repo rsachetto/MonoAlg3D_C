@@ -3,8 +3,7 @@
 //
 #include "../main/linear_system_solver.h"
 #include "../main/output_utils.h"
-#include "../utils/logfile_utils.h"
-
+#include "../vector/element_vector.h"
 #include <criterion/criterion.h>
 #include <omp.h>
 
@@ -27,7 +26,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
 
     int max_el = num_lines_m;
 
-    initialize_and_construct_grid (grid, 1.0, (uint8_t )num_lines_m);
+    initialize_and_construct_grid (grid, 1.0);
 
     n_cells = grid->number_of_cells;
     while (n_cells < num_lines_m) {
@@ -67,10 +66,8 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
         el.column = cell_position;
         el.cell = cell;
 
-        cell->elements = new_element_array (max_el);
-        cell->elements[0] = el;
-
-        int next_element = 1;
+        cell->elements = element_vector_create(7);
+        element_vector_push_back(cell->elements, el);
 
         for (int j = 0; j < num_lines_m; j++) {
             if (cell_position != j) {
@@ -89,8 +86,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
                         aux = aux->next;
                     }
                     el2.cell = aux;
-                    cell->elements[next_element] = el2;
-                    next_element++;
+                    element_vector_push_back(cell->elements, el2);
                 }
             }
         }
@@ -228,7 +224,6 @@ void run_cg (bool jacobi) {
     int nt = 1;
 
 #if defined(_OPENMP)
-    omp_set_num_threads(6);
     nt = omp_get_max_threads();
 #endif
 
@@ -285,7 +280,5 @@ Test (utils, vector) {
     cr_assert_eq(v->size ,1);
 
     cr_assert_eq(int_vector_at(v, 0),2);
-
-
 
 }

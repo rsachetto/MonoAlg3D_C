@@ -18,7 +18,6 @@ struct grid {
     uint32_t number_of_cells;  // Number of cells of grid.
 
     uint32_t num_active_cells;
-    uint8_t num_cell_neighbours;
 
     uint32_vector *free_sv_positions;
     uint32_vector *refined_this_step;
@@ -30,10 +29,10 @@ struct grid {
 
 
 struct grid* new_grid();
-void initialize_grid(struct grid *the_grid, double side_length, uint8_t num_cell_neighbours);
+void initialize_grid(struct grid *the_grid, double side_length);
 void clean_and_free_grid(struct grid* the_grid);
 void construct_grid(struct grid *the_grid);
-void initialize_and_construct_grid(struct grid *the_grid, double side_length, uint8_t num_cell_neighbours);
+void initialize_and_construct_grid(struct grid *the_grid, double side_length);
 
 void print_grid(struct grid* the_grid, FILE *output_file);
 void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary);

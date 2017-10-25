@@ -15,21 +15,19 @@ struct grid* new_grid() {
     return result;
 }
 
-void initialize_and_construct_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
+void initialize_and_construct_grid (struct grid *the_grid, double side_length) {
     assert(the_grid);
 
-    initialize_grid (the_grid, side_length, num_cell_neighbours);
+    initialize_grid (the_grid, side_length);
     construct_grid (the_grid);
 }
 
-void initialize_grid (struct grid *the_grid, double side_length, uint8_t num_cell_neighbours) {
+void initialize_grid (struct grid *the_grid, double side_length) {
 
     assert(the_grid);
 
     the_grid->side_length = side_length;
     the_grid->number_of_cells = 0;
-    the_grid->num_cell_neighbours = num_cell_neighbours;
-
 
 }
 
@@ -359,33 +357,29 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
     struct element element;
-    struct element *cell_elements;
-    int max_el = the_grid->num_cell_neighbours;
+    element_vector *cell_elements;
 
     while (grid_cell != 0) {
         if (grid_cell->active) {
 
             cell_elements = grid_cell->elements;
-            element = cell_elements[0];
+            size_t max_el = cell_elements->size;
 
-            fprintf(output_file, "%" PRIu32 " " "%" PRIu32 " %.15lf\n",
-                    grid_cell->grid_position + 1,
-                    (element.column) + 1,
-                    element.value);
+            for(size_t i = 0; i < max_el; i++) {
 
-            int el_count = 1;
+                element = cell_elements->base[i];
+                if(element.cell != NULL) {
+                    fprintf(output_file, "%" PRIu32 " " "%" PRIu32 " %.15lf\n",
+                            grid_cell->grid_position + 1,
+                            (element.column) + 1,
+                            element.value);
+                }
+                else {
+                    break;
+                }
 
-            while ((el_count < max_el) && (cell_elements[el_count].cell != NULL)) {
-
-                element = grid_cell->elements[el_count];
-                fprintf(output_file, "%" PRIu32 " " "%" PRIu32 " %.15lf\n",
-                        grid_cell->grid_position + 1,
-                        (element.column) + 1,
-                        element.value);
-
-
-                el_count++;
             }
+
         }
         grid_cell = grid_cell->next;
     }

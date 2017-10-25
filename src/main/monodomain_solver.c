@@ -191,7 +191,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     start_stop_watch (&solver_time);
 
-
     int print_rate = configs->print_rate;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
@@ -427,7 +426,6 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    uint8_t max_elements = the_grid->num_cell_neighbours;
 
     initialize_diagonal_elements (the_solver, the_grid);
 
@@ -435,22 +433,22 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
     for (int i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->south, 's', max_elements);
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->south, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->north, 'n', max_elements);
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->north, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->east, 'e', max_elements);
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->east, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->west, 'w', max_elements);
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->west, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->front, 'f', max_elements);
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->front, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->back, 'b', max_elements);
+        fill_discretization_matrix_elements(the_solver, ac[i], ac[i]->back, 'b');
     }
 }
 
@@ -463,7 +461,6 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
     double cm = the_solver->cm;
     double dt = the_solver->dt;
 
-    uint8_t max_elements = the_grid->num_cell_neighbours;
 
 #pragma omp parallel for private(alpha, h)
     for (int i = 0; i < num_active_cells; i++) {
@@ -476,17 +473,18 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
         element.value = alpha;
 
         if (ac[i]->elements != NULL) {
-            free (ac[i]->elements);
+            element_vector_clear_and_free_data (ac[i]->elements);
         }
 
-        ac[i]->elements = new_element_array (max_elements);
+        ac[i]->elements = element_vector_create (7);
 
-        ac[i]->elements[0] = element;
+        element_vector_push_back(ac[i]->elements, element);
+        //ac[i]->elements[0] = element;
     }
 }
 
-void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, struct cell_node *grid_cell,
-                                          void *neighbour_grid_cell, char direction, uint8_t max_elements) {
+void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, struct cell_node *grid_cell,
+                                         void *neighbour_grid_cell, char direction) {
 
     uint32_t position;
     bool has_found;
@@ -512,10 +510,10 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
     char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
     if (neighbour_grid_cell_level > grid_cell->cell_data.level) {
-        if ((neighbour_grid_cell_type == 'w')) {
+        if ((neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
             has_found = false;
             while (!has_found) {
-                if (neighbour_grid_cell_type == 'w') {
+                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
                     white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
                     if (white_neighbor_cell->single_connector == NULL) {
                         has_found = true;
@@ -530,7 +528,7 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
         }
     }
     else {
-        if (neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
+        if (neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
             has_found = false;
             while (!has_found) {
                 if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
@@ -561,45 +559,55 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
                 h = grid_cell->face_length;
             }
 
-            struct element *cell_elements = grid_cell->elements;
+            element_vector *cell_elements = grid_cell->elements;
             position = black_neighbor_cell->grid_position;
 
             lock_cell_node (grid_cell);
 
-            int el_counter = 1;
+            size_t el_counter = 1;
+            size_t max_elements = cell_elements->size;
+            bool insert = true;
 
-            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
-                   cell_elements[el_counter].column != position) {
-                el_counter++;
+            for(size_t i = 1; i < max_elements; i++) {
+                if(cell_elements->base[i].column == position) {
+                    insert = false;
+                    break;
+                }
             }
 
+//            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
+//                   cell_elements[el_counter].column != position) {
+//                el_counter++;
+//            }
+
             // TODO: maybe each element can have a different sigma!
-            if (el_counter < max_elements && cell_elements[el_counter].cell == NULL) {
+            if (insert) {
 
                 struct element new_element;
                 new_element.column = position;
                 if (direction == 'n') { // Z direction
                     new_element.value = -sigmaZ1 * h;
-                    cell_elements[0].value += (sigmaZ1 * h);
+                    cell_elements->base[0].value += (sigmaZ1 * h);
                 } else if (direction == 's') { // Z direction
                     new_element.value = -sigmaZ2 * h;
-                    cell_elements[0].value += sigmaZ2 * h;
+                    cell_elements->base[0].value += sigmaZ2 * h;
                 } else if (direction == 'e') { // Y direction
                     new_element.value = -sigmaY1 * h;
-                    cell_elements[0].value += (sigmaY1 * h);
+                    cell_elements->base[0].value += (sigmaY1 * h);
                 } else if (direction == 'w') { // Y direction
                     new_element.value = -sigmaY2 * h;
-                    cell_elements[0].value += (sigmaY2 * h);
+                    cell_elements->base[0].value += (sigmaY2 * h);
                 } else if (direction == 'f') { // X direction
                     new_element.value = -sigmaX1 * h;
-                    cell_elements[0].value += (sigmaX1 * h);
+                    cell_elements->base[0].value += (sigmaX1 * h);
                 } else if (direction == 'b') { // X direction
                     new_element.value = -sigmaX2 * h;
-                    cell_elements[0].value += (sigmaX2 * h);
+                    cell_elements->base[0].value += (sigmaX2 * h);
                 }
 
                 new_element.cell = black_neighbor_cell;
-                cell_elements[el_counter] = new_element;
+                element_vector_push_back(cell_elements, new_element);
+                //cell_elements[el_counter] = new_element;
             }
             unlock_cell_node (grid_cell);
 
@@ -610,38 +618,48 @@ void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, 
             lock_cell_node (black_neighbor_cell);
 
             el_counter = 1;
+            max_elements = cell_elements->size;
 
-            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
-                   cell_elements[el_counter].column != position) {
-                el_counter++;
+            insert = true;
+            for(size_t i = 1; i < max_elements; i++) {
+                if(cell_elements->base[i].column == position) {
+                    insert = false;
+                    break;
+                }
             }
 
-            if (el_counter < max_elements && cell_elements[el_counter].cell == NULL) {
+//            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
+//                   cell_elements[el_counter].column != position) {
+//                el_counter++;
+//            }
+
+            if (insert) {
 
                 struct element new_element;
                 new_element.column = position;
                 if (direction == 'n') { // Z direction
                     new_element.value = -sigmaZ1 * h;
-                    cell_elements[0].value += (sigmaZ1 * h);
+                    cell_elements->base[0].value += (sigmaZ1 * h);
                 } else if (direction == 's') { // Z direction
                     new_element.value = -sigmaZ2 * h;
-                    cell_elements[0].value += (sigmaZ2 * h);
+                    cell_elements->base[0].value += (sigmaZ2 * h);
                 } else if (direction == 'e') { // Y direction
                     new_element.value = -sigmaY1 * h;
-                    cell_elements[0].value += (sigmaY1 * h);
+                    cell_elements->base[0].value += (sigmaY1 * h);
                 } else if (direction == 'w') { // Y direction
                     new_element.value = -sigmaY2 * h;
-                    cell_elements[0].value += (sigmaY2 * h);
+                    cell_elements->base[0].value += (sigmaY2 * h);
                 } else if (direction == 'f') { // X direction
                     new_element.value = -sigmaX1 * h;
-                    cell_elements[0].value += (sigmaX1 * h);
+                    cell_elements->base[0].value += (sigmaX1 * h);
                 } else if (direction == 'b') { // X direction
                     new_element.value = -sigmaX2 * h;
-                    cell_elements[0].value += (sigmaX2 * h);
+                    cell_elements->base[0].value += (sigmaX2 * h);
                 }
 
                 new_element.cell = grid_cell;
-                cell_elements[el_counter] = new_element;
+                element_vector_push_back(cell_elements, new_element);
+                //cell_elements[el_counter] = new_element;
             }
 
             unlock_cell_node (black_neighbor_cell);
