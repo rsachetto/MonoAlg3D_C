@@ -151,10 +151,9 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    double x_limit = 0.0;
+    double x_limit = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, x_limit, config->config_data.config, "x_limit");
 
-    bool stim;
     real stim_current = config->stim_current;
     real stim_value;
 
@@ -166,7 +165,7 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
 
     #pragma omp parallel for private(stim, stim_value)
     for (int i = 0; i < n_active; i++) {
-        stim = (ac[i]->center_x >= x_limit);
+        bool stim = (ac[i]->center_x >= x_limit);
 
         if (stim) {
             stim_value = stim_current;

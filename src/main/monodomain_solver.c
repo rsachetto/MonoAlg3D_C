@@ -198,7 +198,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     double cg_error;
     uint32_t cg_iterations;
 
-    set_spatial_stim (the_grid, stimuli_configs);
+    if(stimuli_configs)
+        set_spatial_stim (the_grid, stimuli_configs);
 
     if(has_extra_data)
         set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
@@ -287,7 +288,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
             if (redo_matrix) {
                 order_grid_cells (the_grid);
 
-                set_spatial_stim (the_grid, stimuli_configs);
+                if(stimuli_configs)
+                    set_spatial_stim (the_grid, stimuli_configs);
                 if(has_extra_data)
                     set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 

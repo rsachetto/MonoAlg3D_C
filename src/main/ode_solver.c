@@ -199,27 +199,29 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     double time = cur_time;
 
+    //TODO: maybe this can be null if no stimuli configured
     real *merged_stims = (real*)calloc(sizeof(real),n_active);
 
     struct stim_config *tmp = NULL;
     real stim_start, stim_dur;
 
-
-    for (int k = 0; k < stim_configs->size; k++) {
-        for (struct stim_config_elt *e = stim_configs->table[k % stim_configs->size]; e != 0; e = e->next) {
-            tmp = e->value;
-            stim_start = tmp->stim_start;
-            stim_dur = tmp->stim_duration;
-            for (int j = 0; j < num_steps; ++j) {
-                if( ( time>=stim_start ) && ( time<=stim_start+stim_dur ) ) {
-                    #pragma omp parallel for
-                    for (int i = 0; i < n_active; i++) {
-                        merged_stims[i] = tmp->spatial_stim_currents[i];
+    if(stim_configs) {
+        for (int k = 0; k < stim_configs->size; k++) {
+            for (struct stim_config_elt *e = stim_configs->table[k % stim_configs->size]; e != 0; e = e->next) {
+                tmp = e->value;
+                stim_start = tmp->stim_start;
+                stim_dur = tmp->stim_duration;
+                for (int j = 0; j < num_steps; ++j) {
+                    if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
+                        #pragma omp parallel for
+                        for (int i = 0; i < n_active; i++) {
+                            merged_stims[i] = tmp->spatial_stim_currents[i];
+                        }
                     }
+                    time += dt;
                 }
-                time += dt;
+                time = cur_time;
             }
-            time = cur_time;
         }
     }
 
