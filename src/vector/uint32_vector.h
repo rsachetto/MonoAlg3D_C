@@ -6,7 +6,7 @@
 #define MONOALG3D_U32_vector_H
 
 #include <stddef.h>
-#include <unitypes.h>
+#include <stdint.h>
 
 typedef uint32_t data_type_32;
 

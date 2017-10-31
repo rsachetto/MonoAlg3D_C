@@ -3,6 +3,7 @@
 //
 
 #include "linear_system_solver.h"
+#include "../vector/stretchy_buffer.h"
 
 uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool use_jacobi, double *error) {
 
@@ -33,21 +34,19 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
 
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (int i = 0; i < num_active_cells; i++) {
-        element_vector *cell_elements = ac[i]->elements;
+        struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
-        int el_count = 0;
-        size_t max_el = cell_elements->size;
+        size_t max_el = sb_count(cell_elements);
 
-        while( (el_count < max_el) && (cell_elements->base[el_count].cell != NULL)) {
-            element = cell_elements->base[el_count];
+        for(int el = 0; el < max_el; el++) {
+            element = cell_elements[el];
             ac[i]->Ax += element.value * element.cell->v;
-            el_count++;
         }
 
         ac[i]->r = ac[i]->b - ac[i]->Ax;
         if(use_jacobi) {
-            double value = cell_elements->base[0].value;
+            double value = cell_elements[0].value;
             if(value == 0.0) value = 1.0;
             ac[i]->z = (1.0/value) * ac[i]->r; // preconditioner
             rTz += ac[i]->r * ac[i]->z;
@@ -63,10 +62,8 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
     *error = rTr;
     //__________________________________________________________________________
     //Conjugate gradient iterations.
-    if( *error >= precision )
-    {
-        while( number_of_iterations < max_its )
-        {
+    if( *error >= precision ) {
+        while( number_of_iterations < max_its ) {
             //__________________________________________________________________
             // Computes Ap and pTAp. Uses Ax to store Ap.
             pTAp = 0.0;
@@ -75,16 +72,12 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
             for (int i = 0; i < num_active_cells; i++) {
 
                 ac[i]->Ax = 0.0;
-                element_vector *cell_elements = ac[i]->elements;
+                struct element *cell_elements = ac[i]->elements;
 
-                int el_count = 0;
-
-                size_t max_el = cell_elements->size;
-                while( (el_count < max_el) && (cell_elements->base[el_count].cell != NULL) )
-                {
-                    element = cell_elements->base[el_count];
+                size_t max_el = sb_count(cell_elements);
+                for(int el = 0; el < max_el; el++) {
+                    element = cell_elements[el];
                     ac[i]->Ax += element.value * element.cell->p;
-                    el_count++;
                 }
 
                 pTAp += ac[i]->p * ac[i]->Ax;
@@ -112,7 +105,7 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
                 ac[i]->r -= alpha * ac[i]->Ax;
 
                 if(use_jacobi) {
-                    double value = ac[i]->elements->base[0].value;
+                    double value = ac[i]->elements[0].value;
                     if(value == 0.0) value = 1.0;
                     ac[i]->z = (1.0/value) * ac[i]->r;
                     r1Tz1 += ac[i]->z * ac[i]->r;

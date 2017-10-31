@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include <unitypes.h>
+#include <stdint.h>
 #include "../main/constants.h"
 #include <stdlib.h>
 #include "model_gpu_utils.h"

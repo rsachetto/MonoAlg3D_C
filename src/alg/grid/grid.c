@@ -3,7 +3,9 @@
 //
 
 #include "grid.h"
+#include "../../vector/stretchy_buffer.h"
 #include <assert.h>
+#include "inttypes.h"
 
 struct grid* new_grid() {
     struct grid* result = (struct grid*) malloc(sizeof(struct grid));
@@ -357,17 +359,17 @@ void print_grid_matrix (struct grid *the_grid, FILE *output_file) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
     struct element element;
-    element_vector *cell_elements;
+    struct element *cell_elements;
 
     while (grid_cell != 0) {
         if (grid_cell->active) {
 
             cell_elements = grid_cell->elements;
-            size_t max_el = cell_elements->size;
+            size_t max_el = sb_count(cell_elements);
 
             for(size_t i = 0; i < max_el; i++) {
 
-                element = cell_elements->base[i];
+                element = cell_elements[i];
                 if(element.cell != NULL) {
                     fprintf(output_file, "%" PRIu32 " " "%" PRIu32 " %.15lf\n",
                             grid_cell->grid_position + 1,

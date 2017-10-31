@@ -6,7 +6,7 @@
 #define MONOALG3D_EDO_SOLVER_H
 
 #include <stdbool.h>
-#include <unitypes.h>
+#include <stdint.h>
 #include "../vector/uint32_vector.h"
 #include "config/stim_config_hash.h"
 #include "config/config_parser.h"

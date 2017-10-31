@@ -16,6 +16,7 @@
 #include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
 #include "../utils/logfile_utils.h"
+#include "../vector/stretchy_buffer.h"
 
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
@@ -262,7 +263,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         if (count % print_rate == 0) {
             print_to_stdout_and_file ("t = %lf, Iterations = "
                     "%" PRIu32 ", Error Norm = %e, Number of Cells:"
-                    "%" PRIu32 ", Iterations time: %ld μs\n",
+                    "%" PRIu32 ", Iterations time: %ld μ\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
 
@@ -270,7 +271,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         if (adaptive) {
             redo_matrix = false;
             if (cur_time >= start_adpt_at) {
-
                 if (count % refine_each == 0) {
                     start_stop_watch (&ref_time);
                     redo_matrix = refine_grid_with_bound (the_grid, refinement_bound, start_h);
@@ -473,13 +473,12 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
         element.value = alpha;
 
         if (ac[i]->elements != NULL) {
-            element_vector_clear_and_free_data (ac[i]->elements);
+            sb_free(ac[i]->elements);
+            ac[i]->elements = NULL;
         }
 
-        ac[i]->elements = element_vector_create (7);
-
-        element_vector_push_back(ac[i]->elements, element);
-        //ac[i]->elements[0] = element;
+        //sb_reserve(ac[i]->elements, 7);
+        sb_push(ac[i]->elements, element);
     }
 }
 
@@ -559,26 +558,20 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
                 h = grid_cell->face_length;
             }
 
-            element_vector *cell_elements = grid_cell->elements;
+            struct element *cell_elements = grid_cell->elements;
             position = black_neighbor_cell->grid_position;
 
             lock_cell_node (grid_cell);
 
-            size_t el_counter = 1;
-            size_t max_elements = cell_elements->size;
+            size_t max_elements = sb_count(cell_elements);
             bool insert = true;
 
             for(size_t i = 1; i < max_elements; i++) {
-                if(cell_elements->base[i].column == position) {
+                if(cell_elements[i].column == position) {
                     insert = false;
                     break;
                 }
             }
-
-//            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
-//                   cell_elements[el_counter].column != position) {
-//                el_counter++;
-//            }
 
             // TODO: maybe each element can have a different sigma!
             if (insert) {
@@ -587,27 +580,26 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
                 new_element.column = position;
                 if (direction == 'n') { // Z direction
                     new_element.value = -sigmaZ1 * h;
-                    cell_elements->base[0].value += (sigmaZ1 * h);
+                    cell_elements[0].value += (sigmaZ1 * h);
                 } else if (direction == 's') { // Z direction
                     new_element.value = -sigmaZ2 * h;
-                    cell_elements->base[0].value += sigmaZ2 * h;
+                    cell_elements[0].value += sigmaZ2 * h;
                 } else if (direction == 'e') { // Y direction
                     new_element.value = -sigmaY1 * h;
-                    cell_elements->base[0].value += (sigmaY1 * h);
+                    cell_elements[0].value += (sigmaY1 * h);
                 } else if (direction == 'w') { // Y direction
                     new_element.value = -sigmaY2 * h;
-                    cell_elements->base[0].value += (sigmaY2 * h);
+                    cell_elements[0].value += (sigmaY2 * h);
                 } else if (direction == 'f') { // X direction
                     new_element.value = -sigmaX1 * h;
-                    cell_elements->base[0].value += (sigmaX1 * h);
+                    cell_elements[0].value += (sigmaX1 * h);
                 } else if (direction == 'b') { // X direction
                     new_element.value = -sigmaX2 * h;
-                    cell_elements->base[0].value += (sigmaX2 * h);
+                    cell_elements[0].value += (sigmaX2 * h);
                 }
 
                 new_element.cell = black_neighbor_cell;
-                element_vector_push_back(cell_elements, new_element);
-                //cell_elements[el_counter] = new_element;
+                sb_push(grid_cell->elements, new_element);
             }
             unlock_cell_node (grid_cell);
 
@@ -617,21 +609,15 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
 
             lock_cell_node (black_neighbor_cell);
 
-            el_counter = 1;
-            max_elements = cell_elements->size;
+            max_elements = sb_count(cell_elements);
 
             insert = true;
             for(size_t i = 1; i < max_elements; i++) {
-                if(cell_elements->base[i].column == position) {
+                if(cell_elements[i].column == position) {
                     insert = false;
                     break;
                 }
             }
-
-//            while (el_counter < max_elements && cell_elements[el_counter].cell != NULL &&
-//                   cell_elements[el_counter].column != position) {
-//                el_counter++;
-//            }
 
             if (insert) {
 
@@ -639,27 +625,26 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
                 new_element.column = position;
                 if (direction == 'n') { // Z direction
                     new_element.value = -sigmaZ1 * h;
-                    cell_elements->base[0].value += (sigmaZ1 * h);
+                    cell_elements[0].value += (sigmaZ1 * h);
                 } else if (direction == 's') { // Z direction
                     new_element.value = -sigmaZ2 * h;
-                    cell_elements->base[0].value += (sigmaZ2 * h);
+                    cell_elements[0].value += (sigmaZ2 * h);
                 } else if (direction == 'e') { // Y direction
                     new_element.value = -sigmaY1 * h;
-                    cell_elements->base[0].value += (sigmaY1 * h);
+                    cell_elements[0].value += (sigmaY1 * h);
                 } else if (direction == 'w') { // Y direction
                     new_element.value = -sigmaY2 * h;
-                    cell_elements->base[0].value += (sigmaY2 * h);
+                    cell_elements[0].value += (sigmaY2 * h);
                 } else if (direction == 'f') { // X direction
                     new_element.value = -sigmaX1 * h;
-                    cell_elements->base[0].value += (sigmaX1 * h);
+                    cell_elements[0].value += (sigmaX1 * h);
                 } else if (direction == 'b') { // X direction
                     new_element.value = -sigmaX2 * h;
-                    cell_elements->base[0].value += (sigmaX2 * h);
+                    cell_elements[0].value += (sigmaX2 * h);
                 }
 
                 new_element.cell = grid_cell;
-                element_vector_push_back(cell_elements, new_element);
-                //cell_elements[el_counter] = new_element;
+                sb_push(black_neighbor_cell->elements, new_element);
             }
 
             unlock_cell_node (black_neighbor_cell);

@@ -1,7 +1,19 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
 
-set(CMAKE_C_STANDARD 99)
+macro(use_c99)
+  if (CMAKE_VERSION VERSION_LESS "3.1")
+    if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        set (CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+    endif ()
+    else ()
+        set (CMAKE_C_STANDARD 99)
+    endif ()
+endmacro(use_c99)
+
+
+#set(CMAKE_C_STANDARD 99)
+use_c99()
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
@@ -10,16 +22,16 @@ if(EXISTS "/etc/manjaro-release")
     set(CMAKE_C_COMPILER "/opt/cuda/bin/gcc")
 endif(EXISTS "/etc/manjaro-release")
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
 
 find_package (Threads) #we look for a thread package
 
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
+#find_package(OpenMP)
+#if (OPENMP_FOUND)
+#    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+#    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+#endif()
 
 FIND_PACKAGE(CUDA)
 if (CUDA_FOUND)

@@ -10,8 +10,8 @@
 
 #include "../main/constants.h"
 #include <stdbool.h>
-#include <unitypes.h>
-
+#include <stdint.h>
+#include <stddef.h>
 struct cell_model_data {
     int number_of_ode_equations;
     real initial_v;

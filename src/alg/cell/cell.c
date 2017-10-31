@@ -5,6 +5,7 @@
 #include "cell.h"
 #include <pthread.h>
 #include <math.h>
+#include "../../vector/stretchy_buffer.h"
 
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
     data->type = type;
@@ -71,12 +72,9 @@ void init_cell_node(struct cell_node *cell_node) {
 
 void free_cell_node(struct cell_node *cell_node) {
 
-    if(cell_node->elements != NULL) {
-        free(cell_node->elements);
-    }
+    sb_free(cell_node->elements);
 
     pthread_mutex_destroy(&(cell_node->updating));
-
 
     free(cell_node);
 }

@@ -6,15 +6,21 @@
 #define MONOALG3D_CELL_H
 
 #include <stdbool.h>
-#include <unitypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../../vector/int_vector.h"
 #include "../../vector/uint32_vector.h"
-#include "../../vector/element_vector.h"
+//#include "../../vector/element_vector.h"
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
+
+struct element {
+    double value;
+    uint32_t column; // Column of the matrix to which this element belongs.
+    struct cell_node *cell;
+};
 
 struct basic_cell_data {
     char type;
@@ -62,7 +68,8 @@ struct cell_node {
 
     //______________________________________________________________________________
     /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
-    element_vector *elements;
+    //element_vector *elements;
+    struct element *elements;
 
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient

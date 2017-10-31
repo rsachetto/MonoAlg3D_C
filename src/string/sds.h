@@ -37,7 +37,7 @@
 
 #include <sys/types.h>
 #include <stdarg.h>
-#include <unitypes.h>
+#include <stdint.h>
 
 typedef char *sds;
 

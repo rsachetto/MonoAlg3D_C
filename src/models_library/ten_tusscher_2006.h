@@ -1,7 +1,7 @@
 #ifndef MONOALG3D_MODEL_TEN_TUSSCHER_COMMON_H
 #define MONOALG3D_MODEL_TEN_TUSSCHER_COMMON_H
 
-#include <unitypes.h>
+#include <stdint.h>
 #include "../main/constants.h"
 #include "model_common.h"
 
