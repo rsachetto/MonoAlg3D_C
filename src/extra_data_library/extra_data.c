@@ -43,7 +43,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
             float center_x = (float)ac[i]->center_x;
             float center_y = (float)ac[i]->center_y;
             //TODO: Maybe we want the distance from the Z as well
-            float center_z = (float)ac[i]->center_z;
+            //float center_z = (float)ac[i]->center_z;
 
             float distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
             distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;

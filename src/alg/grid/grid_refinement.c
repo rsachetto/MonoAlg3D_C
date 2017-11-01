@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include "grid.h"
+#include "../../vector/stretchy_buffer.h"
 
 /**
  * Decides if the grid should be refined by traversing the whole grid, according
@@ -29,10 +30,9 @@ bool refine_grid_with_bound(struct grid* the_grid, double refinement_bound,  dou
     bool refined_once = false;
     set_grid_flux(the_grid);
 
-    uint32_vector *refined = the_grid->refined_this_step;
-    uint32_vector *free_sv_pos = the_grid->free_sv_positions;
+    uint32_t *free_sv_pos = the_grid->free_sv_positions;
 
-    uint32_vector_clear(refined);
+    sb_clear(the_grid->refined_this_step);
 
     while( continue_refining ) {
         continue_refining = false;
@@ -47,7 +47,7 @@ bool refine_grid_with_bound(struct grid* the_grid, double refinement_bound,  dou
             {
                 auxiliar_grid_cell = grid_cell;
                 grid_cell = grid_cell->next;
-                refine_cell(auxiliar_grid_cell, free_sv_pos, refined);
+                refine_cell(auxiliar_grid_cell, free_sv_pos, &(the_grid->refined_this_step));
                 the_grid->number_of_cells += 7;
                 continue_refining = true;
                 refined_once = true;

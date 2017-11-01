@@ -170,12 +170,14 @@
 #define STB_STRETCHY_BUFFER_H_INCLUDED
 
 #ifndef NO_STRETCHY_BUFFER_SHORT_NAMES
-#define sb_free   stb_sb_free
-#define sb_push   stb_sb_push
-#define sb_count  stb_sb_count
-#define sb_add    stb_sb_add
-#define sb_reserve    stb_sb_reserve
-#define sb_last   stb_sb_last
+#define sb_free    stb_sb_free
+#define sb_push    stb_sb_push
+#define sb_pop     stb_sb_pop
+#define sb_count   stb_sb_count
+#define sb_add     stb_sb_add
+#define sb_reserve stb_sb_reserve
+#define sb_last    stb_sb_last
+#define sb_clear   stb_sb_clear
 #endif
 
 #define stb_sb_free(a)         ((a) ? free(stb__sbraw(a)),0 : 0)
@@ -184,6 +186,8 @@
 #define stb_sb_add(a,n)        (stb__sbmaybegrow(a,n), stb__sbn(a)+=(n), &(a)[stb__sbn(a)-(n)])
 #define stb_sb_reserve(a,n)    (stb__sbmaybegrow(a,n))
 #define stb_sb_last(a)         ((a)[stb__sbn(a)-1])
+#define stb_sb_pop(a)          (stb__sbn(a)-=1, (a)[stb__sbn(a)])
+#define stb_sb_clear(a)        (stb__sbn(a)=0)
 
 #define stb__sbraw(a) ((int *) (a) - 2)
 #define stb__sbm(a)   stb__sbraw(a)[0]
@@ -194,6 +198,9 @@
 #define stb__sbgrow(a,n)      ((a) = stb__sbgrowf((a), (n), sizeof(*(a))))
 
 #include <stdlib.h>
+#include <assert.h>
+#define STRETCHY_BUFFER_OUT_OF_MEMORY assert(0)
+
 
 static void * stb__sbgrowf(void *arr, int increment, int itemsize)
 {

@@ -68,7 +68,7 @@ bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_b
     return derefinement_condition;
 }
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *free_sv_positions) {
+void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv_positions) {
     if (first_bunch_cell == 0) {
         fprintf (stderr, "derefine_cell_bunch: Parameter first_bunch_cell is NULL. Exiting!!");
         exit (10);
@@ -95,7 +95,7 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *fre
     // Front northeast node of the bunch becomes the derefined node.
     struct cell_node *new_cell = get_front_northeast_cell (first_bunch_cell);
 
-    if(free_sv_positions) {
+    if(free_sv_positions && *free_sv_positions) {
 
         //Free Sv Map positions//////////////////////////////////
         struct cell_node *w = (struct cell_node *) new_cell->west;
@@ -108,14 +108,14 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *fre
 
         struct cell_node *wsb = ws->back;
 
-        uint32_vector_push_back(free_sv_positions, w->sv_position);
-        uint32_vector_push_back(free_sv_positions, b->sv_position);
-        uint32_vector_push_back(free_sv_positions, s->sv_position);
+        sb_push(*free_sv_positions, w->sv_position);
+        sb_push(*free_sv_positions, b->sv_position);
+        sb_push(*free_sv_positions, s->sv_position);
 
-        uint32_vector_push_back(free_sv_positions, wb->sv_position);
-        uint32_vector_push_back(free_sv_positions, ws->sv_position);
-        uint32_vector_push_back(free_sv_positions, sb->sv_position);
-        uint32_vector_push_back(free_sv_positions, wsb->sv_position);
+        sb_push(*free_sv_positions, wb->sv_position);
+        sb_push(*free_sv_positions, ws->sv_position);
+        sb_push(*free_sv_positions, sb->sv_position);
+        sb_push(*free_sv_positions, wsb->sv_position);
         /////////////////////////////////////////////////////////////
 
     }

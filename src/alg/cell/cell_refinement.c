@@ -5,7 +5,7 @@
 #include <assert.h>
 #include "cell.h"
 
-void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint32_vector *refined_this_step)  {
+void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t **refined_this_step)  {
 
     assert(cell);
 
@@ -46,8 +46,8 @@ void refine_cell( struct cell_node *cell, uint32_vector *free_sv_positions, uint
     front_northeast_sub_cell->center_z = cell_center_z + cell_quarter_side;
     front_northeast_sub_cell->bunch_number       = old_bunch_number * 10 + 1;
 
-    if(refined_this_step != NULL) {
-        uint32_vector_push_back(refined_this_step, front_northeast_sub_cell->sv_position);
+    if(refined_this_step && *refined_this_step) {
+        sb_push(*refined_this_step, front_northeast_sub_cell->sv_position);
     }
 
     // Creation of back Northeast node.
@@ -1166,8 +1166,8 @@ void simplify_refinement( struct transition_node *transition_node ) {
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
                            double face_length, double half_face_length,
                            double center_x, double center_y, double center_z,
-                           uint64_t  bunch_number, uint32_vector *free_sv_positions,
-                           uint32_vector *refined_this_step) {
+                           uint64_t  bunch_number, uint32_t *free_sv_positions,
+                           uint32_t **refined_this_step) {
 
 
     the_cell->cell_data.level = other_cell->cell_data.level;
@@ -1183,11 +1183,11 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
     the_cell->center_z = center_z;
     the_cell->bunch_number = bunch_number;
 
-    if(free_sv_positions != NULL)
-        the_cell->sv_position = uint32_vector_pop_back(free_sv_positions);
+    if(free_sv_positions)
+        the_cell->sv_position = sb_pop(free_sv_positions);
 
-    if(refined_this_step != NULL)
-        uint32_vector_push_back(refined_this_step, the_cell->sv_position);
+    if(refined_this_step && *refined_this_step)
+        sb_push(*refined_this_step, the_cell->sv_position);
 
 }
 

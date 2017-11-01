@@ -204,8 +204,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     if(has_extra_data)
         set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 
-    uint32_vector *refined_this_step = the_grid->refined_this_step;
-
     bool save_in_binary = configs->binary;
 
     double cur_time = 0.0;
@@ -263,7 +261,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
         if (count % print_rate == 0) {
             print_to_stdout_and_file ("t = %lf, Iterations = "
                     "%" PRIu32 ", Error Norm = %e, Number of Cells:"
-                    "%" PRIu32 ", Iterations time: %ld μ\n",
+                    "%" PRIu32 ", Iterations time: %ld us\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
 
@@ -294,8 +292,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
                 update_cells_to_solve (the_grid, the_ode_solver);
 
-                if (uint32_vector_size (refined_this_step) > 0) {
-                    update_state_vectors_after_refinement (the_ode_solver, refined_this_step);
+                if (sb_count (the_grid->refined_this_step) > 0) {
+                    update_state_vectors_after_refinement (the_ode_solver, the_grid->refined_this_step);
                 }
 
                 start_stop_watch (&part_mat);
@@ -324,7 +322,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 void set_spatial_stim (struct grid *the_grid, struct stim_config_hash *stim_configs) {
 
     struct stim_config *tmp = NULL;
-    int n_active = the_grid->num_active_cells;
 
     for (int i = 0; i < stim_configs->size; i++) {
         for (struct stim_config_elt *e = stim_configs->table[i % stim_configs->size]; e != 0; e = e->next) {
@@ -380,7 +377,7 @@ void save_old_cell_positions (struct grid *the_grid) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (uint32_t i = 0; i < n_active; i++) {
         ac[i]->sv_position = ac[i]->grid_position;
     }
@@ -422,6 +419,36 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
     }
 }
 
+void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct grid *the_grid) {
+
+    double alpha, h;
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+    double beta = the_solver->beta;
+    double cm = the_solver->cm;
+    double dt = the_solver->dt;
+
+
+    #pragma omp parallel for private(alpha, h)
+    for (int i = 0; i < num_active_cells; i++) {
+        h = ac[i]->face_length;
+        alpha = ALPHA (beta, cm, dt, h);
+
+        struct element element;
+        element.column = ac[i]->grid_position;
+        element.cell = ac[i];
+        element.value = alpha;
+
+        if (ac[i]->elements != NULL) {
+            sb_free(ac[i]->elements);
+        }
+
+        ac[i]->elements = NULL;
+        //sb_reserve(ac[i]->elements, 7);
+        sb_push(ac[i]->elements, element);
+    }
+}
+
 void set_discretization_matrix (struct monodomain_solver *the_solver, struct grid *the_grid) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -429,7 +456,7 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
 
     initialize_diagonal_elements (the_solver, the_grid);
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
@@ -452,35 +479,6 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
     }
 }
 
-void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct grid *the_grid) {
-
-    double alpha, h;
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
-    double dt = the_solver->dt;
-
-
-#pragma omp parallel for private(alpha, h)
-    for (int i = 0; i < num_active_cells; i++) {
-        h = ac[i]->face_length;
-        alpha = ALPHA (beta, cm, dt, h);
-
-        struct element element;
-        element.column = ac[i]->grid_position;
-        element.cell = ac[i];
-        element.value = alpha;
-
-        if (ac[i]->elements != NULL) {
-            sb_free(ac[i]->elements);
-            ac[i]->elements = NULL;
-        }
-
-        //sb_reserve(ac[i]->elements, 7);
-        sb_push(ac[i]->elements, element);
-    }
-}
 
 void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, struct cell_node *grid_cell,
                                          void *neighbour_grid_cell, char direction) {
@@ -558,10 +556,11 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
                 h = grid_cell->face_length;
             }
 
+            lock_cell_node (grid_cell);
+
             struct element *cell_elements = grid_cell->elements;
             position = black_neighbor_cell->grid_position;
 
-            lock_cell_node (grid_cell);
 
             size_t max_elements = sb_count(cell_elements);
             bool insert = true;
@@ -604,10 +603,9 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
             unlock_cell_node (grid_cell);
 
 
+            lock_cell_node (black_neighbor_cell);
             cell_elements = black_neighbor_cell->elements;
             position = grid_cell->grid_position;
-
-            lock_cell_node (black_neighbor_cell);
 
             max_elements = sb_count(cell_elements);
 

@@ -11,8 +11,15 @@ struct grid* new_grid() {
     struct grid* result = (struct grid*) malloc(sizeof(struct grid));
     result->first_cell = NULL;
     result->active_cells = NULL;
-    result->refined_this_step = uint32_vector_create(128);
-    result->free_sv_positions = uint32_vector_create(128);
+
+    result->refined_this_step = NULL;
+    result->free_sv_positions = NULL;
+
+
+    sb_reserve(result->refined_this_step, 128);
+    sb_reserve(result->free_sv_positions, 128);
+    //result->refined_this_step = uint32_vector_create(128);
+    //result->free_sv_positions = uint32_vector_create(128);
 
     return result;
 }
@@ -318,11 +325,11 @@ void clean_grid (struct grid *the_grid) {
 
 
     if (the_grid->refined_this_step) {
-        uint32_vector_clear(the_grid->refined_this_step);
+        sb_clear(the_grid->refined_this_step);
     }
 
     if (the_grid->free_sv_positions) {
-        uint32_vector_clear(the_grid->free_sv_positions);
+        sb_clear(the_grid->free_sv_positions);
     }
 
 }
@@ -337,15 +344,9 @@ void clean_and_free_grid(struct grid* the_grid) {
         free (the_grid->active_cells);
     }
 
-    if (the_grid->refined_this_step) {
-        uint32_vector_clear_and_free_data(the_grid->refined_this_step);
-        free (the_grid->refined_this_step);
-    }
+    sb_free (the_grid->refined_this_step);
 
-    if (the_grid->free_sv_positions) {
-        uint32_vector_clear_and_free_data(the_grid->free_sv_positions);
-        free (the_grid->free_sv_positions);
-    }
+    sb_free (the_grid->free_sv_positions);
 
     free (the_grid);
 }

@@ -3,6 +3,8 @@
 //
 
 #include "ode_solver.h"
+#include "../vector/stretchy_buffer.h"
+
 #include <string.h>
 #include <dlfcn.h>
 #include <assert.h>
@@ -10,7 +12,6 @@
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
 #include "../utils/logfile_utils.h"
-
 #endif
 
 struct ode_solver* new_ode_solver() {
@@ -191,7 +192,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     assert(the_ode_solver->sv);
 
     real dt = the_ode_solver->min_dt;
-    int n_odes = the_ode_solver->model_data.number_of_ode_equations;
+    //int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
 
     void *extra_data = the_ode_solver->edo_extra_data;
@@ -242,12 +243,12 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     free(merged_stims);
 }
 
-void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32_vector *refined_this_step) {
+void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32_t *refined_this_step) {
 
     assert(ode_solver);
     assert(ode_solver->sv);
 
-    size_t num_refined_cells = uint32_vector_size(refined_this_step)/8;
+    size_t num_refined_cells = sb_count(refined_this_step)/8;
 
     real *sv = ode_solver->sv;
     int neq = ode_solver->model_data.number_of_ode_equations;
@@ -263,11 +264,11 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
             size_t index_id = i * 8;
 
-            uint32_t index = uint32_vector_at(refined_this_step, index_id);
+            uint32_t index = refined_this_step[index_id];
             sv_src = &sv[index];
 
             for (int j = 1; j < 8; j++) {
-                index = uint32_vector_at(refined_this_step, index_id + j);
+                index = refined_this_step[index_id + j];
                 sv_dst = &sv[index];
                 check_cuda_errors(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t )neq, cudaMemcpyDeviceToDevice));
             }
@@ -286,11 +287,11 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32
 
             size_t index_id = i * 8;
 
-            uint32_t index = uint32_vector_at(refined_this_step, index_id);
+            uint32_t index = refined_this_step[index_id];
             sv_src = &sv[index * neq];
 
             for (int j = 1; j < 8; j++) {
-                index = uint32_vector_at(refined_this_step, index_id + j);
+                index = refined_this_step[index_id + j];
                 sv_dst = &sv[index * neq];
                 memcpy(sv_dst, sv_src, neq * sizeof(real));
             }

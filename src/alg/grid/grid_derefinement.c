@@ -23,7 +23,6 @@ bool derefine_grid_with_bound (struct grid *the_grid, double derefinement_bound,
     bool derefined_once = false;
     set_grid_flux (the_grid);
 
-    uint32_vector *free_svs = the_grid->free_sv_positions;
 
     grid_cell = the_grid->first_cell;
     while (grid_cell != 0) {
@@ -84,7 +83,7 @@ bool derefine_grid_with_bound (struct grid *the_grid, double derefinement_bound,
                             if (cell_needs_derefinement (grid_cell, derefinement_bound)) {
                                 auxiliar_grid_cell = grid_cell->next->next->next->next->next->next->next->next;
 
-                                derefine_cell_bunch (grid_cell, free_svs);
+                                derefine_cell_bunch (grid_cell, &(the_grid->free_sv_positions));
 
                                 the_grid->number_of_cells -= 7;
                                 grid_cell = auxiliar_grid_cell;

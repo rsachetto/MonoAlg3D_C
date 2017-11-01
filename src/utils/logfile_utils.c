@@ -5,6 +5,10 @@
 #include <stdarg.h>
 
 #include "logfile_utils.h"
+#include <stdio.h>
+
+static FILE *logfile = NULL;
+
 
 void print_to_stdout_and_file(char const *fmt, ...) {
     va_list ap;

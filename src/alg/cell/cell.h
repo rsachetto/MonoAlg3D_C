@@ -9,9 +9,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../vector/int_vector.h"
-#include "../../vector/uint32_vector.h"
-//#include "../../vector/element_vector.h"
+#include "../../vector/stretchy_buffer.h"
+
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
@@ -150,21 +149,21 @@ double get_cell_maximum_flux (struct cell_node *the_cell);
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
                             double face_length, double half_face_length, double center_x,
                             double center_y, double center_z, uint64_t bunch_number,
-                            uint32_vector *free_sv_positions, uint32_vector *refined_this_step);
+                            uint32_t *free_sv_positions, uint32_t **refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
                                        struct cell_node *other_node, char direction);
 
 void simplify_refinement (struct transition_node *transition_node);
-void refine_cell (struct cell_node *cell, uint32_vector *free_sv_positions,
-                  uint32_vector *refined_this_step);
+void refine_cell (struct cell_node *cell, uint32_t *free_sv_positions,
+                  uint32_t **refined_this_step);
 
 bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
 void simplify_deref (struct transition_node *transition_node);
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_vector *free_sv_positions);
+void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv_positions);
 
 
 #endif // MONOALG3D_CELL_H
