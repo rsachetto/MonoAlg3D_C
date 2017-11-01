@@ -6,7 +6,6 @@
 #define MONOALG3D_GRID_H
 
 #include "../cell/cell.h"
-#include "../../vector/uint32_vector.h"
 
 #include <stdlib.h>
 #include <stdio.h>

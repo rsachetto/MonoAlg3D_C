@@ -46,15 +46,14 @@ ADD_SUBDIRECTORY(src/main)
 ADD_SUBDIRECTORY(src/hash)
 ADD_SUBDIRECTORY(src/ini_parser)
 ADD_SUBDIRECTORY(src/string)
-ADD_SUBDIRECTORY(src/vector)
 
 set(SOURCE_FILES src/main.c)
 
 add_executable(MonoAlg3D ${SOURCE_FILES})
 
-ADD_DEPENDENCIES(MonoAlg3D utils alg solvers gpu_utils hashes ini_parser string vector)
+ADD_DEPENDENCIES(MonoAlg3D utils alg solvers gpu_utils hashes ini_parser string)
 
-target_link_libraries(MonoAlg3D alg solvers utils gpu_utils hashes ini_parser string vector ${CMAKE_THREAD_LIBS_INIT} ${CUDA_LIBRARIES} dl m)
+target_link_libraries(MonoAlg3D alg solvers utils gpu_utils hashes ini_parser string ${CMAKE_THREAD_LIBS_INIT} ${CUDA_LIBRARIES} dl m)
 
 ADD_SUBDIRECTORY(src/models_library)
 ADD_SUBDIRECTORY(src/stimuli_library)

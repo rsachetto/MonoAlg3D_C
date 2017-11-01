@@ -51,7 +51,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     start_stop_watch(&config_time);
 
-    //MAIN CONFIGURATION
+    ///////MAIN CONFIGURATION BEGIN//////////////////
     init_ode_solver_with_cell_model(the_ode_solver);
 
     if(configs->stim_configs) {
@@ -72,7 +72,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     if(configs->extra_data_config) {
         init_extra_data_functions(configs->extra_data_config);
     }
-    //////////////////////////////
+    ///////MAIN CONFIGURATION END//////////////////
 
     struct stim_config_hash *stimuli_configs = configs->stim_configs;
     struct extra_data_config *extra_data_config = configs->extra_data_config;
@@ -444,7 +444,7 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
         }
 
         ac[i]->elements = NULL;
-        //sb_reserve(ac[i]->elements, 7);
+        sb_reserve(ac[i]->elements, 7);
         sb_push(ac[i]->elements, element);
     }
 }

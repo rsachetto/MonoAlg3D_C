@@ -9,9 +9,8 @@ int main(int argc, char **argv) {
 
     struct user_options* options;
 
-    //We load the default options first
     options = new_user_options();
-    
+
     struct grid *the_grid;
     struct monodomain_solver *edp_solver;
     struct ode_solver *ode_solver;
@@ -29,10 +28,6 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Error: Can't load the config file %s\n", options->config_file);
             return EXIT_FAILURE;
         }
-    }
-    else {
-        fprintf(stderr, "Error: no config file provided! Some configurations are only available via config file!\n");
-        return EXIT_FAILURE;
     }
 
     //The command line options always overwrite the config file
@@ -58,10 +53,6 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    //FILE *teste = fopen("V_t_0", "w");
-//    print_grid_with_scar_info(the_grid, teste, false);
-    //fclose(teste);
-    //exit(0);
     solve_monodomain(the_grid, edp_solver, ode_solver, options);
 
     clean_and_free_grid(the_grid);
