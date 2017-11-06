@@ -3,8 +3,8 @@
 //
 #include "../main/linear_system_solver.h"
 #include "../main/output_utils.h"
-#include "../vector/element_vector.h"
 #include <criterion/criterion.h>
+#include "../vector/stretchy_buffer.h"
 #include <omp.h>
 
 double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines);
@@ -23,8 +23,6 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
 
     cr_assert_eq (num_lines_m, num_lines_v);
     cr_assert (nnz);
-
-    int max_el = num_lines_m;
 
     initialize_and_construct_grid (grid, 1.0);
 
@@ -66,8 +64,8 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
         el.column = cell_position;
         el.cell = cell;
 
-        cell->elements = element_vector_create(7);
-        element_vector_push_back(cell->elements, el);
+        sb_reserve(cell->elements, 7);
+        sb_push(cell->elements, el);
 
         for (int j = 0; j < num_lines_m; j++) {
             if (cell_position != j) {
@@ -86,7 +84,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
                         aux = aux->next;
                     }
                     el2.cell = aux;
-                    element_vector_push_back(cell->elements, el2);
+                    sb_push(cell->elements, el2);
                 }
             }
         }
@@ -265,20 +263,24 @@ Test (solvers, cg_no_jacobi) {
 
 Test (utils, vector) {
 
-    int_vector *v;
+    int *v = NULL;
 
-    v = int_vector_create(1);
+    sb_reserve(v, 1);
 
-    cr_assert_eq(v->size ,0);
-    cr_assert_eq(v->capacity ,1);
+    cr_assert_eq(sb_count(v) ,0);
+    cr_assert_eq(stb__sbm(v)  ,1);
 
-    int_vector_insert(v, 2, 2);
+    sb_push(v, 0);
+    sb_push(v, 1);
+    sb_push(v, 2);
 
-    cr_assert_eq(int_vector_at(v, 2),0); //error, inserting after size
+    cr_assert_eq(sb_count(v) ,3);
 
-    int_vector_push_back(v, 2);
-    cr_assert_eq(v->size ,1);
 
-    cr_assert_eq(int_vector_at(v, 0),2);
+    cr_assert_eq(v[0], 0);
+    cr_assert_eq(v[1], 1);
+    cr_assert_eq(v[2], 2);
+
+
 
 }

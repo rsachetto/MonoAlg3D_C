@@ -307,6 +307,8 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
     solver->min_dt = (real)options->dt_edo;
     solver->gpu = options->gpu;
 
-    solver->model_data.model_library_path = strdup(options->model_file_path);
+    if(options->model_file_path) {
+        solver->model_data.model_library_path = strdup(options->model_file_path);
+    }
 
 }

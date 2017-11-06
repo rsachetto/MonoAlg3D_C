@@ -35,10 +35,11 @@ int main(int argc, char **argv) {
 
 
     if(options->out_dir_name) {
-        char buffer [FILENAME_MAX];
+        sds buffer = sdsnew("");
         create_dir_if_no_exists(options->out_dir_name);
-        sprintf(buffer,"%s/outputlog.txt", options->out_dir_name);
+        buffer = sdscatfmt(buffer,"%s/outputlog.txt", options->out_dir_name);
         open_logfile(buffer);
+        sdsfree(buffer);
     }
 
     configure_ode_solver_from_options(ode_solver, options);

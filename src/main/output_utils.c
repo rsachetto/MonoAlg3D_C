@@ -21,7 +21,7 @@ bool dir_exists(const char *path) {
 
 void create_dir_if_no_exists(const char *out_dir) {
     if (!dir_exists (out_dir)) {
-        printf ("%s does not exist! Creating\n", out_dir);
+        printf ("%s does not exist! Creating!\n", out_dir);
 
         if (mkdir (out_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
             fprintf (stderr, "Error creating directory %s. Exiting!\n", out_dir);
