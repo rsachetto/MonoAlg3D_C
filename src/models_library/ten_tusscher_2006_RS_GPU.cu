@@ -1,11 +1,9 @@
 #include <stddef.h>
 #include <stdint.h>
-#include "../main/constants.h"
 #include <stdlib.h>
 #include "model_gpu_utils.h"
 
 #include "ten_tusscher_2006.h"
-
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
@@ -18,7 +16,6 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
-
 
     kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, num_volumes);
 
@@ -46,7 +43,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
 
     //the array cells to solve is passed when we are using and adapative mesh
     uint32_t *cells_to_solve_device = NULL;
-    if(cells_to_solve) {
+    if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
@@ -122,7 +119,6 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
             }
             
         }
-        free(rDY);
 
     }
 }

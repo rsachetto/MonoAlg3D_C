@@ -3,9 +3,7 @@
 //
 
 #include "cell.h"
-#include <pthread.h>
 #include <math.h>
-#include "../../vector/stretchy_buffer.h"
 
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
     data->type = type;
@@ -65,8 +63,9 @@ void init_cell_node(struct cell_node *cell_node) {
 
 
     cell_node->elements = NULL;
-    pthread_mutex_init(&(cell_node->updating), NULL);
-
+#if defined(_OPENMP)
+    omp_init_lock(&(cell_node->updating));
+#endif
 
 }
 
@@ -74,17 +73,23 @@ void free_cell_node(struct cell_node *cell_node) {
 
     sb_free(cell_node->elements);
 
-    pthread_mutex_destroy(&(cell_node->updating));
+#if defined(_OPENMP)
+    omp_destroy_lock(&(cell_node->updating));
+#endif
 
     free(cell_node);
 }
 
 void lock_cell_node(struct cell_node *cell_node) {
-    pthread_mutex_lock(&(cell_node->updating));
+#if defined(_OPENMP)
+    omp_set_lock(&(cell_node->updating));
+#endif
 }
 
 void unlock_cell_node(struct cell_node *cell_node) {
-    pthread_mutex_unlock(&(cell_node->updating));
+#if defined(_OPENMP)
+    omp_unset_lock(&(cell_node->updating));
+#endif
 }
 
 struct transition_node* new_transition_node() {

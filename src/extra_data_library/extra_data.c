@@ -3,8 +3,8 @@
 //
 
 #include "../utils/erros_helpers.h"
-#include "../main/config/extra_data_config.h"
-#include "../main/constants.h"
+#include "../monodomain/config/extra_data_config.h"
+#include "../monodomain/constants.h"
 #include "../libraries_common/config_helpers.h"
 
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {

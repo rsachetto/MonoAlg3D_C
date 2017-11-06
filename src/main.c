@@ -1,7 +1,6 @@
-#include <stdio.h>
 #include "alg/grid/grid.h"
-#include "main/ode_solver.h"
-#include "main/monodomain_solver.h"
+#include "monodomain/ode_solver.h"
+#include "monodomain/monodomain_solver.h"
 #include "ini_parser/ini.h"
 #include "utils/logfile_utils.h"
 

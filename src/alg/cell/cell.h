@@ -5,12 +5,15 @@
 #ifndef MONOALG3D_CELL_H
 #define MONOALG3D_CELL_H
 
+#include "../../vector/stretchy_buffer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../vector/stretchy_buffer.h"
 
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
@@ -82,7 +85,9 @@ struct cell_node {
     double z;  // Jacobi preconditioner
     double b;  /* In Ax = b, corresponds to the element in int_vector b associated to this cell. */
 
-    pthread_mutex_t updating;
+#if defined(_OPENMP)
+    omp_lock_t updating;
+#endif
 
     // Variables used by some applications of partial differential equations.
     double v;

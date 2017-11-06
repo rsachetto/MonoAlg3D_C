@@ -2,22 +2,22 @@
 // Created by sachetto on 03/10/17.
 //
 
-
-#include <inttypes.h>
-#include <omp.h>
-#include <assert.h>
-#include <string.h>
-
-#ifdef COMPILE_CUDA
-#include "../gpu_utils/gpu_utils.h"
-#endif
-
 #include "monodomain_solver.h"
 #include "../utils/stop_watch.h"
 #include "linear_system_solver.h"
 #include "../utils/logfile_utils.h"
-#include "../vector/stretchy_buffer.h"
 
+#include <inttypes.h>
+
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
+
+#include <assert.h>
+
+#ifdef COMPILE_CUDA
+#include "../gpu_utils/gpu_utils.h"
+#endif
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);

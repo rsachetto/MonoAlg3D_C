@@ -2,11 +2,10 @@
 // Created by sachetto on 03/10/17.
 //
 
+#include "output_utils.h"
 #include <sys/stat.h>
 #include <malloc.h>
-#include <assert.h>
 #include <stdlib.h>
-#include "output_utils.h"
 
 bool dir_exists(const char *path) {
     struct stat info;

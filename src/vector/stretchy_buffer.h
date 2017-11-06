@@ -92,7 +92,7 @@
 //
 // Common use:
 //
-//    The main application for this is when building a list of
+//    The monodomain application for this is when building a list of
 //    things with an unknown quantity, either due to loading from
 //    a file or through a process which produces an unpredictable
 //    number.
@@ -159,7 +159,7 @@
 //    to the user.)
 //
 //    The details are trivial and implementation is straightforward;
-//    the main trick is in realizing in the first place that it's
+//    the monodomain trick is in realizing in the first place that it's
 //    possible to do this in a generic, type-safe way in C.
 //
 // LICENSE
@@ -189,7 +189,7 @@
 #define stb_sb_pop(a)          (stb__sbn(a)-=1, (a)[stb__sbn(a)])
 #define stb_sb_clear(a)        (stb__sbn(a)=0)
 
-#define stb__sbraw(a) ((int *) (a) - 2)
+#define stb__sbraw(a) ((u_int32_t *) (a) - 2)
 #define stb__sbm(a)   stb__sbraw(a)[0]
 #define stb__sbn(a)   stb__sbraw(a)[1]
 
@@ -202,12 +202,12 @@
 #define STRETCHY_BUFFER_OUT_OF_MEMORY assert(0)
 
 
-static void * stb__sbgrowf(void *arr, int increment, int itemsize)
+static void * stb__sbgrowf(void *arr, u_int32_t increment, u_int32_t itemsize)
 {
-   int dbl_cur = arr ? 2*stb__sbm(arr) : 0;
-   int min_needed = stb_sb_count(arr) + increment;
-   int m = dbl_cur > min_needed ? dbl_cur : min_needed;
-   int *p = (int *) realloc(arr ? stb__sbraw(arr) : 0, itemsize * m + sizeof(int)*2);
+   u_int32_t dbl_cur = arr ? 2*stb__sbm(arr) : 0;
+   u_int32_t min_needed = stb_sb_count(arr) + increment;
+   u_int32_t m = dbl_cur > min_needed ? dbl_cur : min_needed;
+   u_int32_t *p = (u_int32_t *) realloc(arr ? stb__sbraw(arr) : 0, itemsize * m + sizeof(u_int32_t)*2);
    if (p) {
       if (!arr)
          p[1] = 0;
@@ -217,7 +217,7 @@ static void * stb__sbgrowf(void *arr, int increment, int itemsize)
       #ifdef STRETCHY_BUFFER_OUT_OF_MEMORY
       STRETCHY_BUFFER_OUT_OF_MEMORY ;
       #endif
-      return (void *) (2*sizeof(int)); // try to force a NULL pointer exception later
+      return (void *) (2*sizeof(u_int32_t)); // try to force a NULL pointer exception later
    }
 }
 #endif // STB_STRETCHY_BUFFER_H_INCLUDED

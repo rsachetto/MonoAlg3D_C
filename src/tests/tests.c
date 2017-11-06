@@ -1,11 +1,9 @@
 //
 // Created by sachetto on 06/10/17.
 //
-#include "../main/linear_system_solver.h"
-#include "../main/output_utils.h"
+#include "../monodomain/linear_system_solver.h"
+#include "../monodomain/output_utils.h"
 #include <criterion/criterion.h>
-#include "../vector/stretchy_buffer.h"
-#include <omp.h>
 
 double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines);
 
@@ -261,7 +259,7 @@ Test (solvers, cg_no_jacobi) {
     run_cg (false);
 }
 
-Test (utils, vector) {
+Test (utils, stretchy_buffer_int) {
 
     int *v = NULL;
 
@@ -276,11 +274,92 @@ Test (utils, vector) {
 
     cr_assert_eq(sb_count(v) ,3);
 
-
     cr_assert_eq(v[0], 0);
     cr_assert_eq(v[1], 1);
     cr_assert_eq(v[2], 2);
+}
 
+Test (utils, stretchy_buffer_float) {
 
+    float *v = NULL;
+
+    sb_reserve(v, 1);
+
+    cr_assert_eq(sb_count(v) ,0);
+    cr_assert_eq(stb__sbm(v)  ,1);
+
+    sb_push(v, 0);
+    sb_push(v, 0.5);
+    sb_push(v, 2.5);
+
+    cr_assert_eq(sb_count(v) ,3);
+
+    cr_assert_float_eq(v[0], 0.0, 1e-10);
+    cr_assert_float_eq(v[1], 0.5, 1e-10);
+    cr_assert_float_eq(v[2], 2.5, 1e-10);
+}
+
+Test (utils, stretchy_buffer_double) {
+
+    double *v = NULL;
+
+    sb_reserve(v, 1);
+
+    cr_assert_eq(sb_count(v) ,0);
+    cr_assert_eq(stb__sbm(v)  ,1);
+
+            sb_push(v, 0);
+            sb_push(v, 0.5);
+            sb_push(v, 2.5);
+
+    cr_assert_eq(sb_count(v) ,3);
+
+    cr_assert_float_eq(v[0], 0.0, 1e-10);
+    cr_assert_float_eq(v[1], 0.5, 1e-10);
+    cr_assert_float_eq(v[2], 2.5, 1e-10);
+}
+
+Test (utils, stretchy_buffer_element) {
+
+    struct element *v = NULL;
+
+    sb_reserve(v, 1);
+
+    cr_assert_eq(sb_count(v) ,0);
+    cr_assert_eq(stb__sbm(v)  ,1);
+
+    struct cell_node *c  = new_cell_node();
+    struct element a = {0, 1, c};
+
+    sb_push(v, a);
+
+    a.column = 2;
+    a.value = -2.2;
+    sb_push(v, a);
+
+    a.column = 3;
+    a.value = 3.5;
+    sb_push(v, a);
+
+    cr_assert_eq(sb_count(v) ,3);
+
+    cr_assert_eq(v[0].column, 1);
+    cr_assert_float_eq(v[0].value, 0.0, 1e-10);
+    cr_assert_eq(v[0].cell, c);
+
+    cr_assert_eq(v[1].column, 2);
+    cr_assert_float_eq(v[1].value, -2.2, 1e-10);
+    cr_assert_eq(v[1].cell, c);
+
+    cr_assert_eq(v[2].column, 3);
+    cr_assert_float_eq(v[2].value, 3.5, 1e-10);
+    cr_assert_eq(v[2].cell, c);
+
+    struct element b = sb_pop(v);
+    cr_assert_eq(sb_count(v), 2);
+
+    cr_assert_eq(b.column, 3);
+
+    free(c);
 
 }

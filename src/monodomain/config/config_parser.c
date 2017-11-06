@@ -1,9 +1,9 @@
 #include "config_parser.h"
 #include "../../ini_parser/ini_file_sections.h"
+#include "../../utils/logfile_utils.h"
 
 #include <string.h>
 #include <assert.h>
-#include "../../utils/logfile_utils.h"
 
 static const struct option long_options[] = {
         { "config_file", required_argument, NULL, 'c' },

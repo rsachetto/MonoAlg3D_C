@@ -7,12 +7,11 @@
 #include <stdlib.h>
 
 #include "../utils/erros_helpers.h"
-#include "../utils/logfile_utils.h"
 #include "../utils/utils.h"
-#include "../main/constants.h"
+#include "../monodomain/constants.h"
 #include "../hash/string_hash.h"
 #include "../alg/grid/grid.h"
-#include "../main/config/stim_config.h"
+#include "../monodomain/config/stim_config.h"
 #include "../libraries_common/config_helpers.h"
 
 SET_SPATIAL_STIM(set_benchmark_spatial_stim) {

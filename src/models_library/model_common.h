@@ -8,10 +8,12 @@
 #ifndef MONOALG3D_MODEL_COMMON_H
 #define MONOALG3D_MODEL_COMMON_H
 
-#include "../main/constants.h"
+#include "../monodomain/constants.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+
 struct cell_model_data {
     int number_of_ode_equations;
     real initial_v;

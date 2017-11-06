@@ -5,8 +5,7 @@
 #include "domain_helpers.h"
 
 #include "../libraries_common/config_helpers.h"
-#include "../main/config/domain_config.h"
-#include "../utils/erros_helpers.h"
+#include "../monodomain/config/domain_config.h"
 #include "../utils/logfile_utils.h"
 #include <assert.h>
 #include <time.h>
