@@ -3,7 +3,6 @@
 //
 
 #include "grid.h"
-#include "../../vector/stretchy_buffer.h"
 #include <assert.h>
 #include "inttypes.h"
 

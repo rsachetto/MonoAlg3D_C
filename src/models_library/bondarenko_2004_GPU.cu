@@ -128,7 +128,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         for (int n = 0; n < num_steps; ++n) {
 
-            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt);            
+            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id);
 
             for(int i = 0; i < NEQ; i++) {
                 *((real*)((char*)sv + pitch * i) + sv_id) = rDY[i];
@@ -140,7 +140,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 }
 
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt) {
+inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_) {
 
     // State variables
     const real V_old_ = *((real*)((char*)sv_ + pitch * 0) + threadID_);	 // initial value = -82.4202 millivolt

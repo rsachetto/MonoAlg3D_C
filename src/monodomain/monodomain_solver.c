@@ -7,18 +7,12 @@
 #include "linear_system_solver.h"
 #include "../utils/logfile_utils.h"
 
-#include <inttypes.h>
-
-#if defined(_OPENMP)
-#include <omp.h>
-#endif
-
-#include <assert.h>
-
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
+#include <inttypes.h>
+#include <assert.h>
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);
@@ -34,8 +28,8 @@ struct monodomain_solver *new_monodomain_solver() {
     return result;
 }
 
-void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
-                      struct ode_solver *the_ode_solver,  struct user_options *configs) {
+void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
+                      struct grid *the_grid, struct user_options *configs) {
 
     assert(configs);
 
@@ -59,7 +53,7 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     if(configs->stim_configs) {
         //Init all stimuli
-        STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_KEY(configs->stim_configs, init_stim_functions);
+        STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(configs->stim_configs, init_stim_functions);
     }
 
     //Configure the functions and set the mesh domain
@@ -176,7 +170,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
 
     fflush (stdout);
 
-
     init_stop_watch (&solver_time);
     init_stop_watch (&ode_time);
     init_stop_watch (&cg_time);
@@ -272,7 +265,6 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
                     "%" PRIu32 ", Iterations time: %ld us\n",
                     cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
         }
-
 
         if (adaptive) {
             redo_matrix = false;
@@ -403,7 +395,7 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
     solver->cells_to_solve = (uint32_t *)malloc (the_grid->num_active_cells * sizeof (uint32_t));
     uint32_t *cts = solver->cells_to_solve;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (uint32_t i = 0; i < n_active; i++) {
         cts[i] = ac[i]->sv_position;
     }
@@ -418,7 +410,7 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
     double cm = the_solver->cm;
     double dt = the_solver->dt;
 
-#pragma omp parallel for private(alpha, h)
+    #pragma omp parallel for private(alpha, h)
     for (int i = 0; i < active_cells; i++) {
         h = ac[i]->face_length;
         alpha = ALPHA (beta, cm, dt, h);
@@ -498,16 +490,16 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
 
-    double sigmaX = the_solver->sigma_x;
-    double sigmaY = the_solver->sigma_y;
-    double sigmaZ = the_solver->sigma_z;
+    double sigma_x = the_solver->sigma_x;
+    double sigma_y = the_solver->sigma_y;
+    double sigma_z = the_solver->sigma_z;
 
-    double sigmaX1 = (2.0f * sigmaX * sigmaX) / (sigmaX + sigmaX);
-    double sigmaX2 = (2.0f * sigmaX * sigmaX) / (sigmaX + sigmaX);
-    double sigmaY1 = (2.0f * sigmaY * sigmaY) / (sigmaY + sigmaY);
-    double sigmaY2 = (2.0f * sigmaY * sigmaY) / (sigmaY + sigmaY);
-    double sigmaZ1 = (2.0f * sigmaZ * sigmaZ) / (sigmaZ + sigmaZ);
-    double sigmaZ2 = (2.0f * sigmaZ * sigmaZ) / (sigmaZ + sigmaZ);
+    double sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+    double sigma_x2 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+    double sigma_y1 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
+    double sigma_y2 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
+    double sigma_z1 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
+    double sigma_z2 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
      * cell which is a cell node. */
@@ -586,23 +578,23 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
                 struct element new_element;
                 new_element.column = position;
                 if (direction == 'n') { // Z direction
-                    new_element.value = -sigmaZ1 * h;
-                    cell_elements[0].value += (sigmaZ1 * h);
+                    new_element.value = -sigma_z1 * h;
+                    cell_elements[0].value += (sigma_z1 * h);
                 } else if (direction == 's') { // Z direction
-                    new_element.value = -sigmaZ2 * h;
-                    cell_elements[0].value += sigmaZ2 * h;
+                    new_element.value = -sigma_z2 * h;
+                    cell_elements[0].value += sigma_z2 * h;
                 } else if (direction == 'e') { // Y direction
-                    new_element.value = -sigmaY1 * h;
-                    cell_elements[0].value += (sigmaY1 * h);
+                    new_element.value = -sigma_y1 * h;
+                    cell_elements[0].value += (sigma_y1 * h);
                 } else if (direction == 'w') { // Y direction
-                    new_element.value = -sigmaY2 * h;
-                    cell_elements[0].value += (sigmaY2 * h);
+                    new_element.value = -sigma_y2 * h;
+                    cell_elements[0].value += (sigma_y2 * h);
                 } else if (direction == 'f') { // X direction
-                    new_element.value = -sigmaX1 * h;
-                    cell_elements[0].value += (sigmaX1 * h);
+                    new_element.value = -sigma_x1 * h;
+                    cell_elements[0].value += (sigma_x1 * h);
                 } else if (direction == 'b') { // X direction
-                    new_element.value = -sigmaX2 * h;
-                    cell_elements[0].value += (sigmaX2 * h);
+                    new_element.value = -sigma_x2 * h;
+                    cell_elements[0].value += (sigma_x2 * h);
                 }
 
                 new_element.cell = black_neighbor_cell;
@@ -630,23 +622,23 @@ void fill_discretization_matrix_elements(struct monodomain_solver *the_solver, s
                 struct element new_element;
                 new_element.column = position;
                 if (direction == 'n') { // Z direction
-                    new_element.value = -sigmaZ1 * h;
-                    cell_elements[0].value += (sigmaZ1 * h);
+                    new_element.value = -sigma_z1 * h;
+                    cell_elements[0].value += (sigma_z1 * h);
                 } else if (direction == 's') { // Z direction
-                    new_element.value = -sigmaZ2 * h;
-                    cell_elements[0].value += (sigmaZ2 * h);
+                    new_element.value = -sigma_z2 * h;
+                    cell_elements[0].value += (sigma_z2 * h);
                 } else if (direction == 'e') { // Y direction
-                    new_element.value = -sigmaY1 * h;
-                    cell_elements[0].value += (sigmaY1 * h);
+                    new_element.value = -sigma_y1 * h;
+                    cell_elements[0].value += (sigma_y1 * h);
                 } else if (direction == 'w') { // Y direction
-                    new_element.value = -sigmaY2 * h;
-                    cell_elements[0].value += (sigmaY2 * h);
+                    new_element.value = -sigma_y2 * h;
+                    cell_elements[0].value += (sigma_y2 * h);
                 } else if (direction == 'f') { // X direction
-                    new_element.value = -sigmaX1 * h;
-                    cell_elements[0].value += (sigmaX1 * h);
+                    new_element.value = -sigma_x1 * h;
+                    cell_elements[0].value += (sigma_x1 * h);
                 } else if (direction == 'b') { // X direction
-                    new_element.value = -sigmaX2 * h;
-                    cell_elements[0].value += (sigmaX2 * h);
+                    new_element.value = -sigma_x2 * h;
+                    cell_elements[0].value += (sigma_x2 * h);
                 }
 
                 new_element.cell = grid_cell;
@@ -709,9 +701,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
             the_monodomain_solver->sigma_y,
             the_monodomain_solver->sigma_z);
 
-    print_to_stdout_and_file ("Initial N. of Elements = "
-                    "%" PRIu32 "\n",
-            the_grid->num_active_cells);
+    print_to_stdout_and_file ("Initial N. of Elements = ""%" PRIu32 "\n", the_grid->num_active_cells);
     print_to_stdout_and_file ("PDE time step = %lf\n", the_monodomain_solver->dt);
     print_to_stdout_and_file ("ODE min time step = %lf\n", the_ode_solver->min_dt);
     print_to_stdout_and_file ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
@@ -751,7 +741,6 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         else {
             print_to_stdout_and_file("Stimuli configuration:\n");
         }
-
 
         for (int i = 0; i < options->stim_configs->size; i++) {
             for (struct stim_config_elt *e = options->stim_configs->table[i % options->stim_configs->size];

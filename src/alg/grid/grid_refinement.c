@@ -2,9 +2,7 @@
 // Created by sachetto on 30/09/17.
 //
 
-#include <assert.h>
 #include "grid.h"
-#include "../../vector/stretchy_buffer.h"
 
 /**
  * Decides if the grid should be refined by traversing the whole grid, according

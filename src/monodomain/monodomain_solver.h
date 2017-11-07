@@ -6,13 +6,13 @@
 #define MONOALG3D_SOLVER_H
 
 #include "../alg/grid/grid.h"
-#include "output_utils.h"
 #include "ode_solver.h"
-#include <stdbool.h>
-#include <stdint.h>
 #include "config/stim_config_hash.h"
 #include "config/extra_data_config.h"
 #include "config/config_parser.h"
+
+#include <stdbool.h>
+#include <stdint.h>
 
 struct monodomain_solver {
 
@@ -44,8 +44,8 @@ struct monodomain_solver {
 
 struct monodomain_solver *new_monodomain_solver ();
 
-void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monodomain_solver,
-                      struct ode_solver *the_edo_solver, struct user_options *configs);
+void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_edo_solver,
+                      struct grid *the_grid, struct user_options *configs);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);

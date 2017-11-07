@@ -3,7 +3,6 @@
 //
 
 #include "linear_system_solver.h"
-#include "../vector/stretchy_buffer.h"
 
 uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool use_jacobi, double *error) {
 

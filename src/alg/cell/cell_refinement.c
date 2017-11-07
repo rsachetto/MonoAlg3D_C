@@ -2,7 +2,6 @@
 // Created by sachetto on 30/09/17.
 //
 
-#include <assert.h>
 #include "cell.h"
 
 void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t **refined_this_step)  {

@@ -166,7 +166,7 @@ void refine_cell (struct cell_node *cell, uint32_t *free_sv_positions,
 bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
-void simplify_deref (struct transition_node *transition_node);
+void simplify_derefinement(struct transition_node *transition_node);
 
 void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv_positions);
 

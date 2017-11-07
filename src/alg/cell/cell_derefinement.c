@@ -207,12 +207,12 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv
     new_cell->back = back_transition_node;
 
     // Simplification of grid Eliminating unneeded transition nodes.
-    simplify_deref (north_transition_node);
-    simplify_deref (south_transition_node);
-    simplify_deref (east_transition_node);
-    simplify_deref (west_transition_node);
-    simplify_deref (front_transition_node);
-    simplify_deref (back_transition_node);
+    simplify_derefinement(north_transition_node);
+    simplify_derefinement(south_transition_node);
+    simplify_derefinement(east_transition_node);
+    simplify_derefinement(west_transition_node);
+    simplify_derefinement(front_transition_node);
+    simplify_derefinement(back_transition_node);
 }
 
 /**
@@ -387,9 +387,9 @@ uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell) {
  * @throw NullPointer If a null transition node is given as argument, a NullPointer
  * exception is thrown.
  */
-void simplify_deref (struct transition_node *transition_node) {
+void simplify_derefinement(struct transition_node *transition_node) {
     if (transition_node == NULL) {
-        fprintf (stderr, "simplify_deref(): Parameter transition_node is NULL. Exiting!");
+        fprintf (stderr, "simplify_derefinement(): Parameter transition_node is NULL. Exiting!");
         exit (10);
     }
 

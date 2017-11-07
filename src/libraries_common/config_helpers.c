@@ -3,7 +3,6 @@
 //
 
 #include "config_helpers.h"
-#include <stdlib.h>
 
 char *get_char_parameter (struct string_hash *config, const char *parameter) {
     char *config_char = string_hash_search (config, parameter);

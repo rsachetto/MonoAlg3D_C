@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include "model_gpu_utils.h"
 
 #include "ten_tusscher_2006.h"

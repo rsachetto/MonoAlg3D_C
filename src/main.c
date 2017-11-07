@@ -11,11 +11,11 @@ int main(int argc, char **argv) {
     options = new_user_options();
 
     struct grid *the_grid;
-    struct monodomain_solver *edp_solver;
+    struct monodomain_solver *monodomain_solver;
     struct ode_solver *ode_solver;
 
     the_grid   = new_grid();
-    edp_solver = new_monodomain_solver();
+    monodomain_solver = new_monodomain_solver();
     ode_solver = new_ode_solver();
 
     //First we have to get the config file path
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     }
 
     configure_ode_solver_from_options(ode_solver, options);
-    configure_monodomain_solver_from_options(edp_solver, options);
+    configure_monodomain_solver_from_options(monodomain_solver, options);
     configure_grid_from_options(the_grid, options);
 
 
@@ -53,12 +53,12 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    solve_monodomain(the_grid, edp_solver, ode_solver, options);
+    solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
 
-    free(edp_solver);
+    free(monodomain_solver);
 
     free_user_options(options);
     close_logfile();

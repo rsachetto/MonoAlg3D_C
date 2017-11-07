@@ -591,7 +591,7 @@ void set_fibrosis_from_file(struct grid *grid) {
         exit (0);
     }
 
-    int size = 2172089;
+    size_t size = 2172089;
 
     double **a = (double **)malloc (sizeof (double *) * size);
     for (int i = 0; i < size; i++) {

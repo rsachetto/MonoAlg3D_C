@@ -1,6 +1,5 @@
 # Executables
 *.exe
-*.out
 *.app
 *.i*86
 *.x86_64
@@ -60,3 +59,4 @@ tmp*/
 tests_bin/
 .vscode/
 build/
+*~

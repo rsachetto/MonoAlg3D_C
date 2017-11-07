@@ -111,7 +111,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, phi, config->config_data.config, "phi");
 
         unsigned seed = 0;
-        bool success = false;
+        bool success;
         GET_PARAMETER_NUMERIC_VALUE (unsigned, seed, config->config_data.config, "seed", success);
         if (!success)
             seed = 0;

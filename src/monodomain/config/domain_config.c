@@ -6,7 +6,6 @@
 #include <dlfcn.h>
 #include <string.h>
 #include "../../utils/logfile_utils.h"
-#include "../output_utils.h"
 
 void init_domain_functions(struct domain_config *config) {
 

@@ -50,7 +50,7 @@ struct ode_solver {
 
 void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint32_t num_volumes);
 
-void update_state_vectors_after_refinement(struct ode_solver *ode_solver, uint32_t *refined_this_step);
+void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const uint32_t *refined_this_step);
 struct ode_solver* new_ode_solver();
 void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
