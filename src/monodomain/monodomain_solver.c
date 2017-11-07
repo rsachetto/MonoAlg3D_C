@@ -19,6 +19,7 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
+
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);
 }
@@ -41,6 +42,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     assert(the_grid);
     assert(the_monodomain_solver);
     assert(the_ode_solver);
+
+    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
             total_deref_time = 0, cg_partial, total_config_time = 0;
@@ -189,6 +192,8 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     set_discretization_matrix (the_monodomain_solver, the_grid);
     total_mat_time = stop_stop_watch (&part_mat);
     print_to_stdout_and_file ("Assembling Monodomain Matrix End\n");
+    print_to_stdout_and_file (LOG_LINE_SEPARATOR);
+
 
     start_stop_watch (&solver_time);
 
@@ -207,6 +212,9 @@ void solve_monodomain(struct grid *the_grid, struct monodomain_solver *the_monod
     bool save_in_binary = configs->binary;
 
     double cur_time = 0.0;
+
+    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    print_to_stdout_and_file("Starting simulation\n");
     while (cur_time <= finalT) {
 
         if (save_to_file) {
@@ -736,7 +744,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
 
     if(options->stim_configs) {
-        print_to_stdout_and_file("======================================================================\n");
+        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
         if (options->stim_configs->size == 1)
             print_to_stdout_and_file("Stimulus configuration:\n");
@@ -765,7 +773,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
                 STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
 
-                print_to_stdout_and_file("======================================================================\n");
+                print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
             }
         }
@@ -789,7 +797,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(options->domain_config->config_data.config);
-    print_to_stdout_and_file("======================================================================\n");
+    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     if(options->extra_data_config) {
         print_to_stdout_and_file("Extra data ODE function configuration:\n");
@@ -805,7 +813,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         }
 
         STRING_HASH_PRINT_KEY_VALUE_LOG(options->extra_data_config->config_data.config);
-        print_to_stdout_and_file("======================================================================\n");
+        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
 

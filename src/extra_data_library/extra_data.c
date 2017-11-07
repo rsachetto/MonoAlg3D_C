@@ -190,7 +190,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     return (void*)fibs;
 }
 
-SET_EXTRA_DATA(set_extra_data_for_scar_edge) {
+SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 

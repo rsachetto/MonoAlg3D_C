@@ -9,7 +9,6 @@
 
 static FILE *logfile = NULL;
 
-
 void print_to_stdout_and_file(char const *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
