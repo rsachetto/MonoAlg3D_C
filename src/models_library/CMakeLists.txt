@@ -18,7 +18,7 @@ endif(CUDA_FOUND)
 ############## BONDARENKO ##############################
 set(MODEL_FILE_CPU "bondarenko_2004.c")
 set(MODEL_FILE_GPU "bondarenko_2004_GPU.cu")
-set(COMMON_HEADERS model_common.h ten_tusscher_2006.h)
+set(COMMON_HEADERS model_common.h bondarenko_2004.h)
 
 
 if(CUDA_FOUND)

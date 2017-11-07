@@ -4,16 +4,13 @@
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
-    assert(cell_model);
-
     if(get_initial_v)
         cell_model->initial_v = INITIAL_V;
     if(get_neq)
-        cell_model->number_of_ode_equations = 41;
-
+        cell_model->number_of_ode_equations = NEQ;
 }
 
-SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions) {
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
         sv[0] = -82.4202f;	 // V millivolt
         sv[1] = 0.115001f;	 // Cai msvromolar
@@ -72,14 +69,12 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
         for (int j = 0; j < num_steps; ++j) {
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
-
         }
     }
 }
 
 void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
 
-    assert(sv);
 
     real rY[NEQ], rDY[NEQ];
 

@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "../monodomain/constants.h"
+#include <stdint.h>
 #include "model_gpu_utils.h"
 
 #include "bondarenko_2004.h"
@@ -7,7 +7,6 @@
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     print_to_stdout_and_file("Using Bondarenko GPU model\n");
-
 
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
@@ -27,7 +26,6 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 }
 
 extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
-
 
     // execution configuration
     const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
@@ -56,54 +54,52 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
 
 }
 
-__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
-{
-    // Thread ID
+__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {    // Thread ID
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
-    if(threadID < num_volumes) {
+    if (threadID < num_volumes) {
 
-        *((real *) ((char *) sv + pitch * 0) + threadID) = -82.4202f;	 // V millivolt
-        *((real *) ((char *) sv + pitch * 1) + threadID) = 0.115001f;	 // Cai msvromolar
-        *((real *) ((char *) sv + pitch * 2) + threadID) = 0.115001f;	 // Cass msvromolar
-        *((real *) ((char *) sv + pitch * 3) + threadID) = 1299.5f;	 // CaJSR msvromolar
-        *((real *) ((char *) sv + pitch * 4) + threadID) = 1299.5f;	 // CaNSR msvromolar
-        *((real *) ((char *) sv + pitch * 5) + threadID) = 0.0f;	 // P_RyR dimensionless
-        *((real *) ((char *) sv + pitch * 6) + threadID) = 11.2684f;	 // LTRPN_Ca msvromolar
-        *((real *) ((char *) sv + pitch * 7) + threadID) = 125.29f;	 // HTRPN_Ca msvromolar
-        *((real *) ((char *) sv + pitch * 8) + threadID) = 0.149102e-4f;	 // P_O1 dimensionless
-        *((real *) ((char *) sv + pitch * 9) + threadID) = 0.951726e-10f;	 // P_O2 dimensionless
-        *((real *) ((char *) sv + pitch * 10) + threadID) = 0.16774e-3f;	 // P_C2 dimensionless
-        *((real *) ((char *) sv + pitch * 11) + threadID) = 0.930308e-18f;	 // O dimensionless
-        *((real *) ((char *) sv + pitch * 12) + threadID) = 0.124216e-3f;	 // C2 dimensionless
-        *((real *) ((char *) sv + pitch * 13) + threadID) = 0.578679e-8f;	 // C3 dimensionless
-        *((real *) ((char *) sv + pitch * 14) + threadID) = 0.119816e-12f;	 // C4 dimensionless
-        *((real *) ((char *) sv + pitch * 15) + threadID) = 0.497923e-18f;	 // I1 dimensionless
-        *((real *) ((char *) sv + pitch * 16) + threadID) = 0.345847e-13f;	 // I2 dimensionless
-        *((real *) ((char *) sv + pitch * 17) + threadID) = 0.185106e-13f;	 // I3 dimensionless
-        *((real *) ((char *) sv + pitch * 18) + threadID) = 14237.1f;	 // Nai msvromolar
-        *((real *) ((char *) sv + pitch * 19) + threadID) = 0.020752f;	 // C_Na2 dimensionless
-        *((real *) ((char *) sv + pitch * 20) + threadID) = 0.279132e-3f;	 // C_Na1 dimensionless
-        *((real *) ((char *) sv + pitch * 21) + threadID) = 0.713483e-6f;	 // O_Na dimensionless
-        *((real *) ((char *) sv + pitch * 22) + threadID) = 0.153176e-3f;	 // IF_Na dimensionless
-        *((real *) ((char *) sv + pitch * 23) + threadID) = 0.673345e-6f;	 // I1_Na dimensionless
-        *((real *) ((char *) sv + pitch * 24) + threadID) = 0.155787e-8f;	 // I2_Na dimensionless
-        *((real *) ((char *) sv + pitch * 25) + threadID) = 0.0113879f;	 // sv_Na2 dimensionless
-        *((real *) ((char *) sv + pitch * 26) + threadID) = 0.34278f;	 // sv_Na3 dimensionless
-        *((real *) ((char *) sv + pitch * 27) + threadID) = 143720.0f;	 // Ki msvromolar
-        *((real *) ((char *) sv + pitch * 28) + threadID) = 0.265563e-2f;	 // ato_f dimensionless
-        *((real *) ((char *) sv + pitch * 29) + threadID) = 0.999977f;	 // ito_f dimensionless
-        *((real *) ((char *) sv + pitch * 30) + threadID) = 0.417069e-3f;	 // ato_s dimensionless
-        *((real *) ((char *) sv + pitch * 31) + threadID) = 0.998543f;	 // ito_s dimensionless
-        *((real *) ((char *) sv + pitch * 32) + threadID) = 0.262753e-3f;	 // nKs dimensionless
-        *((real *) ((char *) sv + pitch * 33) + threadID) = 0.417069e-3f;	 // aur dimensionless
-        *((real *) ((char *) sv + pitch * 34) + threadID) = 0.998543f;	 // iur dimensionless
-        *((real *) ((char *) sv + pitch * 35) + threadID) = 0.417069e-3f;	 // aKss dimensionless
-        *((real *) ((char *) sv + pitch * 36) + threadID) = 1.0f;	 // iKss dimensionless
-        *((real *) ((char *) sv + pitch * 37) + threadID) = 0.641229e-3f;	 // C_K2 dimensionless
-        *((real *) ((char *) sv + pitch * 38) + threadID) = 0.992513e-3f;	 // C_K1 dimensionless
-        *((real *) ((char *) sv + pitch * 39) + threadID) = 0.175298e-3f;	 // O_K dimensionless
-        *((real *) ((char *) sv + pitch * 40) + threadID) = 0.319129e-4f;	 // I_K dimensionless
+        *((real * )((char *) sv + pitch * 0) + threadID) = -82.4202f;     // V millivolt
+        *((real * )((char *) sv + pitch * 1) + threadID) = 0.115001;     // Cai micromolar
+        *((real * )((char *) sv + pitch * 2) + threadID) = 0.115001;     // Cass micromolar
+        *((real * )((char *) sv + pitch * 3) + threadID) = 1299.5;     // CaJSR micromolar
+        *((real * )((char *) sv + pitch * 4) + threadID) = 1299.5;     // CaNSR micromolar
+        *((real * )((char *) sv + pitch * 5) + threadID) = 0.0;     // P_RyR dimensionless
+        *((real * )((char *) sv + pitch * 6) + threadID) = 11.2684;     // LTRPN_Ca micromolar
+        *((real * )((char *) sv + pitch * 7) + threadID) = 125.29;     // HTRPN_Ca micromolar
+        *((real * )((char *) sv + pitch * 8) + threadID) = 0.149102e-4;     // P_O1 dimensionless
+        *((real * )((char *) sv + pitch * 9) + threadID) = 0.951726e-10;     // P_O2 dimensionless
+        *((real * )((char *) sv + pitch * 10) + threadID) = 0.16774e-3;     // P_C2 dimensionless
+        *((real * )((char *) sv + pitch * 11) + threadID) = 0.930308e-18;     // O dimensionless
+        *((real * )((char *) sv + pitch * 12) + threadID) = 0.124216e-3;     // C2 dimensionless
+        *((real * )((char *) sv + pitch * 13) + threadID) = 0.578679e-8;     // C3 dimensionless
+        *((real * )((char *) sv + pitch * 14) + threadID) = 0.119816e-12;     // C4 dimensionless
+        *((real * )((char *) sv + pitch * 15) + threadID) = 0.497923e-18;     // I1 dimensionless
+        *((real * )((char *) sv + pitch * 16) + threadID) = 0.345847e-13;     // I2 dimensionless
+        *((real * )((char *) sv + pitch * 17) + threadID) = 0.185106e-13;     // I3 dimensionless
+        *((real * )((char *) sv + pitch * 18) + threadID) = 14237.1;     // Nai micromolar
+        *((real * )((char *) sv + pitch * 19) + threadID) = 0.020752;     // C_Na2 dimensionless
+        *((real * )((char *) sv + pitch * 20) + threadID) = 0.279132e-3;     // C_Na1 dimensionless
+        *((real * )((char *) sv + pitch * 21) + threadID) = 0.713483e-6;     // O_Na dimensionless
+        *((real * )((char *) sv + pitch * 22) + threadID) = 0.153176e-3;     // IF_Na dimensionless
+        *((real * )((char *) sv + pitch * 23) + threadID) = 0.673345e-6;     // I1_Na dimensionless
+        *((real * )((char *) sv + pitch * 24) + threadID) = 0.155787e-8;     // I2_Na dimensionless
+        *((real * )((char *) sv + pitch * 25) + threadID) = 0.0113879;     // IC_Na2 dimensionless
+        *((real * )((char *) sv + pitch * 26) + threadID) = 0.34278;     // IC_Na3 dimensionless
+        *((real * )((char *) sv + pitch * 27) + threadID) = 143720.0;     // Ki micromolar
+        *((real * )((char *) sv + pitch * 28) + threadID) = 0.265563e-2;     // ato_f dimensionless
+        *((real * )((char *) sv + pitch * 29) + threadID) = 0.999977;     // ito_f dimensionless
+        *((real * )((char *) sv + pitch * 30) + threadID) = 0.417069e-3;     // ato_s dimensionless
+        *((real * )((char *) sv + pitch * 31) + threadID) = 0.998543;     // ito_s dimensionless
+        *((real * )((char *) sv + pitch * 32) + threadID) = 0.262753e-3;     // nKs dimensionless
+        *((real * )((char *) sv + pitch * 33) + threadID) = 0.417069e-3;     // aur dimensionless
+        *((real * )((char *) sv + pitch * 34) + threadID) = 0.998543;     // iur dimensionless
+        *((real * )((char *) sv + pitch * 35) + threadID) = 0.417069e-3;     // aKss dimensionless
+        *((real * )((char *) sv + pitch * 36) + threadID) = 1.0;     // iKss dimensionless
+        *((real * )((char *) sv + pitch * 37) + threadID) = 0.641229e-3;     // C_K2 dimensionless
+        *((real * )((char *) sv + pitch * 38) + threadID) = 0.992513e-3;     // C_K1 dimensionless
+        *((real * )((char *) sv + pitch * 39) + threadID) = 0.175298e-3;     // O_K dimensionless
+        *((real * )((char *) sv + pitch * 40) + threadID) = 0.319129e-4;     // I_K dimensionless
 
     }
 }
@@ -131,7 +127,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
             RHS_gpu(sv, rDY, stim_currents[threadID], sv_id);
 
             for(int i = 0; i < NEQ; i++) {
-                *((real*)((char*)sv + pitch * i) + sv_id) = rDY[i];
+                *((real *) ((char *) sv + pitch * i) + sv_id) = dt * rDY[i] + *((real *) ((char *) sv + pitch * i) + sv_id);
             }            
 
         }

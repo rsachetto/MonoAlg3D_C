@@ -11,7 +11,7 @@
 
 struct stim_config;
 
-#define SET_SPATIAL_STIM(name) void name(struct grid *the_grid, struct stim_config *config)
+#define SET_SPATIAL_STIM(name) void name(struct stim_config *config, struct grid *the_grid)
 typedef SET_SPATIAL_STIM(set_spatial_stim_fn);
 
 struct stim_config {

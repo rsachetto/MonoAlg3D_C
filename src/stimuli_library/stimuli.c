@@ -87,7 +87,7 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    int s_size;
+    size_t s_size;
 
     bool stim;
     real stim_current = config->stim_current;
@@ -100,7 +100,7 @@ SET_SPATIAL_STIM(set_stim_from_file) {
         exit(EXIT_FAILURE);
     }
 
-    fscanf(s_file, "%d\n", &s_size);
+    fscanf(s_file, "%zu\n", &s_size);
 
     double **cell_stims = (double**) malloc(sizeof(double*)*s_size);
     for(int i=0; i< s_size; i++){
@@ -165,6 +165,42 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
     #pragma omp parallel for private(stim_value)
     for (int i = 0; i < n_active; i++) {
         bool stim = (ac[i]->center_x >= x_limit);
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        config->spatial_stim_currents[i] = stim_value;
+
+    }
+}
+
+SET_SPATIAL_STIM(stim_base_mouse) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    double stim_size = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, stim_size, config->config_data.config, "stim_size");
+
+    real stim_current = config->stim_current;
+    real stim_value;
+
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
+
+    #pragma omp parallel for private(stim_value)
+    for (int i = 0; i < n_active; i++) {
+
+        bool stim;
+        stim  = (ac[i]->center_x >= 3000.0 - stim_size) && (ac[i]->center_x <= 3000.0 + stim_size);
+        stim &= (ac[i]->center_y >= 2400.0 - stim_size) && (ac[i]->center_y <= 2400.0 + stim_size);
+        stim &= (ac[i]->center_z >= 300 - stim_size) && (ac[i]->center_z <= 300 + stim_size);
 
         if (stim) {
             stim_value = stim_current;

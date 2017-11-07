@@ -81,8 +81,13 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, size_t size,
     int i = 0;
     while (i < size) {
 
-        fscanf (file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
-                &fibrosis[i], &tag[i]);
+        if(read_fibrosis) {
+            fscanf (file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
+                    &fibrosis[i], &tag[i]);
+        }
+        else {
+            fscanf (file, "%lf,%lf,%lf,%lf\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy);
+        }
 
         // we save the old index to reference fibrosis[i] and tags[i]. T
         // this is needed because the array mesh_points is sorted after reading the mesh file.

@@ -5,7 +5,7 @@
 #include "utils.h"
 #define SWAP(x, y, T) do { T SWAP = (x); (x) = (y); (y) = SWAP; } while (0)
 
-size_t partition(double **a, size_t column, size_t first, size_t last) {
+int partition(double **a, int column, int first, int last) {
     //
     // partitions array from first to last index w/ a[first] as pivot.
     // pre: a is an array where elements a[first] through a[last] have values.
@@ -16,8 +16,8 @@ size_t partition(double **a, size_t column, size_t first, size_t last) {
     // loc is location of pivot in partitioned array
     //
 
-    size_t i = first;
-    size_t loc = last + 1;
+    int  i = first;
+    int loc = last + 1;
     double pivot = a[first][column];
 
     // increase i until greater than loc
@@ -45,7 +45,7 @@ size_t partition(double **a, size_t column, size_t first, size_t last) {
     return loc; // return current loc
 }
 
-void quicksort(double **a, size_t column, size_t first, size_t last) {
+void quicksort(double **a, int column, int first, int last) {
     //
     // quicksort algorithm to sort an array of elements
     // pre: a is an array where elements a[first] through a[last] have values.
@@ -53,7 +53,7 @@ void quicksort(double **a, size_t column, size_t first, size_t last) {
     // post: a[first..last] has been sorted
     //
 
-    size_t loc;
+    int loc;
 
     // partition everything, partition left, partition right
     // continue until only one element, now in correct index
@@ -65,34 +65,34 @@ void quicksort(double **a, size_t column, size_t first, size_t last) {
 }
 
 
-void sort_vector(double **a, size_t length) {
+void sort_vector(double **a, int length) {
 
     quicksort(a, 0, 0, length - 1); // perform quicksort algorithm ordering using the X coordinate
 
-    size_t j = 0;
+    int j = 0;
     while ( j < length ) {
         double xnum = a[j][0];
-        size_t firstx = j;
+        int firstx = j;
         while (a[j][0] == xnum) {
             j++;
             if (j == length)
                 break;
         }
-        size_t lastx = j - 1;
+        int lastx = j - 1;
         quicksort(a, 1, firstx, lastx);
     }
-    size_t k = 0;
+    int k = 0;
     while ( k < length ) {
         double xnum = a[k][0];
         double ynum = a[k][1];
-        size_t firstxy = k;
+        int firstxy = k;
         while (a[k][0] == xnum && a[k][1] == ynum) {
             k++;
             if (k == length) {
                 break;
             }
         }
-        size_t lastxy = k - 1;
+        int lastxy = k - 1;
         quicksort(a, 2, firstxy, lastxy);
     }
 }

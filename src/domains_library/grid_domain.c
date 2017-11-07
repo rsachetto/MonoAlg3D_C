@@ -111,7 +111,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, phi, config->config_data.config, "phi");
 
         unsigned seed = 0;
-        bool success;
+        bool success ;
         GET_PARAMETER_NUMERIC_VALUE (unsigned, seed, config->config_data.config, "seed", success);
         if (!success)
             seed = 0;
@@ -374,7 +374,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_fibrotic_mesh) {
     if (!success)
         seed = 0;
 
-    initialize_grid_with_plain_mesh (the_grid, config);
+    initialize_grid_with_plain_mesh (config, the_grid);
     set_plain_fibrosis (the_grid, phi, seed);
 }
 
@@ -404,6 +404,6 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
         seed = 0;
     }
 
-    initialize_grid_with_plain_mesh (the_grid, config);
+    initialize_grid_with_plain_mesh (config, the_grid);
     set_plain_sphere_fibrosis (the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, seed);
 }

@@ -10,7 +10,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
     if(get_initial_v)
         cell_model->initial_v = INITIAL_V;
     if(get_neq)
-        cell_model->number_of_ode_equations = 19;
+        cell_model->number_of_ode_equations = NEQ;
 
 }
 

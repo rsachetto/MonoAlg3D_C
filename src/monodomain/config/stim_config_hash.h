@@ -28,8 +28,8 @@ struct stim_config_elt {
 };
 
 struct stim_config_hash {
-    int size; /* size of the pointer table */
-    int n;    /* number of elements stored */
+    size_t size; /* size of the pointer table */
+    size_t n;    /* number of elements stored */
     struct stim_config_elt **table;
 };
 

@@ -79,14 +79,13 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
     solver->handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
     if (!solver->handle) {
-        fputs (dlerror(), stderr);
-        fprintf(stderr, "\n");
+        fprintf(stderr, "%s\n", dlerror());
         exit(1);
     }
 
     solver->get_cell_model_data = dlsym(solver->handle, "init_cell_model_data");
     if ((error = dlerror()) != NULL)  {
-        fputs(error, stderr);
+        fprintf(stderr, "%s\n", error);
         fprintf(stderr, "init_cell_model_data function not found in the provided model library\n");
         if(!isfinite(solver->model_data.initial_v)) {
             fprintf(stderr, "intial_v not provided in the [cell_model] of the config file! Exiting\n");
@@ -97,15 +96,15 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
     solver->set_ode_initial_conditions_cpu = dlsym(solver->handle, "set_model_initial_conditions_cpu");
     if ((error = dlerror()) != NULL)  {
-        fputs(error, stderr);
+        fprintf(stderr, "%s\n", error);
         fprintf(stderr, "set_model_initial_conditions function not found in the provided model library\n");
         exit(1);
     }
 
     solver->solve_model_ode_cpu = dlsym(solver->handle, "solve_model_odes_cpu");
     if ((error = dlerror()) != NULL)  {
-        fputs(error, stderr);
-        fprintf(stderr, "\nsolve_model_odes_cpu function not found in the provided model library\n");
+        fprintf(stderr, "%s\n", error);
+        fprintf(stderr, "solve_model_odes_cpu function not found in the provided model library\n");
         exit(1);
     }
 
@@ -199,8 +198,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     double time = cur_time;
 
-    //TODO: maybe this can be null if no stimuli configured
-    real *merged_stims = (real*)calloc(sizeof(real),n_active);
+    real *merged_stims = (real*)calloc(sizeof(real), n_active);
 
     struct stim_config *tmp = NULL;
     real stim_start, stim_dur;

@@ -1,5 +1,5 @@
-#ifndef MONOALG3D_MODEL_TEN_TUSSCHER_COMMON_H
-#define MONOALG3D_MODEL_TEN_TUSSCHER_COMMON_H
+#ifndef MONOALG3D_MODEL_TEN_TUSSCHER_2006_H
+#define MONOALG3D_MODEL_TEN_TUSSCHER_2006_H
 
 #include <stdint.h>
 #include "model_common.h"
@@ -31,4 +31,4 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt);
 void solve_model_ode_cpu(real dt, real *sv, real stim_current);
 
-#endif //MONOALG3D_MODEL_TEN_TUSSCHER_COMMON_H
+#endif //MONOALG3D_MODEL_TEN_TUSSCHER_2006_H
