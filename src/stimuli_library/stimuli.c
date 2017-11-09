@@ -212,3 +212,37 @@ SET_SPATIAL_STIM(stim_base_mouse) {
 
     }
 }
+
+SET_SPATIAL_STIM(stim_mouse_spiral) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    real stim_current = config->stim_current;
+    real stim_value;
+
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
+
+    #pragma omp parallel for private(stim_value)
+    for (int i = 0; i < n_active; i++) {
+
+        bool stim;        
+
+        stim  = (ac[i]->center_x >= 3000.0) && (ac[i]->center_x <= 6000.0);
+        stim &= (ac[i]->center_y >= 1940.0) && (ac[i]->center_y <= 6100.0);
+        stim &= (ac[i]->center_z >=  2230.0) && (ac[i]->center_z <= 5800.0);
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        config->spatial_stim_currents[i] = stim_value;
+
+    }
+}

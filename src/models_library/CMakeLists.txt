@@ -38,3 +38,14 @@ else()
     ADD_LIBRARY(ten_tusscher_3 ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 #########################################################
+
+############## FABERRUDY 2000 ##############################
+set(MODEL_FILE_CPU "faber_rudy_2000_version04.c")
+set(MODEL_FILE_GPU "faber_rudy_2000_version04.cu")
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(faber_rudy_2000_version04 ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+else()
+    ADD_LIBRARY(faber_rudy_2000_version04 ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
