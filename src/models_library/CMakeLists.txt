@@ -40,12 +40,13 @@ endif(CUDA_FOUND)
 #########################################################
 
 ############## FABERRUDY 2000 ##############################
-set(MODEL_FILE_CPU "faber_rudy_2000_version04.c")
-set(MODEL_FILE_GPU "faber_rudy_2000_version04.cu")
+set(MODEL_FILE_CPU "luo_rudy_1991.c")
+set(MODEL_FILE_GPU "luo_rudy_1991.cu")
+set(COMMON_HEADERS model_common.h luo_rudy_1991.h)
 
 if(CUDA_FOUND)
-    CUDA_ADD_LIBRARY(faber_rudy_2000_version04 ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+    CUDA_ADD_LIBRARY(luo_rudy_1991 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
 else()
-    ADD_LIBRARY(faber_rudy_2000_version04 ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+    ADD_LIBRARY(luo_rudy_1991 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 #########################################################

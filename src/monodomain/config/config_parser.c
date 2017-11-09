@@ -11,7 +11,7 @@ static const struct option long_options[] = {
         { "use_adaptivity", no_argument, NULL, 'a' },
         { "abort_on_no_activity", no_argument, NULL, 'b' },
         { "num_threads", required_argument, NULL, 'n' },
-        { "use_gpu", no_argument, NULL, 'g' },
+        { "use_gpu", required_argument, NULL, 'g' },
         { "print_rate",required_argument , NULL, 'p' },
         { "max_cg_its", required_argument, NULL, 'm' },
         { "cg_tolerance", required_argument, NULL, 't' },
@@ -37,8 +37,7 @@ static const struct option long_options[] = {
         { NULL, no_argument, NULL, 0 }
 };
 
-//static const char *opt_string = "c:k:p:abn:gp:m:t:r:d:z:e:f:l:R:D:G:h";
-static const char *opt_string =   "c:o:abn:gp:m:t:r:d:z:e:f:jR:D:G:k:yh";
+static const char *opt_string =   "c:o:abn:g:p:m:t:r:d:z:e:f:jR:D:G:k:yh";
 
 
 /* Display program usage, and exit.
@@ -65,7 +64,7 @@ void display_usage (char **argv) {
     printf ("--dt_edp | -z [dt]. Simulation time discretization (PDE). Default: 0.01 \n");
     printf ("--dt_edo | -e [dt]. Minimum ODE time discretization (using time adaptivity. Default: 0.01 \n");
     printf ("--num_threads | -n [num-threads]. Solve using OpenMP. Default: 1 \n");
-    printf ("--use_gpu | -g. Solve ODEs using GPU. Default: No \n");
+    printf ("--use_gpu | -g [yes|no|true|false]. Solve ODEs using GPU. Default: No \n");
     printf ("--binary_output | -y. Save output files in binary format. Default: No \n");
     printf ("--use_preconditioner | -j Use Jacobi Preconditioner. Default: No \n");
     printf ("--refine_each | -R [ts], Refine each ts timesteps. Default: 1 \n");
@@ -519,7 +518,8 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                         issue_overwrite_warning ("output_dir", "No Save", optarg, user_args->config_file);
                     }
                 }
-                user_args->out_dir_name = optarg;
+                free(user_args->out_dir_name);
+                user_args->out_dir_name = strdup(optarg);
 
                 break;
             case 'k':
@@ -531,7 +531,8 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                         issue_overwrite_warning ("model_file_path", "No Save", optarg, user_args->config_file);
                     }
                 }
-                user_args->model_file_path = optarg;
+                free(user_args->model_file_path);
+                user_args->model_file_path = strdup(optarg);
 
                 break;
             case 'f':
@@ -567,17 +568,33 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 if (((int)strtol (optarg, NULL, 10)) > 0) {
                     if (user_args->num_threads_was_set) {
                         sprintf (old_value, "%d", user_args->num_threads);
-                        issue_overwrite_warning ("num_threads", old_value, optarg, user_args->config_file);
+                        issue_overwrite_warning ("nu"
+                                                         "m_threads", old_value, optarg, user_args->config_file);
                     }
                     user_args->num_threads = (int)strtol (optarg, NULL, 10);
                 }
                 break;
             case 'g':
                 if (user_args->gpu_was_set) {
-                    sprintf (old_value, "%d", user_args->gpu);
+
+                    if(user_args->gpu) {
+                        sprintf(old_value, "yes");
+                    }
+                    else {
+                        sprintf(old_value, "no");
+                    }
+
                     issue_overwrite_warning ("use_gpu", old_value, optarg, user_args->config_file);
                 }
-                user_args->gpu = true;
+                if (strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
+                    user_args->gpu = true;
+                } else if (strcmp(optarg, "false") == 0 || strcmp(optarg, "no") == 0) {
+                    user_args->gpu = false;
+                }
+                else {
+                    fprintf(stderr, "Warning: Invalid value for use_gpu option: %s! Valid options are: true, yes, false, no. Setting the value to false\n", optarg);
+                    user_args->gpu = false;
+                }
                 break;
             case 'z':
                 if (user_args->dt_edp_was_set) {

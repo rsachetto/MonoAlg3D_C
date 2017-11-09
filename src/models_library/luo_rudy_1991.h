@@ -1,11 +1,11 @@
-#ifndef MONOALG3D_MODEL_FABER_RUDY_2000_VERSION04_H
-#define MONOALG3D_MODEL_FABER_RUDY_2000_VERSION04_H
+#ifndef MONOALG3D_MODEL_LUO_RUDY_1991_H
+#define MONOALG3D_MODEL_LUO_RUDY_1991_H
 
 #include <stdint.h>
 #include "model_common.h"
 
-#define NEQ 25
-#define INITIAL_V (-90.000000f)
+#define NEQ 8
+#define INITIAL_V (-84.380111f)
 
 #ifdef __CUDACC__
 
@@ -31,5 +31,5 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 void solve_model_ode_cpu(real dt, real *sv, real stim_current);
 void RHS_cpu(const real *sv, real *rDY_, real stim_current);
 
-#endif //MONOALG3D_MODEL_FABER_RUDY_2000_VERSION04_H
+#endif //MONOALG3D_MODEL_LUO_RUDY_1991_H
 
