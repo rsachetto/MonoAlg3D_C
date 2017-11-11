@@ -63,6 +63,10 @@ double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_li
 
 void save_grid_domain (struct grid * the_grid, const char *file_name);
 
+void lock_grid(struct grid *the_grid);
+
+void unlock_grid(struct grid *the_grid);
+
 
 
 #endif //MONOALG3D_GRID_H

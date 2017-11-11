@@ -27,6 +27,7 @@
 #define DOMAIN_OPT 1800
 #define EXTRA_DATA_OPT 1900
 #define STIM_OPT 2000
+#define DRAW_OPT 3000
 
 struct user_options {
     double final_time;				/*-f option */
@@ -67,6 +68,9 @@ struct user_options {
     bool model_file_path_was_set;
     bool binary;                    /*-y option*/
     bool binary_was_set;
+
+    bool draw;
+
 
     double sigma_x;
     bool sigma_x_was_set;

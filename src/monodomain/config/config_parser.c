@@ -33,6 +33,7 @@ static const struct option long_options[] = {
         { "domain", required_argument, NULL, DOMAIN_OPT},
         { "extra_data", required_argument, NULL, EXTRA_DATA_OPT},
         { "stimulus", required_argument, NULL, STIM_OPT},
+        { "draw_gl_output", no_argument, NULL, DRAW_OPT},
         { "help", no_argument, NULL, 'h' },
         { NULL, no_argument, NULL, 0 }
 };
@@ -163,6 +164,8 @@ struct user_options *new_user_options () {
     user_args->stim_configs = NULL;
     user_args->domain_config = NULL;
     user_args->extra_data_config = NULL;
+
+    user_args->draw = false;
 
     return user_args;
 }
@@ -686,6 +689,9 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                     user_args->stim_configs = stim_config_hash_create();
                 }
                 set_stim_config(optarg, user_args->stim_configs, user_args->config_file );
+                break;
+            case DRAW_OPT:
+                user_args->draw = true;
                 break;
             case 'h': /* fall-through is intentional */
             case '?':

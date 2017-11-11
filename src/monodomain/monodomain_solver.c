@@ -11,6 +11,10 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
+#ifdef COMPILE_OPENGL
+#include "../draw/draw.h"
+#endif
+
 #include <assert.h>
 #include <inttypes.h>
 
@@ -36,6 +40,12 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     assert (the_grid);
     assert (the_monodomain_solver);
     assert (the_ode_solver);
+
+#ifdef COMPILE_OPENGL
+    if(configs->draw) {
+        grid_to_draw = the_grid;
+    }
+#endif
 
     print_to_stdout_and_file (LOG_LINE_SEPARATOR);
 
@@ -220,6 +230,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
         if (save_to_file) {
 
+#ifdef COMPILE_OPENGL
+            redraw  = count % print_rate == 0; //redraw grid
+#endif
             if (count % print_rate == 0) {
                 start_stop_watch (&write_time);
 
@@ -275,6 +288,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         }
 
         if (adaptive) {
+
             redo_matrix = false;
             if (cur_time >= start_adpt_at) {
                 if (count % refine_each == 0) {
@@ -289,7 +303,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
                     total_deref_time += stop_stop_watch (&deref_time);
                 }
             }
-
             if (redo_matrix) {
                 order_grid_cells (the_grid);
 
@@ -317,6 +330,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         }
         count++;
         cur_time += dt_edp;
+
     }
 
     print_to_stdout_and_file ("Resolution Time: %ld μs\n", stop_stop_watch (&solver_time));
