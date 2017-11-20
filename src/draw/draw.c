@@ -358,7 +358,6 @@ static void draw_cube(double x, double y, double z, double face_size, double v) 
     glVertex3d(-face_size, face_size, face_size);
     glVertex3d(face_size, face_size, face_size);
 
-
     glEnd();
 
     glPopMatrix();
@@ -420,7 +419,7 @@ static void init_variables() {
     // Sets the initial coordinates of the target point.
     centerX = 0.5;
     centerY = 0.5;
-    centerZ = 0;
+    centerZ = 0.5;
 
     // Sets the camera to not move.
     walk        = false;
