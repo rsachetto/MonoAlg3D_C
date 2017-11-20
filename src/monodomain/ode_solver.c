@@ -7,11 +7,12 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <assert.h>
+#include "../utils/logfile_utils.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
-#include "../utils/logfile_utils.h"
 #endif
+
 
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
@@ -38,10 +39,14 @@ struct ode_solver* new_ode_solver() {
 
 void free_ode_solver(struct ode_solver *solver) {
     if(solver->sv) {
-        if(solver->gpu)
+        if(solver->gpu) {
+#ifdef COMPILE_CUDA
             cudaFree(solver->sv);
-        else
+#endif
+        }
+        else {
             free(solver->sv);
+        }
 
     }
 

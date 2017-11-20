@@ -306,68 +306,6 @@ GLdouble * get_color(double value)
     return result;
 }
 
-
-GLfloat vertices[] = { 1, 1, 1,  -1, 1, 1,  -1,-1, 1,   1,-1, 1,   // v0,v1,v2,v3 (front)
-                       1, 1, 1,   1,-1, 1,   1,-1,-1,   1, 1,-1,   // v0,v3,v4,v5 (right)
-                       1, 1, 1,   1, 1,-1,  -1, 1,-1,  -1, 1, 1,   // v0,v5,v6,v1 (top)
-                       -1, 1, 1,  -1, 1,-1,  -1,-1,-1,  -1,-1, 1,   // v1,v6,v7,v2 (left)
-                       -1,-1,-1,   1,-1,-1,   1,-1, 1,  -1,-1, 1,   // v7,v4,v3,v2 (bottom)
-                       1,-1,-1,  -1,-1,-1,  -1, 1,-1,   1, 1,-1 }; // v4,v7,v6,v5 (back)
-
-// normal array
-GLfloat normals[]  = { 0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   // v0,v1,v2,v3 (front)
-                       1, 0, 0,   1, 0, 0,   1, 0, 0,   1, 0, 0,   // v0,v3,v4,v5 (right)
-                       0, 1, 0,   0, 1, 0,   0, 1, 0,   0, 1, 0,   // v0,v5,v6,v1 (top)
-                       -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,   // v1,v6,v7,v2 (left)
-                       0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,   // v7,v4,v3,v2 (bottom)
-                       0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1 }; // v4,v7,v6,v5 (back)
-
-// index array of vertex array for glDrawElements() & glDrawRangeElement()
-GLubyte indices[]  = { 0, 1, 2,   2, 3, 0,      // front
-                       4, 5, 6,   6, 7, 4,      // right
-                       8, 9,10,  10,11, 8,      // top
-                       12,13,14,  14,15,12,      // left
-                       16,17,18,  18,19,16,      // bottom
-                       20,21,22,  22,23,20 };    // back
-
-
-void drawCubes(double x, double y, double z, double face_size, double v)
-{
-
-//    GLdouble vertices[] = { face_size, face_size, face_size,  -face_size, face_size, face_size,  -face_size,-face_size, face_size,   face_size,-face_size, face_size,   // v0,vface_size,v2,v3 (front)
-//                            face_size, face_size, face_size,   face_size,-face_size, face_size,   face_size,-face_size,-face_size,   face_size, face_size,-face_size,   // v0,v3,v4,v5 (right)
-//                            face_size, face_size, face_size,   face_size, face_size,-face_size,  -face_size, face_size,-face_size,  -face_size, face_size, face_size,   // v0,v5,v6,vface_size (top)
-//                            -face_size, face_size, face_size,  -face_size, face_size,-face_size,  -face_size,-face_size,-face_size,  -face_size,-face_size, face_size,   // vface_size,v6,v7,v2 (left)
-//                            -face_size,-face_size,-face_size,   face_size,-face_size,-face_size,   face_size,-face_size, face_size,  -face_size,-face_size, face_size,   // v7,v4,v3,v2 (bottom)
-//                            face_size,-face_size,-face_size,  -face_size,-face_size,-face_size,  -face_size, face_size,-face_size,   face_size, face_size,-face_size }; // v4,v7,v6,v5 (back)
-
-
-    GLdouble *color;
-
-
-//    if(!grid) {
-    v = (v - INITIAL_V)/(40.0-INITIAL_V);
-    color = get_color(v);
-
-    glColor4dv(color);
-    free(color);
-
-    glPushMatrix();
-    glPushName(0);  // ignored if no GL_SELECT mode
-
-    glTranslated(x, y, z);
-
-    // draw a cube
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, indices);
-
-    glPopName();    // ignored if no GL_SELECT mode
-    glPopMatrix();
-
-
-
-}
-
-
 static void draw_cube(double x, double y, double z, double face_size, double v) {
 
     glPushMatrix();
@@ -378,17 +316,9 @@ static void draw_cube(double x, double y, double z, double face_size, double v) 
 
     GLdouble *color;
 
-//    if(!grid) {
     v = (v - INITIAL_V)/(40.0-INITIAL_V);
     color = get_color(v);
-//    }
-//    else {
-//        color = (GLdouble *) malloc(sizeof(GLdouble) * 4);
-//        color[0] = 0;
-//        color[2] = 0;
-//        color[3] = 0;
-//        color[4] = 0;
-//    }
+
     glColor4dv(color);
     free(color);
 
@@ -490,7 +420,7 @@ static void init_variables() {
     // Sets the initial coordinates of the target point.
     centerX = 0.5;
     centerY = 0.5;
-    centerZ = 0.5;
+    centerZ = 0;
 
     // Sets the camera to not move.
     walk        = false;

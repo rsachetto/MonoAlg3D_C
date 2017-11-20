@@ -78,6 +78,7 @@ int main(int argc, char **argv) {
 #endif
 
     if(options->draw) {
+#ifdef COMPILE_OPENGL
         grid_to_draw = NULL;
         struct mono_args *thread_args = (struct mono_args *) malloc(sizeof(struct mono_args));
         thread_args->options = options;
@@ -95,7 +96,7 @@ int main(int argc, char **argv) {
         }
 
         init_opengl(argc, argv);
-
+#endif
     }
     else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
