@@ -6,7 +6,7 @@ SET(COMMON_SRC ../libraries_common/config_helpers.c ../libraries_common/config_h
 ############## DEFAULT STIM LIBRARY ##############################
 ADD_LIBRARY(default_stimuli ${LIB_TYPE} ${COMMON_SRC} stimuli.c)
 
-IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+IF(MSVC)
 	TARGET_LINK_LIBRARIES(default_stimuli hashes utils)
 ENDIF()
 

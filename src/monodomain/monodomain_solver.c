@@ -100,16 +100,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
 
-    double cg_tol = the_monodomain_solver->tolerance;
-
-    int np = the_monodomain_solver->num_threads;
-
-    if (np == 0)
-        np = 1;
-
-#if defined(_OPENMP)
-    omp_set_num_threads (np);
-#endif
+    double cg_tol = the_monodomain_solver->tolerance; 
 
     bool redo_matrix;
 
@@ -384,7 +375,7 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
         check_cuda_errors (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));		
 
 		#pragma omp parallel for
-        for (i = 0; i < n_active; i++) {
+        for (i = 0; i < n_active; i++) {			
             vms[ac[i]->sv_position] = (real)ac[i]->v;
         }
 

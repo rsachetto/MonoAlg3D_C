@@ -760,16 +760,18 @@ static void display()
         struct cell_node **ac = grid_to_draw->active_cells;
         struct cell_node *grid_cell;
 
-        //#pragma omp parallel for
-        for (int i = 0; i < n_active; i++) {
-            grid_cell = ac[i];
+		if (ac) {
+			//#pragma omp parallel for
+			for (int i = 0; i < n_active; i++) {
+				grid_cell = ac[i];
 
-            if (grid_cell->active) {
-                draw_cube(grid_cell->center_x / size, grid_cell->center_y / size, grid_cell->center_z / size,
-                          grid_cell->half_face_length / size, grid_cell->v);
-            }
+				if (grid_cell->active) {
+					draw_cube(grid_cell->center_x / size, grid_cell->center_y / size, grid_cell->center_z / size,
+						grid_cell->half_face_length / size, grid_cell->v);
+				}
 
-        }
+			}
+		}
     }
     glutSwapBuffers();
 

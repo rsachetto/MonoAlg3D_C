@@ -80,27 +80,33 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    if(options->draw) {
-#ifdef COMPILE_OPENGL
-        grid_to_draw = NULL;
-        struct mono_args *thread_args = (struct mono_args *) malloc(sizeof(struct mono_args));
-        thread_args->options = options;
-        thread_args->ode_solver = ode_solver;
-        thread_args->the_grid = the_grid;
-        thread_args->monodomain_solver = monodomain_solver;
+	 int np = monodomain_solver->num_threads;
 
-        pthread_t solver_thread;
+    if (np == 0)
+        np = 1;
 
-
-        /* create a second thread which executes the monodomain solver as the main thread needs to update the Window */
-        if(pthread_create(&solver_thread, NULL, start_monodomain_in_thread, thread_args)) {
-            fprintf(stderr, "Error creating thread\n");
-            return 1;
-        }
-
-        init_opengl(argc, argv);
+#if defined(_OPENMP)
+    omp_set_num_threads (np);
 #endif
-    }
+
+	if (options->draw) {
+#ifdef COMPILE_OPENGL		
+		#pragma omp parallel sections num_threads(2)
+		{
+			#pragma omp section
+			{
+				grid_to_draw = NULL;
+				init_opengl(argc, argv);
+			}
+	
+			#pragma omp section
+			{
+				solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+			}
+
+		}	
+#endif
+	}
     else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
     }

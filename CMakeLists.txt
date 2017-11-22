@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
 
+#set(OPENGL_LIBRARY_DIR "C:/Users/sache/freeglut/lib/x64")
+set(GLUT_INCLUDE_DIR "C:/Users/sache/freeglut/include")
+
 if (CMAKE_VERSION VERSION_LESS "3.9.0")
     # Set only because there are old target_link_libraries() statements in the
     # FindCUDA.cmake file that comes with CMake that error out if the new behavior
@@ -29,7 +32,7 @@ IF(EXISTS "/etc/manjaro-release")
     set(CMAKE_C_COMPILER "/opt/cuda/bin/gcc")
 ENDIF(EXISTS "/etc/manjaro-release")
 
-IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+IF(MSVC)
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 	ADD_SUBDIRECTORY(src/getopt)
 	ADD_SUBDIRECTORY(src/dlfcn-win32)
@@ -46,8 +49,6 @@ IF (OPENMP_FOUND)
 ENDIF()
 
 FIND_PACKAGE(CUDA)
-
-
  if (CUDA_FOUND AND MSVC AND "${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
             message(WARNING "You have CUDA installed, but we can't use it unless you put visual studio in 64bit mode.")
             set(CUDA_FOUND 0)
@@ -73,8 +74,12 @@ ENDIF()
 FIND_PACKAGE(OpenGL)
 FIND_PACKAGE(GLUT)
 IF(OPENGL_FOUND AND GLUT_FOUND)
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${OPENGL_INCLUDE_DIR}\" -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
-    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I \"${OPENGL_INCLUDE_DIR}\" -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
+	IF(MSVC)
+		SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
+	ELSE()
+		SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${OPENGL_INCLUDE_DIR}\" -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")		
+	ENDIF()
+
     ADD_SUBDIRECTORY(src/draw)
     SET(OPT_DEPS ${OPT_DEPS} draw)
 ENDIF()
@@ -90,7 +95,7 @@ ADD_EXECUTABLE(MonoAlg3D src/main.c)
 
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string ${OPT_DEPS})
 
-IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+IF(MSVC)
     TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl)
     SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 ELSE()
