@@ -372,16 +372,18 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
 
     real *sv = the_ode_solver->sv;
 
+	int i;
+
     if (the_ode_solver->gpu) {
 #ifdef COMPILE_CUDA
         real *vms;
         size_t mem_size = max_number_of_cells * sizeof (real);
 
         vms = (real *)malloc (mem_size);
-        check_cuda_errors (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
+        check_cuda_errors (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));		
 
-#pragma omp parallel for
-        for (int i = 0; i < n_active; i++) {
+		#pragma omp parallel for
+        for (i = 0; i < n_active; i++) {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
         }
 
@@ -389,8 +391,8 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
         free (vms);
 #endif
     } else {
-#pragma omp parallel for
-        for (uint32_t i = 0; i < n_active; i++) {
+		#pragma omp parallel for
+        for (i = 0; i < n_active; i++) {
             sv[ac[i]->sv_position * n_edos] = (real)ac[i]->v;
         }
     }
@@ -401,8 +403,11 @@ void save_old_cell_positions (struct grid *the_grid) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-#pragma omp parallel for
-    for (uint32_t i = 0; i < n_active; i++) {
+	int i;
+
+
+	#pragma omp parallel for
+    for (i = 0; i < n_active; i++) {
         ac[i]->sv_position = ac[i]->grid_position;
     }
 }
@@ -418,9 +423,10 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
 
     solver->cells_to_solve = (uint32_t *)malloc (the_grid->num_active_cells * sizeof (uint32_t));
     uint32_t *cts = solver->cells_to_solve;
-
-#pragma omp parallel for
-    for (uint32_t i = 0; i < n_active; i++) {
+	int i;
+	
+	#pragma omp parallel for
+    for (i = 0; i < n_active; i++) {
         cts[i] = ac[i]->sv_position;
     }
 }
@@ -433,9 +439,11 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
     double beta = the_solver->beta;
     double cm = the_solver->cm;
     double dt = the_solver->dt;
+	int i;
 
-#pragma omp parallel for private(alpha, h)
-    for (int i = 0; i < active_cells; i++) {
+
+	#pragma omp parallel for private(alpha, h)
+    for (i = 0; i < active_cells; i++) {
         h = ac[i]->face_length;
         alpha = ALPHA (beta, cm, dt, h);
         ac[i]->v = initial_v;
@@ -450,10 +458,13 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
     struct cell_node **ac = the_grid->active_cells;
     double beta = the_solver->beta;
     double cm = the_solver->cm;
-    double dt = the_solver->dt;
+
+	double dt = the_solver->dt;
+
+	int i;
 
 #pragma omp parallel for private(alpha, h)
-    for (int i = 0; i < num_active_cells; i++) {
+    for (i = 0; i < num_active_cells; i++) {
         h = ac[i]->face_length;
         alpha = ALPHA (beta, cm, dt, h);
 
@@ -479,8 +490,10 @@ void set_discretization_matrix (struct monodomain_solver *the_solver, struct gri
 
     initialize_diagonal_elements (the_solver, the_grid);
 
-#pragma omp parallel for
-    for (int i = 0; i < num_active_cells; i++) {
+	int i;
+
+	#pragma omp parallel for
+    for (i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
         fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->south, 's');
@@ -684,9 +697,9 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
         check_cuda_errors (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
 #endif
-
-#pragma omp parallel for private(h, alpha)
-    for (int i = 0; i < num_active_cells; i++) {
+	int i;
+	#pragma omp parallel for private(h, alpha)
+    for (i = 0; i < num_active_cells; i++) {
         h = active_cells[i]->face_length;
         alpha = ALPHA (beta, cm, dt_edp, h);
 

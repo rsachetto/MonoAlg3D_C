@@ -9,7 +9,7 @@
 #include "../utils/logfile_utils.h"
 #include <assert.h>
 #include <time.h>
-#include <unistd.h>
+//#include <unistd.h>
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
 

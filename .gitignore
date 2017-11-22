@@ -60,3 +60,4 @@ tests_bin/
 .vscode/
 build/
 *~
+.vs/

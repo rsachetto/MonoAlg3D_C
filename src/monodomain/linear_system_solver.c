@@ -30,9 +30,10 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
     rTz = 0.0;
 
     struct element element;
+	int i;
 
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
-    for (int i = 0; i < num_active_cells; i++) {
+    for (i = 0; i < num_active_cells; i++) {
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
@@ -68,7 +69,7 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
             pTAp = 0.0;
 
             #pragma omp parallel for private(element) reduction(+ : pTAp)
-            for (int i = 0; i < num_active_cells; i++) {
+            for (i = 0; i < num_active_cells; i++) {
 
                 ac[i]->Ax = 0.0;
                 struct element *cell_elements = ac[i]->elements;
@@ -98,7 +99,7 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
 
             // Computes new value of solution: u = u + alpha*p.
             #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
-            for (int i = 0; i < num_active_cells; i++) {
+            for (i = 0; i < num_active_cells; i++) {
                 ac[i]->v += alpha * ac[i]->p;
 
                 ac[i]->r -= alpha * ac[i]->Ax;
@@ -129,7 +130,7 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
             //__________________________________________________________________
             //Computes int_vector p1 = r1 + beta*p and uses it to upgrade p.
             #pragma omp parallel for
-            for (int i = 0; i < num_active_cells; i++) {
+            for (i = 0; i < num_active_cells; i++) {
                 if(use_jacobi) {
                     ac[i]->p1 = ac[i]->z + beta * ac[i]->p;
                 }

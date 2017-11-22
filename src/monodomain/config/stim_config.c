@@ -3,13 +3,22 @@
 //
 
 #include "stim_config.h"
+#ifdef _MSC_VER
+#include "../../dlfcn-win32/dlfcn.h"
+#else
 #include <dlfcn.h>
+#endif
 #include <string.h>
 #include "../../utils/logfile_utils.h"
 
 void init_stim_functions(struct stim_config *config, char* stim_name) {
 
-    char *default_library_name = "./shared_libs/libdefault_stimuli.so";
+#ifdef _MSC_VER
+	char *default_library_name = "./shared_libs/default_stimuli.dll";
+#else
+	char *default_library_name = "./shared_libs/libdefault_stimuli.so";
+#endif
+
     char *function_name = config->config_data.function_name;
 
     if(config->config_data.library_file_path == NULL) {

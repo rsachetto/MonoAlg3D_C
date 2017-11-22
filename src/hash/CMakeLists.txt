@@ -5,4 +5,4 @@ set(SOURCE_FILES_HASH hash_common.h
         string_hash.h
        )
 
-ADD_LIBRARY(hashes SHARED ${SOURCE_FILES_HASH})
+ADD_LIBRARY(hashes STATIC ${SOURCE_FILES_HASH})

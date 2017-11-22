@@ -4,14 +4,24 @@
 
 #include "extra_data_config.h"
 #include "../../utils/logfile_utils.h"
+
+#ifdef _MSC_VER
+#include "../../dlfcn-win32/dlfcn.h"
+#else
 #include <dlfcn.h>
+#endif
+
 #include <string.h>
 
 void init_extra_data_functions(struct extra_data_config *config) {
 
     char *function_name = config->config_data.function_name;
 
-    char *default_function = "./shared_libs/libdefault_extra_data.so";
+#ifdef _MSC_VER
+	char *default_function = "./shared_libs/default_extra_data.dll";
+#else
+	char *default_function = "./shared_libs/libdefault_extra_data.so";
+#endif
 
     if(config->config_data.library_file_path == NULL) {
         print_to_stdout_and_file("Using the default library for extra data functions\n");

@@ -10,4 +10,4 @@ set(SOURCE_FILES_ALG
         ../vector/stretchy_buffer.h
         )
 
-ADD_LIBRARY(alg SHARED ${SOURCE_FILES_ALG})
+ADD_LIBRARY(alg STATIC ${SOURCE_FILES_ALG})

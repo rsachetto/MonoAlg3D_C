@@ -5,7 +5,11 @@
 #include "ode_solver.h"
 
 #include <string.h>
+#ifdef _MSC_VER
+#include "../dlfcn-win32/dlfcn.h"
+#else
 #include <dlfcn.h>
+#endif
 #include <assert.h>
 #include "../utils/logfile_utils.h"
 
@@ -182,8 +186,10 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
 
         solver->sv = (real*)malloc(n_odes*num_cells*sizeof(real));
 
+		int i;
+
         #pragma omp parallel for
-        for(u_int32_t i = 0; i < num_cells; i++) {
+        for(i = 0; i < num_cells; i++) {
             soicc_fn_pt(solver->sv + (i*n_odes));
         }
     }
@@ -208,6 +214,8 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     struct stim_config *tmp = NULL;
     real stim_start, stim_dur;
 
+	int i;
+
     if(stim_configs) {
         for (int k = 0; k < stim_configs->size; k++) {
             for (struct stim_config_elt *e = stim_configs->table[k % stim_configs->size]; e != 0; e = e->next) {
@@ -217,7 +225,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                 for (int j = 0; j < num_steps; ++j) {
                     if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
                         #pragma omp parallel for
-                        for (int i = 0; i < n_active; i++) {
+                        for (i = 0; i < n_active; i++) {
                             merged_stims[i] = tmp->spatial_stim_currents[i];
                         }
                     }
@@ -256,13 +264,16 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
     int neq = ode_solver->model_data.number_of_ode_equations;
     real *sv_src;
     real *sv_dst;
+	int  i;
+
 
     if(ode_solver->gpu) {
 #ifdef COMPILE_CUDA
 
         size_t pitch_h = ode_solver->pitch;
-#pragma omp parallel for private(sv_src, sv_dst)
-        for (size_t i = 0; i < num_refined_cells; i++) {
+
+		#pragma omp parallel for private(sv_src, sv_dst)
+        for (i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * 8;
 
@@ -285,7 +296,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
     else {
 
         #pragma omp parallel for private(sv_src, sv_dst)
-        for (size_t i = 0; i < num_refined_cells; i++) {
+        for (i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * 8;
 

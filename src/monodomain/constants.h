@@ -13,4 +13,8 @@
 // Precision to be used for the calculations
 typedef float real;
 
+#ifdef _MSC_VER
+#define EXPORT_FN __declspec(dllexport)
+#endif
+
 #endif //MONOALG3D_CONSTANTS_H

@@ -189,7 +189,7 @@
 #define stb_sb_pop(a)          (stb__sbn(a)-=1, (a)[stb__sbn(a)])
 #define stb_sb_clear(a)        (stb__sbn(a)=0)
 
-#define stb__sbraw(a) ((u_int32_t *) (a) - 2)
+#define stb__sbraw(a) ((uint32_t *) (a) - 2)
 #define stb__sbm(a)   stb__sbraw(a)[0]
 #define stb__sbn(a)   stb__sbraw(a)[1]
 
@@ -199,25 +199,26 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <stdint.h>
 #define STRETCHY_BUFFER_OUT_OF_MEMORY assert(0)
 
 
-static void * stb__sbgrowf(void *arr, u_int32_t increment, u_int32_t itemsize)
+static void * stb__sbgrowf(void *arr, uint32_t increment, uint32_t itemsize)
 {
-   u_int32_t dbl_cur = arr ? 2*stb__sbm(arr) : 0;
-   u_int32_t min_needed = stb_sb_count(arr) + increment;
-   u_int32_t m = dbl_cur > min_needed ? dbl_cur : min_needed;
-   u_int32_t *p = (u_int32_t *) realloc(arr ? stb__sbraw(arr) : 0, itemsize * m + sizeof(u_int32_t)*2);
-   if (p) {
-      if (!arr)
-         p[1] = 0;
-      p[0] = m;
-      return p+2;
+	uint32_t dbl_cur = arr ? 2*stb__sbm(arr) : 0;
+	uint32_t min_needed = stb_sb_count(arr) + increment;
+	uint32_t m = dbl_cur > min_needed ? dbl_cur : min_needed;
+	uint32_t *p = (uint32_t *) realloc(arr ? stb__sbraw(arr) : 0, itemsize * m + sizeof(uint32_t)*2);
+	if (p) {
+		if (!arr)
+			p[1] = 0;
+		p[0] = m;
+		return p+2;
    } else {
       #ifdef STRETCHY_BUFFER_OUT_OF_MEMORY
       STRETCHY_BUFFER_OUT_OF_MEMORY ;
       #endif
-      return (void *) (2*sizeof(u_int32_t)); // try to force a NULL pointer exception later
+      return (void *) (2*sizeof(uint32_t)); // try to force a NULL pointer exception later
    }
 }
 #endif // STB_STRETCHY_BUFFER_H_INCLUDED

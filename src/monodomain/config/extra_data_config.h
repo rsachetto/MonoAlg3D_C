@@ -8,8 +8,9 @@
 #include "../../alg/grid/grid.h"
 #include "../../hash/string_hash.h"
 #include "config_common.h"
+#include "../constants.h"
 
-#define SET_EXTRA_DATA(name) void *name (struct grid * the_grid, struct string_hash *config, size_t *extra_data_size)
+#define SET_EXTRA_DATA(name) EXPORT_FN void *name (struct grid * the_grid, struct string_hash *config, size_t *extra_data_size)
 typedef SET_EXTRA_DATA(set_extra_data_fn);
 
 struct extra_data_config {

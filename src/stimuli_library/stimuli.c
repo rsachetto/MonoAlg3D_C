@@ -29,8 +29,10 @@ SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
 
     config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
 
+	int i;
+
     #pragma omp parallel for private(stim, stim_value)
-    for (int i = 0; i < n_active; i++) {
+    for (i = 0; i < n_active; i++) {
 
         stim = ac[i]->center_x > 5500.0;
         stim &= ac[i]->center_x < 7000.0;
@@ -64,8 +66,11 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
     }
 
     config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
+
+	int i;
+
     #pragma omp parallel for private(stim, stim_value)
-    for (int i = 0; i < n_active; i++) {
+    for (i = 0; i < n_active; i++) {
         stim = ac[i]->center_x < x_limit;
 
         if (stim) {
@@ -122,9 +127,11 @@ SET_SPATIAL_STIM(set_stim_from_file) {
     }
 
     config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
-
-    #pragma omp parallel for private(stim, stim_value)
-    for (int i = 0; i < n_active; i++) {
+	
+	int i;
+	
+	#pragma omp parallel for private(stim, stim_value)
+    for (i = 0; i < n_active; i++) {
 
         double center_x = ac[i]->center_x;
         double center_y = ac[i]->center_y;
@@ -162,8 +169,10 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
 
     config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
 
-    #pragma omp parallel for private(stim_value)
-    for (int i = 0; i < n_active; i++) {
+	int i;
+	
+	#pragma omp parallel for private(stim_value)
+    for (i = 0; i < n_active; i++) {
         bool stim = (ac[i]->center_x >= x_limit);
 
         if (stim) {
@@ -194,8 +203,10 @@ SET_SPATIAL_STIM(stim_base_mouse) {
 
     config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
 
+	int i;
+
     #pragma omp parallel for private(stim_value)
-    for (int i = 0; i < n_active; i++) {
+    for (i = 0; i < n_active; i++) {
 
         bool stim;
         stim  = (ac[i]->center_x >= 3000.0 - stim_size) && (ac[i]->center_x <= 3000.0 + stim_size);
@@ -227,8 +238,10 @@ SET_SPATIAL_STIM(stim_mouse_spiral) {
 
     config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
 
+	int i;
+
     #pragma omp parallel for private(stim_value)
-    for (int i = 0; i < n_active; i++) {
+    for (i = 0; i < n_active; i++) {
 
         bool stim;        
 

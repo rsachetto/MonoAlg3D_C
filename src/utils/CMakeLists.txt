@@ -6,4 +6,4 @@ set(SOURCE_FILES_UTILS
         sort.c erros_helpers.c erros_helpers.h
         logfile_utils.c logfile_utils.h)
 
-ADD_LIBRARY(utils SHARED ${SOURCE_FILES_UTILS})
+ADD_LIBRARY(utils STATIC ${SOURCE_FILES_UTILS})

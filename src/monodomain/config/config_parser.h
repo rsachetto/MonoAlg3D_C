@@ -8,7 +8,12 @@
 #ifndef MONOALG3D_CONFIG_PARSER_H
 #define MONOALG3D_CONFIG_PARSER_H
 
+#ifdef _MSC_VER
+#include "../../getopt/getopt.h"
+#else
 #include <getopt.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
