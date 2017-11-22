@@ -46,9 +46,26 @@ IF (OPENMP_FOUND)
 ENDIF()
 
 FIND_PACKAGE(CUDA)
+
+
+ if (CUDA_FOUND AND MSVC AND "${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
+            message(WARNING "You have CUDA installed, but we can't use it unless you put visual studio in 64bit mode.")
+            set(CUDA_FOUND 0)
+endif()
+
 IF (CUDA_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
+
+
+	if (MSVC OR APPLE)
+               set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+               # Grab all the -D flags from CMAKE_CXX_FLAGS so we can pass them
+               # to nvcc.
+               string(REGEX MATCHALL "-D[^ ]*" FLAGS_FOR_NVCC "${CMAKE_CXX_FLAGS}")
+            endif()
+
+	list(APPEND CUDA_NVCC_FLAGS "${FLAGS_FOR_NVCC} -Xcompiler \"-MDd  ${OpenMP_CXX_FLAGS}\" ")
     ADD_SUBDIRECTORY(src/gpu_utils)
     SET(OPT_DEPS gpu_utils)
 ENDIF()
