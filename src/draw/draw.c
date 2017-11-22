@@ -810,7 +810,7 @@ void init_opengl(int argc, char **argv) {
     glutKeyboardFunc(keyboard);
     glutSpecialFunc( special_keys );
     glutMotionFunc( moving_mouse );
-    glutTimerFunc( 40, timer, 0 );
+    glutTimerFunc( 20, timer, 20 );
     glEnable( GL_DEPTH_TEST );
     glutMainLoop();
 }

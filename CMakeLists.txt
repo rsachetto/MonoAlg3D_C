@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
 
+if (CMAKE_VERSION VERSION_LESS "3.9.0")
+    # Set only because there are old target_link_libraries() statements in the
+    # FindCUDA.cmake file that comes with CMake that error out if the new behavior
+    # is used.  In newer versions of CMake we can instead set CUDA_LINK_LIBRARIES_KEYWORD which fixes this issue.
+    cmake_policy(SET CMP0023 OLD)
+else()
+    set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
+endif()
+
 MACRO(USE_C99)
     IF (CMAKE_VERSION VERSION_LESS "3.1")
         IF (CMAKE_C_COMPILER_ID STREQUAL "GNU")
@@ -20,7 +29,7 @@ IF(EXISTS "/etc/manjaro-release")
     set(CMAKE_C_COMPILER "/opt/cuda/bin/gcc")
 ENDIF(EXISTS "/etc/manjaro-release")
 
-IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 	ADD_SUBDIRECTORY(src/getopt)
 	ADD_SUBDIRECTORY(src/dlfcn-win32)
@@ -36,7 +45,7 @@ IF (OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 ENDIF()
 
-#FIND_PACKAGE(CUDA)
+FIND_PACKAGE(CUDA)
 IF (CUDA_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
@@ -65,13 +74,11 @@ ADD_EXECUTABLE(MonoAlg3D src/main.c)
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string ${OPT_DEPS})
 
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl)
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl)
+    SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 ELSE()
-TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
 ENDIF()
-
-
 
 ADD_SUBDIRECTORY(src/models_library)
 ADD_SUBDIRECTORY(src/stimuli_library)

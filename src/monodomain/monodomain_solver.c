@@ -228,11 +228,12 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file ("Starting simulation\n");
     while (cur_time <= finalT) {
 
+#ifdef COMPILE_OPENGL
+        redraw  = count % print_rate == 0; //redraw grid
+#endif
+
         if (save_to_file) {
 
-#ifdef COMPILE_OPENGL
-            redraw  = count % print_rate == 0; //redraw grid
-#endif
             if (count % print_rate == 0) {
                 start_stop_watch (&write_time);
 
