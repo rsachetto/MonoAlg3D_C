@@ -15,6 +15,8 @@ typedef float real;
 
 #ifdef _MSC_VER
 #define EXPORT_FN __declspec(dllexport)
+#else
+#define EXPORT_FN 
 #endif
 
 #endif //MONOALG3D_CONSTANTS_H
