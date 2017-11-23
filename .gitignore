@@ -61,4 +61,4 @@ tests_bin/
 build/
 *~
 .vs/
-/CMakeSettings.json
+*.json
