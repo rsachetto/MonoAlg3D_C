@@ -375,7 +375,7 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
         check_cuda_errors (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));		
 
 		#pragma omp parallel for
-        for (i = 0; i < n_active; i++) {			
+        for (i = 0; i < n_active; i++) {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
         }
 

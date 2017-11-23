@@ -6,7 +6,7 @@
 #define MONOALG3D_CONFIG_HELPERS_H
 #include "../hash/string_hash.h"
 #include "../monodomain/constants.h"
-#include "../utils/erros_helpers.h"
+#include "erros_helpers.h"
 #include <stdbool.h>
 #include <string.h>
 

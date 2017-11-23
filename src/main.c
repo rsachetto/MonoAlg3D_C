@@ -1,4 +1,4 @@
-#ifdef __unix__         
+#ifdef __unix__
 #include <pthread.h>
 #endif
 
@@ -11,19 +11,6 @@
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
 #endif
-
-struct mono_args {
-    struct user_options* options;
-    struct grid *the_grid;
-    struct monodomain_solver *monodomain_solver;
-    struct ode_solver *ode_solver;
-};
-
-void * start_monodomain_in_thread(void *args) {
-    struct mono_args* args_local = (struct mono_args*) args;
-    solve_monodomain(args_local->monodomain_solver, args_local->ode_solver, args_local->the_grid, args_local->options);
-    return NULL;
-}
 
 int main(int argc, char **argv) {
 
@@ -80,7 +67,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-	 int np = monodomain_solver->num_threads;
+    int np = monodomain_solver->num_threads;
 
     if (np == 0)
         np = 1;
@@ -89,25 +76,27 @@ int main(int argc, char **argv) {
     omp_set_num_threads (np);
 #endif
 
-	if (options->draw) {
-#ifdef COMPILE_OPENGL		
-		#pragma omp parallel sections num_threads(2)
-		{
-			#pragma omp section
-			{
-				grid_to_draw = NULL;
-				init_opengl(argc, argv);
-			}
-	
-			#pragma omp section
-			{
-				solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
-			}
+    if (options->draw) {
+#ifdef COMPILE_OPENGL
 
-		}	
+        omp_set_nested(true);
+
+        #pragma omp parallel sections num_threads(2)
+        {
+            #pragma omp section
+            {
+                grid_to_draw = NULL;
+                init_opengl(argc, argv);
+            }
+
+            #pragma omp section
+            {
+                solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+            }
+
+        }
 #endif
-	}
-    else {
+    } else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
     }
 

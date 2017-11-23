@@ -13,17 +13,13 @@ else()
     set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
 endif()
 
-MACRO(USE_C99)
-    IF (CMAKE_VERSION VERSION_LESS "3.1")
-        IF (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            SET(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
-        ENDIF(CMAKE_C_COMPILER_ID)
-    ELSE()
-        SET(CMAKE_C_STANDARD 99)
-    ENDIF()
-ENDMACRO(USE_C99)
-
-USE_C99()
+IF (CMAKE_VERSION VERSION_LESS "3.1")
+    IF (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        SET(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+    ENDIF(CMAKE_C_COMPILER_ID)
+ELSE()
+    SET(CMAKE_C_STANDARD 99)
+ENDIF()
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
 SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
@@ -49,24 +45,27 @@ IF (OPENMP_FOUND)
 ENDIF()
 
 FIND_PACKAGE(CUDA)
- if (CUDA_FOUND AND MSVC AND "${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
+
+IF (CUDA_FOUND AND MSVC AND "${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
             message(WARNING "You have CUDA installed, but we can't use it unless you put visual studio in 64bit mode.")
             set(CUDA_FOUND 0)
-endif()
+ENDIF()
 
 IF (CUDA_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
 
 
-	if (MSVC OR APPLE)
-               set(CUDA_PROPAGATE_HOST_FLAGS OFF)
-               # Grab all the -D flags from CMAKE_CXX_FLAGS so we can pass them
-               # to nvcc.
-               string(REGEX MATCHALL "-D[^ ]*" FLAGS_FOR_NVCC "${CMAKE_CXX_FLAGS}")
-            endif()
+	IF (MSVC OR APPLE)
+        set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+       # Grab all the -D flags from CMAKE_CXX_FLAGS so we can pass them
+       # to nvcc.
+       string(REGEX MATCHALL "-D[^ ]*" FLAGS_FOR_NVCC "${CMAKE_CXX_FLAGS}")
+       IF(MSVC)
+           list(APPEND CUDA_NVCC_FLAGS "${FLAGS_FOR_NVCC} -Xcompiler \"-MDd  ${OpenMP_CXX_FLAGS}\" ")
+       ENDIF()
+    ENDIF()
 
-	list(APPEND CUDA_NVCC_FLAGS "${FLAGS_FOR_NVCC} -Xcompiler \"-MDd  ${OpenMP_CXX_FLAGS}\" ")
     ADD_SUBDIRECTORY(src/gpu_utils)
     SET(OPT_DEPS gpu_utils)
 ENDIF()
@@ -102,10 +101,18 @@ ELSE()
     TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
 ENDIF()
 
+
 ADD_SUBDIRECTORY(src/models_library)
+
+#This src files is used only in the libraries below
+###
+SET(COMMON_SRC ../libraries_common/config_helpers.c ../libraries_common/config_helpers.h
+        ../libraries_common/erros_helpers.h ../libraries_common/erros_helpers.h)
+
 ADD_SUBDIRECTORY(src/stimuli_library)
 ADD_SUBDIRECTORY(src/domains_library)
 ADD_SUBDIRECTORY(src/extra_data_library)
+###
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
