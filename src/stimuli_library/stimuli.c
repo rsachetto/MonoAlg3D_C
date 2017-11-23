@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "../libraries_common/erros_helpers.h"
 #include "../utils/utils.h"
 #include "../monodomain/constants.h"
 #include "../alg/grid/grid.h"

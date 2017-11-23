@@ -1,7 +1,3 @@
-#ifdef __unix__
-#include <pthread.h>
-#endif
-
 #include "alg/grid/grid.h"
 #include "monodomain/ode_solver.h"
 #include "monodomain/monodomain_solver.h"

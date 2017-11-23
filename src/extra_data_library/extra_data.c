@@ -2,7 +2,6 @@
 // Created by sachetto on 01/10/17.
 //
 
-#include "../libraries_common/erros_helpers.h"
 #include "../monodomain/config/extra_data_config.h"
 #include "../libraries_common/config_helpers.h"
 

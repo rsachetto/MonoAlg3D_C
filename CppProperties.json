@@ -1,0 +1,136 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "name": "x86-Debug",
+      "includePath": [
+        "${env.INCLUDE}",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\draw",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\gpu_utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\models_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain\\config",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\string",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\stimuli_library",
+        "C:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\domains_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\extra_data_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\getopt",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\grid",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\hash",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\dlfcn-win32",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\libraries_common",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\cell"
+      ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "msvc-x86"
+    },
+    {
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "name": "x86-Release",
+      "includePath": [
+        "${env.INCLUDE}",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\draw",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\gpu_utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\models_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain\\config",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\string",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\stimuli_library",
+        "C:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\domains_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\extra_data_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\getopt",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\grid",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\hash",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\dlfcn-win32",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\libraries_common",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\cell"
+      ],
+      "defines": [
+        "WIN32",
+        "NDEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "msvc-x86"
+    },
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Debug",
+      "includePath": [
+        "${env.INCLUDE}",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\draw",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\gpu_utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\models_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain\\config",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\string",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\stimuli_library",
+        "C:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\domains_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\extra_data_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\getopt",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\grid",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\hash",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\dlfcn-win32",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\libraries_common",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\cell"
+      ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "msvc-x64"
+    },
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Release",
+      "includePath": [
+        "${env.INCLUDE}",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\draw",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\gpu_utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\models_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\monodomain\\config",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\string",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\stimuli_library",
+        "C:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\domains_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\extra_data_library",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\getopt",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\grid",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\utils",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\hash",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\dlfcn-win32",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\libraries_common",
+        "c:\\Users\\sache\\CLionProjects\\MonoAlg3D_C\\src\\alg\\cell"
+      ],
+      "defines": [
+        "WIN32",
+        "NDEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "msvc-x64"
+    }
+  ]
+}

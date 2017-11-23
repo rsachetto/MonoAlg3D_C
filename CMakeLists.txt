@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
 
-#set(OPENGL_LIBRARY_DIR "C:/Users/sache/freeglut/lib/x64")
-set(GLUT_INCLUDE_DIR "C:/Users/sache/freeglut/include")
+IF(MSVC)
+	set(GLUT_INCLUDE_DIR "C:/Users/sache/freeglut/include")
+	SET(GLUT_glut_LIBRARY "C:/Users/sache/freeglut/lib/x64/freeglut.lib")
+endif()
 
 if (CMAKE_VERSION VERSION_LESS "3.9.0")
     # Set only because there are old target_link_libraries() statements in the
@@ -104,10 +106,8 @@ ENDIF()
 
 ADD_SUBDIRECTORY(src/models_library)
 
-#This src files is used only in the libraries below
-###
 SET(COMMON_SRC ../libraries_common/config_helpers.c ../libraries_common/config_helpers.h
-        ../libraries_common/erros_helpers.h ../libraries_common/erros_helpers.h)
+        ../libraries_common/erros_helpers.c ../libraries_common/erros_helpers.h)
 
 ADD_SUBDIRECTORY(src/stimuli_library)
 ADD_SUBDIRECTORY(src/domains_library)
