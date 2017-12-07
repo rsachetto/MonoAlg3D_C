@@ -1,12 +1,13 @@
 import glob
 from sys import argv
 import numpy as np
+import os
 
 dir1 = argv[1]
 dir2 = argv[2]
 
-files1  = glob.glob(dir1+"/V_t*")
-files2  = glob.glob(dir2+"/V_t*")
+files1  = sorted(glob.glob(dir1+"/V_t*"), key=os.path.getmtime)
+files2  = sorted(glob.glob(dir2+"/V_t*"), key=os.path.getmtime)
 data_final = []
 
 for f1, f2 in zip(files1, files2):

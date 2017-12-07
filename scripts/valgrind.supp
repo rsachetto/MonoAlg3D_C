@@ -154,3 +154,129 @@
    fun:solve_monodomain
    fun:main
 }
+
+{
+   calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   fun:cuInit
+   fun:_ZN6cudart11globalState18loadDriverInternalEv
+   fun:_ZN6cudart24__loadDriverInternalUtilEv
+   fun:__pthread_once_slow
+   fun:_ZN6cudart8cuosOnceEPiPFvvE
+   fun:_ZN6cudart11globalState16initializeDriverEv
+   fun:cudaGetDeviceCount
+   fun:solve_monodomain
+}
+
+{
+   calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   fun:cuInit
+   fun:_ZN6cudart11globalState18loadDriverInternalEv
+   fun:_ZN6cudart24__loadDriverInternalUtilEv
+   fun:__pthread_once_slow
+   fun:_ZN6cudart8cuosOnceEPiPFvvE
+   fun:_ZN6cudart11globalState16initializeDriverEv
+   fun:cudaGetDeviceCount
+   fun:solve_monodomain
+}
+
+{
+   calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   fun:cuInit
+   fun:_ZN6cudart11globalState18loadDriverInternalEv
+   fun:_ZN6cudart24__loadDriverInternalUtilEv
+   fun:__pthread_once_slow
+   fun:_ZN6cudart8cuosOnceEPiPFvvE
+   fun:_ZN6cudart11globalState16initializeDriverEv
+   fun:cudaGetDeviceCount
+   fun:solve_monodomain
+}
+
+{
+   calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   fun:cuInit
+   fun:_ZN6cudart11globalState18loadDriverInternalEv
+   fun:_ZN6cudart24__loadDriverInternalUtilEv
+   fun:__pthread_once_slow
+   fun:_ZN6cudart8cuosOnceEPiPFvvE
+   fun:_ZN6cudart11globalState16initializeDriverEv
+   fun:cudaGetDeviceCount
+   fun:solve_monodomain
+}
+
+{
+   calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   fun:cuInit
+   fun:_ZN6cudart11globalState18loadDriverInternalEv
+   fun:_ZN6cudart24__loadDriverInternalUtilEv
+   fun:__pthread_once_slow
+   fun:_ZN6cudart8cuosOnceEPiPFvvE
+   fun:_ZN6cudart11globalState16initializeDriverEv
+   fun:cudaGetDeviceCount
+   fun:solve_monodomain
+   fun:main
+}
+
+{
+   malloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+}
+
+{
+   malloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+   obj:/usr/lib/libcuda.so.384.98
+}

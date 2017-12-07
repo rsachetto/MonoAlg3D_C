@@ -212,7 +212,7 @@ bool print_grid_and_check_for_activity(struct grid *the_grid, FILE *output_file,
                 fwrite (&v, sizeof(v), 1, output_file);
             }
             else {
-                fprintf(output_file, "%lf,%lf,%lf,%lf,%.4lf\n", center_x, center_y, center_z, half_face, v);
+                fprintf(output_file, "%g,%g,%g,%g,%g\n", center_x, center_y, center_z, half_face, v);
             }
         }
         grid_cell = grid_cell->next;

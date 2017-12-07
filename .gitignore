@@ -13,6 +13,7 @@
 
 # User-specific stuff:
 .idea/**/workspace.xml
+.idea/codeStyles/
 .idea/**/tasks.xml
 .idea/dictionaries
 

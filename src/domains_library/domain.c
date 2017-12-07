@@ -21,14 +21,24 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
 
     double start_h = config->start_h;
 
-    int num_layers = 1;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (int, num_layers, config->config_data.config, "num_layers");
+    int num_layers = 0;
+    bool s;
+    GET_PARAMETER_NUMERIC_VALUE(int, num_layers, config->config_data.config, "num_layers", s);
 
     double side_length = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length, config->config_data.config, "side_length");
 
     double real_side_length = start_h * 2.0f;
-    double max_h = start_h * num_layers;
+
+    double max_h;
+
+    if(!s || num_layers == 0) {
+        max_h = side_length;
+    }
+
+    else {
+        max_h = start_h * num_layers;
+    }
 
     while (real_side_length < side_length) {
         real_side_length *= 2.0f;
