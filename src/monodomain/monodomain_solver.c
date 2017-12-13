@@ -724,6 +724,8 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     print_to_stdout_and_file ("Sigma X = %.10lf, Sigma Y = %.10lf, Sigma Z = %.10lf\n", the_monodomain_solver->sigma_x,
                               the_monodomain_solver->sigma_y, the_monodomain_solver->sigma_z);
 
+    print_to_stdout_and_file ("Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
+
     print_to_stdout_and_file ("Initial N. of Elements = "
                               "%" PRIu32 "\n",
                               the_grid->num_active_cells);
@@ -850,5 +852,7 @@ void configure_monodomain_solver_from_options (struct monodomain_solver *the_mon
     the_monodomain_solver->sigma_x = options->sigma_x;
     the_monodomain_solver->sigma_y = options->sigma_y;
     the_monodomain_solver->sigma_z = options->sigma_z;
+    the_monodomain_solver->beta = options->beta;
+    the_monodomain_solver->cm = options->cm;
     the_monodomain_solver->start_adapting_at = options->start_adapting_at;
 }
