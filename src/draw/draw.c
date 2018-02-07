@@ -5,7 +5,7 @@
 #include "draw.h"
 #include "../models_library/ten_tusscher_2006.h"
 
-#include <GL/glut.h>
+#include <GL/freeglut.h>
 
 #define pi 3.14159265f
 #define rad ((pi)/180.0f)
@@ -785,6 +785,9 @@ static void timer( int parameter )
     glutTimerFunc( 20, timer, 0 );
 }
 
+void stop_drawing() {
+    
+}
 
 
 void init_opengl(int argc, char **argv) {
@@ -798,6 +801,7 @@ void init_opengl(int argc, char **argv) {
 
     glutInitWindowSize( WIN_WIDTH, WIN_HEIGTH );
     glutCreateWindow( "GLUT" );
+    glutWMCloseFunc(stop_drawing);
 
 
     glEnable (GL_BLEND);
@@ -813,5 +817,6 @@ void init_opengl(int argc, char **argv) {
     glutMotionFunc( moving_mouse );
     glutTimerFunc( 20, timer, 20 );
     glEnable( GL_DEPTH_TEST );
+    glutSetOption( GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS );
     glutMainLoop();
 }
