@@ -33,6 +33,8 @@
 #define EXTRA_DATA_OPT 1900
 #define STIM_OPT 2000
 #define DRAW_OPT 3000
+#define BETA 4000
+#define CM 5000
 
 struct user_options {
     double final_time;				/*-f option */
@@ -83,6 +85,11 @@ struct user_options {
     bool sigma_y_was_set;
     double sigma_z;
     bool sigma_z_was_set;
+    double beta;
+    bool beta_was_set;
+    double cm;
+    bool cm_was_set;
+
     double start_adapting_at;
     bool start_adapting_at_was_set;
     char *config_file;              /*-c option*/

@@ -29,6 +29,8 @@ static const struct option long_options[] = {
         { "sigma_x", required_argument, NULL, SIGMA_X},
         { "sigma_y", required_argument, NULL, SIGMA_Y},
         { "sigma_z", required_argument, NULL, SIGMA_Z},
+        { "beta", required_argument, NULL, BETA},
+        { "cm", required_argument, NULL, CM},
         { "start_adapting_at", required_argument, NULL, START_REFINING},
         { "domain", required_argument, NULL, DOMAIN_OPT},
         { "extra_data", required_argument, NULL, EXTRA_DATA_OPT},
@@ -64,6 +66,8 @@ void display_usage (char **argv) {
                     "Default: 1.0 \n");
     printf ("--dt_edp | -z [dt]. Simulation time discretization (PDE). Default: 0.01 \n");
     printf ("--dt_edo | -e [dt]. Minimum ODE time discretization (using time adaptivity. Default: 0.01 \n");
+    printf ("--beta. Value of beta for simulation (Default: 0.14 \n");
+    printf ("--cm. Value cm (Default: 1.0 \n");
     printf ("--num_threads | -n [num-threads]. Solve using OpenMP. Default: 1 \n");
     printf ("--use_gpu | -g [yes|no|true|false]. Solve ODEs using GPU. Default: No \n");
     printf ("--binary_output | -y. Save output files in binary format. Default: No \n");
@@ -154,6 +158,12 @@ struct user_options *new_user_options () {
 
     user_args->sigma_z = 0.0000176;
     user_args->sigma_z_was_set = false;
+
+    user_args->beta = 0.14;
+    user_args->beta_was_set = false;
+
+    user_args->cm = 1.0;
+    user_args->cm_was_set = false;
 
     user_args->start_adapting_at = 1.0;
     user_args->start_adapting_at_was_set = false;
@@ -635,6 +645,20 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 }
                 user_args->sigma_z = strtod (optarg, NULL);
                 break;
+            case BETA:
+                if (user_args->beta_was_set) {
+                    sprintf (old_value, "%lf", user_args->beta);
+                    issue_overwrite_warning ("beta", old_value, optarg, user_args->config_file);
+                }
+                user_args->beta = strtod (optarg, NULL);
+                break;
+            case CM:
+                if (user_args->cm) {
+                    sprintf (old_value, "%lf", user_args->cm);
+                    issue_overwrite_warning ("cm", old_value, optarg, user_args->config_file);
+                }
+                user_args->cm = strtod (optarg, NULL);
+                break;
             case START_REFINING:
                 if (user_args->start_adapting_at_was_set) {
                     sprintf (old_value, "%lf", user_args->start_adapting_at);
@@ -742,6 +766,12 @@ int parse_config_file (void *user, const char *section, const char *name, const 
     } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_z")) {
         pconfig->sigma_z = strtod(value, NULL);
         pconfig->sigma_z_was_set = true;
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "beta")) {
+        pconfig->beta = strtod(value, NULL);
+        pconfig->beta_was_set = true;
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "cm")) {
+        pconfig->cm = strtod(value, NULL);
+        pconfig->cm_was_set = true;
     } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "start_adapting_at")) {
         pconfig->start_adapting_at = strtod(value, NULL);
         pconfig->start_adapting_at_was_set = true;
