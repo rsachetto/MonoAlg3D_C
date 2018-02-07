@@ -11,15 +11,15 @@
 int main(int argc, char **argv) {
 
     struct user_options* options;
-
     options = new_user_options();
 
     struct grid *the_grid;
-    struct monodomain_solver *monodomain_solver;
-    struct ode_solver *ode_solver;
-
     the_grid   = new_grid();
+
+    struct monodomain_solver *monodomain_solver;
     monodomain_solver = new_monodomain_solver();
+
+    struct ode_solver *ode_solver;
     ode_solver = new_ode_solver();
 
     //First we have to get the config file path
@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
     //The command line options always overwrite the config file
     parse_options(argc, argv, options);
 
+    //Create the output dir and the logfile
     if(options->out_dir_name) {
         sds buffer = sdsnew("");
         create_dir_if_no_exists(options->out_dir_name);

@@ -57,7 +57,7 @@ IF (CUDA_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
 
-
+    #windos hack
 	IF (MSVC OR APPLE)
         set(CUDA_PROPAGATE_HOST_FLAGS OFF)
        # Grab all the -D flags from CMAKE_CXX_FLAGS so we can pass them

@@ -9,8 +9,7 @@
 #include "output_utils.h"
 #include <sys/stat.h>
 #include <malloc.h>
-#include <stdio.h>
-#include <stdlib.h>  
+#include <stdlib.h>
 
 
 bool dir_exists(const char *path) {

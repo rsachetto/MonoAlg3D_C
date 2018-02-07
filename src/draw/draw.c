@@ -4,7 +4,6 @@
 
 #include "draw.h"
 #include "../models_library/ten_tusscher_2006.h"
-#include <math.h>
 
 #include <GL/glut.h>
 

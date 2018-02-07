@@ -1,5 +1,5 @@
 #include "luo_rudy_1991.h"
-#include <stdlib.h>
+
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     if(get_initial_v)

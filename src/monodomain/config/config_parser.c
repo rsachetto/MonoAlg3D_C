@@ -73,6 +73,7 @@ void display_usage (char **argv) {
     printf ("--gpu_id | -G [id], ID of the GPU to be used. Default: 0 \n");
     printf ("--model_file_path | -k [.so file path], Path of the .so representing the cell model and the ode solver. "
                     "Default: NULL \n");
+    printf ("--draw_gl_output, Draw a iterative 3D output of the simulation. Not recommended for big meshes. Default: not draw\n");
     printf ("--help | -h. Shows this help and exit \n");
     exit (EXIT_FAILURE);
 }
