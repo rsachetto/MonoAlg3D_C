@@ -177,7 +177,7 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
     }
 }
 
-bool print_grid_and_check_for_activity(struct grid *the_grid, FILE *output_file, int count, bool binary) {
+bool print_grid_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count, const bool binary) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 

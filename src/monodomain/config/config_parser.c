@@ -50,7 +50,7 @@ void display_usage (char **argv) {
     //TODO: help for domain, extra_data and stimuls flags
     printf ("Usage: %s [options]\n\n", argv[0]);
     printf ("Options:\n");
-    printf ("--config_file | -c [configuration_file_path]. Simulation final time. Default NULL.\n");
+    printf ("--config_file | -c [configuration_file_path]. Simulation configuration file. Default NULL.\n");
     printf ("--simulation_time | -f [simulation final time]. Simulation final time. Default 10.\n");
     printf ("--output_dir | -o [output-dir]. Simulation output directory. If not set, the simulation will not be saved "
                     "to disk. \n");

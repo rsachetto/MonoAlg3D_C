@@ -74,4 +74,7 @@ void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cel
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
                                               struct user_options *options);
 
+bool print_result(const struct grid *the_grid, const struct user_options *configs, int count, bool save_in_binary);
+
+
 #endif // MONOALG3D_SOLVER_H

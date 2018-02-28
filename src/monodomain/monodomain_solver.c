@@ -51,7 +51,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
          total_deref_time = 0, cg_partial, total_config_time = 0;
+
     uint32_t total_cg_it = 0;
+
     struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time,
         config_time;
 
@@ -228,15 +230,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
             if (count % print_rate == 0) {
                 start_stop_watch (&write_time);
 
-                sds tmp = sdsnew (configs->out_dir_name);
-                sds c = sdsfromlonglong (count);
-                tmp = sdscat (tmp, "/V_t_");
-                tmp = sdscat (tmp, c);
-                FILE *f1 = fopen (tmp, "w");
-                activity = print_grid_and_check_for_activity (the_grid, f1, count, save_in_binary);
-                fclose (f1);
-                sdsfree (tmp);
-                sdsfree (c);
+                activity = print_result(the_grid, configs, count, save_in_binary);
 
                 total_write_time += stop_stop_watch (&write_time);
 
@@ -334,6 +328,20 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file ("Write time: %ld μs\n", total_write_time);
     print_to_stdout_and_file ("Initial configuration time: %ld μs\n", total_config_time);
     print_to_stdout_and_file ("CG Total Iterations: %u\n", total_cg_it);
+}
+
+bool print_result(const struct grid *the_grid, const struct user_options *configs, int count, bool save_in_binary) {
+    bool activity;
+    sds tmp = sdsnew (configs->out_dir_name);
+    sds c = sdsfromlonglong (count);
+    tmp = sdscat (tmp, "/V_t_");
+    tmp = sdscat (tmp, c);
+    FILE *f1 = fopen (tmp, "w");
+    activity = print_grid_and_check_for_activity (the_grid, f1, count, save_in_binary);
+    fclose (f1);
+    sdsfree (tmp);
+    sdsfree (c);
+    return activity;
 }
 
 void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_grid) {

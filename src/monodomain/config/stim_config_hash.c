@@ -10,7 +10,7 @@
 
 
 /* dictionary initialization code used in both create_hash and grow */
-struct stim_config_hash *internal_stim_config_hash_create (int size) {
+struct stim_config_hash *internal_stim_config_hash_create(size_t size) {
     struct stim_config_hash *d;
     int i;
 
