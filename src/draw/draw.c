@@ -403,7 +403,6 @@ float mousePreviousX;
 float mousePreviousY;
 int   mouseButton;
 
-GLuint grid_list;
 
 static void init_variables() {
     // Sets the vision angle of the camera.
@@ -797,7 +796,6 @@ void init_opengl(int argc, char **argv) {
     init_variables();
 
     glutInitDisplayMode( GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE );
-    //glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);   // display mode
 
     glutInitWindowSize( WIN_WIDTH, WIN_HEIGTH );
     glutCreateWindow( "GLUT" );
@@ -808,8 +806,6 @@ void init_opengl(int argc, char **argv) {
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     initialize_lighting();
-    grid_list = glGenLists(1);                              // Building Two Lists
-
     glutDisplayFunc( display );
     glutReshapeFunc( reshape );
     glutKeyboardFunc(keyboard);

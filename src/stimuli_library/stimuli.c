@@ -257,3 +257,56 @@ SET_SPATIAL_STIM(stim_mouse_spiral) {
 
     }
 }
+
+SET_SPATIAL_STIM(stim_x_y_z_limits) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    double max_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_x, config->config_data.config, "max_x");
+
+    double min_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_x, config->config_data.config, "min_x");
+
+    double max_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_y, config->config_data.config, "max_y");
+
+    double min_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_y, config->config_data.config, "min_y");
+
+    double max_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_z, config->config_data.config, "max_z");
+
+    double min_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_z, config->config_data.config, "min_z");
+
+    real stim_current = config->stim_current;
+    real stim_value;
+
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
+
+    int i;
+
+    #pragma omp parallel for private(stim_value)
+    for (i = 0; i < n_active; i++) {
+
+        bool stim;
+        stim  = (ac[i]->center_x >= min_x) && (ac[i]->center_x <= max_x);
+        stim &= (ac[i]->center_y >= min_y) && (ac[i]->center_y <= max_y);
+        stim &= (ac[i]->center_z >= min_z) && (ac[i]->center_z <= max_z);
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        config->spatial_stim_currents[i] = stim_value;
+
+    }
+}

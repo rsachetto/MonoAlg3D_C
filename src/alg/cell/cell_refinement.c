@@ -1173,6 +1173,7 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
     the_cell->active = other_cell->active;
     the_cell->fibrotic = other_cell->fibrotic;
     the_cell->border_zone = other_cell->border_zone;
+    the_cell->scar_type = other_cell->scar_type;
     the_cell->v = other_cell->v;
 
     the_cell->face_length = face_length;

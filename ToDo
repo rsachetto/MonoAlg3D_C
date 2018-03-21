@@ -1,1 +1,3 @@
+- Make a domain version that sets the two scars and the fibrosis from file
+- Compare the mesh with the mesh from the scientific reports paper
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)

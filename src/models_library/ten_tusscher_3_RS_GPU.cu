@@ -49,8 +49,8 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     real *fibs = NULL;
 
     if(extra_data) {
-        atpi = ((real*)extra_data)[0];
-        fibs = ((real*)extra_data)+1;
+        atpi = ((real*)extra_data)[0]; //value
+        fibs = ((real*)extra_data)+1; //pointer
         extra_data_bytes_size = extra_data_bytes_size-sizeof(real);
     }
     else {

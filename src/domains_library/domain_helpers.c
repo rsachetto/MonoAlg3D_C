@@ -10,7 +10,7 @@
 #include <time.h>
 
 #ifdef _MSC_VER
-    #include <process.h>
+#include <process.h>
     #define getpid _getpid
 #else
 #include <unistd.h>
@@ -526,16 +526,16 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
                 double centerZ = gridCell->center_z;
                 if(gridCell->scar_type == 'b') {
                     dist_big = sqrt((centerX - big_scar_center_x) * (centerX - big_scar_center_x) +
-                                (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
-                                (centerZ - big_scar_center_z) * (centerZ - big_scar_center_z));
+                                    (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
+                                    (centerZ - big_scar_center_z) * (centerZ - big_scar_center_z));
                     if (dist_big > bz_size_big) {
                         bz_size_big = dist_big;
                     }
                 }
                 else if(gridCell->scar_type == 's') {
                     dist_small = sqrt((centerX - small_scar_center_x) * (centerX - small_scar_center_x) +
-                                    (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
-                                    (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
+                                      (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
+                                      (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
                     if (dist_small > bz_size_small) {
                         bz_size_small = dist_small;
                     }
@@ -568,8 +568,8 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
                 }
                 else if(gridCell->scar_type == 's') {
                     dist_small = sqrt((centerX - small_scar_center_x) * (centerX - small_scar_center_x) +
-                                    (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
-                                    (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
+                                      (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
+                                      (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
                     dist_small = dist_small / bz_size_small;
                     double phi_local = phi - phi * dist_small;
 
@@ -586,66 +586,60 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
 }
 
 
-void set_fibrosis_from_file(struct grid *grid) {
+void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char *filename, int size) {
 
-    int minx = 79100;
-    int maxx = 121000;
-    int miny = 66700;
-    int maxy = 106000;
-    int minz = 11200;
-    int maxz = 61400;
 
-    FILE *file = fopen ("scar.pts", "r");
+    FILE *file = fopen(filename, "r");
 
-    if (!file) {
-        printf ("Error opening mesh described in V_t_0!!\n");
-        exit (0);
+    if(!file) {
+        printf("Error opening file %s!!\n", filename);
+        exit(0);
     }
 
-    size_t size = 2172089;
 
-    double **a = (double **)malloc (sizeof (double *) * size);
-    for (int i = 0; i < size; i++) {
-        a[i] = (double *)malloc (sizeof (double) * 3);
-        if (a[i] == NULL) {
-            printf ("Failed to allocate memory\n");
-            exit (0);
+    double **scar_mesh = (double**) malloc(sizeof(double*)*size);
+    for(int i=0; i< size; i++){
+        scar_mesh[i] = (double*) malloc(sizeof(double) * 3);
+        if(scar_mesh[i] == NULL) {
+            printf("Failed to allocate memory\n");
+            exit(0);
         }
     }
-    double b;
-
-    int d;
+    double dummy1, dummy2; //unused values
 
     int i = 0;
 
-    while (!feof (file)) {
-        fscanf (file, "%lf,%lf,%lf,%d,%lf\n", &a[i][0], &a[i][1], &a[i][2], &d, &b);
+    while ( !feof(file) ) {
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf\n",&scar_mesh[i][0],&scar_mesh[i][1],&scar_mesh[i][2], &dummy1, &dummy2);
         i++;
     }
-    sort_vector (a, size);
 
-    struct cell_node *gridCell = grid->first_cell;
-    while (gridCell != 0) {
+    fclose(file);
 
-        double centerX = gridCell->center_x;
-        double centerY = gridCell->center_y;
-        double centerZ = gridCell->center_z;
+    sort_vector(scar_mesh, size);
 
-        // inside big scar
-        if (centerX < maxx && centerY < maxy && centerZ < maxz && centerX > minx && centerY > miny &&
-            centerZ > minz) {
-            int index = inside_mesh (a, centerX, centerY, centerZ, 0, size - 1);
-            gridCell->active = (index != -1);
+    struct cell_node *grid_cell = grid->first_cell;
+    while( grid_cell != 0 ) {
+
+        double center_x = grid_cell->center_x;
+        double center_y = grid_cell->center_y;
+        double center_z = grid_cell->center_z;
+
+        if( (grid_cell->face_length == 100.0) && (grid_cell->scar_type == type)) {
+            int index = inside_mesh(scar_mesh, center_x, center_y, center_z, 0, size - 1);
+            grid_cell->active = (index != -1);
         }
 
-        gridCell = gridCell->next;
+        grid_cell = grid_cell->next;
     }
 
-    fclose (file);
-    for (int j = 0; j < size; j++) {
-        free (a[j]);
+    for(int k=0; k < size; k++){
+        free(scar_mesh[k]);
     }
 
-    free (a);
+    free(scar_mesh);
+
 }
+
+
 

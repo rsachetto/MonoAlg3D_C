@@ -264,7 +264,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
     int neq = ode_solver->model_data.number_of_ode_equations;
     real *sv_src;
     real *sv_dst;
-	int  i;
+    size_t  i;
 
 
     if(ode_solver->gpu) {

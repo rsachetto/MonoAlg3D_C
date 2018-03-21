@@ -29,4 +29,6 @@ void set_human_mesh_fibrosis(struct grid *grid, double phi, unsigned seed, doubl
                              double big_scar_center_y, double big_scar_center_z, double small_scar_center_x,
                              double small_scar_center_y, double small_scar_center_z);
 
+void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char *filename, int size);
+
 #endif // MONOALG3D_DOMAIN_HELPERS_H

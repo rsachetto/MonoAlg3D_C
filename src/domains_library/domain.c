@@ -90,7 +90,6 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
         fibrotic = ((strcmp (fibrotic_char, "yes") == 0) || (strcmp (fibrotic_char, "true") == 0));
     }
 
-
     initialize_and_construct_grid (the_grid, 204800);
     refine_grid (the_grid, 7);
 
@@ -105,43 +104,66 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
 
     if (fibrotic) {
 
-        double small_scar_center_x = 0.0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, small_scar_center_x, config->config_data.config, "small_scar_center_x");
+        //Here we refine the scar cells
+        refine_fibrotic_cells (the_grid); //400 um
+        refine_fibrotic_cells (the_grid); //200 um
+        refine_fibrotic_cells (the_grid); //100 um
 
-        double small_scar_center_y = 0.0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, small_scar_center_y, config->config_data.config, "small_scar_center_y");
-
-        double small_scar_center_z = 0.0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, small_scar_center_z, config->config_data.config, "small_scar_center_z");
-
-        double big_scar_center_x = 0.0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, big_scar_center_x, config->config_data.config, "big_scar_center_x");
-
-        double big_scar_center_y = 0.0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, big_scar_center_y, config->config_data.config, "big_scar_center_y");
-
-        double big_scar_center_z = 0.0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, big_scar_center_z, config->config_data.config, "big_scar_center_z");
-
-        double phi = 0.0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, phi, config->config_data.config, "phi");
-
-        unsigned seed = 0;
-        bool success ;
-        GET_PARAMETER_NUMERIC_VALUE (unsigned, seed, config->config_data.config, "seed", success);
-        if (!success)
-            seed = 0;
-
-        refine_fibrotic_cells (the_grid);
-        refine_fibrotic_cells (the_grid);
-        refine_fibrotic_cells (the_grid);
-
+        //and the border zone
         refine_border_zone_cells (the_grid);
         refine_border_zone_cells (the_grid);
         refine_border_zone_cells (the_grid);
 
-        set_human_mesh_fibrosis (the_grid, phi, seed, big_scar_center_x, big_scar_center_y, big_scar_center_z,
-                                 small_scar_center_x, small_scar_center_y, small_scar_center_z);
+        char *scar_file_big;
+        GET_PARAMETER_VALUE_CHAR (scar_file_big, config->config_data.config, "big_scar_file");
+
+        char *scar_file_small;
+        GET_PARAMETER_VALUE_CHAR (scar_file_small, config->config_data.config, "small_scar_file");
+
+        if(scar_file_big) {
+            print_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_big);
+            set_human_mesh_fibrosis_from_file(the_grid, 'b', scar_file_big, 2172089);
+        }
+
+        if(scar_file_small) {
+            print_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_small);
+            set_human_mesh_fibrosis_from_file(the_grid, 's', scar_file_small, 845051);
+        }
+
+        if(!(scar_file_big || scar_file_small)) {
+
+            double small_scar_center_x = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, small_scar_center_x, config->config_data.config, "small_scar_center_x");
+
+            double small_scar_center_y = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, small_scar_center_y, config->config_data.config, "small_scar_center_y");
+
+            double small_scar_center_z = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, small_scar_center_z, config->config_data.config, "small_scar_center_z");
+
+            double big_scar_center_x = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, big_scar_center_x, config->config_data.config, "big_scar_center_x");
+
+            double big_scar_center_y = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, big_scar_center_y, config->config_data.config, "big_scar_center_y");
+
+            double big_scar_center_z = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, big_scar_center_z, config->config_data.config, "big_scar_center_z");
+
+            double phi = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, phi, config->config_data.config, "phi");
+
+            unsigned seed = 0;
+            bool seed_success ;
+            GET_PARAMETER_NUMERIC_VALUE (unsigned, seed, config->config_data.config, "seed", seed_success);
+            if (!seed_success)
+                seed = 0;
+
+            print_to_stdout_and_file("Setting random fibrosis pattern\n");
+            set_human_mesh_fibrosis(the_grid, phi, seed, big_scar_center_x, big_scar_center_y, big_scar_center_z,
+                                    small_scar_center_x, small_scar_center_y, small_scar_center_z);
+        }
+
     }
 
     free (mesh_file);
