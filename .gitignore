@@ -58,6 +58,9 @@ bin/
 shared_libs/
 tmp*/
 tests_bin/
+meshes/*.pts
+meshes/human_800_tagged.alg
+meshes/mouse.alg
 .vscode/
 build/
 *~
