@@ -2,9 +2,25 @@
 // Created by sachetto on 04/10/17.
 //
 
-#include "linear_system_solver.h"
+#include "../monodomain/config/linear_system_solver_config.h"
+#include "../libraries_common/config_helpers.h"
 
-uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool use_jacobi, double *error) {
+SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
+
+    double tol = 1e-16;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
+
+
+    bool use_jacobi = true;
+    char *preconditioner_char;
+    GET_PARAMETER_VALUE_CHAR (preconditioner_char, config->config_data.config, "use_preconditioner");
+    if (preconditioner_char != NULL) {
+        use_jacobi = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));
+    }
+
+    int max_its = 50;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+
 
     double    rTr,
             r1Tr1,
@@ -20,7 +36,7 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
     struct cell_node** ac = the_grid->active_cells;
 
     *error = 1.0;
-    uint32_t number_of_iterations = 1;
+    *number_of_iterations = 1;
 
     //__________________________________________________________________________
     //Computes int_vector A*x, residue r = b - Ax, scalar rTr = r^T * r and
@@ -30,9 +46,9 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
     rTz = 0.0;
 
     struct element element;
-	int i;
+    int i;
 
-    #pragma omp parallel for private (element) reduction(+:rTr,rTz)
+#pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (i = 0; i < num_active_cells; i++) {
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
@@ -63,12 +79,12 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
     //__________________________________________________________________________
     //Conjugate gradient iterations.
     if( *error >= precision ) {
-        while( number_of_iterations < max_its ) {
+        while( *number_of_iterations < max_its ) {
             //__________________________________________________________________
             // Computes Ap and pTAp. Uses Ax to store Ap.
             pTAp = 0.0;
 
-            #pragma omp parallel for private(element) reduction(+ : pTAp)
+#pragma omp parallel for private(element) reduction(+ : pTAp)
             for (i = 0; i < num_active_cells; i++) {
 
                 ac[i]->Ax = 0.0;
@@ -98,7 +114,7 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
             r1Tz1 = 0.0;
 
             // Computes new value of solution: u = u + alpha*p.
-            #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
+#pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
             for (i = 0; i < num_active_cells; i++) {
                 ac[i]->v += alpha * ac[i]->p;
 
@@ -123,13 +139,13 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
             }
 
             *error = r1Tr1;
-            number_of_iterations++;
+            *number_of_iterations = *number_of_iterations + 1;
             if( *error <= precision ) {
                 break;
             }
             //__________________________________________________________________
             //Computes int_vector p1 = r1 + beta*p and uses it to upgrade p.
-            #pragma omp parallel for
+#pragma omp parallel for
             for (i = 0; i < num_active_cells; i++) {
                 if(use_jacobi) {
                     ac[i]->p1 = ac[i]->z + beta * ac[i]->p;
@@ -146,7 +162,5 @@ uint32_t conjugate_gradient(struct grid *the_grid, int max_its, double tol, bool
         }
 
     }//end of conjugate gradient iterations.
-
-    return number_of_iterations;
 
 }//end conjugateGradient() function.

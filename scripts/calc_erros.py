@@ -25,8 +25,8 @@ for f1, f2 in zip(files1, files2):
         line = line.strip().split(",")
         data_list2.append(float(line[4]))
 
-    x =np.array(data_list1)
-    y =np.array(data_list2)
+    x = np.array(data_list1)
+    y = np.array(data_list2)
 
     error = (np.sqrt(sum( np.power(x-y,2) )) / np.sqrt( sum( np.power(y,2))))*100.0
     print f1, f2, error

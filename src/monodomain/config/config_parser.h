@@ -19,11 +19,6 @@
 #include <stdbool.h>
 #include <math.h>
 #include "../../alg/grid/grid.h"
-#include "../output_utils.h"
-#include "stim_config_hash.h"
-#include "domain_config.h"
-#include "extra_data_config.h"
-
 
 #define SIGMA_X 1400
 #define SIGMA_Y 1500
@@ -32,6 +27,8 @@
 #define DOMAIN_OPT 1800
 #define EXTRA_DATA_OPT 1900
 #define STIM_OPT 2000
+#define ASSEMBLY_MATRIX_OPT 2100
+#define LINEAR_SYSTEM_SOLVER_OPT 2200
 #define DRAW_OPT 3000
 #define BETA 4000
 #define CM 5000
@@ -45,8 +42,6 @@ struct user_options {
     bool adaptive_was_set;
     int print_rate;	            	/*-p option */
     bool print_rate_was_set;
-    int max_its;					/*-m option*/
-    bool max_its_was_set;
     double ref_bound;				/*-r option*/
     bool ref_bound_was_set;
     double deref_bound;				/*-d option*/
@@ -59,8 +54,6 @@ struct user_options {
     bool num_threads_was_set;
     bool gpu;                       /*-g option*/
     bool gpu_was_set;
-    bool use_jacobi;                /*-j option*/
-    bool use_jacobi_was_set;
     int refine_each;                /*-R option*/
     bool refine_each_was_set;
     int derefine_each;              /*-D option*/
@@ -69,8 +62,6 @@ struct user_options {
     bool gpu_id_was_set;
     bool abort_no_activity;         /*-b option*/
     bool abort_no_activity_was_set;
-    double cg_tol;                  /*-t option*/
-    bool cg_tol_was_set;
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
     bool binary;                    /*-y option*/
@@ -97,7 +88,8 @@ struct user_options {
     struct stim_config_hash *stim_configs;
     struct domain_config *domain_config;
     struct extra_data_config *extra_data_config;
-
+    struct assembly_matrix_config *assembly_matrix_config;
+    struct linear_system_solver_config *linear_system_solver_config;
 
 };
 
@@ -111,10 +103,7 @@ void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
-
-
 void free_user_options(struct user_options *s);
-
 void issue_overwrite_warning (const char *var, const char *old_value, const char *new_value, const char *config_file);
 
 #endif /* MONOALG3D_CONFIG_PARSER_H */

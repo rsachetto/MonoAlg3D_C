@@ -6,10 +6,11 @@
 #define MONOALG3D_CONFIG_HELPERS_H
 #include "../hash/string_hash.h"
 #include "../monodomain/constants.h"
-#include "erros_helpers.h"
 #include <stdbool.h>
 #include <string.h>
 
+
+void report_parameter_error_on_function(const char * function, const char *parameter);
 char *get_char_parameter (struct string_hash *config, const char *parameter);
 
 #define GET_PARAMETER_VALUE_CHAR(value, config, parameter)                                                             \
@@ -37,6 +38,15 @@ char *get_char_parameter (struct string_hash *config, const char *parameter);
         if (config_char) {                                                                                             \
             (value) = (type)strtod (config_char, NULL);                                                                \
             (success) = true;                                                                                          \
+            free (config_char);                                                                                        \
+        }                                                                                                              \
+    } while (0)
+
+#define GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(type, value, config, parameter)                                     \
+    do {                                                                                                               \
+        char *config_char = get_char_parameter (config, parameter);                                                    \
+        if (config_char) {                                                                                             \
+            (value) = (type)strtod (config_char, NULL);                                                                \
             free (config_char);                                                                                        \
         }                                                                                                              \
     } while (0)

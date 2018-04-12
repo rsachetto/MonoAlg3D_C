@@ -44,14 +44,22 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
+    //Default values for a healthy cell
     real atpi = 6.8f;
+    real Ko = 5.4f;
+    real Ki_mult = 1.0f;
+    real acidosis = 0.0;
     real *fibrosis_device;
     real *fibs = NULL;
 
     if(extra_data) {
         atpi = ((real*)extra_data)[0]; //value
-        fibs = ((real*)extra_data)+1; //pointer
-        extra_data_bytes_size = extra_data_bytes_size-sizeof(real);
+        Ko = ((real*)extra_data)[1]; //value
+        Ki_mult = ((real*)extra_data)[2]; //value
+        acidosis = ((real*)extra_data)[3]; //value
+        fibs = ((real*)extra_data)+4; //pointer
+
+        extra_data_bytes_size = extra_data_bytes_size-4*sizeof(real);
     }
     else {
         extra_data_bytes_size = num_cells_to_solve*sizeof(real);
@@ -61,7 +69,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     check_cuda_error(cudaMalloc((void **) &fibrosis_device, extra_data_bytes_size));
     check_cuda_error(cudaMemcpy(fibrosis_device, fibs, extra_data_bytes_size, cudaMemcpyHostToDevice));
 
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, fibrosis_device, atpi);
+    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, fibrosis_device, atpi, Ko, Ki_mult, acidosis);
 
     check_cuda_error( cudaPeekAtLastError() );
 
@@ -99,7 +107,8 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 // Solving the model for each cell in the tissue matrix ni x nj
 __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          int num_steps, real *fibrosis,  real atpi)
+                          int num_steps, real *fibrosis,  real atpi,
+                          real Ko, real Ki_multiplicator, real acidosis)
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
@@ -115,7 +124,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         for (int n = 0; n < num_steps; ++n) {
 
-            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt, fibrosis[threadID], atpi);
+            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt, fibrosis[threadID], atpi, Ko, Ki_multiplicator, acidosis);
 
             *((real*)((char*)sv) + sv_id) = dt*rDY[0] + *((real*)((char*)sv) + sv_id);
 
@@ -129,9 +138,20 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 }
 
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real atpi) {
+inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real atpi, real Ko, real Ki_multiplicator, real acidosis) {
 
+    //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
     const real svolt = *((real*)((char*)sv_ + pitch * 0) + threadID_);
+
+    //printf("%lf, %lf, %lf, %lf, %lf\n", atpi, Ko, Ki_multiplicator, acidosis, fibrosis);
+
+    real svolt_acid = svolt;
+
+    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
+        //These values are from In Electrophysiologic effects of acute myocardial ischemia: a theoretical
+        //study of altered cell excitability and action potential duration
+        svolt_acid = svolt - 3.4f;
+    }
 
     const real sm   = *((real*)((char*)sv_ + pitch * 1) + threadID_);
     const real sh   = *((real*)((char*)sv_ + pitch * 2) + threadID_);
@@ -139,7 +159,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real sxr1 = *((real*)((char*)sv_ + pitch * 4) + threadID_);
     const real sxs  = *((real*)((char*)sv_ + pitch * 5) + threadID_);
     const real ss   = *((real*)((char*)sv_ + pitch * 6) + threadID_);
-    const real  sf  = *((real*)((char*)sv_ + pitch * 7) + threadID_);
+    const real sf  = *((real*)((char*)sv_ + pitch * 7) + threadID_);
     const real sf2  = *((real*)((char*)sv_ + pitch * 8) + threadID_);
     const real D_INF  = *((real*)((char*)sv_ + pitch * 9) + threadID_);
     const real Xr2_INF  = *((real*)((char*)sv_ + pitch * 10) + threadID_);
@@ -149,10 +169,16 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
     const real hatp = 2;             // Hill coefficient
 
-    real Ko   = 5.4;
 
-    real atpi_change = 6.8f-atpi;
 
+    //Extracellular potassium concentration was elevated
+    //from its default value of 5.4 mM to values between 6.0 and 8.0 mM
+    //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
+    real Ko_change  = 5.4f - Ko;
+    Ko = Ko + Ko_change*fibrosis;
+
+    //Linear changing of atpi depending on the fibrosis and distance from the center of the scar (only for border zone cells)
+    real atpi_change = 6.8f - atpi;
     atpi = atpi + atpi_change*fibrosis;
 
     //real katp = 0.306;
@@ -172,13 +198,24 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real Nao=140.0;
     const real Cai=0.00007;
     const real Nai=7.67;
-    const real Ki=138.3;
 
-//Constants
-    const real R=8314.472;
-    const real F=96485.3415f;
-    const real T=310.0;
-    const real RTONF=(R*T)/F;
+    //This paramter changes with acidosis.
+    //In Electrophysiologic effects of acute myocardial ischemia: a theoretical
+    //study of altered cell excitability and action potential duration
+    //the authors change Ki by multiplying it to 0.863259669. Should we do the same here?
+    //This changes are based on data from rat and guinea pig
+    real Ki_multiplicator_change  = 1.0f - Ki_multiplicator;
+    Ki_multiplicator = Ki_multiplicator + Ki_multiplicator_change*fibrosis;
+
+
+    real Ki=138.3f*Ki_multiplicator;
+    //printf("Ki = %lf\n", Ki);
+
+    //Constants
+    const real R = 8314.472;
+    const real F = 96485.3415f;
+    const real T = 310.0;
+    const real RTONF = (R*T)/F;
 
 //Parameters for currents
 //Parameters for IKr
@@ -207,7 +244,11 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real Gto=0.294;
 #endif
 //Parameters for INa
-    const real GNa=14.838;
+//if acidosis this has to change to 0.75*GNa
+    real GNa=14.838;
+    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
+        GNa = GNa*0.75f;
+    }
 //Parameters for IbNa
     const real GbNa=0.00029;
 //Parameters for INaK
@@ -215,7 +256,11 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real KmNa=40.0;
     const real knak=2.724;
 //Parameters for ICaL
-    const real GCaL=0.2786f*pcal;
+//if acidosis this has to change to 0.75*GCaL
+    real GCaL=0.2786f*pcal;
+    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
+        GCaL = GCaL*0.75f;
+    }
 //Parameters for IbCa
     const real GbCa=0.000592;
 //Parameters for INaCa
@@ -301,25 +346,28 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     Bk1=(3.0f*expf(0.0002f*(svolt-Ek+100.0f))+
          expf(0.1f*(svolt-Ek-10.0f)))/(1.0f+expf(-0.5f*(svolt-Ek)));
     rec_iK1=Ak1/(Ak1+Bk1);
-    rec_iNaK=(1.0f/(1.0f+0.1245f*expf(-0.1f*svolt*F/(R*T))+0.0353f*expf(-svolt*F/(R*T))));
+    rec_iNaK=(1.0f/(1.0f+0.1245f*expf(-0.1f*svolt_acid*F/(R*T))+0.0353f*expf(-svolt_acid*F/(R*T))));
     rec_ipK=1.0f/(1.0f+expf((25.0f-svolt)/5.98f));
 
+    //According to In Electrophysiologic effects of acute myocardial ischemia: a theoretical
+    //study of altered cell excitability and action potential duration
+    //Vm_acid = Vm -3.4 for all sodium current computation
 
     //Compute currents
-    INa=GNa*sm*sm*sm*sh*sj*(svolt-Ena);
+    INa=GNa*sm*sm*sm*sh*sj*(svolt_acid-Ena);
     ICaL=GCaL*D_INF*sf*sf2*(svolt-60);
     Ito=Gto*R_INF*ss*(svolt-Ek);
     IKr=Gkr*sqrtf(Ko/5.4f)*sxr1*Xr2_INF*(svolt-Ek);
     IKs=Gks*sxs*sxs*(svolt-Eks);
     IK1=GK1*rec_iK1*(svolt-Ek);
     INaCa=knaca*(1.0f/(KmNai*KmNai*KmNai+Nao*Nao*Nao))*(1.0f/(KmCa+Cao))*
-          (1.0f/(1.0f+ksat*expf((n-1.0f)*svolt*F/(R*T))))*
+          (1.0f/(1.0f+ksat*expf((n-1.0f)*svolt_acid*F/(R*T))))*
           (expf(n*svolt*F/(R*T))*Nai*Nai*Nai*Cao-
            expf((n-1.0f)*svolt*F/(R*T))*Nao*Nao*Nao*Cai*2.5f);
     INaK=knak*(Ko/(Ko+KmK))*(Nai/(Nai+KmNa))*rec_iNaK;
     IpCa=GpCa*Cai/(KpCa+Cai);
     IpK=GpK*rec_ipK*(svolt-Ek);
-    IbNa=GbNa*(svolt-Ena);
+    IbNa=GbNa*(svolt_acid-Ena);
     IbCa=GbCa*(svolt-Eca);
 
     IKatp = gkbaratp*(svolt-Ek);

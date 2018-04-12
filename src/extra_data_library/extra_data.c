@@ -64,14 +64,30 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(float)*(num_active_cells+4);
 
-    float *fibs = (float*)calloc(num_active_cells+1, sizeof(float));
+    float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
 
     real atpi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, atpi, config, "atpi");
 
+    real Ko = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, Ko, config, "Ko");
+
+    real Ki_multiplicator = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, Ki_multiplicator, config, "Ki_multiplicator");
+
+    char *acidosis_char;
+    float acidosis = 0.0;
+    GET_PARAMETER_VALUE_CHAR (acidosis_char, config, "acidosis");
+    if (acidosis_char != NULL) {
+        acidosis = ((strcmp (acidosis_char, "yes") == 0) || (strcmp (acidosis_char, "true") == 0));
+    }
+
     fibs[0] = atpi;
+    fibs[1] = Ko;
+    fibs[2] = Ki_multiplicator;
+    fibs[3] = acidosis;
 
     return (void*)fibs;
 }

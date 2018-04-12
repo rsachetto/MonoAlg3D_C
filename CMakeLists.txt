@@ -106,12 +106,13 @@ ENDIF()
 
 ADD_SUBDIRECTORY(src/models_library)
 
-SET(COMMON_SRC ../libraries_common/config_helpers.c ../libraries_common/config_helpers.h
-        ../libraries_common/erros_helpers.c ../libraries_common/erros_helpers.h)
+SET(COMMON_SRC ../libraries_common/config_helpers.c ../libraries_common/config_helpers.h)
 
 ADD_SUBDIRECTORY(src/stimuli_library)
 ADD_SUBDIRECTORY(src/domains_library)
 ADD_SUBDIRECTORY(src/extra_data_library)
+ADD_SUBDIRECTORY(src/matrix_assembly_library)
+ADD_SUBDIRECTORY(src/linear_system_solver_library)
 ###
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )

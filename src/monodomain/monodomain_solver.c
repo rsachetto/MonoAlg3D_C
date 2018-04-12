@@ -5,7 +5,6 @@
 #include "monodomain_solver.h"
 #include "../utils/logfile_utils.h"
 #include "../utils/stop_watch.h"
-#include "linear_system_solver.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -17,6 +16,12 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include "../string/sds.h"
+
+
+#include "config/domain_config.h"
+#include "config/assembly_matrix_config.h"
+#include "config/linear_system_solver_config.h"
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);
@@ -66,6 +71,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     struct stim_config_hash *stimuli_configs = configs->stim_configs;
     struct extra_data_config *extra_data_config = configs->extra_data_config;
     struct domain_config *domain_config = configs->domain_config;
+    struct assembly_matrix_config *assembly_matrix_config = configs->assembly_matrix_config;
+    struct linear_system_solver_config *linear_system_solver_config = configs->linear_system_solver_config;
+
     bool has_extra_data = (extra_data_config != NULL);
 
     double last_stimulus_time = -1.0;
@@ -94,6 +102,20 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         exit (EXIT_FAILURE);
     }
 
+    if (assembly_matrix_config) {
+        init_assembly_matrix_functions (assembly_matrix_config);
+    } else {
+        print_to_stdout_and_file ("No assembly matrix configuration provided! Exiting!\n");
+        exit (EXIT_FAILURE);
+    }
+
+    if (linear_system_solver_config) {
+        init_linear_system_solver_functions (linear_system_solver_config);
+    } else {
+        print_to_stdout_and_file ("No linear solver configuration provided! Exiting!\n");
+        exit (EXIT_FAILURE);
+    }
+
     if (has_extra_data) {
         init_extra_data_functions (extra_data_config);
     }
@@ -102,16 +124,11 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
 
-    double cg_tol = the_monodomain_solver->tolerance; 
-
     bool redo_matrix;
 
     bool activity;
 
-    int max_its;
-
     bool gpu = the_ode_solver->gpu;
-    bool jacobi = the_monodomain_solver->use_jacobi;
 
     int count = 0;
 
@@ -159,12 +176,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     double initial_v = the_ode_solver->model_data.initial_v;
 
-    if (the_monodomain_solver->max_iterations > 0) {
-        max_its = the_monodomain_solver->max_iterations;
-    } else {
-        max_its = (int)the_grid->number_of_cells;
-    }
-
     total_config_time = stop_stop_watch (&config_time);
 
     print_solver_info (the_monodomain_solver, the_ode_solver, the_grid, configs);
@@ -195,7 +206,11 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file ("Assembling Monodomain Matrix Begin\n");
     start_stop_watch (&part_mat);
     set_initial_conditions (the_monodomain_solver, the_grid, initial_v);
-    set_discretization_matrix (the_monodomain_solver, the_grid);
+
+    assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
+    //set_discretization_matrix (the_monodomain_solver, the_grid);
+
+
     total_mat_time = stop_stop_watch (&part_mat);
     print_to_stdout_and_file ("Assembling Monodomain Matrix End\n");
     print_to_stdout_and_file (LOG_LINE_SEPARATOR);
@@ -205,8 +220,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     int print_rate = configs->print_rate;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
-    double cg_error;
-    uint32_t cg_iterations;
+    double solver_error;
+    uint32_t solver_iterations = 0;
+
 
     if (stimuli_configs)
         set_spatial_stim(stimuli_configs, the_grid);
@@ -258,19 +274,20 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
         start_stop_watch (&cg_time);
 
-        cg_iterations = conjugate_gradient (the_grid, max_its, cg_tol, jacobi, &cg_error);
+        linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations, &solver_error);
+        //solver_iterations = conjugate_gradient (the_grid, 200, 1e-16, true, &solver_error);
 
         cg_partial = stop_stop_watch (&cg_time);
 
         cg_total_time += cg_partial;
 
-        total_cg_it += cg_iterations;
+        total_cg_it += solver_iterations;
 
         if (count % print_rate == 0) {
             print_to_stdout_and_file ("t = %lf, Iterations = "
                                       "%" PRIu32 ", Error Norm = %e, Number of Cells:"
                                       "%" PRIu32 ", Iterations time: %ld us\n",
-                                      cur_time, cg_iterations, cg_error, the_grid->num_active_cells, cg_partial);
+                                      cur_time, solver_iterations, solver_error, the_grid->num_active_cells, cg_partial);
         }
 
         if (adaptive) {
@@ -309,7 +326,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
                 start_stop_watch (&part_mat);
 
-                set_discretization_matrix (the_monodomain_solver, the_grid);
+                //TODO: split this in a user defined function
+                //set_discretization_matrix (the_monodomain_solver, the_grid);
+                assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
 
                 total_mat_time += stop_stop_watch (&part_mat);
             }
@@ -451,238 +470,6 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
     }
 }
 
-void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct grid *the_grid) {
-
-    double alpha, h;
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
-
-	double dt = the_solver->dt;
-
-	int i;
-
-#pragma omp parallel for private(alpha, h)
-    for (i = 0; i < num_active_cells; i++) {
-        h = ac[i]->face_length;
-        alpha = ALPHA (beta, cm, dt, h);
-
-        struct element element;
-        element.column = ac[i]->grid_position;
-        element.cell = ac[i];
-        element.value = alpha;
-
-        if (ac[i]->elements != NULL) {
-            sb_free (ac[i]->elements);
-        }
-
-        ac[i]->elements = NULL;
-        sb_reserve (ac[i]->elements, 7);
-        sb_push (ac[i]->elements, element);
-    }
-}
-
-void set_discretization_matrix (struct monodomain_solver *the_solver, struct grid *the_grid) {
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    initialize_diagonal_elements (the_solver, the_grid);
-
-	int i;
-
-	#pragma omp parallel for
-    for (i = 0; i < num_active_cells; i++) {
-
-        // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->south, 's');
-
-        // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->north, 'n');
-
-        // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->east, 'e');
-
-        // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->west, 'w');
-
-        // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->front, 'f');
-
-        // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements (the_solver, ac[i], ac[i]->back, 'b');
-    }
-}
-
-void fill_discretization_matrix_elements (struct monodomain_solver *the_solver, struct cell_node *grid_cell,
-                                          void *neighbour_grid_cell, char direction) {
-
-    uint32_t position;
-    bool has_found;
-    double h;
-
-    struct transition_node *white_neighbor_cell;
-    struct cell_node *black_neighbor_cell;
-
-    double sigma_x = the_solver->sigma_x;
-    double sigma_y = the_solver->sigma_y;
-    double sigma_z = the_solver->sigma_z;
-
-    double sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
-    double sigma_x2 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
-    double sigma_y1 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
-    double sigma_y2 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
-    double sigma_z1 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
-    double sigma_z2 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
-
-    /* When neighbour_grid_cell is a transition node, looks for the next neighbor
-     * cell which is a cell node. */
-    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
-    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-
-    if (neighbour_grid_cell_level > grid_cell->cell_data.level) {
-        if ((neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
-            has_found = false;
-            while (!has_found) {
-                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
-                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
-                    if (white_neighbor_cell->single_connector == NULL) {
-                        has_found = true;
-                    } else {
-                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
-                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-    } else {
-        if (neighbour_grid_cell_level <= grid_cell->cell_data.level &&
-            (neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
-            has_found = false;
-            while (!has_found) {
-                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
-                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
-                    if (white_neighbor_cell->single_connector == 0) {
-                        has_found = true;
-                    } else {
-                        neighbour_grid_cell = white_neighbor_cell->single_connector;
-                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-
-    // Tratamos somente os pontos interiores da malha.
-    if (neighbour_grid_cell_type == CELL_NODE_TYPE) {
-
-        black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-
-        if (black_neighbor_cell->active) {
-
-            if (black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
-                h = black_neighbor_cell->face_length;
-            } else {
-                h = grid_cell->face_length;
-            }
-
-            lock_cell_node (grid_cell);
-
-            struct element *cell_elements = grid_cell->elements;
-            position = black_neighbor_cell->grid_position;
-
-            size_t max_elements = sb_count (cell_elements);
-            bool insert = true;
-
-            for (size_t i = 1; i < max_elements; i++) {
-                if (cell_elements[i].column == position) {
-                    insert = false;
-                    break;
-                }
-            }
-
-            // TODO: maybe each element can have a different sigma!
-            if (insert) {
-
-                struct element new_element;
-                new_element.column = position;
-                if (direction == 'n') { // Z direction
-                    new_element.value = -sigma_z1 * h;
-                    cell_elements[0].value += (sigma_z1 * h);
-                } else if (direction == 's') { // Z direction
-                    new_element.value = -sigma_z2 * h;
-                    cell_elements[0].value += sigma_z2 * h;
-                } else if (direction == 'e') { // Y direction
-                    new_element.value = -sigma_y1 * h;
-                    cell_elements[0].value += (sigma_y1 * h);
-                } else if (direction == 'w') { // Y direction
-                    new_element.value = -sigma_y2 * h;
-                    cell_elements[0].value += (sigma_y2 * h);
-                } else if (direction == 'f') { // X direction
-                    new_element.value = -sigma_x1 * h;
-                    cell_elements[0].value += (sigma_x1 * h);
-                } else if (direction == 'b') { // X direction
-                    new_element.value = -sigma_x2 * h;
-                    cell_elements[0].value += (sigma_x2 * h);
-                }
-
-                new_element.cell = black_neighbor_cell;
-                sb_push (grid_cell->elements, new_element);
-            }
-            unlock_cell_node (grid_cell);
-
-            lock_cell_node (black_neighbor_cell);
-            cell_elements = black_neighbor_cell->elements;
-            position = grid_cell->grid_position;
-
-            max_elements = sb_count (cell_elements);
-
-            insert = true;
-            for (size_t i = 1; i < max_elements; i++) {
-                if (cell_elements[i].column == position) {
-                    insert = false;
-                    break;
-                }
-            }
-
-            if (insert) {
-
-                struct element new_element;
-                new_element.column = position;
-                if (direction == 'n') { // Z direction
-                    new_element.value = -sigma_z1 * h;
-                    cell_elements[0].value += (sigma_z1 * h);
-                } else if (direction == 's') { // Z direction
-                    new_element.value = -sigma_z2 * h;
-                    cell_elements[0].value += (sigma_z2 * h);
-                } else if (direction == 'e') { // Y direction
-                    new_element.value = -sigma_y1 * h;
-                    cell_elements[0].value += (sigma_y1 * h);
-                } else if (direction == 'w') { // Y direction
-                    new_element.value = -sigma_y2 * h;
-                    cell_elements[0].value += (sigma_y2 * h);
-                } else if (direction == 'f') { // X direction
-                    new_element.value = -sigma_x1 * h;
-                    cell_elements[0].value += (sigma_x1 * h);
-                } else if (direction == 'b') { // X direction
-                    new_element.value = -sigma_x2 * h;
-                    cell_elements[0].value += (sigma_x2 * h);
-                }
-
-                new_element.cell = grid_cell;
-                sb_push (black_neighbor_cell->elements, new_element);
-            }
-
-            unlock_cell_node (black_neighbor_cell);
-        }
-    }
-}
-
 void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                         double beta, double cm, double dt_edp, real *sv, int n_equations_cell_model, bool use_gpu) {
 
@@ -740,11 +527,11 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     print_to_stdout_and_file ("PDE time step = %lf\n", the_monodomain_solver->dt);
     print_to_stdout_and_file ("ODE min time step = %lf\n", the_ode_solver->min_dt);
     print_to_stdout_and_file ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
-    print_to_stdout_and_file ("Maximum CG iterations = %d\n", the_monodomain_solver->max_iterations);
-    print_to_stdout_and_file ("CG tolerance = %e\n", the_monodomain_solver->tolerance);
-    if (the_monodomain_solver->use_jacobi) {
-        print_to_stdout_and_file ("Using Jacobi preconditioner\n");
-    }
+////    print_to_stdout_and_file ("Maximum CG iterations = %d\n", the_monodomain_solver->max_iterations);
+//    print_to_stdout_and_file ("CG tolerance = %e\n", the_monodomain_solver->tolerance);
+//    if (the_monodomain_solver->use_jacobi) {
+//        print_to_stdout_and_file ("Using Jacobi preconditioner\n");
+//    }
     if (the_grid->adaptive) {
         print_to_stdout_and_file ("Using adaptativity\n");
         print_to_stdout_and_file ("Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
@@ -842,9 +629,8 @@ void configure_monodomain_solver_from_options (struct monodomain_solver *the_mon
     assert (the_monodomain_solver);
     assert (options);
 
-    the_monodomain_solver->tolerance = options->cg_tol;
+
     the_monodomain_solver->num_threads = options->num_threads;
-    the_monodomain_solver->max_iterations = options->max_its;
     the_monodomain_solver->final_time = options->final_time;
 
     the_monodomain_solver->refine_each = options->refine_each;
@@ -855,7 +641,6 @@ void configure_monodomain_solver_from_options (struct monodomain_solver *the_mon
     the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
 
     the_monodomain_solver->dt = options->dt_edp;
-    the_monodomain_solver->use_jacobi = options->use_jacobi;
 
     the_monodomain_solver->sigma_x = options->sigma_x;
     the_monodomain_solver->sigma_y = options->sigma_y;

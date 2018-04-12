@@ -3,6 +3,8 @@
 #include "monodomain/monodomain_solver.h"
 #include "monodomain/ode_solver.h"
 #include "utils/logfile_utils.h"
+#include "string/sds.h"
+#include "monodomain/output_utils.h"
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
@@ -78,16 +80,17 @@ int main (int argc, char **argv) {
         omp_set_nested (true);
 
 #pragma omp parallel sections num_threads(2)
-        {
-#pragma omp section
+{
+        #pragma omp section
             {
                 grid_to_draw = NULL;
                 init_opengl (argc, argv);
             }
 
-#pragma omp section
-            { solve_monodomain (monodomain_solver, ode_solver, the_grid, options); }
-        }
+        #pragma omp section
+        {
+                solve_monodomain (monodomain_solver, ode_solver, the_grid, options); }
+}
 #endif
     } else {
         solve_monodomain (monodomain_solver, ode_solver, the_grid, options);

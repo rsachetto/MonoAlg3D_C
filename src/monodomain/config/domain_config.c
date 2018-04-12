@@ -27,7 +27,7 @@ void init_domain_functions(struct domain_config *config) {
         config->config_data.library_file_path_was_set = true;
     }
     else {
-        print_to_stdout_and_file("Opening %s as stimuli lib\n", config->config_data.library_file_path);
+        print_to_stdout_and_file("Opening %s as domain lib\n", config->config_data.library_file_path);
 
     }
 
