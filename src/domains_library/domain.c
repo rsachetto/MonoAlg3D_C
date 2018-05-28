@@ -5,7 +5,7 @@
 #include "domain_helpers.h"
 
 #include "../libraries_common/config_helpers.h"
-#include "../monodomain/config/domain_config.h"
+#include "../config/domain_config.h"
 #include "../utils/logfile_utils.h"
 #include <assert.h>
 #include <time.h>
@@ -69,6 +69,50 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
     }
 
     set_plain_domain (the_grid, side_length, side_length, max_h);
+
+    int i;
+    for (i = 0; i < num_steps; i++) {
+        derefine_grid_inactive_cells (the_grid);
+    }
+}
+
+SET_SPATIAL_DOMAIN (initialize_grid_with_cable_mesh) {
+
+    double start_h = config->start_h;
+
+    double cable_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, cable_length, config->config_data.config, "cable_length");
+
+    double real_cable_length = start_h * 2.0f;
+
+
+    while (real_cable_length < cable_length) {
+        real_cable_length *= 2.0f;
+    }
+
+    print_to_stdout_and_file ("Initial cable length: %lf µm\n", real_cable_length);
+    print_to_stdout_and_file ("Loading cable mesh with %lf µm using dx %lf µm\n", cable_length, start_h);
+
+    int num_steps = get_num_refinement_steps_to_discretization (real_cable_length, start_h);
+
+    initialize_and_construct_grid (the_grid, real_cable_length);
+
+    if ((real_cable_length / 2.0f) > start_h) {
+        double aux = real_cable_length / 2.0f;
+
+        for (int i = 0; i < num_steps - 3; i++) {
+            set_plain_domain (the_grid, real_cable_length, real_cable_length, aux);
+            refine_grid (the_grid, 1);
+            aux = aux / 2.0f;
+        }
+
+        refine_grid (the_grid, 3);
+
+    } else {
+        refine_grid (the_grid, num_steps);
+    }
+
+    set_plain_domain (the_grid, real_cable_length, start_h, start_h);
 
     int i;
     for (i = 0; i < num_steps; i++) {

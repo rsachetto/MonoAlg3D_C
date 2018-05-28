@@ -6,8 +6,8 @@
 #define MONOALG3D_ASSEMBLY_CONFIG_H
 
 #include "config_common.h"
-#include "../constants.h"
-#include "../../monodomain/monodomain_solver.h"
+#include "../monodomain/constants.h"
+#include "../monodomain/monodomain_solver.h"
 
 struct assembly_matrix_config;
 

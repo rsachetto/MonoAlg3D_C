@@ -1,20 +1,21 @@
-set(SOURCE_FILES_SOLVER
-        output_utils.h
-        output_utils.c
-		../config/config_common.c ../config/config_common.h
-		../config/stim_config_hash.c ../config/stim_config_hash.h
-		../config/stim_config.h ../config/stim_config.c
-		../config/domain_config.c ../config/domain_config.h
-		../config/assembly_matrix_config.c ../config/assembly_matrix_config.h
-		../config/extra_data_config.c ../config/extra_data_config.h
-		../config/linear_system_solver_config.c ../config/linear_system_solver_config.h
-        ode_solver.c ode_solver.h
-        monodomain_solver.h monodomain_solver.c
-		../config/config_parser.c ../config/config_parser.h
-        constants.h)
+set(SOURCE_FILES_CONFIG
+		config_common.c config_common.h
+		stim_config_hash.c stim_config_hash.h
+		stim_config.h stim_config.c
+		domain_config.c domain_config.h
+		assembly_matrix_config.c assembly_matrix_config.h
+		extra_data_config.c extra_data_config.h
+		linear_system_solver_config.c linear_system_solver_config.h
+		config_parser.c config_parser.h
+        )
 
-ADD_LIBRARY(solvers STATIC ${SOURCE_FILES_SOLVER})
+ADD_LIBRARY(config STATIC ${SOURCE_FILES_CONFIG})
+
+
 
 IF(MSVC)
-	TARGET_LINK_LIBRARIES(solvers getopt)
+	TARGET_LINK_LIBRARIES(config string hashes getopt utils dl)
+ELSE()
+	TARGET_LINK_LIBRARIES(config string hashes utils dl)
+
 ENDIF()

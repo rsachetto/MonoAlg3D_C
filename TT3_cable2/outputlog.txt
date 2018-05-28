@@ -1,0 +1,166 @@
+======================================================================
+Opening ./shared_libs/libten_tusscher_3.so as model lib
+Using the default library for stimuli functions for stim_plain
+Using the default library for domain functions for Cable Mesh with fibrosis
+Initial cable length: 12800.000000 µm
+Loading cable mesh with 10000.000000 µm using dx 100.000000 µm
+Opening shared_libs/libdefault_matrix_assembly.so as matrix assembly lib
+Opening shared_libs/libdefault_linear_system_solver.so as linear system solver lib
+Using the default library for extra data functions
+1 devices available, running on Device 0: GeForce GTX 1080
+Setting ODE's initial conditions
+Using ten Tusscher 3 GPU model
+System parameters: 
+Using OpenMP with 4 threads
+Using GPU to solve ODEs
+Initial V: -86.199997
+Number of ODEs in cell model: 12
+Sigma X = 0.0001334000, Sigma Y = 0.0001334000, Sigma Z = 0.0001334000
+Beta = 0.1400000000, Cm = 1.0000000000
+Initial N. of Elements = 128
+PDE time step = 0.020000
+ODE min time step = 0.020000
+Simulation Final Time = 100.000000
+Print Rate = 50
+Saving to plain text output in ./TT3_cable2 dir
+======================================================================
+Stimuli configuration:
+Stimulus name: stim_plain
+Stimulus start: 0.000000
+Stimulus duration: 2.000000
+Stimulus current: -38.000000
+Stimulus library: ./shared_libs/libdefault_stimuli.so
+Stimulus function: stim_if_x_less_than
+Stimulus extra parameter:
+x_limit = 500.0
+======================================================================
+Domain configuration:
+Domain name: Cable Mesh with fibrosis
+Domain initial Space Discretization: 100.000000 um
+Domain extra parameter:
+cable_length = 10000.0
+======================================================================
+Extra data ODE function configuration:
+Extra data library: ./shared_libs/libdefault_extra_data.so
+Extra data function: set_extra_data_for_fibrosis_plain
+Extra data parameter:
+Ki_multiplicator = 1.1
+atpi = 6.8
+acidosis = false
+Ko = 5.4
+======================================================================
+Solving EDO 1 times before solving PDE
+Assembling Monodomain Matrix Begin
+Assembling Monodomain Matrix End
+======================================================================
+Starting simulation
+t = 0.000000, Iterations = 10, Error Norm = 2.743359e-18, Number of Cells:128, Iterations time: 36 us
+t = 1.000000, Iterations = 10, Error Norm = 2.918099e-18, Number of Cells:128, Iterations time: 28 us
+t = 2.000000, Iterations = 10, Error Norm = 3.683557e-17, Number of Cells:128, Iterations time: 24 us
+t = 3.000000, Iterations = 10, Error Norm = 5.602814e-17, Number of Cells:128, Iterations time: 22 us
+t = 4.000000, Iterations = 11, Error Norm = 2.486390e-18, Number of Cells:128, Iterations time: 27 us
+t = 5.000000, Iterations = 11, Error Norm = 3.023427e-18, Number of Cells:128, Iterations time: 25 us
+t = 6.000000, Iterations = 11, Error Norm = 2.032835e-18, Number of Cells:128, Iterations time: 26 us
+t = 7.000000, Iterations = 10, Error Norm = 4.940258e-17, Number of Cells:128, Iterations time: 22 us
+t = 8.000000, Iterations = 10, Error Norm = 9.881381e-17, Number of Cells:128, Iterations time: 22 us
+t = 9.000000, Iterations = 11, Error Norm = 3.179072e-18, Number of Cells:128, Iterations time: 24 us
+t = 10.000000, Iterations = 11, Error Norm = 2.887041e-18, Number of Cells:128, Iterations time: 25 us
+t = 11.000000, Iterations = 10, Error Norm = 8.817265e-17, Number of Cells:128, Iterations time: 23 us
+t = 12.000000, Iterations = 10, Error Norm = 4.402663e-17, Number of Cells:128, Iterations time: 23 us
+t = 13.000000, Iterations = 11, Error Norm = 2.081629e-18, Number of Cells:128, Iterations time: 25 us
+t = 14.000000, Iterations = 11, Error Norm = 3.240319e-18, Number of Cells:128, Iterations time: 25 us
+t = 15.000000, Iterations = 11, Error Norm = 3.314633e-18, Number of Cells:128, Iterations time: 27 us
+t = 16.000000, Iterations = 11, Error Norm = 2.415710e-18, Number of Cells:128, Iterations time: 25 us
+t = 17.000000, Iterations = 10, Error Norm = 7.406210e-17, Number of Cells:128, Iterations time: 24 us
+t = 18.000000, Iterations = 10, Error Norm = 5.145827e-17, Number of Cells:128, Iterations time: 23 us
+t = 19.000000, Iterations = 11, Error Norm = 2.124217e-18, Number of Cells:128, Iterations time: 24 us
+t = 20.000000, Iterations = 11, Error Norm = 3.185380e-18, Number of Cells:128, Iterations time: 26 us
+t = 21.000000, Iterations = 11, Error Norm = 2.809348e-18, Number of Cells:128, Iterations time: 29 us
+t = 22.000000, Iterations = 11, Error Norm = 2.110128e-18, Number of Cells:128, Iterations time: 25 us
+t = 23.000000, Iterations = 9, Error Norm = 1.311099e-17, Number of Cells:128, Iterations time: 20 us
+t = 24.000000, Iterations = 8, Error Norm = 2.358756e-17, Number of Cells:128, Iterations time: 20 us
+t = 25.000000, Iterations = 8, Error Norm = 1.730545e-17, Number of Cells:128, Iterations time: 18 us
+t = 26.000000, Iterations = 8, Error Norm = 2.145369e-17, Number of Cells:128, Iterations time: 18 us
+t = 27.000000, Iterations = 8, Error Norm = 2.217295e-17, Number of Cells:128, Iterations time: 18 us
+t = 28.000000, Iterations = 8, Error Norm = 1.942908e-17, Number of Cells:128, Iterations time: 18 us
+t = 29.000000, Iterations = 8, Error Norm = 1.528150e-17, Number of Cells:128, Iterations time: 19 us
+t = 30.000000, Iterations = 8, Error Norm = 1.130884e-17, Number of Cells:128, Iterations time: 18 us
+t = 31.000000, Iterations = 8, Error Norm = 8.104254e-18, Number of Cells:128, Iterations time: 18 us
+t = 32.000000, Iterations = 8, Error Norm = 5.723563e-18, Number of Cells:128, Iterations time: 18 us
+t = 33.000000, Iterations = 8, Error Norm = 4.013179e-18, Number of Cells:128, Iterations time: 18 us
+t = 34.000000, Iterations = 8, Error Norm = 2.807138e-18, Number of Cells:128, Iterations time: 19 us
+t = 35.000000, Iterations = 7, Error Norm = 9.901791e-17, Number of Cells:128, Iterations time: 16 us
+t = 36.000000, Iterations = 7, Error Norm = 6.955678e-17, Number of Cells:128, Iterations time: 19 us
+t = 37.000000, Iterations = 7, Error Norm = 4.936164e-17, Number of Cells:128, Iterations time: 15 us
+t = 38.000000, Iterations = 7, Error Norm = 3.560214e-17, Number of Cells:128, Iterations time: 16 us
+t = 39.000000, Iterations = 7, Error Norm = 2.624908e-17, Number of Cells:128, Iterations time: 16 us
+t = 40.000000, Iterations = 7, Error Norm = 1.989363e-17, Number of Cells:128, Iterations time: 16 us
+t = 41.000000, Iterations = 7, Error Norm = 1.556021e-17, Number of Cells:128, Iterations time: 16 us
+t = 42.000000, Iterations = 7, Error Norm = 1.256749e-17, Number of Cells:128, Iterations time: 16 us
+t = 43.000000, Iterations = 7, Error Norm = 1.050302e-17, Number of Cells:128, Iterations time: 16 us
+t = 44.000000, Iterations = 7, Error Norm = 9.025647e-18, Number of Cells:128, Iterations time: 16 us
+t = 45.000000, Iterations = 7, Error Norm = 7.950729e-18, Number of Cells:128, Iterations time: 15 us
+t = 46.000000, Iterations = 7, Error Norm = 7.186377e-18, Number of Cells:128, Iterations time: 16 us
+t = 47.000000, Iterations = 7, Error Norm = 6.599887e-18, Number of Cells:128, Iterations time: 16 us
+t = 48.000000, Iterations = 7, Error Norm = 6.168286e-18, Number of Cells:128, Iterations time: 17 us
+t = 49.000000, Iterations = 7, Error Norm = 5.803773e-18, Number of Cells:128, Iterations time: 16 us
+t = 50.000000, Iterations = 7, Error Norm = 5.504379e-18, Number of Cells:128, Iterations time: 16 us
+t = 51.000000, Iterations = 7, Error Norm = 5.278687e-18, Number of Cells:128, Iterations time: 16 us
+t = 52.000000, Iterations = 7, Error Norm = 5.070803e-18, Number of Cells:128, Iterations time: 15 us
+t = 53.000000, Iterations = 7, Error Norm = 4.912753e-18, Number of Cells:128, Iterations time: 16 us
+t = 54.000000, Iterations = 7, Error Norm = 4.751272e-18, Number of Cells:128, Iterations time: 16 us
+t = 55.000000, Iterations = 7, Error Norm = 4.615783e-18, Number of Cells:128, Iterations time: 16 us
+t = 56.000000, Iterations = 7, Error Norm = 4.500347e-18, Number of Cells:128, Iterations time: 16 us
+t = 57.000000, Iterations = 7, Error Norm = 4.382657e-18, Number of Cells:128, Iterations time: 17 us
+t = 58.000000, Iterations = 7, Error Norm = 4.283782e-18, Number of Cells:128, Iterations time: 16 us
+t = 59.000000, Iterations = 7, Error Norm = 4.198832e-18, Number of Cells:128, Iterations time: 16 us
+t = 60.000000, Iterations = 7, Error Norm = 4.117741e-18, Number of Cells:128, Iterations time: 20 us
+t = 61.000000, Iterations = 7, Error Norm = 4.046306e-18, Number of Cells:128, Iterations time: 16 us
+t = 62.000000, Iterations = 7, Error Norm = 3.971201e-18, Number of Cells:128, Iterations time: 16 us
+t = 63.000000, Iterations = 7, Error Norm = 3.906914e-18, Number of Cells:128, Iterations time: 15 us
+t = 64.000000, Iterations = 7, Error Norm = 3.849608e-18, Number of Cells:128, Iterations time: 17 us
+t = 65.000000, Iterations = 7, Error Norm = 3.802167e-18, Number of Cells:128, Iterations time: 17 us
+t = 66.000000, Iterations = 7, Error Norm = 3.738331e-18, Number of Cells:128, Iterations time: 17 us
+t = 67.000000, Iterations = 7, Error Norm = 3.692973e-18, Number of Cells:128, Iterations time: 16 us
+t = 68.000000, Iterations = 7, Error Norm = 3.647605e-18, Number of Cells:128, Iterations time: 15 us
+t = 69.000000, Iterations = 7, Error Norm = 3.614246e-18, Number of Cells:128, Iterations time: 16 us
+t = 70.000000, Iterations = 7, Error Norm = 3.563188e-18, Number of Cells:128, Iterations time: 16 us
+t = 71.000000, Iterations = 7, Error Norm = 3.534048e-18, Number of Cells:128, Iterations time: 20 us
+t = 72.000000, Iterations = 7, Error Norm = 3.505603e-18, Number of Cells:128, Iterations time: 16 us
+t = 73.000000, Iterations = 7, Error Norm = 3.467284e-18, Number of Cells:128, Iterations time: 16 us
+t = 74.000000, Iterations = 7, Error Norm = 3.434623e-18, Number of Cells:128, Iterations time: 15 us
+t = 75.000000, Iterations = 7, Error Norm = 3.416325e-18, Number of Cells:128, Iterations time: 16 us
+t = 76.000000, Iterations = 7, Error Norm = 3.391295e-18, Number of Cells:128, Iterations time: 16 us
+t = 77.000000, Iterations = 7, Error Norm = 3.368054e-18, Number of Cells:128, Iterations time: 16 us
+t = 78.000000, Iterations = 7, Error Norm = 3.352145e-18, Number of Cells:128, Iterations time: 16 us
+t = 79.000000, Iterations = 7, Error Norm = 3.333233e-18, Number of Cells:128, Iterations time: 15 us
+t = 80.000000, Iterations = 7, Error Norm = 3.316568e-18, Number of Cells:128, Iterations time: 16 us
+t = 81.000000, Iterations = 7, Error Norm = 3.306159e-18, Number of Cells:128, Iterations time: 16 us
+t = 82.000000, Iterations = 7, Error Norm = 3.294168e-18, Number of Cells:128, Iterations time: 16 us
+t = 83.000000, Iterations = 7, Error Norm = 3.272726e-18, Number of Cells:128, Iterations time: 16 us
+t = 84.000000, Iterations = 7, Error Norm = 3.262139e-18, Number of Cells:128, Iterations time: 17 us
+t = 85.000000, Iterations = 7, Error Norm = 3.265117e-18, Number of Cells:128, Iterations time: 16 us
+t = 86.000000, Iterations = 7, Error Norm = 3.254125e-18, Number of Cells:128, Iterations time: 15 us
+t = 87.000000, Iterations = 7, Error Norm = 3.247825e-18, Number of Cells:128, Iterations time: 16 us
+t = 88.000000, Iterations = 7, Error Norm = 3.250618e-18, Number of Cells:128, Iterations time: 16 us
+t = 89.000000, Iterations = 7, Error Norm = 3.254572e-18, Number of Cells:128, Iterations time: 16 us
+t = 90.000000, Iterations = 7, Error Norm = 3.239890e-18, Number of Cells:128, Iterations time: 16 us
+t = 91.000000, Iterations = 7, Error Norm = 3.236132e-18, Number of Cells:128, Iterations time: 15 us
+t = 92.000000, Iterations = 7, Error Norm = 3.248345e-18, Number of Cells:128, Iterations time: 16 us
+t = 93.000000, Iterations = 7, Error Norm = 3.250905e-18, Number of Cells:128, Iterations time: 15 us
+t = 94.000000, Iterations = 7, Error Norm = 3.254137e-18, Number of Cells:128, Iterations time: 15 us
+t = 95.000000, Iterations = 7, Error Norm = 3.257165e-18, Number of Cells:128, Iterations time: 16 us
+t = 96.000000, Iterations = 7, Error Norm = 3.272380e-18, Number of Cells:128, Iterations time: 21 us
+t = 97.000000, Iterations = 7, Error Norm = 3.271743e-18, Number of Cells:128, Iterations time: 15 us
+t = 98.000000, Iterations = 7, Error Norm = 3.293881e-18, Number of Cells:128, Iterations time: 16 us
+t = 99.000000, Iterations = 7, Error Norm = 3.282359e-18, Number of Cells:128, Iterations time: 16 us
+t = 100.000000, Iterations = 7, Error Norm = 3.306755e-18, Number of Cells:128, Iterations time: 16 us
+Resolution Time: 1157081 μs
+ODE Total Time: 1000874 μs
+CG Total Time: 90459 μs
+Mat time: 104 μs
+Refine time: 0 μs
+Derefine time: 0 μs
+Write time: 16455 μs
+Initial configuration time: 166410 μs
+CG Total Iterations: 39626

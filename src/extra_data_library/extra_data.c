@@ -2,7 +2,7 @@
 // Created by sachetto on 01/10/17.
 //
 
-#include "../monodomain/config/extra_data_config.h"
+#include "../config/extra_data_config.h"
 #include "../libraries_common/config_helpers.h"
 
 

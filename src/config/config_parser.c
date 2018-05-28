@@ -2,9 +2,9 @@
 #include <assert.h>
 
 #include "config_parser.h"
-#include "../../ini_parser/ini_file_sections.h"
-#include "../../utils/logfile_utils.h"
-#include "../../string/sds.h"
+#include "../ini_parser/ini_file_sections.h"
+#include "../utils/logfile_utils.h"
+#include "../string/sds.h"
 #include "stim_config_hash.h"
 #include "domain_config.h"
 #include "extra_data_config.h"
@@ -178,6 +178,8 @@ struct user_options *new_user_options () {
     user_args->linear_system_solver_config = NULL;
 
     user_args->draw = false;
+
+    user_args->main_found = false;
 
     return user_args;
 }
@@ -854,6 +856,10 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
 
 int parse_config_file (void *user, const char *section, const char *name, const char *value) {
     struct user_options *pconfig = (struct user_options *) user;
+
+    if( MATCH_SECTION(MAIN_SECTION) ) {
+        pconfig->main_found = true;
+    }
 
     if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "num_threads")) {
         pconfig->num_threads = (int)strtol (value, NULL, 10);

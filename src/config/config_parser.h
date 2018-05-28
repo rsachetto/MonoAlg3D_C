@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
-#include "../../alg/grid/grid.h"
+#include "../alg/grid/grid.h"
 
 #define SIGMA_X 1400
 #define SIGMA_Y 1500
@@ -90,6 +90,8 @@ struct user_options {
     struct extra_data_config *extra_data_config;
     struct assembly_matrix_config *assembly_matrix_config;
     struct linear_system_solver_config *linear_system_solver_config;
+
+    bool main_found;
 
 };
 

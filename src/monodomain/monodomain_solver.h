@@ -7,9 +7,9 @@
 
 #include "../alg/grid/grid.h"
 #include "ode_solver.h"
-#include "config/stim_config_hash.h"
-#include "config/extra_data_config.h"
-#include "config/config_parser.h"
+#include "../config/stim_config_hash.h"
+#include "../config/extra_data_config.h"
+#include "../config/config_parser.h"
 
 #include <stdbool.h>
 #include <stdint.h>

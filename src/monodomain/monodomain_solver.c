@@ -19,9 +19,9 @@
 #include "../string/sds.h"
 
 
-#include "config/domain_config.h"
-#include "config/assembly_matrix_config.h"
-#include "config/linear_system_solver_config.h"
+#include "../config/domain_config.h"
+#include "../config/assembly_matrix_config.h"
+#include "../config/linear_system_solver_config.h"
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow (h, 3.0);

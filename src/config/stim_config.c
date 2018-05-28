@@ -9,7 +9,7 @@
 #include <dlfcn.h>
 #endif
 #include <string.h>
-#include "../../utils/logfile_utils.h"
+#include "../utils/logfile_utils.h"
 
 void init_stim_functions(struct stim_config *config, char* stim_name) {
 

@@ -9,7 +9,7 @@
 #include "../utils/utils.h"
 #include "../monodomain/constants.h"
 #include "../alg/grid/grid.h"
-#include "../monodomain/config/stim_config.h"
+#include "../config/stim_config.h"
 #include "../libraries_common/config_helpers.h"
 
 SET_SPATIAL_STIM(set_benchmark_spatial_stim) {

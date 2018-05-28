@@ -6,8 +6,8 @@
 #define MONOALG3D_LINEAR_SOLVER_CONFIG_H
 
 #include "config_common.h"
-#include "../constants.h"
-#include "../../alg/grid/grid.h"
+#include "../monodomain/constants.h"
+#include "../alg/grid/grid.h"
 
 struct linear_system_solver_config; //Forward declaration
 

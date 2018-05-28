@@ -6,7 +6,7 @@
 #define MONOALG3D_CONFIG_COMMON_H
 
 #include <stdbool.h>
-#include "../../hash/string_hash.h"
+#include "../hash/string_hash.h"
 
 struct config_common {
     void *handle;

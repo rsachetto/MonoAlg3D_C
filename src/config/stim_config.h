@@ -5,8 +5,8 @@
 #ifndef MONOALG3D_STIM_CONFIG_H
 #define MONOALG3D_STIM_CONFIG_H
 
-#include "../../alg/grid/grid.h"
-#include "../constants.h"
+#include "../alg/grid/grid.h"
+#include "../monodomain/constants.h"
 #include "config_common.h"
 
 struct stim_config;

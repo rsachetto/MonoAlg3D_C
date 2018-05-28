@@ -5,9 +5,9 @@
 #ifndef MONOALG3D_DOMAIN_CONFIG_H
 #define MONOALG3D_DOMAIN_CONFIG_H
 
-#include "../../alg/grid/grid.h"
+#include "../alg/grid/grid.h"
 #include "config_common.h"
-#include "../constants.h"
+#include "../monodomain/constants.h"
 
 struct domain_config;
 

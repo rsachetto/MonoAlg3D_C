@@ -2,26 +2,41 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <ui.h>
 #include <glib.h>
 #include <assert.h>
 #include <stdbool.h>
 #include "ini_parser/ini.h"
 #include "config/config_parser.h"
+#include "libui/ui.h"
+#include <unistd.h>
 
-uiMultilineEntry *configText, *runText;
+uiSourceView *configText;
+uiMultilineEntry *runText;
 uiWindow *w;
 uiBox *verticalBox, *horizontalButtonBox, *horizontalTextBox;
-uiButton *btnConfiguration, *btnRun;
+uiButton *btnConfiguration, *btnRun, *btnSave, *btnSaveAs;
+static uiProgressBar *pbar;
+
 struct user_options *options;
+bool child_running = false;
 
 char *config_file_name = NULL;
 char *output_last_sim = NULL;
+gint child_stdout, child_stderr;
 
 GIOChannel *channel_stderr, *channel_stdout;
+GPid child_pid;
+GThread *thread;
 
 int onClosing(uiWindow *w, void *data)
 {
+
+    if(child_running) {
+        g_io_channel_shutdown(channel_stderr, TRUE, NULL);
+        g_io_channel_shutdown(channel_stdout, TRUE, NULL);
+        g_spawn_close_pid(child_pid);
+    }
+
     uiQuit();
     return 1;
 }
@@ -31,6 +46,7 @@ static void onOpenFileClicked(uiButton *b, void *data)
 
     if(config_file_name) uiFreeText(config_file_name);
 
+    //TODO: implement filter for ini files
     config_file_name = uiOpenFile(w);
     if (config_file_name == NULL) {
         return;
@@ -49,15 +65,28 @@ static void onOpenFileClicked(uiButton *b, void *data)
         fprintf (stderr, "Error: Can't load the config file %s\n", config_file_name);
     }
 
-
     //TODO: we should check for more missing parameters
     if(options->main_found) {
-        uiMultilineEntrySetText(configText, string);
+        uiSourceViewSetText(configText, string, "text/x-ini-file");
         uiControlEnable(uiControl(btnRun));
+        uiSourceViewSetReadOnly(configText, false);
     }
     else {
         uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
     }
+}
+
+static void saveConfigFile()
+{
+    if(!config_file_name) uiMsgBoxError(w, "Error", "This should never be NULL!");
+//
+    uiSourceViewSaveSource(configText, config_file_name);
+    uiControlDisable(uiControl(btnSave));
+}
+
+static void saveConfigFileCB(uiButton *b, void *data)
+{
+   saveConfigFile();
 }
 
 static gboolean getOutput (GIOChannel *channel, GIOCondition cond, gpointer data) {
@@ -65,6 +94,9 @@ static gboolean getOutput (GIOChannel *channel, GIOCondition cond, gpointer data
     gsize length;
     gsize terminator_pos;
     GError *error = NULL;
+
+
+    if (cond & G_IO_HUP) return FALSE;
 
     if (g_io_channel_read_line (channel, &str_return, &length, &terminator_pos, &error) == G_IO_STATUS_ERROR) {
         g_warning ("Something went wrong");
@@ -75,7 +107,51 @@ static gboolean getOutput (GIOChannel *channel, GIOCondition cond, gpointer data
 
     uiMultilineEntryAppend(runText, str_return);
 
-    g_free( str_return );
+    char *sub = strstr(str_return, "t = ");
+
+    if(sub != NULL) {
+
+        printf(sub);
+        char *e = strchr(sub, ',');
+        int index = (int)(e - sub);
+
+        char *time_string = (char*) malloc(index-3);
+
+        strncpy(time_string, sub+3, index-3);
+        time_string[index-3] = '\0';
+
+        int progress = (int) ((atof(time_string) / (options->final_time-options->dt_edp)*100.0));
+
+        uiProgressBarSetValue(pbar, progress);
+    }
+
+    uiHandlePendingEvents();
+
+    g_free(str_return);
+
+    return TRUE;
+}
+
+static gboolean getError (GIOChannel *channel, GIOCondition cond, gpointer data) {
+    gchar *str_return;
+    gsize length;
+    gsize terminator_pos;
+    GError *error = NULL;
+
+    if (cond & G_IO_HUP) return FALSE;
+
+    if (g_io_channel_read_line (channel, &str_return, &length, &terminator_pos, &error) == G_IO_STATUS_ERROR) {
+        g_warning ("Something went wrong");
+    }
+    if (error != NULL) {
+        g_warning (error->message);
+    }
+
+
+    uiMultilineEntryAppend(runText, str_return);
+    uiHandlePendingEvents();
+
+    g_free(str_return);
 
     return TRUE;
 }
@@ -87,11 +163,11 @@ static void child_watch_cb (GPid pid, gint status, gpointer user_data) {
     g_io_channel_shutdown(channel_stderr,TRUE,NULL);
     g_io_channel_shutdown(channel_stdout,TRUE,NULL);
     g_spawn_close_pid (pid);
+    child_running = false;
+    uiControlEnable(uiControl(btnRun));
 }
 
-static void runSimulation(uiButton *b, void *data) {
-
-    //TODO: the working directory and the executable need to be read from a configuration file
+void handleChild() {
 
     char **program = (char**) malloc(4*sizeof(char*));
 
@@ -102,8 +178,6 @@ static void runSimulation(uiButton *b, void *data) {
 
     program[3] = NULL;
 
-    gint child_stdout, child_stderr;
-    GPid child_pid;
     g_autoptr(GError) error = NULL;
 
     // Spawn child process.
@@ -115,15 +189,53 @@ static void runSimulation(uiButton *b, void *data) {
         g_error ("Spawning child failed: %s", error->message);
     }
 
+    child_running = true;
+//
     g_child_watch_add (child_pid, child_watch_cb, NULL);
 
-
     channel_stderr = g_io_channel_unix_new(child_stderr);
-    g_io_add_watch (channel_stderr, G_IO_IN, getOutput, NULL);
+    g_io_add_watch (channel_stderr, G_IO_IN | G_IO_HUP, (GIOFunc) getError, NULL);
 
     channel_stdout = g_io_channel_unix_new(child_stdout);
-    g_io_add_watch (channel_stdout, G_IO_IN, getOutput, NULL);
-    //g_io_channel_shutdown(channel,TRUE,NULL);
+    g_io_add_watch (channel_stdout, G_IO_IN | G_IO_HUP, (GIOFunc) getOutput, NULL);
+}
+
+//TODO: the working directory and the executable need to be read from a configuration file
+static void runSimulation(uiButton *b, void *data) {
+
+    //TODO: config auto save on run
+    if(uiSourceViewGetModified(configText)) {
+        //uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
+        int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. Do you want to save before running?");
+
+        if(response == uiReturnValueCancel) {
+            g_debug("Canceling...");
+            return;
+        }
+        else {
+            g_debug("Saving...");
+            saveConfigFile();
+        }
+
+    }
+
+    handleChild();
+    uiControlDisable(uiControl(btnRun));
+}
+
+void onConfigChanged(uiSourceView *e, void *data) {
+
+    int modified = uiSourceViewGetModified(e);
+    int can_undo = uiSourceViewCanUndo(e);
+
+    printf("MOD: %d, CAN: %d\n", modified, can_undo);
+
+    if(modified) {
+        uiControlEnable(uiControl(btnSave));
+    }
+    else {
+        uiControlDisable(uiControl(btnSave));
+    }
 
 }
 
@@ -152,11 +264,17 @@ int main(void)  {
     uiBoxSetPadded(verticalBox, 1);
     uiWindowSetChild(w, uiControl(verticalBox));
 
-    configText = uiNewMultilineEntry();
-    //uiMultilineEntrySetReadOnly(configText, 1);
+    configText = uiNewSourceView();
+    uiSourceViewSetReadOnly(configText, true);
+    uiSourceViewOnChanged(configText, onConfigChanged, NULL);
+
 
     runText = uiNewMultilineEntry();
     uiMultilineEntrySetReadOnly(runText, 1);
+
+    btnSave = uiNewButton("Save");
+    uiControlDisable(uiControl(btnSave));
+    uiButtonOnClicked(btnSave, saveConfigFileCB, NULL);
 
     btnConfiguration = uiNewButton("Open configuration");
     uiButtonOnClicked(btnConfiguration, onOpenFileClicked, NULL);
@@ -165,11 +283,15 @@ int main(void)  {
     uiButtonOnClicked(btnRun, runSimulation, NULL);
     uiControlDisable(uiControl(btnRun));
 
+    pbar = uiNewProgressBar();
+
     uiBoxAppend(horizontalTextBox, uiControl(configText), 1);
     uiBoxAppend(horizontalTextBox, uiControl(runText), 1);
 
     uiBoxAppend(horizontalButtonBox, uiControl(btnConfiguration), 0);
+    uiBoxAppend(horizontalButtonBox, uiControl(btnSave), 0);
     uiBoxAppend(horizontalButtonBox, uiControl(btnRun), 0);
+    uiBoxAppend(horizontalButtonBox, uiControl(pbar), 1);
 
     uiBoxAppend(verticalBox, uiControl(horizontalTextBox), 1);
     uiBoxAppend(verticalBox, uiControl(horizontalButtonBox), 0);
@@ -177,5 +299,6 @@ int main(void)  {
     uiWindowOnClosing(w, onClosing, NULL);
     uiControlShow(uiControl(w));
     uiMain();
+
     return 0;
 }

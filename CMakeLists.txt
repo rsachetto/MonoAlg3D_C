@@ -1,3 +1,7 @@
+IF(EXISTS "/etc/manjaro-release")
+    set(CMAKE_C_COMPILER "/opt/cuda/bin/gcc")
+ENDIF(EXISTS "/etc/manjaro-release")
+
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
 
@@ -25,10 +29,6 @@ ENDIF()
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
 SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
-
-IF(EXISTS "/etc/manjaro-release")
-    set(CMAKE_C_COMPILER "/opt/cuda/bin/gcc")
-ENDIF(EXISTS "/etc/manjaro-release")
 
 IF(MSVC)
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
@@ -91,16 +91,19 @@ ADD_SUBDIRECTORY(src/monodomain)
 ADD_SUBDIRECTORY(src/hash)
 ADD_SUBDIRECTORY(src/ini_parser)
 ADD_SUBDIRECTORY(src/string)
+ADD_SUBDIRECTORY(src/config)
 
 ADD_EXECUTABLE(MonoAlg3D src/main.c)
 
-ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string ${OPT_DEPS})
+
+
+ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string config ${OPT_DEPS})
 
 IF(MSVC)
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl)
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl)
     SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 ELSE()
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
 ENDIF()
 
 
@@ -118,3 +121,25 @@ ADD_SUBDIRECTORY(src/linear_system_solver_library)
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
+
+SET(COMPILE_GUI TRUE)
+
+IF(${COMPILE_GUI})
+    IF(NOT APPLE AND NOT WIN32)
+
+        find_package(PkgConfig REQUIRED)
+        pkg_search_module(GLIB REQUIRED glib-2.0)
+        pkg_check_modules(GTK REQUIRED gtk+-3.0)
+
+        IF(GLIB_FOUND)
+            IF(GTK_FOUND)
+                ADD_SUBDIRECTORY(src/libui)
+                ADD_EXECUTABLE(MonoAlg3D_GUI src/main_gui.c)
+                target_include_directories(MonoAlg3D_GUI PRIVATE ${GLIB_INCLUDE_DIRS})
+                TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ini_parser config libui ${GLIB_LDFLAGS})
+            ENDIF()
+        ENDIF()
+    ENDIF()
+ENDIF()
+
+

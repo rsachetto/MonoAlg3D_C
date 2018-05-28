@@ -9,7 +9,7 @@
 #include "../utils/utils.h"
 #include "../monodomain/constants.h"
 #include "../alg/grid/grid.h"
-#include "../monodomain/config/assembly_matrix_config.h"
+#include "../config/assembly_matrix_config.h"
 #include "../libraries_common/config_helpers.h"
 
 static inline double ALPHA (double beta, double cm, double dt, double h) {

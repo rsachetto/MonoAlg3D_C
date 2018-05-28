@@ -2,7 +2,7 @@
 // Created by sachetto on 04/10/17.
 //
 
-#include "../monodomain/config/linear_system_solver_config.h"
+#include "../config/linear_system_solver_config.h"
 #include "../libraries_common/config_helpers.h"
 
 SOLVE_LINEAR_SYSTEM(conjugate_gradient) {

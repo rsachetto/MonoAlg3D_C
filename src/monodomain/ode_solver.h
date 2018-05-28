@@ -7,8 +7,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "config/stim_config_hash.h"
-#include "config/config_parser.h"
+#include "../config/stim_config_hash.h"
+#include "../config/config_parser.h"
 
 #include "../models_library/model_common.h"
 
