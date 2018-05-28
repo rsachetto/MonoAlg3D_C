@@ -173,7 +173,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 
     //Extracellular potassium concentration was elevated
     //from its default value of 5.4 mM to values between 6.0 and 8.0 mM
-    //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
+    //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischemia and Re-entry
     real Ko_change  = 5.4f - Ko;
     Ko = Ko + Ko_change*fibrosis;
 
