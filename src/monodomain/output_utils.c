@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 bool dir_exists(const char *path) {

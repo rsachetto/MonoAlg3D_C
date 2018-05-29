@@ -9,7 +9,7 @@
 #define MONOALG3D_CONFIG_PARSER_H
 
 #ifdef _MSC_VER
-#include "../../getopt/getopt.h"
+#include "../getopt/getopt.h"
 #else
 #include <getopt.h>
 #endif

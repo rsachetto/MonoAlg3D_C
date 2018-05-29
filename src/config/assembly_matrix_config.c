@@ -5,7 +5,7 @@
 #include "assembly_matrix_config.h"
 
 #ifdef _MSC_VER
-#include "../../dlfcn-win32/dlfcn.h"
+#include "../dlfcn-win32/dlfcn.h"
 #else
 #include <dlfcn.h>
 #endif

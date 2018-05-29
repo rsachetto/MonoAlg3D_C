@@ -2,15 +2,32 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <glib.h>
 #include <assert.h>
 #include <stdbool.h>
 #include "ini_parser/ini.h"
 #include "config/config_parser.h"
-#include "libui/ui.h"
-#include <unistd.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <tchar.h>
+#endif
+
+#include "libui/ui.h"
+
+#ifdef linux
+#include <unistd.h>
+#endif
+
+//#include <glib.h> We are trying to substitute glib for now
+
+#ifdef linux
 uiSourceView *configText;
+#endif
+
+#ifdef _WIN32
+uiMultilineEntry *configText;
+#endif
+
 uiMultilineEntry *runText;
 uiWindow *w;
 uiBox *verticalBox, *horizontalButtonBox, *horizontalTextBox;
@@ -22,20 +39,25 @@ bool child_running = false;
 
 char *config_file_name = NULL;
 char *output_last_sim = NULL;
+
+/*
 gint child_stdout, child_stderr;
 
 GIOChannel *channel_stderr, *channel_stdout;
 GPid child_pid;
 GThread *thread;
+*/
 
 int onClosing(uiWindow *w, void *data)
 {
 
+/*
     if(child_running) {
         g_io_channel_shutdown(channel_stderr, TRUE, NULL);
         g_io_channel_shutdown(channel_stdout, TRUE, NULL);
         g_spawn_close_pid(child_pid);
     }
+*/
 
     uiQuit();
     return 1;
@@ -67,9 +89,21 @@ static void onOpenFileClicked(uiButton *b, void *data)
 
     //TODO: we should check for more missing parameters
     if(options->main_found) {
+		
+		uiControlEnable(uiControl(btnRun));
+		
+		#ifdef linux
         uiSourceViewSetText(configText, string, "text/x-ini-file");
-        uiControlEnable(uiControl(btnRun));
+		#endif        
+		
+		#ifdef linux
         uiSourceViewSetReadOnly(configText, false);
+		#endif
+		
+		#ifdef _WIN32
+        uiMultilineEntryAppend(configText, string);
+		uiMultilineEntrySetReadOnly(configText, false);
+		#endif
     }
     else {
         uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
@@ -79,8 +113,13 @@ static void onOpenFileClicked(uiButton *b, void *data)
 static void saveConfigFile()
 {
     if(!config_file_name) uiMsgBoxError(w, "Error", "This should never be NULL!");
-//
+
+	
+	//TODO: we need to do this on windows
+	
+	#ifdef linux
     uiSourceViewSaveSource(configText, config_file_name);
+	#endif
     uiControlDisable(uiControl(btnSave));
 }
 
@@ -89,6 +128,7 @@ static void saveConfigFileCB(uiButton *b, void *data)
    saveConfigFile();
 }
 
+/*
 static gboolean getOutput (GIOChannel *channel, GIOCondition cond, gpointer data) {
     gchar *str_return;
     gsize length;
@@ -156,9 +196,9 @@ static gboolean getError (GIOChannel *channel, GIOCondition cond, gpointer data)
     return TRUE;
 }
 
+
 static void child_watch_cb (GPid pid, gint status, gpointer user_data) {
-    g_message ("Child %" G_PID_FORMAT " exited %s", pid,
-               g_spawn_check_exit_status (status, NULL) ? "normally" : "abnormally");
+    //g_message ("Child %" G_PID_FORMAT " exited %s", pid, g_spawn_check_exit_status (status, NULL) ? "normally" : "abnormally");
 
     g_io_channel_shutdown(channel_stderr,TRUE,NULL);
     g_io_channel_shutdown(channel_stdout,TRUE,NULL);
@@ -166,6 +206,7 @@ static void child_watch_cb (GPid pid, gint status, gpointer user_data) {
     child_running = false;
     uiControlEnable(uiControl(btnRun));
 }
+*/
 
 void handleChild() {
 
@@ -178,6 +219,7 @@ void handleChild() {
 
     program[3] = NULL;
 
+	/*
     g_autoptr(GError) error = NULL;
 
     // Spawn child process.
@@ -198,26 +240,28 @@ void handleChild() {
 
     channel_stdout = g_io_channel_unix_new(child_stdout);
     g_io_add_watch (channel_stdout, G_IO_IN | G_IO_HUP, (GIOFunc) getOutput, NULL);
+	*/
 }
 
 //TODO: the working directory and the executable need to be read from a configuration file
 static void runSimulation(uiButton *b, void *data) {
 
-    //TODO: config auto save on run
+
+    //TODO: config auto save on run. Make a windows version of this
+	#ifdef linux
     if(uiSourceViewGetModified(configText)) {
         //uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
         int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. Do you want to save before running?");
 
-        if(response == uiReturnValueCancel) {
-            g_debug("Canceling...");
+        if(response == uiReturnValueCancel) {            
             return;
         }
-        else {
-            g_debug("Saving...");
+        else {            
             saveConfigFile();
         }
 
     }
+	#endif
 
     handleChild();
     uiControlDisable(uiControl(btnRun));
@@ -225,6 +269,9 @@ static void runSimulation(uiButton *b, void *data) {
 
 void onConfigChanged(uiSourceView *e, void *data) {
 
+//TODO: make a windows version of this function
+
+#ifdef linux
     int modified = uiSourceViewGetModified(e);
     int can_undo = uiSourceViewCanUndo(e);
 
@@ -236,10 +283,11 @@ void onConfigChanged(uiSourceView *e, void *data) {
     else {
         uiControlDisable(uiControl(btnSave));
     }
+#endif
 
 }
 
-int main(void)  {
+int main()  {
 
     uiInitOptions o;
 
@@ -264,9 +312,16 @@ int main(void)  {
     uiBoxSetPadded(verticalBox, 1);
     uiWindowSetChild(w, uiControl(verticalBox));
 
+	#ifdef linux
     configText = uiNewSourceView();
     uiSourceViewSetReadOnly(configText, true);
     uiSourceViewOnChanged(configText, onConfigChanged, NULL);
+	#endif
+	
+	#ifdef _WIN32
+	configText = uiNewMultilineEntry();
+    uiMultilineEntrySetReadOnly(configText, 1);
+	#endif
 
 
     runText = uiNewMultilineEntry();

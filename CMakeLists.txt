@@ -46,7 +46,7 @@ IF (OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 ENDIF(OPENMP_FOUND)
 
-FIND_PACKAGE(CUDA)
+#FIND_PACKAGE(CUDA)
 
 IF (CUDA_FOUND AND MSVC AND "${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
             message(WARNING "You have CUDA installed, but we can't use it unless you put visual studio in 64bit mode.")
@@ -93,10 +93,22 @@ ADD_SUBDIRECTORY(src/ini_parser)
 ADD_SUBDIRECTORY(src/string)
 ADD_SUBDIRECTORY(src/config)
 
+SET(COMPILE_GUI TRUE)
+
+IF(${COMPILE_GUI})
+    ADD_SUBDIRECTORY(src/libui)
+    ADD_EXECUTABLE(MonoAlg3D_GUI src/main_gui.c)
+    IF(MSVC)
+        ADD_DEPENDENCIES(MonoAlg3D_GUI ini_parser config libui dl)
+        TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ini_parser config libui dl)
+    ELSE()
+        ADD_DEPENDENCIES(MonoAlg3D_GUI ini_parser config libui)
+        TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ini_parser config libui)
+    ENDIF()
+ENDIF()
+
+
 ADD_EXECUTABLE(MonoAlg3D src/main.c)
-
-
-
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string config ${OPT_DEPS})
 
 IF(MSVC)
@@ -105,7 +117,6 @@ IF(MSVC)
 ELSE()
     TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
 ENDIF()
-
 
 ADD_SUBDIRECTORY(src/models_library)
 
@@ -116,28 +127,6 @@ ADD_SUBDIRECTORY(src/domains_library)
 ADD_SUBDIRECTORY(src/extra_data_library)
 ADD_SUBDIRECTORY(src/matrix_assembly_library)
 ADD_SUBDIRECTORY(src/linear_system_solver_library)
-###
-
-SET(COMPILE_GUI TRUE)
-
-IF(${COMPILE_GUI})
-    IF(NOT APPLE AND NOT WIN32)
-
-        find_package(PkgConfig REQUIRED)
-        pkg_search_module(GLIB REQUIRED glib-2.0)
-        pkg_check_modules(GTK REQUIRED gtk+-3.0)
-
-        IF(GLIB_FOUND)
-            IF(GTK_FOUND)
-                ADD_SUBDIRECTORY(src/libui)
-                ADD_EXECUTABLE(MonoAlg3D_GUI src/main_gui.c)
-                target_include_directories(MonoAlg3D_GUI PRIVATE ${GLIB_INCLUDE_DIRS})
-                TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ini_parser config libui ${GLIB_LDFLAGS})
-            ENDIF()
-        ENDIF()
-    ENDIF()
-ENDIF()
-
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
