@@ -7,14 +7,12 @@
 HANDLE hStdIn = NULL; // Handle to parents std input.
 
 //TODO: make it receive a function that will be called after reading the child output
-DWORD WINAPI run_child_process_and_process_output (LPVOID lpParam)
+void run_child_process_and_process_output (char * program_with_path,  void (*function_to_apply)(void*))
 {
-    HANDLE hOutputReadTmp,hOutputRead,hOutputWrite;
+    HANDLE hOutputReadTmp, hOutputRead, hOutputWrite;
     HANDLE hInputWriteTmp,hInputRead,hInputWrite;
     HANDLE hErrorWrite;
     SECURITY_ATTRIBUTES sa;
-
-    struct ThreadData *td = (struct ThreadData*)lpParam;
 
     // Set up the security attributes struct.
     sa.nLength= sizeof(SECURITY_ATTRIBUTES);
@@ -70,7 +68,7 @@ DWORD WINAPI run_child_process_and_process_output (LPVOID lpParam)
     if ( (hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE )
         DisplayError("GetStdHandle");
 
-    PrepAndLaunchRedirectedChild(hOutputWrite,hInputRead,hErrorWrite);
+    PrepAndLaunchRedirectedChild(program_with_path, hOutputWrite,hInputRead,hErrorWrite);
 
 
     // Close pipe handles (do not continue to modify the parent).
@@ -82,7 +80,7 @@ DWORD WINAPI run_child_process_and_process_output (LPVOID lpParam)
     if (!CloseHandle(hErrorWrite)) DisplayError("CloseHandle");
 
     // Read the child's output.
-    ReadAndHandleOutput(hOutputRead, td->fn_pointer);
+    ReadAndHandleOutput(hOutputRead, function_to_apply);
     // Redirection is complete
 
     // Force the read on the input to return by closing the stdin handle.
@@ -99,7 +97,7 @@ DWORD WINAPI run_child_process_and_process_output (LPVOID lpParam)
 ///////////////////////////////////////////////////////////////////////
 
 
-void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
+void PrepAndLaunchRedirectedChild(char *program, HANDLE hChildStdOut,
                                   HANDLE hChildStdIn,
                                   HANDLE hChildStdErr)
 {
@@ -123,15 +121,6 @@ void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
     // Child.exe). Make sure Child.exe is in the same directory as
     // redirect.c launch redirect from a command line to prevent location
     // confusion.
-
-    //TODO: we need to pass the child path and parameters here
-    char program[] = "bin\\MonoAlg3D.exe -c example_configs\\benchmark_config_example.ini";
-
-
-    //strcpy_s (program, strlen("bin\\MonoAlg3D.exe "), "bin\\MonoAlg3D.exe ");
-    //strcat_s (program, strlen("-c "), "-c ");
-    //strcat_s (program, strlen("example_configs/benchmark_config_example.ini"), "example_configs/benchmark_config_example.ini");
-
     if (!CreateProcess(NULL, program, NULL,NULL,TRUE,
                        CREATE_NEW_CONSOLE,NULL,NULL,&si,&pi))
         DisplayError("CreateProcess");
@@ -139,7 +128,6 @@ void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
     // Close any unnecessary handles.
     if (!CloseHandle(pi.hThread)) DisplayError("CloseHandle");
 
-    //free(program);
 }
 
 
@@ -147,10 +135,8 @@ void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
 // ReadAndHandleOutput
 // Monitors handle for input. Exits when child exits or pipe breaks.
 ///////////////////////////////////////////////////////////////////////
-void ReadAndHandleOutput(HANDLE hPipeRead, void (*f)(void*))
+void ReadAndHandleOutput(HANDLE hPipeRead, void (*apply_function)(void*))
 {
-
-
     char lpBuffer[256];
     DWORD nBytesRead;
     DWORD nCharsWritten;
@@ -166,12 +152,9 @@ void ReadAndHandleOutput(HANDLE hPipeRead, void (*f)(void*))
                 DisplayError("ReadFile"); // Something bad happened.
         }
 
-        // Display the character read on the screen.
-        //WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE),lpBuffer, nBytesRead,&nCharsWritten,NULL);
-
-        //f will free the data passed to it
+        //apply_function will free the data passed to it
         lpBuffer[nBytesRead-1] = '\0';
-        f(_strdup(lpBuffer));
+        apply_function(_strdup(lpBuffer));
 
     }
 }

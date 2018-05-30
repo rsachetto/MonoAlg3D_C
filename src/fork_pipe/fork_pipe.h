@@ -1,0 +1,1 @@
+void run_child_process_and_process_output (char * program_with_path,  void (*function_to_apply)(void*));

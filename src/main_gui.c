@@ -6,10 +6,10 @@
 #include <stdbool.h>
 #include "ini_parser/ini.h"
 #include "config/config_parser.h"
+#include "fork_pipe/fork_pipe.h"
 
 #ifdef _WIN32
 #include <windows.h>
-#include "fork_pipe/fork_pipe_windows.h" //TODO: put this in one header
 #include <tchar.h>
 #endif
 
@@ -19,8 +19,6 @@
 #ifdef linux
 #include <unistd.h>
 #endif
-
-//#include <glib.h> We are trying to substitute glib for now
 
 #ifdef linux
 uiSourceView *configText;
@@ -42,15 +40,8 @@ bool child_running = false;
 char *config_file_name = NULL;
 char *output_last_sim = NULL;
 
-/*
-gint child_stdout, child_stderr;
 
-GIOChannel *channel_stderr, *channel_stdout;
-GPid child_pid;
-GThread *thread;
-*/
-
-void appendToOutput(void *data) {
+static void appendToOutput(void *data) {
     char *s = (char*) data;
     uiMultilineEntryAppend(runText, s);
 
@@ -75,22 +66,12 @@ void appendToOutput(void *data) {
     free(s);
 }
 
-void appendToQueue(void *data) {
+static void appendToQueue(void *data) {
     uiQueueMain(appendToOutput, data);
 }
 
 
-int onClosing(uiWindow *w, void *data)
-{
-
-/*
-    if(child_running) {
-        g_io_channel_shutdown(channel_stderr, TRUE, NULL);
-        g_io_channel_shutdown(channel_stdout, TRUE, NULL);
-        g_spawn_close_pid(child_pid);
-    }
-*/
-
+static int onClosing(uiWindow *w, void *data) {
     uiQuit();
     return 1;
 }
@@ -145,10 +126,7 @@ static void onOpenFileClicked(uiButton *b, void *data)
 static void saveConfigFile()
 {
     if(!config_file_name) uiMsgBoxError(w, "Error", "This should never be NULL!");
-
-	
 	//TODO: we need to do this on windows
-	
 	#ifdef linux
     uiSourceViewSaveSource(configText, config_file_name);
 	#endif
@@ -160,88 +138,47 @@ static void saveConfigFileCB(uiButton *b, void *data)
    saveConfigFile();
 }
 
-/*
-static gboolean getOutput (GIOChannel *channel, GIOCondition cond, gpointer data) {
-    gchar *str_return;
-    gsize length;
-    gsize terminator_pos;
-    GError *error = NULL;
+struct ThreadData {
+    char *program;
+    void (*fn_pointer)(void*);
+};
 
 
-    if (cond & G_IO_HUP) return FALSE;
+#ifdef _WIN32
+DWORD WINAPI start_program_with_tread(LPVOID thread_param) {
+#else
+void start_program_with_tread(void * thread_param) {
+#endif
 
-    if (g_io_channel_read_line (channel, &str_return, &length, &terminator_pos, &error) == G_IO_STATUS_ERROR) {
-        g_warning ("Something went wrong");
-    }
-    if (error != NULL) {
-        g_warning (error->message);
-    }
-
-    uiMultilineEntryAppend(runText, str_return);
-
-    char *sub = strstr(str_return, "t = ");
-
-    if(sub != NULL) {
-
-        printf(sub);
-        char *e = strchr(sub, ',');
-        int index = (int)(e - sub);
-
-        char *time_string = (char*) malloc(index-3);
-
-        strncpy(time_string, sub+3, index-3);
-        time_string[index-3] = '\0';
-
-        int progress = (int) ((atof(time_string) / (options->final_time-options->dt_edp)*100.0));
-
-        uiProgressBarSetValue(pbar, progress);
-    }
-
-    uiHandlePendingEvents();
-
-    g_free(str_return);
-
-    return TRUE;
+    struct ThreadData *td = (struct ThreadData*) thread_param;
+    run_child_process_and_process_output(td->program, td->fn_pointer);
 }
 
-static gboolean getError (GIOChannel *channel, GIOCondition cond, gpointer data) {
-    gchar *str_return;
-    gsize length;
-    gsize terminator_pos;
-    GError *error = NULL;
-
-    if (cond & G_IO_HUP) return FALSE;
-
-    if (g_io_channel_read_line (channel, &str_return, &length, &terminator_pos, &error) == G_IO_STATUS_ERROR) {
-        g_warning ("Something went wrong");
-    }
-    if (error != NULL) {
-        g_warning (error->message);
-    }
-
-
-    uiMultilineEntryAppend(runText, str_return);
-    uiHandlePendingEvents();
-
-    g_free(str_return);
-
-    return TRUE;
-}
-
-
-static void child_watch_cb (GPid pid, gint status, gpointer user_data) {
-    //g_message ("Child %" G_PID_FORMAT " exited %s", pid, g_spawn_check_exit_status (status, NULL) ? "normally" : "abnormally");
-
-    g_io_channel_shutdown(channel_stderr,TRUE,NULL);
-    g_io_channel_shutdown(channel_stdout,TRUE,NULL);
-    g_spawn_close_pid (pid);
-    child_running = false;
-    uiControlEnable(uiControl(btnRun));
-}
-*/
 
 void start_monodomain_exec() {
 
+    //LEAK: maybe free it on the run_child_process_and_process_output function
+    struct ThreadData *td = (struct ThreadData *)malloc(sizeof(struct ThreadData));
+    td->fn_pointer = appendToQueue;
+
+#ifdef _WIN32
+    HANDLE thread;
+    DWORD  threadId;
+
+    //TODO: we need to pass the Monoalg path and parameters here
+    char program[] = "bin\\MonoAlg3D.exe -c example_configs\\benchmark_config_example.ini";
+    td->program = _strdup(program);
+
+    thread = CreateThread(
+            NULL,                   // default security attributes
+            0,                      // use default stack size
+            start_program_with_tread,       // thread function name
+            (LPVOID) td,          // argument to thread function
+            0,                      // use default creation flags
+            &threadId);   // returns the thread identifier
+
+#else
+    //TODO: we need to pass the Monoalg path and parameters here
     char **program = (char**) malloc(4*sizeof(char*));
 
     program[0] = strdup("bin/MonoAlg3D");
@@ -252,44 +189,10 @@ void start_monodomain_exec() {
     program[3] = NULL;
 
 
-    struct ThreadData *td = (struct ThreadData *)malloc(sizeof(struct ThreadData));
 
-    td->program = NULL;
-    td->fn_pointer = appendToQueue;
-
-#ifdef _WIN32
-    HANDLE thread;
-    DWORD  threadId;
-    thread = CreateThread(
-            NULL,                   // default security attributes
-            0,                      // use default stack size
-            run_child_process_and_process_output,       // thread function name
-            (LPVOID) td,          // argument to thread function
-            0,                      // use default creation flags
-            &threadId);   // returns the thread identifier
 #endif
-	/*
-    g_autoptr(GError) error = NULL;
 
-    // Spawn child process.
-    g_spawn_async_with_pipes ("/home/sachetto/Projects/MonoAlg3D_C/", program, NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL,
-                              NULL, &child_pid, NULL, &child_stdout,
-                              &child_stderr, &error);
-    if (error != NULL)
-    {
-        g_error ("Spawning child failed: %s", error->message);
-    }
 
-    child_running = true;
-//
-    g_child_watch_add (child_pid, child_watch_cb, NULL);
-
-    channel_stderr = g_io_channel_unix_new(child_stderr);
-    g_io_add_watch (channel_stderr, G_IO_IN | G_IO_HUP, (GIOFunc) getError, NULL);
-
-    channel_stdout = g_io_channel_unix_new(child_stdout);
-    g_io_add_watch (channel_stdout, G_IO_IN | G_IO_HUP, (GIOFunc) getOutput, NULL);
-	*/
 }
 
 //TODO: the working directory and the executable need to be read from a configuration file
