@@ -97,18 +97,20 @@ SET(COMPILE_GUI TRUE)
 
 IF(${COMPILE_GUI})
     ADD_SUBDIRECTORY(src/libui)
+    ADD_SUBDIRECTORY(src/fork_pipe)
     ADD_EXECUTABLE(MonoAlg3D_GUI src/main_gui.c)
+    SET(GUI_DEPS ini_parser config libui fork_pipe)
     IF(MSVC)
-        ADD_DEPENDENCIES(MonoAlg3D_GUI ini_parser config libui dl)
-        TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ini_parser config libui dl)
-    ELSE()
-        ADD_DEPENDENCIES(MonoAlg3D_GUI ini_parser config libui)
-        TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ini_parser config libui)
+        SET(GUI_DEPS ${GUI_DEPS} dl)
     ENDIF()
+
+    ADD_DEPENDENCIES(MonoAlg3D_GUI ${GUI_DEPS} )
+    TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ${GUI_DEPS})
+
 ENDIF()
 
 
-ADD_EXECUTABLE(MonoAlg3D src/main.c)
+ADD_EXECUTABLE(MonoAlg3D src/main.c src/fork_pipe/fork_pipe_windows.c src/fork_pipe/fork_pipe_windows.h)
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string config ${OPT_DEPS})
 
 IF(MSVC)

@@ -9,10 +9,12 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include "fork_pipe/fork_pipe_windows.h" //TODO: put this in one header
 #include <tchar.h>
 #endif
 
 #include "libui/ui.h"
+
 
 #ifdef linux
 #include <unistd.h>
@@ -47,6 +49,36 @@ GIOChannel *channel_stderr, *channel_stdout;
 GPid child_pid;
 GThread *thread;
 */
+
+void appendToOutput(void *data) {
+    char *s = (char*) data;
+    uiMultilineEntryAppend(runText, s);
+
+    char *sub = strstr(s, "t = ");
+
+    if(sub != NULL) {
+
+        printf(sub);
+        char *e = strchr(sub, ',');
+        int index = (int)(e - sub);
+
+        char *time_string = (char*) malloc(index-3);
+
+        strncpy(time_string, sub+3, index-3);
+        time_string[index-3] = '\0';
+
+        int progress = (int) ((atof(time_string) / (options->final_time-options->dt_edp)*100.0));
+
+        uiProgressBarSetValue(pbar, progress);
+    }
+
+    free(s);
+}
+
+void appendToQueue(void *data) {
+    uiQueueMain(appendToOutput, data);
+}
+
 
 int onClosing(uiWindow *w, void *data)
 {
@@ -208,7 +240,7 @@ static void child_watch_cb (GPid pid, gint status, gpointer user_data) {
 }
 */
 
-void handleChild() {
+void start_monodomain_exec() {
 
     char **program = (char**) malloc(4*sizeof(char*));
 
@@ -219,6 +251,23 @@ void handleChild() {
 
     program[3] = NULL;
 
+
+    struct ThreadData *td = (struct ThreadData *)malloc(sizeof(struct ThreadData));
+
+    td->program = NULL;
+    td->fn_pointer = appendToQueue;
+
+#ifdef _WIN32
+    HANDLE thread;
+    DWORD  threadId;
+    thread = CreateThread(
+            NULL,                   // default security attributes
+            0,                      // use default stack size
+            run_child_process_and_process_output,       // thread function name
+            (LPVOID) td,          // argument to thread function
+            0,                      // use default creation flags
+            &threadId);   // returns the thread identifier
+#endif
 	/*
     g_autoptr(GError) error = NULL;
 
@@ -263,7 +312,7 @@ static void runSimulation(uiButton *b, void *data) {
     }
 	#endif
 
-    handleChild();
+    start_monodomain_exec();
     uiControlDisable(uiControl(btnRun));
 }
 
