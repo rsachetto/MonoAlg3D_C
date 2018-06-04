@@ -46,7 +46,7 @@ IF (OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 ENDIF(OPENMP_FOUND)
 
-#FIND_PACKAGE(CUDA)
+FIND_PACKAGE(CUDA)
 
 IF (CUDA_FOUND AND MSVC AND "${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
             message(WARNING "You have CUDA installed, but we can't use it unless you put visual studio in 64bit mode.")
@@ -109,8 +109,7 @@ IF(${COMPILE_GUI})
 
 ENDIF()
 
-
-ADD_EXECUTABLE(MonoAlg3D src/main.c src/fork_pipe/fork_pipe_windows.c src/fork_pipe/fork_pipe_windows.h)
+ADD_EXECUTABLE(MonoAlg3D src/main.c)
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string config ${OPT_DEPS})
 
 IF(MSVC)

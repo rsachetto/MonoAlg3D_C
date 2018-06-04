@@ -3,7 +3,7 @@ SET(LIB_TYPE MODULE) #set the lib type
 ############## TEN TUSCHER 2006 ##############################
 set(MODEL_FILE_CPU "ten_tusscher_2006_RS_CPU.c")
 set(MODEL_FILE_GPU "ten_tusscher_2006_RS_GPU.cu")
-set(COMMON_HEADERS model_common.h ten_tusscher_3_RS.h)
+set(COMMON_HEADERS model_common.h ten_tusscher_2006.h)
 
 if(CUDA_FOUND)
     CUDA_ADD_LIBRARY(ten_tusscher_2006 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
@@ -13,6 +13,23 @@ if(CUDA_FOUND)
 	ENDIF()
 else()
     ADD_LIBRARY(ten_tusscher_2006 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+
+#########################################################
+
+############## TEN TUSCHER 2004 ##############################
+set(MODEL_FILE_CPU "ten_tusscher_2004_RS_CPU.c")
+set(MODEL_FILE_GPU "ten_tusscher_2004_RS_GPU.cu")
+set(COMMON_HEADERS model_common.h ten_tusscher_2004.h)
+
+if(CUDA_FOUND)
+	CUDA_ADD_LIBRARY(ten_tusscher_2004_endo ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+	IF(MSVC)
+		set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+		TARGET_LINK_LIBRARIES(ten_tusscher_2004_endo PUBLIC utils)
+	ENDIF()
+else()
+	ADD_LIBRARY(ten_tusscher_2004_endo ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 
 #########################################################
