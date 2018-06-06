@@ -17,7 +17,61 @@
     #include <unistd.h>
 #endif
 
-SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
+SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
+
+    double start_h = config->start_h;
+
+    double side_length_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length_x, config->config_data.config, "side_length_x");
+
+    double side_length_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length_y, config->config_data.config, "side_length_y");
+
+    double side_length_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length_z, config->config_data.config, "side_length_z");
+
+    double max_yz = fmax(side_length_y, side_length_z);
+    double max_side_length = fmax(side_length_x, max_yz);
+
+    double real_side_length = start_h * 2.0;
+
+    while (real_side_length < max_side_length) {
+        real_side_length *= 2.0;
+    }
+
+    print_to_stdout_and_file ("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length,
+                              real_side_length, real_side_length);
+    print_to_stdout_and_file ("Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm\n", side_length_x,
+                              side_length_y, side_length_z, start_h);
+
+    int num_steps = get_num_refinement_steps_to_discretization (real_side_length, start_h);
+
+    initialize_and_construct_grid (the_grid, real_side_length);
+
+    if ((real_side_length / 2.0f) > side_length_z) {
+        double aux = real_side_length / 2.0f;
+
+        for (int i = 0; i < num_steps - 3; i++) {
+            set_cuboid_domain(the_grid, real_side_length, real_side_length, aux);
+            refine_grid (the_grid, 1);
+            aux = aux / 2.0f;
+        }
+
+        refine_grid (the_grid, 3);
+
+    } else {
+        refine_grid (the_grid, num_steps);
+    }
+
+    set_cuboid_domain(the_grid, side_length_x, side_length_y, side_length_z);
+
+    int i;
+    for (i = 0; i < num_steps; i++) {
+        derefine_grid_inactive_cells (the_grid);
+    }
+}
+
+SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
 
     double start_h = config->start_h;
 
@@ -44,7 +98,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
         real_side_length *= 2.0f;
     }
 
-    print_to_stdout_and_file ("Initial cube side length: %lf µm x %lf µm x %lf µm\n", real_side_length,
+    print_to_stdout_and_file ("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length,
                               real_side_length, real_side_length);
     print_to_stdout_and_file ("Loading plain mesh with %lf µm x %lf µm x %lf µm using dx %lf µm\n", side_length,
                               side_length, max_h, start_h);
@@ -57,7 +111,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
         double aux = real_side_length / 2.0f;
 
         for (int i = 0; i < num_steps - 3; i++) {
-            set_plain_domain (the_grid, real_side_length, real_side_length, aux);
+            set_cuboid_domain(the_grid, real_side_length, real_side_length, aux);
             refine_grid (the_grid, 1);
             aux = aux / 2.0f;
         }
@@ -68,7 +122,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_mesh) {
         refine_grid (the_grid, num_steps);
     }
 
-    set_plain_domain (the_grid, side_length, side_length, max_h);
+    set_cuboid_domain(the_grid, side_length, side_length, max_h);
 
     int i;
     for (i = 0; i < num_steps; i++) {
@@ -101,7 +155,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cable_mesh) {
         double aux = real_cable_length / 2.0f;
 
         for (int i = 0; i < num_steps - 3; i++) {
-            set_plain_domain (the_grid, real_cable_length, real_cable_length, aux);
+            set_cuboid_domain(the_grid, real_cable_length, real_cable_length, aux);
             refine_grid (the_grid, 1);
             aux = aux / 2.0f;
         }
@@ -112,7 +166,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cable_mesh) {
         refine_grid (the_grid, num_steps);
     }
 
-    set_plain_domain (the_grid, real_cable_length, start_h, start_h);
+    set_cuboid_domain(the_grid, real_cable_length, start_h, start_h);
 
     int i;
     for (i = 0; i < num_steps; i++) {
@@ -456,7 +510,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_fibrotic_mesh) {
     if (!success)
         seed = 0;
 
-    initialize_grid_with_plain_mesh (config, the_grid);
+    initialize_grid_with_square_mesh (config, the_grid);
     set_plain_fibrosis (the_grid, phi, seed);
 }
 
@@ -486,6 +540,6 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
         seed = 0;
     }
 
-    initialize_grid_with_plain_mesh (config, the_grid);
+    initialize_grid_with_square_mesh (config, the_grid);
     set_plain_sphere_fibrosis (the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, seed);
 }

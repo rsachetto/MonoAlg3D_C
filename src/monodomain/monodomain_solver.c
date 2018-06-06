@@ -230,8 +230,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     if (has_extra_data)
         set_ode_extra_data (extra_data_config, the_grid, the_ode_solver);
 
-    bool save_in_binary = configs->binary;
-
     double cur_time = 0.0;
 
     print_to_stdout_and_file ("Starting simulation\n");
@@ -246,7 +244,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
             if (count % print_rate == 0) {
                 start_stop_watch (&write_time);
 
-                activity = print_result(the_grid, configs, count, save_in_binary);
+                activity = print_result(the_grid, configs, count);
 
                 total_write_time += stop_stop_watch (&write_time);
 
@@ -349,14 +347,25 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file ("CG Total Iterations: %u\n", total_cg_it);
 }
 
-bool print_result(const struct grid *the_grid, const struct user_options *configs, int count, bool save_in_binary) {
+bool print_result(const struct grid *the_grid, const struct user_options *configs, int count) {
     bool activity;
     sds tmp = sdsnew (configs->out_dir_name);
     sds c = sdsfromlonglong (count);
     tmp = sdscat (tmp, "/V_t_");
     tmp = sdscat (tmp, c);
+
+    if(configs->use_vtk) {
+        tmp = sdscat (tmp, ".vtk");
+    }
+
     FILE *f1 = fopen (tmp, "w");
-    activity = print_grid_and_check_for_activity (the_grid, f1, count, save_in_binary);
+    if(configs->use_vtk) {
+        activity = save_grid_vtk_format_and_check_for_activity(the_grid, f1, count);
+    }
+    else {
+        activity = save_grid_text_format_and_check_for_activity(the_grid, f1, count, configs->binary);
+    }
+
     fclose (f1);
     sdsfree (tmp);
     sdsfree (c);

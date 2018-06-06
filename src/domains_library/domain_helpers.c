@@ -43,7 +43,7 @@ void set_benchmark_domain (struct grid *the_grid) {
     }
 }
 
-void set_plain_domain (struct grid *the_grid, double sizeX, double sizeY, double sizeZ) {
+void set_cuboid_domain(struct grid *the_grid, double sizeX, double sizeY, double sizeZ) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
     while (grid_cell != 0) {

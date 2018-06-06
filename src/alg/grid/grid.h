@@ -40,7 +40,10 @@ void initialize_and_construct_grid(struct grid *the_grid, double side_length);
 void print_grid(struct grid* the_grid, FILE *output_file);
 void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary);
 
-bool print_grid_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count, const bool binary);
+bool save_grid_text_format_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count,
+                                                  const bool binary);
+
+bool save_grid_vtk_format_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count);
 
 void clean_grid(struct grid *the_grid);
 void order_grid_cells (struct grid *the_grid);

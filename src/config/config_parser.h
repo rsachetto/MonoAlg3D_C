@@ -20,9 +20,6 @@
 #include <math.h>
 #include "../alg/grid/grid.h"
 
-#define SIGMA_X 1400
-#define SIGMA_Y 1500
-#define SIGMA_Z 1600
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
 #define EXTRA_DATA_OPT 1900
@@ -66,6 +63,9 @@ struct user_options {
     bool model_file_path_was_set;
     bool binary;                    /*-y option*/
     bool binary_was_set;
+
+    bool use_vtk;                    /*-V option*/
+    bool use_vtk_was_set;
 
     bool draw;
 

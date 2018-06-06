@@ -33,6 +33,7 @@ static const struct option long_options[] = {
         { "gpu_id", required_argument, NULL, 'G'},
         { "model_file_path", required_argument, NULL, 'k'},
         { "binary_output", no_argument, NULL, 'y'},
+        { "vtk_output", no_argument, NULL, 'V'},
         { "beta", required_argument, NULL, BETA},
         { "cm", required_argument, NULL, CM},
         { "start_adapting_at", required_argument, NULL, START_REFINING},
@@ -45,7 +46,7 @@ static const struct option long_options[] = {
         { NULL, no_argument, NULL, 0 }
 };
 
-static const char *opt_string =   "c:o:abn:g:p:m:t:r:d:z:e:f:jR:D:G:k:yh";
+static const char *opt_string =   "c:o:abn:g:p:m:t:r:d:z:e:f:jR:D:G:k:yVh";
 
 
 /* Display program usage, and exit.
@@ -76,6 +77,7 @@ void display_usage (char **argv) {
     printf ("--num_threads | -n [num-threads]. Solve using OpenMP. Default: 1 \n");
     printf ("--use_gpu | -g [yes|no|true|false]. Solve ODEs using GPU. Default: No \n");
     printf ("--binary_output | -y. Save output files in binary format. Default: No \n");
+    printf ("--vtk_output | -V. Save output files in vtk text format. Default: No \n");
     printf ("--use_preconditioner | -j Use Jacobi Preconditioner. Default: No \n");
     printf ("--refine_each | -R [ts], Refine each ts timesteps. Default: 1 \n");
     printf ("--derefine_each | -D [ts], Derefine each ts timesteps. Default: 1 \n");
@@ -157,6 +159,9 @@ struct user_options *new_user_options () {
 
     user_args->binary = false;
     user_args->binary_was_set = false;
+
+    user_args->use_vtk = false;
+    user_args->use_vtk_was_set = false;
 
 
     user_args->stim_configs = NULL;
@@ -770,6 +775,13 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 }
                 user_args->binary = true;
                 break;
+            case 'V':
+                if (user_args->use_vtk_was_set) {
+                    sprintf (old_value, "%d", user_args->use_vtk_was_set);
+                    issue_overwrite_warning ("vtk_output", old_value, optarg, user_args->config_file);
+                }
+                user_args->use_vtk = true;
+                break;
             case DOMAIN_OPT:
                 if(user_args->domain_config == NULL) {
                     print_to_stdout_and_file("Creating new domain config from command line!\n");
@@ -873,6 +885,13 @@ int parse_config_file (void *user, const char *section, const char *name, const 
             pconfig->binary = false;
         }
         pconfig->binary_was_set = true;
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "vtk_output")) {
+        if (strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->use_vtk = true;
+        } else {
+            pconfig->use_vtk = false;
+        }
+        pconfig->use_vtk_was_set = true;
     } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refinement_bound")) {
         pconfig->ref_bound = strtod(value, NULL);
         pconfig->ref_bound_was_set = true;

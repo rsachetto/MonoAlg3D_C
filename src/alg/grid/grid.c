@@ -2,9 +2,11 @@
 // Created by sachetto on 29/09/17.
 //
 
-#include "grid.h"
 #include <assert.h>
-#include "inttypes.h"
+#include <inttypes.h>
+
+#include "grid.h"
+#include "../../hash/point_hash.h"
 
 struct grid* new_grid() {
     struct grid* result = (struct grid*) malloc(sizeof(struct grid));
@@ -14,8 +16,8 @@ struct grid* new_grid() {
     result->refined_this_step = NULL;
     result->free_sv_positions = NULL;
 
-    sb_reserve(result->refined_this_step, 128);
-    sb_reserve(result->free_sv_positions, 128);
+            sb_reserve(result->refined_this_step, 128);
+            sb_reserve(result->free_sv_positions, 128);
 
 
     return result;
@@ -177,7 +179,8 @@ void print_grid (struct grid *the_grid, FILE *output_file) {
     }
 }
 
-bool print_grid_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count, const bool binary) {
+bool save_grid_text_format_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count,
+                                                  const bool binary) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
@@ -221,43 +224,203 @@ bool print_grid_and_check_for_activity(const struct grid *the_grid, FILE *output
     return act;
 }
 
-void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary) {
+bool save_grid_vtk_format_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
     double center_x, center_y, center_z, half_face;
     double v;
+    bool act = false;
+    float *values = NULL;
+    int *cells = NULL;
+
+    struct point_hash *hash = point_hash_create();
+
+    struct point_3d aux1;
+    struct point_3d aux2;
+    struct point_3d aux3;
+    struct point_3d aux4;
+    struct point_3d aux5;
+    struct point_3d aux6;
+    struct point_3d aux7;
+    struct point_3d aux8;
+
+    int id = 0;
+    int num_cells = 0;
+
+    fprintf(output_file, "# vtk DataFile Version 4.2\n");
+    fprintf(output_file, "vtk output\n");
+    fprintf(output_file, "ASCII\n");
+    fprintf(output_file, "DATASET UNSTRUCTURED_GRID\n");
+    fprintf(output_file, "                                                                                    \n");
 
     while (grid_cell != 0) {
 
-        v = -1.0;
         if (grid_cell->active) {
 
             center_x = grid_cell->center_x;
             center_y = grid_cell->center_y;
             center_z = grid_cell->center_z;
 
-            if(grid_cell->fibrotic)
-                v = 1.0;
-            else if(grid_cell->border_zone)
-                v = 2.0;
-
+            v = grid_cell->v;
             half_face = grid_cell->half_face_length;
 
-            if(binary) {
-                fwrite (&center_x, sizeof(center_x), 1, output_file);
-                fwrite (&center_y, sizeof(center_y), 1, output_file);
-                fwrite (&center_z, sizeof(center_z), 1, output_file);
-                fwrite (&half_face, sizeof(half_face), 1, output_file);
-                fwrite (&v, sizeof(v), 1, output_file);
+            if (count > 0) {
+                if (grid_cell->v > -86.0) {
+                    act = true;
+                }
+            } else {
+                act = true;
             }
-            else {
-                fprintf (output_file, "%lf,%lf,%lf,%lf,%.4lf\n", center_x, center_y, center_z, half_face, v);
+
+            sb_push(values, v);
+
+            aux1.x = center_x - half_face;
+            aux1.y = center_y - half_face;
+            aux1.z = center_z - half_face;
+
+            aux2.x = center_x + half_face;
+            aux2.y = center_y - half_face;
+            aux2.z = center_z - half_face;
+
+            aux3.x = center_x + half_face;
+            aux3.y = center_y + half_face;
+            aux3.z = center_z - half_face;
+
+            aux4.x = center_x - half_face;
+            aux4.y = center_y + half_face;
+            aux4.z = center_z - half_face;
+
+            aux5.x = center_x - half_face;
+            aux5.y = center_y - half_face;
+            aux5.z = center_z + half_face;
+
+            aux6.x = center_x + half_face;
+            aux6.y = center_y - half_face;
+            aux6.z = center_z + half_face;
+
+            aux7.x = center_x + half_face;
+            aux7.y = center_y + half_face;
+            aux7.z = center_z + half_face;
+
+            aux8.x = center_x - half_face;
+            aux8.y = center_y + half_face;
+            aux8.z = center_z + half_face;
+
+
+            if (point_hash_search(hash, aux1) == -1) {
+                point_hash_insert(hash, aux1, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux1.x, aux1.y, aux1.z);
             }
+
+            if (point_hash_search(hash, aux2) == -1) {
+                point_hash_insert(hash, aux2, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux2.x, aux2.y, aux2.z);
+            }
+
+            if (point_hash_search(hash, aux3) == -1) {
+                point_hash_insert(hash, aux3, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux3.x, aux3.y, aux3.z);
+            }
+
+            if (point_hash_search(hash, aux4) == -1) {
+                point_hash_insert(hash, aux4, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux4.x, aux4.y, aux4.z);
+            }
+
+            if (point_hash_search(hash, aux5) == -1) {
+                point_hash_insert(hash, aux5, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux5.x, aux5.y, aux5.z);
+            }
+
+            if (point_hash_search(hash, aux6) == -1) {
+                point_hash_insert(hash, aux6, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux6.x, aux6.y, aux6.z);
+            }
+
+            if (point_hash_search(hash, aux7) == -1) {
+                point_hash_insert(hash, aux7, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux7.x, aux7.y, aux7.z);
+            }
+
+            if (point_hash_search(hash, aux8) == -1) {
+                point_hash_insert(hash, aux8, id);
+                id++;
+
+                fprintf(output_file, "%lf %lf %lf\n", aux8.x, aux8.y, aux8.z);
+            }
+
+            sb_push(cells, point_hash_search(hash, aux1));
+            sb_push(cells, point_hash_search(hash, aux2));
+            sb_push(cells, point_hash_search(hash, aux3));
+            sb_push(cells, point_hash_search(hash, aux4));
+            sb_push(cells, point_hash_search(hash, aux5));
+            sb_push(cells, point_hash_search(hash, aux6));
+            sb_push(cells, point_hash_search(hash, aux7));
+            sb_push(cells, point_hash_search(hash, aux8));
+            num_cells++;
+
+
         }
+
         grid_cell = grid_cell->next;
     }
 
+    fprintf(output_file, "\nCELLS %d %d\n", num_cells, 9*num_cells);
+
+    int points_per_cell = 8;
+    int cell_type = 12;
+
+    for(int i = 0; i < num_cells; i++) {
+        fprintf(output_file, "%d ", points_per_cell);
+        for(int j = 0; j < points_per_cell; j++) {
+            fprintf(output_file, "%d ", cells[points_per_cell*i + j]);
+        }
+        fprintf(output_file, "\n");
+    }
+
+
+    fprintf(output_file, "\nCELL_TYPES %d\n", num_cells);
+    for(int i = 0; i < num_cells; i++) {
+        fprintf(output_file, "%d\n", cell_type);
+    }
+
+    fprintf(output_file, "\nCELL_DATA %d\n", num_cells);
+    fprintf(output_file, "SCALARS Scalars_ float\n");
+    fprintf(output_file, "LOOKUP_TABLE default\n");
+    {
+        int num_values = sb_count(values);
+        for(int i = 0; i < num_values; i++) {
+            fprintf(output_file, "%lf ", values[i]);
+        }
+    }
+
+    fprintf(output_file, "\nMETADATA\n");
+    fprintf(output_file, "INFORMATION 0\n");
+
+    fseek(output_file, 70, SEEK_SET);
+
+    fprintf(output_file, "POINTS %d float", id);
+
+    point_hash_destroy(hash);
+    sb_free(cells);
+    sb_free(values);
+
+    return act;
 }
 
 void order_grid_cells (struct grid *the_grid) {
@@ -322,11 +485,11 @@ void clean_grid (struct grid *the_grid) {
 
 
     if (the_grid->refined_this_step) {
-        sb_clear(the_grid->refined_this_step);
+                sb_clear(the_grid->refined_this_step);
     }
 
     if (the_grid->free_sv_positions) {
-        sb_clear(the_grid->free_sv_positions);
+                sb_clear(the_grid->free_sv_positions);
     }
 
 }
@@ -341,9 +504,9 @@ void clean_and_free_grid(struct grid* the_grid) {
         free (the_grid->active_cells);
     }
 
-    sb_free (the_grid->refined_this_step);
+            sb_free (the_grid->refined_this_step);
 
-    sb_free (the_grid->free_sv_positions);
+            sb_free (the_grid->free_sv_positions);
 
     free (the_grid);
 }
@@ -443,3 +606,4 @@ void save_grid_domain (struct grid * the_grid, const char *file_name) {
     }
     fclose (f);
 }
+

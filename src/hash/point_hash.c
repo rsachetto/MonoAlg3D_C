@@ -132,7 +132,7 @@ int point_hash_search(struct point_hash* d, struct point_3d key) {
         }
     }
 
-    return 0;
+    return -1;
 }
 
 /* delete the most recently inserted record with the given key */
