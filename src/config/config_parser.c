@@ -33,9 +33,6 @@ static const struct option long_options[] = {
         { "gpu_id", required_argument, NULL, 'G'},
         { "model_file_path", required_argument, NULL, 'k'},
         { "binary_output", no_argument, NULL, 'y'},
-        { "sigma_x", required_argument, NULL, SIGMA_X},
-        { "sigma_y", required_argument, NULL, SIGMA_Y},
-        { "sigma_z", required_argument, NULL, SIGMA_Z},
         { "beta", required_argument, NULL, BETA},
         { "cm", required_argument, NULL, CM},
         { "start_adapting_at", required_argument, NULL, START_REFINING},
@@ -148,15 +145,6 @@ struct user_options *new_user_options () {
     user_args->model_file_path_was_set = false;
 
     user_args->config_file = NULL;
-
-    user_args->sigma_x = 0.0000176;
-    user_args->sigma_x_was_set = false;
-
-    user_args->sigma_y = 0.0001334;
-    user_args->sigma_y_was_set = false;
-
-    user_args->sigma_z = 0.0000176;
-    user_args->sigma_z_was_set = false;
 
     user_args->beta = 0.14;
     user_args->beta_was_set = false;
@@ -740,27 +728,6 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 }
                 user_args->dt_edp = strtod (optarg, NULL);
                 break;
-            case SIGMA_X:
-                if (user_args->sigma_x_was_set) {
-                    sprintf (old_value, "%lf", user_args->sigma_x);
-                    issue_overwrite_warning ("sigma_x", old_value, optarg, user_args->config_file);
-                }
-                user_args->sigma_x = strtod (optarg, NULL);
-                break;
-            case SIGMA_Y:
-                if (user_args->sigma_y_was_set) {
-                    sprintf (old_value, "%lf", user_args->sigma_y);
-                    issue_overwrite_warning ("sigma_y", old_value, optarg, user_args->config_file);
-                }
-                user_args->sigma_y = strtod (optarg, NULL);
-                break;
-            case SIGMA_Z:
-                if (user_args->sigma_z_was_set) {
-                    sprintf (old_value, "%lf", user_args->sigma_z);
-                    issue_overwrite_warning ("sigma_z", old_value, optarg, user_args->config_file);
-                }
-                user_args->sigma_z = strtod (optarg, NULL);
-                break;
             case BETA:
                 if (user_args->beta_was_set) {
                     sprintf (old_value, "%lf", user_args->beta);
@@ -870,15 +837,6 @@ int parse_config_file (void *user, const char *section, const char *name, const 
     } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "simulation_time")) {
         pconfig->final_time = strtod(value, NULL);
         pconfig->final_time_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_x")) {
-        pconfig->sigma_x = strtod(value, NULL);
-        pconfig->sigma_x_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_y")) {
-        pconfig->sigma_y = strtod(value, NULL);
-        pconfig->sigma_y_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "sigma_z")) {
-        pconfig->sigma_z = strtod(value, NULL);
-        pconfig->sigma_z_was_set = true;
     } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "beta")) {
         pconfig->beta = strtod(value, NULL);
         pconfig->beta_was_set = true;

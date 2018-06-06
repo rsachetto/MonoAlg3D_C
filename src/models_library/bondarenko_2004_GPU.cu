@@ -368,16 +368,16 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     real d_dt_O_K = (((calc_alpha_a1*C_K2_old_)+(calc_beta_i_duplicated_rapid_delayed_rectifier_potassium_current*I_K_old_))-((calc_beta_a1*O_K_old_)+(calc_alpha_i_duplicated_rapid_delayed_rectifier_potassium_current*O_K_old_)));	// 100
     real d_dt_I_K = ((calc_alpha_i_duplicated_rapid_delayed_rectifier_potassium_current*O_K_old_)-(calc_beta_i_duplicated_rapid_delayed_rectifier_potassium_current*I_K_old_));	// 101
 
-    rDY_[0] = d_dt_V;
-    rDY_[1] = d_dt_Cai;
-    rDY_[2] = d_dt_Cass;
-    rDY_[3] = d_dt_CaJSR;
-    rDY_[4] = d_dt_CaNSR;
-    rDY_[5] = d_dt_P_RyR;
-    rDY_[6] = d_dt_LTRPN_Ca;
-    rDY_[7] = d_dt_HTRPN_Ca;
-    rDY_[8] = d_dt_P_O1;
-    rDY_[9] = d_dt_P_O2;
+    rDY_[0]  = d_dt_V;
+    rDY_[1]  = d_dt_Cai;
+    rDY_[2]  = d_dt_Cass;
+    rDY_[3]  = d_dt_CaJSR;
+    rDY_[4]  = d_dt_CaNSR;
+    rDY_[5]  = d_dt_P_RyR;
+    rDY_[6]  = d_dt_LTRPN_Ca;
+    rDY_[7]  = d_dt_HTRPN_Ca;
+    rDY_[8]  = d_dt_P_O1;
+    rDY_[9]  = d_dt_P_O2;
     rDY_[10] = d_dt_P_C2;
     rDY_[11] = d_dt_O;
     rDY_[12] = d_dt_C2;

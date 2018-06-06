@@ -69,13 +69,6 @@ struct user_options {
 
     bool draw;
 
-
-    double sigma_x;
-    bool sigma_x_was_set;
-    double sigma_y;
-    bool sigma_y_was_set;
-    double sigma_z;
-    bool sigma_z_was_set;
     double beta;
     bool beta_was_set;
     double cm;

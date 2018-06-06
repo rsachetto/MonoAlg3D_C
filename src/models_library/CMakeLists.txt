@@ -82,3 +82,20 @@ else()
 endif(CUDA_FOUND)
 #########################################################
 
+############## OHARA_RUDY 2000 ##############################
+set(MODEL_FILE_CPU "Ohara_Rudy_2011.c")
+set(MODEL_FILE_GPU "Ohara_Rudy_2011.cu")
+set(COMMON_HEADERS model_common.h Ohara_Rudy_2011.h)
+
+set(LIB_NAME "ohara_rudy_endo_2011")
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+    IF(MSVC)
+        set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+        TARGET_LINK_LIBRARIES(${LIB_NAME} PUBLIC utils)
+    endif()
+else()
+    ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################

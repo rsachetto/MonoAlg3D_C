@@ -516,8 +516,8 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     print_to_stdout_and_file ("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
     print_to_stdout_and_file ("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
 
-    print_to_stdout_and_file ("Sigma X = %.10lf, Sigma Y = %.10lf, Sigma Z = %.10lf\n", the_monodomain_solver->sigma_x,
-                              the_monodomain_solver->sigma_y, the_monodomain_solver->sigma_z);
+//    print_to_stdout_and_file ("Sigma X = %.10lf, Sigma Y = %.10lf, Sigma Z = %.10lf\n", the_monodomain_solver->sigma_x,
+//                              the_monodomain_solver->sigma_y, the_monodomain_solver->sigma_z);
 
     print_to_stdout_and_file ("Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
 
@@ -642,9 +642,9 @@ void configure_monodomain_solver_from_options (struct monodomain_solver *the_mon
 
     the_monodomain_solver->dt = options->dt_edp;
 
-    the_monodomain_solver->sigma_x = options->sigma_x;
-    the_monodomain_solver->sigma_y = options->sigma_y;
-    the_monodomain_solver->sigma_z = options->sigma_z;
+//    the_monodomain_solver->sigma_x = options->sigma_x;
+//    the_monodomain_solver->sigma_y = options->sigma_y;
+//    the_monodomain_solver->sigma_z = options->sigma_z;
     the_monodomain_solver->beta = options->beta;
     the_monodomain_solver->cm = options->cm;
     the_monodomain_solver->start_adapting_at = options->start_adapting_at;

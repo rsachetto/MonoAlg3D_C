@@ -21,11 +21,6 @@ struct monodomain_solver {
 
     double beta, cm; // micrometers
 
-    //TODO: maybe we dont need this here
-    double sigma_x;
-    double sigma_y;
-    double sigma_z;
-
     int refine_each;
     int derefine_each;
     double refinement_bound;
