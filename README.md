@@ -19,10 +19,12 @@ The output will be saved in the VTK format. In order to see the results you can 
 - Each line represents a Volume
 - Each volume is represented by its center point (X, Y, and Z), the value of halt of its side length and the calculated V
 
-Example:
+Example file:
 
+```
 850,850,950,50,-85
 850,950,950,50,-85
 850,950,850,50,-85
+```
 
 This file represents 3 volumes with 100 micrometer of side. The first volume is centered at  at 850,850,950 and the calculated V is -85 mV.
