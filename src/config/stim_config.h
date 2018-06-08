@@ -20,10 +20,16 @@ struct stim_config {
 
     real stim_start;
     bool stim_start_was_set;
+
     real stim_duration;
     bool stim_duration_was_set;
+
     real stim_current;
     bool stim_current_was_set;
+
+    real stim_period;
+    bool stim_period_was_set;
+
 
     real *spatial_stim_currents;
     set_spatial_stim_fn *set_spatial_stim;

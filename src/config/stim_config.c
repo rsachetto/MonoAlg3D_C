@@ -53,22 +53,33 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
 }
 
 struct stim_config* new_stim_config() {
+
     struct stim_config *result = (struct stim_config*) malloc(sizeof(struct stim_config));
     init_config_common_data(&(result->config_data));
+
     result->set_spatial_stim = NULL;
     result->spatial_stim_currents = NULL;
+    result->stim_period = 0.0;
 
     result->stim_current_was_set = false;
     result->stim_duration_was_set = false;
     result->stim_start_was_set = false;
+    result->stim_period_was_set = false;
+
     return result;
 }
 
 void print_stim_config_values(struct stim_config* s) {
     print_to_stdout_and_file("stim_start %lf\n", s->stim_start);
     print_to_stdout_and_file("stim_duration %lf\n", s->stim_duration);
+
+    if(s->stim_period > 0.0) {
+        print_to_stdout_and_file("stim_period %lf\n", s->stim_period);
+    }
+
     print_to_stdout_and_file("stim_current %lf\n", s->stim_current);
     print_to_stdout_and_file("stim_function %s\n", s->config_data.function_name);
+
 }
 
 void free_stim_config(struct stim_config* s) {

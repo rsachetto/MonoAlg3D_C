@@ -77,6 +77,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     bool has_extra_data = (extra_data_config != NULL);
 
     double last_stimulus_time = -1.0;
+    bool has_any_periodic_stim = false;
 
     if (stimuli_configs) {
         // Init all stimuli
@@ -88,6 +89,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         for (int i = 0; i < s_size; i++) {
             for (struct stim_config_elt *e = stimuli_configs->table[i % s_size]; e != 0; e = e->next) {
                 s_end = e->value->stim_start + e->value->stim_duration;
+                has_any_periodic_stim |= (e->value->stim_period > 0.0);
                 if(s_end > last_stimulus_time) last_stimulus_time = s_end;
             }
         }
@@ -204,14 +206,12 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     init_stop_watch (&deref_time);
 
     print_to_stdout_and_file ("Assembling Monodomain Matrix Begin\n");
+
     start_stop_watch (&part_mat);
     set_initial_conditions (the_monodomain_solver, the_grid, initial_v);
-
     assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
-    //set_discretization_matrix (the_monodomain_solver, the_grid);
-
-
     total_mat_time = stop_stop_watch (&part_mat);
+
     print_to_stdout_and_file ("Assembling Monodomain Matrix End\n");
     print_to_stdout_and_file (LOG_LINE_SEPARATOR);
 
@@ -233,6 +233,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     double cur_time = 0.0;
 
     print_to_stdout_and_file ("Starting simulation\n");
+
+    //Main simulation loop start
     while (cur_time <= finalT) {
 
 #ifdef COMPILE_OPENGL
@@ -273,7 +275,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         start_stop_watch (&cg_time);
 
         linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations, &solver_error);
-        //solver_iterations = conjugate_gradient (the_grid, 200, 1e-16, true, &solver_error);
 
         cg_partial = stop_stop_watch (&cg_time);
 
@@ -308,7 +309,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
                 order_grid_cells (the_grid);
 
                 if (stimuli_configs) {
-                    if(cur_time <= last_stimulus_time) {
+                    //TODO: with the periodic stimuli we have to change how to calculate this
+                    if(cur_time <= last_stimulus_time || has_any_periodic_stim) {
                         set_spatial_stim(stimuli_configs, the_grid);
                     }
                 }
@@ -459,6 +461,7 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
     }
 }
 
+//TODO: MAYBE WE HAVE TO MOVE THIS TO THE USER PROVIDED LIBRARY (ASSEMBLY MATRIX)
 void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, double initial_v) {
 
     double alpha, h;

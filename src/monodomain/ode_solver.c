@@ -231,6 +231,11 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                     }
                     time += dt;
                 }
+
+                if(time >= stim_start + tmp->stim_period) {
+                    tmp->stim_start = stim_start + tmp->stim_period;
+                }
+
                 time = cur_time;
             }
         }

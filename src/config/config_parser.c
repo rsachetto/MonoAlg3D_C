@@ -189,7 +189,6 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
     char old_value[32];
     char *key, *value;
 
-
     assert(stim_configs);
 
     for(int i = 0; i < tokens_count; i++) {
@@ -270,6 +269,14 @@ void set_stim_config(const char *args, struct stim_config_hash *stim_configs, co
             }
             free(sc->config_data.function_name);
             sc->config_data.function_name = strdup(value);
+        }
+        else if (strcmp(key, "period") == 0) {
+            if(sc->stim_period_was_set) {
+                sprintf (old_value, "%lf", sc->stim_period);
+                print_to_stdout_and_file("WARNING: For stimulus %s:\n", stim_name);
+                issue_overwrite_warning ("period", old_value, value, config_file);
+            }
+            sc->stim_period = (real) strtod(value, NULL);
         }
         else if (strcmp(key, "library_file") == 0) {
             if(sc->config_data.library_file_path_was_set) {
@@ -942,9 +949,12 @@ int parse_config_file (void *user, const char *section, const char *name, const 
         } else if(MATCH_NAME("duration")) {
             tmp->stim_duration = (real)strtod(value, NULL);
             tmp->stim_duration_was_set = true;
-        }else if(MATCH_NAME("current")) {
+        } else if(MATCH_NAME("current")) {
             tmp->stim_current = (real)strtod(value, NULL);
             tmp->stim_current_was_set = true;
+        } else if(MATCH_NAME("period")) {
+            tmp->stim_period = (real)strtod(value, NULL);
+            tmp->stim_period_was_set = true;
         } else if(MATCH_NAME("function")) {
             tmp->config_data.function_name = strdup(value);
             tmp->config_data.function_name_was_set = true;
