@@ -10,7 +10,7 @@ $ make
 
 The binary program will be generated at bin folder.
 
-#Running example:
+# Running example:
 
 bin/MonoAlg3D -c example_configs/cuboid_ohara.ini
 
