@@ -15,9 +15,9 @@
 
 #include "libui/ui.h"
 
-
 #ifdef linux
 #include <unistd.h>
+#include <pthread.h>
 #endif
 
 #ifdef linux
@@ -40,6 +40,9 @@ bool child_running = false;
 char *config_file_name = NULL;
 char *output_last_sim = NULL;
 
+#ifdef linux
+pthread_t thread;
+#endif
 
 static void appendToOutput(void *data) {
     char *s = (char*) data;
@@ -47,20 +50,32 @@ static void appendToOutput(void *data) {
 
     char *sub = strstr(s, "t = ");
 
+
     if(sub != NULL) {
 
-        printf(sub);
-        char *e = strchr(sub, ',');
-        int index = (int)(e - sub);
+        char *sub2 = strstr(sub, ",");
 
-        char *time_string = (char*) malloc(index-3);
+        if(sub2 != NULL) {
 
-        strncpy(time_string, sub+3, index-3);
-        time_string[index-3] = '\0';
+            char *e = strchr(sub, ',');
+            int index = (int) (e - sub);
 
-        int progress = (int) ((atof(time_string) / (options->final_time-options->dt_edp)*100.0));
+            char *time_string = (char *) malloc(index - 3);
 
-        uiProgressBarSetValue(pbar, progress);
+            strncpy(time_string, sub + 3, index - 3);
+            time_string[index - 3] = '\0';
+
+            int progress = (int) ((atof(time_string) / (options->final_time - options->dt_edp) * 100.0));
+
+            uiProgressBarSetValue(pbar, progress);
+        }
+    }
+
+    char *sub3 = strstr(s, "CG Total Iterations: ");
+
+    if(sub3) {
+        uiProgressBarSetValue(pbar, 100);
+        uiControlEnable(uiControl(btnRun));
     }
 
     free(s);
@@ -145,13 +160,14 @@ struct ThreadData {
 
 
 #ifdef _WIN32
-DWORD WINAPI start_program_with_tread(LPVOID thread_param) {
+DWORD WINAPI start_program_with_thread(LPVOID thread_param) {
 #else
-void start_program_with_tread(void * thread_param) {
+void *start_program_with_thread(void * thread_param) {
 #endif
 
     struct ThreadData *td = (struct ThreadData*) thread_param;
     run_child_process_and_process_output(td->program, td->fn_pointer);
+    return NULL;
 }
 
 
@@ -172,26 +188,18 @@ void start_monodomain_exec() {
     thread = CreateThread(
             NULL,                   // default security attributes
             0,                      // use default stack size
-            start_program_with_tread,       // thread function name
+            start_program_with_thread,       // thread function name
             (LPVOID) td,          // argument to thread function
             0,                      // use default creation flags
             &threadId);   // returns the thread identifier
 
 #else
     //TODO: we need to pass the Monoalg path and parameters here
-    char **program = (char**) malloc(4*sizeof(char*));
-
-    program[0] = strdup("bin/MonoAlg3D");
-    program[1] = strdup("-c");
-    program[2] = strdup(config_file_name);
-    printf ("%s\n", config_file_name);
-
-    program[3] = NULL;
-
-
-
+    char program[] = "bin/MonoAlg3D -c example_configs/cuboid_tentusscher4.ini";
+    td->program = strdup(program);
+    pthread_create(&thread, NULL, start_program_with_thread, (void*) td);
+    pthread_detach(thread);
 #endif
-
 
 }
 
@@ -199,22 +207,24 @@ void start_monodomain_exec() {
 static void runSimulation(uiButton *b, void *data) {
 
 
-    //TODO: config auto save on run. Make a windows version of this
+/*    //TODO: config auto save on run. Make a windows version of this
 	#ifdef linux
     if(uiSourceViewGetModified(configText)) {
         //uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
         int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. Do you want to save before running?");
 
-        if(response == uiReturnValueCancel) {            
+        if(response == uiReturnValueCancel) {
             return;
         }
-        else {            
-            saveConfigFile();
+        else {
+           // saveConfigFile();
         }
 
     }
-	#endif
-
+	#endif*/
+    uiMultilineEntrySetText(runText, "");
+    uiProgressBarSetValue(pbar, 0);
+    
     start_monodomain_exec();
     uiControlDisable(uiControl(btnRun));
 }
