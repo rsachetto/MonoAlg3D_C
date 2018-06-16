@@ -1,6 +1,8 @@
+- Correct the save file
+- Implement options window for GUI
 - Implement custom data savers, maybe...
-- Re-enable the unit tests that were desabled after the library changes
-- Correct the domain version that sets the two scars and the fibrosis from file (maybe the error is on extra-data
+- Re-enable the unit tests that were disabled after the library changes
+- Correct the domain version that sets the two scars and the fibrosis from file (maybe the error is on extra-data)
 - Compare the mesh with the mesh from the scientific reports paper
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)
 

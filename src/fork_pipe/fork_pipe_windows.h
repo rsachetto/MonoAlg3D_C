@@ -8,8 +8,8 @@
 #include<windows.h>
 #pragma comment(lib, "User32.lib")
 
-void DisplayError(char *pszAPI);
-void ReadAndHandleOutput(HANDLE hOutputRead, void (*f)(void*));
+void DisplayError(char *pszAPI, int line);
+void ReadAndHandleOutput(HANDLE hOutputRead, void (*function_to_apply)(void*));
 void PrepAndLaunchRedirectedChild(char * program, HANDLE hChildStdOut,
                                   HANDLE hChildStdIn,
                                   HANDLE hChildStdErr);

@@ -13,10 +13,13 @@ void print_to_stdout_and_file(char const *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vprintf(fmt, ap);
+    fflush(stdout);
     va_end(ap);
     va_start(ap, fmt);
-    if(logfile)
+    if(logfile) {
         vfprintf(logfile, fmt, ap);
+        fflush(logfile);
+    }
     va_end(ap);
 }
 

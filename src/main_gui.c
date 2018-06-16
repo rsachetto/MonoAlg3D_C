@@ -31,11 +31,11 @@ uiMultilineEntry *configText;
 uiMultilineEntry *runText;
 uiWindow *w;
 uiBox *verticalBox, *horizontalButtonBox, *horizontalTextBox;
-uiButton *btnConfiguration, *btnRun, *btnSave, *btnSaveAs;
+uiButton *btnConfiguration, *btnRun, *btnSave, *btnCancel;
 static uiProgressBar *pbar;
 
 struct user_options *options;
-bool child_running = false;
+bool simulation_running = false;
 
 char *config_file_name = NULL;
 char *output_last_sim = NULL;
@@ -166,7 +166,11 @@ void *start_program_with_thread(void * thread_param) {
 #endif
 
     struct ThreadData *td = (struct ThreadData*) thread_param;
+    simulation_running = true;
+    uiControlEnable(uiControl(btnCancel));
     run_child_process_and_process_output(td->program, td->fn_pointer);
+    simulation_running = false;
+    uiControlDisable(uiControl(btnCancel));
     return NULL;
 }
 
@@ -225,6 +229,32 @@ static void runSimulation(uiButton *b, void *data) {
     uiMultilineEntrySetText(runText, "");
     uiProgressBarSetValue(pbar, 0);
     
+    start_monodomain_exec();
+    uiControlDisable(uiControl(btnRun));
+}
+
+//TODO: the working directory and the executable need to be read from a configuration file
+static void cancelSimulation(uiButton *b, void *data) {
+
+
+/*    //TODO: config auto save on run. Make a windows version of this
+	#ifdef linux
+    if(uiSourceViewGetModified(configText)) {
+        //uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
+        int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. Do you want to save before running?");
+
+        if(response == uiReturnValueCancel) {
+            return;
+        }
+        else {
+           // saveConfigFile();
+        }
+
+    }
+	#endif*/
+    uiMultilineEntrySetText(runText, "");
+    uiProgressBarSetValue(pbar, 0);
+
     start_monodomain_exec();
     uiControlDisable(uiControl(btnRun));
 }
@@ -300,6 +330,10 @@ int main()  {
     uiButtonOnClicked(btnRun, runSimulation, NULL);
     uiControlDisable(uiControl(btnRun));
 
+    btnCancel = uiNewButton("Cancel Simulation");
+    uiButtonOnClicked(btnCancel, cancelSimulation, NULL);
+    uiControlDisable(uiControl(btnCancel));
+
     pbar = uiNewProgressBar();
 
     uiBoxAppend(horizontalTextBox, uiControl(configText), 1);
@@ -309,6 +343,8 @@ int main()  {
     uiBoxAppend(horizontalButtonBox, uiControl(btnSave), 0);
     uiBoxAppend(horizontalButtonBox, uiControl(btnRun), 0);
     uiBoxAppend(horizontalButtonBox, uiControl(pbar), 1);
+    uiBoxAppend(horizontalButtonBox, uiControl(btnCancel), 0);
+
 
     uiBoxAppend(verticalBox, uiControl(horizontalTextBox), 1);
     uiBoxAppend(verticalBox, uiControl(horizontalButtonBox), 0);

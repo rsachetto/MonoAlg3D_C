@@ -2,13 +2,13 @@
 // Created by sache on 29/05/2018.
 //
 
+#include <assert.h>
+#include <stdio.h>
 #include "fork_pipe_windows.h"
 
-HANDLE hStdIn = NULL; // Handle to parents std input.
-
-//TODO: make it receive a function that will be called after reading the child output
 void run_child_process_and_process_output (char * program_with_path,  void (*function_to_apply)(void*))
 {
+    HANDLE hStdIn = NULL; // Handle to parents std input.
     HANDLE hOutputReadTmp, hOutputRead, hOutputWrite;
     HANDLE hInputWriteTmp,hInputRead,hInputWrite;
     HANDLE hErrorWrite;
@@ -21,8 +21,7 @@ void run_child_process_and_process_output (char * program_with_path,  void (*fun
 
     // Create the child output pipe.
     if (!CreatePipe(&hOutputReadTmp,&hOutputWrite,&sa,0))
-        DisplayError("CreatePipe");
-
+        DisplayError("CreatePipe", __LINE__);
 
     // Create a duplicate of the output write handle for the std error
     // write handle. This is necessary in case the child application
@@ -30,12 +29,12 @@ void run_child_process_and_process_output (char * program_with_path,  void (*fun
     if (!DuplicateHandle(GetCurrentProcess(),hOutputWrite,
                          GetCurrentProcess(),&hErrorWrite,0,
                          TRUE,DUPLICATE_SAME_ACCESS))
-        DisplayError("DuplicateHandle");
+        DisplayError("DuplicateHandle", __LINE__);
 
 
     // Create the child input pipe.
     if (!CreatePipe(&hInputRead,&hInputWriteTmp,&sa,0))
-        DisplayError("CreatePipe");
+        DisplayError("CreatePipe", __LINE__);
 
 
     // Create new output read handle and the input write handles. Set
@@ -47,47 +46,48 @@ void run_child_process_and_process_output (char * program_with_path,  void (*fun
                          &hOutputRead, // Address of new handle.
                          0,FALSE, // Make it uninheritable.
                          DUPLICATE_SAME_ACCESS))
-        DisplayError("DupliateHandle");
+        DisplayError("DuplicateHandle", __LINE__);
 
     if (!DuplicateHandle(GetCurrentProcess(),hInputWriteTmp,
                          GetCurrentProcess(),
                          &hInputWrite, // Address of new handle.
                          0,FALSE, // Make it uninheritable.
                          DUPLICATE_SAME_ACCESS))
-        DisplayError("DupliateHandle");
+        DisplayError("DuplicateHandle", __LINE__);
 
 
     // Close inheritable copies of the handles you do not want to be
     // inherited.
-    if (!CloseHandle(hOutputReadTmp)) DisplayError("CloseHandle");
-    if (!CloseHandle(hInputWriteTmp)) DisplayError("CloseHandle");
-
+    if (!CloseHandle(hOutputReadTmp)) DisplayError("CloseHandle", __LINE__);
+    if (!CloseHandle(hInputWriteTmp)) DisplayError("CloseHandle", __LINE__);
 
     // Get std input handle so you can close it and force the ReadFile to
     // fail when you want the input thread to exit.
-    if ( (hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE )
-        DisplayError("GetStdHandle");
+    if ((hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+        DisplayError("GetStdHandle", __LINE__);
+    }
 
     PrepAndLaunchRedirectedChild(program_with_path, hOutputWrite,hInputRead,hErrorWrite);
-
 
     // Close pipe handles (do not continue to modify the parent).
     // You need to make sure that no handles to the write end of the
     // output pipe are maintained in this process or else the pipe will
     // not close when the child process exits and the ReadFile will hang.
-    if (!CloseHandle(hOutputWrite)) DisplayError("CloseHandle");
-    if (!CloseHandle(hInputRead )) DisplayError("CloseHandle");
-    if (!CloseHandle(hErrorWrite)) DisplayError("CloseHandle");
+    if (!CloseHandle(hOutputWrite)) DisplayError("CloseHandle", __LINE__);
+    if (!CloseHandle(hInputRead )) DisplayError("CloseHandle", __LINE__);
+    if (!CloseHandle(hErrorWrite)) DisplayError("CloseHandle", __LINE__);
 
     // Read the child's output.
     ReadAndHandleOutput(hOutputRead, function_to_apply);
     // Redirection is complete
 
     // Force the read on the input to return by closing the stdin handle.
-    if (!CloseHandle(hStdIn)) DisplayError("CloseHandle");
+    //TODO: BUG, if we run this fork multiple times, close handle returns a error!
+    // error code = 6.
+    //if (!CloseHandle(hStdIn)) DisplayError("CloseHandle", __LINE__);
 
-    if (!CloseHandle(hOutputRead)) DisplayError("CloseHandle");
-    if (!CloseHandle(hInputWrite)) DisplayError("CloseHandle");
+    if (!CloseHandle(hOutputRead)) DisplayError("CloseHandle",__LINE__ );
+    if (!CloseHandle(hInputWrite)) DisplayError("CloseHandle", __LINE__);
 }
 
 
@@ -123,10 +123,10 @@ void PrepAndLaunchRedirectedChild(char *program, HANDLE hChildStdOut,
     // confusion.
     if (!CreateProcess(NULL, program, NULL,NULL,TRUE,
                        CREATE_NEW_CONSOLE,NULL,NULL,&si,&pi))
-        DisplayError("CreateProcess");
+        DisplayError("CreateProcess", __LINE__);
 
     // Close any unnecessary handles.
-    if (!CloseHandle(pi.hThread)) DisplayError("CloseHandle");
+    if (!CloseHandle(pi.hThread)) DisplayError("CloseHandle", __LINE__);
 
 }
 
@@ -135,26 +135,36 @@ void PrepAndLaunchRedirectedChild(char *program, HANDLE hChildStdOut,
 // ReadAndHandleOutput
 // Monitors handle for input. Exits when child exits or pipe breaks.
 ///////////////////////////////////////////////////////////////////////
-void ReadAndHandleOutput(HANDLE hPipeRead, void (*apply_function)(void*))
+void ReadAndHandleOutput(HANDLE hPipeRead, void (*function_to_apply)(void*))
 {
-    char lpBuffer[256];
+    char lpBuffer[1024];
+    char ch;
     DWORD nBytesRead;
     DWORD nCharsWritten;
 
+    int char_count = 0;
+
     while(TRUE)
     {
-        if (!ReadFile(hPipeRead,lpBuffer, sizeof(lpBuffer),
+        if (!ReadFile(hPipeRead, &ch, 1,
                       &nBytesRead,NULL) || !nBytesRead)
         {
             if (GetLastError() == ERROR_BROKEN_PIPE)
                 break; // pipe done - normal exit path.
             else
-                DisplayError("ReadFile"); // Something bad happened.
+                DisplayError("ReadFile",__LINE__); // Something bad happened.
         }
 
-        //apply_function will free the data passed to it
-        lpBuffer[nBytesRead-1] = '\0';
-        apply_function(_strdup(lpBuffer));
+        if(ch != '\n') {
+            lpBuffer[char_count] = ch;
+            char_count++;
+        } else {
+            assert(char_count < 1024);
+            lpBuffer[char_count] = '\n';
+            lpBuffer[char_count+1] = '\0';
+            char_count = 0;
+            function_to_apply(_strdup(lpBuffer));
+        }
 
     }
 }
@@ -163,7 +173,7 @@ void ReadAndHandleOutput(HANDLE hPipeRead, void (*apply_function)(void*))
 // DisplayError
 // Displays the error number and corresponding message.
 ///////////////////////////////////////////////////////////////////////
-void DisplayError(char *pszAPI)
+void DisplayError(char *pszAPI, int line)
 {
     LPVOID lpvMessageBuffer;
     CHAR szPrintBuffer[512];
@@ -176,12 +186,12 @@ void DisplayError(char *pszAPI)
             (LPTSTR)&lpvMessageBuffer, 0, NULL);
 
     wsprintf(szPrintBuffer,
-             "ERROR: API    = %s.\n   error code = %d.\n   message    = %s.\n",
-             pszAPI, GetLastError(), (char *)lpvMessageBuffer);
+             "LINE:%d, ERROR: API    = %s.\n   error code = %d.\n   message    = %s.\n",
+             line, pszAPI, GetLastError(), (char *)lpvMessageBuffer);
 
     WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE),szPrintBuffer,
                  lstrlen(szPrintBuffer),&nCharsWritten,NULL);
 
     LocalFree(lpvMessageBuffer);
-    ExitProcess(GetLastError());
+    //ExitProcess(GetLastError());
 }
