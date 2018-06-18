@@ -18,9 +18,6 @@ struct grid {
 
     uint32_t num_active_cells;
 
-    //uint32_vector *free_sv_positions;
-    //uint32_vector *refined_this_step;
-
     //dynamic arrays, need to point to NULL
     uint32_t *free_sv_positions; 
     uint32_t *refined_this_step;
