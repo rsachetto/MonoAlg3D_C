@@ -1035,9 +1035,9 @@ _UI_ENUM(uiModifiers) {
 
 
 _UI_ENUM(uiDialogReturnValues) {
-    uiReturnValueOk,
-    uiReturnValueCancel,
-    uiReturnValueAccept,
+    uiReturnValueOk = 1,
+    uiReturnValueCancel = 2,
+    uiReturnValueAccept = 3,
 };
 
 // TODO document drag captures

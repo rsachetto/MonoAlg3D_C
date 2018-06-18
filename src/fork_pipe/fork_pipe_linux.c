@@ -7,10 +7,10 @@
 #include <fcntl.h>
 #include "fork_pipe_linux.h"
 
-void run_child_process_and_process_output (char * program_with_path,  void (*function_to_apply)(void*)) {
+void run_child_process_and_process_output (char * program_with_path,  void (*function_to_apply)(void*), pid_t *childpid) {
 
     int cp[2]; //child to parent pipe
-    pid_t childpid;
+    *childpid = -1;
 
     pipe(cp);
 
@@ -40,7 +40,7 @@ void run_child_process_and_process_output (char * program_with_path,  void (*fun
     char line[MAX_EXPECTED_LINE];
     int char_count = 0;
 
-    switch (childpid = fork() ) {
+    switch (*childpid = fork() ) {
         case -1: {
             perror("fork");
             exit(EXIT_FAILURE);
@@ -78,7 +78,11 @@ void run_child_process_and_process_output (char * program_with_path,  void (*fun
 
             }
 
+            *childpid = -1;
+
         }
     }
+
+
 
 }
