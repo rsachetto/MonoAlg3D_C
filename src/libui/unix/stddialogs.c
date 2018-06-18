@@ -21,10 +21,9 @@ static const struct {
 static gint uiResponseFromExtResponse(gint gtkreturn)
 {
     int i;
-
     for (i = 0; extResponses[i].gtkreturn != 0xFFFF; i++) {
         if (extResponses[i].gtkreturn == gtkreturn) {
-            return extResponses->extreturn;
+            return extResponses[i].extreturn;
         }
     }
 
@@ -94,5 +93,6 @@ void uiMsgBoxError(uiWindow *parent, const char *title, const char *description)
 
 int uiMsgBoxConfirmCancel(uiWindow *parent, const char *title, const char *description)
 {
-	return uiResponseFromExtResponse(msgbox(windowWindow(parent), title, description, GTK_MESSAGE_QUESTION, GTK_BUTTONS_OK_CANCEL));
+	int response = msgbox(windowWindow(parent), title, description, GTK_MESSAGE_QUESTION, GTK_BUTTONS_OK_CANCEL);
+	return uiResponseFromExtResponse(response);
 }
