@@ -40,7 +40,6 @@ struct user_options *options;
 bool simulation_running = false;
 
 char *config_file_name = NULL;
-char *output_last_sim = NULL;
 
 #ifdef linux
 pthread_t thread;
@@ -155,6 +154,7 @@ static void onOpenFileClicked (uiButton *b, void *data) {
 
     char *string = malloc (fsize + 1);
     fread (string, fsize, 1, f);
+    string[fsize-1] = '\0';
     fclose (f);
 
     if (ini_parse (config_file_name, parse_config_file, options) < 0) {
@@ -181,12 +181,16 @@ static void onOpenFileClicked (uiButton *b, void *data) {
 }
 
 static void saveConfigFile () {
-    if (!config_file_name)
-        uiMsgBoxError (w, "Error", "This should never be NULL!");
-        // TODO: we need to do this on windows
+
+    if (!config_file_name) {
+        uiMsgBoxError(w, "Error", "This should never be NULL!");
+    }
+
+    // TODO: we need to do this on windows
 #ifdef linux
     uiSourceViewSaveSource (configText, config_file_name);
 #endif
+
     uiControlDisable (uiControl (btnSave));
 }
 
@@ -217,7 +221,10 @@ void *start_program_with_thread (void *thread_param) {
     simulation_running = false;
     uiControlDisable (uiControl (btnCancel));
 
-    // TODO: free thread_param stuff...
+
+    free(td->program);
+    free(td);
+
 
     return NULL;
 }
@@ -259,22 +266,23 @@ void start_monodomain_exec () {
 // TODO: the working directory and the executable need to be read from a configuration file
 static void runSimulation (uiButton *b, void *data) {
 
-    /*    //TODO: config auto save on run. Make a windows version of this
-        #ifdef linux
-        if(uiSourceViewGetModified(configText)) {
-            //uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
-            int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. Do you want to
-       save before running?");
+    //TODO: config auto save on run. Make a windows version of this
+#ifdef linux
+    if(uiSourceViewGetModified(configText)) {
+        //uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
+        int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. "
+                                                                   "Do you want to save before running?");
 
-            if(response == uiReturnValueCancel) {
-                return;
-            }
-            else {
-               // saveConfigFile();
-            }
-
+        if(response == uiReturnValueCancel) {
+            return;
         }
-        #endif*/
+        else {
+           printf("SAVING FILE\n");
+            // saveConfigFile();
+        }
+
+    }
+#endif
     uiMultilineEntrySetText (runText, "");
     uiProgressBarSetValue (pbar, 0);
 
@@ -314,9 +322,6 @@ void onConfigChanged (uiSourceView *e, void *data) {
 
 #ifdef linux
     int modified = uiSourceViewGetModified (e);
-    int can_undo = uiSourceViewCanUndo (e);
-
-    printf ("MOD: %d, CAN: %d\n", modified, can_undo);
 
     if (modified) {
         uiControlEnable (uiControl (btnSave));
