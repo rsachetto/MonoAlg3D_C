@@ -534,3 +534,7 @@ void enableAllWindowsExcept(uiWindow *which)
 		EnableWindow(w.first->hwnd, TRUE);
 	}
 }
+
+void uiWindowSetModal(uiWindow *w, uiWindow *parent, int modal) {
+    //gtk_window_set_modal(w->window, modal);
+}
