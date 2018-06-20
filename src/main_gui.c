@@ -38,6 +38,7 @@ static uiProgressBar *pbar;
 
 struct user_options *options;
 bool simulation_running = false;
+int modified;
 
 char *config_file_name = NULL;
 
@@ -154,7 +155,11 @@ static void onOpenFileClicked (uiButton *b, void *data) {
 
     char *string = malloc (fsize + 1);
     fread (string, fsize, 1, f);
+#ifdef linux
     string[fsize-1] = '\0';
+#else
+    string[fsize] = '\0';
+#endif
     fclose (f);
 
     if (ini_parse (config_file_name, parse_config_file, options) < 0) {
@@ -269,7 +274,6 @@ static void runSimulation (uiButton *b, void *data) {
     //TODO: config auto save on run. Make a windows version of this
 #ifdef linux
     if(uiSourceViewGetModified(configText)) {
-        //uiMsgBoxError(w, "Invalid file!", "Error parsing ini file!");
         int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. "
                                                                    "Do you want to save before running?");
 
@@ -278,7 +282,21 @@ static void runSimulation (uiButton *b, void *data) {
         }
         else {
            printf("SAVING FILE\n");
-            // saveConfigFile();
+           saveConfigFile();
+        }
+
+    }
+#else
+    if(uiMultilineEntryGetModified(configText)) {
+        int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. "
+                                                                   "Do you want to save before running?");
+
+        if(response == uiReturnValueCancel) {
+            return;
+        }
+        else {
+            printf("SAVING FILE\n");
+            saveConfigFile();
         }
 
     }
@@ -316,18 +334,28 @@ static void cancelSimulation (uiButton *b, void *data) {
     }
 }
 
-void onConfigChanged (uiSourceView *e, void *data) {
+#ifdef linux
+void onConfigChanged (uiSourceView *e, void *data)
+#else
+void onConfigChanged (uiMultilineEntry *e, void *data)
+#endif
+{
 
     // TODO: make a windows version of this function
 
 #ifdef linux
-    int modified = uiSourceViewGetModified (e);
+    modified = uiSourceViewGetModified (e);
 
     if (modified) {
         uiControlEnable (uiControl (btnSave));
     } else {
         uiControlDisable (uiControl (btnSave));
     }
+#else
+
+    modified = 1;
+    uiControlEnable (uiControl (btnSave));
+
 #endif
 }
 
@@ -386,6 +414,7 @@ int main () {
 #ifdef _WIN32
     configText = uiNewMultilineEntry ();
     uiMultilineEntrySetReadOnly (configText, 1);
+    uiMultilineEntryOnChanged(configText, onConfigChanged, NULL);
 #endif
 
     runText = uiNewMultilineEntry ();
