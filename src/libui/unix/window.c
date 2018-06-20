@@ -277,3 +277,9 @@ uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar)
 
 	return w;
 }
+
+void uiWindowSetModal(uiWindow *w, uiWindow *parent, int modal) {
+        gtk_window_set_modal(w->window, modal);
+}
+
+

@@ -47,7 +47,7 @@ pthread_t thread;
 pid_t childpid;
 #endif
 
-static void appendToOutput (void *data) {
+static void append_to_output(void *data) {
     char *s = (char *)data;
     uiMultilineEntryAppend (runText, s);
 
@@ -83,11 +83,11 @@ static void appendToOutput (void *data) {
     free (s);
 }
 
-static void appendToQueue (void *data) {
-    uiQueueMain (appendToOutput, data);
+static void append_to_queue(void *data) {
+    uiQueueMain(append_to_output, data);
 }
 
-static int onClosing (uiWindow *w, void *data) {
+static int on_closing_main_window(uiWindow *w, void *data) {
 
     if (simulation_running) {
 
@@ -95,7 +95,6 @@ static int onClosing (uiWindow *w, void *data) {
                                               "Are you sure you want to quit and cancel the current simulation?");
 
         if (response == uiReturnValueCancel) {
-            printf ("NO CLOSE\n");
             return 0;
         } else {
 #ifdef _WIN32
@@ -112,7 +111,7 @@ static int onClosing (uiWindow *w, void *data) {
     return 1;
 }
 
-static int onShouldQuit (void *data) {
+static int on_should_quit_main_program(void *data) {
 
     if (simulation_running) {
 
@@ -137,7 +136,21 @@ static int onShouldQuit (void *data) {
     return 1;
 }
 
-static void onOpenFileClicked (uiButton *b, void *data) {
+static int on_close_preferences_window(uiWindow *w, void *data) {
+    //TODO: ask form confirmation if any preference changed
+   // uiWindow *pref_win = uiWindow (data);
+   // uiControlDestroy (uiControl (pref_win));
+    return 1;
+}
+
+static void on_open_path_clicked(uiButton *b, void *data) {
+        uiEntry *entry = (uiEntry*) data;
+        char *path = uiOpenFile (w);
+        uiEntrySetText(entry, path);
+}
+
+
+static void on_open_file_clicked(uiButton *b, void *data) {
 
     if (config_file_name)
         uiFreeText (config_file_name);
@@ -155,11 +168,14 @@ static void onOpenFileClicked (uiButton *b, void *data) {
 
     char *string = malloc (fsize + 1);
     fread (string, fsize, 1, f);
-#ifdef linux
-    string[fsize-1] = '\0';
-#else
-    string[fsize] = '\0';
-#endif
+
+    if(string[fsize-1] == '\n') {
+        string[fsize-1] = '\0';
+    }
+    else {
+        string[fsize] = '\0';
+    }
+
     fclose (f);
 
     if (ini_parse (config_file_name, parse_config_file, options) < 0) {
@@ -185,10 +201,15 @@ static void onOpenFileClicked (uiButton *b, void *data) {
     }
 }
 
-static void saveConfigFile () {
+static void on_open_file_menu_clicked(uiMenuItem *item, uiWindow *w, void *data) {
+    on_open_file_clicked(NULL, NULL);
+}
+
+static void save_config_file(uiButton *b, void *data) {
 
     if (!config_file_name) {
         uiMsgBoxError(w, "Error", "This should never be NULL!");
+        return;
     }
 
     // TODO: we need to do this on windows
@@ -199,9 +220,6 @@ static void saveConfigFile () {
     uiControlDisable (uiControl (btnSave));
 }
 
-static void saveConfigFileCB (uiButton *b, void *data) {
-    saveConfigFile ();
-}
 
 struct ThreadData {
     char *program;
@@ -234,18 +252,20 @@ void *start_program_with_thread (void *thread_param) {
     return NULL;
 }
 
+// TODO: the working directory and the executable need to be read from a configuration file
 void start_monodomain_exec () {
 
-    // LEAK: maybe free it on the run_child_process_and_process_output function
+    // TODO: we need to pass the Monoalg path and parameters here
+
     struct ThreadData *td = (struct ThreadData *)malloc (sizeof (struct ThreadData));
-    td->fn_pointer = appendToQueue;
+    td->fn_pointer = append_to_queue;
+    sds program = sdsnew ("");
 
 #ifdef _WIN32
     HANDLE thread;
     DWORD threadId;
 
-    // TODO: we need to pass the Monoalg path and parameters here
-    char program[] = "bin\\MonoAlg3D.exe -c example_configs\\benchmark_config_example.ini";
+    program = sdscatfmt (program, "bin\\MonoAlg3D.exe -c %s", config_file_name);
     td->program = _strdup (program);
 
     thread = CreateThread (NULL,                      // default security attributes
@@ -256,24 +276,26 @@ void start_monodomain_exec () {
                            &threadId);                // returns the thread identifier
 
 #else
-    // TODO: we need to pass the Monoalg path and parameters here
-
-    sds program = sdsnew ("");
-    program = sdscatfmt (program, "%bin/MonoAlg3D -c %s", config_file_name);
+    program = sdscatfmt (program, "bin/MonoAlg3D -c %s", config_file_name);
     td->program = strdup (program);
     pthread_create (&thread, NULL, start_program_with_thread, (void *)td);
     pthread_detach (thread);
     sdsfree (program);
 
 #endif
+
 }
 
-// TODO: the working directory and the executable need to be read from a configuration file
-static void runSimulation (uiButton *b, void *data) {
+
+static void run_simulation(uiButton *b, void *data) {
 
     //TODO: config auto save on run. Make a windows version of this
 #ifdef linux
-    if(uiSourceViewGetModified(configText)) {
+    if(uiSourceViewGetModified(configText))
+#else
+    if(uiMultilineEntryGetModified(configText))
+#endif
+    {
         int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. "
                                                                    "Do you want to save before running?");
 
@@ -282,25 +304,11 @@ static void runSimulation (uiButton *b, void *data) {
         }
         else {
            printf("SAVING FILE\n");
-           saveConfigFile();
+            save_config_file(NULL, NULL);
         }
 
     }
-#else
-    if(uiMultilineEntryGetModified(configText)) {
-        int response = uiMsgBoxConfirmCancel(w, "File not saved!", "The config file was modified. "
-                                                                   "Do you want to save before running?");
 
-        if(response == uiReturnValueCancel) {
-            return;
-        }
-        else {
-            printf("SAVING FILE\n");
-            saveConfigFile();
-        }
-
-    }
-#endif
     uiMultilineEntrySetText (runText, "");
     uiProgressBarSetValue (pbar, 0);
 
@@ -308,7 +316,7 @@ static void runSimulation (uiButton *b, void *data) {
     uiControlDisable (uiControl (btnRun));
 }
 
-static void cancelSimulation (uiButton *b, void *data) {
+static void cancel_simulation(uiButton *b, void *data) {
 
     if (simulation_running) {
 
@@ -325,7 +333,6 @@ static void cancelSimulation (uiButton *b, void *data) {
                 kill (childpid, SIGKILL);
             }
 #endif
-
             uiControlDisable (uiControl (btnCancel));
             uiProgressBarSetValue (pbar, 0);
             uiControlEnable (uiControl (btnRun));
@@ -335,9 +342,9 @@ static void cancelSimulation (uiButton *b, void *data) {
 }
 
 #ifdef linux
-void onConfigChanged (uiSourceView *e, void *data)
+void on_config_changed(uiSourceView *e, void *data)
 #else
-void onConfigChanged (uiMultilineEntry *e, void *data)
+void on_config_changed (uiMultilineEntry *e, void *data)
 #endif
 {
 
@@ -352,12 +359,70 @@ void onConfigChanged (uiMultilineEntry *e, void *data)
         uiControlDisable (uiControl (btnSave));
     }
 #else
-
     modified = 1;
     uiControlEnable (uiControl (btnSave));
 
 #endif
 }
+
+
+static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data) {
+
+    uiWindow *pref_window;
+    pref_window = uiNewWindow ("Preferences", 640, 150, 0);
+    uiWindowSetModal(pref_window, NULL, 1);
+    uiWindowSetMargined (pref_window, 1);
+    uiWindowOnClosing(pref_window, on_close_preferences_window, pref_window);
+
+
+    uiLabel *alg_3D_path_label = uiNewLabel("Alg 3D executable full path: ");
+    uiEntry *alg_3D_path_entry = uiNewEntry();
+    uiButton *alg_3D_path_choose = uiNewButton("Open...");
+    uiButtonOnClicked(alg_3D_path_choose, on_open_path_clicked, alg_3D_path_entry);
+
+    uiBox *alg_3D_path_button_label_box = uiNewHorizontalBox ();
+    uiBoxAppend(alg_3D_path_button_label_box, uiControl(alg_3D_path_label), 0);
+    uiBoxAppend(alg_3D_path_button_label_box, uiControl(alg_3D_path_entry), 1);
+    uiBoxAppend(alg_3D_path_button_label_box, uiControl(alg_3D_path_choose), 0);
+
+    uiLabel *libraries_path_label = uiNewLabel("Shared libraries full path: ");
+    uiEntry *libraries_path_entry = uiNewEntry();
+    uiButton *libraries_path_choose = uiNewButton("Open...");
+    uiButtonOnClicked(libraries_path_choose, on_open_path_clicked, libraries_path_entry);
+
+    uiBox *libraries_path_button_label_box = uiNewHorizontalBox ();
+    uiBoxAppend(libraries_path_button_label_box, uiControl(libraries_path_label), 0);
+    uiBoxAppend(libraries_path_button_label_box, uiControl(libraries_path_entry), 1);
+    uiBoxAppend(libraries_path_button_label_box, uiControl(libraries_path_choose), 0);
+
+    uiBoxSetPadded (alg_3D_path_button_label_box, 1);
+    uiBoxSetPadded (libraries_path_button_label_box, 1);
+
+    uiBox *vertical_box = uiNewVerticalBox();
+    uiBoxAppend(vertical_box, uiControl(alg_3D_path_button_label_box), 0);
+    uiBoxAppend(vertical_box, uiControl(libraries_path_button_label_box), 0);
+
+    uiButton *ok = uiNewButton("Save");
+    uiButton *cancel = uiNewButton("Cancel");
+
+
+    uiBox *ok_cancel_box = uiNewHorizontalBox();
+    uiBoxAppend(ok_cancel_box, uiControl(ok), 0);
+    uiBoxAppend(ok_cancel_box, uiControl(cancel), 0);
+    uiBoxSetPadded (ok_cancel_box, 1);
+
+    uiBoxSetPadded (libraries_path_button_label_box, 1);
+
+    uiBoxAppend(vertical_box, uiControl(ok_cancel_box), 0);
+
+    uiBoxSetPadded (vertical_box, 1);
+
+    uiWindowSetChild (pref_window, uiControl (vertical_box));
+
+    uiControlShow (uiControl (pref_window));
+
+}
+
 
 int main () {
 
@@ -379,16 +444,16 @@ int main () {
 
     menu = uiNewMenu ("File");
     item = uiMenuAppendItem (menu, "Open");
-    // uiMenuItemOnClicked(item, openClicked, NULL);
+    uiMenuItemOnClicked(item, on_open_file_menu_clicked, NULL);
 
     item = uiMenuAppendItem (menu, "Save");
-    // uiMenuItemOnClicked(item, saveClicked, NULL);
+    //uiMenuItemOnClicked(item, save_file, NULL);
 
     item = uiMenuAppendQuitItem (menu);
 
     menu = uiNewMenu ("Edit");
     item = uiMenuAppendPreferencesItem (menu);
-    // uiMenuItemOnClicked(item, saveClicked, NULL);
+    uiMenuItemOnClicked(item, open_configuration_window, NULL);
 
     w = uiNewWindow ("MonoAlg3D GUI", 1024, 768, 1);
     uiWindowSetMargined (w, 1);
@@ -408,7 +473,7 @@ int main () {
 #ifdef linux
     configText = uiNewSourceView ();
     uiSourceViewSetReadOnly (configText, true);
-    uiSourceViewOnChanged (configText, onConfigChanged, NULL);
+    uiSourceViewOnChanged(configText, on_config_changed, NULL);
 #endif
 
 #ifdef _WIN32
@@ -422,17 +487,17 @@ int main () {
 
     btnSave = uiNewButton ("Save");
     uiControlDisable (uiControl (btnSave));
-    uiButtonOnClicked (btnSave, saveConfigFileCB, NULL);
+    uiButtonOnClicked (btnSave, save_config_file, NULL);
 
     btnConfiguration = uiNewButton ("Open configuration");
-    uiButtonOnClicked (btnConfiguration, onOpenFileClicked, NULL);
+    uiButtonOnClicked(btnConfiguration, on_open_file_clicked, NULL);
 
     btnRun = uiNewButton ("Run simulation");
-    uiButtonOnClicked (btnRun, runSimulation, NULL);
+    uiButtonOnClicked(btnRun, run_simulation, NULL);
     uiControlDisable (uiControl (btnRun));
 
     btnCancel = uiNewButton ("Cancel Simulation");
-    uiButtonOnClicked (btnCancel, cancelSimulation, NULL);
+    uiButtonOnClicked(btnCancel, cancel_simulation, NULL);
     uiControlDisable (uiControl (btnCancel));
 
     pbar = uiNewProgressBar ();
@@ -449,8 +514,8 @@ int main () {
     uiBoxAppend (verticalBox, uiControl (horizontalTextBox), 1);
     uiBoxAppend (verticalBox, uiControl (horizontalButtonBox), 0);
 
-    uiWindowOnClosing (w, onClosing, NULL);
-    uiOnShouldQuit (onShouldQuit, w);
+    uiWindowOnClosing(w, on_closing_main_window, NULL);
+    uiOnShouldQuit(on_should_quit_main_program, w);
     uiControlShow (uiControl (w));
     uiMain ();
     uiUninit();
