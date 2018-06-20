@@ -81,6 +81,10 @@ void uiMultilineEntrySetText(uiMultilineEntry *e, const char *text)
 	// don't queue the control for resize; entry sizes are independent of their contents
 }
 
+int uiMultilineEntryGetModified(uiMultilineEntry *e) {
+	return (int)SendMessageW(e->hwnd, EM_GETMODIFY, 0, 0);
+}
+
 void uiMultilineEntryAppend(uiMultilineEntry *e, const char *text)
 {
 	LRESULT n;

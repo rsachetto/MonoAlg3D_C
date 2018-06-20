@@ -68,7 +68,6 @@ char *uiSourceViewText(uiSourceView *e)
 	return out;
 }
 
-
 int uiSourceViewGetModified(uiSourceView *e) {
     return gtk_text_buffer_get_modified(GTK_TEXT_BUFFER(e->sourceBuffer));
 }

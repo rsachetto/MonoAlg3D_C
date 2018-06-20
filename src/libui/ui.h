@@ -282,6 +282,7 @@ typedef struct uiSourceView uiSourceView;
 _UI_EXTERN void uiSourceViewSetText(uiSourceView *e, const char *text, char *mime_type);
 _UI_EXTERN char *uiSourceViewText(uiSourceView *e);
 _UI_EXTERN int uiSourceViewGetModified(uiSourceView *e);
+_UI_EXTERN int uiMultilineEntryGetModified(uiMultilineEntry *e);
 _UI_EXTERN void uiSourceViewOnChanged(uiSourceView *e, void (*f)(uiSourceView *e, void *data), void *data);
 _UI_EXTERN uiSourceView *uiNewSourceView(void);
 _UI_EXTERN void uiSourceViewSetReadOnly(uiSourceView *e, int readonly);

@@ -16,6 +16,28 @@
 
 #define windowHWND(w) ((HWND) uiControlHandle(uiControl(w)))
 
+static const struct {
+    HRESULT wreturn;
+    uiDialogReturnValues extreturn;
+} extResponses[] = {
+        { IDOK, uiReturnValueOk},
+        { IDCANCEL, uiReturnValueCancel},
+        { 0xFFFF, 0 },
+
+};
+
+static int uiResponseFromExtResponse(HRESULT wreturn)
+{
+    int i;
+    for (i = 0; extResponses[i].wreturn != 0xFFFF; i++) {
+        if (extResponses[i].wreturn == wreturn) {
+            return extResponses[i].extreturn;
+        }
+    }
+
+    return 0;
+}
+
 char *commonItemDialog(HWND parent, REFCLSID clsid, REFIID iid, FILEOPENDIALOGOPTIONS optsadd)
 {
 	IFileDialog *d = NULL;
@@ -102,20 +124,23 @@ char *uiSaveFile(uiWindow *parent)
 
 // TODO switch to TaskDialogIndirect()?
 
-static void msgbox(HWND parent, const char *title, const char *description, TASKDIALOG_COMMON_BUTTON_FLAGS buttons, PCWSTR icon)
+static int msgbox(HWND parent, const char *title, const char *description, TASKDIALOG_COMMON_BUTTON_FLAGS buttons, PCWSTR icon)
 {
 	WCHAR *wtitle, *wdescription;
 	HRESULT hr;
 
 	wtitle = toUTF16(title);
 	wdescription = toUTF16(description);
+    int nButtonPressed = 0;
 
-	hr = TaskDialog(parent, NULL, NULL, wtitle, wdescription, buttons, icon, NULL);
-	if (hr != S_OK)
+	hr = TaskDialog(parent, NULL, NULL, wtitle, wdescription, buttons, icon, &nButtonPressed);
+	if (hr != S_OK )
 		logHRESULT(L"error showing task dialog", hr);
 
 	uiprivFree(wdescription);
 	uiprivFree(wtitle);
+
+	return nButtonPressed;
 }
 
 void uiMsgBox(uiWindow *parent, const char *title, const char *description)
@@ -131,3 +156,13 @@ void uiMsgBoxError(uiWindow *parent, const char *title, const char *description)
 	msgbox(windowHWND(parent), title, description, TDCBF_OK_BUTTON, TD_ERROR_ICON);
 	enableAllWindowsExcept(parent);
 }
+
+int uiMsgBoxConfirmCancel(uiWindow *parent, const char *title, const char *description)
+{
+	disableAllWindowsExcept(parent);
+	int resp = msgbox(windowHWND(parent), title, description, TDCBF_OK_BUTTON | TDCBF_CANCEL_BUTTON, TD_ERROR_ICON);
+	enableAllWindowsExcept(parent);
+
+	return uiResponseFromExtResponse(resp);
+}
+
