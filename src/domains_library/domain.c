@@ -353,7 +353,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
         if(grid_cell->active) {
             if(grid_cell->fibrotic) {
                 grid_cell->can_change = false;
-                double p = (double) (rand()) / (RAND_MAX);
+                double p = (double) (rand()) / (RAND_MAX); //rand() has limited randomness
                 if (p < phi) grid_cell->active = false;
             }
             else if(grid_cell->border_zone) {

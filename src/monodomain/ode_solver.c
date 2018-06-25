@@ -167,7 +167,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
             check_cuda_errors(cudaFree(solver->sv));
         }
 
-        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells);
+        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells, solver->edo_extra_data, solver->extra_data_size);
 #endif
     } else {
 
@@ -190,7 +190,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint3
 
         #pragma omp parallel for
         for(i = 0; i < num_cells; i++) {
-            soicc_fn_pt(solver->sv + (i*n_odes));
+            soicc_fn_pt(solver->sv + (i*n_odes), solver->edo_extra_data, solver->extra_data_size);
         }
     }
 }
