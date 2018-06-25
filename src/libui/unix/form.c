@@ -24,7 +24,7 @@ struct uiForm {
 
 uiUnixControlAllDefaultsExceptDestroy(uiForm)
 
-#define ctrl(f, i) &g_array_index(f->children, struct formChild, i)
+#define ctrl(f, i) &g_array_index((f)->children, struct formChild, i)
 
 static void uiFormDestroy(uiControl *c)
 {

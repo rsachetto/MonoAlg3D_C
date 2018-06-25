@@ -77,7 +77,7 @@ static struct feature mkkey(char a, char b, char c, char d)
 	return f;
 }
 
-#define find(pkey, otf) bsearch(pkey, otf->data, otf->len, sizeof (struct feature), featurecmp)
+#define find(pkey, otf) bsearch(pkey, (otf)->data, otf->len, sizeof (struct feature), featurecmp)
 
 void uiOpenTypeFeaturesAdd(uiOpenTypeFeatures *otf, char a, char b, char c, char d, uint32_t value)
 {

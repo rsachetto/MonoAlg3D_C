@@ -22,7 +22,7 @@ void uiprivLoadFutures(void)
 	handle = dlopen(NULL, RTLD_LAZY);
 	if (handle == NULL)
 		return;
-#define GET(var, fn) *((void **) (&var)) = dlsym(handle, #fn)
+#define GET(var, fn) *((void **) (&(var))) = dlsym(handle, #fn)
 	GET(newFeaturesAttr, pango_attr_font_features_new);
 	GET(newFGAlphaAttr, pango_attr_foreground_alpha_new);
 	GET(newBGAlphaAttr, pango_attr_background_alpha_new);

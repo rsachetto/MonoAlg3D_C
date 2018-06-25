@@ -21,7 +21,7 @@ struct uiGrid {
 
 uiUnixControlAllDefaultsExceptDestroy(uiGrid)
 
-#define ctrl(g, i) &g_array_index(g->children, struct gridChild, i)
+#define ctrl(g, i) &g_array_index((g)->children, struct gridChild, i)
 
 static void uiGridDestroy(uiControl *c)
 {
