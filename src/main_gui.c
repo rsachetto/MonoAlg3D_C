@@ -35,17 +35,19 @@ uiMultilineEntry *configText;
 uiMultilineEntry *runText;
 uiWindow *w;
 uiBox *verticalBox, *horizontalButtonBox, *horizontalTextBox;
-uiButton *btnConfiguration, *btnRun, *btnSave, *btnCancel;
+uiButton *btnConfiguration, *btnRun, *btnSave, *btnParaview, *btnCancel;
 static uiProgressBar *pbar;
 
-//TODO: configuration stuff. Maybe create a struct here?
 uiEntry *alg_3D_path_entry, *paraview_path_entry;
 
 struct user_options *options;
 bool simulation_running = false;
 int modified = 0;
 
-char *config_file_name = NULL;
+static char *config_file_name = NULL;
+static char *global_alg3d_path = NULL;
+static char *global_config_path = NULL;
+static char *global_paraview_path = NULL;
 
 #ifdef linux
 pthread_t thread;
@@ -141,11 +143,15 @@ static int on_should_quit_main_program(void *data) {
     return 1;
 }
 
-static int on_close_preferences_window(uiWindow *w, void *data) {
+static int on_close_preferences_window(uiWindow *b, void *data) {
     //TODO: ask form confirmation if any preference changed
-   // uiWindow *pref_win = uiWindow (data);
-   // uiControlDestroy (uiControl (pref_win));
     return 1;
+}
+
+static void close_preferences_window(uiButton *b, void *data) {
+    //TODO: ask form confirmation if any preference changed
+    uiWindow *pref_win = uiWindow (data);
+    uiControlDestroy (uiControl (pref_win));
 }
 
 static void on_open_path_clicked(uiButton *b, void *data) {
@@ -210,6 +216,7 @@ static void on_open_file_menu_clicked(uiMenuItem *item, uiWindow *w, void *data)
     on_open_file_clicked(NULL, NULL);
 }
 
+
 static void save_simulation_config_file(uiButton *b, void *data) {
 
     if (!config_file_name) {
@@ -225,6 +232,9 @@ static void save_simulation_config_file(uiButton *b, void *data) {
     uiControlDisable (uiControl (btnSave));
 }
 
+static void on_save_file_menu_clicked(uiMenuItem *item, uiWindow *w, void *data) {
+    save_simulation_config_file(NULL, NULL);
+}
 
 struct ThreadData {
     char *program;
@@ -257,20 +267,17 @@ void *start_program_with_thread (void *thread_param) {
     return NULL;
 }
 
-// TODO: the working directory and the executable need to be read from a configuration file
 void start_monodomain_exec () {
-
-    // TODO: we need to pass the Monoalg path and parameters here
 
     struct ThreadData *td = (struct ThreadData *)malloc (sizeof (struct ThreadData));
     td->fn_pointer = append_to_queue;
     sds program = sdsnew ("");
 
+    program = sdscatfmt (program, "%s -c %s", global_alg3d_path, config_file_name);
+
 #ifdef _WIN32
     HANDLE thread;
     DWORD threadId;
-
-    program = sdscatfmt (program, "bin\\MonoAlg3D.exe -c %s", config_file_name);
     td->program = _strdup (program);
 
     thread = CreateThread (NULL,                      // default security attributes
@@ -281,7 +288,7 @@ void start_monodomain_exec () {
                            &threadId);                // returns the thread identifier
 
 #else
-    program = sdscatfmt (program, "bin/MonoAlg3D -c %s", config_file_name);
+
     td->program = strdup (program);
     pthread_create (&thread, NULL, start_program_with_thread, (void *)td);
     pthread_detach (thread);
@@ -308,7 +315,6 @@ static void run_simulation(uiButton *b, void *data) {
             return;
         }
         else {
-           printf("SAVING FILE\n");
             save_simulation_config_file(NULL, NULL);
         }
 
@@ -391,8 +397,11 @@ char *get_config_file_path() {
 
     char* base_dir = dirname(gui_path);
 
+#ifdef _WIN32
+    sprintf(config_path, "%s\\.config", base_dir);
+#else
     sprintf(config_path, "%s/.config", base_dir);
-
+#endif
     free(base_dir);
     return config_path;
 
@@ -401,22 +410,36 @@ char *get_config_file_path() {
 
 void save_gui_config_file(uiButton *e, void *data) {
 
-    char *config_path = get_config_file_path();
-
     char *alg_path = uiEntryText(alg_3D_path_entry);
     char *paraview_path = uiEntryText(paraview_path_entry);
 
-    FILE *config_file = fopen(config_path, "w");
+    FILE *config_file = fopen(global_config_path, "w");
 
     if(!config_file) {
-        fprintf(stderr, "Error openning %s\n", config_path);
+        fprintf(stderr, "Error openning %s\n", global_config_path);
         return;
     }
 
     fprintf(config_file, "%s\n%s\n", alg_path, paraview_path);
 
-    free(config_path);
+    if(global_alg3d_path) {
+        free(global_alg3d_path);
+    }
+
+    if(global_paraview_path) {
+        free(global_paraview_path);
+    }
+
+    global_alg3d_path = strdup(alg_path);
+    global_paraview_path = strdup(paraview_path);
+
+    free(alg_path);
+    free(paraview_path);
     fclose(config_file);
+
+    uiWindow *win = uiWindow (data);
+    uiControlDestroy (uiControl (win));
+
 
 }
 
@@ -456,16 +479,11 @@ static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data)
     uiBoxAppend(vertical_box, uiControl(alg_3D_path_button_label_box), 0);
     uiBoxAppend(vertical_box, uiControl(libraries_path_button_label_box), 0);
 
-    uiButton *ok = uiNewButton("Save");
+    uiButton *ok = uiNewButton("Save and close");
+    uiButtonOnClicked(ok, save_gui_config_file, (void*)pref_window);
 
-    char *teste;
-
-    teste = uiEntryText(alg_3D_path_entry);
-
-    uiButtonOnClicked(ok, save_gui_config_file, (void*)teste);
-
-    uiButton *cancel = uiNewButton("Cancel");
-    //uiButtonOnClicked (cancel, on_close_preferences_window, NULL);
+    uiButton *cancel = uiNewButton("Close without saving");
+    uiButtonOnClicked (cancel, close_preferences_window, (void*) pref_window);
 
 
     uiBox *ok_cancel_box = uiNewHorizontalBox();
@@ -481,9 +499,58 @@ static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data)
 
     uiWindowSetChild (pref_window, uiControl (vertical_box));
 
-    char *config_path = get_config_file_path();
+    uiEntrySetText(alg_3D_path_entry, global_alg3d_path);
+    uiEntrySetText(paraview_path_entry, global_paraview_path);
 
-    FILE *config_file = fopen(config_path, "r");
+    //free(config_path);
+    uiControlShow (uiControl (pref_window));
+
+}
+
+static void *start_paraview_with_thread(void *data) {
+
+    char *program = (char*)data;
+
+    system(program);
+    sdsfree(program);
+
+    return NULL;
+
+}
+
+void open_paraview_last_simulation(uiButton *b, void *data) {
+
+
+    struct ThreadData *td = (struct ThreadData *)malloc (sizeof (struct ThreadData));
+    td->fn_pointer = append_to_queue;
+    sds program = sdsnew ("");
+
+#ifdef _WIN32
+    HANDLE thread;
+    DWORD threadId;
+
+    program = sdscatfmt (program, "%s --data=%s\\V_t_..vtk", global_paraview_path, options->out_dir_name);
+    td->program = _strdup (program);
+
+    thread = CreateThread (NULL,                      // default security attributes
+                           0,                         // use default stack size
+                           start_paraview_with_thread, // thread function name
+                           (LPVOID)program,                // argument to thread function
+                           0,                         // use default creation flags
+                           &threadId);                // returns the thread identifier
+
+#else
+    program = sdscatfmt (program, "%s --data=%s/V_t_..vtk", global_paraview_path, options->out_dir_name);
+    td->program = strdup (program);
+    pthread_create (&thread, NULL, start_paraview_with_thread, (void *)program);
+    pthread_detach (thread);
+#endif
+
+}
+
+void set_global_paths() {
+    global_config_path = get_config_file_path();
+    FILE *config_file = fopen(global_config_path, "r");
 
     if(config_file) {
 
@@ -499,23 +566,18 @@ static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data)
         if ((pos=strchr(paraview_path, '\n')) != NULL)
             *pos = '\0';
 
-        uiEntrySetText(alg_3D_path_entry, alg_path);
-        uiEntrySetText(paraview_path_entry, paraview_path);
+        global_alg3d_path = strdup(alg_path);
+        global_paraview_path = strdup(paraview_path);
 
         free(alg_path);
         free(paraview_path);
-        fclose(config_file);
     }
-
-    //free(config_path);
-    uiControlShow (uiControl (pref_window));
-
 }
-
 
 int main () {
 
     options = new_user_options ();
+    set_global_paths();
 
     uiMenu *menu;
     uiMenuItem *item;
@@ -530,13 +592,12 @@ int main () {
         return 1;
     }
 
-
     menu = uiNewMenu ("File");
     item = uiMenuAppendItem (menu, "Open");
     uiMenuItemOnClicked(item, on_open_file_menu_clicked, NULL);
 
     item = uiMenuAppendItem (menu, "Save");
-    //uiMenuItemOnClicked(item, save_file, NULL);
+    uiMenuItemOnClicked(item, on_save_file_menu_clicked, NULL);
 
     item = uiMenuAppendQuitItem (menu);
 
@@ -589,6 +650,10 @@ int main () {
     uiButtonOnClicked(btnCancel, cancel_simulation, NULL);
     uiControlDisable (uiControl (btnCancel));
 
+    btnParaview = uiNewButton ("Visualize results");
+    uiButtonOnClicked(btnParaview, open_paraview_last_simulation, NULL);
+    uiControlDisable (uiControl (btnParaview));
+
     pbar = uiNewProgressBar ();
 
     uiBoxAppend (horizontalTextBox, uiControl (configText), 1);
@@ -597,6 +662,7 @@ int main () {
     uiBoxAppend (horizontalButtonBox, uiControl (btnConfiguration), 0);
     uiBoxAppend (horizontalButtonBox, uiControl (btnSave), 0);
     uiBoxAppend (horizontalButtonBox, uiControl (btnRun), 0);
+    uiBoxAppend (horizontalButtonBox, uiControl (btnParaview), 0);
     uiBoxAppend (horizontalButtonBox, uiControl (pbar), 1);
     uiBoxAppend (horizontalButtonBox, uiControl (btnCancel), 0);
 
