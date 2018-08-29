@@ -10,6 +10,19 @@ double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines);
 
 double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *nnz);
 
+double calc_mse(const double *x, const double *xapp, int n) {
+
+    double sum_sq = 0;
+
+    for (int i = 0; i < n; ++i) {
+        double err = x[i] - xapp[i];
+        sum_sq += (err * err);
+    }
+
+    return sum_sq/n;
+}
+
+
 void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b) {
 
     uint32_t n_cells;
@@ -97,9 +110,6 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
         cell->v = 1.0;
         cell = cell->next;
     }
-
-    // print_grid_matrix(grid, stdout);
-    // print_grid_vector(grid, stdout, 'b');
 
     for (int i = 0; i < num_lines_m; i++) {
         free (matrix[i]);
@@ -202,7 +212,8 @@ double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines) {
     return vector;
 }
 
-void run_cg (bool jacobi) {
+void test_solver (bool preconditioner, char *method_name, int nt) {
+
     FILE *A = fopen ("src/tests/A.txt", "r");
     FILE *B = fopen ("src/tests/B.txt", "r");
     FILE *X = fopen ("src/tests/X.txt", "r");
@@ -218,35 +229,24 @@ void run_cg (bool jacobi) {
 
     construct_grid_from_file (grid, A, B);
 
-    int nt = 1;
 
 #if defined(_OPENMP)
+    omp_set_num_threads(nt);
     nt = omp_get_max_threads();
 #endif
-
-
-    if(jacobi) {
-        printf("Testing CG with jacobi preconditioner using %d treads\n", nt);
-    }
-
-    else {
-        printf("Testing CG using %d treads\n", nt);
-    }
 
     struct linear_system_solver_config *linear_system_solver_config;
 
     linear_system_solver_config = new_linear_system_solver_config();
-    linear_system_solver_config->config_data.function_name = "conjugate_gradient";
+    linear_system_solver_config->config_data.function_name = method_name;
 
     string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "tolerance", "1e-16");
-    if(jacobi)
+    if(preconditioner)
         string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "use_preconditioner", "yes");
     else
         string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "use_preconditioner", "no");
 
     string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "max_iterations", "200");
-
-//    conjugate_gradient (grid, 200, 1e-16, jacobi, &error);
 
     uint32_t n_iter;
 
@@ -255,14 +255,16 @@ void run_cg (bool jacobi) {
 
     linear_system_solver_config->solve_linear_system(linear_system_solver_config, grid, &n_iter, &error);
 
-
-
-
     int n_lines1;
     uint32_t n_lines2;
 
     double *x = read_octave_vector_file_to_array (X, &n_lines1);
     double *x_grid = grid_vector_to_array (grid, 'x', &n_lines2);
+
+//    if(preconditioner)
+//        printf("MSE using %s with preconditioner and %d threads: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
+//    else
+//        printf("MSE using %s without preconditioner and %d threads:: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
 
     cr_assert_eq (n_lines1, n_lines2);
 
@@ -275,13 +277,43 @@ void run_cg (bool jacobi) {
     fclose (B);
 }
 
-Test (solvers, cg_jacobi) {
-    run_cg (true);
+
+Test (solvers, cg_jacobi_1t) {
+    test_solver (true, "conjugate_gradient", 1);
 }
 
-Test (solvers, cg_no_jacobi) {
-    run_cg (false);
+Test (solvers, cg_no_jacobi_1t) {
+    test_solver (false, "conjugate_gradient", 1);
 }
+
+Test (solvers, bcg_jacobi_1t) {
+    test_solver (true, "biconjugate_gradient", 1);
+}
+
+Test (solvers, jacobi_1t) {
+    test_solver (false, "jacobi", 1);
+}
+
+#if defined(_OPENMP)
+
+Test (solvers, cg_jacobi_6t) {
+    test_solver (true, "conjugate_gradient", 6);
+}
+
+Test (solvers, cg_no_jacobi_6t) {
+    test_solver (false, "conjugate_gradient", 6);
+}
+
+
+Test (solvers, bcg_no_jacobi_6t) {
+    test_solver (false, "biconjugate_gradient", 6);
+}
+
+Test (solvers, jacobi_6t) {
+    test_solver (false, "jacobi", 6);
+}
+
+#endif
 
 Test (utils, stretchy_buffer_int) {
 
@@ -332,9 +364,9 @@ Test (utils, stretchy_buffer_double) {
     cr_assert_eq(sb_count(v) ,0);
     cr_assert_eq(stb__sbm(v)  ,1);
 
-            sb_push(v, 0);
-            sb_push(v, 0.5);
-            sb_push(v, 2.5);
+    sb_push(v, 0);
+    sb_push(v, 0.5);
+    sb_push(v, 2.5);
 
     cr_assert_eq(sb_count(v) ,3);
 
