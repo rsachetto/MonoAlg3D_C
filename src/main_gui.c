@@ -258,10 +258,11 @@ void *start_program_with_thread (void *thread_param) {
 
     simulation_running = false;
     uiControlDisable (uiControl (btnCancel));
-
+    uiControlEnable(uiControl(btnParaview));
 
     free(td->program);
     free(td);
+
 
 
     return NULL;
@@ -300,6 +301,12 @@ void start_monodomain_exec () {
 
 
 static void run_simulation(uiButton *b, void *data) {
+
+    if(!global_alg3d_path) {
+        uiMsgBoxError(w, "Error", "Simulator executable path is not configured!\nConfigure using edit->preferences menu!");
+        return;
+    }
+
 
     //TODO: config auto save on run. Make a windows version of this
 #ifdef linux
@@ -592,7 +599,9 @@ void set_global_paths() {
 
         free(alg_path);
         free(paraview_path);
+        return;
     }
+
 }
 
 int main (int argc, char **argv) {
