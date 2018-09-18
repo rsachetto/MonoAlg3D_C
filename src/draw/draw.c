@@ -411,8 +411,8 @@ static void init_variables() {
     // Sets the initial observer's coordinates. It corresponds  to position  the
     // the camera initialy.
     eyeX = 3;
-    eyeY = 0.5;
-    eyeZ = 0.5;
+    eyeY = 3;
+    eyeZ = 3;
 
     // Sets the initial coordinates of the target point.
     centerX = 0.5;
@@ -610,6 +610,20 @@ static void vision( void )
     //TODO: we need to calculate the scale based on the grid size
     glScaled(2, 2, 2);
 
+
+    glDisable(GL_TEXTURE_2D);
+    glLineWidth(2);
+    glBegin(GL_LINES);
+    glColor3f(1, 0, 0);
+    glVertex3f(0, 0, 0);
+    glVertex3f(2, 0, 0);
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, 2, 0);
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, 0, 0);
+    glEnd();
+
+
 }
 
 static void reshape( GLsizei w, GLsizei h )  {
@@ -747,7 +761,7 @@ static void display()
 {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    vision();
+
 
     if (grid_to_draw) {
 
@@ -771,6 +785,9 @@ static void display()
 			}
 		}
     }
+
+    vision();
+
     glutSwapBuffers();
 
 
