@@ -7,6 +7,7 @@ set(SOURCE_FILES_CONFIG
 		extra_data_config.c extra_data_config.h
 		linear_system_solver_config.c linear_system_solver_config.h
 		config_parser.c config_parser.h
+		save_mesh_config.c save_mesh_config.h
         )
 
 ADD_LIBRARY(config STATIC ${SOURCE_FILES_CONFIG})

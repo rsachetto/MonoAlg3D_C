@@ -10,6 +10,7 @@
 #define ALG_SECTION "alg"
 #define STIM_SECTION "stim"
 #define DOMAIN_SECTION "domain"
+#define SAVE_SECTION "print_result"
 #define MATRIX_ASSEMBLY_SECTION "assembly_matrix"
 #define LINEAR_SYSTEM_SOLVER_SECTION "linear_system_solver"
 #define EXTRA_DATA_SECTION "extra_data"

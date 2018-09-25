@@ -10,6 +10,7 @@
 #include "../monodomain/monodomain_solver.h"
 
 struct assembly_matrix_config;
+struct monodomain_solver;
 
 #define ASSEMBLY_MATRIX(name) EXPORT_FN void name(struct assembly_matrix_config *config, struct monodomain_solver *the_solver, struct grid *the_grid)
 typedef ASSEMBLY_MATRIX(assembly_matrix_fn);

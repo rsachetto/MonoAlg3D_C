@@ -2,8 +2,8 @@
 // Created by sachetto on 01/10/17.
 //
 
-#ifndef MONOALG3D_UTILS_H_H
-#define MONOALG3D_UTILS_H_H
+#ifndef MONOALG3D_UTILS_H
+#define MONOALG3D_UTILS_H
 
 #include <stddef.h>
 

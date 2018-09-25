@@ -15,6 +15,13 @@ struct config_common {
     char *library_file_path;
     bool library_file_path_was_set;
     struct string_hash *config;
+
+};
+
+struct generic_config {
+    //This is used to cast any config that has only a config_common and a
+    //function pointer
+    struct config_common config_data;
 };
 
 void init_config_common_data(struct config_common *cm);
