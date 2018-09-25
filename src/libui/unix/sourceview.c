@@ -143,7 +143,7 @@ int uiSourceViewCanUndo(uiSourceView *e)
 
 
 //TODO: handle error better
-int uiSourceViewSaveSource(uiSourceView *e, const char * filename) {
+void uiSourceViewSaveSource(uiSourceView *e, const char * filename) {
 
     GFile *file = g_file_new_for_path(filename);
     GtkSourceFile *sourceFile = gtk_source_file_new();

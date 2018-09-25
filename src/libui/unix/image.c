@@ -52,8 +52,10 @@ void uiImageAppend(uiImage *i, void *pixels, int pixelWidth, int pixelHeight, in
 	cs = cairo_image_surface_create_for_data(buf, CAIRO_FORMAT_ARGB32,
 		pixelWidth, pixelHeight,
 		cstride);
-	if (cairo_surface_status(cs) != CAIRO_STATUS_SUCCESS)
+	if (cairo_surface_status(cs) != CAIRO_STATUS_SUCCESS) {
 		/* TODO */;
+	}
+
 	cairo_surface_flush(cs);
 	g_ptr_array_add(i->images, cs);
 }
