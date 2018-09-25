@@ -37,11 +37,6 @@ void initialize_and_construct_grid(struct grid *the_grid, double side_length);
 void print_grid(struct grid* the_grid, FILE *output_file);
 void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary);
 
-bool save_grid_text_format_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count,
-                                                  const bool binary);
-
-bool save_grid_vtk_format_and_check_for_activity(const struct grid *the_grid, FILE *output_file, const int count);
-
 void clean_grid(struct grid *the_grid);
 void order_grid_cells (struct grid *the_grid);
 
@@ -61,6 +56,8 @@ void print_grid_matrix(struct grid *the_grid, FILE* output_file);
 void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines);
 
+
+//TODO: do we need this??
 void save_grid_domain (struct grid * the_grid, const char *file_name);
 
 void lock_grid(struct grid *the_grid);

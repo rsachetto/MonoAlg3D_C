@@ -288,7 +288,7 @@ _UI_EXTERN void uiSourceViewOnChanged(uiSourceView *e, void (*f)(uiSourceView *e
 _UI_EXTERN uiSourceView *uiNewSourceView(void);
 _UI_EXTERN void uiSourceViewSetReadOnly(uiSourceView *e, int readonly);
 _UI_EXTERN int uiSourceViewCanUndo(uiSourceView *e);
-_UI_EXTERN int uiSourceViewSaveSource(uiSourceView *e, const char * filename);
+_UI_EXTERN void uiSourceViewSaveSource(uiSourceView *e, const char * filename);
 
 
 typedef struct uiMenuItem uiMenuItem;
