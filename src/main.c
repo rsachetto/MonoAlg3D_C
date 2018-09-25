@@ -39,10 +39,10 @@ int main (int argc, char **argv) {
     parse_options (argc, argv, options);
 
     // Create the output dir and the logfile
-    if (options->out_dir_name) {
+    if (options->save_mesh_config && options->save_mesh_config->out_dir_name) {
         sds buffer = sdsnew ("");
-        create_dir_if_no_exists (options->out_dir_name);
-        buffer = sdscatfmt (buffer, "%s/outputlog.txt", options->out_dir_name);
+        create_dir_if_no_exists (options->save_mesh_config->out_dir_name);
+        buffer = sdscatfmt (buffer, "%s/outputlog.txt", options->save_mesh_config->out_dir_name);
         open_logfile (buffer);
         sdsfree (buffer);
     }

@@ -2,8 +2,8 @@
 // Created by sachetto on 01/10/17.
 //
 
-#ifndef MONOALG3D_HASH_H
-#define MONOALG3D_HASH_H
+#ifndef MONOALG3D_POINT_HASH_H
+#define MONOALG3D_POINT_HASH_H
 
 struct point_3d {
     double x, y, z;

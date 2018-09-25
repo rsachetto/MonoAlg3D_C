@@ -1,18 +1,18 @@
-//
-// Created by sachetto on 29/09/17.
-//
-
 #ifndef MONOALG3D_SOLVER_H
 #define MONOALG3D_SOLVER_H
 
 #include "../alg/grid/grid.h"
 #include "ode_solver.h"
-#include "../config/stim_config_hash.h"
-#include "../config/extra_data_config.h"
 #include "../config/config_parser.h"
 
 #include <stdbool.h>
 #include <stdint.h>
+
+
+//Forward declarations
+struct user_options;
+struct ode_solver;
+struct stim_config_hash;
 
 struct monodomain_solver {
 

@@ -73,6 +73,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     struct domain_config *domain_config = configs->domain_config;
     struct assembly_matrix_config *assembly_matrix_config = configs->assembly_matrix_config;
     struct linear_system_solver_config *linear_system_solver_config = configs->linear_system_solver_config;
+    struct save_mesh_config *save_mesh_config = configs->save_mesh_config;
 
     bool has_extra_data = (extra_data_config != NULL);
 
@@ -118,6 +119,12 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         exit (EXIT_FAILURE);
     }
 
+    if (save_mesh_config) {
+        init_save_mesh_functions (save_mesh_config);
+    } else {
+        print_to_stdout_and_file ("No configuration provided to save the results! The results will not be saved!\n");
+    }
+
     if (has_extra_data) {
         init_extra_data_functions (extra_data_config);
     }
@@ -142,7 +149,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
-    bool save_to_file = (configs->out_dir_name != NULL);
+    bool save_to_file = (configs->save_mesh_config != NULL);
 
     double dt_edp = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
@@ -217,7 +224,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     start_stop_watch (&solver_time);
 
-    int print_rate = configs->print_rate;
+    int print_rate = configs->save_mesh_config->print_rate;
+    double vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
     double solver_error;
@@ -245,8 +253,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
             if (count % print_rate == 0) {
                 start_stop_watch (&write_time);
-
-                activity = print_result(the_grid, configs, count);
+                activity = save_mesh_config->save_mesh(save_mesh_config->out_dir_name, vm_threshold, save_mesh_config, the_grid);
 
                 total_write_time += stop_stop_watch (&write_time);
 
@@ -265,6 +272,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
         start_stop_watch (&ode_time);
 
+        //REACTION
         solve_all_volumes_odes (the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
 
         update_monodomain (original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_edp,
@@ -274,6 +282,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
         start_stop_watch (&cg_time);
 
+        //DIFUSION
         linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations, &solver_error);
 
         cg_partial = stop_stop_watch (&cg_time);
@@ -347,31 +356,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file ("Write time: %ld μs\n", total_write_time);
     print_to_stdout_and_file ("Initial configuration time: %ld μs\n", total_config_time);
     print_to_stdout_and_file ("CG Total Iterations: %u\n", total_cg_it);
-}
-
-bool print_result(const struct grid *the_grid, const struct user_options *configs, int count) {
-    bool activity;
-    sds tmp = sdsnew (configs->out_dir_name);
-    sds c = sdsfromlonglong (count);
-    tmp = sdscat (tmp, "/V_t_");
-    tmp = sdscat (tmp, c);
-
-    if(configs->use_vtk) {
-        tmp = sdscat (tmp, ".vtk");
-    }
-
-    FILE *f1 = fopen (tmp, "w");
-    if(configs->use_vtk) {
-        activity = save_grid_vtk_format_and_check_for_activity(the_grid, f1, count);
-    }
-    else {
-        activity = save_grid_text_format_and_check_for_activity(the_grid, f1, count, configs->binary);
-    }
-
-    fclose (f1);
-    sdsfree (tmp);
-    sdsfree (c);
-    return activity;
 }
 
 void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_grid) {
@@ -552,18 +536,20 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
         print_to_stdout_and_file ("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
     }
 
-    print_to_stdout_and_file ("Print Rate = %d\n", options->print_rate);
 
-    if (options->out_dir_name != NULL) {
-        if (options->binary) {
-            print_to_stdout_and_file ("Saving using binary output in %s dir\n", options->out_dir_name);
-
-        } else {
-            print_to_stdout_and_file ("Saving to plain text output in %s dir\n", options->out_dir_name);
-        }
-    } else {
-        print_to_stdout_and_file ("The solution will not be saved\n");
-    }
+    //TODO: change this to the print configuration
+//    print_to_stdout_and_file ("Print Rate = %d\n", options->print_rate);
+//
+//    if (options->out_dir_name != NULL) {
+//        if (options->binary) {
+//            print_to_stdout_and_file ("Saving using binary output in %s dir\n", options->out_dir_name);
+//
+//        } else {
+//            print_to_stdout_and_file ("Saving to plain text output in %s dir\n", options->out_dir_name);
+//        }
+//    } else {
+//        print_to_stdout_and_file ("The solution will not be saved\n");
+//    }
 
     if (options->stim_configs) {
         print_to_stdout_and_file (LOG_LINE_SEPARATOR);

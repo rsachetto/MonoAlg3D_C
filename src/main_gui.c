@@ -540,7 +540,7 @@ void open_paraview_last_simulation(uiButton *b, void *data) {
                            &threadId);                // returns the thread identifier
 
 #else
-    program = sdscatfmt (program, "%s --data=%s/V_t_..vtk", global_paraview_path, options->out_dir_name);
+    program = sdscatfmt (program, "%s --data=%s/V_t_..vtk", global_paraview_path, options->save_mesh_config->out_dir_name);
     td->program = strdup (program);
     pthread_create (&thread, NULL, start_paraview_with_thread, (void *)program);
     pthread_detach (thread);

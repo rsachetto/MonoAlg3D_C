@@ -20,6 +20,13 @@
 #include <math.h>
 #include "../alg/grid/grid.h"
 
+#include "domain_config.h"
+#include "extra_data_config.h"
+#include "assembly_matrix_config.h"
+#include "save_mesh_config.h"
+#include "linear_system_solver_config.h"
+#include "stim_config_hash.h"
+
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
 #define EXTRA_DATA_OPT 1900
@@ -27,18 +34,15 @@
 #define ASSEMBLY_MATRIX_OPT 2100
 #define LINEAR_SYSTEM_SOLVER_OPT 2200
 #define DRAW_OPT 3000
+#define SAVE_OPT 3100
 #define BETA 4000
 #define CM 5000
 
 struct user_options {
     double final_time;				/*-f option */
     bool final_time_was_set;
-    char *out_dir_name;	            /*-o option */
-    bool out_dir_name_was_set;
     bool adaptive;	                /*-a option */
     bool adaptive_was_set;
-    int print_rate;	            	/*-p option */
-    bool print_rate_was_set;
     double ref_bound;				/*-r option*/
     bool ref_bound_was_set;
     double deref_bound;				/*-d option*/
@@ -59,13 +63,12 @@ struct user_options {
     bool gpu_id_was_set;
     bool abort_no_activity;         /*-b option*/
     bool abort_no_activity_was_set;
+    double vm_threshold;            /*-v option*/
+    double vm_threshold_was_set;
+
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
-    bool binary;                    /*-y option*/
-    bool binary_was_set;
 
-    bool use_vtk;                    /*-V option*/
-    bool use_vtk_was_set;
 
     bool draw;
 
@@ -83,6 +86,7 @@ struct user_options {
     struct extra_data_config *extra_data_config;
     struct assembly_matrix_config *assembly_matrix_config;
     struct linear_system_solver_config *linear_system_solver_config;
+    struct save_mesh_config *save_mesh_config;
 
     bool main_found;
 

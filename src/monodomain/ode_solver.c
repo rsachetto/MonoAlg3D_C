@@ -293,8 +293,6 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 
 
         }
-        //TODO: test if is faster to update the GPU using a kernel or a host function with cudaMemcpy2D
-        //ode_solver->update_gpu_fn(sv, refined_this_step->base, num_refined_cells, neq);
 
 #endif
     }

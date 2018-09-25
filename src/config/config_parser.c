@@ -5,18 +5,12 @@
 #include "../ini_parser/ini_file_sections.h"
 #include "../utils/logfile_utils.h"
 #include "../string/sds.h"
-#include "stim_config_hash.h"
-#include "domain_config.h"
-#include "extra_data_config.h"
-#include "assembly_matrix_config.h"
-#include "linear_system_solver_config.h"
-
 
 static const struct option long_options[] = {
         { "config_file", required_argument, NULL, 'c' },
-        { "output_dir", required_argument , NULL, 'o' },
         { "use_adaptivity", no_argument, NULL, 'a' },
         { "abort_on_no_activity", no_argument, NULL, 'b' },
+        { "vm_threshold", required_argument, NULL, 'v' },
         { "num_threads", required_argument, NULL, 'n' },
         { "use_gpu", required_argument, NULL, 'g' },
         { "print_rate",required_argument , NULL, 'p' },
@@ -32,12 +26,11 @@ static const struct option long_options[] = {
         { "derefine_each", required_argument, NULL, 'D'},
         { "gpu_id", required_argument, NULL, 'G'},
         { "model_file_path", required_argument, NULL, 'k'},
-        { "binary_output", no_argument, NULL, 'y'},
-        { "vtk_output", no_argument, NULL, 'V'},
         { "beta", required_argument, NULL, BETA},
         { "cm", required_argument, NULL, CM},
         { "start_adapting_at", required_argument, NULL, START_REFINING},
         { "domain", required_argument, NULL, DOMAIN_OPT},
+        { "save_result", required_argument, NULL, SAVE_OPT},
         { "assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT},
         { "extra_data", required_argument, NULL, EXTRA_DATA_OPT},
         { "stimulus", required_argument, NULL, STIM_OPT},
@@ -46,7 +39,7 @@ static const struct option long_options[] = {
         { NULL, no_argument, NULL, 0 }
 };
 
-static const char *opt_string =   "c:o:abn:g:p:m:t:r:d:z:e:f:jR:D:G:k:yVh";
+static const char *opt_string =   "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:h";
 
 
 /* Display program usage, and exit.
@@ -63,6 +56,7 @@ void display_usage (char **argv) {
     printf ("--use_adaptivity | -a. No argument required. Use adaptivity. Default No use.\n");
     printf ("--abort_on_no_activity | -b. No argument required. The simulation will be aborted if no activity is "
                     "verified after print_rate time steps. Default false.\n");
+    printf ("--vm_treshold | -v. V to abort. If abort_on_no_activity is set, this will be used as abort threshold. Default -86.0.\n");
     printf ("--print_rate | -p [output-print-rate]. Output print rate (in number of iterations). Default: 1 \n");
     printf ("--max_cg_its | -m [max-its]. Maximum number of CG iterations. Default: number of volumes \n");
     printf ("--cg_tolerance | -t [tolerance]. Conjugate Gradiente tolerance. Default: 1e-16 \n");
@@ -101,9 +95,6 @@ struct user_options *new_user_options () {
 
     struct user_options *user_args = (struct user_options *)malloc (sizeof (struct user_options));
 
-    user_args->out_dir_name = NULL;
-    user_args->out_dir_name_was_set = false;
-
     user_args->adaptive = false;
     user_args->adaptive_was_set = false;
 
@@ -115,9 +106,6 @@ struct user_options *new_user_options () {
 
     user_args->final_time = 10.0;
     user_args->final_time_was_set = false;
-
-    user_args->print_rate = 1;
-    user_args->print_rate_was_set = false;
 
     user_args->ref_bound = 0.11;
     user_args->ref_bound_was_set = false;
@@ -157,11 +145,8 @@ struct user_options *new_user_options () {
     user_args->start_adapting_at = 1.0;
     user_args->start_adapting_at_was_set = false;
 
-    user_args->binary = false;
-    user_args->binary_was_set = false;
-
-    user_args->use_vtk = false;
-    user_args->use_vtk_was_set = false;
+    user_args->vm_threshold = -86.0;
+    user_args->vm_threshold_was_set = false;
 
 
     user_args->stim_configs = NULL;
@@ -169,9 +154,9 @@ struct user_options *new_user_options () {
     user_args->extra_data_config = NULL;
     user_args->assembly_matrix_config = NULL;
     user_args->linear_system_solver_config = NULL;
+    user_args->save_mesh_config = NULL;
 
     user_args->draw = false;
-
     user_args->main_found = false;
 
     return user_args;
@@ -391,8 +376,88 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
 
 }
 
-void set_linear_system_solver_config(const char *args, struct linear_system_solver_config *config, const char *config_file) {
+void set_save_mesh_config(const char *args, struct save_mesh_config *sm, const char *config_file) {
 
+    sds extra_config;
+    sds *extra_config_tokens;
+    int tokens_count;
+    extra_config = sdsnew(args);
+    extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
+    char * opt_value;
+    char old_value[32];
+    char *key, *value;
+
+    assert(sm);
+
+    struct string_hash *sh = sm->config_data.config;
+
+    for(int i = 0; i < tokens_count; i++) {
+        extra_config_tokens[i] = sdstrim(extra_config_tokens[i], " ");
+
+        int values_count;
+        sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
+
+        if(values_count != 2) {
+            fprintf(stderr, "Invalid format for options %s. Exiting!\n", args);
+            exit(EXIT_FAILURE);
+        }
+
+        key_value[0] = sdstrim(key_value[0], " ");
+        key_value[1] = sdstrim(key_value[1], " ");
+
+        key   = key_value[0];
+        value = key_value[1];
+
+        if(strcmp(key, "print_rate") == 0) {
+            if(sm->print_rate_was_set) {
+                sprintf (old_value, "%d", sm->print_rate);
+                print_to_stdout_and_file("WARNING: For save_mesh configuration: \n");
+                issue_overwrite_warning ("print_rate", old_value, value, config_file);
+            }
+            sm->print_rate =  (int)strtol (value, NULL, 10);
+        }
+        if(strcmp(key, "output_dir") == 0) {
+            if(sm->out_dir_name_was_set) {
+                print_to_stdout_and_file("WARNING: For save_mesh configuration: \n");
+                issue_overwrite_warning ("print_rate", sm->out_dir_name, value, config_file);
+            }
+            free(sm->out_dir_name);
+            sm->out_dir_name = strdup(value);
+        }
+        else if (strcmp(key, "function") == 0) {
+            if(sm->config_data.function_name_was_set) {
+                print_to_stdout_and_file("WARNING: For save_mesh configuration: \n");
+                issue_overwrite_warning ("function", sm->config_data.function_name, value, config_file);
+            }
+            free(sm->config_data.function_name);
+            sm->config_data.function_name = strdup(value);
+        }
+        else if (strcmp(key, "library_file") == 0) {
+            if(sm->config_data.library_file_path_was_set) {
+                print_to_stdout_and_file("WARNING: For save_mesh configuration: \n");
+                issue_overwrite_warning ("library_file", sm->config_data.library_file_path, value, config_file);
+            }
+            free(sm->config_data.library_file_path);
+            sm->config_data.library_file_path = strdup(value);
+        }
+        else {
+            opt_value = string_hash_search(sh, key);
+            if(opt_value) {
+                issue_overwrite_warning(key, opt_value, value, config_file);
+            }
+
+            string_hash_insert_or_overwrite(sh, key, value);
+
+        }
+        sdsfreesplitres(key_value, values_count);
+
+    }
+
+    sdsfreesplitres(extra_config_tokens, tokens_count);
+
+}
+
+void set_config(const char *args, void *some_config, const char *config_file, char *config_type) {
     sds extra_config;
     sds *extra_config_tokens;
     int tokens_count;
@@ -401,7 +466,9 @@ void set_linear_system_solver_config(const char *args, struct linear_system_solv
     char *opt_value;
     char *key, *value;
 
-    assert(config);
+    assert(some_config);
+
+    struct generic_config* config = (struct generic_config*) some_config;
 
     struct string_hash *sh = config->config_data.config;
 
@@ -425,14 +492,14 @@ void set_linear_system_solver_config(const char *args, struct linear_system_solv
         if (strcmp(key, "name") == 0) {
             if (strcmp(key, "function") == 0) {
                 if (config->config_data.function_name_was_set) {
-                    print_to_stdout_and_file("WARNING: For domain configuration: \n");
+                    print_to_stdout_and_file("WARNING: For %s configuration: \n", config_type);
                     issue_overwrite_warning("function", config->config_data.function_name, value, config_file);
                 }
                 free(config->config_data.function_name);
                 config->config_data.function_name = strdup(value);
             } else if (strcmp(key, "library_file") == 0) {
                 if (config->config_data.library_file_path_was_set) {
-                    print_to_stdout_and_file("WARNING: For domain configuration: \n");
+                    print_to_stdout_and_file("WARNING: For %s configuration: \n", config_type);
                     issue_overwrite_warning("library_file", config->config_data.library_file_path, value, config_file);
                 }
                 free(config->config_data.library_file_path);
@@ -455,133 +522,6 @@ void set_linear_system_solver_config(const char *args, struct linear_system_solv
     }
 }
 
-void set_assembly_matrix_config(const char *args, struct assembly_matrix_config *mc, const char *config_file) {
-
-    sds extra_config;
-    sds *extra_config_tokens;
-    int tokens_count;
-    extra_config = sdsnew(args);
-    extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
-    char *opt_value;
-    char *key, *value;
-
-    assert(mc);
-
-    struct string_hash *sh = mc->config_data.config;
-
-    for (int i = 0; i < tokens_count; i++) {
-        extra_config_tokens[i] = sdstrim(extra_config_tokens[i], " ");
-
-        int values_count;
-        sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
-
-        if (values_count != 2) {
-            fprintf(stderr, "Invalid format for options %s. Exiting!\n", args);
-            exit(EXIT_FAILURE);
-        }
-
-        key_value[0] = sdstrim(key_value[0], " ");
-        key_value[1] = sdstrim(key_value[1], " ");
-
-        key = key_value[0];
-        value = key_value[1];
-
-        if (strcmp(key, "name") == 0) {
-            if (strcmp(key, "function") == 0) {
-                if (mc->config_data.function_name_was_set) {
-                    print_to_stdout_and_file("WARNING: For domain configuration: \n");
-                    issue_overwrite_warning("function", mc->config_data.function_name, value, config_file);
-                }
-                free(mc->config_data.function_name);
-                mc->config_data.function_name = strdup(value);
-            } else if (strcmp(key, "library_file") == 0) {
-                if (mc->config_data.library_file_path_was_set) {
-                    print_to_stdout_and_file("WARNING: For domain configuration: \n");
-                    issue_overwrite_warning("library_file", mc->config_data.library_file_path, value, config_file);
-                }
-                free(mc->config_data.library_file_path);
-                mc->config_data.library_file_path = strdup(value);
-            } else {
-                opt_value = string_hash_search(sh, key);
-                if (opt_value) {
-                    issue_overwrite_warning(key, opt_value, value, config_file);
-                }
-
-                string_hash_insert_or_overwrite(sh, key, value);
-
-            }
-            sdsfreesplitres(key_value, values_count);
-
-        }
-
-        sdsfreesplitres(extra_config_tokens, tokens_count);
-
-    }
-}
-
-void set_extra_data_config(const char *args, struct extra_data_config *dc, const char *config_file) {
-
-    sds extra_config;
-    sds *extra_config_tokens;
-    int tokens_count;
-    extra_config = sdsnew(args);
-    extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
-    char * opt_value;
-    char *key, *value;
-
-    assert(dc);
-
-    struct string_hash *sh = dc->config_data.config;
-
-    for(int i = 0; i < tokens_count; i++) {
-        extra_config_tokens[i] = sdstrim(extra_config_tokens[i], " ");
-
-        int values_count;
-        sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
-
-        if(values_count != 2) {
-            fprintf(stderr, "Invalid format for optios %s. Exiting!\n", args);
-            exit(EXIT_FAILURE);
-        }
-
-        key_value[0] = sdstrim(key_value[0], " ");
-        key_value[1] = sdstrim(key_value[1], " ");
-
-        key   = key_value[0];
-        value = key_value[1];
-
-        if (strcmp(key, "function") == 0) {
-            if(dc->config_data.function_name_was_set) {
-                print_to_stdout_and_file("WARNING: For extra_data configuration: \n");
-                issue_overwrite_warning ("function", dc->config_data.function_name, value, config_file);
-            }
-            free(dc->config_data.function_name);
-            dc->config_data.function_name = strdup(value);
-        }
-        else if (strcmp(key, "library_file") == 0) {
-            if(dc->config_data.library_file_path_was_set) {
-                print_to_stdout_and_file("WARNING: For extra_data configuration: \n");
-                issue_overwrite_warning ("library_file", dc->config_data.library_file_path, value, config_file);
-            }
-            free(dc->config_data.library_file_path);
-            dc->config_data.library_file_path = strdup(value);
-        }
-        else {
-            opt_value = string_hash_search(sh, key);
-            if(opt_value) {
-                issue_overwrite_warning(key, opt_value, value, config_file);
-            }
-
-            string_hash_insert_or_overwrite(sh, key, value);
-
-        }
-        sdsfreesplitres(key_value, values_count);
-
-    }
-
-    sdsfreesplitres(extra_config_tokens, tokens_count);
-
-}
 
 void get_config_file (int argc, char **argv, struct user_options *user_args) {
     int opt = 0;
@@ -638,26 +578,6 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                     issue_overwrite_warning ("dt_edo", old_value, optarg, user_args->config_file);
                 }
                 user_args->dt_edo = strtod (optarg, NULL);
-
-                break;
-            case 'p':
-                if (user_args->print_rate_was_set) {
-                    sprintf (old_value, "%d", user_args->print_rate);
-                    issue_overwrite_warning ("print_rate", old_value, optarg, user_args->config_file);
-                }
-                user_args->print_rate = (int)strtol (optarg, NULL, 10);
-                break;
-            case 'o':
-                if (user_args->out_dir_name_was_set) {
-                    if (user_args->out_dir_name) {
-                        issue_overwrite_warning ("output_dir", user_args->out_dir_name, optarg, user_args->config_file);
-                    } else {
-                        issue_overwrite_warning ("output_dir", "No Save", optarg, user_args->config_file);
-                    }
-                }
-                free(user_args->out_dir_name);
-                user_args->out_dir_name = strdup(optarg);
-
                 break;
             case 'k':
                 if (user_args->model_file_path_was_set) {
@@ -775,20 +695,14 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 }
                 user_args->abort_no_activity = true;
                 break;
-            case 'y':
-                if (user_args->binary_was_set) {
-                    sprintf (old_value, "%d", user_args->binary);
-                    issue_overwrite_warning ("binary_output", old_value, optarg, user_args->config_file);
+            case 'v':
+                if (user_args->vm_threshold_was_set) {
+                    sprintf (old_value, "%lf", user_args->vm_threshold);
+                    issue_overwrite_warning ("vm_threshold", old_value, optarg, user_args->config_file);
                 }
-                user_args->binary = true;
+                user_args->vm_threshold = strtod (optarg, NULL);;
                 break;
-            case 'V':
-                if (user_args->use_vtk_was_set) {
-                    sprintf (old_value, "%d", user_args->use_vtk_was_set);
-                    issue_overwrite_warning ("vtk_output", old_value, optarg, user_args->config_file);
-                }
-                user_args->use_vtk = true;
-                break;
+
             case DOMAIN_OPT:
                 if(user_args->domain_config == NULL) {
                     print_to_stdout_and_file("Creating new domain config from command line!\n");
@@ -796,26 +710,33 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                 }
                 set_domain_config(optarg, user_args->domain_config, user_args->config_file );
                 break;
+            case SAVE_OPT:
+                if(user_args->domain_config == NULL) {
+                    print_to_stdout_and_file("Creating new save config from command line!\n");
+                    user_args->save_mesh_config = new_save_mesh_config();
+                }
+                set_config(optarg, user_args->save_mesh_config, user_args->config_file, "save_mesh");
+                break;
             case ASSEMBLY_MATRIX_OPT:
                 if(user_args->assembly_matrix_config == NULL) {
                     print_to_stdout_and_file("Creating new assembly_matrix config from command line!\n");
                     user_args->assembly_matrix_config = new_assembly_matrix_config();
                 }
-                set_assembly_matrix_config(optarg, user_args->assembly_matrix_config, user_args->config_file );
+                set_config(optarg, user_args->assembly_matrix_config, user_args->config_file, "assembly_matrix");
                 break;
             case LINEAR_SYSTEM_SOLVER_OPT:
                 if(user_args->linear_system_solver_config == NULL) {
                     print_to_stdout_and_file("Creating new linear_system_solver config from command line!\n");
                     user_args->linear_system_solver_config = new_linear_system_solver_config();
                 }
-                set_linear_system_solver_config(optarg, user_args->linear_system_solver_config, user_args->config_file);
+                set_config(optarg, user_args->linear_system_solver_config, user_args->config_file, "linear_system_solver");
                 break;
             case EXTRA_DATA_OPT:
                 if(user_args->extra_data_config == NULL) {
                     print_to_stdout_and_file("Creating new extra data config from command line!\n");
                     user_args->extra_data_config = new_extra_data_config();
                 }
-                set_extra_data_config(optarg, user_args->extra_data_config, user_args->config_file );
+                set_config(optarg, user_args->extra_data_config, user_args->config_file, "extra_data" );
                 break;
             case STIM_OPT:
                 if(user_args->stim_configs == NULL) {
@@ -872,34 +793,18 @@ int parse_config_file (void *user, const char *section, const char *name, const 
             pconfig->abort_no_activity = false;
         }
         pconfig->abort_no_activity_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "use_adaptivity")) {
+    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "vm_threshold")) {
+        pconfig->vm_threshold = strtod(value, NULL);
+        pconfig->vm_threshold_was_set = true;
+    }
+    else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "use_adaptivity")) {
         if (strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
             pconfig->adaptive = true;
         } else {
             pconfig->adaptive = false;
         }
         pconfig->adaptive_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "print_rate")) {
-        pconfig->print_rate = (int)strtol (value, NULL, 10);
-        pconfig->print_rate_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "output_dir")) {
-        pconfig->out_dir_name = strdup(value);
-        pconfig->out_dir_name_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "binary_output")) {
-        if (strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
-            pconfig->binary = true;
-        } else {
-            pconfig->binary = false;
-        }
-        pconfig->binary_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (MAIN_SECTION, "vtk_output")) {
-        if (strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
-            pconfig->use_vtk = true;
-        } else {
-            pconfig->use_vtk = false;
-        }
-        pconfig->use_vtk_was_set = true;
-    } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refinement_bound")) {
+    }  else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "refinement_bound")) {
         pconfig->ref_bound = strtod(value, NULL);
         pconfig->ref_bound_was_set = true;
     } else if (MATCH_SECTION_AND_NAME (ALG_SECTION, "derefinement_bound")) {
@@ -1059,8 +964,34 @@ int parse_config_file (void *user, const char *section, const char *name, const 
             string_hash_insert(pconfig->extra_data_config->config_data.config, name, value);
         }
     }
+    else if(MATCH_SECTION(SAVE_SECTION)) {
+
+        if(pconfig->save_mesh_config == NULL) {
+            pconfig->save_mesh_config = new_save_mesh_config();
+        }
+        if (MATCH_NAME("print_rate")) {
+            pconfig->save_mesh_config->print_rate = (int)strtol (value, NULL, 10);
+            pconfig->save_mesh_config->print_rate_was_set = true;
+        }
+        if (MATCH_NAME("output_dir")) {
+            pconfig->save_mesh_config->out_dir_name = strdup(value);
+            pconfig->save_mesh_config->out_dir_name_was_set = true;
+        }
+        if(MATCH_NAME("function")) {
+            pconfig->save_mesh_config->config_data.function_name = strdup(value);
+            pconfig->save_mesh_config->config_data.function_name_was_set = true;
+        }
+        else if(MATCH_NAME("library_file")) {
+            pconfig->save_mesh_config->config_data.library_file_path = strdup(value);
+            pconfig->save_mesh_config->config_data.library_file_path_was_set = true;
+        }
+        else {
+            string_hash_insert(pconfig->save_mesh_config->config_data.config, name, value);
+        }
+    }
     else {
-        fprintf(stderr, "Invalid name %s in section %s on the config file!\n", name, section);
+
+        fprintf(stderr, "\033[33;5;7mInvalid name %s in section %s on the config file!\033[0m\n", name, section);
         return 0;
     }
 
@@ -1077,7 +1008,6 @@ void configure_grid_from_options(struct grid* grid, struct user_options *options
 
 void free_user_options(struct user_options *s) {
     free(s->model_file_path);
-    free(s->out_dir_name);
     if(s->stim_configs) {
         STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(s->stim_configs, free_stim_config);
         stim_config_hash_destroy(s->stim_configs);

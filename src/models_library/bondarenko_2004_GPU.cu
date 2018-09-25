@@ -21,6 +21,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();
+
     return pitch_h;
 
 }
@@ -39,12 +40,13 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
 
-    //the array cells to solve is passed when we are using and adapative mesh
+    //the array cells to solve is passed when we are using and adaptive mesh
     uint32_t *cells_to_solve_device = NULL;
     if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
+
     solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps);
 
     check_cuda_error( cudaPeekAtLastError() );
