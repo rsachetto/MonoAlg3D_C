@@ -390,14 +390,24 @@ char *get_config_file_path() {
 #endif
 
 #ifdef _WIN32
-    read_chars = GetModuleFileName(NULL, gui_path, bufsize)
+    read_chars = GetModuleFileName(NULL, gui_path, bufsize);
 #endif
 
     gui_path[read_chars] = '\0';
 
+    #ifdef linux
     char* base_dir = dirname(gui_path);
+#endif
 
 #ifdef _WIN32
+    char node[ _MAX_DIR ];
+    char base_dir[ _MAX_DIR ];
+    char fname[ _MAX_FNAME ];
+    char ext[ _MAX_EXT ];
+
+    _splitpath( gui_path, node, base_dir, fname, ext );
+
+
     sprintf(config_path, "%s\\.config", base_dir);
 #else
     sprintf(config_path, "%s/.config", base_dir);
@@ -507,8 +517,13 @@ static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data)
 
 }
 
-static void *start_paraview_with_thread(void *data) {
 
+
+#ifdef _WIN32
+DWORD WINAPI start_paraview_with_thread(LPVOID data) {
+#else
+static void *start_paraview_with_thread(void *data) {
+#endif
     char *program = (char*)data;
 
     system(program);
@@ -525,11 +540,17 @@ void open_paraview_last_simulation(uiButton *b, void *data) {
     td->fn_pointer = append_to_queue;
     sds program = sdsnew ("");
 
+    if(options->save_mesh_config->out_dir_name == NULL) {
+        uiMsgBoxError(w, "Error", "The last simulation was not saved!");
+        return;
+    }
+
+
 #ifdef _WIN32
     HANDLE thread;
     DWORD threadId;
 
-    program = sdscatfmt (program, "%s --data=%s\\V_t_..vtk", global_paraview_path, options->out_dir_name);
+    program = sdscatfmt (program, "%s --data=%s\\V_t_..vtk", global_paraview_path, options->save_mesh_config->out_dir_name);
     td->program = _strdup (program);
 
     thread = CreateThread (NULL,                      // default security attributes
@@ -574,7 +595,7 @@ void set_global_paths() {
     }
 }
 
-int main () {
+int main (int argc, char **argv) {
 
     options = new_user_options ();
     set_global_paths();
@@ -629,7 +650,7 @@ int main () {
 #ifdef _WIN32
     configText = uiNewMultilineEntry ();
     uiMultilineEntrySetReadOnly (configText, 1);
-    uiMultilineEntryOnChanged(configText, onConfigChanged, NULL);
+    uiMultilineEntryOnChanged(configText, on_simulation_config_changed, NULL);
 #endif
 
     runText = uiNewMultilineEntry ();
