@@ -57,12 +57,12 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->b = 0.0;
 
     cell_node->can_change = true;
-    cell_node->fibrotic = false;
-    cell_node->border_zone = false;
-    cell_node->scar_type = 'n';
-
 
     cell_node->elements = NULL;
+
+    cell_node->linear_system_solver_extra_info = NULL;
+    cell_node->mesh_extra_info = NULL;
+
 #if defined(_OPENMP)
     omp_init_lock(&(cell_node->updating));
 #endif
@@ -72,6 +72,8 @@ void init_cell_node(struct cell_node *cell_node) {
 void free_cell_node(struct cell_node *cell_node) {
 
     sb_free(cell_node->elements);
+    free(cell_node->linear_system_solver_extra_info);
+    free(cell_node->mesh_extra_info);
 
 #if defined(_OPENMP)
     omp_destroy_lock(&(cell_node->updating));
