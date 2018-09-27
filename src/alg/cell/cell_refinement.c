@@ -3,6 +3,7 @@
 //
 
 #include "cell.h"
+#include "string.h"
 
 void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t **refined_this_step)  {
 
@@ -1171,9 +1172,20 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
 
     the_cell->cell_data.level = other_cell->cell_data.level;
     the_cell->active = other_cell->active;
-    the_cell->fibrotic = other_cell->fibrotic;
-    the_cell->border_zone = other_cell->border_zone;
-    the_cell->scar_type = other_cell->scar_type;
+
+    if(other_cell->mesh_extra_info) {
+        the_cell->mesh_extra_info_size = other_cell->mesh_extra_info_size;
+        the_cell->mesh_extra_info = malloc(other_cell->mesh_extra_info_size);
+        memcpy(the_cell->mesh_extra_info, other_cell->mesh_extra_info, other_cell->mesh_extra_info_size);
+    }
+
+    if(other_cell->linear_system_solver_extra_info) {
+        the_cell->linear_system_solver_extra_info_size = other_cell->linear_system_solver_extra_info_size;
+        the_cell->linear_system_solver_extra_info = malloc(other_cell->linear_system_solver_extra_info_size);
+        memcpy(the_cell->linear_system_solver_extra_info, other_cell->linear_system_solver_extra_info,
+               other_cell->linear_system_solver_extra_info_size);
+    }
+
     the_cell->v = other_cell->v;
 
     the_cell->face_length = face_length;

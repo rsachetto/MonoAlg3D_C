@@ -5,9 +5,14 @@
 #include "domain_helpers.h"
 #include "../utils/logfile_utils.h"
 #include "../utils/utils.h"
+#include "../alg/cell/cell.h"
+#include "../libraries_common/common_data_structures.h"
+
 #include <float.h>
 #include <math.h>
 #include <time.h>
+
+
 
 #ifdef _MSC_VER
 #include <process.h>
@@ -16,17 +21,56 @@
 #include <unistd.h>
 #endif
 
-int get_num_refinement_steps_to_discretization (double side_len, double h) {
 
-    int num_steps = 0;
-    double aux = side_len;
+void refine_fibrotic_cells(struct grid *the_grid) {
 
-    while (aux > h) {
-        num_steps++;
-        aux /= 2.0;
+    assert(the_grid);
+
+    struct cell_node *grid_cell, *auxiliar_grid_cell;
+
+    struct fibrotic_mesh_info *mesh_info;
+
+    grid_cell = the_grid->first_cell;
+    while ( grid_cell != 0 )	{
+
+        mesh_info = FIBROTIC_INFO(grid_cell);
+
+        if(grid_cell->active && mesh_info->fibrotic) {
+            auxiliar_grid_cell = grid_cell;
+            grid_cell = grid_cell->next;
+            refine_cell( auxiliar_grid_cell, NULL, NULL);
+            the_grid->number_of_cells += 7;
+        }
+        else {
+            grid_cell = grid_cell->next;
+        }
     }
+}
 
-    return num_steps - 1;
+void refine_border_zone_cells(struct grid *the_grid) {
+
+    assert(the_grid);
+
+    struct cell_node *grid_cell, *auxiliar_grid_cell;
+
+    struct fibrotic_mesh_info *mesh_info;
+
+
+    grid_cell = the_grid->first_cell;
+    while ( grid_cell != 0 )	{
+
+        mesh_info = FIBROTIC_INFO(grid_cell);
+
+        if(grid_cell->active && mesh_info->border_zone) {
+            auxiliar_grid_cell = grid_cell;
+            grid_cell = grid_cell->next;
+            refine_cell( auxiliar_grid_cell, NULL, NULL);
+            the_grid->number_of_cells += 7;
+        }
+        else {
+            grid_cell = grid_cell->next;
+        }
+    }
 }
 
 /**
@@ -57,6 +101,7 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, size_t size,
 
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen (file_name, "r");
+
 
     if (!file) {
         print_to_stdout_and_file ("Error opening mesh described in %s!!\n", file_name);
@@ -131,9 +176,12 @@ void set_custom_mesh (struct grid *the_grid, const char *file_name, size_t size,
                 grid_cell->active = true;
                 if (read_fibrosis) {
                     int old_index = (int)mesh_points[index][3];
-                    grid_cell->fibrotic = (fibrosis[old_index] == 1);
-                    grid_cell->border_zone = (fibrosis[old_index] == 2);
-                    grid_cell->scar_type = tag[old_index];
+
+                    INITIALIZE_FIBROTIC_INFO(grid_cell);
+
+                    FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
+                    BORDER_ZONE(grid_cell) = (fibrosis[old_index] == 2);
+                    SCAR_TYPE(grid_cell) = tag[old_index];
                 }
             } else {
                 grid_cell->active = false;
@@ -210,9 +258,12 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
                 grid_cell->active = true;
                 if (read_fibrosis) {
                     int old_index = (int)mesh_points[index][3];
-                    grid_cell->fibrotic = (fibrosis[old_index] == 1);
-                    grid_cell->border_zone = (fibrosis[old_index] == 2);
-                    grid_cell->scar_type = tag[old_index];
+
+                    INITIALIZE_FIBROTIC_INFO(grid_cell);
+
+                    FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
+                    BORDER_ZONE(grid_cell) = (fibrosis[old_index] == 2);
+                    SCAR_TYPE(grid_cell) = tag[old_index];
                 }
             } else {
                 grid_cell->active = false;
@@ -425,9 +476,13 @@ void set_plain_fibrosis (struct grid *the_grid, double phi, unsigned fib_seed) {
 
         if (grid_cell->active) {
             double p = (double)(rand ()) / (RAND_MAX);
-            if (p < phi)
+            if (p < phi) {
                 grid_cell->active = false;
-            grid_cell->fibrotic = true;
+            }
+
+            INITIALIZE_FIBROTIC_INFO(grid_cell);
+            FIBROTIC(grid_cell) = true;
+
         }
         grid_cell = grid_cell->next;
     }
@@ -456,11 +511,14 @@ void set_plain_sphere_fibrosis (struct grid *the_grid, double phi, double plain_
         double distance = pow (grid_cell->center_x - plain_center, 2.0) + pow (grid_cell->center_y - plain_center, 2.0);
 
         if (grid_cell->active) {
+
+            INITIALIZE_FIBROTIC_INFO(grid_cell);
+
             if (distance <= bz_radius_2) {
                 if (distance <= sphere_radius_2) {
-                    grid_cell->fibrotic = true;
+                    FIBROTIC(grid_cell) = true;
                 } else {
-                    grid_cell->border_zone = true;
+                    BORDER_ZONE(grid_cell) = true;
                 }
             }
         }
@@ -472,12 +530,12 @@ void set_plain_sphere_fibrosis (struct grid *the_grid, double phi, double plain_
     while (grid_cell != 0) {
 
         if (grid_cell->active) {
-            if (grid_cell->fibrotic) {
+            if (FIBROTIC(grid_cell)) {
                 double p = (double)(rand ()) / (RAND_MAX);
                 if (p < phi)
                     grid_cell->active = false;
                 grid_cell->can_change = false;
-            } else if (grid_cell->border_zone) {
+            } else if (BORDER_ZONE(grid_cell)) {
                 double distance_from_center =
                         sqrt ((grid_cell->center_x - plain_center) * (grid_cell->center_x - plain_center) +
                               (grid_cell->center_y - plain_center) * (grid_cell->center_y - plain_center));
@@ -510,21 +568,21 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
     double dist_small = 0;
 
     print_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
-    struct cell_node *gridCell = grid->first_cell;
+    struct cell_node *grid_cell = grid->first_cell;
 
-    while (gridCell != NULL) {
+    while (grid_cell != NULL) {
 
-        if (gridCell->active) {
-            if (gridCell->fibrotic) {
-                gridCell->can_change = false;
+        if (grid_cell->active) {
+            if (FIBROTIC(grid_cell)) {
+                grid_cell->can_change = false;
                 double p = (double) (rand()) / (RAND_MAX);
                 if (p < phi)
-                    gridCell->active = false;
-            } else if (gridCell->border_zone) {
-                double centerX = gridCell->center_x;
-                double centerY = gridCell->center_y;
-                double centerZ = gridCell->center_z;
-                if(gridCell->scar_type == 'b') {
+                    grid_cell->active = false;
+            } else if (BORDER_ZONE(grid_cell)) {
+                double centerX = grid_cell->center_x;
+                double centerY = grid_cell->center_y;
+                double centerZ = grid_cell->center_z;
+                if(SCAR_TYPE(grid_cell) == 'b') {
                     dist_big = sqrt((centerX - big_scar_center_x) * (centerX - big_scar_center_x) +
                                     (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
                                     (centerZ - big_scar_center_z) * (centerZ - big_scar_center_z));
@@ -532,7 +590,7 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
                         bz_size_big = dist_big;
                     }
                 }
-                else if(gridCell->scar_type == 's') {
+                else if(SCAR_TYPE(grid_cell) == 's') {
                     dist_small = sqrt((centerX - small_scar_center_x) * (centerX - small_scar_center_x) +
                                       (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
                                       (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
@@ -542,18 +600,18 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
                 }
             }
         }
-        gridCell = gridCell->next;
+        grid_cell = grid_cell->next;
     }
 
-    gridCell = grid->first_cell;
-    while (gridCell != NULL) {
+    grid_cell = grid->first_cell;
+    while (grid_cell != NULL) {
 
-        if (gridCell->active) {
-            if (gridCell->border_zone) {
-                double centerX = gridCell->center_x;
-                double centerY = gridCell->center_y;
-                double centerZ = gridCell->center_z;
-                if(gridCell->scar_type == 'b') {
+        if (grid_cell->active) {
+            if (BORDER_ZONE(grid_cell)) {
+                double centerX = grid_cell->center_x;
+                double centerY = grid_cell->center_y;
+                double centerZ = grid_cell->center_z;
+                if(SCAR_TYPE(grid_cell) == 'b') {
                     dist_big = sqrt((centerX - big_scar_center_x) * (centerX - big_scar_center_x) +
                                     (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
                                     (centerZ - big_scar_center_z) * (centerZ - big_scar_center_z));
@@ -562,11 +620,11 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
 
                     double p = (double) (rand()) / (RAND_MAX);
                     if (p < phi_local) {
-                        gridCell->active = false;
+                        grid_cell->active = false;
                     }
-                    gridCell->can_change = false;
+                    grid_cell->can_change = false;
                 }
-                else if(gridCell->scar_type == 's') {
+                else if(SCAR_TYPE(grid_cell) == 's') {
                     dist_small = sqrt((centerX - small_scar_center_x) * (centerX - small_scar_center_x) +
                                       (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
                                       (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
@@ -575,13 +633,13 @@ void set_human_mesh_fibrosis (struct grid *grid, double phi, unsigned seed, doub
 
                     double p = (double) (rand()) / (RAND_MAX);
                     if (p < phi_local) {
-                        gridCell->active = false;
+                        grid_cell->active = false;
                     }
-                    gridCell->can_change = false;
+                    grid_cell->can_change = false;
                 }
             }
         }
-        gridCell = gridCell->next;
+        grid_cell = grid_cell->next;
     }
 }
 
@@ -625,7 +683,7 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
         double center_y = grid_cell->center_y;
         double center_z = grid_cell->center_z;
 
-        if( (grid_cell->face_length == 100.0) && (grid_cell->scar_type == type)) {
+        if( (grid_cell->face_length == 100.0) && (SCAR_TYPE(grid_cell) == type)) {
             int index = inside_mesh(scar_mesh, center_x, center_y, center_z, 0, size - 1);
             grid_cell->active = (index != -1);
         }

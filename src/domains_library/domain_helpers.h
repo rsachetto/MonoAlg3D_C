@@ -7,8 +7,6 @@
 
 #include "../alg/grid/grid.h"
 
-int get_num_refinement_steps_to_discretization (double side_len, double h);
-
 void set_benchmark_domain (struct grid *the_grid);
 void set_cuboid_domain(struct grid *the_grid, double sizeX, double sizeY, double sizeZ);
 
@@ -30,5 +28,9 @@ void set_human_mesh_fibrosis(struct grid *grid, double phi, unsigned seed, doubl
                              double small_scar_center_y, double small_scar_center_z);
 
 void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char *filename, int size);
+
+void refine_fibrotic_cells(struct grid *the_grid);
+
+void refine_border_zone_cells(struct grid *the_grid);
 
 #endif // MONOALG3D_DOMAIN_HELPERS_H

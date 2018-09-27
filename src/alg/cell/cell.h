@@ -73,40 +73,33 @@ struct cell_node {
     //element_vector *elements;
     struct element *elements;
 
+    double face_length;
+
+    bool can_change;
+
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient
    method.
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
     double Ax; /* Element of int_vector Ax = b associated to this cell. Also plays the role of Ap.*/
-    double r;  /* Element of the int_vector r = b - Ax associated to this cell. */
-    double p;  /* Element of the search direction int_vector in the conjugate gradient algorithm. */
-    double p1; /* p's upgrade in the conjugate gradient algorithm. */
-    double z;  // Jacobi preconditioner
     double b;  /* In Ax = b, corresponds to the element in int_vector b associated to this cell. */
+    void *linear_system_solver_extra_info;
+    size_t linear_system_solver_extra_info_size;
 
-    //////////////////
-    double x_aux;  // Biconjugate variable
-    double r_aux;  // Biconjugate variable
-    double z_aux;  // Biconjugate variable
-    double p_aux;  // Biconjugate variable
-    double p1_aux; // Biconjugate variable
-    double xA;     // Biconjugate variable
+    uint32_t sv_position;
+
+    void *mesh_extra_info;
+    size_t mesh_extra_info_size;
+
+    // Variables used by some applications of partial differential equations.
+    double v;
+
 
 #if defined(_OPENMP)
     omp_lock_t updating;
 #endif
 
-    // Variables used by some applications of partial differential equations.
-    double v;
-
-    uint32_t sv_position;
-    double face_length;
-    bool can_change;
-
-    bool fibrotic;
-    bool border_zone;
-    char scar_type;
 };
 
 struct transition_node {

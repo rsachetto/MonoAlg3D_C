@@ -4,12 +4,12 @@
 
 #include "../config/linear_system_solver_config.h"
 #include "../libraries_common/config_helpers.h"
+#include "../libraries_common/common_data_structures.h"
 
 SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     double tol = 1e-16;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
-
 
     bool use_jacobi = true;
     char *preconditioner_char;
@@ -50,6 +50,11 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (i = 0; i < num_active_cells; i++) {
+
+        if(CG_INFO(ac[i]) == NULL) {
+            INITIALIZE_CONJUGATE_GRADIENT_INFO(ac[i]);
+        }
+
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
@@ -60,19 +65,19 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
             ac[i]->Ax += element.value * element.cell->v;
         }
 
-        ac[i]->r = ac[i]->b - ac[i]->Ax;
+        CG_R(ac[i]) = ac[i]->b - ac[i]->Ax;
         if(use_jacobi) {
             double value = cell_elements[0].value;
             if(value == 0.0) value = 1.0;
-            ac[i]->z = (1.0/value) * ac[i]->r; // preconditioner
-            rTz += ac[i]->r * ac[i]->z;
-            ac[i]->p = ac[i]->z;
+            CG_Z(ac[i]) = (1.0/value) * CG_R(ac[i]); // preconditioner
+            rTz += CG_R(ac[i]) * CG_Z(ac[i]);
+            CG_P(ac[i]) = CG_Z(ac[i]);
         }
         else {
-            ac[i]->p = ac[i]->r;
+            CG_P(ac[i]) = CG_R(ac[i]);
         }
 
-        rTr += ac[i]->r * ac[i]->r;
+        rTr += CG_R(ac[i]) * CG_R(ac[i]);
     }
 
     *error = rTr;
@@ -93,10 +98,10 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
                 size_t max_el = sb_count(cell_elements);
                 for(int el = 0; el < max_el; el++) {
                     element = cell_elements[el];
-                    ac[i]->Ax += element.value * element.cell->p;
+                    ac[i]->Ax += element.value * CG_P(element.cell);
                 }
 
-                pTAp += ac[i]->p * ac[i]->Ax;
+                pTAp += CG_P(ac[i]) * ac[i]->Ax;
             }
 
             //__________________________________________________________________
@@ -116,18 +121,18 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
             // Computes new value of solution: u = u + alpha*p.
 #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
             for (i = 0; i < num_active_cells; i++) {
-                ac[i]->v += alpha * ac[i]->p;
+                ac[i]->v += alpha * CG_P(ac[i]);
 
-                ac[i]->r -= alpha * ac[i]->Ax;
+                CG_R(ac[i]) -= alpha * ac[i]->Ax;
 
                 if(use_jacobi) {
                     double value = ac[i]->elements[0].value;
                     if(value == 0.0) value = 1.0;
-                    ac[i]->z = (1.0/value) * ac[i]->r;
-                    r1Tz1 += ac[i]->z * ac[i]->r;
+                    CG_Z(ac[i]) = (1.0/value) * CG_R(ac[i]);
+                    r1Tz1 += CG_Z(ac[i]) * CG_R(ac[i]);
                 }
 
-                r1Tr1 += ac[i]->r * ac[i]->r;
+                r1Tr1 += CG_R(ac[i]) * CG_R(ac[i]);
             }
             //__________________________________________________________________
             //Computes beta.
@@ -148,12 +153,12 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 #pragma omp parallel for
             for (i = 0; i < num_active_cells; i++) {
                 if(use_jacobi) {
-                    ac[i]->p1 = ac[i]->z + beta * ac[i]->p;
+                    CG_P1(ac[i]) = CG_Z(ac[i]) + beta * CG_P(ac[i]);
                 }
                 else {
-                    ac[i]->p1 = ac[i]->r + beta * ac[i]->p;
+                    CG_P1(ac[i]) = CG_R(ac[i]) + beta * CG_P(ac[i]);
                 }
-                ac[i]->p = ac[i]->p1;
+                CG_P(ac[i]) = CG_P1(ac[i]);
             }
 
             rTz = r1Tz1;
@@ -193,9 +198,13 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
         //Jacobi iterations.
         while (*number_of_iterations < max_its)
         {
-#pragma omp parallel for private (element,sigma)
+            #pragma omp parallel for private (element,sigma)
             for (i = 0; i < num_active_cells; i++)
             {
+                if(JACOBI_INFO(ac[i]) == NULL) {
+                    INITIALIZE_JACOBI_INFO(ac[i]);
+                }
+
                 struct element *cell_elements = ac[i]->elements;
                 sigma = 0.0;
 
@@ -209,7 +218,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
                 }
 
                 double value = cell_elements[0].value;
-                ac[i]->x_aux = (1/value)*(ac[i]->b - sigma);
+                JACOBI_X_AUX(ac[i]) = (1.0/value)*(ac[i]->b - sigma);
             }
             double residue = 0.0;
             double sum;
@@ -225,10 +234,10 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
                 for(int el = 0; el < max_el; el++)
                 {
                     element = cell_elements[el];
-                    sum += element.value * element.cell->x_aux;
+                    sum += element.value * JACOBI_X_AUX(element.cell);
                 }
 
-                ac[i]->v = ac[i]->x_aux;
+                ac[i]->v = JACOBI_X_AUX(ac[i]);
                 residue += pow(ac[i]->b - sum,2);
             }
             // The error is norm of the residue
@@ -242,7 +251,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
     }
 }
 
-// Berg's code
+//// Berg's code
 SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 {
 
@@ -287,8 +296,13 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     #pragma omp parallel for
     for (i = 0; i < num_active_cells; i++)
     {
-        ac[i]->xA = 0.0;
-        ac[i]->x_aux = ac[i]->v;
+
+        if(BCG_INFO(ac[i]) == NULL) {
+            INITIALIZE_BICONJUGATE_GRADIENT_INFO(ac[i]);
+        }
+
+        BCG_XA(ac[i]) = 0.0;
+        BCG_X_AUX(ac[i]) = ac[i]->v;
     }
 
 
@@ -310,7 +324,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             ac[i]->Ax += element.value * element.cell->v;
 
             #pragma omp critical
-            ac[col]->xA += element.value * ac[i]->x_aux;
+            BCG_XA(ac[col]) += element.value * BCG_X_AUX(ac[i]);
         }
     }
 
@@ -326,25 +340,25 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     {
         struct element *cell_elements = ac[i]->elements;
 
-        ac[i]->r = ac[i]->b - ac[i]->Ax;
-        ac[i]->r_aux = ac[i]->b - ac[i]->xA;
+        BCG_R(ac[i]) = ac[i]->b - ac[i]->Ax;
+        BCG_R_AUX(ac[i]) = ac[i]->b - BCG_XA(ac[i]);
 
         if(use_jacobi)
         {
             double value = cell_elements[0].value;
             if(value == 0.0) value = 1.0;
-            ac[i]->z = (1.0/value) * ac[i]->r; // preconditioner
-            ac[i]->z_aux = (1.0/value) * ac[i]->r_aux;
-            rTz += ac[i]->r_aux * ac[i]->z;
-            ac[i]->p = ac[i]->z;
-            ac[i]->p_aux = ac[i]->z_aux;
+            BCG_Z(ac[i]) = (1.0/value) * BCG_R(ac[i]); // preconditioner
+            BCG_Z_AUX(ac[i]) = (1.0/value) * BCG_R_AUX(ac[i]);
+            rTz += BCG_R_AUX(ac[i]) * BCG_Z(ac[i]);
+            BCG_P(ac[i]) = BCG_Z(ac[i]);
+            BCG_P_AUX(ac[i]) = BCG_Z_AUX(ac[i]);
         }
         else
         {
-            ac[i]->p = ac[i]->r;
-            ac[i]->p_aux = ac[i]->r_aux;
+            BCG_P(ac[i]) = BCG_R(ac[i]);
+            BCG_P_AUX(ac[i])= BCG_R_AUX(ac[i]);
         }
-        rTr += ac[i]->r_aux * ac[i]->r;
+        rTr += BCG_R_AUX(ac[i]) * BCG_R(ac[i]);
     }
 
     *error = rTr;
@@ -361,7 +375,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
             #pragma omp parallel for
             for (i = 0; i < num_active_cells; i++)
-                ac[i]->xA = 0.0;
+                BCG_XA(ac[i]) = 0.0;
 
             #pragma omp parallel for private(element) reduction(+ : pTAp)
             for (i = 0; i < num_active_cells; i++)
@@ -374,13 +388,13 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
                 {
                     element = cell_elements[el];
                     uint32_t col = element.column;
-                    ac[i]->Ax += element.value * element.cell->p;
+                    ac[i]->Ax += element.value * BCG_P(element.cell);
 
                     #pragma omp critical
-                    ac[col]->xA += element.value * ac[i]->p_aux;
+                    BCG_XA(ac[col]) += element.value * BCG_P_AUX(ac[i]);
                 }
 
-                pTAp += ac[i]->p_aux * ac[i]->Ax;
+                pTAp += BCG_P_AUX(ac[i]) * ac[i]->Ax;
             }
 
             //__________________________________________________________________
@@ -403,22 +417,22 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
             for (i = 0; i < num_active_cells; i++)
             {
-                ac[i]->v += alpha * ac[i]->p;
-                ac[i]->x_aux += alpha * ac[i]->p_aux;
+                ac[i]->v += alpha * BCG_P(ac[i]);
+                BCG_X_AUX(ac[i]) += alpha * BCG_P_AUX(ac[i]);
 
-                ac[i]->r -= alpha * ac[i]->Ax;
-                ac[i]->r_aux -= alpha * ac[i]->xA;
+                BCG_R(ac[i]) -= alpha * ac[i]->Ax;
+                BCG_R_AUX(ac[i]) -= alpha * BCG_XA(ac[i]);
 
                 if(use_jacobi)
                 {
                     double value = ac[i]->elements[0].value;
                     if(value == 0.0) value = 1.0;
-                    ac[i]->z = (1.0/value) * ac[i]->r;
-                    ac[i]->z_aux = (1.0/value) * ac[i]->r_aux;
-                    r1Tz1 += ac[i]->z * ac[i]->r_aux;
+                    BCG_Z(ac[i]) = (1.0/value) * BCG_R(ac[i]);
+                    BCG_Z_AUX(ac[i]) = (1.0/value) * BCG_R_AUX(ac[i]);
+                    r1Tz1 += BCG_Z(ac[i]) * BCG_R_AUX(ac[i]);
                 }
 
-                r1Tr1 += ac[i]->r * ac[i]->r_aux;
+                r1Tr1 += BCG_R(ac[i]) * BCG_R_AUX(ac[i]);
             }
             //__________________________________________________________________
             //Computes beta.
@@ -445,16 +459,16 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             {
                 if(use_jacobi)
                 {
-                    ac[i]->p1 = ac[i]->z + beta * ac[i]->p;
-                    ac[i]->p1_aux = ac[i]->z_aux + beta * ac[i]->p_aux;
+                    BCG_P1(ac[i]) = BCG_Z(ac[i]) + beta * BCG_P(ac[i]);
+                    BCG_P1_AUX(ac[i]) = BCG_Z_AUX(ac[i]) + beta * BCG_P_AUX(ac[i]);
                 }
                 else
                 {
-                    ac[i]->p1 = ac[i]->r + beta * ac[i]->p;
-                    ac[i]->p1_aux = ac[i]->r_aux + beta * ac[i]->p_aux;
+                    BCG_P1(ac[i]) = BCG_R(ac[i]) + beta * BCG_P(ac[i]);
+                    BCG_P1_AUX(ac[i]) = BCG_R_AUX(ac[i]) + beta * BCG_P_AUX(ac[i]);
                 }
-                ac[i]->p = ac[i]->p1;
-                ac[i]->p_aux = ac[i]->p1_aux;
+                BCG_P(ac[i]) = BCG_P1(ac[i]);
+                BCG_P_AUX(ac[i]) = BCG_P1_AUX(ac[i]);
             }
 
             rTz = r1Tz1;

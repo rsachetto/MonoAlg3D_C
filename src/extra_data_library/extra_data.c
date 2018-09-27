@@ -4,6 +4,7 @@
 
 #include "../config/extra_data_config.h"
 #include "../libraries_common/config_helpers.h"
+#include "../libraries_common/common_data_structures.h"
 
 
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
@@ -35,10 +36,10 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 	#pragma omp parallel for
     for (i = 0; i < num_active_cells; i++) {
 
-        if(ac[i]->fibrotic) {
+        if(FIBROTIC(ac[i])) {
             fibs[i+1] = 0.0;
         }
-        else if(ac[i]->border_zone) {
+        else if(BORDER_ZONE(ac[i])) {
 
             float center_x = (float)ac[i]->center_x;
             float center_y = (float)ac[i]->center_y;
@@ -123,7 +124,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis) {
     fibs[0] = 6.8;
 
     for(int i = 0; i < num_active_cells; i++) {
-        if(ac[i]->fibrotic) {
+        if(FIBROTIC(ac[i])) {
             fibs[i+1] = 0.0;
         }
         else {
@@ -172,16 +173,21 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     double dist_small = 0;
 
 	int i;
+	bool fibrotic, border_zone;
+	char scar_type;
     
     //#pragma omp parallel for private(dist_big, dist_small) reduction(max: bz_size_big, bz_size_small)
 	#pragma omp parallel for private(dist_big, dist_small)
     for (i = 0; i < num_active_cells; i++) {
 
-        if (ac[i]->active && ac[i]->border_zone) {
+        border_zone = BORDER_ZONE(ac[i]);
+        scar_type = SCAR_TYPE(ac[i]);
+
+        if (ac[i]->active && border_zone) {
             double center_x = ac[i]->center_x;
             double center_y = ac[i]->center_y;
             double center_z = ac[i]->center_z;
-            if(ac[i]->scar_type == 'b') {
+            if(scar_type == 'b') {
                 dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
                                 (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
                                 (center_z - big_scar_center_z) * (center_z - big_scar_center_z));
@@ -190,7 +196,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
                     bz_size_big = dist_big;
                 }
             }
-            else if(ac[i]->scar_type == 's') {
+            else if(scar_type == 's') {
                 dist_small = sqrt((center_x - small_scar_center_x) * (center_x - small_scar_center_x) +
                                   (center_y - small_scar_center_y) * (center_y - small_scar_center_y) +
                                   (center_z - small_scar_center_z) * (center_z - small_scar_center_z));
@@ -206,21 +212,25 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     for (i = 0; i < num_active_cells; i++) {
 
         if (ac[i]->active) {
-            if(ac[i]->fibrotic) {
+            fibrotic = FIBROTIC(ac[i]);
+            border_zone = BORDER_ZONE(ac[i]);
+            scar_type = SCAR_TYPE(ac[i]);
+
+            if(fibrotic) {
                 fibs[i+1] = 0.0f;
             }
-            else if (ac[i]->border_zone) {
+            else if (border_zone) {
                 double center_x = ac[i]->center_x;
                 double center_y = ac[i]->center_y;
                 double center_z = ac[i]->center_z;
-                if(ac[i]->scar_type == 'b') {
+                if(scar_type == 'b') {
                     dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
                                     (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
                                     (center_z - big_scar_center_z) * (center_z - big_scar_center_z));
                     fibs[i+1] = (real)(dist_big / bz_size_big);
                     
                 }
-                else if(ac[i]->scar_type == 's') {
+                else if(scar_type == 's') {
                     dist_small = sqrt((center_x - small_scar_center_x) * (center_x - small_scar_center_x) +
                                       (center_y - small_scar_center_y) * (center_y - small_scar_center_y) +
                                       (center_z - small_scar_center_z) * (center_z - small_scar_center_z));
@@ -288,12 +298,14 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     double dist;
 
 	int i;
+	bool border_zone, fibrotic;
 
 //    #pragma omp parallel for private(dist) reduction(max: bz_size)
 	#pragma omp parallel for private(dist)
     for (i = 0; i < num_active_cells; i++) {
         if(ac[i]->active) {
-            if(ac[i]->border_zone) {
+            border_zone = BORDER_ZONE(ac[i]);
+            if(border_zone) {
                 double center_x = ac[i]->center_x;
                 double center_y = ac[i]->center_y;
                 double center_z = ac[i]->center_z;
@@ -311,10 +323,14 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     for (i = 0; i < num_active_cells; i++) {
 
         if(ac[i]->active) {
-            if(ac[i]->fibrotic) {
+
+            border_zone = BORDER_ZONE(ac[i]);
+            fibrotic = FIBROTIC(ac[i]);
+
+            if(fibrotic) {
                 fibs[i+1] = 0.0;
             }
-            else if(ac[i]->border_zone) {
+            else if(border_zone) {
                 double center_x = ac[i]->center_x;
                 double center_y = ac[i]->center_y;
                 double center_z = ac[i]->center_z;

@@ -363,3 +363,17 @@ void save_grid_domain (struct grid * the_grid, const char *file_name) {
     fclose (f);
 }
 
+int get_num_refinement_steps_to_discretization (double side_len, double h) {
+
+    int num_steps = 0;
+    double aux = side_len;
+
+    while (aux > h) {
+        num_steps++;
+        aux /= 2.0;
+    }
+
+    return num_steps - 1;
+}
+
+

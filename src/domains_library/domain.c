@@ -7,6 +7,7 @@
 #include "../libraries_common/config_helpers.h"
 #include "../config/domain_config.h"
 #include "../utils/logfile_utils.h"
+#include "../libraries_common/common_data_structures.h"
 #include <assert.h>
 #include <time.h>
 
@@ -347,16 +348,20 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     print_to_stdout_and_file ("Using %u as seed\n", fib_seed);
     print_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
     struct cell_node *grid_cell = the_grid->first_cell;
-    
+    bool fibrotic, border_zone;
+
     while( grid_cell != 0 ) {
 
         if(grid_cell->active) {
-            if(grid_cell->fibrotic) {
+            fibrotic = FIBROTIC(grid_cell);
+            border_zone = BORDER_ZONE(grid_cell);
+
+            if(fibrotic) {
                 grid_cell->can_change = false;
                 double p = (double) (rand()) / (RAND_MAX); //rand() has limited randomness
                 if (p < phi) grid_cell->active = false;
             }
-            else if(grid_cell->border_zone) {
+            else if(border_zone) {
                 double center_x = grid_cell->center_x;
                 double center_y = grid_cell->center_y;
                 double center_z = grid_cell->center_z;
@@ -374,7 +379,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     while( grid_cell != 0 ) {
 
         if(grid_cell->active) {
-            if(grid_cell->border_zone) {
+            border_zone = BORDER_ZONE(grid_cell);
+            if(border_zone) {
                 double center_x = grid_cell->center_x;
                 double center_y = grid_cell->center_y;
                 double center_z = grid_cell->center_z;
