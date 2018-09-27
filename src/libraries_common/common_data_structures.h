@@ -42,12 +42,12 @@ struct biconjugate_gradient_info {
     double p1; /* p's upgrade in the conjugate gradient algorithm. */
     double z;  // Jacobi preconditioner
 
-    double x_aux;  // Biconjugate variable
-    double r_aux;  // Biconjugate variable
-    double z_aux;  // Biconjugate variable
-    double p_aux;  // Biconjugate variable
-    double p1_aux; // Biconjugate variable
-    double xA;     // Biconjugate variable
+    double x_aux;
+    double r_aux;
+    double z_aux;
+    double p_aux;
+    double p1_aux;
+    double xA;
 };
 
 struct jacobi_info {
@@ -75,15 +75,15 @@ struct jacobi_info {
 #define JACOBI_INFO(grid_cell) (struct jacobi_info *)grid_cell->linear_system_solver_extra_info
 #define JACOBI_X_AUX(grid_cell) ((struct jacobi_info *)(grid_cell)->linear_system_solver_extra_info)->x_aux
 
-#define INITIALIZE_SIMPLE_INFO(grid_cell, info_struct)                                                                 \
+#define INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO(grid_cell, info_struct)                                                                 \
     do {                                                                                                               \
         size_t size = sizeof (struct info_struct);                                                                     \
         (grid_cell)->linear_system_solver_extra_info = malloc (size);                                                  \
         (grid_cell)->linear_system_solver_extra_info_size = size;                                                      \
     } while (0);
 
-#define INITIALIZE_CONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_SIMPLE_INFO (grid_cell, conjugate_gradient_info)
-#define INITIALIZE_BICONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_SIMPLE_INFO (grid_cell, biconjugate_gradient_info)
-#define INITIALIZE_JACOBI_INFO(grid_cell) INITIALIZE_SIMPLE_INFO (grid_cell, jacobi_info)
+#define INITIALIZE_CONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO (grid_cell, conjugate_gradient_info)
+#define INITIALIZE_BICONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO (grid_cell, biconjugate_gradient_info)
+#define INITIALIZE_JACOBI_INFO(grid_cell) INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO (grid_cell, jacobi_info)
 
 #endif // MONOALG3D_COMMON_DATA_STRUCTURES_H
