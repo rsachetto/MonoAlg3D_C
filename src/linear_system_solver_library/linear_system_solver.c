@@ -21,6 +21,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
             use_jacobi = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));
         }
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+        initialized = true;
     }
 
 
@@ -180,6 +181,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
         max_its = 500;
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+        initialized = true;
     }
 
 
@@ -270,6 +272,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
         max_its = 100;
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+        initialized = true;
     }
 
 
