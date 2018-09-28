@@ -6,7 +6,7 @@
 #include "../libraries_common/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 
-static bool initialized = false;
+bool initialized = false;
 bool use_jacobi;
 int max_its = 50;
 double tol = 1e-16;

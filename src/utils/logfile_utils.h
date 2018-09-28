@@ -11,5 +11,6 @@
 void print_to_stdout_and_file(char const *fmt, ...);
 void open_logfile(const char *path);
 void close_logfile();
+int cp_file(const char *to, const char *from);
 
 #endif //MONOALG3D_LOGFILE_UTILS_H
