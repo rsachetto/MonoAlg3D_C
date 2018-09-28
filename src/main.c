@@ -77,7 +77,9 @@ int main (int argc, char **argv) {
     if (options->draw) {
 #ifdef COMPILE_OPENGL
 
-        omp_set_nested (true);
+        #if defined(_OPENMP)
+            omp_set_nested (true);
+        #endif
 
 #pragma omp parallel sections num_threads(2)
 {
