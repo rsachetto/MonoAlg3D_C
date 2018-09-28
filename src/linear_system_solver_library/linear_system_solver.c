@@ -6,20 +6,22 @@
 #include "../libraries_common/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 
+static bool initialized = false;
+bool use_jacobi;
+int max_its = 50;
+double tol = 1e-16;
+
 SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
-    double tol = 1e-16;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
-
-    bool use_jacobi = true;
-    char *preconditioner_char;
-    GET_PARAMETER_VALUE_CHAR (preconditioner_char, config->config_data.config, "use_preconditioner");
-    if (preconditioner_char != NULL) {
-        use_jacobi = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));
+    if(!initialized) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
+        char *preconditioner_char;
+        GET_PARAMETER_VALUE_CHAR (preconditioner_char, config->config_data.config, "use_preconditioner");
+        if (preconditioner_char != NULL) {
+            use_jacobi = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));
+        }
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
     }
-
-    int max_its = 50;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
 
 
     double  rTr,
@@ -173,11 +175,12 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 // Berg's code
 SOLVE_LINEAR_SYSTEM(jacobi) {
 
-    double tol = 1e-08;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
 
-    int max_its = 500;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+    if(!initialized) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
+        max_its = 500;
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+    }
 
 
     double  sigma,
@@ -255,20 +258,19 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
 SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 {
 
-    double tol = 1e-16;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
 
+    if(!initialized) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
+        char *preconditioner_char;
+        GET_PARAMETER_VALUE_CHAR (preconditioner_char, config->config_data.config, "use_preconditioner");
+        if (preconditioner_char != NULL)
+        {
+            use_jacobi = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));
+        }
 
-    bool use_jacobi = true;
-    char *preconditioner_char;
-    GET_PARAMETER_VALUE_CHAR (preconditioner_char, config->config_data.config, "use_preconditioner");
-    if (preconditioner_char != NULL)
-    {
-        use_jacobi = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));
+        max_its = 100;
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
     }
-
-    int max_its = 100;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
 
 
     double  rTr,
