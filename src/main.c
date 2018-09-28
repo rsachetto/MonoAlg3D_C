@@ -38,13 +38,32 @@ int main (int argc, char **argv) {
     // The command line options always overwrite the config file
     parse_options (argc, argv, options);
 
+
     // Create the output dir and the logfile
     if (options->save_mesh_config && options->save_mesh_config->out_dir_name) {
-        sds buffer = sdsnew ("");
+        sds buffer_log = sdsnew ("");
+        sds buffer_ini = sdsnew ("");
+
         create_dir_if_no_exists (options->save_mesh_config->out_dir_name);
-        buffer = sdscatfmt (buffer, "%s/outputlog.txt", options->save_mesh_config->out_dir_name);
-        open_logfile (buffer);
-        sdsfree (buffer);
+        buffer_log = sdscatfmt (buffer_log, "%s/outputlog.txt", options->save_mesh_config->out_dir_name);
+        open_logfile (buffer_log);
+
+        print_to_stdout_and_file("Command line to reproduce this simulation:\n");
+        for (int i = 0; i < argc; i++) {
+            print_to_stdout_and_file("%s ", argv[i]);
+        }
+
+        print_to_stdout_and_file("\n");
+
+        buffer_ini = sdscatfmt (buffer_ini, "%s/original_configuration.ini", options->save_mesh_config->out_dir_name);
+
+        print_to_stdout_and_file("For reproducibility porpouse the configuration file was copied to file: %s\n", buffer_ini);
+
+        cp_file(buffer_ini,  options->config_file);
+
+        sdsfree (buffer_log);
+        sdsfree (buffer_ini);
+
     }
 
     configure_ode_solver_from_options (ode_solver, options);
