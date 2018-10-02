@@ -28,7 +28,7 @@ void init_linear_system_solver_functions(struct linear_system_solver_config *con
         config->config_data.library_file_path_was_set = true;
     }
     else {
-        print_to_stdout_and_file("Opening %s as linear system solver lib\n", config->config_data.library_file_path);
+        print_to_stdout_and_file("Using %s as linear system solver lib\n", config->config_data.library_file_path);
 
     }
 

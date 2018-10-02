@@ -29,7 +29,7 @@ void init_extra_data_functions(struct extra_data_config *config) {
         config->config_data.library_file_path_was_set = true;
     }
     else {
-        print_to_stdout_and_file("Opening %s as ODE extra data lib\n", config->config_data.library_file_path);
+        print_to_stdout_and_file("Using %s as ODE extra data lib\n", config->config_data.library_file_path);
 
     }
 
