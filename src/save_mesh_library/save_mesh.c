@@ -78,14 +78,10 @@ SAVE_MESH(save_as_text_or_binary) {
 
 SAVE_MESH(save_as_vtk) {
 
-
     char * file_prefix;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
 
-    char * out_dir_name;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(out_dir_name, config->config_data.config, "output_dir");
-
-    sds tmp = sdsnew (out_dir_name);
+    sds tmp = sdsnew (output_dir);
     sds c = sdsfromlonglong (count);
     tmp = sdscat (tmp, "/V_t_");
     tmp = sdscat (tmp, c);
