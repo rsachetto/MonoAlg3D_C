@@ -416,7 +416,7 @@ void set_save_mesh_config(const char *args, struct save_mesh_config *sm, const c
             }
             sm->print_rate =  (int)strtol (value, NULL, 10);
         }
-        if(strcmp(key, "output_dir") == 0) {
+        else if(strcmp(key, "output_dir") == 0) {
             if(sm->out_dir_name_was_set) {
                 print_to_stdout_and_file("WARNING: For save_mesh configuration: \n");
                 issue_overwrite_warning ("print_rate", sm->out_dir_name, value, config_file);
@@ -973,11 +973,11 @@ int parse_config_file (void *user, const char *section, const char *name, const 
             pconfig->save_mesh_config->print_rate = (int)strtol (value, NULL, 10);
             pconfig->save_mesh_config->print_rate_was_set = true;
         }
-        if (MATCH_NAME("output_dir")) {
+        else if (MATCH_NAME("output_dir")) {
             pconfig->save_mesh_config->out_dir_name = strdup(value);
             pconfig->save_mesh_config->out_dir_name_was_set = true;
         }
-        if(MATCH_NAME("function")) {
+        else if(MATCH_NAME("function")) {
             pconfig->save_mesh_config->config_data.function_name = strdup(value);
             pconfig->save_mesh_config->config_data.function_name_was_set = true;
         }

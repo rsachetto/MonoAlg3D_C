@@ -57,7 +57,7 @@ int main (int argc, char **argv) {
 
         buffer_ini = sdscatfmt (buffer_ini, "%s/original_configuration.ini", options->save_mesh_config->out_dir_name);
 
-        print_to_stdout_and_file("For reproducibility porpouse the configuration file was copied to file: %s\n", buffer_ini);
+        print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n", buffer_ini);
 
         cp_file(buffer_ini,  options->config_file);
 

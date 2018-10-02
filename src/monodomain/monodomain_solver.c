@@ -99,7 +99,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     // Configure the functions and set the mesh domain
     if (domain_config) {
         init_domain_functions (domain_config);
-        domain_config->set_spatial_domain (domain_config, the_grid);
     } else {
         print_to_stdout_and_file ("No domain configuration provided! Exiting!\n");
         exit (EXIT_FAILURE);
@@ -128,6 +127,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     if (has_extra_data) {
         init_extra_data_functions (extra_data_config);
     }
+
+    print_to_stdout_and_file (LOG_LINE_SEPARATOR);
+
     ///////MAIN CONFIGURATION END//////////////////
 
     int refine_each = the_monodomain_solver->refine_each;
@@ -171,6 +173,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     }
 #endif
 
+
+    domain_config->set_spatial_domain (domain_config, the_grid);
+
     order_grid_cells (the_grid);
     uint32_t original_num_cells = the_grid->num_active_cells;
 
@@ -212,15 +217,10 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     init_stop_watch (&ref_time);
     init_stop_watch (&deref_time);
 
-    print_to_stdout_and_file ("Assembling Monodomain Matrix Begin\n");
-
     start_stop_watch (&part_mat);
     set_initial_conditions (the_monodomain_solver, the_grid, initial_v);
     assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
     total_mat_time = stop_stop_watch (&part_mat);
-
-    print_to_stdout_and_file ("Assembling Monodomain Matrix End\n");
-    print_to_stdout_and_file (LOG_LINE_SEPARATOR);
 
     start_stop_watch (&solver_time);
 
@@ -318,7 +318,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
                 order_grid_cells (the_grid);
 
                 if (stimuli_configs) {
-                    //TODO: with the periodic stimuli we have to change how to calculate this
                     if(cur_time <= last_stimulus_time || has_any_periodic_stim) {
                         set_spatial_stim(stimuli_configs, the_grid);
                     }
@@ -334,9 +333,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
                 }
 
                 start_stop_watch (&part_mat);
-
-                //TODO: split this in a user defined function
-                //set_discretization_matrix (the_monodomain_solver, the_grid);
                 assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
 
                 total_mat_time += stop_stop_watch (&part_mat);
@@ -394,7 +390,7 @@ void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *th
         size_t mem_size = max_number_of_cells * sizeof (real);
 
         vms = (real *)malloc (mem_size);
-        check_cuda_errors (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));		
+        check_cuda_errors (cudaMemcpy (vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
 		#pragma omp parallel for
         for (i = 0; i < n_active; i++) {
@@ -438,7 +434,7 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
     solver->cells_to_solve = (uint32_t *)malloc (the_grid->num_active_cells * sizeof (uint32_t));
     uint32_t *cts = solver->cells_to_solve;
 	int i;
-	
+
 	#pragma omp parallel for
     for (i = 0; i < n_active; i++) {
         cts[i] = ac[i]->sv_position;
@@ -501,6 +497,9 @@ void update_monodomain (uint32_t initial_number_of_cells, uint32_t num_active_ce
 
 void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                         struct grid *the_grid, struct user_options *options) {
+
+    print_to_stdout_and_file (LOG_LINE_SEPARATOR);
+
     print_to_stdout_and_file ("System parameters: \n");
 #if defined(_OPENMP)
     print_to_stdout_and_file ("Using OpenMP with %d threads\n", omp_get_max_threads ());
@@ -512,9 +511,6 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     print_to_stdout_and_file ("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
     print_to_stdout_and_file ("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
 
-//    print_to_stdout_and_file ("Sigma X = %.10lf, Sigma Y = %.10lf, Sigma Z = %.10lf\n", the_monodomain_solver->sigma_x,
-//                              the_monodomain_solver->sigma_y, the_monodomain_solver->sigma_z);
-
     print_to_stdout_and_file ("Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
 
     print_to_stdout_and_file ("Initial N. of Elements = "
@@ -523,63 +519,53 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     print_to_stdout_and_file ("PDE time step = %lf\n", the_monodomain_solver->dt);
     print_to_stdout_and_file ("ODE min time step = %lf\n", the_ode_solver->min_dt);
     print_to_stdout_and_file ("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
-////    print_to_stdout_and_file ("Maximum CG iterations = %d\n", the_monodomain_solver->max_iterations);
-//    print_to_stdout_and_file ("CG tolerance = %e\n", the_monodomain_solver->tolerance);
-//    if (the_monodomain_solver->use_jacobi) {
-//        print_to_stdout_and_file ("Using Jacobi preconditioner\n");
-//    }
-    if (the_grid->adaptive) {
-        print_to_stdout_and_file ("Using adaptativity\n");
-        print_to_stdout_and_file ("Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
-        print_to_stdout_and_file ("Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
-        print_to_stdout_and_file ("Refining each %d time steps\n", the_monodomain_solver->refine_each);
-        print_to_stdout_and_file ("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
+
+    print_to_stdout_and_file (LOG_LINE_SEPARATOR);
+
+    print_to_stdout_and_file ("Save results configuration:\n");
+    print_to_stdout_and_file ("Print Rate = %d\n", options->save_mesh_config->print_rate);
+
+    if (options->save_mesh_config->out_dir_name != NULL) {
+        print_to_stdout_and_file ("Saving simulation results to: %s\n", options->save_mesh_config->out_dir_name);
     }
 
+    if (options->save_mesh_config->config_data.config->n == 1) {
+        print_to_stdout_and_file ("Save mesh extra parameter:\n");
+    } else if (options->save_mesh_config->config_data.config->n > 1) {
+        print_to_stdout_and_file ("Save mesh extra parameters:\n");
+    }
 
-    //TODO: change this to the print configuration
-//    print_to_stdout_and_file ("Print Rate = %d\n", options->print_rate);
-//
-//    if (options->out_dir_name != NULL) {
-//        if (options->binary) {
-//            print_to_stdout_and_file ("Saving using binary output in %s dir\n", options->out_dir_name);
-//
-//        } else {
-//            print_to_stdout_and_file ("Saving to plain text output in %s dir\n", options->out_dir_name);
-//        }
-//    } else {
-//        print_to_stdout_and_file ("The solution will not be saved\n");
-//    }
+    STRING_HASH_PRINT_KEY_VALUE_LOG (options->save_mesh_config->config_data.config);
+    print_to_stdout_and_file (LOG_LINE_SEPARATOR);
 
     if (options->stim_configs) {
-        print_to_stdout_and_file (LOG_LINE_SEPARATOR);
 
         if (options->stim_configs->size == 1)
-            print_to_stdout_and_file ("Stimulus configuration:\n");
+            print_to_stdout_and_file("Stimulus configuration:\n");
         else {
-            print_to_stdout_and_file ("Stimuli configuration:\n");
+            print_to_stdout_and_file("Stimuli configuration:\n");
         }
 
         for (int i = 0; i < options->stim_configs->size; i++) {
             for (struct stim_config_elt *e = options->stim_configs->table[i % options->stim_configs->size]; e != 0;
                  e = e->next) {
 
-                print_to_stdout_and_file ("Stimulus name: %s\n", e->key);
-                print_to_stdout_and_file ("Stimulus start: %lf\n", e->value->stim_start);
-                print_to_stdout_and_file ("Stimulus duration: %lf\n", e->value->stim_duration);
-                print_to_stdout_and_file ("Stimulus current: %lf\n", e->value->stim_current);
-                print_to_stdout_and_file ("Stimulus library: %s\n", e->value->config_data.library_file_path);
-                print_to_stdout_and_file ("Stimulus function: %s\n", e->value->config_data.function_name);
+                print_to_stdout_and_file("Stimulus name: %s\n", e->key);
+                print_to_stdout_and_file("Stimulus start: %lf\n", e->value->stim_start);
+                print_to_stdout_and_file("Stimulus duration: %lf\n", e->value->stim_duration);
+                print_to_stdout_and_file("Stimulus current: %lf\n", e->value->stim_current);
+                print_to_stdout_and_file("Stimulus library: %s\n", e->value->config_data.library_file_path);
+                print_to_stdout_and_file("Stimulus function: %s\n", e->value->config_data.function_name);
                 struct string_hash *tmp = e->value->config_data.config;
                 if (tmp->n == 1) {
-                    print_to_stdout_and_file ("Stimulus extra parameter:\n");
+                    print_to_stdout_and_file("Stimulus extra parameter:\n");
                 } else if (tmp->n > 1) {
-                    print_to_stdout_and_file ("Stimulus extra parameters:\n");
+                    print_to_stdout_and_file("Stimulus extra parameters:\n");
                 }
 
                 STRING_HASH_PRINT_KEY_VALUE_LOG (tmp);
 
-                print_to_stdout_and_file (LOG_LINE_SEPARATOR);
+                print_to_stdout_and_file(LOG_LINE_SEPARATOR);
             }
         }
     }
@@ -589,6 +575,12 @@ void print_solver_info (struct monodomain_solver *the_monodomain_solver, struct 
     print_to_stdout_and_file ("Domain initial Space Discretization: %lf um\n", options->domain_config->start_h);
 
     if (the_grid->adaptive) {
+        print_to_stdout_and_file ("Using adaptativity\n");
+        print_to_stdout_and_file ("Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
+        print_to_stdout_and_file ("Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
+        print_to_stdout_and_file ("Refining each %d time steps\n", the_monodomain_solver->refine_each);
+        print_to_stdout_and_file ("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
+
         print_to_stdout_and_file ("Domain maximum Space Discretization: %lf um\n", options->domain_config->max_h);
         print_to_stdout_and_file ("The adaptivity will start in time: %lf ms\n",
                                   the_monodomain_solver->start_adapting_at);

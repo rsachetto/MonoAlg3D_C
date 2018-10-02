@@ -28,7 +28,7 @@ void init_assembly_matrix_functions(struct assembly_matrix_config *config) {
         config->config_data.library_file_path_was_set = true;
     }
     else {
-        print_to_stdout_and_file("Opening %s as matrix assembly lib\n", config->config_data.library_file_path);
+        print_to_stdout_and_file("Using %s as matrix assembly lib\n", config->config_data.library_file_path);
 
     }
 

@@ -27,7 +27,7 @@ void init_stim_functions(struct stim_config *config, char* stim_name) {
         config->config_data.library_file_path_was_set = true;
     }
     else {
-        print_to_stdout_and_file("Opening %s as stimuli lib for %s\n", config->config_data.library_file_path, stim_name);
+        print_to_stdout_and_file("Using %s as stimuli lib for %s\n", config->config_data.library_file_path, stim_name);
     }
 
     config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
