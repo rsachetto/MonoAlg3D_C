@@ -24,6 +24,51 @@ SAVE_MESH(save_as_text_or_binary) {
     bool binary;
     GET_PARAMETER_BINARY_VALUE (binary, config->config_data.config, "binary");
 
+    bool clip_with_plain = false;
+    GET_PARAMETER_BINARY_VALUE (clip_with_plain, config->config_data.config, "clip_with_plain");
+
+    bool clip_with_bounds = false;
+    GET_PARAMETER_BINARY_VALUE (clip_with_bounds, config->config_data.config, "clip_with_bounds");
+
+    real min_x = 0.0;
+    real min_y = 0.0;
+    real min_z = 0.0;
+    real max_x = 0.0;
+    real max_y = 0.0;
+    real max_z = 0.0;
+
+    real p0[3] = {0, 0 ,0};
+    real  n[3] = {0, 0 ,0};
+
+    if(clip_with_plain) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, n[0], config->config_data.config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, n[1], config->config_data.config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, n[2], config->config_data.config, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, p0[0], config->config_data.config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, p0[1], config->config_data.config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, p0[2], config->config_data.config, "origin_z");
+    }
+
+    if(clip_with_bounds) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, min_x, config->config_data.config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, min_y, config->config_data.config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, min_z, config->config_data.config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_x, config->config_data.config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_y, config->config_data.config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_z, config->config_data.config, "max_z");
+
+    }
+
+
+    real l = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+    real A = n[0] / l;
+    real B = n[1] / l;
+    real C = n[2] / l;
+    real D = -(n[0]*p0[0] + n[1]*p0[1] + n[2]*p0[2]);
+
+    double side;
+
+
     sds tmp = sdsnew (output_dir);
     sds c = sdsfromlonglong (count);
     tmp = sdscat (tmp, "/V_t_");
@@ -44,6 +89,25 @@ SAVE_MESH(save_as_text_or_binary) {
             center_x = grid_cell->center_x;
             center_y = grid_cell->center_y;
             center_z = grid_cell->center_z;
+
+            if(clip_with_plain) {
+                side = A*center_x + B*center_y + C* center_z + D;
+                if (side < 0) {
+                    grid_cell = grid_cell->next;
+                    continue;
+                }
+            }
+
+            if(clip_with_bounds) {
+                bool ignore_cell = center_x < min_x || center_x > max_x ||
+                                   center_y < min_y || center_y > max_y ||
+                                   center_z < min_z || center_z > max_z;
+
+                if(ignore_cell) {
+                    grid_cell = grid_cell->next;
+                    continue;
+                }
+            }
 
             v = grid_cell->v;
             half_face = grid_cell->half_face_length;
@@ -80,6 +144,42 @@ SAVE_MESH(save_as_vtk) {
 
     char * file_prefix;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
+
+
+    bool clip_with_plain = false;
+    GET_PARAMETER_BINARY_VALUE (clip_with_plain, config->config_data.config, "clip_with_plain");
+
+    bool clip_with_bounds = false;
+    GET_PARAMETER_BINARY_VALUE (clip_with_bounds, config->config_data.config, "clip_with_bounds");
+
+    real min_x = 0.0;
+    real min_y = 0.0;
+    real min_z = 0.0;
+    real max_x = 0.0;
+    real max_y = 0.0;
+    real max_z = 0.0;
+
+     real p0[3] = {0, 0 ,0};
+     real  n[3] = {0, 0 ,0};
+
+    if(clip_with_plain) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, n[0], config->config_data.config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, n[1], config->config_data.config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, n[2], config->config_data.config, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, p0[0], config->config_data.config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, p0[1], config->config_data.config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, p0[2], config->config_data.config, "origin_z");
+    }
+
+    if(clip_with_bounds) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, min_x, config->config_data.config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, min_y, config->config_data.config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, min_z, config->config_data.config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_x, config->config_data.config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_y, config->config_data.config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_z, config->config_data.config, "max_z");
+
+    }
 
     sds tmp = sdsnew (output_dir);
     sds c = sdsfromlonglong (count);
@@ -119,6 +219,14 @@ SAVE_MESH(save_as_vtk) {
     fprintf(output_file, "DATASET UNSTRUCTURED_GRID\n");
     fprintf(output_file, "                                                                                    \n");
 
+    real l = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+    real A = n[0] / l;
+    real B = n[1] / l;
+    real C = n[2] / l;
+    real D = -(n[0]*p0[0] + n[1]*p0[1] + n[2]*p0[2]);
+    
+    double side;
+
     while (grid_cell != 0) {
 
         if (grid_cell->active) {
@@ -126,6 +234,26 @@ SAVE_MESH(save_as_vtk) {
             center_x = grid_cell->center_x;
             center_y = grid_cell->center_y;
             center_z = grid_cell->center_z;
+
+            if(clip_with_plain) {
+               side = A*center_x + B*center_y + C* center_z + D;
+               if (side < 0) {
+                   grid_cell = grid_cell->next;
+                   continue;
+               }
+            }
+
+            if(clip_with_bounds) {
+                bool ignore_cell = center_x < min_x || center_x > max_x ||
+                                  center_y < min_y || center_y > max_y ||
+                                  center_z < min_z || center_z > max_z;
+
+                if(ignore_cell) {
+                    grid_cell = grid_cell->next;
+                    continue;
+                }
+            }
+
 
             v = grid_cell->v;
             half_face = grid_cell->half_face_length;
@@ -138,7 +266,7 @@ SAVE_MESH(save_as_vtk) {
                 act = true;
             }
 
-                    sb_push(values, v);
+            sb_push(values, v);
 
             aux1.x = center_x - half_face;
             aux1.y = center_y - half_face;
@@ -229,14 +357,14 @@ SAVE_MESH(save_as_vtk) {
                 fprintf(output_file, "%lf %lf %lf\n", aux8.x, aux8.y, aux8.z);
             }
 
-                    sb_push(cells, point_hash_search(hash, aux1));
-                    sb_push(cells, point_hash_search(hash, aux2));
-                    sb_push(cells, point_hash_search(hash, aux3));
-                    sb_push(cells, point_hash_search(hash, aux4));
-                    sb_push(cells, point_hash_search(hash, aux5));
-                    sb_push(cells, point_hash_search(hash, aux6));
-                    sb_push(cells, point_hash_search(hash, aux7));
-                    sb_push(cells, point_hash_search(hash, aux8));
+            sb_push(cells, point_hash_search(hash, aux1));
+            sb_push(cells, point_hash_search(hash, aux2));
+            sb_push(cells, point_hash_search(hash, aux3));
+            sb_push(cells, point_hash_search(hash, aux4));
+            sb_push(cells, point_hash_search(hash, aux5));
+            sb_push(cells, point_hash_search(hash, aux6));
+            sb_push(cells, point_hash_search(hash, aux7));
+            sb_push(cells, point_hash_search(hash, aux8));
             num_cells++;
 
 
