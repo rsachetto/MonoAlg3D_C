@@ -38,13 +38,13 @@ void initialize_diagonal_elements (struct monodomain_solver *the_solver, struct 
         element.cell = ac[i];
         element.value = alpha;
 
-        if (ac[i]->elements != NULL) {
-                    sb_free (ac[i]->elements);
-        }
+        if(ac[i]->elements)
+            sb_free (ac[i]->elements);
 
-        ac[i]->elements = NULL;
-                sb_reserve (ac[i]->elements, 7);
-                sb_push (ac[i]->elements, element);
+        ac[i]->elements =  NULL;
+
+        sb_reserve (ac[i]->elements, 7);
+        sb_push (ac[i]->elements, element);
     }
 }
 

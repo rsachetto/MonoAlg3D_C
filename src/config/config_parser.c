@@ -715,7 +715,7 @@ void parse_options (int argc, char **argv, struct user_options *user_args) {
                     print_to_stdout_and_file("Creating new save config from command line!\n");
                     user_args->save_mesh_config = new_save_mesh_config();
                 }
-                set_config(optarg, user_args->save_mesh_config, user_args->config_file, "save_mesh");
+                set_save_mesh_config(optarg, user_args->save_mesh_config, user_args->config_file );
                 break;
             case ASSEMBLY_MATRIX_OPT:
                 if(user_args->assembly_matrix_config == NULL) {
@@ -1016,5 +1016,11 @@ void free_user_options(struct user_options *s) {
         free_extra_data_config(s->extra_data_config);
     if(s->domain_config)
         free_domain_config(s->domain_config);
+    if(s->save_mesh_config)
+        free_save_mesh_config(s->save_mesh_config);
+    if(s->assembly_matrix_config)
+        free_assembly_matrix_config(s->assembly_matrix_config);
+    if(s->linear_system_solver_config)
+        free_linear_system_solver_config(s->linear_system_solver_config);
     free(s);
 }

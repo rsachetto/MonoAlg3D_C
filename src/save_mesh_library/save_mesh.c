@@ -16,19 +16,22 @@
 
 static int count = 0;
 
+char * file_prefix;
+bool binary = false;
+bool clip_with_plain = false;
+bool clip_with_bounds = false;
+
+bool initialized = false;
 SAVE_MESH(save_as_text_or_binary) {
 
-    char * file_prefix;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
+    if(!initialized) {
 
-    bool binary;
-    GET_PARAMETER_BINARY_VALUE (binary, config->config_data.config, "binary");
-
-    bool clip_with_plain = false;
-    GET_PARAMETER_BINARY_VALUE (clip_with_plain, config->config_data.config, "clip_with_plain");
-
-    bool clip_with_bounds = false;
-    GET_PARAMETER_BINARY_VALUE (clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
+        GET_PARAMETER_BINARY_VALUE (binary, config->config_data.config, "binary");
+        GET_PARAMETER_BINARY_VALUE (clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BINARY_VALUE (clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        initialized = true;
+    }
 
     real min_x = 0.0;
     real min_y = 0.0;
@@ -134,6 +137,7 @@ SAVE_MESH(save_as_text_or_binary) {
     fclose (output_file);
     sdsfree (tmp);
     sdsfree (c);
+    free(file_prefix);
 
     return act;
 
@@ -142,15 +146,12 @@ SAVE_MESH(save_as_text_or_binary) {
 
 SAVE_MESH(save_as_vtk) {
 
-    char * file_prefix;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-
-
-    bool clip_with_plain = false;
-    GET_PARAMETER_BINARY_VALUE (clip_with_plain, config->config_data.config, "clip_with_plain");
-
-    bool clip_with_bounds = false;
-    GET_PARAMETER_BINARY_VALUE (clip_with_bounds, config->config_data.config, "clip_with_bounds");
+    if(!initialized) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
+        GET_PARAMETER_BINARY_VALUE (clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BINARY_VALUE (clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        initialized = true;
+    }
 
     real min_x = 0.0;
     real min_y = 0.0;
@@ -178,7 +179,6 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_x, config->config_data.config, "max_x");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_y, config->config_data.config, "max_y");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, max_z, config->config_data.config, "max_z");
-
     }
 
     sds tmp = sdsnew (output_dir);
