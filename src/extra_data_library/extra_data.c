@@ -69,26 +69,23 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
 
-    real atpi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, atpi, config, "atpi");
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
 
-    real Ko = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, Ko, config, "Ko");
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
 
-    real Ki_multiplicator = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, Ki_multiplicator, config, "Ki_multiplicator");
+    real Ki_multiplicator = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
 
-    char *acidosis_char;
-    float acidosis = 0.0;
-    GET_PARAMETER_VALUE_CHAR (acidosis_char, config, "acidosis");
-    if (acidosis_char != NULL) {
-        acidosis = ((strcmp (acidosis_char, "yes") == 0) || (strcmp (acidosis_char, "true") == 0));
-    }
+
+    real acidosis;
+    GET_PARAMETER_BINARY_VALUE(acidosis, config, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;
     fibs[2] = Ki_multiplicator;
-    fibs[3] = acidosis;
+    fibs[3] = (real)acidosis;
 
     return (void*)fibs;
 }
@@ -139,15 +136,28 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(float)*(num_active_cells+4);
 
-    float *fibs = (float*)malloc(*extra_data_size);
+    float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
+
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
+
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
+
+    real Ki_multiplicator = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
+
+    real acidosis;
+    GET_PARAMETER_BINARY_VALUE(acidosis, config, "acidosis");
+
+    fibs[0] = atpi;
+    fibs[1] = Ko;
+    fibs[2] = Ki_multiplicator;
+    fibs[3] = (real)acidosis;
 
     struct cell_node ** ac = the_grid->active_cells;
-
-    real atpi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,atpi,  config, "atpi");
-    fibs[0] = atpi;
 
     double small_scar_center_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config, "small_scar_center_x");

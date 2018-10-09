@@ -66,3 +66,4 @@ build/
 *~
 .vs/
 *.json
+test_headers/erro.txt
