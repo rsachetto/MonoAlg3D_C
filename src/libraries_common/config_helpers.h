@@ -23,12 +23,12 @@ char *get_char_parameter (struct string_hash *config, const char *parameter);
         }                                                                                                              \
     } while (0)
 
-#define GET_PARAMETER_BINARY_VALUE(value, config, parameter)                                             \
+#define GET_PARAMETER_BINARY_VALUE(value, config, parameter)                                                           \
     do {                                                                                                               \
         char *value_char;                                                                                              \
         value = false;                                                                                                 \
         GET_PARAMETER_VALUE_CHAR (value_char, config, parameter);                                                      \
-        if (value_char != NULL) {                                                                                     \
+        if (value_char != NULL) {                                                                                      \
             (value) = ((strcmp (value_char, "yes") == 0) || (strcmp (value_char, "true") == 0));                       \
         }                                                                                                              \
         free (value_char);                                                                                             \
