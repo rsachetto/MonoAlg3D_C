@@ -27,7 +27,7 @@ struct fibrotic_mesh_info {
         FIBROTIC ((grid_cell)) = false;                                                                                \
         BORDER_ZONE (grid_cell) = false;                                                                               \
         SCAR_TYPE ((grid_cell)) = 'n';                                                                                 \
-    } while (0);
+    } while (0)
 
 struct conjugate_gradient_info {
     double r;  /* Element of the int_vector r = b - Ax associated to this cell. */
@@ -80,7 +80,7 @@ struct jacobi_info {
         size_t size = sizeof (struct info_struct);                                                                     \
         (grid_cell)->linear_system_solver_extra_info = malloc (size);                                                  \
         (grid_cell)->linear_system_solver_extra_info_size = size;                                                      \
-    } while (0);
+    } while (0)
 
 #define INITIALIZE_CONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO (grid_cell, conjugate_gradient_info)
 #define INITIALIZE_BICONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO (grid_cell, biconjugate_gradient_info)
