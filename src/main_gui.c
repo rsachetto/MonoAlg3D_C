@@ -385,7 +385,7 @@ char *get_config_file_path() {
 
     char *gui_path, *config_path;
     size_t bufsize = 2048;
-    ssize_t read_chars;
+    size_t read_chars;
     gui_path = (char*) malloc(bufsize);
     config_path = (char*) malloc(strlen(".config") + bufsize);
 
