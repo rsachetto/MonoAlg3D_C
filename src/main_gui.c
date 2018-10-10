@@ -263,8 +263,6 @@ void *start_program_with_thread (void *thread_param) {
     free(td->program);
     free(td);
 
-
-
     return NULL;
 }
 
@@ -387,7 +385,7 @@ char *get_config_file_path() {
 
     char *gui_path, *config_path;
     size_t bufsize = 2048;
-    int read_chars;
+    ssize_t read_chars;
     gui_path = (char*) malloc(bufsize);
     config_path = (char*) malloc(strlen(".config") + bufsize);
 
@@ -413,15 +411,12 @@ char *get_config_file_path() {
     char ext[ _MAX_EXT ];
 
     _splitpath( gui_path, node, base_dir, fname, ext );
-
-
     sprintf(config_path, "%s\\.config", base_dir);
 #else
     sprintf(config_path, "%s/.config", base_dir);
 #endif
     free(base_dir);
     return config_path;
-
 }
 
 
@@ -456,8 +451,6 @@ void save_gui_config_file(uiButton *e, void *data) {
 
     uiWindow *win = uiWindow (data);
     uiControlDestroy (uiControl (win));
-
-
 }
 
 static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data) {
@@ -467,7 +460,6 @@ static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data)
     uiWindowSetModal(pref_window, NULL, 1);
     uiWindowSetMargined (pref_window, 1);
     uiWindowOnClosing(pref_window, on_close_preferences_window, pref_window);
-
 
     uiLabel *alg_3D_path_label = uiNewLabel("Alg 3D executable full path: ");
     alg_3D_path_entry = uiNewEntry();
@@ -502,7 +494,6 @@ static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data)
     uiButton *cancel = uiNewButton("Close without saving");
     uiButtonOnClicked (cancel, close_preferences_window, (void*) pref_window);
 
-
     uiBox *ok_cancel_box = uiNewHorizontalBox();
     uiBoxAppend(ok_cancel_box, uiControl(ok), 0);
     uiBoxAppend(ok_cancel_box, uiControl(cancel), 0);
@@ -519,7 +510,6 @@ static void open_configuration_window(uiMenuItem *item, uiWindow *w, void *data)
     uiEntrySetText(alg_3D_path_entry, global_alg3d_path);
     uiEntrySetText(paraview_path_entry, global_paraview_path);
 
-    //free(config_path);
     uiControlShow (uiControl (pref_window));
 
 }
@@ -541,7 +531,6 @@ static void *start_paraview_with_thread(void *data) {
 }
 
 void open_paraview_last_simulation(uiButton *b, void *data) {
-
 
     struct ThreadData *td = (struct ThreadData *)malloc (sizeof (struct ThreadData));
     td->fn_pointer = append_to_queue;
