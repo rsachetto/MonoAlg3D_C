@@ -16,8 +16,8 @@ struct grid* new_grid() {
     result->refined_this_step = NULL;
     result->free_sv_positions = NULL;
 
-            sb_reserve(result->refined_this_step, 128);
-            sb_reserve(result->free_sv_positions, 128);
+    sb_reserve(result->refined_this_step, 128);
+    sb_reserve(result->free_sv_positions, 128);
 
 
     return result;
