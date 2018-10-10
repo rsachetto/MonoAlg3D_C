@@ -6,9 +6,9 @@
 #include "../alg/grid/grid.h"
 #include "../config/linear_system_solver_config.h"
 
-double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines);
+double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
 
-double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *nnz);
+double **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
 
 double calc_mse(const double *x, const double *xapp, int n) {
 
@@ -19,28 +19,28 @@ double calc_mse(const double *x, const double *xapp, int n) {
         sum_sq += (err * err);
     }
 
-    return sum_sq/n;
+    return sum_sq / n;
 }
 
 
-void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b) {
+void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b) {
 
     uint32_t n_cells;
     int num_lines_m = 0;
     int num_lines_v = 0;
     int nnz = 0;
 
-    double **matrix = read_octave_mat_file_to_array (matrix_a, &num_lines_m, &nnz);
-    double *vector = read_octave_vector_file_to_array (vector_b, &num_lines_v);
+    double **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
+    double *vector = read_octave_vector_file_to_array(vector_b, &num_lines_v);
 
     cr_assert_eq (num_lines_m, num_lines_v);
     cr_assert (nnz);
 
-    initialize_and_construct_grid (grid, 1.0);
+    initialize_and_construct_grid(grid, 1.0);
 
     n_cells = grid->number_of_cells;
     while (n_cells < num_lines_m) {
-        refine_grid (grid, 1);
+        refine_grid(grid, 1);
         n_cells = grid->number_of_cells;
     }
 
@@ -58,7 +58,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
         item_count++;
     }
 
-    order_grid_cells (grid);
+    order_grid_cells(grid);
 
     cr_assert_eq (num_lines_m, grid->num_active_cells);
 
@@ -76,8 +76,8 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
         el.column = cell_position;
         el.cell = cell;
 
-        sb_reserve(cell->elements, 7);
-        sb_push(cell->elements, el);
+                sb_reserve(cell->elements, 7);
+                sb_push(cell->elements, el);
 
         for (int j = 0; j < num_lines_m; j++) {
             if (cell_position != j) {
@@ -87,7 +87,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
                 if (m_value != 0.0) {
                     struct element el2;
                     el2.value = m_value;
-                    el2.column = (uint32_t)j;
+                    el2.column = (uint32_t) j;
 
                     struct cell_node *aux = grid->first_cell;
                     while (aux) {
@@ -96,7 +96,7 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
                         aux = aux->next;
                     }
                     el2.cell = aux;
-                    sb_push(cell->elements, el2);
+                            sb_push(cell->elements, el2);
                 }
             }
         }
@@ -112,37 +112,37 @@ void construct_grid_from_file (struct grid *grid, FILE *matrix_a, FILE *vector_b
     }
 
     for (int i = 0; i < num_lines_m; i++) {
-        free (matrix[i]);
+        free(matrix[i]);
     }
 
-    free (matrix);
-    free (vector);
+    free(matrix);
+    free(vector);
 }
 
-double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *nnz) {
+double **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
     const char *sep = " ";
     char *line_a = NULL;
     size_t len;
     int count;
 
     do {
-        getline (&line_a, &len, matrix_file);
-        sds *tmp = sdssplitlen (line_a, (int)strlen (line_a), sep, (int)strlen (sep), &count);
+        getline(&line_a, &len, matrix_file);
+        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
         if (count) {
-            if (strcmp (tmp[1], "columns:") == 0) {
-                (*num_lines) = atoi (tmp[2]);
+            if (strcmp(tmp[1], "columns:") == 0) {
+                (*num_lines) = atoi(tmp[2]);
             }
-            if (strcmp (tmp[1], "nnz:") == 0) {
-                (*nnz) = atoi (tmp[2]);
+            if (strcmp(tmp[1], "nnz:") == 0) {
+                (*nnz) = atoi(tmp[2]);
             }
         }
-        sdsfreesplitres (tmp, count);
+        sdsfreesplitres(tmp, count);
     } while ((line_a)[0] == '#');
 
-    double **matrix = (double **)malloc (*num_lines * sizeof (double *));
+    double **matrix = (double **) malloc(*num_lines * sizeof(double *));
 
     for (int i = 0; i < *num_lines; i++) {
-        matrix[i] = (double *)calloc (*num_lines, sizeof (double));
+        matrix[i] = (double *) calloc(*num_lines, sizeof(double));
     }
 
     int item_count = 0;
@@ -151,27 +151,27 @@ double **read_octave_mat_file_to_array (FILE *matrix_file, int *num_lines, int *
 
     while (item_count < *nnz) {
 
-        sds *tmp = sdssplitlen (line_a, (int)strlen (line_a), sep, (int)strlen (sep), &count);
+        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
         if (tmp[0][0] != '\n') {
-            m_line = atoi (tmp[0]);
-            m_column = atoi (tmp[1]);
-            m_value = atof (tmp[2]);
+            m_line = atoi(tmp[0]);
+            m_column = atoi(tmp[1]);
+            m_value = atof(tmp[2]);
 
             matrix[m_line - 1][m_column - 1] = m_value;
         }
-        sdsfreesplitres (tmp, count);
+        sdsfreesplitres(tmp, count);
 
         item_count++;
-        getline (&line_a, &len, matrix_file);
+        getline(&line_a, &len, matrix_file);
     }
 
     if (line_a)
-        free (line_a);
+        free(line_a);
 
     return matrix;
 }
 
-double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines) {
+double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
 
     ssize_t read;
     size_t len;
@@ -180,54 +180,64 @@ double *read_octave_vector_file_to_array (FILE *vec_file, int *num_lines) {
     char *sep = " ";
 
     do {
-        read = getline (&line_b, &len, vec_file);
-        sds *tmp = sdssplitlen (line_b, (int)strlen (line_b), sep, (int)strlen (sep), &count);
+        read = getline(&line_b, &len, vec_file);
+        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
         if (count) {
-            if (strcmp (tmp[1], "rows:") == 0) {
-                (*num_lines) = atoi (tmp[2]);
+            if (strcmp(tmp[1], "rows:") == 0) {
+                (*num_lines) = atoi(tmp[2]);
             }
         }
-        sdsfreesplitres (tmp, count);
+        sdsfreesplitres(tmp, count);
     } while ((line_b)[0] == '#');
 
-    double *vector = (double *)malloc (*num_lines * sizeof (double));
+    double *vector = (double *) malloc(*num_lines * sizeof(double));
 
     int item_count = 0;
     while ((item_count < *num_lines) && read) {
-        sds *tmp = sdssplitlen (line_b, (int)strlen (line_b), sep, (int)strlen (sep), &count);
+        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
 
         if (tmp[0][0] != '\n') {
-            vector[item_count] = atof (tmp[1]);
+            vector[item_count] = atof(tmp[1]);
         }
 
-        sdsfreesplitres (tmp, count);
+        sdsfreesplitres(tmp, count);
 
         item_count++;
-        read = getline (&line_b, &len, vec_file);
+        read = getline(&line_b, &len, vec_file);
     }
 
     if (line_b)
-        free (line_b);
+        free(line_b);
 
     return vector;
 }
 
-void test_solver (bool preconditioner, char *method_name, int nt) {
+void test_solver(bool preconditioner, char *method_name, int nt, int version) {
 
-    FILE *A = fopen ("src/tests/A.txt", "r");
-    FILE *B = fopen ("src/tests/B.txt", "r");
-    FILE *X = fopen ("src/tests/X.txt", "r");
-    double error;
+    FILE *A = NULL;
+    FILE *B = NULL;
+    FILE *X = NULL;
+
+    if (version == 1) {
+        A = fopen("src/tests/A.txt", "r");
+        B = fopen("src/tests/B.txt", "r");
+        X = fopen("src/tests/X.txt", "r");
+    } else if (version == 2) {
+        A = fopen("src/tests/A1.txt", "r");
+        B = fopen("src/tests/B1.txt", "r");
+        X = fopen("src/tests/X1.txt", "r");
+    }
 
     cr_assert(A);
     cr_assert(B);
     cr_assert(X);
 
+    double error;
 
-    struct grid *grid = (struct grid *)malloc (sizeof (struct grid));
+    struct grid *grid = new_grid();
     cr_assert (grid);
 
-    construct_grid_from_file (grid, A, B);
+    construct_grid_from_file(grid, A, B);
 
 
 #if defined(_OPENMP)
@@ -241,7 +251,7 @@ void test_solver (bool preconditioner, char *method_name, int nt) {
     linear_system_solver_config->config_data.function_name = method_name;
 
     string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "tolerance", "1e-16");
-    if(preconditioner)
+    if (preconditioner)
         string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "use_preconditioner", "yes");
     else
         string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "use_preconditioner", "no");
@@ -258,8 +268,8 @@ void test_solver (bool preconditioner, char *method_name, int nt) {
     int n_lines1;
     uint32_t n_lines2;
 
-    double *x = read_octave_vector_file_to_array (X, &n_lines1);
-    double *x_grid = grid_vector_to_array (grid, 'x', &n_lines2);
+    double *x = read_octave_vector_file_to_array(X, &n_lines1);
+    double *x_grid = grid_vector_to_array(grid, 'x', &n_lines2);
 
 //    if(preconditioner)
 //        printf("MSE using %s with preconditioner and %d threads: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
@@ -272,63 +282,102 @@ void test_solver (bool preconditioner, char *method_name, int nt) {
         cr_assert_float_eq (x[i], x_grid[i], 1e-10);
     }
 
-    clean_and_free_grid (grid);
-    fclose (A);
-    fclose (B);
+    clean_and_free_grid(grid);
+    fclose(A);
+    fclose(B);
 }
 
 
 Test (solvers, cg_jacobi_1t) {
-    test_solver (true, "conjugate_gradient", 1);
+    test_solver(true, "conjugate_gradient", 1, 1);
 }
 
 Test (solvers, cg_no_jacobi_1t) {
-    test_solver (false, "conjugate_gradient", 1);
+    test_solver(false, "conjugate_gradient", 1, 1);
 }
 
 Test (solvers, bcg_jacobi_1t) {
-    test_solver (true, "biconjugate_gradient", 1);
+    test_solver(true, "biconjugate_gradient", 1, 1);
 }
 
 Test (solvers, jacobi_1t) {
-    test_solver (false, "jacobi", 1);
+    test_solver(false, "jacobi", 1, 1);
 }
 
 #if defined(_OPENMP)
 
 Test (solvers, cg_jacobi_6t) {
-    test_solver (true, "conjugate_gradient", 6);
+    test_solver(true, "conjugate_gradient", 6, 1);
 }
 
 Test (solvers, cg_no_jacobi_6t) {
-    test_solver (false, "conjugate_gradient", 6);
+    test_solver(false, "conjugate_gradient", 6, 1);
 }
 
 
 Test (solvers, bcg_no_jacobi_6t) {
-    test_solver (false, "biconjugate_gradient", 6);
+    test_solver(false, "biconjugate_gradient", 6, 1);
 }
 
 Test (solvers, jacobi_6t) {
-    test_solver (false, "jacobi", 6);
+    test_solver(false, "jacobi", 6, 1);
 }
 
 #endif
+
+
+Test (solvers, cg_jacobi_1t_2) {
+    test_solver(true, "conjugate_gradient", 1, 2);
+}
+
+Test (solvers, cg_no_jacobi_1t_2) {
+    test_solver(false, "conjugate_gradient", 1, 2);
+}
+
+Test (solvers, bcg_jacobi_1t_2) {
+    test_solver(true, "biconjugate_gradient", 1, 2);
+}
+
+Test (solvers, jacobi_1t_2) {
+    test_solver(false, "jacobi", 1, 2);
+}
+
+#if defined(_OPENMP)
+
+Test (solvers, cg_jacobi_6t_2) {
+    test_solver(true, "conjugate_gradient", 6, 2);
+}
+
+Test (solvers, cg_no_jacobi_6t_2) {
+    test_solver(false, "conjugate_gradient", 6, 2);
+}
+
+
+Test (solvers, bcg_no_jacobi_6t_2) {
+    test_solver(false, "biconjugate_gradient", 6, 2);
+}
+
+Test (solvers, jacobi_6t_2) {
+    test_solver(false, "jacobi", 6, 2);
+}
+
+#endif
+
 
 Test (utils, stretchy_buffer_int) {
 
     int *v = NULL;
 
-    sb_reserve(v, 1);
+            sb_reserve(v, 1);
 
-    cr_assert_eq(sb_count(v) ,0);
-    cr_assert_eq(stb__sbm(v)  ,1);
+    cr_assert_eq(sb_count(v), 0);
+    cr_assert_eq(stb__sbm(v), 1);
 
-    sb_push(v, 0);
-    sb_push(v, 1);
-    sb_push(v, 2);
+            sb_push(v, 0);
+            sb_push(v, 1);
+            sb_push(v, 2);
 
-    cr_assert_eq(sb_count(v) ,3);
+    cr_assert_eq(sb_count(v), 3);
 
     cr_assert_eq(v[0], 0);
     cr_assert_eq(v[1], 1);
@@ -339,16 +388,16 @@ Test (utils, stretchy_buffer_float) {
 
     float *v = NULL;
 
-    sb_reserve(v, 1);
+            sb_reserve(v, 1);
 
-    cr_assert_eq(sb_count(v) ,0);
-    cr_assert_eq(stb__sbm(v)  ,1);
+    cr_assert_eq(sb_count(v), 0);
+    cr_assert_eq(stb__sbm(v), 1);
 
-    sb_push(v, 0);
-    sb_push(v, 0.5);
-    sb_push(v, 2.5);
+            sb_push(v, 0);
+            sb_push(v, 0.5);
+            sb_push(v, 2.5);
 
-    cr_assert_eq(sb_count(v) ,3);
+    cr_assert_eq(sb_count(v), 3);
 
     cr_assert_float_eq(v[0], 0.0, 1e-10);
     cr_assert_float_eq(v[1], 0.5, 1e-10);
@@ -359,16 +408,16 @@ Test (utils, stretchy_buffer_double) {
 
     double *v = NULL;
 
-    sb_reserve(v, 1);
+            sb_reserve(v, 1);
 
-    cr_assert_eq(sb_count(v) ,0);
-    cr_assert_eq(stb__sbm(v)  ,1);
+    cr_assert_eq(sb_count(v), 0);
+    cr_assert_eq(stb__sbm(v), 1);
 
-    sb_push(v, 0);
-    sb_push(v, 0.5);
-    sb_push(v, 2.5);
+            sb_push(v, 0);
+            sb_push(v, 0.5);
+            sb_push(v, 2.5);
 
-    cr_assert_eq(sb_count(v) ,3);
+    cr_assert_eq(sb_count(v), 3);
 
     cr_assert_float_eq(v[0], 0.0, 1e-10);
     cr_assert_float_eq(v[1], 0.5, 1e-10);
@@ -379,25 +428,25 @@ Test (utils, stretchy_buffer_element) {
 
     struct element *v = NULL;
 
-    sb_reserve(v, 1);
+            sb_reserve(v, 1);
 
-    cr_assert_eq(sb_count(v) ,0);
-    cr_assert_eq(stb__sbm(v)  ,1);
+    cr_assert_eq(sb_count(v), 0);
+    cr_assert_eq(stb__sbm(v), 1);
 
-    struct cell_node *c  = new_cell_node();
+    struct cell_node *c = new_cell_node();
     struct element a = {0, 1, c};
 
-    sb_push(v, a);
+            sb_push(v, a);
 
     a.column = 2;
     a.value = -2.2;
-    sb_push(v, a);
+            sb_push(v, a);
 
     a.column = 3;
     a.value = 3.5;
-    sb_push(v, a);
+            sb_push(v, a);
 
-    cr_assert_eq(sb_count(v) ,3);
+    cr_assert_eq(sb_count(v), 3);
 
     cr_assert_eq(v[0].column, 1);
     cr_assert_float_eq(v[0].value, 0.0, 1e-10);
