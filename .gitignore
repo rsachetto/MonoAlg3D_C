@@ -67,3 +67,5 @@ build/
 .vs/
 *.json
 test_headers/erro.txt
+/test_headers/test_h.c
+/test_headers/test_h
