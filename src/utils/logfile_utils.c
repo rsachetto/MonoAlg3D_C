@@ -7,8 +7,17 @@
 #include "logfile_utils.h"
 #include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
+
 #include <errno.h>
+
+#ifdef _WIN32
+#include <io.h>
+#define read _read
+#endif
+
+#ifdef linux
+#include <unistd.h>
+#endif
 
 static FILE *logfile = NULL;
 
@@ -27,7 +36,12 @@ void print_to_stdout_and_file(char const *fmt, ...) {
 }
 
 void open_logfile(const char *path) {
-    logfile = fopen(path, "w");
+
+#ifdef _WIN32
+    fopen_s(&logfile, path, "w");
+#else
+    logfile = fopen_s(path, "w");
+#endif
 
     if(logfile == NULL) {
         fprintf(stderr, "Error opening %s, printing output only in the sdtout (Terminal)\n", path);
@@ -46,7 +60,7 @@ int cp_file(const char *to, const char *from)
 {
     int fd_to, fd_from;
     char buf[4096];
-    ssize_t nread;
+    int nread;
     int saved_errno;
 
     fd_from = open(from, O_RDONLY);
@@ -60,10 +74,10 @@ int cp_file(const char *to, const char *from)
     while (nread = read(fd_from, buf, sizeof buf), nread > 0)
     {
         char *out_ptr = buf;
-        ssize_t nwritten;
+        int  nwritten;
 
         do {
-            nwritten = write(fd_to, out_ptr, (size_t)nread);
+            nwritten = write(fd_to, out_ptr, nread);
 
             if (nwritten >= 0)
             {
