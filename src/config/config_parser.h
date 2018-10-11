@@ -26,6 +26,7 @@
 #include "save_mesh_config.h"
 #include "linear_system_solver_config.h"
 #include "stim_config_hash.h"
+#include "save_state_config.h"
 
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
@@ -69,7 +70,6 @@ struct user_options {
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
 
-
     bool draw;
 
     double beta;
@@ -87,6 +87,7 @@ struct user_options {
     struct assembly_matrix_config *assembly_matrix_config;
     struct linear_system_solver_config *linear_system_solver_config;
     struct save_mesh_config *save_mesh_config;
+    struct save_state_config *save_state_config;
 
     bool main_found;
 

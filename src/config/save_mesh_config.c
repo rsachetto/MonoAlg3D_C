@@ -20,7 +20,7 @@ void init_save_mesh_functions(struct save_mesh_config *config) {
     char *function_name = config->config_data.function_name;
 
 #ifdef _MSC_VER
-	char *default_function = "./shared_libs/default_matrix_assembly.dll";
+	char *default_function = "./shared_libs/libdefault_save_mesh.dll";
 #else
 	char *default_function = "./shared_libs/libdefault_save_mesh.so";
 #endif

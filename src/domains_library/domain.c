@@ -70,6 +70,9 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
     for (i = 0; i < num_steps; i++) {
         derefine_grid_inactive_cells (the_grid);
     }
+
+    //TODO: remove, using only for debug
+    refine_grid_cell_at(the_grid, 100);
 }
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
