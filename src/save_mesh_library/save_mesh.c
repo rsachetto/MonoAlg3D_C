@@ -9,7 +9,7 @@
 #include "../utils/utils.h"
 #include "../monodomain/constants.h"
 #include "../alg/grid/grid.h"
-#include "../config/assembly_matrix_config.h"
+#include "../config/save_mesh_config.h"
 #include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
 #include "../hash/point_hash.h"

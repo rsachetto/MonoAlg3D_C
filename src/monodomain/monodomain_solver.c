@@ -74,6 +74,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     struct assembly_matrix_config *assembly_matrix_config = configs->assembly_matrix_config;
     struct linear_system_solver_config *linear_system_solver_config = configs->linear_system_solver_config;
     struct save_mesh_config *save_mesh_config = configs->save_mesh_config;
+    struct save_state_config *save_state_config = configs->save_state_config;
 
     bool has_extra_data = (extra_data_config != NULL);
 
@@ -124,6 +125,13 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file ("No configuration provided to save the results! The results will not be saved!\n");
     }
 
+    if(save_state_config) {
+        init_save_state_functions(save_state_config);        
+    }
+    else {
+        print_to_stdout_and_file ("No configuration provided to make simulation checkpoints! Chekpoints will not be created!\n");
+    }
+
     if (has_extra_data) {
         init_extra_data_functions (extra_data_config);
     }
@@ -152,6 +160,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
     bool save_to_file = (configs->save_mesh_config != NULL);
+    bool save_checkpoint = (configs->save_state_config != NULL);
+
 
     double dt_edp = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
@@ -224,7 +234,13 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     start_stop_watch (&solver_time);
 
-    int print_rate = configs->save_mesh_config->print_rate;
+    int print_rate = save_mesh_config->print_rate;
+
+    int save_state_rate = 0;
+    
+    if(save_checkpoint)
+        save_state_rate = save_state_config->save_rate;
+
     double vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
@@ -263,6 +279,15 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
                         break;
                     }
                 }
+            }
+        }
+
+        if (save_checkpoint) {
+
+            if (count % save_state_rate == 1) {
+                //start_stop_watch (&write_time);
+               save_state_config->save_state(save_state_config, the_grid, the_ode_solver);
+                //total_write_time += stop_stop_watch (&write_time);                
             }
         }
 

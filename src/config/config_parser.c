@@ -155,6 +155,7 @@ struct user_options *new_user_options () {
     user_args->assembly_matrix_config = NULL;
     user_args->linear_system_solver_config = NULL;
     user_args->save_mesh_config = NULL;
+    user_args->save_state_config = NULL;
 
     user_args->draw = false;
     user_args->main_found = false;
@@ -964,7 +965,7 @@ int parse_config_file (void *user, const char *section, const char *name, const 
             string_hash_insert(pconfig->extra_data_config->config_data.config, name, value);
         }
     }
-    else if(MATCH_SECTION(SAVE_SECTION)) {
+    else if(MATCH_SECTION(SAVE_RESULT_SECTION)) {
 
         if(pconfig->save_mesh_config == NULL) {
             pconfig->save_mesh_config = new_save_mesh_config();
@@ -987,6 +988,31 @@ int parse_config_file (void *user, const char *section, const char *name, const 
         }
         else {
             string_hash_insert(pconfig->save_mesh_config->config_data.config, name, value);
+        }
+    }
+    else if(MATCH_SECTION(SAVE_STATE_SECTION)) {
+
+        if(pconfig->save_state_config == NULL) {
+            pconfig->save_state_config = new_save_state_config();
+        }
+        if (MATCH_NAME("save_rate")) {
+            pconfig->save_state_config->save_rate = (int)strtol (value, NULL, 10);
+            pconfig->save_state_config->save_rate_was_set = true;
+        }
+        else if (MATCH_NAME("output_dir")) {
+            pconfig->save_state_config->out_dir_name = strdup(value);
+            pconfig->save_state_config->out_dir_name_was_set = true;
+        }
+        else if(MATCH_NAME("function")) {
+            pconfig->save_state_config->config_data.function_name = strdup(value);
+            pconfig->save_state_config->config_data.function_name_was_set = true;
+        }
+        else if(MATCH_NAME("library_file")) {
+            pconfig->save_state_config->config_data.library_file_path = strdup(value);
+            pconfig->save_state_config->config_data.library_file_path_was_set = true;
+        }
+        else {
+            string_hash_insert(pconfig->save_state_config->config_data.config, name, value);
         }
     }
     else {
