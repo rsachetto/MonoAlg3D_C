@@ -998,11 +998,7 @@ int parse_config_file (void *user, const char *section, const char *name, const 
         if (MATCH_NAME("save_rate")) {
             pconfig->save_state_config->save_rate = (int)strtol (value, NULL, 10);
             pconfig->save_state_config->save_rate_was_set = true;
-        }
-        else if (MATCH_NAME("output_dir")) {
-            pconfig->save_state_config->out_dir_name = strdup(value);
-            pconfig->save_state_config->out_dir_name_was_set = true;
-        }
+        }        
         else if(MATCH_NAME("function")) {
             pconfig->save_state_config->config_data.function_name = strdup(value);
             pconfig->save_state_config->config_data.function_name_was_set = true;

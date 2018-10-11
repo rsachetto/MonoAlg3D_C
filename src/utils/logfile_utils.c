@@ -40,7 +40,7 @@ void open_logfile(const char *path) {
 #ifdef _WIN32
     fopen_s(&logfile, path, "w");
 #else
-    logfile = fopen_s(path, "w");
+    logfile = fopen(path, "w");
 #endif
 
     if(logfile == NULL) {

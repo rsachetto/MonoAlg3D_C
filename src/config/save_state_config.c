@@ -60,17 +60,13 @@ struct save_state_config* new_save_state_config() {
     struct save_state_config *result = (struct save_state_config*) malloc(sizeof(struct save_state_config));
 
     init_config_common_data(&(result->config_data));
-    result->save_state = NULL;
-    result->out_dir_name = NULL;
-    result->out_dir_name_was_set = false;    
-    result->save_rate = 0;
-    result->save_rate_was_set = false;
+    result->save_state = NULL;    
+    result->save_rate = 0;   
 
     return result;
 }
 
-void print_save_state_config_values(struct save_state_config* s) {    
-    printf("save_state_output_dir: %s\n",s->out_dir_name);
+void print_save_state_config_values(struct save_state_config* s) {        
     printf("save_state_save_rate: %d\n",s->save_rate);
     printf("save_state_function: %s\n",s->config_data.function_name);
     printf("save_stateh_library_file: %s\n",s->config_data.library_file_path);
@@ -82,9 +78,7 @@ void free_save_state_config(struct save_state_config* s) {
     free(s->config_data.library_file_path);
     free(s->config_data.function_name);
     string_hash_destroy(s->config_data.config);
-
-    free(s->out_dir_name);
-
+    
     if(s->config_data.handle)
         dlclose(s->config_data.handle);
     free(s);
