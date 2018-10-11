@@ -286,7 +286,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
             if (count % save_state_rate == 1) {
                 //start_stop_watch (&write_time);
-               save_state_config->save_state(save_state_config, the_grid, the_ode_solver);
+               save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid, the_ode_solver);
                 //total_write_time += stop_stop_watch (&write_time);                
             }
         }

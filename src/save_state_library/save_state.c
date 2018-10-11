@@ -11,9 +11,7 @@
 #include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
 
-SAVE_STATE(save_simulation_state) {
-
-    char *output_dir = config->out_dir_name;
+SAVE_STATE(save_simulation_state) {   
 
     sds tmp = sdsnew (output_dir);    
     tmp = sdscat (tmp, "/simulation_state.dat");    

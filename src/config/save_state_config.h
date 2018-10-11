@@ -14,7 +14,8 @@
 struct save_state_config;
 struct ode_solver;
 
-#define SAVE_STATE(name) EXPORT_FN void name(struct save_state_config *config, \
+#define SAVE_STATE(name) EXPORT_FN void name(char *output_dir, \
+                                             struct save_state_config *config, \
                                              struct grid *the_grid, \
                                              struct ode_solver *the_ode_solver)
 
@@ -22,12 +23,10 @@ typedef SAVE_STATE(save_state_fn);
 
 
 struct save_state_config {
-    struct config_common config_data;    
-    char *out_dir_name;
-    bool out_dir_name_was_set;
+    struct config_common config_data;        
     int save_rate;
     bool save_rate_was_set;
-
+    
     save_state_fn *save_state;     
 };
 
