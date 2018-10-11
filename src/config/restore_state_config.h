@@ -13,7 +13,8 @@
 //Forward declaration
 struct restore_state_config;
 
-#define RESTORE_STATE(name) EXPORT_FN void name(struct restore_state_config *config, \
+#define RESTORE_STATE(name) EXPORT_FN void name(char* output_dir,                    \
+                                                struct restore_state_config *config, \
                                                 struct grid *the_grid,               \
                                                 struct ode_solver *the_ode_solver)
 typedef RESTORE_STATE(restore_state_fn);

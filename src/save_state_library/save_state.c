@@ -44,5 +44,6 @@ SAVE_STATE(save_simulation_state) {
     
 
     //TODO: we need to restore the ode solver state as well
+    //TODO: maybe we need to save the monodomain solver state...
 
 }
