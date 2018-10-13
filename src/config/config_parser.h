@@ -25,8 +25,9 @@
 #include "assembly_matrix_config.h"
 #include "save_mesh_config.h"
 #include "linear_system_solver_config.h"
-#include "stim_config_hash.h"
+#include "../hash/stim_config_hash.h"
 #include "save_state_config.h"
+#include "restore_state_config.h"
 
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
@@ -88,6 +89,7 @@ struct user_options {
     struct linear_system_solver_config *linear_system_solver_config;
     struct save_mesh_config *save_mesh_config;
     struct save_state_config *save_state_config;
+    struct restore_state_config *restore_state_config;
 
     bool main_found;
 

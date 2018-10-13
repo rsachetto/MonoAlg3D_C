@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "../models_library/model_common.h"
 #include "../config/config_parser.h"
-#include "../config/stim_config_hash.h"
+#include "../hash/stim_config_hash.h"
 
 //Forward declaration
 struct user_options;

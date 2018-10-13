@@ -61,13 +61,10 @@ struct restore_state_config* new_restore_state_config() {
 
     init_config_common_data(&(result->config_data));
     result->restore_state = NULL;
-    result->in_dir_name = NULL;
-    result->in_dir_name_was_set = false;    
     return result;
 }
 
-void print_restore_state_config_values(struct restore_state_config* s) {    
-    printf("restore_state_input_dir: %s\n",s->in_dir_name);
+void print_restore_state_config_values(struct restore_state_config* s) {
     printf("restore_state_function: %s\n",s->config_data.function_name);
     printf("restore_stateh_library_file: %s\n",s->config_data.library_file_path);
     printf("restore_state_config:\n");
@@ -78,8 +75,6 @@ void free_restore_state_config(struct restore_state_config* s) {
     free(s->config_data.library_file_path);
     free(s->config_data.function_name);
     string_hash_destroy(s->config_data.config);
-
-    free(s->in_dir_name);
 
     if(s->config_data.handle)
         dlclose(s->config_data.handle);

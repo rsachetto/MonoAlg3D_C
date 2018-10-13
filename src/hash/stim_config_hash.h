@@ -5,7 +5,7 @@
 #ifndef MONOALG3D_STIM_CONFIG_HASH_H
 #define MONOALG3D_STIM_CONFIG_HASH_H
 
-#include "stim_config.h"
+#include "../config/stim_config.h"
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                                          \
     for (int i = 0; i < (d)->size; i++) {                                                                                   \
