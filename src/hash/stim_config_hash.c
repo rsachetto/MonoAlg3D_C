@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "../hash/hash_common.h"
+#include "hash_common.h"
 
 
 /* dictionary initialization code used in both create_hash and grow */

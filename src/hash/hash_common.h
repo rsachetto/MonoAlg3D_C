@@ -5,4 +5,12 @@
 #define GROWTH_FACTOR (2)
 #define MAX_LOAD_FACTOR (1)
 
+#include <stdbool.h>
+
+struct point_3d {
+    double x, y, z;
+};
+
+bool point_equals(struct point_3d a, struct point_3d b);
+
 #endif

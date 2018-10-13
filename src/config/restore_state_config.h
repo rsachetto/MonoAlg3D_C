@@ -13,7 +13,7 @@
 //Forward declaration
 struct restore_state_config;
 
-#define RESTORE_STATE(name) EXPORT_FN void name(char* output_dir,                    \
+#define RESTORE_STATE(name) EXPORT_FN void name(char* input_dir,                    \
                                                 struct restore_state_config *config, \
                                                 struct grid *the_grid,               \
                                                 struct ode_solver *the_ode_solver)
@@ -21,14 +21,13 @@ typedef RESTORE_STATE(restore_state_fn);
 
 
 struct restore_state_config {
-    struct config_common config_data;    
-    char *in_dir_name;
-    bool in_dir_name_was_set;
+    struct config_common config_data;
 
+    //TODO: do we need more?
     restore_state_fn *restore_state;     
 };
 
-struct restore_state_config* new_save_restore_config();
+struct restore_state_config* new_restore_restore_config();
 void init_restore_state_functions(struct restore_state_config *config);
 void free_restore_state_config(struct restore_state_config* s);
 void print_restore_state_config_values(struct restore_state_config* s);

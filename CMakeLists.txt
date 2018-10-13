@@ -131,6 +131,7 @@ ADD_SUBDIRECTORY(src/matrix_assembly_library)
 ADD_SUBDIRECTORY(src/linear_system_solver_library)
 ADD_SUBDIRECTORY(src/save_mesh_library)
 ADD_SUBDIRECTORY(src/save_state_library)
+ADD_SUBDIRECTORY(src/restore_state_library)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
