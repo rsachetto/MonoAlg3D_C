@@ -8,15 +8,18 @@
 #include "config_common.h"
 #include "../monodomain/constants.h"
 #include "../monodomain/ode_solver.h"
+#include "../monodomain/monodomain_solver.h"
 #include "../alg/grid/grid.h"
 
 //Forward declaration
 struct save_state_config;
 struct ode_solver;
+struct monodomain_solver;
 
 #define SAVE_STATE(name) EXPORT_FN void name(char *output_dir, \
                                              struct save_state_config *config, \
                                              struct grid *the_grid, \
+                                             struct monodomain_solver *the_monodomain_solver,  \
                                              struct ode_solver *the_ode_solver)
 
 typedef SAVE_STATE(save_state_fn);

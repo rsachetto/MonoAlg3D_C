@@ -148,6 +148,12 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     ///////MAIN CONFIGURATION END//////////////////
 
+    if(restore_checkpoint) {
+        //Here we only restore the monodomain_solver_state...
+        restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, NULL, the_monodomain_solver, NULL);
+    }
+
+
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
 
@@ -167,10 +173,6 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
-    
-    
-
-
     double dt_edp = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
 
@@ -192,28 +194,34 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 #endif
 
     if(restore_checkpoint) {
-        restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, the_grid, NULL);
+        //Here we only restore the grid...
+        restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, the_grid, NULL, NULL);
     }
     else {
         domain_config->set_spatial_domain (domain_config, the_grid);
     }
-    
 
     order_grid_cells (the_grid);
     uint32_t original_num_cells = the_grid->num_active_cells;
 
     save_old_cell_positions (the_grid);
 
-    if (adaptive) {
-        update_cells_to_solve (the_grid, the_ode_solver);
-    }
+    if(restore_checkpoint) {
 
-    print_to_stdout_and_file ("Setting ODE's initial conditions\n");
-    set_ode_initial_conditions_for_all_volumes (the_ode_solver, the_grid->num_active_cells);
+    }
+    else {
+
+        if (adaptive) {
+            update_cells_to_solve (the_grid, the_ode_solver);
+        }
+        print_to_stdout_and_file("Setting ODE's initial conditions\n");
+        set_ode_initial_conditions_for_all_volumes(the_ode_solver, the_grid->num_active_cells);
+    }
 
     double initial_v = the_ode_solver->model_data.initial_v;
 
     total_config_time = stop_stop_watch (&config_time);
+
 
     print_solver_info (the_monodomain_solver, the_ode_solver, the_grid, configs);
 
@@ -241,7 +249,9 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     init_stop_watch (&deref_time);
 
     start_stop_watch (&part_mat);
-    set_initial_conditions (the_monodomain_solver, the_grid, initial_v);
+    if(!restore_checkpoint) {
+        set_initial_conditions(the_monodomain_solver, the_grid, initial_v);
+    }
     assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
     total_mat_time = stop_stop_watch (&part_mat);
 
@@ -299,7 +309,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
             if (count % save_state_rate == 1) {
                 //start_stop_watch (&write_time);
-               save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid, the_ode_solver);
+               save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid, the_monodomain_solver, the_ode_solver);
                 //total_write_time += stop_stop_watch (&write_time);                
             }
         }
@@ -469,7 +479,7 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
         free (solver->cells_to_solve);
     }
 
-    solver->cells_to_solve = (uint32_t *)malloc (the_grid->num_active_cells * sizeof (uint32_t));
+    solver->cells_to_solve = (uint32_t *) malloc(the_grid->num_active_cells * sizeof (uint32_t));
     uint32_t *cts = solver->cells_to_solve;
 	int i;
 

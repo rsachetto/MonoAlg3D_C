@@ -23,32 +23,32 @@ bool clip_with_bounds = false;
 
 bool initialized = false;
 
+int invert_bytes(int data) {
+    int swapped = ((data>>24)&0xff) | // move byte 3 to byte 0
+                  ((data<<8)&0xff0000) | // move byte 1 to byte 2
+                  ((data>>8)&0xff00) | // move byte 2 to byte 1
+                  ((data<<24)&0xff000000); // byte 0 to byte 3
+    return swapped;
+
+}
+
+
 void save_binary_float(FILE *output_file, struct point_3d *p){
     int a = *(int*)&(p->x);
-    int swapped = ((a>>24)&0xff) | // move byte 3 to byte 0
-                  ((a<<8)&0xff0000) | // move byte 1 to byte 2
-                  ((a>>8)&0xff00) | // move byte 2 to byte 1
-                  ((a<<24)&0xff000000); // byte 0 to byte 3
-
+    int swapped = invert_bytes(a);
 
     //fwrite(&aux1, sizeof(struct point_3d), 1, output_file);
     fwrite(&swapped, sizeof(int), 1, output_file);
 
 
     a = *(int*)&(p->y);
-    swapped = ((a>>24)&0xff) | // move byte 3 to byte 0
-              ((a<<8)&0xff0000) | // move byte 1 to byte 2
-              ((a>>8)&0xff00) | // move byte 2 to byte 1
-              ((a<<24)&0xff000000); // byte 0 to byte 3
+    swapped = invert_bytes(a);
 
     fwrite(&swapped, sizeof(int), 1, output_file);
 
 
     a = *(int*)&(p->z);
-    swapped = ((a>>24)&0xff) | // move byte 3 to byte 0
-              ((a<<8)&0xff0000) | // move byte 1 to byte 2
-              ((a>>8)&0xff00) | // move byte 2 to byte 1
-              ((a<<24)&0xff000000); // byte 0 to byte 3
+    swapped = invert_bytes(a);
 
     fwrite(&swapped, sizeof(int), 1, output_file);
 }
@@ -462,15 +462,8 @@ SAVE_MESH(save_as_vtk) {
     int points_per_cell = 8;
     int cell_type = 12;
 
-    int points_per_cell_swapped = ((points_per_cell>>24)&0xff) | // move byte 3 to byte 0
-                                  ((points_per_cell<<8)&0xff0000) | // move byte 1 to byte 2
-                                  ((points_per_cell>>8)&0xff00) | // move byte 2 to byte 1
-                                  ((points_per_cell<<24)&0xff000000); // byte 0 to byte 3
-
-    int cell_type_swapped = ((cell_type>>24)&0xff) | // move byte 3 to byte 0
-                            ((cell_type<<8)&0xff0000) | // move byte 1 to byte 2
-                            ((cell_type>>8)&0xff00) | // move byte 2 to byte 1
-                            ((cell_type<<24)&0xff000000); // byte 0 to byte 3
+    int points_per_cell_swapped = invert_bytes(points_per_cell);
+    int cell_type_swapped = invert_bytes(cell_type);
 
     for(int i = 0; i < num_cells; i++) {
         if(binary) {
@@ -482,10 +475,7 @@ SAVE_MESH(save_as_vtk) {
 
         for(int j = 0; j < points_per_cell; j++) {
             if(binary) {
-                int aux = ((cells[points_per_cell * i + j]>>24)&0xff) | // move byte 3 to byte 0
-                          ((cells[points_per_cell * i + j]<<8)&0xff0000) | // move byte 1 to byte 2
-                          ((cells[points_per_cell * i + j]>>8)&0xff00) | // move byte 2 to byte 1
-                          ((cells[points_per_cell * i + j]<<24)&0xff000000); // byte 0 to byte 3
+                int aux = invert_bytes(cells[points_per_cell * i + j]);
                 fwrite(&aux, sizeof(int), 1, output_file);
             }
             else {
@@ -515,10 +505,7 @@ SAVE_MESH(save_as_vtk) {
 
         for (int i = 0; i < num_values; i++) {
             if(binary) {
-                int aux = ((*((int*)&values[i]) >>24) & 0xff ) | // move byte 3 to byte 0
-                          ((*((int*)&values[i])<<8)&0xff0000) | // move byte 1 to byte 2
-                          ((*((int*)&values[i])>>8)&0xff00) | // move byte 2 to byte 1
-                          ((*((int*)&values[i])<<24)&0xff000000); // byte 0 to byte 3
+                int aux = invert_bytes(*((int*)&values[i]));
                 fwrite(&aux, sizeof(int), 1, output_file);
             }
             else {
