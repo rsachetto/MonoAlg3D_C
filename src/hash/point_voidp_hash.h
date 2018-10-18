@@ -30,7 +30,7 @@ void point_voidp_hash_insert(struct point_voidp_hash*, struct point_3d key, void
 
 /* return the most recently inserted value associated with a key */
 /* or 0 if no matching key is present */
-int point_voidp_hash_search(struct point_voidp_hash*, struct point_3d key);
+void* point_voidp_hash_search(struct point_voidp_hash*, struct point_3d key);
 
 /* delete the most recently inserted record with the given key */
 /* if there is no such record, has no effect */

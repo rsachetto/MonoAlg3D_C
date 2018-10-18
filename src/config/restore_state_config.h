@@ -27,7 +27,7 @@ struct restore_state_config {
     restore_state_fn *restore_state;     
 };
 
-struct restore_state_config* new_restore_restore_config();
+struct restore_state_config* new_restore_state_config();
 void init_restore_state_functions(struct restore_state_config *config);
 void free_restore_state_config(struct restore_state_config* s);
 void print_restore_state_config_values(struct restore_state_config* s);

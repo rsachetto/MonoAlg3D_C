@@ -1013,11 +1013,12 @@ int parse_config_file (void *user, const char *section, const char *name, const 
         }
     }
     else if(MATCH_SECTION(RESTORE_STATE_SECTION)) {
-
-        if(pconfig->restore_state_config == NULL) {
+        
+        if(pconfig->restore_state_config == NULL) {            
             pconfig->restore_state_config = new_restore_state_config();
         }
-        else if(MATCH_NAME("function")) {
+        
+        if(MATCH_NAME("function")) {
             pconfig->restore_state_config->config_data.function_name = strdup(value);
             pconfig->restore_state_config->config_data.function_name_was_set = true;
         }

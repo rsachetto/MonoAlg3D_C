@@ -36,7 +36,7 @@ struct cell_node {
 
     uint64_t bunch_number; // Bunch identifier
 
-    double center_x, center_y, center_z;
+    float center_x, center_y, center_z;
 
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
@@ -57,7 +57,7 @@ struct cell_node {
     uint8_t hilbert_shape_number;
 
     // Cell geometry.
-    double half_face_length;
+    float half_face_length;
 
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
@@ -73,10 +73,10 @@ struct cell_node {
     //element_vector *elements;
     struct element *elements;
 
-    double face_length;
+    float face_length;
 
     bool can_change;
-
+    bool visited;
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient
    method.
