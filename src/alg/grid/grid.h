@@ -13,7 +13,7 @@
 struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.
-    double side_length;        // Length of cube grid. Default = 1.0.
+    float side_length;        // Length of cube grid. Default = 1.0.
     uint32_t number_of_cells;  // Number of cells of grid.
 
     uint32_t num_active_cells;

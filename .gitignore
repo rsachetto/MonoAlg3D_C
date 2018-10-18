@@ -71,3 +71,4 @@ test_headers/test_h.c
 test_headers/test_h
 
 outputs/
+cuboid_tt2004_gpu/
