@@ -20,14 +20,14 @@ void init_restore_state_functions(struct restore_state_config *config) {
     char *function_name = config->config_data.function_name;
 
 #ifdef _MSC_VER
-	char *default_function = "./shared_libs/default_restore_state.dll";
+	char *default_library = "./shared_libs/libdefault_restore_state.dll";
 #else
-	char *default_function = "./shared_libs/default_restore_state.so";
+	char *default_library = "./shared_libs/libdefault_restore_state.so";
 #endif
 
     if(config->config_data.library_file_path == NULL) {
         print_to_stdout_and_file("Using the default library for restoring simulation state\n");
-        config->config_data.library_file_path = strdup(default_function);
+        config->config_data.library_file_path = strdup(default_library);
         config->config_data.library_file_path_was_set = true;
     }
     else {
@@ -42,7 +42,7 @@ void init_restore_state_functions(struct restore_state_config *config) {
         exit(1);
     }
 
-    if(function_name){
+    if(function_name) {
         config->restore_state = dlsym(config->config_data.handle, function_name);
         if (dlerror() != NULL)  {
             fprintf(stderr, "\n%s function not found in the provided restore state library\n", function_name);

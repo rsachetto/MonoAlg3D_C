@@ -75,7 +75,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     struct linear_system_solver_config *linear_system_solver_config = configs->linear_system_solver_config;
     struct save_mesh_config *save_mesh_config = configs->save_mesh_config;
     struct save_state_config *save_state_config = configs->save_state_config;
-
+    struct restore_state_config *restore_state_config = configs->restore_state_config;
+    
     bool has_extra_data = (extra_data_config != NULL);
 
     double last_stimulus_time = -1.0;
@@ -119,12 +120,14 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         exit (EXIT_FAILURE);
     }
 
+    bool save_to_file = (save_mesh_config != NULL);
     if (save_mesh_config) {
         init_save_mesh_functions (save_mesh_config);
     } else {
         print_to_stdout_and_file ("No configuration provided to save the results! The results will not be saved!\n");
     }
 
+    bool save_checkpoint = (save_state_config != NULL);
     if(save_state_config) {
         init_save_state_functions(save_state_config);        
     }
@@ -132,10 +135,15 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file ("No configuration provided to make simulation checkpoints! Chekpoints will not be created!\n");
     }
 
+    bool restore_checkpoint = (restore_state_config != NULL);
+    if(restore_state_config) {
+        init_restore_state_functions(restore_state_config);
+    }
+
     if (has_extra_data) {
         init_extra_data_functions (extra_data_config);
     }
-
+    
     print_to_stdout_and_file (LOG_LINE_SEPARATOR);
 
     ///////MAIN CONFIGURATION END//////////////////
@@ -159,8 +167,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
-    bool save_to_file = (configs->save_mesh_config != NULL);
-    bool save_checkpoint = (configs->save_state_config != NULL);
+    
+    
 
 
     double dt_edp = the_monodomain_solver->dt;
@@ -183,8 +191,13 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     }
 #endif
 
-
-    domain_config->set_spatial_domain (domain_config, the_grid);
+    if(restore_checkpoint) {
+        restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, the_grid, NULL);
+    }
+    else {
+        domain_config->set_spatial_domain (domain_config, the_grid);
+    }
+    
 
     order_grid_cells (the_grid);
     uint32_t original_num_cells = the_grid->num_active_cells;

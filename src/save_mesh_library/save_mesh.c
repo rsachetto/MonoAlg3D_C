@@ -22,7 +22,39 @@ bool clip_with_plain = false;
 bool clip_with_bounds = false;
 
 bool initialized = false;
-SAVE_MESH(save_as_text_or_binary) {
+
+void save_binary_float(FILE *output_file, struct point_3d *p){
+    int a = *(int*)&(p->x);
+    int swapped = ((a>>24)&0xff) | // move byte 3 to byte 0
+                  ((a<<8)&0xff0000) | // move byte 1 to byte 2
+                  ((a>>8)&0xff00) | // move byte 2 to byte 1
+                  ((a<<24)&0xff000000); // byte 0 to byte 3
+
+
+    //fwrite(&aux1, sizeof(struct point_3d), 1, output_file);
+    fwrite(&swapped, sizeof(int), 1, output_file);
+
+
+    a = *(int*)&(p->y);
+    swapped = ((a>>24)&0xff) | // move byte 3 to byte 0
+              ((a<<8)&0xff0000) | // move byte 1 to byte 2
+              ((a>>8)&0xff00) | // move byte 2 to byte 1
+              ((a<<24)&0xff000000); // byte 0 to byte 3
+
+    fwrite(&swapped, sizeof(int), 1, output_file);
+
+
+    a = *(int*)&(p->z);
+    swapped = ((a>>24)&0xff) | // move byte 3 to byte 0
+              ((a<<8)&0xff0000) | // move byte 1 to byte 2
+              ((a>>8)&0xff00) | // move byte 2 to byte 1
+              ((a<<24)&0xff000000); // byte 0 to byte 3
+
+    fwrite(&swapped, sizeof(int), 1, output_file);
+}
+
+SAVE_MESH(save_as_text_or_binary)
+{
 
     if(!initialized) {
 
@@ -150,6 +182,7 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
         GET_PARAMETER_BINARY_VALUE (clip_with_plain, config->config_data.config, "clip_with_plain");
         GET_PARAMETER_BINARY_VALUE (clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BINARY_VALUE (binary, config->config_data.config, "binary");
         initialized = true;
     }
 
@@ -160,8 +193,8 @@ SAVE_MESH(save_as_vtk) {
     real max_y = 0.0;
     real max_z = 0.0;
 
-     real p0[3] = {0, 0 ,0};
-     real  n[3] = {0, 0 ,0};
+    real p0[3] = {0, 0 ,0};
+    real  n[3] = {0, 0 ,0};
 
     if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real, n[0], config->config_data.config, "normal_x");
@@ -193,7 +226,7 @@ SAVE_MESH(save_as_vtk) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    double center_x, center_y, center_z, half_face;
+    float center_x, center_y, center_z, half_face;
     double v;
     bool act = false;
     float *values = NULL;
@@ -215,7 +248,13 @@ SAVE_MESH(save_as_vtk) {
 
     fprintf(output_file, "# vtk DataFile Version 4.2\n");
     fprintf(output_file, "vtk output\n");
-    fprintf(output_file, "ASCII\n");
+    if(binary) {
+        fprintf(output_file, "BINARY\n");
+    }
+    else {
+        fprintf(output_file, "ASCII \n");
+    }
+
     fprintf(output_file, "DATASET UNSTRUCTURED_GRID\n");
     fprintf(output_file, "                                                                                    \n");
 
@@ -224,7 +263,7 @@ SAVE_MESH(save_as_vtk) {
     real B = n[1] / l;
     real C = n[2] / l;
     real D = -(n[0]*p0[0] + n[1]*p0[1] + n[2]*p0[2]);
-    
+
     double side;
 
     while (grid_cell != 0) {
@@ -236,17 +275,17 @@ SAVE_MESH(save_as_vtk) {
             center_z = grid_cell->center_z;
 
             if(clip_with_plain) {
-               side = A*center_x + B*center_y + C* center_z + D;
-               if (side < 0) {
-                   grid_cell = grid_cell->next;
-                   continue;
-               }
+                side = A*center_x + B*center_y + C* center_z + D;
+                if (side < 0) {
+                    grid_cell = grid_cell->next;
+                    continue;
+                }
             }
 
             if(clip_with_bounds) {
                 bool ignore_cell = center_x < min_x || center_x > max_x ||
-                                  center_y < min_y || center_y > max_y ||
-                                  center_z < min_z || center_z > max_z;
+                                   center_y < min_y || center_y > max_y ||
+                                   center_z < min_z || center_z > max_z;
 
                 if(ignore_cell) {
                     grid_cell = grid_cell->next;
@@ -266,7 +305,7 @@ SAVE_MESH(save_as_vtk) {
                 act = true;
             }
 
-            sb_push(values, v);
+                    sb_push(values, v);
 
             aux1.x = center_x - half_face;
             aux1.y = center_y - half_face;
@@ -305,66 +344,111 @@ SAVE_MESH(save_as_vtk) {
                 point_hash_insert(hash, aux1, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux1.x, aux1.y, aux1.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux1);
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux1.x, aux1.y, aux1.z);
+                }
+
             }
 
             if (point_hash_search(hash, aux2) == -1) {
                 point_hash_insert(hash, aux2, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux2.x, aux2.y, aux2.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux2);
+
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux2.x, aux2.y, aux2.z);
+                }
+
             }
 
             if (point_hash_search(hash, aux3) == -1) {
                 point_hash_insert(hash, aux3, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux3.x, aux3.y, aux3.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux3);
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux3.x, aux3.y, aux3.z);
+                }
             }
 
             if (point_hash_search(hash, aux4) == -1) {
                 point_hash_insert(hash, aux4, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux4.x, aux4.y, aux4.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux4);
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux4.x, aux4.y, aux4.z);
+                }
             }
 
             if (point_hash_search(hash, aux5) == -1) {
                 point_hash_insert(hash, aux5, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux5.x, aux5.y, aux5.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux5);
+
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux5.x, aux5.y, aux5.z);
+                }
             }
 
             if (point_hash_search(hash, aux6) == -1) {
                 point_hash_insert(hash, aux6, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux6.x, aux6.y, aux6.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux6);
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux6.x, aux6.y, aux6.z);
+                }
             }
 
             if (point_hash_search(hash, aux7) == -1) {
                 point_hash_insert(hash, aux7, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux7.x, aux7.y, aux7.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux7);
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux7.x, aux7.y, aux7.z);
+                }
             }
 
             if (point_hash_search(hash, aux8) == -1) {
                 point_hash_insert(hash, aux8, id);
                 id++;
 
-                fprintf(output_file, "%lf %lf %lf\n", aux8.x, aux8.y, aux8.z);
+                if(binary) {
+                    save_binary_float(output_file, &aux8);
+
+                }
+                else {
+                    fprintf(output_file, "%lf %lf %lf\n", aux8.x, aux8.y, aux8.z);
+                }
             }
 
-            sb_push(cells, point_hash_search(hash, aux1));
-            sb_push(cells, point_hash_search(hash, aux2));
-            sb_push(cells, point_hash_search(hash, aux3));
-            sb_push(cells, point_hash_search(hash, aux4));
-            sb_push(cells, point_hash_search(hash, aux5));
-            sb_push(cells, point_hash_search(hash, aux6));
-            sb_push(cells, point_hash_search(hash, aux7));
-            sb_push(cells, point_hash_search(hash, aux8));
+                    sb_push(cells, point_hash_search(hash, aux1));
+                    sb_push(cells, point_hash_search(hash, aux2));
+                    sb_push(cells, point_hash_search(hash, aux3));
+                    sb_push(cells, point_hash_search(hash, aux4));
+                    sb_push(cells, point_hash_search(hash, aux5));
+                    sb_push(cells, point_hash_search(hash, aux6));
+                    sb_push(cells, point_hash_search(hash, aux7));
+                    sb_push(cells, point_hash_search(hash, aux8));
             num_cells++;
 
 
@@ -378,40 +462,83 @@ SAVE_MESH(save_as_vtk) {
     int points_per_cell = 8;
     int cell_type = 12;
 
-    for(int i = 0; i < num_cells; i++) {
-        fprintf(output_file, "%d ", points_per_cell);
-        for(int j = 0; j < points_per_cell; j++) {
-            fprintf(output_file, "%d ", cells[points_per_cell*i + j]);
-        }
-        fprintf(output_file, "\n");
-    }
+    int points_per_cell_swapped = ((points_per_cell>>24)&0xff) | // move byte 3 to byte 0
+                                  ((points_per_cell<<8)&0xff0000) | // move byte 1 to byte 2
+                                  ((points_per_cell>>8)&0xff00) | // move byte 2 to byte 1
+                                  ((points_per_cell<<24)&0xff000000); // byte 0 to byte 3
 
+    int cell_type_swapped = ((cell_type>>24)&0xff) | // move byte 3 to byte 0
+                            ((cell_type<<8)&0xff0000) | // move byte 1 to byte 2
+                            ((cell_type>>8)&0xff00) | // move byte 2 to byte 1
+                            ((cell_type<<24)&0xff000000); // byte 0 to byte 3
+
+    for(int i = 0; i < num_cells; i++) {
+        if(binary) {
+            fwrite(&points_per_cell_swapped, sizeof(int), 1, output_file);
+        }
+        else {
+            fprintf(output_file, "%d ", points_per_cell);
+        }
+
+        for(int j = 0; j < points_per_cell; j++) {
+            if(binary) {
+                int aux = ((cells[points_per_cell * i + j]>>24)&0xff) | // move byte 3 to byte 0
+                          ((cells[points_per_cell * i + j]<<8)&0xff0000) | // move byte 1 to byte 2
+                          ((cells[points_per_cell * i + j]>>8)&0xff00) | // move byte 2 to byte 1
+                          ((cells[points_per_cell * i + j]<<24)&0xff000000); // byte 0 to byte 3
+                fwrite(&aux, sizeof(int), 1, output_file);
+            }
+            else {
+                fprintf(output_file, "%d ", cells[points_per_cell * i + j]);
+            }
+        }
+
+        if(!binary) fprintf(output_file, "\n");
+    }
 
     fprintf(output_file, "\nCELL_TYPES %d\n", num_cells);
     for(int i = 0; i < num_cells; i++) {
-        fprintf(output_file, "%d\n", cell_type);
+        if(binary) {
+            fwrite(&cell_type_swapped, sizeof(int), 1, output_file);
+        }
+        else {
+            fprintf(output_file, "%d\n", cell_type);
+        }
+
     }
 
     fprintf(output_file, "\nCELL_DATA %d\n", num_cells);
     fprintf(output_file, "SCALARS Scalars_ float\n");
     fprintf(output_file, "LOOKUP_TABLE default\n");
     {
-        int num_values = sb_count(values);
-        for(int i = 0; i < num_values; i++) {
-            fprintf(output_file, "%lf ", values[i]);
+        size_t num_values = sb_count(values);
+
+        for (int i = 0; i < num_values; i++) {
+            if(binary) {
+                int aux = ((*((int*)&values[i]) >>24) & 0xff ) | // move byte 3 to byte 0
+                          ((*((int*)&values[i])<<8)&0xff0000) | // move byte 1 to byte 2
+                          ((*((int*)&values[i])>>8)&0xff00) | // move byte 2 to byte 1
+                          ((*((int*)&values[i])<<24)&0xff000000); // byte 0 to byte 3
+                fwrite(&aux, sizeof(int), 1, output_file);
+            }
+            else {
+                fprintf(output_file, "%lf ", values[i]);
+            }
+
         }
+
     }
 
     fprintf(output_file, "\nMETADATA\n");
-    fprintf(output_file, "INFORMATION 0\n");
+    fprintf(output_file, "INFORMATION 0\n\n");
 
-    fseek(output_file, 70, SEEK_SET);
+    fseek(output_file, 71, SEEK_SET);
 
     fprintf(output_file, "POINTS %d float", id);
 
     point_hash_destroy(hash);
-    sb_free(cells);
-    sb_free(values);
+            sb_free(cells);
+            sb_free(values);
 
     count++;
     fclose (output_file);

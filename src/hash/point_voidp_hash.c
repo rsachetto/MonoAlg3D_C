@@ -116,7 +116,7 @@ void point_voidp_hash_insert(struct point_voidp_hash* d, struct point_3d key, vo
 
 /* return the most recently inserted value associated with a key */
 /* or 0 if no matching key is present */
-int point_voidp_hash_search(struct point_voidp_hash* d, struct point_3d key) {
+void* point_voidp_hash_search(struct point_voidp_hash* d, struct point_3d key) {
     struct elt *e;
 
     for(e = d->table[point_voidp_hash_function(key) % d->size]; e != 0; e = e->next) {
@@ -126,7 +126,7 @@ int point_voidp_hash_search(struct point_voidp_hash* d, struct point_3d key) {
         }
     }
 
-    return -1;
+    return (void*)-1;
 }
 
 /* delete the most recently inserted record with the given key */

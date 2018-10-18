@@ -1,5 +1,6 @@
 IF(EXISTS "/etc/manjaro-release")
     set(CMAKE_C_COMPILER "/opt/cuda/bin/gcc")
+    set(CMAKE_CXX_COMPILER "/opt/cuda/bin/g++")
 ENDIF(EXISTS "/etc/manjaro-release")
 
 cmake_minimum_required(VERSION 3.0.1)

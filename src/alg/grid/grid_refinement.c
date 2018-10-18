@@ -101,6 +101,19 @@ void refine_grid_cell_at(struct grid *the_grid, uint32_t cell_number) {
 
 }
 
+void refine_grid_cell(struct grid *the_grid, struct cell_node* grid_cell) {
+
+    if( !grid_cell ) {
+        fprintf(stderr, "refine_grid_cell: grid_cell is NULL.\n");
+        exit(10);
+
+    }
+
+    refine_cell( grid_cell, NULL ,NULL);
+    the_grid->number_of_cells += 7;
+
+}
+
 void set_grid_flux(struct grid *the_grid) {
 
     uint32_t active_cells = the_grid->num_active_cells;
