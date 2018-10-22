@@ -266,6 +266,8 @@ void *start_program_with_thread (void *thread_param) {
 
 #ifdef _WIN32
     return 0;
+#else
+    return NULL;
 #endif
 }
 
@@ -542,7 +544,7 @@ static void *start_paraview_with_thread(void *data) {
 #ifdef _WIN32
     return 1;
 #else
-    return;
+    return NULL;
 #endif
 
 }
