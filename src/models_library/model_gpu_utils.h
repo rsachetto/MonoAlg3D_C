@@ -24,7 +24,7 @@ extern __cuda_fake_struct blockIdx;
 
 #define check_cuda_error(ans) { gpu_assert((ans), __FILE__, __LINE__); }
 
-inline void gpu_assert(cudaError_t code, const char *file, int line)
+void gpu_assert(cudaError_t code, const char *file, int line)
 {
     if (code != cudaSuccess)
     {

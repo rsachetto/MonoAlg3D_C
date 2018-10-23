@@ -33,6 +33,8 @@ struct monodomain_solver *new_monodomain_solver () {
 
     result->beta = 0.14;
     result->cm = 1.0;
+    result->current_time = 0.0;
+    result->current_count = 0;
 
     return result;
 }
@@ -163,7 +165,7 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     bool gpu = the_ode_solver->gpu;
 
-    int count = 0;
+    int count = the_monodomain_solver->current_count;
 
     double refinement_bound = the_monodomain_solver->refinement_bound;
     double derefinement_bound = the_monodomain_solver->derefinement_bound;
@@ -203,25 +205,26 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
 
     order_grid_cells (the_grid);
     uint32_t original_num_cells = the_grid->num_active_cells;
+    the_ode_solver->original_num_cells = original_num_cells;
+    the_ode_solver->num_cells_to_solve = original_num_cells;
 
     save_old_cell_positions (the_grid);
 
-    if(restore_checkpoint) {
-
+    if (adaptive) {
+        update_cells_to_solve (the_grid, the_ode_solver);
     }
-    else {
+    print_to_stdout_and_file("Setting ODE's initial conditions\n");
+    set_ode_initial_conditions_for_all_volumes(the_ode_solver);
 
-        if (adaptive) {
-            update_cells_to_solve (the_grid, the_ode_solver);
-        }
-        print_to_stdout_and_file("Setting ODE's initial conditions\n");
-        set_ode_initial_conditions_for_all_volumes(the_ode_solver, the_grid->num_active_cells);
+    //We need to call this function after because of the pitch.... maybe we have to change the way
+    //we pass this paramters to the cell model....
+    if(restore_checkpoint) {
+       restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, NULL, NULL, the_ode_solver);
     }
 
     double initial_v = the_ode_solver->model_data.initial_v;
 
     total_config_time = stop_stop_watch (&config_time);
-
 
     print_solver_info (the_monodomain_solver, the_ode_solver, the_grid, configs);
 
@@ -277,7 +280,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
     if (has_extra_data)
         set_ode_extra_data (extra_data_config, the_grid, the_ode_solver);
 
-    double cur_time = 0.0;
+
+    double cur_time = the_monodomain_solver->current_time;
 
     print_to_stdout_and_file ("Starting simulation\n");
 
@@ -291,7 +295,10 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
         if (save_to_file) {
 
             if (count % print_rate == 0) {
+
                 start_stop_watch (&write_time);
+
+                save_mesh_config->save_counter = count;
                 activity = save_mesh_config->save_mesh(save_mesh_config->out_dir_name, vm_threshold, save_mesh_config, the_grid);
 
                 total_write_time += stop_stop_watch (&write_time);
@@ -305,17 +312,8 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
             }
         }
 
-        if (save_checkpoint) {
-
-            if (count % save_state_rate == 1) {
-                //start_stop_watch (&write_time);
-               save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid, the_monodomain_solver, the_ode_solver);
-                //total_write_time += stop_stop_watch (&write_time);                
-            }
-        }
-
         if (cur_time > 0.0) {
-            update_ode_state_vector (the_ode_solver, the_grid, original_num_cells);
+            update_ode_state_vector (the_ode_solver, the_grid);
         }
 
         start_stop_watch (&ode_time);
@@ -386,8 +384,21 @@ void solve_monodomain (struct monodomain_solver *the_monodomain_solver, struct o
                 total_mat_time += stop_stop_watch (&part_mat);
             }
         }
+
+
         count++;
         cur_time += dt_edp;
+
+
+        if (save_checkpoint) {
+            if (count != 0 && (count % save_state_rate == 0)) {
+                the_monodomain_solver->current_count = count;
+                the_monodomain_solver->current_time = cur_time;
+                printf("Saving state with time = %lf, and count = %d\n", the_monodomain_solver->current_time, the_monodomain_solver->current_count);
+                save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid, the_monodomain_solver, the_ode_solver);
+            }
+        }
+
 
     }
 
@@ -421,8 +432,9 @@ void set_ode_extra_data (struct extra_data_config *config, struct grid *the_grid
         config->set_extra_data (the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
 }
 
-void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *the_grid, uint32_t max_number_of_cells) {
+void update_ode_state_vector (struct ode_solver *the_ode_solver, struct grid *the_grid) {
 
+    uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
@@ -479,7 +491,8 @@ void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver) {
         free (solver->cells_to_solve);
     }
 
-    solver->cells_to_solve = (uint32_t *) malloc(the_grid->num_active_cells * sizeof (uint32_t));
+    solver->num_cells_to_solve = n_active;
+    solver->cells_to_solve = (uint32_t *) malloc(n_active * sizeof (uint32_t));
     uint32_t *cts = solver->cells_to_solve;
 	int i;
 

@@ -133,6 +133,10 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
     }
 
 
+    free(solver->model_data.model_library_path);
+    //We don't need this anymore...
+    solver->model_data.model_library_path = NULL;
+
     /*solver->update_gpu_fn = dlsym(solver->handle, "update_gpu_after_refinement");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
@@ -143,10 +147,11 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
 }
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint32_t num_cells) {
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
 
     bool get_initial_v = !isfinite(solver->model_data.initial_v);
     bool get_neq = solver->model_data.number_of_ode_equations == -1;
+    uint32_t num_cells = solver->original_num_cells;
 
     (*(solver->get_cell_model_data))(&(solver->model_data), get_initial_v, get_neq);
     int n_odes = solver->model_data.number_of_ode_equations;

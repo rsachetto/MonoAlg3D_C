@@ -5,13 +5,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <cuda_runtime.h>
 
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
 #include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
+#include "../models_library/model_gpu_utils.h"
 
 SAVE_STATE(save_simulation_state) {
+
 
     //Here we save the domain state
     if(the_grid){
@@ -90,8 +93,56 @@ SAVE_STATE(save_simulation_state) {
             return;
         }
 
-        //TODO: here we have to save the ode_solver state....
+        fwrite(&(the_ode_solver->max_dt), sizeof(the_ode_solver->max_dt), 1, output_file);
+        fwrite(&(the_ode_solver->min_dt), sizeof(the_ode_solver->min_dt), 1, output_file);
+        fwrite(&(the_ode_solver->rel_tol), sizeof(the_ode_solver->rel_tol), 1, output_file);
+        fwrite(&(the_ode_solver->abs_tol), sizeof(the_ode_solver->abs_tol), 1, output_file);
 
+        fwrite(&(the_ode_solver->previous_dt), sizeof(the_ode_solver->previous_dt), 1, output_file);
+        fwrite(&(the_ode_solver->time_new), sizeof(the_ode_solver->time_new), 1, output_file);
+
+
+        size_t num_cells_to_solve = 0;
+
+        if(the_ode_solver->cells_to_solve) {
+            num_cells_to_solve = the_ode_solver->num_cells_to_solve;
+            fwrite(&num_cells_to_solve, sizeof(the_ode_solver->num_cells_to_solve), 1, output_file);
+            fwrite(the_ode_solver->cells_to_solve, sizeof(the_ode_solver->cells_to_solve[0]), num_cells_to_solve,
+                   output_file);
+        }
+
+        else {
+            fwrite(&num_cells_to_solve, sizeof(the_ode_solver->num_cells_to_solve), 1, output_file);
+        }
+
+        fwrite(&(the_ode_solver->gpu), sizeof(the_ode_solver->gpu), 1, output_file);
+        fwrite(&(the_ode_solver->gpu_id), sizeof(the_ode_solver->gpu_id), 1, output_file);
+
+        fwrite(&(the_ode_solver->model_data), sizeof(the_ode_solver->model_data), 1, output_file);
+        fwrite(&(the_ode_solver->pitch), sizeof(the_ode_solver->pitch), 1, output_file);
+
+        fwrite(&(the_ode_solver->original_num_cells), sizeof(the_ode_solver->original_num_cells), 1, output_file);
+        if(the_ode_solver->gpu) {
+
+            real *sv_cpu;
+            sv_cpu = (real*) malloc(the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations * sizeof(real));
+
+            check_cuda_error(cudaMemcpy2D(sv_cpu, the_ode_solver->original_num_cells * sizeof(real), the_ode_solver->sv, the_ode_solver->pitch,
+                         the_ode_solver->original_num_cells * sizeof(real), (size_t)the_ode_solver->model_data.number_of_ode_equations,
+                         cudaMemcpyDeviceToHost));
+
+            fwrite(sv_cpu, sizeof(real), the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations,
+                    output_file);
+
+        }
+        else {
+            fwrite(the_ode_solver->sv, sizeof(real), the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations,
+                   output_file);
+
+        }
+
+        fwrite(&(the_ode_solver->extra_data_size), sizeof(the_ode_solver->extra_data_size), 1, output_file);
+        fwrite(the_ode_solver->edo_extra_data, the_ode_solver->extra_data_size, 1, output_file);
 
         fclose(output_file);
 

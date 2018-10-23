@@ -21,6 +21,7 @@ struct save_mesh_config {
     bool print_rate_was_set;
     char * out_dir_name;
     bool out_dir_name_was_set;
+    int save_counter;
 
     save_mesh_fn *save_mesh;
 };

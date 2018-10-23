@@ -1,7 +1,15 @@
 SET(LIB_TYPE MODULE) #set the lib type
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(default_save_state ${LIB_TYPE}  save_state.c)
+  #  IF(MSVC)
+        set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+        TARGET_LINK_LIBRARIES(default_save_state PUBLIC hashes string alg)
+   # ENDIF()
+ELSE()
+    ADD_LIBRARY(default_save_state ${LIB_TYPE} save_state.c)
+    TARGET_LINK_LIBRARIES(default_save_state hashes string alg)
+ENDIF(CUDA_FOUND)
 
-############## DEFAULT SAVE MESH LIBRARY ##############################
-ADD_LIBRARY(default_save_state ${LIB_TYPE} ${COMMON_SRC} save_state.c)
-TARGET_LINK_LIBRARIES(default_save_state hashes string alg)
-#########################################################
+
+
 
