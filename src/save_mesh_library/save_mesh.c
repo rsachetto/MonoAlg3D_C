@@ -14,8 +14,6 @@
 #include "../string/sds.h"
 #include "../hash/point_hash.h"
 
-static int count = 0;
-
 char * file_prefix;
 bool binary = false;
 bool clip_with_plain = false;
@@ -105,7 +103,7 @@ SAVE_MESH(save_as_text_or_binary)
 
 
     sds tmp = sdsnew (output_dir);
-    sds c = sdsfromlonglong (count);
+    sds c = sdsfromlonglong (config->save_counter);
     tmp = sdscat (tmp, "/V_t_");
     tmp = sdscat (tmp, c);
 
@@ -165,7 +163,6 @@ SAVE_MESH(save_as_text_or_binary)
         grid_cell = grid_cell->next;
     }
 
-    count++;
     fclose (output_file);
     sdsfree (tmp);
     sdsfree (c);
@@ -215,7 +212,7 @@ SAVE_MESH(save_as_vtk) {
     }
 
     sds tmp = sdsnew (output_dir);
-    sds c = sdsfromlonglong (count);
+    sds c = sdsfromlonglong (config->save_counter);
     tmp = sdscat (tmp, "/V_t_");
     tmp = sdscat (tmp, c);
 
@@ -297,7 +294,7 @@ SAVE_MESH(save_as_vtk) {
             v = grid_cell->v;
             half_face = grid_cell->half_face_length;
 
-            if (count > 0) { //TODO: maybe this should be a parameter
+            if (config->save_counter > 0) { //TODO: maybe this should be a parameter
                 if (grid_cell->v > vm_threshold) {
                     act = true;
                 }
@@ -527,7 +524,7 @@ SAVE_MESH(save_as_vtk) {
             sb_free(cells);
             sb_free(values);
 
-    count++;
+
     fclose (output_file);
     sdsfree (tmp);
     sdsfree (c);

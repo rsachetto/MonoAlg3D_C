@@ -27,11 +27,13 @@ struct ode_solver {
     real previous_dt;
     real time_new;
 
+    size_t num_cells_to_solve;
     uint32_t *cells_to_solve;
 
     bool gpu;
     int gpu_id;
 
+    uint32_t original_num_cells;
     real *sv;
     void *edo_extra_data;
     size_t extra_data_size;
@@ -50,7 +52,7 @@ struct ode_solver {
 
 };
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, uint32_t num_volumes);
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver);
 
 void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const uint32_t *refined_this_step);
 struct ode_solver* new_ode_solver();
