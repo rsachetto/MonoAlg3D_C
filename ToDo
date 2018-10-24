@@ -3,5 +3,4 @@
 - Correct the domain version that sets the two scars and the fibrosis from file (maybe the error is on extra-data)
 - Compare the mesh with the mesh from the scientific reports paper
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)
-- Try to make a dump of the simulation and implement a checkpoint system
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
