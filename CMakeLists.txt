@@ -3,8 +3,11 @@ IF(EXISTS "/etc/manjaro-release")
     set(CMAKE_CXX_COMPILER "/opt/cuda/bin/g++")
 ENDIF(EXISTS "/etc/manjaro-release")
 
+
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
+
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 IF(MSVC)
 	set(GLUT_INCLUDE_DIR "C:/Users/sache/freeglut/include")
