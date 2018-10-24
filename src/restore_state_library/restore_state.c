@@ -78,13 +78,6 @@ RESTORE_STATE (restore_simulation_state) {
                 // This cell is already restored
                 grid_cell = grid_cell->next;
             } else {
-//
-//#ifndef NDEBUG
-//                if ((the_grid->number_of_cells % 1000 == 0) || (the_grid->number_of_cells == number_of_cells)) {
-//                    printf ("Target mesh size: %d, current mesh size: %d\n", number_of_cells,
-//                            the_grid->number_of_cells);
-//                }
-//#endif
 
                 struct point_3d mesh_point;
                 mesh_point.x = grid_cell->center_x;
@@ -92,8 +85,8 @@ RESTORE_STATE (restore_simulation_state) {
                 mesh_point.z = grid_cell->center_z;
 
                 if ((cell_data = point_voidp_hash_search (mesh_hash, mesh_point)) != (void *)-1) {
-                    // This grid_cell is already in the mesh. We only need to restore the data associated to it...
 
+                    // This grid_cell is already in the mesh. We only need to restore the data associated to it...
                     // If the cell is not active we don't need to recover its state
                     if (cell_data[9] == 0.0) {
                         grid_cell->active = false;
@@ -114,6 +107,7 @@ RESTORE_STATE (restore_simulation_state) {
 
                     grid_cell->visited = true;
                     grid_cell = grid_cell->next;
+
                 } else {
                     // This grid_cell is not in the  mesh. We need to refine it and check again and again....
                     refine_grid_cell (the_grid, grid_cell);
@@ -137,12 +131,12 @@ RESTORE_STATE (restore_simulation_state) {
 
         FILE *input_file = fopen (tmp, "rb");
 
-        sdsfree (tmp);
-
         if (!input_file) {
             fprintf (stderr, "Error opening %s file for restoring the simulation state\n", tmp);
             exit (10);
         }
+
+        sdsfree (tmp);
 
         fread (the_monodomain_solver, sizeof (struct monodomain_solver), 1, input_file);
         fclose (input_file);
@@ -196,7 +190,6 @@ RESTORE_STATE (restore_simulation_state) {
             fread (sv_cpu, sizeof (real),
                    the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations, input_file);
 
-            //TODO: We need to check this.......
             check_cuda_error(cudaMemcpy2D (the_ode_solver->sv, the_ode_solver->pitch, sv_cpu, the_ode_solver->original_num_cells * sizeof (real),
                           the_ode_solver->original_num_cells * sizeof (real),
                           (size_t)the_ode_solver->model_data.number_of_ode_equations, cudaMemcpyHostToDevice));
