@@ -24,10 +24,9 @@ bool dir_exists(const char *path) {
         return false;
 }
 
-void create_dir_if_no_exists(const char *out_dir) {
+void create_dir(const char *out_dir) {
     if (!dir_exists (out_dir)) {
         printf ("%s does not exist! Creating!\n", out_dir);
-
 
 #if defined _MSC_VER
 		if (_mkdir(out_dir) == -1) {

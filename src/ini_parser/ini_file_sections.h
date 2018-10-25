@@ -10,7 +10,7 @@
 #define ALG_SECTION "alg"
 #define STIM_SECTION "stim"
 #define DOMAIN_SECTION "domain"
-#define SAVE_RESULT_SECTION "print_result" //TODO: change to save_result?
+#define SAVE_RESULT_SECTION "save_result"
 #define SAVE_STATE_SECTION "save_state" 
 #define RESTORE_STATE_SECTION "restore_state" 
 #define MATRIX_ASSEMBLY_SECTION "assembly_matrix"

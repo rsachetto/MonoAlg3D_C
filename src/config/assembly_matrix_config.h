@@ -17,7 +17,6 @@ typedef ASSEMBLY_MATRIX(assembly_matrix_fn);
 
 struct assembly_matrix_config {
     struct config_common config_data;
-    //TODO: define the data needed for this function. We can decide to pass everything to the config configuration
     assembly_matrix_fn *assembly_matrix;
 };
 

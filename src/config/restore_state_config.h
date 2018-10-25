@@ -25,8 +25,6 @@ typedef RESTORE_STATE(restore_state_fn);
 
 struct restore_state_config {
     struct config_common config_data;
-
-    //TODO: do we need more?
     restore_state_fn *restore_state;     
 };
 
