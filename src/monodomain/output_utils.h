@@ -9,7 +9,6 @@
 #include "../string/sds.h"
 
 bool dir_exists(const char *path);
-void create_dir_if_no_exists(const char *out_dir);
-
+void create_dir(const char *out_dir);
 
 #endif //MONOALG3D_OUTPUT_UTILS_H

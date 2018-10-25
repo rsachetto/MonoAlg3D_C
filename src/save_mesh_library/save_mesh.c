@@ -93,7 +93,7 @@ SAVE_MESH(save_as_text_or_binary)
     }
 
 
-    real l = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+    real l = sqrtf(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
     real A = n[0] / l;
     real B = n[1] / l;
     real C = n[2] / l;
@@ -255,7 +255,7 @@ SAVE_MESH(save_as_vtk) {
     fprintf(output_file, "DATASET UNSTRUCTURED_GRID\n");
     fprintf(output_file, "                                                                                    \n");
 
-    real l = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+    real l = sqrtf(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
     real A = n[0] / l;
     real B = n[1] / l;
     real C = n[2] / l;

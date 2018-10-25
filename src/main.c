@@ -38,13 +38,12 @@ int main (int argc, char **argv) {
     // The command line options always overwrite the config file
     parse_options (argc, argv, options);
 
-
     // Create the output dir and the logfile
     if (options->save_mesh_config && options->save_mesh_config->out_dir_name) {
         sds buffer_log = sdsnew ("");
         sds buffer_ini = sdsnew ("");
 
-        create_dir_if_no_exists (options->save_mesh_config->out_dir_name);
+        create_dir (options->save_mesh_config->out_dir_name);
         buffer_log = sdscatfmt (buffer_log, "%s/outputlog.txt", options->save_mesh_config->out_dir_name);
         open_logfile (buffer_log);
 

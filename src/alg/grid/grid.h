@@ -62,10 +62,5 @@ int get_num_refinement_steps_to_discretization (double side_len, double h);
 //TODO: do we need this??
 void save_grid_domain (struct grid * the_grid, const char *file_name);
 
-void lock_grid(struct grid *the_grid);
-
-void unlock_grid(struct grid *the_grid);
-
-
 
 #endif //MONOALG3D_GRID_H
