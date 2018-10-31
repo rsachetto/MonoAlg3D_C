@@ -43,7 +43,7 @@ void construct_grid (struct grid *the_grid) {
 
     assert(the_grid);
 
-    double side_length = the_grid->side_length;
+    float side_length = the_grid->side_length;
 
     // Cell nodes.
     struct cell_node *front_northeast_cell, *front_northwest_cell, *front_southeast_cell, *front_southwest_cell,
@@ -69,8 +69,8 @@ void construct_grid (struct grid *the_grid) {
     front_transition_node = new_transition_node ();
     back_transition_node = new_transition_node ();
 
-    double half_side_length = side_length / 2.0f;
-    double quarter_side_length = side_length / 4.0f;
+    float half_side_length = side_length / 2.0f;
+    float quarter_side_length = side_length / 4.0f;
     //__________________________________________________________________________
     //              Initialization of transition nodes.
     //__________________________________________________________________________

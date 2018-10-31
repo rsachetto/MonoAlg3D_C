@@ -143,18 +143,18 @@ void set_transition_node_data (struct transition_node *the_transition_node, uint
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);
 
-void set_cell_node_data(struct cell_node *the_cell, double face_length, double half_face_length,
+void set_cell_node_data(struct cell_node *the_cell, float face_length, float half_face_length,
                         uint64_t bunch_number, void *east, void *north, void *west, void *south,
                         void *front, void *back, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, double center_x,
-                        double center_y, double center_z);
+                        uint32_t grid_position, uint8_t hilbert_shape_number, float center_x,
+                        float center_y, float center_z);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
 double get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            double face_length, double half_face_length, double center_x,
-                            double center_y, double center_z, uint64_t bunch_number,
+                            float face_length, float half_face_length, float center_x,
+                            float center_y, float center_z, uint64_t bunch_number,
                             uint32_t *free_sv_positions, uint32_t **refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,

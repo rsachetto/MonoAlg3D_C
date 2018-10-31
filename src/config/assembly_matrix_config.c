@@ -63,7 +63,6 @@ struct assembly_matrix_config* new_assembly_matrix_config() {
 
 void print_assembly_matrix_config(struct assembly_matrix_config* s) {
 
-
     printf("assembly_matrix_function: %s\n",s->config_data.function_name);
     printf("assembly_matrix_library_file: %s\n",s->config_data.library_file_path);
     printf("assembly_matrix_config:\n");

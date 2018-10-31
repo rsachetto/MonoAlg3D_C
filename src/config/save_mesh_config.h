@@ -12,7 +12,7 @@
 //Forward declaration
 struct save_mesh_config;
 
-#define SAVE_MESH(name) EXPORT_FN bool name(char* output_dir, double vm_threshold, struct save_mesh_config *config, struct grid *the_grid)
+#define SAVE_MESH(name) EXPORT_FN void name(double current_dt, struct save_mesh_config *config, struct grid *the_grid)
 typedef SAVE_MESH(save_mesh_fn);
 
 struct save_mesh_config {
@@ -21,7 +21,6 @@ struct save_mesh_config {
     bool print_rate_was_set;
     char * out_dir_name;
     bool out_dir_name_was_set;
-    int save_counter;
 
     save_mesh_fn *save_mesh;
 };

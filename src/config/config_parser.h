@@ -37,21 +37,23 @@
 #define LINEAR_SYSTEM_SOLVER_OPT 2200
 #define DRAW_OPT 3000
 #define SAVE_OPT 3100
+#define SAVE_STATE_OPT 3200
+#define RESTORE_STATE_OPT 3300
 #define BETA 4000
 #define CM 5000
 
 struct user_options {
-    double final_time;				/*-f option */
+    float final_time;				/*-f option */
     bool final_time_was_set;
     bool adaptive;	                /*-a option */
     bool adaptive_was_set;
-    double ref_bound;				/*-r option*/
+    float ref_bound;				/*-r option*/
     bool ref_bound_was_set;
-    double deref_bound;				/*-d option*/
+    float deref_bound;				/*-d option*/
     bool deref_bound_was_set;
-    double dt_edp;					/*-z option*/
+    float dt_edp;					/*-z option*/
     bool dt_edp_was_set;
-    double dt_edo;				    /*-e option*/
+    float dt_edo;				    /*-e option*/
     bool dt_edo_was_set;
     int num_threads;                /*-n option*/
     bool num_threads_was_set;
@@ -65,20 +67,21 @@ struct user_options {
     bool gpu_id_was_set;
     bool abort_no_activity;         /*-b option*/
     bool abort_no_activity_was_set;
-    double vm_threshold;            /*-v option*/
-    double vm_threshold_was_set;
+    float vm_threshold;            /*-v option*/
+    bool vm_threshold_was_set;
 
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
 
     bool draw;
 
-    double beta;
+    float beta;
     bool beta_was_set;
-    double cm;
+
+    float cm;
     bool cm_was_set;
 
-    double start_adapting_at;
+    float start_adapting_at;
     bool start_adapting_at_was_set;
     char *config_file;              /*-c option*/
 
@@ -95,9 +98,6 @@ struct user_options {
 
 };
 
-
-/* Display program usage, and exit.
- */
 void display_usage( char** argv );
 struct user_options * new_user_options();
 void parse_options(int argc, char**argv, struct user_options *user_args);

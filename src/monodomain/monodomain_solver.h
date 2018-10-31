@@ -49,7 +49,7 @@ void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                        struct grid *the_grid, struct user_options *options);
 
-void update_ode_state_vector(struct ode_solver *the_ode_solver, struct grid *the_grid);
+bool update_ode_state_vector_and_check_for_activity(float vm_thresold, struct ode_solver *the_ode_solver, struct grid *the_grid);
 
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver);
 void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_grid);
