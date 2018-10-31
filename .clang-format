@@ -8,7 +8,7 @@ ColumnLimit: 120
 IndentWidth: 4
 Language: Cpp
 SpaceBeforeAssignmentOperators: true
-SpaceBeforeParens: Always
+SpaceBeforeParens: Never
 SpaceInEmptyParentheses: false
 UseTab: Never
 TabWidth: 4

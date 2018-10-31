@@ -84,23 +84,6 @@ void refine_grid(struct grid* the_grid, int num_steps) {
 
 }
 
-void refine_grid_cell_at(struct grid *the_grid, uint32_t cell_number) {
-
-    if( (cell_number > the_grid->number_of_cells) || (cell_number < 0) ) {
-        fprintf(stderr, "refine_grid_cell_at: cell_number %u is out of bounds. Exiting!", cell_number);
-        exit(10);
-    }
-
-    struct cell_node *grid_cell = the_grid->first_cell;
-    for( uint32_t i = 0; i < cell_number; i++ ) {
-        grid_cell = grid_cell->next;
-    }
-
-    refine_cell( grid_cell, NULL ,NULL);
-    the_grid->number_of_cells += 7;
-
-}
-
 void refine_grid_cell(struct grid *the_grid, struct cell_node* grid_cell) {
 
     if( !grid_cell ) {

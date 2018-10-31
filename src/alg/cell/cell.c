@@ -7,14 +7,13 @@
 
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
     data->type = type;
-    data->level   = 1;
+    data->level = 1;
 }
 
-struct cell_node* new_cell_node() {
-    struct cell_node* result = (struct cell_node*)malloc(sizeof(struct cell_node));
+struct cell_node *new_cell_node() {
+    struct cell_node *result = (struct cell_node *)malloc(sizeof(struct cell_node));
     init_cell_node(result);
     return result;
-
 }
 
 void init_cell_node(struct cell_node *cell_node) {
@@ -29,35 +28,35 @@ void init_cell_node(struct cell_node *cell_node) {
 
     cell_node->bunch_number = 0;
 
-    cell_node->north       = NULL;
-    cell_node->south       = NULL;
-    cell_node->east        = NULL;
-    cell_node->west        = NULL;
-    cell_node->front       = NULL;
-    cell_node->back        = NULL;
+    cell_node->north = NULL;
+    cell_node->south = NULL;
+    cell_node->east = NULL;
+    cell_node->west = NULL;
+    cell_node->front = NULL;
+    cell_node->back = NULL;
 
-    cell_node->previous    = NULL;
-    cell_node->next        = NULL;
+    cell_node->previous = NULL;
+    cell_node->next = NULL;
 
-    cell_node->grid_position        = 0;
-    cell_node->sv_position          = 0;
+    cell_node->grid_position = 0;
+    cell_node->sv_position = 0;
     cell_node->hilbert_shape_number = 0;
-    cell_node->face_length          = 1.0;
-    cell_node->half_face_length     = 0.5;
+    cell_node->face_length = 1.0;
+    cell_node->half_face_length = 0.5;
 
     cell_node->v = 0;
 
     cell_node->north_flux = 0.0;
     cell_node->south_flux = 0.0;
-    cell_node->east_flux  = 0.0;
-    cell_node->west_flux  = 0.0;
+    cell_node->east_flux = 0.0;
+    cell_node->west_flux = 0.0;
     cell_node->front_flux = 0.0;
-    cell_node->back_flux  = 0.0;
+    cell_node->back_flux = 0.0;
 
     cell_node->b = 0.0;
 
     cell_node->can_change = true;
-    cell_node->visited    = false;
+    cell_node->visited = false;
 
     cell_node->elements = NULL;
 
@@ -67,7 +66,6 @@ void init_cell_node(struct cell_node *cell_node) {
 #if defined(_OPENMP)
     omp_init_lock(&(cell_node->updating));
 #endif
-
 }
 
 void free_cell_node(struct cell_node *cell_node) {
@@ -95,8 +93,8 @@ void unlock_cell_node(struct cell_node *cell_node) {
 #endif
 }
 
-struct transition_node* new_transition_node() {
-    struct transition_node* result = (struct transition_node*) malloc(sizeof(struct transition_node));
+struct transition_node *new_transition_node() {
+    struct transition_node *result = (struct transition_node *)malloc(sizeof(struct transition_node));
     init_transition_node(result);
     return result;
 }
@@ -105,20 +103,17 @@ void init_transition_node(struct transition_node *transition_node) {
 
     init_basic_cell_data_with_type(&(transition_node->cell_data), TRANSITION_NODE_TYPE);
 
-    transition_node->single_connector      = NULL;
-    transition_node->quadruple_connector1  = NULL;
-    transition_node->quadruple_connector2  = NULL;
-    transition_node->quadruple_connector3  = NULL;
-    transition_node->quadruple_connector4  = NULL;
-    transition_node->direction             = 0;
-
+    transition_node->single_connector = NULL;
+    transition_node->quadruple_connector1 = NULL;
+    transition_node->quadruple_connector2 = NULL;
+    transition_node->quadruple_connector3 = NULL;
+    transition_node->quadruple_connector4 = NULL;
+    transition_node->direction = 0;
 }
 
-
-void set_transition_node_data(struct transition_node *the_transition_node,  uint16_t level, char direction,
-                              void *single_connector,
-                              void * quadruple_connector1, void * quadruple_connector2,
-                              void * quadruple_connector3, void * quadruple_connector4 ) {
+void set_transition_node_data(struct transition_node *the_transition_node, uint16_t level, char direction,
+                              void *single_connector, void *quadruple_connector1, void *quadruple_connector2,
+                              void *quadruple_connector3, void *quadruple_connector4) {
 
     the_transition_node->cell_data.level = level;
 
@@ -135,13 +130,10 @@ void set_transition_node_data(struct transition_node *the_transition_node,  uint
     the_transition_node->quadruple_connector4 = quadruple_connector4;
 }
 
-        void set_cell_node_data(struct cell_node *the_cell, double face_length, double half_face_length,
-                                uint64_t bunch_number,
-                                void *east, void *north, void *west, void *south, void *front, void *back,
-                                void *previous, void *next,
-                                uint32_t grid_position, uint8_t hilbert_shape_number,
-                                double center_x, double center_y, double center_z)
-{
+void set_cell_node_data(struct cell_node *the_cell, float face_length, float half_face_length, uint64_t bunch_number,
+                        void *east, void *north, void *west, void *south, void *front, void *back, void *previous,
+                        void *next, uint32_t grid_position, uint8_t hilbert_shape_number, float center_x,
+                        float center_y, float center_z) {
     the_cell->face_length = face_length;
     the_cell->half_face_length = half_face_length;
     the_cell->bunch_number = bunch_number;
@@ -160,39 +152,39 @@ void set_transition_node_data(struct transition_node *the_transition_node,  uint
     the_cell->center_z = center_z;
 }
 
-void set_cell_flux( struct cell_node *the_cell, char direction ) {
+void set_cell_flux(struct cell_node *the_cell, char direction) {
 
     void *neighbour_grid_cell;
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
 
-    switch( direction ) {
-        case 'n':
-            neighbour_grid_cell = the_cell->north;
-            break;
+    switch(direction) {
+    case 'n':
+        neighbour_grid_cell = the_cell->north;
+        break;
 
-        case 's':
-            neighbour_grid_cell = the_cell->south;
-            break;
+    case 's':
+        neighbour_grid_cell = the_cell->south;
+        break;
 
-        case 'e':
-            neighbour_grid_cell = the_cell->east;
-            break;
+    case 'e':
+        neighbour_grid_cell = the_cell->east;
+        break;
 
-        case 'w':
-            neighbour_grid_cell = the_cell->west;
-            break;
+    case 'w':
+        neighbour_grid_cell = the_cell->west;
+        break;
 
-        case 'f':
-            neighbour_grid_cell = the_cell->front;
-            break;
+    case 'f':
+        neighbour_grid_cell = the_cell->front;
+        break;
 
-        case 'b':
-            neighbour_grid_cell = the_cell->back;
-            break;
-        default:
-            fprintf(stderr, "Invalid cell direction %c! Exiting...", direction);
-            exit(10);
+    case 'b':
+        neighbour_grid_cell = the_cell->back;
+        break;
+    default:
+        fprintf(stderr, "Invalid cell direction %c! Exiting...", direction);
+        exit(10);
     }
 
     double leastDistance = the_cell->half_face_length;
@@ -200,17 +192,17 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
     bool has_found;
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
-      * cell which is a cell node. */
+     * cell which is a cell node. */
     uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
     char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
-    if (neighbour_grid_cell_level > the_cell->cell_data.level) {
-        if ((neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
+    if(neighbour_grid_cell_level > the_cell->cell_data.level) {
+        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
             has_found = false;
-            while (!has_found) {
-                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
                     white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
-                    if (white_neighbor_cell->single_connector == NULL) {
+                    if(white_neighbor_cell->single_connector == NULL) {
                         has_found = true;
                     } else {
                         neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
@@ -221,14 +213,13 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
                 }
             }
         }
-    }
-    else {
-        if (neighbour_grid_cell_level <= the_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
+    } else {
+        if(neighbour_grid_cell_level <= the_cell->cell_data.level && (neighbour_grid_cell_type == 'w')) {
             has_found = false;
-            while (!has_found) {
-                if (neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
                     white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
-                    if (white_neighbor_cell->single_connector == 0) {
+                    if(white_neighbor_cell->single_connector == 0) {
                         has_found = true;
                     } else {
                         neighbour_grid_cell = white_neighbor_cell->single_connector;
@@ -241,106 +232,109 @@ void set_cell_flux( struct cell_node *the_cell, char direction ) {
         }
     }
 
-    if (neighbour_grid_cell_type == CELL_NODE_TYPE) {
+    if(neighbour_grid_cell_type == CELL_NODE_TYPE) {
 
-        black_neighbor_cell = (struct cell_node*)(neighbour_grid_cell);
+        black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
-        if ( black_neighbor_cell->half_face_length < leastDistance )
+        if(black_neighbor_cell->half_face_length < leastDistance)
             leastDistance = black_neighbor_cell->half_face_length;
 
-        localFlux = ( the_cell->v - black_neighbor_cell->v ) * ( 2.0 * leastDistance );
+        localFlux = (the_cell->v - black_neighbor_cell->v) * (2.0 * leastDistance);
 
         lock_cell_node(the_cell);
 
-        switch( direction ) {
+        switch(direction) {
             case 's':
-                if ( localFlux > the_cell->south_flux)
+                if(localFlux > the_cell->south_flux)
                     the_cell->south_flux += localFlux;
                 break;
 
             case 'n':
-                if ( localFlux > the_cell->north_flux)
+                if(localFlux > the_cell->north_flux)
                     the_cell->north_flux += localFlux;
                 break;
 
             case 'e':
-                if ( localFlux > the_cell->east_flux )
+                if(localFlux > the_cell->east_flux)
                     the_cell->east_flux += localFlux;
                 break;
 
             case 'w':
-                if ( localFlux > the_cell->west_flux)
+                if(localFlux > the_cell->west_flux)
                     the_cell->west_flux += localFlux;
                 break;
 
             case 'f':
-                if ( localFlux > the_cell->front_flux )
+                if(localFlux > the_cell->front_flux)
                     the_cell->front_flux += localFlux;
                 break;
 
             case 'b':
-                if ( localFlux > the_cell->back_flux )
+                if(localFlux > the_cell->back_flux)
                     the_cell->back_flux += localFlux;
                 break;
+
+            default:break;
         }
 
         unlock_cell_node(the_cell);
 
         lock_cell_node(black_neighbor_cell);
 
-        switch( direction ) {
+        switch(direction) {
             case 's':
-                if ( localFlux > black_neighbor_cell->north_flux )
+                if(localFlux > black_neighbor_cell->north_flux)
                     black_neighbor_cell->north_flux += localFlux;
                 break;
 
             case 'n':
-                if ( localFlux > black_neighbor_cell->south_flux)
+                if(localFlux > black_neighbor_cell->south_flux)
                     black_neighbor_cell->south_flux += localFlux;
                 break;
 
             case 'e':
-                if ( localFlux > black_neighbor_cell->west_flux)
+                if(localFlux > black_neighbor_cell->west_flux)
                     black_neighbor_cell->west_flux += localFlux;
                 break;
 
             case 'w':
-                if ( localFlux > black_neighbor_cell->east_flux)
+                if(localFlux > black_neighbor_cell->east_flux)
                     black_neighbor_cell->east_flux += localFlux;
                 break;
 
             case 'f':
-                if ( localFlux > black_neighbor_cell->back_flux)
+                if(localFlux > black_neighbor_cell->back_flux)
                     black_neighbor_cell->back_flux += localFlux;
                 break;
 
             case 'b':
-                if ( localFlux > black_neighbor_cell->front_flux)
+                if(localFlux > black_neighbor_cell->front_flux)
                     black_neighbor_cell->front_flux += localFlux;
                 break;
+
+             default:break;
         }
 
         unlock_cell_node(black_neighbor_cell);
-
     }
 }
 
-double get_cell_maximum_flux(struct cell_node* the_cell) {
+double get_cell_maximum_flux(struct cell_node *the_cell) {
 
     double maximumFlux = fabs(the_cell->east_flux);
-    if( fabs(the_cell->north_flux) > maximumFlux )
+    if(fabs(the_cell->north_flux) > maximumFlux)
         maximumFlux = fabs(the_cell->north_flux);
 
-    if( fabs(the_cell->south_flux) > maximumFlux )
+    if(fabs(the_cell->south_flux) > maximumFlux)
         maximumFlux = fabs(the_cell->south_flux);
 
-    if( fabs(the_cell->west_flux) > maximumFlux )
+    if(fabs(the_cell->west_flux) > maximumFlux)
         maximumFlux = fabs(the_cell->west_flux);
 
-    if( fabs(the_cell->front_flux) > maximumFlux )
+    if(fabs(the_cell->front_flux) > maximumFlux)
         maximumFlux = fabs(the_cell->front_flux);
 
-    if( fabs(the_cell->back_flux) > maximumFlux )
+    if(fabs(the_cell->back_flux) > maximumFlux)
         maximumFlux = fabs(the_cell->back_flux);
 
     return maximumFlux;

@@ -127,9 +127,9 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv
     if (new_cell->next != 0)
         new_cell->next->previous = new_cell;
 
-    double aux_center_x = ((struct cell_node *)(new_cell->back))->center_x;
-    double aux_center_y = ((struct cell_node *)(new_cell->west))->center_y;
-    double aux_center_z = ((struct cell_node *)(new_cell->south))->center_z;
+    float aux_center_x = ((struct cell_node *)(new_cell->back))->center_x;
+    float aux_center_y = ((struct cell_node *)(new_cell->west))->center_y;
+    float aux_center_z = ((struct cell_node *)(new_cell->south))->center_z;
 
     // New geometric variables.
     new_cell->center_x = (new_cell->center_x + aux_center_x) / 2.0f;

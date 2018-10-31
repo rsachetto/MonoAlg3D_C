@@ -64,6 +64,7 @@ struct save_mesh_config* new_save_mesh_config() {
     result->out_dir_name = NULL;
     result->out_dir_name_was_set = false;
     result->print_rate_was_set = false;
+    result->print_rate = 0;
     return result;
 }
 
