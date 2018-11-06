@@ -16,7 +16,9 @@ void run_child_process_and_process_output (char * program_with_path,  void (*fun
 
     char *token;
 
-    char **prog = (char**) malloc(4*sizeof(char*));
+
+    //TODO: we need to pass more args here
+    char **prog = (char**) malloc(5*sizeof(char*));
 
     //get the first token
     token = strtok(program_with_path, " ");
@@ -29,10 +31,10 @@ void run_child_process_and_process_output (char * program_with_path,  void (*fun
         token = strtok(NULL, " ");
 
         i++;
-        assert(i <= 3);
+        //assert(i <= 4);
     }
 
-    prog[3] = NULL;
+    prog[4] = NULL;
 
     char ch;
 

@@ -277,7 +277,8 @@ void start_monodomain_exec () {
     td->fn_pointer = append_to_queue;
     sds program = sdsnew ("");
 
-    program = sdscatfmt (program, "%s -c %s", global_alg3d_path, config_file_name);
+    //TODO we need to change this acording to the user options maybe...
+    program = sdscatfmt (program, "%s -c %s --draw_gl_output", global_alg3d_path, config_file_name);
 
 #ifdef _WIN32
     HANDLE thread;
