@@ -99,3 +99,21 @@ else()
     ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 #########################################################
+
+############## FHN 1961 MOD ##############################
+set(MODEL_FILE_CPU "fhn_mod.c")
+set(MODEL_FILE_GPU "fhn_mod.cu")
+set(COMMON_HEADERS model_common.h fhn_mod.h)
+
+set(LIB_NAME "fhn_mod")
+
+if(CUDA_FOUND)
+	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+	IF(MSVC)
+		set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+		TARGET_LINK_LIBRARIES(${LIB_NAME} PUBLIC utils)
+	endif()
+else()
+	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################

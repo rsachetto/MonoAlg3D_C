@@ -29,6 +29,8 @@ static bool initialized = false;
 static bool first_save_call = true;
 static int count = 0;
 
+static struct vtk_unstructured_grid *vtk_grid = NULL;
+
 void add_file_to_pvd(double current_dt, const char *output_dir, const char *base_name);
 
 SAVE_MESH(save_as_text_or_binary) {
@@ -133,8 +135,6 @@ SAVE_MESH(save_as_text_or_binary) {
     }
 
     fclose(output_file);
-    sdsfree(tmp);
-    free(file_prefix);
 }
 
 SAVE_MESH(save_as_vtk) {
@@ -175,12 +175,13 @@ SAVE_MESH(save_as_vtk) {
     count++;
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
-    struct vtk_unstructured_grid *vtk_grid =
-            new_vtk_unstructured_grid_from_alg_grid(the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
 
     save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, output_dir_with_file, binary);
 
-    free_vtk_unstructured_grid(vtk_grid);
+    if(the_grid->adaptive)
+        free_vtk_unstructured_grid(vtk_grid);
+
     sdsfree(output_dir_with_file);
 }
 
@@ -258,8 +259,7 @@ SAVE_MESH(save_as_vtu) {
         add_file_to_pvd(current_dt, output_dir, base_name);
     }
 
-    struct vtk_unstructured_grid *vtk_grid =
-        new_vtk_unstructured_grid_from_alg_grid(the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
 
     if(compress) {
         save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, output_dir_with_file, compression_level);
@@ -268,7 +268,9 @@ SAVE_MESH(save_as_vtu) {
         save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
     }
 
-    free_vtk_unstructured_grid(vtk_grid);
+    if(the_grid->adaptive)
+        free_vtk_unstructured_grid(vtk_grid);
+
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
 

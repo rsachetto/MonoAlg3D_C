@@ -5,12 +5,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
 #include "../libraries_common/config_helpers.h"
 #include "../monodomain/constants.h"
 #include "../utils/utils.h"
+
 
 static inline double ALPHA(double beta, double cm, double dt, double h) {
     return (((beta * cm) / dt) * UM2_TO_CM2) * pow(h, 3.0);
@@ -212,6 +214,68 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
     }
 }
 
+ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
+
+    printf("Assembling matrix 1 time\n");
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    initialize_diagonal_elements(the_solver, the_grid);
+
+    int i;
+
+    real sigma_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+
+    real sigma_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+
+    real sigma_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+
+    srand(time(NULL));
+
+
+
+
+#pragma omp parallel for
+    for(i = 0; i < num_active_cells; i++) {
+
+        float r;
+
+        #pragma omp critical
+        r = (float)rand()/(float)RAND_MAX;
+
+        real sigma_x_new = sigma_x*r;
+
+        #pragma omp critical
+        r = (float)rand()/(float)RAND_MAX;
+
+        real sigma_y_new= sigma_y*r;
+        real sigma_z_new= sigma_z*r;
+
+
+        // Computes and designates the flux due to south cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->south, 's');
+
+        // Computes and designates the flux due to north cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->north, 'n');
+
+        // Computes and designates the flux due to east cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->east, 'e');
+
+        // Computes and designates the flux due to west cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->west, 'w');
+
+        // Computes and designates the flux due to front cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->front, 'f');
+
+        // Computes and designates the flux due to back cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->back, 'b');
+    }
+}
+
 ASSEMBLY_MATRIX(no_fibers_assembly_matrix) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -229,6 +293,8 @@ ASSEMBLY_MATRIX(no_fibers_assembly_matrix) {
 
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+
+
 
 #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {

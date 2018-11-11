@@ -32,14 +32,35 @@ void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid) {
     }
 }
 
-struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_alg_grid(struct grid *grid, bool clip_with_plain,
+void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                                                       float *plain_coordinates, bool clip_with_bounds,
-                                                                      float *bounds) {
+                                                                      float *bounds, bool read_only_values) {
 
-    if(grid == NULL)
-        return NULL;
+    static bool mesh_already_loaded =  false;
 
-    struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid();
+    if(grid == NULL) {
+        return;
+    }
+
+    if(!read_only_values) {
+        *vtk_grid = new_vtk_unstructured_grid();
+    }
+    else {
+        if(!(*vtk_grid) && mesh_already_loaded) {
+            fprintf(stderr,
+                    "Function new_vtk_unstructured_grid_from_alg_grid can only be called with read_only_values if the grid is already loaded");
+            exit(EXIT_FAILURE);
+        }
+
+        if(mesh_already_loaded) {
+            assert(*vtk_grid);
+            sb_free((*vtk_grid)->values);
+            (*vtk_grid)->values = NULL;
+        }
+        else {
+            *vtk_grid = new_vtk_unstructured_grid();
+        }
+    }
 
     float min_x = 0.0;
     float min_y = 0.0;
@@ -77,7 +98,7 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_alg_grid(struct gri
     struct cell_node *grid_cell = grid->first_cell;
 
     float center_x, center_y, center_z, half_face;
-    double v;
+    //double v;
 
     struct point_3d aux1;
     struct point_3d aux2;
@@ -88,8 +109,8 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_alg_grid(struct gri
     struct point_3d aux7;
     struct point_3d aux8;
 
-    int id = 0;
-    int num_cells = 0;
+    uint32_t id = 0;
+    uint32_t num_cells = 0;
 
     float l = sqrtf(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
     float A = n[0] / l;
@@ -126,10 +147,14 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_alg_grid(struct gri
                 }
             }
 
-            v = grid_cell->v;
-            half_face = grid_cell->half_face_length;
+            sb_push((*vtk_grid)->values, grid_cell->v);
 
-            sb_push(vtk_grid->values, v);
+            if(mesh_already_loaded && read_only_values) {
+                grid_cell = grid_cell->next;
+                continue;
+            }
+
+            half_face = grid_cell->half_face_length;
 
             aux1.x = center_x - half_face;
             aux1.y = center_y - half_face;
@@ -164,71 +189,72 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_alg_grid(struct gri
             aux8.z = center_z + half_face;
 
             if(point_hash_search(hash, aux1) == -1) {
-                sb_push(vtk_grid->points, aux1);
+                sb_push((*vtk_grid)->points, aux1);
                 point_hash_insert(hash, aux1, id);
                 id++;
             }
 
             if(point_hash_search(hash, aux2) == -1) {
-                sb_push(vtk_grid->points, aux2);
+                sb_push((*vtk_grid)->points, aux2);
                 point_hash_insert(hash, aux2, id);
                 id++;
             }
 
             if(point_hash_search(hash, aux3) == -1) {
                 point_hash_insert(hash, aux3, id);
-                sb_push(vtk_grid->points, aux3);
+                sb_push((*vtk_grid)->points, aux3);
                 id++;
             }
 
             if(point_hash_search(hash, aux4) == -1) {
                 point_hash_insert(hash, aux4, id);
-                sb_push(vtk_grid->points, aux4);
+                sb_push((*vtk_grid)->points, aux4);
                 id++;
             }
 
             if(point_hash_search(hash, aux5) == -1) {
-                sb_push(vtk_grid->points, aux5);
+                sb_push((*vtk_grid)->points, aux5);
                 point_hash_insert(hash, aux5, id);
                 id++;
             }
 
             if(point_hash_search(hash, aux6) == -1) {
-                sb_push(vtk_grid->points, aux6);
+                sb_push((*vtk_grid)->points, aux6);
                 point_hash_insert(hash, aux6, id);
                 id++;
             }
 
             if(point_hash_search(hash, aux7) == -1) {
-                sb_push(vtk_grid->points, aux7);
+                sb_push((*vtk_grid)->points, aux7);
                 point_hash_insert(hash, aux7, id);
                 id++;
             }
 
             if(point_hash_search(hash, aux8) == -1) {
-                sb_push(vtk_grid->points, aux8);
+                sb_push((*vtk_grid)->points, aux8);
                 point_hash_insert(hash, aux8, id);
                 id++;
             }
 
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux1));
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux2));
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux3));
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux4));
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux5));
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux6));
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux7));
-            sb_push(vtk_grid->cells, point_hash_search(hash, aux8));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux1));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux2));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux3));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux4));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux5));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux6));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux7));
+            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux8));
             num_cells++;
         }
 
         grid_cell = grid_cell->next;
     }
 
-    vtk_grid->num_cells = num_cells;
-    vtk_grid->num_points = id;
-
-    return vtk_grid;
+    if(!mesh_already_loaded) {
+        (*vtk_grid)->num_cells = num_cells;
+        (*vtk_grid)->num_points = id;
+        mesh_already_loaded = true;
+    }
 }
 
 sds create_common_vtu_header(bool compressed, int num_points, int num_cells) {
@@ -383,8 +409,6 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
         }
     }
 
-    offset += (vtk_grid->num_cells) + 8; // 1 byte
-
     file_content = sdscat(file_content, "        </DataArray>\n");
 
     file_content = sdscat(file_content, "      </Cells>\n");
@@ -468,6 +492,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
     fclose(output_file);
 }
 
+//TODO: for non adaptive meshes we need to compress only the values data array. The other arrays remain the same. So we need to save them somewhere
 void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *vtk_grid, char *filename, int compression_level) {
 
     sds first_file_part = create_common_vtu_header(true, vtk_grid->num_points, vtk_grid->num_cells);
@@ -495,7 +520,6 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
     sds types_array_header =
         sdsnew("        <DataArray type=\"UInt8\" Name=\"types\" format=\"appended\" offset=\"%zu\"/>\n");
 
-    offset += (vtk_grid->num_cells) + 8; // 1 byte
 
     sds data_end = sdsnew("      </Cells>\n");
 
@@ -671,6 +695,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         fwrite(block_sizes_compressed_for_values, sizeof(uint64_t), num_block_for_values, output_file);
         fwrite(compressed_data_for_values, data_size_after_compression_for_values, 1, output_file);
         free(compressed_data_for_values);
+        free(block_sizes_compressed_for_values);
         
         //Points
         fwrite(&num_block_for_points, sizeof(uint64_t), 1, output_file);
@@ -678,7 +703,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         fwrite(&last_block_size_for_points, sizeof(uint64_t), 1, output_file);
         fwrite(block_sizes_compressed_for_points, sizeof(uint64_t), num_block_for_points, output_file);
         fwrite(compressed_data_for_points, data_size_after_compression_for_points, 1, output_file);
+
         free(compressed_data_for_points);
+        free(block_sizes_compressed_for_points);
 
         //connectivity
         fwrite(&num_block_for_connectivity, sizeof(uint64_t), 1, output_file);
@@ -686,7 +713,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         fwrite(&last_block_size_for_connectivity, sizeof(uint64_t), 1, output_file);
         fwrite(block_sizes_compressed_for_connectivity, sizeof(uint64_t), num_block_for_connectivity, output_file);
         fwrite(compressed_data_for_connectivity, data_size_after_compression_for_connectivity, 1, output_file);
+
         free(compressed_data_for_connectivity);
+        free(block_sizes_compressed_for_connectivity);
 
         //offsets
         fwrite(&num_block_for_offsets, sizeof(uint64_t), 1, output_file);
@@ -694,7 +723,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         fwrite(&last_block_size_for_offsets, sizeof(uint64_t), 1, output_file);
         fwrite(block_sizes_compressed_for_offsets, sizeof(uint64_t), num_block_for_offsets, output_file);
         fwrite(compressed_data_for_offsets, data_size_after_compression_for_offsets, 1, output_file);
+
         free(compressed_data_for_offsets);
+        free(block_sizes_compressed_for_offsets);
 
         //types
         fwrite(&num_block_for_types, sizeof(uint64_t), 1, output_file);
@@ -702,7 +733,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         fwrite(&last_block_size_for_types, sizeof(uint64_t), 1, output_file);
         fwrite(block_sizes_compressed_for_types, sizeof(uint64_t), num_block_for_types, output_file);
         fwrite(compressed_data_for_types, data_size_after_compression_for_types, 1, output_file);
+
         free(compressed_data_for_types);
+        free(block_sizes_compressed_for_types);
     }
 
     sds appended_end = sdsnew("\n  </AppendedData>\n");
