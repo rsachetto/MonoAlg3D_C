@@ -22,6 +22,8 @@ void calculate_blocks_and_compress_data(size_t total_data_size_before_compressio
         block_size = total_data_size_before_compression;
     }
 
+    assert(block_size);
+
     (*block_size_uncompressed) = block_size;
 
     size_t num_full_blocks = total_data_size_before_compression / block_size;

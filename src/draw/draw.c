@@ -315,7 +315,7 @@ static void draw_cube(double x, double y, double z, double face_size, double v) 
 
     GLdouble *color;
 
-    v = (v - INITIAL_V)/(40.0-INITIAL_V);
+    //v = (v - INITIAL_V)/(40.0-INITIAL_V);
     color = get_color(v);
 
     glColor4dv(color);
