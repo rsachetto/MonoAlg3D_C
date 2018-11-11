@@ -3,6 +3,11 @@ IF(EXISTS "/etc/manjaro-release")
     set(CMAKE_CXX_COMPILER "/opt/cuda/bin/g++")
 ENDIF(EXISTS "/etc/manjaro-release")
 
+IF(EXISTS "/etc/debconf.conf")
+    set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
+    set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
+ENDIF(EXISTS "/etc/debconf.conf")
+
 
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
@@ -76,6 +81,8 @@ IF (CUDA_FOUND)
     ADD_SUBDIRECTORY(src/gpu_utils)
     SET(OPT_DEPS gpu_utils)
 ENDIF(CUDA_FOUND)
+
+SET(OpenGL_GL_PREFERENCE "GLVND")
 
 FIND_PACKAGE(OpenGL)
 FIND_PACKAGE(GLUT)
