@@ -214,6 +214,17 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
     }
 }
 
+int randRange(int n) {
+    int limit;
+    int r;
+
+    limit = RAND_MAX - (RAND_MAX % n);
+
+    while((r = rand()) >= limit);
+
+    return r % n;
+}
+
 ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     printf("Assembling matrix 1 time\n");
@@ -234,23 +245,21 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
 
-    srand(time(NULL));
-
-
+    srand((unsigned int)time(NULL));
 
 
 #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {
 
-        float r;
+        float r = 1.0;
 
-        #pragma omp critical
-        r = (float)rand()/(float)RAND_MAX;
+//        #pragma omp critical
+//        r = (float)randRange(RAND_MAX)/(float)RAND_MAX;
 
         real sigma_x_new = sigma_x*r;
 
-        #pragma omp critical
-        r = (float)rand()/(float)RAND_MAX;
+//        #pragma omp critical
+//        r = (float)rand()/(float)RAND_MAX;
 
         real sigma_y_new= sigma_y*r;
         real sigma_z_new= sigma_z*r;

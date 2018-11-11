@@ -8,16 +8,17 @@
 #include "data_utils.h"
 #include <inttypes.h>
 #include <math.h>
-//#include <unitypes.h>
+#include <stdint.h>
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
     struct vtk_unstructured_grid *grid = (struct vtk_unstructured_grid *)malloc(sizeof(struct vtk_unstructured_grid));
 
-    grid->num_cells = 0;
-    grid->num_points = 0;
     grid->cells = NULL;
     grid->values = NULL;
     grid->points = NULL;
+
+    grid->num_cells = 0;
+    grid->num_points = 0;
     grid->points_per_cell = 8;
     grid->cell_type = 12;
 
