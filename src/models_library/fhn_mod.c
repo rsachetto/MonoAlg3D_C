@@ -10,7 +10,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    bool first_call = true;
+    static bool first_call = true;
 
     if(first_call) {
         print_to_stdout_and_file("Using modified FHN 1961 CPU model\n");
