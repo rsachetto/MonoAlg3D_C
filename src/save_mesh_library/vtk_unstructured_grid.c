@@ -98,7 +98,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
 
     struct cell_node *grid_cell = grid->first_cell;
 
-    float center_x, center_y, center_z, half_face;
+    float center_x, center_y, center_z;
     //double v;
 
     struct point_3d aux1;
@@ -155,39 +155,41 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                 continue;
             }
 
-            half_face = grid_cell->half_face_length;
+            float half_face_x = grid_cell->dx / 2.0f;
+            float half_face_y = grid_cell->dy / 2.0f;
+            float half_face_z = grid_cell->dz / 2.0f;
 
-            aux1.x = center_x - half_face;
-            aux1.y = center_y - half_face;
-            aux1.z = center_z - half_face;
+            aux1.x = center_x - half_face_x;
+            aux1.y = center_y - half_face_y;
+            aux1.z = center_z - half_face_z;
 
-            aux2.x = center_x + half_face;
-            aux2.y = center_y - half_face;
-            aux2.z = center_z - half_face;
+            aux2.x = center_x + half_face_x;
+            aux2.y = center_y - half_face_y;
+            aux2.z = center_z - half_face_z;
 
-            aux3.x = center_x + half_face;
-            aux3.y = center_y + half_face;
-            aux3.z = center_z - half_face;
+            aux3.x = center_x + half_face_x;
+            aux3.y = center_y + half_face_y;
+            aux3.z = center_z - half_face_z;
 
-            aux4.x = center_x - half_face;
-            aux4.y = center_y + half_face;
-            aux4.z = center_z - half_face;
+            aux4.x = center_x - half_face_x;
+            aux4.y = center_y + half_face_y;
+            aux4.z = center_z - half_face_z;
 
-            aux5.x = center_x - half_face;
-            aux5.y = center_y - half_face;
-            aux5.z = center_z + half_face;
+            aux5.x = center_x - half_face_x;
+            aux5.y = center_y - half_face_y;
+            aux5.z = center_z + half_face_z;
 
-            aux6.x = center_x + half_face;
-            aux6.y = center_y - half_face;
-            aux6.z = center_z + half_face;
+            aux6.x = center_x + half_face_x;
+            aux6.y = center_y - half_face_y;
+            aux6.z = center_z + half_face_z;
 
-            aux7.x = center_x + half_face;
-            aux7.y = center_y + half_face;
-            aux7.z = center_z + half_face;
+            aux7.x = center_x + half_face_x;
+            aux7.y = center_y + half_face_y;
+            aux7.z = center_z + half_face_z;
 
-            aux8.x = center_x - half_face;
-            aux8.y = center_y + half_face;
-            aux8.z = center_z + half_face;
+            aux8.x = center_x - half_face_x;
+            aux8.y = center_y + half_face_y;
+            aux8.z = center_z + half_face_z;
 
             if(point_hash_search(hash, aux1) == -1) {
                 sb_push((*vtk_grid)->points, aux1);
@@ -254,7 +256,9 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     if(!mesh_already_loaded) {
         (*vtk_grid)->num_cells = num_cells;
         (*vtk_grid)->num_points = id;
-        mesh_already_loaded = true;
+
+        if(read_only_values)
+            mesh_already_loaded = true;
     }
 }
 

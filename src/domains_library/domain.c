@@ -472,12 +472,17 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
 
     double side_length;
 
-    double start_h = config->start_h;
+    //TODO: we need to change this in order to support different discretizations for each direction
+    double start_h_x = config->start_h;
+    double start_h_y = config->start_h;
+    double start_h_z = config->start_h;
 
-    print_to_stdout_and_file ("Loading N-Version benchmark mesh using dx %lf um\n", start_h);
-    if ((start_h == 100.0) || (start_h == 200.0)) {
+    //
+
+    print_to_stdout_and_file ("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h_x, start_h_y, start_h_z);
+    if ((start_h_x == 100.0) || (start_h_x == 200.0)) {
         side_length = 25600.0;
-    } else if (start_h == 125.0 || start_h == 250.0 || start_h == 500.0) {
+    } else if (start_h_x == 125.0 || start_h_x == 250.0 || start_h_x == 500.0) {
         side_length = 32000.0;
     } else {
         fprintf (stderr, "initialize_grid_with_benchmark_mesh: invalid value of start_h (initial "
@@ -488,7 +493,8 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
     //TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid (the_grid, side_length, side_length, side_length);
 
-    int num_steps = get_num_refinement_steps_to_discretization (side_length, start_h);
+    //TODO: we need to change this in order to support different discretizations for each direction
+    int num_steps = get_num_refinement_steps_to_discretization (side_length, start_h_x);
 
     refine_grid (the_grid, num_steps);
     set_benchmark_domain (the_grid);
@@ -506,7 +512,8 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
 
         while (grid_cell != 0) {
             if (grid_cell->active) {
-                set_cell_not_changeable (grid_cell, start_h);
+                //TODO: we need to change this in order to support different discretizations for each direction
+                set_cell_not_changeable (grid_cell, start_h_x);
             }
             grid_cell = grid_cell->next;
         }
