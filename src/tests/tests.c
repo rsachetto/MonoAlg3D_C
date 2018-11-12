@@ -36,7 +36,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     cr_assert_eq (num_lines_m, num_lines_v);
     cr_assert (nnz);
 
-    initialize_and_construct_grid(grid, 1.0);
+    initialize_and_construct_grid(grid, 1.0, 1.0, 1.0);
 
     n_cells = grid->number_of_cells;
     while (n_cells < num_lines_m) {
