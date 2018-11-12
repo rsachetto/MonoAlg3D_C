@@ -89,7 +89,7 @@ SAVE_MESH(save_as_text_or_binary) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    double center_x, center_y, center_z, half_face;
+    double center_x, center_y, center_z, dx, dy, dz;
     double v;
 
     while(grid_cell != 0) {
@@ -119,16 +119,20 @@ SAVE_MESH(save_as_text_or_binary) {
             }
 
             v = grid_cell->v;
-            half_face = grid_cell->half_face_length;
+            dx = grid_cell->dx;
+            dy = grid_cell->dy;
+            dz = grid_cell->dz;
 
             if(binary) {
                 fwrite(&center_x, sizeof(center_x), 1, output_file);
                 fwrite(&center_y, sizeof(center_y), 1, output_file);
                 fwrite(&center_z, sizeof(center_z), 1, output_file);
-                fwrite(&half_face, sizeof(half_face), 1, output_file);
+                fwrite(&dx, sizeof(dx), 1, output_file);
+                fwrite(&dy, sizeof(dy), 1, output_file);
+                fwrite(&dz, sizeof(dz), 1, output_file);
                 fwrite(&v, sizeof(v), 1, output_file);
             } else {
-                fprintf(output_file, "%g,%g,%g,%g,%g\n", center_x, center_y, center_z, half_face, v);
+                fprintf(output_file, "%g,%g,%g,%g,%g, %g, %g\n", center_x, center_y, center_z, dx, dy, dz, v);
             }
         }
         grid_cell = grid_cell->next;

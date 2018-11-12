@@ -27,7 +27,8 @@ bool derefine_grid_with_bound (struct grid *the_grid, double derefinement_bound,
     grid_cell = the_grid->first_cell;
     while (grid_cell != 0) {
         has_been_derefined = false;
-        if (grid_cell->can_change && grid_cell->face_length < max_h && grid_cell->active) {
+        //TODO: we need to change this in order to support different discretizations for each direction
+        if (grid_cell->can_change && grid_cell->dx < max_h && grid_cell->active) {
 
             /* Verifies if each one of the next seven cells has  are
              * active */

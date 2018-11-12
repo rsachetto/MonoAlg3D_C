@@ -30,7 +30,9 @@ SAVE_STATE(save_simulation_state) {
             return;
         }
 
-        fwrite(&(the_grid->side_length), sizeof(the_grid->side_length), 1, output_file);
+        fwrite(&(the_grid->side_length_x), sizeof(the_grid->side_length_x), 1, output_file);
+        fwrite(&(the_grid->side_length_y), sizeof(the_grid->side_length_y), 1, output_file);
+        fwrite(&(the_grid->side_length_z), sizeof(the_grid->side_length_z), 1, output_file);
         fwrite(&(the_grid->number_of_cells), sizeof(the_grid->number_of_cells), 1, output_file);
         fwrite(&(the_grid->num_active_cells), sizeof(the_grid->num_active_cells), 1, output_file);
 
