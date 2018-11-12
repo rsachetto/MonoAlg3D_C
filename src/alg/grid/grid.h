@@ -13,7 +13,10 @@
 struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.
-    float side_length;        // Length of cube grid. Default = 1.0.
+    float side_length_x;
+    float side_length_y;
+    float side_length_z;
+
     uint32_t number_of_cells;  // Number of cells of grid.
 
     uint32_t num_active_cells;
@@ -29,10 +32,10 @@ struct grid {
 
 
 struct grid* new_grid();
-void initialize_grid(struct grid *the_grid, double side_length);
+void initialize_grid(struct grid *the_grid, float side_length_x, float side_length_y, float side_length_z);
 void clean_and_free_grid(struct grid* the_grid);
 void construct_grid(struct grid *the_grid);
-void initialize_and_construct_grid(struct grid *the_grid, double side_length);
+void initialize_and_construct_grid(struct grid *the_grid, float side_length_x, float side_length_y, float side_length_z);
 
 void print_grid(struct grid* the_grid, FILE *output_file);
 void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary);

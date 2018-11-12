@@ -32,7 +32,8 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
 #pragma omp parallel for private(alpha, h)
     for(i = 0; i < num_active_cells; i++) {
-        h = ac[i]->face_length;
+        //TODO: we need to change this in order to support different discretizations for each direction
+        h = ac[i]->dx;
         alpha = ALPHA(beta, cm, dt, h);
 
         struct element element;
@@ -118,9 +119,11 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
         if(black_neighbor_cell->active) {
 
             if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
-                h = black_neighbor_cell->face_length;
+                //TODO: we need to change this in order to support different discretizations for each direction
+                h = black_neighbor_cell->dx;
             } else {
-                h = grid_cell->face_length;
+                //TODO: we need to change this in order to support different discretizations for each direction
+                h = grid_cell->dx;
             }
 
             lock_cell_node(grid_cell);
@@ -227,8 +230,6 @@ int randRange(int n) {
 
 ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
-    printf("Assembling matrix 1 time\n");
-
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
@@ -247,20 +248,17 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     srand((unsigned int)time(NULL));
 
+    float modifiers[4] = {0.001f, 0.1f, 0.5f, 1.0f};
 
 #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {
 
-        float r = 1.0;
+        float r = 1.0f;
 
-//        #pragma omp critical
-//        r = (float)randRange(RAND_MAX)/(float)RAND_MAX;
+        //#pragma omp critical
+        //r = modifiers[randRange(4)];
 
         real sigma_x_new = sigma_x*r;
-
-//        #pragma omp critical
-//        r = (float)rand()/(float)RAND_MAX;
-
         real sigma_y_new= sigma_y*r;
         real sigma_z_new= sigma_z*r;
 

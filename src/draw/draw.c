@@ -765,8 +765,8 @@ static void display()
 
     if (grid_to_draw) {
 
-
-        double size = grid_to_draw->side_length;
+        //TODO: we need to change this in order to support different discretizations for each direction
+        double size = grid_to_draw->side_length_x;
 
         uint32_t n_active = grid_to_draw->num_active_cells;
         struct cell_node **ac = grid_to_draw->active_cells;
@@ -778,8 +778,9 @@ static void display()
 				grid_cell = ac[i];
 
 				if (grid_cell->active) {
-					draw_cube(grid_cell->center_x / size, grid_cell->center_y / size, grid_cell->center_z / size,
-						grid_cell->half_face_length / size, grid_cell->v);
+                    //TODO: we need to change this in order to support different discretizations for each direction
+                    draw_cube(grid_cell->center_x / size, grid_cell->center_y / size, grid_cell->center_z / size,
+						grid_cell->dx / size, grid_cell->v);
 				}
 
 			}

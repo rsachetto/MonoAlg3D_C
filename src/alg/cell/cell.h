@@ -56,8 +56,9 @@ struct cell_node {
     // created when this cell is refined.
     uint8_t hilbert_shape_number;
 
-    // Cell geometry.
-    float half_face_length;
+//    // Cell geometry.
+//    float half_dx;
+//    float half_face_length_zy;
 
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
@@ -68,12 +69,10 @@ struct cell_node {
         front_flux,   // Flux coming from front direction.
         back_flux;    // Flux coming from back direction.
 
-    //______________________________________________________________________________
     /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
-    //element_vector *elements;
     struct element *elements;
 
-    float face_length;
+    float dx, dy, dz;
 
     bool can_change;
     bool visited;
@@ -143,7 +142,7 @@ void set_transition_node_data (struct transition_node *the_transition_node, uint
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);
 
-void set_cell_node_data(struct cell_node *the_cell, float face_length, float half_face_length,
+void set_cell_node_data(struct cell_node *the_cell, float dx, float dy, float dz,
                         uint64_t bunch_number, void *east, void *north, void *west, void *south,
                         void *front, void *back, void *previous, void *next,
                         uint32_t grid_position, uint8_t hilbert_shape_number, float center_x,
@@ -153,7 +152,7 @@ void set_cell_flux (struct cell_node *the_cell, char direction);
 double get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            float face_length, float half_face_length, float center_x,
+                            float dx, float dy, float dz, float center_x,
                             float center_y, float center_z, uint64_t bunch_number,
                             uint32_t *free_sv_positions, uint32_t **refined_this_step);
 

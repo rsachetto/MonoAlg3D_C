@@ -521,7 +521,8 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
 
 #pragma omp parallel for private(alpha, h)
     for(i = 0; i < active_cells; i++) {
-        h = ac[i]->face_length;
+        //TODO: we need to change this in order to support different discretizations for each direction
+        h = ac[i]->dx;
         alpha = ALPHA(beta, cm, dt, h);
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;
@@ -545,7 +546,8 @@ void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cel
     int i;
 #pragma omp parallel for private(h, alpha)
     for(i = 0; i < num_active_cells; i++) {
-        h = active_cells[i]->face_length;
+        //TODO: we need to change this in order to support different discretizations for each direction
+        h = active_cells[i]->dx;
         alpha = ALPHA(beta, cm, dt_edp, h);
 
         if(use_gpu) {

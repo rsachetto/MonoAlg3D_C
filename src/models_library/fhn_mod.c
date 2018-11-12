@@ -61,19 +61,14 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     const real u = sv[0];
     const real v = sv[1];
 
-    const real a = 0.2;
-    const real b = 0.5;
+    const real a = 0.2f;
+    const real b = 0.5f;
     const real k = 36.0;
-    const real epsilon  = 0.000045;
-
-    real calc_I_stim = stim_current;
-
-    real calc_u = k*(u*(1 - u)*(u - a) - u*v);
-    real calc_v = k*(epsilon*(b*u - v));
+    const real epsilon  =  0.000045;
 
 
-    rDY_[0] = calc_u + calc_I_stim;
-    rDY_[1] = calc_v;
+    rDY_[0] = k*(u*(1.0f - u)*(u - a) - u*v) + stim_current;
+    rDY_[1] = k*epsilon*(b*u - v);
 
 
 }

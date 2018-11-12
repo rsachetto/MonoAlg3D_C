@@ -30,8 +30,12 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     float cell_center_x    = cell->center_x,
             cell_center_y   = cell->center_y,
             cell_center_z   = cell->center_z,
-            cell_half_side    = cell->half_face_length,
-            cell_quarter_side = cell->half_face_length / 2.0f;
+            cell_half_side_x    = cell->dx / 2.0f,
+            cell_half_side_y    = cell->dy / 2.0f,
+            cell_half_side_z    = cell->dz / 2.0f,
+            cell_quarter_side_x = cell->dx / 4.0f,
+            cell_quarter_side_y = cell->dy / 4.0f,
+            cell_quarter_side_z = cell->dz / 4.0f;
 
     uint64_t old_bunch_number = cell->bunch_number;
 
@@ -39,11 +43,12 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     // becomes the frontNortheast cell of the new bunch.
     front_northeast_sub_cell                     = cell;
     front_northeast_sub_cell->cell_data.level    = cell->cell_data.level + (uint16_t )1;
-    front_northeast_sub_cell->face_length        = cell_half_side;
-    front_northeast_sub_cell->half_face_length   = cell_quarter_side;
-    front_northeast_sub_cell->center_x = cell_center_x + cell_quarter_side;
-    front_northeast_sub_cell->center_y = cell_center_y + cell_quarter_side;
-    front_northeast_sub_cell->center_z = cell_center_z + cell_quarter_side;
+    front_northeast_sub_cell->dx        = cell_half_side_x;
+    front_northeast_sub_cell->dy        = cell_half_side_y;
+    front_northeast_sub_cell->dz        = cell_half_side_z;
+    front_northeast_sub_cell->center_x = cell_center_x + cell_quarter_side_x;
+    front_northeast_sub_cell->center_y = cell_center_y + cell_quarter_side_y;
+    front_northeast_sub_cell->center_z = cell_center_z + cell_quarter_side_z;
     front_northeast_sub_cell->bunch_number       = old_bunch_number * 10 + 1;
 
     if(refined_this_step && *refined_this_step) {
@@ -54,11 +59,12 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     back_northeast_sub_cell = new_cell_node();
     set_refined_cell_data(back_northeast_sub_cell,
                           front_northeast_sub_cell,
-                          cell_half_side,
-                          cell_quarter_side,
-                          cell_center_x - cell_quarter_side,
-                          cell_center_y + cell_quarter_side,
-                          cell_center_z + cell_quarter_side,
+                          cell_half_side_x,
+                          cell_half_side_y,
+                          cell_half_side_z,
+                          cell_center_x - cell_quarter_side_x,
+                          cell_center_y + cell_quarter_side_y,
+                          cell_center_z + cell_quarter_side_z,
                           old_bunch_number * 10 + 2, free_sv_positions, refined_this_step);
 
 
@@ -66,22 +72,24 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     back_northwest_sub_cell = new_cell_node();
     set_refined_cell_data(back_northwest_sub_cell,
                           front_northeast_sub_cell,
-                          cell_half_side,
-                          cell_quarter_side,
-                          cell_center_x - cell_quarter_side,
-                          cell_center_y - cell_quarter_side,
-                          cell_center_z + cell_quarter_side,
+                          cell_half_side_x,
+                          cell_half_side_y,
+                          cell_half_side_z,
+                          cell_center_x - cell_quarter_side_x,
+                          cell_center_y - cell_quarter_side_y,
+                          cell_center_z + cell_quarter_side_z,
                           old_bunch_number * 10 + 3, free_sv_positions, refined_this_step);
 
     // Creation of front Northwest node.
     front_northwest_sub_cell = new_cell_node();
     set_refined_cell_data(front_northwest_sub_cell,
                           front_northeast_sub_cell,
-                          cell_half_side,
-                          cell_quarter_side,
-                          cell_center_x + cell_quarter_side,
-                          cell_center_y - cell_quarter_side,
-                          cell_center_z + cell_quarter_side,
+                          cell_half_side_x,
+                          cell_half_side_y,
+                          cell_half_side_z,
+                          cell_center_x + cell_quarter_side_x,
+                          cell_center_y - cell_quarter_side_y,
+                          cell_center_z + cell_quarter_side_z,
                           old_bunch_number * 10 + 4, free_sv_positions, refined_this_step);
 
 
@@ -89,11 +97,12 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     front_southwest_sub_cell = new_cell_node();
     set_refined_cell_data(front_southwest_sub_cell,
                           front_northeast_sub_cell,
-                          cell_half_side,
-                          cell_quarter_side,
-                          cell_center_x + cell_quarter_side,
-                          cell_center_y - cell_quarter_side,
-                          cell_center_z - cell_quarter_side,
+                          cell_half_side_x,
+                          cell_half_side_y,
+                          cell_half_side_z,
+                          cell_center_x + cell_quarter_side_x,
+                          cell_center_y - cell_quarter_side_y,
+                          cell_center_z - cell_quarter_side_z,
                           old_bunch_number * 10 + 5, free_sv_positions, refined_this_step);
 
 
@@ -101,11 +110,12 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     back_southwest_sub_cell = new_cell_node();
     set_refined_cell_data(back_southwest_sub_cell,
                           front_northeast_sub_cell,
-                          cell_half_side,
-                          cell_quarter_side,
-                          cell_center_x - cell_quarter_side,
-                          cell_center_y - cell_quarter_side,
-                          cell_center_z - cell_quarter_side,
+                          cell_half_side_x,
+                          cell_half_side_y,
+                          cell_half_side_z,
+                          cell_center_x - cell_quarter_side_x,
+                          cell_center_y - cell_quarter_side_y,
+                          cell_center_z - cell_quarter_side_z,
                           old_bunch_number * 10 + 6, free_sv_positions, refined_this_step);
 
 
@@ -114,11 +124,12 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     back_southeast_sub_cell = new_cell_node();
     set_refined_cell_data(back_southeast_sub_cell,
                           front_northeast_sub_cell,
-                          cell_half_side,
-                          cell_quarter_side,
-                          cell_center_x - cell_quarter_side,
-                          cell_center_y + cell_quarter_side,
-                          cell_center_z - cell_quarter_side,
+                          cell_half_side_x,
+                          cell_half_side_y,
+                          cell_half_side_z,
+                          cell_center_x - cell_quarter_side_x,
+                          cell_center_y + cell_quarter_side_y,
+                          cell_center_z - cell_quarter_side_z,
                           old_bunch_number * 10 + 7, free_sv_positions, refined_this_step);
 
 
@@ -126,11 +137,12 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     front_southeast_sub_cell = new_cell_node();
     set_refined_cell_data(front_southeast_sub_cell,
                           front_northeast_sub_cell,
-                          cell_half_side,
-                          cell_quarter_side,
-                          cell_center_x + cell_quarter_side,
-                          cell_center_y + cell_quarter_side,
-                          cell_center_z - cell_quarter_side,
+                          cell_half_side_x,
+                          cell_half_side_y,
+                          cell_half_side_z,
+                          cell_center_x + cell_quarter_side_x,
+                          cell_center_y + cell_quarter_side_y,
+                          cell_center_z - cell_quarter_side_z,
                           old_bunch_number * 10 + 8, free_sv_positions, refined_this_step);
 
     // west transition node.
@@ -1164,7 +1176,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
-                           float face_length, float half_face_length,
+                           float dx, float dy, float dz,
                            float center_x, float center_y, float center_z,
                            uint64_t  bunch_number, uint32_t *free_sv_positions,
                            uint32_t **refined_this_step) {
@@ -1188,8 +1200,10 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
 
     the_cell->v = other_cell->v;
 
-    the_cell->face_length = face_length;
-    the_cell->half_face_length = half_face_length;
+    the_cell->dx = dx;
+    the_cell->dy = dy;
+    the_cell->dz = dz;
+
     the_cell->center_x = center_x;
     the_cell->center_y = center_y;
     the_cell->center_z = center_z;

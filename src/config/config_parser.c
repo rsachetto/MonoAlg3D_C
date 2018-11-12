@@ -404,7 +404,7 @@ void set_save_mesh_config(const char *args, struct save_mesh_config *sm, const c
         } else if(strcmp(key, "output_dir") == 0) {
             if(sm->out_dir_name_was_set) {
                 print_to_stdout_and_file("WARNING: For save_mesh configuration: \n");
-                issue_overwrite_warning("print_rate", sm->out_dir_name, value, config_file);
+                issue_overwrite_warning("output_dir", sm->out_dir_name, value, config_file);
             }
             free(sm->out_dir_name);
             sm->out_dir_name = strdup(value);

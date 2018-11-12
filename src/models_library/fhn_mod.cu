@@ -97,39 +97,18 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
 inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_) {
 
-//    //State variables
-//    const real u = *((real*)((char*)sv_ + pitch * 0) + threadID_);
-//    const real v = *((real*)((char*)sv_ + pitch * 1) + threadID_);
+    //State variables
+    const real u = *((real*)((char*)sv_ + pitch * 0) + threadID_);
+    const real v = *((real*)((char*)sv_ + pitch * 1) + threadID_);
 //
-//    const real a = 0.2;
-//    const real b = 0.5;
-//    const real k = 36.0;
-//    const real epsilon  = 0.000045;
-//
-//    real calc_I_stim = stim_current;
-//
-//    real calc_u = k*(u*(1 - u)*(u - a) - u*v);
-//    real calc_v = k*(epsilon*(b*u - v));
-//
-//
-//    rDY_[0] = calc_u + calc_I_stim;
-//    rDY_[1] = calc_v;
-
-
-//State variables
-    const real V_old_ =  *((real*)((char*)sv_ + pitch * 0) + threadID_);
-    const real h_old_ =  *((real*)((char*)sv_ + pitch * 1) + threadID_);
-
-    //Parameters
-    const real a = 0.2;
-    const real b = 0.5;
+    const real a = 0.2f;
+    const real b = 0.5f;
     const real k = 36.0;
-    const real epsilon  = 0.000045;
+    const real epsilon  =  0.000045;
 
-    real calc_I_stim = stim_current;
 
-    rDY_[0] = k*( V_old_*(V_old_ - a)*(1.00000f - V_old_) - (V_old_*h_old_)) + calc_I_stim;
-    rDY_[1] = k*(epsilon*(b*V_old_ -  h_old_));
+    rDY_[0] = k*(u*(1.0f - u)*(u - a) - u*v) + stim_current;
+    rDY_[1] = k*epsilon*(b*u - v);
 
 
 }

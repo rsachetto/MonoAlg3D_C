@@ -14,6 +14,8 @@
  * @param min_h Minimum refinement level required for the graph.
  * @param refinement_bound Minimum flux required for each cell of graph.
  */
+
+//TODO: we need to change this in order to support different discretizations for each direction
 bool refine_grid_with_bound(struct grid* the_grid, double refinement_bound,  double min_h) {
 
     if( min_h <= 0.0 ) {
@@ -40,7 +42,8 @@ bool refine_grid_with_bound(struct grid* the_grid, double refinement_bound,  dou
             maximum_flux = get_cell_maximum_flux(grid_cell);
 
             if( ( grid_cell->can_change && grid_cell->active ) &&
-                ( grid_cell->face_length > min_h ) &&
+                    //TODO: we need to change this in order to support different discretizations for each direction
+                    ( grid_cell->dx > min_h ) &&
                 ( maximum_flux >= refinement_bound ) )
             {
                 auxiliar_grid_cell = grid_cell;

@@ -41,8 +41,9 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->grid_position = 0;
     cell_node->sv_position = 0;
     cell_node->hilbert_shape_number = 0;
-    cell_node->face_length = 1.0;
-    cell_node->half_face_length = 0.5;
+    cell_node->dx = 1.0;
+    cell_node->dy = 1.0;
+    cell_node->dz = 1.0;
 
     cell_node->v = 0;
 
@@ -130,12 +131,13 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
     the_transition_node->quadruple_connector4 = quadruple_connector4;
 }
 
-void set_cell_node_data(struct cell_node *the_cell, float face_length, float half_face_length, uint64_t bunch_number,
+void set_cell_node_data(struct cell_node *the_cell, float dx, float dy, float dz, uint64_t bunch_number,
                         void *east, void *north, void *west, void *south, void *front, void *back, void *previous,
                         void *next, uint32_t grid_position, uint8_t hilbert_shape_number, float center_x,
                         float center_y, float center_z) {
-    the_cell->face_length = face_length;
-    the_cell->half_face_length = half_face_length;
+    the_cell->dx = dx;
+    the_cell->dy = dy;
+    the_cell->dz = dz;
     the_cell->bunch_number = bunch_number;
     the_cell->east = east;
     the_cell->north = north;
@@ -187,7 +189,9 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
         exit(10);
     }
 
-    double leastDistance = the_cell->half_face_length;
+
+    //TODO: we need to change this in order to support different discretizations for each direction
+    double leastDistance = the_cell->dx/2.0;
     double localFlux;
     bool has_found;
 
@@ -236,8 +240,9 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
 
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
-        if(black_neighbor_cell->half_face_length < leastDistance)
-            leastDistance = black_neighbor_cell->half_face_length;
+        //TODO: we need to change this in order to support different discretizations for each direction
+        if(black_neighbor_cell->dx/2.0 < leastDistance)
+            leastDistance = black_neighbor_cell->dx / 2.0;
 
         localFlux = (the_cell->v - black_neighbor_cell->v) * (2.0 * leastDistance);
 

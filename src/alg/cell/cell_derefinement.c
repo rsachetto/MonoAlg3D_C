@@ -136,8 +136,10 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv
     new_cell->center_y = (new_cell->center_y + aux_center_y) / 2.0f;
     new_cell->center_z = (new_cell->center_z + aux_center_z) / 2.0f;
 
-    new_cell->face_length = 2.0f * new_cell->face_length;
-    new_cell->half_face_length = 2.0f * new_cell->half_face_length;
+    new_cell->dx = 2.0f * new_cell->dx;
+    new_cell->dy = 2.0f * new_cell->dy;
+    new_cell->dz = 2.0f * new_cell->dz;
+
     new_cell->v = u;
 
     new_cell->cell_data.level = bunch_level - (uint8_t)1;
