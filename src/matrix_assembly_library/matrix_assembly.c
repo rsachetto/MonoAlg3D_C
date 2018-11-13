@@ -14,13 +14,9 @@
 #include "../utils/utils.h"
 
 
-static inline double ALPHA(double beta, double cm, double dt, double h) {
-    return (((beta * cm) / dt) * UM2_TO_CM2) * pow(h, 3.0);
-}
-
 void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) {
 
-    double alpha, h;
+    double alpha, dx, dy, dz;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     double beta = the_solver->beta;
@@ -30,11 +26,13 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     int i;
 
-#pragma omp parallel for private(alpha, h)
+#pragma omp parallel for private(alpha, dx, dy, dz)
     for(i = 0; i < num_active_cells; i++) {
-        //TODO: we need to change this in order to support different discretizations for each direction
-        h = ac[i]->dx;
-        alpha = ALPHA(beta, cm, dt, h);
+        dx = ac[i]->dx;
+        dy = ac[i]->dy;
+        dz = ac[i]->dz;
+
+        alpha = ALPHA(beta, cm, dt, dx, dy, dz);
 
         struct element element;
         element.column = ac[i]->grid_position;
@@ -57,7 +55,7 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
 
     uint32_t position;
     bool has_found;
-    double h;
+    double dx, dy, dz;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
@@ -119,11 +117,13 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
         if(black_neighbor_cell->active) {
 
             if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
-                //TODO: we need to change this in order to support different discretizations for each direction
-                h = black_neighbor_cell->dx;
+                dx = black_neighbor_cell->dx;
+                dy = black_neighbor_cell->dy;
+                dz = black_neighbor_cell->dz;
             } else {
-                //TODO: we need to change this in order to support different discretizations for each direction
-                h = grid_cell->dx;
+                dx = grid_cell->dx;
+                dy = grid_cell->dy;
+                dz = grid_cell->dz;
             }
 
             lock_cell_node(grid_cell);
@@ -146,23 +146,23 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
                 struct element new_element;
                 new_element.column = position;
                 if(direction == 'n') { // Z direction
-                    new_element.value = -sigma_z1 * h;
-                    cell_elements[0].value += (sigma_z1 * h);
+                    new_element.value = -sigma_z1 * ((dx*dy)/dz);
+                    cell_elements[0].value += (sigma_z1 * ((dx*dy)/dz));
                 } else if(direction == 's') { // Z direction
-                    new_element.value = -sigma_z2 * h;
-                    cell_elements[0].value += sigma_z2 * h;
+                    new_element.value = -sigma_z2 * ((dx*dy)/dz);
+                    cell_elements[0].value += (sigma_z2 * ((dx*dy)/dz));
                 } else if(direction == 'e') { // Y direction
-                    new_element.value = -sigma_y1 * h;
-                    cell_elements[0].value += (sigma_y1 * h);
+                    new_element.value = -sigma_y1 * ((dx*dz)/dy);
+                    cell_elements[0].value += (sigma_y1 * ((dx*dz)/dy));
                 } else if(direction == 'w') { // Y direction
-                    new_element.value = -sigma_y2 * h;
-                    cell_elements[0].value += (sigma_y2 * h);
+                    new_element.value = -sigma_y2 * ((dx*dz)/dy);
+                    cell_elements[0].value += (sigma_y2 * ((dx*dz)/dy));
                 } else if(direction == 'f') { // X direction
-                    new_element.value = -sigma_x1 * h;
-                    cell_elements[0].value += (sigma_x1 * h);
+                    new_element.value = -sigma_x1 * ((dy*dz)/dx);
+                    cell_elements[0].value += (sigma_x1 * ((dy*dz)/dx));
                 } else if(direction == 'b') { // X direction
-                    new_element.value = -sigma_x2 * h;
-                    cell_elements[0].value += (sigma_x2 * h);
+                    new_element.value = -sigma_x2 * ((dy*dz)/dx);
+                    cell_elements[0].value += (sigma_x2 * ((dy*dz)/dx));
                 }
 
                 new_element.cell = black_neighbor_cell;
@@ -189,23 +189,23 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
                 struct element new_element;
                 new_element.column = position;
                 if(direction == 'n') { // Z direction
-                    new_element.value = -sigma_z1 * h;
-                    cell_elements[0].value += (sigma_z1 * h);
+                    new_element.value = -sigma_z1 * ((dx*dy)/dz);
+                    cell_elements[0].value += (sigma_z1 * ((dx*dy)/dz));
                 } else if(direction == 's') { // Z direction
-                    new_element.value = -sigma_z2 * h;
-                    cell_elements[0].value += (sigma_z2 * h);
+                    new_element.value = -sigma_z2 * ((dx*dy)/dz);
+                    cell_elements[0].value += sigma_z2 * ((dx*dy)/dz);
                 } else if(direction == 'e') { // Y direction
-                    new_element.value = -sigma_y1 * h;
-                    cell_elements[0].value += (sigma_y1 * h);
+                    new_element.value = -sigma_y1 * ((dx*dz)/dy);
+                    cell_elements[0].value += (sigma_y1 * ((dx*dz)/dy));
                 } else if(direction == 'w') { // Y direction
-                    new_element.value = -sigma_y2 * h;
-                    cell_elements[0].value += (sigma_y2 * h);
+                    new_element.value = -sigma_y2 * ((dx*dz)/dy);
+                    cell_elements[0].value += (sigma_y2 * ((dx*dz)/dy));
                 } else if(direction == 'f') { // X direction
-                    new_element.value = -sigma_x1 * h;
-                    cell_elements[0].value += (sigma_x1 * h);
+                    new_element.value = -sigma_x1 * ((dy*dz)/dx);
+                    cell_elements[0].value += (sigma_x1 * ((dy*dz)/dx));
                 } else if(direction == 'b') { // X direction
-                    new_element.value = -sigma_x2 * h;
-                    cell_elements[0].value += (sigma_x2 * h);
+                    new_element.value = -sigma_x2 * ((dy*dz)/dx);
+                    cell_elements[0].value += (sigma_x2 * ((dy*dz)/dx));
                 }
 
                 new_element.cell = grid_cell;
@@ -301,8 +301,6 @@ ASSEMBLY_MATRIX(no_fibers_assembly_matrix) {
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
 
-
-
 #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {
 
@@ -324,4 +322,5 @@ ASSEMBLY_MATRIX(no_fibers_assembly_matrix) {
         // Computes and designates the flux due to back cells.
         fill_discretization_matrix_elements(sigma_x, sigma_y, sigma_z, ac[i], ac[i]->back, 'b');
     }
+
 }

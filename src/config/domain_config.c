@@ -57,8 +57,15 @@ struct domain_config* new_domain_config() {
 
     init_config_common_data(&(result->config_data));
 
-    result->start_h_was_set = false;
-    result->max_h_was_set = false;
+    result->start_dx_was_set = false;
+    result->max_dx_was_set = false;
+
+    result->start_dy_was_set = false;
+    result->max_dy_was_set = false;
+
+    result->start_dz_was_set = false;
+    result->max_dz_was_set = false;
+
     result->domain_name_was_set = false;
 
     result->set_spatial_domain = NULL;
@@ -71,8 +78,8 @@ void print_domain_config_values(struct domain_config* s) {
     printf("domain_name: %s\n",s->domain_name);
     printf("domain_function: %s\n",s->config_data.function_name);
     printf("domain_library_file: %s\n",s->config_data.library_file_path);
-    printf("start_discretization: %lf\n",s->start_h);
-    printf("maximum_discretization: %lf\n",s->max_h);
+    printf("start_discretization: dx %lf, dy %lf, dz %lf\n", s->start_dx, s->start_dy, s->start_dz);
+    printf("maximum_discretization: dx %lf, dy %lf, dz %lf\n", s->max_dx, s->max_dy, s->max_dz);
     printf("domain_config:\n");
     STRING_HASH_PRINT_KEY_VALUE(s->config_data.config);
 }

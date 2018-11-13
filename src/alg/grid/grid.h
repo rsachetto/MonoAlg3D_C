@@ -58,6 +58,7 @@ void derefine_grid_inactive_cells (struct grid* the_grid);
 void print_grid_matrix(struct grid *the_grid, FILE* output_file);
 void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 double * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines);
+void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file);
 
 int get_num_refinement_steps_to_discretization (double side_len, double h);
 
