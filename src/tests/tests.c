@@ -76,12 +76,11 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
         el.column = cell_position;
         el.cell = cell;
 
-                sb_reserve(cell->elements, 7);
-                sb_push(cell->elements, el);
+        sb_reserve(cell->elements, 7);
+        sb_push(cell->elements, el);
 
         for (int j = 0; j < num_lines_m; j++) {
             if (cell_position != j) {
-                // we should find a better way to compare the floating points
                 m_value = matrix[cell_position][j];
 
                 if (m_value != 0.0) {
@@ -96,7 +95,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
                         aux = aux->next;
                     }
                     el2.cell = aux;
-                            sb_push(cell->elements, el2);
+                    sb_push(cell->elements, el2);
                 }
             }
         }

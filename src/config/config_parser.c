@@ -320,21 +320,58 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
             }
             free(dc->domain_name);
             dc->domain_name = strdup(value);
-        } else if(strcmp(key, "start_discretization") == 0) {
-            if(dc->start_h_was_set) {
-                sprintf(old_value, "%lf", dc->start_h);
+        } else if(strcmp(key, "start_dx") == 0) {
+            if(dc->start_dx_was_set) {
+                sprintf(old_value, "%lf", dc->start_dx);
                 print_to_stdout_and_file("WARNING: For domain configuration: \n");
-                issue_overwrite_warning("start_discretization", old_value, value, config_file);
+                issue_overwrite_warning("start_dx", old_value, value, config_file);
             }
-            dc->start_h = (real)strtod(value, NULL);
-        } else if(strcmp(key, "maximum_discretization") == 0) {
-            if(dc->max_h_was_set) {
-                sprintf(old_value, "%lf", dc->max_h);
+            dc->start_dx = (real)strtod(value, NULL);
+        } else if(strcmp(key, "maximum_dx") == 0) {
+            if(dc->max_dx_was_set) {
+                sprintf(old_value, "%lf", dc->max_dx);
                 print_to_stdout_and_file("WARNING: For domain configuration: \n");
-                issue_overwrite_warning("maximum_discretization", old_value, value, config_file);
+                issue_overwrite_warning("maximum_dx", old_value, value, config_file);
             }
-            dc->max_h = (real)strtod(value, NULL);
-        } else if(strcmp(key, "function") == 0) {
+            dc->max_dx = strtod(value, NULL);
+        }
+
+
+        else if(strcmp(key, "start_dy") == 0) {
+            if(dc->start_dy_was_set) {
+                sprintf(old_value, "%lf", dc->start_dy);
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
+                issue_overwrite_warning("start_dy", old_value, value, config_file);
+            }
+            dc->start_dy = strtod(value, NULL);
+        } else if(strcmp(key, "maximum_dy") == 0) {
+            if(dc->max_dy_was_set) {
+                sprintf(old_value, "%lf", dc->max_dy);
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
+                issue_overwrite_warning("maximum_dy", old_value, value, config_file);
+            }
+            dc->max_dy = (real)strtod(value, NULL);
+        }
+
+
+        else if(strcmp(key, "start_dz") == 0) {
+            if(dc->start_dz_was_set) {
+                sprintf(old_value, "%lf", dc->start_dz);
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
+                issue_overwrite_warning("start_dz", old_value, value, config_file);
+            }
+            dc->start_dz = (real)strtod(value, NULL);
+        } else if(strcmp(key, "maximum_dz") == 0) {
+            if(dc->max_dz_was_set) {
+                sprintf(old_value, "%lf", dc->max_dz);
+                print_to_stdout_and_file("WARNING: For domain configuration: \n");
+                issue_overwrite_warning("maximum_dz", old_value, value, config_file);
+            }
+            dc->max_dz = (real)strtod(value, NULL);
+        }
+
+
+        else if(strcmp(key, "function") == 0) {
             if(dc->config_data.function_name_was_set) {
                 print_to_stdout_and_file("WARNING: For domain configuration: \n");
                 issue_overwrite_warning("function", dc->config_data.function_name, value, config_file);
@@ -873,13 +910,26 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->domain_config = new_domain_config();
         }
 
-        if(MATCH_NAME("start_discretization")) {
-            pconfig->domain_config->start_h = strtod(value, NULL);
-            pconfig->domain_config->start_h_was_set = true;
-        } else if(MATCH_NAME("maximum_discretization")) {
-            pconfig->domain_config->max_h = strtod(value, NULL);
-            pconfig->domain_config->max_h_was_set = true;
-        } else if(MATCH_NAME("name")) {
+        if(MATCH_NAME("start_dx")) {
+            pconfig->domain_config->start_dx = strtod(value, NULL);
+            pconfig->domain_config->start_dx_was_set = true;
+        } else if(MATCH_NAME("maximum_dx")) {
+            pconfig->domain_config->max_dx = strtod(value, NULL);
+            pconfig->domain_config->max_dx_was_set = true;
+        } else if(MATCH_NAME("start_dy")) {
+            pconfig->domain_config->start_dy = strtod(value, NULL);
+            pconfig->domain_config->start_dy_was_set = true;
+        } else if(MATCH_NAME("maximum_dy")) {
+            pconfig->domain_config->max_dy = strtod(value, NULL);
+            pconfig->domain_config->max_dy_was_set = true;
+        } else if(MATCH_NAME("start_dz")) {
+            pconfig->domain_config->start_dz = strtod(value, NULL);
+            pconfig->domain_config->start_dz_was_set = true;
+        } else if(MATCH_NAME("maximum_dz")) {
+            pconfig->domain_config->max_dz = strtod(value, NULL);
+            pconfig->domain_config->max_dz_was_set = true;
+        }
+        else if(MATCH_NAME("name")) {
             pconfig->domain_config->domain_name = strdup(value);
             pconfig->domain_config->domain_name_was_set = true;
         } else if(MATCH_NAME("function")) {
@@ -944,6 +994,8 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         if(pconfig->save_mesh_config == NULL) {
             pconfig->save_mesh_config = new_save_mesh_config();
         }
+
+
         if(MATCH_NAME("print_rate")) {
             pconfig->save_mesh_config->print_rate = (int)strtol(value, NULL, 10);
             pconfig->save_mesh_config->print_rate_was_set = true;
@@ -964,6 +1016,8 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         if(pconfig->save_state_config == NULL) {
             pconfig->save_state_config = new_save_state_config();
         }
+
+
         if(MATCH_NAME("save_rate")) {
             pconfig->save_state_config->save_rate = (int)strtol(value, NULL, 10);
             pconfig->save_state_config->save_rate_was_set = true;

@@ -22,9 +22,6 @@
 #include "../config/domain_config.h"
 #include "../config/linear_system_solver_config.h"
 
-static inline double ALPHA(double beta, double cm, double dt, double h) {
-    return (((beta * cm) / dt) * UM2_TO_CM2) * pow(h, 3.0);
-}
 
 struct monodomain_solver *new_monodomain_solver() {
 
@@ -171,8 +168,9 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     double refinement_bound = the_monodomain_solver->refinement_bound;
     double derefinement_bound = the_monodomain_solver->derefinement_bound;
 
-    double start_h = domain_config->start_h;
-    double max_h = domain_config->max_h;
+    // TODO: we need to change this in order to support different discretizations for each direction
+    double start_h = domain_config->start_dx;
+    double max_h = domain_config->max_dx;
 
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
@@ -287,11 +285,11 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     // Main simulation loop start
     while(cur_time <= finalT) {
 
-        #ifdef COMPILE_OPENGL
+#ifdef COMPILE_OPENGL
         redraw = count % print_rate == 0; // redraw grid
-        #endif
+#endif
 
-        if( save_to_file && (count % print_rate == 0) ) {
+        if(save_to_file && (count % print_rate == 0)) {
 
             start_stop_watch(&write_time);
             save_mesh_config->save_mesh(cur_time, save_mesh_config, the_grid);
@@ -424,7 +422,8 @@ void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid,
         config->set_extra_data(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
 }
 
-bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct ode_solver *the_ode_solver, struct grid *the_grid) {
+bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct ode_solver *the_ode_solver,
+                                                    struct grid *the_grid) {
 
     uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
     uint32_t n_active = the_grid->num_active_cells;
@@ -446,33 +445,30 @@ bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct o
         vms = (real *)malloc(mem_size);
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-        #pragma omp parallel for
+#pragma omp parallel for
         for(i = 0; i < n_active; i++) {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
 
-            if (ac[i]->v > vm_threshold) {
+            if(ac[i]->v > vm_threshold) {
                 act = true;
             }
-
         }
 
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
 #endif
     } else {
-        #pragma omp parallel for
+#pragma omp parallel for
         for(i = 0; i < n_active; i++) {
             sv[ac[i]->sv_position * n_edos] = (real)ac[i]->v;
 
-            if (ac[i]->v > vm_threshold) {
+            if(ac[i]->v > vm_threshold) {
                 act = true;
             }
-
         }
     }
 
     return act;
-
 }
 
 void save_old_cell_positions(struct grid *the_grid) {
@@ -511,7 +507,7 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
 // TODO: MAYBE WE HAVE TO MOVE THIS TO THE USER PROVIDED LIBRARY (ASSEMBLY MATRIX)
 void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *the_grid, double initial_v) {
 
-    double alpha, h;
+    double alpha, dx, dy, dz;
     struct cell_node **ac = the_grid->active_cells;
     uint32_t active_cells = the_grid->num_active_cells;
     double beta = the_solver->beta;
@@ -519,11 +515,13 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
     double dt = the_solver->dt;
     int i;
 
-#pragma omp parallel for private(alpha, h)
+#pragma omp parallel for private(alpha, dx, dy, dz)
     for(i = 0; i < active_cells; i++) {
-        //TODO: we need to change this in order to support different discretizations for each direction
-        h = ac[i]->dx;
-        alpha = ALPHA(beta, cm, dt, h);
+        dx =  ac[i]->dx;
+        dy =  ac[i]->dy;
+        dz =  ac[i]->dz;
+
+        alpha = ALPHA(beta, cm, dt, dx, dy, dz);
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;
     }
@@ -532,7 +530,7 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                        double beta, double cm, double dt_edp, real *sv, int n_equations_cell_model, bool use_gpu) {
 
-    double h, alpha;
+    double dx, dy, dz, alpha;
 
 #ifdef COMPILE_CUDA
     real *vms = NULL;
@@ -544,11 +542,13 @@ void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cel
     }
 #endif
     int i;
-#pragma omp parallel for private(h, alpha)
+#pragma omp parallel for private(dx, dy, dz, alpha)
     for(i = 0; i < num_active_cells; i++) {
-        //TODO: we need to change this in order to support different discretizations for each direction
-        h = active_cells[i]->dx;
-        alpha = ALPHA(beta, cm, dt_edp, h);
+        dx =  active_cells[i]->dx;
+        dy =  active_cells[i]->dy;
+        dz =  active_cells[i]->dz;
+
+        alpha = ALPHA(beta, cm, dt_edp, dx, dy, dz);
 
         if(use_gpu) {
 #ifdef COMPILE_CUDA
@@ -640,7 +640,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
     print_to_stdout_and_file("Domain configuration:\n");
     print_to_stdout_and_file("Domain name: %s\n", options->domain_config->domain_name);
-    print_to_stdout_and_file("Domain initial Space Discretization: %lf um\n", options->domain_config->start_h);
+    print_to_stdout_and_file("Domain initial Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
+                             options->domain_config->start_dx, options->domain_config->start_dy,
+                             options->domain_config->start_dz);
 
     if(the_grid->adaptive) {
         print_to_stdout_and_file("Using adaptativity\n");
@@ -649,7 +651,8 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Refining each %d time steps\n", the_monodomain_solver->refine_each);
         print_to_stdout_and_file("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
 
-        print_to_stdout_and_file("Domain maximum Space Discretization: %lf um\n", options->domain_config->max_h);
+        print_to_stdout_and_file("Domain maximum Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
+                options->domain_config->max_dx, options->domain_config->max_dy, options->domain_config->max_dz);
         print_to_stdout_and_file("The adaptivity will start in time: %lf ms\n",
                                  the_monodomain_solver->start_adapting_at);
     }

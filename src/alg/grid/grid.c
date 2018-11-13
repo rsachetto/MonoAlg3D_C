@@ -312,6 +312,63 @@ void print_grid_matrix(struct grid *the_grid, FILE *output_file) {
     }
 }
 
+int compare_elements (const void * a, const void * b)
+{
+    if ( (*(struct element*)a).column <  (*(struct element*)b).column ) return -1;
+    if ( (*(struct element*)a).column == (*(struct element*)b).column ) return 0;
+    if ( (*(struct element*)a).column >  (*(struct element*)b).column ) return 1;
+
+    return 1;//Unreachable
+}
+
+void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file) {
+
+    assert(the_grid);
+    assert(output_file);
+
+    struct cell_node *grid_cell;
+    grid_cell = the_grid->first_cell;
+    struct element element;
+    struct element *cell_elements;
+
+    fprintf(output_file, "# Created by Monodomain solver\n");
+    fprintf(output_file, "# name: Alg_grid_matrix\n");
+    fprintf(output_file, "# type: sparse matrix\n");
+    fprintf(output_file, "# nnz:                                    \n");
+    fprintf(output_file, "# rows: %d\n", the_grid->num_active_cells);
+    fprintf(output_file, "# columns: %d\n", the_grid->num_active_cells);
+
+    int nnz = 0;
+
+    while(grid_cell != 0) {
+        if(grid_cell->active) {
+
+            cell_elements = grid_cell->elements;
+            size_t max_el = sb_count(cell_elements);
+
+            qsort (cell_elements, max_el, sizeof(struct element), compare_elements);
+
+            for(size_t i = 0; i < max_el; i++) {
+
+                element = cell_elements[i];
+                if(element.cell != NULL) {
+                    nnz += 1;
+                    fprintf(output_file,
+                            "%" PRIu32 " "
+                            "%" PRIu32 " %.15lf\n",
+                            grid_cell->grid_position + 1, (element.column) + 1, element.value);
+                } else {
+                    break;
+                }
+            }
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fseek(output_file, 84, SEEK_SET);
+    fprintf(output_file, "%d", nnz);
+}
+
 void print_grid_vector(struct grid *the_grid, FILE *output_file, char name) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;

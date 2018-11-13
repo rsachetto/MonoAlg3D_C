@@ -20,7 +20,8 @@
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
 
-    double start_h = config->start_h;
+    //TODO: we need to change this in order to support different discretizations for each direction
+    double start_h = config->start_dx;
 
     double side_length_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length_x, config->config_data.config, "side_length_x");
@@ -75,7 +76,8 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
 
-    double start_h = config->start_h;
+    //TODO: we need to change this in order to support different discretizations for each direction
+    double start_h = config->start_dx;
 
     int num_layers = 0;
     bool s;
@@ -135,7 +137,8 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_cable_mesh) {
 
-    double start_h = config->start_h;
+    //TODO: we need to change this in order to support different discretizations for each direction
+    double start_h = config->start_dx;
 
     double cable_length = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, cable_length, config->config_data.config, "cable_length");
@@ -180,7 +183,11 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cable_mesh) {
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_human_mesh_with_two_scars) {
 
-    config->start_h = 800.0;
+    //TODO: we need to change this in order to support different discretizations for each direction
+    config->start_dx = 800.0;
+    config->start_dy = 800.0;
+    config->start_dx = 800.0;
+
     bool fibrotic = false;
 
     char *mesh_file;
@@ -291,7 +298,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
     srand (fib_seed);
 
-    config->start_h = 800.0;
+    //TODO: we need to change this in order to support different discretizations for each direction
+    config->start_dx = 800.0;
+    config->start_dy = 800.0;
+    config->start_dz = 800.0;
     uint8_t size_code;
 
     //TODO: we need to change this in order to support different discretizations for each direction
@@ -412,7 +422,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_rabbit_mesh) {
 
-    config->start_h = 250.0;
+    //TODO: we need to change this in order to support different discretizations for each direction
+    config->start_dx = 250.0;
+    config->start_dy = 250.0;
+    config->start_dz = 250.0;
 
     char *mesh_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (mesh_file, config->config_data.config, "mesh_file");
@@ -439,7 +452,8 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_mouse_mesh) {
 
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (mesh_file, config->config_data.config, "mesh_file");
 
-    double start_h = config->start_h;
+        //TODO: we need to change this in order to support different discretizations for each direction
+    double start_h = config->start_dx;
 
     assert (the_grid);
 
@@ -468,33 +482,47 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_mouse_mesh) {
     }
 }
 
+int maximum( int a, int b, int c )
+{
+    int max = ( a < b ) ? b : a;
+    return ( ( max < c ) ? c : max );
+}
+
 SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
 
-    double side_length;
+    double side_length_x;
+    double side_length_y;
+    double side_length_z;
 
-    //TODO: we need to change this in order to support different discretizations for each direction
-    double start_h_x = config->start_h;
-    double start_h_y = config->start_h;
-    double start_h_z = config->start_h;
-
-    //
+    double start_h_x = config->start_dx;
+    double start_h_y = config->start_dy;
+    double start_h_z = config->start_dz;
 
     print_to_stdout_and_file ("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h_x, start_h_y, start_h_z);
-    if ((start_h_x == 100.0) || (start_h_x == 200.0)) {
-        side_length = 25600.0;
-    } else if (start_h_x == 125.0 || start_h_x == 250.0 || start_h_x == 500.0) {
-        side_length = 32000.0;
-    } else {
-        fprintf (stderr, "initialize_grid_with_benchmark_mesh: invalid value of start_h (initial "
-                         "discretization). Exiting!");
-        exit (10);
+
+    side_length_x = start_h_x;
+    side_length_y = start_h_y;
+    side_length_z = start_h_z;
+
+    int nx = 0;
+    int ny = 0;
+    int nz = 0;
+
+    while(side_length_y < 20000.0) {
+        side_length_y = side_length_y*2.0;
     }
 
-    //TODO: we need to change this in order to support different discretizations for each direction
-    initialize_and_construct_grid (the_grid, side_length, side_length, side_length);
+    side_length_x = side_length_y*(config->start_dx/config->start_dy);
+    side_length_z = side_length_y*(config->start_dz/config->start_dy);
+
+    int n_max = maximum(nx, ny, nz);
+    printf("%d\n", n_max);
 
     //TODO: we need to change this in order to support different discretizations for each direction
-    int num_steps = get_num_refinement_steps_to_discretization (side_length, start_h_x);
+    initialize_and_construct_grid (the_grid,side_length_x, side_length_y, side_length_z);
+
+    //TODO: we need to change this in order to support different discretizations for each direction
+    int num_steps = get_num_refinement_steps_to_discretization (side_length_y, start_h_y);
 
     refine_grid (the_grid, num_steps);
     set_benchmark_domain (the_grid);
