@@ -507,7 +507,7 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
 // TODO: MAYBE WE HAVE TO MOVE THIS TO THE USER PROVIDED LIBRARY (ASSEMBLY MATRIX)
 void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *the_grid, double initial_v) {
 
-    double alpha, dx, dy, dz;
+    double alpha;
     struct cell_node **ac = the_grid->active_cells;
     uint32_t active_cells = the_grid->num_active_cells;
     double beta = the_solver->beta;
@@ -515,13 +515,10 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
     double dt = the_solver->dt;
     int i;
 
-#pragma omp parallel for private(alpha, dx, dy, dz)
+#pragma omp parallel for private(alpha)
     for(i = 0; i < active_cells; i++) {
-        dx =  ac[i]->dx;
-        dy =  ac[i]->dy;
-        dz =  ac[i]->dz;
 
-        alpha = ALPHA(beta, cm, dt, dx, dy, dz);
+        alpha = ALPHA(beta, cm, dt, ac[i]->dx, ac[i]->dy, ac[i]->dz);
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;
     }
@@ -530,7 +527,7 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                        double beta, double cm, double dt_edp, real *sv, int n_equations_cell_model, bool use_gpu) {
 
-    double dx, dy, dz, alpha;
+    double alpha;
 
 #ifdef COMPILE_CUDA
     real *vms = NULL;
@@ -542,13 +539,9 @@ void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cel
     }
 #endif
     int i;
-#pragma omp parallel for private(dx, dy, dz, alpha)
+#pragma omp parallel for private(alpha)
     for(i = 0; i < num_active_cells; i++) {
-        dx =  active_cells[i]->dx;
-        dy =  active_cells[i]->dy;
-        dz =  active_cells[i]->dz;
-
-        alpha = ALPHA(beta, cm, dt_edp, dx, dy, dz);
+        alpha = ALPHA(beta, cm, dt_edp, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
 
         if(use_gpu) {
 #ifdef COMPILE_CUDA
