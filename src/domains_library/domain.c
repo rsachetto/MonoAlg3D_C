@@ -20,8 +20,9 @@
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
 
-    //TODO: we need to change this in order to support different discretizations for each direction
-    double start_h = config->start_dx;
+    double start_dx = config->start_dx;
+    double start_dy = config->start_dy;
+    double start_dz = config->start_dz;
 
     double side_length_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length_x, config->config_data.config, "side_length_x");
@@ -32,30 +33,92 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
     double side_length_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length_z, config->config_data.config, "side_length_z");
 
-    double max_yz = fmax(side_length_y, side_length_z);
-    double max_side_length = fmax(side_length_x, max_yz);
 
-    double real_side_length = start_h * 2.0;
+    double real_side_length_x = start_dx * 2.0;
+    double real_side_length_y = start_dy * 2.0;
+    double real_side_length_z = start_dz * 2.0;
 
-    while (real_side_length < max_side_length) {
-        real_side_length *= 2.0;
+    double nx = side_length_x / start_dx;
+    double ny = side_length_y / start_dy;
+    double nz = side_length_z / start_dz;
+
+    //TODO: check if nx, ny, nz are integer and check if sizes are 2^x, otherwise this discretization is invalid...
+    //ceilf(nx) == nx
+    //ceilf(ny) == ny
+    //ceilf(nz) == nz
+
+    while (real_side_length_x < side_length_x) {
+        real_side_length_x *= 2.0;
     }
 
-    print_to_stdout_and_file ("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length,
-                              real_side_length, real_side_length);
-    print_to_stdout_and_file ("Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm\n", side_length_x,
-                              side_length_y, side_length_z, start_h);
+    while (real_side_length_y < side_length_y) {
+        real_side_length_y *= 2.0;
+    }
 
-    int num_steps = get_num_refinement_steps_to_discretization (real_side_length, start_h);
+    while (real_side_length_z < side_length_z) {
+        real_side_length_z *= 2.0;
+    }
 
-    //TODO: we need to change this in order to support different discretizations for each direction
-    initialize_and_construct_grid (the_grid, real_side_length, real_side_length, real_side_length);
+    double max_yz = fmax(real_side_length_y, real_side_length_z);
+    double max_size = fmax(real_side_length_x, max_yz);
 
-    if ((real_side_length / 2.0f) > side_length_z) {
-        double aux = real_side_length / 2.0f;
+    if(max_size == real_side_length_x) {
+
+        int proportion_size = (int)(real_side_length_x/real_side_length_y);
+
+        int proportion_h;
+        int multiply;
+
+        if(start_dx > start_dy) {
+            proportion_h = (int)(start_dx/start_dy);
+
+            //TODO: check if the multiply is pow of 2, otherwise it will fail
+            multiply = abs(proportion_size - proportion_h);
+            real_side_length_x = real_side_length_x*multiply;
+        }
+        else {
+            proportion_h = (int)(start_dy/start_dx);
+            //TODO: check if the multiply is pow of 2, otherwise it will fail
+            multiply = abs(proportion_size - proportion_h);
+            real_side_length_y = real_side_length_y*multiply;
+        }
+
+        proportion_size = (int)(real_side_length_x/real_side_length_z);
+
+        if(start_dx > start_dz) {
+            proportion_h = (int)(start_dx/start_dz);
+
+            //TODO: check if the multiply is pow of 2, otherwise it will fail
+            multiply = abs(proportion_size - proportion_h);
+            real_side_length_x = real_side_length_x*multiply;
+        }
+        else {
+            proportion_h = (int)(start_dz/start_dx);
+            //TODO: check if the multiply is pow of 2, otherwise it will fail
+            multiply = abs(proportion_size - proportion_h);
+            real_side_length_z = real_side_length_z*multiply;
+        }
+
+
+    }
+
+
+
+
+    print_to_stdout_and_file ("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x,
+                              real_side_length_y, real_side_length_z);
+    print_to_stdout_and_file ("Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x,
+                              side_length_y, side_length_z, start_dx, start_dy, start_dz);
+
+    int num_steps = get_num_refinement_steps_to_discretization (real_side_length_x, start_dx);
+
+    initialize_and_construct_grid (the_grid, real_side_length_x, real_side_length_y, real_side_length_z);
+
+    if ((real_side_length_x / 2.0f) > side_length_x) {
+        double aux = real_side_length_x / 2.0f;
 
         for (int i = 0; i < num_steps - 3; i++) {
-            set_cuboid_domain(the_grid, real_side_length, real_side_length, aux);
+            set_cuboid_domain(the_grid, real_side_length_x, real_side_length_y, aux);
             refine_grid (the_grid, 1);
             aux = aux / 2.0f;
         }
@@ -76,8 +139,11 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
 
 SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
 
-    //TODO: we need to change this in order to support different discretizations for each direction
-    double start_h = config->start_dx;
+
+    double start_dx = config->start_dx;
+    double start_dy = config->start_dy;
+    double start_dz = config->start_dz;
+
 
     int num_layers = 0;
     bool s;
@@ -86,7 +152,8 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
     double side_length = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length, config->config_data.config, "side_length");
 
-    double real_side_length = start_h * 2.0f;
+    //TODO: change
+    double real_side_length = start_dx * 2.0f;
 
     double max_h;
 
@@ -95,7 +162,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
     }
 
     else {
-        max_h = start_h * num_layers;
+        max_h = start_dz * num_layers;
     }
 
     while (real_side_length < side_length) {
@@ -105,9 +172,9 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
     print_to_stdout_and_file ("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length,
                               real_side_length, real_side_length);
     print_to_stdout_and_file ("Loading plain mesh with %lf µm x %lf µm x %lf µm using dx %lf µm\n", side_length,
-                              side_length, max_h, start_h);
+                              side_length, max_h, start_dx);
 
-    int num_steps = get_num_refinement_steps_to_discretization (real_side_length, start_h);
+    int num_steps = get_num_refinement_steps_to_discretization (real_side_length, start_dx);
 
     //TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid (the_grid, real_side_length, real_side_length, real_side_length);
@@ -482,12 +549,6 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_mouse_mesh) {
     }
 }
 
-int maximum( int a, int b, int c )
-{
-    int max = ( a < b ) ? b : a;
-    return ( ( max < c ) ? c : max );
-}
-
 SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
 
     double side_length_x;
@@ -504,10 +565,6 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
     side_length_y = start_h_y;
     side_length_z = start_h_z;
 
-    int nx = 0;
-    int ny = 0;
-    int nz = 0;
-
     while(side_length_y < 20000.0) {
         side_length_y = side_length_y*2.0;
     }
@@ -515,13 +572,8 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
     side_length_x = side_length_y*(config->start_dx/config->start_dy);
     side_length_z = side_length_y*(config->start_dz/config->start_dy);
 
-    int n_max = maximum(nx, ny, nz);
-    printf("%d\n", n_max);
-
-    //TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid (the_grid,side_length_x, side_length_y, side_length_z);
 
-    //TODO: we need to change this in order to support different discretizations for each direction
     int num_steps = get_num_refinement_steps_to_discretization (side_length_y, start_h_y);
 
     refine_grid (the_grid, num_steps);
@@ -540,8 +592,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_benchmark_mesh) {
 
         while (grid_cell != 0) {
             if (grid_cell->active) {
-                //TODO: we need to change this in order to support different discretizations for each direction
-                set_cell_not_changeable (grid_cell, start_h_x);
+                set_cell_not_changeable (grid_cell, start_h_y);
             }
             grid_cell = grid_cell->next;
         }
