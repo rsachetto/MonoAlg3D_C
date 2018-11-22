@@ -31,7 +31,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     int nnz = 0;
 
     double **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
-    double *vector = read_octave_vector_file_to_array(vector_b, &num_lines_v);
+    double *vector  = read_octave_vector_file_to_array(vector_b, &num_lines_v);
 
     cr_assert_eq (num_lines_m, num_lines_v);
     cr_assert (nnz);

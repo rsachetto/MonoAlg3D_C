@@ -64,7 +64,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     const real a = 0.2f;
     const real b = 0.5f;
     const real k = 36.0;
-    const real epsilon  =  0.000045;
+    const real epsilon  =  0.000150;
 
 
     rDY_[0] = k*(u*(1.0f - u)*(u - a) - u*v) + stim_current;
