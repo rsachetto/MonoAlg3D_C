@@ -100,12 +100,29 @@ static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
 
-    double sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
-    double sigma_x2 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
-    double sigma_y1 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
-    double sigma_y2 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
-    double sigma_z1 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
-    double sigma_z2 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
+    double sigma_x1 = 0.0;
+    double sigma_x2 = 0.0;
+
+    if(sigma_x != 0.0) {
+        sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+        sigma_x2 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+    }
+
+    double sigma_y1 = 0.0;
+    double sigma_y2 = 0.0;
+
+    if(sigma_y != 0.0) {
+        sigma_y1 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
+        sigma_y2 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
+    }
+
+    double sigma_z1 = 0.0;
+    double sigma_z2 = 0.0;
+
+    if(sigma_z != 0.0) {
+        sigma_z1 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
+        sigma_z2 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
+    }
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
      * cell which is a cell node. */
@@ -251,15 +268,15 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     srand((unsigned int)time(NULL));
 
-    float modifiers[4] = {0.001f, 0.1f, 0.5f, 1.0f};
+    float modifiers[4] = {0.0f, 0.1f, 0.5f, 1.0f};
 
 #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {
 
         float r = 1.0f;
 
-        //#pragma omp critical
-        // r = modifiers[randRange(4)];
+        #pragma omp critical
+        r = modifiers[randRange(4)];
 
         real sigma_x_new = sigma_x * r;
         real sigma_y_new = sigma_y * r;

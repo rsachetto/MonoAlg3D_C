@@ -59,75 +59,69 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_cuboid_mesh) {
         real_side_length_z *= 2.0;
     }
 
-    double max_yz = fmax(real_side_length_y, real_side_length_z);
-    double max_size = fmax(real_side_length_x, max_yz);
+    int proportion_h;
 
-    if(max_size == real_side_length_x) {
-
-        int proportion_size = (int)(real_side_length_x/real_side_length_y);
-
-        int proportion_h;
-        int multiply;
-
-        if(start_dx > start_dy) {
-            proportion_h = (int)(start_dx/start_dy);
-
-            //TODO: check if the multiply is pow of 2, otherwise it will fail
-            multiply = abs(proportion_size - proportion_h);
-            real_side_length_x = real_side_length_x*multiply;
-        }
+    if(start_dx > start_dy) {
+        proportion_h = (int)(start_dx/start_dy);
+        if(real_side_length_y >= real_side_length_x ||  (real_side_length_x/proportion_h) < real_side_length_y)
+            real_side_length_x = real_side_length_y*proportion_h;
         else {
-            proportion_h = (int)(start_dy/start_dx);
-            //TODO: check if the multiply is pow of 2, otherwise it will fail
-            multiply = abs(proportion_size - proportion_h);
-            real_side_length_y = real_side_length_y*multiply;
+            real_side_length_y = real_side_length_x/proportion_h;
         }
 
-        proportion_size = (int)(real_side_length_x/real_side_length_z);
-
-        if(start_dx > start_dz) {
-            proportion_h = (int)(start_dx/start_dz);
-
-            //TODO: check if the multiply is pow of 2, otherwise it will fail
-            multiply = abs(proportion_size - proportion_h);
-            real_side_length_x = real_side_length_x*multiply;
-        }
+    }
+    else {
+        proportion_h = (int)(start_dy/start_dx);
+        if(real_side_length_x >= real_side_length_y)
+            real_side_length_y = real_side_length_x*proportion_h;
         else {
-            proportion_h = (int)(start_dz/start_dx);
-            //TODO: check if the multiply is pow of 2, otherwise it will fail
-            multiply = abs(proportion_size - proportion_h);
-            real_side_length_z = real_side_length_z*multiply;
+            real_side_length_x = real_side_length_y/proportion_h;
         }
-
 
     }
 
+    if(start_dy > start_dz) {
+        proportion_h = (int)(start_dy/start_dz);
+        if(real_side_length_z >= real_side_length_y || real_side_length_y/proportion_h < real_side_length_z)
+            real_side_length_y = real_side_length_z*proportion_h;
+        else {
+            real_side_length_z = real_side_length_y/proportion_h;
+        }
 
+    }
+    else {
+        proportion_h = (int)(start_dz/start_dy);
+        if(real_side_length_y > real_side_length_z || real_side_length_z/proportion_h < real_side_length_y)
+            real_side_length_z = real_side_length_y*proportion_h;
+        else {
+            real_side_length_y = real_side_length_z/proportion_h;
+        }
 
-
+    }
     print_to_stdout_and_file ("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x,
                               real_side_length_y, real_side_length_z);
     print_to_stdout_and_file ("Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x,
                               side_length_y, side_length_z, start_dx, start_dy, start_dz);
 
+    //TODO: is this correct??
     int num_steps = get_num_refinement_steps_to_discretization (real_side_length_x, start_dx);
 
     initialize_and_construct_grid (the_grid, real_side_length_x, real_side_length_y, real_side_length_z);
 
-    if ((real_side_length_x / 2.0f) > side_length_x) {
-        double aux = real_side_length_x / 2.0f;
-
-        for (int i = 0; i < num_steps - 3; i++) {
-            set_cuboid_domain(the_grid, real_side_length_x, real_side_length_y, aux);
-            refine_grid (the_grid, 1);
-            aux = aux / 2.0f;
-        }
-
-        refine_grid (the_grid, 3);
-
-    } else {
+//    if ((real_side_length_x / 2.0f) > side_length_x) {
+//        double aux = real_side_length_x / 2.0f;
+//
+//        for (int i = 0; i < num_steps - 3; i++) {
+//            set_cuboid_domain(the_grid, aux, real_side_length_y, real_side_length_z);
+//            refine_grid (the_grid, 1);
+//            aux = aux / 2.0f;
+//        }
+//
+//        refine_grid (the_grid, 3);
+//
+//    } else {
         refine_grid (the_grid, num_steps);
-    }
+    //}
 
     set_cuboid_domain(the_grid, side_length_x, side_length_y, side_length_z);
 
