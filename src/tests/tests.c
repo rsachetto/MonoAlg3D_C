@@ -5,6 +5,11 @@
 #include <criterion/criterion.h>
 #include "../alg/grid/grid.h"
 #include "../config/linear_system_solver_config.h"
+#include "../config/domain_config.h"
+#include "../config/save_mesh_config.h"
+#include <signal.h>
+
+
 
 double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
 
@@ -286,6 +291,135 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     fclose(B);
 }
 
+int test_cuboid_mesh(double start_dx, double start_dy, double start_dz, char* side_length_x, char* side_length_y, char* side_length_z, bool save) {
+
+    struct grid *grid = new_grid();
+    struct domain_config *domain_config;
+
+    domain_config = new_domain_config();
+
+    domain_config->start_dx  = start_dx;
+    domain_config->start_dy  = start_dy;
+    domain_config->start_dz  = start_dz;
+
+    domain_config->config_data.function_name = strdup("initialize_grid_with_cuboid_mesh");
+    domain_config->domain_name = strdup("Test cuboid");
+
+    string_hash_insert(domain_config->config_data.config, "side_length_x", side_length_x);
+    string_hash_insert(domain_config->config_data.config, "side_length_y", side_length_y);
+    string_hash_insert(domain_config->config_data.config, "side_length_z", side_length_z);
+
+    init_domain_functions(domain_config);
+
+    int success = domain_config->set_spatial_domain(domain_config, grid);
+
+    if(!success ) {
+        return 0;
+    }
+
+    order_grid_cells(grid);
+
+    double sx = grid->side_length_x;
+    double sy = grid->side_length_y;
+    double sz = grid->side_length_z;
+
+    double nx = sx / start_dx;
+    double ny = sy / start_dy;
+    double nz = sz / start_dz;
+
+    struct cell_node *cell = grid->first_cell;
+
+    double max_x = 0;
+    double max_y = 0;
+    double max_z = 0;
+
+    while(cell) {
+
+        if(cell->active) {
+            if (cell->center_x > max_x) {
+                max_x = cell->center_x;
+            }
+
+            if (cell->center_y > max_y) {
+                max_y = cell->center_y;
+            }
+
+            if (cell->center_z > max_z) {
+                max_z = cell->center_z;
+            }
+        }
+
+        cell = cell->next;
+    }
+
+    if(save) {
+        struct save_mesh_config *save_mesh_config = new_save_mesh_config();
+
+        save_mesh_config->config_data.function_name = "save_as_vtu";
+        save_mesh_config->out_dir_name = "./tests_bin";
+        save_mesh_config->print_rate = 1;
+
+        sds file_prefix = sdscatprintf(sdsempty(), "test_%lf_%lf_%lf_%s_%s_%s", start_dx, start_dy, start_dz,
+                                       side_length_x, side_length_y, side_length_z);
+        init_save_mesh_functions(save_mesh_config);
+        string_hash_insert(save_mesh_config->config_data.config, "file_prefix", file_prefix);
+        string_hash_insert(save_mesh_config->config_data.config, "compress", "yes");
+
+        save_mesh_config->save_mesh(0.0, save_mesh_config, grid);
+    }
+
+    cr_assert_float_eq(max_x+(start_dx/2.0), atof(side_length_x), 1e-16);
+    cr_assert_float_eq(max_y+(start_dy/2.0), atof(side_length_y), 1e-16);
+    cr_assert_float_eq(max_z+(start_dz/2.0), atof(side_length_z), 1e-16);
+    cr_assert_eq(nx*ny*nz, grid->num_active_cells);
+
+    return 1;
+
+}
+
+Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_1000) {
+    int success  = test_cuboid_mesh(100, 100, 100, "1000", "1000", "1000", false);
+    assert(success);
+}
+
+Test (mesh_load, cuboid_mesh_200_100_100_1000_1000_1000) {
+    int success = test_cuboid_mesh(200, 100, 100, "1000", "1000", "1000", false);
+    assert(success);
+}
+
+Test (mesh_load, cuboid_mesh_100_200_100_1000_1000_1000) {
+
+    int success = test_cuboid_mesh(100, 200, 100, "1000", "1000", "1000", false);
+    assert(success);
+}
+
+Test (mesh_load, cuboid_mesh_100_100_200_1000_1000_1000) {
+
+    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", false);
+    assert(success);
+}
+
+Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_2000) {
+    int success = test_cuboid_mesh(100, 100, 100, "1000", "1000", "2000", false);
+    assert(success);
+}
+
+Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_1500) {
+
+    int success = test_cuboid_mesh(150, 150, 150, "1500", "1500", "1500", false);
+    assert(success);
+}
+
+
+Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_3000) {
+    int success  = test_cuboid_mesh(150, 150, 150, "1500", "1500", "3000", false);
+    assert(success);
+}
+
+Test (mesh_load, cuboid_mesh_300_150_150_1500_1500_3000) {
+    int success = test_cuboid_mesh(300, 150, 150, "1500", "1500", "3000", false);
+    assert(!success);
+}
 
 Test (solvers, cg_jacobi_1t) {
     test_solver(true, "conjugate_gradient", 1, 1);

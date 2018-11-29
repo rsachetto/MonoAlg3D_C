@@ -33,4 +33,8 @@ void refine_fibrotic_cells(struct grid *the_grid);
 
 void refine_border_zone_cells(struct grid *the_grid);
 
+int calculate_cuboid_side_lengths(double start_dx, double start_dy, double start_dz, double side_length_x,
+                                   double side_length_y, double side_length_z, double *real_side_length_x,
+                                   double *real_side_length_y, double *real_side_length_z);
+
 #endif // MONOALG3D_DOMAIN_HELPERS_H

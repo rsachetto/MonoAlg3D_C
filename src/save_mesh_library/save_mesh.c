@@ -83,7 +83,7 @@ SAVE_MESH(save_as_text_or_binary) {
     double side;
 
     sds tmp = sdsnew(output_dir);
-    tmp = sdscatprintf(tmp, "/V_t_%lf.vtk", current_dt);
+    tmp = sdscatprintf(tmp, "/%s_it_%lf.vtk", file_prefix, current_dt);
 
     FILE *output_file = fopen(tmp, "w");
 
@@ -175,7 +175,7 @@ SAVE_MESH(save_as_vtk) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "V_t_%d.vtk", count);
+    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_ms.vtu", file_prefix, count);
     count++;
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
@@ -255,7 +255,7 @@ SAVE_MESH(save_as_vtu) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "V_t_%d.vtu", count);
+    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d.vtu", file_prefix, count);
     count++;
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 

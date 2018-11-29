@@ -198,7 +198,12 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         // Here we only restore the grid...
         restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, the_grid, NULL, NULL);
     } else {
-        domain_config->set_spatial_domain(domain_config, the_grid);
+        int success = domain_config->set_spatial_domain(domain_config, the_grid);
+
+        if(!success) {
+            fprintf(stderr, "Error configuring the domain!\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     order_grid_cells(the_grid);
