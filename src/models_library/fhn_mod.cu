@@ -100,7 +100,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     //State variables
     const real u = *((real*)((char*)sv_ + pitch * 0) + threadID_);
     const real v = *((real*)((char*)sv_ + pitch * 1) + threadID_);
-//
+
     const real a = 0.2f;
     const real b = 0.5f;
     const real k = 36.0;

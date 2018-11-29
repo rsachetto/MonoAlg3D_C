@@ -11,6 +11,7 @@
 
 
 void report_parameter_error_on_function(const char * function, const char *parameter);
+void report_error_on_function(const char * function, const char *error);
 char *get_char_parameter (struct string_hash *config, const char *parameter);
 
 #define GET_PARAMETER_VALUE_CHAR(value, config, parameter)                                                             \
@@ -70,5 +71,7 @@ char *get_char_parameter (struct string_hash *config, const char *parameter);
             report_parameter_error_on_function (__func__, parameter);                                                  \
         }                                                                                                              \
     } while (0)
+
+#define REPORT_ERROR_ON_FUNCTION(error) do {report_error_on_function(__func__, error); } while (0)
 
 #endif // MONOALG3D_CONFIG_HELPERS_H

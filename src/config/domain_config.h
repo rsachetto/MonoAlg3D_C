@@ -11,7 +11,7 @@
 
 struct domain_config;
 
-#define SET_SPATIAL_DOMAIN(name) EXPORT_FN void name(struct domain_config *config, struct grid *the_grid)
+#define SET_SPATIAL_DOMAIN(name) EXPORT_FN int name(struct domain_config *config, struct grid *the_grid)
 typedef SET_SPATIAL_DOMAIN(set_spatial_domain_fn);
 
 struct domain_config {
