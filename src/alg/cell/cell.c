@@ -189,10 +189,14 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
         exit(10);
     }
 
+    double leastDistance_x = the_cell->dx/2.0;
+    double leastDistance_y = the_cell->dy/2.0;
+    double leastDistance_z = the_cell->dz/2.0;
 
-    //TODO: we need to change this in order to support different discretizations for each direction
-    double leastDistance = the_cell->dx/2.0;
-    double localFlux;
+    double localFlux_x;
+    double localFlux_y;
+    double localFlux_z;
+
     bool has_found;
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
@@ -240,43 +244,50 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
 
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
-        //TODO: we need to change this in order to support different discretizations for each direction
-        if(black_neighbor_cell->dx/2.0 < leastDistance)
-            leastDistance = black_neighbor_cell->dx / 2.0;
+        if(black_neighbor_cell->dx/2.0 < leastDistance_x)
+            leastDistance_x = black_neighbor_cell->dx / 2.0;
 
-        localFlux = (the_cell->v - black_neighbor_cell->v) * (2.0 * leastDistance);
+        if(black_neighbor_cell->dy/2.0 < leastDistance_y)
+            leastDistance_y = black_neighbor_cell->dy / 2.0;
+
+        if(black_neighbor_cell->dz/2.0 < leastDistance_z)
+            leastDistance_z = black_neighbor_cell->dz / 2.0;
+
+        localFlux_x = (the_cell->v - black_neighbor_cell->v) * (2.0 * leastDistance_x);
+        localFlux_y = (the_cell->v - black_neighbor_cell->v) * (2.0 * leastDistance_y);
+        localFlux_z = (the_cell->v - black_neighbor_cell->v) * (2.0 * leastDistance_z);
 
         lock_cell_node(the_cell);
 
         switch(direction) {
             case 's':
-                if(localFlux > the_cell->south_flux)
-                    the_cell->south_flux += localFlux;
+                if(localFlux_y > the_cell->south_flux)
+                    the_cell->south_flux += localFlux_y;
                 break;
 
             case 'n':
-                if(localFlux > the_cell->north_flux)
-                    the_cell->north_flux += localFlux;
+                if(localFlux_y > the_cell->north_flux)
+                    the_cell->north_flux += localFlux_y;
                 break;
 
             case 'e':
-                if(localFlux > the_cell->east_flux)
-                    the_cell->east_flux += localFlux;
+                if(localFlux_x > the_cell->east_flux)
+                    the_cell->east_flux += localFlux_x;
                 break;
 
             case 'w':
-                if(localFlux > the_cell->west_flux)
-                    the_cell->west_flux += localFlux;
+                if(localFlux_x > the_cell->west_flux)
+                    the_cell->west_flux += localFlux_x;
                 break;
 
             case 'f':
-                if(localFlux > the_cell->front_flux)
-                    the_cell->front_flux += localFlux;
+                if(localFlux_z > the_cell->front_flux)
+                    the_cell->front_flux += localFlux_z;
                 break;
 
             case 'b':
-                if(localFlux > the_cell->back_flux)
-                    the_cell->back_flux += localFlux;
+                if(localFlux_z > the_cell->back_flux)
+                    the_cell->back_flux += localFlux_z;
                 break;
 
             default:break;
@@ -288,33 +299,33 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
 
         switch(direction) {
             case 's':
-                if(localFlux > black_neighbor_cell->north_flux)
-                    black_neighbor_cell->north_flux += localFlux;
+                if(localFlux_y > black_neighbor_cell->north_flux)
+                    black_neighbor_cell->north_flux += localFlux_y;
                 break;
 
             case 'n':
-                if(localFlux > black_neighbor_cell->south_flux)
-                    black_neighbor_cell->south_flux += localFlux;
+                if(localFlux_y > black_neighbor_cell->south_flux)
+                    black_neighbor_cell->south_flux += localFlux_y;
                 break;
 
             case 'e':
-                if(localFlux > black_neighbor_cell->west_flux)
-                    black_neighbor_cell->west_flux += localFlux;
+                if(localFlux_x > black_neighbor_cell->west_flux)
+                    black_neighbor_cell->west_flux += localFlux_x;
                 break;
 
             case 'w':
-                if(localFlux > black_neighbor_cell->east_flux)
-                    black_neighbor_cell->east_flux += localFlux;
+                if(localFlux_x > black_neighbor_cell->east_flux)
+                    black_neighbor_cell->east_flux += localFlux_x;
                 break;
 
             case 'f':
-                if(localFlux > black_neighbor_cell->back_flux)
-                    black_neighbor_cell->back_flux += localFlux;
+                if(localFlux_z > black_neighbor_cell->back_flux)
+                    black_neighbor_cell->back_flux += localFlux_z;
                 break;
 
             case 'b':
-                if(localFlux > black_neighbor_cell->front_flux)
-                    black_neighbor_cell->front_flux += localFlux;
+                if(localFlux_z > black_neighbor_cell->front_flux)
+                    black_neighbor_cell->front_flux += localFlux_z;
                 break;
 
              default:break;

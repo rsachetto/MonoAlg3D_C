@@ -840,7 +840,6 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
         double center_y = grid_cell->center_y;
         double center_z = grid_cell->center_z;
 
-        // TODO: we need to change this in order to support different discretizations for each direction
         if((grid_cell->dx == 100.0) && (SCAR_TYPE(grid_cell) == type)) {
             int index = inside_mesh(scar_mesh, center_x, center_y, center_z, 0, size - 1);
             grid_cell->active = (index != -1);

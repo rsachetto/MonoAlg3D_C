@@ -168,10 +168,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     double refinement_bound = the_monodomain_solver->refinement_bound;
     double derefinement_bound = the_monodomain_solver->derefinement_bound;
 
-    // TODO: we need to change this in order to support different discretizations for each direction
-    double start_h = domain_config->start_dx;
-    double max_h = domain_config->max_dx;
-
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
     double dt_edp = the_monodomain_solver->dt;
@@ -205,6 +201,14 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
             exit(EXIT_FAILURE);
         }
     }
+
+    double start_dx = domain_config->start_dx;
+    double start_dy = domain_config->start_dy;
+    double start_dz = domain_config->start_dz;
+
+    double max_dx = domain_config->max_dx;
+    double max_dy = domain_config->max_dy;
+    double max_dz = domain_config->max_dz;
 
     order_grid_cells(the_grid);
     uint32_t original_num_cells = the_grid->num_active_cells;
@@ -347,13 +351,13 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
             if(cur_time >= start_adpt_at) {
                 if(count % refine_each == 0) {
                     start_stop_watch(&ref_time);
-                    redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_h);
+                    redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_dx, start_dy, start_dz);
                     total_ref_time += stop_stop_watch(&ref_time);
                 }
 
                 if(count % derefine_each == 0) {
                     start_stop_watch(&deref_time);
-                    redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_h);
+                    redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
                     total_deref_time += stop_stop_watch(&deref_time);
                 }
             }
