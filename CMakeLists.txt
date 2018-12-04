@@ -124,6 +124,26 @@ ENDIF()
 ADD_EXECUTABLE(MonoAlg3D src/main.c)
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string config ${OPT_DEPS})
 
+FIND_PACKAGE(MPI)
+IF(MPI_C_FOUND)
+    INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
+    ADD_EXECUTABLE(MonoAlg3D_batch src/main_batch.c)
+    ADD_DEPENDENCIES(MonoAlg3D_batch utils alg solvers hashes ini_parser string config ${OPT_DEPS})
+    TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils hashes ini_parser string config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
+    #TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils hashes ini_parser string config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
+
+#    IF(MPI_C_COMPILE_FLAGS)
+#        SET_TARGET_PROPERTIES(MonoAlg3D_batch PROPERTIES
+#                COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+#    ENDIF(MPI_C_COMPILE_FLAGS)
+#
+#    IF(MPI_C_LINK_FLAGS)
+#        SET_TARGET_PROPERTIES(MonoAlg3D_batch PROPERTIES
+#                LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+#    ENDIF(MPI_C_LINK_FLAGS)
+
+ENDIF(MPI_C_FOUND)
+
 IF(MSVC)
     TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl)
     SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
