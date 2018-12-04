@@ -38,8 +38,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
     double real_side_length_y;
     double real_side_length_z;
 
-    int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z,
-                                  &real_side_length_x, &real_side_length_y, &real_side_length_z);
+    int success =
+        calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z,
+                                      &real_side_length_x, &real_side_length_y, &real_side_length_z);
 
     if(!success) {
         return 0;
@@ -82,7 +83,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     double start_dx = config->start_dx;
     double start_dy = config->start_dy;
     double start_dz = config->start_dz;
@@ -94,8 +94,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
     double real_side_length_y;
     double real_side_length_z;
 
-    int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, cable_length, start_dy, start_dz, &real_side_length_x,
-                                  &real_side_length_y, &real_side_length_z);
+    int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, cable_length, start_dy, start_dz,
+                                                &real_side_length_x, &real_side_length_y, &real_side_length_z);
 
     if(!success) {
         return 0;
@@ -122,7 +122,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     config->start_dx = 800.0;
     config->start_dy = 800.0;
     config->start_dx = 800.0;
@@ -138,7 +137,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         fibrotic = ((strcmp(fibrotic_char, "yes") == 0) || (strcmp(fibrotic_char, "true") == 0));
     }
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
     refine_grid(the_grid, 7);
 
@@ -243,13 +241,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
     srand(fib_seed);
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     config->start_dx = 800.0;
     config->start_dy = 800.0;
     config->start_dz = 800.0;
     uint8_t size_code;
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
     refine_grid(the_grid, 7);
 
@@ -367,7 +363,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     config->start_dx = 250.0;
     config->start_dy = 250.0;
     config->start_dz = 250.0;
@@ -375,7 +370,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     char *mesh_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid(the_grid, 64000.0, 64000.0, 64000.4);
     refine_grid(the_grid, 7);
 
@@ -413,19 +407,25 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     set_custom_mesh(the_grid, mesh_file, 96195, false);
 
-    print_to_stdout_and_file("Cleaning grid\n");
-
     int i;
     for(i = 0; i < 5; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
 
-    if(start_h == 50.0) {
+    if(start_h == 100.0) {
+
+    } else if(start_h == 50.0) {
         print_to_stdout_and_file("Refining Mesh to 50um\n");
         refine_grid(the_grid, 1);
     } else if(start_h == 25.0) {
         print_to_stdout_and_file("Refining Mesh to 25um\n");
-        refine_grid(the_grid, 1);
+        refine_grid(the_grid, 2);
+    } else if(start_h == 12.5) {
+        print_to_stdout_and_file("Refining Mesh to 12.5um\n");
+        refine_grid(the_grid, 3);
+    } else {
+        print_to_stdout_and_file("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
+                                 "or 12.5um. Using 100um!\n");
     }
 
     return 1;
@@ -433,31 +433,43 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
 
-    double side_length_x;
-    double side_length_y;
-    double side_length_z;
+    double side_length;
 
-    double start_h_x = config->start_dx;
-    double start_h_y = config->start_dy;
-    double start_h_z = config->start_dz;
+    double start_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, start_h, config->config_data.config, "start_discretization");
 
-    print_to_stdout_and_file("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h_x,
-                             start_h_y, start_h_z);
+    double max_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_h, config->config_data.config, "maximum_discretization");
 
-    side_length_x = start_h_x;
-    side_length_y = start_h_y;
-    side_length_z = start_h_z;
+    print_to_stdout_and_file("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h,
+                             start_h, start_h);
 
-    while(side_length_y < 20000.0) {
-        side_length_y = side_length_y * 2.0;
+    side_length = start_h;
+
+    while(side_length < 20000.0) {
+        side_length = side_length * 2.0;
     }
 
-    side_length_x = side_length_y * (config->start_dx / config->start_dy);
-    side_length_z = side_length_y * (config->start_dz / config->start_dy);
+    initialize_and_construct_grid(the_grid, side_length, side_length, side_length);
 
-    initialize_and_construct_grid(the_grid, side_length_x, side_length_y, side_length_z);
+    config->max_dx = max_h;
+    config->max_dx_was_set = true;
 
-    int num_steps = get_num_refinement_steps_to_discretization(side_length_y, start_h_y);
+    config->max_dy = max_h;
+    config->max_dy_was_set = true;
+
+    config->max_dz = max_h;
+    config->max_dz_was_set = true;
+
+    config->start_dx = start_h;
+    config->start_dx_was_set = true;
+    config->start_dy = start_h;
+    config->start_dy_was_set = true;
+    config->start_dz = start_h;
+    config->start_dz_was_set = true;
+
+
+    int num_steps = get_num_refinement_steps_to_discretization(side_length, start_h);
 
     refine_grid(the_grid, num_steps);
     set_benchmark_domain(the_grid);
@@ -475,7 +487,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
 
         while(grid_cell != 0) {
             if(grid_cell->active) {
-                set_cell_not_changeable(grid_cell, start_h_y);
+                set_cell_not_changeable(grid_cell, start_h);
             }
             grid_cell = grid_cell->next;
         }

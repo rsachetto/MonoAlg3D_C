@@ -30,14 +30,14 @@ struct ode_solver* new_ode_solver() {
 
     result->set_ode_initial_conditions_gpu = NULL;
     result->solve_model_ode_gpu = NULL;
-    //result->update_gpu_fn = NULL;
+
     result->model_data.initial_v = INFINITY;
     result->model_data.number_of_ode_equations = -1;
 
     result->edo_extra_data = NULL;
     result->edo_extra_data = 0;
 
-    //init_ode_solver_with_cell_model(result);
+
     return result;
 }
 

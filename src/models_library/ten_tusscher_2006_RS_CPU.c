@@ -17,25 +17,50 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 //TODO: this should be called only once for the whole mesh, like in the GPU code
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    sv[0] = -85.23f;   // V;       millivolt
-    sv[1] = 0.00621f;  // Xr1;     dimensionless
-    sv[2] = 0.4712f;   // Xr2;     dimensionless
-    sv[3] = 0.0095f;   // Xs;      dimensionless
-    sv[4] = 0.00172f;  // m;       dimensionless
-    sv[5] = 0.7444f;   // h;       dimensionless
-    sv[6] = 0.7045f;   // j;       dimensionless
-    sv[7] = 3.373e-5f; // d;       dimensionless
-    sv[8] = 0.7888f;   // f;       dimensionless
-    sv[9] = 0.9755f;   // f2;      dimensionless
-    sv[10] = 0.9953f;   // fCass;   dimensionless
-    sv[11] = 0.999998f; // s;       dimensionless
-    sv[12] = 2.42e-8f;  // r;       dimensionless
-    sv[13] = 0.000126f; // Ca_i;    millimolar
-    sv[14] = 3.64f;     // Ca_SR;   millimolar
-    sv[15] = 0.00036f;  // Ca_ss;   millimolar
-    sv[16] = 0.9073f;   // R_prime; dimensionless
-    sv[17] = 8.604f;    // Na_i;    millimolar
-    sv[18] = 136.89f;   // K_i;     millimolar
+    if(extra_data == NULL) {
+        sv[0] = -85.23f;   // V;       millivolt
+        sv[1] = 0.00621f;  // Xr1;     dimensionless
+        sv[2] = 0.4712f;   // Xr2;     dimensionless
+        sv[3] = 0.0095f;   // Xs;      dimensionless
+        sv[4] = 0.00172f;  // m;       dimensionless
+        sv[5] = 0.7444f;   // h;       dimensionless
+        sv[6] = 0.7045f;   // j;       dimensionless
+        sv[7] = 3.373e-5f; // d;       dimensionless
+        sv[8] = 0.7888f;   // f;       dimensionless
+        sv[9] = 0.9755f;   // f2;      dimensionless
+        sv[10] = 0.9953f;   // fCass;   dimensionless
+        sv[11] = 0.999998f; // s;       dimensionless
+        sv[12] = 2.42e-8f;  // r;       dimensionless
+        sv[13] = 0.000126f; // Ca_i;    millimolar
+        sv[14] = 3.64f;     // Ca_SR;   millimolar
+        sv[15] = 0.00036f;  // Ca_ss;   millimolar
+        sv[16] = 0.9073f;   // R_prime; dimensionless
+        sv[17] = 8.604f;    // Na_i;    millimolar
+        sv[18] = 136.89f;   // K_i;     millimolar
+    }
+    else {
+        float *initial = (float*)extra_data;
+        sv[0] =  initial[0];// V;       millivolt
+        sv[1] =  initial[1];// Xr1;     dimensionless
+        sv[2] =  initial[2];// Xr2;     dimensionless
+        sv[3] =  initial[3];// Xs;      dimensionless
+        sv[4] =  initial[4];// m;       dimensionless
+        sv[5] =  initial[5];// h;       dimensionless
+        sv[6] =  initial[6];// j;       dimensionless
+        sv[7] =  initial[7];// d;       dimensionless
+        sv[8] =  initial[8];// f;       dimensionless
+        sv[9] =  initial[9];// f2;      dimensionless
+        sv[10] = initial[10]; // fCass;   dimensionless
+        sv[11] = initial[11]; // s;       dimensionless
+        sv[12] = initial[12]; // r;       dimensionless
+        sv[13] = initial[13]; // Ca_i;    millimolar
+        sv[14] = initial[14]; // Ca_SR;   millimolar
+        sv[15] = initial[15]; // Ca_ss;   millimolar
+        sv[16] = initial[16]; // R_prime; dimensionless
+        sv[17] = initial[17]; // Na_i;    millimolar
+        sv[18] = initial[18]; // K_i;     millimolar
+
+    }
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {

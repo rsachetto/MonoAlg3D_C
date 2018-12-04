@@ -405,7 +405,6 @@ Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_2000) {
 }
 
 Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_1500) {
-
     int success = test_cuboid_mesh(150, 150, 150, "1500", "1500", "1500", false);
     assert(success);
 }

@@ -359,3 +359,33 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
 
     return (void*)fibs;
 }
+
+SET_EXTRA_DATA(set_extra_data_for_benchmark) {
+
+    *extra_data_size = sizeof(float)*19;
+
+    float *initial_conditions = (float*)malloc(*extra_data_size);
+
+    // Initial conditions  // Var      Units          Initial value
+    initial_conditions[ 0] = -85.423f;  // V;       millivolt;     -85.423
+    initial_conditions[ 1] = 0.0165;   // Xr1;     dimensionless; 0.0165
+    initial_conditions[ 2] = 0.473;    // Xr2;     dimensionless; 0.473
+    initial_conditions[ 3] = 0.0174;   // Xs;      dimensionless; 0.0174
+    initial_conditions[ 4] = 0.00165;  // m;       dimensionless; 0.00165
+    initial_conditions[ 5] = 0.749;    // h;       dimensionless; 0.749
+    initial_conditions[ 6] = 0.6788;   // j;       dimensionless; 0.6788
+    initial_conditions[ 7] = 3.288e-5; // d;       dimensionless; 3.288e-5
+    initial_conditions[ 8] = 0.7026;   // f;       dimensionless; 0.7026
+    initial_conditions[ 9] = 0.9526;   // f2;      dimensionless; 0.9526
+    initial_conditions[10] = 0.9942;   // fCass;   dimensionless; 0.9942
+    initial_conditions[11] = 0.999998; // s;       dimensionless; 0.999998
+    initial_conditions[12] = 2.347e-8; // r;       dimensionless; 2.347e-8
+    initial_conditions[13] = 0.000153; // Ca_i;    millimolar;    0.000153
+    initial_conditions[14] = 4.272;    // Ca_SR;   millimolar;    4.272
+    initial_conditions[15] = 0.00042;  // Ca_ss;   millimolar;    0.00042
+    initial_conditions[16] = 0.8978;   // R_prime; dimensionless; 0.8978
+    initial_conditions[17] = 10.132;   // Na_i;    millimolar;    10.132
+    initial_conditions[18] = 138.52;   // K_i;     millimolar;    138.52
+
+    return (void*)initial_conditions;
+}
