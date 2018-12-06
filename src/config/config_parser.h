@@ -98,11 +98,24 @@ struct user_options {
 
 };
 
+struct batch_options {
+    char *batch_config_file;     /*-c option*/
+    char *output_folder;         //TODO: maybe we can create here a option for this
+    int num_simulations;
+    struct string_hash *config_to_change;
+};
+
 void display_usage( char** argv );
+void display_batch_usage(char **argv);
+
 struct user_options * new_user_options();
+struct batch_options * new_batch_options();
 void parse_options(int argc, char**argv, struct user_options *user_args);
+void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
+
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
+int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
 void free_user_options(struct user_options *s);
