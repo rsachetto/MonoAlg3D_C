@@ -6,6 +6,12 @@
 #include "../utils/logfile_utils.h"
 #include "config_parser.h"
 
+static const struct option long_batch_options[] = {
+        {"config_file", required_argument, NULL, 'c'}
+};
+
+static const char *batch_opt_string = "c:h";
+
 static const struct option long_options[] = {
     {"config_file", required_argument, NULL, 'c'},
     {"use_adaptivity", no_argument, NULL, 'a'},
@@ -39,7 +45,8 @@ static const struct option long_options[] = {
     {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT},
     {"draw_gl_output", no_argument, NULL, DRAW_OPT},
     {"help", no_argument, NULL, 'h'},
-    {NULL, no_argument, NULL, 0}};
+    {NULL, no_argument, NULL, 0}
+};
 
 static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:h";
 
@@ -85,11 +92,28 @@ void display_usage(char **argv) {
     exit(EXIT_FAILURE);
 }
 
+void display_batch_usage(char **argv) {
+
+    printf("Usage: %s [options]\n\n", argv[0]);
+    printf("Options:\n");
+    printf("--config_file | -c [configuration_file_path]. Batch simulations configuration file. Default NULL.\n");
+    printf("--help | -h. Shows this help and exit \n");
+    exit(EXIT_FAILURE);
+}
+
 void issue_overwrite_warning(const char *var, const char *old_value, const char *new_value, const char *config_file) {
     fprintf(stderr,
             "WARNING: option %s was set in the file %s to %s and is being overwritten "
             "by the command line flag to %s!\n",
             var, config_file, old_value, new_value);
+}
+
+struct batch_options *new_batch_options() {
+    struct batch_options *user_args = (struct batch_options *)malloc(sizeof(struct batch_options));
+    user_args->batch_config_file = NULL;
+    user_args->config_to_change = string_hash_create();
+
+    return user_args;
 }
 
 struct user_options *new_user_options() {
@@ -535,6 +559,32 @@ void set_config(const char *args, void *some_config, const char *config_file, ch
     }
 }
 
+void parse_batch_options(int argc, char **argv, struct batch_options *user_args) {
+
+    int opt = 0;
+    int option_index;
+
+    opt = getopt_long_only(argc, argv, batch_opt_string, long_batch_options, &option_index);
+//    char old_value[32];
+
+    while (opt != -1) {
+        switch (opt) {
+            case 'c':
+                user_args->batch_config_file = strdup(optarg);
+                break;
+            case 'h': /* fall-through is intentional */
+            case '?':
+                display_batch_usage(argv);
+                break;
+            default:
+                /* You won't actually get here. */
+                break;
+        }
+
+        opt = getopt_long(argc, argv, batch_opt_string, long_batch_options, &option_index);
+    }
+}
+
 void get_config_file(int argc, char **argv, struct user_options *user_args) {
     int opt = 0;
 
@@ -787,6 +837,28 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
 
         opt = getopt_long(argc, argv, opt_string, long_options, &option_index);
     }
+}
+
+int parse_batch_config_file(void *user, const char *section, const char *name, const char *value) {
+
+    struct batch_options *pconfig = (struct batch_options *)user;
+
+    if(MATCH_SECTION(BATCH_SECTION)) {
+
+        if(MATCH_NAME("output_folder")) {
+            pconfig->output_folder = strdup(value);
+
+        } else if(MATCH_NAME("num_simulations")) {
+            pconfig->num_simulations = (int) strtol(value, NULL, 10);
+        }
+    } else if(MATCH_SECTION(MODIFICATION_SECTION)) {
+            string_hash_insert(pconfig->config_to_change, name, value);
+    } else {
+        fprintf(stderr, "\033[33;5;7mInvalid name %s in section %s on the batch config file!\033[0m\n", name, section);
+        return 0;
+    }
+
+    return 1;
 }
 
 int parse_config_file(void *user, const char *section, const char *name, const char *value) {

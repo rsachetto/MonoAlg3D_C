@@ -16,6 +16,8 @@
 #define MATRIX_ASSEMBLY_SECTION "assembly_matrix"
 #define LINEAR_SYSTEM_SOLVER_SECTION "linear_system_solver"
 #define EXTRA_DATA_SECTION "extra_data"
+#define BATCH_SECTION "batch"
+#define MODIFICATION_SECTION "modify"
 
 #define MATCH_SECTION_AND_NAME(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define MATCH_SECTION(s) strcmp(section, s) == 0

@@ -6,6 +6,7 @@
 #include "string/sds.h"
 #include "utils/logfile_utils.h"
 #include <mpi.h>
+#include <string.h>
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
@@ -15,13 +16,87 @@ int main(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
 
-    int rank, np;
+    int rank, num_proccess, num_max_proc;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_proccess);
 
-    //TODO: we need to think a way to run different simulations using a template configuration maybe....
+    int simulation_number_start;
+    int num_simulations;
+    char *output_folder;
 
+    if(rank == 0) {
+
+        struct batch_options *batch_options;
+        batch_options = new_batch_options();
+
+        //TODO: maybe we want to get the config file first...
+        parse_batch_options(argc, argv, batch_options);
+
+        if(ini_parse(batch_options->batch_config_file, parse_batch_config_file, batch_options) < 0) {
+            fprintf(stderr, "Error: Can't load the config file %s\n", batch_options->batch_config_file);
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+        }
+
+
+        if(num_proccess > batch_options->num_simulations) {
+            num_max_proc = batch_options->num_simulations;
+        }
+        else {
+            num_max_proc = num_proccess;
+        }
+
+        //This folder needs to be in a shared filesystem
+        //TODO: send this to every other proccess....
+        create_dir(batch_options->output_folder);
+
+        num_simulations = batch_options->num_simulations/num_max_proc;
+        int last_rank_extra = batch_options->num_simulations%num_max_proc;
+
+        simulation_number_start = 0;
+        int size_out_folder = (int)strlen(batch_options->output_folder);
+
+        for(int i = 1; i < num_proccess; i++) {
+
+            simulation_number_start += num_simulations;
+            int num_sims = num_simulations;
+
+            if(i == num_max_proc - 1) {
+                num_sims += last_rank_extra;
+            }
+
+            if (i >= batch_options->num_simulations) {
+                num_sims = 0;
+            }
+
+            MPI_Send(&num_sims,                1, MPI_INT, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&simulation_number_start, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&size_out_folder, 1, MPI_INT, i, 3, MPI_COMM_WORLD);
+            MPI_Send(batch_options->output_folder, size_out_folder, MPI_CHAR, i, 4, MPI_COMM_WORLD);
+        }
+
+        simulation_number_start = 0;
+        output_folder = batch_options->output_folder;
+    }
+
+    else {
+        int size_out_folder;
+
+        MPI_Recv(&num_simulations, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&simulation_number_start, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&size_out_folder, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        output_folder = malloc(size_out_folder);
+
+        MPI_Recv(output_folder, size_out_folder, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    if(num_simulations == 0) {
+        MPI_Finalize();
+        return EXIT_SUCCESS;
+    }
+
+    printf("Rank %d, performing %d simulations, starting at index %d and saving in %s\n", rank, num_simulations, simulation_number_start, output_folder);
 
     struct user_options *options;
     options = new_user_options();
@@ -94,13 +169,13 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    int np = monodomain_solver->num_threads;
+    int nt = monodomain_solver->num_threads;
 
-    if(np == 0)
-        np = 1;
+    if(nt == 0)
+        nt = 1;
 
 #if defined(_OPENMP)
-    omp_set_num_threads(np);
+    omp_set_num_threads(nt);
 #endif
 
     solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
