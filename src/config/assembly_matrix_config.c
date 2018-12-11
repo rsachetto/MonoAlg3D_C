@@ -10,7 +10,7 @@
 #include <dlfcn.h>
 #endif
 #include <string.h>
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 
 void init_assembly_matrix_functions(struct assembly_matrix_config *config) {
 

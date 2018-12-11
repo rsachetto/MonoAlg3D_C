@@ -4,7 +4,7 @@
 #include "monodomain/ode_solver.h"
 #include "monodomain/output_utils.h"
 #include "string/sds.h"
-#include "utils/logfile_utils.h"
+#include "utils/file_utils.h"
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"

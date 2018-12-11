@@ -3,7 +3,7 @@
 
 #include "../ini_parser/ini_file_sections.h"
 #include "../string/sds.h"
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 #include "config_parser.h"
 
 static const struct option long_batch_options[] = {
@@ -111,7 +111,9 @@ void issue_overwrite_warning(const char *var, const char *old_value, const char 
 struct batch_options *new_batch_options() {
     struct batch_options *user_args = (struct batch_options *)malloc(sizeof(struct batch_options));
     user_args->batch_config_file = NULL;
+    user_args->initial_config = NULL;
     user_args->config_to_change = string_hash_create();
+    user_args->num_simulations = 0;
 
     return user_args;
 }
@@ -565,7 +567,6 @@ void parse_batch_options(int argc, char **argv, struct batch_options *user_args)
     int option_index;
 
     opt = getopt_long_only(argc, argv, batch_opt_string, long_batch_options, &option_index);
-//    char old_value[32];
 
     while (opt != -1) {
         switch (opt) {
@@ -848,9 +849,15 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
         if(MATCH_NAME("output_folder")) {
             pconfig->output_folder = strdup(value);
 
-        } else if(MATCH_NAME("num_simulations")) {
+        } else if(MATCH_NAME("num_simulations_per_parameter_change")) {
             pconfig->num_simulations = (int) strtol(value, NULL, 10);
+        } else if(MATCH_NAME("initial_config")) {
+            pconfig->initial_config = strdup(value);
         }
+        else if(MATCH_NAME("num_parameter_change")) {
+            pconfig->num_par_change = (int) strtol(value, NULL, 10);
+        }
+
     } else if(MATCH_SECTION(MODIFICATION_SECTION)) {
             string_hash_insert(pconfig->config_to_change, name, value);
     } else {

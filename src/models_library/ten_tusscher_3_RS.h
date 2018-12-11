@@ -13,7 +13,7 @@
 #ifdef __CUDACC__
 
 extern "C" {
-    #include "../utils/logfile_utils.h"
+    #include "../utils/file_utils.h"
 }
 
 static __device__ size_t pitch;
@@ -28,7 +28,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
 inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real atpi, real Ko, real Ki_multiplicator, real acidosis);
 #else
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 #endif
 
 

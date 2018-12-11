@@ -11,7 +11,7 @@
 #include <dlfcn.h>
 #endif
 #include <assert.h>
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -329,6 +329,7 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
     solver->gpu = options->gpu;
 
     if(options->model_file_path) {
+        free(solver->model_data.model_library_path);
         solver->model_data.model_library_path = strdup(options->model_file_path);
     }
 

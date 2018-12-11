@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 
 void init_save_state_functions(struct save_state_config *config) {
 
