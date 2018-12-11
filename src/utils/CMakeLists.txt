@@ -4,7 +4,7 @@ set(SOURCE_FILES_UTILS
         stop_watch.h
         stop_watch.c
         sort.c
-        logfile_utils.c logfile_utils.h)
+        file_utils.c file_utils.h)
 
 ADD_LIBRARY(utils STATIC ${SOURCE_FILES_UTILS})
 

@@ -3,7 +3,7 @@
 //
 
 #include "monodomain_solver.h"
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 #include "../utils/stop_watch.h"
 
 #ifdef COMPILE_CUDA

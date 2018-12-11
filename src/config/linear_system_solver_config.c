@@ -10,7 +10,7 @@
 #include <dlfcn.h>
 #endif
 #include <string.h>
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 
 void init_linear_system_solver_functions(struct linear_system_solver_config *config) {
 

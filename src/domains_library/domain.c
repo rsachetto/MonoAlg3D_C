@@ -8,7 +8,7 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 #include <assert.h>
 #include <time.h>
 

@@ -4,7 +4,7 @@
 
 #include <stdarg.h>
 
-#include "logfile_utils.h"
+#include "file_utils.h"
 #include <stdio.h>
 #include <fcntl.h>
 
@@ -17,6 +17,8 @@
 
 #ifdef linux
 #include <unistd.h>
+#include <stdlib.h>
+
 #endif
 
 static FILE *logfile = NULL;
@@ -113,4 +115,44 @@ int cp_file(const char *to, const char *from)
 
     errno = saved_errno;
     return -1;
+}
+
+char *read_entire_file(char *filename, long *size) {
+
+    FILE    *infile;
+    char    *buffer;
+    long    numbytes;
+
+    if(!filename) return NULL;
+
+/* open an existing file for reading */
+    infile = fopen(filename, "r");
+
+/* quit if the file does not exist */
+    if(infile == NULL)
+        return NULL;
+
+/* Get the number of bytes */
+    fseek(infile, 0L, SEEK_END);
+    numbytes = ftell(infile);
+
+/* reset the file position indicator to
+the beginning of the file */
+    fseek(infile, 0L, SEEK_SET);
+
+/* grab sufficient memory for the
+buffer to hold the text */
+    buffer = (char*)malloc(numbytes*sizeof(char));
+
+/* memory error */
+    if(buffer == NULL)
+        return NULL;
+
+/* copy all the text into the buffer */
+    fread(buffer, sizeof(char), numbytes, infile);
+    fclose(infile);
+
+    *size = numbytes;
+
+    return buffer;
 }

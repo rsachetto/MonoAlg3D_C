@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../utils/logfile_utils.h"
+#include "../utils/file_utils.h"
 
 void init_restore_state_functions(struct restore_state_config *config) {
 
