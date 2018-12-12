@@ -12,6 +12,12 @@
 #include "draw/draw.h"
 #endif
 
+struct changed_parameters {
+    char *section;
+    char *name;
+    double *values;
+};
+
 int main(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
@@ -143,8 +149,6 @@ int main(int argc, char **argv) {
 
             string_hash_insert(config_to_change, key, value);
 
-            
-
             free(key);
             free(value);
         }
@@ -184,10 +188,38 @@ int main(int argc, char **argv) {
         options->save_mesh_config->out_dir_name = strdup("batch_run");
     }
 
+    struct changed_parameters *changed = NULL;
 
-    char *changed_parameters = NULL;
+    for(int k = 0; k < config_to_change->size; k++) {
+        for(struct string_elt *e = config_to_change->table[k % config_to_change->size]; e != 0; e = e->next) {
+
+            struct changed_parameters c;
+
+            int count;
+            sds *section_name = sdssplit(e->key, "|", &count);
+
+            c.section = strdup(section_name[0]);
+            c.name = strdup(section_name[1]);
+            sdsfreesplitres(section_name, count);
 
 
+            sds *value_range = sdssplit(e->value, "|", &count);
+
+            double value = strtod(value_range[0], NULL);
+            double inc  = strtod(value_range[1], NULL);
+            sdsfreesplitres(value_range, count);
+
+            c.values = malloc(sizeof(double)*num_par_change);
+
+            for(int n = 0; n < num_par_change; n++) {
+                c.values[n] = value + n*inc;
+            }
+
+            stb_sb_push(changed, c);
+        }
+    }
+
+    char *initial_out_dir_name  = strdup(options->save_mesh_config->out_dir_name);
 
     //Parse the modification directives
     for(int s = simulation_number_start; s < simulation_number_start+num_simulations; s++) {
@@ -197,7 +229,59 @@ int main(int argc, char **argv) {
             ode_solver = new_ode_solver();
 
             sds new_out_dir_name =
-                    sdscatprintf(sdsempty(), "%s/%s_%d", output_folder, options->save_mesh_config->out_dir_name, s);
+                    sdscatprintf(sdsempty(), "%s/%s_run_%d", output_folder, initial_out_dir_name, s);
+
+            for(int n = 0; n < config_to_change->n; n++) {
+                new_out_dir_name = sdscatprintf(new_out_dir_name, "_%s_%lf", changed[n].name, changed[n].values[p]);
+
+                sds char_value = sdscatprintf(sdsempty(), "%lf", changed[n].values[p]);
+
+                if(strcmp("extra_data", changed[n].section) == 0) {
+                    if(options->extra_data_config) {
+                        string_hash_insert_or_overwrite(options->extra_data_config->config_data.config, changed[n].name,
+                                                        char_value);
+                    }
+                }
+                else if(strcmp("domain", changed[n].section) == 0) {
+
+                    if(options->domain_config) {
+
+                        if (strcmp("start_dx", changed[n].name) == 0) {
+                            options->domain_config->start_dx = changed[n].values[p];
+                        } else if (strcmp("start_dy", changed[n].name) == 0) {
+                            options->domain_config->start_dy = changed[n].values[p];
+                        } else if (strcmp("start_dz", changed[n].name) == 0) {
+                            options->domain_config->start_dz = changed[n].values[p];
+                        } else if (strcmp("maximum_dx", changed[n].name) == 0) {
+                            options->domain_config->max_dx = changed[n].values[p];
+                        } else if (strcmp("maximum_dy", changed[n].name) == 0) {
+                            options->domain_config->max_dy = changed[n].values[p];
+                        } else if (strcmp("maximum_dz", changed[n].name) == 0) {
+                            options->domain_config->max_dz = changed[n].values[p];
+                        } else {
+                            string_hash_insert_or_overwrite(options->domain_config->config_data.config, changed[n].name,
+                                                            char_value);
+                        }
+                    }
+                }
+                else if(strcmp("assembly_matrix", changed[n].section) == 0) {
+                    if(options->assembly_matrix_config) {
+                        string_hash_insert_or_overwrite(options->assembly_matrix_config->config_data.config,
+                                                        changed[n].name, char_value);
+                    }
+                }
+                else if(strcmp("linear_system_solver", changed[n].section) == 0) {
+                    if(options->linear_system_solver_config) {
+                        string_hash_insert_or_overwrite(options->linear_system_solver_config->config_data.config,
+                                                        changed[n].name, char_value);
+                    }
+                }
+
+
+                sdsfree(char_value);
+
+            }
+
 
             free(options->save_mesh_config->out_dir_name);
             options->save_mesh_config->out_dir_name = strdup(new_out_dir_name);
@@ -265,6 +349,7 @@ int main(int argc, char **argv) {
 
     free(monodomain_solver);
     free_user_options(options);
+    free(initial_out_dir_name);
 
     MPI_Finalize();
 

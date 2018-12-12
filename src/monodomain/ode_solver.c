@@ -33,6 +33,7 @@ struct ode_solver* new_ode_solver() {
 
     result->model_data.initial_v = INFINITY;
     result->model_data.number_of_ode_equations = -1;
+    result->model_data.model_library_path = NULL;
 
     result->edo_extra_data = NULL;
     result->edo_extra_data = 0;
