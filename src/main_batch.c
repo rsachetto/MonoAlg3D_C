@@ -18,6 +18,57 @@ struct changed_parameters {
     double *values;
 };
 
+void configure_new_parameters(sds new_out_dir_name, struct changed_parameters *changed, struct user_options *options, int n, int p) {
+    new_out_dir_name = sdscatprintf(new_out_dir_name, "_%s_%lf", changed[n].name, changed[n].values[p]);
+
+    sds char_value = sdscatprintf(sdsempty(), "%lf", changed[n].values[p]);
+
+    if(strcmp("extra_data", changed[n].section) == 0) {
+        if(options->extra_data_config) {
+            string_hash_insert_or_overwrite(options->extra_data_config->config_data.config, changed[n].name,
+                                            char_value);
+        }
+    }
+    else if(strcmp("domain", changed[n].section) == 0) {
+
+        if(options->domain_config) {
+
+            if (strcmp("start_dx", changed[n].name) == 0) {
+                options->domain_config->start_dx = changed[n].values[p];
+            } else if (strcmp("start_dy", changed[n].name) == 0) {
+                options->domain_config->start_dy = changed[n].values[p];
+            } else if (strcmp("start_dz", changed[n].name) == 0) {
+                options->domain_config->start_dz = changed[n].values[p];
+            } else if (strcmp("maximum_dx", changed[n].name) == 0) {
+                options->domain_config->max_dx = changed[n].values[p];
+            } else if (strcmp("maximum_dy", changed[n].name) == 0) {
+                options->domain_config->max_dy = changed[n].values[p];
+            } else if (strcmp("maximum_dz", changed[n].name) == 0) {
+                options->domain_config->max_dz = changed[n].values[p];
+            } else {
+                string_hash_insert_or_overwrite(options->domain_config->config_data.config, changed[n].name,
+                                                char_value);
+            }
+        }
+    }
+    else if(strcmp("assembly_matrix", changed[n].section) == 0) {
+        if(options->assembly_matrix_config) {
+            string_hash_insert_or_overwrite(options->assembly_matrix_config->config_data.config,
+                                            changed[n].name, char_value);
+        }
+    }
+    else if(strcmp("linear_system_solver", changed[n].section) == 0) {
+        if(options->linear_system_solver_config) {
+            string_hash_insert_or_overwrite(options->linear_system_solver_config->config_data.config,
+                                            changed[n].name, char_value);
+        }
+    }
+
+
+    sdsfree(char_value);
+
+}
+
 int main(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
@@ -232,54 +283,7 @@ int main(int argc, char **argv) {
                     sdscatprintf(sdsempty(), "%s/%s_run_%d", output_folder, initial_out_dir_name, s);
 
             for(int n = 0; n < config_to_change->n; n++) {
-                new_out_dir_name = sdscatprintf(new_out_dir_name, "_%s_%lf", changed[n].name, changed[n].values[p]);
-
-                sds char_value = sdscatprintf(sdsempty(), "%lf", changed[n].values[p]);
-
-                if(strcmp("extra_data", changed[n].section) == 0) {
-                    if(options->extra_data_config) {
-                        string_hash_insert_or_overwrite(options->extra_data_config->config_data.config, changed[n].name,
-                                                        char_value);
-                    }
-                }
-                else if(strcmp("domain", changed[n].section) == 0) {
-
-                    if(options->domain_config) {
-
-                        if (strcmp("start_dx", changed[n].name) == 0) {
-                            options->domain_config->start_dx = changed[n].values[p];
-                        } else if (strcmp("start_dy", changed[n].name) == 0) {
-                            options->domain_config->start_dy = changed[n].values[p];
-                        } else if (strcmp("start_dz", changed[n].name) == 0) {
-                            options->domain_config->start_dz = changed[n].values[p];
-                        } else if (strcmp("maximum_dx", changed[n].name) == 0) {
-                            options->domain_config->max_dx = changed[n].values[p];
-                        } else if (strcmp("maximum_dy", changed[n].name) == 0) {
-                            options->domain_config->max_dy = changed[n].values[p];
-                        } else if (strcmp("maximum_dz", changed[n].name) == 0) {
-                            options->domain_config->max_dz = changed[n].values[p];
-                        } else {
-                            string_hash_insert_or_overwrite(options->domain_config->config_data.config, changed[n].name,
-                                                            char_value);
-                        }
-                    }
-                }
-                else if(strcmp("assembly_matrix", changed[n].section) == 0) {
-                    if(options->assembly_matrix_config) {
-                        string_hash_insert_or_overwrite(options->assembly_matrix_config->config_data.config,
-                                                        changed[n].name, char_value);
-                    }
-                }
-                else if(strcmp("linear_system_solver", changed[n].section) == 0) {
-                    if(options->linear_system_solver_config) {
-                        string_hash_insert_or_overwrite(options->linear_system_solver_config->config_data.config,
-                                                        changed[n].name, char_value);
-                    }
-                }
-
-
-                sdsfree(char_value);
-
+                configure_new_parameters(new_out_dir_name, changed, options, n, p);
             }
 
 
