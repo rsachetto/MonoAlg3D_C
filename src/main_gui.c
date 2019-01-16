@@ -75,7 +75,7 @@ static void append_to_output(void *data) {
             strncpy (time_string, sub + 3, index - 3);
             time_string[index - 3] = '\0';
 
-            int progress = (int)((atof (time_string) / (options->final_time - options->dt_edp) * 100.0));
+            int progress = (int)((atof (time_string) / (options->final_time - options->dt_pde) * 100.0));
 
             uiProgressBarSetValue (pbar, progress);
         }

@@ -65,7 +65,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+4);
+    *extra_data_size = sizeof(float)*(num_active_cells+5);
 
     float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
 
@@ -78,32 +78,56 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
     real Ki_multiplicator = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
 
+    real K1_multiplicator = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
 
-    real acidosis;
-    GET_PARAMETER_BINARY_VALUE(acidosis, config, "acidosis");
+    real acidosis = false;
+    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;
     fibs[2] = Ki_multiplicator;
-    fibs[3] = (real)acidosis;
+    fibs[3] = K1_multiplicator;
+    fibs[4] = (real)acidosis;
+
 
     return (void*)fibs;
 }
+
+
 
 SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(float)*(num_active_cells+5);
 
-    float *fibs = (float*)malloc(*extra_data_size);
+    float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
 
-    real atpi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,atpi,  config, "atpi");
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
+
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
+
+    real Ki_multiplicator = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
+
+    real K1_multiplicator = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
+
+    real acidosis = false;
+    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+
+
     fibs[0] = atpi;
+    fibs[1] = Ko;
+    fibs[2] = Ki_multiplicator;
+    fibs[3] = K1_multiplicator;
+    fibs[4] = (real)acidosis;
 
-    for(int i = 1; i < num_active_cells+1; i++) {
-        fibs[i] = 1.0;
+    for(int i = 5; i < num_active_cells+5; i++) {
+        fibs[i] = 0.0;
     }
 
     return (void*)fibs;
@@ -150,7 +174,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
 
     real acidosis;
-    GET_PARAMETER_BINARY_VALUE(acidosis, config, "acidosis");
+    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;

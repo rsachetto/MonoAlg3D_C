@@ -202,7 +202,7 @@ RESTORE_STATE (restore_simulation_state) {
         }
 
         fread(&(the_ode_solver->extra_data_size), sizeof(the_ode_solver->extra_data_size), 1, input_file);
-        fread (the_ode_solver->edo_extra_data, the_ode_solver->extra_data_size, 1, input_file);
+        fread (the_ode_solver->ode_extra_data, the_ode_solver->extra_data_size, 1, input_file);
 
         fclose (input_file);
     }

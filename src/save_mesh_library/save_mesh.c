@@ -40,9 +40,9 @@ SAVE_MESH(save_as_text_or_binary) {
     if(!initialized) {
 
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE(binary, config->config_data.config, "binary");
-        GET_PARAMETER_BINARY_VALUE(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
         initialized = true;
     }
 
@@ -132,7 +132,7 @@ SAVE_MESH(save_as_text_or_binary) {
                 fwrite(&dz, sizeof(dz), 1, output_file);
                 fwrite(&v, sizeof(v), 1, output_file);
             } else {
-                fprintf(output_file, "%g,%g,%g,%g,%g, %g, %g\n", center_x, center_y, center_z, dx, dy, dz, v);
+                fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
             }
         }
         grid_cell = grid_cell->next;
@@ -147,9 +147,9 @@ SAVE_MESH(save_as_vtk) {
 
     if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE(clip_with_bounds, config->config_data.config, "clip_with_bounds");
-        GET_PARAMETER_BINARY_VALUE(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
         initialized = true;
     }
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
@@ -221,11 +221,11 @@ SAVE_MESH(save_as_vtu) {
 
     if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE(clip_with_bounds, config->config_data.config, "clip_with_bounds");
-        GET_PARAMETER_BINARY_VALUE(binary, config->config_data.config, "binary");
-        GET_PARAMETER_BINARY_VALUE(save_pvd, config->config_data.config, "save_pvd");
-        GET_PARAMETER_BINARY_VALUE(compress, config->config_data.config, "compress");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data.config, "compression_level");
         if(compress) binary = true;
 

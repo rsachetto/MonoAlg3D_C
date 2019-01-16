@@ -35,8 +35,8 @@ struct ode_solver* new_ode_solver() {
     result->model_data.number_of_ode_equations = -1;
     result->model_data.model_library_path = NULL;
 
-    result->edo_extra_data = NULL;
-    result->edo_extra_data = 0;
+    result->ode_extra_data = NULL;
+    result->ode_extra_data = 0;
 
 
     return result;
@@ -55,8 +55,8 @@ void free_ode_solver(struct ode_solver *solver) {
 
     }
 
-    if(solver->edo_extra_data) {
-        free(solver->edo_extra_data);
+    if(solver->ode_extra_data) {
+        free(solver->ode_extra_data);
     }
 
     if(solver->cells_to_solve) {
@@ -173,7 +173,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
             check_cuda_errors(cudaFree(solver->sv));
         }
 
-        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells, solver->edo_extra_data, solver->extra_data_size);
+        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells, solver->ode_extra_data, solver->extra_data_size);
 #endif
     } else {
 
@@ -196,7 +196,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
 
         #pragma omp parallel for
         for(i = 0; i < num_cells; i++) {
-            soicc_fn_pt(solver->sv + (i*n_odes), solver->edo_extra_data, solver->extra_data_size);
+            soicc_fn_pt(solver->sv + (i*n_odes), solver->ode_extra_data, solver->extra_data_size);
         }
     }
 }
@@ -210,7 +210,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     //int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
 
-    void *extra_data = the_ode_solver->edo_extra_data;
+    void *extra_data = the_ode_solver->ode_extra_data;
     size_t extra_data_size = the_ode_solver->extra_data_size;
 
     double time = cur_time;
@@ -326,7 +326,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
     solver->gpu_id = options->gpu_id;
-    solver->min_dt = (real)options->dt_edo;
+    solver->min_dt = (real)options->dt_ode;
     solver->gpu = options->gpu;
 
     if(options->model_file_path) {

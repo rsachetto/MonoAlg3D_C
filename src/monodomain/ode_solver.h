@@ -35,7 +35,7 @@ struct ode_solver {
 
     uint32_t original_num_cells;
     real *sv;
-    void *edo_extra_data;
+    void *ode_extra_data;
     size_t extra_data_size;
     struct cell_model_data model_data;
 

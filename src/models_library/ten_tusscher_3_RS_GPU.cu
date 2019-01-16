@@ -48,6 +48,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     real Ko = 5.4f;
     real Ki_mult = 1.0f;
     real acidosis = 0.0;
+    real K1_mult = 1.0f;
     real *fibrosis_device;
     real *fibs = NULL;
 
@@ -55,10 +56,11 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
         atpi = ((real*)extra_data)[0]; //value
         Ko = ((real*)extra_data)[1]; //value
         Ki_mult = ((real*)extra_data)[2]; //value
-        acidosis = ((real*)extra_data)[3]; //value
-        fibs = ((real*)extra_data)+4; //pointer
+        K1_mult = ((real*)extra_data)[3]; //value
+        acidosis = ((real*)extra_data)[4]; //value
+        fibs = ((real*)extra_data) + 5; //pointer
 
-        extra_data_bytes_size = extra_data_bytes_size-4*sizeof(real);
+        extra_data_bytes_size = extra_data_bytes_size-5*sizeof(real);
     }
     else {
         extra_data_bytes_size = num_cells_to_solve*sizeof(real);
@@ -68,7 +70,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     check_cuda_error(cudaMalloc((void **) &fibrosis_device, extra_data_bytes_size));
     check_cuda_error(cudaMemcpy(fibrosis_device, fibs, extra_data_bytes_size, cudaMemcpyHostToDevice));
 
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, fibrosis_device, atpi, Ko, Ki_mult, acidosis);
+    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, fibrosis_device, atpi, Ko, Ki_mult, K1_mult, acidosis);
 
     check_cuda_error( cudaPeekAtLastError() );
 
@@ -107,7 +109,7 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
                           int num_steps, real *fibrosis,  real atpi,
-                          real Ko, real Ki_multiplicator, real acidosis)
+                          real Ko, real Ki_multiplicator, real K1_multiplicator, real acidosis)
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
@@ -123,7 +125,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         for (int n = 0; n < num_steps; ++n) {
 
-            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt, fibrosis[threadID], atpi, Ko, Ki_multiplicator, acidosis);
+            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt, fibrosis[threadID], atpi, Ko, Ki_multiplicator, K1_multiplicator, acidosis);
 
             *((real*)((char*)sv) + sv_id) = dt*rDY[0] + *((real*)((char*)sv) + sv_id);
 
@@ -137,8 +139,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 }
 
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real atpi, real Ko, real Ki_multiplicator, real acidosis) {
-
+inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real atpi, real Ko, real Ki_multiplicator, real K1_multiplicator, real acidosis) {
     //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
     const real svolt = *((real*)((char*)sv_ + pitch * 0) + threadID_);
 
@@ -167,8 +168,6 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real natp = 0.24;          // K dependence of ATP-sensitive K current
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
     const real hatp = 2;             // Hill coefficient
-
-
 
     //Extracellular potassium concentration was elevated
     //from its default value of 5.4 mM to values between 6.0 and 8.0 mM
@@ -358,7 +357,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     Ito=Gto*R_INF*ss*(svolt-Ek);
     IKr=Gkr*sqrtf(Ko/5.4f)*sxr1*Xr2_INF*(svolt-Ek);
     IKs=Gks*sxs*sxs*(svolt-Eks);
-    IK1=GK1*rec_iK1*(svolt-Ek);
+    IK1=GK1*rec_iK1*(svolt-Ek)*K1_multiplicator;
     INaCa=knaca*(1.0f/(KmNai*KmNai*KmNai+Nao*Nao*Nao))*(1.0f/(KmCa+Cao))*
           (1.0f/(1.0f+ksat*expf((n-1.0f)*svolt_acid*F/(R*T))))*
           (expf(n*svolt*F/(R*T))*Nai*Nai*Nai*Cao-

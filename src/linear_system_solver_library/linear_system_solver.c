@@ -15,7 +15,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     if(!initialized) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
-        GET_PARAMETER_BINARY_VALUE(use_jacobi, config->config_data.config, "use_preconditioner");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(use_jacobi, config->config_data.config, "use_preconditioner");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
         initialized = true;
     }

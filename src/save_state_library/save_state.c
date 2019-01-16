@@ -144,7 +144,7 @@ SAVE_STATE(save_simulation_state) {
         }
 
         fwrite(&(the_ode_solver->extra_data_size), sizeof(the_ode_solver->extra_data_size), 1, output_file);
-        fwrite(the_ode_solver->edo_extra_data, the_ode_solver->extra_data_size, 1, output_file);
+        fwrite(the_ode_solver->ode_extra_data, the_ode_solver->extra_data_size, 1, output_file);
 
         fclose(output_file);
 
