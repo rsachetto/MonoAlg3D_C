@@ -25,16 +25,39 @@ bool dir_exists(const char *path) {
 }
 
 void create_dir(const char *out_dir) {
-    if (!dir_exists (out_dir)) {
-        printf ("%s does not exist! Creating!\n", out_dir);
 
-#if defined _MSC_VER
-		if (_mkdir(out_dir) == -1) {
-#else
-		if (mkdir(out_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-#endif
-            fprintf (stderr, "Error creating directory %s. Exiting!\n", out_dir);
-            exit (EXIT_FAILURE);
+    //TODO: check for windows dir separators
+    int dirs_count;
+
+    sds *all_dirs = sdssplit(out_dir, "/", &dirs_count);
+    sds new_dir;
+
+    if(out_dir[0] == '/') {
+        new_dir = sdsnew("/");
+    }
+    else {
+        new_dir = sdsempty();
+    }
+
+    for(int d = 0; d < dirs_count; d++) {
+
+        new_dir = sdscat(new_dir, all_dirs[d]);
+        new_dir = sdscat(new_dir, "/");
+
+        if (!dir_exists (new_dir)) {
+
+            printf ("%s does not exist! Creating!\n", new_dir);
+            #if defined _MSC_VER
+                if (_mkdir(out_dir) == -1)
+            #else
+                if (mkdir(new_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+            #endif
+            {
+
+                fprintf (stderr, "Error creating directory %s Exiting!\n", new_dir);
+                exit (EXIT_FAILURE);
+            }
         }
     }
+
 }
