@@ -39,7 +39,7 @@ struct monodomain_solver {
 
 struct monodomain_solver *new_monodomain_solver ();
 
-void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_edo_solver,
+void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                       struct grid *the_grid, struct user_options *configs);
 
 void save_old_cell_positions (struct grid *the_grid);
@@ -56,7 +56,7 @@ void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_gr
 
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                        double beta,
-                       double cm, double dt_edp, real *sv, int n_equations_cell_model, bool use_gpu);
+                       double cm, double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu);
 
 
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,

@@ -19,6 +19,7 @@
 #include <unistd.h>
 #endif
 
+
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     double start_dx = config->start_dx;
@@ -81,6 +82,28 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
     return 1;
 }
 
+SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
+
+    int num_layers = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, num_layers, config->config_data.config, "num_layers");
+
+    double side_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (double, side_length, config->config_data.config, "side_length");
+
+    sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
+    sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
+    sds sz_char = sdscatprintf(sdsempty(), "%lf", config->start_dz*num_layers);
+
+
+    string_hash_insert(config->config_data.config, "side_length_x", sx_char);
+    string_hash_insert(config->config_data.config, "side_length_y", sy_char);
+    string_hash_insert(config->config_data.config, "side_length_z", sz_char);
+
+    return initialize_grid_with_cuboid_mesh(config, the_grid);
+
+
+}
+
 SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
     double start_dx = config->start_dx;
@@ -110,7 +133,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
     refine_grid(the_grid, num_steps);
 
-    set_cuboid_domain(the_grid, real_side_length_x, start_dy, start_dz);
+    set_cuboid_domain(the_grid, cable_length, start_dy, start_dz);
 
     int i;
     for(i = 0; i < num_steps; i++) {

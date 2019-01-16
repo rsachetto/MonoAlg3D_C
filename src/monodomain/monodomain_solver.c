@@ -170,13 +170,13 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     bool adaptive = the_grid->adaptive;
     double start_adpt_at = the_monodomain_solver->start_adapting_at;
-    double dt_edp = the_monodomain_solver->dt;
+    double dt_pde = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
 
     double beta = the_monodomain_solver->beta;
     double cm = the_monodomain_solver->cm;
 
-    double dt_edo = the_ode_solver->min_dt;
+    double dt_ode = the_ode_solver->min_dt;
 
 #ifdef COMPILE_CUDA
     if(gpu) {
@@ -238,14 +238,14 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     int ode_step = 1;
 
-    if(dt_edp >= dt_edo) {
-        ode_step = (int)(dt_edp / dt_edo);
+    if(dt_pde >= dt_ode) {
+        ode_step = (int)(dt_pde / dt_ode);
         print_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
     } else {
         print_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
                                  "step: %lf\n",
-                                 dt_edo);
-        dt_edp = dt_edo;
+                                 dt_ode);
+        dt_pde = dt_ode;
     }
 
     fflush(stdout);
@@ -321,7 +321,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         // REACTION
         solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
 
-        update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_edp,
+        update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_pde,
                           the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
 
         ode_total_time += stop_stop_watch(&ode_time);
@@ -387,7 +387,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         }
 
         count++;
-        cur_time += dt_edp;
+        cur_time += dt_pde;
 
         if(save_checkpoint) {
             if(count != 0 && (count % save_state_rate == 0)) {
@@ -426,8 +426,8 @@ void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_gr
 
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
-    free(the_ode_solver->edo_extra_data);
-    the_ode_solver->edo_extra_data =
+    free(the_ode_solver->ode_extra_data);
+    the_ode_solver->ode_extra_data =
         config->set_extra_data(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
 }
 
@@ -438,7 +438,7 @@ bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct o
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    int n_edos = the_ode_solver->model_data.number_of_ode_equations;
+    int n_odes = the_ode_solver->model_data.number_of_ode_equations;
 
     real *sv = the_ode_solver->sv;
 
@@ -469,7 +469,7 @@ bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct o
     } else {
 #pragma omp parallel for
         for(i = 0; i < n_active; i++) {
-            sv[ac[i]->sv_position * n_edos] = (real)ac[i]->v;
+            sv[ac[i]->sv_position * n_odes] = (real)ac[i]->v;
 
             if(ac[i]->v > vm_threshold) {
                 act = true;
@@ -534,7 +534,7 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
 }
 
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
-                       double beta, double cm, double dt_edp, real *sv, int n_equations_cell_model, bool use_gpu) {
+                       double beta, double cm, double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu) {
 
     double alpha;
 
@@ -550,7 +550,7 @@ void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cel
     int i;
 #pragma omp parallel for private(alpha)
     for(i = 0; i < num_active_cells; i++) {
-        alpha = ALPHA(beta, cm, dt_edp, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
+        alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
 
         if(use_gpu) {
 #ifdef COMPILE_CUDA
@@ -701,7 +701,7 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
 
     the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
 
-    the_monodomain_solver->dt = options->dt_edp;
+    the_monodomain_solver->dt = options->dt_pde;
 
     //    the_monodomain_solver->sigma_x = options->sigma_x;
     //    the_monodomain_solver->sigma_y = options->sigma_y;

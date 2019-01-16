@@ -51,10 +51,10 @@ struct user_options {
     bool ref_bound_was_set;
     float deref_bound;				/*-d option*/
     bool deref_bound_was_set;
-    float dt_edp;					/*-z option*/
-    bool dt_edp_was_set;
-    float dt_edo;				    /*-e option*/
-    bool dt_edo_was_set;
+    float dt_pde;					/*-z option*/
+    bool dt_pde_was_set;
+    float dt_ode;				    /*-e option*/
+    bool dt_ode_was_set;
     int num_threads;                /*-n option*/
     bool num_threads_was_set;
     bool gpu;                       /*-g option*/
@@ -121,6 +121,5 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
 void free_user_options(struct user_options *s);
-void issue_overwrite_warning (const char *var, const char *old_value, const char *new_value, const char *config_file);
-
+void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 #endif /* MONOALG3D_CONFIG_PARSER_H */

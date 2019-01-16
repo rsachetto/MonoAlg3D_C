@@ -286,7 +286,6 @@ int main(int argc, char **argv) {
                 configure_new_parameters(new_out_dir_name, changed, options, n, p);
             }
 
-
             free(options->save_mesh_config->out_dir_name);
             options->save_mesh_config->out_dir_name = strdup(new_out_dir_name);
             sdsfree(new_out_dir_name);
