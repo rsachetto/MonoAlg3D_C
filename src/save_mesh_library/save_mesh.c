@@ -28,6 +28,7 @@ static FILE *pvd_file = NULL;
 static bool initialized = false;
 static bool first_save_call = true;
 static int count = 0;
+sds base_name_template;
 
 static struct vtk_unstructured_grid *vtk_grid = NULL;
 
@@ -145,7 +146,15 @@ SAVE_MESH(save_as_vtk) {
 
     char *output_dir = config->out_dir_name;
 
+
     if(!initialized) {
+
+        sds num_padding_sds = sdsfromlonglong(config->last_count);
+        int num_padding = strlen(num_padding_sds);
+
+        base_name_template = sdscatprintf(sdsempty(), "%%s_it_%%0%dd.vtk", num_padding);
+
+
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
@@ -175,9 +184,10 @@ SAVE_MESH(save_as_vtk) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_ms.vtu", file_prefix, count);
+    sds base_name = sdscatprintf(sdsempty(), base_name_template, file_prefix, count*config->print_rate);
+
     count++;
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name);
 
     new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
 
@@ -218,13 +228,16 @@ void add_file_to_pvd(double current_dt, const char *output_dir, const char *base
 SAVE_MESH(save_as_vtu) {
 
     char *output_dir = config->out_dir_name;
-
     if(!initialized) {
+
+        sds num_padding_sds = sdsfromlonglong(config->last_count);
+        int num_padding = strlen(num_padding_sds);
+
+        base_name_template = sdscatprintf(sdsempty(), "%%s_it_%%0%dd.vtu", num_padding);
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data.config, "compression_level");
         if(compress) binary = true;
@@ -255,13 +268,11 @@ SAVE_MESH(save_as_vtu) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d.vtu", file_prefix, count);
+    sds base_name = sdscatprintf(sdsempty(), base_name_template, file_prefix, count*config->print_rate);
     count++;
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name);
 
-    if(save_pvd) {
-        add_file_to_pvd(current_dt, output_dir, base_name);
-    }
+    add_file_to_pvd(current_dt, output_dir, base_name);
 
     new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
 
