@@ -30,14 +30,7 @@ void create_dir(const char *out_dir) {
     int dirs_count;
 
     sds *all_dirs = sdssplit(out_dir, "/", &dirs_count);
-    sds new_dir;
-
-    if(out_dir[0] == '/') {
-        new_dir = sdsnew("/");
-    }
-    else {
-        new_dir = sdsempty();
-    }
+    sds new_dir = sdsempty();
 
     for(int d = 0; d < dirs_count; d++) {
 
@@ -59,5 +52,5 @@ void create_dir(const char *out_dir) {
             }
         }
     }
-
+    
 }
