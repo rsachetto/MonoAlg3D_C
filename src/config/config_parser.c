@@ -377,7 +377,6 @@ void set_domain_config(const char *args, struct domain_config *dc, const char *c
             }
             dc->max_dz = (real)strtod(value, NULL);
         }
-
         else if(strcmp(key, "function") == 0) {
             if(dc->config_data.function_name_was_set) {
                 issue_overwrite_warning("function", "domain", dc->config_data.function_name, value, config_file);
