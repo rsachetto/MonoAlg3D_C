@@ -1,3 +1,4 @@
+Sachetto
 - Correct the save file in the GUI
 - Implement options window for GUI
 - Correct the domain version that sets the two scars and the fibrosis from file (maybe the error is on extra-data)
@@ -5,3 +6,9 @@
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 - Implement compressed data on vtk files https://github.com/lz4/lz4/blob/dev/examples/simple_buffer.c
+
+Berg
+- Put the Purkinje code into this new version
+
+Pedro
+- Upgrade and refactor the DDM code.
