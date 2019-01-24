@@ -19,6 +19,7 @@
 #define TRANSITION_NODE_TYPE 'w'
 
 struct element {
+    char direction;     // NEW parameter !!!
     double value;
     uint32_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
