@@ -21,6 +21,12 @@ struct monodomain_solver {
 
     double beta, cm; // micrometers
 
+    // **************************************************
+    // Berg and Pedro code ...
+    bool using_ddm;
+    double kappa_x, kappa_y, kappa_z;
+    // **************************************************
+
     int refine_each;
     int derefine_each;
     double refinement_bound;
@@ -57,12 +63,17 @@ void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_gr
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                        double beta,
                        double cm, double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu);
-
-
+                    
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
                                               struct user_options *options);
 
 bool print_result(const struct grid *the_grid, const struct user_options *configs, int count);
 
+// ***********************************************************************************************************
+// Berg and Pedro code ...
+void update_monodomain_ddm (uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells, double beta, double cm,\
+                    const double kappa_x, const double kappa_y, const double kappa_z,\
+                    double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu);
+// ***********************************************************************************************************
 
 #endif // MONOALG3D_SOLVER_H

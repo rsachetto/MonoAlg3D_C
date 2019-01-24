@@ -24,6 +24,7 @@ struct domain_config {
     bool start_dx_was_set, max_dx_was_set;
     bool start_dy_was_set, max_dy_was_set;
     bool start_dz_was_set, max_dz_was_set;
+
     set_spatial_domain_fn *set_spatial_domain;
 };
 
