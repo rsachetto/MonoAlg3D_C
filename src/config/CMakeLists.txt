@@ -2,6 +2,7 @@ set(SOURCE_FILES_CONFIG
 		config_common.c config_common.h
 		stim_config.h stim_config.c
 		domain_config.c domain_config.h
+		purkinje_config.c purkinje_config.h
 		assembly_matrix_config.c assembly_matrix_config.h
 		extra_data_config.c extra_data_config.h
 		linear_system_solver_config.c linear_system_solver_config.h
