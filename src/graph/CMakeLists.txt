@@ -1,0 +1,7 @@
+set(SOURCE_FILES_GRAPH graph.h graph.c)
+
+ADD_LIBRARY(graph STATIC ${SOURCE_FILES_GRAPH})
+
+if(NOT MSVC)
+    set_property(TARGET graph PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()

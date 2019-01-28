@@ -174,6 +174,7 @@ struct user_options *new_user_options() {
 
     user_args->stim_configs = NULL;
     user_args->domain_config = NULL;
+    user_args->purkinje_config = NULL;
     user_args->extra_data_config = NULL;
     user_args->assembly_matrix_config = NULL;
     user_args->linear_system_solver_config = NULL;
@@ -990,6 +991,36 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->domain_config->config_data.library_file_path_was_set = true;
         } else {
             string_hash_insert(pconfig->domain_config->config_data.config, name, value);
+        }
+    }
+    else if(MATCH_SECTION(PURKINJE_SECTION)) {
+
+        if(pconfig->purkinje_config == NULL) {
+            pconfig->purkinje_config = new_purkinje_config();
+        }
+
+        if (MATCH_NAME ("start_discretization")) {
+            pconfig->purkinje_config->start_h = strtod (value, NULL);
+            pconfig->purkinje_config->start_h_was_set = true;
+
+        }
+        else if(MATCH_NAME("name")) {
+            pconfig->purkinje_config->domain_name = strdup(value);
+            pconfig->purkinje_config->domain_name_was_set = true;
+
+        }
+        else if(MATCH_NAME("function")) {
+            pconfig->purkinje_config->config_data.function_name = strdup(value);
+            pconfig->purkinje_config->config_data.function_name_was_set = true;
+
+        }
+        else if(MATCH_NAME("library_file")) {
+            pconfig->purkinje_config->config_data.library_file_path = strdup(value);
+            pconfig->purkinje_config->config_data.library_file_path_was_set = true;
+
+        }
+        else {
+            string_hash_insert(pconfig->purkinje_config->config_data.config, name, value);
         }
     } else if(MATCH_SECTION(MATRIX_ASSEMBLY_SECTION)) {
 

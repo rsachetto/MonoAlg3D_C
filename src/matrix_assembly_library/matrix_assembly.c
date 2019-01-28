@@ -17,8 +17,6 @@ static struct element fill_element(uint32_t position, char direction, double dx,
                                    double sigma_x2, double sigma_y1, double sigma_y2, double sigma_z1, double sigma_z2,
                                    struct element *cell_elements);
 
-// ***********************************************************************************************************
-// Berg and Pedro code ...
 double calculate_kappa (const real cell_length, const real h)
 {
     return (pow(cell_length,4) - pow(h,4)) / (12.0*pow(cell_length,2));
@@ -307,9 +305,6 @@ static void fill_discretization_matrix_elements_ddm (double sigma_x, double sigm
         }
     }
 }
-
-// ***********************************************************************************************************
-
 
 void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) {
 
@@ -637,9 +632,7 @@ ASSEMBLY_MATRIX(no_fibers_assembly_matrix) {
     }
 }
 
-// ***********************************************************************************************************
 // TODO: The kappas can be different from one cell to another
-// Berg and Pedro code ...
 ASSEMBLY_MATRIX(ddm_assembly_matrix) 
 {
 
@@ -743,3 +736,118 @@ ASSEMBLY_MATRIX(ddm_assembly_matrix)
     
 }
 
+// *******************************************************************************************************
+// Berg code
+void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) 
+{
+    double alpha; 
+    double dx, dy, dz;
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+    struct node *n = the_grid->the_purkinje_network->list_nodes;
+    double beta = the_solver->beta;
+    double cm = the_solver->cm;
+
+    double dt = the_solver->dt;
+
+    int i;
+
+    for (i = 0; i < num_active_cells; i++) 
+    {
+        dx = ac[i]->dx;
+        dy = ac[i]->dy;
+        dz = ac[i]->dz;
+
+        alpha = ALPHA(beta, cm, dt, dx, dy, dz);
+
+        struct element element;
+        element.column = ac[i]->grid_position;
+        element.cell = ac[i];
+        element.value = alpha;
+
+        if (ac[i]->elements != NULL) 
+        {
+            sb_free (ac[i]->elements);
+        }
+
+        ac[i]->elements = NULL;
+        sb_reserve (ac[i]->elements,n->num_edges);
+        sb_push (ac[i]->elements, element);
+
+        n = n->next;
+    }       
+}
+
+// For the Purkinje fibers we only need to solve the 1D Monodomain equation
+static void fill_discretization_matrix_elements_purkinje (double sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
+                                                        struct node *pk_node) 
+{
+    
+    struct edge *e;
+    struct element **cell_elements;
+    double dx, dy, dz;
+
+    double sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+
+    int i;
+
+    for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next)
+    {
+        cell_elements = &grid_cells[i]->elements;
+        dx = grid_cells[i]->dx;
+
+        e = pk_node->list_edges;
+
+        // Do the mapping of the edges from the graph to the sparse matrix data structure ...
+        while (e != NULL)
+        {
+            struct element new_element;
+
+            // Neighbour elements ...
+            new_element.column = e->id;
+            new_element.value = -sigma_x1 * dx;
+            new_element.cell = grid_cells[e->id];
+
+            // Diagonal element ...
+            cell_elements[0]->value += (sigma_x1 * dx);
+
+            sb_push(grid_cells[i]->elements,new_element);   
+
+            e = e->next;         
+        }
+    }
+}
+
+ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix) 
+{
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+    struct node *pk_node = the_grid->the_purkinje_network->list_nodes;
+
+    initialize_diagonal_elements_purkinje(the_solver, the_grid);
+
+    real sigma_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+
+    fill_discretization_matrix_elements_purkinje(sigma_x,ac,num_active_cells,pk_node);
+
+    /*
+    printf("Sigma_x = %.10lf\n",sigma_x);
+    printf("dx = %.10lf\n",ac[0]->dx);
+    
+    for (int i = 0; i < num_active_cells; i++)
+    {
+        printf("\nCell %d -- Diagonal = %lf\n",i,ac[i]->elements[0].value);
+        int count = sb_count(ac[i]->elements);
+        printf("\tElements:\n");
+        for (int j = 1; j < count; j++)
+            printf("\t%d -- Column = %d -- Value = %lf\n",ac[i]->elements[j].column,ac[i]->elements[j].column,ac[i]->elements[j].value);
+    }
+
+    printf("Leaving program ...\n");
+    exit(EXIT_FAILURE);
+    */
+
+}
+// *******************************************************************************************************

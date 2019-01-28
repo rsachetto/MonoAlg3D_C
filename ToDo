@@ -8,7 +8,9 @@ Sachetto
 - Implement compressed data on vtk files https://github.com/lz4/lz4/blob/dev/examples/simple_buffer.c
 
 Berg
-- Put the Purkinje code into this new version
+- Add the output option in the 'save_vtk_polydata_grid_as_legacy_vtk' function
+- Implement 'save_vtk_polydata_grid_as_vtu' function
+- Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 
 Pedro
 - Upgrade and refactor the DDM code.
