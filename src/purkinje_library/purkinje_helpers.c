@@ -35,7 +35,6 @@ void set_purkinje_network_from_file (struct graph *the_purkinje_network, const c
 
     //read_purkinje_network_from_file(file_name,&points,&branches,&N,&E);
     build_skeleton_purkinje(file_name,skeleton_network);
-    // OK
 
     build_mesh_purkinje(the_purkinje_network,skeleton_network,side_length);
     

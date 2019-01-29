@@ -10,8 +10,8 @@
 
 struct line 
 {
-    uint32_t source;
-    uint32_t destination;
+    uint64_t source;
+    uint64_t destination;
 };
 
 struct vtk_polydata_grid
@@ -30,8 +30,8 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
                                                                      float *plain_coordinates, bool clip_with_bounds,
                                                                      float *bounds, bool read_only_values);
 
-void save_vtk_polydata_grid_as_vtu (struct vtk_polydata_grid *vtk_grid, char *filename, bool binary);
-void save_vtk_polydata_grid_as_vtu_compressed (struct vtk_polydata_grid *vtk_grid, char *filename, int compression_level);
+void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *filename, bool binary);
+void save_vtk_polydata_grid_as_vtp_compressed (struct vtk_polydata_grid *vtk_grid, char *filename, int compression_level);
 void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid, char *filename, bool binary);
 
 
