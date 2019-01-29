@@ -323,14 +323,84 @@ SAVE_MESH(save_as_vtk_purkinje) {
     count++;
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
-    //new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
-    //save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, output_dir_with_file, binary);
-    
     new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
                                     clip_with_plain, plain_coords, clip_with_bounds, bounds,\
                                     !the_grid->adaptive);
     save_vtk_polydata_grid_as_legacy_vtk(vtk_polydata, output_dir_with_file, binary);
 
+    if(the_grid->adaptive)
+        free_vtk_polydata_grid(vtk_polydata);
+
     sdsfree(output_dir_with_file);
+
+}
+
+SAVE_MESH(save_as_vtp_purkinje) {
+
+    char *output_dir = config->out_dir_name;
+
+    if(!initialized) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
+        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data.config, "compression_level");
+        if(compress) binary = true;
+
+        initialized = true;
+    }
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
+
+    if(clip_with_plain) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[1], config->config_data.config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[2], config->config_data.config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data.config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[4], config->config_data.config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[5], config->config_data.config, "normal_z");
+    }
+
+    if(clip_with_bounds) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[0], config->config_data.config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[1], config->config_data.config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[2], config->config_data.config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[3], config->config_data.config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config->config_data.config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data.config, "max_z");
+    }
+
+
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d.vtp", file_prefix, count);
+    count++;
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+
+    if(save_pvd) 
+    {
+        add_file_to_pvd(current_dt, output_dir, base_name);
+    }
+
+    new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
+                                    clip_with_plain, plain_coords, clip_with_bounds, bounds,\
+                                    !the_grid->adaptive);
+
+    if(compress) 
+    {
+        save_vtk_polydata_grid_as_vtp_compressed(vtk_polydata, output_dir_with_file, compression_level);
+    }
+    else 
+    {
+        save_vtk_polydata_grid_as_vtp(vtk_polydata, output_dir_with_file, binary);
+    }
+
+    if(the_grid->adaptive)
+        free_vtk_polydata_grid(vtk_polydata);
+
+    sdsfree(output_dir_with_file);
+    sdsfree(base_name);
 
 }

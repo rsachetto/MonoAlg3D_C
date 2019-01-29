@@ -115,22 +115,20 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     }
     else
     {
-        print_to_stdout_and_file("No purkinje configuration provided! Exiting!\n");
-        exit(EXIT_FAILURE);
+        print_to_stdout_and_file("No purkinje configuration provided!\n");
+        //exit(EXIT_FAILURE);
     }
 
     // Configure the functions and set the mesh domain
-    /*
     if(domain_config) 
     {
         init_domain_functions(domain_config);
     } 
     else 
     {
-        print_to_stdout_and_file("No domain configuration provided! Exiting!\n");
-        exit(EXIT_FAILURE);
+        print_to_stdout_and_file("No domain configuration provided!\n");
+        //exit(EXIT_FAILURE);
     }
-    */
 
     if(assembly_matrix_config) 
     {
@@ -242,35 +240,53 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     } 
     else 
     {
-        // TODO:
-        // Set the domain functions alongside the purkinje functions
 
-        int success = purkinje_config->set_spatial_purkinje(purkinje_config,the_grid);
-        //int success = domain_config->set_spatial_domain(domain_config, the_grid);
-
-        if(!success) {
-            fprintf(stderr, "Error configuring the Purkinje domain!\n");
-            exit(EXIT_FAILURE);
+        int success;
+        if (purkinje_config)
+        {
+            success = purkinje_config->set_spatial_purkinje(purkinje_config,the_grid);
+            if(!success) 
+            {
+                fprintf(stderr, "Error configuring the Purkinje domain!\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+            
+        if (domain_config)
+        {
+            success = domain_config->set_spatial_domain(domain_config, the_grid);
+            if(!success) 
+            {
+                fprintf(stderr, "Error configuring the tissue domain!\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
-    /*
-    double start_dx = domain_config->start_dx;
-    double start_dy = domain_config->start_dy;
-    double start_dz = domain_config->start_dz;
+    double start_dx, start_dy, start_dz;
+    double max_dx, max_dy, max_dz;
 
-    double max_dx = domain_config->max_dx;
-    double max_dy = domain_config->max_dy;
-    double max_dz = domain_config->max_dz;
-    */
+    if (purkinje_config)
+    {
+        start_dx = purkinje_config->start_h;
+        start_dy = purkinje_config->start_h;
+        start_dz = purkinje_config->start_h;
 
-    double start_dx = purkinje_config->start_h;
-    double start_dy = purkinje_config->start_h;
-    double start_dz = purkinje_config->start_h;
+        max_dx = purkinje_config->start_h;
+        max_dy = purkinje_config->start_h;
+        max_dz = purkinje_config->start_h;
+    }
 
-    double max_dx = purkinje_config->start_h;
-    double max_dy = purkinje_config->start_h;
-    double max_dz = purkinje_config->start_h;
+    if (domain_config)
+    {
+        start_dx = domain_config->start_dx;
+        start_dy = domain_config->start_dy;
+        start_dz = domain_config->start_dz;
+
+        max_dx = domain_config->max_dx;
+        max_dy = domain_config->max_dy;
+        max_dz = domain_config->max_dz;
+    }
 
     order_grid_cells(the_grid);
     uint32_t original_num_cells = the_grid->num_active_cells;
