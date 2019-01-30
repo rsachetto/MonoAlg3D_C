@@ -261,6 +261,12 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
                 exit(EXIT_FAILURE);
             }
         }
+
+        if (!purkinje_config && !domain_config)
+        {
+            fprintf(stderr, "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     double start_dx, start_dy, start_dz;
