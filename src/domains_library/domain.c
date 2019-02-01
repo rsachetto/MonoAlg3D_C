@@ -531,8 +531,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     if(!success)
         seed = 0;
 
-    // TODO: change this here
-    //    initialize_grid_with_square_mesh(config, the_grid);
+    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
+
+    string_hash_insert(config->config_data.config, "num_layers", nl_char);
+
+    initialize_grid_with_square_mesh(config, the_grid);
     set_plain_fibrosis(the_grid, phi, seed);
 
     return 1;

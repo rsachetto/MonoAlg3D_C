@@ -52,5 +52,5 @@ void create_dir(const char *out_dir) {
             }
         }
     }
-    
+
 }

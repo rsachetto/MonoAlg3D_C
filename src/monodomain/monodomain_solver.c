@@ -240,7 +240,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     } 
     else 
     {
-
         int success;
         if (purkinje_config)
         {
@@ -289,9 +288,9 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         start_dy = domain_config->start_dy;
         start_dz = domain_config->start_dz;
 
-        max_dx = domain_config->max_dx;
-        max_dy = domain_config->max_dy;
-        max_dz = domain_config->max_dz;
+        max_dx = purkinje_config->start_h;
+        max_dy = purkinje_config->start_h;
+        max_dz = purkinje_config->start_h;
     }
 
     order_grid_cells(the_grid);
@@ -358,7 +357,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     start_stop_watch(&solver_time);
 
-    int print_rate = save_mesh_config->print_rate;
+    int print_rate = 0;
+
 
     int save_state_rate = 0;
 
@@ -380,6 +380,11 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     double cur_time = the_monodomain_solver->current_time;
 
     print_to_stdout_and_file("Starting simulation\n");
+
+    if(save_mesh_config != NULL) {
+        print_rate = save_mesh_config->print_rate;
+        save_mesh_config->last_count = (int)(finalT/dt_pde);
+    }
 
     // Main simulation loop start
     while(cur_time <= finalT) 

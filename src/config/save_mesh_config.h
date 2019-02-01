@@ -18,6 +18,7 @@ typedef SAVE_MESH(save_mesh_fn);
 struct save_mesh_config {
     struct config_common config_data;
     int print_rate;
+    int last_count;
     bool print_rate_was_set;
     char * out_dir_name;
     bool out_dir_name_was_set;
