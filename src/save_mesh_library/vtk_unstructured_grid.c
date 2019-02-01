@@ -864,6 +864,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         }
     }
 
+    /*
     {
         sds tmp = sdscat(sdsempty(), "\nMETADATA\n");
         tmp = sdscat(tmp, "INFORMATION 0\n\n");
@@ -871,6 +872,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         file_content = sdscatsds(file_content, tmp);
         sdsfree(tmp);
     }
+    */
 
     FILE *output_file = fopen(filename, "w");
     if(binary) {
