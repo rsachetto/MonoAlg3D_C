@@ -14,6 +14,13 @@ if [ "$#" -ne 5 ]; then
     echo "<AP_OUT> = Name for the output text file"
     echo "<CELL_ID> = Index of the cell to be plotted"
     echo "-------------------------------------------------------------------"
+    echo "!!! This script only works if the output file is NOT saved in   !!!"
+    echo "!!!                     binary format                           !!!"
+    echo "-------------------------------------------------------------------"
+    echo "<AP_LINE> guide:"
+    echo "  VTP/VTU --> Line 6"
+    echo "  VTK     --> Last line"
+    echo "-------------------------------------------------------------------"
     exit 1
 fi
 

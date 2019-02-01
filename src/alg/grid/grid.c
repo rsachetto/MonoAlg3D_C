@@ -19,6 +19,9 @@ struct grid *new_grid() {
     sb_reserve(result->refined_this_step, 128);
     sb_reserve(result->free_sv_positions, 128);
 
+    // Purkinje
+    result->the_purkinje_network = new_graph();
+
     return result;
 }
 
@@ -223,17 +226,43 @@ void clean_grid(struct grid *the_grid) {
     assert(the_grid);
     uint32_t number_of_cells = the_grid->number_of_cells;
 
+    struct cell_node *grid_cell = the_grid->first_cell;
+
+    // First delete the cells from the Purkinje network
+    if(grid_cell) 
+    {
+        while (grid_cell) 
+        {
+
+            struct cell_node *next = grid_cell->next;
+            free_cell_node(grid_cell);
+            grid_cell = next;
+
+        }
+    }
+
+    if (the_grid->the_purkinje_network) 
+    {
+        free_graph(the_grid->the_purkinje_network);
+    }
+    
+    // TODO: Think about this function
+    // Then, we will delete the tissue cells
+
     // In order to release the memory allocated for the grid, the grid is
     // derefined to level 1. Thus, the grid shape is known and each node can
     // be easily reached.
-    while(number_of_cells > 8) {
+    /*
+    while(number_of_cells > 8) 
+    {
         derefine_all_grid(the_grid);
         number_of_cells = the_grid->number_of_cells;
     }
 
-    struct cell_node *grid_cell = the_grid->first_cell;
+    grid_cell = the_grid->first_cell;
 
-    if(grid_cell) {
+    if(grid_cell) 
+    {
 
         // Deleting transition nodes.
         free((struct transition_node *)(grid_cell->north));
@@ -244,19 +273,23 @@ void clean_grid(struct grid *the_grid) {
         free((struct transition_node *)(((struct cell_node *)(grid_cell->back))->back));
 
         // Deleting cells nodes.
-        while(grid_cell) {
+        while(grid_cell) 
+        {
 
             struct cell_node *next = grid_cell->next;
             free_cell_node(grid_cell);
             grid_cell = next;
         }
     }
+    */
 
-    if(the_grid->refined_this_step) {
+    if(the_grid->refined_this_step) 
+    {
         sb_clear(the_grid->refined_this_step);
     }
 
-    if(the_grid->free_sv_positions) {
+    if(the_grid->free_sv_positions) 
+    {
         sb_clear(the_grid->free_sv_positions);
     }
 }
@@ -267,7 +300,8 @@ void clean_and_free_grid(struct grid *the_grid) {
 
     clean_grid(the_grid);
 
-    if(the_grid->active_cells) {
+    if(the_grid->active_cells) 
+    {
         free(the_grid->active_cells);
     }
 
@@ -429,4 +463,75 @@ int get_num_refinement_steps_to_discretization(double side_len, double h) {
     }
 
     return num_steps - 1;
+}
+
+void initialize_grid_purkinje (struct grid *the_grid)
+{
+    assert(the_grid);
+
+    the_grid->number_of_cells = 0;
+}
+
+void construct_grid_purkinje (struct grid *the_grid)
+{
+    assert(the_grid);
+
+    // TODO: Allow dx, dy, dz to be different in the Purkinje code
+    float side_length_x = the_grid->the_purkinje_network->dx;
+    float side_length_y = the_grid->the_purkinje_network->dx;
+    float side_length_z = the_grid->the_purkinje_network->dx;
+
+    float half_side_length_x = side_length_x / 2.0f;
+    float half_side_length_y = side_length_y / 2.0f;
+    float half_side_length_z = side_length_z / 2.0f;
+
+    float quarter_side_length_x = half_side_length_x / 2.0f;
+    float quarter_side_length_y = half_side_length_y / 2.0f;
+    float quarter_side_length_z = half_side_length_z / 2.0f;
+
+    int total_nodes = the_grid->the_purkinje_network->total_nodes;
+    
+    // Create an array of cell nodes
+    struct cell_node **cells = (struct cell_node**)malloc(sizeof(struct cell_node*)*total_nodes);
+    for (int i = 0; i < total_nodes; i++)
+        cells[i] = new_cell_node();
+    
+    // Pass through the Purkinje graph and set the cell nodes.
+    struct node *n = the_grid->the_purkinje_network->list_nodes;
+    for (int i = 0; i < total_nodes; i++)
+    {
+        
+        if (i == 0)
+            set_cell_node_data (cells[i],half_side_length_x,half_side_length_y,half_side_length_z,\
+                            0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,cells[i+1],i,0,\
+                            n->x,n->y,n->z);
+        else if (i == total_nodes-1)
+            set_cell_node_data (cells[i],half_side_length_x,half_side_length_y,half_side_length_z,\
+                        0,NULL,NULL,NULL,NULL,NULL,NULL,\
+                        cells[i-1],NULL,i,0,\
+                        n->x,n->y,n->z);
+        else
+            set_cell_node_data (cells[i],half_side_length_x,half_side_length_y,half_side_length_z,\
+                        0,NULL,NULL,NULL,NULL,NULL,NULL,\
+                        cells[i-1],cells[i+1],i,0,\
+                        n->x,n->y,n->z);
+
+        // Do not refine the Purkinje cells !
+        cells[i]->can_change = false;
+
+        n = n->next;
+    }
+    
+    // Grid initialization
+    the_grid->first_cell = cells[0];
+    the_grid->number_of_cells = total_nodes;
+    
+}
+
+void initialize_and_construct_grid_purkinje (struct grid *the_grid)
+{
+    assert(the_grid);
+
+    initialize_grid_purkinje(the_grid);
+    construct_grid_purkinje(the_grid);
 }

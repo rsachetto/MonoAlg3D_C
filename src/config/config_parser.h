@@ -21,6 +21,7 @@
 #include "../alg/grid/grid.h"
 
 #include "domain_config.h"
+#include "purkinje_config.h"
 #include "extra_data_config.h"
 #include "assembly_matrix_config.h"
 #include "save_mesh_config.h"
@@ -87,6 +88,7 @@ struct user_options {
 
     struct stim_config_hash *stim_configs;
     struct domain_config *domain_config;
+    struct purkinje_config *purkinje_config;
     struct extra_data_config *extra_data_config;
     struct assembly_matrix_config *assembly_matrix_config;
     struct linear_system_solver_config *linear_system_solver_config;

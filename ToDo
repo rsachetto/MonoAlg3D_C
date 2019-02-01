@@ -8,7 +8,10 @@ Sachetto
 - Implement compressed data on vtk files https://github.com/lz4/lz4/blob/dev/examples/simple_buffer.c
 
 Berg
-- Put the Purkinje code into this new version
+- Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 
 Pedro
 - Upgrade and refactor the DDM code.
+- Rewrite the 'update_monodomain' function for the DDM case
+- Implement the anisotropic case for the DDM. 
+    The kappas can be different now along the control volumes

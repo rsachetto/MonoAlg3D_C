@@ -6,6 +6,7 @@
 #define MONOALG3D_GRID_H
 
 #include "../cell/cell.h"
+#include "../../graph/graph.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,6 +28,8 @@ struct grid {
 
     struct cell_node* *active_cells;
     bool adaptive;
+
+    struct graph *the_purkinje_network;
 
 };
 
@@ -63,5 +66,8 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
 int get_num_refinement_steps_to_discretization (double side_len, double h);
 void save_grid_domain (struct grid * the_grid, const char *file_name);
 
+void initialize_and_construct_grid_purkinje (struct grid *the_grid);
+void initialize_grid_purkinje (struct grid *the_grid);
+void construct_grid_purkinje (struct grid *the_grid);
 
 #endif //MONOALG3D_GRID_H

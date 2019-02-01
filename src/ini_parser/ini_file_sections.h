@@ -10,6 +10,7 @@
 #define ALG_SECTION "alg"
 #define STIM_SECTION "stim"
 #define DOMAIN_SECTION "domain"
+#define PURKINJE_SECTION "purkinje"
 #define SAVE_RESULT_SECTION "save_result"
 #define SAVE_STATE_SECTION "save_state" 
 #define RESTORE_STATE_SECTION "restore_state" 
