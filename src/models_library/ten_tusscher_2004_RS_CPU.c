@@ -195,8 +195,8 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     real dCaSR;
 
     real A;
-    real BufferFactorc;
-    real BufferFactorsr;
+//    real BufferFactorc;
+//    real BufferFactorsr;
     real SERCA;
     real Caisquare;
     real CaSRsquare;
@@ -266,12 +266,12 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     real inverseVcF2=1/(2*Vc*F);
     real inverseVcF=1./(Vc*F);
     real Kupsquare=Kup*Kup;
-    real BufcKbufc=Bufc*Kbufc;
-    real Kbufcsquare=Kbufc*Kbufc;
-    real Kbufc2=2*Kbufc;
-    real BufsrKbufsr=Bufsr*Kbufsr;
-    const real Kbufsrsquare=Kbufsr*Kbufsr;
-    const real Kbufsr2=2*Kbufsr;
+//    real BufcKbufc=Bufc*Kbufc;
+//    real Kbufcsquare=Kbufc*Kbufc;
+//    real Kbufc2=2*Kbufc;
+//    real BufsrKbufsr=Bufsr*Kbufsr;
+//    const real Kbufsrsquare=Kbufsr*Kbufsr;
+//    const real Kbufsr2=2*Kbufsr;
     const real exptaufca=exp(-dt/taufca);
     const real exptaug=exp(-dt/taug);
 
