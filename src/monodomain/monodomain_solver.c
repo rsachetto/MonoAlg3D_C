@@ -113,21 +113,17 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     {
         init_purkinje_functions(purkinje_config);
     }
-    else
-    {
-        print_to_stdout_and_file("No purkinje configuration provided!\n");
-        //exit(EXIT_FAILURE);
-    }
 
     // Configure the functions and set the mesh domain
     if(domain_config) 
     {
         init_domain_functions(domain_config);
     } 
-    else 
-    {
-        print_to_stdout_and_file("No domain configuration provided!\n");
-        //exit(EXIT_FAILURE);
+
+
+    if( !(purkinje_config || domain_config) ) {
+        print_to_stdout_and_file("No domain or purkinje configuration provided! Exiting!\n");
+        exit(EXIT_FAILURE);
     }
 
     if(assembly_matrix_config) 
@@ -288,9 +284,12 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         start_dy = domain_config->start_dy;
         start_dz = domain_config->start_dz;
 
-        max_dx = purkinje_config->start_h;
-        max_dy = purkinje_config->start_h;
-        max_dz = purkinje_config->start_h;
+        //TODO: Lucas, this was incorrect before. Check please.
+        if(!purkinje_config) {
+            max_dx = domain_config->max_dx;
+            max_dy = domain_config->max_dy;
+            max_dz = domain_config->max_dz;
+        }
     }
 
     order_grid_cells(the_grid);
@@ -425,6 +424,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         //update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_pde,
         //                  the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
 
+        //TODO: this functions should be in a user provided library, as they can change depending on the solver that is being used;
         if (!the_monodomain_solver->using_ddm)
             update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_pde,
                           the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
@@ -654,6 +654,7 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
     }
 }
 
+// TODO: THIS FUNCTION SHOULD BE IN AN USER PROVIDED LIBRARY
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                        double beta, double cm, double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu) {
 
@@ -859,9 +860,6 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
 
     the_monodomain_solver->dt = options->dt_pde;
 
-    //    the_monodomain_solver->sigma_x = options->sigma_x;
-    //    the_monodomain_solver->sigma_y = options->sigma_y;
-    //    the_monodomain_solver->sigma_z = options->sigma_z;
     the_monodomain_solver->beta = options->beta;
     the_monodomain_solver->cm = options->cm;
     the_monodomain_solver->start_adapting_at = options->start_adapting_at;

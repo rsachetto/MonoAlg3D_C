@@ -5,7 +5,6 @@ Sachetto
 - Compare the mesh with the mesh from the scientific reports paper
 - Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
-- Implement compressed data on vtk files https://github.com/lz4/lz4/blob/dev/examples/simple_buffer.c
 
 Berg
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
