@@ -240,7 +240,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     } 
     else 
     {
-
         int success;
         if (purkinje_config)
         {
@@ -289,9 +288,9 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         start_dy = domain_config->start_dy;
         start_dz = domain_config->start_dz;
 
-        max_dx = domain_config->max_dx;
-        max_dy = domain_config->max_dy;
-        max_dz = domain_config->max_dz;
+        max_dx = purkinje_config->start_h;
+        max_dy = purkinje_config->start_h;
+        max_dz = purkinje_config->start_h;
     }
 
     order_grid_cells(the_grid);
