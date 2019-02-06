@@ -121,9 +121,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     } 
 
 
-    if( !(purkinje_config || domain_config) ) {
-        print_to_stdout_and_file("No domain or purkinje configuration provided! Exiting!\n");
-        exit(EXIT_FAILURE);
+    if( !purkinje_config && !domain_config ) {
+        print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
     if(assembly_matrix_config) 
@@ -132,8 +131,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     } 
     else 
     {
-        print_to_stdout_and_file("No assembly matrix configuration provided! Exiting!\n");
-        exit(EXIT_FAILURE);
+        print_to_stderr_and_file_and_exit("No assembly matrix configuration provided! Exiting!\n");
     }
 
     if(linear_system_solver_config) 
@@ -142,8 +140,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     } 
     else 
     {
-        print_to_stdout_and_file("No linear solver configuration provided! Exiting!\n");
-        exit(EXIT_FAILURE);
+        print_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
     }
 
     bool save_to_file = (save_mesh_config != NULL) && (save_mesh_config->print_rate > 0);
@@ -242,8 +239,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
             success = purkinje_config->set_spatial_purkinje(purkinje_config,the_grid);
             if(!success) 
             {
-                fprintf(stderr, "Error configuring the Purkinje domain!\n");
-                exit(EXIT_FAILURE);
+                print_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
             }
         }
             
@@ -252,15 +248,13 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
             success = domain_config->set_spatial_domain(domain_config, the_grid);
             if(!success) 
             {
-                fprintf(stderr, "Error configuring the tissue domain!\n");
-                exit(EXIT_FAILURE);
+                print_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
             }
         }
 
         if (!purkinje_config && !domain_config)
         {
-            fprintf(stderr, "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
-            exit(EXIT_FAILURE);
+            print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
         }
     }
 
@@ -1022,11 +1016,4 @@ void update_monodomain_ddm (uint32_t initial_number_of_cells, uint32_t num_activ
 #ifdef COMPILE_CUDA
     free(vms);
 #endif
-}
-// ***********************************************************************************************************
-
-void debug_print_and_leave ()
-{
-    printf("Leaving program\n"); 
-    exit(EXIT_FAILURE);
 }

@@ -42,13 +42,11 @@ void init_linear_system_solver_functions(struct linear_system_solver_config *con
     if(function_name){
         config->solve_linear_system = dlsym(config->config_data.handle, function_name);
         if (dlerror() != NULL)  {
-            fprintf(stderr, "\n%s function not found in the provided linear_system_solver library\n", function_name);
-            exit(EXIT_FAILURE);
+            print_to_stderr_and_file_and_exit("\n%s function not found in the provided linear_system_solver library\n", function_name);
         }
     }
     else {
-        fprintf(stderr, "No function name for matrix assembly library provided. Exiting!\n");
-        exit(EXIT_FAILURE);
+        print_to_stderr_and_file_and_exit("No function name for matrix assembly library provided. Exiting!\n");
     }
 
 }
