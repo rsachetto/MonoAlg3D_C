@@ -37,6 +37,21 @@ void print_to_stdout_and_file(char const *fmt, ...) {
     va_end(ap);
 }
 
+void print_to_stderr_and_file_and_exit(char const *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vprintf(fmt, ap);
+    fflush(stderr);
+    va_end(ap);
+    va_start(ap, fmt);
+    if(logfile) {
+        vfprintf(logfile, fmt, ap);
+        fflush(logfile);
+    }
+    va_end(ap);
+    exit(EXIT_FAILURE);
+}
+
 void open_logfile(const char *path) {
 
 #ifdef _WIN32

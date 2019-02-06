@@ -560,23 +560,23 @@ Test (utils, stretchy_buffer_element) {
 
     struct element *v = NULL;
 
-            sb_reserve(v, 1);
+    sb_reserve(v, 1);
 
     cr_assert_eq(sb_count(v), 0);
     cr_assert_eq(stb__sbm(v), 1);
 
     struct cell_node *c = new_cell_node();
-    struct element a = {0, 1, c};
+    struct element a = {'a', 0, 1, c};
 
-            sb_push(v, a);
+    sb_push(v, a);
 
     a.column = 2;
     a.value = -2.2;
-            sb_push(v, a);
+    sb_push(v, a);
 
     a.column = 3;
     a.value = 3.5;
-            sb_push(v, a);
+    sb_push(v, a);
 
     cr_assert_eq(sb_count(v), 3);
 
