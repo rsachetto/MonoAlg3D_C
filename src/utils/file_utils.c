@@ -5,8 +5,10 @@
 #include <stdarg.h>
 
 #include "file_utils.h"
+#include "../vector/stretchy_buffer.h"
 #include <stdio.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include <errno.h>
 
@@ -16,8 +18,10 @@
 #endif
 
 #ifdef linux
+
 #include <unistd.h>
 #include <stdlib.h>
+#include <dirent.h>
 
 #endif
 
@@ -25,12 +29,16 @@ static FILE *logfile = NULL;
 
 void print_to_stdout_and_file(char const *fmt, ...) {
     va_list ap;
+
+    if (!no_stdout) {
+        va_start(ap, fmt);
+        vprintf(fmt, ap);
+        fflush(stdout);
+        va_end(ap);
+    }
+
     va_start(ap, fmt);
-    vprintf(fmt, ap);
-    fflush(stdout);
-    va_end(ap);
-    va_start(ap, fmt);
-    if(logfile) {
+    if (logfile) {
         vfprintf(logfile, fmt, ap);
         fflush(logfile);
     }
@@ -44,7 +52,7 @@ void print_to_stderr_and_file_and_exit(char const *fmt, ...) {
     fflush(stderr);
     va_end(ap);
     va_start(ap, fmt);
-    if(logfile) {
+    if (logfile) {
         vfprintf(logfile, fmt, ap);
         fflush(logfile);
     }
@@ -60,21 +68,19 @@ void open_logfile(const char *path) {
     logfile = fopen(path, "w");
 #endif
 
-    if(logfile == NULL) {
+    if (logfile == NULL) {
         fprintf(stderr, "Error opening %s, printing output only in the sdtout (Terminal)\n", path);
-    }
-    else {
+    } else {
         printf("Log will be saved in %s\n", path);
     }
 }
 
 void close_logfile() {
-    if(logfile) fclose(logfile);
+    if (logfile) fclose(logfile);
 }
 
 
-int cp_file(const char *to, const char *from)
-{
+int cp_file(const char *to, const char *from) {
     int fd_to, fd_from;
     char buf[4096];
     int nread;
@@ -88,30 +94,24 @@ int cp_file(const char *to, const char *from)
     if (fd_to < 0)
         goto out_error;
 
-    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
-    {
+    while (nread = read(fd_from, buf, sizeof buf), nread > 0) {
         char *out_ptr = buf;
-        int  nwritten;
+        int nwritten;
 
         do {
             nwritten = write(fd_to, out_ptr, nread);
 
-            if (nwritten >= 0)
-            {
+            if (nwritten >= 0) {
                 nread -= nwritten;
                 out_ptr += nwritten;
-            }
-            else if (errno != EINTR)
-            {
+            } else if (errno != EINTR) {
                 goto out_error;
             }
         } while (nread > 0);
     }
 
-    if (nread == 0)
-    {
-        if (close(fd_to) < 0)
-        {
+    if (nread == 0) {
+        if (close(fd_to) < 0) {
             fd_to = -1;
             goto out_error;
         }
@@ -134,17 +134,17 @@ int cp_file(const char *to, const char *from)
 
 char *read_entire_file(char *filename, long *size) {
 
-    FILE    *infile;
-    char    *buffer;
-    long    numbytes;
+    FILE *infile;
+    char *buffer;
+    long numbytes;
 
-    if(!filename) return NULL;
+    if (!filename) return NULL;
 
 /* open an existing file for reading */
     infile = fopen(filename, "r");
 
 /* quit if the file does not exist */
-    if(infile == NULL)
+    if (infile == NULL)
         return NULL;
 
 /* Get the number of bytes */
@@ -157,10 +157,10 @@ the beginning of the file */
 
 /* grab sufficient memory for the
 buffer to hold the text */
-    buffer = (char*)malloc(numbytes*sizeof(char));
+    buffer = (char *) malloc(numbytes * sizeof(char));
 
 /* memory error */
-    if(buffer == NULL)
+    if (buffer == NULL)
         return NULL;
 
 /* copy all the text into the buffer */
@@ -170,4 +170,67 @@ buffer to hold the text */
     *size = numbytes;
 
     return buffer;
+}
+
+char **read_lines(const char *filename) {
+
+    char **lines = NULL;
+
+
+    size_t len = 0;
+    ssize_t read;
+
+    FILE *fp;
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+        fprintf(stderr, "Error reading file %s\n", filename);
+        return NULL;
+    }
+
+    char * line = NULL;
+    while ((read = getline(&line, &len, fp)) != -1) {
+        line[strlen(line) - 1] = '\0';
+        sb_push(lines, strdup(line));
+    }
+
+    free(line);
+    fclose(fp);
+
+    return lines;
+
+}
+
+
+char **list_files_from_dir(const char *dir, const char *prefix) {
+
+    DIR *dp;
+
+    char **files = NULL;
+
+    struct dirent *dirp;
+
+    if ((dp = opendir(dir)) == NULL) {
+        fprintf(stderr, "Error opening %s\n", dir);
+        exit(0);
+    }
+
+    while ((dirp = readdir(dp)) != NULL) {
+
+        char *file_name = strdup(dirp->d_name);
+
+        if (prefix) {
+
+            if (strncmp(prefix, file_name, strlen(prefix)) == 0) {
+                sb_push(files, file_name);
+            }
+
+        } else {
+            sb_push(files, file_name);
+        }
+    }
+
+    closedir(dp);
+    return files;
 }

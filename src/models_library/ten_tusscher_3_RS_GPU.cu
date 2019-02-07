@@ -43,12 +43,14 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
-    //Default values for a healthy cell
+    // Default values for a healthy cell ///////////
     real atpi = 6.8f;
     real Ko = 5.4f;
     real Ki_mult = 1.0f;
     real acidosis = 0.0;
     real K1_mult = 1.0f;
+    ////////////////////////////////////
+
     real *fibrosis_device;
     real *fibs = NULL;
 

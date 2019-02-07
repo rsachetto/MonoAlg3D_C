@@ -268,16 +268,14 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
-        print_to_stdout_and_file("Error opening mesh described in %s!!\n", file_name);
-        exit(0);
+        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
     }
 
     double **mesh_points = (double **)malloc(sizeof(double *) * size);
     for(int i = 0; i < size; i++) {
         mesh_points[i] = (double *)malloc(sizeof(double) * 4);
         if(mesh_points[i] == NULL) {
-            print_to_stdout_and_file("Failed to allocate memory\n");
-            exit(0);
+            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
     }
     double dummy; // we don't use this value here
@@ -372,16 +370,15 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
-        print_to_stdout_and_file("Error opening mesh described in %s!!\n", file_name);
-        exit(0);
+        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
+
     }
 
     double **mesh_points = (double **)malloc(sizeof(double *) * size);
     for(int i = 0; i < size; i++) {
         mesh_points[i] = (double *)calloc(4, sizeof(double));
         if(mesh_points[i] == NULL) {
-            print_to_stdout_and_file("Failed to allocate memory\n");
-            exit(0);
+            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
     }
     double dummy; // we don't use this value here

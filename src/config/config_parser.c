@@ -42,10 +42,11 @@ static const struct option long_options[] = {
     {"restore_state", required_argument, NULL, RESTORE_STATE_OPT},
     {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT},
     {"draw_gl_output", no_argument, NULL, DRAW_OPT},
+    {"quiet", no_argument, NULL, 'q'},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
-static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:h";
+static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh";
 
 /* Display program usage, and exit.
  */
@@ -171,6 +172,9 @@ struct user_options *new_user_options() {
 
     user_args->vm_threshold = -86.0f;
     user_args->vm_threshold_was_set = false;
+
+    user_args->quiet = false;
+    user_args->quiet_was_set = false;
 
     user_args->stim_configs = NULL;
     user_args->domain_config = NULL;
@@ -738,7 +742,6 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
                 issue_overwrite_warning("vm_threshold", "main", old_value, optarg, user_args->config_file);
             }
             user_args->vm_threshold = strtof(optarg, NULL);
-            ;
             break;
 
         case DOMAIN_OPT:
@@ -799,6 +802,13 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case DRAW_OPT:
             user_args->draw = true;
+            break;
+        case 'q':
+            if(user_args->quiet_was_set) {
+                sprintf(old_value, "%d", user_args->quiet);
+                issue_overwrite_warning("quiet", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->quiet = true;
             break;
         case 'h': /* fall-through is intentional */
         case '?':
@@ -882,6 +892,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->adaptive = false;
         }
         pconfig->adaptive_was_set = true;
+    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "quiet")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->quiet = true;
+        } else {
+            pconfig->quiet = false;
+        }
+        pconfig->quiet = true;
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
         pconfig->ref_bound = strtof(value, NULL);
         pconfig->ref_bound_was_set = true;

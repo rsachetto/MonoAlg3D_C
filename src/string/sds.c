@@ -779,7 +779,6 @@ int sdscmp(const sds s1, const sds s2) {
     return cmp;
 }
 
-
 /* Split 's' with separator in 'sep'. An array
  * of sds strings is returned. *count will be set
  * by reference to the number of tokens returned.

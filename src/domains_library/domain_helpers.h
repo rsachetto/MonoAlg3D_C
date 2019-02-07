@@ -16,7 +16,7 @@ void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, 
                                   double minx, double maxx, double miny, double maxy, double minz,
                                   double maxz,  bool read_fibrosis);
 
-void set_cell_not_changeable (struct cell_node *c, double initialDiscretization);
+void set_cell_not_changeable (struct cell_node *c, double initial_discretization);
 
 void set_plain_fibrosis (struct grid *the_grid, double phi, unsigned fib_seed);
 

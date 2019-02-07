@@ -7,6 +7,9 @@
 #include "../config/linear_system_solver_config.h"
 #include "../config/domain_config.h"
 #include "../config/save_mesh_config.h"
+#include "../config/config_parser.h"
+#include "../utils/file_utils.h"
+#include "../ini_parser/ini.h"
 #include <signal.h>
 
 
@@ -377,47 +380,203 @@ int test_cuboid_mesh(double start_dx, double start_dy, double start_dz, char* si
 
 }
 
+int run_simulation_with_config(char *config_file) {
+
+    struct user_options *options;
+    options = new_user_options();
+
+    struct grid *the_grid;
+    the_grid = new_grid();
+
+    struct monodomain_solver *monodomain_solver;
+    monodomain_solver = new_monodomain_solver();
+
+    struct ode_solver *ode_solver;
+    ode_solver = new_ode_solver();
+
+    // Here we parse the config file
+    if(config_file) {
+        options->config_file = strdup(config_file);
+
+        if(ini_parse(options->config_file, parse_config_file, options) < 0) {
+            fprintf(stderr, "Error: Can't load the config file %s\n", options->config_file);
+            return 0;
+        }
+
+    }
+
+    no_stdout = true;
+
+    if(options->save_mesh_config->out_dir_name) {
+        free(options->save_mesh_config->out_dir_name);
+    }
+
+    options->save_mesh_config->out_dir_name = strdup("tests_bin/gold_tmp");
+
+    // Create the output dir and the logfile
+    if(options->save_mesh_config->out_dir_name) {
+        create_dir(options->save_mesh_config->out_dir_name);
+    }
+    else {
+        return 0;
+    }
+
+    configure_ode_solver_from_options(ode_solver, options);
+    configure_monodomain_solver_from_options(monodomain_solver, options);
+    configure_grid_from_options(the_grid, options);
+
+#ifndef COMPILE_CUDA
+    if(ode_solver->gpu) {
+        print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        ode_solver->gpu = false;
+    }
+#endif
+
+    int np = monodomain_solver->num_threads;
+
+    if(np == 0)
+        np = 1;
+
+#if defined(_OPENMP)
+    omp_set_num_threads(np);
+#endif
+
+    solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+
+
+    clean_and_free_grid(the_grid);
+    free_ode_solver(ode_solver);
+
+    free(monodomain_solver);
+
+    free_user_options(options);
+    close_logfile();
+
+    return 1;
+}
+
+
+
+int check_output_equals(const sds gold_output, const sds tested_output) {
+
+
+    sds *files_gold = list_files_from_dir(gold_output, "V_it_");
+    sds *files_tested_sim = list_files_from_dir(tested_output, "V_it_");
+
+    int n_files_gold = sb_count(files_gold);
+    int n_files_tested = sb_count(files_tested_sim);
+
+    cr_assert_eq(n_files_gold, n_files_tested);
+
+    for(int i = 0; i < n_files_gold; i++) {
+        sds full_path_gold = sdsempty();
+        full_path_gold = sdscatprintf(full_path_gold, "%s/", gold_output);
+        full_path_gold = sdscat(full_path_gold, files_gold[i]);
+
+        sds full_path_tested = sdsempty();
+        full_path_tested = sdscatprintf(full_path_tested, "%s/", tested_output);
+        full_path_tested = sdscat(full_path_tested, files_tested_sim[i]);
+
+        sds *lines_gold = read_lines(full_path_gold);
+        sds *lines_tested = read_lines(full_path_tested);
+
+        cr_assert(lines_gold);
+        cr_assert(lines_tested);
+
+        sdsfree(full_path_gold);
+        sdsfree(full_path_tested);
+
+
+        int n_lines_gold = sb_count(lines_gold);
+        int n_lines_tested= sb_count(lines_tested);
+
+        cr_assert_eq(n_lines_gold, n_lines_tested);
+
+        for(int j = 0; j < n_lines_gold; j++) {
+
+            int count_gold;
+            int count_tested;
+
+            sds *gold_values = sdssplit(lines_gold[j], ",", &count_gold);
+            sds *tested_simulation_values = sdssplit(lines_tested[j], ",", &count_tested);
+
+            cr_assert_eq(count_gold, count_tested);
+
+            for(int k = 0; k < count_gold-1; k++) {
+                double value_gold = strtod(gold_values[k], NULL);
+                double value_tested = strtod(tested_simulation_values[k], NULL);
+                cr_assert_eq(value_gold, value_tested);
+            }
+
+            double value_gold = strtod(gold_values[count_gold-1], NULL);
+            double value_tested = strtod(tested_simulation_values[count_gold-1], NULL);
+
+            cr_assert_float_eq(value_gold, value_tested, 1e-10);
+
+            sdsfreesplitres(gold_values, count_gold);
+            sdsfreesplitres(tested_simulation_values, count_tested);
+        }
+    }
+
+    return 1;
+
+
+}
+
+/////STARTING TESTS////////////////////////////////////////////////////////////////////////
+
+Test(run_gold_simulation, gpu_no_adapt) {
+    int success = run_simulation_with_config("example_configs/gold_simulation_no_adapt.ini");
+    cr_assert(success);
+
+    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
+    sds tested_simulation_dir = sdsnew("tests_bin/gold_tmp/");
+
+    success = check_output_equals(gold_dir, tested_simulation_dir);
+    cr_assert(success);
+}
+
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_1000) {
     int success  = test_cuboid_mesh(100, 100, 100, "1000", "1000", "1000", false);
-    assert(success);
+    cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_200_100_100_1000_1000_1000) {
     int success = test_cuboid_mesh(200, 100, 100, "1000", "1000", "1000", false);
-    assert(success);
+    cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_100_200_100_1000_1000_1000) {
 
     int success = test_cuboid_mesh(100, 200, 100, "1000", "1000", "1000", false);
-    assert(success);
+    cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_100_100_200_1000_1000_1000) {
 
     int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", false);
-    assert(success);
+    cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_2000) {
     int success = test_cuboid_mesh(100, 100, 100, "1000", "1000", "2000", false);
-    assert(success);
+    cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_1500) {
     int success = test_cuboid_mesh(150, 150, 150, "1500", "1500", "1500", false);
-    assert(success);
+    cr_assert(success);
 }
 
 
 Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_3000) {
     int success  = test_cuboid_mesh(150, 150, 150, "1500", "1500", "3000", false);
-    assert(success);
+    cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_300_150_150_1500_1500_3000) {
     int success = test_cuboid_mesh(300, 150, 150, "1500", "1500", "3000", false);
-    assert(!success);
+    cr_assert(!success);
 }
 
 Test (solvers, cg_jacobi_1t) {
