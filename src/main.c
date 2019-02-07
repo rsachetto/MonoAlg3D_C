@@ -38,6 +38,9 @@ int main(int argc, char **argv) {
     // The command line options always overwrite the config file
     parse_options(argc, argv, options);
 
+    //This variable is from file_utils.h
+    no_stdout = options->quiet;
+
     // Create the output dir and the logfile
     if(options->save_mesh_config && options->save_mesh_config->out_dir_name) {
         sds buffer_log = sdsnew("");

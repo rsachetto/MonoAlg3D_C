@@ -87,7 +87,10 @@ SAVE_MESH(save_as_text_or_binary) {
     double side;
 
     sds tmp = sdsnew(output_dir);
-    tmp = sdscatprintf(tmp, "/%s_it_%lf.vtk", file_prefix, current_dt);
+    if(binary)
+        tmp = sdscatprintf(tmp, "/%s_it_%lf.bin", file_prefix, current_dt);
+    else
+        tmp = sdscatprintf(tmp, "/%s_it_%lf.txt", file_prefix, current_dt);
 
     FILE *output_file = fopen(tmp, "w");
 

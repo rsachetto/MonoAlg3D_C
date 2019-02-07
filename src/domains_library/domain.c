@@ -281,10 +281,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
         set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 30400, 81600, 59200, 103000, 13600, 48000, true);
         size_code = 1;
     } else {
-        printf(
-            "Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n",
+        print_to_stderr_and_file_and_exit("Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n",
             scar_size);
-        exit(EXIT_FAILURE);
     }
 
     print_to_stdout_and_file("Cleaning grid\n");
@@ -447,7 +445,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
         print_to_stdout_and_file("Refining Mesh to 12.5um\n");
         refine_grid(the_grid, 3);
     } else {
-        print_to_stdout_and_file("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
+        print_to_stderr_and_file_and_exit("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
                                  "or 12.5um. Using 100um!\n");
     }
 

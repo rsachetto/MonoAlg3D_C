@@ -86,6 +86,9 @@ struct user_options {
     bool start_adapting_at_was_set;
     char *config_file;              /*-c option*/
 
+    bool quiet; /*-q option*/
+    bool quiet_was_set;
+
     struct stim_config_hash *stim_configs;
     struct domain_config *domain_config;
     struct purkinje_config *purkinje_config;
