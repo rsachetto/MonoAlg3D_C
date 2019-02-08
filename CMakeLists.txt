@@ -84,19 +84,26 @@ ENDIF(CUDA_FOUND)
 
 SET(OpenGL_GL_PREFERENCE "GLVND")
 
-
-#TODO: use raylib to the visualization tool
 FIND_PACKAGE(OpenGL)
-FIND_PACKAGE(GLUT)
-IF(OPENGL_FOUND AND GLUT_FOUND)
-	IF(MSVC)
-		SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
-	ELSE()
-		SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${OPENGL_INCLUDE_DIR}\" -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")		
-	ENDIF()
+
+IF(OPENGL_FOUND AND OPENMP_FOUND)
+    IF(MSVC)
+        #SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
+        SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
+    ELSE()
+        #SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${OPENGL_INCLUDE_DIR}\" -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
+        SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
+    ENDIF()
+
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
+    set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # or games
+
+    #    # build raylib
+    ADD_SUBDIRECTORY(src/raylib/src)
 
     ADD_SUBDIRECTORY(src/draw)
-    SET(OPT_DEPS ${OPT_DEPS} draw)
+
+    SET(OPT_DEPS ${OPT_DEPS} draw raylib)
 ENDIF()
 
 ADD_SUBDIRECTORY(src/utils)
@@ -108,7 +115,7 @@ ADD_SUBDIRECTORY(src/string)
 ADD_SUBDIRECTORY(src/config)
 ADD_SUBDIRECTORY(src/graph)
 
-SET(COMPILE_GUI TRUE)
+SET(COMPILE_GUI FALSE)
 
 IF(${COMPILE_GUI})
     ADD_SUBDIRECTORY(src/libui)
@@ -121,7 +128,6 @@ IF(${COMPILE_GUI})
 
     ADD_DEPENDENCIES(MonoAlg3D_GUI ${GUI_DEPS} )
     TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ${GUI_DEPS})
-
 ENDIF()
 
 ADD_EXECUTABLE(MonoAlg3D src/main.c)
@@ -132,14 +138,14 @@ IF(MPI_C_FOUND)
     INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
     ADD_EXECUTABLE(MonoAlg3D_batch src/main_batch.c)
     ADD_DEPENDENCIES(MonoAlg3D_batch utils alg solvers hashes ini_parser string graph config ${OPT_DEPS})
-    TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
+    TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
 ENDIF(MPI_C_FOUND)
 
 IF(MSVC)
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl)
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl)
     SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 ELSE()
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${CUDA_LIBRARIES} dl m)
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl m)
 ENDIF()
 
 ADD_SUBDIRECTORY(src/models_library)

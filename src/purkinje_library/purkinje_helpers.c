@@ -21,7 +21,7 @@
 void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, const double side_length) 
 {
 
-    struct cell_node *grid_cell = the_grid->first_cell;
+//    struct cell_node *grid_cell = the_grid->first_cell;
 
     struct graph *purkinje = the_grid->the_purkinje_network;
 
