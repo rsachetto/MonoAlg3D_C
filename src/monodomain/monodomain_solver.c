@@ -50,13 +50,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     assert(the_monodomain_solver);
     assert(the_ode_solver);
 
-#ifdef COMPILE_OPENGL
-    if(configs->draw) 
-    {
-        grid_to_draw = the_grid;
-    }
-#endif
-
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
@@ -379,13 +372,17 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         save_mesh_config->last_count = (int)(finalT/dt_pde);
     }
 
+
+    #ifdef COMPILE_OPENGL
+    if(configs->draw) {
+        draw_config.grid_to_draw = the_grid;
+    }
+    #endif
+
     // Main simulation loop start
     while(cur_time <= finalT) 
     {
 
-#ifdef COMPILE_OPENGL
-        redraw = count % print_rate == 0; // redraw grid
-#endif
 
         if(save_to_file && (count % print_rate == 0)) 
         {
@@ -409,14 +406,12 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
             }
         }
 
+
+
         start_stop_watch(&ode_time);
 
         // REACTION
         solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
-
-
-        //update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_pde,
-        //                  the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
 
         //TODO: this functions should be in a user provided library, as they can change depending on the solver that is being used;
         if (!the_monodomain_solver->using_ddm)
@@ -430,6 +425,12 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         ode_total_time += stop_stop_watch(&ode_time);
 
         start_stop_watch(&cg_time);
+
+        #ifdef COMPILE_OPENGL
+        if(configs->draw) {
+            omp_set_lock(&draw_config.draw_lock);
+        }
+        #endif
 
         // DIFUSION
         linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations,
@@ -451,12 +452,12 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
         if(adaptive) 
         {
-
             redo_matrix = false;
             if(cur_time >= start_adpt_at) 
             {
                 if(count % refine_each == 0) 
                 {
+
                     start_stop_watch(&ref_time);
                     redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_dx, start_dy, start_dz);
                     total_ref_time += stop_stop_watch(&ref_time);
@@ -497,7 +498,14 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
                 total_mat_time += stop_stop_watch(&part_mat);
             }
+
         }
+
+        #ifdef COMPILE_OPENGL
+        if(configs->draw) {
+            omp_unset_lock(&draw_config.draw_lock);
+        }
+        #endif
 
         count++;
         cur_time += dt_pde;

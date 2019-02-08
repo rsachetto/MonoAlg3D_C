@@ -95,25 +95,35 @@ int main(int argc, char **argv) {
     omp_set_num_threads(np);
 #endif
 
+    //If COMPILE_OPENGL is not set this is always false. See above.
     if(options->draw) {
-#ifdef COMPILE_OPENGL
 
-#if defined(_OPENMP)
+        #ifdef COMPILE_OPENGL //If this is defined so OMP is also defined
+
         omp_set_nested(true);
-#endif
 
-#pragma omp parallel sections num_threads(2)
+        #pragma omp parallel sections num_threads(2)
         {
-#pragma omp section
+            #pragma omp section
             {
-                grid_to_draw = NULL;
-                init_opengl(argc, argv);
+
+                draw_config.grid_to_draw = NULL;
+                draw_config.max_v = options->max_v;
+                draw_config.min_v = options->min_v;
+
+                if(draw_config.min_v == 0) draw_config.min_v = 0.1f;
+                omp_init_lock(&draw_config.draw_lock);
+
+                init_opengl();
             }
 
-#pragma omp section
-            { solve_monodomain(monodomain_solver, ode_solver, the_grid, options); }
+            #pragma omp section
+            {
+                solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+            }
         }
-#endif
+
+        #endif //COMPILE_OPENGL
     } else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
     }

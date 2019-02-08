@@ -41,7 +41,9 @@ static const struct option long_options[] = {
     {"save_state", required_argument, NULL, SAVE_STATE_OPT},
     {"restore_state", required_argument, NULL, RESTORE_STATE_OPT},
     {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT},
-    {"draw_gl_output", no_argument, NULL, DRAW_OPT},
+    {"visualize", no_argument, NULL, DRAW_OPT},
+    {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
+    {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
     {"quiet", no_argument, NULL, 'q'},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
@@ -84,7 +86,7 @@ void display_usage(char **argv) {
     printf("--gpu_id | -G [id], ID of the GPU to be used. Default: 0 \n");
     printf("--model_file_path | -k [.so file path], Path of the .so representing the cell model and the ode solver. "
            "Default: NULL \n");
-    printf("--draw_gl_output, Draw a iterative 3D output of the simulation. Not recommended for big meshes. Default: "
+    printf("--visualize, Draw a iterative 3D output of the simulation. Not recommended for big meshes. Default: "
            "not draw\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
@@ -187,6 +189,9 @@ struct user_options *new_user_options() {
     user_args->restore_state_config = NULL;
 
     user_args->draw = false;
+    user_args->max_v = 40.0f;
+    user_args->min_v = -86.0f;
+
     user_args->main_found = false;
 
     return user_args;
@@ -802,6 +807,12 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case DRAW_OPT:
             user_args->draw = true;
+            break;
+        case MAX_V_OPT:
+            user_args->max_v = strtof(optarg, NULL);
+            break;
+        case MIN_V_OPT:
+            user_args->min_v = strtof(optarg, NULL);
             break;
         case 'q':
             if(user_args->quiet_was_set) {
