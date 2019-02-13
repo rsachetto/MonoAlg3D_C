@@ -14,7 +14,19 @@ struct draw_config {
     double min_v;
     bool grid_only;
     bool grid_lines;
-    bool domain_ready;
+    bool simulating;
+    double time;
+
+
+    long solver_time;
+    long ode_total_time;
+    long cg_total_time;
+    long total_mat_time;
+    long total_ref_time;
+    long total_deref_time;
+    long total_write_time;
+    long total_config_time;
+    long total_cg_it;
 
     //If we are compiling this file, openmp is available.
     omp_lock_t draw_lock;

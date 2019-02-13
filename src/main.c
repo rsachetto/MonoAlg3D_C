@@ -112,6 +112,11 @@ int main(int argc, char **argv) {
                 draw_config.min_v = options->min_v;
 
                 if(draw_config.min_v == 0) draw_config.min_v = 0.1f;
+
+                draw_config.simulating = false;
+                draw_config.time = 0.0;
+
+
                 omp_init_lock(&draw_config.draw_lock);
 
                 init_opengl();

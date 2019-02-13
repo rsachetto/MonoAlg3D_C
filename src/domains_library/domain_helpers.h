@@ -8,7 +8,7 @@
 #include "../alg/grid/grid.h"
 
 void set_benchmark_domain (struct grid *the_grid);
-void set_cuboid_domain(struct grid *the_grid, double sizeX, double sizeY, double sizeZ);
+void set_cuboid_domain(struct grid *the_grid, float sizeX, float sizeY, float sizeZ);
 
 void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, bool read_fibrosis);
 

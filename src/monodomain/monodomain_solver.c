@@ -376,6 +376,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     #ifdef COMPILE_OPENGL
     if(configs->draw) {
         draw_config.grid_to_draw = the_grid;
+        draw_config.simulating = true;
     }
     #endif
 
@@ -504,6 +505,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         #ifdef COMPILE_OPENGL
         if(configs->draw) {
             omp_unset_lock(&draw_config.draw_lock);
+            draw_config.time = cur_time;
         }
         #endif
 
@@ -524,7 +526,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         }
     }
 
-    print_to_stdout_and_file("Resolution Time: %ld μs\n", stop_stop_watch(&solver_time));
+    long res_time = stop_stop_watch(&solver_time);
+    print_to_stdout_and_file("Resolution Time: %ld μs\n", res_time);
     print_to_stdout_and_file("ODE Total Time: %ld μs\n", ode_total_time);
     print_to_stdout_and_file("CG Total Time: %ld μs\n", cg_total_time);
     print_to_stdout_and_file("Mat time: %ld μs\n", total_mat_time);
@@ -533,6 +536,20 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     print_to_stdout_and_file("Write time: %ld μs\n", total_write_time);
     print_to_stdout_and_file("Initial configuration time: %ld μs\n", total_config_time);
     print_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
+    draw_config.time = cur_time;
+
+   draw_config.solver_time = res_time;
+   draw_config.ode_total_time = ode_total_time;
+   draw_config.cg_total_time = cg_total_time;
+   draw_config.total_mat_time = total_mat_time;
+   draw_config.total_ref_time = total_ref_time;
+   draw_config.total_deref_time = total_deref_time;
+   draw_config.total_write_time = total_write_time;
+   draw_config.total_config_time = total_config_time;
+   draw_config.total_cg_it  = total_cg_it;
+    
+
+    draw_config.simulating = false;
 }
 
 void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_grid) {
