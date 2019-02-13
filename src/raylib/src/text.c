@@ -683,7 +683,7 @@ void UnloadFont(Font font)
 
 // Shows current FPS on top-left corner
 // NOTE: Uses default font
-void DrawFPS(int posX, int posY)
+void DrawFPS(int posX, int posY, Color color)
 {
     // NOTE: We are rendering fps every second for better viewing on high framerates
 
@@ -700,7 +700,7 @@ void DrawFPS(int posX, int posY)
     }
 
     // NOTE: We have rounding errors every frame, so it oscillates a lot
-    DrawText(TextFormat("%2i FPS", fps), posX, posY, 20, LIME);
+    DrawText(TextFormat("%2i FPS", fps), posX, posY, 20, color);
 }
 
 // Draw text (using default font)
