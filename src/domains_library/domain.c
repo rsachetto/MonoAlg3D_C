@@ -414,8 +414,13 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
+
     // TODO: we need to change this in order to support different discretizations for each direction
-    double start_h = config->start_dx;
+    double start_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, start_h, config->config_data.config, "start_discretization");
+
+    double max_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_h, config->config_data.config, "maximum_discretization");
 
     assert(the_grid);
 
@@ -447,7 +452,25 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
     } else {
         print_to_stderr_and_file_and_exit("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
                                  "or 12.5um. Using 100um!\n");
+        start_h = 100.0;
     }
+
+    config->max_dx = max_h;
+    config->max_dx_was_set = true;
+
+    config->max_dy = max_h;
+    config->max_dy_was_set = true;
+
+    config->max_dz = max_h;
+    config->max_dz_was_set = true;
+
+    config->start_dx = start_h;
+    config->start_dx_was_set = true;
+    config->start_dy = start_h;
+    config->start_dy_was_set = true;
+    config->start_dz = start_h;
+    config->start_dz_was_set = true;
+
 
     return 1;
 }

@@ -162,17 +162,11 @@ static void draw_alg_mesh(Vector3 mesh_offset) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
 
-   // draw_coordinates();
-
-    //return;
-
     if (grid_to_draw) {
 
         uint32_t n_active = grid_to_draw->num_active_cells;
         struct cell_node **ac = grid_to_draw->active_cells;
         struct cell_node *grid_cell;
-
-//        double last_non_nan = 0.0;
 
         if (ac) {
             //#pragma omp parallel for
@@ -192,13 +186,6 @@ static void draw_alg_mesh(Vector3 mesh_offset) {
 
                 double v = (grid_cell->v - draw_config.min_v)/(draw_config.max_v - draw_config.min_v);
 
-//                if(!isnan(v)) {
-//                    last_non_nan = v;
-//                }
-//                else {
-//                    v = last_non_nan;
-//                }
-
                 Color color = get_color(v);
 
                 if(draw_config.grid_only) {
@@ -210,11 +197,7 @@ static void draw_alg_mesh(Vector3 mesh_offset) {
                         DrawCubeWiresV(cubePosition, cubeSize, BLACK);
                     }
                 }
-
-
             }
-
-
         }
     }
 
@@ -227,7 +210,7 @@ void init_opengl() {
     int screenWidth = 1280;
     int screenHeight = 720;
 
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
+    //SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     InitWindow(screenWidth, screenHeight, "Simulation visualization");
@@ -246,7 +229,7 @@ void init_opengl() {
 
     SetCameraMode(camera, CAMERA_FREE); // Set a free camera mode
 
-    SetTargetFPS(60);   // Set our game to run at 60 frames-per-second
+    SetTargetFPS(60);
 
     Vector3 mesh_offset = (Vector3){ 0.0f, 0.0f, 0.0f };
     //--------------------------------------------------------------------------------------
@@ -256,7 +239,7 @@ void init_opengl() {
         // Update
         UpdateCamera(&camera);          // Update camera
 
-        if (IsKeyDown('Z')) camera.target = (Vector3){ 3.5f, -2.0f, -1.0f };
+        if (IsKeyDown('Z')) camera.target =  (Vector3){ 0.137565f, 0.199405f, 0.181663f };
 
         if (IsKeyPressed('G')) draw_config.grid_only = !draw_config.grid_only;
 
@@ -264,31 +247,25 @@ void init_opengl() {
 
         // Draw
         //----------------------------------------------------------------------------------
-
-//        printf("POSITION: %lf, %lf, %lf\n", camera.position.x, camera.position.y, camera.position.z);
-//        printf("TARGET: %lf, %lf, %lf\n", camera.target.x, camera.target.y, camera.target.z);
-
         BeginDrawing();
 
         if(draw_config.grid_to_draw && omp_test_lock(&draw_config.draw_lock)) {
 
-            BeginMode3D(camera);
-           // DrawGrid(10, 1.0f);
             ClearBackground(GRAY);
+
+            BeginMode3D(camera);
+
             if(!calc_center) {
                 mesh_offset = find_mesh_center();
             }
+
             draw_alg_mesh(mesh_offset);
             omp_unset_lock(&draw_config.draw_lock);
 
-
             EndMode3D();
 
-            //DrawFPS(10, 360);
-
-            DrawRectangle(10, 10, 320, 173, Fade(SKYBLUE, 0.5f));
-            DrawRectangleLines(10, 10, 320, 173, BLUE);
-
+            DrawRectangle(10, 10, 320, 193, SKYBLUE);
+            DrawRectangleLines(10, 10, 320, 193, BLUE);
             DrawText("Free camera default controls:", 20, 20, 10, BLACK);
             DrawText("- Mouse Wheel to Zoom in-out", 40, 40, 10, DARKGRAY);
             DrawText("- Mouse Wheel Pressed to Pan", 40, 60, 10, DARKGRAY);
@@ -297,11 +274,12 @@ void init_opengl() {
             DrawText("- Z to reset zoom", 40, 120, 10, DARKGRAY);
             DrawText("- G to only draw the grid lines", 40, 140, 10, DARKGRAY);
             DrawText("- L to enable or disable the grid lines", 40, 160, 10, DARKGRAY);
+
         }
 
         EndDrawing();
-    }
-        //----------------------------------------------------------------------------------
+
+    }       //----------------------------------------------------------------------------------
 
 
     // De-Initialization
