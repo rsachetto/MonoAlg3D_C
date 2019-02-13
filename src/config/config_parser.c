@@ -88,6 +88,9 @@ void display_usage(char **argv) {
            "Default: NULL \n");
     printf("--visualize, Draw a iterative 3D output of the simulation. Not recommended for big meshes. Default: "
            "not draw\n");
+    printf("--visualization_max_v, maximum value for V. This is only used to configure the color map in the visualization window. Default: -86.0\n");
+    printf("--visualization_min_v, minimum value for V. This is only used to configure the color map in the visualization window. Default: 40.0\n");
+
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }

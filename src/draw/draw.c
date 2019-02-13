@@ -15,7 +15,7 @@ Color get_color(double value)
 //    #define NUM_COLORS 4
 //    static float color[NUM_COLORS][3] = { {0,0,1}, {0,1,0}, {1,1,0}, {1,0,0} };
 
-    int idx1;        // |-- Our desired color will be between these two indexes in "color".
+    int idx1;        // |-- Our desiBLACK color will be between these two indexes in "color".
     int idx2;        // |
     double fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
 
@@ -24,7 +24,7 @@ Color get_color(double value)
     else
     {
         value = value * (NUM_COLORS-1);        // Will multiply value by 3.
-        idx1  = (int)floor(value);                  // Our desired color will be after this index.
+        idx1  = (int)floor(value);                  // Our desiBLACK color will be after this index.
         idx2  = idx1+1;                        // ... and before this index (inclusive).
         fractBetween = value - (double)idx1;    // Distance between the two indexes (0-1).
     }
@@ -50,8 +50,8 @@ static Vector3 find_mesh_center() {
     struct cell_node **ac = grid_to_draw->active_cells;
     struct cell_node *grid_cell;
 
-    double max_x, max_y, max_z;
-    double min_x, min_y, min_z;
+    float max_x, max_y, max_z;
+    float min_x, min_y, min_z;
 
     max_x = FLT_MIN;
     max_y = FLT_MIN;
@@ -68,7 +68,6 @@ static Vector3 find_mesh_center() {
         calc_center = true;
 
         if (ac) {
-//            #pragma omp parallel for
             for (int i = 0; i < n_active; i++) {
                 grid_cell = ac[i];
 
@@ -100,65 +99,17 @@ static Vector3 find_mesh_center() {
         result.y = (max_y+min_y)/2.0f;
         result.z = (max_z+min_z)/2.0f;
 
-        printf("%lf, %lf, %lf", result.x, result.y, result.z);
         calc_center = true;
 
     }
-
-
 
     return result;
 
 }
 
-void draw_coordinates(){
-
-    // draw some lines
-    rlColor3f(1.0,0.0,0.0); // red x
-    rlBegin(GL_LINES);
-    // x aix
-
-    rlVertex3f(-4.0f, 0.0f, 0.0f);
-    rlVertex3f(4.0f, 0.0f, 0.0f);
-
-    rlVertex3f(4.0f, 0.0f, 0.0f);
-    rlVertex3f(3.0f, 1.0f, 0.0f);
-
-    rlVertex3f(4.0f, 0.0f, 0.0f);
-    rlVertex3f(3.0f, -1.0f, 0.0f);
-    rlEnd();
-
-    // y 
-    rlColor3f(0.0f,1.0f,0.0f); // green y
-    rlBegin(GL_LINES);
-    rlVertex3f(0.0f, -4.0f, 0.0f);
-    rlVertex3f(0.0f, 4.0f, 0.0f);
-
-    rlVertex3f(0.0, 4.0f, 0.0f);
-    rlVertex3f(1.0, 3.0f, 0.0f);
-
-    rlVertex3f(0.0, 4.0f, 0.0f);
-    rlVertex3f(-1.0, 3.0f, 0.0f);
-    rlEnd();
-
-    // z 
-    rlColor3f(0.0,0.0,1.0); // blue z
-    rlBegin(GL_LINES);
-    rlVertex3f(0.0, 0.0f ,-4.0f );
-    rlVertex3f(0.0, 0.0f ,4.0f );
 
 
-    rlVertex3f(0.0, 0.0f ,4.0f );
-    rlVertex3f(0.0, 1.0f ,3.0f );
-
-    rlVertex3f(0.0, 0.0f ,4.0f );
-    rlVertex3f(0.0, -1.0f ,3.0f );
-    rlEnd();
-
-}
-
-
-static void draw_alg_mesh(Vector3 mesh_offset) {
+static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
 
@@ -168,21 +119,22 @@ static void draw_alg_mesh(Vector3 mesh_offset) {
         struct cell_node **ac = grid_to_draw->active_cells;
         struct cell_node *grid_cell;
 
+        //printf("%lf\n", max_size);
+
         if (ac) {
-            //#pragma omp parallel for
             for (int i = 0; i < n_active; i++) {
                 grid_cell = ac[i];
 
                 Vector3 cubePosition;
 
-                cubePosition.x = (grid_cell->center_x - mesh_offset.x)/2000.0f;
-                cubePosition.y = (grid_cell->center_y - mesh_offset.y)/2000.0f;
-                cubePosition.z = (grid_cell->center_z - mesh_offset.z)/2000.0f;
+                cubePosition.x = (grid_cell->center_x - mesh_offset.x)/scale;
+                cubePosition.y = (grid_cell->center_y - mesh_offset.y)/scale;
+                cubePosition.z = (grid_cell->center_z - mesh_offset.z)/scale;
 
                 Vector3 cubeSize;
-                cubeSize.x = grid_cell->dx/2000.0f;
-                cubeSize.y = grid_cell->dy/2000.0f;
-                cubeSize.z = grid_cell->dz/2000.0f;
+                cubeSize.x = grid_cell->dx/scale;
+                cubeSize.y = grid_cell->dy/scale;
+                cubeSize.z = grid_cell->dz/scale;
 
                 double v = (grid_cell->v - draw_config.min_v)/(draw_config.max_v - draw_config.min_v);
 
@@ -207,8 +159,8 @@ void init_opengl() {
     // Initialization
     //--------------------------------------------------------------------------------------
 
-    int screenWidth = 1280;
-    int screenHeight = 720;
+    int screenWidth = 1920;
+    int screenHeight = 1080;
 
     //SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -232,14 +184,21 @@ void init_opengl() {
     SetTargetFPS(60);
 
     Vector3 mesh_offset = (Vector3){ 0.0f, 0.0f, 0.0f };
+    float scale = 1.0f;
+
+    char tmp[100];
     //--------------------------------------------------------------------------------------
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
+
+        if (IsKeyDown('Z')) {
+            camera.target   = (Vector3){ 0.137565f, 0.199405f, 0.181663f };
+        }
+
         // Update
         UpdateCamera(&camera);          // Update camera
 
-        if (IsKeyDown('Z')) camera.target =  (Vector3){ 0.137565f, 0.199405f, 0.181663f };
 
         if (IsKeyPressed('G')) draw_config.grid_only = !draw_config.grid_only;
 
@@ -257,23 +216,91 @@ void init_opengl() {
 
             if(!calc_center) {
                 mesh_offset = find_mesh_center();
+                scale = fmaxf(draw_config.grid_to_draw->side_length_x, fmaxf(draw_config.grid_to_draw->side_length_y, draw_config.grid_to_draw->side_length_z))/5.0f;
             }
 
-            draw_alg_mesh(mesh_offset);
+            draw_alg_mesh(mesh_offset, scale);
             omp_unset_lock(&draw_config.draw_lock);
 
             EndMode3D();
 
-            DrawRectangle(10, 10, 320, 193, SKYBLUE);
-            DrawRectangleLines(10, 10, 320, 193, BLUE);
-            DrawText("Free camera default controls:", 20, 20, 10, BLACK);
-            DrawText("- Mouse Wheel to Zoom in-out", 40, 40, 10, DARKGRAY);
-            DrawText("- Mouse Wheel Pressed to Pan", 40, 60, 10, DARKGRAY);
-            DrawText("- Alt + Mouse Wheel Pressed to Rotate", 40, 80, 10, DARKGRAY);
-            DrawText("- Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom", 40, 100, 10, DARKGRAY);
-            DrawText("- Z to reset zoom", 40, 120, 10, DARKGRAY);
-            DrawText("- G to only draw the grid lines", 40, 140, 10, DARKGRAY);
-            DrawText("- L to enable or disable the grid lines", 40, 160, 10, DARKGRAY);
+
+            if(draw_config.simulating) {
+
+                DrawRectangle(10, 10, 320, 193, SKYBLUE);
+                DrawRectangleLines(10, 10, 320, 193, BLUE);
+                DrawText("Free camera default controls:", 20, 20, 10, BLACK);
+                DrawText("- Mouse Wheel to Zoom in-out", 40, 40, 10, DARKGRAY);
+                DrawText("- Mouse Wheel Pressed to Pan", 40, 60, 10, DARKGRAY);
+                DrawText("- Alt + Mouse Wheel Pressed to Rotate", 40, 80, 10, DARKGRAY);
+                DrawText("- Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom", 40, 100, 10, DARKGRAY);
+                DrawText("- Z to reset zoom", 40, 120, 10, DARKGRAY);
+                DrawText("- G to only draw the grid lines", 40, 140, 10, DARKGRAY);
+                DrawText("- L to enable or disable the grid lines", 40, 160, 10, DARKGRAY);
+
+                sprintf(tmp, "%lf ms", draw_config.time);
+                DrawText("Simulation running:", 20, 180, 16, BLACK);
+                DrawText(tmp, 170, 180, 16, BLACK);
+            }
+
+            else {
+
+                DrawRectangle(10, 10, 320, 210, SKYBLUE);
+                DrawRectangleLines(10, 10, 320, 210, BLUE);
+
+                int text_pos = 20;
+                int text_offset = 20;
+
+                DrawText("Simulation finished!", 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "Resolution Time: %ld us\n", draw_config.solver_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "ODE Total Time: %ld us\n", draw_config.ode_total_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "CG Total Time: %ld us\n", draw_config.cg_total_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "Mat time: %ld us\n", draw_config.total_mat_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "Refine time: %ld us\n", draw_config.total_ref_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "Derefine time: %ld us\n", draw_config.total_deref_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "Write time: %ld us\n", draw_config.total_write_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "Initial configuration time: %ld us\n", draw_config.total_config_time);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+                text_pos += text_offset;
+
+                sprintf(tmp, "CG Total Iterations: %ld\n", draw_config.total_cg_it);
+                DrawText(tmp, 20, text_pos, 16, BLACK);
+
+            }
+
+
 
         }
 
