@@ -36,6 +36,8 @@
 *
 **********************************************************************************************/
 
+//This source was altered by Rafael Sachetto
+
 #include "raylib.h"         // Declares module functions
 
 // Check if config flags have been externally provided on compilation line
