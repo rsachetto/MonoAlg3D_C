@@ -224,7 +224,7 @@ void order_grid_cells(struct grid *the_grid) {
 void clean_grid(struct grid *the_grid) {
 
     assert(the_grid);
-    uint32_t number_of_cells = the_grid->number_of_cells;
+
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
@@ -252,7 +252,9 @@ void clean_grid(struct grid *the_grid) {
     // In order to release the memory allocated for the grid, the grid is
     // derefined to level 1. Thus, the grid shape is known and each node can
     // be easily reached.
+
     /*
+    uint32_t number_of_cells = the_grid->number_of_cells;
     while(number_of_cells > 8) 
     {
         derefine_all_grid(the_grid);
@@ -485,9 +487,9 @@ void construct_grid_purkinje (struct grid *the_grid)
     float half_side_length_y = side_length_y / 2.0f;
     float half_side_length_z = side_length_z / 2.0f;
 
-    float quarter_side_length_x = half_side_length_x / 2.0f;
-    float quarter_side_length_y = half_side_length_y / 2.0f;
-    float quarter_side_length_z = half_side_length_z / 2.0f;
+//    float quarter_side_length_x = half_side_length_x / 2.0f;
+//    float quarter_side_length_y = half_side_length_y / 2.0f;
+//    float quarter_side_length_z = half_side_length_z / 2.0f;
 
     int total_nodes = the_grid->the_purkinje_network->total_nodes;
     
