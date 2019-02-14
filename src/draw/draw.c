@@ -12,9 +12,6 @@ bool calc_center = false;
 
 Color get_color(double value)
 {
-//    #define NUM_COLORS 4
-//    static float color[NUM_COLORS][3] = { {0,0,1}, {0,1,0}, {1,1,0}, {1,0,0} };
-
     int idx1;        // |-- Our desiBLACK color will be between these two indexes in "color".
     int idx2;        // |
     double fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
@@ -107,11 +104,109 @@ static Vector3 find_mesh_center() {
 
 }
 
+bool have_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
 
+    struct cell_node *black_neighbor_cell;
+
+    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
+    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+
+    struct transition_node *white_neighbor_cell;
+
+    if(neighbour_grid_cell_level > grid_cell->cell_data.level)
+    {
+        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+        {
+            while(true)
+            {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+                {
+                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
+                    if(white_neighbor_cell->single_connector == NULL)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                }
+                else
+                {
+                    black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+                    return black_neighbor_cell->active;
+                }
+            }
+        }
+        else {
+            black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+            return black_neighbor_cell->active;
+        }
+
+    }
+    else
+    {
+        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+        {
+            while(true)
+            {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+                {
+                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
+                    if(white_neighbor_cell->single_connector == NULL)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        neighbour_grid_cell = white_neighbor_cell->single_connector;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                }
+                else
+                {
+                    black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+                    return black_neighbor_cell->active;
+                }
+            }
+        }
+        else {
+            black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+            return black_neighbor_cell->active;
+        }
+    }
+}
+
+bool skip_node(struct cell_node *grid_cell) {
+
+    if(!have_neighbour(grid_cell, grid_cell->north) ) {
+        return false;
+    }
+    else if(!have_neighbour(grid_cell, grid_cell->south) ) {
+        return false;
+    }
+    else if(!have_neighbour(grid_cell, grid_cell->west) ) {
+        return false;
+    }
+    else if(!have_neighbour(grid_cell, grid_cell->east) ) {
+        return false;
+    }
+    else if(!have_neighbour(grid_cell, grid_cell->front) ) {
+        return false;
+    }
+    else if(!have_neighbour(grid_cell, grid_cell->back) ) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
 
 static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
+    int count = 0;
 
     if (grid_to_draw) {
 
@@ -119,11 +214,19 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
         struct cell_node **ac = grid_to_draw->active_cells;
         struct cell_node *grid_cell;
 
-        //printf("%lf\n", max_size);
+
 
         if (ac) {
             for (int i = 0; i < n_active; i++) {
+
                 grid_cell = ac[i];
+
+                if(skip_node(grid_cell)) {
+                    continue;
+                }
+
+                count++;
+
 
                 Vector3 cubePosition;
 
@@ -151,18 +254,20 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
                 }
             }
         }
+        printf("TOTAL NODES: %d, DRAWING: %d\n", n_active, count);
     }
 
+
+
 }
+
+const int screenWidth = 1280;
+const int screenHeight = 720;
 
 void init_opengl() {
     // Initialization
     //--------------------------------------------------------------------------------------
 
-    int screenWidth = 1920;
-    int screenHeight = 1080;
-
-    //SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     InitWindow(screenWidth, screenHeight, "Simulation visualization");
@@ -177,7 +282,6 @@ void init_opengl() {
     camera.up       = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
     camera.fovy     = 45.0f;                                // Camera field-of-view Y
     camera.type     = CAMERA_PERSPECTIVE;                  // Camera mode type
-
 
     SetCameraMode(camera, CAMERA_FREE); // Set a free camera mode
 

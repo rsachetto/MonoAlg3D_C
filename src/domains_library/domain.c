@@ -154,11 +154,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
     char *mesh_file;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
-    char *fibrotic_char;
-    GET_PARAMETER_VALUE_CHAR(fibrotic_char, config->config_data.config, "fibrotic");
-    if(fibrotic_char != NULL) {
-        fibrotic = ((strcmp(fibrotic_char, "yes") == 0) || (strcmp(fibrotic_char, "true") == 0));
-    }
+    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data.config, "fibrotic");
 
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
     refine_grid(the_grid, 7);
@@ -184,11 +180,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         refine_border_zone_cells(the_grid);
         refine_border_zone_cells(the_grid);
 
-        char *scar_file_big;
-        GET_PARAMETER_VALUE_CHAR(scar_file_big, config->config_data.config, "big_scar_file");
+        char *scar_file_big = NULL;
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_big, config->config_data.config, "big_scar_file");
 
-        char *scar_file_small;
-        GET_PARAMETER_VALUE_CHAR(scar_file_small, config->config_data.config, "small_scar_file");
+        char *scar_file_small = NULL;
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_small, config->config_data.config, "small_scar_file");
 
         if(scar_file_big) {
             print_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_big);
@@ -388,10 +384,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     config->start_dy = 250.0;
     config->start_dz = 250.0;
 
-    char *mesh_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
+    char *mesh_file = strdup("meshes/rabheart.alg");
+    //LEAK on mesh_file if mesh_file is defined on ini file
+    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(mesh_file, config->config_data.config, "mesh_file");
 
-    initialize_and_construct_grid(the_grid, 64000.0, 64000.0, 64000.4);
+    double max_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_h, config->config_data.config, "maximum_discretization");
+
+    initialize_and_construct_grid(the_grid, 64000.0, 64000.0, 64000.0);
     refine_grid(the_grid, 7);
 
     print_to_stdout_and_file("Loading Rabbit Heart Mesh\n");
@@ -404,6 +404,22 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
         derefine_grid_inactive_cells(the_grid);
     }
     free(mesh_file);
+
+    config->max_dx = max_h;
+    config->max_dx_was_set = true;
+
+    config->max_dy = max_h;
+    config->max_dy_was_set = true;
+
+    config->max_dz = max_h;
+    config->max_dz_was_set = true;
+
+    config->start_dx = 250.0;
+    config->start_dx_was_set = true;
+    config->start_dy = 250.0;
+    config->start_dy_was_set = true;
+    config->start_dz = 250.0;
+    config->start_dz_was_set = true;
 
     return 1;
 }
