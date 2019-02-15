@@ -10,7 +10,7 @@
 
 bool calc_center = false;
 
-Color get_color(double value)
+static inline Color get_color(double value)
 {
     int idx1;        // |-- Our desiBLACK color will be between these two indexes in "color".
     int idx2;        // |
@@ -39,72 +39,7 @@ Color get_color(double value)
     return result;
 }
 
-static Vector3 find_mesh_center() {
-
-    struct grid *grid_to_draw = draw_config.grid_to_draw;
-
-    uint32_t n_active = grid_to_draw->num_active_cells;
-    struct cell_node **ac = grid_to_draw->active_cells;
-    struct cell_node *grid_cell;
-
-    float max_x, max_y, max_z;
-    float min_x, min_y, min_z;
-
-    max_x = FLT_MIN;
-    max_y = FLT_MIN;
-    max_z = FLT_MIN;
-
-    min_x = FLT_MAX;
-    min_y = FLT_MAX;
-    min_z = FLT_MAX;
-
-    Vector3 result = (Vector3){0.0, 0.0, 0.0};
-
-    if (grid_to_draw) {
-
-        calc_center = true;
-
-        if (ac) {
-            for (int i = 0; i < n_active; i++) {
-                grid_cell = ac[i];
-
-                if(grid_cell->center_x > max_x) {
-                    max_x = grid_cell->center_x;
-                }
-                else if(grid_cell->center_x < min_x) {
-                    min_x = grid_cell->center_x;
-                }
-
-                if(grid_cell->center_y > max_y) {
-                    max_y = grid_cell->center_y;
-                }
-                else if(grid_cell->center_y < min_y) {
-                    min_y = grid_cell->center_y;
-                }
-
-                if(grid_cell->center_z > max_z) {
-                    max_z = grid_cell->center_z;
-                }
-                else if(grid_cell->center_z < min_z) {
-                    min_z = grid_cell->center_z;
-                }
-
-            }
-        }
-
-        result.x = (max_x+min_x)/2.0f;
-        result.y = (max_y+min_y)/2.0f;
-        result.z = (max_z+min_z)/2.0f;
-
-        calc_center = true;
-
-    }
-
-    return result;
-
-}
-
-bool have_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
+static bool have_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
 
     struct cell_node *black_neighbor_cell;
 
@@ -178,7 +113,7 @@ bool have_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
     }
 }
 
-bool skip_node(struct cell_node *grid_cell) {
+static bool skip_node(struct cell_node *grid_cell) {
 
     if(!have_neighbour(grid_cell, grid_cell->north) ) {
         return false;
@@ -203,18 +138,87 @@ bool skip_node(struct cell_node *grid_cell) {
     }
 }
 
+static Vector3 find_mesh_center() {
+
+    struct grid *grid_to_draw = draw_config.grid_to_draw;
+
+    uint32_t n_active = grid_to_draw->num_active_cells;
+    struct cell_node **ac = grid_to_draw->active_cells;
+    struct cell_node *grid_cell;
+
+    float max_x, max_y, max_z;
+    float min_x, min_y, min_z;
+
+    max_x = FLT_MIN;
+    max_y = FLT_MIN;
+    max_z = FLT_MIN;
+
+    min_x = FLT_MAX;
+    min_y = FLT_MAX;
+    min_z = FLT_MAX;
+
+    Vector3 result = (Vector3){0.0, 0.0, 0.0};
+
+    calc_center = true;
+
+    if (ac) {
+        for (int i = 0; i < n_active; i++) {
+            grid_cell = ac[i];
+            if(grid_cell->center_x > max_x) {
+                max_x = grid_cell->center_x;
+            }
+            else if(grid_cell->center_x < min_x) {
+                min_x = grid_cell->center_x;
+            }
+
+            if(grid_cell->center_y > max_y) {
+                max_y = grid_cell->center_y;
+            }
+            else if(grid_cell->center_y < min_y) {
+                min_y = grid_cell->center_y;
+            }
+
+            if(grid_cell->center_z > max_z) {
+                max_z = grid_cell->center_z;
+            }
+            else if(grid_cell->center_z < min_z) {
+                min_z = grid_cell->center_z;
+            }
+
+        }
+    }
+
+    result.x = (max_x+min_x)/2.0f;
+    result.y = (max_y+min_y)/2.0f;
+    result.z = (max_z+min_z)/2.0f;
+
+    calc_center = true;
+
+    return result;
+
+}
+
+
+
 static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
-    int count = 0;
+
+    Vector3 cubePosition;
+    Vector3 cubeSize;
+    Color color;
+
+    double max_v = draw_config.max_v;
+    double min_v = draw_config.min_v;
+
+    bool grid_only = draw_config.grid_only;
+    bool grid_lines = draw_config.grid_lines;
 
     if (grid_to_draw) {
 
         uint32_t n_active = grid_to_draw->num_active_cells;
         struct cell_node **ac = grid_to_draw->active_cells;
         struct cell_node *grid_cell;
-
-
 
         if (ac) {
             for (int i = 0; i < n_active; i++) {
@@ -225,48 +229,35 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
                     continue;
                 }
 
-                count++;
-
-
-                Vector3 cubePosition;
-
                 cubePosition.x = (grid_cell->center_x - mesh_offset.x)/scale;
                 cubePosition.y = (grid_cell->center_y - mesh_offset.y)/scale;
                 cubePosition.z = (grid_cell->center_z - mesh_offset.z)/scale;
 
-                Vector3 cubeSize;
                 cubeSize.x = grid_cell->dx/scale;
                 cubeSize.y = grid_cell->dy/scale;
                 cubeSize.z = grid_cell->dz/scale;
 
-                double v = (grid_cell->v - draw_config.min_v)/(draw_config.max_v - draw_config.min_v);
+                color = get_color((grid_cell->v - min_v)/(max_v - min_v));
 
-                Color color = get_color(v);
-
-                if(draw_config.grid_only) {
+                if(grid_only) {
                     DrawCubeWiresV(cubePosition, cubeSize, color);
                 }
                 else {
                     DrawCubeV(cubePosition, cubeSize, color);
-                    if(draw_config.grid_lines) {
+                    if(grid_lines) {
                         DrawCubeWiresV(cubePosition, cubeSize, BLACK);
                     }
                 }
             }
         }
-        printf("TOTAL NODES: %d, DRAWING: %d\n", n_active, count);
+
     }
-
-
-
 }
 
 const int screenWidth = 1280;
 const int screenHeight = 720;
 
 void init_opengl() {
-    // Initialization
-    //--------------------------------------------------------------------------------------
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
@@ -275,7 +266,6 @@ void init_opengl() {
     draw_config.grid_only = false;
     draw_config.grid_lines = true;
 
-// Define the camera to look into our 3d world
     Camera3D camera;
     camera.position = (Vector3){ 0.064882f, 0.165282f, 15.977825f };  // Camera position
     camera.target   = (Vector3){ 0.137565f, 0.199405f, 0.181663f };      // Camera looking at point
@@ -291,8 +281,9 @@ void init_opengl() {
     float scale = 1.0f;
 
     char tmp[100];
-    //--------------------------------------------------------------------------------------
-    // Main game loop
+    bool mesh_loaded = false;
+
+
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
 
@@ -301,8 +292,8 @@ void init_opengl() {
         }
 
         // Update
-        UpdateCamera(&camera);          // Update camera
 
+        UpdateCamera(&camera);
 
         if (IsKeyPressed('G')) draw_config.grid_only = !draw_config.grid_only;
 
@@ -314,6 +305,7 @@ void init_opengl() {
 
         if(draw_config.grid_to_draw && omp_test_lock(&draw_config.draw_lock)) {
 
+            mesh_loaded = true;
             ClearBackground(GRAY);
 
             BeginMode3D(camera);
@@ -327,7 +319,6 @@ void init_opengl() {
             omp_unset_lock(&draw_config.draw_lock);
 
             EndMode3D();
-
 
             if(draw_config.simulating) {
 
@@ -403,24 +394,22 @@ void init_opengl() {
                 DrawText(tmp, 20, text_pos, 16, BLACK);
 
             }
-
-
-
+        }
+        else if(!mesh_loaded){
+            int posx = GetScreenWidth()/2-150;
+            int posy = GetScreenHeight()/2-50;
+            ClearBackground(GRAY);
+            DrawRectangle(posx, posy, 320, 20, SKYBLUE);
+            DrawRectangleLines(posx, posy, 320, 20, BLUE);
+            DrawText("Loading Mesh...", posx+80, posy, 20, BLACK);
         }
 
         EndDrawing();
 
-    }       //----------------------------------------------------------------------------------
+    }
 
-
-    // De-Initialization
     omp_destroy_lock(&draw_config.draw_lock);
 
-
-    //--------------------------------------------------------------------------------------
-    CloseWindow();        // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
-
-
+    CloseWindow();
 
 }
