@@ -343,7 +343,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     start_stop_watch(&solver_time);
 
-    int print_rate = 0;
+    int print_rate = 1;
 
 
     int save_state_rate = 0;
@@ -371,7 +371,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         print_rate = save_mesh_config->print_rate;
         save_mesh_config->last_count = (int)(finalT/dt_pde);
     }
-
 
     #ifdef COMPILE_OPENGL
     if(configs->draw) {
@@ -733,25 +732,23 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    print_to_stdout_and_file("Save results configuration:\n");
-    print_to_stdout_and_file("Print Rate = %d\n", options->save_mesh_config->print_rate);
+    if(options->save_mesh_config) {
+        print_to_stdout_and_file("Save results configuration:\n");
+        print_to_stdout_and_file("Print Rate = %d\n", options->save_mesh_config->print_rate);
 
-    if(options->save_mesh_config->out_dir_name != NULL) 
-    {
-        print_to_stdout_and_file("Saving simulation results to: %s\n", options->save_mesh_config->out_dir_name);
+        if (options->save_mesh_config->out_dir_name != NULL) {
+            print_to_stdout_and_file("Saving simulation results to: %s\n", options->save_mesh_config->out_dir_name);
+        }
+
+        if (options->save_mesh_config->config_data.config->n == 1) {
+            print_to_stdout_and_file("Save mesh extra parameter:\n");
+        } else if (options->save_mesh_config->config_data.config->n > 1) {
+            print_to_stdout_and_file("Save mesh extra parameters:\n");
+        }
+
+        STRING_HASH_PRINT_KEY_VALUE_LOG(options->save_mesh_config->config_data.config);
+        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
-
-    if(options->save_mesh_config->config_data.config->n == 1) 
-    {
-        print_to_stdout_and_file("Save mesh extra parameter:\n");
-    } 
-    else if(options->save_mesh_config->config_data.config->n > 1) 
-    {
-        print_to_stdout_and_file("Save mesh extra parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG(options->save_mesh_config->config_data.config);
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     if(options->stim_configs) 
     {

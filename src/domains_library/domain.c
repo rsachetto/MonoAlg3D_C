@@ -431,7 +431,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     double start_h = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, start_h, config->config_data.config, "start_discretization");
 
@@ -440,7 +439,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     assert(the_grid);
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid(the_grid, 6400.0, 6400.0, 6400.0);
 
     refine_grid(the_grid, 5);
@@ -567,10 +565,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data.config, "seed", success);
     if(!success)
         seed = 0;
-
-    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
-
-    string_hash_insert(config->config_data.config, "num_layers", nl_char);
+//    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
+//
+//    string_hash_insert(config->config_data.config, "num_layers", nl_char);
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_plain_fibrosis(the_grid, phi, seed);
@@ -604,8 +601,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
         seed = 0;
     }
 
-    // TODO: changeeeee
-    //    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_grid_with_square_mesh(config, the_grid);
     set_plain_sphere_fibrosis(the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, seed);
 
     return 1;
