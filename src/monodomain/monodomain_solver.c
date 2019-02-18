@@ -271,7 +271,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         start_dy = domain_config->start_dy;
         start_dz = domain_config->start_dz;
 
-        //TODO: Lucas, this was incorrect before. Check please.
+        //TODO: @Lucas, this was incorrect before. Check please.
         if(!purkinje_config) {
             max_dx = domain_config->max_dx;
             max_dy = domain_config->max_dy;
