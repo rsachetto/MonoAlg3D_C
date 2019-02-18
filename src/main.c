@@ -34,6 +34,11 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
     }
+    else {
+        fprintf(stderr, "\nError: The config file is mandatory.\n\n");
+        display_usage(argv);
+        return EXIT_FAILURE;
+    }
 
     // The command line options always overwrite the config file
     parse_options(argc, argv, options);

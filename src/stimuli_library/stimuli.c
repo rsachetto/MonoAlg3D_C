@@ -411,7 +411,7 @@ SET_SPATIAL_STIM(stim_if_id_less_than) {
     real stim_current = config->stim_current;
     real stim_value;
 
-    int id;
+    int id = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, id, config->config_data.config, "id_limit");
 
     if(config->spatial_stim_currents) 
@@ -451,7 +451,7 @@ SET_SPATIAL_STIM(stim_if_id_greater_than) {
     real stim_current = config->stim_current;
     real stim_value;
 
-    int id;
+    int id = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, id, config->config_data.config, "id_limit");
 
     if(config->spatial_stim_currents) 
