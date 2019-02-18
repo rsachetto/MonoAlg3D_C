@@ -6,7 +6,9 @@
 #include <GL/gl.h>
 #include "draw.h"
 #include "../raylib/raylib.h"
-#include "../raylib/rlgl.h"
+
+#define RAYGUI_IMPLEMENTATION
+#include "../raylib/raygui.h"
 
 bool calc_center = false;
 Vector3 *cube_positions = NULL;
@@ -201,7 +203,7 @@ static Vector3 find_mesh_center() {
 
 
 
-static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
+static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
 
@@ -214,6 +216,8 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
 
     bool grid_only = draw_config.grid_only;
     bool grid_lines = draw_config.grid_lines;
+
+    bool collision = false;
 
     if (grid_to_draw) {
 
@@ -238,6 +242,10 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
                 cubeSize.y = grid_cell->dy/scale;
                 cubeSize.z = grid_cell->dz/scale;
 
+                collision = CheckCollisionRayBox(ray,
+                                                 (BoundingBox){(Vector3){ cubePosition.x - cubeSize.x/2, cubePosition.y - cubeSize.y/2, cubePosition.z - cubeSize.z/2 },
+                                                               (Vector3){ cubePosition.x + cubeSize.x/2, cubePosition.y + cubeSize.y/2, cubePosition.z + cubeSize.z/2 }});
+
                 color = get_color((grid_cell->v - min_v)/(max_v - min_v));
 
                 if(grid_only) {
@@ -245,8 +253,13 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale) {
                 }
                 else {
                     DrawCubeV(cubePosition, cubeSize, color);
+
                     if(grid_lines) {
                         DrawCubeWiresV(cubePosition, cubeSize, BLACK);
+                    }
+
+                    if(collision) {
+                        DrawCubeWiresV(cubePosition, cubeSize, GREEN);
                     }
                 }
             }
@@ -276,7 +289,7 @@ void init_opengl() {
 
     SetCameraMode(camera, CAMERA_FREE); // Set a free camera mode
 
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     Vector3 mesh_offset = (Vector3){ 0.0f, 0.0f, 0.0f };
     float scale = 1.0f;
@@ -284,6 +297,7 @@ void init_opengl() {
     char tmp[100];
     bool mesh_loaded = false;
 
+    Ray ray = {FLT_MAX, FLT_MAX, FLT_MAX};        // Picking line ray
 
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
@@ -291,8 +305,6 @@ void init_opengl() {
         if (IsKeyDown('Z')) {
             camera.target   = (Vector3){ 0.137565f, 0.199405f, 0.181663f };
         }
-
-        // Update
 
         UpdateCamera(&camera);
 
@@ -303,6 +315,10 @@ void init_opengl() {
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            ray = GetMouseRay(GetMousePosition(), camera);
+        }
 
         if(draw_config.grid_to_draw && omp_test_lock(&draw_config.draw_lock)) {
 
@@ -316,7 +332,7 @@ void init_opengl() {
                 scale = fmaxf(draw_config.grid_to_draw->side_length_x, fmaxf(draw_config.grid_to_draw->side_length_y, draw_config.grid_to_draw->side_length_z))/5.0f;
             }
 
-            draw_alg_mesh(mesh_offset, scale);
+            draw_alg_mesh(mesh_offset, scale, ray);
             omp_unset_lock(&draw_config.draw_lock);
 
             EndMode3D();
@@ -337,6 +353,7 @@ void init_opengl() {
                 sprintf(tmp, "%lf ms", draw_config.time);
                 DrawText("Simulation running:", 20, 180, 16, BLACK);
                 DrawText(tmp, 170, 180, 16, BLACK);
+
             }
 
             else {
@@ -403,6 +420,20 @@ void init_opengl() {
             DrawRectangle(posx, posy, 320, 20, SKYBLUE);
             DrawRectangleLines(posx, posy, 320, 20, BLUE);
             DrawText("Loading Mesh...", posx+80, posy, 20, BLACK);
+        }
+
+        if(draw_config.simulating) {
+            if(!draw_config.paused) {
+                if (GuiButton((Rectangle){ GetScreenWidth() - 170, GetScreenHeight() - 50, 150, 30 }, "Pause Simulation")) {
+                    draw_config.paused = true;
+                    printf("PAUSING\n");
+                }
+            } else {
+                if (GuiButton((Rectangle){ GetScreenWidth() - 170, GetScreenHeight() - 50, 150, 30 }, "Continue Simulation")) {
+                    draw_config.paused = false;
+                }
+            }
+            GuiEnable();
         }
 
         EndDrawing();
