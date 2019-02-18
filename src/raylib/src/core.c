@@ -984,6 +984,23 @@ const char *GetMonitorName(int monitor)
     return "";
 }
 
+// Get clipboard text content
+// NOTE: returned string is allocated and freed by GLFW
+const char *GetClipboardText(void)
+{
+#if defined(PLATFORM_DESKTOP)
+    return glfwGetClipboardString(window);
+#endif
+}
+
+// Set clipboard text content
+void SetClipboardText(const char *text)
+{
+#if defined(PLATFORM_DESKTOP)
+    glfwSetClipboardString(window, text);
+#endif
+}
+
 // Show mouse cursor
 void ShowCursor(void)
 {
@@ -1237,6 +1254,10 @@ void EndTextureMode(void)
 
     rlMatrixMode(RL_MODELVIEW);         // Switch back to MODELVIEW matrix
     rlLoadIdentity();                   // Reset current matrix (MODELVIEW)
+    
+    // Reset current screen size
+    currentWidth = GetScreenWidth();
+    currentHeight = GetScreenHeight();
 }
 
 // Returns a ray trace from mouse position
@@ -3257,9 +3278,9 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
                 char path[512] = { 0 };
             #if defined(PLATFORM_ANDROID)
                 strcpy(path, internalDataPath);
-                strcat(path, TextFormat("/screenrec%03i.gif", screenshotCounter));
+                strcat(path, TextFormat("./screenrec%03i.gif", screenshotCounter));
             #else
-                strcpy(path, TextFormat("/screenrec%03i.gif", screenshotCounter));
+                strcpy(path, TextFormat("./screenrec%03i.gif", screenshotCounter));
             #endif
 
                 // NOTE: delay represents the time between frames in the gif, if we capture a gif frame every

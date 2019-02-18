@@ -9,6 +9,7 @@
 #include "../raylib/rlgl.h"
 
 bool calc_center = false;
+Vector3 *cube_positions = NULL;
 
 static inline Color get_color(double value)
 {

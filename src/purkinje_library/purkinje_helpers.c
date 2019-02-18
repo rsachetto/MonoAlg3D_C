@@ -276,7 +276,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network)
     struct node *n;
     struct edge *e;
 
-    char *filename = "purkinje_mesh.vtk";
+    char *filename = "meshes/purkinje_mesh.vtk";
     print_to_stdout_and_file("[!] Purkinje mesh file will be saved in :> %s\n",filename);
 
     FILE *file = fopen(filename,"w+");
