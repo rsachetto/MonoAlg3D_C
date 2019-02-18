@@ -23,6 +23,8 @@
 #include "../config/purkinje_config.h"
 #include "../config/linear_system_solver_config.h"
 
+#include <unistd.h>
+#include <stdio.h>
 
 struct monodomain_solver *new_monodomain_solver() {
 
@@ -376,153 +378,150 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     if(configs->draw) {
         draw_config.grid_to_draw = the_grid;
         draw_config.simulating = true;
+        draw_config.paused = false;
     }
     #endif
 
     // Main simulation loop start
-    while(cur_time <= finalT) 
+    while(cur_time <= finalT)
     {
 
-
-        if(save_to_file && (count % print_rate == 0)) 
-        {
-
-            start_stop_watch(&write_time);
-            save_mesh_config->save_mesh(cur_time, save_mesh_config, the_grid);
-            total_write_time += stop_stop_watch(&write_time);
-        }
-
-        if(cur_time > 0.0) 
-        {
-            activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_grid);
-
-            if(abort_on_no_activity) 
-            {
-                if(!activity) 
-                {
-                    print_to_stdout_and_file("No activity, aborting simulation\n");
-                    break;
-                }
-            }
-        }
-
-
-
-        start_stop_watch(&ode_time);
-
-        // REACTION
-        solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
-
-        //TODO: this functions should be in a user provided library, as they can change depending on the solver that is being used;
-        if (!the_monodomain_solver->using_ddm)
-            update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, dt_pde,
-                          the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
-        else
-            update_monodomain_ddm(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm,\
-                            the_monodomain_solver->kappa_x, the_monodomain_solver->kappa_y,the_monodomain_solver->kappa_z,\
-                            dt_pde, the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
-
-        ode_total_time += stop_stop_watch(&ode_time);
-
-        start_stop_watch(&cg_time);
-
         #ifdef COMPILE_OPENGL
-        if(configs->draw) {
-            omp_set_lock(&draw_config.draw_lock);
-        }
+        if(!draw_config.paused) {
         #endif
 
-        // DIFUSION
-        linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations,
-                                                         &solver_error);
+            if (save_to_file && (count % print_rate == 0)) {
 
-        cg_partial = stop_stop_watch(&cg_time);
-
-        cg_total_time += cg_partial;
-
-        total_cg_it += solver_iterations;
-
-        if(count % print_rate == 0) 
-        {
-            print_to_stdout_and_file("t = %lf, Iterations = "
-                                     "%" PRIu32 ", Error Norm = %e, Number of Cells:"
-                                     "%" PRIu32 ", Iterations time: %ld us\n",
-                                     cur_time, solver_iterations, solver_error, the_grid->num_active_cells, cg_partial);
-        }
-
-        if(adaptive) 
-        {
-            redo_matrix = false;
-            if(cur_time >= start_adpt_at) 
-            {
-                if(count % refine_each == 0) 
-                {
-
-                    start_stop_watch(&ref_time);
-                    redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_dx, start_dy, start_dz);
-                    total_ref_time += stop_stop_watch(&ref_time);
-                }
-
-                if(count % derefine_each == 0) 
-                {
-                    start_stop_watch(&deref_time);
-                    redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
-                    total_deref_time += stop_stop_watch(&deref_time);
-                }
+                start_stop_watch(&write_time);
+                save_mesh_config->save_mesh(cur_time, save_mesh_config, the_grid);
+                total_write_time += stop_stop_watch(&write_time);
             }
-            if(redo_matrix) 
-            {
-                order_grid_cells(the_grid);
 
-                if(stimuli_configs) 
-                {
-                    if(cur_time <= last_stimulus_time || has_any_periodic_stim) 
-                    {
-                        set_spatial_stim(stimuli_configs, the_grid);
+            if (cur_time > 0.0) {
+                activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_grid);
+
+                if (abort_on_no_activity) {
+                    if (!activity) {
+                        print_to_stdout_and_file("No activity, aborting simulation\n");
+                        break;
                     }
                 }
-                if(has_extra_data) 
-                {
-                    set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
-                }
-
-                update_cells_to_solve(the_grid, the_ode_solver);
-
-                if(sb_count(the_grid->refined_this_step) > 0) 
-                {
-                    update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
-                }
-
-                start_stop_watch(&part_mat);
-                assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
-
-                total_mat_time += stop_stop_watch(&part_mat);
             }
 
-        }
 
+            start_stop_watch(&ode_time);
+
+            // REACTION
+            solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
+
+            //TODO: this functions should be in a user provided library, as they can change depending on the solver that is being used;
+            if (!the_monodomain_solver->using_ddm)
+                update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm,
+                                  dt_pde,
+                                  the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
+            else
+                update_monodomain_ddm(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm, \
+                            the_monodomain_solver->kappa_x, the_monodomain_solver->kappa_y,
+                                      the_monodomain_solver->kappa_z, \
+                            dt_pde, the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
+
+            ode_total_time += stop_stop_watch(&ode_time);
+
+            start_stop_watch(&cg_time);
+
+#ifdef COMPILE_OPENGL
+            if (configs->draw) {
+                omp_set_lock(&draw_config.draw_lock);
+            }
+#endif
+
+            // DIFUSION
+            linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations,
+                                                             &solver_error);
+
+            cg_partial = stop_stop_watch(&cg_time);
+
+            cg_total_time += cg_partial;
+
+            total_cg_it += solver_iterations;
+
+            if (count % print_rate == 0) {
+                print_to_stdout_and_file("t = %lf, Iterations = "
+                                         "%" PRIu32 ", Error Norm = %e, Number of Cells:"
+                                         "%" PRIu32 ", Iterations time: %ld us\n",
+                                         cur_time, solver_iterations, solver_error, the_grid->num_active_cells,
+                                         cg_partial);
+            }
+
+            if (adaptive) {
+                redo_matrix = false;
+                if (cur_time >= start_adpt_at) {
+                    if (count % refine_each == 0) {
+
+                        start_stop_watch(&ref_time);
+                        redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_dx, start_dy, start_dz);
+                        total_ref_time += stop_stop_watch(&ref_time);
+                    }
+
+                    if (count % derefine_each == 0) {
+                        start_stop_watch(&deref_time);
+                        redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
+                        total_deref_time += stop_stop_watch(&deref_time);
+                    }
+                }
+                if (redo_matrix) {
+                    order_grid_cells(the_grid);
+
+                    if (stimuli_configs) {
+                        if (cur_time <= last_stimulus_time || has_any_periodic_stim) {
+                            set_spatial_stim(stimuli_configs, the_grid);
+                        }
+                    }
+                    if (has_extra_data) {
+                        set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
+                    }
+
+                    update_cells_to_solve(the_grid, the_ode_solver);
+
+                    if (sb_count(the_grid->refined_this_step) > 0) {
+                        update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
+                    }
+
+                    start_stop_watch(&part_mat);
+                    assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
+
+                    total_mat_time += stop_stop_watch(&part_mat);
+                }
+
+            }
+
+#ifdef COMPILE_OPENGL
+            if (configs->draw) {
+                omp_unset_lock(&draw_config.draw_lock);
+                draw_config.time = cur_time;
+            }
+#endif
+
+            count++;
+            cur_time += dt_pde;
+
+            if (save_checkpoint) {
+                if (count != 0 && (count % save_state_rate == 0)) {
+                    the_monodomain_solver->current_count = count;
+                    the_monodomain_solver->current_time = cur_time;
+                    printf("Saving state with time = %lf, and count = %d\n", the_monodomain_solver->current_time,
+                           the_monodomain_solver->current_count);
+                    save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid,
+                                                  the_monodomain_solver, the_ode_solver);
+                }
+            }
         #ifdef COMPILE_OPENGL
-        if(configs->draw) {
-            omp_unset_lock(&draw_config.draw_lock);
-            draw_config.time = cur_time;
+        } //if(draw_config->paused)
+        else {
+            sleep(1);
+            continue;
         }
         #endif
-
-        count++;
-        cur_time += dt_pde;
-
-        if(save_checkpoint) 
-        {
-            if(count != 0 && (count % save_state_rate == 0)) 
-            {
-                the_monodomain_solver->current_count = count;
-                the_monodomain_solver->current_time = cur_time;
-                printf("Saving state with time = %lf, and count = %d\n", the_monodomain_solver->current_time,
-                       the_monodomain_solver->current_count);
-                save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid,
-                                              the_monodomain_solver, the_ode_solver);
-            }
-        }
     }
 
     long res_time = stop_stop_watch(&solver_time);
