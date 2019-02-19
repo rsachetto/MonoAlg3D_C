@@ -10,6 +10,7 @@ static const struct option long_batch_options[] = {{"config_file", required_argu
 
 static const char *batch_opt_string = "c:h";
 
+//TODO: we need to document the complex options. See comments below
 static const struct option long_options[] = {
     {"config_file", required_argument, NULL, 'c'},
     {"use_adaptivity", no_argument, NULL, 'a'},
@@ -33,30 +34,29 @@ static const struct option long_options[] = {
     {"beta", required_argument, NULL, BETA},
     {"cm", required_argument, NULL, CM},
     {"start_adapting_at", required_argument, NULL, START_REFINING},
-    {"domain", required_argument, NULL, DOMAIN_OPT},
-    {"save_result", required_argument, NULL, SAVE_OPT},
-    {"assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT},
-    {"extra_data", required_argument, NULL, EXTRA_DATA_OPT},
-    {"stimulus", required_argument, NULL, STIM_OPT},
-    {"save_state", required_argument, NULL, SAVE_STATE_OPT},
-    {"restore_state", required_argument, NULL, RESTORE_STATE_OPT},
-    {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT},
-    {"draw_gl_output", no_argument, NULL, DRAW_OPT},
+    {"domain", required_argument, NULL, DOMAIN_OPT}, //Complex option in the format --domain "name='domain', start_dx=250.0" ...
+    {"save_result", required_argument, NULL, SAVE_OPT}, //Complex option
+    {"assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT}, //Complex option
+    {"extra_data", required_argument, NULL, EXTRA_DATA_OPT}, //Complex option
+    {"stimulus", required_argument, NULL, STIM_OPT}, //Complex option
+    {"save_state", required_argument, NULL, SAVE_STATE_OPT}, //Complex option
+    {"restore_state", required_argument, NULL, RESTORE_STATE_OPT}, //Complex option
+    {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT}, //Complex option
+    {"visualize", no_argument, NULL, DRAW_OPT},
+    {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
+    {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
+    {"quiet", no_argument, NULL, 'q'},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
-static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:h";
+static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh";
 
-/* Display program usage, and exit.
- */
 void display_usage(char **argv) {
 
     printf("Usage: %s [options]\n\n", argv[0]);
     printf("Options:\n");
-    printf("--config_file | -c [configuration_file_path]. Simulation configuration file. Default NULL.\n");
+    printf("--config_file | -c [configuration_file_path]. Simulation configuration file. Mandatory!\n");
     printf("--simulation_time | -f [simulation final time]. Simulation final time. Default 10.\n");
-    printf("--output_dir | -o [output-dir]. Simulation output directory. If not set, the simulation will not be saved "
-           "to disk. \n");
     printf("--use_adaptivity | -a. No argument required. Use adaptivity. Default No use.\n");
     printf("--abort_on_no_activity | -b. No argument required. The simulation will be aborted if no activity is "
            "verified after print_rate time steps. Default false.\n");
@@ -75,16 +75,19 @@ void display_usage(char **argv) {
     printf("--cm. Value cm (Default: 1.0 \n");
     printf("--num_threads | -n [num-threads]. Solve using OpenMP. Default: 1 \n");
     printf("--use_gpu | -g [yes|no|true|false]. Solve ODEs using GPU. Default: No \n");
-    printf("--binary_output | -y. Save output files in binary format. Default: No \n");
-    printf("--vtk_output | -V. Save output files in vtk text format. Default: No \n");
     printf("--use_preconditioner | -j Use Jacobi Preconditioner. Default: No \n");
     printf("--refine_each | -R [ts], Refine each ts timesteps. Default: 1 \n");
     printf("--derefine_each | -D [ts], Derefine each ts timesteps. Default: 1 \n");
     printf("--gpu_id | -G [id], ID of the GPU to be used. Default: 0 \n");
     printf("--model_file_path | -k [.so file path], Path of the .so representing the cell model and the ode solver. "
            "Default: NULL \n");
-    printf("--draw_gl_output, Draw a iterative 3D output of the simulation. Not recommended for big meshes. Default: "
+    printf("--domain, Change the domain configuration without changing the .ini file."
+           " Example: --domain \"name=domain, start_dx=250.0\"\n");
+    printf("--visualize, Draw a iterative 3D output of the simulation. Not recommended for big meshes. Default: "
            "not draw\n");
+    printf("--visualization_max_v, maximum value for V. This is only used to configure the color map in the visualization window. Default: -86.0\n");
+    printf("--visualization_min_v, minimum value for V. This is only used to configure the color map in the visualization window. Default: 40.0\n");
+
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
@@ -172,6 +175,9 @@ struct user_options *new_user_options() {
     user_args->vm_threshold = -86.0f;
     user_args->vm_threshold_was_set = false;
 
+    user_args->quiet = false;
+    user_args->quiet_was_set = false;
+
     user_args->stim_configs = NULL;
     user_args->domain_config = NULL;
     user_args->purkinje_config = NULL;
@@ -183,6 +189,9 @@ struct user_options *new_user_options() {
     user_args->restore_state_config = NULL;
 
     user_args->draw = false;
+    user_args->max_v = 40.0f;
+    user_args->min_v = -86.0f;
+
     user_args->main_found = false;
 
     return user_args;
@@ -738,7 +747,6 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
                 issue_overwrite_warning("vm_threshold", "main", old_value, optarg, user_args->config_file);
             }
             user_args->vm_threshold = strtof(optarg, NULL);
-            ;
             break;
 
         case DOMAIN_OPT:
@@ -799,6 +807,19 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case DRAW_OPT:
             user_args->draw = true;
+            break;
+        case MAX_V_OPT:
+            user_args->max_v = strtof(optarg, NULL);
+            break;
+        case MIN_V_OPT:
+            user_args->min_v = strtof(optarg, NULL);
+            break;
+        case 'q':
+            if(user_args->quiet_was_set) {
+                sprintf(old_value, "%d", user_args->quiet);
+                issue_overwrite_warning("quiet", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->quiet = true;
             break;
         case 'h': /* fall-through is intentional */
         case '?':
@@ -882,6 +903,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->adaptive = false;
         }
         pconfig->adaptive_was_set = true;
+    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "quiet")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->quiet = true;
+        } else {
+            pconfig->quiet = false;
+        }
+        pconfig->quiet = true;
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
         pconfig->ref_bound = strtof(value, NULL);
         pconfig->ref_bound_was_set = true;

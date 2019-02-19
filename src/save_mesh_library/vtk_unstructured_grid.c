@@ -701,7 +701,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         fwrite(compressed_data_for_values, data_size_after_compression_for_values, 1, output_file);
         free(compressed_data_for_values);
         free(block_sizes_compressed_for_values);
-        
+
         //Points
         fwrite(&num_block_for_points, sizeof(uint64_t), 1, output_file);
         fwrite(&block_size_uncompressed_for_points, sizeof(uint64_t), 1, output_file);

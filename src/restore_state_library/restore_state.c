@@ -2,7 +2,6 @@
 // Created by sachetto on 13/10/17.
 //
 
-#include <cuda_runtime.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,7 +10,11 @@
 #include "../config/restore_state_config.h"
 #include "../hash/point_voidp_hash.h"
 #include "../libraries_common/config_helpers.h"
+
+#ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"
+#endif
+
 #include "../string/sds.h"
 
 RESTORE_STATE (restore_simulation_state) {
@@ -185,7 +188,7 @@ RESTORE_STATE (restore_simulation_state) {
 
         fread (&(the_ode_solver->original_num_cells), sizeof (the_ode_solver->original_num_cells), 1, input_file);
         if (the_ode_solver->gpu) {
-
+#ifdef COMPILE_CUDA
             real *sv_cpu;
             sv_cpu = (real *)malloc (the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations *
                                      sizeof (real));
@@ -195,7 +198,7 @@ RESTORE_STATE (restore_simulation_state) {
             check_cuda_error(cudaMemcpy2D (the_ode_solver->sv, the_ode_solver->pitch, sv_cpu, the_ode_solver->original_num_cells * sizeof (real),
                           the_ode_solver->original_num_cells * sizeof (real),
                           (size_t)the_ode_solver->model_data.number_of_ode_equations, cudaMemcpyHostToDevice));
-
+#endif
         } else {
             fread (the_ode_solver->sv, sizeof (real),
                    the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations, input_file);

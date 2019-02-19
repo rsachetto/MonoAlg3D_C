@@ -154,11 +154,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
     char *mesh_file;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
-    char *fibrotic_char;
-    GET_PARAMETER_VALUE_CHAR(fibrotic_char, config->config_data.config, "fibrotic");
-    if(fibrotic_char != NULL) {
-        fibrotic = ((strcmp(fibrotic_char, "yes") == 0) || (strcmp(fibrotic_char, "true") == 0));
-    }
+    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data.config, "fibrotic");
 
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
     refine_grid(the_grid, 7);
@@ -184,11 +180,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         refine_border_zone_cells(the_grid);
         refine_border_zone_cells(the_grid);
 
-        char *scar_file_big;
-        GET_PARAMETER_VALUE_CHAR(scar_file_big, config->config_data.config, "big_scar_file");
+        char *scar_file_big = NULL;
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_big, config->config_data.config, "big_scar_file");
 
-        char *scar_file_small;
-        GET_PARAMETER_VALUE_CHAR(scar_file_small, config->config_data.config, "small_scar_file");
+        char *scar_file_small = NULL;
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_small, config->config_data.config, "small_scar_file");
 
         if(scar_file_big) {
             print_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_big);
@@ -281,10 +277,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
         set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 30400, 81600, 59200, 103000, 13600, 48000, true);
         size_code = 1;
     } else {
-        printf(
-            "Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n",
+        print_to_stderr_and_file_and_exit("Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n",
             scar_size);
-        exit(EXIT_FAILURE);
     }
 
     print_to_stdout_and_file("Cleaning grid\n");
@@ -390,10 +384,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     config->start_dy = 250.0;
     config->start_dz = 250.0;
 
-    char *mesh_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
+    char *mesh_file = strdup("meshes/rabheart.alg");
+    //LEAK on mesh_file if mesh_file is defined on ini file
+    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(mesh_file, config->config_data.config, "mesh_file");
 
-    initialize_and_construct_grid(the_grid, 64000.0, 64000.0, 64000.4);
+    double max_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_h, config->config_data.config, "maximum_discretization");
+
+    initialize_and_construct_grid(the_grid, 64000.0, 64000.0, 64000.0);
     refine_grid(the_grid, 7);
 
     print_to_stdout_and_file("Loading Rabbit Heart Mesh\n");
@@ -407,6 +405,22 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     }
     free(mesh_file);
 
+    config->max_dx = max_h;
+    config->max_dx_was_set = true;
+
+    config->max_dy = max_h;
+    config->max_dy_was_set = true;
+
+    config->max_dz = max_h;
+    config->max_dz_was_set = true;
+
+    config->start_dx = 250.0;
+    config->start_dx_was_set = true;
+    config->start_dy = 250.0;
+    config->start_dy_was_set = true;
+    config->start_dz = 250.0;
+    config->start_dz_was_set = true;
+
     return 1;
 }
 
@@ -416,12 +430,15 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
-    // TODO: we need to change this in order to support different discretizations for each direction
-    double start_h = config->start_dx;
+
+    double start_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, start_h, config->config_data.config, "start_discretization");
+
+    double max_h = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_h, config->config_data.config, "maximum_discretization");
 
     assert(the_grid);
 
-    // TODO: we need to change this in order to support different discretizations for each direction
     initialize_and_construct_grid(the_grid, 6400.0, 6400.0, 6400.0);
 
     refine_grid(the_grid, 5);
@@ -447,9 +464,27 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
         print_to_stdout_and_file("Refining Mesh to 12.5um\n");
         refine_grid(the_grid, 3);
     } else {
-        print_to_stdout_and_file("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
+        print_to_stderr_and_file_and_exit("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
                                  "or 12.5um. Using 100um!\n");
+        start_h = 100.0;
     }
+
+    config->max_dx = max_h;
+    config->max_dx_was_set = true;
+
+    config->max_dy = max_h;
+    config->max_dy_was_set = true;
+
+    config->max_dz = max_h;
+    config->max_dz_was_set = true;
+
+    config->start_dx = start_h;
+    config->start_dx_was_set = true;
+    config->start_dy = start_h;
+    config->start_dy_was_set = true;
+    config->start_dz = start_h;
+    config->start_dz_was_set = true;
+
 
     return 1;
 }
@@ -530,10 +565,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data.config, "seed", success);
     if(!success)
         seed = 0;
-
-    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
-
-    string_hash_insert(config->config_data.config, "num_layers", nl_char);
+//    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
+//
+//    string_hash_insert(config->config_data.config, "num_layers", nl_char);
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_plain_fibrosis(the_grid, phi, seed);
@@ -567,8 +601,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
         seed = 0;
     }
 
-    // TODO: changeeeee
-    //    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_grid_with_square_mesh(config, the_grid);
     set_plain_sphere_fibrosis(the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, seed);
 
     return 1;

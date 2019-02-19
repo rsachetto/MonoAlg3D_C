@@ -173,7 +173,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     real Ki_multiplicator = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
 
-    real acidosis;
+    real acidosis = false;
     GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
 
     fibs[0] = atpi;

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "fhn_mod.h"
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
@@ -13,7 +14,12 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     static bool first_call = true;
 
     if(first_call) {
+#ifdef _WIN32
+        printf("Using modified FHN 1961 CPU model\n");
+#else
         print_to_stdout_and_file("Using modified FHN 1961 CPU model\n");
+#endif
+
         first_call = false;
     }
 
@@ -25,7 +31,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 
-	uint32_t i;
+	int i;
 
     #pragma omp parallel for private(sv_id)
     for (i = 0; i < num_cells_to_solve; i++) {
@@ -33,7 +39,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
         else
-            sv_id = i;
+            sv_id = (uint32_t )i;
 
         for (int j = 0; j < num_steps; ++j) {
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);

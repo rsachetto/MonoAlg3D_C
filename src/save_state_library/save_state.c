@@ -5,13 +5,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <cuda_runtime.h>
 
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
 #include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
+
+#ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"
+#endif
 
 SAVE_STATE(save_simulation_state) {
 
@@ -126,6 +128,7 @@ SAVE_STATE(save_simulation_state) {
         fwrite(&(the_ode_solver->original_num_cells), sizeof(the_ode_solver->original_num_cells), 1, output_file);
         if(the_ode_solver->gpu) {
 
+        #ifdef COMPILE_CUDA
             real *sv_cpu;
             sv_cpu = (real*) malloc(the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations * sizeof(real));
 
@@ -135,6 +138,7 @@ SAVE_STATE(save_simulation_state) {
 
             fwrite(sv_cpu, sizeof(real), the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations,
                     output_file);
+        #endif
 
         }
         else {
