@@ -5,7 +5,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include "../alg/grid/grid.h"
 #include "../config/save_mesh_config.h"
@@ -87,7 +90,10 @@ SAVE_MESH(save_as_text_or_binary) {
     double side;
 
     sds tmp = sdsnew(output_dir);
-    tmp = sdscatprintf(tmp, "/%s_it_%lf.vtk", file_prefix, current_dt);
+    if(binary)
+        tmp = sdscatprintf(tmp, "/%s_it_%lf.bin", file_prefix, current_dt);
+    else
+        tmp = sdscatprintf(tmp, "/%s_it_%lf.txt", file_prefix, current_dt);
 
     FILE *output_file = fopen(tmp, "w");
 
@@ -231,6 +237,11 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data.config, "compression_level");
+
+        #ifndef DCOMPILE_ZLIB
+        compress = false;
+        #endif
+
         if(compress) binary = true;
 
         initialized = true;
@@ -347,6 +358,10 @@ SAVE_MESH(save_as_vtp_purkinje) {
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data.config, "compression_level");
+
+#ifndef DCOMPILE_ZLIB
+        compress = false;
+#endif
         if(compress) binary = true;
 
         initialized = true;

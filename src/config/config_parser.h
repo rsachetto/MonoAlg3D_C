@@ -40,6 +40,8 @@
 #define SAVE_OPT 3100
 #define SAVE_STATE_OPT 3200
 #define RESTORE_STATE_OPT 3300
+#define MAX_V_OPT 3400
+#define MIN_V_OPT 3500
 #define BETA 4000
 #define CM 5000
 
@@ -86,6 +88,9 @@ struct user_options {
     bool start_adapting_at_was_set;
     char *config_file;              /*-c option*/
 
+    bool quiet; /*-q option*/
+    bool quiet_was_set;
+
     struct stim_config_hash *stim_configs;
     struct domain_config *domain_config;
     struct purkinje_config *purkinje_config;
@@ -95,6 +100,9 @@ struct user_options {
     struct save_mesh_config *save_mesh_config;
     struct save_state_config *save_state_config;
     struct restore_state_config *restore_state_config;
+
+    float max_v, min_v;
+
 
     bool main_found;
 

@@ -14,6 +14,7 @@
 struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.
+
     float side_length_x;
     float side_length_y;
     float side_length_z;

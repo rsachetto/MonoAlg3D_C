@@ -21,7 +21,7 @@
 void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, const double side_length) 
 {
 
-    struct cell_node *grid_cell = the_grid->first_cell;
+//    struct cell_node *grid_cell = the_grid->first_cell;
 
     struct graph *purkinje = the_grid->the_purkinje_network;
 
@@ -276,7 +276,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network)
     struct node *n;
     struct edge *e;
 
-    char *filename = "purkinje_mesh.vtk";
+    char *filename = "meshes/purkinje_mesh.vtk";
     print_to_stdout_and_file("[!] Purkinje mesh file will be saved in :> %s\n",filename);
 
     FILE *file = fopen(filename,"w+");
