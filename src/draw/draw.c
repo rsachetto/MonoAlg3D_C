@@ -12,7 +12,11 @@
 #include "../raylib/src/raygui.h"
 
 bool calc_center = false;
-Vector3 *cube_positions = NULL;
+//Vector3 *cube_positions = NULL;
+double *vms = NULL;
+int graph_pos_x;
+int graph_pos_y;
+float t = 0.0;
 
 static inline Color get_color(double value)
 {
@@ -218,7 +222,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
     bool grid_only = draw_config.grid_only;
     bool grid_lines = draw_config.grid_lines;
 
-    bool collision = false;
+    bool collision;
 
     if (grid_to_draw) {
 
@@ -226,10 +230,19 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
         struct cell_node **ac = grid_to_draw->active_cells;
         struct cell_node *grid_cell;
 
+
         if (ac) {
             for (int i = 0; i < n_active; i++) {
 
+
                 grid_cell = ac[i];
+
+                //TODO: change
+                if(i == 5409) {
+                    if(!draw_config.paused)
+                    sb_push(vms, grid_cell->v);
+                }
+
 
                 if(skip_node(grid_cell)) {
                     continue;
@@ -298,10 +311,17 @@ void init_opengl() {
     char tmp[100];
     bool mesh_loaded = false;
 
-    Ray ray = {FLT_MAX, FLT_MAX, FLT_MAX};        // Picking line ray
+    Ray ray = {FLT_MAX, FLT_MAX, FLT_MAX};
+
+    Vector2 pos;
+    float t_inc = 0.6;
 
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
+
+        //TODO: draw only when the data is selected
+        graph_pos_x = 10;
+        graph_pos_y = GetScreenHeight()-260;
 
         if (IsKeyDown('Z')) {
             camera.target   = (Vector3){ 0.137565f, 0.199405f, 0.181663f };
@@ -317,8 +337,10 @@ void init_opengl() {
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            ray = GetMouseRay(GetMousePosition(), camera);
+        if(!draw_config.adaptive) {
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                ray = GetMouseRay(GetMousePosition(), camera);
+            }
         }
 
         if(draw_config.grid_to_draw && omp_test_lock(&draw_config.draw_lock)) {
@@ -338,7 +360,34 @@ void init_opengl() {
 
             EndMode3D();
 
+
+
             if(draw_config.simulating) {
+                DrawRectangle(graph_pos_x, graph_pos_y, 300, 250, WHITE);
+
+                t = 0.0;
+                int c = sb_count(vms);
+                for(int i = 0; i < c; i++) {
+
+                    //DrawRectangleV(pos, (Vector2){2.0, 2.0}, BLACK);
+                    if(i+1 < c) {
+
+                        Vector2 p1;
+                        p1.x =  (float)graph_pos_x + 5.0f + t;
+                        p1.y = ((vms[i] - draw_config.min_v)/(draw_config.max_v-draw_config.min_v)) * ( ((graph_pos_y+10) - (graph_pos_y+220)) ) + graph_pos_y+220;
+
+                        Vector2 p2;
+                        p2.x = p1.x + t_inc;
+                        p2.y = ((vms[i+1] - draw_config.min_v)/(draw_config.max_v-draw_config.min_v)) * ( ((graph_pos_y+10) - (graph_pos_y+220)) ) + graph_pos_y+220;
+
+
+                        DrawLineV(p1, p2, BLACK);
+                    }
+                    t = t + t_inc;
+
+                }
+
+                //DrawText("UHUUU", pos.x, pos.y, 10, BLACK);
 
                 DrawRectangle(10, 10, 320, 193, SKYBLUE);
                 DrawRectangleLines(10, 10, 320, 193, BLUE);
