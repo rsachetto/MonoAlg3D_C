@@ -23,7 +23,12 @@
 #include "../config/purkinje_config.h"
 #include "../config/linear_system_solver_config.h"
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#define sleep Sleep
+#endif
+
 #include <stdio.h>
 
 struct monodomain_solver *new_monodomain_solver() {

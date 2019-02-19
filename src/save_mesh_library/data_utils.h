@@ -9,7 +9,9 @@
 #include "../string/sds.h"
 #include "vtk_polydata_grid.h"
 
+#ifdef COMPILE_ZLIB
 #include <zlib.h>
+#endif
 
 int invert_bytes(int data);
 sds write_binary_point(sds output_string, struct point_3d *p);
