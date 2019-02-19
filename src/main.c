@@ -121,6 +121,8 @@ int main(int argc, char **argv) {
                 draw_config.simulating = false;
                 draw_config.time = 0.0;
 
+                draw_config.adaptive = options->adaptive;
+
 
                 omp_init_lock(&draw_config.draw_lock);
 
