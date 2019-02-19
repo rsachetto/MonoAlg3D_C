@@ -3,12 +3,13 @@
 //
 
 #include <float.h>
-#include <GL/gl.h>
 #include "draw.h"
-#include "../raylib/raylib.h"
+
+
+#include "../raylib/src/raylib.h"
 
 #define RAYGUI_IMPLEMENTATION
-#include "../raylib/raygui.h"
+#include "../raylib/src/raygui.h"
 
 bool calc_center = false;
 Vector3 *cube_positions = NULL;
