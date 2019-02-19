@@ -14,29 +14,19 @@ void report_parameter_error_on_function(const char * function, const char *param
 void report_error_on_function(const char * function, const char *error);
 char *get_char_parameter (struct string_hash *config, const char *parameter);
 
-#define GET_PARAMETER_VALUE_CHAR(value, config, parameter)                                                             \
+#define GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value, config, parameter)                                                             \
     do {                                                                                                               \
-        (value) = NULL;                                                                                                \
         char *config_char = get_char_parameter (config, parameter);                                                    \
-        if (config_char) {                                                                                             \
+        if (config_char) {                                                                                            \
             (value) = strdup (config_char);                                                                            \
             free (config_char);                                                                                        \
         }                                                                                                              \
     } while (0)
 
-#define GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                           \
-    do {                                                                                                               \
-        char *value_char;                                                                                              \
-        GET_PARAMETER_VALUE_CHAR (value_char, config, parameter);                                                      \
-        if (value_char != NULL) {                                                                                      \
-            (value) = ((strcmp (value_char, "yes") == 0) || (strcmp (value_char, "true") == 0));                       \
-        }                                                                                                              \
-        free (value_char);                                                                                             \
-    } while (0)
-
 #define GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(value, config, parameter)                                             \
     do {                                                                                                               \
-        GET_PARAMETER_VALUE_CHAR (value, config, parameter);                                                           \
+        (value) = NULL;                                                                                                \
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value, config, parameter);                                                           \
         if (!(value)) {                                                                                                \
             report_parameter_error_on_function (__func__, parameter);                                                  \
         }                                                                                                              \
@@ -53,6 +43,17 @@ char *get_char_parameter (struct string_hash *config, const char *parameter);
         }                                                                                                              \
     } while (0)
 
+
+#define GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(value, config, parameter)                                            \
+    do {                                                                                                               \
+        char *value_char = NULL;                                                                                              \
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value_char, config, parameter);                                                      \
+        if (value_char != NULL) {                                                                                      \
+            (value) = ((strcmp (value_char, "yes") == 0) || (strcmp (value_char, "true") == 0));                       \
+        }                                                                                                              \
+        free (value_char);                                                                                             \
+    } while (0)
+
 #define GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(type, value, config, parameter)                                     \
     do {                                                                                                               \
         char *config_char = get_char_parameter (config, parameter);                                                    \
@@ -65,7 +66,7 @@ char *get_char_parameter (struct string_hash *config, const char *parameter);
 #define GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(type, value, config, parameter)                                    \
     do {                                                                                                               \
         bool s;                                                                                                        \
-        GET_PARAMETER_NUMERIC_VALUE (type, value, config, parameter, s);                                               \
+        GET_PARAMETER_NUMERIC_VALUE(type, value, config, parameter, s);                                               \
         if (!s) {                                                                                                      \
             report_parameter_error_on_function (__func__, parameter);                                                  \
         }                                                                                                              \

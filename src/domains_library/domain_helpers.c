@@ -33,7 +33,6 @@ int calculate_cuboid_side_lengths(double start_dx, double start_dy, double start
     double ny = side_length_y / start_dy;
     double nz = side_length_z / start_dz;
 
-
     double proportion_dxdy = fmax(start_dx, start_dy)/fmin(start_dx, start_dy);
     double proportion_dxdz = fmax(start_dx, start_dz)/fmin(start_dx, start_dz);
     double proportion_dydz = fmax(start_dz, start_dy)/fmin(start_dz, start_dy);
@@ -245,9 +244,14 @@ void set_benchmark_domain(struct grid *the_grid) {
             (grid_cell->center_y < 20000) && (grid_cell->center_x < 7000) && (grid_cell->center_z < 3000);
         grid_cell = grid_cell->next;
     }
+
+    the_grid->side_length_x = 7000;
+    the_grid->side_length_y = 20000;
+    the_grid->side_length_z = 3000;
+
 }
 
-void set_cuboid_domain(struct grid *the_grid, double sizeX, double sizeY, double sizeZ) {
+void set_cuboid_domain(struct grid *the_grid, float sizeX, float sizeY, float sizeZ) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
     while(grid_cell != 0) {
@@ -268,16 +272,14 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
-        print_to_stdout_and_file("Error opening mesh described in %s!!\n", file_name);
-        exit(0);
+        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
     }
 
     double **mesh_points = (double **)malloc(sizeof(double *) * size);
     for(int i = 0; i < size; i++) {
         mesh_points[i] = (double *)malloc(sizeof(double) * 4);
         if(mesh_points[i] == NULL) {
-            print_to_stdout_and_file("Failed to allocate memory\n");
-            exit(0);
+            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
     }
     double dummy; // we don't use this value here
@@ -363,6 +365,10 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     free(mesh_points);
     free(tag);
     free(fibrosis);
+
+    the_grid->side_length_x = maxx;
+    the_grid->side_length_y = maxy;
+    the_grid->side_length_z = maxz;
 }
 
 void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, size_t size, double minx, double maxx,
@@ -372,16 +378,15 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
-        print_to_stdout_and_file("Error opening mesh described in %s!!\n", file_name);
-        exit(0);
+        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
+
     }
 
     double **mesh_points = (double **)malloc(sizeof(double *) * size);
     for(int i = 0; i < size; i++) {
         mesh_points[i] = (double *)calloc(4, sizeof(double));
         if(mesh_points[i] == NULL) {
-            print_to_stdout_and_file("Failed to allocate memory\n");
-            exit(0);
+            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
     }
     double dummy; // we don't use this value here
@@ -441,6 +446,11 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
     for(int l = 0; l < size; l++) {
         free(mesh_points[l]);
     }
+
+
+    the_grid->side_length_x = maxx;
+    the_grid->side_length_y = maxy;
+    the_grid->side_length_z = maxz;
 
     free(mesh_points);
     free(tag);
