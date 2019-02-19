@@ -259,8 +259,9 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
     if(!initialized) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
-        char *preconditioner_char;
-        GET_PARAMETER_VALUE_CHAR (preconditioner_char, config->config_data.config, "use_preconditioner");
+
+        char *preconditioner_char = NULL;
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(preconditioner_char, config->config_data.config, "use_preconditioner");
         if (preconditioner_char != NULL)
         {
             use_jacobi = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));

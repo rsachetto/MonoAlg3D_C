@@ -8,7 +8,7 @@ if(CUDA_FOUND)
 
 #ENDIF()
 ELSE()
-    ADD_LIBRARY(default_restore_state ${LIB_TYPE} restore.c)
+    ADD_LIBRARY(default_restore_state ${LIB_TYPE} restore_state.c)
     TARGET_LINK_LIBRARIES(default_restore_state hashes string alg)
 ENDIF(CUDA_FOUND)
 

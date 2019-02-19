@@ -39,6 +39,7 @@ bool derefine_grid_with_bound (struct grid *the_grid, double derefinement_bound,
             active6 = grid_cell->next->next->next->next->next->active;
             active7 = grid_cell->next->next->next->next->next->next->active;
             active8 = grid_cell->next->next->next->next->next->next->next->active;
+
             if ((active1) && (active2) && (active3) && (active4) && (active5) && (active6) && (active7) && (active8)) {
 
                 /* Checks if the next seven cells of the current cell can change. */
