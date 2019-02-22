@@ -14,8 +14,8 @@
 #include "../utils/stop_watch.h"
 #include "../hash/point_voidp_hash.h"
 
-bool calc_center = false;
-//Vector3 *cube_positions = NULL;
+static bool calc_center = false;
+static bool one_selected = false;
 
 int graph_pos_x;
 int graph_pos_y;
@@ -221,7 +221,7 @@ static Vector3 find_mesh_center() {
 
 }
 
-static void draw_alg_mesh(float scale, Ray ray) {
+static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
 
@@ -267,9 +267,9 @@ static void draw_alg_mesh(float scale, Ray ray) {
                     point_voidp_hash_insert_or_overwrite(selected_aps, p, aps);
                 }
 
-                cubePosition.x = (grid_cell->center_x)/scale;
-                cubePosition.y = (grid_cell->center_y)/scale;
-                cubePosition.z = (grid_cell->center_z)/scale;
+                cubePosition.x = (grid_cell->center_x - mesh_offset.x)/scale;
+                cubePosition.y = (grid_cell->center_y - mesh_offset.y)/scale;
+                cubePosition.z = (grid_cell->center_z - mesh_offset.z)/scale;
 
 
                 cubeSize.x = grid_cell->dx/scale;
@@ -292,7 +292,7 @@ static void draw_alg_mesh(float scale, Ray ray) {
                         DrawCubeWiresV(cubePosition, cubeSize, BLACK);
                     }
 
-                    if(collision) {
+                    if(collision && !one_selected) {
                         DrawCubeWiresV(cubePosition, cubeSize, GREEN);
 
                         if(aps == (void*)-1) {
@@ -300,12 +300,16 @@ static void draw_alg_mesh(float scale, Ray ray) {
                             point_voidp_hash_insert(selected_aps, p, aps);
                             printf("%d\n", selected_aps->n);
                         }
+                        one_selected = true;
+
                     }
                 }
             }
         }
-
     }
+
+    one_selected = false;
+
 }
 
 int num_colors = 19;
@@ -313,7 +317,6 @@ Color colors[] = {DARKGRAY, YELLOW, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME
 
 void draw_ap() {
 
-    //TODO: draw only when the data is selected
     graph_pos_x = 1;
     graph_pos_y = GetScreenHeight() - 400;
 
@@ -326,7 +329,7 @@ void draw_ap() {
     float min_y = graph_pos_y + 350.0f;
     float max_y = graph_pos_y + 50.0f;
 
-    DrawText("Time (ms)", graph_pos_x + 125, min_y + 30, 6, RED);
+    DrawTextEx(font, "Time (ms)", (Vector2){graph_pos_x + 160.0f, min_y + 30.0f}, 16, 1, BLACK);
 
     Vector2 p1, p2;
     struct ap *aps;
@@ -406,21 +409,54 @@ void draw_ap() {
 
 void draw_instruction_box () {
 
+    int text_position = 10;
+    int text_offset = 20;
+
     char tmp[100];
-    DrawRectangle(10, 10, 320, 193, WHITE);
-    DrawRectangleLines(10, 10, 320, 193, BLACK);
-    DrawText("Free camera default controls:", 20, 20, 10, BLACK);
-    DrawText("- Mouse Wheel to Zoom in-out", 40, 40, 10, DARKGRAY);
-    DrawText("- Mouse Wheel Pressed to Pan", 40, 60, 10, DARKGRAY);
-    DrawText("- Alt + Mouse Wheel Pressed to Rotate", 40, 80, 10, DARKGRAY);
-    DrawText("- Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom", 40, 100, 10, DARKGRAY);
-    DrawText("- Z to reset zoom", 40, 120, 10, DARKGRAY);
-    DrawText("- G to only draw the grid lines", 40, 140, 10, DARKGRAY);
-    DrawText("- L to enable or disable the grid lines", 40, 160, 10, DARKGRAY);
+    DrawRectangle(10, 10, 320, 233, WHITE);
+
+    DrawRectangleLines(10, 10, 320, 233, BLACK);
+
+    DrawText("Default controls:", 20, 20, 10, BLACK);
+    text_position += text_offset;
+
+    DrawText("- Mouse Wheel to Zoom in-out", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- Mouse Wheel Pressed to Pan", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- Alt + Mouse Wheel Pressed to Rotate", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- Z to reset zoom", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- G to only draw the grid lines", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- L to enable or disable the grid lines", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- Double click on a volume to show the AP", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- Space to start or pause simulation", 40, text_position, 12, BLACK);
+    text_position += text_offset;
 
     sprintf(tmp, "%lf ms", draw_config.time);
-    DrawText("Simulation running:", 20, 180, 16, BLACK);
-    DrawText(tmp, 170, 180, 16, BLACK);
+    if(draw_config.paused) {
+        DrawText("Simulation paused:", 20, text_position, 16, BLACK);
+    }
+    else {
+        DrawText("Simulation running:", 20, text_position, 16, BLACK);
+    }
+    DrawText(tmp, 170, text_position, 16, BLACK);
+
+
 }
 
 void draw_end_info_box() {
@@ -479,6 +515,7 @@ void draw_end_info_box() {
 
     sprintf(tmp, "CG Total Iterations: %ld\n", draw_config.total_cg_it);
     DrawText(tmp, 20, text_pos, 16, BLACK);
+
 }
 
 const int screenWidth = 1280;
@@ -488,6 +525,7 @@ void init_opengl() {
 
     struct stop_watch timer;
 
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     InitWindow(screenWidth, screenHeight, "Simulation visualization");
@@ -514,9 +552,15 @@ void init_opengl() {
 
     bool mesh_loaded = false;
 
-    Ray ray = {FLT_MAX, FLT_MAX, FLT_MAX};
+    Ray ray;
+    ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+
+    Vector3 mesh_offset = (Vector3){ 0, 0, 0 };
+
 
     while (!WindowShouldClose()) {
+
 
         if (IsKeyDown('Z')) {
             camera.target   = (Vector3){ 0.137565f, 0.199405f, 0.181663f };
@@ -528,22 +572,21 @@ void init_opengl() {
 
         if (IsKeyPressed('L')) draw_config.grid_lines = !draw_config.grid_lines;
 
+        if (IsKeyPressed(KEY_SPACE)) draw_config.paused = !draw_config.paused;
+
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        if(!draw_config.adaptive) {
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                if(!timer.running) {
-                    start_stop_watch(&timer);
-                }
-                else {
-                    long delay = stop_stop_watch(&timer);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if(!timer.running) {
+                start_stop_watch(&timer);
+            }
+            else {
+                long delay = stop_stop_watch(&timer);
 
-                    if(delay < 450000) {
-                        ray = GetMouseRay(GetMousePosition(), camera);
-                    }
-
+                if(delay < 450000) {
+                    ray = GetMouseRay(GetMousePosition(), camera);
                 }
 
             }
@@ -557,19 +600,18 @@ void init_opengl() {
             BeginMode3D(camera);
 
             if(!calc_center) {
+                mesh_offset = find_mesh_center();
                 scale = fmaxf(draw_config.grid_to_draw->side_length_x, fmaxf(draw_config.grid_to_draw->side_length_y, draw_config.grid_to_draw->side_length_z))/5.0f;
             }
 
-            draw_alg_mesh(scale, ray);
+            draw_alg_mesh(mesh_offset, scale, ray);
             omp_unset_lock(&draw_config.draw_lock);
 
             EndMode3D();
 
             if(draw_config.simulating) {
-
                 draw_ap();
                 draw_instruction_box();
-
             }
 
             else {
@@ -584,33 +626,6 @@ void init_opengl() {
             DrawRectangle(posx, posy, 320, 20, WHITE);
             DrawRectangleLines(posx, posy, 320, 20, BLACK);
             DrawText("Loading Mesh...", posx+80, posy, 20, BLACK);
-        }
-
-        if(draw_config.simulating) {
-            if(!draw_config.paused) {
-                if (GuiButton((Rectangle){ GetScreenWidth() - 170, GetScreenHeight() - 50, 150, 30 }, "Pause Simulation")) {
-                    draw_config.paused = true;
-                }
-            } else {
-                if (GuiButton((Rectangle){ GetScreenWidth() - 170, GetScreenHeight() - 50, 150, 30 }, "Continue Simulation")) {
-                    draw_config.paused = false;
-                }
-            }
-
-//            if(!show_ap) {
-//                if (GuiButton((Rectangle){ 10, 220, 150, 30 }, "Show AP")) {
-//                    show_ap = true;
-//                }
-//            }
-//            else {
-//                if (GuiButton((Rectangle){ 10, 220, 150, 30 }, "Hide AP")) {
-//                    show_ap = false;
-//                }
-//            }
-
-
-
-            GuiEnable();
         }
 
         EndDrawing();
