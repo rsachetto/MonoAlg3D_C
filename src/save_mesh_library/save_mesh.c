@@ -25,7 +25,7 @@ char *file_prefix;
 bool binary = false;
 bool clip_with_plain = false;
 bool clip_with_bounds = false;
-bool save_pvd = false;
+bool save_pvd = true;
 bool compress = false;
 int compression_level = 3;
 static FILE *pvd_file = NULL;

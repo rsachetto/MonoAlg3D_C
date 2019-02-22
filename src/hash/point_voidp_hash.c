@@ -114,8 +114,21 @@ void point_voidp_hash_insert(struct point_voidp_hash* d, struct point_3d key, vo
     }
 }
 
+
+void point_voidp_hash_insert_or_overwrite(struct point_voidp_hash* d, struct point_3d key, void* value) {
+
+    void* new_key = point_voidp_hash_search(d, key);
+
+    //Key found, delete it first
+    if(new_key != (void*)-1) {
+        point_voidp_hash_delete(d, key);
+    }
+
+    point_voidp_hash_insert(d, key, value);
+}
+
 /* return the most recently inserted value associated with a key */
-/* or 0 if no matching key is present */
+/* or -1 if no matching key is present */
 void* point_voidp_hash_search(struct point_voidp_hash* d, struct point_3d key) {
     struct elt *e;
 
@@ -146,7 +159,7 @@ void point_voidp_hash_delete(struct point_voidp_hash *d, struct point_3d key)
 
             //free(e->value);
             free(e);
-
+            d->n--;
             return;
         }
     }
