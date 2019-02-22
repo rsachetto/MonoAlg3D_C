@@ -19,7 +19,6 @@
 #include <unistd.h>
 #endif
 
-
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     double start_dx = config->start_dx;
@@ -78,6 +77,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
     for(i = 0; i < num_steps; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
+
+    translate_visible_mesh_to_origin(the_grid);
 
     return 1;
 }
@@ -139,6 +140,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
     for(i = 0; i < num_steps; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
+
+    translate_visible_mesh_to_origin(the_grid);
 
     return 1;
 }
@@ -485,7 +488,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
     config->start_dz = start_h;
     config->start_dz_was_set = true;
 
-
     return 1;
 }
 
@@ -551,23 +553,18 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
         }
     }
 
+    translate_visible_mesh_to_origin(the_grid);
+
     return 1;
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
 
-    bool success;
-
     double phi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, phi, config->config_data.config, "phi");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data.config, "seed", success);
-    if(!success)
-        seed = 0;
-//    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
-//
-//    string_hash_insert(config->config_data.config, "num_layers", nl_char);
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_plain_fibrosis(the_grid, phi, seed);

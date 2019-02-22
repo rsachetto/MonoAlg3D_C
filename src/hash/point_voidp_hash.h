@@ -28,6 +28,8 @@ void point_voidp_hash_destroy(struct point_voidp_hash*);
 /* insert a new key-value pair into an existing dictionary */
 void point_voidp_hash_insert(struct point_voidp_hash*, struct point_3d key, void* value);
 
+void point_voidp_hash_insert_or_overwrite(struct point_voidp_hash* d, struct point_3d key, void* value);
+
 /* return the most recently inserted value associated with a key */
 /* or 0 if no matching key is present */
 void* point_voidp_hash_search(struct point_voidp_hash*, struct point_3d key);

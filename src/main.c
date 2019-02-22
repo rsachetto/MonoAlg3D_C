@@ -122,7 +122,8 @@ int main(int argc, char **argv) {
                 draw_config.time = 0.0;
 
                 draw_config.adaptive = options->adaptive;
-
+                draw_config.final_time = options->final_time;
+                draw_config.dt = options->dt_pde;
 
                 omp_init_lock(&draw_config.draw_lock);
 

@@ -125,7 +125,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
-    if(assembly_matrix_config) 
+
+    if(assembly_matrix_config)
     {
         init_assembly_matrix_functions(assembly_matrix_config);
     } 
@@ -372,8 +373,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     double cur_time = the_monodomain_solver->current_time;
 
-    print_to_stdout_and_file("Starting simulation\n");
-
     if(save_mesh_config != NULL) {
         print_rate = save_mesh_config->print_rate;
         save_mesh_config->last_count = (int)(finalT/dt_pde);
@@ -383,9 +382,14 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     if(configs->draw) {
         draw_config.grid_to_draw = the_grid;
         draw_config.simulating = true;
+        draw_config.paused = true;
+    }
+    else {
         draw_config.paused = false;
     }
     #endif
+
+    print_to_stdout_and_file("Starting simulation\n");
 
     // Main simulation loop start
     while(cur_time <= finalT)
@@ -500,13 +504,13 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
             }
 
-#ifdef COMPILE_OPENGL
+            #ifdef COMPILE_OPENGL
             if (configs->draw) {
                 omp_unset_lock(&draw_config.draw_lock);
                 draw_config.time = cur_time;
             }
-#endif
 
+            #endif
             count++;
             cur_time += dt_pde;
 

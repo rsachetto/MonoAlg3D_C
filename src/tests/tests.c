@@ -526,6 +526,9 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
 /////STARTING TESTS////////////////////////////////////////////////////////////////////////
 
 Test(run_gold_simulation, gpu_no_adapt) {
+
+    printf("Running simulation for testing\n");
+
     int success = run_simulation_with_config("example_configs/gold_simulation_no_adapt.ini");
     cr_assert(success);
 
@@ -554,7 +557,7 @@ Test (mesh_load, cuboid_mesh_100_200_100_1000_1000_1000) {
 
 Test (mesh_load, cuboid_mesh_100_100_200_1000_1000_1000) {
 
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", false);
+    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true);
     cr_assert(success);
 }
 
