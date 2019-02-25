@@ -32,13 +32,19 @@ static FILE *pvd_file = NULL;
 
 static bool initialized = false;
 static bool first_save_call = true;
-static int count = 0;
 
 static struct vtk_unstructured_grid *vtk_grid = NULL;
 
 static struct vtk_polydata_grid *vtk_polydata = NULL;
 
 void add_file_to_pvd(double current_dt, const char *output_dir, const char *base_name);
+
+static sds create_base_name(char *file_prefix, int iteration_count, char *extension) {
+
+    return sdscatprintf(sdsempty(), "%s_it_%d.%s", file_prefix, iteration_count, extension);
+    //return sdscatprintf(sdsempty(), "%sit_%d.%s", file_prefix, iteration_count, extension);
+
+}
 
 SAVE_MESH(save_as_text_or_binary) {
 
@@ -90,12 +96,22 @@ SAVE_MESH(save_as_text_or_binary) {
     double side;
 
     sds tmp = sdsnew(output_dir);
-    if(binary)
-        tmp = sdscatprintf(tmp, "/%s_it_%lf.bin", file_prefix, current_dt);
-    else
-        tmp = sdscatprintf(tmp, "/%s_it_%lf.txt", file_prefix, current_dt);
+    tmp = sdscat(tmp, "/");
+
+    sds base_name = NULL;
+    if(binary) {
+        base_name = create_base_name(file_prefix, iteration_count, "bin");
+    }
+    else {
+        base_name = create_base_name(file_prefix, iteration_count, "txt");
+    }
+
+    tmp = sdscat(tmp, base_name);
 
     FILE *output_file = fopen(tmp, "w");
+
+    sdsfree(base_name);
+    sdsfree(tmp);
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
@@ -185,8 +201,9 @@ SAVE_MESH(save_as_vtk) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_ms.vtk", file_prefix, count);
-    count++;
+    //sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_time_%lf_ms.vtk", file_prefix, iteration_count, current_dt);
+    sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
+
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
     new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
@@ -197,6 +214,7 @@ SAVE_MESH(save_as_vtk) {
         free_vtk_unstructured_grid(vtk_grid);
 
     sdsfree(output_dir_with_file);
+    sdsfree(base_name);
 }
 
 void add_file_to_pvd(double current_dt, const char *output_dir, const char *base_name) {
@@ -270,8 +288,9 @@ SAVE_MESH(save_as_vtu) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d.vtu", file_prefix, count);
-    count++;
+    //sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_time_%lf_ms.vtu", file_prefix, iteration_count, current_dt);
+    sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
+
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
     if(save_pvd) {
@@ -330,8 +349,8 @@ SAVE_MESH(save_as_vtk_purkinje) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_ms.vtk", file_prefix, count);
-    count++;
+    //sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_time_%lf_ms.vtk", file_prefix, iteration_count, current_dt);
+    sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
     new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
@@ -343,6 +362,7 @@ SAVE_MESH(save_as_vtk_purkinje) {
         free_vtk_polydata_grid(vtk_polydata);
 
     sdsfree(output_dir_with_file);
+    sdsfree(base_name);
 
 }
 
@@ -390,8 +410,8 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = sdscatprintf(sdsempty(), "%s_it_%d.vtp", file_prefix, count);
-    count++;
+    sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
+
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
     if(save_pvd) 

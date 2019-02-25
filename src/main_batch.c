@@ -2,7 +2,6 @@
 #include "ini_parser/ini.h"
 #include "monodomain/monodomain_solver.h"
 #include "monodomain/ode_solver.h"
-#include "monodomain/output_utils.h"
 #include "string/sds.h"
 #include "utils/file_utils.h"
 #include <mpi.h>
