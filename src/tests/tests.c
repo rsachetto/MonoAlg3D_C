@@ -1,7 +1,6 @@
 ////
 //// Created by sachetto on 06/10/17.
 ////
-#include "../monodomain/output_utils.h"
 #include <criterion/criterion.h>
 #include "../alg/grid/grid.h"
 #include "../config/linear_system_solver_config.h"
@@ -10,6 +9,7 @@
 #include "../config/config_parser.h"
 #include "../utils/file_utils.h"
 #include "../ini_parser/ini.h"
+#include "../string/sds.h"
 #include <signal.h>
 
 
@@ -368,7 +368,7 @@ int test_cuboid_mesh(double start_dx, double start_dy, double start_dz, char* si
         string_hash_insert(save_mesh_config->config_data.config, "file_prefix", file_prefix);
         string_hash_insert(save_mesh_config->config_data.config, "compress", "yes");
 
-        save_mesh_config->save_mesh(0.0, save_mesh_config, grid);
+        save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
     }
 
     cr_assert_float_eq(max_x+(start_dx/2.0), atof(side_length_x), 1e-16);
@@ -415,6 +415,7 @@ int run_simulation_with_config(char *config_file) {
 
     // Create the output dir and the logfile
     if(options->save_mesh_config->out_dir_name) {
+        remove_directory(options->save_mesh_config->out_dir_name);
         create_dir(options->save_mesh_config->out_dir_name);
     }
     else {
