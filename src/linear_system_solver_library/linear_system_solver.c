@@ -6,6 +6,8 @@
 #include "../libraries_common/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 
+#include "../single_file_libraries/stb_ds.h"
+
 bool initialized = false;
 bool use_jacobi;
 int max_its = 50;
@@ -57,7 +59,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
-        size_t max_el = sb_count(cell_elements);
+        size_t max_el = arrlen(cell_elements);
 
         for(int el = 0; el < max_el; el++) {
             element = cell_elements[el];
@@ -94,7 +96,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
                 ac[i]->Ax = 0.0;
                 struct element *cell_elements = ac[i]->elements;
 
-                size_t max_el = sb_count(cell_elements);
+                size_t max_el = arrlen(cell_elements);
                 for(int el = 0; el < max_el; el++) {
                     element = cell_elements[el];
                     ac[i]->Ax += element.value * CG_P(element.cell);
@@ -209,7 +211,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
                 struct element *cell_elements = ac[i]->elements;
                 sigma = 0.0;
 
-                size_t max_el = sb_count(cell_elements);
+                size_t max_el = arrlen(cell_elements);
 
                 // Do not take the diagonal element
                 for(int el = 1; el < max_el; el++)
@@ -228,7 +230,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
             {
                 struct element *cell_elements = ac[i]->elements;
 
-                size_t max_el = sb_count(cell_elements);
+                size_t max_el = arrlen(cell_elements);
 
                 // Do not take the diagonal element
                 sum = 0.0;
@@ -317,7 +319,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
         struct element *cell_elements = ac[i]->elements;
         ac[i]->Ax = 0.0;
 
-        size_t max_el = sb_count(cell_elements);
+        size_t max_el = arrlen(cell_elements);
 
         for(int el = 0; el < max_el; el++)
         {
@@ -385,7 +387,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
                 ac[i]->Ax = 0.0;
                 struct element *cell_elements = ac[i]->elements;
 
-                size_t max_el = sb_count(cell_elements);
+                size_t max_el = arrlen(cell_elements);
                 for(int el = 0; el < max_el; el++)
                 {
                     element = cell_elements[el];

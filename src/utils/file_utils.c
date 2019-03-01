@@ -5,13 +5,15 @@
 #include <stdarg.h>
 
 #include "file_utils.h"
-#include "../vector/stretchy_buffer.h"
 #include "../string/sds.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
 
 #include <errno.h>
+
+#include "../single_file_libraries/stb_ds.h"
+
 
 #ifdef _WIN32
 #include <io.h>
@@ -247,7 +249,7 @@ char **read_lines(const char *filename) {
     char * line = NULL;
     while ((read = getline(&line, &len, fp)) != -1) {
         line[strlen(line) - 1] = '\0';
-        sb_push(lines, strdup(line));
+        arrput(lines, strdup(line));
     }
 
     free(line);
@@ -279,11 +281,11 @@ char **list_files_from_dir(const char *dir, const char *prefix) {
         if (prefix) {
 
             if (strncmp(prefix, file_name, strlen(prefix)) == 0) {
-                sb_push(files, file_name);
+                arrput(files, file_name);
             }
 
         } else {
-            sb_push(files, file_name);
+            arrput(files, file_name);
         }
     }
 
@@ -331,6 +333,9 @@ void create_dir(const char *out_dir) {
             }
         }
     }
+
+    sdsfreesplitres(all_dirs, dirs_count);
+    sdsfree(new_dir);
 
 }
 

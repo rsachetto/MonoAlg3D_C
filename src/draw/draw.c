@@ -12,7 +12,9 @@
 #define RAYGUI_IMPLEMENTATION
 #include "../raylib/src/raygui.h"
 #include "../utils/stop_watch.h"
-#include "../hash/point_voidp_hash.h"
+#include "../common_types/common_types.h"
+
+#include "../single_file_libraries/stb_ds.h"
 
 static bool calc_center = false;
 static bool one_selected = false;
@@ -27,7 +29,7 @@ struct ap {
     float t;
 };
 
-struct point_voidp_hash *selected_aps;
+struct point_voidp_hash_entry *selected_aps;
 
 static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
@@ -257,14 +259,15 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
                 p.y = grid_cell->center_y;
                 p.z = grid_cell->center_z;
 
-                struct ap *aps = (struct ap*) point_voidp_hash_search(selected_aps, p);
+                struct ap *aps = (struct ap*) hmget(selected_aps, p);
 
-                if(!draw_config.paused && draw_config.simulating && aps != (void*)-1) {
+                if(!draw_config.paused && draw_config.simulating && aps != NULL) {
                     struct ap ap1;
                     ap1.t = draw_config.time;
                     ap1.v = grid_cell->v;
-                    sb_push(aps, ap1);
-                    point_voidp_hash_insert_or_overwrite(selected_aps, p, aps);
+                    arrput(aps, ap1);
+
+                    hmput(selected_aps, p, aps);
                 }
 
                 cubePosition.x = (grid_cell->center_x - mesh_offset.x)/scale;
@@ -295,10 +298,9 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
                     if(collision && !one_selected) {
                         DrawCubeWiresV(cubePosition, cubeSize, GREEN);
 
-                        if(aps == (void*)-1) {
-                            aps = NULL;
-                            point_voidp_hash_insert(selected_aps, p, aps);
-                            printf("%d\n", selected_aps->n);
+                        if(aps == NULL) {
+                            arrsetcap(aps, 50);
+                            hmput(selected_aps, p, aps);
                         }
                         one_selected = true;
 
@@ -307,9 +309,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
             }
         }
     }
-
     one_selected = false;
-
 }
 
 int num_colors = 19;
@@ -334,30 +334,32 @@ void draw_ap() {
     Vector2 p1, p2;
     struct ap *aps;
     int c_count = 0;
-    for (int i = 0; i < selected_aps->size; i++) {
-        for (struct elt *e = selected_aps->table[i % (selected_aps)->size]; e != 0; e = e->next) {
-            aps = (struct ap*) e->value;
-            int c = sb_count(aps);
+    int n = hmlen(selected_aps);
 
-            if(c > 0) {
-                Color line_color = colors[c_count % num_colors];
-                c_count++;
-                for (int i = 0; i < c; i++) {
+    for (int i = 0; i < n; i++) {
 
-                    if (i + 1 < c) {
+        aps = (struct ap*) selected_aps[i].value;
+        int c = arrlen(aps);
 
-                        p1.x = normalize(0.0, draw_config.final_time, min_x, max_x, aps[i].t);
-                        p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i].v);
+        if(c > 0) {
+            Color line_color = colors[c_count % num_colors];
+            c_count++;
+            for (int i = 0; i < c; i++) {
 
-                        p2.x = normalize(0.0, draw_config.final_time, min_x, max_x, aps[i + 1].t);
-                        p2.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i + 1].v);
+                if (i + 1 < c) {
 
-                        DrawLineV(p1, p2, line_color);
-                    }
+                    p1.x = normalize(0.0, draw_config.final_time, min_x, max_x, aps[i].t);
+                    p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i].v);
 
+                    p2.x = normalize(0.0, draw_config.final_time, min_x, max_x, aps[i + 1].t);
+                    p2.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i + 1].v);
+
+                    DrawLineV(p1, p2, line_color);
                 }
+
             }
         }
+
     }
 
     int p = 0;
@@ -535,7 +537,8 @@ void init_opengl() {
     draw_config.grid_only = false;
     draw_config.grid_lines = true;
 
-    selected_aps = point_voidp_hash_create();
+    selected_aps = NULL;
+    hmdefault(selected_aps, NULL);
 
     Camera3D camera;
     camera.position = (Vector3){ 0.064882f, 0.165282f, 15.977825f };  // Camera position

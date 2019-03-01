@@ -12,14 +12,14 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/save_mesh_config.h"
-#include "../hash/point_hash.h"
+#include "../common_types/common_types.h"
 #include "../libraries_common/config_helpers.h"
 #include "../monodomain/constants.h"
 #include "../string/sds.h"
 #include "../utils/utils.h"
 
-#include "vtk_unstructured_grid.h"
-#include "vtk_polydata_grid.h"
+#include "../vtk_utils/vtk_unstructured_grid.h"
+#include "../vtk_utils/vtk_polydata_grid.h"
 
 char *file_prefix;
 bool binary = false;
@@ -40,10 +40,7 @@ static struct vtk_polydata_grid *vtk_polydata = NULL;
 void add_file_to_pvd(double current_dt, const char *output_dir, const char *base_name);
 
 static sds create_base_name(char *file_prefix, int iteration_count, char *extension) {
-
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", file_prefix, iteration_count, extension);
-    //return sdscatprintf(sdsempty(), "%sit_%d.%s", file_prefix, iteration_count, extension);
-
 }
 
 SAVE_MESH(save_as_text_or_binary) {
@@ -145,9 +142,9 @@ SAVE_MESH(save_as_text_or_binary) {
             }
 
             v = grid_cell->v;
-            dx = grid_cell->dx;
-            dy = grid_cell->dy;
-            dz = grid_cell->dz;
+            dx = grid_cell->dx/2.0;
+            dy = grid_cell->dy/2.0;
+            dz = grid_cell->dz/2.0;
 
             if(binary) {
                 fwrite(&center_x, sizeof(center_x), 1, output_file);
