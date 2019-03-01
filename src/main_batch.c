@@ -9,6 +9,8 @@
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
+#include "single_file_libraries/stb_ds.h"
+
 #endif
 
 struct changed_parameters {
@@ -24,8 +26,8 @@ void configure_new_parameters(sds new_out_dir_name, struct changed_parameters *c
 
     if(strcmp("extra_data", changed[n].section) == 0) {
         if(options->extra_data_config) {
-            string_hash_insert_or_overwrite(options->extra_data_config->config_data.config, changed[n].name,
-                                            char_value);
+            shput(options->extra_data_config->config_data.config, changed[n].name,
+                  strdup(char_value));
         }
     }
     else if(strcmp("domain", changed[n].section) == 0) {
@@ -45,21 +47,21 @@ void configure_new_parameters(sds new_out_dir_name, struct changed_parameters *c
             } else if (strcmp("maximum_dz", changed[n].name) == 0) {
                 options->domain_config->max_dz = changed[n].values[p];
             } else {
-                string_hash_insert_or_overwrite(options->domain_config->config_data.config, changed[n].name,
-                                                char_value);
+                shput(options->domain_config->config_data.config, changed[n].name,
+                      strdup(char_value));
             }
         }
     }
     else if(strcmp("assembly_matrix", changed[n].section) == 0) {
         if(options->assembly_matrix_config) {
-            string_hash_insert_or_overwrite(options->assembly_matrix_config->config_data.config,
-                                            changed[n].name, char_value);
+            shput(options->assembly_matrix_config->config_data.config,
+                                            changed[n].name, strdup(char_value));
         }
     }
     else if(strcmp("linear_system_solver", changed[n].section) == 0) {
         if(options->linear_system_solver_config) {
-            string_hash_insert_or_overwrite(options->linear_system_solver_config->config_data.config,
-                                            changed[n].name, char_value);
+            shput(options->linear_system_solver_config->config_data.config,
+                                            changed[n].name, strdup(char_value));
         }
     }
 
@@ -83,7 +85,7 @@ int main(int argc, char **argv) {
 
     char *output_folder;
 
-    struct string_hash *config_to_change = string_hash_create();
+    struct string_hash_entry *config_to_change = NULL;
     char *entire_config_file = NULL;
     long config_file_size;
 
@@ -140,24 +142,27 @@ int main(int argc, char **argv) {
                 num_sims = 0;
             }
 
+            int n = (int)shlen(config_to_change);
+
             MPI_Send(&num_sims, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(&num_par_change, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(&simulation_number_start, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(&size_out_folder, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(batch_options->output_folder, size_out_folder, MPI_CHAR, i, 0, MPI_COMM_WORLD);
-            MPI_Send(&config_to_change->n, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&n, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
 
-            for(int k = 0; k < config_to_change->size; k++) {
-                for(struct string_elt *e = config_to_change->table[k % config_to_change->size]; e != 0; e = e->next) {
+            for(int k = 0; k < n; k++) {
 
-                    int key_value_sizes[2];
-                    key_value_sizes[0] = (int)strlen(e->key) + 1;
-                    key_value_sizes[1] = (int)strlen(e->value) + 1;
-                    MPI_Send(key_value_sizes, 2, MPI_INT, i, 0, MPI_COMM_WORLD);
+                struct string_hash_entry e = config_to_change[k];
 
-                    MPI_Send(e->key, key_value_sizes[0], MPI_CHAR, i, 0, MPI_COMM_WORLD);
-                    MPI_Send(e->value, key_value_sizes[1], MPI_CHAR, i, 0, MPI_COMM_WORLD);
-                }
+                int key_value_sizes[2];
+                key_value_sizes[0] = (int)strlen(e.key) + 1;
+                key_value_sizes[1] = (int)strlen(e.value) + 1;
+                MPI_Send(key_value_sizes, 2, MPI_INT, i, 0, MPI_COMM_WORLD);
+
+                MPI_Send(e.key, key_value_sizes[0], MPI_CHAR, i, 0, MPI_COMM_WORLD);
+                MPI_Send(e.value, key_value_sizes[1], MPI_CHAR, i, 0, MPI_COMM_WORLD);
+
             }
 
             MPI_Send(&config_file_size, 1, MPI_LONG, i, 0, MPI_COMM_WORLD);
@@ -197,7 +202,7 @@ int main(int argc, char **argv) {
             MPI_Recv(key, key_value_sizes[0], MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(value, key_value_sizes[1], MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-            string_hash_insert(config_to_change, key, value);
+            shput(config_to_change, key, strdup(value));
 
             free(key);
             free(value);
@@ -240,20 +245,23 @@ int main(int argc, char **argv) {
 
     struct changed_parameters *changed = NULL;
 
-    for(int k = 0; k < config_to_change->size; k++) {
-        for(struct string_elt *e = config_to_change->table[k % config_to_change->size]; e != 0; e = e->next) {
+    size_t config_n = shlen(config_to_change);
+
+    for(int k = 0; k < config_n; k++) {
+
+            struct string_hash_entry e = config_to_change[k];
 
             struct changed_parameters c;
 
             int count;
-            sds *section_name = sdssplit(e->key, "|", &count);
+            sds *section_name = sdssplit(e.key, "|", &count);
 
             c.section = strdup(section_name[0]);
             c.name = strdup(section_name[1]);
             sdsfreesplitres(section_name, count);
 
 
-            sds *value_range = sdssplit(e->value, "|", &count);
+            sds *value_range = sdssplit(e.value, "|", &count);
 
             double value = strtod(value_range[0], NULL);
             double inc  = strtod(value_range[1], NULL);
@@ -265,8 +273,8 @@ int main(int argc, char **argv) {
                 c.values[n] = value + n*inc;
             }
 
-            stb_sb_push(changed, c);
-        }
+            arrput(changed, c);
+
     }
 
     char *initial_out_dir_name  = strdup(options->save_mesh_config->out_dir_name);
@@ -281,7 +289,7 @@ int main(int argc, char **argv) {
             sds new_out_dir_name =
                     sdscatprintf(sdsempty(), "%s/%s_run_%d", output_folder, initial_out_dir_name, s);
 
-            for(int n = 0; n < config_to_change->n; n++) {
+            for(int n = 0; n < config_n; n++) {
                 configure_new_parameters(new_out_dir_name, changed, options, n, p);
             }
 

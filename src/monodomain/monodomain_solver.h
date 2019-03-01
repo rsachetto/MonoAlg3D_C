@@ -55,7 +55,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 bool update_ode_state_vector_and_check_for_activity(float vm_thresold, struct ode_solver *the_ode_solver, struct grid *the_grid);
 
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver);
-void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_grid);
+void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid);
 
 void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
                        double beta,

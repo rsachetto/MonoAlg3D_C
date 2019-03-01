@@ -8,7 +8,10 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/restore_state_config.h"
-#include "../hash/point_voidp_hash.h"
+
+#include "../common_types/common_types.h"
+#include "../single_file_libraries/stb_ds.h"
+
 #include "../libraries_common/config_helpers.h"
 
 #ifdef COMPILE_CUDA
@@ -37,7 +40,8 @@ RESTORE_STATE (restore_simulation_state) {
         int number_of_cells = 0;
         int num_active_cells = 0;
         float side_length_x, side_length_y, side_length_z;
-        struct point_voidp_hash *mesh_hash = point_voidp_hash_create ();
+        struct point_voidp_hash_entry *mesh_hash = NULL;
+        hmdefault(mesh_hash, NULL);
 
         fread (&side_length_x, sizeof (the_grid->side_length_x), 1, input_file);
         fread (&side_length_y, sizeof (the_grid->side_length_y), 1, input_file);
@@ -70,7 +74,7 @@ RESTORE_STATE (restore_simulation_state) {
             // read active
             fread (&mesh_data[9], sizeof (grid_cell->active), 1, input_file);
 
-            point_voidp_hash_insert (mesh_hash, mp, mesh_data);
+            hmput(mesh_hash, mp, mesh_data);
         }
 
         printf ("Restoring grid state...\n");
@@ -89,7 +93,7 @@ RESTORE_STATE (restore_simulation_state) {
                 mesh_point.y = grid_cell->center_y;
                 mesh_point.z = grid_cell->center_z;
 
-                if ((cell_data = point_voidp_hash_search (mesh_hash, mesh_point)) != (void *)-1) {
+                if ((cell_data = hmget (mesh_hash, mesh_point)) != NULL) {
 
                     // This grid_cell is already in the mesh. We only need to restore the data associated to it...
                     // If the cell is not active we don't need to recover its state
@@ -124,7 +128,7 @@ RESTORE_STATE (restore_simulation_state) {
         assert (number_of_cells == the_grid->number_of_cells);
 
         fclose (input_file);
-        point_voidp_hash_destroy (mesh_hash);
+        hmfree(mesh_hash);
     }
 
     if (the_monodomain_solver) {

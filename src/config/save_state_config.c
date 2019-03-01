@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #include "../utils/file_utils.h"
+#include "../single_file_libraries/stb_ds.h"
 
 void init_save_state_functions(struct save_state_config *config) {
 
@@ -75,12 +76,7 @@ void print_save_state_config_values(struct save_state_config* s) {
 }
 
 void free_save_state_config(struct save_state_config* s) {
-    free(s->config_data.library_file_path);
-    free(s->config_data.function_name);
-    string_hash_destroy(s->config_data.config);
-    
-    if(s->config_data.handle)
-        dlclose(s->config_data.handle);
+    free_config_common_data(&(s->config_data));
     free(s);
 
 }

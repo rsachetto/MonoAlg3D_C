@@ -21,7 +21,10 @@
 #include "../config/assembly_matrix_config.h"
 #include "../config/domain_config.h"
 #include "../config/purkinje_config.h"
+#include "../config/stim_config.h"
 #include "../config/linear_system_solver_config.h"
+
+#include "../single_file_libraries/stb_ds.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -73,7 +76,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     ///////MAIN CONFIGURATION BEGIN//////////////////
     init_ode_solver_with_cell_model(the_ode_solver);
-    struct stim_config_hash *stimuli_configs = configs->stim_configs;
+    struct string_voidp_hash_entry *stimuli_configs = configs->stim_configs;
     struct extra_data_config *extra_data_config = configs->extra_data_config;
     struct domain_config *domain_config = configs->domain_config;
     struct purkinje_config *purkinje_config = configs->purkinje_config;
@@ -94,17 +97,17 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(stimuli_configs, init_stim_functions);
 
         // Find last stimuli
-        size_t s_size = stimuli_configs->size;
+        size_t s_size = shlen(stimuli_configs);
         double s_end;
-        for(int i = 0; i < s_size; i++) 
-        {
-            for(struct stim_config_elt *e = stimuli_configs->table[i % s_size]; e != 0; e = e->next) 
-            {
-                s_end = e->value->stim_start + e->value->stim_duration;
-                has_any_periodic_stim |= (e->value->stim_period > 0.0);
-                if(s_end > last_stimulus_time)
-                    last_stimulus_time = s_end;
-            }
+        for(int i = 0; i < s_size; i++) {
+
+            struct stim_config *sconfig = (struct stim_config*) stimuli_configs[i].value;
+
+            s_end = sconfig->stim_start + sconfig->stim_duration;
+            has_any_periodic_stim |= (sconfig->stim_period > 0.0);
+            if(s_end > last_stimulus_time)
+                last_stimulus_time = s_end;
+
         }
     }
 
@@ -492,7 +495,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
                     update_cells_to_solve(the_grid, the_ode_solver);
 
-                    if (sb_count(the_grid->refined_this_step) > 0) {
+                    if (arrlen(the_grid->refined_this_step) > 0) {
                         update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
                     }
 
@@ -559,15 +562,14 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     draw_config.simulating = false;
 }
 
-void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_grid) {
+void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid) {
 
     struct stim_config *tmp = NULL;
+    size_t n = shlen(stim_configs);
 
-    for(int i = 0; i < stim_configs->size; i++) {
-        for(struct stim_config_elt *e = stim_configs->table[i % stim_configs->size]; e != 0; e = e->next) {
-            tmp = e->value;
-            tmp->set_spatial_stim(tmp, the_grid);
-        }
+    for(int i = 0; i < n; i++) {
+        tmp = (struct stim_config *)stim_configs[i].value;
+        tmp->set_spatial_stim(tmp, the_grid);
     }
 }
 
@@ -748,9 +750,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
             print_to_stdout_and_file("Saving simulation results to: %s\n", options->save_mesh_config->out_dir_name);
         }
 
-        if (options->save_mesh_config->config_data.config->n == 1) {
+        if (shlen(options->save_mesh_config->config_data.config) == 1) {
             print_to_stdout_and_file("Save mesh extra parameter:\n");
-        } else if (options->save_mesh_config->config_data.config->n > 1) {
+        } else if (shlen(options->save_mesh_config->config_data.config) > 1) {
             print_to_stdout_and_file("Save mesh extra parameters:\n");
         }
 
@@ -761,37 +763,39 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     if(options->stim_configs) 
     {
 
-        if(options->stim_configs->size == 1)
+        size_t o = shlen(options->stim_configs);
+
+        if(o == 1)
             print_to_stdout_and_file("Stimulus configuration:\n");
         else
             print_to_stdout_and_file("Stimuli configuration:\n");
 
-        for(int i = 0; i < options->stim_configs->size; i++) 
-        {
-            for(struct stim_config_elt *e = options->stim_configs->table[i % options->stim_configs->size]; e != 0;
-                e = e->next) 
+
+
+        for(int i = 0; i < o; i++) {
+
+            struct string_voidp_hash_entry e = options->stim_configs[i];
+
+            print_to_stdout_and_file("Stimulus name: %s\n", e.key);
+            print_to_stdout_and_file("Stimulus start: %lf\n", ((struct stim_config*)e.value)->stim_start);
+            print_to_stdout_and_file("Stimulus duration: %lf\n", ((struct stim_config*)e.value)->stim_duration);
+            print_to_stdout_and_file("Stimulus current: %lf\n", ((struct stim_config*)e.value)->stim_current);
+            print_to_stdout_and_file("Stimulus library: %s\n", ((struct stim_config*)e.value)->config_data.library_file_path);
+            print_to_stdout_and_file("Stimulus function: %s\n", ((struct stim_config*)e.value)->config_data.function_name);
+            struct string_hash_entry *tmp = ((struct stim_config*)e.value)->config_data.config;
+            if(shlen(tmp) == 1)
             {
-
-                print_to_stdout_and_file("Stimulus name: %s\n", e->key);
-                print_to_stdout_and_file("Stimulus start: %lf\n", e->value->stim_start);
-                print_to_stdout_and_file("Stimulus duration: %lf\n", e->value->stim_duration);
-                print_to_stdout_and_file("Stimulus current: %lf\n", e->value->stim_current);
-                print_to_stdout_and_file("Stimulus library: %s\n", e->value->config_data.library_file_path);
-                print_to_stdout_and_file("Stimulus function: %s\n", e->value->config_data.function_name);
-                struct string_hash *tmp = e->value->config_data.config;
-                if(tmp->n == 1) 
-                {
-                    print_to_stdout_and_file("Stimulus extra parameter:\n");
-                } 
-                else if(tmp->n > 1) 
-                {
-                    print_to_stdout_and_file("Stimulus extra parameters:\n");
-                }
-
-                STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
-
-                print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+                print_to_stdout_and_file("Stimulus extra parameter:\n");
             }
+            else if(shlen(tmp)  > 1)
+            {
+                print_to_stdout_and_file("Stimulus extra parameters:\n");
+            }
+
+            STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
+
+            print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
         }
     }
 
@@ -803,11 +807,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
                              options->domain_config->start_dx, options->domain_config->start_dy,
                              options->domain_config->start_dz);
 
-        if(options->domain_config->config_data.config->n == 1) 
+        if(shlen(options->domain_config->config_data.config) == 1)
         {
             print_to_stdout_and_file("Domain extra parameter:\n");
         } 
-        else if(options->domain_config->config_data.config->n > 1) 
+        else if(shlen(options->domain_config->config_data.config) > 1)
         {
             print_to_stdout_and_file("Domain extra parameters:\n");
         }
@@ -822,11 +826,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Purkinje network name: %s\n", options->purkinje_config->domain_name);
         print_to_stdout_and_file ("Purkinje network initial Space Discretization: %lf um\n", options->purkinje_config->start_h);
 
-        if (options->purkinje_config->config_data.config->n == 1) 
+        if (shlen(options->purkinje_config->config_data.config) == 1)
         {
             print_to_stdout_and_file ("Purkinje extra parameter:\n");
         } 
-        else if (options->purkinje_config->config_data.config->n > 1) {
+        else if (shlen(options->purkinje_config->config_data.config) > 1) {
             print_to_stdout_and_file ("Purkinje extra parameters:\n");
         }
 
@@ -855,9 +859,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Extra data library: %s\n", options->extra_data_config->config_data.library_file_path);
         print_to_stdout_and_file("Extra data function: %s\n", options->extra_data_config->config_data.function_name);
 
-        if(options->domain_config->config_data.config->n == 1) {
+        if(shlen(options->domain_config->config_data.config) == 1) {
             print_to_stdout_and_file("Extra data parameter:\n");
-        } else if(options->domain_config->config_data.config->n > 1) {
+        } else if(shlen(options->domain_config->config_data.config) > 1) {
             print_to_stdout_and_file("Extra data parameters:\n");
         }
 
@@ -931,7 +935,7 @@ void update_monodomain_ddm (uint32_t initial_number_of_cells, uint32_t num_activ
         // 2) Calculate kappas
         // We need to capture the neighbours from the current volume 
         struct element *cell_elements = active_cells[i]->elements;
-        uint32_t max_elements = sb_count(cell_elements);
+        uint32_t max_elements = arrlen(cell_elements);
         
         // Berg tip:
         // TODO: The computation of the kappas will enter here ...

@@ -5,19 +5,22 @@
 #include <assert.h>
 #include <inttypes.h>
 
-#include "../../hash/point_hash.h"
 #include "grid.h"
+
+#define STB_DS_IMPLEMENTATION
+#include "../../single_file_libraries/stb_ds.h"
 
 struct grid *new_grid() {
     struct grid *result = (struct grid *)malloc(sizeof(struct grid));
     result->first_cell = NULL;
     result->active_cells = NULL;
+    result->adaptive = false;
 
     result->refined_this_step = NULL;
     result->free_sv_positions = NULL;
 
-    sb_reserve(result->refined_this_step, 128);
-    sb_reserve(result->free_sv_positions, 128);
+    arrsetcap(result->refined_this_step, 128);
+    arrsetcap(result->free_sv_positions, 128);
 
     // Purkinje
     result->the_purkinje_network = new_graph();
@@ -226,20 +229,20 @@ void clean_grid(struct grid *the_grid) {
     assert(the_grid);
 
 
-    struct cell_node *grid_cell = the_grid->first_cell;
+    struct cell_node *grid_cell = NULL;
 
-    // First delete the cells from the Purkinje network
-    if(grid_cell) 
-    {
-        while (grid_cell) 
-        {
-
-            struct cell_node *next = grid_cell->next;
-            free_cell_node(grid_cell);
-            grid_cell = next;
-
-        }
-    }
+//    // First delete the cells from the Purkinje network
+//    if(grid_cell)
+//    {
+//        while (grid_cell)
+//        {
+//
+//            struct cell_node *next = grid_cell->next;
+//            free_cell_node(grid_cell);
+//            grid_cell = next;
+//
+//        }
+//    }
 
     if (the_grid->the_purkinje_network) 
     {
@@ -253,9 +256,8 @@ void clean_grid(struct grid *the_grid) {
     // derefined to level 1. Thus, the grid shape is known and each node can
     // be easily reached.
 
-    /*
     uint32_t number_of_cells = the_grid->number_of_cells;
-    while(number_of_cells > 8) 
+    while(number_of_cells > 8)
     {
         derefine_all_grid(the_grid);
         number_of_cells = the_grid->number_of_cells;
@@ -263,7 +265,7 @@ void clean_grid(struct grid *the_grid) {
 
     grid_cell = the_grid->first_cell;
 
-    if(grid_cell) 
+    if(grid_cell)
     {
 
         // Deleting transition nodes.
@@ -275,24 +277,22 @@ void clean_grid(struct grid *the_grid) {
         free((struct transition_node *)(((struct cell_node *)(grid_cell->back))->back));
 
         // Deleting cells nodes.
-        while(grid_cell) 
+        while(grid_cell)
         {
-
             struct cell_node *next = grid_cell->next;
             free_cell_node(grid_cell);
             grid_cell = next;
         }
     }
-    */
 
     if(the_grid->refined_this_step) 
     {
-        sb_clear(the_grid->refined_this_step);
+        arrsetlen(the_grid->refined_this_step, 0);
     }
 
     if(the_grid->free_sv_positions) 
     {
-        sb_clear(the_grid->free_sv_positions);
+        arrsetlen(the_grid->free_sv_positions, 0);
     }
 }
 
@@ -307,9 +307,8 @@ void clean_and_free_grid(struct grid *the_grid) {
         free(the_grid->active_cells);
     }
 
-    sb_free(the_grid->refined_this_step);
-
-    sb_free(the_grid->free_sv_positions);
+    arrfree(the_grid->refined_this_step);
+    arrfree(the_grid->free_sv_positions);
 
     free(the_grid);
 }
@@ -329,7 +328,7 @@ void print_grid_matrix(struct grid *the_grid, FILE *output_file) {
         if(grid_cell->active) {
 
             cell_elements = grid_cell->elements;
-            size_t max_el = sb_count(cell_elements);
+            size_t max_el = arrlen(cell_elements);
 
             for(size_t i = 0; i < max_el; i++) {
 
@@ -380,7 +379,7 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
         if(grid_cell->active) {
 
             cell_elements = grid_cell->elements;
-            size_t max_el = sb_count(cell_elements);
+            size_t max_el = arrlen(cell_elements);
 
             qsort (cell_elements, max_el, sizeof(struct element), compare_elements);
 

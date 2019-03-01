@@ -10,6 +10,9 @@
 #include <math.h>
 #include <stdint.h>
 
+#include "../common_types/common_types.h"
+#include "../single_file_libraries/stb_ds.h"
+
 struct vtk_polydata_grid *new_vtk_polydata_grid ()
 {
     struct vtk_polydata_grid *grid = (struct vtk_polydata_grid *)malloc(sizeof(struct vtk_polydata_grid));
@@ -77,7 +80,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
         if(mesh_already_loaded) 
         {
             assert(*vtk_grid);
-            sb_free((*vtk_grid)->values);
+            arrfree((*vtk_grid)->values);
             (*vtk_grid)->values = NULL;
         }
         else 
@@ -96,7 +99,8 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     uint32_t id = 0;
     uint32_t num_cells = 0;
 
-    struct point_hash *hash = point_hash_create();
+    struct point_hash_entry *hash = NULL;
+    hmdefault(hash, -1);
 
     while (grid_cell != NULL)
     {
@@ -106,7 +110,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
             center_y = grid_cell->center_y;
             center_z = grid_cell->center_z;
 
-            sb_push((*vtk_grid)->values, grid_cell->v);
+            arrput((*vtk_grid)->values, grid_cell->v);
 
             // This 'if' statement do not let us re-insert points and lines to the arrays ... =)
             if(mesh_already_loaded && read_only_values) 
@@ -122,10 +126,10 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
             aux.z = center_z;
 
             // Search for duplicates
-            if(point_hash_search(hash, aux) == -1) 
+            if(hmget(hash, aux) == -1)
             {
-                sb_push((*vtk_grid)->points, aux);
-                point_hash_insert(hash, aux, id);
+                arrput((*vtk_grid)->points, aux);
+                hmput(hash, aux, id);
                 id++;
             }
 
@@ -136,7 +140,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
                 auxl.source = u->id;
                 auxl.destination = v->id;
                 
-                sb_push((*vtk_grid)->lines, auxl);
+                arrput((*vtk_grid)->lines, auxl);
 
                 v = v->next;
             }
@@ -178,7 +182,7 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
     
     size_t size_until_now = sdslen(file_content);
 
-    int num_points = sb_count(vtk_grid->points);
+    int num_points = arrlen(vtk_grid->points);
     for(int i = 0; i < num_points; i++) 
     {
         struct point_3d p = vtk_grid->points[i];
@@ -221,7 +225,7 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
         
     }
 
-    int num_values = sb_count(vtk_grid->values);
+    int num_values = arrlen(vtk_grid->values);
 
     {
         sds tmp = sdscatprintf(sdsempty(), "POINT_DATA %d\n", num_values);
@@ -288,7 +292,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
             sdscat(file_content, "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"ascii\">\n");
     }
 
-    size_t num_values = sb_count(vtk_grid->values);
+    size_t num_values = arrlen(vtk_grid->values);
 
     if(!binary) 
     {
@@ -323,7 +327,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     if(!binary) 
     {
-        int num_points = sb_count(vtk_grid->points);
+        int num_points = arrlen(vtk_grid->points);
         for(int i = 0; i < num_points; i++) 
         {
             struct point_3d p = vtk_grid->points[i];
@@ -484,8 +488,9 @@ void free_vtk_polydata_grid(struct vtk_polydata_grid *vtk_grid)
 {
     if(vtk_grid) 
     {
-        sb_free(vtk_grid->lines);
-        sb_free(vtk_grid->values);
-        sb_free(vtk_grid->points);
+        arrfree(vtk_grid->lines);
+        arrfree(vtk_grid->values);
+        arrfree(vtk_grid->points);
+        free(vtk_grid);
     }
 }

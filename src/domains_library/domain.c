@@ -9,6 +9,7 @@
 #include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
 #include "../utils/file_utils.h"
+#include "../single_file_libraries/stb_ds.h"
 #include <assert.h>
 #include <time.h>
 
@@ -96,9 +97,9 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
     sds sz_char = sdscatprintf(sdsempty(), "%lf", config->start_dz*num_layers);
 
 
-    string_hash_insert(config->config_data.config, "side_length_x", sx_char);
-    string_hash_insert(config->config_data.config, "side_length_y", sy_char);
-    string_hash_insert(config->config_data.config, "side_length_z", sz_char);
+    shput(config->config_data.config, "side_length_x", sx_char);
+    shput(config->config_data.config, "side_length_y", sy_char);
+    shput(config->config_data.config, "side_length_z", sz_char);
 
     return initialize_grid_with_cuboid_mesh(config, the_grid);
 
