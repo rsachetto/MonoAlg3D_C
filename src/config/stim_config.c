@@ -10,6 +10,9 @@
 #endif
 #include <string.h>
 #include "../utils/file_utils.h"
+#include "../common_types/common_types.h"
+
+#include "../single_file_libraries/stb_ds.h"
 
 void init_stim_functions(struct stim_config *config, char* stim_name) {
 
@@ -83,11 +86,6 @@ void print_stim_config_values(struct stim_config* s) {
 }
 
 void free_stim_config(struct stim_config* s) {
-    free(s->config_data.function_name);
-    free(s->config_data.library_file_path);
-    free(s->spatial_stim_currents);
-    if(s->config_data.handle)
-        dlclose(s->config_data.handle);
-    string_hash_destroy(s->config_data.config);
+    free_config_common_data(&(s->config_data));
     free(s);
 }

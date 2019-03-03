@@ -5,17 +5,18 @@
 #ifndef MONOALG3D_DATA_UTILS_H
 #define MONOALG3D_DATA_UTILS_H
 
-#include "../hash/hash_common.h"
 #include "../string/sds.h"
-#include "vtk_polydata_grid.h"
 
 #ifdef COMPILE_ZLIB
 #include <zlib.h>
 #endif
 
+#include "../common_types/common_types.h"
+
+
 int invert_bytes(int data);
 sds write_binary_point(sds output_string, struct point_3d *p);
-sds write_binary_line (sds output_string, struct line *l); 
+sds write_binary_line (sds output_string, struct line *l);
 
 static size_t compress_buffer(unsigned char const *uncompressed_data, size_t uncompressed_data_size,
                               unsigned char *compressed_data, size_t compression_space, int level);

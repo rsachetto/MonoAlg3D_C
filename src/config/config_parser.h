@@ -26,7 +26,7 @@
 #include "assembly_matrix_config.h"
 #include "save_mesh_config.h"
 #include "linear_system_solver_config.h"
-#include "../hash/stim_config_hash.h"
+#include "../common_types/common_types.h"
 #include "save_state_config.h"
 #include "restore_state_config.h"
 
@@ -91,7 +91,7 @@ struct user_options {
     bool quiet; /*-q option*/
     bool quiet_was_set;
 
-    struct stim_config_hash *stim_configs;
+    struct string_voidp_hash_entry *stim_configs;
     struct domain_config *domain_config;
     struct purkinje_config *purkinje_config;
     struct extra_data_config *extra_data_config;
@@ -114,7 +114,7 @@ struct batch_options {
     char *initial_config;
     int num_simulations;
     int num_par_change;
-    struct string_hash *config_to_change;
+    struct string_hash_entry *config_to_change;
 };
 
 void display_usage( char** argv );

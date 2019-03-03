@@ -7,7 +7,6 @@ set(SOURCE_FILES_ALG
         cell/cell.c
         cell/cell_derefinement.c
         cell/cell_refinement.c
-        ../vector/stretchy_buffer.h
         )
 
 ADD_LIBRARY(alg STATIC ${SOURCE_FILES_ALG})

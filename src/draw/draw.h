@@ -10,14 +10,16 @@
 
 struct draw_config {
     struct grid *grid_to_draw;
-    double max_v;
-    double min_v;
+    float max_v;
+    float min_v;
     bool grid_only;
     bool grid_lines;
     bool simulating;
     bool paused;
-    double time;
-
+    bool adaptive;
+    float time;
+    float final_time;
+    float dt;
 
     long solver_time;
     long ode_total_time;

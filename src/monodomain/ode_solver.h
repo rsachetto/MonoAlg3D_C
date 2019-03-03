@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "../models_library/model_common.h"
 #include "../config/config_parser.h"
-#include "../hash/stim_config_hash.h"
+#include "../common_types/common_types.h"
 
 //Forward declaration
 struct user_options;
@@ -59,7 +59,7 @@ struct ode_solver* new_ode_solver();
 void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, double cur_time, int num_steps,
-                            struct stim_config_hash *stim_configs);
+                            struct string_voidp_hash_entry *stim_configs);
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
 
 

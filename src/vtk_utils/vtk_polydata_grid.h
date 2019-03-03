@@ -6,13 +6,8 @@
 #define MONOALG3D_VTK_POLYDATA_GRID_H
 
 #include "../alg/grid/grid.h"
-#include "../hash/point_hash.h"
+#include "../common_types/common_types.h"
 
-struct line 
-{
-    uint64_t source;
-    uint64_t destination;
-};
 
 struct vtk_polydata_grid
 {
