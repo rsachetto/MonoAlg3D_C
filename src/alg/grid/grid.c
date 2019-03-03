@@ -228,60 +228,66 @@ void clean_grid(struct grid *the_grid) {
 
     assert(the_grid);
 
-
     struct cell_node *grid_cell = NULL;
 
-//    // First delete the cells from the Purkinje network
-//    if(grid_cell)
-//    {
-//        while (grid_cell)
-//        {
-//
-//            struct cell_node *next = grid_cell->next;
-//            free_cell_node(grid_cell);
-//            grid_cell = next;
-//
-//        }
-//    }
-
+    // TODO: Think about this function
+    // Delete nodes from the Purkinje network
     if (the_grid->the_purkinje_network) 
     {
+
+        // First free the Purkinje mesh structure
         free_graph(the_grid->the_purkinje_network);
-    }
-    
-    // TODO: Think about this function
-    // Then, we will delete the tissue cells
 
-    // In order to release the memory allocated for the grid, the grid is
-    // derefined to level 1. Thus, the grid shape is known and each node can
-    // be easily reached.
+        grid_cell = the_grid->first_cell;
 
-    uint32_t number_of_cells = the_grid->number_of_cells;
-    while(number_of_cells > 8)
-    {
-        derefine_all_grid(the_grid);
-        number_of_cells = the_grid->number_of_cells;
-    }
-
-    grid_cell = the_grid->first_cell;
-
-    if(grid_cell)
-    {
-
-        // Deleting transition nodes.
-        free((struct transition_node *)(grid_cell->north));
-        free((struct transition_node *)(grid_cell->front));
-        free((struct transition_node *)(grid_cell->east));
-        free((struct transition_node *)(((struct cell_node *)(grid_cell->west))->west));
-        free((struct transition_node *)(((struct cell_node *)(grid_cell->south))->south));
-        free((struct transition_node *)(((struct cell_node *)(grid_cell->back))->back));
-
-        // Deleting cells nodes.
-        while(grid_cell)
+        // Then, delete the cells from the Purkinje network 
+        if(grid_cell) 
         {
-            struct cell_node *next = grid_cell->next;
-            free_cell_node(grid_cell);
-            grid_cell = next;
+            while (grid_cell) 
+            {
+
+                struct cell_node *next = grid_cell->next;
+                free_cell_node(grid_cell);
+                grid_cell = next;
+
+            }
+        }
+    }
+    // Delete the tissue cells
+    else
+    {
+
+        // In order to release the memory allocated for the grid, the grid is
+        // derefined to level 1. Thus, the grid shape is known and each node can
+        // be easily reached.
+
+        uint32_t number_of_cells = the_grid->number_of_cells;
+        while(number_of_cells > 8)
+        {
+            derefine_all_grid(the_grid);
+            number_of_cells = the_grid->number_of_cells;
+        }
+
+        grid_cell = the_grid->first_cell;
+
+        if(grid_cell)
+        {
+
+            // Deleting transition nodes.
+            free((struct transition_node *)(grid_cell->north));
+            free((struct transition_node *)(grid_cell->front));
+            free((struct transition_node *)(grid_cell->east));
+            free((struct transition_node *)(((struct cell_node *)(grid_cell->west))->west));
+            free((struct transition_node *)(((struct cell_node *)(grid_cell->south))->south));
+            free((struct transition_node *)(((struct cell_node *)(grid_cell->back))->back));
+
+            // Deleting cells nodes.
+            while(grid_cell)
+            {
+                struct cell_node *next = grid_cell->next;
+                free_cell_node(grid_cell);
+                grid_cell = next;
+            }
         }
     }
 
