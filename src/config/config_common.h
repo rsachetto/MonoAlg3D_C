@@ -6,7 +6,7 @@
 #define MONOALG3D_CONFIG_COMMON_H
 
 #include <stdbool.h>
-#include "../hash/string_hash.h"
+#include "../common_types/common_types.h"
 
 struct config_common {
     void *handle;
@@ -14,7 +14,7 @@ struct config_common {
     bool function_name_was_set;
     char *library_file_path;
     bool library_file_path_was_set;
-    struct string_hash *config;
+    struct string_hash_entry *config;
 
 };
 
@@ -25,6 +25,7 @@ struct generic_config {
 };
 
 void init_config_common_data(struct config_common *cm);
+void free_config_common_data(struct config_common *cm);
 
 
 #endif //MONOALG3D_CONFIG_COMMON_H

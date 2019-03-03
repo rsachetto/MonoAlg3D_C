@@ -5,6 +5,9 @@
 #include "cell.h"
 #include <math.h>
 
+#include "../../single_file_libraries/stb_ds.h"
+
+
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
     data->type = type;
     data->level = 1;
@@ -71,16 +74,17 @@ void init_cell_node(struct cell_node *cell_node) {
 
 void free_cell_node(struct cell_node *cell_node) {
 
-    sb_free(cell_node->elements);
+    arrfree(cell_node->elements);
     free(cell_node->linear_system_solver_extra_info);
     free(cell_node->mesh_extra_info);
 
 #if defined(_OPENMP)
     omp_destroy_lock(&(cell_node->updating));
 #endif
-
     free(cell_node);
 }
+
+
 
 void lock_cell_node(struct cell_node *cell_node) {
 #if defined(_OPENMP)

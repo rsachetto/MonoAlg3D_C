@@ -3,8 +3,9 @@
 //
 
 #include "data_utils.h"
-#include "vtk_unstructured_grid.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
 #define BLOCK_SIZE 1 << 15
 
@@ -116,7 +117,7 @@ sds write_binary_point(sds output_string, struct point_3d *p) {
     return output_string;
 }
 
-sds write_binary_line (sds output_string, struct line *l) 
+sds write_binary_line (sds output_string, struct line *l)
 {
     int a = 2;
     int swapped = invert_bytes(a);

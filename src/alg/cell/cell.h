@@ -5,7 +5,6 @@
 #ifndef MONOALG3D_CELL_H
 #define MONOALG3D_CELL_H
 
-#include "../../vector/stretchy_buffer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

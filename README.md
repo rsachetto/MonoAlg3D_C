@@ -191,7 +191,7 @@ $ bin/MonoAlg3D -c example_configs/cuboid_ohara.ini
 The output will be saved in the VTK format. In order to see the results you can use Paraview (https://www.paraview.org/). You can also set the output to plain text, by changing the option ```vtk_output``` to false in the configuration file. The text format is defined as following:
 
 - Each line represents a Volume
-- Each volume is represented by its center point (X, Y, and Z), the value of halt of its side length and the calculated V
+- Each volume is represented by its center point (X, Y, and Z), the value of half of its side length and the calculated V
 
 Example file:
 

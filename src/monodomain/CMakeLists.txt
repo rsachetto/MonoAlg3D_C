@@ -1,6 +1,4 @@
 set(SOURCE_FILES_SOLVER
-        output_utils.h
-        output_utils.c
         ode_solver.c ode_solver.h
         monodomain_solver.h monodomain_solver.c
         constants.h)
