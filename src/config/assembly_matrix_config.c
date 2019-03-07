@@ -73,6 +73,6 @@ void print_assembly_matrix_config(struct assembly_matrix_config* s) {
 }
 
 void free_assembly_matrix_config(struct assembly_matrix_config* s) {
-    free_config_common_data(&(s->config_data))
+    free_config_common_data(&(s->config_data));
     free(s);
 }

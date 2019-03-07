@@ -8,16 +8,12 @@
 #include "../single_file_libraries/stb_ds.h"
 #include "../string/sds.h"
 
-
 int main() {
 
     struct grid *grid = new_grid();
     grid->adaptive = true;
 
-
     initialize_and_construct_grid(grid, 1, 1, 1);
-
-    //order_grid_cells(grid);
 
     struct save_mesh_config *save_mesh_config = new_save_mesh_config();
 
@@ -34,9 +30,9 @@ int main() {
     refine_grid_cell(grid, grid->first_cell);
 
     save_mesh_config->save_mesh(1, 1.0, save_mesh_config, grid);
-//
+
     bool d = derefine_grid_cell(grid, grid->first_cell);
-    if(d) printf("DEREF\n");
+
     save_mesh_config->save_mesh(2, 2.0, save_mesh_config, grid);
 
     free_save_mesh_config(save_mesh_config);
