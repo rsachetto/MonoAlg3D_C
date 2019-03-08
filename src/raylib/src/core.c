@@ -273,6 +273,7 @@ static GLFWwindow *window;                      // Native window (graphic device
 #endif
 static bool windowReady = false;                // Check if window has been initialized successfully
 static bool windowMinimized = false;            // Check if window has been minimized
+static bool windowResized = false;              // Check if window has been resized
 static const char *windowTitle = NULL;          // Window text title...
 
 static unsigned int displayWidth, displayHeight;// Display width and height (monitor, device-screen, LCD, ...)
@@ -707,7 +708,7 @@ bool WindowShouldClose(void)
 {
 #if defined(PLATFORM_WEB)
     // Emterpreter-Async required to run sync code
-    // https://github.com/kripken/emscripten/wiki/Emterpreter#emterpreter-async-run-synchronous-code
+    // https://github.com/emscripten-core/emscripten/wiki/Emterpreter#emterpreter-async-run-synchronous-code
     // By default, this function is never called on a web-ready raylib example because we encapsulate
     // frame code in a UpdateDrawFrame() function, to allow browser manage execution asynchronously
     // but now emscripten allows sync code to be executed in an interpreted way, using emterpreter!
@@ -740,6 +741,16 @@ bool IsWindowMinimized(void)
 #else
     return false;
 #endif
+}
+
+// Check if window has been resized
+bool IsWindowResized(void)
+{
+#if defined(PLATFORM_DESKTOP) || defined(PLATFORM_WEB) || defined(PLATFORM_UWP)
+    return windowResized;
+#else
+    return false;
+#endif 
 }
 
 // Check if window is currently hidden
@@ -871,7 +882,7 @@ void *GetWindowHandle(void)
 {
 #if defined(_WIN32)
     // NOTE: Returned handle is: void *HWND (windows.h)
-	return glfwGetWin32Window(window);
+    return glfwGetWin32Window(window);
 #elif defined(__linux__)
     // NOTE: Returned handle is: unsigned long Window (X.h)
     // typedef unsigned long XID;
@@ -990,6 +1001,8 @@ const char *GetClipboardText(void)
 {
 #if defined(PLATFORM_DESKTOP)
     return glfwGetClipboardString(window);
+#else
+    return NULL;
 #endif
 }
 
@@ -1228,7 +1241,7 @@ void BeginTextureMode(RenderTexture2D target)
     rlLoadIdentity();                   // Reset current matrix (MODELVIEW)
 
     //rlScalef(0.0f, -1.0f, 0.0f);      // Flip Y-drawing (?)
-    
+
     // Setup current width/height for proper aspect ratio
     // calculation when using BeginMode3D()
     currentWidth = target.texture.width;
@@ -1254,7 +1267,7 @@ void EndTextureMode(void)
 
     rlMatrixMode(RL_MODELVIEW);         // Switch back to MODELVIEW matrix
     rlLoadIdentity();                   // Reset current matrix (MODELVIEW)
-    
+
     // Reset current screen size
     currentWidth = GetScreenWidth();
     currentHeight = GetScreenHeight();
@@ -1430,11 +1443,11 @@ Vector3 ColorToHSV(Color color)
     Vector3 hsv = { 0.0f, 0.0f, 0.0f };
     float min, max, delta;
 
-    min = rgb.x < rgb.y ? rgb.x : rgb.y;
-    min = min  < rgb.z ? min  : rgb.z;
+    min = rgb.x < rgb.y? rgb.x : rgb.y;
+    min = min  < rgb.z? min  : rgb.z;
 
-    max = rgb.x > rgb.y ? rgb.x : rgb.y;
-    max = max  > rgb.z ? max  : rgb.z;
+    max = rgb.x > rgb.y? rgb.x : rgb.y;
+    max = max  > rgb.z? max  : rgb.z;
 
     hsv.z = max;            // Value
     delta = max - min;
@@ -1485,25 +1498,25 @@ Color ColorFromHSV(Vector3 hsv)
     // Red channel
     float k = fmod((5.0f + h/60.0f), 6);
     float t = 4.0f - k;
-    k = (t < k) ? t : k;
-    k = (k < 1) ? k : 1;
-    k = (k > 0) ? k : 0;
+    k = (t < k)? t : k;
+    k = (k < 1)? k : 1;
+    k = (k > 0)? k : 0;
     color.r = (v - v*s*k)*255;
 
     // Green channel
     k = fmod((3.0f + h/60.0f), 6);
     t = 4.0f - k;
-    k = (t < k) ? t : k;
-    k = (k < 1) ? k : 1;
-    k = (k > 0) ? k : 0;
+    k = (t < k)? t : k;
+    k = (k < 1)? k : 1;
+    k = (k > 0)? k : 0;
     color.g = (v - v*s*k)*255;
 
     // Blue channel
     k = fmod((1.0f + h/60.0f), 6);
     t = 4.0f - k;
-    k = (t < k) ? t : k;
-    k = (k < 1) ? k : 1;
-    k = (k > 0) ? k : 0;
+    k = (t < k)? t : k;
+    k = (k < 1)? k : 1;
+    k = (k > 0)? k : 0;
     color.b = (v - v*s*k)*255;
 
     return color;
@@ -1677,7 +1690,7 @@ const char *GetFileNameWithoutExt(const char *filePath)
 
     // NOTE: strrchr() returns a pointer to the last occurrence of character
     lastDot = strrchr(result, nameDot);
-    lastSep = (pathSep == 0) ? NULL : strrchr(result, pathSep);
+    lastSep = (pathSep == 0)? NULL : strrchr(result, pathSep);
 
     if (lastDot != NULL)            // Check if it has an extension separator...
     {
@@ -1917,14 +1930,13 @@ void OpenURL(const char *url)
         char *cmd = (char *)calloc(strlen(url) + 10, sizeof(char));
 
 #if defined(_WIN32)
-        sprintf(cmd, "explorer '%s'", url);
+        sprintf(cmd, "explorer %s", url);
 #elif defined(__linux__)
         sprintf(cmd, "xdg-open '%s'", url); // Alternatives: firefox, x-www-browser
 #elif defined(__APPLE__)
         sprintf(cmd, "open '%s'", url);
 #endif
         system(cmd);
-
         free(cmd);
     }
 }
@@ -2214,7 +2226,7 @@ void SetMouseOffset(int offsetX, int offsetY)
 // NOTE: Useful when rendering to different size targets
 void SetMouseScale(float scaleX, float scaleY)
 {
-	mouseScale = (Vector2){ scaleX, scaleY };
+    mouseScale = (Vector2){ scaleX, scaleY };
 }
 
 // Returns mouse wheel movement Y
@@ -3136,6 +3148,8 @@ static void PollInputEvents(void)
             gamepadAxisCount = axisCount;
         }
     }
+    
+    windowResized = false;
 
 #if defined(SUPPORT_EVENTS_WAITING)
     glfwWaitEvents();
@@ -3192,7 +3206,7 @@ static void PollInputEvents(void)
 
     // Poll Events (registered events)
     // NOTE: Activity is paused if not enabled (appEnabled)
-    while ((ident = ALooper_pollAll(appEnabled ? 0 : -1, NULL, &events,(void**)&source)) >= 0)
+    while ((ident = ALooper_pollAll(appEnabled? 0 : -1, NULL, &events,(void**)&source)) >= 0)
     {
         // Process this event
         if (source != NULL) source->process(androidApp, source);
@@ -3413,6 +3427,8 @@ static void WindowSizeCallback(GLFWwindow *window, int width, int height)
     currentHeight = height;
 
     // NOTE: Postprocessing texture is not scaled to new size
+    
+    windowResized = true;
 }
 
 // GLFW3 WindowIconify Callback, runs when window is minimized/restored
@@ -3772,7 +3788,7 @@ static EM_BOOL EmscriptenTouchCallback(int eventType, const EmscriptenTouchEvent
     }
 
     printf("%s, numTouches: %d %s%s%s%s\n", emscripten_event_type_to_string(eventType), event->numTouches,
-           event->ctrlKey ? " CTRL" : "", event->shiftKey ? " SHIFT" : "", event->altKey ? " ALT" : "", event->metaKey ? " META" : "");
+           event->ctrlKey? " CTRL" : "", event->shiftKey? " SHIFT" : "", event->altKey? " ALT" : "", event->metaKey? " META" : "");
 
     for (int i = 0; i < event->numTouches; ++i)
     {
@@ -3826,7 +3842,7 @@ static EM_BOOL EmscriptenGamepadCallback(int eventType, const EmscriptenGamepadE
 {
     /*
     printf("%s: timeStamp: %g, connected: %d, index: %ld, numAxes: %d, numButtons: %d, id: \"%s\", mapping: \"%s\"\n",
-           eventType != 0 ? emscripten_event_type_to_string(eventType) : "Gamepad state",
+           eventType != 0? emscripten_event_type_to_string(eventType) : "Gamepad state",
            gamepadEvent->timestamp, gamepadEvent->connected, gamepadEvent->index, gamepadEvent->numAxes, gamepadEvent->numButtons, gamepadEvent->id, gamepadEvent->mapping);
 
     for(int i = 0; i < gamepadEvent->numAxes; ++i) printf("Axis %d: %g\n", i, gamepadEvent->axis[i]);
@@ -4190,11 +4206,11 @@ static void EventThreadSpawn(char *device)
     {
         // Looks like a interesting device
         TraceLog(LOG_INFO, "Opening input device [%s] (%s%s%s%s%s)", device,
-            worker->isMouse ? "mouse " : "",
-            worker->isMultitouch ? "multitouch " : "",
-            worker->isTouch ? "touchscreen " : "",
-            worker->isGamepad ? "gamepad " : "",
-            worker->isKeyboard ? "keyboard " : "");
+            worker->isMouse? "mouse " : "",
+            worker->isMultitouch? "multitouch " : "",
+            worker->isTouch? "touchscreen " : "",
+            worker->isGamepad? "gamepad " : "",
+            worker->isKeyboard? "keyboard " : "");
 
         // Create a thread for this device
         int error = pthread_create(&worker->threadId, NULL, &EventThread, (void *)worker);
@@ -4320,7 +4336,7 @@ static void *EventThread(void *arg)
             // Button parsing
             if (event.type == EV_KEY)
             {
-                if((event.code == BTN_TOUCH) || (event.code == BTN_LEFT))
+                if ((event.code == BTN_TOUCH) || (event.code == BTN_LEFT))
                 {
                     currentMouseStateEvdev[MOUSE_LEFT_BUTTON] = event.value;
                     if (event.value > 0) gestureEvent.touchAction = TOUCH_DOWN;
