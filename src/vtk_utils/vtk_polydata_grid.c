@@ -97,7 +97,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     float center_x, center_y, center_z;
 
     uint32_t id = 0;
-    uint32_t num_cells = 0;
+//    uint32_t num_cells = 0;
 
     struct point_hash_entry *hash = NULL;
     hmdefault(hash, -1);

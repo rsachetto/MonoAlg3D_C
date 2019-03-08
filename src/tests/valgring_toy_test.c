@@ -31,7 +31,7 @@ int main() {
 
     save_mesh_config->save_mesh(1, 1.0, save_mesh_config, grid);
 
-    bool d = derefine_grid_cell(grid, grid->first_cell);
+    derefine_grid_cell(grid, grid->first_cell);
 
     save_mesh_config->save_mesh(2, 2.0, save_mesh_config, grid);
 
