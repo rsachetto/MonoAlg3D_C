@@ -75,7 +75,7 @@
 
 // utils.c
 /* Show TraceLog() output messages. NOTE: By default LOG_DEBUG traces not shown */
-#cmakedefine SUPPORT_TRACELOG 1
+//#cmakedefine SUPPORT_TRACELOG 1
 /* Support saving image data as PNG fileformat. NOTE: Requires stb_image_write library */
 #cmakedefine SUPPORT_SAVE_PNG 1
 /* Support saving image data as PMP fileformat. NOTE: Requires stb_image_write library */
