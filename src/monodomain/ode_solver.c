@@ -16,9 +16,10 @@
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
+#endif
+
 #include "../single_file_libraries/stb_ds.h"
 
-#endif
 
 
 struct ode_solver* new_ode_solver() {
