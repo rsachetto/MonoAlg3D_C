@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "../single_file_libraries/stb_ds.h"
+
 void report_parameter_error_on_function(const char *function, const char *parameter);
 void report_error_on_function(const char *function, const char *error);
 char *get_char_parameter(struct string_hash_entry *config, const char *parameter);

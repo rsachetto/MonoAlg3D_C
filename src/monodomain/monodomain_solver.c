@@ -512,7 +512,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
                 omp_unset_lock(&draw_config.draw_lock);
                 draw_config.time = cur_time;
             }
-
             #endif
             count++;
             cur_time += dt_pde;
@@ -546,8 +545,9 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     print_to_stdout_and_file("Write time: %ld μs\n", total_write_time);
     print_to_stdout_and_file("Initial configuration time: %ld μs\n", total_config_time);
     print_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
-    draw_config.time = cur_time;
 
+#ifdef COMPILE_OPENGL
+   draw_config.time = cur_time;
    draw_config.solver_time = res_time;
    draw_config.ode_total_time = ode_total_time;
    draw_config.cg_total_time = cg_total_time;
@@ -557,9 +557,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
    draw_config.total_write_time = total_write_time;
    draw_config.total_config_time = total_config_time;
    draw_config.total_cg_it  = total_cg_it;
-    
-
-    draw_config.simulating = false;
+   draw_config.simulating = false;
+#endif
 }
 
 void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid) {

@@ -18,5 +18,4 @@ IF(MSVC)
 	TARGET_LINK_LIBRARIES(config string getopt utils dl)
 ELSE()
 	TARGET_LINK_LIBRARIES(config string utils dl)
-
 ENDIF()

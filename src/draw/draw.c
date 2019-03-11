@@ -3,7 +3,6 @@
 //
 
 #include <float.h>
-#include <pthread.h>
 #include "draw.h"
 
 
