@@ -15,6 +15,6 @@ ADD_DEPENDENCIES(ToyTest utils alg solvers string config)
 
 if(MSVC)
     target_link_libraries(ToyTest alg solvers utils string ini_parser config ${CMAKE_THREAD_LIBS_INIT})
-else(MSVC)
+else()
     target_link_libraries(ToyTest alg solvers utils string ini_parser config ${CMAKE_THREAD_LIBS_INIT} m )
 endif()
