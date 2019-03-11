@@ -305,38 +305,91 @@ bool dir_exists(const char *path) {
         return false;
 }
 
-void create_dir(const char *out_dir) {
+//
+//void create_dir(const char *out_dir) {
+//
+//    //TODO: check for windows dir separators
+//    int dirs_count;
+//
+//    sds *all_dirs = sdssplit(out_dir, "/", &dirs_count);
+//    sds new_dir = sdsempty();
+//
+//    for(int d = 0; d < dirs_count; d++) {
+//
+//        new_dir = sdscat(new_dir, all_dirs[d]);
+//        new_dir = sdscat(new_dir, "/");
+//
+//        if (!dir_exists (new_dir)) {
+//
+//            printf ("%s does not exist! Creating!\n", new_dir);
+//#if defined _MSC_VER
+//            if (_mkdir(out_dir) == -1)
+//#else
+//            if (mkdir(new_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+//#endif
+//            {
+//
+//                fprintf (stderr, "Error creating directory %s Exiting!\n", new_dir);
+//                exit (EXIT_FAILURE);
+//            }
+//        }
+//    }
+//
+//    sdsfreesplitres(all_dirs, dirs_count);
+//    sdsfree(new_dir);
+//
+//}
 
-    //TODO: check for windows dir separators
-    int dirs_count;
+void fixpath(char *path)
+{
+    for(; *path; ++path)
+        if (*path == '\\')
+            *path = '/';
+}
 
-    sds *all_dirs = sdssplit(out_dir, "/", &dirs_count);
-    sds new_dir = sdsempty();
+void create_dir(char *out_dir) {
 
-    for(int d = 0; d < dirs_count; d++) {
+    fixpath(out_dir);
+    size_t out_dir_len = strlen(out_dir);
 
-        new_dir = sdscat(new_dir, all_dirs[d]);
-        new_dir = sdscat(new_dir, "/");
+    char *new_dir = (char*) malloc(out_dir_len+2);
 
-        if (!dir_exists (new_dir)) {
+    memcpy(new_dir, out_dir, out_dir_len+1);
 
-            printf ("%s does not exist! Creating!\n", new_dir);
-#if defined _MSC_VER
-            if (_mkdir(out_dir) == -1)
-#else
-            if (mkdir(new_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
-#endif
+    if(new_dir[out_dir_len] != '/') {
+        new_dir[out_dir_len] = '/';
+        new_dir[out_dir_len+1] = '\0';
+    }
+
+    int start = 0;
+
+    if(new_dir[0] == '/') {
+        start++;
+    }
+
+    char *slash = strchr(new_dir+start, '/');
+    while(slash) {
+        char *dir_to_create = malloc(slash - new_dir);
+        memcpy(dir_to_create, new_dir, slash-new_dir);
+        dir_to_create[slash-new_dir] = '\0';
+
+        if (!dir_exists (dir_to_create)) {
+
+            printf ("%s does not exist! Creating!\n", dir_to_create);
+            #if defined _MSC_VER
+            if (_mkdir(dir_to_create) == -1)
+            #else
+            if (mkdir(dir_to_create, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+            #endif
             {
-
-                fprintf (stderr, "Error creating directory %s Exiting!\n", new_dir);
+                fprintf (stderr, "Error creating directory %s Exiting!\n", dir_to_create);
                 exit (EXIT_FAILURE);
             }
         }
+
+        slash = strchr(slash+1,'/');
+        free(dir_to_create);
     }
-
-    sdsfreesplitres(all_dirs, dirs_count);
-    sdsfree(new_dir);
-
 }
 
 int remove_directory(const char *path)
