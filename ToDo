@@ -7,7 +7,9 @@ Sachetto
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 
 Berg
+- [Elnaz] Implement a script to calculate the APD's of every cell in the grid (use "getAps.sh" and "getAPD.py" together ...)
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
+- Implement coupling between Purkinje and tissue
 
 Pedro
 - Upgrade and refactor the DDM code.
