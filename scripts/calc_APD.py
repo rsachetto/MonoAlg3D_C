@@ -1,5 +1,6 @@
 from sys import argv
 
+
 def forwarddiff(y, h):
     n = len(y)
     res = []
@@ -10,6 +11,7 @@ def forwarddiff(y, h):
 
     return res
 
+
 def slope_start(data, start=0, epsilon=0.0001, h=1.0):
 
     d = data[start:]
@@ -19,6 +21,7 @@ def slope_start(data, start=0, epsilon=0.0001, h=1.0):
         if abs(d[i] - d[i-1]/h) > epsilon:
             return i+start
 
+
 def slope_end(data, start=0, epsilon=0.0001, h=1.0):
 
     d = data[start:]
@@ -27,7 +30,6 @@ def slope_end(data, start=0, epsilon=0.0001, h=1.0):
     for i in range(1,n):
         if abs(d[i] - d[i-1]/h) < epsilon:
             return i+start
-
 
 
 def max_index(data, start, end):
@@ -40,12 +42,14 @@ def max_index(data, start, end):
 
     return max_index
 
+
 def index_activation(data, start=0):
     d = data[start:]
 
     for i, v in enumerate(d):
-        if d[i+start] < 0.0 and d[i+start+1] > 0.0:
+        if d[i + start] < 0.0 < d[i + start + 1]:
             return i+start
+
 
 ap_file_name = argv[1]
 num_aps = int(argv[2])

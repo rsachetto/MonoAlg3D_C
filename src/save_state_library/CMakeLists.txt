@@ -7,7 +7,7 @@ if(CUDA_FOUND)
    # ENDIF()
 ELSE()
     ADD_LIBRARY(default_save_state ${LIB_TYPE} save_state.c)
-    TARGET_LINK_LIBRARIES(default_save_state  string alg)
+    TARGET_LINK_LIBRARIES(default_save_state string alg)
 ENDIF(CUDA_FOUND)
 
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 AP_DIR=$1
 AP_PREFIX=$2
 AP_LINE=$3
@@ -24,5 +25,5 @@ if [ "$#" -ne 5 ]; then
     exit 1
 fi
 
-for i in `ls -1v ${AP_DIR}/${AP_PREFIX}*`; do sed -n "${AP_LINE}p" $i | awk -v "col=${CELL_ID}" -F ' ' '{print $col}'  ; done > output/${AP_OUT}.txt
+for i in `ls -1v ${AP_DIR}/${AP_PREFIX}*`; do sed -n "${AP_LINE}p" ${i} | awk -v "col=${CELL_ID}" -F ' ' '{print $col}'  ; done > output/${AP_OUT}.txt
 
