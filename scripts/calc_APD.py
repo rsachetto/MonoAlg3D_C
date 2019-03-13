@@ -1,4 +1,4 @@
-from sys import argv
+import sys
 
 def forwarddiff(y, h):
     n = len(y)
@@ -29,7 +29,7 @@ def slope_end(data, start=0, epsilon=0.0001, h=1.0):
             return i+start
 
 
-
+# Returns the timestep where the maximum derivative occurs
 def max_index(data, start, end):
 
     d = data[start:(start+end)]
@@ -47,50 +47,73 @@ def index_activation(data, start=0):
         if d[i+start] < 0.0 and d[i+start+1] > 0.0:
             return i+start
 
-ap_file_name = argv[1]
-num_aps = int(argv[2])
-ms_each_step = float(argv[3])
+def main ():
 
-ap_file = open(ap_file_name)
+    if ( len(sys.argv) != 4 ):
+        print("-------------------------------------------------------------------------")
+        print("Usage:> python %s <ap_file_name> <num_aps> <ms_each_step>" % sys.argv[0])
+        print("-------------------------------------------------------------------------")
+        print("<ap_file_name> = Input file with the AP's from each timestep")
+        print("<num_aps> = Number of AP's to be used for the APD calculation")
+        print("<ms_each_step> = Number of milliseconds from each timestep")
+        print("     this value can be calculated as:")
+        print("         ms_each_step = (simulation_time) / (dt*print_rate)")
+        print("     Where the values <simulation_time>, <dt> and <print_rate> are all")
+        print("     given in the configuration file of the simulation.")
+        print("-------------------------------------------------------------------------")
+        return 1
 
-rests = []
+    ap_file_name = sys.argv[1]
+    num_aps = int(sys.argv[2])
+    ms_each_step = float(sys.argv[3])
 
-epsilon = 0.003
+    ap_file = open(ap_file_name)
 
-ap_data = [float(data) for data in ap_file]
+    rests = []
 
-i = 0
+    epsilon = 0.003
 
-while True:
+    ap_data = [float(data) for data in ap_file]
 
-    try:
-        data1 = ap_data[i]
-        data2 = ap_data[i+1]
-        i = i + 1
+    i = 0
 
-        if abs(data1-data2) < epsilon:
-            rests.append(data1)
-            rests.append(data2)
+    while True:
 
-    except:
-        break
+        try:
+            data1 = ap_data[i]
+            data2 = ap_data[i+1]
+            i = i + 1
 
-rest = sum(rests)/len(rests)
+            if abs(data1-data2) < epsilon:
+                rests.append(data1)
+                rests.append(data2)
 
-print("Rest: ", rest)
-epsilon = 0.05
-apds = []
+        except:
+            break
 
-slope_e = 0
-max_ind = 0
+    rest = sum(rests)/len(rests)
 
-for j in range(num_aps):
+    print("Rest: ", rest)
+    epsilon = 0.05
+    apds = []
 
-    slope_s = slope_start(ap_data, slope_e, 0.1)
-    max_ind = max_index(ap_data, slope_e, 1050)
-    slope_e = slope_end(ap_data, max_ind+3, 0.005)
+    slope_e = 0
+    max_ind = 0
 
-    apds.append((slope_e-slope_s)*ms_each_step)
+    for j in range(num_aps):
 
-print("APD: ", sum(apds)/len(apds))
+        slope_s = slope_start(ap_data, slope_e, 0.1)
+        print("Slope start = %g\n" % slope_s)
 
+        max_ind = max_index(ap_data, slope_e, 1050)
+        print("Max ind = %d\n" % max_ind)
+
+        slope_e = slope_end(ap_data, max_ind+3, 0.001)
+        print("Slope end = %g\n" % slope_e)
+
+        apds.append((slope_e-slope_s)*ms_each_step)
+
+    print("APD: ", sum(apds)/len(apds))
+
+if __name__ == "__main__":
+    main()
