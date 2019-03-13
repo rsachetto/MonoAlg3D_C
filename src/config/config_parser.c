@@ -46,6 +46,7 @@ static const struct option long_options[] = {
     {"save_state", required_argument, NULL, SAVE_STATE_OPT}, //Complex option
     {"restore_state", required_argument, NULL, RESTORE_STATE_OPT}, //Complex option
     {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT}, //Complex option
+    {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, //Complex option
     {"visualize", no_argument, NULL, DRAW_OPT},
     {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
     {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
@@ -785,6 +786,13 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
                 user_args->linear_system_solver_config = new_linear_system_solver_config();
             }
             set_config(optarg, user_args->linear_system_solver_config, user_args->config_file, "linear_system_solver");
+            break;
+        case UPDATE_MONODOMAIN_SOLVER_OPT:
+            if(user_args->update_monodomain_config == NULL) {
+                print_to_stdout_and_file("Creating new update_monodomain config from command line!\n");
+                user_args->update_monodomain_config = new_update_monodomain_config();
+            }
+            set_config(optarg, user_args->update_monodomain_config, user_args->config_file, "update_monodomain");
             break;
         case EXTRA_DATA_OPT:
             if(user_args->extra_data_config == NULL) {
