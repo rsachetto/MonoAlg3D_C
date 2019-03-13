@@ -12,7 +12,6 @@
 //Forward declarations
 struct user_options;
 struct ode_solver;
-struct stim_config_hash;
 
 struct monodomain_solver {
 
