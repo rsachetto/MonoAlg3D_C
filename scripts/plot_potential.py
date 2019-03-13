@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def read_transmembrane_potential (input_file,dt,print_rate):
 	data = np.genfromtxt(input_file)
 	n = len(data)
@@ -11,19 +12,20 @@ def read_transmembrane_potential (input_file,dt,print_rate):
 	
 	return timesteps, vms
 
+
 def plot_transmembrane_potential (t,v):
 	plt.grid()
-	plt.plot(t,v,label="Vm",c="black",linewidth=3.0)
+	plt.plot(t, v, label="Vm", c="black", linewidth=3.0)
 	plt.xlabel("t (ms)",fontsize=15)
 	plt.ylabel("V (mV)",fontsize=15)
 	plt.title("Action potential",fontsize=14)
 	plt.legend(loc=2,fontsize=14)
 	plt.show()
-	#plt.savefig("ap.pdf")
+
 
 def main ():
 	
-	if (len(sys.argv) != 4):
+	if len(sys.argv) != 4:
 		print("-------------------------------------------------------------------------")
 		print("Usage:> python %s <input_file> <dt> <print_rate>" % sys.argv[0])
 		print("-------------------------------------------------------------------------")
@@ -36,6 +38,7 @@ def main ():
 	t, vm = read_transmembrane_potential(input_file,dt,print_rate)
 
 	plot_transmembrane_potential(t,vm)
-	
+
+
 if __name__ == "__main__":
 	main()

@@ -4,10 +4,9 @@ from sys import argv
 def forwarddiff(y, h):
     n = len(y)
     res = []
-    i = 1
 
-    for i in range(1,n):
-        res.append((y[i] - y[i-1]) / h);
+    for i in range(1, n):
+        res.append((y[i] - y[i-1]) / h)
 
     return res
 
