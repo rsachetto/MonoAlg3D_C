@@ -10,6 +10,7 @@ set(SOURCE_FILES_CONFIG
 		save_mesh_config.c save_mesh_config.h
 		save_state_config.c save_state_config.h
 		restore_state_config.c restore_state_config.h
+		update_monodomain_config.c update_monodomain_config.h
         )
 
 ADD_LIBRARY(config STATIC ${SOURCE_FILES_CONFIG})

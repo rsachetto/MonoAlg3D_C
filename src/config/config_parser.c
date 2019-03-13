@@ -195,6 +195,7 @@ struct user_options *new_user_options() {
     user_args->save_mesh_config = NULL;
     user_args->save_state_config = NULL;
     user_args->restore_state_config = NULL;
+    user_args->update_monodomain_config = NULL;
 
     user_args->draw = false;
     user_args->max_v = 40.0f;
@@ -1069,7 +1070,25 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else {
             shput(pconfig->assembly_matrix_config->config_data.config, name, strdup(value));
         }
-    } else if(MATCH_SECTION(LINEAR_SYSTEM_SOLVER_SECTION)) {
+    }
+    else if(MATCH_SECTION(UPDATE_MONODOMAIN_SECTION)) {
+
+        if(pconfig->update_monodomain_config == NULL) {
+            pconfig->update_monodomain_config = new_update_monodomain_config();
+        }
+
+        if(MATCH_NAME("function")) {
+            pconfig->update_monodomain_config->config_data.function_name = strdup(value);
+            pconfig->update_monodomain_config->config_data.function_name_was_set = true;
+
+        } else if(MATCH_NAME("library_file")) {
+            pconfig->update_monodomain_config->config_data.library_file_path = strdup(value);
+            pconfig->update_monodomain_config->config_data.library_file_path_was_set = true;
+        } else {
+            shput(pconfig->update_monodomain_config->config_data.config, name, strdup(value));
+        }
+    }
+    else if(MATCH_SECTION(LINEAR_SYSTEM_SOLVER_SECTION)) {
 
         if(pconfig->linear_system_solver_config == NULL) {
             pconfig->linear_system_solver_config = new_linear_system_solver_config();
@@ -1200,6 +1219,9 @@ void free_user_options(struct user_options *s) {
 
     if(s->save_state_config)
         free_save_state_config(s->save_state_config);
+
+    if(s->update_monodomain_config)
+        free_update_monodomain_config(s->update_monodomain_config);
 
     free(s);
 }

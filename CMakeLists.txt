@@ -162,7 +162,9 @@ ADD_SUBDIRECTORY(src/linear_system_solver_library)
 ADD_SUBDIRECTORY(src/save_mesh_library)
 ADD_SUBDIRECTORY(src/save_state_library)
 ADD_SUBDIRECTORY(src/restore_state_library)
+ADD_SUBDIRECTORY(src/update_monodomain_library)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
+
