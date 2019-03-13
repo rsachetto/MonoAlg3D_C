@@ -676,8 +676,6 @@ ASSEMBLY_MATRIX(ddm_assembly_matrix)
     kappa_z = calculate_kappa(cell_length_z,dz);
     the_solver->kappa_z = kappa_z;
 
-    the_solver->using_ddm = true;
-
     printf("[!] Using DDM formulation\n");
     printf("[X] Cell length = %.10lf || sigma_x = %.10lf || dx = %.10lf || kappa_x = %.10lf\n",\
             cell_length_x,sigma_x,dx,kappa_x);

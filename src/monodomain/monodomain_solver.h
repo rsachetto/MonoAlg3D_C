@@ -21,7 +21,7 @@ struct monodomain_solver {
 
     double beta, cm; // micrometers
 
-    bool using_ddm;
+    //TODO: maybe use an extra data variable as we did on the alg cell
     double kappa_x, kappa_y, kappa_z;
     
     int refine_each;
@@ -56,19 +56,10 @@ bool update_ode_state_vector_and_check_for_activity(float vm_thresold, struct od
 
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver);
 void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid);
-
-void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
-                       double beta,
-                       double cm, double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu);
                     
-void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
-                                              struct user_options *options);
+void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver, struct user_options *options);
 
 bool print_result(const struct grid *the_grid, const struct user_options *configs, int count);
-
-void update_monodomain_ddm (uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells, double beta, double cm,\
-                    const double kappa_x, const double kappa_y, const double kappa_z,\
-                    double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu);
 
 void debug_print_and_leave ();
 

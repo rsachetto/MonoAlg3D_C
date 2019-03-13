@@ -29,6 +29,7 @@
 #include "../common_types/common_types.h"
 #include "save_state_config.h"
 #include "restore_state_config.h"
+#include "update_monodomain_config.h"
 
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
@@ -100,6 +101,7 @@ struct user_options {
     struct save_mesh_config *save_mesh_config;
     struct save_state_config *save_state_config;
     struct restore_state_config *restore_state_config;
+    struct update_monodomain_config *update_monodomain_config;
 
     float max_v, min_v;
 
