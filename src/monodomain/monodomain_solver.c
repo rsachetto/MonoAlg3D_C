@@ -527,9 +527,10 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
                 }
             }
         #ifdef COMPILE_OPENGL
-        } //if(draw_config->paused)
+        } //else of if(draw_config->paused)
         else {
-            sleep(1);
+            //Is this a good usage of mutexes to mimic sleep-wakeup???
+            omp_set_lock(&draw_config.sleep_lock);
             continue;
         }
         #endif

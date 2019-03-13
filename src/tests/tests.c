@@ -447,7 +447,6 @@ int run_simulation_with_config(char *config_file) {
 
     solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 
-
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
 
@@ -467,8 +466,11 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
     sds *files_gold = list_files_from_dir(gold_output, "V_it_");
     sds *files_tested_sim = list_files_from_dir(tested_output, "V_it_");
 
-    int n_files_gold = arrlen(files_gold);
-    int n_files_tested = arrlen(files_tested_sim);
+    cr_assert(files_gold != NULL);
+    cr_assert(files_tested_sim != NULL);
+
+    ptrdiff_t n_files_gold = arrlen(files_gold);
+    ptrdiff_t n_files_tested = arrlen(files_tested_sim);
 
     cr_assert_eq(n_files_gold, n_files_tested);
 
@@ -490,9 +492,8 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
         sdsfree(full_path_gold);
         sdsfree(full_path_tested);
 
-
-        int n_lines_gold = arrlen(lines_gold);
-        int n_lines_tested= arrlen(lines_tested);
+        ptrdiff_t n_lines_gold = arrlen(lines_gold);
+        ptrdiff_t n_lines_tested= arrlen(lines_tested);
 
         cr_assert_eq(n_lines_gold, n_lines_tested);
 
@@ -721,6 +722,7 @@ Test (utils, arr_double) {
     cr_assert_float_eq(v[0], 0.0, 1e-10);
     cr_assert_float_eq(v[1], 0.5, 1e-10);
     cr_assert_float_eq(v[2], 2.5, 1e-10);
+
 }
 
 Test (utils, arr_element) {

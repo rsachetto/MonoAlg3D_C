@@ -274,7 +274,7 @@ char **list_files_from_dir(const char *dir, const char *prefix) {
 
     if ((dp = opendir(dir)) == NULL) {
         fprintf(stderr, "Error opening %s\n", dir);
-        exit(0);
+        return NULL;
     }
 
     while ((dirp = readdir(dp)) != NULL) {
@@ -499,6 +499,7 @@ void fixpath(char *path)
 
 void create_dir(char *out_dir) {
 
+    //TODO: check why this is not working in windows. It seems that out_dir is not null terminated.
     //fixpath(out_dir);
 
     if(dir_exists(out_dir)) return;
@@ -520,7 +521,7 @@ void create_dir(char *out_dir) {
         start++;
     }
 
-    char *slash = strchr(new_dir+start, '/');
+    char *slash = strchr(new_dir + start, '/');
 
     while(slash) {
         size_t dirname_size = slash - new_dir;
@@ -545,6 +546,8 @@ void create_dir(char *out_dir) {
         slash = strchr(slash+1,'/');
         free(dir_to_create);
     }
+
+    free(new_dir);
 }
 
 
