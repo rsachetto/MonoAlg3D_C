@@ -33,7 +33,7 @@ struct draw_config {
 
     //If we are compiling this file, openmp is available.
     omp_lock_t draw_lock;
-
+    omp_lock_t sleep_lock;
 };
 
 struct draw_config draw_config;
@@ -300,6 +300,6 @@ static const double color[NUM_COLORS][3] =
 
 
 
-void init_opengl();
+void init_and_open_visualization_window();
 
 #endif //MONOALG3D_DRAW_H

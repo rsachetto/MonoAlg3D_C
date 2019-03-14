@@ -27,7 +27,7 @@ struct grid {
     uint32_t *free_sv_positions;
     uint32_t *refined_this_step;
 
-    struct cell_node* *active_cells;
+    struct cell_node **active_cells;
     bool adaptive;
 
     struct graph *the_purkinje_network;

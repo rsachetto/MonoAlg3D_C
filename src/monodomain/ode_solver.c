@@ -20,6 +20,9 @@
 
 #endif
 
+#include "../single_file_libraries/stb_ds.h"
+
+
 
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
