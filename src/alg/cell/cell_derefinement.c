@@ -2,7 +2,10 @@
 // Created by sachetto on 30/09/17.
 //
 
+#include <assert.h>
+
 #include "cell.h"
+#include "../../single_file_libraries/stb_ds.h"
 
 /**
 * Decides if the bunch should be derefined. A bunch will not be derefined if
@@ -69,10 +72,8 @@ bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_b
 }
 
 void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv_positions) {
-    if (first_bunch_cell == 0) {
-        fprintf (stderr, "derefine_cell_bunch: Parameter first_bunch_cell is NULL. Exiting!!");
-        exit (10);
-    }
+
+    assert(first_bunch_cell);
 
     struct cell_node *cell_before_bunch = first_bunch_cell->previous;
     struct cell_node *cell_after_bunch =
@@ -108,14 +109,14 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv
 
         struct cell_node *wsb = ws->back;
 
-        sb_push(*free_sv_positions, w->sv_position);
-        sb_push(*free_sv_positions, b->sv_position);
-        sb_push(*free_sv_positions, s->sv_position);
+        arrput(*free_sv_positions, w->sv_position);
+        arrput(*free_sv_positions, b->sv_position);
+        arrput(*free_sv_positions, s->sv_position);
 
-        sb_push(*free_sv_positions, wb->sv_position);
-        sb_push(*free_sv_positions, ws->sv_position);
-        sb_push(*free_sv_positions, sb->sv_position);
-        sb_push(*free_sv_positions, wsb->sv_position);
+        arrput(*free_sv_positions, wb->sv_position);
+        arrput(*free_sv_positions, ws->sv_position);
+        arrput(*free_sv_positions, sb->sv_position);
+        arrput(*free_sv_positions, wsb->sv_position);
         /////////////////////////////////////////////////////////////
 
     }
@@ -386,14 +387,10 @@ uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell) {
  * then simply connects the outside to it.
  *
  * @param transition_node Candidate transition node to be eliminated.
- * @throw NullPointer If a null transition node is given as argument, a NullPointer
- * exception is thrown.
  */
 void simplify_derefinement(struct transition_node *transition_node) {
-    if (transition_node == NULL) {
-        fprintf (stderr, "simplify_derefinement(): Parameter transition_node is NULL. Exiting!");
-        exit (10);
-    }
+
+    assert(transition_node);
 
     struct cell_node *derefinedCell = (struct cell_node *)(transition_node->single_connector);
     char direction = transition_node->direction;
@@ -448,7 +445,7 @@ void simplify_derefinement(struct transition_node *transition_node) {
         default: { break; }
         }
 
-        if (neighborCellType == 'b') {
+        if (neighborCellType == CELL_NODE_TYPE) {
             blackNeighborCell = (struct cell_node *)(neighbor_transition_node->single_connector);
             switch (direction) {
             case 'n': {

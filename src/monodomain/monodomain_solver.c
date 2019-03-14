@@ -21,7 +21,10 @@
 #include "../config/assembly_matrix_config.h"
 #include "../config/domain_config.h"
 #include "../config/purkinje_config.h"
+#include "../config/stim_config.h"
 #include "../config/linear_system_solver_config.h"
+
+#include "../single_file_libraries/stb_ds.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -40,7 +43,6 @@ struct monodomain_solver *new_monodomain_solver() {
     result->current_time = 0.0;
     result->current_count = 0;
 
-    result->using_ddm = false;
     result->kappa_x = 0.0;
     result->kappa_y = 0.0;
     result->kappa_z = 0.0;
@@ -73,7 +75,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     ///////MAIN CONFIGURATION BEGIN//////////////////
     init_ode_solver_with_cell_model(the_ode_solver);
-    struct stim_config_hash *stimuli_configs = configs->stim_configs;
+    struct string_voidp_hash_entry *stimuli_configs = configs->stim_configs;
     struct extra_data_config *extra_data_config = configs->extra_data_config;
     struct domain_config *domain_config = configs->domain_config;
     struct purkinje_config *purkinje_config = configs->purkinje_config;
@@ -82,6 +84,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     struct save_mesh_config *save_mesh_config = configs->save_mesh_config;
     struct save_state_config *save_state_config = configs->save_state_config;
     struct restore_state_config *restore_state_config = configs->restore_state_config;
+    struct update_monodomain_config *update_monodomain_config = configs->update_monodomain_config;
 
     bool has_extra_data = (extra_data_config != NULL);
 
@@ -94,17 +97,17 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(stimuli_configs, init_stim_functions);
 
         // Find last stimuli
-        size_t s_size = stimuli_configs->size;
+        size_t s_size = shlen(stimuli_configs);
         double s_end;
-        for(int i = 0; i < s_size; i++) 
-        {
-            for(struct stim_config_elt *e = stimuli_configs->table[i % s_size]; e != 0; e = e->next) 
-            {
-                s_end = e->value->stim_start + e->value->stim_duration;
-                has_any_periodic_stim |= (e->value->stim_period > 0.0);
-                if(s_end > last_stimulus_time)
-                    last_stimulus_time = s_end;
-            }
+        for(int i = 0; i < s_size; i++) {
+
+            struct stim_config *sconfig = (struct stim_config*) stimuli_configs[i].value;
+
+            s_end = sconfig->stim_start + sconfig->stim_duration;
+            has_any_periodic_stim |= (sconfig->stim_period > 0.0);
+            if(s_end > last_stimulus_time)
+                last_stimulus_time = s_end;
+
         }
     }
 
@@ -125,7 +128,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
-    if(assembly_matrix_config) 
+
+    if(assembly_matrix_config)
     {
         init_assembly_matrix_functions(assembly_matrix_config);
     } 
@@ -178,7 +182,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    ///////MAIN CONFIGURATION END//////////////////
 
     if(restore_checkpoint) 
     {
@@ -186,6 +189,16 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, NULL,
                                             the_monodomain_solver, NULL);
     }
+
+    if(!update_monodomain_config) {
+        update_monodomain_config = new_update_monodomain_config();
+
+    }
+
+    init_update_monodomain_functions(update_monodomain_config);
+
+    ///////MAIN CONFIGURATION END//////////////////
+
 
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
@@ -206,8 +219,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     double dt_pde = the_monodomain_solver->dt;
     double finalT = the_monodomain_solver->final_time;
 
-    double beta = the_monodomain_solver->beta;
-    double cm = the_monodomain_solver->cm;
+//    double beta = the_monodomain_solver->beta;
+//    double cm = the_monodomain_solver->cm;
 
     double dt_ode = the_ode_solver->min_dt;
 
@@ -371,8 +384,6 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     double cur_time = the_monodomain_solver->current_time;
 
-    print_to_stdout_and_file("Starting simulation\n");
-
     if(save_mesh_config != NULL) {
         print_rate = save_mesh_config->print_rate;
         save_mesh_config->last_count = (int)(finalT/dt_pde);
@@ -382,9 +393,14 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     if(configs->draw) {
         draw_config.grid_to_draw = the_grid;
         draw_config.simulating = true;
+        draw_config.paused = true;
+    }
+    else {
         draw_config.paused = false;
     }
     #endif
+
+    print_to_stdout_and_file("Starting simulation\n");
 
     // Main simulation loop start
     while(cur_time <= finalT)
@@ -397,7 +413,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
             if (save_to_file && (count % print_rate == 0)) {
 
                 start_stop_watch(&write_time);
-                save_mesh_config->save_mesh(cur_time, save_mesh_config, the_grid);
+                save_mesh_config->save_mesh(count, cur_time, save_mesh_config, the_grid);
                 total_write_time += stop_stop_watch(&write_time);
             }
 
@@ -417,15 +433,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
             // REACTION
             solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
-
-            //TODO: this functions should be in a user provided library, as they can change depending on the solver that is being used;
-            if (!the_monodomain_solver->using_ddm)
-                update_monodomain(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm,\
-                                  dt_pde, the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
-            else
-                update_monodomain_ddm(original_num_cells, the_grid->num_active_cells, the_grid->active_cells, beta, cm,\
-                            the_monodomain_solver->kappa_x, the_monodomain_solver->kappa_y, the_monodomain_solver->kappa_z,\
-			    dt_pde, the_ode_solver->sv, the_ode_solver->model_data.number_of_ode_equations, gpu);
+            update_monodomain_config->update_monodomain(update_monodomain_config, original_num_cells, the_monodomain_solver, the_grid, the_ode_solver);
 
             ode_total_time += stop_stop_watch(&ode_time);
 
@@ -485,7 +493,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
                     update_cells_to_solve(the_grid, the_ode_solver);
 
-                    if (sb_count(the_grid->refined_this_step) > 0) {
+                    if (arrlen(the_grid->refined_this_step) > 0) {
                         update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
                     }
 
@@ -497,13 +505,12 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
             }
 
-#ifdef COMPILE_OPENGL
+            #ifdef COMPILE_OPENGL
             if (configs->draw) {
                 omp_unset_lock(&draw_config.draw_lock);
                 draw_config.time = cur_time;
             }
-#endif
-
+            #endif
             count++;
             cur_time += dt_pde;
 
@@ -518,9 +525,10 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
                 }
             }
         #ifdef COMPILE_OPENGL
-        } //if(draw_config->paused)
+        } //else of if(draw_config->paused)
         else {
-            sleep(1);
+            //Is this a good usage of mutexes to mimic sleep-wakeup???
+            omp_set_lock(&draw_config.sleep_lock);
             continue;
         }
         #endif
@@ -536,8 +544,9 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     print_to_stdout_and_file("Write time: %ld μs\n", total_write_time);
     print_to_stdout_and_file("Initial configuration time: %ld μs\n", total_config_time);
     print_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
-    draw_config.time = cur_time;
 
+#ifdef COMPILE_OPENGL
+   draw_config.time = cur_time;
    draw_config.solver_time = res_time;
    draw_config.ode_total_time = ode_total_time;
    draw_config.cg_total_time = cg_total_time;
@@ -547,20 +556,18 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
    draw_config.total_write_time = total_write_time;
    draw_config.total_config_time = total_config_time;
    draw_config.total_cg_it  = total_cg_it;
-    
-
-    draw_config.simulating = false;
+   draw_config.simulating = false;
+#endif
 }
 
-void set_spatial_stim(struct stim_config_hash *stim_configs, struct grid *the_grid) {
+void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid) {
 
     struct stim_config *tmp = NULL;
+    size_t n = shlen(stim_configs);
 
-    for(int i = 0; i < stim_configs->size; i++) {
-        for(struct stim_config_elt *e = stim_configs->table[i % stim_configs->size]; e != 0; e = e->next) {
-            tmp = e->value;
-            tmp->set_spatial_stim(tmp, the_grid);
-        }
+    for(int i = 0; i < n; i++) {
+        tmp = (struct stim_config *)stim_configs[i].value;
+        tmp->set_spatial_stim(tmp, the_grid);
     }
 }
 
@@ -673,39 +680,6 @@ void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *t
     }
 }
 
-// TODO: THIS FUNCTION SHOULD BE IN AN USER PROVIDED LIBRARY
-void update_monodomain(uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells,
-                       double beta, double cm, double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu) {
-
-    double alpha;
-
-#ifdef COMPILE_CUDA
-    real *vms = NULL;
-    size_t mem_size = initial_number_of_cells * sizeof(real);
-
-    if(use_gpu) {
-        vms = (real *)malloc(mem_size);
-        check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
-    }
-#endif
-    int i;
-#pragma omp parallel for private(alpha)
-    for(i = 0; i < num_active_cells; i++) {
-        alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
-
-        if(use_gpu) {
-#ifdef COMPILE_CUDA
-            active_cells[i]->b = vms[active_cells[i]->sv_position] * alpha;
-#endif
-        } else {
-            active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
-        }
-    }
-#ifdef COMPILE_CUDA
-    free(vms);
-#endif
-}
-
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                        struct grid *the_grid, struct user_options *options) {
 
@@ -741,9 +715,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
             print_to_stdout_and_file("Saving simulation results to: %s\n", options->save_mesh_config->out_dir_name);
         }
 
-        if (options->save_mesh_config->config_data.config->n == 1) {
+        if (shlen(options->save_mesh_config->config_data.config) == 1) {
             print_to_stdout_and_file("Save mesh extra parameter:\n");
-        } else if (options->save_mesh_config->config_data.config->n > 1) {
+        } else if (shlen(options->save_mesh_config->config_data.config) > 1) {
             print_to_stdout_and_file("Save mesh extra parameters:\n");
         }
 
@@ -754,37 +728,39 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     if(options->stim_configs) 
     {
 
-        if(options->stim_configs->size == 1)
+        size_t o = shlen(options->stim_configs);
+
+        if(o == 1)
             print_to_stdout_and_file("Stimulus configuration:\n");
         else
             print_to_stdout_and_file("Stimuli configuration:\n");
 
-        for(int i = 0; i < options->stim_configs->size; i++) 
-        {
-            for(struct stim_config_elt *e = options->stim_configs->table[i % options->stim_configs->size]; e != 0;
-                e = e->next) 
+
+
+        for(int i = 0; i < o; i++) {
+
+            struct string_voidp_hash_entry e = options->stim_configs[i];
+
+            print_to_stdout_and_file("Stimulus name: %s\n", e.key);
+            print_to_stdout_and_file("Stimulus start: %lf\n", ((struct stim_config*)e.value)->stim_start);
+            print_to_stdout_and_file("Stimulus duration: %lf\n", ((struct stim_config*)e.value)->stim_duration);
+            print_to_stdout_and_file("Stimulus current: %lf\n", ((struct stim_config*)e.value)->stim_current);
+            print_to_stdout_and_file("Stimulus library: %s\n", ((struct stim_config*)e.value)->config_data.library_file_path);
+            print_to_stdout_and_file("Stimulus function: %s\n", ((struct stim_config*)e.value)->config_data.function_name);
+            struct string_hash_entry *tmp = ((struct stim_config*)e.value)->config_data.config;
+            if(shlen(tmp) == 1)
             {
-
-                print_to_stdout_and_file("Stimulus name: %s\n", e->key);
-                print_to_stdout_and_file("Stimulus start: %lf\n", e->value->stim_start);
-                print_to_stdout_and_file("Stimulus duration: %lf\n", e->value->stim_duration);
-                print_to_stdout_and_file("Stimulus current: %lf\n", e->value->stim_current);
-                print_to_stdout_and_file("Stimulus library: %s\n", e->value->config_data.library_file_path);
-                print_to_stdout_and_file("Stimulus function: %s\n", e->value->config_data.function_name);
-                struct string_hash *tmp = e->value->config_data.config;
-                if(tmp->n == 1) 
-                {
-                    print_to_stdout_and_file("Stimulus extra parameter:\n");
-                } 
-                else if(tmp->n > 1) 
-                {
-                    print_to_stdout_and_file("Stimulus extra parameters:\n");
-                }
-
-                STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
-
-                print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+                print_to_stdout_and_file("Stimulus extra parameter:\n");
             }
+            else if(shlen(tmp)  > 1)
+            {
+                print_to_stdout_and_file("Stimulus extra parameters:\n");
+            }
+
+            STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
+
+            print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
         }
     }
 
@@ -796,11 +772,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
                              options->domain_config->start_dx, options->domain_config->start_dy,
                              options->domain_config->start_dz);
 
-        if(options->domain_config->config_data.config->n == 1) 
+        if(shlen(options->domain_config->config_data.config) == 1)
         {
             print_to_stdout_and_file("Domain extra parameter:\n");
         } 
-        else if(options->domain_config->config_data.config->n > 1) 
+        else if(shlen(options->domain_config->config_data.config) > 1)
         {
             print_to_stdout_and_file("Domain extra parameters:\n");
         }
@@ -815,11 +791,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Purkinje network name: %s\n", options->purkinje_config->domain_name);
         print_to_stdout_and_file ("Purkinje network initial Space Discretization: %lf um\n", options->purkinje_config->start_h);
 
-        if (options->purkinje_config->config_data.config->n == 1) 
+        if (shlen(options->purkinje_config->config_data.config) == 1)
         {
             print_to_stdout_and_file ("Purkinje extra parameter:\n");
         } 
-        else if (options->purkinje_config->config_data.config->n > 1) {
+        else if (shlen(options->purkinje_config->config_data.config) > 1) {
             print_to_stdout_and_file ("Purkinje extra parameters:\n");
         }
 
@@ -848,9 +824,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Extra data library: %s\n", options->extra_data_config->config_data.library_file_path);
         print_to_stdout_and_file("Extra data function: %s\n", options->extra_data_config->config_data.function_name);
 
-        if(options->domain_config->config_data.config->n == 1) {
+        if(shlen(options->domain_config->config_data.config) == 1) {
             print_to_stdout_and_file("Extra data parameter:\n");
-        } else if(options->domain_config->config_data.config->n > 1) {
+        } else if(shlen(options->domain_config->config_data.config) > 1) {
             print_to_stdout_and_file("Extra data parameters:\n");
         }
 
@@ -880,163 +856,4 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
     the_monodomain_solver->beta = options->beta;
     the_monodomain_solver->cm = options->cm;
     the_monodomain_solver->start_adapting_at = options->start_adapting_at;
-}
-
-// ***********************************************************************************************************
-// Berg and Pedro code ...
-void update_monodomain_ddm (uint32_t initial_number_of_cells, uint32_t num_active_cells, struct cell_node **active_cells, double beta, double cm,\
-                    const double kappa_x, const double kappa_y, const double kappa_z,\
-                    double dt_pde, real *sv, int n_equations_cell_model, bool use_gpu) 
-{
-
-    double alpha;
-
-#ifdef COMPILE_CUDA
-    real *vms = NULL;
-    size_t mem_size = initial_number_of_cells * sizeof(real);
-
-    if(use_gpu) 
-    {
-        vms = (real *)malloc(mem_size);
-        check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
-    }
-#endif
-
-    int i;
-    
-    #pragma omp parallel for private(alpha)
-    for(i = 0; i < num_active_cells; i++) 
-    {
-        // 1) Calculate alpha for the diagonal element ...
-        alpha = ALPHA_CM(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
-        
-        if(use_gpu) 
-        {
-            #ifdef COMPILE_CUDA
-            active_cells[i]->b = vms[active_cells[i]->sv_position] * alpha;
-            #endif
-        } 
-        else 
-        {
-            active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
-        }
-
-        // 2) Calculate kappas
-        // We need to capture the neighbours from the current volume 
-        struct element *cell_elements = active_cells[i]->elements;
-        uint32_t max_elements = sb_count(cell_elements);
-        
-        // Berg tip:
-        // TODO: The computation of the kappas will enter here ...
-        //       When we consider the anisotropic case
-
-        double dx = active_cells[i]->dx;
-        double dy = active_cells[i]->dy;
-        double dz = active_cells[i]->dz;
-
-        for (int j = 1; j < max_elements; j++)
-        {
-            int k = cell_elements[j].column;
-
-            if (cell_elements[j].direction == 'n') // North cell
-            {
-                double multiplier = (dx * dy) / dz;
-                if(use_gpu) 
-                {
-                    #ifdef COMPILE_CUDA
-                    active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_z / dt_pde;
-                    active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_z / dt_pde;
-                    #endif
-                } 
-                else 
-                {
-                    active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
-                    active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
-                }
-            }
-            else if (cell_elements[j].direction == 's') // South cell
-            {
-                double multiplier = (dx * dy) / dz;
-                if(use_gpu) 
-                {
-                    #ifdef COMPILE_CUDA
-                    active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_z / dt_pde;
-                    active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_z / dt_pde;
-                    #endif
-                } 
-                else 
-                {
-                    active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
-                    active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
-                }
-            }
-            else if (cell_elements[j].direction == 'e') // East cell
-            {
-                double multiplier = (dx * dz) / dy;
-                if(use_gpu) 
-                {
-                    #ifdef COMPILE_CUDA
-                    active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_y / dt_pde;
-                    active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_y / dt_pde;
-                    #endif
-                } 
-                else 
-                {
-                    active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
-                    active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
-                }
-            }
-            else if (cell_elements[j].direction == 'w') // West cell
-            {
-                double multiplier = (dx * dz) / dy;
-                if(use_gpu) 
-                {
-                    #ifdef COMPILE_CUDA
-                    active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_y / dt_pde;
-                    active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_y / dt_pde;
-                    #endif
-                } 
-                else 
-                {
-                    active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
-                    active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
-                }
-            }
-            else if (cell_elements[j].direction == 'f') // Forward cell
-            {
-                double multiplier = (dy * dz) / dx;
-                if(use_gpu) 
-                {
-                    #ifdef COMPILE_CUDA
-                    active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_x / dt_pde;
-                    active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_x / dt_pde;
-                    #endif
-                } 
-                else 
-                {
-                    active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
-                    active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
-                }
-            }
-            else if (cell_elements[j].direction == 'b') // Backward cell
-            {
-                double multiplier = (dy * dz) / dx;
-                if(use_gpu) 
-                {
-                    #ifdef COMPILE_CUDA
-                    active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_x / dt_pde;
-                    active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_x / dt_pde;
-                    #endif
-                } 
-                else 
-                {
-                    active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
-                    active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
-                }
-            }
-        }
-    }
-#ifdef COMPILE_CUDA
-    free(vms);
-#endif
 }

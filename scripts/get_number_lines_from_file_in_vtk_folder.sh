@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$#" -ne 2 ]; then
+if [[ "$#" -ne 2 ]]; then
     echo "-------------------------------------------------------------------"
     echo "Usage:> $0 <AP_DIR> <AP_PREFIX>"
     echo "-------------------------------------------------------------------"
@@ -17,7 +17,7 @@ AP_DIR=$1
 AP_PREFIX=$2
 
 FIRST_FILE=$(ls -1v ${AP_DIR}/${AP_PREFIX}_it_0_*)
-NUMBER_OF_LINES=$(wc $FIRST_FILE | awk -F ' ' '{print $1}')
+NUMBER_OF_LINES=$(wc ${FIRST_FILE} | awk -F ' ' '{print $1}')
 NUMBER_OF_LINES=$((NUMBER_OF_LINES+1))
-echo $NUMBER_OF_LINES
+echo ${NUMBER_OF_LINES}
 

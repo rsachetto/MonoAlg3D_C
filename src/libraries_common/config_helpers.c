@@ -15,7 +15,7 @@ void report_parameter_error_on_function(const char * function, const char *param
     exit(EXIT_FAILURE);
 }
 
-char *get_char_parameter (struct string_hash *config, const char *parameter) {
-    char *config_char = string_hash_search (config, parameter);
-    return config_char;
+char *get_char_parameter (struct string_hash_entry *config, const char *parameter) {
+    char *config_value = shget (config, parameter);
+    return config_value;
 }

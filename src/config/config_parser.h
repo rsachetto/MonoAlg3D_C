@@ -26,9 +26,10 @@
 #include "assembly_matrix_config.h"
 #include "save_mesh_config.h"
 #include "linear_system_solver_config.h"
-#include "../hash/stim_config_hash.h"
+#include "../common_types/common_types.h"
 #include "save_state_config.h"
 #include "restore_state_config.h"
+#include "update_monodomain_config.h"
 
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
@@ -36,6 +37,7 @@
 #define STIM_OPT 2000
 #define ASSEMBLY_MATRIX_OPT 2100
 #define LINEAR_SYSTEM_SOLVER_OPT 2200
+#define UPDATE_MONODOMAIN_SOLVER_OPT 2300
 #define DRAW_OPT 3000
 #define SAVE_OPT 3100
 #define SAVE_STATE_OPT 3200
@@ -91,7 +93,7 @@ struct user_options {
     bool quiet; /*-q option*/
     bool quiet_was_set;
 
-    struct stim_config_hash *stim_configs;
+    struct string_voidp_hash_entry *stim_configs;
     struct domain_config *domain_config;
     struct purkinje_config *purkinje_config;
     struct extra_data_config *extra_data_config;
@@ -100,6 +102,7 @@ struct user_options {
     struct save_mesh_config *save_mesh_config;
     struct save_state_config *save_state_config;
     struct restore_state_config *restore_state_config;
+    struct update_monodomain_config *update_monodomain_config;
 
     float max_v, min_v;
 
@@ -114,7 +117,7 @@ struct batch_options {
     char *initial_config;
     int num_simulations;
     int num_par_change;
-    struct string_hash *config_to_change;
+    struct string_hash_entry *config_to_change;
 };
 
 void display_usage( char** argv );

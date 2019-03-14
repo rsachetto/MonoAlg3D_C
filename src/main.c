@@ -2,7 +2,6 @@
 #include "ini_parser/ini.h"
 #include "monodomain/monodomain_solver.h"
 #include "monodomain/ode_solver.h"
-#include "monodomain/output_utils.h"
 #include "string/sds.h"
 #include "utils/file_utils.h"
 
@@ -121,10 +120,14 @@ int main(int argc, char **argv) {
                 draw_config.simulating = false;
                 draw_config.time = 0.0;
 
+                draw_config.adaptive = options->adaptive;
+                draw_config.final_time = options->final_time;
+                draw_config.dt = options->dt_pde;
 
                 omp_init_lock(&draw_config.draw_lock);
+                omp_init_lock(&draw_config.sleep_lock);
 
-                init_opengl();
+                init_and_open_visualization_window();
             }
 
             #pragma omp section

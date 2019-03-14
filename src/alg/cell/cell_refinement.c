@@ -4,6 +4,9 @@
 
 #include "cell.h"
 #include "string.h"
+#include "../../single_file_libraries/stb_ds.h"
+
+#include <assert.h>
 
 void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t **refined_this_step)  {
 
@@ -52,7 +55,7 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
     front_northeast_sub_cell->bunch_number       = old_bunch_number * 10 + 1;
 
     if(refined_this_step && *refined_this_step) {
-        sb_push(*refined_this_step, front_northeast_sub_cell->sv_position);
+        arrput(*refined_this_step, front_northeast_sub_cell->sv_position);
     }
 
     // Creation of back Northeast node.
@@ -1083,10 +1086,7 @@ void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t 
  */
 void simplify_refinement( struct transition_node *transition_node ) {
 
-    if( transition_node == NULL ) {
-        fprintf(stderr, "simplify_refinement: Parameter transition_node is NULL. Exiting!");
-        exit(10);
-    }
+    assert(transition_node);
 
     // Pointers used to convert the Cell in a cell node or transition node.
     struct transition_node *neighbour_transition_node;
@@ -1101,7 +1101,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
 
         uint16_t single_connector_level = ((struct basic_cell_data*)(transition_node->single_connector))->level;
 
-        if( ( node_type == 'w') && (node_level == single_connector_level) ) {
+        if( ( node_type == TRANSITION_NODE_TYPE) && (node_level == single_connector_level) ) {
             struct transition_node *neighbour_node = (struct transition_node*) (transition_node->single_connector);
 
             struct cell_node *cellNode[4];
@@ -1132,7 +1132,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
 
                 type = neighborCell[i]->cell_data.type;
                 switch( type ) {
-                    case 'b': {
+                    case CELL_NODE_TYPE: {
                         neighbour_cell_node = neighborCell[i];
                         switch( direction )	{
                             case 'n': { neighbour_cell_node->south = cellNode[i]; break; }
@@ -1146,7 +1146,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
                         break;
                     }
 
-                    case 'w': {
+                    case TRANSITION_NODE_TYPE: {
                         neighbour_transition_node = (struct transition_node*)(neighborCell[i]);
                         if( neighbour_node == neighbour_transition_node->single_connector )
                             neighbour_transition_node->single_connector = cellNode[i];
@@ -1210,10 +1210,10 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
     the_cell->bunch_number = bunch_number;
 
     if(free_sv_positions)
-        the_cell->sv_position = sb_pop(free_sv_positions);
+        the_cell->sv_position = arrpop(free_sv_positions);
 
     if(refined_this_step && *refined_this_step)
-        sb_push(*refined_this_step, the_cell->sv_position);
+        arrput(*refined_this_step, the_cell->sv_position);
 
 }
 

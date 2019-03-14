@@ -21,6 +21,60 @@
 #include <unistd.h>
 #endif
 
+void translate_visible_mesh_to_origin(struct grid *grid) {
+
+    float minx = FLT_MAX;
+    float miny = FLT_MAX;
+    float minz = FLT_MAX;
+
+    struct cell_node *grid_cell;
+
+    float center_x;
+    float center_y;
+    float center_z;
+
+    grid_cell = grid->first_cell;
+
+    while(grid_cell != 0) {
+
+        center_x = grid_cell->center_x;
+        center_y = grid_cell->center_y;
+        center_z = grid_cell->center_z;
+
+        if(center_x < minx){
+            minx = center_x;
+        }
+
+        if(center_y < miny){
+            miny = center_y;
+        }
+
+        if(center_z < minz){
+            minz = center_z;
+        }
+
+        grid_cell = grid_cell->next;
+    }
+
+    grid_cell = grid->first_cell;
+
+    struct fibrotic_mesh_info *mesh_info;
+
+    while(grid_cell != 0) {
+
+        mesh_info = FIBROTIC_INFO(grid_cell);
+
+        if(grid_cell->active || (mesh_info && mesh_info->fibrotic)) {
+            grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
+            grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);;
+            grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);;
+        }
+
+        grid_cell = grid_cell->next;
+    }
+
+}
+
 int calculate_cuboid_side_lengths(double start_dx, double start_dy, double start_dz, double side_length_x,
                                    double side_length_y, double side_length_z, double *real_side_length_x,
                                    double *real_side_length_y, double *real_side_length_z) {
@@ -320,6 +374,7 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
 
         i++;
     }
+
     sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
 
     double maxx = mesh_points[size - 1][0];
@@ -369,6 +424,10 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     the_grid->side_length_x = maxx;
     the_grid->side_length_y = maxy;
     the_grid->side_length_z = maxz;
+
+
+    translate_visible_mesh_to_origin(the_grid);
+
 }
 
 void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, size_t size, double minx, double maxx,

@@ -1,7 +1,6 @@
 ////
 //// Created by sachetto on 06/10/17.
 ////
-#include "../monodomain/output_utils.h"
 #include <criterion/criterion.h>
 #include "../alg/grid/grid.h"
 #include "../config/linear_system_solver_config.h"
@@ -10,8 +9,11 @@
 #include "../config/config_parser.h"
 #include "../utils/file_utils.h"
 #include "../ini_parser/ini.h"
+#include "../string/sds.h"
 #include <signal.h>
 
+//#define STB_DS_IMPLEMENTATION
+#include "../single_file_libraries/stb_ds.h"
 
 
 double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
@@ -84,8 +86,8 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
         el.column = cell_position;
         el.cell = cell;
 
-        sb_reserve(cell->elements, 7);
-        sb_push(cell->elements, el);
+        arrsetcap(cell->elements, 7);
+        arrput(cell->elements, el);
 
         for (int j = 0; j < num_lines_m; j++) {
             if (cell_position != j) {
@@ -103,7 +105,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
                         aux = aux->next;
                     }
                     el2.cell = aux;
-                    sb_push(cell->elements, el2);
+                    arrput(cell->elements, el2);
                 }
             }
         }
@@ -257,13 +259,13 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     linear_system_solver_config = new_linear_system_solver_config();
     linear_system_solver_config->config_data.function_name = method_name;
 
-    string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "tolerance", "1e-16");
+    shput(linear_system_solver_config->config_data.config, "tolerance", "1e-16");
     if (preconditioner)
-        string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "use_preconditioner", "yes");
+        shput(linear_system_solver_config->config_data.config, "use_preconditioner", "yes");
     else
-        string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "use_preconditioner", "no");
+        shput(linear_system_solver_config->config_data.config, "use_preconditioner", "no");
 
-    string_hash_insert_or_overwrite(linear_system_solver_config->config_data.config, "max_iterations", "200");
+    shput(linear_system_solver_config->config_data.config, "max_iterations", "200");
 
     uint32_t n_iter;
 
@@ -308,9 +310,10 @@ int test_cuboid_mesh(double start_dx, double start_dy, double start_dz, char* si
     domain_config->config_data.function_name = strdup("initialize_grid_with_cuboid_mesh");
     domain_config->domain_name = strdup("Test cuboid");
 
-    string_hash_insert(domain_config->config_data.config, "side_length_x", side_length_x);
-    string_hash_insert(domain_config->config_data.config, "side_length_y", side_length_y);
-    string_hash_insert(domain_config->config_data.config, "side_length_z", side_length_z);
+    shput(domain_config->config_data.config, "side_length_x", side_length_x);
+    shput(domain_config->config_data.config, "side_length_y", side_length_y);
+    shput(domain_config->config_data.config, "side_length_z", side_length_z);
+
 
     init_domain_functions(domain_config);
 
@@ -365,10 +368,10 @@ int test_cuboid_mesh(double start_dx, double start_dy, double start_dz, char* si
         sds file_prefix = sdscatprintf(sdsempty(), "test_%lf_%lf_%lf_%s_%s_%s", start_dx, start_dy, start_dz,
                                        side_length_x, side_length_y, side_length_z);
         init_save_mesh_functions(save_mesh_config);
-        string_hash_insert(save_mesh_config->config_data.config, "file_prefix", file_prefix);
-        string_hash_insert(save_mesh_config->config_data.config, "compress", "yes");
+        shput(save_mesh_config->config_data.config, "file_prefix", file_prefix);
+        shput(save_mesh_config->config_data.config, "compress", "yes");
 
-        save_mesh_config->save_mesh(0.0, save_mesh_config, grid);
+        save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
     }
 
     cr_assert_float_eq(max_x+(start_dx/2.0), atof(side_length_x), 1e-16);
@@ -415,6 +418,7 @@ int run_simulation_with_config(char *config_file) {
 
     // Create the output dir and the logfile
     if(options->save_mesh_config->out_dir_name) {
+        remove_directory(options->save_mesh_config->out_dir_name);
         create_dir(options->save_mesh_config->out_dir_name);
     }
     else {
@@ -443,7 +447,6 @@ int run_simulation_with_config(char *config_file) {
 
     solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 
-
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
 
@@ -463,8 +466,11 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
     sds *files_gold = list_files_from_dir(gold_output, "V_it_");
     sds *files_tested_sim = list_files_from_dir(tested_output, "V_it_");
 
-    int n_files_gold = sb_count(files_gold);
-    int n_files_tested = sb_count(files_tested_sim);
+    cr_assert(files_gold != NULL);
+    cr_assert(files_tested_sim != NULL);
+
+    ptrdiff_t n_files_gold = arrlen(files_gold);
+    ptrdiff_t n_files_tested = arrlen(files_tested_sim);
 
     cr_assert_eq(n_files_gold, n_files_tested);
 
@@ -486,9 +492,8 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
         sdsfree(full_path_gold);
         sdsfree(full_path_tested);
 
-
-        int n_lines_gold = sb_count(lines_gold);
-        int n_lines_tested= sb_count(lines_tested);
+        ptrdiff_t n_lines_gold = arrlen(lines_gold);
+        ptrdiff_t n_lines_tested= arrlen(lines_tested);
 
         cr_assert_eq(n_lines_gold, n_lines_tested);
 
@@ -526,6 +531,9 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
 /////STARTING TESTS////////////////////////////////////////////////////////////////////////
 
 Test(run_gold_simulation, gpu_no_adapt) {
+
+    printf("Running simulation for testing\n");
+
     int success = run_simulation_with_config("example_configs/gold_simulation_no_adapt.ini");
     cr_assert(success);
 
@@ -554,8 +562,9 @@ Test (mesh_load, cuboid_mesh_100_200_100_1000_1000_1000) {
 
 Test (mesh_load, cuboid_mesh_100_100_200_1000_1000_1000) {
 
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", false);
+    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true);
     cr_assert(success);
+
 }
 
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_2000) {
@@ -655,89 +664,90 @@ Test (solvers, jacobi_6t_2) {
 #endif
 
 
-Test (utils, stretchy_buffer_int) {
+Test (utils, arr_int) {
 
     int *v = NULL;
 
-            sb_reserve(v, 1);
+    arrsetcap(v, 1);
 
-    cr_assert_eq(sb_count(v), 0);
-    cr_assert_eq(stb__sbm(v), 1);
+    cr_assert_eq(arrlen(v), 0);
+    cr_assert_geq(arrcap(v), 1);
 
-            sb_push(v, 0);
-            sb_push(v, 1);
-            sb_push(v, 2);
+    arrput(v, 0);
+    arrput(v, 1);
+    arrput(v, 2);
 
-    cr_assert_eq(sb_count(v), 3);
+    cr_assert_eq(arrlen(v), 3);
 
     cr_assert_eq(v[0], 0);
     cr_assert_eq(v[1], 1);
     cr_assert_eq(v[2], 2);
 }
 
-Test (utils, stretchy_buffer_float) {
+Test (utils, arr_float) {
 
     float *v = NULL;
 
-            sb_reserve(v, 1);
+    arrsetcap(v, 1);
 
-    cr_assert_eq(sb_count(v), 0);
-    cr_assert_eq(stb__sbm(v), 1);
+    cr_assert_eq(arrlen(v), 0);
+    cr_assert_geq(arrcap(v), 1);
 
-            sb_push(v, 0);
-            sb_push(v, 0.5);
-            sb_push(v, 2.5);
+    arrput(v, 0);
+    arrput(v, 0.5);
+    arrput(v, 2.5);
 
-    cr_assert_eq(sb_count(v), 3);
+    cr_assert_eq(arrlen(v), 3);
 
     cr_assert_float_eq(v[0], 0.0, 1e-10);
     cr_assert_float_eq(v[1], 0.5, 1e-10);
     cr_assert_float_eq(v[2], 2.5, 1e-10);
 }
 
-Test (utils, stretchy_buffer_double) {
+Test (utils, arr_double) {
 
     double *v = NULL;
 
-            sb_reserve(v, 1);
+    arrsetcap(v, 1);
 
-    cr_assert_eq(sb_count(v), 0);
-    cr_assert_eq(stb__sbm(v), 1);
+    cr_assert_eq(arrlen(v), 0);
+    cr_assert_geq(arrcap(v), 1);
 
-            sb_push(v, 0);
-            sb_push(v, 0.5);
-            sb_push(v, 2.5);
+    arrput(v, 0);
+    arrput(v, 0.5);
+    arrput(v, 2.5);
 
-    cr_assert_eq(sb_count(v), 3);
+    cr_assert_eq(arrlen(v), 3);
 
     cr_assert_float_eq(v[0], 0.0, 1e-10);
     cr_assert_float_eq(v[1], 0.5, 1e-10);
     cr_assert_float_eq(v[2], 2.5, 1e-10);
+
 }
 
-Test (utils, stretchy_buffer_element) {
+Test (utils, arr_element) {
 
     struct element *v = NULL;
 
-    sb_reserve(v, 1);
+    arrsetcap(v, 1);
 
-    cr_assert_eq(sb_count(v), 0);
-    cr_assert_eq(stb__sbm(v), 1);
+    cr_assert_eq(arrlen(v), 0);
+    cr_assert_geq(arrcap(v), 1);
 
     struct cell_node *c = new_cell_node();
     struct element a = {'a', 0, 1, c};
 
-    sb_push(v, a);
+    arrput(v, a);
 
     a.column = 2;
     a.value = -2.2;
-    sb_push(v, a);
+    arrput(v, a);
 
     a.column = 3;
     a.value = 3.5;
-    sb_push(v, a);
+    arrput(v, a);
 
-    cr_assert_eq(sb_count(v), 3);
+    cr_assert_eq(arrlen(v), 3);
 
     cr_assert_eq(v[0].column, 1);
     cr_assert_float_eq(v[0].value, 0.0, 1e-10);
@@ -751,8 +761,8 @@ Test (utils, stretchy_buffer_element) {
     cr_assert_float_eq(v[2].value, 3.5, 1e-10);
     cr_assert_eq(v[2].cell, c);
 
-    struct element b = sb_pop(v);
-    cr_assert_eq(sb_count(v), 2);
+    struct element b = arrpop(v);
+    cr_assert_eq(arrlen(v), 2);
 
     cr_assert_eq(b.column, 3);
 

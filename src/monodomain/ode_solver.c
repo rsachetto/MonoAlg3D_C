@@ -12,10 +12,14 @@
 #endif
 #include <assert.h>
 #include "../utils/file_utils.h"
+#include "../config/stim_config.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
 #endif
+
+#include "../single_file_libraries/stb_ds.h"
+
 
 
 struct ode_solver* new_ode_solver() {
@@ -202,7 +206,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
 }
 
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, double cur_time, int num_steps,
-                            struct stim_config_hash *stim_configs) {
+                            struct string_voidp_hash_entry *stim_configs) {
 
     assert(the_ode_solver->sv);
 
@@ -221,11 +225,11 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     real stim_start, stim_dur;
 
 	int i;
+    ptrdiff_t n = hmlen(stim_configs);
 
     if(stim_configs) {
-        for (int k = 0; k < stim_configs->size; k++) {
-            for (struct stim_config_elt *e = stim_configs->table[k % stim_configs->size]; e != 0; e = e->next) {
-                tmp = e->value;
+        for (int k = 0; k < n; k++) {
+                tmp = (struct stim_config*) stim_configs[k].value;
                 stim_start = tmp->stim_start;
                 stim_dur = tmp->stim_duration;
                 for (int j = 0; j < num_steps; ++j) {
@@ -244,7 +248,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
                 time = cur_time;
             }
-        }
+
     }
 
 
@@ -269,7 +273,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
     assert(ode_solver);
     assert(ode_solver->sv);
 
-    size_t num_refined_cells = sb_count(refined_this_step)/8;
+    size_t num_refined_cells = arrlen(refined_this_step)/8;
 
     real *sv = ode_solver->sv;
     int neq = ode_solver->model_data.number_of_ode_equations;

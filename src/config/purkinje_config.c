@@ -10,6 +10,8 @@
 #endif
 #include <string.h>
 #include "../utils/file_utils.h"
+#include "../common_types/common_types.h"
+#include "../single_file_libraries/stb_ds.h"
 
 void init_purkinje_functions (struct purkinje_config *config) 
 {
@@ -85,11 +87,7 @@ void print_purkinje_config_values (struct purkinje_config* s)
 
 void free_purkinje_config(struct purkinje_config* s) 
 {
-    free(s->config_data.library_file_path);
-    free(s->config_data.function_name);
-    string_hash_destroy(s->config_data.config);
+    free_config_common_data(&(s->config_data));
     free(s->domain_name);
-    if(s->config_data.handle)
-        dlclose(s->config_data.handle);
     free(s);
 }

@@ -3,6 +3,7 @@
 //
 
 #include "grid.h"
+#include "../../single_file_libraries/stb_ds.h"
 
 /**
  * Decides if the grid should be refined by traversing the whole grid, according
@@ -41,7 +42,7 @@ bool refine_grid_with_bound(struct grid *the_grid, double refinement_bound, doub
 
     uint32_t *free_sv_pos = the_grid->free_sv_positions;
 
-    sb_clear(the_grid->refined_this_step);
+    arrreset(the_grid->refined_this_step);
 
     while(continue_refining) {
         continue_refining = false;
