@@ -29,7 +29,7 @@ def slope_end(data, start=0, epsilon=0.0001, h=1.0):
             return i+start
 
 
-# Returns the timestep where the maximum derivative occurs
+# Returns the timestep where the maximum potential occurs
 def max_index(data, start, end):
 
     d = data[start:(start+end)]
@@ -100,15 +100,16 @@ def main ():
     slope_e = 0
     max_ind = 0
 
+    # These settings are working for the Tentusscher -> "plain_mesh_tentusscher.ini"
     for j in range(num_aps):
 
-        slope_s = slope_start(ap_data, slope_e, 0.1)
+        slope_s = slope_start(ap_data, slope_e, 50)
         print("Slope start = %g\n" % slope_s)
 
         max_ind = max_index(ap_data, slope_e, 1050)
         print("Max ind = %d\n" % max_ind)
 
-        slope_e = slope_end(ap_data, max_ind+3, 0.001)
+        slope_e = slope_end(ap_data, max_ind+3, 0.005, ms_each_step)
         print("Slope end = %g\n" % slope_e)
 
         apds.append((slope_e-slope_s)*ms_each_step)

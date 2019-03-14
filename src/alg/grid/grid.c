@@ -232,7 +232,7 @@ void clean_grid(struct grid *the_grid) {
 
     // TODO: Think about this function
     // Delete nodes from the Purkinje network
-    if (the_grid->the_purkinje_network) 
+    if (the_grid->the_purkinje_network->list_nodes == NULL) 
     {
 
         // First free the Purkinje mesh structure
