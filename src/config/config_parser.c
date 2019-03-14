@@ -46,6 +46,7 @@ static const struct option long_options[] = {
     {"save_state", required_argument, NULL, SAVE_STATE_OPT}, //Complex option
     {"restore_state", required_argument, NULL, RESTORE_STATE_OPT}, //Complex option
     {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT}, //Complex option
+    {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, //Complex option
     {"visualize", no_argument, NULL, DRAW_OPT},
     {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
     {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
@@ -195,6 +196,7 @@ struct user_options *new_user_options() {
     user_args->save_mesh_config = NULL;
     user_args->save_state_config = NULL;
     user_args->restore_state_config = NULL;
+    user_args->update_monodomain_config = NULL;
 
     user_args->draw = false;
     user_args->max_v = 40.0f;
@@ -785,6 +787,13 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             }
             set_config(optarg, user_args->linear_system_solver_config, user_args->config_file, "linear_system_solver");
             break;
+        case UPDATE_MONODOMAIN_SOLVER_OPT:
+            if(user_args->update_monodomain_config == NULL) {
+                print_to_stdout_and_file("Creating new update_monodomain config from command line!\n");
+                user_args->update_monodomain_config = new_update_monodomain_config();
+            }
+            set_config(optarg, user_args->update_monodomain_config, user_args->config_file, "update_monodomain");
+            break;
         case EXTRA_DATA_OPT:
             if(user_args->extra_data_config == NULL) {
                 print_to_stdout_and_file("Creating new extra data config from command line!\n");
@@ -1069,7 +1078,25 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else {
             shput(pconfig->assembly_matrix_config->config_data.config, name, strdup(value));
         }
-    } else if(MATCH_SECTION(LINEAR_SYSTEM_SOLVER_SECTION)) {
+    }
+    else if(MATCH_SECTION(UPDATE_MONODOMAIN_SECTION)) {
+
+        if(pconfig->update_monodomain_config == NULL) {
+            pconfig->update_monodomain_config = new_update_monodomain_config();
+        }
+
+        if(MATCH_NAME("function")) {
+            pconfig->update_monodomain_config->config_data.function_name = strdup(value);
+            pconfig->update_monodomain_config->config_data.function_name_was_set = true;
+
+        } else if(MATCH_NAME("library_file")) {
+            pconfig->update_monodomain_config->config_data.library_file_path = strdup(value);
+            pconfig->update_monodomain_config->config_data.library_file_path_was_set = true;
+        } else {
+            shput(pconfig->update_monodomain_config->config_data.config, name, strdup(value));
+        }
+    }
+    else if(MATCH_SECTION(LINEAR_SYSTEM_SOLVER_SECTION)) {
 
         if(pconfig->linear_system_solver_config == NULL) {
             pconfig->linear_system_solver_config = new_linear_system_solver_config();
@@ -1200,6 +1227,9 @@ void free_user_options(struct user_options *s) {
 
     if(s->save_state_config)
         free_save_state_config(s->save_state_config);
+
+    if(s->update_monodomain_config)
+        free_update_monodomain_config(s->update_monodomain_config);
 
     free(s);
 }

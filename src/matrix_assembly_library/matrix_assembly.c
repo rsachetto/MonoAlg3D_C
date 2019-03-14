@@ -31,8 +31,8 @@ void initialize_diagonal_elements_ddm (struct monodomain_solver *the_solver, str
     double alpha;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
+//    double beta = the_solver->beta;
+//    double cm = the_solver->cm;
 
     double dt = the_solver->dt;
 
@@ -676,8 +676,6 @@ ASSEMBLY_MATRIX(ddm_assembly_matrix)
     kappa_z = calculate_kappa(cell_length_z,dz);
     the_solver->kappa_z = kappa_z;
 
-    the_solver->using_ddm = true;
-
     printf("[!] Using DDM formulation\n");
     printf("[X] Cell length = %.10lf || sigma_x = %.10lf || dx = %.10lf || kappa_x = %.10lf\n",\
             cell_length_x,sigma_x,dx,kappa_x);
@@ -786,7 +784,7 @@ static void fill_discretization_matrix_elements_purkinje (double sigma_x, struct
     
     struct edge *e;
     struct element **cell_elements;
-    double dx, dy, dz;
+    double dx;
 
     double sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
 

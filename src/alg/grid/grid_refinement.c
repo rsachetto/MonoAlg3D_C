@@ -42,7 +42,7 @@ bool refine_grid_with_bound(struct grid *the_grid, double refinement_bound, doub
 
     uint32_t *free_sv_pos = the_grid->free_sv_positions;
 
-    arrsetlen(the_grid->refined_this_step, 0);
+    arrreset(the_grid->refined_this_step);
 
     while(continue_refining) {
         continue_refining = false;

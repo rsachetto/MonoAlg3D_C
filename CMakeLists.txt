@@ -3,10 +3,10 @@ IF(EXISTS "/etc/manjaro-release")
     set(CMAKE_CXX_COMPILER "/opt/cuda/bin/g++")
 ENDIF(EXISTS "/etc/manjaro-release")
 
-IF(EXISTS "/etc/debconf.conf")
-    set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
-    set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
-ENDIF(EXISTS "/etc/debconf.conf")
+#IF(EXISTS "/etc/debconf.conf")
+#    set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
+#    set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
+#ENDIF(EXISTS "/etc/debconf.conf")
 
 
 cmake_minimum_required(VERSION 3.0.1)
@@ -84,7 +84,7 @@ ENDIF(CUDA_FOUND)
 SET(OpenGL_GL_PREFERENCE "GLVND")
 FIND_PACKAGE(OpenGL)
 
-IF(OPENGL_FOUND AND OPENMP_FOUND)
+IF(NOT MSVC AND OPENGL_FOUND AND OPENMP_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
 ENDIF()
 
@@ -97,7 +97,7 @@ ADD_SUBDIRECTORY(src/config)
 ADD_SUBDIRECTORY(src/graph)
 ADD_SUBDIRECTORY(src/vtk_utils)
 
-IF(OPENGL_FOUND AND OPENMP_FOUND)
+IF(NOT MSVC AND OPENGL_FOUND AND OPENMP_FOUND)
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
     ADD_SUBDIRECTORY(src/raylib/src)
@@ -162,7 +162,9 @@ ADD_SUBDIRECTORY(src/linear_system_solver_library)
 ADD_SUBDIRECTORY(src/save_mesh_library)
 ADD_SUBDIRECTORY(src/save_state_library)
 ADD_SUBDIRECTORY(src/restore_state_library)
+ADD_SUBDIRECTORY(src/update_monodomain_library)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
+

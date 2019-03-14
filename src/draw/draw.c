@@ -24,7 +24,7 @@ int graph_pos_y;
 
 Font font;
 
-struct ap {
+struct action_potential {
     double v;
     float t;
 };
@@ -259,10 +259,10 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
                 p.y = grid_cell->center_y;
                 p.z = grid_cell->center_z;
 
-                struct ap *aps = (struct ap*) hmget(selected_aps, p);
+                struct action_potential *aps = (struct action_potential*) hmget(selected_aps, p);
 
                 if(!draw_config.paused && draw_config.simulating && aps != NULL) {
-                    struct ap ap1;
+                    struct action_potential ap1;
                     ap1.t = draw_config.time;
                     ap1.v = grid_cell->v;
                     arrput(aps, ap1);
@@ -332,13 +332,13 @@ void draw_ap() {
     DrawTextEx(font, "Time (ms)", (Vector2){graph_pos_x + 160.0f, min_y + 30.0f}, 16, 1, BLACK);
 
     Vector2 p1, p2;
-    struct ap *aps;
+    struct action_potential *aps;
     int c_count = 0;
     int n = hmlen(selected_aps);
 
     for (int i = 0; i < n; i++) {
 
-        aps = (struct ap*) selected_aps[i].value;
+        aps = (struct action_potential*) selected_aps[i].value;
         int c = arrlen(aps);
 
         if(c > 0) {
@@ -523,7 +523,9 @@ void draw_end_info_box() {
 const int screenWidth = 1280;
 const int screenHeight = 720;
 
-void init_opengl() {
+void init_and_open_visualization_window() {
+
+    omp_set_lock(&draw_config.sleep_lock);
 
     struct stop_watch timer;
 
@@ -575,7 +577,10 @@ void init_opengl() {
 
         if (IsKeyPressed('L')) draw_config.grid_lines = !draw_config.grid_lines;
 
-        if (IsKeyPressed(KEY_SPACE)) draw_config.paused = !draw_config.paused;
+        if (IsKeyPressed(KEY_SPACE)) {
+            draw_config.paused = !draw_config.paused;
+            omp_unset_lock(&draw_config.sleep_lock);
+        }
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -636,6 +641,7 @@ void init_opengl() {
     }
 
     omp_destroy_lock(&draw_config.draw_lock);
+    omp_destroy_lock(&draw_config.sleep_lock);
 
     CloseWindow();
 

@@ -18,6 +18,5 @@ void report_parameter_error_on_function(const char * function, const char *param
 
 char *get_char_parameter (struct string_hash_entry *config, const char *parameter) {
     char *config_value = shget (config, parameter);
-
     return config_value;
 }

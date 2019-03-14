@@ -125,8 +125,9 @@ int main(int argc, char **argv) {
                 draw_config.dt = options->dt_pde;
 
                 omp_init_lock(&draw_config.draw_lock);
+                omp_init_lock(&draw_config.sleep_lock);
 
-                init_opengl();
+                init_and_open_visualization_window();
             }
 
             #pragma omp section

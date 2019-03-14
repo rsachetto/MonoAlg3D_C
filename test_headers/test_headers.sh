@@ -2,7 +2,7 @@
 while IFS='' read -r line || [[ -n "$line" ]]; do
     [ -s test_h ] || rm test_h
 
-    error_file=`basename $line`
+    error_file=`basename ${line}`
 
     echo "#include \"$line\" " > test_h.c
     echo "#include <stdio.h> " >> test_h.c

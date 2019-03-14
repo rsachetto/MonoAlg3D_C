@@ -230,9 +230,9 @@ void clean_grid(struct grid *the_grid) {
 
     struct cell_node *grid_cell = NULL;
 
-    // TODO: Think about this function
+    // TODO: Think about this function when the coupling happens ...
     // Delete nodes from the Purkinje network
-    if (the_grid->the_purkinje_network->list_nodes == NULL) 
+    if (the_grid->the_purkinje_network->list_nodes != NULL) 
     {
 
         // First free the Purkinje mesh structure
@@ -293,12 +293,12 @@ void clean_grid(struct grid *the_grid) {
 
     if(the_grid->refined_this_step) 
     {
-        arrsetlen(the_grid->refined_this_step, 0);
+        arrreset(the_grid->refined_this_step);
     }
 
     if(the_grid->free_sv_positions) 
     {
-        arrsetlen(the_grid->free_sv_positions, 0);
+        arrreset(the_grid->free_sv_positions);
     }
 }
 

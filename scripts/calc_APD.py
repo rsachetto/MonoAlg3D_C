@@ -1,14 +1,15 @@
 import sys
 
+
 def forwarddiff(y, h):
     n = len(y)
     res = []
-    i = 1
 
-    for i in range(1,n):
-        res.append((y[i] - y[i-1]) / h);
+    for i in range(1, n):
+        res.append((y[i] - y[i-1]) / h)
 
     return res
+
 
 def slope_start(data, start=0, epsilon=0.0001, h=1.0):
 
@@ -18,6 +19,7 @@ def slope_start(data, start=0, epsilon=0.0001, h=1.0):
     for i in range(1,n):
         if abs(d[i] - d[i-1]/h) > epsilon:
             return i+start
+
 
 def slope_end(data, start=0, epsilon=0.0001, h=1.0):
 
@@ -40,11 +42,12 @@ def max_index(data, start, end):
 
     return max_index
 
+
 def index_activation(data, start=0):
     d = data[start:]
 
     for i, v in enumerate(d):
-        if d[i+start] < 0.0 and d[i+start+1] > 0.0:
+        if d[i + start] < 0.0 < d[i + start + 1]:
             return i+start
 
 def main ():

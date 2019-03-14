@@ -11,5 +11,10 @@ endif()
 
 set(SOURCE_FILES_TEST valgring_toy_test.c)
 add_executable(ToyTest ${SOURCE_FILES_TEST})
-ADD_DEPENDENCIES(ToyTest utils alg solvers string config gpu_utils)
-target_link_libraries(ToyTest alg solvers utils string ini_parser config gpu_utils ${CMAKE_THREAD_LIBS_INIT} m )
+ADD_DEPENDENCIES(ToyTest utils alg solvers string config)
+
+if(MSVC)
+    target_link_libraries(ToyTest alg solvers utils string ini_parser config ${CMAKE_THREAD_LIBS_INIT})
+else()
+    target_link_libraries(ToyTest alg solvers utils string ini_parser config ${CMAKE_THREAD_LIBS_INIT} m )
+endif()

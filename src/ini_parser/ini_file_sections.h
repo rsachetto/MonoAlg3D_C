@@ -15,6 +15,7 @@
 #define SAVE_STATE_SECTION "save_state" 
 #define RESTORE_STATE_SECTION "restore_state" 
 #define MATRIX_ASSEMBLY_SECTION "assembly_matrix"
+#define UPDATE_MONODOMAIN_SECTION "update_monodomain"
 #define LINEAR_SYSTEM_SOLVER_SECTION "linear_system_solver"
 #define EXTRA_DATA_SECTION "extra_data"
 #define BATCH_SECTION "batch"
