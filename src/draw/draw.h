@@ -10,14 +10,16 @@
 
 struct draw_config {
     struct grid *grid_to_draw;
-    double max_v;
-    double min_v;
+    float max_v;
+    float min_v;
     bool grid_only;
     bool grid_lines;
     bool simulating;
     bool paused;
-    double time;
-
+    bool adaptive;
+    float time;
+    float final_time;
+    float dt;
 
     long solver_time;
     long ode_total_time;
@@ -31,7 +33,7 @@ struct draw_config {
 
     //If we are compiling this file, openmp is available.
     omp_lock_t draw_lock;
-
+    omp_lock_t sleep_lock;
 };
 
 struct draw_config draw_config;
@@ -298,6 +300,6 @@ static const double color[NUM_COLORS][3] =
 
 
 
-void init_opengl();
+void init_and_open_visualization_window();
 
 #endif //MONOALG3D_DRAW_H

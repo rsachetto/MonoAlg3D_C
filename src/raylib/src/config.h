@@ -136,7 +136,7 @@
 //------------------------------------------------------------------------------------
 // Show TraceLog() output messages
 // NOTE: By default LOG_DEBUG traces not shown
-#define SUPPORT_TRACELOG    1
+#define SUPPORT_TRACELOG    0
 
 
 #endif  //defined(RAYLIB_CMAKE)

@@ -3,10 +3,10 @@ IF(EXISTS "/etc/manjaro-release")
     set(CMAKE_CXX_COMPILER "/opt/cuda/bin/g++")
 ENDIF(EXISTS "/etc/manjaro-release")
 
-IF(EXISTS "/etc/debconf.conf")
-    set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
-    set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
-ENDIF(EXISTS "/etc/debconf.conf")
+#IF(EXISTS "/etc/debconf.conf")
+#    set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
+#    set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
+#ENDIF(EXISTS "/etc/debconf.conf")
 
 
 cmake_minimum_required(VERSION 3.0.1)
@@ -41,11 +41,11 @@ SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 
 IF(MSVC)
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /w" )
-	ADD_SUBDIRECTORY(src/getopt)
-	ADD_SUBDIRECTORY(src/dlfcn-win32)
-	SET(OPT_DEPS getopt)
 ELSE()
 	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Wall -Wno-unused-function")
+    IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
+        SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer" )
+    ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
 ENDIF()
 
 FIND_PACKAGE(OpenMP)
@@ -78,42 +78,43 @@ IF (CUDA_FOUND)
        ENDIF()
     ENDIF()
 
-    ADD_SUBDIRECTORY(src/gpu_utils)
-    SET(OPT_DEPS gpu_utils)
+
 ENDIF(CUDA_FOUND)
 
 SET(OpenGL_GL_PREFERENCE "GLVND")
-
 FIND_PACKAGE(OpenGL)
 
-IF(OPENGL_FOUND AND OPENMP_FOUND)
-    IF(MSVC)
-        #SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
-        SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
-    ELSE()
-        #SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${OPENGL_INCLUDE_DIR}\" -I \"${GLUT_INCLUDE_DIR}\" -DCOMPILE_OPENGL")
-        SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
-    ENDIF()
-
-    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
-    set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # or games
-
-    #    # build raylib
-    ADD_SUBDIRECTORY(src/raylib/src)
-
-    ADD_SUBDIRECTORY(src/draw)
-
-    SET(OPT_DEPS ${OPT_DEPS} draw raylib)
+IF(NOT MSVC AND OPENGL_FOUND AND OPENMP_FOUND)
+    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
 ENDIF()
 
 ADD_SUBDIRECTORY(src/utils)
 ADD_SUBDIRECTORY(src/alg)
 ADD_SUBDIRECTORY(src/monodomain)
-ADD_SUBDIRECTORY(src/hash)
 ADD_SUBDIRECTORY(src/ini_parser)
 ADD_SUBDIRECTORY(src/string)
 ADD_SUBDIRECTORY(src/config)
 ADD_SUBDIRECTORY(src/graph)
+ADD_SUBDIRECTORY(src/vtk_utils)
+
+IF(NOT MSVC AND OPENGL_FOUND AND OPENMP_FOUND)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
+    ADD_SUBDIRECTORY(src/raylib/src)
+    ADD_SUBDIRECTORY(src/draw)
+    SET(OPT_DEPS ${OPT_DEPS} draw raylib)
+ENDIF()
+
+IF(MSVC)
+    ADD_SUBDIRECTORY(src/getopt)
+    ADD_SUBDIRECTORY(src/dlfcn-win32)
+    SET(OPT_DEPS ${OPT_DEPS} getopt)
+ENDIF()
+
+IF (CUDA_FOUND)
+    ADD_SUBDIRECTORY(src/gpu_utils)
+    SET(OPT_DEPS ${OPT_DEPS} gpu_utils)
+ENDIF()
 
 #SET(COMPILE_GUI FALSE)
 #
@@ -131,21 +132,21 @@ ADD_SUBDIRECTORY(src/graph)
 #ENDIF()
 
 ADD_EXECUTABLE(MonoAlg3D src/main.c)
-ADD_DEPENDENCIES(MonoAlg3D utils alg solvers hashes ini_parser string graph config ${OPT_DEPS})
+ADD_DEPENDENCIES(MonoAlg3D utils alg solvers ini_parser string graph config ${OPT_DEPS})
 
 FIND_PACKAGE(MPI)
 IF(MPI_C_FOUND)
     INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
     ADD_EXECUTABLE(MonoAlg3D_batch src/main_batch.c)
-    ADD_DEPENDENCIES(MonoAlg3D_batch utils alg solvers hashes ini_parser string graph config ${OPT_DEPS})
-    TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
+    ADD_DEPENDENCIES(MonoAlg3D_batch utils alg solvers ini_parser string graph config ${OPT_DEPS})
+    TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
 ENDIF(MPI_C_FOUND)
 
 IF(MSVC)
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl)
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl)
     SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 ELSE()
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils hashes ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl m)
+    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl m)
 ENDIF()
 
 ADD_SUBDIRECTORY(src/models_library)
@@ -161,7 +162,9 @@ ADD_SUBDIRECTORY(src/linear_system_solver_library)
 ADD_SUBDIRECTORY(src/save_mesh_library)
 ADD_SUBDIRECTORY(src/save_state_library)
 ADD_SUBDIRECTORY(src/restore_state_library)
+ADD_SUBDIRECTORY(src/update_monodomain_library)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
+

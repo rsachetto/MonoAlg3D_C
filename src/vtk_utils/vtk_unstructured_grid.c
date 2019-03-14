@@ -10,6 +10,9 @@
 #include <math.h>
 #include <stdint.h>
 
+#include "../common_types/common_types.h"
+#include "../single_file_libraries/stb_ds.h"
+
 struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
     struct vtk_unstructured_grid *grid = (struct vtk_unstructured_grid *)malloc(sizeof(struct vtk_unstructured_grid));
 
@@ -27,9 +30,10 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
 
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid) {
     if(vtk_grid) {
-        sb_free(vtk_grid->cells);
-        sb_free(vtk_grid->values);
-        sb_free(vtk_grid->points);
+        arrfree(vtk_grid->cells);
+        arrfree(vtk_grid->values);
+        arrfree(vtk_grid->points);
+        free(vtk_grid);
     }
 }
 
@@ -55,7 +59,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
 
         if(mesh_already_loaded) {
             assert(*vtk_grid);
-            sb_free((*vtk_grid)->values);
+            arrfree((*vtk_grid)->values);
             (*vtk_grid)->values = NULL;
         }
         else {
@@ -120,7 +124,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     float D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
 
     double side;
-    struct point_hash *hash = point_hash_create();
+    struct point_hash_entry *hash =  NULL;
 
     while(grid_cell != 0) {
 
@@ -148,7 +152,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                 }
             }
 
-            sb_push((*vtk_grid)->values, grid_cell->v);
+            arrput((*vtk_grid)->values, grid_cell->v);
 
             if(mesh_already_loaded && read_only_values) {
                 grid_cell = grid_cell->next;
@@ -191,62 +195,62 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             aux8.y = center_y + half_face_y;
             aux8.z = center_z + half_face_z;
 
-            if(point_hash_search(hash, aux1) == -1) {
-                sb_push((*vtk_grid)->points, aux1);
-                point_hash_insert(hash, aux1, id);
+            if(hmgeti(hash, aux1) == -1) {
+                arrput((*vtk_grid)->points, aux1);
+                hmput(hash, aux1, id);
                 id++;
             }
 
-            if(point_hash_search(hash, aux2) == -1) {
-                sb_push((*vtk_grid)->points, aux2);
-                point_hash_insert(hash, aux2, id);
+            if(hmgeti(hash, aux2) == -1) {
+                arrput((*vtk_grid)->points, aux2);
+                hmput(hash, aux2, id);
                 id++;
             }
 
-            if(point_hash_search(hash, aux3) == -1) {
-                point_hash_insert(hash, aux3, id);
-                sb_push((*vtk_grid)->points, aux3);
+            if(hmgeti(hash, aux3) == -1) {
+                hmput(hash, aux3, id);
+                arrput((*vtk_grid)->points, aux3);
                 id++;
             }
 
-            if(point_hash_search(hash, aux4) == -1) {
-                point_hash_insert(hash, aux4, id);
-                sb_push((*vtk_grid)->points, aux4);
+            if(hmgeti(hash, aux4) == -1) {
+                hmput(hash, aux4, id);
+                arrput((*vtk_grid)->points, aux4);
                 id++;
             }
 
-            if(point_hash_search(hash, aux5) == -1) {
-                sb_push((*vtk_grid)->points, aux5);
-                point_hash_insert(hash, aux5, id);
+            if(hmgeti(hash, aux5) == -1) {
+                arrput((*vtk_grid)->points, aux5);
+                hmput(hash, aux5, id);
                 id++;
             }
 
-            if(point_hash_search(hash, aux6) == -1) {
-                sb_push((*vtk_grid)->points, aux6);
-                point_hash_insert(hash, aux6, id);
+            if(hmgeti(hash, aux6) == -1) {
+                arrput((*vtk_grid)->points, aux6);
+                hmput(hash, aux6, id);
                 id++;
             }
 
-            if(point_hash_search(hash, aux7) == -1) {
-                sb_push((*vtk_grid)->points, aux7);
-                point_hash_insert(hash, aux7, id);
+            if(hmgeti(hash, aux7) == -1) {
+                arrput((*vtk_grid)->points, aux7);
+                hmput(hash, aux7, id);
                 id++;
             }
 
-            if(point_hash_search(hash, aux8) == -1) {
-                sb_push((*vtk_grid)->points, aux8);
-                point_hash_insert(hash, aux8, id);
+            if(hmgeti(hash, aux8) == -1) {
+                arrput((*vtk_grid)->points, aux8);
+                hmput(hash, aux8, id);
                 id++;
             }
 
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux1));
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux2));
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux3));
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux4));
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux5));
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux6));
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux7));
-            sb_push((*vtk_grid)->cells, point_hash_search(hash, aux8));
+            arrput((*vtk_grid)->cells, hmget(hash, aux1));
+            arrput((*vtk_grid)->cells, hmget(hash, aux2));
+            arrput((*vtk_grid)->cells, hmget(hash, aux3));
+            arrput((*vtk_grid)->cells, hmget(hash, aux4));
+            arrput((*vtk_grid)->cells, hmget(hash, aux5));
+            arrput((*vtk_grid)->cells, hmget(hash, aux6));
+            arrput((*vtk_grid)->cells, hmget(hash, aux7));
+            arrput((*vtk_grid)->cells, hmget(hash, aux8));
             num_cells++;
         }
 
@@ -260,6 +264,8 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         if(read_only_values)
             mesh_already_loaded = true;
     }
+
+    hmfree(hash);
 }
 
 sds create_common_vtu_header(bool compressed, int num_points, int num_cells) {
@@ -303,7 +309,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
     }
 
     if(!binary) {
-        size_t num_values = sb_count(vtk_grid->values);
+        size_t num_values = arrlen(vtk_grid->values);
 
         for(int i = 0; i < num_values; i++) {
             file_content = sdscatprintf(file_content, "     %lf ", vtk_grid->values[i]);
@@ -330,7 +336,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
     }
 
     if(!binary) {
-        int num_points = sb_count(vtk_grid->points);
+        int num_points = arrlen(vtk_grid->points);
         for(int i = 0; i < num_points; i++) {
             struct point_3d p = vtk_grid->points[i];
             file_content = sdscatprintf(file_content, "%lf %lf %lf\n", p.x, p.y, p.z);
@@ -770,7 +776,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
 
     size_t size_until_now = sdslen(file_content);
 
-    int num_points = sb_count(vtk_grid->points);
+    int num_points = arrlen(vtk_grid->points);
     for(int i = 0; i < num_points; i++) {
         struct point_3d p = vtk_grid->points[i];
         if(binary) {
@@ -852,7 +858,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         sdsfree(tmp);
     }
 
-    size_t num_values = sb_count(vtk_grid->values);
+    size_t num_values = arrlen(vtk_grid->values);
 
     for(int i = 0; i < num_values; i++) {
         if(binary) {

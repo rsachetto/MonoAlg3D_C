@@ -12,9 +12,6 @@
 ../src/draw/draw.h
 ../src/gpu_utils/gpu_utils.h
 ../src/vector/stretchy_buffer.h
-../src/hash/hash_common.h
-../src/hash/string_hash.h
-../src/hash/point_hash.h
 ../src/domains_library/domain_helpers.h
 ../src/libraries_common/config_helpers.h
 ../src/monodomain/monodomain_solver.h
@@ -22,7 +19,6 @@
 ../src/monodomain/output_utils.h
 ../src/monodomain/constants.h
 ../src/config/extra_data_config.h
-../src/config/stim_config_hash.h
 ../src/config/assembly_matrix_config.h
 ../src/config/domain_config.h
 ../src/config/config_parser.h

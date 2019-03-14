@@ -15,6 +15,9 @@
 
 #include "../utils/file_utils.h"
 
+#include "../common_types/common_types.h"
+#include "../single_file_libraries/stb_ds.h"
+
 void init_save_mesh_functions(struct save_mesh_config *config) {
 
     char *function_name = config->config_data.function_name;
@@ -80,14 +83,8 @@ void print_save_mesh_config_values(struct save_mesh_config* s) {
 }
 
 void free_save_mesh_config(struct save_mesh_config* s) {
-    free(s->config_data.library_file_path);
-    free(s->config_data.function_name);
-    string_hash_destroy(s->config_data.config);
 
+    free_config_common_data(&(s->config_data));
     free(s->out_dir_name);
-
-    if(s->config_data.handle)
-        dlclose(s->config_data.handle);
     free(s);
-
 }

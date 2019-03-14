@@ -6,7 +6,6 @@
 #define MONOALG3D_VTK_UNSTRUCTURED_GRID_H
 
 #include "../alg/grid/grid.h"
-#include "../hash/point_hash.h"
 
 struct vtk_unstructured_grid {
     uint32_t num_points;

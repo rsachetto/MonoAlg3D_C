@@ -27,7 +27,7 @@ struct grid {
     uint32_t *free_sv_positions;
     uint32_t *refined_this_step;
 
-    struct cell_node* *active_cells;
+    struct cell_node **active_cells;
     bool adaptive;
 
     struct graph *the_purkinje_network;
@@ -58,6 +58,8 @@ void refine_border_zone_cells(struct grid *the_grid);
 bool derefine_grid_with_bound (struct grid *the_grid, double derefinement_bound, double max_dx, double max_dy, double max_dz);
 void derefine_all_grid (struct grid* the_grid);
 void derefine_grid_inactive_cells (struct grid* the_grid);
+bool derefine_grid_cell (struct grid *the_grid, struct cell_node *grid_cell);
+
 
 void print_grid_matrix(struct grid *the_grid, FILE* output_file);
 void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);

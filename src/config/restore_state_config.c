@@ -15,6 +15,9 @@
 
 #include "../utils/file_utils.h"
 
+#include "../common_types/common_types.h"
+#include "../single_file_libraries/stb_ds.h"
+
 void init_restore_state_functions(struct restore_state_config *config) {
 
     char *function_name = config->config_data.function_name;
@@ -68,16 +71,12 @@ void print_restore_state_config_values(struct restore_state_config* s) {
     printf("restore_state_function: %s\n",s->config_data.function_name);
     printf("restore_stateh_library_file: %s\n",s->config_data.library_file_path);
     printf("restore_state_config:\n");
+    //TODO: chan
     STRING_HASH_PRINT_KEY_VALUE(s->config_data.config);
 }
 
 void free_restore_state_config(struct restore_state_config* s) {
-    free(s->config_data.library_file_path);
-    free(s->config_data.function_name);
-    string_hash_destroy(s->config_data.config);
-
-    if(s->config_data.handle)
-        dlclose(s->config_data.handle);
+    free_config_common_data(&(s->config_data));
     free(s);
 
 }

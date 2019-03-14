@@ -12,6 +12,9 @@
 #include <string.h>
 #include "../utils/file_utils.h"
 
+#include "../common_types/common_types.h"
+#include "../single_file_libraries/stb_ds.h"
+
 void init_assembly_matrix_functions(struct assembly_matrix_config *config) {
 
     char *function_name = config->config_data.function_name;
@@ -70,11 +73,6 @@ void print_assembly_matrix_config(struct assembly_matrix_config* s) {
 }
 
 void free_assembly_matrix_config(struct assembly_matrix_config* s) {
-    free(s->config_data.library_file_path);
-    free(s->config_data.function_name);
-    string_hash_destroy(s->config_data.config);
-
-    if(s->config_data.handle)
-        dlclose(s->config_data.handle);
+    free_config_common_data(&(s->config_data));
     free(s);
 }
