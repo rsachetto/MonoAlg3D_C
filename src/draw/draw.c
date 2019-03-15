@@ -416,9 +416,9 @@ void draw_instruction_box () {
     int text_offset = 20;
 
     char tmp[100];
-    DrawRectangle(10, 10, 320, 233, WHITE);
+    DrawRectangle(10, 10, 320, 243, WHITE);
 
-    DrawRectangleLines(10, 10, 320, 233, BLACK);
+    DrawRectangleLines(10, 10, 320, 243, BLACK);
 
     DrawText("Default controls:", 20, 20, 10, BLACK);
     text_position += text_offset;
@@ -445,6 +445,9 @@ void draw_instruction_box () {
     text_position += text_offset;
 
     DrawText("- Double click on a volume to show the AP", 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+
+    DrawText("- R to restart simulation", 40, text_position, 12, BLACK);
     text_position += text_offset;
 
     DrawText("- Space to start or pause simulation", 40, text_position, 12, BLACK);
@@ -567,7 +570,6 @@ void init_and_open_visualization_window() {
 
     while (!WindowShouldClose()) {
 
-
         if (IsKeyDown('Z')) {
             camera.target   = (Vector3){ 0.137565f, 0.199405f, 0.181663f };
         }
@@ -579,18 +581,23 @@ void init_and_open_visualization_window() {
         if (IsKeyPressed('L')) draw_config.grid_lines = !draw_config.grid_lines;
 
         if (IsKeyPressed(KEY_SPACE)) {
+
+            if(draw_config.paused) {
+                omp_unset_lock(&draw_config.sleep_lock);
+            }
+
             draw_config.paused = !draw_config.paused;
-            omp_unset_lock(&draw_config.sleep_lock);
         }
 
         if (IsKeyPressed('R')) {
             if(draw_config.paused) {
-                exit(42);
+                omp_unset_lock(&draw_config.sleep_lock);
+                draw_config.paused = false;
             }
-            else {
-                draw_config.restart = true;
-                //exit(42);
-            }
+
+            draw_config.restart = true;
+            mesh_loaded = false;
+
         }
 
         // Draw
@@ -611,7 +618,7 @@ void init_and_open_visualization_window() {
             }
         }
 
-        if(draw_config.grid_to_draw && omp_test_lock(&draw_config.draw_lock)) {
+        if(!draw_config.restart && draw_config.grid_to_draw && omp_test_lock(&draw_config.draw_lock)) {
 
             mesh_loaded = true;
             ClearBackground(GRAY);
@@ -638,7 +645,7 @@ void init_and_open_visualization_window() {
                 draw_end_info_box();
             }
         }
-        else if(!mesh_loaded){
+        else if(!mesh_loaded ){
             int posx = GetScreenWidth()/2-150;
             int posy = GetScreenHeight()/2-50;
             ClearBackground(GRAY);
@@ -654,6 +661,13 @@ void init_and_open_visualization_window() {
     omp_destroy_lock(&draw_config.draw_lock);
     omp_destroy_lock(&draw_config.sleep_lock);
 
+    if(draw_config.paused) {
+        omp_unset_lock(&draw_config.sleep_lock);
+        draw_config.paused = false;
+    }
+
+    draw_config.exit = true;
     CloseWindow();
+
 
 }

@@ -50,7 +50,7 @@ struct monodomain_solver *new_monodomain_solver() {
     return result;
 }
 
-void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
+int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                       struct grid *the_grid, struct user_options *configs) {
 
     assert(configs);
@@ -395,14 +395,17 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     }
 
     #ifdef COMPILE_OPENGL
-    if(configs->draw) {
-        draw_config.grid_to_draw = the_grid;
-        draw_config.simulating = true;
-        draw_config.paused = true;
+    {
+        draw_config.exit = false;
         draw_config.restart = false;
-    }
-    else {
-        draw_config.paused = false;
+
+        if (configs->draw) {
+            draw_config.grid_to_draw = the_grid;
+            draw_config.simulating = true;
+            draw_config.paused = true;
+        } else {
+            draw_config.paused = false;
+        }
     }
     #endif
 
@@ -413,7 +416,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     {
 
         #ifdef COMPILE_OPENGL
-        if(draw_config.restart) exit(42);
+        if(draw_config.restart) return RESTART_SIMULATION;
+        if(draw_config.exit) return END_SIMULATION;
 
         if(!draw_config.paused) {
         #endif
@@ -447,11 +451,11 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
             start_stop_watch(&cg_time);
 
-#ifdef COMPILE_OPENGL
+            #ifdef COMPILE_OPENGL
             if (configs->draw) {
                 omp_set_lock(&draw_config.draw_lock);
             }
-#endif
+            #endif
 
             // DIFUSION
             linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations,
@@ -566,6 +570,9 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
    draw_config.total_cg_it  = total_cg_it;
    draw_config.simulating = false;
 #endif
+
+    return EXIT_SUCCESS;
+
 }
 
 void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid) {

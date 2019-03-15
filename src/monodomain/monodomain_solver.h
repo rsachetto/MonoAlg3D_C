@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define RESTART_SIMULATION 42
+#define END_SIMULATION 43
 
 //Forward declarations
 struct user_options;
@@ -41,7 +43,7 @@ struct monodomain_solver {
 
 struct monodomain_solver *new_monodomain_solver ();
 
-void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
+int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                       struct grid *the_grid, struct user_options *configs);
 
 void save_old_cell_positions (struct grid *the_grid);

@@ -18,6 +18,7 @@ struct draw_config {
     bool grid_lines;
     bool simulating;
     bool paused;
+    bool exit;
     bool adaptive;
     bool restart;
     float time;
