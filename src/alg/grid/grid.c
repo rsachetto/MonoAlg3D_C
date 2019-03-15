@@ -322,7 +322,7 @@ void print_grid_matrix(struct grid *the_grid, FILE *output_file) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
     struct element element;
-    struct element *cell_elements;
+    element_array cell_elements;
 
     while(grid_cell != 0) {
         if(grid_cell->active) {
@@ -364,7 +364,7 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
     struct element element;
-    struct element *cell_elements;
+    element_array cell_elements;
 
     fprintf(output_file, "# Created by Monodomain solver\n");
     fprintf(output_file, "# name: Alg_grid_matrix\n");

@@ -7,6 +7,7 @@
 
 #include "../cell/cell.h"
 #include "../../graph/graph.h"
+#include "../../common_types/common_types.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,8 +25,8 @@ struct grid {
     uint32_t num_active_cells;
 
     //dynamic arrays, need to point to NULL
-    uint32_t *free_sv_positions;
-    uint32_t *refined_this_step;
+    ui32_array free_sv_positions;
+    ui32_array refined_this_step;
 
     struct cell_node **active_cells;
     bool adaptive;

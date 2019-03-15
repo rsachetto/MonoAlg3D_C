@@ -2,8 +2,8 @@
 // Created by sachetto on 13/10/17.
 //
 
-#ifndef MONOALG3D_SAVE_CONFIG_H
-#define MONOALG3D_SAVE_CONFIG_H
+#ifndef MONOALG3D_SAVE_MESH_CONFIG_H
+#define MONOALG3D_SAVE_MESH_CONFIG_H
 
 #include "config_common.h"
 #include "../monodomain/constants.h"
@@ -32,4 +32,4 @@ void free_save_mesh_config(struct save_mesh_config* s);
 void print_save_mesh_config_values(struct save_mesh_config* s);
 
 
-#endif //MONOALG3D_SAVE_CONFIG_H
+#endif //MONOALG3D_SAVE_MESH_CONFIG_H
