@@ -463,8 +463,8 @@ int run_simulation_with_config(char *config_file) {
 int check_output_equals(const sds gold_output, const sds tested_output) {
 
 
-    sds *files_gold = list_files_from_dir(gold_output, "V_it_");
-    sds *files_tested_sim = list_files_from_dir(tested_output, "V_it_");
+    string_array files_gold = list_files_from_dir(gold_output, "V_it_");
+    string_array files_tested_sim = list_files_from_dir(tested_output, "V_it_");
 
     cr_assert(files_gold != NULL);
     cr_assert(files_tested_sim != NULL);
@@ -483,8 +483,8 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
         full_path_tested = sdscatprintf(full_path_tested, "%s/", tested_output);
         full_path_tested = sdscat(full_path_tested, files_tested_sim[i]);
 
-        sds *lines_gold = read_lines(full_path_gold);
-        sds *lines_tested = read_lines(full_path_tested);
+        string_array lines_gold = read_lines(full_path_gold);
+        string_array lines_tested = read_lines(full_path_tested);
 
         cr_assert(lines_gold);
         cr_assert(lines_tested);

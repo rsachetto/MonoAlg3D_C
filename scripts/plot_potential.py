@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def read_transmembrane_potential (input_file,dt,print_rate):
+def read_transmembrane_potential(input_file, dt, print_rate):
 	data = np.genfromtxt(input_file)
 	n = len(data)
 
@@ -13,7 +13,7 @@ def read_transmembrane_potential (input_file,dt,print_rate):
 	return timesteps, vms
 
 
-def plot_transmembrane_potential (t,v):
+def plot_transmembrane_potential(t, v):
 	plt.grid()
 	plt.plot(t, v, label="Vm", c="black", linewidth=3.0)
 	plt.xlabel("t (ms)",fontsize=15)
@@ -23,7 +23,7 @@ def plot_transmembrane_potential (t,v):
 	plt.show()
 
 
-def main ():
+def main():
 	
 	if len(sys.argv) != 4:
 		print("-------------------------------------------------------------------------")

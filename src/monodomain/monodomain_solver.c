@@ -190,12 +190,14 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
                                             the_monodomain_solver, NULL);
     }
 
-    if(!update_monodomain_config) {
-        update_monodomain_config = new_update_monodomain_config();
-
+    if(update_monodomain_config) {
+        init_update_monodomain_functions(update_monodomain_config);
+    }
+    else {
+        print_to_stderr_and_file_and_exit("No update monodomain configuration provided! Exiting!\n");
     }
 
-    init_update_monodomain_functions(update_monodomain_config);
+
 
     ///////MAIN CONFIGURATION END//////////////////
 

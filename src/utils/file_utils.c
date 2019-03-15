@@ -232,9 +232,9 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 }
 #endif
 
-char **read_lines(const char *filename) {
+string_array read_lines(const char *filename) {
 
-    char **lines = NULL;
+    string_array lines = NULL;
 
 
     size_t len = 0;
@@ -252,7 +252,7 @@ char **read_lines(const char *filename) {
     char * line = NULL;
     while ((read = getline(&line, &len, fp)) != -1) {
         line[strlen(line) - 1] = '\0';
-                arrput(lines, strdup(line));
+        arrput(lines, strdup(line));
     }
 
     free(line);
@@ -264,11 +264,11 @@ char **read_lines(const char *filename) {
 
 
 #ifndef _WIN32
-char **list_files_from_dir(const char *dir, const char *prefix) {
+string_array list_files_from_dir(const char *dir, const char *prefix) {
 
     DIR *dp;
 
-    char **files = NULL;
+    string_array files = NULL;
 
     struct dirent *dirp;
 

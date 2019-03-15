@@ -28,6 +28,8 @@ struct action_potential {
     float t;
 };
 
+typedef struct action_potential * action_potential_array;
+
 struct point_voidp_hash_entry *selected_aps;
 
 static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
@@ -258,7 +260,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
                 p.y = grid_cell->center_y;
                 p.z = grid_cell->center_z;
 
-                struct action_potential *aps = (struct action_potential*) hmget(selected_aps, p);
+                action_potential_array aps = (struct action_potential*) hmget(selected_aps, p);
 
                 if(!draw_config.paused && draw_config.simulating && aps != NULL) {
                     struct action_potential ap1;
