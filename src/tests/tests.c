@@ -530,6 +530,7 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
 
 /////STARTING TESTS////////////////////////////////////////////////////////////////////////
 
+#ifdef COMPILE_CUDA
 Test(run_gold_simulation, gpu_no_adapt) {
 
     printf("Running simulation for testing\n");
@@ -543,6 +544,7 @@ Test(run_gold_simulation, gpu_no_adapt) {
     success = check_output_equals(gold_dir, tested_simulation_dir);
     cr_assert(success);
 }
+#endif
 
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_1000) {
     int success  = test_cuboid_mesh(100, 100, 100, "1000", "1000", "1000", false);

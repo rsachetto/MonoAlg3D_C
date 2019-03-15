@@ -77,8 +77,6 @@ IF (CUDA_FOUND)
            list(APPEND CUDA_NVCC_FLAGS "${FLAGS_FOR_NVCC} -Xcompiler \"-MDd  ${OpenMP_CXX_FLAGS}\" ")
        ENDIF()
     ENDIF()
-
-
 ENDIF(CUDA_FOUND)
 
 SET(OpenGL_GL_PREFERENCE "GLVND")

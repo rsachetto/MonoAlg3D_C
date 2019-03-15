@@ -32,7 +32,7 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
 
-#ifdef COMPILE_CUDA
+    #ifdef COMPILE_CUDA
     real *vms = NULL;
     size_t mem_size = initial_number_of_cells * sizeof(real);
 
@@ -40,23 +40,24 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
         vms = (real *)malloc(mem_size);
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
-#endif
+    #endif
+
     int i;
-#pragma omp parallel for private(alpha)
+    #pragma omp parallel for private(alpha)
     for(i = 0; i < num_active_cells; i++) {
         alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
 
         if(use_gpu) {
-#ifdef COMPILE_CUDA
+            #ifdef COMPILE_CUDA
             active_cells[i]->b = vms[active_cells[i]->sv_position] * alpha;
-#endif
+            #endif
         } else {
             active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
         }
     }
-#ifdef COMPILE_CUDA
+    #ifdef COMPILE_CUDA
     free(vms);
-#endif
+    #endif
 }
 
 UPDATE_MONODOMAIN(update_monodomain_ddm) {
@@ -176,10 +177,10 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
                 double multiplier = (dx * dz) / dy;
                 if(use_gpu)
                 {
-#ifdef COMPILE_CUDA
+                    #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_y / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_y / dt_pde;
-#endif
+                    #endif
                 }
                 else
                 {
@@ -192,10 +193,10 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
                 double multiplier = (dy * dz) / dx;
                 if(use_gpu)
                 {
-#ifdef COMPILE_CUDA
+                    #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_x / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_x / dt_pde;
-#endif
+                    #endif
                 }
                 else
                 {
@@ -208,10 +209,10 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
                 double multiplier = (dy * dz) / dx;
                 if(use_gpu)
                 {
-#ifdef COMPILE_CUDA
+                    #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_x / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_x / dt_pde;
-#endif
+                    #endif
                 }
                 else
                 {
