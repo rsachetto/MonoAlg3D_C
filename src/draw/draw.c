@@ -583,6 +583,16 @@ void init_and_open_visualization_window() {
             omp_unset_lock(&draw_config.sleep_lock);
         }
 
+        if (IsKeyPressed('R')) {
+            if(draw_config.paused) {
+                exit(42);
+            }
+            else {
+                draw_config.restart = true;
+                //exit(42);
+            }
+        }
+
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();

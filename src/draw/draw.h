@@ -19,6 +19,7 @@ struct draw_config {
     bool simulating;
     bool paused;
     bool adaptive;
+    bool restart;
     float time;
     float final_time;
     float dt;
