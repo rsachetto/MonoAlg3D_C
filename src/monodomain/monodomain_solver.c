@@ -399,6 +399,7 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
         draw_config.grid_to_draw = the_grid;
         draw_config.simulating = true;
         draw_config.paused = true;
+        draw_config.restart = false;
     }
     else {
         draw_config.paused = false;
@@ -412,6 +413,8 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
     {
 
         #ifdef COMPILE_OPENGL
+        if(draw_config.restart) exit(42);
+
         if(!draw_config.paused) {
         #endif
 
