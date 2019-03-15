@@ -209,7 +209,9 @@ void solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct od
 
     bool activity;
 
+    #ifdef COMPILE_CUDA
     bool gpu = the_ode_solver->gpu;
+    #endif
 
     int count = the_monodomain_solver->current_count;
 
@@ -584,7 +586,6 @@ void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid,
 bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct ode_solver *the_ode_solver,
                                                     struct grid *the_grid) {
 
-    uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
@@ -598,6 +599,7 @@ bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct o
 
     if(the_ode_solver->gpu) {
 #ifdef COMPILE_CUDA
+        uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
         real *vms;
         size_t mem_size = max_number_of_cells * sizeof(real);
 
