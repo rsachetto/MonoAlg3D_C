@@ -32,6 +32,14 @@ struct string_voidp_hash_entry {
     void *value;
 };
 
+typedef uint32_t * ui32_array;
+typedef  struct element * element_array;
+typedef float * f32_array;
+typedef struct point_3d * point3d_array;
+typedef struct line * line_array;
+typedef int * int_array;
+typedef char** string_array;
+
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                                 \
     for(int i = 0; i < shlen(d); i++) {                                                                                \
         struct string_hash_entry e = d[i];                                                                             \

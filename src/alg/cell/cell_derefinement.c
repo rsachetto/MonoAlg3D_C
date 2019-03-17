@@ -71,7 +71,7 @@ bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_b
     return derefinement_condition;
 }
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv_positions) {
+void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_sv_positions) {
 
     assert(first_bunch_cell);
 

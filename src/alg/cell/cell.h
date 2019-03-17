@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../../common_types/common_types.h"
+
 #if defined(_OPENMP)
 #include <omp.h>
 #endif
@@ -70,7 +72,7 @@ struct cell_node {
         back_flux;    // Flux coming from back direction.
 
     /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
-    struct element *elements;
+    element_array elements;
 
     float dx, dy, dz;
 
@@ -154,21 +156,21 @@ double get_cell_maximum_flux (struct cell_node *the_cell);
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
                             float dx, float dy, float dz, float center_x,
                             float center_y, float center_z, uint64_t bunch_number,
-                            uint32_t *free_sv_positions, uint32_t **refined_this_step);
+                            ui32_array free_sv_positions, ui32_array *refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
                                        struct cell_node *other_node, char direction);
 
 void simplify_refinement (struct transition_node *transition_node);
-void refine_cell (struct cell_node *cell, uint32_t *free_sv_positions,
-                  uint32_t **refined_this_step);
+void refine_cell (struct cell_node *cell, ui32_array free_sv_positions,
+                  ui32_array *refined_this_step);
 
 bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
 void simplify_derefinement(struct transition_node *transition_node);
 
-void derefine_cell_bunch (struct cell_node *first_bunch_cell, uint32_t **free_sv_positions);
+void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_sv_positions);
 
 
 #endif // MONOALG3D_CELL_H

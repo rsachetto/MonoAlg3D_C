@@ -6,6 +6,7 @@
 #define MONOALG3D_VTK_UNSTRUCTURED_GRID_H
 
 #include "../alg/grid/grid.h"
+#include "../common_types/common_types.h"
 
 struct vtk_unstructured_grid {
     uint32_t num_points;
@@ -17,9 +18,9 @@ struct vtk_unstructured_grid {
     //TODO: we handle only meshes with the same cell_type. If we need something different we will need to change this
     uint8_t cell_type;
 
-    float *values;
-    int *cells;
-    struct point_3d *points;
+    f32_array values;
+    int_array cells;
+    point3d_array points;
 
 };
 

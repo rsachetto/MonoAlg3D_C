@@ -8,7 +8,7 @@
 
 #include <assert.h>
 
-void refine_cell( struct cell_node *cell, uint32_t *free_sv_positions, uint32_t **refined_this_step)  {
+void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_array *refined_this_step)  {
 
     assert(cell);
 
@@ -1178,8 +1178,8 @@ void simplify_refinement( struct transition_node *transition_node ) {
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
                            float dx, float dy, float dz,
                            float center_x, float center_y, float center_z,
-                           uint64_t  bunch_number, uint32_t *free_sv_positions,
-                           uint32_t **refined_this_step) {
+                           uint64_t  bunch_number, ui32_array free_sv_positions,
+                           ui32_array *refined_this_step) {
 
 
     the_cell->cell_data.level = other_cell->cell_data.level;
