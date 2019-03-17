@@ -8,6 +8,8 @@
 #include "../alg/grid/grid.h"
 #include "../monodomain/ode_solver.h"
 
+#include <omp.h>
+
 struct draw_config {
     struct grid *grid_to_draw;
     float max_v;
@@ -16,7 +18,9 @@ struct draw_config {
     bool grid_lines;
     bool simulating;
     bool paused;
+    bool exit;
     bool adaptive;
+    bool restart;
     float time;
     float final_time;
     float dt;

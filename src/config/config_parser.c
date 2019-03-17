@@ -578,6 +578,9 @@ void parse_batch_options(int argc, char **argv, struct batch_options *user_args)
 }
 
 void get_config_file(int argc, char **argv, struct user_options *user_args) {
+
+    optind = 0;
+
     int opt = 0;
 
     int option_index;

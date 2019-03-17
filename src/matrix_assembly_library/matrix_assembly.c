@@ -47,7 +47,6 @@ void initialize_diagonal_elements_ddm (struct monodomain_solver *the_solver, str
         element.column = ac[i]->grid_position;
         element.cell = ac[i];
         element.value = alpha;
-        //printf("Cell %d -- value = %.10lf\n",i,element.value);
 
         if(ac[i]->elements)
             arrfree(ac[i]->elements);

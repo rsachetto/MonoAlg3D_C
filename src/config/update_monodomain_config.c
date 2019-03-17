@@ -42,13 +42,15 @@ void init_update_monodomain_functions(struct update_monodomain_config *config) {
         exit(1);
     }
 
-    if(!function_name) {
-        function_name = strdup("update_monodomain_default");
+    if(function_name) {
+        config->update_monodomain = dlsym(config->config_data.handle, function_name);
+        if (dlerror() != NULL) {
+            fprintf(stderr, "\n%s function not found in the provided update_monodomain library\n", function_name);
+            exit(EXIT_FAILURE);
+        }
     }
-
-    config->update_monodomain = dlsym(config->config_data.handle, function_name);
-    if (dlerror() != NULL)  {
-        fprintf(stderr, "\n%s function not found in the provided update_monodomain library\n", function_name);
+    else {
+        fprintf(stderr, "No function name for update_monodomain library provided. Exiting!\n");
         exit(EXIT_FAILURE);
     }
 

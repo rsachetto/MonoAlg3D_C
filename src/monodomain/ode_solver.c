@@ -217,7 +217,6 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
     real *sv = the_ode_solver->sv;
 
     void *extra_data = the_ode_solver->ode_extra_data;
-    size_t extra_data_size = the_ode_solver->extra_data_size;
 
     double time = cur_time;
 
@@ -255,12 +254,13 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
 
     if(the_ode_solver->gpu) {
-#ifdef COMPILE_CUDA
+        #ifdef COMPILE_CUDA
+        size_t extra_data_size = the_ode_solver->extra_data_size;
         solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
         solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
                       extra_data_size);
 
-#endif
+        #endif
     }
     else {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
@@ -285,7 +285,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 
 
     if(ode_solver->gpu) {
-#ifdef COMPILE_CUDA
+        #ifdef COMPILE_CUDA
 
         size_t pitch_h = ode_solver->pitch;
 
@@ -302,11 +302,9 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
                 sv_dst = &sv[index];
                 check_cuda_errors(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t )neq, cudaMemcpyDeviceToDevice));
             }
-
-
         }
 
-#endif
+        #endif
     }
     else {
 

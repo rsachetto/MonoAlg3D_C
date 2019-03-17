@@ -9,49 +9,42 @@
 #include "draw/draw.h"
 #endif
 
-int main(int argc, char **argv) {
+void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver,  struct ode_solver **ode_solver, struct grid **the_grid ) {
 
-    struct user_options *options;
-    options = new_user_options();
-
-    struct grid *the_grid;
-    the_grid = new_grid();
-
-    struct monodomain_solver *monodomain_solver;
-    monodomain_solver = new_monodomain_solver();
-
-    struct ode_solver *ode_solver;
-    ode_solver = new_ode_solver();
+    *options = new_user_options();
+    *the_grid = new_grid();
+    *monodomain_solver = new_monodomain_solver();
+    *ode_solver = new_ode_solver();
 
     // First we have to get the config file path
-    get_config_file(argc, argv, options);
+    get_config_file(argc, argv, *options);
 
-    if(options->config_file) {
+    if((*(options))->config_file) {
         // Here we parse the config file
-        if(ini_parse(options->config_file, parse_config_file, options) < 0) {
-            fprintf(stderr, "Error: Can't load the config file %s\n", options->config_file);
-            return EXIT_FAILURE;
+        if(ini_parse((*(options))->config_file, parse_config_file, *options) < 0) {
+            fprintf(stderr, "Error: Can't load the config file %s\n", (*(options))->config_file);
+            exit(EXIT_FAILURE);
         }
     }
     else {
         fprintf(stderr, "\nError: The config file is mandatory.\n\n");
         display_usage(argv);
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     // The command line options always overwrite the config file
-    parse_options(argc, argv, options);
+    parse_options(argc, argv, *options);
 
     //This variable is from file_utils.h
-    no_stdout = options->quiet;
+    no_stdout = (*(options))->quiet;
 
     // Create the output dir and the logfile
-    if(options->save_mesh_config && options->save_mesh_config->out_dir_name) {
+    if((*(options))->save_mesh_config && (*(options))->save_mesh_config->out_dir_name) {
         sds buffer_log = sdsnew("");
         sds buffer_ini = sdsnew("");
 
-        create_dir(options->save_mesh_config->out_dir_name);
-        buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", options->save_mesh_config->out_dir_name);
+        create_dir((*(options))->save_mesh_config->out_dir_name);
+        buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", (*(options))->save_mesh_config->out_dir_name);
         open_logfile(buffer_log);
 
         print_to_stdout_and_file("Command line to reproduce this simulation:\n");
@@ -61,20 +54,48 @@ int main(int argc, char **argv) {
 
         print_to_stdout_and_file("\n");
 
-        buffer_ini = sdscatfmt(buffer_ini, "%s/original_configuration.ini", options->save_mesh_config->out_dir_name);
+        buffer_ini = sdscatfmt(buffer_ini, "%s/original_configuration.ini", (*(options))->save_mesh_config->out_dir_name);
 
         print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
                                  buffer_ini);
 
-        cp_file(buffer_ini, options->config_file);
+        cp_file(buffer_ini, (*(options))->config_file);
 
         sdsfree(buffer_log);
         sdsfree(buffer_ini);
     }
 
-    configure_ode_solver_from_options(ode_solver, options);
-    configure_monodomain_solver_from_options(monodomain_solver, options);
-    configure_grid_from_options(the_grid, options);
+    configure_ode_solver_from_options(*ode_solver, *options);
+    configure_monodomain_solver_from_options(*monodomain_solver, *options);
+    configure_grid_from_options(*the_grid, *options);
+
+};
+
+void free_current_simulation_resources(struct user_options *options, struct monodomain_solver *monodomain_solver,  struct ode_solver *ode_solver, struct grid *the_grid) {
+    clean_and_free_grid(the_grid);
+    free_ode_solver(ode_solver);
+
+    free(monodomain_solver);
+
+    free_user_options(options);
+    close_logfile();
+}
+
+int main(int argc, char **argv) {
+
+    struct user_options *options = NULL;
+    //options = new_user_options();
+
+    struct grid *the_grid;
+    //the_grid = new_grid();
+
+    struct monodomain_solver *monodomain_solver = NULL;
+    //monodomain_solver = new_monodomain_solver();
+
+    struct ode_solver *ode_solver = NULL;
+    //ode_solver = new_ode_solver();
+
+    configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
@@ -132,22 +153,23 @@ int main(int argc, char **argv) {
 
             #pragma omp section
             {
-                solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+                int result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+                free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+
+                while(result == RESTART_SIMULATION) {
+                    configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
+                    result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+                    free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+                }
+
             }
         }
 
         #endif //COMPILE_OPENGL
     } else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+        free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
     }
-
-    clean_and_free_grid(the_grid);
-    free_ode_solver(ode_solver);
-
-    free(monodomain_solver);
-
-    free_user_options(options);
-    close_logfile();
 
     return EXIT_SUCCESS;
 }
