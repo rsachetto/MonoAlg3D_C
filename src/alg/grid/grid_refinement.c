@@ -77,7 +77,6 @@ void refine_grid(struct grid *the_grid, int num_steps) {
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
     for(int i = 0; i < num_steps; i++) {
-        printf("Refining grid %d of %d, num cells %d\n", i+1, num_steps, the_grid->number_of_cells);
         grid_cell = the_grid->first_cell;
         while(grid_cell != 0) {
             if(grid_cell->can_change && grid_cell->active) {

@@ -63,7 +63,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
         int remaining_refinements = num_steps;
 
         for(int i = 0; i < num_steps; i++) {
-
             set_cuboid_domain(the_grid, real_side_length_x, real_side_length_y, aux);
             refine_grid(the_grid, 1);
             derefine_grid_inactive_cells(the_grid);
