@@ -37,7 +37,7 @@ static struct vtk_unstructured_grid *vtk_grid = NULL;
 
 static struct vtk_polydata_grid *vtk_polydata = NULL;
 
-void add_file_to_pvd(double current_dt, const char *output_dir, const char *base_name);
+void add_file_to_pvd(real_cpu current_dt, const char *output_dir, const char *base_name);
 
 static sds create_base_name(char *file_prefix, int iteration_count, char *extension) {
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", file_prefix, iteration_count, extension);
@@ -90,7 +90,7 @@ SAVE_MESH(save_as_text_or_binary) {
     real C = n[2] / l;
     real D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
 
-    double side;
+    real_cpu side;
 
     sds tmp = sdsnew(output_dir);
     tmp = sdscat(tmp, "/");
@@ -112,8 +112,8 @@ SAVE_MESH(save_as_text_or_binary) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    double center_x, center_y, center_z, dx, dy, dz;
-    double v;
+    real_cpu center_x, center_y, center_z, dx, dy, dz;
+    real_cpu v;
 
     while(grid_cell != 0) {
 
@@ -214,7 +214,7 @@ SAVE_MESH(save_as_vtk) {
     sdsfree(base_name);
 }
 
-void add_file_to_pvd(double current_dt, const char *output_dir, const char *base_name) {
+void add_file_to_pvd(real_cpu current_dt, const char *output_dir, const char *base_name) {
     sds pvd_name = sdsnew(output_dir);
     pvd_name = sdscat(pvd_name, "/simulation_result.pvd");
 

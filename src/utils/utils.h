@@ -7,7 +7,9 @@
 
 #include <stddef.h>
 
-void sort_vector(double **a, int length);
-int inside_mesh(double **a, double x, double y, double z, int first, int last);
+#include "../monodomain/constants.h"
+
+void sort_vector(real_cpu **a, int length);
+int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, int first, int last);
 
 #endif //MONOALG3D_UTILS_H_H
