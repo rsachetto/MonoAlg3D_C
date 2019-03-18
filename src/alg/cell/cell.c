@@ -135,10 +135,10 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
     the_transition_node->quadruple_connector4 = quadruple_connector4;
 }
 
-void set_cell_node_data(struct cell_node *the_cell, float dx, float dy, float dz, uint64_t bunch_number,
+void set_cell_node_data(struct cell_node *the_cell, real_cpu dx, real_cpu dy, real_cpu dz, uint64_t bunch_number,
                         void *east, void *north, void *west, void *south, void *front, void *back, void *previous,
-                        void *next, uint32_t grid_position, uint8_t hilbert_shape_number, float center_x,
-                        float center_y, float center_z) {
+                        void *next, uint32_t grid_position, uint8_t hilbert_shape_number, real_cpu center_x,
+                        real_cpu center_y, real_cpu center_z) {
     the_cell->dx = dx;
     the_cell->dy = dy;
     the_cell->dz = dz;

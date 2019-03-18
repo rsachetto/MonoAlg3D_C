@@ -23,15 +23,15 @@
 
 void translate_visible_mesh_to_origin(struct grid *grid) {
 
-    float minx = FLT_MAX;
-    float miny = FLT_MAX;
-    float minz = FLT_MAX;
+    real_cpu minx = FLT_MAX;
+    real_cpu miny = FLT_MAX;
+    real_cpu minz = FLT_MAX;
 
     struct cell_node *grid_cell;
 
-    float center_x;
-    float center_y;
-    float center_z;
+    real_cpu center_x;
+    real_cpu center_y;
+    real_cpu center_z;
 
     grid_cell = grid->first_cell;
 
@@ -305,7 +305,7 @@ void set_benchmark_domain(struct grid *the_grid) {
 
 }
 
-void set_cuboid_domain(struct grid *the_grid, float sizeX, float sizeY, float sizeZ) {
+void set_cuboid_domain(struct grid *the_grid, real_cpu sizeX, real_cpu sizeY, real_cpu sizeZ) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
     while(grid_cell != 0) {
