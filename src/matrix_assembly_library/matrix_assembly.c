@@ -557,12 +557,12 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     srand((unsigned int)time(NULL));
 
-    float modifiers[4] = {0.0f, 0.1f, 0.5f, 1.0f};
+    real_cpu modifiers[4] = {0.0f, 0.1f, 0.5f, 1.0f};
 
 #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {
 
-        float r = 1.0f;
+        real_cpu r;
 
         #pragma omp critical
         r = modifiers[randRange(4)];

@@ -39,7 +39,7 @@ RESTORE_STATE (restore_simulation_state) {
 
         int number_of_cells = 0;
         int num_active_cells = 0;
-        float side_length_x, side_length_y, side_length_z;
+        real_cpu side_length_x, side_length_y, side_length_z;
         struct point_voidp_hash_entry *mesh_hash = NULL;
         hmdefault(mesh_hash, NULL);
 

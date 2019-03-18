@@ -175,8 +175,8 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
         initialized = true;
     }
-    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    float bounds[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");
@@ -261,8 +261,8 @@ SAVE_MESH(save_as_vtu) {
 
         initialized = true;
     }
-    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    float bounds[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");
@@ -323,8 +323,8 @@ SAVE_MESH(save_as_vtk_purkinje) {
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
         initialized = true;
     }
-    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    float bounds[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");
@@ -383,8 +383,8 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
         initialized = true;
     }
-    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    float bounds[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");

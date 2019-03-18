@@ -79,7 +79,7 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     struct cell_node *cell_after_bunch =
         first_bunch_cell->next->next->next->next->next->next->next->next;
 
-    uint16_t bunch_level = first_bunch_cell->cell_data.level;
+    uint8_t bunch_level = first_bunch_cell->cell_data.level;
     uint8_t hilbert_shape_number = get_father_bunch_number (first_bunch_cell);
     uint64_t bunch_number = first_bunch_cell->bunch_number;
 
@@ -128,9 +128,9 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     if (new_cell->next != 0)
         new_cell->next->previous = new_cell;
 
-    float aux_center_x = ((struct cell_node *)(new_cell->back))->center_x;
-    float aux_center_y = ((struct cell_node *)(new_cell->west))->center_y;
-    float aux_center_z = ((struct cell_node *)(new_cell->south))->center_z;
+    real_cpu aux_center_x = ((struct cell_node *)(new_cell->back))->center_x;
+    real_cpu aux_center_y = ((struct cell_node *)(new_cell->west))->center_y;
+    real_cpu aux_center_z = ((struct cell_node *)(new_cell->south))->center_z;
 
     // New geometric variables.
     new_cell->center_x = (new_cell->center_x + aux_center_x) / 2.0f;

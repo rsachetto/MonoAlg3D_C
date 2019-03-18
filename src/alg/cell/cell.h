@@ -39,7 +39,7 @@ struct cell_node {
 
     uint64_t bunch_number; // Bunch identifier
 
-    float center_x, center_y, center_z;
+    real_cpu center_x, center_y, center_z;
 
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
@@ -60,8 +60,8 @@ struct cell_node {
     uint8_t hilbert_shape_number;
 
 //    // Cell geometry.
-//    float half_dx;
-//    float half_face_length_zy;
+//    real_cpu half_dx;
+//    real_cpu half_face_length_zy;
 
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
@@ -75,7 +75,7 @@ struct cell_node {
     /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
     element_array elements;
 
-    float dx, dy, dz;
+    real_cpu dx, dy, dz;
 
     bool can_change;
     bool visited;
@@ -145,18 +145,18 @@ void set_transition_node_data (struct transition_node *the_transition_node, uint
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);
 
-void set_cell_node_data(struct cell_node *the_cell, float dx, float dy, float dz,
+void set_cell_node_data(struct cell_node *the_cell, real_cpu dx, real_cpu dy, real_cpu dz,
                         uint64_t bunch_number, void *east, void *north, void *west, void *south,
                         void *front, void *back, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, float center_x,
-                        float center_y, float center_z);
+                        uint32_t grid_position, uint8_t hilbert_shape_number, real_cpu center_x,
+                        real_cpu center_y, real_cpu center_z);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
 real_cpu get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            float dx, float dy, float dz, float center_x,
-                            float center_y, float center_z, uint64_t bunch_number,
+                            real_cpu dx, real_cpu dy, real_cpu dz, real_cpu center_x,
+                            real_cpu center_y, real_cpu center_z, uint64_t bunch_number,
                             ui32_array free_sv_positions, ui32_array *refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,

@@ -375,7 +375,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(save_checkpoint)
         save_state_rate = save_state_config->save_rate;
 
-    float vm_threshold = configs->vm_threshold;
+    real_cpu vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
     real_cpu solver_error;
@@ -402,7 +402,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (configs->draw) {
             draw_config.grid_to_draw = the_grid;
             draw_config.simulating = true;
-            draw_config.paused = true;
+            draw_config.paused = !configs->start_visualization_unpaused;
         } else {
             draw_config.paused = false;
         }
@@ -571,7 +571,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
    draw_config.simulating = false;
 #endif
 
-    return EXIT_SUCCESS;
+    return SIMULATION_FINISHED;
 
 }
 
@@ -593,7 +593,7 @@ void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid,
         config->set_extra_data(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
 }
 
-bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct ode_solver *the_ode_solver,
+bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver,
                                                     struct grid *the_grid) {
 
     uint32_t n_active = the_grid->num_active_cells;

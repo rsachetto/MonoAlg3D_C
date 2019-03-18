@@ -10,22 +10,22 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(real)*(num_active_cells+1);
 
-    float *fibs = (float*)malloc(*extra_data_size);
+    real *fibs = (real*)malloc(*extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
 
     real atpi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, atpi, config, "atpi");
 
-    float plain_center = 0.0;
+    real plain_center = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config, "plain_center");
 
-    float border_zone_size = 0.0;
+    real border_zone_size = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config, "border_zone_size");
 
-    float sphere_radius = 0.0;
+    real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config, "sphere_radius");
 
     fibs[0] = atpi;    
@@ -40,12 +40,12 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
         }
         else if(BORDER_ZONE(ac[i])) {
 
-            float center_x = (float)ac[i]->center_x;
-            float center_y = (float)ac[i]->center_y;
+            real center_x = (real)ac[i]->center_x;
+            real center_y = (real)ac[i]->center_y;
             //TODO: Maybe we want the distance from the Z as well
-            //float center_z = (float)ac[i]->center_z;
+            //real center_z = (real)ac[i]->center_z;
 
-            float distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
+            real distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
             distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;
             fibs[i+1] = distanceFromCenter;
 
@@ -64,9 +64,9 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+5);
+    *extra_data_size = sizeof(real)*(num_active_cells+5);
 
-    float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
+    real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
 
     real atpi = 6.8;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
@@ -99,9 +99,9 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+5);
+    *extra_data_size = sizeof(real)*(num_active_cells+5);
 
-    float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
+    real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
 
     real atpi = 6.8;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
@@ -159,9 +159,9 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+4);
+    *extra_data_size = sizeof(real)*(num_active_cells+4);
 
-    float *fibs = (float*)calloc(*extra_data_size, sizeof(float));
+    real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
 
     real atpi = 6.8;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
@@ -283,9 +283,9 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(float)*(num_active_cells+1);
+    *extra_data_size = sizeof(real)*(num_active_cells+1);
 
-    float *fibs = (float*)malloc(*extra_data_size);
+    real *fibs = (real*)malloc(*extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
 
@@ -385,9 +385,9 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
 
 SET_EXTRA_DATA(set_extra_data_for_benchmark) {
 
-    *extra_data_size = sizeof(float)*19;
+    *extra_data_size = sizeof(real)*19;
 
-    float *initial_conditions = (float*)malloc(*extra_data_size);
+    real *initial_conditions = (real*)malloc(*extra_data_size);
 
     // Initial conditions  // Var      Units          Initial value
     initial_conditions[ 0] = -85.423f;  // V;       millivolt;     -85.423

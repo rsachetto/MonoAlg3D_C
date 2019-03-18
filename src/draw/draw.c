@@ -25,14 +25,14 @@ Font font;
 
 struct action_potential {
     real_cpu v;
-    float t;
+    real_cpu t;
 };
 
 typedef struct action_potential * action_potential_array;
 
 struct point_voidp_hash_entry *selected_aps;
 
-static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
+static inline real_cpu normalize(real_cpu r_min, real_cpu r_max, real_cpu t_min, real_cpu t_max, real_cpu m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
 }
 
@@ -172,8 +172,8 @@ static Vector3 find_mesh_center() {
     struct cell_node **ac = grid_to_draw->active_cells;
     struct cell_node *grid_cell;
 
-    float max_x, max_y, max_z;
-    float min_x, min_y, min_z;
+    real_cpu max_x, max_y, max_z;
+    real_cpu min_x, min_y, min_z;
 
     max_x = FLT_MIN;
     max_y = FLT_MIN;
@@ -214,9 +214,9 @@ static Vector3 find_mesh_center() {
         }
     }
 
-    result.x = (max_x+min_x)/2.0f;
-    result.y = (max_y+min_y)/2.0f;
-    result.z = (max_z+min_z)/2.0f;
+    result.x = (float)(max_x+min_x)/2.0f;
+    result.y = (float)(max_y+min_y)/2.0f;
+    result.z = (float)(max_z+min_z)/2.0f;
 
     calc_center = true;
 
@@ -224,7 +224,7 @@ static Vector3 find_mesh_center() {
 
 }
 
-static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
+static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
 
@@ -271,14 +271,14 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
                     hmput(selected_aps, p, aps);
                 }
 
-                cubePosition.x = (grid_cell->center_x - mesh_offset.x)/scale;
-                cubePosition.y = (grid_cell->center_y - mesh_offset.y)/scale;
-                cubePosition.z = (grid_cell->center_z - mesh_offset.z)/scale;
+                cubePosition.x = (float)((grid_cell->center_x - mesh_offset.x)/scale);
+                cubePosition.y = (float)((grid_cell->center_y - mesh_offset.y)/scale);
+                cubePosition.z = (float)((grid_cell->center_z - mesh_offset.z)/scale);
 
 
-                cubeSize.x = grid_cell->dx/scale;
-                cubeSize.y = grid_cell->dy/scale;
-                cubeSize.z = grid_cell->dz/scale;
+                cubeSize.x = (float)(grid_cell->dx/scale);
+                cubeSize.y = (float)(grid_cell->dy/scale);
+                cubeSize.z = (float)(grid_cell->dz/scale);
 
                 collision = CheckCollisionRayBox(ray,
                                                  (BoundingBox){(Vector3){ cubePosition.x - cubeSize.x/2, cubePosition.y - cubeSize.y/2, cubePosition.z - cubeSize.z/2 },
@@ -324,11 +324,11 @@ void draw_ap() {
     int grap_width = GetScreenWidth() / 3;
 
     DrawRectangle(graph_pos_x, graph_pos_y, grap_width, 450, WHITE);
-    float min_x = graph_pos_x + 55.0f;
-    float max_x = graph_pos_x + grap_width - 10;
+    real_cpu min_x = graph_pos_x + 55.0f;
+    real_cpu max_x = graph_pos_x + grap_width - 10;
 
-    float min_y = graph_pos_y + 350.0f;
-    float max_y = graph_pos_y + 50.0f;
+    real_cpu min_y = graph_pos_y + 350.0f;
+    real_cpu max_y = graph_pos_y + 50.0f;
 
     DrawTextEx(font, "Time (ms)", (Vector2){graph_pos_x + 160.0f, min_y + 30.0f}, 16, 1, BLACK);
 
@@ -388,9 +388,9 @@ void draw_ap() {
     }
 
     int num_ticks = 10;
-    float tick_ofsset = (draw_config.max_v - draw_config.min_v)/(float)num_ticks;
+    real_cpu tick_ofsset = (draw_config.max_v - draw_config.min_v)/(real_cpu)num_ticks;
 
-    float v = draw_config.min_v;
+    real_cpu v = draw_config.min_v;
 
     for(int t = 0; t <= num_ticks; t++ ) {
         char tmp[20];
@@ -557,7 +557,7 @@ void init_and_open_visualization_window() {
 
     SetTargetFPS(120);
 
-    float scale = 1.0f;
+    real_cpu scale = 1.0f;
 
     bool mesh_loaded = false;
 
@@ -566,7 +566,6 @@ void init_and_open_visualization_window() {
     ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
 
     Vector3 mesh_offset = (Vector3){ 0, 0, 0 };
-
 
     while (!WindowShouldClose()) {
 

@@ -30,7 +30,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
 
     uint8_t number_of_hilbert_shape;
 
-    float cell_center_x    = cell->center_x,
+    real_cpu cell_center_x    = cell->center_x,
             cell_center_y   = cell->center_y,
             cell_center_z   = cell->center_z,
             cell_half_side_x    = cell->dx / 2.0f,
@@ -1176,8 +1176,8 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
-                           float dx, float dy, float dz,
-                           float center_x, float center_y, float center_z,
+                           real_cpu dx, real_cpu dy, real_cpu dz,
+                           real_cpu center_x, real_cpu center_y, real_cpu center_z,
                            uint64_t  bunch_number, ui32_array free_sv_positions,
                            ui32_array *refined_this_step) {
 
