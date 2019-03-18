@@ -10,13 +10,17 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include "../raylib/src/raygui.h"
-#include "../utils/stop_watch.h"
 #include "../common_types/common_types.h"
 
 #include "../single_file_libraries/stb_ds.h"
 
 static bool calc_center = false;
 static bool one_selected = false;
+static bool draw_selected_ap_text = false;
+
+#define DOUBLE_CLICK_DELAY 0.5 //seconds
+
+double selected_time = 0.0;
 
 int graph_pos_x;
 int graph_pos_y;
@@ -302,6 +306,8 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
                         if(aps == NULL) {
                             arrsetcap(aps, 50);
                             hmput(selected_aps, p, aps);
+                            draw_selected_ap_text = true;
+                            selected_time = GetTime();
                         }
                         one_selected = true;
 
@@ -315,6 +321,14 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
 int num_colors = 19;
 Color colors[] = {DARKGRAY, YELLOW, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
+
+ double clamp(double x, double min, double max) {
+     if (x < min)
+         x = min;
+     else if (x > max)
+         x = max;
+     return x;
+ }
 
 void draw_ap() {
 
@@ -330,21 +344,35 @@ void draw_ap() {
     real_cpu min_y = graph_pos_y + 350.0f;
     real_cpu max_y = graph_pos_y + 50.0f;
 
-    DrawTextEx(font, "Time (ms)", (Vector2){graph_pos_x + 160.0f, min_y + 30.0f}, 16, 1, BLACK);
+    int n = hmlen(selected_aps);
+
+    if(draw_selected_ap_text) {
+        char tmp[256];
+        double time_elapsed = GetTime() - selected_time;
+        unsigned char alpha = (unsigned char) clamp(255 - time_elapsed*100, 0, 255);
+        Color c = colors[(n-1) % num_colors];
+        c.a = alpha;
+        sprintf(tmp, "%d AP(s) selected", n);
+        DrawTextEx(font, tmp, (Vector2){graph_pos_x + 160.0f, (float)max_y}, 16, 1, c);
+
+        if(alpha == 0) {
+            draw_selected_ap_text = false;
+            selected_time = 0.0;
+        }
+    }
+
+    DrawTextEx(font, "Time (ms)", (Vector2){graph_pos_x + 160.0f, (float)min_y + 30.0f}, 16, 1, BLACK);
 
     Vector2 p1, p2;
     struct action_potential *aps;
-    int c_count = 0;
-    int n = hmlen(selected_aps);
 
-    for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
 
-        aps = (struct action_potential*) selected_aps[i].value;
+        aps = (struct action_potential*) selected_aps[j].value;
         int c = arrlen(aps);
 
         if(c > 0) {
-            Color line_color = colors[c_count % num_colors];
-            c_count++;
+            Color line_color = colors[j % num_colors];
             for (int i = 0; i < c; i++) {
 
                 if (i + 1 < c) {
@@ -415,10 +443,13 @@ void draw_instruction_box () {
     int text_position = 10;
     int text_offset = 20;
 
-    char tmp[100];
-    DrawRectangle(10, 10, 320, 243, WHITE);
+    int box_w = 320;
+    int box_h = 263;
 
-    DrawRectangleLines(10, 10, 320, 243, BLACK);
+    char tmp[100];
+    DrawRectangle(10, 10, box_w, box_h, WHITE);
+
+    DrawRectangleLines(10, 10, box_w, box_h, BLACK);
 
     DrawText("Default controls:", 20, 20, 10, BLACK);
     text_position += text_offset;
@@ -461,8 +492,6 @@ void draw_instruction_box () {
         DrawText("Simulation running:", 20, text_position, 16, BLACK);
     }
     DrawText(tmp, 170, text_position, 16, BLACK);
-
-
 }
 
 void draw_end_info_box() {
@@ -531,14 +560,14 @@ void init_and_open_visualization_window() {
 
     omp_set_lock(&draw_config.sleep_lock);
 
-    struct stop_watch timer;
-
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     InitWindow(screenWidth, screenHeight, "Simulation visualization");
 
     font = LoadFont("misc/Roboto-Black.ttf");
+
+    bool mesh_loaded = false;
 
     draw_config.grid_only = false;
     draw_config.grid_lines = true;
@@ -559,13 +588,13 @@ void init_and_open_visualization_window() {
 
     real_cpu scale = 1.0f;
 
-    bool mesh_loaded = false;
-
     Ray ray;
     ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
 
     Vector3 mesh_offset = (Vector3){ 0, 0, 0 };
+
+    double mouse_timer = -1;
 
     while (!WindowShouldClose()) {
 
@@ -589,6 +618,14 @@ void init_and_open_visualization_window() {
         }
 
         if (IsKeyPressed('R')) {
+            for(int i = 0; i < hmlen(selected_aps); i++) {
+                        arrfree(selected_aps[i].value);
+            }
+
+            hmfree(selected_aps);
+            selected_aps = NULL;
+            hmdefault(selected_aps, NULL);
+
             if(draw_config.paused) {
                 omp_unset_lock(&draw_config.sleep_lock);
                 draw_config.paused = false;
@@ -596,7 +633,8 @@ void init_and_open_visualization_window() {
 
             draw_config.restart = true;
             mesh_loaded = false;
-
+            ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+            ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
         }
 
         // Draw
@@ -604,14 +642,18 @@ void init_and_open_visualization_window() {
         BeginDrawing();
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if(!timer.running) {
-                start_stop_watch(&timer);
+            if(mouse_timer == -1) {
+                mouse_timer = GetTime();
             }
             else {
-                long delay = stop_stop_watch(&timer);
+                double delay = GetTime()-mouse_timer;
 
-                if(delay < 450000) {
+                if(delay < DOUBLE_CLICK_DELAY) {
                     ray = GetMouseRay(GetMousePosition(), camera);
+                    mouse_timer = -1;
+                }
+                else {
+                    mouse_timer = -1;
                 }
 
             }

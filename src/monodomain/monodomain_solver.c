@@ -416,7 +416,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
 
         #ifdef COMPILE_OPENGL
-        if(draw_config.restart) return RESTART_SIMULATION;
+        if(draw_config.restart) {
+            draw_config.time = 0.0;
+            return RESTART_SIMULATION;
+        }
         if(draw_config.exit) return END_SIMULATION;
 
         if(!draw_config.paused) {
