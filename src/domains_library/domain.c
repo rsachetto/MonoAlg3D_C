@@ -57,17 +57,22 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     initialize_and_construct_grid(the_grid, real_side_length_x, real_side_length_y, real_side_length_z);
 
+    //TODO: maybe to this in all directions????
     if((real_side_length_z / 2.0f) > side_length_z) {
         real_cpu aux = real_side_length_z / 2.0f;
+        int remaining_refinements = num_steps;
 
-        for(int i = 0; i < num_steps - 3; i++) {
+        for(int i = 0; i < num_steps; i++) {
 
             set_cuboid_domain(the_grid, real_side_length_x, real_side_length_y, aux);
             refine_grid(the_grid, 1);
+            derefine_grid_inactive_cells(the_grid);
             aux = aux / 2.0f;
+            remaining_refinements--;
+            if(aux <= side_length_z) break;
         }
 
-        refine_grid(the_grid, 3);
+        refine_grid(the_grid, remaining_refinements);
 
     } else {
         refine_grid(the_grid, num_steps);
