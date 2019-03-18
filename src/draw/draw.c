@@ -24,7 +24,7 @@ int graph_pos_y;
 Font font;
 
 struct action_potential {
-    double v;
+    real_cpu v;
     float t;
 };
 
@@ -36,11 +36,11 @@ static inline float normalize(float r_min, float r_max, float t_min, float t_max
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
 }
 
-static inline Color get_color(double value)
+static inline Color get_color(real_cpu value)
 {
     int idx1;        // |-- Our desiBLACK color will be between these two indexes in "color".
     int idx2;        // |
-    double fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
+    real_cpu fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
 
     if(value <= 0)      {  idx1 = idx2 = 0;            }    // accounts for an input <=0
     else if(value >= 1)  {  idx1 = idx2 = NUM_COLORS-1; }    // accounts for an input >=0
@@ -49,7 +49,7 @@ static inline Color get_color(double value)
         value = value * (NUM_COLORS-1);        // Will multiply value by 3.
         idx1  = (int)floor(value);                  // Our desiBLACK color will be after this index.
         idx2  = idx1+1;                        // ... and before this index (inclusive).
-        fractBetween = value - (double)idx1;    // Distance between the two indexes (0-1).
+        fractBetween = value - (real_cpu)idx1;    // Distance between the two indexes (0-1).
     }
 
     unsigned char red   = (unsigned char) (((color[idx2][0] - color[idx1][0])*fractBetween + color[idx1][0]) * 255);
@@ -232,8 +232,8 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
     Vector3 cubeSize;
     Color color;
 
-    double max_v = draw_config.max_v;
-    double min_v = draw_config.min_v;
+    real_cpu max_v = draw_config.max_v;
+    real_cpu min_v = draw_config.min_v;
 
     bool grid_only = draw_config.grid_only;
     bool grid_lines = draw_config.grid_lines;

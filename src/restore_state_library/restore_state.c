@@ -59,14 +59,14 @@ RESTORE_STATE (restore_simulation_state) {
         // Read the mesh to a point hash
         for (int i = 0; i < number_of_cells; i++) {
 
-            double *mesh_data = (double *)calloc (num_data, sizeof (double));
+            real_cpu *mesh_data = (real_cpu *)calloc (num_data, sizeof (real_cpu));
 
             // Read center_x, center_y, center_z
             fread (&mp, sizeof (mp), 1, input_file);
 
             // Read v, north_flux, south_flux, east_flux, west_flux, front_flux,
             // back_flux, b
-            fread (&mesh_data[0], sizeof (double), 8, input_file);
+            fread (&mesh_data[0], sizeof (real_cpu), 8, input_file);
 
             // read can_change
             fread (&mesh_data[8], sizeof (grid_cell->can_change), 1, input_file);
@@ -79,7 +79,7 @@ RESTORE_STATE (restore_simulation_state) {
 
         printf ("Restoring grid state...\n");
 
-        double *cell_data;
+        real_cpu *cell_data;
 
         while (grid_cell) {
 

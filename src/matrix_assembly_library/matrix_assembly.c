@@ -14,27 +14,27 @@
 #include "../utils/utils.h"
 #include "../single_file_libraries/stb_ds.h"
 
-static struct element fill_element(uint32_t position, char direction, double dx, double dy, double dz, double sigma_x1,
-                                   double sigma_x2, double sigma_y1, double sigma_y2, double sigma_z1, double sigma_z2,
+static struct element fill_element(uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x1,
+                                   real_cpu sigma_x2, real_cpu sigma_y1, real_cpu sigma_y2, real_cpu sigma_z1, real_cpu sigma_z2,
                                    struct element *cell_elements);
 
-double calculate_kappa (const real cell_length, const real h)
+real_cpu calculate_kappa (const real cell_length, const real h)
 {
     return (pow(cell_length,4) - pow(h,4)) / (12.0*pow(cell_length,2));
 }
 
 void initialize_diagonal_elements_ddm (struct monodomain_solver *the_solver, struct grid *the_grid,\
-                                    const double dx, const double dy, const double dz,\
-                                    const double kappa_x, const double kappa_y, const double kappa_z,\
-                                    const double sigma_x, const double sigma_y, const double sigma_z)
+                                    const real_cpu dx, const real_cpu dy, const real_cpu dz,\
+                                    const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
+                                    const real_cpu sigma_x, const real_cpu sigma_y, const real_cpu sigma_z)
 {
-    double alpha;
+    real_cpu alpha;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 //    double beta = the_solver->beta;
 //    double cm = the_solver->cm;
 
-    double dt = the_solver->dt;
+    real_cpu dt = the_solver->dt;
 
     int i;
 
@@ -60,14 +60,14 @@ void initialize_diagonal_elements_ddm (struct monodomain_solver *the_solver, str
 
 }
 
-struct element fill_element_ddm (uint32_t position, char direction, double dx, double dy, double dz,\
-                                 double sigma_x1, double sigma_x2, double sigma_y1, double sigma_y2, double sigma_z1, double sigma_z2,\
-                                 const double kappa_x, const double kappa_y, const double kappa_z,\
-                                 const double dt,\
+struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
+                                 real_cpu sigma_x1, real_cpu sigma_x2, real_cpu sigma_y1, real_cpu sigma_y2, real_cpu sigma_z1, real_cpu sigma_z2,\
+                                 const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
+                                 const real_cpu dt,\
                                 struct element *cell_elements) 
 {
 
-    double multiplier;
+    real_cpu multiplier;
 
     struct element new_element;
     new_element.column = position;
@@ -119,22 +119,22 @@ struct element fill_element_ddm (uint32_t position, char direction, double dx, d
     return new_element;
 }
 
-static void fill_discretization_matrix_elements_ddm (double sigma_x, double sigma_y, double sigma_z,
-                                                const double kappa_x, const double kappa_y, const double kappa_z,
-                                                const double dt,
+static void fill_discretization_matrix_elements_ddm (real_cpu sigma_x, real_cpu sigma_y, real_cpu sigma_z,
+                                                const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,
+                                                const real_cpu dt,
                                                 struct cell_node *grid_cell, void *neighbour_grid_cell,
                                                 char direction) 
 {
 
     uint32_t position;
     bool has_found;
-    double dx, dy, dz;
+    real_cpu dx, dy, dz;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
 
-    double sigma_x1 = 0.0;
-    double sigma_x2 = 0.0;
+    real_cpu sigma_x1 = 0.0;
+    real_cpu sigma_x2 = 0.0;
 
     if(sigma_x != 0.0) 
     {
@@ -142,8 +142,8 @@ static void fill_discretization_matrix_elements_ddm (double sigma_x, double sigm
         sigma_x2 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
     }
 
-    double sigma_y1 = 0.0;
-    double sigma_y2 = 0.0;
+    real_cpu sigma_y1 = 0.0;
+    real_cpu sigma_y2 = 0.0;
 
     if(sigma_y != 0.0) 
     {
@@ -151,8 +151,8 @@ static void fill_discretization_matrix_elements_ddm (double sigma_x, double sigm
         sigma_y2 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
     }
 
-    double sigma_z1 = 0.0;
-    double sigma_z2 = 0.0;
+    real_cpu sigma_z1 = 0.0;
+    real_cpu sigma_z2 = 0.0;
 
     if(sigma_z != 0.0) 
     {
@@ -308,13 +308,13 @@ static void fill_discretization_matrix_elements_ddm (double sigma_x, double sigm
 
 void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) {
 
-    double alpha, dx, dy, dz;
+    real_cpu alpha, dx, dy, dz;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
 
-    double dt = the_solver->dt;
+    real_cpu dt = the_solver->dt;
 
     int i;
 
@@ -341,11 +341,11 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
     }
 }
 
-struct element fill_element(uint32_t position, char direction, double dx, double dy, double dz, double sigma_x1,
-                            double sigma_x2, double sigma_y1, double sigma_y2, double sigma_z1, double sigma_z2,
+struct element fill_element(uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x1,
+                            real_cpu sigma_x2, real_cpu sigma_y1, real_cpu sigma_y2, real_cpu sigma_z1, real_cpu sigma_z2,
                             struct element *cell_elements) {
 
-    double multiplier;
+    real_cpu multiplier;
 
     struct element new_element;
     new_element.column = position;
@@ -378,35 +378,35 @@ struct element fill_element(uint32_t position, char direction, double dx, double
     return new_element;
 }
 
-static void fill_discretization_matrix_elements(double sigma_x, double sigma_y, double sigma_z,
+static void fill_discretization_matrix_elements(real_cpu sigma_x, real_cpu sigma_y, real_cpu sigma_z,
                                                 struct cell_node *grid_cell, void *neighbour_grid_cell,
                                                 char direction) {
 
     uint32_t position;
     bool has_found;
-    double dx, dy, dz;
+    real_cpu dx, dy, dz;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
 
-    double sigma_x1 = 0.0;
-    double sigma_x2 = 0.0;
+    real_cpu sigma_x1 = 0.0;
+    real_cpu sigma_x2 = 0.0;
 
     if(sigma_x != 0.0) {
         sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
         sigma_x2 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
     }
 
-    double sigma_y1 = 0.0;
-    double sigma_y2 = 0.0;
+    real_cpu sigma_y1 = 0.0;
+    real_cpu sigma_y2 = 0.0;
 
     if(sigma_y != 0.0) {
         sigma_y1 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
         sigma_y2 = (2.0f * sigma_y * sigma_y) / (sigma_y + sigma_y);
     }
 
-    double sigma_z1 = 0.0;
-    double sigma_z2 = 0.0;
+    real_cpu sigma_z1 = 0.0;
+    real_cpu sigma_z2 = 0.0;
 
     if(sigma_z != 0.0) {
         sigma_z1 = (2.0f * sigma_z * sigma_z) / (sigma_z + sigma_z);
@@ -738,15 +738,15 @@ ASSEMBLY_MATRIX(ddm_assembly_matrix)
 // Berg code
 void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) 
 {
-    double alpha; 
-    double dx, dy, dz;
+    real_cpu alpha;
+    real_cpu dx, dy, dz;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     struct node *n = the_grid->the_purkinje_network->list_nodes;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
 
-    double dt = the_solver->dt;
+    real_cpu dt = the_solver->dt;
 
     int i;
 
@@ -777,15 +777,15 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 }
 
 // For the Purkinje fibers we only need to solve the 1D Monodomain equation
-static void fill_discretization_matrix_elements_purkinje (double sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
+static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
                                                         struct node *pk_node) 
 {
     
     struct edge *e;
     struct element **cell_elements;
-    double dx;
+    real_cpu dx;
 
-    double sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+    real_cpu sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
 
     int i;
 

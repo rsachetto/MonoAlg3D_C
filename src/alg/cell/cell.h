@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "../../common_types/common_types.h"
+#include "../../monodomain/constants.h"
 
 #if defined(_OPENMP)
 #include <omp.h>
@@ -21,14 +22,14 @@
 
 struct element {
     char direction;     // NEW parameter !!!
-    double value;
+    real_cpu value;
     uint32_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
 };
 
 struct basic_cell_data {
     char type;
-    uint16_t level; // This should be enough for the refinement levels
+    uint8_t level; // This should be enough for the refinement levels
 };
 
 struct cell_node {
@@ -64,7 +65,7 @@ struct cell_node {
 
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
-    double north_flux, // Flux coming from north direction.
+    real_cpu north_flux, // Flux coming from north direction.
         south_flux,   // Flux coming from south direction.
         east_flux,    // Flux coming from east direction.
         west_flux,    // Flux coming from west direction.
@@ -83,8 +84,8 @@ struct cell_node {
    method.
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
-    double Ax; /* Element of int_vector Ax = b associated to this cell. Also plays the role of Ap.*/
-    double b;  /* In Ax = b, corresponds to the element in int_vector b associated to this cell. */
+    real_cpu Ax; /* Element of int_vector Ax = b associated to this cell. Also plays the role of Ap.*/
+    real_cpu b;  /* In Ax = b, corresponds to the element in int_vector b associated to this cell. */
     void *linear_system_solver_extra_info;
     size_t linear_system_solver_extra_info_size;
 
@@ -94,7 +95,7 @@ struct cell_node {
     size_t mesh_extra_info_size;
 
     // Variables used by some applications of partial differential equations.
-    double v;
+    real_cpu v;
 
 
 #if defined(_OPENMP)
@@ -151,7 +152,7 @@ void set_cell_node_data(struct cell_node *the_cell, float dx, float dy, float dz
                         float center_y, float center_z);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
-double get_cell_maximum_flux (struct cell_node *the_cell);
+real_cpu get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
                             float dx, float dy, float dz, float center_x,
@@ -165,7 +166,7 @@ void simplify_refinement (struct transition_node *transition_node);
 void refine_cell (struct cell_node *cell, ui32_array free_sv_positions,
                   ui32_array *refined_this_step);
 
-bool cell_needs_derefinement (struct cell_node *grid_cell, double derefinement_bound);
+bool cell_needs_derefinement (struct cell_node *grid_cell, real_cpu derefinement_bound);
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell);
 uint8_t get_father_bunch_number (struct cell_node *first_bunch_cell);
 void simplify_derefinement(struct transition_node *transition_node);

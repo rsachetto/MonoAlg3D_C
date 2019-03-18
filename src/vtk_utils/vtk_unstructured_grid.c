@@ -123,7 +123,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     float C = n[2] / l;
     float D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
 
-    double side;
+    real_cpu side;
     struct point_hash_entry *hash =  NULL;
 
     while(grid_cell != 0) {

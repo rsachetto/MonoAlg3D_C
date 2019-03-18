@@ -193,13 +193,13 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
         exit(10);
     }
 
-    double leastDistance_x = the_cell->dx/2.0;
-    double leastDistance_y = the_cell->dy/2.0;
-    double leastDistance_z = the_cell->dz/2.0;
+    real_cpu leastDistance_x = the_cell->dx/2.0;
+    real_cpu leastDistance_y = the_cell->dy/2.0;
+    real_cpu leastDistance_z = the_cell->dz/2.0;
 
-    double localFlux_x;
-    double localFlux_y;
-    double localFlux_z;
+    real_cpu localFlux_x;
+    real_cpu localFlux_y;
+    real_cpu localFlux_z;
 
     bool has_found;
 
@@ -339,9 +339,9 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
     }
 }
 
-double get_cell_maximum_flux(struct cell_node *the_cell) {
+real_cpu get_cell_maximum_flux(struct cell_node *the_cell) {
 
-    double maximumFlux = fabs(the_cell->east_flux);
+    real_cpu maximumFlux = fabs(the_cell->east_flux);
     if(fabs(the_cell->north_flux) > maximumFlux)
         maximumFlux = fabs(the_cell->north_flux);
 

@@ -24,7 +24,7 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (network_file,config->config_data.config,"network_file");
 
     // TODO: Consider also the diameter of the Purkinje cell ...
-    double side_length = config->start_h;
+    real_cpu side_length = config->start_h;
 
     // TODO: Implement this test
     int success = check_purkinje_input(side_length);
