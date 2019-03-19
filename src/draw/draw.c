@@ -619,7 +619,7 @@ void init_and_open_visualization_window() {
 
         if (IsKeyPressed('R')) {
             for(int i = 0; i < hmlen(selected_aps); i++) {
-                        arrfree(selected_aps[i].value);
+                arrfree(selected_aps[i].value);
             }
 
             hmfree(selected_aps);

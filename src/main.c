@@ -157,14 +157,13 @@ int main(int argc, char **argv) {
 
                 while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                     if(result == RESTART_SIMULATION) {
+                        free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
                         configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
                         result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
-                        free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
                     }
 
                     if(draw_config.restart) result = RESTART_SIMULATION;
                     if(draw_config.exit) break;
-
                 }
             }
         }
