@@ -50,6 +50,7 @@ static const struct option long_options[] = {
     {"visualize", no_argument, NULL, DRAW_OPT},
     {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
     {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
+    {"start_simulation_unpaused", no_argument, NULL, VISUALIZATION_PAUSED_OPT},
     {"quiet", no_argument, NULL, 'q'},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
@@ -92,6 +93,7 @@ void display_usage(char **argv) {
            "not draw\n");
     printf("--visualization_max_v, maximum value for V. This is only used to configure the color map in the visualization window. Default: -86.0\n");
     printf("--visualization_min_v, minimum value for V. This is only used to configure the color map in the visualization window. Default: 40.0\n");
+    printf("--start_simulation_unpaused. When visualizing, starts the simulation unpaused. Default: true (starts paused)\n");
 
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
@@ -203,6 +205,8 @@ struct user_options *new_user_options() {
     user_args->min_v = -86.0f;
 
     user_args->main_found = false;
+
+    user_args->start_visualization_unpaused = false;
 
     return user_args;
 }
@@ -832,6 +836,9 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case MIN_V_OPT:
             user_args->min_v = strtof(optarg, NULL);
+            break;
+        case VISUALIZATION_PAUSED_OPT:
+            user_args->start_visualization_unpaused = true;
             break;
         case 'q':
             if(user_args->quiet_was_set) {

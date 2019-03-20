@@ -19,7 +19,7 @@ struct purkinje_config
     struct config_common config_data;
     char *domain_name;
     bool domain_name_was_set;
-    double start_h;
+    real_cpu start_h;
     bool start_h_was_set;
     set_spatial_purkinje_fn *set_spatial_purkinje;
 };

@@ -46,19 +46,20 @@
 #define MIN_V_OPT 3500
 #define BETA 4000
 #define CM 5000
+#define VISUALIZATION_PAUSED_OPT 5100
 
 struct user_options {
-    float final_time;				/*-f option */
+    real_cpu final_time;				/*-f option */
     bool final_time_was_set;
     bool adaptive;	                /*-a option */
     bool adaptive_was_set;
-    float ref_bound;				/*-r option*/
+    real_cpu ref_bound;				/*-r option*/
     bool ref_bound_was_set;
-    float deref_bound;				/*-d option*/
+    real_cpu deref_bound;				/*-d option*/
     bool deref_bound_was_set;
-    float dt_pde;					/*-z option*/
+    real_cpu dt_pde;					/*-z option*/
     bool dt_pde_was_set;
-    float dt_ode;				    /*-e option*/
+    real_cpu dt_ode;				    /*-e option*/
     bool dt_ode_was_set;
     int num_threads;                /*-n option*/
     bool num_threads_was_set;
@@ -72,7 +73,7 @@ struct user_options {
     bool gpu_id_was_set;
     bool abort_no_activity;         /*-b option*/
     bool abort_no_activity_was_set;
-    float vm_threshold;            /*-v option*/
+    real_cpu vm_threshold;            /*-v option*/
     bool vm_threshold_was_set;
 
     char *model_file_path;          /*-k option*/
@@ -80,18 +81,20 @@ struct user_options {
 
     bool draw;
 
-    float beta;
+    real_cpu beta;
     bool beta_was_set;
 
-    float cm;
+    real_cpu cm;
     bool cm_was_set;
 
-    float start_adapting_at;
+    real_cpu start_adapting_at;
     bool start_adapting_at_was_set;
     char *config_file;              /*-c option*/
 
     bool quiet; /*-q option*/
     bool quiet_was_set;
+
+    bool start_visualization_unpaused;
 
     struct string_voidp_hash_entry *stim_configs;
     struct domain_config *domain_config;
@@ -104,7 +107,7 @@ struct user_options {
     struct restore_state_config *restore_state_config;
     struct update_monodomain_config *update_monodomain_config;
 
-    float max_v, min_v;
+    real_cpu max_v, min_v;
 
 
     bool main_found;

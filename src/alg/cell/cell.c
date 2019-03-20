@@ -135,10 +135,10 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
     the_transition_node->quadruple_connector4 = quadruple_connector4;
 }
 
-void set_cell_node_data(struct cell_node *the_cell, float dx, float dy, float dz, uint64_t bunch_number,
+void set_cell_node_data(struct cell_node *the_cell, real_cpu dx, real_cpu dy, real_cpu dz, uint64_t bunch_number,
                         void *east, void *north, void *west, void *south, void *front, void *back, void *previous,
-                        void *next, uint32_t grid_position, uint8_t hilbert_shape_number, float center_x,
-                        float center_y, float center_z) {
+                        void *next, uint32_t grid_position, uint8_t hilbert_shape_number, real_cpu center_x,
+                        real_cpu center_y, real_cpu center_z) {
     the_cell->dx = dx;
     the_cell->dy = dy;
     the_cell->dz = dz;
@@ -193,13 +193,13 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
         exit(10);
     }
 
-    double leastDistance_x = the_cell->dx/2.0;
-    double leastDistance_y = the_cell->dy/2.0;
-    double leastDistance_z = the_cell->dz/2.0;
+    real_cpu leastDistance_x = the_cell->dx/2.0;
+    real_cpu leastDistance_y = the_cell->dy/2.0;
+    real_cpu leastDistance_z = the_cell->dz/2.0;
 
-    double localFlux_x;
-    double localFlux_y;
-    double localFlux_z;
+    real_cpu localFlux_x;
+    real_cpu localFlux_y;
+    real_cpu localFlux_z;
 
     bool has_found;
 
@@ -339,9 +339,9 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
     }
 }
 
-double get_cell_maximum_flux(struct cell_node *the_cell) {
+real_cpu get_cell_maximum_flux(struct cell_node *the_cell) {
 
-    double maximumFlux = fabs(the_cell->east_flux);
+    real_cpu maximumFlux = fabs(the_cell->east_flux);
     if(fabs(the_cell->north_flux) > maximumFlux)
         maximumFlux = fabs(the_cell->north_flux);
 

@@ -12,6 +12,7 @@
 
 // Precision to be used for the calculations
 typedef float real;
+typedef double real_cpu;
 
 #ifdef _MSC_VER
 #define EXPORT_FN __declspec(dllexport)

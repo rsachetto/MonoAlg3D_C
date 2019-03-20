@@ -10,7 +10,7 @@
  *
  * @param derefinement_bound Derefinement condition.
  */
-bool derefine_grid_with_bound (struct grid *the_grid, double derefinement_bound, double max_dx, double max_dy, double max_dz) {
+bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_bound, real_cpu max_dx, real_cpu max_dy, real_cpu max_dz) {
 
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 

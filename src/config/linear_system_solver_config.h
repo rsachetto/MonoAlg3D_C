@@ -11,7 +11,7 @@
 
 struct linear_system_solver_config; //Forward declaration
 
-#define SOLVE_LINEAR_SYSTEM(name) EXPORT_FN void name(struct linear_system_solver_config *config, struct grid *the_grid, uint32_t *number_of_iterations, double *error)
+#define SOLVE_LINEAR_SYSTEM(name) EXPORT_FN void name(struct linear_system_solver_config *config, struct grid *the_grid, uint32_t *number_of_iterations, real_cpu *error)
 typedef SOLVE_LINEAR_SYSTEM(linear_system_solver_fn);
 
 struct linear_system_solver_config {
