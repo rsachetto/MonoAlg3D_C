@@ -1,18 +1,20 @@
-1) New Purkinje module was added
-	- The Purkinje network is represented as a graph
-	- The data structure is stored inside the grid
-	- New 'graph' library
-	- The 'purkinje_library' folder has helper functions for building the Purkinje mesh
+1) Merged Sachetto changes since 19/03/2019
 
-2) A new Purkinje section in the configuration files
-	- The user needs to pass a ".vtk" file with the skeleton of the Purkinje network
-	- These files are stored inside the 'networks' folder
+2) Fix bugs: 
+    - On the "free_grid" function there was a bug when dealing with Purkinje network, the program
+    could not be finished correctly.
+    - On "vtk_polydata_grid.c" file the name of the datatype to be saved was set to "realcpu_32"
+    instead of "Float32".
 
-3) A new 'matrix_assembly' function for the Purkinje network
+3) Upgrades:
+    - Add a description and more comments for the usage of "calc_APD.py" script.
+    - Add a new script to plot several action potentials in one single axis 
+        ("plot_multiple_potentials.py").
+    - Add a new program in the scripts folder to calculate and dump the positions (x,y,z) of every single cell in the grid to a file.
+        ("cell_positions_calculator")
+    - Add a new program in the scripts folder to calculate the propagation velocity between two cells in the grid.
+        ("calc_propagation_velocity")
+    - Add new Purkinje networks that were build using the "Network-Generator" for testing.
 
-4) New 'save_mesh' functions for the Purkinje network  
 
-5) New types of stimulus added to the 'stimuli_library'
-
-6) New examples for the Purkinje network
 

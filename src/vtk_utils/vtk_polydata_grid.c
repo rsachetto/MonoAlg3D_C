@@ -178,7 +178,7 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
     }
 
     file_content = sdscat(file_content, "DATASET POLYDATA\n");
-    file_content = sdscatprintf(file_content, "POINTS %d real_cpu\n", vtk_grid->num_points);
+    file_content = sdscatprintf(file_content, "POINTS %d float\n", vtk_grid->num_points);
 
     size_t size_until_now = sdslen(file_content);
 
@@ -229,7 +229,7 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
 
     {
         sds tmp = sdscatprintf(sdsempty(), "POINT_DATA %d\n", num_values);
-        tmp = sdscat(tmp, "SCALARS Vm real_cpu\n");
+        tmp = sdscat(tmp, "SCALARS Vm float\n");
         tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
         size_until_now += sdslen(tmp);
@@ -281,7 +281,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
     {
         file_content = sdscat(
             file_content,
-            "        <DataArray type=\"real_cpu32\" Name=\"Scalars_\" format=\"appended\" offset=\"0\">\n"); // First
+            "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"appended\" offset=\"0\">\n"); // First
                                                                                                           // offset is
                                                                                                           // always 0
 
@@ -289,7 +289,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
     else
     {
         file_content =
-            sdscat(file_content, "        <DataArray type=\"real_cpu32\" Name=\"Scalars_\" format=\"ascii\">\n");
+            sdscat(file_content, "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"ascii\">\n");
     }
 
     size_t num_values = arrlen(vtk_grid->values);
@@ -313,7 +313,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
     if(binary)
     {
         file_content = sdscatprintf(file_content,
-                                    "        <DataArray type=\"real_cpu32\" Name=\"Points\" "
+                                    "        <DataArray type=\"Float32\" Name=\"Points\" "
                                     "NumberOfComponents=\"3\" format=\"appended\" offset=\"%zu\">\n",
                                     offset);
 
@@ -322,7 +322,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
     {
         file_content =
             sdscat(file_content,
-                   "        <DataArray type=\"real_cpu32\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+                   "        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n");
     }
 
     if(!binary)
@@ -340,7 +340,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     file_content = sdscat(file_content, "      <Lines>\n");
 
-    offset += (vtk_grid->num_points * 4 * 3) + 8; // 3*32 bits real_cpu for each point
+    offset += (vtk_grid->num_points * 4 * 3) + 8; // 3*32 bits float for each point
 
     if(binary)
     {
