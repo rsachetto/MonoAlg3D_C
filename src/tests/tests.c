@@ -296,7 +296,8 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     fclose(B);
 }
 
-int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, char* side_length_x, char* side_length_y, char* side_length_z, bool save, bool compress,  bool binary) {
+int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, char* side_length_x, char* side_length_y, char* side_length_z, bool save, bool compress,  bool binary, int id) {
+
 
     struct grid *grid = new_grid();
     struct domain_config *domain_config;
@@ -365,8 +366,8 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
         save_mesh_config->out_dir_name = "./tests_bin";
         save_mesh_config->print_rate = 1;
 
-        sds file_prefix = sdscatprintf(sdsempty(), "test_%lf_%lf_%lf_%s_%s_%s", start_dx, start_dy, start_dz,
-                                       side_length_x, side_length_y, side_length_z);
+        sds file_prefix = sdscatprintf(sdsempty(), "test_%lf_%lf_%lf_%s_%s_%s_%d", start_dx, start_dy, start_dz,
+                                       side_length_x, side_length_y, side_length_z, id);
         init_save_mesh_functions(save_mesh_config);
 
         shput(save_mesh_config->config_data.config, "file_prefix", file_prefix);
@@ -376,6 +377,7 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
         shput(save_mesh_config->config_data.config, "binary", "yes");
 
         save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
+
     }
 
     cr_assert_float_eq(max_x+(start_dx/2.0), atof(side_length_x), 1e-16);
@@ -588,55 +590,55 @@ Test(run_gold_simulation, gpu_no_adapt) {
 #endif
 
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_1000) {
-    int success  = test_cuboid_mesh(100, 100, 100, "1000", "1000", "1000", false, false, false);
+    int success  = test_cuboid_mesh(100, 100, 100, "1000", "1000", "1000", false, false, false, 0);
     cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_200_100_100_1000_1000_1000) {
-    int success = test_cuboid_mesh(200, 100, 100, "1000", "1000", "1000", false, false, false);
+    int success = test_cuboid_mesh(200, 100, 100, "1000", "1000", "1000", false, false, false, 0);
     cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_100_200_100_1000_1000_1000) {
 
-    int success = test_cuboid_mesh(100, 200, 100, "1000", "1000", "1000", false, false, false);
+    int success = test_cuboid_mesh(100, 200, 100, "1000", "1000", "1000", false, false, false, 0);
     cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_100_100_200_1000_1000_1000) {
 
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", false, false, false);
+    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", false, false, false, 0);
     cr_assert(success);
 
 }
 
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_2000) {
-    int success = test_cuboid_mesh(100, 100, 100, "1000", "1000", "2000", false, false, false);
+    int success = test_cuboid_mesh(100, 100, 100, "1000", "1000", "2000", false, false, false, 0);
     cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_1500) {
-    int success = test_cuboid_mesh(150, 150, 150, "1500", "1500", "1500", false, false, false);
+    int success = test_cuboid_mesh(150, 150, 150, "1500", "1500", "1500", false, false, false, 0);
     cr_assert(success);
 }
 
 
 Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_3000) {
-    int success  = test_cuboid_mesh(150, 150, 150, "1500", "1500", "3000", false, false, false);
+    int success  = test_cuboid_mesh(150, 150, 150, "1500", "1500", "3000", false, false, false, 0);
     cr_assert(success);
 }
 
 Test (mesh_load, cuboid_mesh_300_150_150_1500_1500_3000) {
-    int success = test_cuboid_mesh(300, 150, 150, "1500", "1500", "3000", false, false, false);
+    int success = test_cuboid_mesh(300, 150, 150, "1500", "1500", "3000", false, false, false, 0);
     cr_assert(!success);
 }
 
 Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_binary) {
 
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, false, true);
+    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, false, true, 1);
     cr_assert(success);
 
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_it_0.vtu", "r");
+    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_1_it_0.vtu", "r");
     FILE *f2 = fopen("tests_bin/gold_vtu_mesh_binary.vtu", "r");
 
     success = compare_two_binary_files(f1, f2);
@@ -649,10 +651,10 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_bin
 
 Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_compressed) {
 
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, true, false);
+    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, true, false, 2);
     cr_assert(success);
 
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_it_0.vtu", "r");
+    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_2_it_0.vtu", "r");
     FILE *f2 = fopen("tests_bin/gold_vtu_mesh_compressed.vtu", "r");
 
     success = compare_two_binary_files(f1, f2);
@@ -665,10 +667,10 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_com
 
 Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_plain) {
 
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, false, false);
+    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, false, false, 3);
     cr_assert(success);
 
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_it_0.vtu", "r");
+    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_3_it_0.vtu", "r");
     FILE *f2 = fopen("tests_bin/gold_vtu_mesh.vtu", "r");
 
     success = compare_two_binary_files(f1, f2);
