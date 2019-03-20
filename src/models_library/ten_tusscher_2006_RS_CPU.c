@@ -39,7 +39,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         sv[18] = 136.89f;   // K_i;     millimolar
     }
     else {
-        float *initial = (float*)extra_data;
+        real *initial = (real *)extra_data;
         sv[0] =  initial[0];// V;       millivolt
         sv[1] =  initial[1];// Xr1;     dimensionless
         sv[2] =  initial[2];// Xr2;     dimensionless

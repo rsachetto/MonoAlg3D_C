@@ -16,16 +16,16 @@
 #include "../single_file_libraries/stb_ds.h"
 
 
-double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
 
-double **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
 
-double calc_mse(const double *x, const double *xapp, int n) {
+real_cpu calc_mse(const real_cpu *x, const real_cpu *xapp, int n) {
 
-    double sum_sq = 0;
+    real_cpu sum_sq = 0;
 
     for (int i = 0; i < n; ++i) {
-        double err = x[i] - xapp[i];
+        real_cpu err = x[i] - xapp[i];
         sum_sq += (err * err);
     }
 
@@ -40,8 +40,8 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     int num_lines_v = 0;
     int nnz = 0;
 
-    double **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
-    double *vector  = read_octave_vector_file_to_array(vector_b, &num_lines_v);
+    real_cpu **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
+    real_cpu *vector  = read_octave_vector_file_to_array(vector_b, &num_lines_v);
 
     cr_assert_eq (num_lines_m, num_lines_v);
     cr_assert (nnz);
@@ -75,7 +75,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     cell = grid->first_cell;
     uint32_t cell_position;
 
-    double m_value;
+    real_cpu m_value;
 
     for (int i = 0; i < num_lines_m; i++) {
 
@@ -128,7 +128,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     free(vector);
 }
 
-double **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
     const char *sep = " ";
     char *line_a = NULL;
     size_t len;
@@ -148,15 +148,15 @@ double **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *n
         sdsfreesplitres(tmp, count);
     } while ((line_a)[0] == '#');
 
-    double **matrix = (double **) malloc(*num_lines * sizeof(double *));
+    real_cpu **matrix = (real_cpu **) malloc(*num_lines * sizeof(real_cpu *));
 
     for (int i = 0; i < *num_lines; i++) {
-        matrix[i] = (double *) calloc(*num_lines, sizeof(double));
+        matrix[i] = (real_cpu *) calloc(*num_lines, sizeof(real_cpu));
     }
 
     int item_count = 0;
     int m_line, m_column;
-    double m_value;
+    real_cpu m_value;
 
     while (item_count < *nnz) {
 
@@ -180,7 +180,7 @@ double **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *n
     return matrix;
 }
 
-double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
 
     ssize_t read;
     size_t len;
@@ -199,7 +199,7 @@ double *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
         sdsfreesplitres(tmp, count);
     } while ((line_b)[0] == '#');
 
-    double *vector = (double *) malloc(*num_lines * sizeof(double));
+    real_cpu *vector = (real_cpu *) malloc(*num_lines * sizeof(real_cpu));
 
     int item_count = 0;
     while ((item_count < *num_lines) && read) {
@@ -241,7 +241,7 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     cr_assert(B);
     cr_assert(X);
 
-    double error;
+    real_cpu error;
 
     struct grid *grid = new_grid();
     cr_assert (grid);
@@ -277,8 +277,8 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     int n_lines1;
     uint32_t n_lines2;
 
-    double *x = read_octave_vector_file_to_array(X, &n_lines1);
-    double *x_grid = grid_vector_to_array(grid, 'x', &n_lines2);
+    real_cpu *x = read_octave_vector_file_to_array(X, &n_lines1);
+    real_cpu *x_grid = grid_vector_to_array(grid, 'x', &n_lines2);
 
     if(preconditioner)
         printf("MSE using %s with preconditioner and %d threads: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
@@ -296,7 +296,7 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     fclose(B);
 }
 
-int test_cuboid_mesh(double start_dx, double start_dy, double start_dz, char* side_length_x, char* side_length_y, char* side_length_z, bool save) {
+int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, char* side_length_x, char* side_length_y, char* side_length_z, bool save) {
 
     struct grid *grid = new_grid();
     struct domain_config *domain_config;
@@ -325,19 +325,19 @@ int test_cuboid_mesh(double start_dx, double start_dy, double start_dz, char* si
 
     order_grid_cells(grid);
 
-    double sx = grid->side_length_x;
-    double sy = grid->side_length_y;
-    double sz = grid->side_length_z;
+    real_cpu sx = grid->side_length_x;
+    real_cpu sy = grid->side_length_y;
+    real_cpu sz = grid->side_length_z;
 
-    double nx = sx / start_dx;
-    double ny = sy / start_dy;
-    double nz = sz / start_dz;
+    real_cpu nx = sx / start_dx;
+    real_cpu ny = sy / start_dy;
+    real_cpu nz = sz / start_dz;
 
     struct cell_node *cell = grid->first_cell;
 
-    double max_x = 0;
-    double max_y = 0;
-    double max_z = 0;
+    real_cpu max_x = 0;
+    real_cpu max_y = 0;
+    real_cpu max_z = 0;
 
     while(cell) {
 
@@ -508,13 +508,13 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
             cr_assert_eq(count_gold, count_tested);
 
             for(int k = 0; k < count_gold-1; k++) {
-                double value_gold = strtod(gold_values[k], NULL);
-                double value_tested = strtod(tested_simulation_values[k], NULL);
+                real_cpu value_gold = strtod(gold_values[k], NULL);
+                real_cpu value_tested = strtod(tested_simulation_values[k], NULL);
                 cr_assert_eq(value_gold, value_tested);
             }
 
-            double value_gold = strtod(gold_values[count_gold-1], NULL);
-            double value_tested = strtod(tested_simulation_values[count_gold-1], NULL);
+            real_cpu value_gold = strtod(gold_values[count_gold-1], NULL);
+            real_cpu value_tested = strtod(tested_simulation_values[count_gold-1], NULL);
 
             cr_assert_float_eq(value_gold, value_tested, 1e-10);
 
@@ -708,7 +708,7 @@ Test (utils, arr_float) {
 
 Test (utils, arr_double) {
 
-    double *v = NULL;
+    real_cpu *v = NULL;
 
     arrsetcap(v, 1);
 

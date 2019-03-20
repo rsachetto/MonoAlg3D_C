@@ -28,15 +28,15 @@ struct grid *new_grid() {
     return result;
 }
 
-void initialize_and_construct_grid(struct grid *the_grid, float side_length_x, float side_length_y,
-                                   float side_length_z) {
+void initialize_and_construct_grid(struct grid *the_grid, real_cpu side_length_x, real_cpu side_length_y,
+                                   real_cpu side_length_z) {
     assert(the_grid);
 
     initialize_grid(the_grid, side_length_x, side_length_y, side_length_z);
     construct_grid(the_grid);
 }
 
-void initialize_grid(struct grid *the_grid, float side_length_x, float side_length_y, float side_length_z) {
+void initialize_grid(struct grid *the_grid, real_cpu side_length_x, real_cpu side_length_y, real_cpu side_length_z) {
 
     assert(the_grid);
 
@@ -50,9 +50,9 @@ void construct_grid(struct grid *the_grid) {
 
     assert(the_grid);
 
-    float side_length_x = the_grid->side_length_x;
-    float side_length_y = the_grid->side_length_y;
-    float side_length_z = the_grid->side_length_z;
+    real_cpu side_length_x = the_grid->side_length_x;
+    real_cpu side_length_y = the_grid->side_length_y;
+    real_cpu side_length_z = the_grid->side_length_z;
 
     // Cell nodes.
     struct cell_node *front_northeast_cell, *front_northwest_cell, *front_southeast_cell, *front_southwest_cell,
@@ -78,13 +78,13 @@ void construct_grid(struct grid *the_grid) {
     front_transition_node = new_transition_node();
     back_transition_node = new_transition_node();
 
-    float half_side_length_x = side_length_x / 2.0f;
-    float half_side_length_y = side_length_y / 2.0f;
-    float half_side_length_z = side_length_z / 2.0f;
+    real_cpu half_side_length_x = side_length_x / 2.0f;
+    real_cpu half_side_length_y = side_length_y / 2.0f;
+    real_cpu half_side_length_z = side_length_z / 2.0f;
 
-    float quarter_side_length_x = half_side_length_x / 2.0f;
-    float quarter_side_length_y = half_side_length_y / 2.0f;
-    float quarter_side_length_z = half_side_length_z / 2.0f;
+    real_cpu quarter_side_length_x = half_side_length_x / 2.0f;
+    real_cpu quarter_side_length_y = half_side_length_y / 2.0f;
+    real_cpu quarter_side_length_z = half_side_length_z / 2.0f;
 
     //__________________________________________________________________________
     //              Initialization of transition nodes.
@@ -177,8 +177,8 @@ void print_grid(struct grid *the_grid, FILE *output_file) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    float center_x, center_y, center_z, dx, dy, dz;
-    double v;
+    real_cpu center_x, center_y, center_z, dx, dy, dz;
+    real_cpu v;
 
     while(grid_cell != 0) {
 
@@ -419,12 +419,12 @@ void print_grid_vector(struct grid *the_grid, FILE *output_file, char name) {
     }
 }
 
-double *grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines) {
+real_cpu *grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines) {
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
 
     *num_lines = the_grid->num_active_cells;
-    double *vector = (double *)malloc(*num_lines * sizeof(double));
+    real_cpu *vector = (real_cpu *)malloc(*num_lines * sizeof(real_cpu));
 
     while(grid_cell != 0) {
         if(grid_cell->active) {
@@ -453,10 +453,10 @@ void save_grid_domain(struct grid *the_grid, const char *file_name) {
     fclose(f);
 }
 
-int get_num_refinement_steps_to_discretization(double side_len, double h) {
+int get_num_refinement_steps_to_discretization(real_cpu side_len, real_cpu h) {
 
     int num_steps = 0;
-    double aux = side_len;
+    real_cpu aux = side_len;
 
     while(aux > h) {
         num_steps++;
@@ -478,17 +478,17 @@ void construct_grid_purkinje (struct grid *the_grid)
     assert(the_grid);
 
     // TODO: Allow dx, dy, dz to be different in the Purkinje code
-    float side_length_x = the_grid->the_purkinje_network->dx;
-    float side_length_y = the_grid->the_purkinje_network->dx;
-    float side_length_z = the_grid->the_purkinje_network->dx;
+    real_cpu side_length_x = the_grid->the_purkinje_network->dx;
+    real_cpu side_length_y = the_grid->the_purkinje_network->dx;
+    real_cpu side_length_z = the_grid->the_purkinje_network->dx;
 
-    float half_side_length_x = side_length_x / 2.0f;
-    float half_side_length_y = side_length_y / 2.0f;
-    float half_side_length_z = side_length_z / 2.0f;
+    real_cpu half_side_length_x = side_length_x / 2.0f;
+    real_cpu half_side_length_y = side_length_y / 2.0f;
+    real_cpu half_side_length_z = side_length_z / 2.0f;
 
-//    float quarter_side_length_x = half_side_length_x / 2.0f;
-//    float quarter_side_length_y = half_side_length_y / 2.0f;
-//    float quarter_side_length_z = half_side_length_z / 2.0f;
+//    real_cpu quarter_side_length_x = half_side_length_x / 2.0f;
+//    real_cpu quarter_side_length_y = half_side_length_y / 2.0f;
+//    real_cpu quarter_side_length_z = half_side_length_z / 2.0f;
 
     int total_nodes = the_grid->the_purkinje_network->total_nodes;
     

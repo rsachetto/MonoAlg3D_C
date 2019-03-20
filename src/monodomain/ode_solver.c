@@ -205,7 +205,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
     }
 }
 
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, double cur_time, int num_steps,
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time, int num_steps,
                             struct string_voidp_hash_entry *stim_configs) {
 
     assert(the_ode_solver->sv);
@@ -216,7 +216,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     void *extra_data = the_ode_solver->ode_extra_data;
 
-    double time = cur_time;
+    real_cpu time = cur_time;
 
     real *merged_stims = (real*)calloc(sizeof(real), n_active);
 

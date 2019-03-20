@@ -54,8 +54,8 @@ sds create_common_vtp_header(bool compressed, int num_points, int num_lines)
 }
 
 void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                                                     float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values)
+                                                                     real_cpu *plain_coordinates, bool clip_with_bounds,
+                                                                     real_cpu *bounds, bool read_only_values)
 {
     static bool mesh_already_loaded =  false;
 
@@ -64,26 +64,26 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
         return;
     }
 
-    if(!read_only_values) 
+    if(!read_only_values)
     {
         *vtk_grid = new_vtk_polydata_grid();
     }
-    else 
+    else
     {
-        if(!(*vtk_grid) && mesh_already_loaded) 
+        if(!(*vtk_grid) && mesh_already_loaded)
         {
             fprintf(stderr,
                     "Function new_vtk_polydata_grid_from_purkinje_grid can only be called with read_only_values if the grid is already loaded");
             exit(EXIT_FAILURE);
         }
 
-        if(mesh_already_loaded) 
+        if(mesh_already_loaded)
         {
             assert(*vtk_grid);
             arrfree((*vtk_grid)->values);
             (*vtk_grid)->values = NULL;
         }
-        else 
+        else
         {
             *vtk_grid = new_vtk_polydata_grid();
         }
@@ -94,7 +94,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
 
     struct point_3d aux;
     struct line auxl;
-    float center_x, center_y, center_z;
+    real_cpu center_x, center_y, center_z;
 
     uint32_t id = 0;
 //    uint32_t num_cells = 0;
@@ -113,7 +113,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
             arrput((*vtk_grid)->values, grid_cell->v);
 
             // This 'if' statement do not let us re-insert points and lines to the arrays ... =)
-            if(mesh_already_loaded && read_only_values) 
+            if(mesh_already_loaded && read_only_values)
             {
                 grid_cell = grid_cell->next;
                 u = u->next;
@@ -139,7 +139,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
             {
                 auxl.source = u->id;
                 auxl.destination = v->id;
-                
+
                 arrput((*vtk_grid)->lines, auxl);
 
                 v = v->next;
@@ -150,7 +150,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
         u = u->next;
     }
 
-    if(!mesh_already_loaded) 
+    if(!mesh_already_loaded)
     {
         (*vtk_grid)->num_points = id;
         (*vtk_grid)->num_lines = grid->the_purkinje_network->total_edges;
@@ -168,43 +168,43 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
 
     file_content = sdscat(file_content, "# vtk DataFile Version 4.2\n");
     file_content = sdscat(file_content, "vtk output\n");
-    if(binary) 
+    if(binary)
     {
         file_content = sdscat(file_content, "BINARY\n");
-    } 
-    else 
+    }
+    else
     {
         file_content = sdscat(file_content, "ASCII\n");
     }
 
     file_content = sdscat(file_content, "DATASET POLYDATA\n");
-    file_content = sdscatprintf(file_content, "POINTS %d float\n", vtk_grid->num_points);
-    
+    file_content = sdscatprintf(file_content, "POINTS %d real_cpu\n", vtk_grid->num_points);
+
     size_t size_until_now = sdslen(file_content);
 
     int num_points = arrlen(vtk_grid->points);
-    for(int i = 0; i < num_points; i++) 
+    for(int i = 0; i < num_points; i++)
     {
         struct point_3d p = vtk_grid->points[i];
 
-        if(binary) 
+        if(binary)
         {
             file_content = write_binary_point(file_content, &p);
             size_until_now += 3 * sizeof(int);
-        } 
-        else 
+        }
+        else
         {
             file_content = sdscatprintf(file_content, "%lf %lf %lf\n", p.x, p.y, p.z);
         }
     }
 
     int num_lines = vtk_grid->num_lines;
-    
+
     {
         sds tmp = sdscatprintf(sdsempty(), "\nLINES %d %d\n", num_lines, 3 * num_lines);
-        
+
         size_until_now += sdslen(tmp);
-        
+
         file_content = sdscatsds(file_content, tmp);
         sdsfree(tmp);
     }
@@ -222,14 +222,14 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
         {
             file_content = sdscatprintf(file_content, "2 %lu %lu\n",l.source,l.destination);
         }
-        
+
     }
 
     int num_values = arrlen(vtk_grid->values);
 
     {
         sds tmp = sdscatprintf(sdsempty(), "POINT_DATA %d\n", num_values);
-        tmp = sdscat(tmp, "SCALARS Vm float\n");
+        tmp = sdscat(tmp, "SCALARS Vm real_cpu\n");
         tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
         size_until_now += sdslen(tmp);
@@ -240,13 +240,13 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
 
     for (int i = 0; i < num_values; i++)
     {
-        if(binary) 
+        if(binary)
         {
             int aux = invert_bytes(*((int *)&(vtk_grid->values[i])));
             file_content = sdscatlen(file_content, &aux, sizeof(int));
             size_until_now += sizeof(int);
-        } 
-        else 
+        }
+        else
         {
             file_content = sdscatprintf(file_content, "%lf ", vtk_grid->values[i]);
         }
@@ -254,12 +254,12 @@ void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid,\
 
     FILE *output_file = NULL;
 
-    if(binary) 
+    if(binary)
     {
         output_file = fopen(filename, "wb");
         fwrite(file_content, size_until_now, 1, output_file);
-    } 
-    else 
+    }
+    else
     {
         output_file = fopen(filename, "w");
         fprintf(output_file, "%s", file_content);
@@ -277,27 +277,27 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     sds file_content = create_common_vtp_header(false, vtk_grid->num_points, vtk_grid->num_lines);
 
-    if(binary) 
+    if(binary)
     {
         file_content = sdscat(
             file_content,
-            "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"appended\" offset=\"0\">\n"); // First
+            "        <DataArray type=\"real_cpu32\" Name=\"Scalars_\" format=\"appended\" offset=\"0\">\n"); // First
                                                                                                           // offset is
                                                                                                           // always 0
 
-    } 
-    else 
+    }
+    else
     {
         file_content =
-            sdscat(file_content, "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"ascii\">\n");
+            sdscat(file_content, "        <DataArray type=\"real_cpu32\" Name=\"Scalars_\" format=\"ascii\">\n");
     }
 
     size_t num_values = arrlen(vtk_grid->values);
 
-    if(!binary) 
+    if(!binary)
     {
 
-        for(int i = 0; i < num_values; i++) 
+        for(int i = 0; i < num_values; i++)
         {
             file_content = sdscatprintf(file_content, "     %lf ", vtk_grid->values[i]);
         }
@@ -310,25 +310,25 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     file_content = sdscat(file_content, "      <Points>\n");
 
-    if(binary) 
+    if(binary)
     {
         file_content = sdscatprintf(file_content,
-                                    "        <DataArray type=\"Float32\" Name=\"Points\" "
+                                    "        <DataArray type=\"real_cpu32\" Name=\"Points\" "
                                     "NumberOfComponents=\"3\" format=\"appended\" offset=\"%zu\">\n",
                                     offset);
 
-    } 
-    else 
+    }
+    else
     {
         file_content =
             sdscat(file_content,
-                   "        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+                   "        <DataArray type=\"real_cpu32\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n");
     }
 
-    if(!binary) 
+    if(!binary)
     {
         int num_points = arrlen(vtk_grid->points);
-        for(int i = 0; i < num_points; i++) 
+        for(int i = 0; i < num_points; i++)
         {
             struct point_3d p = vtk_grid->points[i];
             file_content = sdscatprintf(file_content, "%lf %lf %lf\n", p.x, p.y, p.z);
@@ -340,16 +340,16 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     file_content = sdscat(file_content, "      <Lines>\n");
 
-    offset += (vtk_grid->num_points * 4 * 3) + 8; // 3*32 bits float for each point
+    offset += (vtk_grid->num_points * 4 * 3) + 8; // 3*32 bits real_cpu for each point
 
-    if(binary) 
+    if(binary)
     {
         file_content = sdscatprintf(
             file_content,
             "        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"appended\" offset=\"%zu\">\n", offset);
 
-    } 
-    else 
+    }
+    else
     {
         file_content =
             sdscat(file_content, "        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">\n");
@@ -357,9 +357,9 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     int num_lines = vtk_grid->num_lines;
 
-    if(!binary) 
+    if(!binary)
     {
-        for(int i = 0; i < num_lines; i++) 
+        for(int i = 0; i < num_lines; i++)
         {
             file_content = sdscatprintf(file_content,"%lu %lu\n",vtk_grid->lines[i].source,vtk_grid->lines[i].destination);
         }
@@ -369,13 +369,13 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     offset += (vtk_grid->num_lines * 2 * 8) + 8; // 64 bits for the line index
 
-    if(binary) 
+    if(binary)
     {
         file_content = sdscatprintf(
             file_content, "        <DataArray type=\"Int64\" Name=\"offsets\" format=\"appended\" offset=\"%zu\">\n",
             offset);
-    } 
-    else 
+    }
+    else
     {
         file_content = sdscat(file_content, "        <DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">\n");
     }
@@ -383,9 +383,9 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
     {
         int offset_local = 2;
 
-        if(!binary) 
+        if(!binary)
         {
-            for(int i = 0; i < num_lines; i++) 
+            for(int i = 0; i < num_lines; i++)
             {
                 file_content = sdscat(file_content, "     ");
                 file_content = sdscatprintf(file_content, "%d ", offset_local);
@@ -406,17 +406,17 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     size_t size_until_now = 0;
 
-    if(binary) 
+    if(binary)
     {
         file_content = sdscat(file_content, "  <AppendedData encoding=\"raw\">\n   _");
 
         size_until_now = sdslen(file_content);
 
         // scalars
-        uint64_t block_size = sizeof(float) * vtk_grid->num_points;
+        uint64_t block_size = sizeof(real_cpu) * vtk_grid->num_points;
         file_content = sdscatlen(file_content, &block_size, sizeof(uint64_t));
         file_content = sdscatlen(file_content, vtk_grid->values, (size_t)block_size);
-        size_until_now += (sizeof(float) * vtk_grid->num_points + sizeof(uint64_t));
+        size_until_now += (sizeof(real_cpu) * vtk_grid->num_points + sizeof(uint64_t));
 
         // Points
         block_size = sizeof(struct point_3d) * vtk_grid->num_points;

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define BLOCK_SIZE 1 << 15
+#define COMPRESED_BLOCK_SIZE 1 << 15
 
 #ifdef COMPILE_ZLIB
 void calculate_blocks_and_compress_data(size_t total_data_size_before_compression,
@@ -16,11 +16,11 @@ void calculate_blocks_and_compress_data(size_t total_data_size_before_compressio
                                         size_t *block_size_uncompressed, size_t **block_sizes_compressed,
                                         size_t *last_block_size, int compression_level) {
 
-    size_t block_size = BLOCK_SIZE;
+    size_t block_size = COMPRESED_BLOCK_SIZE;
 
     *total_data_size_after_compression = 0;
 
-    if(total_data_size_before_compression < BLOCK_SIZE) {
+    if(total_data_size_before_compression < COMPRESED_BLOCK_SIZE) {
         block_size = total_data_size_before_compression;
     }
 
