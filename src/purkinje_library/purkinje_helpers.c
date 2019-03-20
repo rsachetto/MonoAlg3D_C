@@ -18,7 +18,7 @@
 #endif
 
 // Set a a custom Purkinje network from a file that stores its graph structure
-void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, const double side_length) 
+void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, const real_cpu side_length)
 {
 
 //    struct cell_node *grid_cell = the_grid->first_cell;
@@ -29,7 +29,7 @@ void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, 
 
 }
 
-void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const double side_length) 
+void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length)
 {
     struct graph *skeleton_network = new_graph();
 
@@ -79,7 +79,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     // Read points
     for (int i = 0; i < N; i++)
     {
-        double pos[3];
+        real_cpu pos[3];
         if (!fscanf(file,"%lf %lf %lf",&pos[0],&pos[1],&pos[2]))
         {
             fprintf(stderr,"Error reading file.\n");
@@ -111,7 +111,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     fclose(file);
 }
 
-void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const double side_length)
+void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length)
 {
     assert(the_purkinje_network);
     assert(skeleton_network);
@@ -127,7 +127,7 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
 
     // Construct the first node
     struct node *tmp = skeleton_network->list_nodes;
-    double pos[3]; pos[0] = tmp->x; pos[1] = tmp->y; pos[2] = tmp->z;
+    real_cpu pos[3]; pos[0] = tmp->x; pos[1] = tmp->y; pos[2] = tmp->z;
     insert_node_graph(the_purkinje_network,pos);
     
     // Make a Depth-First-Search to build the mesh of the Purkinje network
@@ -155,9 +155,9 @@ void depth_first_search (struct graph *the_purkinje_network, struct node *u, int
 
 void grow_segment (struct graph *the_purkinje_network, struct node *u, struct edge *v, uint32_t *map_skeleton_to_mesh)
 {
-    double h = the_purkinje_network->dx;
-    double d_ori[3], d[3];
-    double segment_length = v->w;
+    real_cpu h = the_purkinje_network->dx;
+    real_cpu d_ori[3], d[3];
+    real_cpu segment_length = v->w;
     uint32_t n_points = segment_length / h;
 
     // Capture the index of the growing node on the mesh
@@ -176,7 +176,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     // Grow the number of points of size 'h' until reaches the size of the segment
     for (int k = 1; k <= n_points; k++)
     {
-        double pos[3];
+        real_cpu pos[3];
         pos[0] = d[0] + d_ori[0]*h*k;
         pos[1] = d[1] + d_ori[1]*h*k;
         pos[2] = d[2] + d_ori[2]*h*k;
@@ -192,12 +192,12 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     map_skeleton_to_mesh[v->id] = id_source;
 }
 
-void calc_unitary_vector (double d_ori[], struct node *u, struct node *v)
+void calc_unitary_vector (real_cpu d_ori[], struct node *u, struct node *v)
 {
     d_ori[0] = v->x - u->x;
     d_ori[1] = v->y - u->y;
     d_ori[2] = v->z - u->z;
-    double norm = sqrt(d_ori[0]*d_ori[0] + d_ori[1]*d_ori[1] + d_ori[2]*d_ori[2]);
+    real_cpu norm = sqrt(d_ori[0]*d_ori[0] + d_ori[1]*d_ori[1] + d_ori[2]*d_ori[2]);
     for (int i = 0; i < 3; i++)
         d_ori[i] /= norm;
 }
@@ -231,7 +231,7 @@ void read_purkinje_network_from_file (const char *filename, struct point **point
     *points = (struct point*)malloc(sizeof(struct point)*(*N));
     for (int i = 0; i < (*N); i++)
     {
-        double pos[3];
+        real_cpu pos[3];
         if (!fscanf(file,"%lf %lf %lf",&pos[0],&pos[1],&pos[2]))
         {
             fprintf(stderr,"Error reading file.\n");
@@ -308,7 +308,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network)
 }
 
 // TODO: Some test for the network will be implemented here ...
-int check_purkinje_input (const double side_length)
+int check_purkinje_input (const real_cpu side_length)
 {
     return 1;
 }

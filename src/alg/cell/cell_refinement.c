@@ -28,9 +28,9 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
             *back_southwest_sub_cell,
             *back_southeast_sub_cell;
 
-    int number_of_hilbert_shape;
+    uint8_t number_of_hilbert_shape;
 
-    float cell_center_x    = cell->center_x,
+    real_cpu cell_center_x    = cell->center_x,
             cell_center_y   = cell->center_y,
             cell_center_z   = cell->center_z,
             cell_half_side_x    = cell->dx / 2.0f,
@@ -45,7 +45,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     // Creation of the front northeast cell. This cell, which is to be refined,
     // becomes the frontNortheast cell of the new bunch.
     front_northeast_sub_cell                     = cell;
-    front_northeast_sub_cell->cell_data.level    = cell->cell_data.level + (uint16_t )1;
+    front_northeast_sub_cell->cell_data.level    = cell->cell_data.level + (uint8_t )1;
     front_northeast_sub_cell->dx        = cell_half_side_x;
     front_northeast_sub_cell->dy        = cell_half_side_y;
     front_northeast_sub_cell->dz        = cell_half_side_z;
@@ -1176,8 +1176,8 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_cell,
-                           float dx, float dy, float dz,
-                           float center_x, float center_y, float center_z,
+                           real_cpu dx, real_cpu dy, real_cpu dz,
+                           real_cpu center_x, real_cpu center_y, real_cpu center_z,
                            uint64_t  bunch_number, ui32_array free_sv_positions,
                            ui32_array *refined_this_step) {
 
@@ -1209,11 +1209,13 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
     the_cell->center_z = center_z;
     the_cell->bunch_number = bunch_number;
 
-    if(free_sv_positions)
+    if(free_sv_positions) {
         the_cell->sv_position = arrpop(free_sv_positions);
+    }
 
-    if(refined_this_step && *refined_this_step)
+    if(refined_this_step && *refined_this_step) {
         arrput(*refined_this_step, the_cell->sv_position);
+    }
 
 }
 

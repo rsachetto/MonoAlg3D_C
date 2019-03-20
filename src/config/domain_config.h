@@ -18,9 +18,9 @@ struct domain_config {
     struct config_common config_data;
     char *domain_name;
     bool domain_name_was_set;
-    double start_dx, max_dx;
-    double start_dy, max_dy;
-    double start_dz, max_dz;
+    real_cpu start_dx, max_dx;
+    real_cpu start_dy, max_dy;
+    real_cpu start_dz, max_dz;
     bool start_dx_was_set, max_dx_was_set;
     bool start_dy_was_set, max_dy_was_set;
     bool start_dz_was_set, max_dz_was_set;

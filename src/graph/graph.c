@@ -62,7 +62,7 @@ void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_
 
     struct node *n1, *n2;
 	struct edge *edge;
-	double norm;
+	real_cpu norm;
 	// Check if the edge is invalid
 	if (id_1 == id_2) return;
 
@@ -88,7 +88,7 @@ void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_
     g->total_edges++;
 }
 
-void insert_node_graph (struct graph *g, const double pos[])
+void insert_node_graph (struct graph *g, const real_cpu pos[])
 {
     assert(g);
 
@@ -108,7 +108,7 @@ void insert_node_graph (struct graph *g, const double pos[])
     }
 }
 
-struct node* new_node (uint32_t id, const double pos[])
+struct node* new_node (uint32_t id, const real_cpu pos[])
 {
     struct node *n = (struct node*)malloc(sizeof(struct node));
     n->id = id;
@@ -122,7 +122,7 @@ struct node* new_node (uint32_t id, const double pos[])
     return n;
 }
 
-struct edge* new_edge (uint32_t id, double w, struct node *dest)
+struct edge* new_edge (uint32_t id, real_cpu w, struct node *dest)
 {
     struct edge *e = (struct edge*)malloc(sizeof(struct edge));
 	e->id = id;
@@ -171,8 +171,8 @@ void print_graph (struct graph *g)
 
 }
 
-double calc_norm (const double x1, const double y1, const double z1,\
-                  const double x2, const double y2, const double z2)
+real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,\
+                  const real_cpu x2, const real_cpu y2, const real_cpu z2)
 {
     return sqrt(pow(x2-x1,2) + pow(y2-y1,2) + pow(z2-z1,2));
 }
