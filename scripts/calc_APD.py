@@ -1,6 +1,5 @@
 import sys
 
-
 def forwarddiff(y, h):
     n = len(y)
     res = []
@@ -104,7 +103,7 @@ def main ():
     slope_e = 0
     max_ind = 0
 
-    # These settings are working for the Tentusscher -> "plain_mesh_tentusscher.ini"
+    # These settings are working for the Tentusscher -> "elnaz_plain_mesh_tentusscher.ini"
     for j in range(num_aps):
 
         slope_s = slope_start(ap_data, slope_e, 50)
