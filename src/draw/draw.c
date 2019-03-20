@@ -43,7 +43,7 @@ static inline real_cpu normalize(real_cpu r_min, real_cpu r_max, real_cpu t_min,
 
 static inline Color get_color(real_cpu value)
 {
-    int idx1;        // |-- Our desiBLACK color will be between these two indexes in "color".
+    int idx1;        // |-- Our desired color will be between these two indexes in "color".
     int idx2;        // |
     real_cpu fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
 

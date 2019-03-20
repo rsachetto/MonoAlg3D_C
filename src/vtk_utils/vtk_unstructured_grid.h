@@ -18,7 +18,7 @@ struct vtk_unstructured_grid {
     //TODO: we handle only meshes with the same cell_type. If we need something different we will need to change this
     uint8_t cell_type;
 
-    real_array values;
+    f32_array values;
     int_array cells;
     point3d_array points;
 
@@ -27,8 +27,8 @@ struct vtk_unstructured_grid {
 struct vtk_unstructured_grid *new_vtk_unstructured_grid();
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                                                     real_cpu *plain_coordinates, bool clip_with_bounds,
-                                                                     real_cpu *bounds, bool read_only_values);
+                                                                     float *plain_coordinates, bool clip_with_bounds,
+                                                                     float *bounds, bool read_only_values);
 
 void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
 void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *vtk_grid, char *filename, int compression_level);

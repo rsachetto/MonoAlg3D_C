@@ -175,25 +175,25 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
         initialized = true;
     }
-    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[1], config->config_data.config, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[2], config->config_data.config, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data.config, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[4], config->config_data.config, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[5], config->config_data.config, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data.config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data.config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data.config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data.config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data.config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data.config, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[0], config->config_data.config, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[1], config->config_data.config, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[2], config->config_data.config, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[3], config->config_data.config, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config->config_data.config, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data.config, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data.config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data.config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data.config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data.config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data.config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data.config, "max_z");
     }
 
     sds output_dir_with_file = sdsnew(output_dir);
@@ -261,31 +261,30 @@ SAVE_MESH(save_as_vtu) {
 
         initialized = true;
     }
-    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[1], config->config_data.config, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[2], config->config_data.config, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data.config, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[4], config->config_data.config, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[5], config->config_data.config, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data.config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data.config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data.config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data.config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data.config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data.config, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[0], config->config_data.config, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[1], config->config_data.config, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[2], config->config_data.config, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[3], config->config_data.config, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config->config_data.config, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data.config, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data.config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data.config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data.config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data.config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data.config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data.config, "max_z");
     }
 
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    //sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_time_%lf_ms.vtu", file_prefix, iteration_count, current_dt);
     sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
@@ -323,8 +322,8 @@ SAVE_MESH(save_as_vtk_purkinje) {
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
         initialized = true;
     }
-    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");
@@ -383,8 +382,8 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
         initialized = true;
     }
-    real_cpu plain_coords[6] = {0, 0, 0, 0, 0, 0};
-    real_cpu bounds[6] = {0, 0, 0, 0, 0, 0};
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data.config, "origin_x");

@@ -38,8 +38,8 @@ void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid) {
 }
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                                                      real_cpu *plain_coordinates, bool clip_with_bounds,
-                                                                      real_cpu *bounds, bool read_only_values) {
+                                                                      float *plain_coordinates, bool clip_with_bounds,
+                                                                      float *bounds, bool read_only_values) {
 
     static bool mesh_already_loaded =  false;
 
@@ -67,15 +67,15 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         }
     }
 
-    real_cpu min_x = 0.0;
-    real_cpu min_y = 0.0;
-    real_cpu min_z = 0.0;
-    real_cpu max_x = 0.0;
-    real_cpu max_y = 0.0;
-    real_cpu max_z = 0.0;
+    float min_x = 0.0;
+    float min_y = 0.0;
+    float min_z = 0.0;
+    float max_x = 0.0;
+    float max_y = 0.0;
+    float max_z = 0.0;
 
-    real_cpu p0[3] = {0, 0, 0};
-    real_cpu n[3] = {0, 0, 0};
+    float p0[3] = {0, 0, 0};
+    float n[3] = {0, 0, 0};
 
     if(!plain_coordinates) {
         clip_with_plain = false;
@@ -117,11 +117,11 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     uint32_t id = 0;
     uint32_t num_cells = 0;
 
-    real_cpu l = sqrtf(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
-    real_cpu A = n[0] / l;
-    real_cpu B = n[1] / l;
-    real_cpu C = n[2] / l;
-    real_cpu D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
+    float l = sqrtf(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+    float A = n[0] / l;
+    float B = n[1] / l;
+    float C = n[2] / l;
+    float D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
 
     real_cpu side;
     struct point_hash_entry *hash =  NULL;
@@ -348,7 +348,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     file_content = sdscat(file_content, "      <Cells>\n");
 
-    offset += (vtk_grid->num_points * 4 * 3) + 8; // 3*32 bits real_cpu for each point
+    offset += (vtk_grid->num_points * 4 * 3) + 8; // 3*32 bits float for each point
 
     if(binary) {
         file_content = sdscatprintf(
@@ -435,10 +435,10 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
         size_until_now = sdslen(file_content);
 
         // scalars
-        uint64_t block_size = sizeof(real_cpu) * vtk_grid->num_cells;
+        uint64_t block_size = sizeof(float) * vtk_grid->num_cells;
         file_content = sdscatlen(file_content, &block_size, sizeof(uint64_t));
         file_content = sdscatlen(file_content, vtk_grid->values, (size_t)block_size);
-        size_until_now += (sizeof(real_cpu) * vtk_grid->num_cells + sizeof(uint64_t));
+        size_until_now += (sizeof(float) * vtk_grid->num_cells + sizeof(uint64_t));
 
         // Points
         block_size = sizeof(struct point_3d) * vtk_grid->num_points;
@@ -557,7 +557,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
 
         unsigned char *data_to_compress;
 
-        data_size = vtk_grid->num_cells * 4; // 32 bit real_cpu for each cell
+        data_size = vtk_grid->num_cells * 4; // 32 bit float for each cell
 
         data_to_compress = (unsigned char *)vtk_grid->values;
         unsigned char *compressed_data_for_values;
@@ -583,7 +583,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         size_t *block_sizes_compressed_for_points;
         size_t last_block_size_for_points;
 
-        data_size = vtk_grid->num_points * 4 * 3; // 3 points, with 32 bit real_cpu each point
+        data_size = vtk_grid->num_points * 4 * 3; // 3 points, with 32 bit float each point
 
         data_to_compress = (unsigned char *)vtk_grid->points;
 
@@ -772,7 +772,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
     }
 
     file_content = sdscat(file_content, "DATASET UNSTRUCTURED_GRID\n");
-    file_content = sdscatprintf(file_content, "POINTS %d real_cpu\n", vtk_grid->num_points);
+    file_content = sdscatprintf(file_content, "POINTS %d float\n", vtk_grid->num_points);
 
     size_t size_until_now = sdslen(file_content);
 
@@ -849,7 +849,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
 
     {
         sds tmp = sdscatprintf(sdsempty(), "\nCELL_DATA %d\n", num_cells);
-        tmp = sdscat(tmp, "SCALARS Scalars_ real_cpu\n");
+        tmp = sdscat(tmp, "SCALARS Scalars_ float\n");
         tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
         size_until_now += sdslen(tmp);
