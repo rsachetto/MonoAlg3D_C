@@ -294,7 +294,10 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     size_t offset = 0;
 
-    sds file_content = create_common_vtu_header(false, vtk_grid->num_points, vtk_grid->num_cells);
+    uint32_t num_cells = vtk_grid->num_cells;
+    uint32_t num_points = vtk_grid->num_points;
+
+    sds file_content = create_common_vtu_header(false, num_points, num_cells);
 
     if(binary) {
         file_content = sdscat(
@@ -319,7 +322,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
     file_content = sdscat(file_content, "        </DataArray>\n");
     file_content = sdscat(file_content, "      </CellData>\n");
 
-    offset = (vtk_grid->num_cells * 4) + 8;
+    offset = (num_cells * 4) + 8;
 
     file_content = sdscat(file_content, "      <Points>\n");
 
@@ -336,7 +339,6 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
     }
 
     if(!binary) {
-        int num_points = arrlen(vtk_grid->points);
         for(int i = 0; i < num_points; i++) {
             struct point_3d p = vtk_grid->points[i];
             file_content = sdscatprintf(file_content, "%lf %lf %lf\n", p.x, p.y, p.z);
@@ -348,7 +350,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     file_content = sdscat(file_content, "      <Cells>\n");
 
-    offset += (vtk_grid->num_points * 4 * 3) + 8; // 3*32 bits float for each point
+    offset += (num_points * 4 * 3) + 8; // 3*32 bits float for each point
 
     if(binary) {
         file_content = sdscatprintf(
@@ -363,8 +365,6 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
     int points_per_cell = vtk_grid->points_per_cell;
     int cell_type = vtk_grid->cell_type;
 
-    int num_cells = vtk_grid->num_cells;
-
     if(!binary) {
         for(int i = 0; i < num_cells; i++) {
             file_content = sdscat(file_content, "     ");
@@ -378,7 +378,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     file_content = sdscat(file_content, "        </DataArray>\n");
 
-    offset += (vtk_grid->num_cells * 8 * points_per_cell) + 8; // 64 bits
+    offset += (num_cells * 8 * points_per_cell) + 8; // 64 bits
 
     if(binary) {
         file_content = sdscatprintf(
@@ -403,7 +403,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     file_content = sdscat(file_content, "        </DataArray>\n");
 
-    offset += (vtk_grid->num_cells * 8) + 8; // 64 bits
+    offset += (num_cells * 8) + 8; // 64 bits
 
     if(binary) {
         file_content = sdscatprintf(
@@ -435,16 +435,16 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
         size_until_now = sdslen(file_content);
 
         // scalars
-        uint64_t block_size = sizeof(float) * vtk_grid->num_cells;
+        uint64_t block_size = sizeof(float) * num_cells;
         file_content = sdscatlen(file_content, &block_size, sizeof(uint64_t));
         file_content = sdscatlen(file_content, vtk_grid->values, (size_t)block_size);
-        size_until_now += (sizeof(float) * vtk_grid->num_cells + sizeof(uint64_t));
+        size_until_now += (block_size + sizeof(uint64_t));
 
         // Points
         block_size = sizeof(struct point_3d) * vtk_grid->num_points;
         file_content = sdscatlen(file_content, &block_size, sizeof(uint64_t));
         file_content = sdscatlen(file_content, vtk_grid->points, (size_t)block_size);
-        size_until_now += (sizeof(struct point_3d) * vtk_grid->num_points + sizeof(uint64_t));
+        size_until_now += (block_size + sizeof(uint64_t));
 
         // connectivity
         block_size = num_cells * points_per_cell * sizeof(int64_t);

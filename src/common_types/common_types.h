@@ -10,7 +10,7 @@ struct line {
 };
 
 struct point_3d {
-    real_cpu x, y, z;
+    float x, y, z;
 };
 
 struct point_hash_entry {
