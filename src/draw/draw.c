@@ -444,7 +444,7 @@ void draw_instruction_box () {
     int text_offset = 20;
 
     int box_w = 320;
-    int box_h = 263;
+    int box_h = 240;
 
     char tmp[100];
     DrawRectangle(10, 10, box_w, box_h, WHITE);
@@ -498,8 +498,11 @@ void draw_end_info_box() {
 
     char tmp[100];
 
-    DrawRectangle(10, 10, 320, 210, SKYBLUE);
-    DrawRectangleLines(10, 10, 320, 210, BLUE);
+    int box_w = 320;
+    int box_h = 230;
+
+    DrawRectangle(10, 10, box_w, box_h, SKYBLUE);
+    DrawRectangleLines(10, 10, box_w, box_h, BLUE);
 
     int text_pos = 20;
     int text_offset = 20;
@@ -508,47 +511,52 @@ void draw_end_info_box() {
 
     text_pos += text_offset;
 
-    sprintf(tmp, "Resolution Time: %ld us\n", draw_config.solver_time);
+    sprintf(tmp, "Resolution Time: %lf s", draw_config.solver_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "ODE Total Time: %ld us\n", draw_config.ode_total_time);
+    sprintf(tmp, "ODE Total Time: %lf s", draw_config.ode_total_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "CG Total Time: %ld us\n", draw_config.cg_total_time);
+    sprintf(tmp, "CG Total Time: %lf s", draw_config.cg_total_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "Mat time: %ld us\n", draw_config.total_mat_time);
+    sprintf(tmp, "Mat time: %lf s", draw_config.total_mat_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "Refine time: %ld us\n", draw_config.total_ref_time);
+    sprintf(tmp, "Refine time: %lf s", draw_config.total_ref_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "Derefine time: %ld us\n", draw_config.total_deref_time);
+    sprintf(tmp, "Derefine time: %lf s", draw_config.total_deref_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "Write time: %ld us\n", draw_config.total_write_time);
+    sprintf(tmp, "Write time: %lf s", draw_config.total_write_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "Initial configuration time: %ld us\n", draw_config.total_config_time);
+    sprintf(tmp, "Initial configuration time: %lf s", draw_config.total_config_time/1000.0/1000.0);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
     text_pos += text_offset;
 
-    sprintf(tmp, "CG Total Iterations: %ld\n", draw_config.total_cg_it);
+    sprintf(tmp, "CG Total Iterations: %ld", draw_config.total_cg_it);
+    DrawText(tmp, 20, text_pos, 16, BLACK);
+
+    text_pos += text_offset;
+
+    sprintf(tmp, "Final Time: %lf ms", draw_config.time);
     DrawText(tmp, 20, text_pos, 16, BLACK);
 
 }
