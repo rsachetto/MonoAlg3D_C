@@ -36,6 +36,7 @@ struct string_voidp_hash_entry {
 typedef uint32_t * ui32_array;
 typedef  struct element * element_array;
 typedef real_cpu * real_array;
+typedef float * f32_array;
 typedef struct point_3d * point3d_array;
 typedef struct line * line_array;
 typedef int * int_array;
