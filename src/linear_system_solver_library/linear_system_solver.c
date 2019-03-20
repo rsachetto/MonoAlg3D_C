@@ -6,6 +6,8 @@
 #include "../libraries_common/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 
+#include "../single_file_libraries/stb_ds.h"
+
 bool initialized = false;
 bool use_jacobi;
 int max_its = 50;

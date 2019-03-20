@@ -16,6 +16,8 @@
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
+#include "../single_file_libraries/stb_ds.h"
+
 #endif
 
 #include "../single_file_libraries/stb_ds.h"

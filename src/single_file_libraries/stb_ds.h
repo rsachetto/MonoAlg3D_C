@@ -1628,10 +1628,16 @@ void stbds_unit_tests(void)
 
   for (i=0; i < testsize; i += 1) {
     stbds_struct s = { i,i*2,i*3,i*4 };
+<<<<<<< HEAD
+    stbds_struct t = { i,i*2,i*3,i*4 };
+    if (i & 1) STBDS_ASSERT(hmgets(map2, s.key).d == 0);
+    else       STBDS_ASSERT(hmgets(map2, s.key).d == i*4);
+=======
     stbds_struct t = { i,i*2,i*3+1,i*4 };
     if (i & 1) STBDS_ASSERT(hmgets(map2, s.key).d == 0);
     else       STBDS_ASSERT(hmgets(map2, s.key).d == i*4);
     STBDS_ASSERT(hmget(map, t) == 0);
+>>>>>>> rsachetto-master
   }
   hmfree(map2);
 #endif

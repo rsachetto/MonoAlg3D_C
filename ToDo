@@ -7,7 +7,12 @@ Sachetto
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 
 Berg
+- [Elnaz] Implement a script to calculate the APD's of every cell (or a set of cells ...)
+  in the grid (use "getAps.sh" and "getAPD.py" together ...)
+
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
+- Implement coupling between Purkinje and tissue
+- Implement multi-celular-model solver (use the 'extra_data' data structure as Sachetto suggested)
 
 Pedro
 - Upgrade and refactor the DDM code.
