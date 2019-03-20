@@ -14,7 +14,7 @@ struct vtk_polydata_grid
     uint32_t num_points;
     uint32_t num_lines;
 
-    real_array values;
+    f32_array values;
     point3d_array points;
     line_array lines;
 };
