@@ -561,7 +561,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     print_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
 
 #ifdef COMPILE_OPENGL
-   draw_config.time = cur_time;
    draw_config.solver_time = res_time;
    draw_config.ode_total_time = ode_total_time;
    draw_config.cg_total_time = cg_total_time;
