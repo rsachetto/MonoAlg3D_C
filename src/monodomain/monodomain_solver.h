@@ -10,6 +10,7 @@
 
 #define RESTART_SIMULATION 42
 #define END_SIMULATION 43
+#define SIMULATION_FINISHED 44
 
 //Forward declarations
 struct user_options;
@@ -18,25 +19,25 @@ struct ode_solver;
 struct monodomain_solver {
 
     int num_threads;
-    double final_time;
+    real_cpu final_time;
 
-    double beta, cm; // micrometers
+    real_cpu beta, cm; // micrometers
 
     //TODO: maybe use an extra data variable as we did on the alg cell
-    double kappa_x, kappa_y, kappa_z;
+    real_cpu kappa_x, kappa_y, kappa_z;
     
     int refine_each;
     int derefine_each;
-    double refinement_bound;
-    double derefinement_bound;
+    real_cpu refinement_bound;
+    real_cpu derefinement_bound;
 
-    double start_adapting_at;
+    real_cpu start_adapting_at;
 
     bool abort_on_no_activity;
 
     // Time used for solving wave equation.
-    double dt;
-    double current_time;
+    real_cpu dt;
+    real_cpu current_time;
     int current_count;
 
 };
@@ -48,12 +49,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
-void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, double initial_v);
+void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v);
 
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                        struct grid *the_grid, struct user_options *options);
 
-bool update_ode_state_vector_and_check_for_activity(float vm_thresold, struct ode_solver *the_ode_solver, struct grid *the_grid);
+bool update_ode_state_vector_and_check_for_activity(real_cpu vm_thresold, struct ode_solver *the_ode_solver, struct grid *the_grid);
 
 void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver);
 void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid);

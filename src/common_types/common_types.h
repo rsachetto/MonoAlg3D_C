@@ -2,6 +2,7 @@
 #define MONOALG3D_COMMON_TYPES_H
 
 #include <stdint.h>
+#include "../monodomain/constants.h"
 
 struct line {
     uint64_t source;
@@ -9,7 +10,7 @@ struct line {
 };
 
 struct point_3d {
-    float x, y, z;
+    real_cpu x, y, z;
 };
 
 struct point_hash_entry {
@@ -34,7 +35,7 @@ struct string_voidp_hash_entry {
 
 typedef uint32_t * ui32_array;
 typedef  struct element * element_array;
-typedef float * f32_array;
+typedef real_cpu * real_array;
 typedef struct point_3d * point3d_array;
 typedef struct line * line_array;
 typedef int * int_array;

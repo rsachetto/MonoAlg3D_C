@@ -10,13 +10,17 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include "../raylib/src/raygui.h"
-#include "../utils/stop_watch.h"
 #include "../common_types/common_types.h"
 
 #include "../single_file_libraries/stb_ds.h"
 
 static bool calc_center = false;
 static bool one_selected = false;
+static bool draw_selected_ap_text = false;
+
+#define DOUBLE_CLICK_DELAY 0.5 //seconds
+
+double selected_time = 0.0;
 
 int graph_pos_x;
 int graph_pos_y;
@@ -24,23 +28,23 @@ int graph_pos_y;
 Font font;
 
 struct action_potential {
-    double v;
-    float t;
+    real_cpu v;
+    real_cpu t;
 };
 
 typedef struct action_potential * action_potential_array;
 
 struct point_voidp_hash_entry *selected_aps;
 
-static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
+static inline real_cpu normalize(real_cpu r_min, real_cpu r_max, real_cpu t_min, real_cpu t_max, real_cpu m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
 }
 
-static inline Color get_color(double value)
+static inline Color get_color(real_cpu value)
 {
     int idx1;        // |-- Our desiBLACK color will be between these two indexes in "color".
     int idx2;        // |
-    double fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
+    real_cpu fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
 
     if(value <= 0)      {  idx1 = idx2 = 0;            }    // accounts for an input <=0
     else if(value >= 1)  {  idx1 = idx2 = NUM_COLORS-1; }    // accounts for an input >=0
@@ -49,7 +53,7 @@ static inline Color get_color(double value)
         value = value * (NUM_COLORS-1);        // Will multiply value by 3.
         idx1  = (int)floor(value);                  // Our desiBLACK color will be after this index.
         idx2  = idx1+1;                        // ... and before this index (inclusive).
-        fractBetween = value - (double)idx1;    // Distance between the two indexes (0-1).
+        fractBetween = value - (real_cpu)idx1;    // Distance between the two indexes (0-1).
     }
 
     unsigned char red   = (unsigned char) (((color[idx2][0] - color[idx1][0])*fractBetween + color[idx1][0]) * 255);
@@ -172,8 +176,8 @@ static Vector3 find_mesh_center() {
     struct cell_node **ac = grid_to_draw->active_cells;
     struct cell_node *grid_cell;
 
-    float max_x, max_y, max_z;
-    float min_x, min_y, min_z;
+    real_cpu max_x, max_y, max_z;
+    real_cpu min_x, min_y, min_z;
 
     max_x = FLT_MIN;
     max_y = FLT_MIN;
@@ -214,9 +218,9 @@ static Vector3 find_mesh_center() {
         }
     }
 
-    result.x = (max_x+min_x)/2.0f;
-    result.y = (max_y+min_y)/2.0f;
-    result.z = (max_z+min_z)/2.0f;
+    result.x = (float)(max_x+min_x)/2.0f;
+    result.y = (float)(max_y+min_y)/2.0f;
+    result.z = (float)(max_z+min_z)/2.0f;
 
     calc_center = true;
 
@@ -224,7 +228,7 @@ static Vector3 find_mesh_center() {
 
 }
 
-static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
+static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
 
@@ -232,8 +236,8 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
     Vector3 cubeSize;
     Color color;
 
-    double max_v = draw_config.max_v;
-    double min_v = draw_config.min_v;
+    real_cpu max_v = draw_config.max_v;
+    real_cpu min_v = draw_config.min_v;
 
     bool grid_only = draw_config.grid_only;
     bool grid_lines = draw_config.grid_lines;
@@ -271,14 +275,14 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
                     hmput(selected_aps, p, aps);
                 }
 
-                cubePosition.x = (grid_cell->center_x - mesh_offset.x)/scale;
-                cubePosition.y = (grid_cell->center_y - mesh_offset.y)/scale;
-                cubePosition.z = (grid_cell->center_z - mesh_offset.z)/scale;
+                cubePosition.x = (float)((grid_cell->center_x - mesh_offset.x)/scale);
+                cubePosition.y = (float)((grid_cell->center_y - mesh_offset.y)/scale);
+                cubePosition.z = (float)((grid_cell->center_z - mesh_offset.z)/scale);
 
 
-                cubeSize.x = grid_cell->dx/scale;
-                cubeSize.y = grid_cell->dy/scale;
-                cubeSize.z = grid_cell->dz/scale;
+                cubeSize.x = (float)(grid_cell->dx/scale);
+                cubeSize.y = (float)(grid_cell->dy/scale);
+                cubeSize.z = (float)(grid_cell->dz/scale);
 
                 collision = CheckCollisionRayBox(ray,
                                                  (BoundingBox){(Vector3){ cubePosition.x - cubeSize.x/2, cubePosition.y - cubeSize.y/2, cubePosition.z - cubeSize.z/2 },
@@ -302,6 +306,8 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
                         if(aps == NULL) {
                             arrsetcap(aps, 50);
                             hmput(selected_aps, p, aps);
+                            draw_selected_ap_text = true;
+                            selected_time = GetTime();
                         }
                         one_selected = true;
 
@@ -316,6 +322,14 @@ static void draw_alg_mesh(Vector3 mesh_offset, float scale, Ray ray) {
 int num_colors = 19;
 Color colors[] = {DARKGRAY, YELLOW, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
 
+ double clamp(double x, double min, double max) {
+     if (x < min)
+         x = min;
+     else if (x > max)
+         x = max;
+     return x;
+ }
+
 void draw_ap() {
 
     graph_pos_x = 1;
@@ -324,27 +338,41 @@ void draw_ap() {
     int grap_width = GetScreenWidth() / 3;
 
     DrawRectangle(graph_pos_x, graph_pos_y, grap_width, 450, WHITE);
-    float min_x = graph_pos_x + 55.0f;
-    float max_x = graph_pos_x + grap_width - 10;
+    real_cpu min_x = graph_pos_x + 55.0f;
+    real_cpu max_x = graph_pos_x + grap_width - 10;
 
-    float min_y = graph_pos_y + 350.0f;
-    float max_y = graph_pos_y + 50.0f;
+    real_cpu min_y = graph_pos_y + 350.0f;
+    real_cpu max_y = graph_pos_y + 50.0f;
 
-    DrawTextEx(font, "Time (ms)", (Vector2){graph_pos_x + 160.0f, min_y + 30.0f}, 16, 1, BLACK);
+    int n = hmlen(selected_aps);
+
+    if(draw_selected_ap_text) {
+        char tmp[256];
+        double time_elapsed = GetTime() - selected_time;
+        unsigned char alpha = (unsigned char) clamp(255 - time_elapsed*100, 0, 255);
+        Color c = colors[(n-1) % num_colors];
+        c.a = alpha;
+        sprintf(tmp, "%d AP(s) selected", n);
+        DrawTextEx(font, tmp, (Vector2){graph_pos_x + 160.0f, (float)max_y}, 16, 1, c);
+
+        if(alpha == 0) {
+            draw_selected_ap_text = false;
+            selected_time = 0.0;
+        }
+    }
+
+    DrawTextEx(font, "Time (ms)", (Vector2){graph_pos_x + 160.0f, (float)min_y + 30.0f}, 16, 1, BLACK);
 
     Vector2 p1, p2;
     struct action_potential *aps;
-    int c_count = 0;
-    int n = hmlen(selected_aps);
 
-    for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
 
-        aps = (struct action_potential*) selected_aps[i].value;
+        aps = (struct action_potential*) selected_aps[j].value;
         int c = arrlen(aps);
 
         if(c > 0) {
-            Color line_color = colors[c_count % num_colors];
-            c_count++;
+            Color line_color = colors[j % num_colors];
             for (int i = 0; i < c; i++) {
 
                 if (i + 1 < c) {
@@ -388,9 +416,9 @@ void draw_ap() {
     }
 
     int num_ticks = 10;
-    float tick_ofsset = (draw_config.max_v - draw_config.min_v)/(float)num_ticks;
+    real_cpu tick_ofsset = (draw_config.max_v - draw_config.min_v)/(real_cpu)num_ticks;
 
-    float v = draw_config.min_v;
+    real_cpu v = draw_config.min_v;
 
     for(int t = 0; t <= num_ticks; t++ ) {
         char tmp[20];
@@ -415,10 +443,13 @@ void draw_instruction_box () {
     int text_position = 10;
     int text_offset = 20;
 
-    char tmp[100];
-    DrawRectangle(10, 10, 320, 243, WHITE);
+    int box_w = 320;
+    int box_h = 263;
 
-    DrawRectangleLines(10, 10, 320, 243, BLACK);
+    char tmp[100];
+    DrawRectangle(10, 10, box_w, box_h, WHITE);
+
+    DrawRectangleLines(10, 10, box_w, box_h, BLACK);
 
     DrawText("Default controls:", 20, 20, 10, BLACK);
     text_position += text_offset;
@@ -461,8 +492,6 @@ void draw_instruction_box () {
         DrawText("Simulation running:", 20, text_position, 16, BLACK);
     }
     DrawText(tmp, 170, text_position, 16, BLACK);
-
-
 }
 
 void draw_end_info_box() {
@@ -531,14 +560,14 @@ void init_and_open_visualization_window() {
 
     omp_set_lock(&draw_config.sleep_lock);
 
-    struct stop_watch timer;
-
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     InitWindow(screenWidth, screenHeight, "Simulation visualization");
 
     font = LoadFont("misc/Roboto-Black.ttf");
+
+    bool mesh_loaded = false;
 
     draw_config.grid_only = false;
     draw_config.grid_lines = true;
@@ -557,9 +586,7 @@ void init_and_open_visualization_window() {
 
     SetTargetFPS(120);
 
-    float scale = 1.0f;
-
-    bool mesh_loaded = false;
+    real_cpu scale = 1.0f;
 
     Ray ray;
     ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
@@ -567,6 +594,7 @@ void init_and_open_visualization_window() {
 
     Vector3 mesh_offset = (Vector3){ 0, 0, 0 };
 
+    double mouse_timer = -1;
 
     while (!WindowShouldClose()) {
 
@@ -590,6 +618,14 @@ void init_and_open_visualization_window() {
         }
 
         if (IsKeyPressed('R')) {
+            for(int i = 0; i < hmlen(selected_aps); i++) {
+                arrfree(selected_aps[i].value);
+            }
+
+            hmfree(selected_aps);
+            selected_aps = NULL;
+            hmdefault(selected_aps, NULL);
+
             if(draw_config.paused) {
                 omp_unset_lock(&draw_config.sleep_lock);
                 draw_config.paused = false;
@@ -597,7 +633,8 @@ void init_and_open_visualization_window() {
 
             draw_config.restart = true;
             mesh_loaded = false;
-
+            ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+            ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
         }
 
         // Draw
@@ -605,14 +642,18 @@ void init_and_open_visualization_window() {
         BeginDrawing();
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if(!timer.running) {
-                start_stop_watch(&timer);
+            if(mouse_timer == -1) {
+                mouse_timer = GetTime();
             }
             else {
-                long delay = stop_stop_watch(&timer);
+                double delay = GetTime()-mouse_timer;
 
-                if(delay < 450000) {
+                if(delay < DOUBLE_CLICK_DELAY) {
                     ray = GetMouseRay(GetMousePosition(), camera);
+                    mouse_timer = -1;
+                }
+                else {
+                    mouse_timer = -1;
                 }
 
             }

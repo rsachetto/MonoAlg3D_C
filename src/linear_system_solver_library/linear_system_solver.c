@@ -9,19 +9,19 @@
 bool initialized = false;
 bool use_jacobi;
 int max_its = 50;
-double tol = 1e-16;
+real_cpu tol = 1e-16;
 
 SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     if(!initialized) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data.config, "tolerance");
         GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(use_jacobi, config->config_data.config, "use_preconditioner");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
         initialized = true;
     }
 
 
-    double  rTr,
+    real_cpu  rTr,
             r1Tr1,
             pTAp,
             alpha,
@@ -66,7 +66,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
         CG_R(ac[i]) = ac[i]->b - ac[i]->Ax;
         if(use_jacobi) {
-            double value = cell_elements[0].value;
+            real_cpu value = cell_elements[0].value;
             if(value == 0.0) value = 1.0;
             CG_Z(ac[i]) = (1.0/value) * CG_R(ac[i]); // preconditioner
             rTz += CG_R(ac[i]) * CG_Z(ac[i]);
@@ -125,7 +125,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
                 CG_R(ac[i]) -= alpha * ac[i]->Ax;
 
                 if(use_jacobi) {
-                    double value = ac[i]->elements[0].value;
+                    real_cpu value = ac[i]->elements[0].value;
                     if(value == 0.0) value = 1.0;
                     CG_Z(ac[i]) = (1.0/value) * CG_R(ac[i]);
                     r1Tz1 += CG_Z(ac[i]) * CG_R(ac[i]);
@@ -174,14 +174,14 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
 
 
     if(!initialized) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data.config, "tolerance");
         max_its = 500;
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
         initialized = true;
     }
 
 
-    double  sigma,
+    real_cpu  sigma,
             precision = tol;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -218,11 +218,11 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
                     sigma += element.value * element.cell->v;
                 }
 
-                double value = cell_elements[0].value;
+                real_cpu value = cell_elements[0].value;
                 JACOBI_X_AUX(ac[i]) = (1.0/value)*(ac[i]->b - sigma);
             }
-            double residue = 0.0;
-            double sum;
+            real_cpu residue = 0.0;
+            real_cpu sum;
             #pragma omp parallel for private (element,sum) reduction (+:residue)
             for (i = 0; i < num_active_cells; i++)
             {
@@ -258,7 +258,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
 
     if(!initialized) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(double, tol, config->config_data.config, "tolerance");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data.config, "tolerance");
 
         char *preconditioner_char = NULL;
         GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(preconditioner_char, config->config_data.config, "use_preconditioner");
@@ -273,7 +273,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     }
 
 
-    double  rTr,
+    real_cpu  rTr,
             r1Tr1,
             pTAp,
             alpha,
@@ -347,7 +347,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
         if(use_jacobi)
         {
-            double value = cell_elements[0].value;
+            real_cpu value = cell_elements[0].value;
             if(value == 0.0) value = 1.0;
             BCG_Z(ac[i]) = (1.0/value) * BCG_R(ac[i]); // preconditioner
             BCG_Z_AUX(ac[i]) = (1.0/value) * BCG_R_AUX(ac[i]);
@@ -427,7 +427,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
                 if(use_jacobi)
                 {
-                    double value = ac[i]->elements[0].value;
+                    real_cpu value = ac[i]->elements[0].value;
                     if(value == 0.0) value = 1.0;
                     BCG_Z(ac[i]) = (1.0/value) * BCG_R(ac[i]);
                     BCG_Z_AUX(ac[i]) = (1.0/value) * BCG_R_AUX(ac[i]);

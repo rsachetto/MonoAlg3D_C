@@ -16,7 +16,7 @@
 struct changed_parameters {
     char *section;
     char *name;
-    double *values;
+    real_cpu *values;
 };
 
 void configure_new_parameters(sds new_out_dir_name, struct changed_parameters *changed, struct user_options *options, int n, int p) {
@@ -263,11 +263,11 @@ int main(int argc, char **argv) {
 
             sds *value_range = sdssplit(e.value, "|", &count);
 
-            double value = strtod(value_range[0], NULL);
-            double inc  = strtod(value_range[1], NULL);
+            real_cpu value = strtod(value_range[0], NULL);
+            real_cpu inc  = strtod(value_range[1], NULL);
             sdsfreesplitres(value_range, count);
 
-            c.values = malloc(sizeof(double)*num_par_change);
+            c.values = malloc(sizeof(real_cpu)*num_par_change);
 
             for(int n = 0; n < num_par_change; n++) {
                 c.values[n] = value + n*inc;

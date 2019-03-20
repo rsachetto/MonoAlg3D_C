@@ -21,13 +21,13 @@
 
 UPDATE_MONODOMAIN(update_monodomain_default) {
 
-    double alpha;
+    real_cpu alpha;
     bool use_gpu = the_ode_solver->gpu;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **active_cells = the_grid->active_cells;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
-    double dt_pde = the_solver->dt;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt_pde = the_solver->dt;
 
     int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
@@ -62,20 +62,20 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
 
 UPDATE_MONODOMAIN(update_monodomain_ddm) {
 
-    double alpha;
+    real_cpu alpha;
     bool use_gpu = the_ode_solver->gpu;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **active_cells = the_grid->active_cells;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
-    double dt_pde = the_solver->dt;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt_pde = the_solver->dt;
 
     int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
 
-    double kappa_x = the_solver->kappa_x;
-    double kappa_y = the_solver->kappa_y;
-    double kappa_z = the_solver->kappa_z;
+    real_cpu kappa_x = the_solver->kappa_x;
+    real_cpu kappa_y = the_solver->kappa_y;
+    real_cpu kappa_z = the_solver->kappa_z;
 
 #ifdef COMPILE_CUDA
     real *vms = NULL;
@@ -116,9 +116,9 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
         // TODO: The computation of the kappas will enter here ...
         //       When we consider the anisotropic case
 
-        double dx = active_cells[i]->dx;
-        double dy = active_cells[i]->dy;
-        double dz = active_cells[i]->dz;
+        real_cpu dx = active_cells[i]->dx;
+        real_cpu dy = active_cells[i]->dy;
+        real_cpu dz = active_cells[i]->dz;
 
         for (int j = 1; j < max_elements; j++)
         {
@@ -126,7 +126,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
 
             if (cell_elements[j].direction == 'n') // North cell
             {
-                double multiplier = (dx * dy) / dz;
+                real_cpu multiplier = (dx * dy) / dz;
                 if(use_gpu)
                 {
 #ifdef COMPILE_CUDA
@@ -142,7 +142,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
             }
             else if (cell_elements[j].direction == 's') // South cell
             {
-                double multiplier = (dx * dy) / dz;
+                real_cpu multiplier = (dx * dy) / dz;
                 if(use_gpu)
                 {
 #ifdef COMPILE_CUDA
@@ -158,7 +158,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
             }
             else if (cell_elements[j].direction == 'e') // East cell
             {
-                double multiplier = (dx * dz) / dy;
+                real_cpu multiplier = (dx * dz) / dy;
                 if(use_gpu)
                 {
 #ifdef COMPILE_CUDA
@@ -174,7 +174,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
             }
             else if (cell_elements[j].direction == 'w') // West cell
             {
-                double multiplier = (dx * dz) / dy;
+                real_cpu multiplier = (dx * dz) / dy;
                 if(use_gpu)
                 {
                     #ifdef COMPILE_CUDA
@@ -190,7 +190,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
             }
             else if (cell_elements[j].direction == 'f') // Forward cell
             {
-                double multiplier = (dy * dz) / dx;
+                real_cpu multiplier = (dy * dz) / dx;
                 if(use_gpu)
                 {
                     #ifdef COMPILE_CUDA
@@ -206,7 +206,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
             }
             else if (cell_elements[j].direction == 'b') // Backward cell
             {
-                double multiplier = (dy * dz) / dx;
+                real_cpu multiplier = (dy * dz) / dx;
                 if(use_gpu)
                 {
                     #ifdef COMPILE_CUDA

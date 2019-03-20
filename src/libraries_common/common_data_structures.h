@@ -30,28 +30,28 @@ struct fibrotic_mesh_info {
     } while (0)
 
 struct conjugate_gradient_info {
-    double r;  /* Element of the int_vector r = b - Ax associated to this cell. */
-    double p;  /* Element of the search direction int_vector in the conjugate gradient algorithm. */
-    double p1; /* p's upgrade in the conjugate gradient algorithm. */
-    double z;  // Jacobi preconditioner
+    real_cpu r;  /* Element of the int_vector r = b - Ax associated to this cell. */
+    real_cpu p;  /* Element of the search direction int_vector in the conjugate gradient algorithm. */
+    real_cpu p1; /* p's upgrade in the conjugate gradient algorithm. */
+    real_cpu z;  // Jacobi preconditioner
 };
 
 struct biconjugate_gradient_info {
-    double r;  /* Element of the int_vector r = b - Ax associated to this cell. */
-    double p;  /* Element of the search direction int_vector in the conjugate gradient algorithm. */
-    double p1; /* p's upgrade in the conjugate gradient algorithm. */
-    double z;  // Jacobi preconditioner
+    real_cpu r;  /* Element of the int_vector r = b - Ax associated to this cell. */
+    real_cpu p;  /* Element of the search direction int_vector in the conjugate gradient algorithm. */
+    real_cpu p1; /* p's upgrade in the conjugate gradient algorithm. */
+    real_cpu z;  // Jacobi preconditioner
 
-    double x_aux;
-    double r_aux;
-    double z_aux;
-    double p_aux;
-    double p1_aux;
-    double xA;
+    real_cpu x_aux;
+    real_cpu r_aux;
+    real_cpu z_aux;
+    real_cpu p_aux;
+    real_cpu p1_aux;
+    real_cpu xA;
 };
 
 struct jacobi_info {
-    double x_aux; // jacobi variable
+    real_cpu x_aux; // jacobi variable
 };
 
 #define CG_INFO(grid_cell) (struct conjugate_gradient_info *)grid_cell->linear_system_solver_extra_info

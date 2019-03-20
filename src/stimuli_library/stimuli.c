@@ -56,8 +56,8 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
     real stim_current = config->stim_current;
     real stim_value;
 
-    double x_limit = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, x_limit, config->config_data.config, "x_limit");
+    real_cpu x_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, x_limit, config->config_data.config, "x_limit");
 
     if(config->spatial_stim_currents) {
         free(config->spatial_stim_currents);
@@ -105,9 +105,9 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 
     fscanf(s_file, "%zu\n", &s_size);
 
-    double **cell_stims = (double**) malloc(sizeof(double*)*s_size);
+    real_cpu **cell_stims = (real_cpu**) malloc(sizeof(real_cpu*)*s_size);
     for(int i=0; i< s_size; i++){
-        cell_stims[i] = (double*) malloc(sizeof(double) * 3);
+        cell_stims[i] = (real_cpu*) malloc(sizeof(real_cpu) * 3);
         if(cell_stims[i] == NULL) {
             fprintf(stderr, "Failed to allocate memory for the stim file\n");
             exit(0);
@@ -131,9 +131,9 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 	#pragma omp parallel for private(stim, stim_value)
     for (i = 0; i < n_active; i++) {
 
-        double center_x = ac[i]->center_x;
-        double center_y = ac[i]->center_y;
-        double center_z = ac[i]->center_z;
+        real_cpu center_x = ac[i]->center_x;
+        real_cpu center_y = ac[i]->center_y;
+        real_cpu center_z = ac[i]->center_z;
 
         int index = inside_mesh(cell_stims, center_x, center_y, center_z, 0, s_size - 1);
         stim = (index != -1);
@@ -155,8 +155,8 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    double x_limit = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, x_limit, config->config_data.config, "x_limit");
+    real_cpu x_limit = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, x_limit, config->config_data.config, "x_limit");
 
     real stim_current = config->stim_current;
     real stim_value;
@@ -189,8 +189,8 @@ SET_SPATIAL_STIM(stim_base_mouse) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    double stim_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, stim_size, config->config_data.config, "stim_size");
+    real_cpu stim_size = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_size, config->config_data.config, "stim_size");
 
     real stim_current = config->stim_current;
     real stim_value;
@@ -263,17 +263,17 @@ SET_SPATIAL_STIM(stim_x_y_limits) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    double max_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_x, config->config_data.config, "max_x");
+    real_cpu max_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_x, config->config_data.config, "max_x");
 
-    double min_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_x, config->config_data.config, "min_x");
+    real_cpu min_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, min_x, config->config_data.config, "min_x");
 
-    double max_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_y, config->config_data.config, "max_y");
+    real_cpu max_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_y, config->config_data.config, "max_y");
 
-    double min_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_y, config->config_data.config, "min_y");
+    real_cpu min_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, min_y, config->config_data.config, "min_y");
 
     real stim_current = config->stim_current;
     real stim_value;
@@ -309,23 +309,23 @@ SET_SPATIAL_STIM(stim_x_y_z_limits) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    double max_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_x, config->config_data.config, "max_x");
+    real_cpu max_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_x, config->config_data.config, "max_x");
 
-    double min_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_x, config->config_data.config, "min_x");
+    real_cpu min_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, min_x, config->config_data.config, "min_x");
 
-    double max_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_y, config->config_data.config, "max_y");
+    real_cpu max_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_y, config->config_data.config, "max_y");
 
-    double min_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_y, config->config_data.config, "min_y");
+    real_cpu min_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, min_y, config->config_data.config, "min_y");
 
-    double max_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, max_z, config->config_data.config, "max_z");
+    real_cpu max_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_z, config->config_data.config, "max_z");
 
-    double min_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, min_z, config->config_data.config, "min_z");
+    real_cpu min_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, min_z, config->config_data.config, "min_z");
 
     real stim_current = config->stim_current;
     real stim_value;
@@ -368,14 +368,14 @@ SET_SPATIAL_STIM(stim_if_inside_circle_than) {
     real stim_current = config->stim_current;
     real stim_value;
 
-    double center_x = 0.0;
-    double center_y = 0.0;
-    double center_z = 0.0;
-    double radius = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, center_x, config->config_data.config, "center_x");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, center_y, config->config_data.config, "center_y");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, center_z, config->config_data.config, "center_z");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(double, radius, config->config_data.config, "radius");
+    real_cpu center_x = 0.0;
+    real_cpu center_y = 0.0;
+    real_cpu center_z = 0.0;
+    real_cpu radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, center_x, config->config_data.config, "center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, center_y, config->config_data.config, "center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, center_z, config->config_data.config, "center_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, radius, config->config_data.config, "radius");
 
     if(config->spatial_stim_currents) {
         free(config->spatial_stim_currents);
@@ -388,7 +388,7 @@ SET_SPATIAL_STIM(stim_if_inside_circle_than) {
     #pragma omp parallel for private(stim, stim_value)
     for (i = 0; i < n_active; i++) 
     {
-        double dist = sqrt(pow(ac[i]->center_x-center_x,2)+pow(ac[i]->center_y-center_y,2)+pow(ac[i]->center_z-center_z,2));
+        real_cpu dist = sqrt(pow(ac[i]->center_x-center_x,2)+pow(ac[i]->center_y-center_y,2)+pow(ac[i]->center_z-center_z,2));
         stim = dist <= radius;
 
         if (stim) {

@@ -88,7 +88,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     bool has_extra_data = (extra_data_config != NULL);
 
-    double last_stimulus_time = -1.0;
+    real_cpu last_stimulus_time = -1.0;
     bool has_any_periodic_stim = false;
 
     if(stimuli_configs) 
@@ -98,7 +98,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         // Find last stimuli
         size_t s_size = shlen(stimuli_configs);
-        double s_end;
+        real_cpu s_end;
         for(int i = 0; i < s_size; i++) {
 
             struct stim_config *sconfig = (struct stim_config*) stimuli_configs[i].value;
@@ -215,18 +215,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int count = the_monodomain_solver->current_count;
 
-    double refinement_bound = the_monodomain_solver->refinement_bound;
-    double derefinement_bound = the_monodomain_solver->derefinement_bound;
+    real_cpu refinement_bound = the_monodomain_solver->refinement_bound;
+    real_cpu derefinement_bound = the_monodomain_solver->derefinement_bound;
 
     bool adaptive = the_grid->adaptive;
-    double start_adpt_at = the_monodomain_solver->start_adapting_at;
-    double dt_pde = the_monodomain_solver->dt;
-    double finalT = the_monodomain_solver->final_time;
+    real_cpu start_adpt_at = the_monodomain_solver->start_adapting_at;
+    real_cpu dt_pde = the_monodomain_solver->dt;
+    real_cpu finalT = the_monodomain_solver->final_time;
 
 //    double beta = the_monodomain_solver->beta;
 //    double cm = the_monodomain_solver->cm;
 
-    double dt_ode = the_ode_solver->min_dt;
+    real_cpu dt_ode = the_ode_solver->min_dt;
 
 #ifdef COMPILE_CUDA
     if(gpu) {
@@ -275,8 +275,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
     }
 
-    double start_dx, start_dy, start_dz;
-    double max_dx, max_dy, max_dz;
+    real_cpu start_dx, start_dy, start_dz;
+    real_cpu max_dx, max_dy, max_dz;
 
     if (purkinje_config)
     {
@@ -324,7 +324,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                             the_ode_solver);
     }
 
-    double initial_v = the_ode_solver->model_data.initial_v;
+    real_cpu initial_v = the_ode_solver->model_data.initial_v;
 
     total_config_time = stop_stop_watch(&config_time);
 
@@ -374,10 +374,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(save_checkpoint)
         save_state_rate = save_state_config->save_rate;
 
-    float vm_threshold = configs->vm_threshold;
+    real_cpu vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
-    double solver_error;
+    real_cpu solver_error;
     uint32_t solver_iterations = 0;
 
     if(stimuli_configs)
@@ -386,7 +386,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(has_extra_data)
         set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 
-    double cur_time = the_monodomain_solver->current_time;
+    real_cpu cur_time = the_monodomain_solver->current_time;
 
     if(save_mesh_config != NULL) {
         print_rate = save_mesh_config->print_rate;
@@ -401,7 +401,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (configs->draw) {
             draw_config.grid_to_draw = the_grid;
             draw_config.simulating = true;
-            draw_config.paused = true;
+            draw_config.paused = !configs->start_visualization_unpaused;
         } else {
             draw_config.paused = false;
         }
@@ -415,7 +415,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
 
         #ifdef COMPILE_OPENGL
-        if(draw_config.restart) return RESTART_SIMULATION;
+        if(draw_config.restart) {
+            draw_config.time = 0.0;
+            return RESTART_SIMULATION;
+        }
         if(draw_config.exit) return END_SIMULATION;
 
         if(!draw_config.paused) {
@@ -570,7 +573,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
    draw_config.simulating = false;
 #endif
 
-    return EXIT_SUCCESS;
+    return SIMULATION_FINISHED;
 
 }
 
@@ -592,7 +595,7 @@ void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid,
         config->set_extra_data(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
 }
 
-bool update_ode_state_vector_and_check_for_activity(float vm_threshold, struct ode_solver *the_ode_solver,
+bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver,
                                                     struct grid *the_grid) {
 
     uint32_t n_active = the_grid->num_active_cells;
@@ -675,14 +678,14 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
 }
 
 // TODO: MAYBE WE HAVE TO MOVE THIS TO THE USER PROVIDED LIBRARY (ASSEMBLY MATRIX)
-void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *the_grid, double initial_v) {
+void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v) {
 
-    double alpha;
+    real_cpu alpha;
     struct cell_node **ac = the_grid->active_cells;
     uint32_t active_cells = the_grid->num_active_cells;
-    double beta = the_solver->beta;
-    double cm = the_solver->cm;
-    double dt = the_solver->dt;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt = the_solver->dt;
     int i;
 
 #pragma omp parallel for private(alpha)
