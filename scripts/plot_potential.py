@@ -29,6 +29,10 @@ def main():
 		print("-------------------------------------------------------------------------")
 		print("Usage:> python %s <input_file> <dt> <print_rate>" % sys.argv[0])
 		print("-------------------------------------------------------------------------")
+		print("<input_file> = Input file with the AP's from each timestep")
+		print("<dt> = Timestep value used for the simulation")
+		print("<print_rate> = Print rate used for the simulation")
+		print("-------------------------------------------------------------------------")
 		return 1
 
 	input_file = sys.argv[1]
