@@ -435,3 +435,6 @@ SAVE_MESH(save_as_vtp_purkinje) {
     sdsfree(base_name);
 
 }
+
+SAVE_MESH(no_save) {
+}
