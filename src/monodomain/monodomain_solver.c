@@ -5,6 +5,7 @@
 #include "monodomain_solver.h"
 #include "../utils/file_utils.h"
 #include "../utils/stop_watch.h"
+#include "../libraries_common/common_data_structures.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -33,6 +34,61 @@
 #endif
 
 #include <stdio.h>
+#include <float.h>
+
+static void translate_visible_mesh_to_origin(struct grid *grid) {
+
+    real_cpu minx = FLT_MAX;
+    real_cpu miny = FLT_MAX;
+    real_cpu minz = FLT_MAX;
+
+    struct cell_node *grid_cell;
+
+    float center_x;
+    float center_y;
+    float center_z;
+
+    grid_cell = grid->first_cell;
+
+    while(grid_cell != 0) {
+
+        center_x = grid_cell->center_x;
+        center_y = grid_cell->center_y;
+        center_z = grid_cell->center_z;
+
+        if(center_x < minx){
+            minx = center_x;
+        }
+
+        if(center_y < miny){
+            miny = center_y;
+        }
+
+        if(center_z < minz){
+            minz = center_z;
+        }
+
+        grid_cell = grid_cell->next;
+    }
+
+    grid_cell = grid->first_cell;
+
+    struct fibrotic_mesh_info *mesh_info;
+
+    while(grid_cell != 0) {
+
+        mesh_info = FIBROTIC_INFO(grid_cell);
+
+        if(grid_cell->active || (mesh_info && mesh_info->fibrotic)) {
+            grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
+            grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);;
+            grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);;
+        }
+
+        grid_cell = grid_cell->next;
+    }
+
+}
 
 struct monodomain_solver *new_monodomain_solver() {
 
@@ -263,8 +319,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (domain_config)
         {
             success = domain_config->set_spatial_domain(domain_config, the_grid);
-            if(!success) 
-            {
+
+            if(configs->draw) {
+                translate_visible_mesh_to_origin(the_grid);
+            }
+
+            if(!success) {
                 print_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
             }
         }
@@ -722,6 +782,16 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
+    if(options->linear_system_solver_config) {
+        print_to_stdout_and_file("Linear system solver configuration:\n");
+
+        print_to_stdout_and_file("Linear system solver library: %s\n", options->linear_system_solver_config->config_data.library_file_path);
+        print_to_stdout_and_file("Linear system solver function: %s\n", options->linear_system_solver_config->config_data.function_name);
+
+        STRING_HASH_PRINT_KEY_VALUE_LOG(options->linear_system_solver_config->config_data.config);
+        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    }
 
     if(options->save_mesh_config) {
         print_to_stdout_and_file("Save results configuration:\n");

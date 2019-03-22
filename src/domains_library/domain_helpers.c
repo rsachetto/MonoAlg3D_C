@@ -21,60 +21,6 @@
 #include <unistd.h>
 #endif
 
-void translate_visible_mesh_to_origin(struct grid *grid) {
-
-    real_cpu minx = FLT_MAX;
-    real_cpu miny = FLT_MAX;
-    real_cpu minz = FLT_MAX;
-
-    struct cell_node *grid_cell;
-
-    real_cpu center_x;
-    real_cpu center_y;
-    real_cpu center_z;
-
-    grid_cell = grid->first_cell;
-
-    while(grid_cell != 0) {
-
-        center_x = grid_cell->center_x;
-        center_y = grid_cell->center_y;
-        center_z = grid_cell->center_z;
-
-        if(center_x < minx){
-            minx = center_x;
-        }
-
-        if(center_y < miny){
-            miny = center_y;
-        }
-
-        if(center_z < minz){
-            minz = center_z;
-        }
-
-        grid_cell = grid_cell->next;
-    }
-
-    grid_cell = grid->first_cell;
-
-    struct fibrotic_mesh_info *mesh_info;
-
-    while(grid_cell != 0) {
-
-        mesh_info = FIBROTIC_INFO(grid_cell);
-
-        if(grid_cell->active || (mesh_info && mesh_info->fibrotic)) {
-            grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
-            grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);;
-            grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);;
-        }
-
-        grid_cell = grid_cell->next;
-    }
-
-}
-
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
                                    real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
                                    real_cpu *real_side_length_y, real_cpu *real_side_length_z) {
@@ -320,7 +266,7 @@ void set_cuboid_domain(struct grid *the_grid, real_cpu sizeX, real_cpu sizeY, re
 
 }
 
-void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, bool read_fibrosis) {
+void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, char *read_format) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen(file_name, "r");
@@ -329,7 +275,7 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
         print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
     }
 
-    real_cpu **mesh_points = (real_cpu **)malloc(sizeof(real_cpu *) * size);
+    double **mesh_points = (double **)malloc(sizeof(double *) * size);
     for(int i = 0; i < size; i++) {
         mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
         if(mesh_points[i] == NULL) {
@@ -349,15 +295,19 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
         tag[k] = 'n';
     }
 
+    fibrosis[0] = -1;
+
     int i = 0;
     while(i < size) {
 
-        if(read_fibrosis) {
-            fscanf(file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
-                   &fibrosis[i], &tag[i]);
-        } else {
-            fscanf(file, "%lf,%lf,%lf,%lf\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy);
-        }
+//        if(read_fibrosis) {
+//            fscanf(file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
+//                   &fibrosis[i], &tag[i]);
+//        } else {
+//            fscanf(file, "%lf,%lf,%lf,%lf\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy);
+//        }
+
+        fscanf(file, read_format, &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &fibrosis[i], &tag[i]);
 
         // we save the old index to reference fibrosis[i] and tags[i]. T
         // this is needed because the array mesh_points is sorted after reading the mesh file.
@@ -394,7 +344,7 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
 
             if(index != -1) {
                 grid_cell->active = true;
-                if(read_fibrosis) {
+                if(fibrosis[0] != -1) {
                     int old_index = (int)mesh_points[index][3];
 
                     INITIALIZE_FIBROTIC_INFO(grid_cell);
@@ -421,12 +371,10 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     free(tag);
     free(fibrosis);
 
+    //TODO: we need to sum the cell discretization here...
     the_grid->side_length_x = maxx;
     the_grid->side_length_y = maxy;
     the_grid->side_length_z = maxz;
-
-
-    translate_visible_mesh_to_origin(the_grid);
 
 }
 

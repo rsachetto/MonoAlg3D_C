@@ -296,6 +296,52 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     fclose(B);
 }
 
+int test_perlin_mesh(char* mesh_file, char *start_dx, char* side_length_x, bool save, bool compress,  bool binary) {
+
+    struct grid *grid = new_grid();
+    struct domain_config *domain_config;
+
+    domain_config = new_domain_config();
+
+    domain_config->config_data.function_name = strdup("set_perlin_square_mesh");
+    domain_config->domain_name = strdup("Perlin mesh");
+
+    shput(domain_config->config_data.config, "side_length", side_length_x);
+    shput(domain_config->config_data.config, "mesh_file",   mesh_file);
+    shput(domain_config->config_data.config, "start_discretization",  start_dx);
+
+    init_domain_functions(domain_config);
+
+    int success = domain_config->set_spatial_domain(domain_config, grid);
+
+    if(!success ) {
+        return 0;
+    }
+
+    if(save) {
+        struct save_mesh_config *save_mesh_config = new_save_mesh_config();
+
+        save_mesh_config->config_data.function_name = "save_as_vtu";
+        save_mesh_config->out_dir_name = "./tests_bin";
+        save_mesh_config->print_rate = 1;
+
+        sds file_prefix = sdscatprintf(sdsempty(), "test_perlin");
+        init_save_mesh_functions(save_mesh_config);
+
+        shput(save_mesh_config->config_data.config, "file_prefix", file_prefix);
+        if(compress)
+        shput(save_mesh_config->config_data.config, "compress", "yes");
+        else if(binary)
+        shput(save_mesh_config->config_data.config, "binary", "yes");
+
+        save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
+
+    }
+
+    return 1;
+
+}
+
 int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, char* side_length_x, char* side_length_y, char* side_length_z, bool save, bool compress,  bool binary, int id) {
 
 
@@ -572,7 +618,12 @@ int compare_two_binary_files(FILE *fp1, FILE *fp2)
 }
 
 /////STARTING TESTS////////////////////////////////////////////////////////////////////////
-
+////Test(test_perlin_mesh, diffuse1) {
+//int main() {
+//    int success = test_perlin_mesh("meshes/diffuse1.mesh", "10.0", "20000.0", true, true, false);
+//    //cr_assert(success);
+//}
+////
 #ifdef COMPILE_CUDA
 Test(run_gold_simulation, gpu_no_adapt) {
 

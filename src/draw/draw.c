@@ -37,7 +37,7 @@ typedef struct action_potential * action_potential_array;
 
 struct point_voidp_hash_entry *selected_aps;
 
-static inline real_cpu normalize(real_cpu r_min, real_cpu r_max, real_cpu t_min, real_cpu t_max, real_cpu m) {
+static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
 }
 
@@ -439,7 +439,32 @@ void draw_ap() {
 
 }
 
-void draw_instruction_box () {
+static void draw_mesh_info_box () {
+
+    int text_position = 10;
+    int text_offset = 20;
+
+    int box_w = 320;
+    int box_h = 240;
+
+    int posx = GetScreenWidth() - box_w - 10;
+    int posy = 10;
+
+    char tmp[100];
+    DrawRectangle(posx, posy, box_w, box_h, WHITE);
+
+    DrawRectangleLines(posx, posy, box_w, box_h, BLACK);
+
+    DrawText("Mesh information:", posx + 10, 20, 10, BLACK);
+    text_position += text_offset;
+
+    sprintf(tmp, "- Num. of Volumes: %d", draw_config.grid_to_draw->num_active_cells);
+
+    DrawText(tmp, posx + 40, text_position, 10, DARKGRAY);
+    text_position += text_offset;
+}
+
+static void draw_instruction_box () {
 
     int text_position = 10;
     int text_offset = 20;
@@ -495,7 +520,7 @@ void draw_instruction_box () {
     DrawText(tmp, 170, text_position, 16, BLACK);
 }
 
-void draw_end_info_box() {
+static void draw_end_info_box() {
 
     char tmp[100];
 
@@ -694,6 +719,9 @@ void init_and_open_visualization_window() {
                 draw_ap();
                 draw_end_info_box();
             }
+
+            draw_mesh_info_box();
+
         }
         else if(!mesh_loaded ){
             int posx = GetScreenWidth()/2-150;
