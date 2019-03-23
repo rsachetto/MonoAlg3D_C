@@ -12,8 +12,8 @@
 
 struct draw_config {
     struct grid *grid_to_draw;
-    real_cpu max_v;
-    real_cpu min_v;
+    float max_v;
+    float min_v;
     bool grid_only;
     bool grid_lines;
     bool simulating;
@@ -43,7 +43,7 @@ struct draw_config {
 struct draw_config draw_config;
 
 #define NUM_COLORS 257
-static const real_cpu color[NUM_COLORS][3] =
+static const double color[NUM_COLORS][3] =
         { {0.2298057,0.298717966,0.753683153},
           {0.234299935,0.305559204,0.759874796},
           {0.238810063,0.312388385,0.766005866},

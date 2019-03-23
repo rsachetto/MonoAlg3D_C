@@ -16,9 +16,9 @@ struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.
 
-    real_cpu side_length_x;
-    real_cpu side_length_y;
-    real_cpu side_length_z;
+    float side_length_x;
+    float side_length_y;
+    float side_length_z;
 
     uint32_t number_of_cells;  // Number of cells of grid.
 
@@ -37,10 +37,10 @@ struct grid {
 
 
 struct grid* new_grid();
-void initialize_grid(struct grid *the_grid, real_cpu side_length_x, real_cpu side_length_y, real_cpu side_length_z);
+void initialize_grid(struct grid *the_grid, float side_length_x, float side_length_y, float side_length_z);
 void clean_and_free_grid(struct grid* the_grid);
 void construct_grid(struct grid *the_grid);
-void initialize_and_construct_grid(struct grid *the_grid, real_cpu side_length_x, real_cpu side_length_y, real_cpu side_length_z);
+void initialize_and_construct_grid(struct grid *the_grid, float side_length_x, float side_length_y, float side_length_z);
 
 void print_grid(struct grid* the_grid, FILE *output_file);
 void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary);
@@ -67,7 +67,7 @@ void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 real_cpu * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines);
 void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file);
 
-int get_num_refinement_steps_to_discretization (real_cpu side_len, real_cpu h);
+int get_num_refinement_steps_to_discretization (float side_len, real_cpu h);
 void save_grid_domain (struct grid * the_grid, const char *file_name);
 
 void initialize_and_construct_grid_purkinje (struct grid *the_grid);
