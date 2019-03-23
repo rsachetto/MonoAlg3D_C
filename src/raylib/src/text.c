@@ -942,7 +942,7 @@ void DrawTextRecEx(Font font, const char *text, Rectangle rec, float fontSize, f
 }
 
 // Measure string width for default font
-int MeasureText(const char *text, int fontSize)
+Vector2 MeasureTextV(const char *text, int fontSize)
 {
     Vector2 vec = { 0.0f, 0.0f };
 
@@ -956,6 +956,14 @@ int MeasureText(const char *text, int fontSize)
         vec = MeasureTextEx(GetFontDefault(), text, (float)fontSize, (float)spacing);
     }
 
+    return vec;
+}
+
+// Measure string width for default font
+int MeasureText(const char *text, int fontSize)
+{
+    Vector2 vec;
+    vec = MeasureTextV(text, fontSize);
     return (int)vec.x;
 }
 

@@ -891,6 +891,7 @@ RLAPI int GetScreenHeight(void);                                  // Get current
 RLAPI int GetMonitorCount(void);                                  // Get number of connected monitors
 RLAPI int GetMonitorWidth(int monitor);                           // Get primary monitor width
 RLAPI int GetMonitorHeight(int monitor);                          // Get primary monitor height
+RLAPI int GetCurrentMonitor(void);                                // Get the monitor that contains the greater window area.
 RLAPI int GetMonitorPhysicalWidth(int monitor);                   // Get primary monitor physical width in millimetres
 RLAPI int GetMonitorPhysicalHeight(int monitor);                  // Get primary monitor physical height in millimetres
 RLAPI const char *GetMonitorName(int monitor);                    // Get the human-readable, UTF-8 encoded name of the primary monitor
@@ -1177,6 +1178,7 @@ RLAPI void DrawTextRecEx(Font font, const char *text, Rectangle rec, float fontS
 
 // Text misc. functions
 RLAPI int MeasureText(const char *text, int fontSize);                                      // Measure string width for default font
+Vector2 MeasureTextV(const char *text, int fontSize);
 RLAPI Vector2 MeasureTextEx(Font font, const char *text, float fontSize, float spacing);    // Measure string size for Font
 RLAPI int GetGlyphIndex(Font font, int character);                                          // Get index position for a unicode character on font
 

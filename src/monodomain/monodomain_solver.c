@@ -256,8 +256,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 
     ///////MAIN CONFIGURATION END//////////////////
-
-
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
 
@@ -278,10 +276,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu start_adpt_at = the_monodomain_solver->start_adapting_at;
     real_cpu dt_pde = the_monodomain_solver->dt;
     real_cpu finalT = the_monodomain_solver->final_time;
-
-//    double beta = the_monodomain_solver->beta;
-//    double cm = the_monodomain_solver->cm;
-
     real_cpu dt_ode = the_ode_solver->min_dt;
 
 #ifdef COMPILE_CUDA
@@ -455,9 +449,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     #ifdef COMPILE_OPENGL
     {
-        draw_config.exit = false;
-        draw_config.restart = false;
-
         if (configs->draw) {
             draw_config.grid_to_draw = the_grid;
             draw_config.simulating = true;
@@ -501,7 +492,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                     }
                 }
             }
-
 
             start_stop_watch(&ode_time);
 

@@ -422,6 +422,8 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
         else if(binary)
         shput(save_mesh_config->config_data.config, "binary", "yes");
 
+        shput(save_mesh_config->config_data.config, "save_pvd", "no");
+
         save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
 
     }
@@ -723,6 +725,9 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_pla
 
     FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_3_it_0.vtu", "r");
     FILE *f2 = fopen("tests_bin/gold_vtu_mesh.vtu", "r");
+
+    cr_assert(f1);
+    cr_assert(f2);
 
     success = compare_two_binary_files(f1, f2);
 
