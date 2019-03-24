@@ -12,8 +12,8 @@
 
 struct draw_config {
     struct grid *grid_to_draw;
-    float max_v;
-    float min_v;
+    real_cpu max_v;
+    real_cpu min_v;
     bool grid_only;
     bool grid_lines;
     bool simulating;

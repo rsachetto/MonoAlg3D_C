@@ -234,6 +234,10 @@ static Vector3 find_mesh_center() {
 
 }
 
+Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
+int num_colors = 18;
+
+
 static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
     struct grid *grid_to_draw = draw_config.grid_to_draw;
@@ -276,7 +280,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
                     struct action_potential ap1;
                     ap1.t = draw_config.time;
                     ap1.v = grid_cell->v;
-                            arrput(aps, ap1);
+                    arrput(aps, ap1);
 
                     hmput(selected_aps, p, aps);
                 }
@@ -299,6 +303,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
                     DrawCubeWiresV(cubePosition, cubeSize, color);
                 }
                 else {
+
                     DrawCubeV(cubePosition, cubeSize, color);
 
                     if(grid_lines) {
@@ -324,8 +329,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
     one_selected = false;
 }
 
-int num_colors = 19;
-Color colors[] = {DARKGRAY, YELLOW, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
+
 
 double clamp(double x, double min, double max) {
     if (x < min)
@@ -360,7 +364,7 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
     float min_y = graph_pos_y + graph_height - 100.0f;
     float max_y = graph_pos_y + 50.0f;
 
-    int num_ticks = (max_x-min_x)/width.x;
+    int num_ticks = (int)((max_x-min_x)/width.x);
 
     int n = hmlen(selected_aps);
 
@@ -768,6 +772,7 @@ void init_and_open_visualization_window() {
             }
 
             draw_alg_mesh(mesh_offset, scale, ray);
+
             omp_unset_lock(&draw_config.draw_lock);
 
             EndMode3D();
@@ -796,6 +801,7 @@ void init_and_open_visualization_window() {
             pos_x = GetScreenWidth() - box_w - 10;
             draw_box(pos_x, 10,  box_w, box_h, text_offset, mesh_info_box_strings, mesh_info_box_lines, font_size_small, WIDER_TEXT);
 
+
         }
         else if(!mesh_loaded) {
             int posx = GetScreenWidth()/2-150;
@@ -805,6 +811,9 @@ void init_and_open_visualization_window() {
             DrawRectangleLines(posx, posy, 320, 20, BLACK);
             DrawText("Loading Mesh...", posx+80, posy, 20, BLACK);
         }
+
+        //DrawFPS(10, GetScreenHeight() - 100);
+
         EndDrawing();
 
     }
