@@ -103,16 +103,9 @@ void init_draw_config(struct draw_config *draw_config, struct user_options *opti
 int main(int argc, char **argv) {
 
     struct user_options *options = NULL;
-    //options = new_user_options();
-
     struct grid *the_grid;
-    //the_grid = new_grid();
-
     struct monodomain_solver *monodomain_solver = NULL;
-    //monodomain_solver = new_monodomain_solver();
-
     struct ode_solver *ode_solver = NULL;
-    //ode_solver = new_ode_solver();
 
     configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
 

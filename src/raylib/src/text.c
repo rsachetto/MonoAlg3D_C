@@ -716,7 +716,7 @@ void DrawFPS(int posX, int posY)
     }
 
     // NOTE: We have rounding errors every frame, so it oscillates a lot
-    DrawText(TextFormat("%2i FPS", fps), posX, posY, 20, LIME);
+    DrawText(TextFormat("%2i FPS", fps), posX, posY, 20, BLACK);
 }
 
 // Draw text (using default font)
