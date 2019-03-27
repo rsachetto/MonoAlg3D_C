@@ -8,7 +8,7 @@
 FILENAME="frames/frame"
 FRAME_RATE="10"
 END_FRAME="200"
-OUTPUT_VIDEO_FILENAME="video/ddm_3d"
+OUTPUT_VIDEO_FILENAME="video/new_activation_time_angle150"
 RESOLUTION="1020x720"
 
 # Execute the converting command using FFMPEG
