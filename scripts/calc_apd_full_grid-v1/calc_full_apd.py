@@ -108,7 +108,7 @@ def main ():
 
     start = time.time()
     # Iterate over each cell
-    for i in range(1,100):
+    for i in range(1,20):
     #for i in range(1,total_num_cells):
         print("=============================================================")
         print("Working on cell %d" % i)
