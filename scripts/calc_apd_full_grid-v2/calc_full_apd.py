@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import time
+import numpy as np
 
 def forwarddiff(y, h):
     n = len(y)
@@ -32,10 +33,10 @@ def slope_end(data, start=0, epsilon=0.0001, h=1.0):
             return i+start
 
 
-# Returns the timestep where the maximum potential occurs
 def max_index(data, start, end):
 
-    d = data[start:(start+end)]
+    # Convert from Numpy array to list of float
+    d = data[start:(start+end)].tolist()
 
     max_v = max(d)
 
@@ -51,26 +52,22 @@ def index_activation(data, start=0):
         if d[i + start] < 0.0 < d[i + start + 1]:
             return i+start
 
-def calc_apd (cell_id, num_aps, ms_each_step):
+def calc_apd (vms, num_aps, ms_each_step):
     apds = []
     slope_s = 0
     slope_e = 0
     max_ind = 0
 
-    ap_file = open("aps/cell-%d.txt" % cell_id)
-
-    ap_data = [float(data) for data in ap_file]
-
     for j in range(num_aps):
             
         #print("-------------------------------------------------------------")
-        slope_s = slope_start(ap_data,slope_e,0.5,ms_each_step)
+        slope_s = slope_start(vms,slope_e,0.5,ms_each_step)
         #print("Slope start = %g ms\n" % (slope_s*ms_each_step))   
 
-        max_ind = max_index(ap_data, slope_e, 1050)
+        max_ind = max_index(vms, slope_e, 1050)
         #print("Max ind = %d\n" % (max_ind))
 
-        slope_e = slope_end(ap_data, max_ind, 0.0005, ms_each_step)
+        slope_e = slope_end(vms, max_ind, 0.0005, ms_each_step)
         #print("Slope end = %g\n" % (slope_e*ms_each_step))
         #print("-------------------------------------------------------------")
         
@@ -79,11 +76,14 @@ def calc_apd (cell_id, num_aps, ms_each_step):
     apd = sum(apds)/len(apds)
     return apd
 
+def clean_files ():
+    
+
 def main ():
 
     if ( len(sys.argv) != 5 ):
         print("-------------------------------------------------------------------------")
-        print("Usage:> python %s <output_dir> <total_num_cells> <num_aps> <ms_each_step>" % sys.argv[0])
+        print("Usage:> python %s <output_dir> <num_aps> <ms_each_step> <print_rate>" % sys.argv[0])
         print("-------------------------------------------------------------------------")
         print("<output_dir> = Output directory of the simulation")
         print("<total_num_cells> = Total number of cells to calculate the APD")
@@ -94,35 +94,44 @@ def main ():
         print("         ms_each_step = (simulation_time) / (num_files)")
         print("     Where the values <simulation_time>, <dt> and <print_rate> are all")
         print("     given in the configuration file of the simulation.")
+        print("<print_rate> = The print rate of the simulation")
         print("-------------------------------------------------------------------------")
-        print("Example:> python calc_full_apd.py ../../outputs/plain_100_100_100_fhn 10 1 2")
+        print("Example:> python calc_full_apd.py ../../outputs/plain_100_100_100_fhn 1 2 100")
         print("-------------------------------------------------------------------------")
         return 1
 
+    # Get user inputs
     output_dir = sys.argv[1]
-    total_num_cells = int(sys.argv[2])
-    num_aps = int(sys.argv[3])
-    ms_each_step = float(sys.argv[4])
+    num_aps = int(sys.argv[2])
+    ms_each_step = float(sys.argv[3])
+    print_rate = int(sys.argv[4])
 
+    # Get the transmembrane potential for all timesteps and every single cell in the grid
+    print("[!] Calling 'getAps.sh' script ...")
+    cmd = "./getAps.sh %s V 6 %d" % (output_dir,print_rate)
+    rc = subprocess.call( cmd, shell=True )
+
+    # Open the generated file from the previous script as a Numpy array and get its dimensions
+    timesteps_file = open("timesteps.txt")
+    ap_data = np.genfromtxt(timesteps_file)
+    num_cells = ap_data.shape[0]
+    num_timesteps = ap_data.shape[1]
+
+    # Open the output file
     out_file = open("output/cells-apd.txt","w")
 
+    print("[!] Calculating APD's ...")
     start = time.time()
     # Iterate over each cell
-    for i in range(1,100):
-    #for i in range(1,total_num_cells):
-        print("=============================================================")
-        print("Working on cell %d" % i)
+    for i in range(num_cells):
+        # Get the transmembrane potential from the current cell
+        vms = ap_data[i]
 
-        cmd = "./getAps.sh %s V 6 aps/cell-%d.txt %d" % (output_dir,i,i)
-        rc = subprocess.call( cmd, shell=True )
+        # Calculates its APD
+        apd = calc_apd(vms,num_aps,ms_each_step)
 
-        apd = calc_apd(i,num_aps,ms_each_step)
-
+        # Write its value on the output file
         out_file.write("%g\n" % (apd))
-        
-        #out_file.write("Cell %d -- APD = %g\n" % (i,apd))
-        #print("Cell %d -- APD = %g" % (i,apd))
-        print("=============================================================")
     end = time.time()
     print("Elapsed time = %g seconds" % (end - start))
     
