@@ -76,15 +76,11 @@ def calc_apd (vms, num_aps, ms_each_step):
     apd = sum(apds)/len(apds)
     return apd
 
-def clean_files ():
-    
-
 def main ():
-
-    if ( len(sys.argv) != 5 ):
-        print("-------------------------------------------------------------------------")
-        print("Usage:> python %s <output_dir> <num_aps> <ms_each_step> <print_rate>" % sys.argv[0])
-        print("-------------------------------------------------------------------------")
+    if ( len(sys.argv) != 6 ):
+        print("-------------------------------------------------------------------------------------------------------------")
+        print("Usage:> python %s <output_dir> <num_aps> <ms_each_step> <total_num_cells> <print_rate>" % sys.argv[0])
+        print("-------------------------------------------------------------------------------------------------------------")
         print("<output_dir> = Output directory of the simulation")
         print("<total_num_cells> = Total number of cells to calculate the APD")
         print("<num_aps> = Number of AP's to be used for the APD calculation")
@@ -95,20 +91,21 @@ def main ():
         print("     Where the values <simulation_time>, <dt> and <print_rate> are all")
         print("     given in the configuration file of the simulation.")
         print("<print_rate> = The print rate of the simulation")
-        print("-------------------------------------------------------------------------")
-        print("Example:> python calc_full_apd.py ../../outputs/plain_100_100_100_fhn 1 2 100")
-        print("-------------------------------------------------------------------------")
+        print("-------------------------------------------------------------------------------------------------------------")
+        print("Example:> python calc_full_apd.py ../../outputs/plain_100_100_100_fhn 1 2 10000 100")
+        print("-------------------------------------------------------------------------------------------------------------")
         return 1
 
     # Get user inputs
     output_dir = sys.argv[1]
     num_aps = int(sys.argv[2])
     ms_each_step = float(sys.argv[3])
-    print_rate = int(sys.argv[4])
+    total_num_cells = int(sys.argv[4])
+    print_rate = int(sys.argv[5])
 
     # Get the transmembrane potential for all timesteps and every single cell in the grid
     print("[!] Calling 'getAps.sh' script ...")
-    cmd = "./getAps.sh %s V 6 %d" % (output_dir,print_rate)
+    cmd = "./getAps.sh %s V 6 %d %d" % (output_dir,total_num_cells,print_rate)
     rc = subprocess.call( cmd, shell=True )
 
     # Open the generated file from the previous script as a Numpy array and get its dimensions
