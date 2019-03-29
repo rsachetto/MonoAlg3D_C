@@ -7,7 +7,8 @@ Sachetto
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 
 Berg
-- [Elnaz] Speedup the 'calc_apd_full_grid-v2' script ... is taking too much time
+- Rewrite the 'calc_apd.py' script so that we could calculate multiple APDs
+	- Use Elnaz idea for this one ...
 
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 - Implement coupling between Purkinje and tissue
