@@ -1,5 +1,9 @@
-# TODO: Convert this script to calculate multiple APD's
-#       Input: START, END, PACING
+# Authors: Lucas Berg and Elnaz
+# 
+# Program that calculates the APD for a single cell in the grid by passing its 
+# transmembrane potential over the time as input.
+#
+# This program also works with multiple AP's !
 
 import sys
 import subprocess
@@ -57,10 +61,10 @@ def index_activation(data, start=0):
 
 def calc_ap_limits (vms, start, end):
     
-    v = vms[start:(start+end)]
+    v = vms[start:end]
 
-    maxV = max(vms)
-    minV = min(vms)
+    maxV = max(v)
+    minV = min(v)
 
     index_maxV = v.index(maxV) + start
 
@@ -82,6 +86,9 @@ def calc_apd (vms, start, end, h, percentage):
 
     index_ref, t_ref = calc_time_reference(vms,index_maxV,end,h,refV)
 
+    print("Start = %g -- Finish = %g -- Peak = %d -- Ref = %d" % (start,end,t_peak,t_ref))
+    print("APD = %g ms" % (t_ref - t_peak))
+
     if (index_ref == -1):
         print("[-] ERROR! Could not find reference potential!")
         sys.exit(1)
@@ -100,7 +107,7 @@ def calc_time_reference (vms, start, end, h, refV):
 
 def calc_max_min_ref_potential (data,apd_p,start,end):
     
-    d = data[start:(start+end)]
+    d = data[start:end]
 
     max_v = max(d)
     min_v = min(d)
@@ -109,7 +116,7 @@ def calc_max_min_ref_potential (data,apd_p,start,end):
     return max_v, min_v, ref_v
 
 def calc_max_derivative (vms,start,end,h):
-    v = vms[start:(start+end)]
+    v = vms[start:end]
     n = len(v)
     dvdt = range(0,n)
 
@@ -123,12 +130,14 @@ def calc_max_derivative (vms,start,end,h):
     return max_index, max_index*h
 
 def main ():
-    if ( len(sys.argv) != 6 ):
+    if ( len(sys.argv) != 7 ):
         print("-------------------------------------------------------------------------------------------------------------")
-        print("Usage:> python %s <input_filename> <num_aps> <ms_each_step> <print_rate> <APD_percentage>" % sys.argv[0])
+        print("Usage:> python %s <input_filename> <num_aps> <period> <ms_each_step>" % sys.argv[0]) 
+        print("                  <print_rate> <APD_percentage>")
         print("-------------------------------------------------------------------------------------------------------------")
         print("<input_filename> = Input filename of the simulation")
         print("<num_aps> = Number of AP's to be used for the APD calculation")
+        print("<period> = Period of each action potential")
         print("<ms_each_step> = Number of milliseconds from each timestep")
         print("     this value can be calculated as:")
         print("         num_files = (simulation_time) / (dt * print_rate)")
@@ -138,25 +147,35 @@ def main ():
         print("<print_rate> = The print rate of the simulation")
         print("<APD_percentage> = APD percentage to be used. e.g: APD_90 = 90")
         print("-------------------------------------------------------------------------------------------------------------")
-        print("Example:> python calc_apd.py aps/ap-fhn-cell-1000.txt 1 2 100 90")
+        print("Example:> python calc_apd.py aps/ap-fhn-4aps-cell-1000 4 250 1 100 90")
+        print("          python calc_apd.py aps/ap-fhn-cell-1000.txt 1 250 2 100 90")
+        print("          python calc_apd.py aps/ap-tt-cell-1000.txt 1 500 2 100 90")
         print("-------------------------------------------------------------------------------------------------------------")
         return 1
 
     # Get user inputs
     ap_file_name = sys.argv[1]
     num_aps = int(sys.argv[2])
-    ms_each_step = float(sys.argv[3])
-    print_rate = int(sys.argv[4])
-    APD_percentage = float(sys.argv[5])*0.01
+    period = int(sys.argv[3])
+    ms_each_step = float(sys.argv[4])
+    print_rate = int(sys.argv[5])
+    APD_percentage = float(sys.argv[6])
 
     # Get the transmembrane potential from the input file
     ap_file = open(ap_file_name)
     vms = [float(data) for data in ap_file]
+    num_timesteps = len(vms)
 
-    # Call the APD calculation function
-    apd = calc_apd(vms,0,1000,ms_each_step,APD_percentage)
+    for i in range(num_aps):
 
-    print("APD = %g ms" % apd)    
+        start = i*period
+        finish = start + period
+    
+        print("==================================================================")
+        print("AP %d -- APD_percentage = %g" % (i+1,APD_percentage))
+        # Call the APD calculation function
+        apd = calc_apd(vms,start,finish,ms_each_step,APD_percentage*0.01)
+        print("==================================================================")
 
 if __name__ == "__main__":
     main()
