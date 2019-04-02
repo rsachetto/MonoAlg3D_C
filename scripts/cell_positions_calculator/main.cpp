@@ -159,7 +159,7 @@ void create_sphere (vtkSmartPointer<vtkAppendPolyData> appendFilter, const doubl
     // Create the sphere at the specified center
     vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
     sphereSource->SetCenter(center[0],center[1],center[2]);
-    sphereSource->SetRadius(0.005);
+    sphereSource->SetRadius(0.05);
     sphereSource->Update();
 
     // Append the sphere to the filter
@@ -223,10 +223,10 @@ int main (int argc, char *argv[])
     struct tissue *the_tissue = new_tissue();
 
     read_control_volumes_from_vtu(the_tissue,unstructuredGrid);
-    //print_control_volumes(the_tissue);
+    print_control_volumes(the_tissue);
 
-    write_control_volumes_middle_positions(the_tissue);
-    //write_control_volumes_middle_positions_to_vtp(the_tissue);
+    //write_control_volumes_middle_positions(the_tissue);
+    write_control_volumes_middle_positions_to_vtp(the_tissue);
 
     return 0;
 }
