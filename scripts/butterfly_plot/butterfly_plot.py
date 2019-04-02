@@ -195,7 +195,7 @@ def main ():
     for k in range(2):
         
         # Iterate over each cell
-        for i in range(100):
+        for i in range(0,10000,100):
             
             # Get the transmembrane potential from the current simulation for the current cell
             if (k == 0):
@@ -209,8 +209,9 @@ def main ():
             else:
                 plt.plot(t, vms, label="Vm", c="red", linewidth=1.0)
 	
-    plt.show()
-    #plt.savefig("output/butterfly.pdf")
+    #plt.show()
+    plt.savefig("output/butterfly.pdf")
+    print("[+] Output file saved at 'output/butterfly.pdf'")
 
 
 if __name__ == "__main__":
