@@ -175,7 +175,7 @@ void write_control_volumes_middle_positions_to_vtp (struct tissue *the_tissue)
     vtkSmartPointer<vtkAppendPolyData> appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
     
     // For each control volume create a sphere
-    for (uint32_t i = 0; i < 100; i++)
+    for (uint32_t i = 0; i < nv; i += 100)
     //for (uint32_t i = 0; i < nv; i++)
     {
         printf("[main] Working on control volume %u\n",i);
