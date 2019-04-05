@@ -197,8 +197,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         print_to_stderr_and_file_and_exit("No update monodomain configuration provided! Exiting!\n");
     }
 
-
-
     ///////MAIN CONFIGURATION END//////////////////
 
 
@@ -313,6 +311,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
         update_cells_to_solve(the_grid, the_ode_solver);
     }
+ 
+    if(has_extra_data)
+        set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
+
     print_to_stdout_and_file("Setting ODE's initial conditions\n");
     set_ode_initial_conditions_for_all_volumes(the_ode_solver);
 
@@ -382,9 +384,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(stimuli_configs)
         set_spatial_stim(stimuli_configs, the_grid);
-
-    if(has_extra_data)
-        set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 
     real_cpu cur_time = the_monodomain_solver->current_time;
 

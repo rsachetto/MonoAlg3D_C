@@ -36,10 +36,11 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu)
 
 	int i;
 
+    uint32_t *mapping = ((uint32_t*)extra_data);
+
     #pragma omp parallel for private(sv_id)
     for (i = 0; i < num_cells_to_solve; i++) 
     {
-
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
         else
@@ -50,6 +51,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu)
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
         }
     }
+
 }
 
 void solve_model_ode_cpu(real dt, real *sv, real stim_current)  
