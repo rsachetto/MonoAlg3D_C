@@ -136,3 +136,21 @@ else()
 endif(CUDA_FOUND)
 #########################################################
 
+############## MIXED FHN + MITCHELL ##############################
+set(MODEL_FILE_CPU "mixed_fhn_mod_mitchell.c")
+set(MODEL_FILE_GPU "mixed_fhn_mod_mitchell.cu")
+set(COMMON_HEADERS model_common.h mixed_fhn_mod_mitchell.h)
+
+set(LIB_NAME "mixed_fhn_mod_mitchell")
+
+if(CUDA_FOUND)
+	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+	IF(MSVC)
+		set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+		TARGET_LINK_LIBRARIES(${LIB_NAME} PUBLIC utils)
+	endif()
+else()
+	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
+

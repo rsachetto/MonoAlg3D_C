@@ -47,9 +47,6 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
         fibrosis=calloc(num_cells_to_solve, sizeof(real));
     }
 
-    printf("Fibrosis = %g\n",fibrosis[0]);
-    exit(EXIT_FAILURE);
-
 	int i;
 
     #pragma omp parallel for private(sv_id)

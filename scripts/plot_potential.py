@@ -20,7 +20,8 @@ def plot_transmembrane_potential(t, v):
 	plt.ylabel("V (mV)",fontsize=15)
 	plt.title("Action potential",fontsize=14)
 	plt.legend(loc=2,fontsize=14)
-	plt.show()
+	#plt.show()
+	plt.savefig("ap.pdf")
 
 
 def main():

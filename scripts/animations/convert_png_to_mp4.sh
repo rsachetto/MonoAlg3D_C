@@ -8,7 +8,7 @@
 FILENAME="frames/frame"
 FRAME_RATE="20"
 END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="video/source_sink_mismatch"
+OUTPUT_VIDEO_FILENAME="video/mixed_celular_models"
 RESOLUTION="1020x720"
 
 # Execute the converting command using FFMPEG
