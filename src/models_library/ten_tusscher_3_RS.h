@@ -7,7 +7,7 @@
 #include "model_common.h"
 
 
-#define ENDO
+#define MCELL
 #define NEQ 12
 #define INITIAL_V (-86.2f)
 
