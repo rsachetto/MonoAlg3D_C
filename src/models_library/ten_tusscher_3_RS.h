@@ -6,8 +6,7 @@
 
 #include "model_common.h"
 
-
-#define MCELL
+#define EPI
 #define NEQ 12
 #define INITIAL_V (-86.2f)
 

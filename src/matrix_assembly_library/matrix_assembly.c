@@ -673,6 +673,103 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix) {
     }
 }
 
+ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma) 
+{
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    initialize_diagonal_elements(the_solver, the_grid);
+
+    int i;
+
+    real sigma_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+
+    real sigma_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+
+    real sigma_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+
+    real channel_width = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data.config, "channel_width");
+
+    real channel_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data.config, "channel_length");
+
+    bool inside_1, inside_2, inside_3, inside_4;
+
+    real side_length_x = the_grid->side_length_x;
+    real side_length_y = the_grid->side_length_y;
+    real side_length_z = the_grid->side_length_z;
+
+    real region_height = (side_length_y - channel_width) / 2.0;
+
+    #pragma omp parallel for
+    for (i = 0; i < num_active_cells; i++)
+    {
+        real sigma_x_new = sigma_x;
+        real sigma_y_new = sigma_y;
+        real sigma_z_new = sigma_z;
+
+        double x = ac[i]->center_x;
+        double y = ac[i]->center_y;
+        double z = ac[i]->center_z;
+
+        // Check region 1
+        inside_1 = (x >= 0.0) && (x <= channel_length) && (y >= 0.0) && (y <= region_height);
+        
+        // Check region 2
+        inside_2 = (x >= 0.0) && (x <= channel_length) && (y >= region_height + channel_width) && (y <= side_length_y);
+
+        if (inside_1 || inside_2)
+        {
+            sigma_x_new = 0.0;
+            sigma_y_new = 0.0;
+            sigma_z_new = 0.0;
+        }
+
+        // Check region 3
+        inside_3 = (x >= 0.0) && (x <= channel_length) && (y >= region_height) && (y <= region_height + channel_width);
+
+        if (inside_3)
+        {
+            sigma_x_new = sigma_x * 0.5;
+            sigma_y_new = sigma_y * 0.5;
+            sigma_z_new = sigma_z * 0.5;
+        }    
+
+        // Check region 4
+        inside_4 = (x >= 0.0) && (x <= channel_length) && (y >= region_height) && (y <= region_height + channel_width);
+
+        if (inside_4)
+        {
+            sigma_x_new = sigma_x * 1.5;
+            sigma_y_new = sigma_y * 1.5;
+            sigma_z_new = sigma_z * 1.5;
+        }
+
+        // Computes and designates the flux due to south cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->south, 's');
+
+        // Computes and designates the flux due to north cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->north, 'n');
+
+        // Computes and designates the flux due to east cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->east, 'e');
+
+        // Computes and designates the flux due to west cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->west, 'w');
+
+        // Computes and designates the flux due to front cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->front, 'f');
+
+        // Computes and designates the flux due to back cells.
+        fill_discretization_matrix_elements(sigma_x_new, sigma_y_new, sigma_z_new, ac[i], ac[i]->back, 'b');
+    }
+}
+
 ASSEMBLY_MATRIX(no_fibers_assembly_matrix) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
