@@ -741,7 +741,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
         }    
 
         // Check region 4
-        inside_4 = (x >= 0.0) && (x <= channel_length) && (y >= region_height) && (y <= region_height + channel_width);
+        inside_4 = (x >= channel_length) && (x <= side_length_x);
 
         if (inside_4)
         {
