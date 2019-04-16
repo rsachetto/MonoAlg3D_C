@@ -4,6 +4,7 @@
 #include "monodomain/ode_solver.h"
 #include "string/sds.h"
 #include "utils/file_utils.h"
+#include <string.h>
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
@@ -83,6 +84,7 @@ void free_current_simulation_resources(struct user_options *options, struct mono
 
 void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
 
+    draw_config->config_name = strdup(options->config_file);
     draw_config->grid_to_draw = NULL;
     draw_config->max_v = options->max_v;
     draw_config->min_v = options->min_v;
@@ -163,7 +165,11 @@ int main(int argc, char **argv) {
                     }
 
                     if(draw_config.restart) result = RESTART_SIMULATION;
-                    if(draw_config.exit) break;
+
+                    if(draw_config.exit)  {
+                        free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+                        break;
+                    }
                 }
             }
         }

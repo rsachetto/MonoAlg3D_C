@@ -24,6 +24,7 @@ struct draw_config {
     real_cpu time;
     real_cpu final_time;
     real_cpu dt;
+    char *config_name;
 
     long solver_time;
     long ode_total_time;
