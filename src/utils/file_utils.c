@@ -38,18 +38,18 @@ void print_to_stdout_and_file(char const *fmt, ...) {
     va_list ap;
 
     if (!no_stdout) {
-                va_start(ap, fmt);
+        va_start(ap, fmt);
         vprintf(fmt, ap);
         fflush(stdout);
-                va_end(ap);
+        va_end(ap);
     }
 
-            va_start(ap, fmt);
+    va_start(ap, fmt);
     if (logfile) {
         vfprintf(logfile, fmt, ap);
         fflush(logfile);
     }
-            va_end(ap);
+    va_end(ap);
 }
 
 void print_to_stderr_and_file_and_exit(char const *fmt, ...) {

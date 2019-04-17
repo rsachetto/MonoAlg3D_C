@@ -203,7 +203,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         print_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
     }
 
-    bool save_to_file = (save_mesh_config != NULL) && (save_mesh_config->print_rate > 0);
+    bool save_to_file = (save_mesh_config != NULL) && (save_mesh_config->print_rate > 0) && (save_mesh_config->out_dir_name);
 
     if(save_to_file) 
     {
@@ -460,9 +460,16 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     print_to_stdout_and_file("Starting simulation\n");
 
+    struct stop_watch iteration_time_watch;
+    long iteration_time;
+
+    init_stop_watch(&iteration_time_watch);
+
     // Main simulation loop start
     while(cur_time <= finalT)
     {
+
+        start_stop_watch(&iteration_time_watch);
 
         #ifdef COMPILE_OPENGL
         if(draw_config.restart) {
@@ -521,7 +528,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             if (count % print_rate == 0) {
                 print_to_stdout_and_file("t = %lf, Iterations = "
                                          "%" PRIu32 ", Error Norm = %e, Number of Cells:"
-                                         "%" PRIu32 ", Iterations time: %ld us\n",
+                                         "%" PRIu32 ", CG Iterations time: %ld us",
                                          cur_time, solver_iterations, solver_error, the_grid->num_active_cells,
                                          cg_partial);
             }
@@ -595,6 +602,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             continue;
         }
         #endif
+
+        iteration_time = stop_stop_watch(&iteration_time_watch);
+
+        if ( (count - 1) % print_rate == 0) {
+            print_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
+        }
     }
 
     long res_time = stop_stop_watch(&solver_time);
