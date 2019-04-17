@@ -491,7 +491,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             if (cur_time > 0.0) {
                 activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_grid);
 
-                if (abort_on_no_activity) {
+                if (abort_on_no_activity && cur_time > last_stimulus_time) {
                     if (!activity) {
                         print_to_stdout_and_file("No activity, aborting simulation\n");
                         break;
