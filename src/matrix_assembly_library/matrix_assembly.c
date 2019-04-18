@@ -702,7 +702,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data.config, "source_factor");
 
     real sink_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data.config, "sink_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sink_factor, config->config_data.config, "sink_factor");
 
     bool inside_1, inside_2, inside_3, inside_4;
 
@@ -737,7 +737,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
         }
 
         // Check region 3
-        inside_3 = (x >= 0.0) && (x <= channel_length) && (y >= region_height) && (y <= region_height + channel_width);
+        inside_3 = (x >= 0.0) && (x < channel_length) && (y >= region_height) && (y <= region_height + channel_width);
 
         if (inside_3)
         {
@@ -747,7 +747,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
         }    
 
         // Check region 4
-        inside_4 = (x >= channel_length) && (x <= side_length_x);
+        inside_4 = (x >= channel_length) && (x <= side_length_x) && (y >= 0.0) && (y <= side_length_y);
 
         if (inside_4)
         {
