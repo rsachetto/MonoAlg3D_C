@@ -578,6 +578,22 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     return 1;
 }
 
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_source_sink_fibrotic_mesh) 
+{
+
+    real_cpu channel_width = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_width, config->config_data.config, "channel_width");
+
+    real_cpu channel_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_length, config->config_data.config, "channel_length");
+
+
+    initialize_grid_with_square_mesh(config, the_grid);
+    set_plain_source_sink_fibrosis(the_grid, channel_width, channel_length);
+
+    return 1;
+}
+
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
 
     real_cpu phi = 0.0;

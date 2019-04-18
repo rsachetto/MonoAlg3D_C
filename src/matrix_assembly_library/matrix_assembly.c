@@ -698,6 +698,12 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     real channel_length = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data.config, "channel_length");
 
+    real source_factor = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data.config, "source_factor");
+
+    real sink_factor = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data.config, "sink_factor");
+
     bool inside_1, inside_2, inside_3, inside_4;
 
     real side_length_x = the_grid->side_length_x;
@@ -735,9 +741,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
 
         if (inside_3)
         {
-            sigma_x_new = sigma_x * 0.5;
-            sigma_y_new = sigma_y * 0.5;
-            sigma_z_new = sigma_z * 0.5;
+            sigma_x_new = sigma_x * source_factor;
+            sigma_y_new = sigma_y * source_factor;
+            sigma_z_new = sigma_z * source_factor;
         }    
 
         // Check region 4
@@ -745,9 +751,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
 
         if (inside_4)
         {
-            sigma_x_new = sigma_x * 1.5;
-            sigma_y_new = sigma_y * 1.5;
-            sigma_z_new = sigma_z * 1.5;
+            sigma_x_new = sigma_x * sink_factor;
+            sigma_y_new = sigma_y * sink_factor;
+            sigma_z_new = sigma_z * sink_factor;
         }
 
         // Computes and designates the flux due to south cells.
