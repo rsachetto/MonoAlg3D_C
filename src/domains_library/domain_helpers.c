@@ -719,6 +719,52 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
     }
 }
 
+void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) 
+{
+
+    print_to_stdout_and_file("Making upper and down left corner inactive !\n");
+
+    bool inside;
+
+    real_cpu side_length_x = the_grid->side_length_x;
+    real_cpu side_length_y = the_grid->side_length_y;
+    real_cpu side_length_z = the_grid->side_length_z;
+
+    real_cpu region_height = (side_length_y - channel_width) / 2.0;
+
+    struct cell_node *grid_cell;
+    grid_cell = the_grid->first_cell;
+
+    while(grid_cell != 0) 
+    {
+
+        if(grid_cell->active) 
+        {
+
+            real_cpu x = grid_cell->center_x;
+            real_cpu y = grid_cell->center_y;
+            real_cpu z = grid_cell->center_z;
+
+            // Check region 1
+            inside = (x >= 0.0) && (x <= channel_length) &&\
+                    (y >= 0.0) && (y <= region_height);
+            
+            // Check region 2
+            inside |= (x >= 0.0) && (x <= channel_length) &&\
+                    (y >= region_height + channel_width) && (y <= side_length_y);
+
+            if(inside) 
+            {
+                grid_cell->active = false;
+            }
+
+            INITIALIZE_FIBROTIC_INFO(grid_cell);
+            FIBROTIC(grid_cell) = true;
+        }
+        grid_cell = grid_cell->next;
+    }
+}
+
 void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
                                real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed) {
 

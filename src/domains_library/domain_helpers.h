@@ -20,6 +20,8 @@ void set_cell_not_changeable (struct cell_node *c, real_cpu initial_discretizati
 
 void set_plain_fibrosis (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
 
+void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length);
+
 void set_plain_sphere_fibrosis (struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
                                 real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed);
 
