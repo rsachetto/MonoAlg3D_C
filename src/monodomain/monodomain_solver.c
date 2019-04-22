@@ -371,7 +371,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     set_ode_initial_conditions_for_all_volumes(the_ode_solver);
 
     // We need to call this function after because of the pitch.... maybe we have to change the way
-    // we pass this paramters to the cell model....
+    // we pass this parameters to the cell model....
     if(restore_checkpoint) 
     {
         restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, NULL, NULL,

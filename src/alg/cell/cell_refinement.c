@@ -1200,6 +1200,10 @@ void set_refined_cell_data(struct cell_node* the_cell, struct cell_node* other_c
 
     the_cell->v = other_cell->v;
 
+    the_cell->sigma_x = other_cell->sigma_x;
+    the_cell->sigma_y = other_cell->sigma_y;
+    the_cell->sigma_z = other_cell->sigma_z;
+
     the_cell->dx = dx;
     the_cell->dy = dy;
     the_cell->dz = dz;
