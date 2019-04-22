@@ -97,6 +97,9 @@ struct cell_node {
     // Variables used by some applications of partial differential equations.
     real_cpu v;
 
+    real_cpu sigma_x;
+    real_cpu sigma_y;
+    real_cpu sigma_z;
 
 #if defined(_OPENMP)
     omp_lock_t updating;
