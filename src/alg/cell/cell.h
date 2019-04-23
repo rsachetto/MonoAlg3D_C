@@ -39,7 +39,7 @@ struct cell_node {
 
     uint64_t bunch_number; // Bunch identifier
 
-    real_cpu center_x, center_y, center_z;
+    float center_x, center_y, center_z;
 
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
@@ -97,6 +97,9 @@ struct cell_node {
     // Variables used by some applications of partial differential equations.
     real_cpu v;
 
+    real_cpu sigma_x;
+    real_cpu sigma_y;
+    real_cpu sigma_z;
 
 #if defined(_OPENMP)
     omp_lock_t updating;

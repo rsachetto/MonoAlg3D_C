@@ -67,6 +67,10 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->linear_system_solver_extra_info = NULL;
     cell_node->mesh_extra_info = NULL;
 
+    cell_node->sigma_x = 0.0;
+    cell_node->sigma_y = 0.0;
+    cell_node->sigma_z = 0.0;
+
 #if defined(_OPENMP)
     omp_init_lock(&(cell_node->updating));
 #endif

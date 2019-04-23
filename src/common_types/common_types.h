@@ -10,7 +10,7 @@ struct line {
 };
 
 struct point_3d {
-    real_cpu x, y, z;
+    float x, y, z;
 };
 
 struct point_hash_entry {
@@ -35,7 +35,7 @@ struct string_voidp_hash_entry {
 
 typedef uint32_t * ui32_array;
 typedef  struct element * element_array;
-typedef real_cpu * real_array;
+typedef float * f32_array;
 typedef struct point_3d * point3d_array;
 typedef struct line * line_array;
 typedef int * int_array;
@@ -55,14 +55,14 @@ typedef char** string_array;
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                         \
     for(int i = 0; i < hmlen(d); i++) {                                                                                \
-        struct string_voidp_hash_entry e = d[i];                                                                             \
+        struct string_voidp_hash_entry e = d[i];                                                                       \
         fn(e.value);                                                                                                   \
     }
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(d, fn)                                                 \
     for(int i = 0; i < hmlen(d); i++) {                                                                                \
-        struct string_voidp_hash_entry e = d[i];                                                                             \
-        fn(e.value, e.key);                                                                      \
+        struct string_voidp_hash_entry e = d[i];                                                                       \
+        fn(e.value, e.key);                                                                                            \
     }
 
 #endif

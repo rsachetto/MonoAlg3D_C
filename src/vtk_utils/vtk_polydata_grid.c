@@ -54,8 +54,8 @@ sds create_common_vtp_header(bool compressed, int num_points, int num_lines)
 }
 
 void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                                                     real_cpu *plain_coordinates, bool clip_with_bounds,
-                                                                     real_cpu *bounds, bool read_only_values)
+                                                                     float *plain_coordinates, bool clip_with_bounds,
+                                                                     float *bounds, bool read_only_values)
 {
     static bool mesh_already_loaded =  false;
 
@@ -413,10 +413,10 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
         size_until_now = sdslen(file_content);
 
         // scalars
-        uint64_t block_size = sizeof(real_cpu) * vtk_grid->num_points;
+        uint64_t block_size = sizeof(float) * vtk_grid->num_points;
         file_content = sdscatlen(file_content, &block_size, sizeof(uint64_t));
         file_content = sdscatlen(file_content, vtk_grid->values, (size_t)block_size);
-        size_until_now += (sizeof(real_cpu) * vtk_grid->num_points + sizeof(uint64_t));
+        size_until_now += (sizeof(float) * vtk_grid->num_points + sizeof(uint64_t));
 
         // Points
         block_size = sizeof(struct point_3d) * vtk_grid->num_points;

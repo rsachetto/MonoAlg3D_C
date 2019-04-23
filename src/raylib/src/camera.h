@@ -149,8 +149,8 @@ void SetCameraMoveControls(int frontKey, int backKey,
 #define CAMERA_FREE_MOUSE_SENSITIVITY                   0.01f
 #define CAMERA_FREE_DISTANCE_MIN_CLAMP                  0.3f
 #define CAMERA_FREE_DISTANCE_MAX_CLAMP                  120.0f
-#define CAMERA_FREE_MIN_CLAMP                           85.0f
-#define CAMERA_FREE_MAX_CLAMP                          -85.0f
+#define CAMERA_FREE_MIN_CLAMP                           89.0f
+#define CAMERA_FREE_MAX_CLAMP                          -89.0f
 #define CAMERA_FREE_SMOOTH_ZOOM_SENSITIVITY             0.05f
 #define CAMERA_FREE_PANNING_DIVIDER                     5.1f
 

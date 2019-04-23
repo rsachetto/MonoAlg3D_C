@@ -5,6 +5,7 @@
 #include "monodomain_solver.h"
 #include "../utils/file_utils.h"
 #include "../utils/stop_watch.h"
+#include "../libraries_common/common_data_structures.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -33,6 +34,61 @@
 #endif
 
 #include <stdio.h>
+#include <float.h>
+
+static void translate_visible_mesh_to_origin(struct grid *grid) {
+
+    real_cpu minx = FLT_MAX;
+    real_cpu miny = FLT_MAX;
+    real_cpu minz = FLT_MAX;
+
+    struct cell_node *grid_cell;
+
+    float center_x;
+    float center_y;
+    float center_z;
+
+    grid_cell = grid->first_cell;
+
+    while(grid_cell != 0) {
+
+        center_x = grid_cell->center_x;
+        center_y = grid_cell->center_y;
+        center_z = grid_cell->center_z;
+
+        if(center_x < minx){
+            minx = center_x;
+        }
+
+        if(center_y < miny){
+            miny = center_y;
+        }
+
+        if(center_z < minz){
+            minz = center_z;
+        }
+
+        grid_cell = grid_cell->next;
+    }
+
+    grid_cell = grid->first_cell;
+
+    struct fibrotic_mesh_info *mesh_info;
+
+    while(grid_cell != 0) {
+
+        mesh_info = FIBROTIC_INFO(grid_cell);
+
+        if(grid_cell->active || (mesh_info && mesh_info->fibrotic)) {
+            grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
+            grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);;
+            grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);;
+        }
+
+        grid_cell = grid_cell->next;
+    }
+
+}
 
 struct monodomain_solver *new_monodomain_solver() {
 
@@ -147,7 +203,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         print_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
     }
 
-    bool save_to_file = (save_mesh_config != NULL) && (save_mesh_config->print_rate > 0);
+    bool save_to_file = (save_mesh_config != NULL) && (save_mesh_config->print_rate > 0) && (save_mesh_config->out_dir_name);
 
     if(save_to_file) 
     {
@@ -198,8 +254,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     ///////MAIN CONFIGURATION END//////////////////
-
-
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
 
@@ -220,10 +274,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu start_adpt_at = the_monodomain_solver->start_adapting_at;
     real_cpu dt_pde = the_monodomain_solver->dt;
     real_cpu finalT = the_monodomain_solver->final_time;
-
-//    double beta = the_monodomain_solver->beta;
-//    double cm = the_monodomain_solver->cm;
-
     real_cpu dt_ode = the_ode_solver->min_dt;
 
 #ifdef COMPILE_CUDA
@@ -261,8 +311,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (domain_config)
         {
             success = domain_config->set_spatial_domain(domain_config, the_grid);
-            if(!success) 
-            {
+
+            if(configs->draw) {
+                translate_visible_mesh_to_origin(the_grid);
+            }
+
+            if(!success) {
                 print_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
             }
         }
@@ -319,7 +373,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     set_ode_initial_conditions_for_all_volumes(the_ode_solver);
 
     // We need to call this function after because of the pitch.... maybe we have to change the way
-    // we pass this paramters to the cell model....
+    // we pass this parameters to the cell model....
     if(restore_checkpoint) 
     {
         restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, NULL, NULL,
@@ -370,7 +424,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int print_rate = 1;
 
-
     int save_state_rate = 0;
 
     if(save_checkpoint)
@@ -394,9 +447,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     #ifdef COMPILE_OPENGL
     {
-        draw_config.exit = false;
-        draw_config.restart = false;
-
         if (configs->draw) {
             draw_config.grid_to_draw = the_grid;
             draw_config.simulating = true;
@@ -409,9 +459,16 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     print_to_stdout_and_file("Starting simulation\n");
 
+    struct stop_watch iteration_time_watch;
+    long iteration_time;
+
+    init_stop_watch(&iteration_time_watch);
+
     // Main simulation loop start
     while(cur_time <= finalT)
     {
+
+        start_stop_watch(&iteration_time_watch);
 
         #ifdef COMPILE_OPENGL
         if(draw_config.restart) {
@@ -433,14 +490,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             if (cur_time > 0.0) {
                 activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_grid);
 
-                if (abort_on_no_activity) {
+                if (abort_on_no_activity && cur_time > last_stimulus_time) {
                     if (!activity) {
                         print_to_stdout_and_file("No activity, aborting simulation\n");
                         break;
                     }
                 }
             }
-
 
             start_stop_watch(&ode_time);
 
@@ -471,7 +527,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             if (count % print_rate == 0) {
                 print_to_stdout_and_file("t = %lf, Iterations = "
                                          "%" PRIu32 ", Error Norm = %e, Number of Cells:"
-                                         "%" PRIu32 ", Iterations time: %ld us\n",
+                                         "%" PRIu32 ", CG Iterations time: %ld us",
                                          cur_time, solver_iterations, solver_error, the_grid->num_active_cells,
                                          cg_partial);
             }
@@ -545,6 +601,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             continue;
         }
         #endif
+
+        iteration_time = stop_stop_watch(&iteration_time_watch);
+
+        if ( (count - 1) % print_rate == 0) {
+            print_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
+        }
     }
 
     long res_time = stop_stop_watch(&solver_time);
@@ -559,7 +621,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     print_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
 
 #ifdef COMPILE_OPENGL
-   draw_config.time = cur_time;
    draw_config.solver_time = res_time;
    draw_config.ode_total_time = ode_total_time;
    draw_config.cg_total_time = cg_total_time;
@@ -722,6 +783,16 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
+    if(options->linear_system_solver_config) {
+        print_to_stdout_and_file("Linear system solver configuration:\n");
+
+        print_to_stdout_and_file("Linear system solver library: %s\n", options->linear_system_solver_config->config_data.library_file_path);
+        print_to_stdout_and_file("Linear system solver function: %s\n", options->linear_system_solver_config->config_data.function_name);
+
+        STRING_HASH_PRINT_KEY_VALUE_LOG(options->linear_system_solver_config->config_data.config);
+        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    }
 
     if(options->save_mesh_config) {
         print_to_stdout_and_file("Save results configuration:\n");

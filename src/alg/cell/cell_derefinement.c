@@ -84,14 +84,28 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     uint64_t bunch_number = first_bunch_cell->bunch_number;
 
     // New cell variable (Arithmetic mean between all cells of the bunch).
-    real_cpu u = 0;
+    real_cpu v_average = 0;
+    real_cpu sigma_x_average = 0.0;
+    real_cpu sigma_y_average = 0.0;
+    real_cpu sigma_z_average = 0.0;
 
     struct cell_node *auxiliar = first_bunch_cell;
+
     for (int i = 0; i < 8; i++) {
-        u += auxiliar->v;
+        v_average += auxiliar->v;
+        sigma_x_average += auxiliar->sigma_x;
+        sigma_y_average += auxiliar->sigma_y;
+        sigma_z_average += auxiliar->sigma_z;
+
         auxiliar = auxiliar->next;
     }
-    u /= 8.0;
+
+    v_average /= 8.0;
+    
+    sigma_x_average /= 8.0;
+    sigma_y_average /= 8.0;
+    sigma_z_average /= 8.0;
+
 
     // Front northeast node of the bunch becomes the derefined node.
     struct cell_node *new_cell = get_front_northeast_cell (first_bunch_cell);
@@ -141,7 +155,11 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     new_cell->dy = 2.0f * new_cell->dy;
     new_cell->dz = 2.0f * new_cell->dz;
 
-    new_cell->v = u;
+    new_cell->v = v_average;
+
+    new_cell->sigma_x = sigma_x_average;
+    new_cell->sigma_y = sigma_y_average;
+    new_cell->sigma_z = sigma_z_average;
 
     new_cell->cell_data.level = bunch_level - (uint8_t)1;
     new_cell->hilbert_shape_number = hilbert_shape_number;

@@ -276,7 +276,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
     assert(ode_solver);
     assert(ode_solver->sv);
 
-    size_t num_refined_cells = arrlen(refined_this_step)/8;
+    size_t num_refined_cells = (size_t) arrlen(refined_this_step)/8;
 
     real *sv = ode_solver->sv;
     int neq = ode_solver->model_data.number_of_ode_equations;
@@ -293,7 +293,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 		#pragma omp parallel for private(sv_src, sv_dst)
         for (i = 0; i < num_refined_cells; i++) {
 
-            size_t index_id = i * 8;
+            size_t index_id = i * (size_t )8;
 
             uint32_t index = refined_this_step[index_id];
             sv_src = &sv[index];
@@ -312,7 +312,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
         #pragma omp parallel for private(sv_src, sv_dst)
         for (i = 0; i < num_refined_cells; i++) {
 
-            size_t index_id = i * 8;
+            size_t index_id = i * (size_t )8;
 
             uint32_t index = refined_this_step[index_id];
             sv_src = &sv[index * neq];

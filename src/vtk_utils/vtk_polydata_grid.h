@@ -14,7 +14,7 @@ struct vtk_polydata_grid
     uint32_t num_points;
     uint32_t num_lines;
 
-    real_array values;
+    f32_array values;
     point3d_array points;
     line_array lines;
 };
@@ -22,8 +22,8 @@ struct vtk_polydata_grid
 struct vtk_polydata_grid *new_vtk_polydata_grid ();
 
 void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                                                     real_cpu *plain_coordinates, bool clip_with_bounds,
-                                                                     real_cpu *bounds, bool read_only_values);
+                                                                     float *plain_coordinates, bool clip_with_bounds,
+                                                                     float *bounds, bool read_only_values);
 
 void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *filename, bool binary);
 void save_vtk_polydata_grid_as_vtp_compressed (struct vtk_polydata_grid *vtk_grid, char *filename, int compression_level);
