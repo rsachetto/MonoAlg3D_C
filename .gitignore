@@ -57,7 +57,9 @@ fabric.properties
 bin/
 shared_libs/
 tmp*/
-tests_bin/
+tests_bin/TestSuite
+tests_bin/ToyTest
+tests_bin/test_*
 meshes/*.pts
 meshes/human_800_tagged.alg
 meshes/mouse.alg

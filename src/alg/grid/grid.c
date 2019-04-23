@@ -28,15 +28,15 @@ struct grid *new_grid() {
     return result;
 }
 
-void initialize_and_construct_grid(struct grid *the_grid, real_cpu side_length_x, real_cpu side_length_y,
-                                   real_cpu side_length_z) {
+void initialize_and_construct_grid(struct grid *the_grid, float side_length_x, float side_length_y,
+                                   float side_length_z) {
     assert(the_grid);
 
     initialize_grid(the_grid, side_length_x, side_length_y, side_length_z);
     construct_grid(the_grid);
 }
 
-void initialize_grid(struct grid *the_grid, real_cpu side_length_x, real_cpu side_length_y, real_cpu side_length_z) {
+void initialize_grid(struct grid *the_grid, float side_length_x, float side_length_y, float side_length_z) {
 
     assert(the_grid);
 
@@ -50,9 +50,9 @@ void construct_grid(struct grid *the_grid) {
 
     assert(the_grid);
 
-    real_cpu side_length_x = the_grid->side_length_x;
-    real_cpu side_length_y = the_grid->side_length_y;
-    real_cpu side_length_z = the_grid->side_length_z;
+    float side_length_x = the_grid->side_length_x;
+    float side_length_y = the_grid->side_length_y;
+    float side_length_z = the_grid->side_length_z;
 
     // Cell nodes.
     struct cell_node *front_northeast_cell, *front_northwest_cell, *front_southeast_cell, *front_southwest_cell,
@@ -459,7 +459,7 @@ void save_grid_domain(struct grid *the_grid, const char *file_name) {
     fclose(f);
 }
 
-int get_num_refinement_steps_to_discretization(real_cpu side_len, real_cpu h) {
+int get_num_refinement_steps_to_discretization(float side_len, real_cpu h) {
 
     int num_steps = 0;
     real_cpu aux = side_len;

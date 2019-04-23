@@ -910,6 +910,57 @@ int GetMonitorCount(void)
 #endif
 }
 
+static int mini(int x, int y)
+{
+    return x < y ? x : y;
+}
+
+static int maxi(int x, int y)
+{
+    return x > y ? x : y;
+}
+
+
+int GetCurrentMonitor(void)
+{
+
+    int bestmonitor = 0;
+
+#if defined(PLATFORM_DESKTOP)
+
+    int nmonitors, i;
+    int wx, wy, ww, wh;
+    int mx, my, mw, mh;
+    int overlap, bestoverlap;
+    GLFWmonitor **monitors;
+    const GLFWvidmode *mode;
+
+    bestoverlap = 0;
+
+    glfwGetWindowPos(window, &wx, &wy);
+    glfwGetWindowSize(window, &ww, &wh);
+    monitors = glfwGetMonitors(&nmonitors);
+
+    for (i = 0; i < nmonitors; i++) {
+        mode = glfwGetVideoMode(monitors[i]);
+        glfwGetMonitorPos(monitors[i], &mx, &my);
+        mw = mode->width;
+        mh = mode->height;
+
+        overlap =
+                maxi(0, mini(wx + ww, mx + mw) - maxi(wx, mx)) *
+                maxi(0, mini(wy + wh, my + mh) - maxi(wy, my));
+
+        if (bestoverlap < overlap) {
+            bestoverlap = overlap;
+            bestmonitor = i;
+        }
+    }
+#endif
+    return bestmonitor;
+
+}
+
 // Get primary monitor width
 int GetMonitorWidth(int monitor)
 {
@@ -2442,14 +2493,14 @@ static bool InitGraphicsDevice(int width, int height)
         if (window)
         {
 #if defined(PLATFORM_DESKTOP)
-            // Center window on screen
-            int windowPosX = displayWidth/2 - screenWidth/2;
-            int windowPosY = displayHeight/2 - screenHeight/2;
-
-            if (windowPosX < 0) windowPosX = 0;
-            if (windowPosY < 0) windowPosY = 0;
-
-            glfwSetWindowPos(window, windowPosX, windowPosY);
+//            // Center window on screen
+//            int windowPosX = displayWidth/2 - screenWidth/2;
+//            int windowPosY = displayHeight/2 - screenHeight/2;
+//
+//            if (windowPosX < 0) windowPosX = 0;
+//            if (windowPosY < 0) windowPosY = 0;
+//
+//            glfwSetWindowPos(window, windowPosX, windowPosY);
 #endif
             renderWidth = screenWidth;
             renderHeight = screenHeight;

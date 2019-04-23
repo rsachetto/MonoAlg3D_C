@@ -10,7 +10,7 @@
 void set_benchmark_domain (struct grid *the_grid);
 void set_cuboid_domain(struct grid *the_grid, real_cpu sizeX, real_cpu sizeY, real_cpu sizeZ);
 
-void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, bool read_fibrosis);
+void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size,char *read_format);
 
 void set_custom_mesh_with_bounds (struct grid *the_grid, const char *file_name, size_t size,
                                   real_cpu minx, real_cpu maxx, real_cpu miny, real_cpu maxy, real_cpu minz,
@@ -34,9 +34,5 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
                                    real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
                                    real_cpu *real_side_length_y, real_cpu *real_side_length_z);
-
-void translate_visible_mesh_to_origin(struct grid *grid);
-
-
 
 #endif // MONOALG3D_DOMAIN_HELPERS_H

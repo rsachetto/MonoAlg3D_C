@@ -4,6 +4,7 @@
 #include "monodomain/ode_solver.h"
 #include "string/sds.h"
 #include "utils/file_utils.h"
+#include <string.h>
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
@@ -81,19 +82,32 @@ void free_current_simulation_resources(struct user_options *options, struct mono
     close_logfile();
 }
 
+void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
+
+    draw_config->config_name = strdup(options->config_file);
+    draw_config->grid_to_draw = NULL;
+    draw_config->max_v = options->max_v;
+    draw_config->min_v = options->min_v;
+
+    if(draw_config->min_v == 0) draw_config->min_v = 0.1f;
+
+    draw_config->simulating = false;
+    draw_config->time = 0.0;
+
+    draw_config->adaptive = options->adaptive;
+    draw_config->final_time = options->final_time;
+    draw_config->dt = options->dt_pde;
+
+    draw_config->exit = false;
+    draw_config->restart = false;
+}
+
 int main(int argc, char **argv) {
 
     struct user_options *options = NULL;
-    //options = new_user_options();
-
     struct grid *the_grid;
-    //the_grid = new_grid();
-
     struct monodomain_solver *monodomain_solver = NULL;
-    //monodomain_solver = new_monodomain_solver();
-
     struct ode_solver *ode_solver = NULL;
-    //ode_solver = new_ode_solver();
 
     configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
 
@@ -132,22 +146,9 @@ int main(int argc, char **argv) {
             #pragma omp section
             {
 
-                draw_config.grid_to_draw = NULL;
-                draw_config.max_v = options->max_v;
-                draw_config.min_v = options->min_v;
-
-                if(draw_config.min_v == 0) draw_config.min_v = 0.1f;
-
-                draw_config.simulating = false;
-                draw_config.time = 0.0;
-
-                draw_config.adaptive = options->adaptive;
-                draw_config.final_time = options->final_time;
-                draw_config.dt = options->dt_pde;
-
                 omp_init_lock(&draw_config.draw_lock);
                 omp_init_lock(&draw_config.sleep_lock);
-
+                init_draw_config(&draw_config, options);
                 init_and_open_visualization_window();
             }
 
@@ -159,11 +160,16 @@ int main(int argc, char **argv) {
                     if(result == RESTART_SIMULATION) {
                         free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
                         configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
+                        init_draw_config(&draw_config, options);
                         result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
                     }
 
                     if(draw_config.restart) result = RESTART_SIMULATION;
-                    if(draw_config.exit) break;
+
+                    if(draw_config.exit)  {
+                        free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+                        break;
+                    }
                 }
             }
         }
