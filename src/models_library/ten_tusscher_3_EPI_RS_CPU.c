@@ -35,22 +35,32 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
     uint32_t sv_id;
-    real atpi;
     real *fibrosis;
 
-    // TODO: Fix this code to be equal to the GPU ...
+    // Default values for a healthy cell ///////////
+    real atpi = 6.8f;
+    real Ko = 5.4f;
+    real Ki_mult = 1.0f;
+    real acidosis = 0.0;
+    real K1_mult = 1.0f;
+    ////////////////////////////////////
+
     if(extra_data) {
-        atpi = *((real*)extra_data);
-        fibrosis = ((real*)extra_data)+1;
+        atpi = ((real*)extra_data)[0]; //value
+        Ko = ((real*)extra_data)[1]; //value
+        Ki_mult = ((real*)extra_data)[2]; //value
+        K1_mult = ((real*)extra_data)[3]; //value
+        acidosis = ((real*)extra_data)[4]; //value
+        fibrosis = ((real*)extra_data) + 5; //pointer
     }
     else {
         atpi = 6.8;
-        fibrosis=calloc(num_cells_to_solve, sizeof(real));
+        fibrosis = calloc(num_cells_to_solve, sizeof(real));
     }
 
-	int i;
+    int i;
 
-    #pragma omp parallel for private(sv_id)
+#pragma omp parallel for private(sv_id)
     for (i = 0; i < num_cells_to_solve; i++) {
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
@@ -58,7 +68,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
             sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], atpi);
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], atpi, Ko, Ki_mult, K1_mult, acidosis);
 
         }
     }
@@ -67,7 +77,8 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 }
 
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real atpi )  {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real atpi, real Ko, real Ki_mult,
+                         real K1_mult, real acidosis)  {
 
     assert(sv);
 
@@ -76,7 +87,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
     for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
 
-    RHS_cpu(rY, rDY, stim_current, dt, fibrosis, atpi);
+    RHS_cpu(rY, rDY, stim_current, dt, fibrosis, atpi,  Ko, Ki_mult, K1_mult, acidosis);
 
     //THIS MODEL USES THE Rush Larsen Method TO SOLVE THE EDOS
     sv[0] = dt*rDY[0] + rY[0];
@@ -94,10 +105,19 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
 }
 
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real atpi) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real atpi, real Ko,
+             real Ki_multiplicator, real K1_multiplicator, real acidosis) {
 
     // State variables
     const real svolt = sv[0];      // Membrane variable
+
+    real svolt_acid = svolt;
+
+    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
+        //These values are from In Electrophysiologic effects of acute myocardial ischemia: a theoretical
+        //study of altered cell excitability and action potential duration
+        svolt_acid = svolt - 3.4f;
+    }
 
     const real sm   = sv[1];
     const real sh   = sv[2];
@@ -117,14 +137,19 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
     const real hatp = 2;             // Hill coefficient
 
-    real Ko   = 5.4;
+    //Extracellular potassium concentration was elevated
+    //from its default value of 5.4 mM to values between 6.0 and 8.0 mM
+    //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischemia and Re-entry
+    real Ko_change  = 5.4f - Ko;
+    Ko = Ko + Ko_change*fibrosis;
 
+    //Linear changing of atpi depending on the fibrosis and distance from the center of the scar (only for border zone cells)
     real atpi_change = 6.8f - atpi;
-
     atpi = atpi + atpi_change*fibrosis;
 
     //real katp = 0.306;
-    const real katp = -0.0942857142857f*atpi + 0.683142857143f; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
+    //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
+    const real katp = -0.0942857142857f*atpi + 0.683142857143f;
 
 
     const real patp =  1.0f/(1.0f + powf((atpi/katp),hatp));
@@ -139,13 +164,24 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     const real Nao=140.0;
     const real Cai=0.00007;
     const real Nai=7.67;
-    const real Ki=138.3;
 
-//Constants
-    const real R=8314.472;
-    const real F=96485.3415f;
-    const real T=310.0;
-    const real RTONF=(R*T)/F;
+    //This paramter changes with acidosis.
+    //In Electrophysiologic effects of acute myocardial ischemia: a theoretical
+    //study of altered cell excitability and action potential duration
+    //the authors change Ki by multiplying it to 0.863259669. Should we do the same here?
+    //This changes are based on data from rat and guinea pig
+    real Ki_multiplicator_change  = 1.0f - Ki_multiplicator;
+    Ki_multiplicator = Ki_multiplicator + Ki_multiplicator_change*fibrosis;
+
+
+    real Ki=138.3f*Ki_multiplicator;
+    //printf("Ki = %lf\n", Ki);
+
+    //Constants
+    const real R = 8314.472;
+    const real F = 96485.3415f;
+    const real T = 310.0;
+    const real RTONF = (R*T)/F;
 
 //Parameters for currents
 //Parameters for IKr
@@ -174,7 +210,11 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     const real Gto=0.294;
 #endif
 //Parameters for INa
-    const real GNa=14.838;
+//if acidosis this has to change to 0.75*GNa
+    real GNa=14.838;
+    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
+        GNa = GNa*0.75f;
+    }
 //Parameters for IbNa
     const real GbNa=0.00029;
 //Parameters for INaK
@@ -182,7 +222,11 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     const real KmNa=40.0;
     const real knak=2.724;
 //Parameters for ICaL
-    const real GCaL=0.2786f*pcal;
+//if acidosis this has to change to 0.75*GCaL
+    real GCaL=0.2786f*pcal;
+    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
+        GCaL = GCaL*0.75f;
+    }
 //Parameters for IbCa
     const real GbCa=0.000592;
 //Parameters for INaCa
@@ -268,25 +312,28 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     Bk1=(3.0f*expf(0.0002f*(svolt-Ek+100.0f))+
          expf(0.1f*(svolt-Ek-10.0f)))/(1.0f+expf(-0.5f*(svolt-Ek)));
     rec_iK1=Ak1/(Ak1+Bk1);
-    rec_iNaK=(1.0f/(1.0f+0.1245f*expf(-0.1f*svolt*F/(R*T))+0.0353f*expf(-svolt*F/(R*T))));
+    rec_iNaK=(1.0f/(1.0f+0.1245f*expf(-0.1f*svolt_acid*F/(R*T))+0.0353f*expf(-svolt_acid*F/(R*T))));
     rec_ipK=1.0f/(1.0f+expf((25.0f-svolt)/5.98f));
 
+    //According to In Electrophysiologic effects of acute myocardial ischemia: a theoretical
+    //study of altered cell excitability and action potential duration
+    //Vm_acid = Vm -3.4 for all sodium current computation
 
     //Compute currents
-    INa=GNa*sm*sm*sm*sh*sj*(svolt-Ena);
+    INa=GNa*sm*sm*sm*sh*sj*(svolt_acid-Ena);
     ICaL=GCaL*D_INF*sf*sf2*(svolt-60);
     Ito=Gto*R_INF*ss*(svolt-Ek);
     IKr=Gkr*sqrtf(Ko/5.4f)*sxr1*Xr2_INF*(svolt-Ek);
     IKs=Gks*sxs*sxs*(svolt-Eks);
-    IK1=GK1*rec_iK1*(svolt-Ek);
+    IK1=GK1*rec_iK1*(svolt-Ek)*K1_multiplicator;
     INaCa=knaca*(1.0f/(KmNai*KmNai*KmNai+Nao*Nao*Nao))*(1.0f/(KmCa+Cao))*
-          (1.0f/(1.0f+ksat*expf((n-1.0f)*svolt*F/(R*T))))*
+          (1.0f/(1.0f+ksat*expf((n-1.0f)*svolt_acid*F/(R*T))))*
           (expf(n*svolt*F/(R*T))*Nai*Nai*Nai*Cao-
            expf((n-1.0f)*svolt*F/(R*T))*Nao*Nao*Nao*Cai*2.5f);
     INaK=knak*(Ko/(Ko+KmK))*(Nai/(Nai+KmNa))*rec_iNaK;
     IpCa=GpCa*Cai/(KpCa+Cai);
     IpK=GpK*rec_ipK*(svolt-Ek);
-    IbNa=GbNa*(svolt-Ena);
+    IbNa=GbNa*(svolt_acid-Ena);
     IbCa=GbCa*(svolt-Eca);
 
     IKatp = gkbaratp*(svolt-Ek);
