@@ -140,9 +140,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     real Ki    = *((real*)((char*)sv + pitch * 16) + threadID_);
 
     //External concentrations
-    //real Ko=5.4;
-//real Ko=6.5;
-real Ko=8;
+    real Ko=5.4;
     real Cao=2.0;
     real Nao=140.0;
 
@@ -393,7 +391,7 @@ real GpK=0.0199551557341385;
 A=0.00934661872479498*CaSRsquare/(0.0625f+CaSRsquare)+0.00479306991518623;
     Irel=A*sd*sg;
   //  Ileak=0.00008f*(CaSR-Cai);
- Ileak=50934e-05*(CaSR-Cai);
+    Ileak=5.60468833850934e-05*(CaSR-Cai);
     SERCA=Vmaxup/(1.f+(Kupsquare/Caisquare));
     CaSRCurrent=SERCA-Irel-Ileak;
     CaCSQN=Bufsr*CaSR/(CaSR+Kbufsr);
@@ -405,7 +403,7 @@ A=0.00934661872479498*CaSRsquare/(0.0625f+CaSRsquare)+0.00479306991518623;
     dCai=dt*(CaCurrent-CaSRCurrent);
     bc=Bufc-CaBuf-dCai-Cai+Kbufc;
     cc=Kbufc*(CaBuf+dCai+Cai);
-    Cai=(sqrt(bc*bc+4*cc)-bc)/2;
+    Cai=(sqrtf(bc*bc+4*cc)-bc)/2;
 
 
 
