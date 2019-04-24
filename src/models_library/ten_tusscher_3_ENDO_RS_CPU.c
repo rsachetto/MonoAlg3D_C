@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "ten_tusscher_3_RS.h"
 
+#define ENDO
+
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
