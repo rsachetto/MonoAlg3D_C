@@ -31,7 +31,9 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 #endif
 
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real atpi);
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real atpi );
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real atpi, real Ko,
+             real Ki_multiplicator, real K1_multiplicator, real acidosis);
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real atpi, real Ko, real Ki_mult,
+                         real K1_mult, real acidosis);
 
 #endif //MONOALG3D_MODEL_TEN_TUSSCHER_3_COMMON_H
