@@ -6,9 +6,9 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="10"
-END_FRAME="200"
-OUTPUT_VIDEO_FILENAME="video/ddm_3d"
+FRAME_RATE="20"
+END_FRAME="500"
+OUTPUT_VIDEO_FILENAME="video/mixed_celular_models_tt_corner"
 RESOLUTION="1020x720"
 
 # Execute the converting command using FFMPEG

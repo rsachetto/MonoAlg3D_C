@@ -84,7 +84,7 @@ def calculate_cell_distance (cells_positions, cell_1_id, cell_2_id):
 
 def calculate_velocity (d,t1,t2):
     
-    v = d / (t2-t1)
+    v = d / abs(t2-t1)
 
     return v
 

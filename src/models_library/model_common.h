@@ -24,7 +24,7 @@ struct cell_model_data {
 typedef GET_CELL_MODEL_DATA (get_cell_model_data_fn);
 
 // CPU FUNCTIONS
-#define SET_ODE_INITIAL_CONDITIONS_CPU(name) EXPORT_FN void name (real *sv, void* extra_data, size_t extra_data_bytes_size)
+#define SET_ODE_INITIAL_CONDITIONS_CPU(name) EXPORT_FN void name (real *sv, uint32_t sv_id, void* extra_data, size_t extra_data_bytes_size)
 typedef SET_ODE_INITIAL_CONDITIONS_CPU (set_ode_initial_conditions_cpu_fn);
 
 #define SOLVE_MODEL_ODES_CPU(name)                                                                                     \
