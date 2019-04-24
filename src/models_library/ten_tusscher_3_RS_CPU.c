@@ -37,6 +37,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
     real atpi;
     real *fibrosis;
 
+    // TODO: Fix this code to be equal to the GPU ...
     if(extra_data) {
         atpi = *((real*)extra_data);
         fibrosis = ((real*)extra_data)+1;
@@ -45,7 +46,6 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
         atpi = 6.8;
         fibrosis=calloc(num_cells_to_solve, sizeof(real));
     }
-
 
 	int i;
 
