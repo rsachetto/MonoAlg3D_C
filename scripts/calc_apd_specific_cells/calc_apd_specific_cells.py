@@ -152,7 +152,7 @@ def main ():
         print("<print_rate> = The print rate of the simulation")
         print("<APD_percentage> = Percentage to be used as reference on the APD calculus")
         print("-------------------------------------------------------------------------------------------------------------")
-        print("Example:> python calc_apd_specific_cells.py ../../outputs/plain_mixed_models_tt inputs/cells_positions_inside_region.txt 1 250 2 10000 100 90")
+        print("Example:> python calc_apd_specific_cells.py ../../outputs/plain_mixed_models_tt inputs/cells_positions_inside_region.txt 1 500 1 10000 50 90")
         print("-------------------------------------------------------------------------------------------------------------")
         return 1
 
