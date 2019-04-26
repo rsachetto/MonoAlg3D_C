@@ -81,6 +81,22 @@ else()
 endif(CUDA_FOUND)
 #########################################################
 
+############## TEN TUSCHER 3 FIG 4B ##############################
+set(MODEL_FILE_CPU "ten_tusscher_3_Fig4b.c")
+set(MODEL_FILE_GPU "ten_tusscher_3_Fig_4b.cu")
+set (LIB_NAME "ten_tusscher_3_fig4b")
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY( ${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+    IF(MSVC)
+        set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+        TARGET_LINK_LIBRARIES(${LIB_NAME} PUBLIC utils)
+    endif()
+else()
+    ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
+
 ############## FABERRUDY 2000 ##############################
 set(MODEL_FILE_CPU "luo_rudy_1991.c")
 set(MODEL_FILE_GPU "luo_rudy_1991.cu")
