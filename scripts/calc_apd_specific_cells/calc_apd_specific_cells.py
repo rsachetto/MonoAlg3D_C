@@ -1,11 +1,17 @@
+# ============================================================================================================
 # Author: Lucas Berg
 #
-# Program that calculates the APD of every cell in the grid by passing a certain percentage. 
+# Program that calculates the APD of specific cells in the grid by passing a file with indexes
+# from the desired cells and a certain percentage for the APD. 
 #   e.g: APD_90 --> percentage = 90
 #        APD_80 --> percentage = 80
 #        APD_70 --> percentage = 70
 #
 # This program also works with multiples AP's !
+#
+# IMPORTANT: This program must be used together 'cell_position_calculator_over_a_line' and only works
+#           with a plain mesh. 
+# ============================================================================================================
 
 import sys
 import subprocess
