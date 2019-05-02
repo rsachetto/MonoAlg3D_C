@@ -80,3 +80,4 @@ scripts/output
 scripts/animations/frames
 scripts/animations/video
 batch_simulations/
+*.vscode*
