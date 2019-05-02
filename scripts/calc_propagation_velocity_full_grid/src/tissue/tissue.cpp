@@ -66,8 +66,7 @@ void set_cells_position_with_vtu_file (struct tissue *the_tissue,\
 
 void set_activation_times (struct tissue *the_tissue, const std::string folder_path,\
                     std::vector<struct vtu_file> vtu_files)
-{
-    printf("[!] Calculating activation time of every cell in the tissue ...\n");   
+{   
 
     uint32_t total_num_cells = the_tissue->total_num_cells;
     uint32_t total_num_steps = vtu_files.size();
@@ -104,6 +103,8 @@ void set_activation_times (struct tissue *the_tissue, const std::string folder_p
 
     free_cell_data(data);
 
+    printf("\n[!] Calculated activation time of every cell in the tissue !\n");
+
 }
 
 void set_conduction_velocity (struct tissue *the_tissue)
@@ -130,12 +131,15 @@ void set_conduction_velocity (struct tissue *the_tissue)
 
     // Sort the cells back its original state
     qsort(cells,total_num_cells,sizeof(struct cell),sort_by_index);
+
+    printf("\n[!] Calculated conduction velocity of every cell in the tissue !\n");
+
 }
 
 void read_transmembrane_potential_from_vtu(struct cell_data *the_data, const std::string folder_path,\
                     std::vector<struct vtu_file> vtu_files)
 {
-    printf("[!] Reading transmembrane potential of every cell in the tissue ...\n");
+    printf("\n[!] Reading transmembrane potential of every cell in the tissue ...\n");
 
     std::string array_name = "Scalars_";
     uint32_t total_num_steps = the_data->num_steps;
@@ -429,9 +433,9 @@ void write_scalar_map_to_vtu (struct tissue *the_tissue,\
     writer->Write();
 
     if (scalar_name == "activation_time" || scalar_name == "at" || scalar_name == "a")
-        printf("[+] Activation time map write into '%s' file!\n",output_filename.c_str());
+        printf("\n[+] Activation time map write into '%s' file!\n",output_filename.c_str());
     else if (scalar_name == "conduction_velocity" || scalar_name == "cv" || scalar_name == "c")
-        printf("[+] Conduction velocity map write into '%s' file!\n",output_filename.c_str());
+        printf("\n[+] Conduction velocity map write into '%s' file!\n",output_filename.c_str());
     else
     {
         printf("[-] ERROR! Invalid scalar_name '%s'\n",scalar_name.c_str());
@@ -481,7 +485,7 @@ int sort_by_index (const void *a, const void *b)
     struct cell *c1 = (struct cell *)a;
     struct cell *c2 = (struct cell *)b;
 
-    if (c1->id < c2->id)
+    if (c1->id > c2->id)
         return true;
     else
         return false;

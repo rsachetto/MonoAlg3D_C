@@ -1,3 +1,9 @@
+// Author: Lucas Berg
+// ---------------------------------------------------------------------------------------------
+// Program that writes the activation time and conduction velocity map of a given simulation
+// This program only works with plain mesh until now ...
+// ---------------------------------------------------------------------------------------------
+
 #include <iostream>
 #include <vector>
 
@@ -36,12 +42,7 @@ int main (int argc, char *argv[])
     write_scalar_map_to_vtu(the_tissue,input_folder,vtu_files[0].name,"a");
 
     set_conduction_velocity(the_tissue);
-    //write_scalar_map_to_vtu(the_tissue,input_folder,vtu_files[0].name,"c");
-
-    //for (uint32_t i = 0; i < the_tissue->total_num_cells; i++)
-    //    printf("Cell %u -- (%g,%g,%g) -- AT = %g -- Velocity = %g\n",i,\
-                the_tissue->cells[i].x,the_tissue->cells[i].y,the_tissue->cells[i].z,\
-                the_tissue->cells[i].at,the_tissue->cells[i].cv);
+    write_scalar_map_to_vtu(the_tissue,input_folder,vtu_files[0].name,"c");
 
     return 0;
 }

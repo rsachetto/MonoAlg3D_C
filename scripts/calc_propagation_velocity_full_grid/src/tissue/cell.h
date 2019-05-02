@@ -9,7 +9,7 @@
 
 struct cell
 {
-    uint32_t id;                // Tissue index
+    uint32_t id;                // Original index
 
     double x, y, z;             // Coordinates
     double at;                  // Activation time

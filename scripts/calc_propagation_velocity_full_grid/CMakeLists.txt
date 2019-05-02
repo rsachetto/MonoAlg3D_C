@@ -7,6 +7,11 @@ include(${VTK_USE_FILE})
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
 
-add_executable(CalcPropagationVelocity main.cpp )
+ADD_SUBDIRECTORY(src/utils)
+ADD_SUBDIRECTORY(src/tissue)
+
+ADD_EXECUTABLE(CalcPropagationVelocity src/main.cpp )
+
+ADD_DEPENDENCIES(CalcPropagationVelocity utils tissue)
  
-target_link_libraries(CalcPropagationVelocity ${VTK_LIBRARIES})
+TARGET_LINK_LIBRARIES(CalcPropagationVelocity ${VTK_LIBRARIES} utils tissue)
