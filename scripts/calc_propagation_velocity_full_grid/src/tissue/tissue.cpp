@@ -430,20 +430,22 @@ void write_scalar_map_to_vtu (struct tissue *the_tissue,\
     vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
     writer->SetFileName(output_filename.c_str());
     writer->SetInputData(unstructured_grid);
-    writer->Write();
-
-    if (scalar_name == "activation_time" || scalar_name == "at" || scalar_name == "a")
+    int sucess = writer->Write();
+    
+    if ((scalar_name == "activation_time" || scalar_name == "at" || scalar_name == "a") && (sucess))
         printf("\n[+] Activation time map write into '%s' file!\n",output_filename.c_str());
-    else if (scalar_name == "conduction_velocity" || scalar_name == "cv" || scalar_name == "c")
+    else if ((scalar_name == "conduction_velocity" || scalar_name == "cv" || scalar_name == "c") && sucess)
         printf("\n[+] Conduction velocity map write into '%s' file!\n",output_filename.c_str());
     else
     {
-        printf("[-] ERROR! Invalid scalar_name '%s'\n",scalar_name.c_str());
+        if (!sucess)
+            printf("[-] ERROR! Cannot open output file '%s'! Check if the folder 'outputs' exists!\n",output_filename.c_str());
+        else
+            printf("[-] ERROR! Invalid scalar_name '%s'\n",scalar_name.c_str());
         exit(EXIT_FAILURE);
     }
     
 }
-
 
 int sort_by_position (const void *a, const void *b)
 {
