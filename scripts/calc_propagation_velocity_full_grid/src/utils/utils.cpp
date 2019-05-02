@@ -13,4 +13,7 @@ void usage (const char pname[])
     printf("<dx> = Size of the space discretization in the x axis\n");
     printf("<dy> = Size of the space discretization in the y axis\n");
     printf("%s\n",PRINT_LINE);
+    printf("Example:\n");
+    printf("%s ../../outputs/plain_100_100_100_fhn 0.02 100 10000 10000 100 100\n",pname);
+    printf("%s\n",PRINT_LINE);
 }
