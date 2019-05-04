@@ -30,6 +30,8 @@
 #include "control_volume.h"
 #include "cell_data.h"
 
+static const uint32_t OFFSET = 5;
+
 struct tissue
 {
     std::string *folder_path;
@@ -78,5 +80,7 @@ void write_scalar_map_to_vtu (struct tissue *the_tissue,\
 
 int sort_by_position (const void *a, const void *b);
 int sort_by_index (const void *a, const void *b);
+
+bool check_position (const uint32_t i, const uint32_t j, const uint32_t num_cells_in_x, const uint32_t num_cells_in_y);
 
 #endif //MONOALG3D_UTILS_H_H

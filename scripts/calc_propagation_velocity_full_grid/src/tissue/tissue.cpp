@@ -265,6 +265,19 @@ void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *th
 double center_finite_difference (struct tissue *the_tissue,\
                     const uint32_t i, const uint32_t j, const char axis)
 {
+
+    struct cell *cells = the_tissue->cells;
+    uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
+    uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
+    double dx = the_tissue->dx;
+    double dy = the_tissue->dy;
+
+    // Check if the neighbour cells are out of the grid
+    bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
+    bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
+    bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
+    bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
+
     double result;
 
     uint32_t north;
@@ -272,29 +285,31 @@ double center_finite_difference (struct tissue *the_tissue,\
     uint32_t south;
     uint32_t west;
 
-    struct cell *cells = the_tissue->cells;
-    uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
-    double dx = the_tissue->dx;
-    double dy = the_tissue->dy;
-
-    if (axis == 'x')
+    if (north_ok && east_ok && south_ok && west_ok)
     {
-        east = (i-1) * num_cells_in_y + j;
-        west = (i+1) * num_cells_in_y + j;
+        if (axis == 'x')
+        {
+            east = (i-OFFSET) * num_cells_in_y + j;
+            west = (i+OFFSET) * num_cells_in_y + j;
 
-        result = (cells[east].at - cells[west].at) / (2.0*dx);
-    }
-    else if (axis == 'y')
-    {
-        north = i * num_cells_in_y + (j-1);
-        south = i * num_cells_in_y + (j+1);
+            result = (cells[east].at - cells[west].at) / (2.0*dx);
+        }
+        else if (axis == 'y')
+        {
+            north = i * num_cells_in_y + (j-OFFSET);
+            south = i * num_cells_in_y + (j+OFFSET);
 
-        result = (cells[north].at - cells[south].at) / (2.0*dy);
+            result = (cells[north].at - cells[south].at) / (2.0*OFFSET*dy);
+        }
+        else
+        {
+            printf("[-] ERROR! On 'center_finite_difference', invalid axis!\n");
+            exit(EXIT_FAILURE);
+        }
     }
     else
     {
-        printf("[-] ERROR! On 'center_finite_difference', invalid axis!\n");
-        exit(EXIT_FAILURE);
+        result = 0.0;
     }
 
     return result;
@@ -311,28 +326,42 @@ double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, c
     uint32_t west;
 
     struct cell *cells = the_tissue->cells;
+    uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
     uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
     double dx = the_tissue->dx;
     double dy = the_tissue->dy;
 
-    if (axis == 'x')
-    {
-        center = i * num_cells_in_y + j;
-        west = (i+1) * num_cells_in_y + j;
+    // Check if the neighbour cells are out of the grid
+    bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
+    bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
+    bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
+    bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
 
-        result = (cells[west].at - cells[center].at) / (dx);
-    }
-    else if (axis == 'y')
+    if (north_ok && east_ok && south_ok && west_ok)
     {
-        center = i * num_cells_in_y + j;
-        south = i * num_cells_in_y + (j+1);
+        if (axis == 'x')
+        {
+            center = i * num_cells_in_y + j;
+            west = (i+OFFSET) * num_cells_in_y + j;
 
-        result = (cells[south].at - cells[center].at) / (dy);
+            result = (cells[west].at - cells[center].at) / (dx);
+        }
+        else if (axis == 'y')
+        {
+            center = i * num_cells_in_y + j;
+            south = i * num_cells_in_y + (j+OFFSET);
+
+            result = (cells[south].at - cells[center].at) / (dy);
+        }
+        else
+        {
+            printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
+            exit(EXIT_FAILURE);
+        }
     }
     else
     {
-        printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
-        exit(EXIT_FAILURE);
+        result = 0.0;
     }
 
     return result;
@@ -350,28 +379,42 @@ double backward_finite_difference (struct tissue *the_tissue,\
     uint32_t west;
 
     struct cell *cells = the_tissue->cells;
+    uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
     uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
     double dx = the_tissue->dx;
     double dy = the_tissue->dy;
 
-    if (axis == 'x')
-    {
-        center = i * num_cells_in_y + j;
-        east = (i-1) * num_cells_in_y + j;
+    // Check if the neighbour cells are out of the grid
+    bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
+    bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
+    bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
+    bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
 
-        result = (cells[center].at - cells[east].at) / (dx);
-    }
-    else if (axis == 'y')
+    if (north_ok && east_ok && south_ok && west_ok)
     {
-        center = i * num_cells_in_y + j;
-        north = i * num_cells_in_y + (j-1);
+        if (axis == 'x')
+        {
+            center = i * num_cells_in_y + j;
+            east = (i-OFFSET) * num_cells_in_y + j;
 
-        result = (cells[center].at - cells[north].at) / (dy);
+            result = (cells[center].at - cells[east].at) / (dx);
+        }
+        else if (axis == 'y')
+        {
+            center = i * num_cells_in_y + j;
+            north = i * num_cells_in_y + (j-OFFSET);
+
+            result = (cells[center].at - cells[north].at) / (dy);
+        }
+        else
+        {
+            printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
+            exit(EXIT_FAILURE);
+        }
     }
     else
     {
-        printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
-        exit(EXIT_FAILURE);
+        result = 0.0;
     }
 
     return result;
@@ -413,9 +456,14 @@ void write_scalar_map_to_vtu (struct tissue *the_tissue,\
     for (uint32_t i = 0; i < total_num_cells; i++)
     {
         if (scalar_name == "activation_time" || scalar_name == "at" || scalar_name == "a")
+        {
             values->InsertNextValue(cells[i].at);
+        }
         else if (scalar_name == "conduction_velocity" || scalar_name == "cv" || scalar_name == "c")
+        {
             values->InsertNextValue(cells[i].cv);
+        }
+            
         else
         {
             printf("[-] ERROR! Invalid scalar_name '%s'\n",scalar_name.c_str());
@@ -488,6 +536,14 @@ int sort_by_index (const void *a, const void *b)
     struct cell *c2 = (struct cell *)b;
 
     if (c1->id > c2->id)
+        return true;
+    else
+        return false;
+}
+
+bool check_position (const uint32_t i, const uint32_t j, const uint32_t num_cells_in_x, const uint32_t num_cells_in_y)
+{
+    if (i >= 0 && i < num_cells_in_y && j >= 0 && j < num_cells_in_x)
         return true;
     else
         return false;
