@@ -75,6 +75,9 @@ struct user_options {
     bool abort_no_activity_was_set;
     real_cpu vm_threshold;            /*-v option*/
     bool vm_threshold_was_set;
+    // NEW VARIABLES !
+    bool calc_activation_time;
+    bool calc_activation_time_was_set;
 
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;

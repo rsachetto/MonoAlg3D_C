@@ -919,6 +919,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->abort_no_activity = false;
         }
         pconfig->abort_no_activity_was_set = true;
+    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "calc_activation_time")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->calc_activation_time = true;
+        } else {
+            pconfig->calc_activation_time = false;
+        }
+        pconfig->calc_activation_time_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
         pconfig->vm_threshold = strtof(value, NULL);
         pconfig->vm_threshold_was_set = true;

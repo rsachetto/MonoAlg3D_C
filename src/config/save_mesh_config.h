@@ -12,7 +12,7 @@
 //Forward declaration
 struct save_mesh_config;
 
-#define SAVE_MESH(name) EXPORT_FN void name(int iteration_count, real_cpu current_dt, struct save_mesh_config *config, struct grid *the_grid)
+#define SAVE_MESH(name) EXPORT_FN void name(int iteration_count, real_cpu current_dt, struct save_mesh_config *config, struct grid *the_grid, const char scalar_name)
 typedef SAVE_MESH(save_mesh_fn);
 
 struct save_mesh_config {

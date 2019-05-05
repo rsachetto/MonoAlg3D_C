@@ -35,6 +35,9 @@ struct monodomain_solver {
 
     bool abort_on_no_activity;
 
+    // NEW VARIABLE!
+    bool calc_activation_time;
+
     // Time used for solving wave equation.
     real_cpu dt;
     real_cpu current_time;
@@ -64,5 +67,9 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
 bool print_result(const struct grid *the_grid, const struct user_options *configs, int count);
 
 void debug_print_and_leave ();
+
+// NEW FUNCTIONS !
+void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, struct ode_solver *the_ode_solver, struct grid *the_grid);
+void print_activation_time (struct grid *the_grid);
 
 #endif // MONOALG3D_SOLVER_H

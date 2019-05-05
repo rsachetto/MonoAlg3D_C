@@ -97,6 +97,10 @@ struct cell_node {
     // Variables used by some applications of partial differential equations.
     real_cpu v;
 
+    // Variables used for propagation velocity calculation
+    real max_dvdt;
+    real activation_time;
+
     real_cpu sigma_x;
     real_cpu sigma_y;
     real_cpu sigma_z;

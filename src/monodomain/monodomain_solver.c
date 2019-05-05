@@ -432,6 +432,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
+    bool calc_activation_time = the_monodomain_solver->calc_activation_time;
     real_cpu solver_error;
     uint32_t solver_iterations = 0;
 
@@ -483,11 +484,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             if (save_to_file && (count % print_rate == 0)) {
 
                 start_stop_watch(&write_time);
-                save_mesh_config->save_mesh(count, cur_time, save_mesh_config, the_grid);
+                save_mesh_config->save_mesh(count, cur_time, save_mesh_config, the_grid,'v');
                 total_write_time += stop_stop_watch(&write_time);
             }
 
             if (cur_time > 0.0) {
+
+                // NEW FEATURE !
+                if (calc_activation_time) {
+                    calculate_activation_time(cur_time,dt_pde,the_ode_solver,the_grid);
+                }
+
                 activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_grid);
 
                 if (abort_on_no_activity && cur_time > last_stimulus_time) {
@@ -496,6 +503,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                         break;
                     }
                 }
+
             }
 
             start_stop_watch(&ode_time);
@@ -531,6 +539,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                          cur_time, solver_iterations, solver_error, the_grid->num_active_cells,
                                          cg_partial);
             }
+
+
 
             if (adaptive) {
                 redo_matrix = false;
@@ -609,6 +619,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
     }
 
+    if (calc_activation_time)
+    {
+        //print_activation_time(the_grid);
+        print_to_stdout_and_file("[+] Saving activation map!\n");
+        save_mesh_config->save_mesh(count, cur_time, save_mesh_config, the_grid,'a');
+    }
+
     long res_time = stop_stop_watch(&solver_time);
     print_to_stdout_and_file("Resolution Time: %ld μs\n", res_time);
     print_to_stdout_and_file("ODE Total Time: %ld μs\n", ode_total_time);
@@ -669,7 +686,8 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 
     bool act = false;
 
-    if(the_ode_solver->gpu) {
+    if(the_ode_solver->gpu) 
+    {
 #ifdef COMPILE_CUDA
         uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
         real *vms;
@@ -679,10 +697,12 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
 #pragma omp parallel for
-        for(i = 0; i < n_active; i++) {
+        for(i = 0; i < n_active; i++) 
+        {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
 
-            if(ac[i]->v > vm_threshold) {
+            if(ac[i]->v > vm_threshold) 
+            {
                 act = true;
             }
         }
@@ -690,12 +710,16 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
 #endif
-    } else {
+    } 
+    else 
+    {
 #pragma omp parallel for
-        for(i = 0; i < n_active; i++) {
+        for(i = 0; i < n_active; i++) 
+        {
             sv[ac[i]->sv_position * n_odes] = (real)ac[i]->v;
 
-            if(ac[i]->v > vm_threshold) {
+            if(ac[i]->v > vm_threshold) 
+            {
                 act = true;
             }
         }
@@ -938,6 +962,8 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
 
     the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
 
+    the_monodomain_solver->calc_activation_time = options->calc_activation_time;
+
     the_monodomain_solver->dt = options->dt_pde;
 
     the_monodomain_solver->beta = options->beta;
@@ -945,3 +971,77 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
     the_monodomain_solver->start_adapting_at = options->start_adapting_at;
 }
 
+// NEW FUNCTION
+void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, struct ode_solver *the_ode_solver, struct grid *the_grid)
+{
+    // V^n+1
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    int n_odes = the_ode_solver->model_data.number_of_ode_equations;
+
+    // V^n+1/2
+    real *sv = the_ode_solver->sv;
+
+    int i;
+
+    if(the_ode_solver->gpu) 
+    {
+#ifdef COMPILE_CUDA
+        uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
+        real *vms;
+        size_t mem_size = max_number_of_cells * sizeof(real);
+
+        vms = (real *)malloc(mem_size);
+        check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+
+#pragma omp parallel for
+        for(i = 0; i < n_active; i++) 
+        {
+            real v_old = vms[ac[i]->sv_position];
+            real v_new = (real)ac[i]->v;
+
+            real dvdt = (v_new - v_old) / dt; 
+
+            if(dvdt > ac[i]->max_dvdt) 
+            {
+                ac[i]->max_dvdt = dvdt;
+                ac[i]->activation_time = cur_time;
+            }
+        }
+
+        free(vms);
+#endif
+    } 
+    else 
+    {
+#pragma omp parallel for
+        for(i = 0; i < n_active; i++) 
+        {
+            real v_old = sv[ac[i]->sv_position * n_odes];
+            real v_new = (real)ac[i]->v;
+
+            real dvdt = (v_new - v_old) / dt;
+
+            if(dvdt > ac[i]->max_dvdt) 
+            {
+                ac[i]->max_dvdt = dvdt;
+                ac[i]->activation_time = cur_time;
+            }
+        }
+    }
+
+}
+
+void print_activation_time (struct grid *the_grid)
+{
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    int i;
+
+    for(i = 0; i < n_active; i++)
+    {
+        print_to_stdout_and_file("Cell %i -- Activation time = %g ms\n",i,ac[i]->activation_time);
+    }
+}

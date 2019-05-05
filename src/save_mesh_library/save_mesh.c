@@ -203,7 +203,7 @@ SAVE_MESH(save_as_vtk) {
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
-    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
+    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
 
     save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, output_dir_with_file, binary);
 
@@ -282,31 +282,56 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data.config, "max_z");
     }
 
+    // TODO: Think a way to improve this code
+    // Write the transmembrane potential
+    if (scalar_name == 'v')
+    {
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/");
+        sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
 
-    sds output_dir_with_file = sdsnew(output_dir);
-    output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
+        output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
 
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+        if(save_pvd) {
+            add_file_to_pvd(current_dt, output_dir, base_name);
+        }
 
-    if(save_pvd) {
-        add_file_to_pvd(current_dt, output_dir, base_name);
+        new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
+
+        if(compress) {
+            save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, output_dir_with_file, compression_level);
+        }
+        else {
+            save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
+        }
+
+        if(the_grid->adaptive)
+            free_vtk_unstructured_grid(vtk_grid);
+
+        sdsfree(output_dir_with_file);
+        sdsfree(base_name);
     }
+    // Write the activation time map
+    else
+    {
+        char *output_dir = config->out_dir_name;
 
-    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
+        float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+        float bounds[6] = {0, 0, 0, 0, 0, 0};
 
-    if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, output_dir_with_file, compression_level);
-    }
-    else {
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/activation-map.vtu");
+
+        new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'a');
+
         save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
+
+        if(the_grid->adaptive)
+            free_vtk_unstructured_grid(vtk_grid);
+
+        sdsfree(output_dir_with_file);
     }
-
-    if(the_grid->adaptive)
-        free_vtk_unstructured_grid(vtk_grid);
-
-    sdsfree(output_dir_with_file);
-    sdsfree(base_name);
+    
 
 }
 
