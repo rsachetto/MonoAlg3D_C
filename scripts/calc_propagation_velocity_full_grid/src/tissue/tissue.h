@@ -30,7 +30,8 @@
 #include "control_volume.h"
 #include "cell_data.h"
 
-static const uint32_t OFFSET = 5;
+// Size of the stencil used to calculate the propagation velocity
+static const uint32_t OFFSET = 1;
 
 struct tissue
 {
@@ -60,6 +61,7 @@ void set_activation_times (struct tissue *the_tissue, const std::string folder_p
                     std::vector<struct vtu_file> vtu_files);
 void set_conduction_velocity (struct tissue *the_tissue);
 
+void load_activation_times (struct tissue *the_tissue, const std::string activation_map_filename);
 
 void read_transmembrane_potential_from_vtu(struct cell_data *the_data, const std::string folder_path,\
                     std::vector<struct vtu_file> vtu_files);

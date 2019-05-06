@@ -39,7 +39,7 @@ void filter_files_inside_folder_by_extension (DIR *dir,\
             std::string extension = filename.substr(filename.size()-3,filename.size()-1);
 
             // Insert this file into the vector
-            if (extension_name == extension)
+            if (extension_name == extension && filename != "activation-map.vtu")
             {
                 struct vtu_file file;
                 

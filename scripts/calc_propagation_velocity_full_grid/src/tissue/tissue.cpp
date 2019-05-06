@@ -107,6 +107,43 @@ void set_activation_times (struct tissue *the_tissue, const std::string folder_p
 
 }
 
+void load_activation_times (struct tissue *the_tissue, const std::string activation_map_filename)
+{
+    printf("\n[!] Loading activation map of the tissue from '%s' ...\n",activation_map_filename.c_str());
+
+    std::string array_name = "Scalars_";
+
+    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+
+    // Load with a Reader
+    reader->SetFileName(activation_map_filename.c_str());
+    reader->Update();
+
+    // Get the scalars from the 'vtkUnstructuredGrid' as a 'vtkFloatArray'
+    vtkUnstructuredGrid *unstructured_grid = reader->GetOutput();
+    vtkIdType total_num_cells = unstructured_grid->GetNumberOfCells();
+    vtkSmartPointer<vtkFloatArray> array = 
+            vtkFloatArray::SafeDownCast(unstructured_grid->GetCellData()->GetArray(array_name.c_str()));
+
+    if(array)
+    {
+        // Pass through the transmembrane of each cell on the tissue for the current timestep
+        for(int i = 0; i < total_num_cells; i++)
+        {
+            double value;
+            value = array->GetValue(i);
+
+            the_tissue->cells[i].at = value;
+            //printf("%u = %g\n",i,value);
+        }
+    }
+    else
+    {
+        printf("[-] ERROR! Could not found scalar array '%s' on file '%s'\n",array_name.c_str(),activation_map_filename.c_str());
+        exit(EXIT_FAILURE);
+    }
+}
+
 void set_conduction_velocity (struct tissue *the_tissue)
 {
     struct cell *cells = the_tissue->cells;
@@ -292,7 +329,7 @@ double center_finite_difference (struct tissue *the_tissue,\
             east = (i-OFFSET) * num_cells_in_y + j;
             west = (i+OFFSET) * num_cells_in_y + j;
 
-            result = (cells[east].at - cells[west].at) / (2.0*dx);
+            result = (cells[east].at - cells[west].at) / (2.0*OFFSET*dx);
         }
         else if (axis == 'y')
         {
@@ -309,7 +346,7 @@ double center_finite_difference (struct tissue *the_tissue,\
     }
     else
     {
-        result = 0.0;
+        result = -1.0;
     }
 
     return result;
@@ -361,7 +398,7 @@ double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, c
     }
     else
     {
-        result = 0.0;
+        result = -1.0;
     }
 
     return result;
@@ -414,7 +451,7 @@ double backward_finite_difference (struct tissue *the_tissue,\
     }
     else
     {
-        result = 0.0;
+        result = -1.0;
     }
 
     return result;
