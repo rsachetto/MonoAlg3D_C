@@ -36,7 +36,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu)
 
 	int i;
 
-    uint32_t *mapping = ((uint32_t*)extra_data);
+//    uint32_t *mapping = ((uint32_t*)extra_data);
 
     #pragma omp parallel for private(sv_id)
     for (i = 0; i < num_cells_to_solve; i++) 

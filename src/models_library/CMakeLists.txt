@@ -51,18 +51,49 @@ else()
 endif(CUDA_FOUND)
 #########################################################
 
-############## TEN TUSCHER 3 ##############################
-set(MODEL_FILE_CPU "ten_tusscher_3_RS_CPU.c")
-set(MODEL_FILE_GPU "ten_tusscher_3_RS_GPU.cu")
+############## TEN TUSCHER 3 ENDO ##############################
+set(MODEL_FILE_CPU "ten_tusscher_3_ENDO_RS_CPU.c")
+set(MODEL_FILE_GPU "ten_tusscher_3_ENDO_RS_GPU.cu")
 
 if(CUDA_FOUND)
-    CUDA_ADD_LIBRARY(ten_tusscher_3 ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+    CUDA_ADD_LIBRARY(ten_tusscher_3_endo ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
 	IF(MSVC)
 		set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
-		TARGET_LINK_LIBRARIES(ten_tusscher_3 PUBLIC utils)
+		TARGET_LINK_LIBRARIES(ten_tusscher_3_endo PUBLIC utils)
 	endif()
 else()
-    ADD_LIBRARY(ten_tusscher_3 ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+    ADD_LIBRARY(ten_tusscher_3_endo ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
+
+############## TEN TUSCHER 3 EPI ##############################
+set(MODEL_FILE_CPU "ten_tusscher_3_EPI_RS_CPU.c")
+set(MODEL_FILE_GPU "ten_tusscher_3_EPI_RS_GPU.cu")
+
+if(CUDA_FOUND)
+	CUDA_ADD_LIBRARY(ten_tusscher_3_epi ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+	IF(MSVC)
+		set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+		TARGET_LINK_LIBRARIES(ten_tusscher_3_epi PUBLIC utils)
+	endif()
+else()
+	ADD_LIBRARY(ten_tusscher_3_epi ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
+
+############## TEN TUSCHER 3 FIG 4B ##############################
+set(MODEL_FILE_CPU "ten_tusscher_3_Fig4b.c")
+set(MODEL_FILE_GPU "ten_tusscher_3_Fig_4b.cu")
+set (LIB_NAME "ten_tusscher_3_fig4b")
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY( ${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h model_common.h ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+    IF(MSVC)
+        set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+        TARGET_LINK_LIBRARIES(${LIB_NAME} PUBLIC utils)
+    endif()
+else()
+    ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_common.h ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 #########################################################
 

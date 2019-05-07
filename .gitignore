@@ -61,6 +61,7 @@ tests_bin/TestSuite
 tests_bin/ToyTest
 tests_bin/test_*
 meshes/*.pts
+meshes/*.mesh
 meshes/human_800_tagged.alg
 meshes/mouse.alg
 .vscode/
