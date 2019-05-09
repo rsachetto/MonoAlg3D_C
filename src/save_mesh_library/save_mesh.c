@@ -112,8 +112,8 @@ SAVE_MESH(save_as_text_or_binary) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    real_cpu center_x, center_y, center_z, dx, dy, dz;
-    real_cpu v;
+    float center_x, center_y, center_z, dx, dy, dz;
+    float v;
 
     while(grid_cell != 0) {
 

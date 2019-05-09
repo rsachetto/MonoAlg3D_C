@@ -8,9 +8,9 @@ ADD_LIBRARY(vtk_utils ${LIB_TYPE} data_utils.c data_utils.h vtk_polydata_grid.c 
 
 IF(ZLIB_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${ZLIB_INCLUDE_DIRS}\" -DCOMPILE_ZLIB")
-    TARGET_LINK_LIBRARIES(vtk_utils string ${ZLIB_LIBRARIES})
+    TARGET_LINK_LIBRARIES(vtk_utils string ${ZLIB_LIBRARIES} yxml m )
 ELSE()
-    TARGET_LINK_LIBRARIES(vtk_utils string)
+    TARGET_LINK_LIBRARIES(vtk_utils string yxml m)
 ENDIF(ZLIB_FOUND)
 
 if(NOT MSVC)

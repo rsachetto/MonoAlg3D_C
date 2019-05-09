@@ -123,6 +123,12 @@ struct batch_options {
     struct string_hash_entry *config_to_change;
 };
 
+struct visualization_options {
+    char *input_folder;         //TODO: maybe we can create here a option for this
+    char *file_prefix;
+};
+
+
 void display_usage( char** argv );
 void display_batch_usage(char **argv);
 

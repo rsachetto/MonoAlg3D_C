@@ -7,8 +7,12 @@
 
 #include "../alg/grid/grid.h"
 #include "../monodomain/ode_solver.h"
+#include "../vtk_utils/vtk_unstructured_grid.h"
 
 #include <omp.h>
+
+#define DRAW_SIMULATION 0
+#define DRAW_FILE 1
 
 struct draw_config {
     struct grid *grid_to_draw;
@@ -39,6 +43,7 @@ struct draw_config {
     //If we are compiling this file, openmp is available.
     omp_lock_t draw_lock;
     omp_lock_t sleep_lock;
+    struct vtk_unstructured_grid *vtk_grid;
 };
 
 struct draw_config draw_config;
@@ -305,6 +310,6 @@ static const double color[NUM_COLORS][3] =
 
 
 
-void init_and_open_visualization_window();
+void init_and_open_visualization_window(int draw_type);
 
 #endif //MONOALG3D_DRAW_H

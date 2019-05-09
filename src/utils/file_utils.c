@@ -2,18 +2,20 @@
 // Created by sachetto on 18/10/17.
 //
 
-#include <stdarg.h>
-
 #include "file_utils.h"
+
+#define STB_DS_IMPLEMENTATION
+#include "../single_file_libraries/stb_ds.h"
+
+
 #include "../string/sds.h"
+
+#include <stdarg.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
-
 #include <errno.h>
-
-#include "../single_file_libraries/stb_ds.h"
-
+#include <ctype.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -29,6 +31,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 
 #endif
 
@@ -139,7 +142,38 @@ int cp_file(const char *to, const char *from) {
     return -1;
 }
 
-char *read_entire_file(char *filename, long *size) {
+char *read_entire_file_with_mmap(const char *filename, size_t *size) {
+
+    char *f;
+
+
+    if (!filename) return NULL;
+
+    struct stat s;
+    int fd = open (filename, O_RDONLY);
+
+    if(fd == -1) {
+        return NULL;
+    }
+
+    /* Get the size of the file. */
+    fstat (fd, & s);
+    *size = s.st_size;
+
+    size_t to_page_size = *size;
+
+    int pagesize = getpagesize();
+    to_page_size += pagesize - (to_page_size%pagesize);
+
+    f = (char *) mmap (0, to_page_size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+    if (f == NULL)
+        return NULL;
+
+    return f;
+}
+
+char *read_entire_file(const char *filename, long *size) {
 
     FILE *infile;
     char *buffer;
@@ -295,6 +329,66 @@ string_array list_files_from_dir(const char *dir, const char *prefix) {
     closedir(dp);
     return files;
 }
+
+/* qsort C-string comparison function */
+static int cstring_cmp(const void *a, const void *b)
+{
+    char *ia = *((char **)a);
+    char *ib = *((char **)b);
+
+    int int_a = 0;
+    int int_b = 0;
+
+    for(; *ia; ia++) {
+        if(isdigit(*ia))
+            int_a = int_a*10 + *ia - '0';
+    }
+
+    for(; *ib; ib++) {
+        if(isdigit(*ib))
+            int_b = int_b*10 + *ib - '0';
+    }
+
+    return int_a - int_b;
+    /* strcmp functions works exactly as expected from
+    comparison function */
+}
+
+
+string_array list_files_from_dir_ordered(const char *dir, const char *prefix) {
+
+    DIR *dp;
+
+    string_array files = NULL;
+
+    struct dirent *dirp;
+
+    if ((dp = opendir(dir)) == NULL) {
+        fprintf(stderr, "Error opening %s\n", dir);
+        return NULL;
+    }
+
+    while ((dirp = readdir(dp)) != NULL) {
+
+        char *file_name = strdup(dirp->d_name);
+
+        if (prefix) {
+
+            if (strncmp(prefix, file_name, strlen(prefix)) == 0) {
+                        arrput(files, file_name);
+            }
+
+        } else {
+                    arrput(files, file_name);
+        }
+    }
+
+    qsort(files, arrlen(files), sizeof(char *), cstring_cmp);
+
+    closedir(dp);
+    return files;
+}
+
 #endif
 
 #ifdef _WIN32
