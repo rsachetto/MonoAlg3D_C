@@ -7,7 +7,6 @@
 
 #include "grid.h"
 
-#define STB_DS_IMPLEMENTATION
 #include "../../single_file_libraries/stb_ds.h"
 
 struct grid *new_grid() {

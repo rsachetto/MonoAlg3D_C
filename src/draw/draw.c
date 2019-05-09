@@ -227,7 +227,86 @@ static Vector3 find_mesh_center() {
 
     result.y = max_y;
     if(max_y != min_y)
-       result.y = (max_y-min_y)/2.0f;
+        result.y = (max_y-min_y)/2.0f;
+
+    result.z = max_z;
+    if(max_z != min_z)
+        result.z = (max_z-min_z)/2.0f;
+
+    calc_center = true;
+
+    return result;
+
+}
+
+static Vector3 find_mesh_center_vtk() {
+
+    struct vtk_unstructured_grid *grid_to_draw = draw_config.vtk_grid;
+
+    uint32_t n_active = grid_to_draw->num_cells;
+
+    float max_x, max_y, max_z;
+    float min_x, min_y, min_z;
+
+    max_x = FLT_MIN;
+    max_y = FLT_MIN;
+    max_z = FLT_MIN;
+
+    min_x = FLT_MAX;
+    min_y = FLT_MAX;
+    min_z = FLT_MAX;
+
+    int64_t *cells = grid_to_draw->cells;
+    point3d_array points = grid_to_draw->points;
+
+    Vector3 result = (Vector3){0.0, 0.0, 0.0};
+    float dx, dy, dz;
+    float center_x, center_y, center_z;
+    int num_points =grid_to_draw->points_per_cell;
+
+    for (int i = 0; i < n_active*num_points; i+=num_points) {
+
+
+        dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
+        dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
+        dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
+
+
+        center_x = points[cells[i]].x + dx/2.0f;
+        center_y = points[cells[i]].y + dy/2.0f;
+        center_z = points[cells[i]].z + dz/2.0f;
+
+        if(center_x > max_x) {
+            max_x = center_x;
+        }
+        else if(center_x < min_x) {
+            min_x = center_x;
+        }
+
+        if(center_y > max_y) {
+            max_y = center_y;
+        }
+        else if(center_y < min_y) {
+            min_y = center_y;
+        }
+
+        if(center_z > max_z) {
+            max_z = center_z;
+        }
+        else if(center_z < min_z) {
+            min_z = center_z;
+        }
+
+    }
+
+    result.x = max_x;
+    if(max_x != min_x)
+        result.x = (max_x-min_x)/2.0f;
+
+
+    result.y = max_y;
+    if(max_y != min_y)
+        result.y = (max_y-min_y)/2.0f;
 
     result.z = max_z;
     if(max_z != min_z)
@@ -241,6 +320,115 @@ static Vector3 find_mesh_center() {
 
 Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
 int num_colors = 18;
+
+static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray ray) {
+
+    struct vtk_unstructured_grid *grid_to_draw = draw_config.vtk_grid;
+
+    Vector3 cubePosition;
+    Vector3 cubeSize;
+    Color color;
+
+    real_cpu max_v = draw_config.max_v;
+    real_cpu min_v = draw_config.min_v;
+
+    bool grid_only = draw_config.grid_only;
+    bool grid_lines = draw_config.grid_lines;
+
+    bool collision;
+    int64_t *cells = grid_to_draw->cells;
+    point3d_array points = grid_to_draw->points;
+
+    float dx, dy, dz;
+    float center_x, center_y, center_z;
+    real_cpu v;
+
+
+
+    if (grid_to_draw) {
+
+        uint32_t n_active = grid_to_draw->num_cells;
+
+        int num_points = grid_to_draw->points_per_cell;
+        int j = num_points;
+
+        for (int i = 0; i < n_active*num_points; i+=num_points) {
+
+
+            dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
+            dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
+            dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
+
+
+            center_x = points[cells[i]].x + dx/2.0f;
+            center_y = points[cells[i]].y + dy/2.0f;
+            center_z = points[cells[i]].z + dz/2.0f;
+
+            v = grid_to_draw->values[j-num_points];
+            j += 1;
+
+//            if(skip_node(grid_cell)) {
+//                continue;
+//            }
+
+            struct point_3d p;
+            p.x = center_x;
+            p.y = center_y;
+            p.z = center_z;
+
+            action_potential_array aps = (struct action_potential*) hmget(selected_aps, p);
+
+            if(!draw_config.paused && draw_config.simulating && aps != NULL) {
+                struct action_potential ap1;
+                ap1.t = draw_config.time;
+                ap1.v = v;
+                arrput(aps, ap1);
+
+                hmput(selected_aps, p, aps);
+            }
+
+            cubePosition.x = (float)((center_x - mesh_offset.x)/scale);
+            cubePosition.y = (float)((center_y - mesh_offset.y)/scale);
+            cubePosition.z = (float)((center_z - mesh_offset.z)/scale);
+
+            cubeSize.x = (float)(dx/scale);
+            cubeSize.y = (float)(dy/scale);
+            cubeSize.z = (float)(dz/scale);
+
+            collision = CheckCollisionRayBox(ray,
+                                             (BoundingBox){(Vector3){ cubePosition.x - cubeSize.x/2, cubePosition.y - cubeSize.y/2, cubePosition.z - cubeSize.z/2 },
+                                                           (Vector3){ cubePosition.x + cubeSize.x/2, cubePosition.y + cubeSize.y/2, cubePosition.z + cubeSize.z/2 }});
+
+            color = get_color((v - min_v)/(max_v - min_v));
+
+            if(grid_only) {
+                DrawCubeWiresV(cubePosition, cubeSize, color);
+            }
+            else {
+
+                DrawCubeV(cubePosition, cubeSize, color);
+
+                if(grid_lines) {
+                    DrawCubeWiresV(cubePosition, cubeSize, BLACK);
+                }
+
+                if(collision && !one_selected) {
+                    DrawCubeWiresV(cubePosition, cubeSize, GREEN);
+
+                    if(aps == NULL) {
+                        arrsetcap(aps, 50);
+                        hmput(selected_aps, p, aps);
+                        draw_selected_ap_text = true;
+                        selected_time = GetTime();
+                    }
+                    one_selected = true;
+
+                }
+            }
+        }
+    }
+    one_selected = false;
+}
 
 static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
@@ -638,24 +826,40 @@ static inline void configure_end_info_box_strings (char ***info_string) {
 
 }
 
-static inline void configure_mesh_info_box_strings (char ***info_string) {
+static inline void configure_mesh_info_box_strings (char ***info_string, int draw_type) {
 
     char tmp[128];
 
     int index = 0;
 
+    uint32_t n_active = 0;
+    float sx, sy, sz;
+
+    if(draw_type == DRAW_SIMULATION) {
+        n_active = draw_config.grid_to_draw->num_active_cells;
+        sx = draw_config.grid_to_draw->side_length_x;
+        sy = draw_config.grid_to_draw->side_length_y;
+        sz = draw_config.grid_to_draw->side_length_z;
+    }
+    else {
+        n_active = draw_config.vtk_grid->num_cells;
+        sx = 0.0;
+        sy = 0.0;
+        sz = 0.0;
+    }
+
     (*(info_string))[index++] = strdup("Mesh information:");
 
-    sprintf(tmp, " - Num. of Volumes: %d", draw_config.grid_to_draw->num_active_cells);
+    sprintf(tmp, " - Num. of Volumes: %d", n_active);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max X: %f", draw_config.grid_to_draw->side_length_x);
+    sprintf(tmp, " - Max X: %f", sx);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max Y: %f", draw_config.grid_to_draw->side_length_y);
+    sprintf(tmp, " - Max Y: %f", sy);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max Z: %f", draw_config.grid_to_draw->side_length_z);
+    sprintf(tmp, " - Max Z: %f", sz);
     (*(info_string))[index++]  = strdup(tmp);
 
     if(draw_config.paused) {
@@ -669,7 +873,7 @@ static inline void configure_mesh_info_box_strings (char ***info_string) {
         sprintf(tmp, "Simulation finished: %lf of %lf ms", draw_config.time, draw_config.final_time);
     }
 
-        (*(info_string))[index]  = strdup(tmp);
+    (*(info_string))[index]  = strdup(tmp);
 
 
 }
@@ -734,15 +938,21 @@ void handle_input(bool *mesh_loaded, Ray *ray) {
 
 }
 
-void init_and_open_visualization_window() {
+void init_and_open_visualization_window(int draw_type) {
 
     omp_set_lock(&draw_config.sleep_lock);
 
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    char *tmp = NULL;
 
-    char *tmp = (char*) malloc(strlen(draw_config.config_name) + strlen("Simulation visualization - ") + 2);
-    sprintf(tmp, "Simulation visualization - %s", draw_config.config_name);
+    if(draw_type == DRAW_SIMULATION) {
+        tmp = (char *) malloc(strlen(draw_config.config_name) + strlen("Simulation visualization - ") + 2);
+        sprintf(tmp, "Simulation visualization - %s", draw_config.config_name);
+    }
+    else if(draw_type == DRAW_FILE) {
+        tmp = strdup("Visualizing...");
+    }
 
     InitWindow(0, 0, tmp);
 
@@ -801,7 +1011,7 @@ void init_and_open_visualization_window() {
             " - C to show/hide everything except grid",
             " - Space to start or pause simulation"
     };
-    
+
     int info_box_lines = sizeof(info_box_strings)/sizeof(info_box_strings[0]);
     int end_info_box_lines = 11;
     int mesh_info_box_lines = 6;
@@ -818,6 +1028,7 @@ void init_and_open_visualization_window() {
 
     end_info_box_strings = (char **) malloc(sizeof(char *) * end_info_box_lines);
     mesh_info_box_strings = (char **) malloc(sizeof(char *) * mesh_info_box_lines);
+    bool have_grid = false;
 
     while (!WindowShouldClose()) {
 
@@ -865,7 +1076,15 @@ void init_and_open_visualization_window() {
             }
         }
 
-        if(draw_config.grid_to_draw && omp_test_lock(&draw_config.draw_lock)) {
+        if(draw_type == DRAW_SIMULATION) {
+            have_grid = draw_config.grid_to_draw;
+        } else {
+            have_grid = draw_config.vtk_grid;
+        }
+
+        if(have_grid) {
+
+            omp_set_lock(&draw_config.draw_lock);
 
             mesh_loaded = true;
             ClearBackground(GRAY);
@@ -873,11 +1092,26 @@ void init_and_open_visualization_window() {
             BeginMode3D(camera);
 
             if(!calc_center) {
-                mesh_offset = find_mesh_center();
-                scale = fmaxf(draw_config.grid_to_draw->side_length_x, fmaxf(draw_config.grid_to_draw->side_length_y, draw_config.grid_to_draw->side_length_z))/5.0f;
+                if(draw_type == DRAW_SIMULATION) {
+                    mesh_offset = find_mesh_center();
+                    scale = fmaxf(draw_config.grid_to_draw->side_length_x,
+                                  fmaxf(draw_config.grid_to_draw->side_length_y,
+                                        draw_config.grid_to_draw->side_length_z)) / 5.0f;
+                }
+                else {
+                    mesh_offset = find_mesh_center_vtk();
+                    scale = fmaxf(mesh_offset.x,
+                                  fmaxf(mesh_offset.y,
+                                        mesh_offset.z)) / 5.0f;
+                }
             }
 
-            draw_alg_mesh(mesh_offset, scale, ray);
+            if(draw_type == DRAW_SIMULATION) {
+                draw_alg_mesh(mesh_offset, scale, ray);
+            }
+            else if(draw_type == DRAW_FILE) {
+                draw_vtk_unstructured_grid(mesh_offset, scale, ray);
+            }
 
             omp_unset_lock(&draw_config.draw_lock);
 
@@ -912,7 +1146,7 @@ void init_and_open_visualization_window() {
             }
 
             if(show_mesh_info_box) {
-                configure_mesh_info_box_strings(&mesh_info_box_strings);
+                configure_mesh_info_box_strings(&mesh_info_box_strings, draw_type);
 
                 box_h = (text_offset * mesh_info_box_lines) + 10;
                 pos_x = GetScreenWidth() - box_w - 10;

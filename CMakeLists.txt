@@ -129,7 +129,7 @@ ENDIF()
     #TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ${GUI_DEPS})
 #ENDIF()
 
-ADD_EXECUTABLE(MonoAlg3D src/main.c)
+ADD_EXECUTABLE(MonoAlg3D src/main_simulator.c)
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers ini_parser string graph config ${OPT_DEPS})
 
 FIND_PACKAGE(MPI)
@@ -162,7 +162,16 @@ ADD_SUBDIRECTORY(src/save_state_library)
 ADD_SUBDIRECTORY(src/restore_state_library)
 ADD_SUBDIRECTORY(src/update_monodomain_library)
 
+#BUILDING VISUALIZER
+IF(OPENGL_FOUND AND OPENMP_FOUND)
+ADD_SUBDIRECTORY(src/xml_parser)
+    ADD_EXECUTABLE(MonoAlg3D_visualizer src/main_visualizer.c)
+    ADD_DEPENDENCIES(MonoAlg3D_visualizer utils config vtk_utils draw)
+    TARGET_LINK_LIBRARIES(MonoAlg3D_visualizer utils config vtk_utils draw raylib)
+ENDIF(OPENGL_FOUND AND OPENMP_FOUND)
+
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
+
 
