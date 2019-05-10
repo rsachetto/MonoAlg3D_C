@@ -4,11 +4,7 @@
 
 #include "update_monodomain_config.h"
 
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 #include <string.h>
 #include "../utils/file_utils.h"
 
@@ -19,11 +15,7 @@ void init_update_monodomain_functions(struct update_monodomain_config *config) {
 
     char *function_name = config->config_data.function_name;
 
-#ifdef _MSC_VER
-	char *default_library = "./shared_libs/default_update_monodomain.dll";
-#else
 	char *default_library = "./shared_libs/libdefault_update_monodomain.so";
-#endif
 
     if(config->config_data.library_file_path == NULL) {
         print_to_stdout_and_file("Using the default library for update monodomain\n");

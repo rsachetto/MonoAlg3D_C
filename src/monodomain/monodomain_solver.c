@@ -27,11 +27,7 @@
 
 #include "../single_file_libraries/stb_ds.h"
 
-#ifndef _WIN32
 #include <unistd.h>
-#else
-#define sleep Sleep
-#endif
 
 #include <stdio.h>
 #include <float.h>

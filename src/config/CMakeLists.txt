@@ -15,8 +15,4 @@ set(SOURCE_FILES_CONFIG
 
 ADD_LIBRARY(config STATIC ${SOURCE_FILES_CONFIG})
 
-IF(MSVC)
-	TARGET_LINK_LIBRARIES(config string getopt utils dl)
-ELSE()
-	TARGET_LINK_LIBRARIES(config string utils dl)
-ENDIF()
+TARGET_LINK_LIBRARIES(config string utils dl)

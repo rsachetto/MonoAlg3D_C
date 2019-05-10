@@ -4,11 +4,7 @@
 
 #include "save_state_config.h"
 
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,11 +16,7 @@ void init_save_state_functions(struct save_state_config *config) {
 
     char *function_name = config->config_data.function_name;
 
-#ifdef _MSC_VER
-	char *default_library = "./shared_libs/libdefault_save_state.dll";
-#else
 	char *default_library = "./shared_libs/libdefault_save_state.so";
-#endif
 
     if(config->config_data.library_file_path == NULL) {
         print_to_stdout_and_file("Using the default library for saving simulation state\n");

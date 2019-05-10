@@ -543,13 +543,11 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
         cr_assert(lines_gold);
         cr_assert(lines_tested);
 
-        sdsfree(full_path_gold);
-        sdsfree(full_path_tested);
-
         ptrdiff_t n_lines_gold = arrlen(lines_gold);
         ptrdiff_t n_lines_tested= arrlen(lines_tested);
 
         cr_assert_eq(n_lines_gold, n_lines_tested);
+
 
         for(int j = 0; j < n_lines_gold; j++) {
 
@@ -570,12 +568,15 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
             real_cpu value_gold = strtod(gold_values[count_gold-1], NULL);
             real_cpu value_tested = strtod(tested_simulation_values[count_gold-1], NULL);
 
-            cr_assert_float_eq(value_gold, value_tested, 1e-6);
-
+            cr_assert_float_eq(value_gold, value_tested, 1e-3, "Found %lf, Expected %lf on line %d of %s", value_tested, value_gold, i+1, full_path_tested);
             sdsfreesplitres(gold_values, count_gold);
             sdsfreesplitres(tested_simulation_values, count_tested);
         }
+
+        sdsfree(full_path_gold);
+        sdsfree(full_path_tested);
     }
+
 
     return 1;
 

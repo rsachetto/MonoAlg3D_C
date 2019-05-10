@@ -4,11 +4,8 @@
 
 #include <stddef.h>
 #include "config_common.h"
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
+
 
 #include "../single_file_libraries/stb_ds.h"
 

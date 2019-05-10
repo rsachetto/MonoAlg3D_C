@@ -4,11 +4,7 @@
 
 #include "assembly_matrix_config.h"
 
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 #include <string.h>
 #include "../utils/file_utils.h"
 
@@ -19,11 +15,7 @@ void init_assembly_matrix_functions(struct assembly_matrix_config *config) {
 
     char *function_name = config->config_data.function_name;
 
-#ifdef _MSC_VER
-	char *default_function = "./shared_libs/default_matrix_assembly.dll";
-#else
-	char *default_function = "./shared_libs/libdefault_matrix_assembly.so";
-#endif
+    char *default_function = "./shared_libs/libdefault_matrix_assembly.so";
 
     if(config->config_data.library_file_path == NULL) {
         print_to_stdout_and_file("Using the default library for matrix assembly\n");

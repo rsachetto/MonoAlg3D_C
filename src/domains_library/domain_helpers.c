@@ -14,12 +14,7 @@
 #include <math.h>
 #include <time.h>
 
-#ifdef _MSC_VER
-#include <process.h>
-#define getpid _getpid
-#else
 #include <unistd.h>
-#endif
 
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
                                    real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,

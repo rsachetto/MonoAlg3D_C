@@ -13,9 +13,7 @@ ELSE()
     TARGET_LINK_LIBRARIES(vtk_utils string yxml m)
 ENDIF(ZLIB_FOUND)
 
-if(NOT MSVC)
-    set_property(TARGET vtk_utils PROPERTY POSITION_INDEPENDENT_CODE ON)
-endif()
+set_property(TARGET vtk_utils PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 #######################################################################
 
