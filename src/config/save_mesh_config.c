@@ -60,7 +60,8 @@ struct save_mesh_config* new_save_mesh_config() {
     result->out_dir_name_was_set = false;
     result->print_rate_was_set = false;
     result->print_rate = 0;
-    result->last_count = 0;
+    result->remove_older_simulation_dir = false;
+    result->remove_older_simulation_dir_was_set = false;
     return result;
 }
 

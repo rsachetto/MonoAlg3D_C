@@ -471,7 +471,31 @@ void set_save_mesh_config(const char *args, struct save_mesh_config *sm, const c
             }
             free(sm->out_dir_name);
             sm->out_dir_name = strdup(value);
-        } else if(strcmp(key, "function") == 0) {
+        }
+        else if(strcmp(key, "remove_older_simulation") == 0) {
+            if(sm->remove_older_simulation_dir_was_set) {
+
+                if(sm->remove_older_simulation_dir) {
+                    sprintf(old_value, "yes");
+                } else {
+                    sprintf(old_value, "no");
+                }
+
+                issue_overwrite_warning("remove_older_simulation", "save_mesh", old_value, optarg, config_file);
+            }
+            if(strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
+                sm->remove_older_simulation_dir = true;
+            } else if(strcmp(optarg, "false") == 0 || strcmp(optarg, "no") == 0) {
+                sm->remove_older_simulation_dir = false;
+            } else {
+                fprintf(stderr,
+                        "Warning: Invalid value for remove_older_simulation option: %s! Valid options are: true, yes, false, no. "
+                        "Setting the value to false\n",
+                        optarg);
+                sm->remove_older_simulation_dir = false;
+            }
+        }
+        else if(strcmp(key, "function") == 0) {
             if(sm->config_data.function_name_was_set) {
                 issue_overwrite_warning("function", "save_mesh", sm->config_data.function_name, value, config_file);
             }
@@ -1149,6 +1173,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else if(MATCH_NAME("output_dir")) {
             pconfig->save_mesh_config->out_dir_name = strdup(value);
             pconfig->save_mesh_config->out_dir_name_was_set = true;
+        } else if(MATCH_NAME("remove_older_simulation")) {
+            if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+                pconfig->save_mesh_config->remove_older_simulation_dir = true;
+            } else {
+                pconfig->save_mesh_config->remove_older_simulation_dir = false;
+            }
+            pconfig->save_mesh_config->remove_older_simulation_dir_was_set = true;
         } else if(MATCH_NAME("function")) {
             pconfig->save_mesh_config->config_data.function_name = strdup(value);
             pconfig->save_mesh_config->config_data.function_name_was_set = true;

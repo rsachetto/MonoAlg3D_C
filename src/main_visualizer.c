@@ -5,19 +5,14 @@
 #include "draw/draw.h"
 #endif
 
-#include "yxml.h"
 #include "single_file_libraries/stb_ds.h"
 #include "vtk_utils/data_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
 
 #include <string.h>
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
-#include <yxml.h>
 
-#include <ctype.h>
 
 void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
 
@@ -41,7 +36,7 @@ void init_draw_config(struct draw_config *draw_config, struct user_options *opti
 
 struct vtk_unstructured_grid *vtk_grid;
 
-static int read_files(char *input_dir, char* prefix) {
+static int read_and_render_files(char *input_dir, char* prefix) {
 
     string_array vtk_file_list  = list_files_from_dir_ordered(input_dir, prefix);
 
@@ -109,12 +104,12 @@ int main(int argc, char **argv) {
 
 #pragma omp section
         {
-            int result = read_files(argv[1], "V_it_");
+            int result = read_and_render_files(argv[1], "V_it_");
 
             while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                 if(result == RESTART_SIMULATION) {
                     init_draw_config(&draw_config, options);
-                    result = read_files(argv[1], "V_it_");
+                    result = read_and_render_files(argv[1], "V_it_");
                 }
 
                 if(draw_config.restart) result = RESTART_SIMULATION;
