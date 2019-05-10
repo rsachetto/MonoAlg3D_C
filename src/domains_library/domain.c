@@ -13,12 +13,7 @@
 #include <assert.h>
 #include <time.h>
 
-#ifdef _MSC_VER
-#include <process.h>
-#define getpid _getpid
-#else
 #include <unistd.h>
-#endif
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 

@@ -4,11 +4,7 @@
 
 #include "linear_system_solver_config.h"
 
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 #include <string.h>
 #include "../utils/file_utils.h"
 #include "../common_types/common_types.h"
@@ -18,11 +14,7 @@ void init_linear_system_solver_functions(struct linear_system_solver_config *con
 
     char *function_name = config->config_data.function_name;
 
-#ifdef _MSC_VER
-	char *default_function = "./shared_libs/libdefault_linear_system_solver.dll";
-#else
 	char *default_function = "./shared_libs/libdefault_linear_system_solver.so";
-#endif
 
     if(config->config_data.library_file_path == NULL) {
         print_to_stdout_and_file("Using the default library to solve the linear system\n");

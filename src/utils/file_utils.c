@@ -9,31 +9,18 @@
 
 
 #include "../string/sds.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
-
-#ifdef _WIN32
-#include <io.h>
-#include <Windows.h>
-#include <direct.h>
-#include <sys/stat.h>
-#define read _read
-#endif
-
-#ifdef linux
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#endif
 
 static FILE *logfile = NULL;
 
@@ -213,59 +200,6 @@ buffer to hold the text */
     return buffer;
 }
 
-#ifdef _WIN32
-// if typedef doesn't exist (msvc, blah)
-typedef intptr_t ssize_t;
-
-ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
-    size_t pos;
-    int c;
-
-    if (lineptr == NULL || stream == NULL || n == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    c = fgetc(stream);
-    if (c == EOF) {
-        return -1;
-    }
-
-    if (*lineptr == NULL) {
-        *lineptr = malloc(128);
-        if (*lineptr == NULL) {
-            return -1;
-        }
-        *n = 128;
-    }
-
-    pos = 0;
-    while(c != EOF) {
-        if (pos + 1 >= *n) {
-            size_t new_size = *n + (*n >> 2);
-            if (new_size < 128) {
-                new_size = 128;
-            }
-            char *new_ptr = realloc(*lineptr, new_size);
-            if (new_ptr == NULL) {
-                return -1;
-            }
-            *n = new_size;
-            *lineptr = new_ptr;
-        }
-
-        ((unsigned char *)(*lineptr))[pos ++] = c;
-        if (c == '\n') {
-            break;
-        }
-        c = fgetc(stream);
-    }
-
-    (*lineptr)[pos] = '\0';
-    return pos;
-}
-#endif
-
 string_array read_lines(const char *filename) {
 
     string_array lines = NULL;
@@ -297,7 +231,6 @@ string_array read_lines(const char *filename) {
 }
 
 
-#ifndef _WIN32
 string_array list_files_from_dir(const char *dir, const char *prefix) {
 
     DIR *dp;
@@ -389,92 +322,7 @@ string_array list_files_from_dir_ordered(const char *dir, const char *prefix) {
     return files;
 }
 
-#endif
 
-#ifdef _WIN32
-bool dir_exists(const char *path)
-{
-    DWORD ftyp = GetFileAttributesA(path);
-    if (ftyp == INVALID_FILE_ATTRIBUTES)
-        return false;  //something is wrong with your path!
-
-    if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
-        return true;   // this is a directory!
-
-    return false;    // this is not a directory!
-}
-
-int is_dots(const char* str) {
-    if(strcmp(str,".") && strcmp(str,"..")) return FALSE;
-    return TRUE;
-}
-
-int remove_directory(const char *path) {
-    HANDLE hFind;    // file handle
-    WIN32_FIND_DATA FindFileData;
-
-    char DirPath[MAX_PATH];
-    char FileName[MAX_PATH];
-
-    strcpy(DirPath,path);
-    strcat(DirPath,"\\*");    // searching all files
-    strcpy(FileName,path);
-    strcat(FileName,"\\");
-
-    // find the first file
-    hFind = FindFirstFile(DirPath,&FindFileData);
-    if(hFind == INVALID_HANDLE_VALUE) return FALSE;
-    strcpy(DirPath,FileName);
-
-    bool bSearch = true;
-    while(bSearch) {    // until we find an entry
-        if(FindNextFile(hFind,&FindFileData)) {
-            if(is_dots(FindFileData.cFileName)) continue;
-            strcat(FileName,FindFileData.cFileName);
-            if((FindFileData.dwFileAttributes &
-                FILE_ATTRIBUTE_DIRECTORY)) {
-
-                // we have found a directory, recurse
-                if(!remove_directory(FileName)) {
-                    FindClose(hFind);
-                    return FALSE;    // directory couldn't be deleted
-                }
-                // remove the empty directory
-                RemoveDirectory(FileName);
-                strcpy(FileName,DirPath);
-            }
-            else {
-                if(FindFileData.dwFileAttributes &
-                   FILE_ATTRIBUTE_READONLY)
-                    // change read-only file mode
-                    _chmod(FileName, _S_IWRITE);
-                if(!DeleteFile(FileName)) {    // delete the file
-                    FindClose(hFind);
-                    return FALSE;
-                }
-                strcpy(FileName,DirPath);
-            }
-        }
-        else {
-            // no more files there
-            if(GetLastError() == ERROR_NO_MORE_FILES)
-                bSearch = false;
-            else {
-                // some error occurred; close the handle and return FALSE
-                FindClose(hFind);
-                return FALSE;
-            }
-
-        }
-
-    }
-    FindClose(hFind);                  // close the file handle
-
-    return RemoveDirectory(path);     // remove the empty directory
-
-}
-
-#else
 bool dir_exists(const char *path) {
     struct stat info;
 
@@ -548,42 +396,6 @@ int remove_directory(const char *path)
     return r;
 }
 
-#endif
-//
-//void create_dir(const char *out_dir) {
-//
-//    //TODO: check for windows dir separators
-//    int dirs_count;
-//
-//    sds *all_dirs = sdssplit(out_dir, "/", &dirs_count);
-//    sds new_dir = sdsempty();
-//
-//    for(int d = 0; d < dirs_count; d++) {
-//
-//        new_dir = sdscat(new_dir, all_dirs[d]);
-//        new_dir = sdscat(new_dir, "/");
-//
-//        if (!dir_exists (new_dir)) {
-//
-//            printf ("%s does not exist! Creating!\n", new_dir);
-//#if defined _MSC_VER
-//            if (_mkdir(out_dir) == -1)
-//#else
-//            if (mkdir(new_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
-//#endif
-//            {
-//
-//                fprintf (stderr, "Error creating directory %s Exiting!\n", new_dir);
-//                exit (EXIT_FAILURE);
-//            }
-//        }
-//    }
-//
-//    sdsfreesplitres(all_dirs, dirs_count);
-//    sdsfree(new_dir);
-//
-//}
-
 void fixpath(char *path)
 {
     for(; *path; ++path)
@@ -592,9 +404,6 @@ void fixpath(char *path)
 }
 
 void create_dir(char *out_dir) {
-
-    //TODO: check why this is not working in windows. It seems that out_dir is not null terminated.
-    //fixpath(out_dir);
 
     if(dir_exists(out_dir)) return;
 
@@ -626,11 +435,8 @@ void create_dir(char *out_dir) {
         if (!dir_exists (dir_to_create)) {
 
             printf ("%s does not exist! Creating!\n", dir_to_create);
-#if defined _MSC_VER
-            if (_mkdir(dir_to_create) == -1)
-#else
-                if (mkdir(dir_to_create, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
-#endif
+
+            if (mkdir(dir_to_create, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
             {
                 fprintf (stderr, "Error creating directory %s Exiting!\n", dir_to_create);
                 exit (EXIT_FAILURE);

@@ -5,11 +5,7 @@
 #include "ode_solver.h"
 
 #include <string.h>
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 #include <assert.h>
 #include "../utils/file_utils.h"
 #include "../config/stim_config.h"

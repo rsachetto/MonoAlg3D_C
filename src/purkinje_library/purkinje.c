@@ -9,13 +9,7 @@
 #include "../utils/file_utils.h"
 #include <assert.h>
 #include <time.h>
-
-#ifdef _MSC_VER
-    #include <process.h>
-    #define getpid _getpid
-#else
-    #include <unistd.h>
-#endif
+#include <unistd.h>
 
 SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh) 
 {

@@ -2,13 +2,7 @@
 #define __STOPWATCH_H
 
 #include <stdbool.h>
-
-#ifdef _MSC_VER
-#include <Windows.h>
-#include <stdint.h> // portable: uint64_t   MSVC: __int64 
-#else
 #include <sys/time.h>
-#endif
 
 /* simple stopwatch class */
 struct stop_watch {

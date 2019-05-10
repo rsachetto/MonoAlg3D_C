@@ -2,14 +2,13 @@
 // Created by bergolho on 19/07/18.
 //
 
+
 #include "purkinje_config.h"
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
+
 #include <dlfcn.h>
-#endif
 #include <string.h>
 #include "../utils/file_utils.h"
+
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 
@@ -18,11 +17,7 @@ void init_purkinje_functions (struct purkinje_config *config)
 
     char *function_name = config->config_data.function_name;
 
-#ifdef _MSC_VER
-	char *default_function = "./shared_libs/default_purkinje.dll";
-#else
 	char *default_function = "./shared_libs/libdefault_purkinje.so";
-#endif
 
     if(config->config_data.library_file_path == NULL) 
     {

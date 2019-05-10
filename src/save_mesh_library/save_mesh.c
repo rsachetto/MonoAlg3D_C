@@ -6,10 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#ifndef _WIN32
 #include <unistd.h>
-#endif
-
 #include "../alg/grid/grid.h"
 #include "../config/save_mesh_config.h"
 #include "../common_types/common_types.h"

@@ -1,4 +1,0 @@
-set(SOURCE_FILES_GETOPT getopt.c
-		getopt.h)
-
-ADD_LIBRARY(getopt STATIC ${SOURCE_FILES_GETOPT})
