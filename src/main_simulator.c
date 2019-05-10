@@ -44,6 +44,10 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
         sds buffer_log = sdsnew("");
         sds buffer_ini = sdsnew("");
 
+        if((*(options))->save_mesh_config->remove_older_simulation_dir) {
+            remove_directory((*(options))->save_mesh_config->out_dir_name);
+        }
+
         create_dir((*(options))->save_mesh_config->out_dir_name);
         buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", (*(options))->save_mesh_config->out_dir_name);
         open_logfile(buffer_log);

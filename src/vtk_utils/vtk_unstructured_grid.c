@@ -1116,13 +1116,14 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
     fclose(output_file);
 }
 
-static int parse_vtk_legacy(char *source, struct parser_state *state) {
+static int parse_vtk_legacy(char *source, size_t source_size, struct parser_state *state) {
 
     //ignoring the first two lines...
-    while (*source != '\n') source++;
-    source++;
-    while (*source != '\n') source++;
-    source++;
+    while (*source != '\n') { source++; source_size--;}
+    source++; source_size--;
+
+    while (*source != '\n') {source++; source_size--;}
+    source++; source_size--;
 
     char *type = NULL;
     char *data_name = NULL;
@@ -1131,11 +1132,11 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
 
     while (!isspace(*source)) {
         arrput(type, *source);
-        source++;
+        source++; source_size--;
     }
 
     arrput(type, '\0');
-    source++;
+    source++; source_size--;
 
     bool binary = strcasecmp(type, "BINARY") == 0;
 
@@ -1143,36 +1144,37 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
     state->ascii = !binary;
 
     //ignoring DATASET line as we only handle UNSTRUCTURED_GRID for now....
-    while (*source != '\n') source++;
-    source++;
+    while (*source != '\n') { source++; source_size--;}
+    source++; source_size--;
 
-    while (*source) {
+    while (source_size > 0) {
 
         while (!isspace(*source)) {
             arrput(data_name, *source);
-            source++;
+            source++; source_size--;
         }
 
         arrput(data_name, '\0');
 
         source++; //skip \n or space
+        source_size--;
 
         if (strcasecmp(data_name, POINTS) == 0) {
 
             while (!isspace(*source)) {
                 arrput(state->number_of_points, *source);
-                source++;
+                source++; source_size--;
             }
             arrput(state->number_of_points, '\0');
 
             //ignoring the rest of the line as we only save as float
-            while (*source != '\n') source++;
-            source++;
+            while (*source != '\n') { source++; source_size--; }
+            source++; source_size--;
 
             if(!binary) {
                 while (isspace(*source) || isdigit(*source) || *source == '-' || *source == '.') {
                     arrput(state->points_ascii, *source);
-                    source++;
+                    source++; source_size--;
                 }
                 arrput(state->points_ascii, '\0');
             }
@@ -1187,8 +1189,9 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
                     }
 
                     source += 12;
+                    source_size -= 12;
                 }
-                source++;
+                source++;source_size--;
             }
 
             data_name[0] = '\0';
@@ -1198,26 +1201,26 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
 
             while (!isspace(*source)) {
                 arrput(state->number_of_cells, *source);
-                source++;
+                source++;source_size--;
             }
 
             arrput(state->number_of_cells, '\0');
-            source++;
+            source++;source_size--;
 
-            while (*source != '\n') source++;
-            source++;
+            while (*source != '\n') {source++; source_size--;}
+            source++; source_size--;
 
             if(!binary) {
                 bool add_next = false;
                 while (isspace(*source) || isdigit(*source) || *source == '-' || *source == '.') {
                     if (*source == '\n') {
                         add_next = false;
-                        source++;
+                        source++; source_size--;
                     }
                     if (add_next) {
                         arrput(state->cells_connectivity_ascii, *source);
                     }
-                    source++;
+                    source++; source_size--;
                     add_next = true;
                 }
             }
@@ -1226,7 +1229,7 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
 
                 for(unsigned long i = 0; i < num_cells; i++) {
                     int points_per_cell = invert_bytes(*(int*)source);
-                    source += 4;
+                    source += 4; source_size -= 4;
 
                     for (int c = 0; c < points_per_cell; c++) {                 
                         uint64_t cell_point = (uint64_t )invert_bytes(*(int*)source);
@@ -1234,10 +1237,10 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
                             arrput(state->cells_connectivity_ascii, *((char*)(&cell_point) + b) ); //here this array will be treated as binary data
                         }
 
-                        source += 4;
+                        source += 4; source_size -= 4;
                     }
                 }
-                source++;
+                source++; source_size--;
 
             }
 
@@ -1248,24 +1251,24 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
         else if (strcasecmp(data_name, CELL_TYPES) == 0) {
             while (!isspace(*source)) {
                 //arrput(state->number_of_cells, *source);
-                source++;
+                source++; source_size--;
             }
 
             //arrput(state->number_of_cells, '\0');
-            source++;
+            source++; source_size--;
 
             if(!binary) {
                 while (isspace(*source) || isdigit(*source) || *source == '-' || *source == '.') {
-                    source++;
+                    source++; source_size--;
                 }
             }
             else {
                 for(unsigned long i = 0; i < num_cells; i++) {
                     //int type = *(int*)source;
-                    source += 4;
+                    source += 4; source_size -= 4;
                 }
 
-                source++;
+                source++; source_size--;
 
             }
 
@@ -1276,24 +1279,20 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
         else if (strcasecmp(data_name, CELL_DATA) == 0) {
             while (!isspace(*source)) {
                 //arrput(state->number_of_cells, *source);
-                source++;
+                source++; source_size--;
             }
 
             //arrput(state->number_of_cells, '\0');
-            source++;
+            source++; source_size--;
 
             data_name[0] = '\0';
             arrsetlen(data_name, 0);
 
         }
         else if (strcasecmp(data_name, SCALARS) == 0) {
-            while (!isspace(*source)) {
-                //arrput(state->number_of_cells, *source);
-                source++;
-            }
 
-            //arrput(state->number_of_cells, '\0');
-            source++;
+            while (*source != '\n') {source++; source_size--;}
+            source++; source_size--;
 
             data_name[0] = '\0';
             arrsetlen(data_name, 0);
@@ -1301,17 +1300,13 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
         }
         else if (strcasecmp(data_name, LOOKUP_TABLE) == 0) {
 
-            while (!isspace(*source)) {
-                arrput(state->number_of_cells, *source);
-                source++;
-            }
-            source++;
-
+            while (*source != '\n') {source++; source_size--;}
+            source++; source_size--;
 
             if(!binary) {
                 while (isspace(*source) || isdigit(*source) || *source == '-' || *source == '.') {
                     arrput(state->celldata_ascii, *source);
-                    source++;
+                    source++; source_size--;
                 }
             }
             else {
@@ -1324,9 +1319,12 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
                         arrput(state->celldata_ascii, *((char*)(&float_value) + b) ); //here this array will be treated as binary data
                     }
 
-                    source += 4;
+                    source += 4; source_size -= 4;
                 }
-                source++;
+                if(source_size) {
+                    source++;
+                    source_size--;
+                }
             }
 
             data_name[0] = '\0';
@@ -1334,13 +1332,14 @@ static int parse_vtk_legacy(char *source, struct parser_state *state) {
 
         }
         else {
-            while (*source != '\n') source++;
-            source++;
+            while (*source != '\n') { source++; source_size--;}
+            source++; source_size--;
 
             data_name[0] = '\0';
             arrsetlen(data_name, 0);
         }
     }
+    return 1;
 }
 
 static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
@@ -1385,7 +1384,7 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
                 }
                 else if (arrlen(state->name_value)) {
                     if (strcmp(OFFSET, x->attr) == 0) {
-                        if (strcmp(SCALARS, state->name_value) == 0) {
+                        if (strcmp(SCALARS_NAME, state->name_value) == 0) {
                             arrput(state->celldata_ofsset, '\0');
                             if(!state->compressed) state->binary = true;
                         }
@@ -1421,7 +1420,7 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
                 if(state->in_dataarray) {
 
                     if(x->data[0] == '\n') x->data[0] = ' ';
-                    if (strcmp(SCALARS, state->name_value) == 0) {
+                    if (strcmp(SCALARS_NAME, state->name_value) == 0) {
                         if (x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
                             arrput(state->celldata_ascii, x->data[0]);
                         }
@@ -1461,7 +1460,7 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
                         arrput(state->format, x->data[0]);
                     }
                     if (strcmp(OFFSET, x->attr) == 0) {
-                        if (strcmp(SCALARS, state->name_value) == 0) {
+                        if (strcmp(SCALARS_NAME, state->name_value) == 0) {
                             if (isdigit(x->data[0])) {
                                 arrput(state->celldata_ofsset, x->data[0]);
                             }
@@ -1564,7 +1563,7 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
     }
     else if(legacy) {
         //VTK legacy file
-        if( parse_vtk_legacy(source, parser_state) == -1) return NULL;
+        if( parse_vtk_legacy(source, size, parser_state) == -1) return NULL;
     }
     else {
         //Simple text or binary representation
@@ -1664,10 +1663,6 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
                 arrput(vtk_grid->cells, strtol(tmp, &pEnd, 10));
                 tmp = pEnd;
             }
-        } else if (legacy && parser_state->binary) {
-            memcpy(vtk_grid->points, parser_state->points_ascii, vtk_grid->num_points * sizeof(struct point_3d));
-            memcpy(vtk_grid->cells, parser_state->cells_connectivity_ascii, vtk_grid->num_cells * vtk_grid->points_per_cell * sizeof(uint64_t));
-            memcpy(vtk_grid->values, parser_state->celldata_ascii, vtk_grid->num_cells * sizeof(float));
         }
 
         free_parser_state(parser_state);

@@ -438,7 +438,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(save_mesh_config != NULL) {
         print_rate = save_mesh_config->print_rate;
-        save_mesh_config->last_count = (int)(finalT/dt_pde);
     }
 
     #ifdef COMPILE_OPENGL
