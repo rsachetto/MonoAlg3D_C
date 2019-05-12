@@ -295,6 +295,8 @@ void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *th
     vx = 1.0 / vx;
     vy = 1.0 / vy;
 
+    printf("Cell %u -- v = (%g,%g) -- ratio = %g\n",the_cell->id,vx,vy,vx/vy);
+
     // Calculate the norm of velocity vector and stored in 'cv' variable of the cell
     the_cell->cv = sqrt(pow(vx,2.0) + pow(vy,2.0));
 }
@@ -310,6 +312,10 @@ double center_finite_difference (struct tissue *the_tissue,\
     double dy = the_tissue->dy;
 
     // Check if the neighbour cells are out of the grid
+    //bool north_ok = true;
+    //bool east_ok = true;
+    //bool south_ok = true;
+    //bool west_ok = true;
     bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
     bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
@@ -369,6 +375,10 @@ double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, c
     double dy = the_tissue->dy;
 
     // Check if the neighbour cells are out of the grid
+    //bool north_ok = true;
+    //bool east_ok = true;
+    //bool south_ok = true;
+    //bool west_ok = true;
     bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
     bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
@@ -422,6 +432,10 @@ double backward_finite_difference (struct tissue *the_tissue,\
     double dy = the_tissue->dy;
 
     // Check if the neighbour cells are out of the grid
+    //bool north_ok = true;
+    //bool east_ok = true;
+    //bool south_ok = true;
+    //bool west_ok = true;
     bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
     bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);

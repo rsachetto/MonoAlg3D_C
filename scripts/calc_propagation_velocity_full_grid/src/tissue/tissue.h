@@ -31,7 +31,7 @@
 #include "cell_data.h"
 
 // Size of the stencil used to calculate the propagation velocity
-static const uint32_t OFFSET = 1;
+static const uint32_t OFFSET = 10;
 
 struct tissue
 {

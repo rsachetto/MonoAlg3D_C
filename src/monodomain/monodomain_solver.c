@@ -1022,7 +1022,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, stru
             real v_new = (real)ac[i]->v;
 
             real dvdt = (v_new - v_old) / dt;
-
+	    
             if(dvdt > ac[i]->max_dvdt) 
             {
                 ac[i]->max_dvdt = dvdt;
