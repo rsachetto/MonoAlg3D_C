@@ -1527,20 +1527,19 @@ static void free_parser_state(struct parser_state *parser_state) {
 
 }
 
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const char *vtu_file_name) {
+void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *vtu_file_name) {
 
     //TODO: this whole code is really convoluted. We can do better than this mess...
-
-    struct vtk_unstructured_grid *vtk_grid = NULL;
-
     size_t size;
 
     struct parser_state *parser_state = calloc(1, sizeof(struct parser_state));
 
     char *tmp = read_entire_file_with_mmap(vtu_file_name, &size);
 
-    if(!tmp)
-        return NULL;
+    if(!tmp) {
+        *vtk_grid = NULL;
+        return;
+    }
 
     char *source = tmp;
 
@@ -1563,22 +1562,25 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
     }
     else if(legacy) {
         //VTK legacy file
-        if( parse_vtk_legacy(source, size, parser_state) == -1) return NULL;
+        if( parse_vtk_legacy(source, size, parser_state) == -1) {
+            *vtk_grid = NULL;
+            return;
+        }
     }
     else {
         //Simple text or binary representation
-        new_vtk_unstructured_grid_from_string(&vtk_grid, source, size, !plain_text, false);
+        new_vtk_unstructured_grid_from_string(vtk_grid, source, size, !plain_text, false);
     }
 
     if(legacy || xml ) {
-        vtk_grid = new_vtk_unstructured_grid();
+        *vtk_grid = new_vtk_unstructured_grid();
 
-        vtk_grid->num_points = strtoul(parser_state->number_of_points, NULL, 10);
-        vtk_grid->num_cells = strtoul(parser_state->number_of_cells, NULL, 10);
+        (*vtk_grid)->num_points = strtoul(parser_state->number_of_points, NULL, 10);
+        (*vtk_grid)->num_cells = strtoul(parser_state->number_of_cells, NULL, 10);
 
-        arrsetcap(vtk_grid->values, vtk_grid->num_cells);
-        arrsetcap(vtk_grid->points, vtk_grid->num_points);
-        arrsetcap(vtk_grid->cells, vtk_grid->num_cells * vtk_grid->points_per_cell);
+        arrsetcap((*vtk_grid)->values, (*vtk_grid)->num_cells);
+        arrsetcap((*vtk_grid)->points, (*vtk_grid)->num_points);
+        arrsetcap((*vtk_grid)->cells,  (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell);
 
 
         if (xml && (parser_state->compressed || parser_state->binary)) {
@@ -1593,27 +1595,27 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
 
             uint64_t *raw_data = (uint64_t *) (source + scalars_offset_value);
             if (parser_state->compressed)
-                get_data_block_from_compressed_vtu_file(raw_data, vtk_grid->values);
+                get_data_block_from_compressed_vtu_file(raw_data, (*vtk_grid)->values);
             else
-                get_data_block_from_uncompressed_binary_vtu_file(raw_data, vtk_grid->values);
+                get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->values);
 
             raw_data = (uint64_t *) (source + points_offset_value);
             if (parser_state->compressed)
-                get_data_block_from_compressed_vtu_file(raw_data, vtk_grid->points);
+                get_data_block_from_compressed_vtu_file(raw_data, (*vtk_grid)->points);
             else
-                get_data_block_from_uncompressed_binary_vtu_file(raw_data, vtk_grid->points);
+                get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->points);
 
             raw_data = (uint64_t *) (source + cells_offset_value);
             if (parser_state->compressed)
-                get_data_block_from_compressed_vtu_file(raw_data, vtk_grid->cells);
+                get_data_block_from_compressed_vtu_file(raw_data, (*vtk_grid)->cells);
             else
-                get_data_block_from_uncompressed_binary_vtu_file(raw_data, vtk_grid->cells);
+                get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->cells);
         }
         else if (legacy && parser_state->binary) {
-            memcpy(vtk_grid->points, parser_state->points_ascii, vtk_grid->num_points * sizeof(struct point_3d));
-            memcpy(vtk_grid->cells, parser_state->cells_connectivity_ascii,
-                   vtk_grid->num_cells * vtk_grid->points_per_cell * sizeof(uint64_t));
-            memcpy(vtk_grid->values, parser_state->celldata_ascii, vtk_grid->num_cells * sizeof(float));
+            memcpy((*vtk_grid)->points, parser_state->points_ascii, (*vtk_grid)->num_points * sizeof(struct point_3d));
+            memcpy((*vtk_grid)->cells, parser_state->cells_connectivity_ascii,
+                   (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell * sizeof(uint64_t));
+            memcpy((*vtk_grid)->values, parser_state->celldata_ascii, (*vtk_grid)->num_cells * sizeof(float));
         }
         else if (parser_state->ascii) {
             char *tmp = parser_state->celldata_ascii;
@@ -1621,8 +1623,8 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
 
             while (*tmp != '-' && !isdigit(*tmp)) tmp++;
 
-            for (int i = 0; i < vtk_grid->num_cells; i++) {
-                        arrput(vtk_grid->values, strtof(tmp, &pEnd));
+            for (int i = 0; i < (*vtk_grid)->num_cells; i++) {
+                arrput((*vtk_grid)->values, strtof(tmp, &pEnd));
                 tmp = pEnd;
             }
 
@@ -1630,9 +1632,9 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
 
             while (*tmp != '-' && !isdigit(*tmp)) tmp++;
 
-            for (int i = 0; i < vtk_grid->num_points; i++) {
+            for (int i = 0; i < (*vtk_grid)->num_points; i++) {
                 struct point_3d p = (struct point_3d) {0.0, 0.0, 0.0};
-                for (int j = 0; j < vtk_grid->points_per_cell; j++) {
+                for (int j = 0; j < (*vtk_grid)->points_per_cell; j++) {
 
                     switch (j) {
                         case 0:
@@ -1652,15 +1654,15 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
                     }
 
                 }
-                        arrput(vtk_grid->points, p);
+                arrput((*vtk_grid)->points, p);
             }
 
             tmp = parser_state->cells_connectivity_ascii;
 
             while (!isdigit(*tmp)) tmp++;
 
-            for (int i = 0; i < vtk_grid->num_cells * vtk_grid->points_per_cell; i++) {
-                arrput(vtk_grid->cells, strtol(tmp, &pEnd, 10));
+            for (int i = 0; i < (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell; i++) {
+                arrput((*vtk_grid)->cells, strtol(tmp, &pEnd, 10));
                 tmp = pEnd;
             }
         }
@@ -1671,6 +1673,12 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
 
     munmap(tmp, size);
 
+}
+
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const char *vtu_file_name) {
+
+    struct vtk_unstructured_grid *vtk_grid = NULL;
+    set_vtk_grid_from_file(&vtk_grid, vtu_file_name);
     return vtk_grid;
 
 }

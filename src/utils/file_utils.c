@@ -288,7 +288,7 @@ static int cstring_cmp(const void *a, const void *b)
 }
 
 
-string_array list_files_from_dir_ordered(const char *dir, const char *prefix) {
+string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {
 
     DIR *dp;
 
@@ -308,11 +308,11 @@ string_array list_files_from_dir_ordered(const char *dir, const char *prefix) {
         if (prefix) {
 
             if (strncmp(prefix, file_name, strlen(prefix)) == 0) {
-                        arrput(files, file_name);
+                arrput(files, file_name);
             }
 
         } else {
-                    arrput(files, file_name);
+            arrput(files, file_name);
         }
     }
 

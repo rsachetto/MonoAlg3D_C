@@ -120,8 +120,8 @@ struct batch_options {
 };
 
 struct visualization_options {
-    char *input_folder;         //TODO: maybe we can create here a option for this
-    char *file_prefix;
+    char *input_folder;
+    real_cpu max_v, min_v, dt;
 };
 
 
@@ -130,8 +130,10 @@ void display_batch_usage(char **argv);
 
 struct user_options * new_user_options();
 struct batch_options * new_batch_options();
+struct visualization_options * new_visualization_options();
 void parse_options(int argc, char**argv, struct user_options *user_args);
 void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
+void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
 
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);

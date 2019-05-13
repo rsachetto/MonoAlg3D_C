@@ -89,7 +89,7 @@ void free_current_simulation_resources(struct user_options *options, struct mono
 void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
 
     draw_config->config_name = strdup(options->config_file);
-    draw_config->grid_to_draw = NULL;
+    draw_config->grid_info.grid_to_draw = NULL;
     draw_config->max_v = options->max_v;
     draw_config->min_v = options->min_v;
 
@@ -104,6 +104,8 @@ void init_draw_config(struct draw_config *draw_config, struct user_options *opti
 
     draw_config->exit = false;
     draw_config->restart = false;
+
+    draw_config->draw_type = DRAW_SIMULATION;
 }
 
 int main(int argc, char **argv) {
@@ -153,7 +155,7 @@ int main(int argc, char **argv) {
                 omp_init_lock(&draw_config.draw_lock);
                 omp_init_lock(&draw_config.sleep_lock);
                 init_draw_config(&draw_config, options);
-                init_and_open_visualization_window(DRAW_SIMULATION);
+                init_and_open_visualization_window();
             }
 
             #pragma omp section
