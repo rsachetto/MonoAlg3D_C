@@ -15,7 +15,7 @@
 #define DRAW_FILE 1
 
 struct draw_config {
-    struct grid *grid_to_draw;
+
     real_cpu max_v;
     real_cpu min_v;
     bool grid_only;
@@ -28,6 +28,8 @@ struct draw_config {
     real_cpu time;
     real_cpu final_time;
     real_cpu dt;
+    int step;
+
     char *config_name;
 
     long solver_time;
@@ -40,10 +42,23 @@ struct draw_config {
     long total_config_time;
     long total_cg_it;
 
+    int advance_or_return;
+    int draw_type;
     //If we are compiling this file, openmp is available.
     omp_lock_t draw_lock;
     omp_lock_t sleep_lock;
-    struct vtk_unstructured_grid *vtk_grid;
+
+
+
+
+    struct grid_info {
+        union {
+            struct vtk_unstructured_grid *vtk_grid;
+            struct grid *grid_to_draw;
+        };
+        char *file_name;
+    } grid_info;
+
 };
 
 struct draw_config draw_config;
@@ -310,6 +325,6 @@ static const double color[NUM_COLORS][3] =
 
 
 
-void init_and_open_visualization_window(int draw_type);
+void init_and_open_visualization_window();
 
 #endif //MONOALG3D_DRAW_H
