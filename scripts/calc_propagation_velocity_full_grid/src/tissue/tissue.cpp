@@ -328,31 +328,24 @@ double center_finite_difference (struct tissue *the_tissue,\
     uint32_t south;
     uint32_t west;
 
-    if (north_ok && east_ok && south_ok && west_ok)
+    if (axis == 'x')
     {
-        if (axis == 'x')
-        {
-            east = (i-OFFSET) * num_cells_in_y + j;
-            west = (i+OFFSET) * num_cells_in_y + j;
+        east = (i-OFFSET) * num_cells_in_y + j;
+        west = (i+OFFSET) * num_cells_in_y + j;
 
-            result = (cells[east].at - cells[west].at) / (2.0*OFFSET*dx);
-        }
-        else if (axis == 'y')
-        {
-            north = i * num_cells_in_y + (j-OFFSET);
-            south = i * num_cells_in_y + (j+OFFSET);
+        result = (cells[east].at - cells[west].at) / (2.0*OFFSET*dx);
+    }
+    else if (axis == 'y')
+    {
+        north = i * num_cells_in_y + (j-OFFSET);
+        south = i * num_cells_in_y + (j+OFFSET);
 
-            result = (cells[north].at - cells[south].at) / (2.0*OFFSET*dy);
-        }
-        else
-        {
-            printf("[-] ERROR! On 'center_finite_difference', invalid axis!\n");
-            exit(EXIT_FAILURE);
-        }
+        result = (cells[north].at - cells[south].at) / (2.0*OFFSET*dy);
     }
     else
     {
-        result = -1.0;
+        printf("[-] ERROR! On 'center_finite_difference', invalid axis!\n");
+        exit(EXIT_FAILURE);
     }
 
     return result;
@@ -384,31 +377,24 @@ double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, c
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
     bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
 
-    if (north_ok && east_ok && south_ok && west_ok)
+    if (axis == 'x')
     {
-        if (axis == 'x')
-        {
-            center = i * num_cells_in_y + j;
-            west = (i+OFFSET) * num_cells_in_y + j;
+        center = i * num_cells_in_y + j;
+        west = (i+OFFSET) * num_cells_in_y + j;
 
-            result = (cells[west].at - cells[center].at) / (dx);
-        }
-        else if (axis == 'y')
-        {
-            center = i * num_cells_in_y + j;
-            south = i * num_cells_in_y + (j+OFFSET);
+        result = (cells[west].at - cells[center].at) / (dx);
+    }
+    else if (axis == 'y')
+    {
+        center = i * num_cells_in_y + j;
+        south = i * num_cells_in_y + (j+OFFSET);
 
-            result = (cells[south].at - cells[center].at) / (dy);
-        }
-        else
-        {
-            printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
-            exit(EXIT_FAILURE);
-        }
+        result = (cells[south].at - cells[center].at) / (dy);
     }
     else
     {
-        result = -1.0;
+        printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
+        exit(EXIT_FAILURE);
     }
 
     return result;
@@ -441,31 +427,24 @@ double backward_finite_difference (struct tissue *the_tissue,\
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
     bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
 
-    if (north_ok && east_ok && south_ok && west_ok)
+    if (axis == 'x')
     {
-        if (axis == 'x')
-        {
-            center = i * num_cells_in_y + j;
-            east = (i-OFFSET) * num_cells_in_y + j;
+        center = i * num_cells_in_y + j;
+        east = (i-OFFSET) * num_cells_in_y + j;
 
-            result = (cells[center].at - cells[east].at) / (dx);
-        }
-        else if (axis == 'y')
-        {
-            center = i * num_cells_in_y + j;
-            north = i * num_cells_in_y + (j-OFFSET);
+        result = (cells[center].at - cells[east].at) / (dx);
+    }
+    else if (axis == 'y')
+    {
+        center = i * num_cells_in_y + j;
+        north = i * num_cells_in_y + (j-OFFSET);
 
-            result = (cells[center].at - cells[north].at) / (dy);
-        }
-        else
-        {
-            printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
-            exit(EXIT_FAILURE);
-        }
+        result = (cells[center].at - cells[north].at) / (dy);
     }
     else
     {
-        result = -1.0;
+        printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
+        exit(EXIT_FAILURE);
     }
 
     return result;
