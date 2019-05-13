@@ -60,7 +60,7 @@ static int read_and_render_files(char *input_dir, char* prefix) {
     sds full_path = sdsnew(input_dir);
 
     if(!num_files) {
-        fprintf(stderr, "No simulations file found in %s", full_path);
+        fprintf(stderr, "No simulations file found in %s\n", full_path);
         return SIMULATION_FINISHED;
     }
 
@@ -157,12 +157,12 @@ int main(int argc, char **argv) {
             while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                 if(result == RESTART_SIMULATION) {
                     init_draw_config(&draw_config, options);
-                    result = read_and_render_files(argv[1], "V_it_");
+                    result = read_and_render_files(options->input_folder, "V_it_");
                 }
 
                 if(draw_config.restart) result = RESTART_SIMULATION;
 
-                if(draw_config.exit)  {
+                if(result == END_SIMULATION)  {
                     break;
                 }
             }

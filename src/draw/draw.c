@@ -4,15 +4,19 @@
 
 #include <float.h>
 #include <pthread.h>
+#include <GL/gl.h>
 #include "draw.h"
 
 
-#include "../raylib/src/raylib.h"
 
 #include "../common_types/common_types.h"
 
 #include "../single_file_libraries/stb_ds.h"
+
+#include "../raylib/src/raylib.h"
 #include "../raylib/src/camera.h"
+#include "../raylib/src/raymath.h"
+#include "../raylib/src/rlgl.h"
 
 static bool calc_center = false;
 static bool one_selected = false;
@@ -24,6 +28,9 @@ static bool c_pressed = false;
 static bool show_info_box = true;
 static bool show_end_info_box = true;
 static bool show_mesh_info_box = true;
+
+Vector3 maxSize;
+Vector3 minSize;
 
 #define DOUBLE_CLICK_DELAY 0.5 //seconds
 
@@ -191,6 +198,17 @@ static Vector3 find_mesh_center() {
     min_y = FLT_MAX;
     min_z = FLT_MAX;
 
+    float max_dx, max_dy, max_dz;
+    float min_dx, min_dy, min_dz;
+
+    max_dx = FLT_MIN;
+    max_dy = FLT_MIN;
+    max_dz = FLT_MIN;
+
+    min_dx = FLT_MAX;
+    min_dy = FLT_MAX;
+    min_dz = FLT_MAX;
+
     Vector3 result = (Vector3){0.0, 0.0, 0.0};
 
     if (ac) {
@@ -198,23 +216,29 @@ static Vector3 find_mesh_center() {
             grid_cell = ac[i];
             if(grid_cell->center_x > max_x) {
                 max_x = grid_cell->center_x;
+                max_dx = grid_cell->dx;
             }
             else if(grid_cell->center_x < min_x) {
                 min_x = grid_cell->center_x;
+                min_dx = grid_cell->dx;
             }
 
             if(grid_cell->center_y > max_y) {
                 max_y = grid_cell->center_y;
+                max_dy = grid_cell->dy;
             }
             else if(grid_cell->center_y < min_y) {
                 min_y = grid_cell->center_y;
+                min_dy = grid_cell->dy;
             }
 
             if(grid_cell->center_z > max_z) {
                 max_z = grid_cell->center_z;
+                max_dz = grid_cell->dz;
             }
             else if(grid_cell->center_z < min_z) {
                 min_z = grid_cell->center_z;
+                min_dz = grid_cell->dz;
             }
 
         }
@@ -234,6 +258,14 @@ static Vector3 find_mesh_center() {
         result.z = (max_z-min_z)/2.0f;
 
     calc_center = true;
+
+    maxSize.x = max_x + max_dx/2.0;
+    maxSize.y = max_y + max_dy/2.0;
+    maxSize.z = max_z + max_dz/2.0;
+
+    minSize.x = min_x - min_dx/2.0;
+    minSize.y = min_y - min_dy/2.0;
+    minSize.z = min_z - min_dz/2.0;
 
     return result;
 
@@ -264,8 +296,18 @@ static Vector3 find_mesh_center_vtk() {
     float center_x, center_y, center_z;
     int num_points =grid_to_draw->points_per_cell;
 
-    for (int i = 0; i < n_active*num_points; i+=num_points) {
+    float max_dx, max_dy, max_dz;
+    float min_dx, min_dy, min_dz;
 
+    max_dx = FLT_MIN;
+    max_dy = FLT_MIN;
+    max_dz = FLT_MIN;
+
+    min_dx = FLT_MAX;
+    min_dy = FLT_MAX;
+    min_dz = FLT_MAX;
+
+    for (int i = 0; i < n_active*num_points; i+=num_points) {
 
         dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
         dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
@@ -278,23 +320,29 @@ static Vector3 find_mesh_center_vtk() {
 
         if(center_x > max_x) {
             max_x = center_x;
+            max_dx = dx;
         }
         else if(center_x < min_x) {
             min_x = center_x;
+            min_dx = dx;
         }
 
         if(center_y > max_y) {
             max_y = center_y;
+            max_dy = dy;
         }
         else if(center_y < min_y) {
             min_y = center_y;
+            min_dy = dy;
         }
 
         if(center_z > max_z) {
             max_z = center_z;
+            max_dz = dz;
         }
         else if(center_z < min_z) {
             min_z = center_z;
+            min_dz = dz;
         }
 
     }
@@ -313,6 +361,14 @@ static Vector3 find_mesh_center_vtk() {
         result.z = (max_z-min_z)/2.0f;
 
     calc_center = true;
+
+    maxSize.x = max_x + max_dx/2.0;
+    maxSize.y = max_y + max_dy/2.0;
+    maxSize.z = max_z + max_dz/2.0;
+
+    minSize.x = min_x - min_dx/2.0;
+    minSize.y = min_y - min_dy/2.0;
+    minSize.z = min_z - min_dz/2.0;
 
     return result;
 
@@ -393,9 +449,9 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
 
-
     float center_x, center_y, center_z;
     real_cpu v;
+
 
     if (grid_to_draw) {
 
@@ -439,7 +495,6 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
     Vector3 cubePosition;
     Vector3 cubeSize;
-
     if (grid_to_draw) {
 
         uint32_t n_active = grid_to_draw->num_active_cells;
@@ -784,19 +839,13 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
     int index = 0;
 
     uint32_t n_active = 0;
-    float sx, sy, sz;
+//    float sx, sy, sz;
 
     if(draw_type == DRAW_SIMULATION) {
         n_active = draw_config.grid_info.grid_to_draw->num_active_cells;
-        sx = draw_config.grid_info.grid_to_draw->side_length_x;
-        sy = draw_config.grid_info.grid_to_draw->side_length_y;
-        sz = draw_config.grid_info.grid_to_draw->side_length_z;
     }
     else {
         n_active = draw_config.grid_info.vtk_grid->num_cells;
-        sx = 0.0;
-        sy = 0.0;
-        sz = 0.0;
     }
 
     (*(info_string))[index++] = strdup("Mesh information:");
@@ -804,14 +853,24 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
     sprintf(tmp, " - Num. of Volumes: %d", n_active);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max X: %f", sx);
+    sprintf(tmp, " - Max X: %f", maxSize.x);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max Y: %f", sy);
+    sprintf(tmp, " - Max Y: %f", maxSize.y);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max Z: %f", sz);
+    sprintf(tmp, " - Max Z: %f", maxSize.z);
     (*(info_string))[index++]  = strdup(tmp);
+
+    sprintf(tmp, " - Min X: %f", minSize.x);
+    (*(info_string))[index++]  = strdup(tmp);
+
+    sprintf(tmp, " - Min Y: %f", minSize.y);
+    (*(info_string))[index++]  = strdup(tmp);
+
+    sprintf(tmp, " - Min Z: %f", minSize.z);
+    (*(info_string))[index++]  = strdup(tmp);
+
 
     if(draw_type == DRAW_SIMULATION) {
         if (draw_config.paused) {
@@ -889,6 +948,7 @@ void handle_input(bool *mesh_loaded, Ray *ray) {
         ray->position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
         ray->direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
         calc_center = false;
+        omp_unset_lock(&draw_config.sleep_lock);
     }
 
     if (IsKeyPressed('A')) {
@@ -992,7 +1052,7 @@ void init_and_open_visualization_window() {
 
     int info_box_lines = sizeof(info_box_strings)/sizeof(info_box_strings[0]);
     int end_info_box_lines = 11;
-    int mesh_info_box_lines = 6;
+    int mesh_info_box_lines = 9;
 
     Vector2 txt_w_h;
 
@@ -1006,7 +1066,7 @@ void init_and_open_visualization_window() {
 
     end_info_box_strings = (char **) malloc(sizeof(char *) * end_info_box_lines);
     mesh_info_box_strings = (char **) malloc(sizeof(char *) * mesh_info_box_lines);
-    bool have_grid = false;
+    bool have_grid;
 
     while (!WindowShouldClose()) {
 
@@ -1161,6 +1221,7 @@ void init_and_open_visualization_window() {
             DrawText("Loading Mesh...", posx+80, posy, 20, BLACK);
         }
 
+        DrawFPS(10,300);
         EndDrawing();
 
     }
@@ -1173,6 +1234,7 @@ void init_and_open_visualization_window() {
         draw_config.paused = false;
     }
 
+    omp_unset_lock(&draw_config.sleep_lock);
     draw_config.exit = true;
     CloseWindow();
 
