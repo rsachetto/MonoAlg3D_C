@@ -32,6 +32,8 @@
 
 // Size of the stencil used to calculate the propagation velocity
 static const uint32_t OFFSET = 1;
+// Threashold for a problem in the conduction velocity calculation
+static const double THRESHOLD = 2.0e+03;
 
 struct tissue
 {

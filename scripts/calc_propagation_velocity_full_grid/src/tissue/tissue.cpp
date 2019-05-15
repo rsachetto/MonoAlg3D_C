@@ -295,7 +295,11 @@ void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *th
     vx = 1.0 / vx;
     vy = 1.0 / vy;
 
-    printf("Cell %u -- v = (%g,%g) -- ratio = %g\n",the_cell->id,vx,vy,vx/vy);
+    // Check if the value is to big
+    if (fabs(vx) > THRESHOLD) vx = 0.0;
+    if (fabs(vy) > THRESHOLD) vy = 0.0;
+
+    printf("Cell %u -- v = (%g,%g)\n",the_cell->id,vx,vy);
 
     // Calculate the norm of velocity vector and stored in 'cv' variable of the cell
     the_cell->cv = sqrt(pow(vx,2.0) + pow(vy,2.0));
