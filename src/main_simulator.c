@@ -106,6 +106,7 @@ void init_draw_config(struct draw_config *draw_config, struct user_options *opti
     draw_config->restart = false;
 
     draw_config->draw_type = DRAW_SIMULATION;
+    draw_config->error_message = NULL;
 }
 
 int main(int argc, char **argv) {
