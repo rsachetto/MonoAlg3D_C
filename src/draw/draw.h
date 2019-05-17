@@ -14,6 +14,13 @@
 #define DRAW_SIMULATION 0
 #define DRAW_FILE 1
 
+#define MIN_VERTICAL_TICKS 4
+#define MAX_VERTICAL_TICKS 20
+
+#define MIN_HORIZONTAL_TICKS 4
+#define MAX_HORIZONTAL_TICKS 20
+
+
 struct draw_config {
 
     real_cpu max_v;
@@ -48,9 +55,6 @@ struct draw_config {
     omp_lock_t draw_lock;
     omp_lock_t sleep_lock;
 
-
-
-
     struct grid_info {
         union {
             struct vtk_unstructured_grid *vtk_grid;
@@ -58,6 +62,8 @@ struct draw_config {
         };
         char *file_name;
     } grid_info;
+
+    char *error_message;
 
 };
 

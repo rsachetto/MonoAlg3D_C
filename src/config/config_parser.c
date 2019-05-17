@@ -121,8 +121,9 @@ void display_visualization_usage(char **argv) {
 
     printf("Usage: %s [options] input_folder \n\n", argv[0]);
     printf("Options:\n");
-    printf("--visualization_max_v, maximum value for V. Default: -86.0\n");
-    printf("--visualization_min_v, minimum value for V. Default: 40.0\n");
+    printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
+    printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
+    printf("--dt | -d, dt for the simulation. Default: 0\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
@@ -149,6 +150,7 @@ struct visualization_options *new_visualization_options() {
     user_args->input_folder = NULL;
     user_args->max_v = 40.0f;
     user_args->min_v = -86.0f;
+    user_args->dt = 0.0;
     return user_args;
 }
 

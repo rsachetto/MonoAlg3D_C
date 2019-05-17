@@ -4,15 +4,12 @@
 
 #include <float.h>
 #include <pthread.h>
-#include <GL/gl.h>
+#include <time.h>
+
+
 #include "draw.h"
-
-
-
 #include "../common_types/common_types.h"
-
 #include "../single_file_libraries/stb_ds.h"
-
 #include "../raylib/src/raylib.h"
 #include "../raylib/src/camera.h"
 #include "../raylib/src/raymath.h"
@@ -395,11 +392,15 @@ static void draw_voxel(Vector3 cube_position, Vector3 cube_size, real_cpu v, Ray
 
     action_potential_array aps = (struct action_potential*) hmget(selected_aps, p);
 
-    if(!draw_config.paused && draw_config.simulating && aps != NULL) {
+    if(draw_config.simulating && aps != NULL) {
         struct action_potential ap1;
         ap1.t = draw_config.time;
         ap1.v = v;
-        arrput(aps, ap1);
+
+        if(draw_config.advance_or_return >= 0)
+            arrput(aps, ap1);
+        else
+            arrpop(aps);
 
         hmput(selected_aps, p, aps);
     }
@@ -427,6 +428,10 @@ static void draw_voxel(Vector3 cube_position, Vector3 cube_size, real_cpu v, Ray
 
             if(aps == NULL) {
                 arrsetcap(aps, 50);
+                struct action_potential ap1;
+                ap1.t = draw_config.time;
+                ap1.v = v;
+                arrput(aps, ap1);
                 hmput(selected_aps, p, aps);
                 draw_selected_ap_text = true;
                 selected_time = GetTime();
@@ -580,7 +585,14 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
         }
     }
 
-    char *time_text = "Time (ms)";
+    char *time_text;
+
+    if(draw_config.dt == 0) {
+        time_text = "Time (steps)";
+    }
+    else {
+        time_text = "Time (ms)";
+    }
     width = MeasureTextEx(font, time_text, font_size_big, spacing_big);
 
     DrawTextEx(font, time_text, (Vector2){min_x + graph_width/2.0f - width.x/2.0f, (float)min_y + 50.0f}, font_size_big, spacing_big, BLACK);
@@ -590,13 +602,18 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
     real_cpu time = 0.0;
 
-    int num_ticks;
+    uint num_ticks;
     real_cpu tick_ofsset = 10;
-    num_ticks = (draw_config.max_v - draw_config.min_v)/tick_ofsset;
+    num_ticks = (uint) ((draw_config.max_v - draw_config.min_v)/tick_ofsset);
 
-    if(num_ticks < 4) {
-        num_ticks = 4;
+    if(num_ticks < MIN_VERTICAL_TICKS) {
+        num_ticks = MIN_VERTICAL_TICKS;
         tick_ofsset = (draw_config.max_v - draw_config.min_v)/num_ticks;
+    }
+    else if(num_ticks > MAX_VERTICAL_TICKS) {
+        num_ticks = MAX_VERTICAL_TICKS;
+        tick_ofsset = (draw_config.max_v - draw_config.min_v)/num_ticks;
+
     }
 
     real_cpu v = draw_config.min_v;
@@ -633,12 +650,17 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
     }
 
     tick_ofsset = 10;
-    num_ticks = draw_config.final_time/tick_ofsset;
+    num_ticks = (int) (draw_config.final_time/tick_ofsset);
 
-    if(num_ticks < 4) {
-        num_ticks = 4;
+    if(num_ticks < MIN_HORIZONTAL_TICKS) {
+        num_ticks = MIN_HORIZONTAL_TICKS;
         tick_ofsset = draw_config.final_time/num_ticks;
     }
+    else if(num_ticks > MAX_HORIZONTAL_TICKS) {
+        num_ticks = MAX_HORIZONTAL_TICKS;
+        tick_ofsset = draw_config.final_time/num_ticks;
+    }
+
 
     float graph_min_x = ((graph_pos_x + 5.0f + max_w.x + 5.0f) + (graph_pos_x + 5.0f + max_w.x + 5.0f + 10.0))/2.0;
 
@@ -884,16 +906,29 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
 
     }
     else {
-
         if (draw_config.paused) {
-            sprintf(tmp, "Visualization paused: %lf of %lf ms", draw_config.time, draw_config.final_time);
+            if(draw_config.dt == 0) {
+                sprintf(tmp, "Visualization paused: %d of %d steps", (int)draw_config.time, (int)draw_config.final_time);
+            }
+            else {
+                sprintf(tmp, "Visualization paused: %lf of %lf ms", draw_config.time, draw_config.final_time);
+            }
         } else if (draw_config.simulating) {
-            sprintf(tmp, "Visualization running: %lf of %lf ms", draw_config.time, draw_config.final_time);
+            if(draw_config.dt == 0) {
+                sprintf(tmp, "Visualization running: %d of %d steps", (int) draw_config.time, (int) draw_config.final_time);
+            }
+            else {
+                sprintf(tmp, "Visualization running: %lf of %lf ms", draw_config.time, draw_config.final_time);
+            }
 
         } else {
-            sprintf(tmp, "Visualization finished: %lf of %lf ms", draw_config.time, draw_config.final_time);
+            if(draw_config.dt == 0) {
+                sprintf(tmp, "Visualization finished: %d of %d steps", (int)draw_config.time, (int)draw_config.final_time);
+            }
+            else {
+                sprintf(tmp, "Visualization finished: %lf of %lf ms", draw_config.time, draw_config.final_time);
+            }
         }
-
     }
 
     (*(info_string))[index] = strdup(tmp);
@@ -903,27 +938,40 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
 
 void handle_input(bool *mesh_loaded, Ray *ray) {
 
-        if(draw_config.paused) {
-            if (IsKeyPressed(KEY_RIGHT)) {
-                draw_config.advance_or_return = 1;
-                omp_unset_lock(&draw_config.sleep_lock);
-            }
-            if(draw_config.draw_type == DRAW_FILE) {
-                //Return one step only works on file visualization...
-                if (IsKeyPressed(KEY_LEFT)) {
+    if(draw_config.paused) {
+
+        if (IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
+            draw_config.advance_or_return = 1;
+            omp_unset_lock(&draw_config.sleep_lock);
+            nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
+            return;
+        }
+
+        if(draw_config.draw_type == DRAW_FILE) {
+            //Return one step only works on file visualization...
+            if (IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
                 draw_config.advance_or_return = -1;
+                nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
                 omp_unset_lock(&draw_config.sleep_lock);
+                return;
             }
         }
 
     }
 
-    if (IsKeyPressed('G')) draw_config.grid_only = !draw_config.grid_only;
+    if (IsKeyPressed('G'))  {
+        draw_config.grid_only = !draw_config.grid_only;
+        return;
+    }
 
-    if (IsKeyPressed('L')) draw_config.grid_lines = !draw_config.grid_lines;
+    if (IsKeyPressed('L')) {
+        draw_config.grid_lines = !draw_config.grid_lines;
+        return;
+    }
 
     if (IsKeyPressed(KEY_SPACE)) {
         draw_config.paused = !draw_config.paused;
+        return;
     }
 
     if (IsKeyPressed('R')) {
@@ -949,28 +997,29 @@ void handle_input(bool *mesh_loaded, Ray *ray) {
         ray->direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
         calc_center = false;
         omp_unset_lock(&draw_config.sleep_lock);
+        return;
     }
 
     if (IsKeyPressed('A')) {
         show_ap = !show_ap;
+        return;
     }
 
 
     if (IsKeyPressed('S')) {
         show_scale = !show_scale;
+        return;
     }
 
     if (IsKeyPressed('C')) {
-
         show_scale = c_pressed;
         show_ap = c_pressed;
         show_info_box = c_pressed;
         show_end_info_box = c_pressed;
         show_mesh_info_box = c_pressed;
-
         c_pressed = !c_pressed;
+        return;
     }
-
 
 }
 
@@ -1006,7 +1055,7 @@ void init_and_open_visualization_window() {
     draw_config.grid_lines = true;
 
     selected_aps = NULL;
-    hmdefault(selected_aps, NULL);
+            hmdefault(selected_aps, NULL);
 
     Camera3D camera;
 
@@ -1042,11 +1091,14 @@ void init_and_open_visualization_window() {
             " - Z to reset zoom",
             " - G to only draw the grid lines",
             " - L to enable or disable the grid lines",
-            " - Double click on a volume to show the AP",
             " - R to restart simulation",
             " - A to show/hide AP visualization",
             " - S to show/hide scale",
             " - C to show/hide everything except grid",
+            " - C to show/hide everything except grid",
+            " - Right arrow to advance one dt when paused",
+            " - Hold up arrow to advance time when paused",
+            " - Double click on a volume to show the AP",
             " - Space to start or pause simulation"
     };
 
@@ -1213,12 +1265,22 @@ void init_and_open_visualization_window() {
 
         }
         else if(!mesh_loaded) {
-            int posx = GetScreenWidth()/2 - 150;
+            int posx = GetScreenWidth()/2 - 320;
             int posy = GetScreenHeight()/2 - 50;
             ClearBackground(GRAY);
-            DrawRectangle(posx, posy, 320, 20, WHITE);
-            DrawRectangleLines(posx, posy, 320, 20, BLACK);
-            DrawText("Loading Mesh...", posx+80, posy, 20, BLACK);
+
+            if(draw_config.error_message) {
+                float spacing = 20/(float)font.baseSize;
+                Vector2 width = MeasureTextEx(font, draw_config.error_message, 20, spacing);
+                DrawRectangle(posx, posy, (int)width.x + 160, 20, RED);
+                DrawRectangleLines(posx, posy, (int)width.x + 160, 20, BLACK);
+                DrawText(draw_config.error_message, posx + 80, posy, 20, BLACK);
+            }
+            else {
+                DrawRectangle(posx, posy, 320, 20, WHITE);
+                DrawRectangleLines(posx, posy, 320, 20, BLACK);
+                DrawText("Loading Mesh...", posx + 80, posy, 20, BLACK);
+            }
         }
 
         DrawFPS(10,300);
@@ -1226,16 +1288,11 @@ void init_and_open_visualization_window() {
 
     }
 
-    omp_destroy_lock(&draw_config.draw_lock);
-    omp_destroy_lock(&draw_config.sleep_lock);
-
-    if(draw_config.paused) {
-        omp_unset_lock(&draw_config.sleep_lock);
-        draw_config.paused = false;
-    }
-
-    omp_unset_lock(&draw_config.sleep_lock);
     draw_config.exit = true;
+
+    omp_unset_lock(&draw_config.draw_lock);
+    omp_unset_lock(&draw_config.sleep_lock);
+
     CloseWindow();
 
 }

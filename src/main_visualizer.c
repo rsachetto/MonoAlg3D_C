@@ -50,6 +50,7 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->draw_type = DRAW_FILE;
     draw_config->grid_info.vtk_grid = NULL;
     draw_config->grid_info.file_name = NULL;
+    draw_config->error_message = NULL;
 }
 
 static int read_and_render_files(char *input_dir, char* prefix) {
@@ -60,8 +61,12 @@ static int read_and_render_files(char *input_dir, char* prefix) {
     sds full_path = sdsnew(input_dir);
 
     if(!num_files) {
-        fprintf(stderr, "No simulations file found in %s\n", full_path);
+        char tmp[4096];
+        sprintf(tmp, "No simulations file found in %s", full_path);
+        fprintf(stderr, "%s\n", tmp);
+        draw_config.error_message = strdup(tmp);
         return SIMULATION_FINISHED;
+
     }
 
     int current_file = 0;
@@ -84,22 +89,21 @@ static int read_and_render_files(char *input_dir, char* prefix) {
     real_cpu dt = draw_config.dt;
 
     draw_config.step = step;
-    draw_config.final_time = final_step*dt;
+    if(dt == 0.0) {
+        draw_config.final_time = final_step;
+
+    } else {
+        draw_config.final_time = final_step*dt;
+    }
 
     while(true) {
 
-        if(draw_config.restart) {
-            draw_config.time = 0.0;
-            free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
-            arrfree(vtk_file_list);
-            return RESTART_SIMULATION;
-        }
-        if(draw_config.exit) {
-            arrfree(vtk_file_list);
-            return END_SIMULATION;
-        }
+        if(dt == 0) {
+            draw_config.time = get_step_from_filename(vtk_file_list[current_file]);
 
-        draw_config.time = get_step_from_filename(vtk_file_list[current_file])*dt;
+        } else {
+            draw_config.time = get_step_from_filename(vtk_file_list[current_file])*dt;
+        }
 
         sdsfree(full_path);
         full_path = sdsnew(input_dir);
@@ -115,6 +119,17 @@ static int read_and_render_files(char *input_dir, char* prefix) {
         omp_unset_lock(&draw_config.draw_lock);
 
         omp_set_lock(&draw_config.sleep_lock);
+
+        if(draw_config.restart) {
+            draw_config.time = 0.0;
+            free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
+            arrfree(vtk_file_list);
+            return RESTART_SIMULATION;
+        }
+        if(draw_config.exit) {
+            arrfree(vtk_file_list);
+            return END_SIMULATION;
+        }
 
         if(draw_config.paused) {
             current_file += draw_config.advance_or_return;
@@ -162,7 +177,7 @@ int main(int argc, char **argv) {
 
                 if(draw_config.restart) result = RESTART_SIMULATION;
 
-                if(result == END_SIMULATION)  {
+                if(result == END_SIMULATION || draw_config.exit)  {
                     break;
                 }
             }
