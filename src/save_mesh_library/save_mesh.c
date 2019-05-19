@@ -316,9 +316,6 @@ SAVE_MESH(save_as_vtu) {
     {
         char *output_dir = config->out_dir_name;
 
-        float plain_coords[6] = {0, 0, 0, 0, 0, 0};
-        float bounds[6] = {0, 0, 0, 0, 0, 0};
-
         sds output_dir_with_file = sdsnew(output_dir);
         output_dir_with_file = sdscat(output_dir_with_file, "/activation-map.vtu");
 
