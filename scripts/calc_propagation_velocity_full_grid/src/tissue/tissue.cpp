@@ -330,12 +330,15 @@ double center_finite_difference (struct tissue *the_tissue,\
     uint32_t south;
     uint32_t west;
 
+<<<<<<< HEAD
     center = i * num_cells_in_y + j;
     east = (i-OFFSET) * num_cells_in_y + j;
     west = (i+OFFSET) * num_cells_in_y + j;
     north = i * num_cells_in_y + (j-OFFSET);
     south = i * num_cells_in_y + (j+OFFSET);
 
+=======
+>>>>>>> 3ed75594b42dc7c49c301eb975bdccd0f897e336
     if (axis == 'x')
     {
         east = (i-OFFSET) * num_cells_in_y + j;

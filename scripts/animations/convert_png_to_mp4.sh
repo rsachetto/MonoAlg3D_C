@@ -7,8 +7,8 @@
 # Variables
 FILENAME="frames/frame"
 FRAME_RATE="10"
-END_FRAME="120"
-OUTPUT_VIDEO_FILENAME="video/corner_tentusscher_2cm"
+END_FRAME="70"
+OUTPUT_VIDEO_FILENAME="video/corner_tentusscher_100_100_100"
 RESOLUTION="1030x430"
 
 # Execute the converting command using FFMPEG
