@@ -88,7 +88,7 @@ int main (int argc, char *argv[])
             value_1 = array_1->GetValue(i);
             value_2 = array_2->GetValue(i);
 
-            values->InsertNextValue((value_1-value_2));
+            values->InsertNextValue(fabs(value_1-value_2));
         }
     }
     else

@@ -6,10 +6,10 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="20"
-END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="video/mixed_celular_models_tt_corner"
-RESOLUTION="1020x720"
+FRAME_RATE="10"
+END_FRAME="120"
+OUTPUT_VIDEO_FILENAME="video/corner_tentusscher_2cm"
+RESOLUTION="1030x430"
 
 # Execute the converting command using FFMPEG
 ffmpeg -r ${FRAME_RATE} -f image2 -s ${RESOLUTION} -start_number 1 -i ${FILENAME}.%04d.png -vframes ${END_FRAME} -vcodec libx264 -crf 25  -pix_fmt yuv420p ${OUTPUT_VIDEO_FILENAME}.mp4

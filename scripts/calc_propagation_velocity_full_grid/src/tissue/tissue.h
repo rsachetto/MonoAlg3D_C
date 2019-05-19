@@ -31,7 +31,7 @@
 #include "cell_data.h"
 
 // Size of the stencil used to calculate the propagation velocity
-static const uint32_t OFFSET = 10;
+static const uint32_t OFFSET = 1;
 
 struct tissue
 {
@@ -84,5 +84,7 @@ int sort_by_position (const void *a, const void *b);
 int sort_by_index (const void *a, const void *b);
 
 bool check_position (const uint32_t i, const uint32_t j, const uint32_t num_cells_in_x, const uint32_t num_cells_in_y);
+
+void print_cells (struct cell *the_cells, const uint32_t total_num_cells);
 
 #endif //MONOALG3D_UTILS_H_H

@@ -154,6 +154,8 @@ void set_conduction_velocity (struct tissue *the_tissue)
     // Sort the cells by (x, y, z)
     qsort(cells,total_num_cells,sizeof(struct cell),sort_by_position);
 
+    //print_cells(cells,total_num_cells);
+
     for (uint32_t i = 0; i < num_cells_in_y; i++)
     {
         for (uint32_t j = 0; j < num_cells_in_x; j++)
@@ -223,7 +225,8 @@ void read_transmembrane_potential_from_vtu(struct cell_data *the_data, const std
 void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *the_cell,\
                     const uint32_t i, const uint32_t j)
 {
-    double vx, vy;
+    // Gradient of the activation time
+    double grad_at[2];
 
     bool in_boundary_1 = the_cell->in_boundary_1;
     bool in_boundary_2 = the_cell->in_boundary_2;
@@ -233,56 +236,56 @@ void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *th
     // Case 1: Interior cell 
     if (!in_boundary_1 && !in_boundary_2 && !in_boundary_3 && !in_boundary_4)
     {
-        vx = center_finite_difference(the_tissue,i,j,'x');
-        vy = center_finite_difference(the_tissue,i,j,'y');
+        grad_at[0] = center_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = center_finite_difference(the_tissue,i,j,'y');
     }
     // Case 2: Upper right corner
     else if (in_boundary_1 && in_boundary_4)
     {
-        vx = forward_finite_difference(the_tissue,i,j,'x');
-        vy = forward_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = forward_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = forward_finite_difference(the_tissue,i,j,'y'); 
     }
     // Case 3: Down right corner
     else if (in_boundary_1 && in_boundary_2)
     {
-        vx = forward_finite_difference(the_tissue,i,j,'x');
-        vy = backward_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = forward_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = backward_finite_difference(the_tissue,i,j,'y'); 
     }
     // Case 4: Down left corner
     else if (in_boundary_2 && in_boundary_3)
     {
-        vx = backward_finite_difference(the_tissue,i,j,'x');
-        vy = backward_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = backward_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = backward_finite_difference(the_tissue,i,j,'y'); 
     }
     // Case 5: Upper left corner
     else if (in_boundary_3 && in_boundary_4)
     {
-        vx = backward_finite_difference(the_tissue,i,j,'x');
-        vy = forward_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = backward_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = forward_finite_difference(the_tissue,i,j,'y'); 
     }
     // Case 6: Right boundary
     else if (in_boundary_1)
     {
-        vx = forward_finite_difference(the_tissue,i,j,'x');
-        vy = center_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = forward_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = center_finite_difference(the_tissue,i,j,'y'); 
     }
     // Case 7: Down boundary
     else if (in_boundary_2)
     {
-        vx = center_finite_difference(the_tissue,i,j,'x');
-        vy = backward_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = center_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = backward_finite_difference(the_tissue,i,j,'y'); 
     }
     // Case 8: Left boundary
     else if (in_boundary_3)
     {
-        vx = backward_finite_difference(the_tissue,i,j,'x');
-        vy = center_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = backward_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = center_finite_difference(the_tissue,i,j,'y'); 
     }
     // Case 9: Upper boundary
     else if (in_boundary_4)
     {
-        vx = center_finite_difference(the_tissue,i,j,'x');
-        vy = forward_finite_difference(the_tissue,i,j,'y'); 
+        grad_at[0] = center_finite_difference(the_tissue,i,j,'x');
+        grad_at[1] = forward_finite_difference(the_tissue,i,j,'y'); 
     }
     else
     {
@@ -290,15 +293,13 @@ void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *th
         exit(EXIT_FAILURE);
     }
 
+    // Calculate the norm of the gradient vector
+    double norm_grad_at = sqrt(pow(grad_at[0],2.0) + pow(grad_at[1],2.0));
+
     // The value is given in {ms/um}, 
-    // so we need to invert these values to get the correct velocity unit {um/ms}
-    vx = 1.0 / vx;
-    vy = 1.0 / vy;
+    // so we need to invert the value to get the correct velocity unit {um/ms}
+    the_cell->cv = pow(norm_grad_at,-1.0);
 
-    printf("Cell %u -- v = (%g,%g) -- ratio = %g\n",the_cell->id,vx,vy,vx/vy);
-
-    // Calculate the norm of velocity vector and stored in 'cv' variable of the cell
-    the_cell->cv = sqrt(pow(vx,2.0) + pow(vy,2.0));
 }
 
 double center_finite_difference (struct tissue *the_tissue,\
@@ -323,36 +324,36 @@ double center_finite_difference (struct tissue *the_tissue,\
 
     double result;
 
+    uint32_t center;
     uint32_t north;
     uint32_t east;
     uint32_t south;
     uint32_t west;
 
-    if (north_ok && east_ok && south_ok && west_ok)
+    center = i * num_cells_in_y + j;
+    east = (i-OFFSET) * num_cells_in_y + j;
+    west = (i+OFFSET) * num_cells_in_y + j;
+    north = i * num_cells_in_y + (j-OFFSET);
+    south = i * num_cells_in_y + (j+OFFSET);
+
+    if (axis == 'x')
     {
-        if (axis == 'x')
-        {
-            east = (i-OFFSET) * num_cells_in_y + j;
-            west = (i+OFFSET) * num_cells_in_y + j;
+        east = (i-OFFSET) * num_cells_in_y + j;
+        west = (i+OFFSET) * num_cells_in_y + j;
 
-            result = (cells[east].at - cells[west].at) / (2.0*OFFSET*dx);
-        }
-        else if (axis == 'y')
-        {
-            north = i * num_cells_in_y + (j-OFFSET);
-            south = i * num_cells_in_y + (j+OFFSET);
+        result = (cells[east].at - cells[west].at) / (2.0*OFFSET*dx);
+    }
+    else if (axis == 'y')
+    {
+        north = i * num_cells_in_y + (j-OFFSET);
+        south = i * num_cells_in_y + (j+OFFSET);
 
-            result = (cells[north].at - cells[south].at) / (2.0*OFFSET*dy);
-        }
-        else
-        {
-            printf("[-] ERROR! On 'center_finite_difference', invalid axis!\n");
-            exit(EXIT_FAILURE);
-        }
+        result = (cells[north].at - cells[south].at) / (2.0*OFFSET*dy);
     }
     else
     {
-        result = -1.0;
+        printf("[-] ERROR! On 'center_finite_difference', invalid axis!\n");
+        exit(EXIT_FAILURE);
     }
 
     return result;
@@ -384,31 +385,24 @@ double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, c
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
     bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
 
-    if (north_ok && east_ok && south_ok && west_ok)
+    if (axis == 'x')
     {
-        if (axis == 'x')
-        {
-            center = i * num_cells_in_y + j;
-            west = (i+OFFSET) * num_cells_in_y + j;
+        center = i * num_cells_in_y + j;
+        west = (i+OFFSET) * num_cells_in_y + j;
 
-            result = (cells[west].at - cells[center].at) / (dx);
-        }
-        else if (axis == 'y')
-        {
-            center = i * num_cells_in_y + j;
-            south = i * num_cells_in_y + (j+OFFSET);
+        result = (cells[west].at - cells[center].at) / (dx);
+    }
+    else if (axis == 'y')
+    {
+        center = i * num_cells_in_y + j;
+        south = i * num_cells_in_y + (j+OFFSET);
 
-            result = (cells[south].at - cells[center].at) / (dy);
-        }
-        else
-        {
-            printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
-            exit(EXIT_FAILURE);
-        }
+        result = (cells[south].at - cells[center].at) / (dy);
     }
     else
     {
-        result = -1.0;
+        printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
+        exit(EXIT_FAILURE);
     }
 
     return result;
@@ -441,31 +435,24 @@ double backward_finite_difference (struct tissue *the_tissue,\
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
     bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
 
-    if (north_ok && east_ok && south_ok && west_ok)
+    if (axis == 'x')
     {
-        if (axis == 'x')
-        {
-            center = i * num_cells_in_y + j;
-            east = (i-OFFSET) * num_cells_in_y + j;
+        center = i * num_cells_in_y + j;
+        east = (i-OFFSET) * num_cells_in_y + j;
 
-            result = (cells[center].at - cells[east].at) / (dx);
-        }
-        else if (axis == 'y')
-        {
-            center = i * num_cells_in_y + j;
-            north = i * num_cells_in_y + (j-OFFSET);
+        result = (cells[center].at - cells[east].at) / (dx);
+    }
+    else if (axis == 'y')
+    {
+        center = i * num_cells_in_y + j;
+        north = i * num_cells_in_y + (j-OFFSET);
 
-            result = (cells[center].at - cells[north].at) / (dy);
-        }
-        else
-        {
-            printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
-            exit(EXIT_FAILURE);
-        }
+        result = (cells[center].at - cells[north].at) / (dy);
     }
     else
     {
-        result = -1.0;
+        printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
+        exit(EXIT_FAILURE);
     }
 
     return result;
@@ -598,4 +585,14 @@ bool check_position (const uint32_t i, const uint32_t j, const uint32_t num_cell
         return true;
     else
         return false;
+}
+
+void print_cells (struct cell *the_cells, const uint32_t total_num_cells)
+{
+
+    for (uint32_t i = 0; i < total_num_cells; i++)
+    {
+        printf("%u -- Cell %u -- (%g,%g,%g)\n",i,the_cells[i].id,\
+                                the_cells[i].x,the_cells[i].y,the_cells[i].z);
+    }
 }

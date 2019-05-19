@@ -22,7 +22,7 @@ def forwarddiff(y, h):
     return res
 
 
-def slope_start(data, start=0, epsilon=0.0001, h=1.0):
+def slope_start(data, start=0, epsilon=1.0, h=1.0):
 
     d = data[start:]
     n = len(d)
@@ -78,9 +78,12 @@ def calculate_cell_distance (cells_positions, cell_1_id, cell_2_id):
     x1, y1, z1 = cells_positions[cell_1_id]
     x2, y2, z2 = cells_positions[cell_2_id]
 
+    dx = np.fabs( x2 - x1 )
+    dy = np.fabs( y2 - y1 )
+    dz = np.fabs( z2 - z1 )
     d = np.sqrt( np.power(x2-x1,2) + np.power(y2-y1,2) + np.power(z2-z1,2) )
 
-    return d
+    return d, dx, dy, dz
 
 def calculate_velocity (d,t1,t2):
     
@@ -116,14 +119,23 @@ def main ():
     t1 = slope_start(ap_data_cell_1)
     t2 = slope_start(ap_data_cell_2)
 
-    d = calculate_cell_distance(cells_positions,cell_1_id,cell_2_id)
+    d, dx, dy, dz = calculate_cell_distance(cells_positions,cell_1_id,cell_2_id)
     
+    vx = calculate_velocity(dx,t1,t2)
+    vy = calculate_velocity(dy,t1,t2)
+    vz = calculate_velocity(dz,t1,t2)
     v = calculate_velocity(d,t1,t2)
 
     print("Activation time of cell 1 = %g ms" % t1)
     print("Activation time of cell 2 = %g ms" % t2)
-    print("Distance = %g cm" % d)
-    print("Velocity = %g cm/ms" % v)
+    print("Distance x = %g um" % dx)
+    print("Velocity x = %g um/ms" % vx)
+    print("Distance y = %g um" % dy)
+    print("Velocity y = %g um/ms" % vy)
+    print("Distance z = %g um" % dz)
+    print("Velocity z = %g um/ms" % vz)
+    print("Distance = %g um" % d)
+    print("Velocity = %g um/ms" % v)
 
 if __name__ == "__main__":
     main()
