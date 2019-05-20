@@ -77,8 +77,8 @@ static void translate_visible_mesh_to_origin(struct grid *grid) {
 
         if(grid_cell->active || (mesh_info && mesh_info->fibrotic)) {
             grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
-            grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);;
-            grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);;
+            grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);
+            grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);
         }
 
         grid_cell = grid_cell->next;
@@ -154,11 +154,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         for(int i = 0; i < s_size; i++) {
 
             struct stim_config *sconfig = (struct stim_config*) stimuli_configs[i].value;
-
             s_end = sconfig->stim_start + sconfig->stim_duration;
-            has_any_periodic_stim |= (sconfig->stim_period > 0.0);
-            if(s_end > last_stimulus_time)
+
+            has_any_periodic_stim |= (bool)(sconfig->stim_period > 0.0);
+
+            if(s_end > last_stimulus_time) {
                 last_stimulus_time = s_end;
+            }
 
         }
     }
@@ -326,6 +328,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu start_dx, start_dy, start_dz;
     real_cpu max_dx, max_dy, max_dz;
 
+    start_dx = start_dy = start_dz = 100.0;
+    max_dx = max_dy = max_dz = 100.0;
+
     if (purkinje_config)
     {
         start_dx = purkinje_config->start_h;
@@ -436,13 +441,16 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     real_cpu cur_time = the_monodomain_solver->current_time;
 
+
+    bool draw = configs->draw;
+
     if(save_mesh_config != NULL) {
         print_rate = save_mesh_config->print_rate;
     }
 
     #ifdef COMPILE_OPENGL
     {
-        if (configs->draw) {
+        if (draw) {
             draw_config.grid_info.grid_to_draw = the_grid;
             draw_config.simulating = true;
             draw_config.paused = !configs->start_visualization_unpaused;
@@ -459,6 +467,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     init_stop_watch(&iteration_time_watch);
 
+
     // Main simulation loop start
     while(cur_time <= finalT)
     {
@@ -466,13 +475,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         start_stop_watch(&iteration_time_watch);
 
         #ifdef COMPILE_OPENGL
-        //else of if(draw_config->paused)
-        omp_set_lock(&draw_config.sleep_lock);
-        if(draw_config.restart) {
-            draw_config.time = 0.0;
-            return RESTART_SIMULATION;
+        if(draw) {
+            omp_set_lock(&draw_config.sleep_lock);
+            if (draw_config.restart) {
+                draw_config.time = 0.0;
+                return RESTART_SIMULATION;
+            }
+            if (draw_config.exit) return END_SIMULATION;
         }
-        if(draw_config.exit) return END_SIMULATION;
         #endif
 
         if (save_to_file && (count % print_rate == 0)) {
@@ -504,7 +514,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         start_stop_watch(&cg_time);
 
         #ifdef COMPILE_OPENGL
-        if (configs->draw) {
+        if (draw) {
             omp_set_lock(&draw_config.draw_lock);
         }
         #endif
@@ -803,16 +813,14 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     if(options->stim_configs) 
     {
 
-        size_t o = shlen(options->stim_configs);
+        size_t num_stims = shlen(options->stim_configs);
 
-        if(o == 1)
+        if(num_stims == 1)
             print_to_stdout_and_file("Stimulus configuration:\n");
         else
             print_to_stdout_and_file("Stimuli configuration:\n");
 
-
-
-        for(int i = 0; i < o; i++) {
+        for(int i = 0; i < num_stims; i++) {
 
             struct string_voidp_hash_entry e = options->stim_configs[i];
 

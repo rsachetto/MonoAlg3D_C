@@ -680,12 +680,9 @@ void get_config_file(int argc, char **argv, struct user_options *user_args) {
     opt = getopt_long(argc, argv, opt_string, long_options, &option_index);
 
     while(opt != -1) {
-        switch(opt) {
-        case 'c':
+        if(opt == 'c') {
             user_args->config_file = optarg;
             return;
-        default:
-            break;
         }
         opt = getopt_long(argc, argv, opt_string, long_options, &option_index);
     }
