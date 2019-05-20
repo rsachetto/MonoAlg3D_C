@@ -26,21 +26,14 @@ static bool show_info_box = true;
 static bool show_end_info_box = true;
 static bool show_mesh_info_box = true;
 
-Vector3 maxSize;
-Vector3 minSize;
+Vector3 max_size;
+Vector3 min_size;
 
 #define DOUBLE_CLICK_DELAY 0.5 //seconds
 
 double selected_time = 0.0;
 
 #define WIDER_TEXT "------------------------------------------------------"
-
-struct action_potential {
-    real_cpu v;
-    real_cpu t;
-};
-
-typedef struct action_potential * action_potential_array;
 
 struct point_voidp_hash_entry *selected_aps;
 
@@ -256,13 +249,13 @@ static Vector3 find_mesh_center() {
 
     calc_center = true;
 
-    maxSize.x = max_x + max_dx/2.0;
-    maxSize.y = max_y + max_dy/2.0;
-    maxSize.z = max_z + max_dz/2.0;
+    max_size.x = max_x + max_dx/2.0;
+    max_size.y = max_y + max_dy/2.0;
+    max_size.z = max_z + max_dz/2.0;
 
-    minSize.x = min_x - min_dx/2.0;
-    minSize.y = min_y - min_dy/2.0;
-    minSize.z = min_z - min_dz/2.0;
+    min_size.x = min_x - min_dx/2.0;
+    min_size.y = min_y - min_dy/2.0;
+    min_size.z = min_z - min_dz/2.0;
 
     return result;
 
@@ -359,13 +352,13 @@ static Vector3 find_mesh_center_vtk() {
 
     calc_center = true;
 
-    maxSize.x = max_x + max_dx/2.0;
-    maxSize.y = max_y + max_dy/2.0;
-    maxSize.z = max_z + max_dz/2.0;
+    max_size.x = max_x + max_dx/2.0;
+    max_size.y = max_y + max_dy/2.0;
+    max_size.z = max_z + max_dz/2.0;
 
-    minSize.x = min_x - min_dx/2.0;
-    minSize.y = min_y - min_dy/2.0;
-    minSize.z = min_z - min_dz/2.0;
+    min_size.x = min_x - min_dx/2.0;
+    min_size.y = min_y - min_dy/2.0;
+    min_size.z = min_z - min_dz/2.0;
 
     return result;
 
@@ -445,11 +438,10 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray 
 
     struct vtk_unstructured_grid *grid_to_draw = draw_config.grid_info.vtk_grid;
 
-    Vector3 cubePosition;
-    Vector3 cubeSize;
+    Vector3 cube_position;
+    Vector3 cube_size;
 
     float dx, dy, dz;
-
 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
@@ -457,39 +449,34 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray 
     float center_x, center_y, center_z;
     real_cpu v;
 
+    uint32_t n_active = grid_to_draw->num_cells;
 
-    if (grid_to_draw) {
+    int num_points = grid_to_draw->points_per_cell;
+    int j = num_points;
 
-        uint32_t n_active = grid_to_draw->num_cells;
+    for (int i = 0; i < n_active*num_points; i+=num_points) {
 
-        int num_points = grid_to_draw->points_per_cell;
-        int j = num_points;
+        dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
+        dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
+        dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
 
-        for (int i = 0; i < n_active*num_points; i+=num_points) {
+        center_x = points[cells[i]].x + dx/2.0f;
+        center_y = points[cells[i]].y + dy/2.0f;
+        center_z = points[cells[i]].z + dz/2.0f;
 
+        v = grid_to_draw->values[j-num_points];
+        j += 1;
 
-            dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
-            dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
-            dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
+        cube_position.x = (float)((center_x - mesh_offset.x)/scale);
+        cube_position.y = (float)((center_y - mesh_offset.y)/scale);
+        cube_position.z = (float)((center_z - mesh_offset.z)/scale);
 
-            center_x = points[cells[i]].x + dx/2.0f;
-            center_y = points[cells[i]].y + dy/2.0f;
-            center_z = points[cells[i]].z + dz/2.0f;
+        cube_size.x = (float)(dx/scale);
+        cube_size.y = (float)(dy/scale);
+        cube_size.z = (float)(dz/scale);
 
-            v = grid_to_draw->values[j-num_points];
-            j += 1;
+        draw_voxel(cube_position, cube_size, v, ray);
 
-            cubePosition.x = (float)((center_x - mesh_offset.x)/scale);
-            cubePosition.y = (float)((center_y - mesh_offset.y)/scale);
-            cubePosition.z = (float)((center_z - mesh_offset.z)/scale);
-
-            cubeSize.x = (float)(dx/scale);
-            cubeSize.y = (float)(dy/scale);
-            cubeSize.z = (float)(dz/scale);
-
-            draw_voxel(cubePosition, cubeSize, v, ray);
-
-        }
     }
     one_selected = false;
 }
@@ -500,6 +487,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
     Vector3 cubePosition;
     Vector3 cubeSize;
+
     if (grid_to_draw) {
 
         uint32_t n_active = grid_to_draw->num_active_cells;
@@ -750,7 +738,7 @@ static void draw_scale(Font font, int font_size_small) {
 
     int num_ticks;
     real_cpu tick_ofsset = 12;
-    num_ticks = (draw_config.max_v - draw_config.min_v)/tick_ofsset;
+    num_ticks = (int) ((draw_config.max_v - draw_config.min_v)/tick_ofsset);
 
     if(num_ticks < 4) {
         num_ticks = 4;
@@ -790,7 +778,7 @@ static void draw_scale(Font font, int font_size_small) {
         color = get_color((v - min_v)/(max_v - min_v));
 
 
-        DrawRectangle(scale_pos_x,initial_y, 20, 30, color);
+        DrawRectangle((int)scale_pos_x,(int)initial_y, 20, 30, color);
         initial_y -= scale_rec_size;
 
         v += tick_ofsset;
@@ -875,22 +863,22 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
     sprintf(tmp, " - Num. of Volumes: %d", n_active);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max X: %f", maxSize.x);
+    sprintf(tmp, " - Max X: %f", max_size.x);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max Y: %f", maxSize.y);
+    sprintf(tmp, " - Max Y: %f", max_size.y);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Max Z: %f", maxSize.z);
+    sprintf(tmp, " - Max Z: %f", max_size.z);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Min X: %f", minSize.x);
+    sprintf(tmp, " - Min X: %f", min_size.x);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Min Y: %f", minSize.y);
+    sprintf(tmp, " - Min Y: %f", min_size.y);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, " - Min Z: %f", minSize.z);
+    sprintf(tmp, " - Min Z: %f", min_size.z);
     (*(info_string))[index++]  = strdup(tmp);
 
 
@@ -1137,7 +1125,7 @@ void init_and_open_visualization_window() {
         box_w = (int) (txt_w_h.x + 50);
 
         if (IsKeyDown('Z')) {
-            camera.target = (Vector3){ 1.081274, -1.581945f, 0.196326};;
+            camera.target = (Vector3){ 1.081274, -1.581945f, 0.196326};
         }
 
         UpdateCamera(&camera);

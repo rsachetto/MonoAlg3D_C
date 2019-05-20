@@ -20,6 +20,12 @@
 #define MIN_HORIZONTAL_TICKS 4
 #define MAX_HORIZONTAL_TICKS 20
 
+struct action_potential {
+    real_cpu v;
+    real_cpu t;
+};
+
+typedef struct action_potential * action_potential_array;
 
 struct draw_config {
 
