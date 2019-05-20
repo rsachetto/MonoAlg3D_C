@@ -768,6 +768,8 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Using GPU to solve ODEs\n");
     }
 
+    print_to_stdout_and_file("Using %s as model lib\n", the_ode_solver->model_data.model_library_path);
+
     print_to_stdout_and_file("Initial V: %lf\n", the_ode_solver->model_data.initial_v);
     print_to_stdout_and_file("Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
 
@@ -782,31 +784,27 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
+    if(the_grid->adaptive)
+    {
+        print_to_stdout_and_file("Using adaptativity\n");
+        print_to_stdout_and_file("Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
+        print_to_stdout_and_file("Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
+        print_to_stdout_and_file("Refining each %d time steps\n", the_monodomain_solver->refine_each);
+        print_to_stdout_and_file("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
+
+        print_to_stdout_and_file("Domain maximum Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
+                                 options->domain_config->max_dx, options->domain_config->max_dy, options->domain_config->max_dz);
+        print_to_stdout_and_file("The adaptivity will start in time: %lf ms\n",
+                                 the_monodomain_solver->start_adapting_at);
+    }
+
     if(options->linear_system_solver_config) {
-        print_to_stdout_and_file("Linear system solver configuration:\n");
-
-        print_to_stdout_and_file("Linear system solver library: %s\n", options->linear_system_solver_config->config_data.library_file_path);
-        print_to_stdout_and_file("Linear system solver function: %s\n", options->linear_system_solver_config->config_data.function_name);
-
-        STRING_HASH_PRINT_KEY_VALUE_LOG(options->linear_system_solver_config->config_data.config);
+        print_linear_system_solver_config_values(options->linear_system_solver_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
     if(options->save_mesh_config) {
-        print_to_stdout_and_file("Save results configuration:\n");
-        print_to_stdout_and_file("Print Rate = %d\n", options->save_mesh_config->print_rate);
-
-        if (options->save_mesh_config->out_dir_name != NULL) {
-            print_to_stdout_and_file("Saving simulation results to: %s\n", options->save_mesh_config->out_dir_name);
-        }
-
-        if (shlen(options->save_mesh_config->config_data.config) == 1) {
-            print_to_stdout_and_file("Save mesh extra parameter:\n");
-        } else if (shlen(options->save_mesh_config->config_data.config) > 1) {
-            print_to_stdout_and_file("Save mesh extra parameters:\n");
-        }
-
-        STRING_HASH_PRINT_KEY_VALUE_LOG(options->save_mesh_config->config_data.config);
+        print_save_mesh_config_values(options->save_mesh_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
@@ -823,25 +821,8 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         for(int i = 0; i < num_stims; i++) {
 
             struct string_voidp_hash_entry e = options->stim_configs[i];
-
             print_to_stdout_and_file("Stimulus name: %s\n", e.key);
-            print_to_stdout_and_file("Stimulus start: %lf\n", ((struct stim_config*)e.value)->stim_start);
-            print_to_stdout_and_file("Stimulus duration: %lf\n", ((struct stim_config*)e.value)->stim_duration);
-            print_to_stdout_and_file("Stimulus current: %lf\n", ((struct stim_config*)e.value)->stim_current);
-            print_to_stdout_and_file("Stimulus library: %s\n", ((struct stim_config*)e.value)->config_data.library_file_path);
-            print_to_stdout_and_file("Stimulus function: %s\n", ((struct stim_config*)e.value)->config_data.function_name);
-            struct string_hash_entry *tmp = ((struct stim_config*)e.value)->config_data.config;
-            if(shlen(tmp) == 1)
-            {
-                print_to_stdout_and_file("Stimulus extra parameter:\n");
-            }
-            else if(shlen(tmp)  > 1)
-            {
-                print_to_stdout_and_file("Stimulus extra parameters:\n");
-            }
-
-            STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
-
+            print_stim_config_values((struct stim_config*) e.value);
             print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
         }
@@ -849,73 +830,33 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
     if (options->domain_config)
     {
-        print_to_stdout_and_file("Domain configuration:\n");
-        print_to_stdout_and_file("Domain name: %s\n", options->domain_config->domain_name);
-        print_to_stdout_and_file("Domain initial Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
-                             options->domain_config->start_dx, options->domain_config->start_dy,
-                             options->domain_config->start_dz);
-
-        if(shlen(options->domain_config->config_data.config) == 1)
-        {
-            print_to_stdout_and_file("Domain extra parameter:\n");
-        } 
-        else if(shlen(options->domain_config->config_data.config) > 1)
-        {
-            print_to_stdout_and_file("Domain extra parameters:\n");
-        }
-
-        STRING_HASH_PRINT_KEY_VALUE_LOG(options->domain_config->config_data.config);
+        print_domain_config_values(options->domain_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
-    
+
     if (options->purkinje_config)
     {
-        print_to_stdout_and_file("Purkinje configuration:\n");
-        print_to_stdout_and_file("Purkinje network name: %s\n", options->purkinje_config->domain_name);
-        print_to_stdout_and_file ("Purkinje network initial Space Discretization: %lf um\n", options->purkinje_config->start_h);
-
-        if (shlen(options->purkinje_config->config_data.config) == 1)
-        {
-            print_to_stdout_and_file ("Purkinje extra parameter:\n");
-        } 
-        else if (shlen(options->purkinje_config->config_data.config) > 1) {
-            print_to_stdout_and_file ("Purkinje extra parameters:\n");
-        }
-
-        STRING_HASH_PRINT_KEY_VALUE_LOG (options->purkinje_config->config_data.config);
+        print_purkinje_config_values(options->purkinje_config);
         print_to_stdout_and_file (LOG_LINE_SEPARATOR);
     }
 
-    if(the_grid->adaptive) 
-    {
-        print_to_stdout_and_file("Using adaptativity\n");
-        print_to_stdout_and_file("Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
-        print_to_stdout_and_file("Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
-        print_to_stdout_and_file("Refining each %d time steps\n", the_monodomain_solver->refine_each);
-        print_to_stdout_and_file("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
-
-        print_to_stdout_and_file("Domain maximum Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
-                options->domain_config->max_dx, options->domain_config->max_dy, options->domain_config->max_dz);
-        print_to_stdout_and_file("The adaptivity will start in time: %lf ms\n",
-                                 the_monodomain_solver->start_adapting_at);
-    }
-
-    if(options->extra_data_config) 
-    {
-        print_to_stdout_and_file("Extra data ODE function configuration:\n");
-
-        print_to_stdout_and_file("Extra data library: %s\n", options->extra_data_config->config_data.library_file_path);
-        print_to_stdout_and_file("Extra data function: %s\n", options->extra_data_config->config_data.function_name);
-
-        if(shlen(options->domain_config->config_data.config) == 1) {
-            print_to_stdout_and_file("Extra data parameter:\n");
-        } else if(shlen(options->domain_config->config_data.config) > 1) {
-            print_to_stdout_and_file("Extra data parameters:\n");
-        }
-
-        STRING_HASH_PRINT_KEY_VALUE_LOG(options->extra_data_config->config_data.config);
+    if(options->extra_data_config) {
+        print_extra_data_config_values(options->extra_data_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
+
+    if(options->update_monodomain_config) {
+        print_update_monodomain_config_values(options->update_monodomain_config);
+        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    }
+
+    if(options->assembly_matrix_config) {
+        print_assembly_matrix_config_values(options->assembly_matrix_config);
+        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    }
+
+
+
 }
 
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
