@@ -17,13 +17,8 @@ void init_linear_system_solver_functions(struct linear_system_solver_config *con
 	char *default_function = "./shared_libs/libdefault_linear_system_solver.so";
 
     if(config->config_data.library_file_path == NULL) {
-        print_to_stdout_and_file("Using the default library to solve the linear system\n");
         config->config_data.library_file_path = strdup(default_function);
         config->config_data.library_file_path_was_set = true;
-    }
-    else {
-        print_to_stdout_and_file("Using %s as linear system solver lib\n", config->config_data.library_file_path);
-
     }
 
     config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
@@ -55,11 +50,17 @@ struct linear_system_solver_config* new_linear_system_solver_config() {
 
 void print_linear_system_solver_config_values(struct linear_system_solver_config* s) {
 
+    if(s == NULL) {
+        print_to_stdout_and_file("No Linear system solver configuration.\n");
+        return;
+    }
 
-    printf("linear_system_solver_function: %s\n",s->config_data.function_name);
-    printf("linear_system_solver_library_file: %s\n",s->config_data.library_file_path);
-    printf("linear_system_solver_config:\n");
-    STRING_HASH_PRINT_KEY_VALUE(s->config_data.config);
+    print_to_stdout_and_file("Linear system solver configuration:\n");
+
+    print_to_stdout_and_file("Linear system solver library: %s\n", s->config_data.library_file_path);
+    print_to_stdout_and_file("Linear system solver function: %s\n", s->config_data.function_name);
+
+    STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data.config);
 }
 
 void free_linear_system_solver_config(struct linear_system_solver_config* s) {
