@@ -29,7 +29,8 @@
 # CMake
 cmake-build-debug/
 cmake-build-release/
-
+cmake-build-minsizerel/
+cmake-build-relwithdebinfo
 
 ## File-based project format:
 *.iws
