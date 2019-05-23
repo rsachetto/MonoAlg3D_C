@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include <float.h>
 
 #include "grid.h"
 
@@ -540,4 +541,52 @@ void initialize_and_construct_grid_purkinje (struct grid *the_grid)
 
     initialize_grid_purkinje(the_grid);
     construct_grid_purkinje(the_grid);
+}
+
+void translate_mesh_to_origin(struct grid *grid) {
+
+    real_cpu minx = FLT_MAX;
+    real_cpu miny = FLT_MAX;
+    real_cpu minz = FLT_MAX;
+
+    struct cell_node *grid_cell;
+
+    float center_x;
+    float center_y;
+    float center_z;
+
+    grid_cell = grid->first_cell;
+
+    while(grid_cell != 0) {
+
+        center_x = grid_cell->center_x;
+        center_y = grid_cell->center_y;
+        center_z = grid_cell->center_z;
+
+        if(center_x < minx){
+            minx = center_x;
+        }
+
+        if(center_y < miny){
+            miny = center_y;
+        }
+
+        if(center_z < minz){
+            minz = center_z;
+        }
+
+        grid_cell = grid_cell->next;
+    }
+
+    grid_cell = grid->first_cell;
+
+    while(grid_cell != 0) {
+
+        grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
+        grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);
+        grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);
+
+        grid_cell = grid_cell->next;
+    }
+
 }

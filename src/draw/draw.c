@@ -1253,22 +1253,26 @@ void init_and_open_visualization_window() {
 
         }
         else if(!mesh_loaded) {
-            int posx = GetScreenWidth()/2 - 320;
-            int posy = GetScreenHeight()/2 - 50;
-            ClearBackground(GRAY);
 
-            if(draw_config.error_message) {
-                float spacing = 20/(float)font.baseSize;
-                Vector2 width = MeasureTextEx(font, draw_config.error_message, 20, spacing);
-                DrawRectangle(posx, posy, (int)width.x + 160, 20, RED);
-                DrawRectangleLines(posx, posy, (int)width.x + 160, 20, BLACK);
-                DrawText(draw_config.error_message, posx + 80, posy, 20, BLACK);
+            ClearBackground(GRAY);
+            float spacing = 20/(float)font.baseSize;
+            static Color c = RED;
+
+            if(!draw_config.error_message) {
+                draw_config.error_message = strdup("Loading Mesh...");
+                c = WHITE;
             }
-            else {
-                DrawRectangle(posx, posy, 320, 20, WHITE);
-                DrawRectangleLines(posx, posy, 320, 20, BLACK);
-                DrawText("Loading Mesh...", posx + 80, posy, 20, BLACK);
-            }
+
+            Vector2 width = MeasureTextEx(font, draw_config.error_message, 20, spacing);
+
+            int posx = GetScreenWidth()/2 - (int)width.x/2;
+            int posy = GetScreenHeight()/2 - 50;
+
+            int rec_width = (int)(width.x) + 40;
+
+            DrawRectangle(posx, posy, rec_width, 20, c);
+            DrawRectangleLines(posx, posy, rec_width, 20, BLACK);
+            DrawText(draw_config.error_message, posx + 20, posy, 20, BLACK);
         }
 
         DrawFPS(10,300);

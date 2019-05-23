@@ -73,5 +73,6 @@ void save_grid_domain (struct grid * the_grid, const char *file_name);
 void initialize_and_construct_grid_purkinje (struct grid *the_grid);
 void initialize_grid_purkinje (struct grid *the_grid);
 void construct_grid_purkinje (struct grid *the_grid);
+void translate_mesh_to_origin(struct grid *grid);
 
 #endif //MONOALG3D_GRID_H
