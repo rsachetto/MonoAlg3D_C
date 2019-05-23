@@ -32,60 +32,6 @@
 #include <stdio.h>
 #include <float.h>
 
-static void translate_visible_mesh_to_origin(struct grid *grid) {
-
-    real_cpu minx = FLT_MAX;
-    real_cpu miny = FLT_MAX;
-    real_cpu minz = FLT_MAX;
-
-    struct cell_node *grid_cell;
-
-    float center_x;
-    float center_y;
-    float center_z;
-
-    grid_cell = grid->first_cell;
-
-    while(grid_cell != 0) {
-
-        center_x = grid_cell->center_x;
-        center_y = grid_cell->center_y;
-        center_z = grid_cell->center_z;
-
-        if(center_x < minx){
-            minx = center_x;
-        }
-
-        if(center_y < miny){
-            miny = center_y;
-        }
-
-        if(center_z < minz){
-            minz = center_z;
-        }
-
-        grid_cell = grid_cell->next;
-    }
-
-    grid_cell = grid->first_cell;
-
-    struct fibrotic_mesh_info *mesh_info;
-
-    while(grid_cell != 0) {
-
-        mesh_info = FIBROTIC_INFO(grid_cell);
-
-        if(grid_cell->active || (mesh_info && mesh_info->fibrotic)) {
-            grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
-            grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);
-            grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);
-        }
-
-        grid_cell = grid_cell->next;
-    }
-
-}
-
 struct monodomain_solver *new_monodomain_solver() {
 
     struct monodomain_solver *result = (struct monodomain_solver *)malloc(sizeof(struct monodomain_solver));
@@ -311,7 +257,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             success = domain_config->set_spatial_domain(domain_config, the_grid);
 
             if(configs->draw) {
-                translate_visible_mesh_to_origin(the_grid);
+                translate_mesh_to_origin(the_grid);
             }
 
             if(!success) {
@@ -854,9 +800,6 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_assembly_matrix_config_values(options->assembly_matrix_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
-
-
-
 }
 
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver,
