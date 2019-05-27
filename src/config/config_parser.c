@@ -10,20 +10,22 @@
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 
+static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
-static const char *batch_opt_string = "c:h";
 
-static const char *visualization_opt_string = "x:m:h";
+static const char *visualization_opt_string = "x:m:d:p:h?";
 static const struct option long_visualization_options[] = {
         {"visualization_max_v", required_argument, NULL, 'x'},
         {"visualization_min_v", required_argument, NULL, 'm'},
         {"dt", required_argument, NULL, 'd'},
+        {"prefix", required_argument, NULL, 'p'},
         {"help", no_argument, NULL, 'h'},
         {NULL, no_argument, NULL, 0}
     };
 
 
+static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh?";
 static const struct option long_options[] = {
     {"config_file", required_argument, NULL, 'c'},
     {"use_adaptivity", no_argument, NULL, 'a'},
@@ -64,7 +66,6 @@ static const struct option long_options[] = {
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
-static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh";
 
 void display_usage(char **argv) {
 
@@ -124,6 +125,7 @@ void display_visualization_usage(char **argv) {
     printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
     printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
     printf("--dt | -d, dt for the simulation. Default: 0\n");
+    printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
@@ -146,12 +148,14 @@ struct batch_options *new_batch_options() {
 }
 
 struct visualization_options *new_visualization_options() {
-    struct visualization_options *user_args = (struct visualization_options *)malloc(sizeof(struct visualization_options));
-    user_args->input_folder = NULL;
-    user_args->max_v = 40.0f;
-    user_args->min_v = -86.0f;
-    user_args->dt = 0.0;
-    return user_args;
+    struct visualization_options *options = (struct visualization_options *)malloc(sizeof(struct visualization_options));
+    options->input_folder = NULL;
+    options->max_v = 40.0f;
+    options->min_v = -86.0f;
+    options->dt = 0.0;
+    options->files_prefix = strdup("V_it");
+
+    return options;
 }
 
 struct user_options *new_user_options() {
@@ -651,6 +655,10 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
                 break;
             case 'd':
                 user_args->dt = strtod(optarg, NULL);
+                break;
+            case 'p':
+                free(user_args->files_prefix);
+                user_args->files_prefix = strdup(optarg);
                 break;
             case 'h': /* fall-through is intentional */
             case '?':

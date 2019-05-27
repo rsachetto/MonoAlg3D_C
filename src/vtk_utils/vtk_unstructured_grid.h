@@ -22,7 +22,9 @@
 #define OFFSETS          "offsets"
 #define CONNECTIVITY     "connectivity"
 #define TYPES            "types"
-#define DATA             "AppendedData"
+#define APPENDEDDATA     "AppendedData"
+#define ENCODING         "encoding"
+#define HEADER_TYPE      "header_type"
 #define COMPRESSOR       "compressor"
 #define FORMAT           "format"
 #define ASCII            "ascii"
@@ -44,6 +46,9 @@ struct parser_state {
     char *celldata_int;
     char *points_ascii;
     char *cells_connectivity_ascii;
+    char *encoding_type;
+    char *header_type;
+    char *base64_content;
 
     bool in_dataarray;
     bool compressed;

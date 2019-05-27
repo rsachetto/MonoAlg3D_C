@@ -77,7 +77,7 @@ static int read_and_render_files(char *input_dir, char* prefix) {
     step1 = get_step_from_filename(vtk_file_list[0]);
     int step;
 
-    if(num_files > 0) {
+    if(num_files > 1) {
         step2 = get_step_from_filename(vtk_file_list[1]);
         step = step2 - step1;
     }
@@ -115,6 +115,17 @@ static int read_and_render_files(char *input_dir, char* prefix) {
         omp_set_lock(&draw_config.draw_lock);
         free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
         draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_vtu_file(full_path);
+
+        if(!draw_config.grid_info.vtk_grid) {
+            char tmp[4096];
+            sprintf(tmp, "Decoder not available for file %s", vtk_file_list[current_file]);
+            fprintf(stderr, "%s\n", tmp);
+            draw_config.error_message = strdup(tmp);
+            omp_unset_lock(&draw_config.draw_lock);
+            return SIMULATION_FINISHED;
+
+        }
+
         draw_config.grid_info.file_name = full_path;
         omp_unset_lock(&draw_config.draw_lock);
 
@@ -167,12 +178,12 @@ int main(int argc, char **argv) {
 
         #pragma omp section
         {
-            int result = read_and_render_files(options->input_folder, "V_it_");
+            int result = read_and_render_files(options->input_folder, options->files_prefix);
 
             while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                 if(result == RESTART_SIMULATION) {
                     init_draw_config(&draw_config, options);
-                    result = read_and_render_files(options->input_folder, "V_it_");
+                    result = read_and_render_files(options->input_folder,  options->files_prefix);
                 }
 
                 if(draw_config.restart) result = RESTART_SIMULATION;
