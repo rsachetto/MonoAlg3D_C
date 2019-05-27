@@ -1803,7 +1803,6 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
     }
 
-
     munmap(tmp, size);
 
 }
