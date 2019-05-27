@@ -22,3 +22,5 @@ target_include_directories(
 	PUBLIC
 		"."
 )
+
+set_property(TARGET yxml PROPERTY POSITION_INDEPENDENT_CODE ON)
