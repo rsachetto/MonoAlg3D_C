@@ -121,6 +121,7 @@ struct batch_options {
 
 struct visualization_options {
     char *input_folder;
+    char *files_prefix;
     real_cpu max_v, min_v, dt;
 };
 

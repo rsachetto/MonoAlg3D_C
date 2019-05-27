@@ -82,7 +82,7 @@ size_t uncompress_buffer(unsigned char const* compressed_data,
 
     // Make sure the output size matched that expected.
     if(us != (uLongf)uncompressed_size ) {
-        printf("Decompression produced incorrect size.\n Expected %zu and got %ul\n", uncompressed_size, us);
+        printf("Decompression produced incorrect size.\n Expected %zu and got %lu\n", uncompressed_size, us);
         return 0;
     }
 
@@ -182,24 +182,29 @@ sds write_binary_line (sds output_string, struct line *l)
     return output_string;
 }
 
-void get_data_block_from_compressed_vtu_file(uint64_t *raw_data, void* values) {
+void get_data_block_from_compressed_vtu_file(char *raw_data, void* values, size_t header_size) {
 
-    uint64_t num_blocks = *raw_data;
-    raw_data += 1;
+    uint64_t num_blocks = 0;
+    memcpy(&num_blocks, raw_data, header_size);
+    raw_data += header_size;
 
-    uint64_t block_size_uncompressed = *raw_data;
-    raw_data += 1;
+    uint64_t block_size_uncompressed = 0;
+    memcpy(&block_size_uncompressed, raw_data, header_size);
+    raw_data += header_size;
 
-    uint64_t last_block_size = *raw_data;
-    raw_data += 1;
+    uint64_t last_block_size = 0;
+    memcpy(&last_block_size, raw_data, header_size);
+    raw_data += header_size;
 
-    uint64_t  *block_sizes_compressed = (uint64_t*)malloc(num_blocks*sizeof(uint64_t));
+    uint64_t  *block_sizes_compressed = (uint64_t*)calloc(num_blocks, sizeof(uint64_t));
     uint64_t  data_size_after_compression = 0;
 
     for(int i = 0; i < num_blocks; i++) {
-        block_sizes_compressed[i] =  *raw_data;
-        data_size_after_compression += *raw_data;
-        raw_data++;
+        memcpy(&block_sizes_compressed[i], raw_data, header_size);
+        uint64_t tmp = 0;
+        memcpy(&tmp, raw_data, header_size);
+        data_size_after_compression += tmp;
+        raw_data += header_size;
     }
     unsigned char* uncompressed_data = (unsigned char *)values;
     unsigned char const* compressed_data = (unsigned char const*) raw_data;
@@ -218,9 +223,10 @@ void get_data_block_from_compressed_vtu_file(uint64_t *raw_data, void* values) {
     free(block_sizes_compressed);
 }
 
-void get_data_block_from_uncompressed_binary_vtu_file(uint64_t *raw_data, void* values) {
-    uint64_t block_size = *raw_data;
-    raw_data += 1;
+void get_data_block_from_uncompressed_binary_vtu_file(char *raw_data, void* values, size_t header_size) {
+    uint64_t block_size = 0;
+    memcpy(&block_size, raw_data, header_size);
+    raw_data += header_size;
     memcpy(values, raw_data, block_size);
 
 }
