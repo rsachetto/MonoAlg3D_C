@@ -75,8 +75,6 @@ double forward_finite_difference (Tissue *the_tissue,\
 double backward_finite_difference (Tissue *the_tissue,\
                     const uint32_t i, const uint32_t j, const char axis);
 
-void write_scalar_maps_inside_bounds_to_vtu (Tissue *the_tissue);
-
 void insert_point_into_map (std::map<Point_3D,uint32_t> &points_map,\
                             vtkSmartPointer<vtkPoints> &points, const double p[],\
                             uint32_t *num_points_inside_bounds);
@@ -84,6 +82,12 @@ void insert_point_into_map (std::map<Point_3D,uint32_t> &points_map,\
 uint32_t get_point_index_from_map (std::map<Point_3D,uint32_t> points_map, const double p[]);
 
 bool check_position (const uint32_t i, const uint32_t j, const uint32_t num_cells_in_x, const uint32_t num_cells_in_y);
+
+void write_scalar_maps_inside_bounds_to_vtu (Tissue *the_tissue);
+
+void write_scalar_maps_inside_bounds_to_vtu_v2 (Tissue *the_tissue);
+
+void insert_point_into_array (vtkSmartPointer<vtkPoints> &points, const double p[]);
 
 // Sorting functions
 int sort_by_position (const void *a, const void *b);

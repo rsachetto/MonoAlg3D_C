@@ -404,6 +404,7 @@ double backward_finite_difference (Tissue *the_tissue,\
     return result;
 }
 
+// This version uses a unique map to store the points
 void write_scalar_maps_inside_bounds_to_vtu (Tissue *the_tissue)
 {
     Cell *cells = the_tissue->cells;
@@ -517,6 +518,100 @@ void write_scalar_maps_inside_bounds_to_vtu (Tissue *the_tissue)
     writer->Write();
 }
 
+// This version adds all the points inside the array without checking if it is already there
+void write_scalar_maps_inside_bounds_to_vtu_v2 (Tissue *the_tissue)
+{
+    Cell *cells = the_tissue->cells;
+    uint32_t num_cells = the_tissue->num_cells;
+
+    double center[3];
+
+    double min_x = the_tissue->bounds[0];
+    double max_x = the_tissue->bounds[1];
+    double min_y = the_tissue->bounds[2];
+    double max_y = the_tissue->bounds[3];
+    double min_z = the_tissue->bounds[4];
+    double max_z = the_tissue->bounds[5];
+
+    // Array to store all the points inside the bounds
+    uint32_t num_points_inside_bounds = 0;
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+
+    // Array to store all the cells inside the bounds
+    vtkSmartPointer<vtkCellArray> cell_array = vtkSmartPointer<vtkCellArray>::New();
+
+    // Arrays to store the activation time and conduction velocity values
+    vtkSmartPointer<vtkFloatArray> at_values = vtkSmartPointer<vtkFloatArray>::New();
+    vtkSmartPointer<vtkFloatArray> cv_values = vtkSmartPointer<vtkFloatArray>::New();
+
+    // For each cell check which ones are inside the bounded region
+    for (uint32_t i = 0; i < num_cells; i++)
+    {
+        center[0] = cells[i].x;
+        center[1] = cells[i].y;
+        center[2] = cells[i].z;
+
+        if (is_inside_bounds(center,min_x,max_x,min_y,max_y,min_z,max_z))
+        {
+            // Get a reference for each vertex from the cell
+            double *p0 = cells[i].p0;
+            double *p1 = cells[i].p1;
+            double *p2 = cells[i].p2;
+            double *p3 = cells[i].p3;
+            double *p4 = cells[i].p4;
+            double *p5 = cells[i].p5;
+            double *p6 = cells[i].p6;
+            double *p7 = cells[i].p7;
+
+            // Insert each point from the cell into the points array
+            insert_point_into_array(points,p0);
+            insert_point_into_array(points,p1);
+            insert_point_into_array(points,p2);
+            insert_point_into_array(points,p3);
+            insert_point_into_array(points,p4);
+            insert_point_into_array(points,p5);
+            insert_point_into_array(points,p6);
+            insert_point_into_array(points,p7);
+
+            // Build a Hexahedron cell
+            vtkSmartPointer<vtkHexahedron> hexahedron = vtkSmartPointer<vtkHexahedron>::New();
+            hexahedron->GetPointIds()->SetId(0, num_points_inside_bounds);
+            hexahedron->GetPointIds()->SetId(1, num_points_inside_bounds+1);
+            hexahedron->GetPointIds()->SetId(2, num_points_inside_bounds+2);
+            hexahedron->GetPointIds()->SetId(3, num_points_inside_bounds+3);
+            hexahedron->GetPointIds()->SetId(4, num_points_inside_bounds+4);
+            hexahedron->GetPointIds()->SetId(5, num_points_inside_bounds+5);
+            hexahedron->GetPointIds()->SetId(6, num_points_inside_bounds+6);
+            hexahedron->GetPointIds()->SetId(7, num_points_inside_bounds+7);
+
+            // Add the cell on the cell array
+            cell_array->InsertNextCell(hexahedron);
+
+            // Insert the cell values into the arrays
+            at_values->InsertNextValue(cells[i].at);
+            cv_values->InsertNextValue(cells[i].cv);
+
+            num_points_inside_bounds += 8;
+        }
+    }
+
+    vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid_new = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    unstructured_grid_new->SetPoints(points);
+    unstructured_grid_new->SetCells(VTK_HEXAHEDRON, cell_array);
+    unstructured_grid_new->GetCellData()->SetScalars(at_values);
+
+    printf("[+] Writing clipped activation map on '%s'\n","outputs/activation_time_map.vtu");
+    vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+    writer->SetFileName("outputs/activation_time_map.vtu");
+    writer->SetInputData(unstructured_grid_new);
+    writer->Write();
+
+    printf("[+] Writing clipped conduction velocity map on '%s'\n","outputs/conduction_velocity_map.vtu");
+    unstructured_grid_new->GetCellData()->SetScalars(cv_values);
+    writer->SetFileName("outputs/conduction_velocity_map.vtu");
+    writer->Write();
+}
+
 void insert_point_into_map (std::map<Point_3D,uint32_t> &points_map,\
                             vtkSmartPointer<vtkPoints> &points, const double p[],\
                             uint32_t *num_points_inside_bounds)
@@ -531,6 +626,13 @@ void insert_point_into_map (std::map<Point_3D,uint32_t> &points_map,\
         
         *num_points_inside_bounds = *num_points_inside_bounds + 1;
     }
+}
+
+void insert_point_into_array (vtkSmartPointer<vtkPoints> &points, const double p[])
+{
+    Point_3D point(p[0],p[1],p[2]);
+
+    points->InsertNextPoint(p[0],p[1],p[2]);
 }
 
 uint32_t get_point_index_from_map (std::map<Point_3D,uint32_t> points_map, const double p[])

@@ -49,7 +49,8 @@ int main (int argc, char *argv[])
     //the_tissue->print();
 
     // Write the activation map and conduction velocity map that are inside the bounded region
-    write_scalar_maps_inside_bounds_to_vtu(the_tissue);
+    //write_scalar_maps_inside_bounds_to_vtu(the_tissue);
+    write_scalar_maps_inside_bounds_to_vtu_v2(the_tissue);
 
     return 0;
 }
