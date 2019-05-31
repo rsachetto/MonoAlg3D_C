@@ -32,7 +32,9 @@ void calculate_blocks_and_compress_data(size_t total_data_size_before_compressio
                                         size_t *block_size_uncompressed, size_t **block_sizes_compressed,
                                         size_t *last_block_size, int compression_level);
 
-void get_data_block_from_compressed_vtu_file(char *raw_data, void* values, size_t header_size);
+size_t get_block_sizes_from_compressed_vtu_file(char *raw_data, size_t header_size, uint64_t *num_blocks, uint64_t *block_size_uncompressed, uint64_t *last_block_size, uint64_t  **block_sizes_compressed);
+void get_data_block_from_compressed_vtu_file(char *raw_data, void* values, size_t header_size, uint64_t num_blocks, uint64_t block_size_uncompressed, uint64_t last_block_size, uint64_t  *block_sizes_compressed);
+
 void get_data_block_from_uncompressed_binary_vtu_file(char *raw_data, void* values, size_t header_size);
 void read_binary_point(void *source, struct point_3d *p);
 

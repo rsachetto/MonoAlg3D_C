@@ -537,16 +537,16 @@ unsigned char * base64_encode(const unsigned char *src, size_t len,
  * base64_decode - Base64 decode
  * @src: Data to be decoded
  * @len: Length of the data to be decoded
- * @out_len: Pointer to output length variable
- * Returns: Allocated buffer of out_len bytes of decoded data,
- * or %NULL on failure
+ * @bytes_read: Pointer to the bytes read on the src stream
+ * Returns: out_len bytes of decoded data,
+ * or 0 on failure
  *
- * Caller is responsible for freeing the returned buffer.
+ * Caller is responsible for allocating the out buffer.
  */
-char * base64_decode(const char *src, size_t len, size_t *out_len, size_t *bytes_read)
+size_t base64_decode(unsigned char *out, const char *src, size_t len, size_t *bytes_read)
 {
-    unsigned char dtable[256], *out, *pos, block[4], tmp;
-    size_t i, count, olen;
+    unsigned char dtable[256], *pos, block[4], tmp;
+    size_t i, count;
     int pad = 0;
 
     memset(dtable, 0x80, 256);
@@ -561,12 +561,11 @@ char * base64_decode(const char *src, size_t len, size_t *out_len, size_t *bytes
     }
 
     if (count == 0 || count % 4)
-        return NULL;
+        return 0;
 
-    olen = count / 4 * 3;
-    pos = out = malloc(olen);
+    pos = out;
     if (out == NULL)
-        return NULL;
+        return 0;
 
     count = 0;
     for (i = 0; i < len; i++) {
@@ -589,19 +588,15 @@ char * base64_decode(const char *src, size_t len, size_t *out_len, size_t *bytes
                 else if (pad == 2)
                     pos -= 2;
                 else {
-                    /* Invalid padding */
-                    free(out);
-                    return NULL;
+                    return 0;
                 }
                 break;
             }
         }
     }
 
-    *out_len = pos - out;
+    *bytes_read = i + 1;
 
-    *bytes_read = i;
-
-    return out;
+    return pos - out;
 }
 

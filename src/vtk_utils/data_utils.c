@@ -182,30 +182,39 @@ sds write_binary_line (sds output_string, struct line *l)
     return output_string;
 }
 
-void get_data_block_from_compressed_vtu_file(char *raw_data, void* values, size_t header_size) {
-
-    uint64_t num_blocks = 0;
-    memcpy(&num_blocks, raw_data, header_size);
+size_t get_block_sizes_from_compressed_vtu_file(char *raw_data, size_t header_size, uint64_t *num_blocks, uint64_t *block_size_uncompressed, uint64_t *last_block_size, uint64_t  **block_sizes_compressed) {
+    size_t offset = 0;
+    *num_blocks = 0;
+    memcpy(num_blocks, raw_data, header_size);
     raw_data += header_size;
+    offset += header_size;
 
-    uint64_t block_size_uncompressed = 0;
-    memcpy(&block_size_uncompressed, raw_data, header_size);
+    *block_size_uncompressed = 0;
+    memcpy(block_size_uncompressed, raw_data, header_size);
     raw_data += header_size;
+    offset += header_size;
 
-    uint64_t last_block_size = 0;
-    memcpy(&last_block_size, raw_data, header_size);
+    *last_block_size = 0;
+    memcpy(last_block_size, raw_data, header_size);
     raw_data += header_size;
+    offset += header_size;
 
-    uint64_t  *block_sizes_compressed = (uint64_t*)calloc(num_blocks, sizeof(uint64_t));
-    uint64_t  data_size_after_compression = 0;
+    *block_sizes_compressed = (uint64_t*)calloc(*num_blocks, sizeof(uint64_t));
 
-    for(int i = 0; i < num_blocks; i++) {
-        memcpy(&block_sizes_compressed[i], raw_data, header_size);
+    for(int i = 0; i < *num_blocks; i++) {
+        memcpy(*block_sizes_compressed + i, raw_data, header_size);
         uint64_t tmp = 0;
         memcpy(&tmp, raw_data, header_size);
-        data_size_after_compression += tmp;
         raw_data += header_size;
+        offset += header_size;
     }
+
+    return offset;
+}
+
+
+void get_data_block_from_compressed_vtu_file(char *raw_data, void* values, size_t header_size, uint64_t num_blocks, uint64_t block_size_uncompressed, uint64_t last_block_size, uint64_t  *block_sizes_compressed) {
+
     unsigned char* uncompressed_data = (unsigned char *)values;
     unsigned char const* compressed_data = (unsigned char const*) raw_data;
 
