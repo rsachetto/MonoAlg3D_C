@@ -15,7 +15,7 @@ struct point_3d {
 
 struct point_hash_entry {
     struct point_3d key;
-    int value;
+    float value;
 };
 
 struct string_hash_entry {

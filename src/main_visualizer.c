@@ -142,8 +142,10 @@ static int read_and_render_files(char *input_dir, char* prefix) {
             return END_SIMULATION;
         }
 
+        //TODO: maybe change how we handle advance_return
         if(draw_config.paused) {
             current_file += draw_config.advance_or_return;
+            draw_config.advance_or_return = 0;
             if(current_file < 0) current_file++;
             else if(current_file >= num_files) current_file--;
 

@@ -14,10 +14,10 @@ struct fibrotic_mesh_info {
     char scar_type;
 };
 
-#define FIBROTIC(grid_cell) ((struct fibrotic_mesh_info *)(grid_cell)->mesh_extra_info)->fibrotic
-#define BORDER_ZONE(grid_cell) ((struct fibrotic_mesh_info *)(grid_cell)->mesh_extra_info)->border_zone
-#define SCAR_TYPE(grid_cell) ((struct fibrotic_mesh_info *)(grid_cell)->mesh_extra_info)->scar_type
 #define FIBROTIC_INFO(grid_cell) (struct fibrotic_mesh_info *)grid_cell->mesh_extra_info
+#define FIBROTIC(grid_cell) (FIBROTIC_INFO(grid_cell))->fibrotic
+#define BORDER_ZONE(grid_cell) (FIBROTIC_INFO(grid_cell))->border_zone
+#define SCAR_TYPE(grid_cell) (FIBROTIC_INFO(grid_cell))->scar_type
 
 #define INITIALIZE_FIBROTIC_INFO(grid_cell)                                                                            \
     do {                                                                                                               \
@@ -27,7 +27,7 @@ struct fibrotic_mesh_info {
         FIBROTIC ((grid_cell)) = false;                                                                                \
         BORDER_ZONE (grid_cell) = false;                                                                               \
         SCAR_TYPE ((grid_cell)) = 'n';                                                                                 \
-    } while (0)
+} while (0)
 
 struct conjugate_gradient_info {
     real_cpu r;  /* Element of the int_vector r = b - Ax associated to this cell. */
@@ -55,25 +55,25 @@ struct jacobi_info {
 };
 
 #define CG_INFO(grid_cell) (struct conjugate_gradient_info *)grid_cell->linear_system_solver_extra_info
-#define CG_R(grid_cell) ((struct conjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->r
-#define CG_P(grid_cell) ((struct conjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->p
-#define CG_P1(grid_cell) ((struct conjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->p1
-#define CG_Z(grid_cell) ((struct conjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->z
+#define CG_R(grid_cell) (CG_INFO(grid_cell))->r
+#define CG_P(grid_cell) (CG_INFO(grid_cell))->p
+#define CG_P1(grid_cell) (CG_INFO(grid_cell))->p1
+#define CG_Z(grid_cell) (CG_INFO(grid_cell))->z
 
 #define BCG_INFO(grid_cell) (struct biconjugate_gradient_info *)grid_cell->linear_system_solver_extra_info
-#define BCG_R(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->r
-#define BCG_P(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->p
-#define BCG_P1(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->p1
-#define BCG_Z(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->z
-#define BCG_X_AUX(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->x_aux
-#define BCG_R_AUX(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->r_aux
-#define BCG_Z_AUX(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->z_aux
-#define BCG_P_AUX(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->p_aux
-#define BCG_P1_AUX(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->p1_aux
-#define BCG_XA(grid_cell) ((struct biconjugate_gradient_info *)(grid_cell)->linear_system_solver_extra_info)->xA
+#define BCG_R(grid_cell) (BCG_INFO(grid_cell))->r
+#define BCG_P(grid_cell) (BCG_INFO(grid_cell))->p
+#define BCG_P1(grid_cell) (BCG_INFO(grid_cell))->p1
+#define BCG_Z(grid_cell) (BCG_INFO(grid_cell))->z
+#define BCG_X_AUX(grid_cell) (BCG_INFO(grid_cell))->x_aux
+#define BCG_R_AUX(grid_cell) (BCG_INFO(grid_cell))->r_aux
+#define BCG_Z_AUX(grid_cell) (BCG_INFO(grid_cell))->z_aux
+#define BCG_P_AUX(grid_cell) (BCG_INFO(grid_cell))->p_aux
+#define BCG_P1_AUX(grid_cell) (BCG_INFO(grid_cell))->p1_aux
+#define BCG_XA(grid_cell) (BCG_INFO(grid_cell))->xA
 
 #define JACOBI_INFO(grid_cell) (struct jacobi_info *)grid_cell->linear_system_solver_extra_info
-#define JACOBI_X_AUX(grid_cell) ((struct jacobi_info *)(grid_cell)->linear_system_solver_extra_info)->x_aux
+#define JACOBI_X_AUX(grid_cell) (JACOBI_INFO(grid_cell))->x_aux
 
 #define INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO(grid_cell, info_struct)                                                                 \
     do {                                                                                                               \
