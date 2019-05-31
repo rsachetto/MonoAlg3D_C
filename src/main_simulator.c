@@ -86,6 +86,7 @@ void free_current_simulation_resources(struct user_options *options, struct mono
     close_logfile();
 }
 
+#ifdef COMPILE_OPENGL
 void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
 
     draw_config->config_name = strdup(options->config_file);
@@ -108,6 +109,7 @@ void init_draw_config(struct draw_config *draw_config, struct user_options *opti
     draw_config->draw_type = DRAW_SIMULATION;
     draw_config->error_message = NULL;
 }
+#endif
 
 int main(int argc, char **argv) {
 
