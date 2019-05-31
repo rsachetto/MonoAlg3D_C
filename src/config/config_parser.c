@@ -141,8 +141,11 @@ struct batch_options *new_batch_options() {
     struct batch_options *user_args = (struct batch_options *)malloc(sizeof(struct batch_options));
     user_args->batch_config_file = NULL;
     user_args->initial_config = NULL;
-    user_args->config_to_change = NULL;
     user_args->num_simulations = 0;
+
+    user_args->config_to_change = NULL;
+    sh_new_arena(user_args->config_to_change);
+    shdefault(user_args->config_to_change, NULL);
 
     return user_args;
 }
