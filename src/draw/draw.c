@@ -32,6 +32,7 @@ Vector3 min_size;
 #define DOUBLE_CLICK_DELAY 0.5 //seconds
 
 double selected_time = 0.0;
+Vector3 current_selected;
 
 #define WIDER_TEXT "------------------------------------------------------"
 
@@ -367,12 +368,12 @@ static Vector3 find_mesh_center_vtk() {
 Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
 int num_colors = 18;
 
-static void draw_voxel(Vector3 cube_position, Vector3 cube_size, real_cpu v, Ray ray) {
+static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, Vector3 cube_size, real_cpu v, Ray ray) {
 
     struct point_3d p;
-    p.x = cube_position.x;
-    p.y = cube_position.y;
-    p.z = cube_position.z;
+    p.x = cube_position_draw.x;
+    p.y = cube_position_draw.y;
+    p.z = cube_position_draw.z;
 
     bool collision;
 
@@ -385,48 +386,48 @@ static void draw_voxel(Vector3 cube_position, Vector3 cube_size, real_cpu v, Ray
 
     action_potential_array aps = (struct action_potential*) hmget(selected_aps, p);
 
-    if(draw_config.simulating && aps != NULL) {
-        struct action_potential ap1;
-        ap1.t = draw_config.time;
-        ap1.v = v;
+    struct action_potential ap1;
+    ap1.t = draw_config.time;
+    ap1.v = v;
 
-        if(draw_config.advance_or_return >= 0)
+    if(aps != NULL) {
+        if(ap1.t > aps[arrlen(aps)-1].t ) {
             arrput(aps, ap1);
-        else
-            arrpop(aps);
-
-        hmput(selected_aps, p, aps);
+            hmput(selected_aps, p, aps);
+        }
     }
 
-
     collision = CheckCollisionRayBox(ray,
-                                     (BoundingBox){(Vector3){ cube_position.x - cube_size.x/2, cube_position.y - cube_size.y/2, cube_position.z - cube_size.z/2 },
-                                                   (Vector3){ cube_position.x + cube_size.x/2, cube_position.y + cube_size.y/2, cube_position.z + cube_size.z/2 }});
+                                     (BoundingBox){(Vector3){ cube_position_draw.x - cube_size.x/2, cube_position_draw.y - cube_size.y/2, cube_position_draw.z - cube_size.z/2 },
+                                                   (Vector3){ cube_position_draw.x + cube_size.x/2, cube_position_draw.y + cube_size.y/2, cube_position_draw.z + cube_size.z/2 }});
 
     color = get_color((v - min_v)/(max_v - min_v));
 
     if(grid_only) {
-        DrawCubeWiresV(cube_position, cube_size, color);
+        DrawCubeWiresV(cube_position_draw, cube_size, color);
     }
     else {
 
-        DrawCubeV(cube_position, cube_size, color);
+        DrawCubeV(cube_position_draw, cube_size, color);
 
         if(grid_lines) {
-            DrawCubeWiresV(cube_position, cube_size, BLACK);
+            DrawCubeWiresV(cube_position_draw, cube_size, BLACK);
         }
 
         if(collision && !one_selected) {
-            DrawCubeWiresV(cube_position, cube_size, GREEN);
+            DrawCubeWiresV(cube_position_draw, cube_size, GREEN);
 
             if(aps == NULL) {
                 arrsetcap(aps, 50);
                 struct action_potential ap1;
                 ap1.t = draw_config.time;
                 ap1.v = v;
+
                 arrput(aps, ap1);
                 hmput(selected_aps, p, aps);
                 draw_selected_ap_text = true;
+                current_selected = (Vector3){cube_position_mesh.x, cube_position_mesh.y, cube_position_mesh.z};
+
                 selected_time = GetTime();
             }
             one_selected = true;
@@ -475,7 +476,7 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray 
         cube_size.y = (float)(dy/scale);
         cube_size.z = (float)(dz/scale);
 
-        draw_voxel(cube_position, cube_size, v, ray);
+        draw_voxel(cube_position, (Vector3){center_x, center_y, center_z}, cube_size, v, ray);
 
     }
     one_selected = false;
@@ -512,7 +513,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
                 cubeSize.y = (float)(grid_cell->dy/scale);
                 cubeSize.z = (float)(grid_cell->dz/scale);
 
-                draw_voxel(cubePosition, cubeSize, ac[i]->v, ray);
+                draw_voxel(cubePosition, (Vector3){grid_cell->center_x, grid_cell->center_y, grid_cell->center_z}, cubeSize, ac[i]->v, ray);
 
             }
         }
@@ -555,16 +556,18 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
     int n = hmlen(selected_aps);
 
-    char *ap_text = "%d AP(s) selected";
-
-    width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
+    char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f )";
 
     if(draw_selected_ap_text) {
         double time_elapsed = GetTime() - selected_time;
-        unsigned char alpha = (unsigned char) clamp(255 - time_elapsed*100, 0, 255);
+        unsigned char alpha = (unsigned char) clamp(255 - time_elapsed*25, 0, 255);
         Color c = colors[(n-1) % num_colors];
         c.a = alpha;
-        sprintf(tmp, ap_text, n);
+
+        sprintf(tmp, ap_text, n, current_selected.x, current_selected.y, current_selected.z);
+
+        width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
+
         DrawTextEx(font, tmp, (Vector2){graph_pos_x + graph_width/2.0f - width.x/2.0f - min_x, max_y}, font_size_big, 1, c);
 
         if(alpha == 0) {
@@ -709,19 +712,21 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
             Color line_color = colors[j % num_colors];
             for (int i = 0; i < c; i++) {
 
-                if (i + 1 < c) {
+                if(aps[i].t <= draw_config.time) {
+                    if (i + 1 < c) {
 
-                    p1.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i].t);
-                    p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i].v);
+                        p1.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i].t);
+                        p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i].v);
 
-                    p2.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i + 1].t);
-                    p2.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i + 1].v);
+                        p2.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i + 1].t);
+                        p2.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i + 1].v);
 
-                    //TODO: create an option for this???
-                    if(aps[i+1].v > draw_config.max_v) draw_config.max_v = aps[i+1].v;
-                    if(aps[i+1].v < draw_config.min_v) draw_config.min_v = aps[i+1].v;
+                        //TODO: create an option for this???
+                        if (aps[i + 1].v > draw_config.max_v) draw_config.max_v = aps[i + 1].v;
+                        if (aps[i + 1].v < draw_config.min_v) draw_config.min_v = aps[i + 1].v;
 
-                    DrawLineV(p1, p2, line_color);
+                        DrawLineV(p1, p2, line_color);
+                    }
                 }
 
             }
@@ -1043,7 +1048,7 @@ void init_and_open_visualization_window() {
     draw_config.grid_lines = true;
 
     selected_aps = NULL;
-            hmdefault(selected_aps, NULL);
+    hmdefault(selected_aps, NULL);
 
     Camera3D camera;
 

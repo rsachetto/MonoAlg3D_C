@@ -154,6 +154,8 @@ char *read_entire_file_with_mmap(const char *filename, size_t *size) {
 
     f = (char *) mmap (0, to_page_size, PROT_READ, MAP_PRIVATE, fd, 0);
 
+    close(fd);
+
     if (f == NULL)
         return NULL;
 

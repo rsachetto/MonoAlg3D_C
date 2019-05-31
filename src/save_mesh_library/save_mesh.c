@@ -25,20 +25,19 @@ bool clip_with_bounds = false;
 bool save_pvd = true;
 bool compress = false;
 int compression_level = 3;
-static FILE *pvd_file = NULL;
 
 static bool initialized = false;
-static bool first_save_call = true;
 
 static struct vtk_unstructured_grid *vtk_grid = NULL;
 
 static struct vtk_polydata_grid *vtk_polydata = NULL;
 
-void add_file_to_pvd(real_cpu current_dt, const char *output_dir, const char *base_name);
+void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name);
 
 static sds create_base_name(char *file_prefix, int iteration_count, char *extension) {
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", file_prefix, iteration_count, extension);
 }
+
 
 SAVE_MESH(save_as_text_or_binary) {
 
@@ -195,10 +194,10 @@ SAVE_MESH(save_as_vtk) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    //sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_time_%lf_ms.vtk", file_prefix, iteration_count, current_dt);
     sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
 
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+    //TODO: change this. We dont need the current_t here
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
 
@@ -211,9 +210,12 @@ SAVE_MESH(save_as_vtk) {
     sdsfree(base_name);
 }
 
-void add_file_to_pvd(real_cpu current_dt, const char *output_dir, const char *base_name) {
+void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name) {
     sds pvd_name = sdsnew(output_dir);
     pvd_name = sdscat(pvd_name, "/simulation_result.pvd");
+
+    static FILE *pvd_file = NULL;
+    static bool first_save_call = true;
 
     if(first_save_call) {
         pvd_file = fopen(pvd_name, "w");
@@ -231,7 +233,7 @@ void add_file_to_pvd(real_cpu current_dt, const char *output_dir, const char *ba
 
     fseek(pvd_file, -26, SEEK_END);
 
-    fprintf(pvd_file, "\n\t\t<DataSet timestep=\"%lf\" group=\"\" part=\"0\" file=\"%s\"/>\n", current_dt, base_name);
+    fprintf(pvd_file, "\n\t\t<DataSet timestep=\"%lf\" group=\"\" part=\"0\" file=\"%s\"/>\n", current_t, base_name);
     fprintf(pvd_file, "\t</Collection>\n");
     fprintf(pvd_file, "</VTKFile>");
     fclose(pvd_file);
@@ -284,10 +286,10 @@ SAVE_MESH(save_as_vtu) {
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
 
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) {
-        add_file_to_pvd(current_dt, output_dir, base_name);
+        add_file_to_pvd(current_t, output_dir, base_name);
     }
 
     new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
@@ -342,9 +344,8 @@ SAVE_MESH(save_as_vtk_purkinje) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    //sds base_name = sdscatprintf(sdsempty(), "%s_it_%d_time_%lf_ms.vtk", file_prefix, iteration_count, current_dt);
     sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
                                     clip_with_plain, plain_coords, clip_with_bounds, bounds,\
@@ -405,11 +406,11 @@ SAVE_MESH(save_as_vtp_purkinje) {
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
 
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_dt);
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) 
     {
-        add_file_to_pvd(current_dt, output_dir, base_name);
+        add_file_to_pvd(current_t, output_dir, base_name);
     }
 
     new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
@@ -433,5 +434,115 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
 }
 
+SAVE_MESH(save_with_activation_times) {
+
+    //save_as_vtu(iteration_count, current_t, last_t, config, the_grid);
+
+    save_as_text_or_binary(iteration_count, current_t, last_t, config, the_grid);
+    float time_threshold = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data.config, "time_threshold");
+
+    char *output_dir = config->out_dir_name;
+
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+    sds base_name = create_base_name("activation_info", iteration_count, "txt");
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+
+    static struct point_hash_entry *last_time_v = NULL;
+
+    static struct point_hash_entry*num_activations = NULL;
+
+    static struct point_voidp_hash_entry *activation_times = NULL;
+
+    if(last_time_v == NULL) {
+        hmdefault(last_time_v, -100.0);
+    }
+
+    if(num_activations == NULL) {
+        hmdefault(num_activations, 0);
+    }
+
+    if(activation_times == NULL) {
+        hmdefault(activation_times, NULL);
+    }
+
+    struct cell_node *grid_cell = the_grid->first_cell;
+
+    float center_x, center_y, center_z, dx, dy, dz;
+    float v;
+
+    FILE *act_file = fopen(output_dir_with_file, "w");
+
+    while(grid_cell != 0) {
+
+        if(grid_cell->active) {
+            center_x = grid_cell->center_x;
+            center_y = grid_cell->center_y;
+            center_z = grid_cell->center_z;
+
+            v = grid_cell->v;
+
+            struct point_3d p;
+            p.x = center_x;
+            p.y = center_y;
+            p.z = center_z;
+
+            dx = grid_cell->dx/2.0;
+            dy = grid_cell->dy/2.0;
+            dz = grid_cell->dz/2.0;
+
+            fprintf(act_file, "%g,%g,%g,%g,%g,%g ", center_x, center_y, center_z, dx, dy, dz);
+            float last_v = hmget(last_time_v, p);
+
+            int n_activations = (int) hmget(num_activations, p);
+            float *activation_times_array = (float*) hmget(activation_times, p);
+
+            int act_times_len = arrlen(activation_times_array);
+
+            if(current_t == 0.0f) {
+                hmput(last_time_v, p, v);
+            }
+            else {
+                if( (last_v < 0.0f)  && (v >= 0.0f) ) {
+
+                    if(act_times_len == 0) {
+                        n_activations++;
+                        hmput(num_activations, p, n_activations);
+                        arrput(activation_times_array, current_t);
+                        hmput(activation_times, p, activation_times_array);
+                    }
+                    else {
+                        float last_act_time = activation_times_array[act_times_len-1];
+                        if(current_t - last_act_time > time_threshold) {
+                            n_activations++;
+                            hmput(num_activations, p, n_activations);
+                            arrput(activation_times_array, current_t);
+                            hmput(activation_times, p, activation_times_array);
+                        }
+
+                    }
+                }
+                hmput(last_time_v, p, v);
+
+            }
+
+            fprintf(act_file, "%d [ ",  n_activations);
+
+            for(int i = 0; i < arrlen(activation_times_array); i++) {
+                fprintf(act_file, "%lf ",  activation_times_array[i]);
+            }
+            fprintf(act_file, "]\n");
+
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fclose(act_file);
+
+
+}
+
 SAVE_MESH(no_save) {
+    //Nop
 }

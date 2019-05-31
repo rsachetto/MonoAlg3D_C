@@ -1615,8 +1615,6 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
             uint64_t points_offset_value = strtoul(parser_state->points_ofsset, NULL, 10);
             uint64_t cells_offset_value = strtoul(parser_state->cells_connectivity_ofsset, NULL, 10);
 
-
-
             if(strcmp(parser_state->encoding_type, "raw") == 0) {
                 //We ignore the \n, spaces and _ before the real data.
                 //That is how VTK works!!
@@ -1639,7 +1637,7 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
                     b64_size--;
                 }
 
-                size_t bytes_to_read = b64_size = arrlen(parser_state->base64_content);
+                b64_size = arrlen(parser_state->base64_content);
                 parser_state->base64_content[b64_size] = '\0';
 
                 //TODO: find a way to decode only the needed data

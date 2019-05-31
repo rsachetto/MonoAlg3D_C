@@ -334,7 +334,7 @@ int test_perlin_mesh(char* mesh_file, char *start_dx, char* side_length_x, bool 
         else if(binary)
         shput(save_mesh_config->config_data.config, "binary", "yes");
 
-        save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
+        save_mesh_config->save_mesh(0, 0.0, 0.0, save_mesh_config, grid);
 
     }
 
@@ -424,7 +424,7 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
 
         shput(save_mesh_config->config_data.config, "save_pvd", "no");
 
-        save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
+        save_mesh_config->save_mesh(0, 0.0, 0.0, save_mesh_config, grid);
 
     }
 
