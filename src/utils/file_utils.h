@@ -27,6 +27,6 @@ bool dir_exists(const char *path);
 void fixpath(char *path);
 void create_dir(char *out_dir);
 int remove_directory(const char *path);
-char * base64_decode(const char *src, size_t len, size_t *out_len, size_t *bytes_read);
+size_t base64_decode(unsigned char* out, const char *src, size_t len, size_t *bytes_read);
 
 #endif //MONOALG3D_FILE_UTILS_H
