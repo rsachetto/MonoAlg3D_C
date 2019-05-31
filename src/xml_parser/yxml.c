@@ -22,7 +22,7 @@
   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <yxml.h>
+#include "yxml.h"
 #include <string.h>
 
 typedef enum {

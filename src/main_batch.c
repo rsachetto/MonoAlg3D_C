@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     struct string_hash_entry *config_to_change = NULL;
 
     char *entire_config_file = NULL;
-    long config_file_size;
+    unsigned long config_file_size;
 
     if(rank == 0) {
 
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 
             }
 
-            MPI_Send(&config_file_size, 1, MPI_LONG, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&config_file_size, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
             MPI_Send(entire_config_file, (int)config_file_size, MPI_CHAR, i, 0, MPI_COMM_WORLD);
         }
 
