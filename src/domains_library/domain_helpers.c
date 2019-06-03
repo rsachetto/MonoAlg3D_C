@@ -665,6 +665,7 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
         }
         grid_cell = grid_cell->next;
     }
+
 }
 
 void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) 
