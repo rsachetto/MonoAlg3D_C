@@ -122,6 +122,7 @@ struct batch_options {
 struct visualization_options {
     char *input_folder;
     char *files_prefix;
+    char *pvd_file;
     real_cpu max_v, min_v, dt;
 };
 
@@ -142,5 +143,6 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
 void free_user_options(struct user_options *s);
+void free_visualization_options(struct visualization_options * options);
 void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 #endif /* MONOALG3D_CONFIG_PARSER_H */

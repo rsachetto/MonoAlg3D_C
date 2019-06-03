@@ -19,10 +19,17 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 
 
 static FILE *logfile = NULL;
+
+char * get_dir_from_path(const char * path) {
+    char *last_slash = NULL;
+    char *parent = NULL;
+    last_slash = strrchr(path, '/');
+    parent = strndup(path, last_slash - path + 1);
+    return parent;
+}
 
 void print_to_stdout_and_file(char const *fmt, ...) {
     va_list ap;
@@ -288,6 +295,7 @@ static int cstring_cmp(const void *a, const void *b)
     /* strcmp functions works exactly as expected from
     comparison function */
 }
+
 
 
 string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {

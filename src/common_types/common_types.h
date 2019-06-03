@@ -41,6 +41,11 @@ typedef struct line * line_array;
 typedef int64_t * int64_array;
 typedef char** string_array;
 
+struct vtk_files {
+    string_array files_list;
+    f32_array    timesteps;
+};
+
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                                 \
     do {                                                                                                               \
         for(int i = 0; i < shlen(d); i++) {                                                                            \

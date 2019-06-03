@@ -5,9 +5,10 @@
 #include "draw/draw.h"
 #endif
 
+#include "string/sds.h"
 #include "single_file_libraries/stb_ds.h"
-#include "vtk_utils/data_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
+#include "vtk_utils/pvd_utils.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -53,12 +54,30 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->error_message = NULL;
 }
 
-static int read_and_render_files(char *input_dir, char* prefix) {
 
-    string_array vtk_file_list  = list_files_from_dir_sorted(input_dir, prefix);
+static int read_and_render_files(const char* pvd_file, char *input_dir, char* prefix) {
 
-    int num_files = arrlen(vtk_file_list);
-    sds full_path = sdsnew(input_dir);
+    bool using_pvd = (pvd_file != NULL);
+
+    struct vtk_files *vtk_files;
+
+    if(!using_pvd) {
+        vtk_files = (struct vtk_files*) malloc(sizeof(struct vtk_files*));
+        vtk_files->files_list  = list_files_from_dir_sorted(input_dir, prefix);
+    }
+    else {
+        vtk_files = list_files_from_and_timesteps_from_pvd(pvd_file);
+    }
+
+    int num_files = arrlen(vtk_files->files_list);
+    sds full_path;
+
+    if(!using_pvd) {
+        full_path = sdsnew(input_dir);
+    }
+    else {
+        full_path = sdsnew(get_dir_from_path(pvd_file));
+    }
 
     if(!num_files) {
         char tmp[4096];
@@ -71,57 +90,81 @@ static int read_and_render_files(char *input_dir, char* prefix) {
 
     int current_file = 0;
 
+    int step;
     int step1;
     int step2 = 0;
+    int final_step;
+    real_cpu dt = 0;
 
-    step1 = get_step_from_filename(vtk_file_list[0]);
-    int step;
+    if(!using_pvd) {
+        step1 = get_step_from_filename(vtk_files->files_list[0]);
 
-    if(num_files > 1) {
-        step2 = get_step_from_filename(vtk_file_list[1]);
-        step = step2 - step1;
+        if (num_files > 1) {
+            step2 = get_step_from_filename(vtk_files->files_list[1]);
+            step = step2 - step1;
+        } else {
+            step = step1;
+        }
+
+        final_step = get_step_from_filename(vtk_files->files_list[num_files - 1]);
+
+        dt = draw_config.dt;
+
+        draw_config.step = step;
+        if (dt == 0.0) {
+            draw_config.final_time = final_step;
+
+        } else {
+            draw_config.final_time = final_step * dt;
+        }
     }
     else {
-        step = step1;
-    }
-
-    int final_step = get_step_from_filename(vtk_file_list[num_files-1]);
-    real_cpu dt = draw_config.dt;
-
-    draw_config.step = step;
-    if(dt == 0.0) {
-        draw_config.final_time = final_step;
-
-    } else {
-        draw_config.final_time = final_step*dt;
+        draw_config.final_time = vtk_files->timesteps[num_files-1];
+        draw_config.dt = -1; //we don't care about dt here as the timesteps are in the PVD file
     }
 
     while(true) {
 
-        if(dt == 0) {
-            draw_config.time = get_step_from_filename(vtk_file_list[current_file]);
+        if(!using_pvd) {
+            if (dt == 0) {
+                draw_config.time = get_step_from_filename(vtk_files->files_list[current_file]);
 
-        } else {
-            draw_config.time = get_step_from_filename(vtk_file_list[current_file])*dt;
+            } else {
+                draw_config.time = get_step_from_filename(vtk_files->files_list[current_file]) * dt;
+            }
+        }
+        else {
+            draw_config.time = vtk_files->timesteps[current_file];
         }
 
         sdsfree(full_path);
-        full_path = sdsnew(input_dir);
+
+        if(!using_pvd) {
+            full_path = sdsnew(input_dir);
+        }
+        else {
+            full_path = sdsnew(get_dir_from_path(pvd_file));
+        }
+
         full_path = sdscat(full_path, "/");
 
         draw_config.grid_info.file_name = NULL;
 
-        full_path = sdscat(full_path, vtk_file_list[current_file]);
+        full_path = sdscat(full_path, vtk_files->files_list[current_file]);
         omp_set_lock(&draw_config.draw_lock);
         free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
         draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_vtu_file(full_path);
 
         if(!draw_config.grid_info.vtk_grid) {
             char tmp[4096];
-            sprintf(tmp, "Decoder not available for file %s", vtk_file_list[current_file]);
+            sprintf(tmp, "Decoder not available for file %s", vtk_files->files_list[current_file]);
             fprintf(stderr, "%s\n", tmp);
             draw_config.error_message = strdup(tmp);
             omp_unset_lock(&draw_config.draw_lock);
+            arrfree(vtk_files->files_list);
+            arrfree(vtk_files->timesteps);
+            free(vtk_files);
+            sdsfree(full_path);
             return SIMULATION_FINISHED;
 
         }
@@ -134,11 +177,17 @@ static int read_and_render_files(char *input_dir, char* prefix) {
         if(draw_config.restart) {
             draw_config.time = 0.0;
             free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
-            arrfree(vtk_file_list);
+            arrfree(vtk_files->files_list);
+            arrfree(vtk_files->timesteps);
+            free(vtk_files);
+            sdsfree(full_path);
             return RESTART_SIMULATION;
         }
         if(draw_config.exit) {
-            arrfree(vtk_file_list);
+            arrfree(vtk_files->files_list);
+            arrfree(vtk_files->timesteps);
+            free(vtk_files);
+            sdsfree(full_path);
             return END_SIMULATION;
         }
 
@@ -168,6 +217,19 @@ int main(int argc, char **argv) {
 
     parse_visualization_options(argc, argv, options);
 
+    if(!options->input_folder) {
+        if(!options->pvd_file) {
+            fprintf(stderr, "Error!. You have to provide a pvd file or a input folder!\n");
+        }
+    } else {
+        if(options->pvd_file) {
+            fprintf(stderr, "Warning!. You provided a pvd file (%s) and an input folder (%s). The input folder will be ignored!\n", options->pvd_file, options->input_folder);
+            free(options->input_folder);
+            options->input_folder = NULL;
+
+        }
+    }
+
     #pragma omp parallel sections num_threads(2)
     {
         #pragma omp section
@@ -180,12 +242,12 @@ int main(int argc, char **argv) {
 
         #pragma omp section
         {
-            int result = read_and_render_files(options->input_folder, options->files_prefix);
+            int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
 
             while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                 if(result == RESTART_SIMULATION) {
                     init_draw_config(&draw_config, options);
-                    result = read_and_render_files(options->input_folder,  options->files_prefix);
+                    result = read_and_render_files(options->pvd_file, options->input_folder,  options->files_prefix);
                 }
 
                 if(draw_config.restart) result = RESTART_SIMULATION;
@@ -197,5 +259,6 @@ int main(int argc, char **argv) {
 
         }
     }
+    free_visualization_options(options);
     return EXIT_SUCCESS;
 }
