@@ -82,6 +82,41 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
     }
 }
 
+SET_SPATIAL_STIM(stim_if_y_less_than) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    bool stim;
+    real stim_current = config->stim_current;
+    real stim_value;
+
+    real_cpu y_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, y_limit, config->config_data.config, "y_limit");
+
+    if(config->spatial_stim_currents) {
+        free(config->spatial_stim_currents);
+    }
+
+    config->spatial_stim_currents = (real *)malloc(n_active*sizeof(real));
+
+	int i;
+
+    #pragma omp parallel for private(stim, stim_value)
+    for (i = 0; i < n_active; i++) {
+        stim = ac[i]->center_y < y_limit;
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        config->spatial_stim_currents[i] = stim_value;
+
+    }
+}
+
 SET_SPATIAL_STIM(set_stim_from_file) {
 
     char *stim_file = NULL;

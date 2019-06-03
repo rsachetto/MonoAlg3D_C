@@ -6,9 +6,9 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="10"
-END_FRAME="70"
-OUTPUT_VIDEO_FILENAME="video/corner_tentusscher_100_100_100"
+FRAME_RATE="100"
+END_FRAME="2000"
+OUTPUT_VIDEO_FILENAME="video/plain_mesh_tentusscher_2004_spiral_wave"
 RESOLUTION="1030x430"
 
 # Execute the converting command using FFMPEG

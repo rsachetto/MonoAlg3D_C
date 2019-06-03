@@ -917,3 +917,46 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
 
     free(scar_mesh);
 }
+
+void set_plain_fibrosis_inside_hole (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
+                        const double min_x, const double max_x,\
+                        const double min_y, const double max_y,\
+                        const double min_z, const double max_z) 
+{
+
+    print_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
+
+    struct cell_node *grid_cell;
+
+    if(fib_seed == 0)
+        fib_seed = (unsigned)time(NULL) + getpid();
+
+    srand(fib_seed);
+
+    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+
+    grid_cell = the_grid->first_cell;
+    while(grid_cell != 0) 
+    {
+
+        if(grid_cell->active) 
+        {
+            real_cpu center_x = grid_cell->center_x;
+            real_cpu center_y = grid_cell->center_y;
+            real_cpu center_z = grid_cell->center_z;
+
+            real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+            if(p < phi &&\
+                center_x >= min_x && center_x <= max_x &&\
+                center_y >= min_y && center_y <= max_y &&\
+                center_z >= min_z && center_z <= max_z)
+            {
+                grid_cell->active = false;
+            }
+
+            INITIALIZE_FIBROTIC_INFO(grid_cell);
+            FIBROTIC(grid_cell) = true;
+        }
+        grid_cell = grid_cell->next;
+    }
+}

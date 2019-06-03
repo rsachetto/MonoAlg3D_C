@@ -692,3 +692,36 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
     return 1;
 
 }
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_hole) 
+{
+
+    real_cpu phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+
+    unsigned seed = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+
+    real min_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data.config, "hole_min_x");
+
+    real max_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data.config, "hole_max_x");
+
+    real min_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data.config, "hole_min_y");
+
+    real max_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data.config, "hole_max_y");
+
+    real min_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data.config, "hole_min_z");
+
+    real max_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data.config, "hole_max_z");
+
+    initialize_grid_with_square_mesh(config, the_grid);
+    set_plain_fibrosis_inside_hole(the_grid, phi, seed, min_x, max_x, min_y, max_y, min_z, max_z);
+
+    return 1;
+}
