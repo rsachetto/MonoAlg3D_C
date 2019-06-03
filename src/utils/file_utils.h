@@ -10,7 +10,10 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <sys/mman.h>
+
 #include "../common_types/common_types.h"
+
 bool no_stdout;
 
 void print_to_stdout_and_file(char const *fmt, ...);
@@ -28,5 +31,6 @@ void fixpath(char *path);
 void create_dir(char *out_dir);
 int remove_directory(const char *path);
 size_t base64_decode(unsigned char* out, const char *src, size_t len, size_t *bytes_read);
+char * get_dir_from_path(const char * path);
 
 #endif //MONOALG3D_FILE_UTILS_H

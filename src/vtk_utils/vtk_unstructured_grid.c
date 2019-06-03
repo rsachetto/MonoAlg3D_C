@@ -1545,6 +1545,10 @@ static void free_parser_state(struct parser_state *parser_state) {
     arrfree(parser_state->cells_connectivity_ascii);
     arrfree(parser_state->points_ascii);
     arrfree(parser_state->celldata_ascii);
+    arrfree(parser_state->encoding_type);
+    arrfree(parser_state->header_type);
+    arrfree(parser_state->format);
+    arrfree(parser_state->base64_content);
     free(parser_state);
 
 }
@@ -1573,7 +1577,6 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
     size_t base64_outlen = 0;
 
-
     if(xml) {
         //VTK XML file
         static char stack[8*1024];
@@ -1584,6 +1587,8 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
             yxml_ret_t r = yxml_parse(x, *source);
             if (parse_vtk_xml(x, r, parser_state) == -1) break;
         }
+
+        free(x);
     }
     else if(legacy) {
         //VTK legacy file
@@ -1661,14 +1666,16 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
             uint64_t num_blocks, block_size_uncompressed, last_block_size, *block_sizes_compressed;
             size_t raw_data_after_blocks_offset = 0;
 
+            char *data_tmp =  parser_state->base64_content + scalars_offset_value;
+
+
             if(is_raw) {
                 raw_data = (source + scalars_offset_value);
             }
             else if(is_b64) {
                 //TODO: maybe we don't need to allocate this amount of memory
                 raw_data = malloc(b64_size);
-                base64_outlen = base64_decode((unsigned char*) raw_data, parser_state->base64_content + scalars_offset_value, b64_size, &bytes_read);
-                b64_size -= bytes_read;
+                base64_outlen = base64_decode((unsigned char*) raw_data, data_tmp, b64_size, &bytes_read);
             }
 
             if (parser_state->compressed) {
@@ -1676,25 +1683,26 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
                                                                                        &last_block_size, &block_sizes_compressed);
 
                 if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { //We read only the header.. need to read the data
-                    base64_decode((unsigned char *) raw_data + base64_outlen,
-                                  parser_state->base64_content + scalars_offset_value + bytes_read, b64_size,
-                                  &bytes_read);
                     b64_size -= bytes_read;
+                    base64_decode((unsigned char *) raw_data + base64_outlen, data_tmp + bytes_read, b64_size, &bytes_read);
                 }
 
 
                 get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->values, header_size, num_blocks, block_size_uncompressed,
                                                         last_block_size, block_sizes_compressed);
             }
-            else
+            else {
                 get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->values, header_size);
+            }
 
             if(is_raw) {
                 raw_data = (source + points_offset_value);
             }
             else if(is_b64) {
-                base64_outlen = base64_decode((unsigned char*) raw_data, parser_state->base64_content + points_offset_value, b64_size, &bytes_read);
-                b64_size -= bytes_read;
+                data_tmp =  parser_state->base64_content + points_offset_value;
+                b64_size = arrlen(parser_state->base64_content) - points_offset_value;
+
+                base64_outlen = base64_decode((unsigned char*) raw_data, data_tmp, b64_size, &bytes_read);
 
             }
 
@@ -1703,32 +1711,35 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
                                                                                         &last_block_size, &block_sizes_compressed);
 
                 if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { //We read only the header.. need to read the data
-                    base64_decode((unsigned char *) raw_data + base64_outlen,
-                                  parser_state->base64_content + points_offset_value + bytes_read, b64_size,
-                                  &bytes_read);
                     b64_size -= bytes_read;
+                    base64_decode((unsigned char *) raw_data + base64_outlen, data_tmp + bytes_read, b64_size,  &bytes_read);
                 }
 
                 get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->points, header_size, num_blocks, block_size_uncompressed,
                                                         last_block_size, block_sizes_compressed);
             }
-            else
+            else {
                 get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->points, header_size);
+            }
 
             if(is_raw) {
                 raw_data = (source + cells_offset_value);
             }
             else if(is_b64) {
-                base64_outlen = base64_decode((unsigned char*) raw_data, parser_state->base64_content + cells_offset_value, b64_size, &bytes_read);
-                b64_size -= bytes_read;
+
+                data_tmp =  parser_state->base64_content + cells_offset_value;
+                b64_size = arrlen(parser_state->base64_content) - cells_offset_value;
+
+                base64_outlen = base64_decode((unsigned char*) raw_data, data_tmp, b64_size, &bytes_read);
             }
             if (parser_state->compressed) {
                 raw_data_after_blocks_offset = get_block_sizes_from_compressed_vtu_file(raw_data, header_size, &num_blocks, &block_size_uncompressed,
                                                                                         &last_block_size, &block_sizes_compressed);
 
                 if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { //We read only the header.. need to read the data
+                    b64_size -= bytes_read;
                     base64_decode((unsigned char *) raw_data + base64_outlen,
-                                  parser_state->base64_content + cells_offset_value + bytes_read, b64_size,
+                                  data_tmp + bytes_read, b64_size,
                                   &bytes_read);
                 }
 
