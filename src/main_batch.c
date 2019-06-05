@@ -7,11 +7,9 @@
 #include <mpi.h>
 #include <string.h>
 
-#ifdef COMPILE_OPENGL
-#include "draw/draw.h"
+
 #include "single_file_libraries/stb_ds.h"
 
-#endif
 
 struct changed_parameters {
     char *section;
@@ -86,8 +84,9 @@ int main(int argc, char **argv) {
     char *output_folder;
 
     struct string_hash_entry *config_to_change = NULL;
+
     char *entire_config_file = NULL;
-    long config_file_size;
+    unsigned long config_file_size;
 
     if(rank == 0) {
 
@@ -102,7 +101,7 @@ int main(int argc, char **argv) {
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
 
-        entire_config_file = read_entire_file(batch_options->initial_config, &config_file_size);
+        entire_config_file = read_entire_file_with_mmap(batch_options->initial_config, &config_file_size);
 
         if(entire_config_file == NULL) {
             fprintf(stderr, "Error: Can't load the config file %s\n", batch_options->initial_config);
@@ -165,7 +164,7 @@ int main(int argc, char **argv) {
 
             }
 
-            MPI_Send(&config_file_size, 1, MPI_LONG, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&config_file_size, 1, MPI_UNSIGNED_LONG, i, 0, MPI_COMM_WORLD);
             MPI_Send(entire_config_file, (int)config_file_size, MPI_CHAR, i, 0, MPI_COMM_WORLD);
         }
 
@@ -174,6 +173,10 @@ int main(int argc, char **argv) {
     }
 
     else {
+
+        sh_new_arena(config_to_change);
+        shdefault(config_to_change, NULL);
+
         int size_out_folder;
         int num_options;
 
@@ -282,7 +285,7 @@ int main(int argc, char **argv) {
     //Parse the modification directives
     for(int s = simulation_number_start; s < simulation_number_start+num_simulations; s++) {
 
-        for (int p = 0; p < num_par_change; p++) {
+        for (int p = 0; p <= num_par_change; p++) {
             the_grid = new_grid();
             ode_solver = new_ode_solver();
 

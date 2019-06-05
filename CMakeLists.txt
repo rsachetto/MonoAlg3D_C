@@ -14,11 +14,6 @@ project(MonoAlg3D)
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
-IF(MSVC)
-	set(GLUT_INCLUDE_DIR "C:/Users/sache/freeglut/include")
-	SET(GLUT_glut_LIBRARY "C:/Users/sache/freeglut/lib/x64/freeglut.lib")
-endif()
-
 if (CMAKE_VERSION VERSION_LESS "3.9.0")
     # Set only because there are old target_link_libraries() statements in the
     # FindCUDA.cmake file that comes with CMake that error out if the new behavior
@@ -31,7 +26,7 @@ endif()
 IF (CMAKE_VERSION VERSION_LESS "3.1")
     IF (CMAKE_C_COMPILER_ID STREQUAL "GNU")
         SET(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
-    ENDIF(CMAKE_C_COMPILER_ID)
+    ENDIF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 ELSE()
     SET(CMAKE_C_STANDARD 99)
 ENDIF()
@@ -39,14 +34,12 @@ ENDIF()
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
 SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 
-IF(MSVC)
-	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /w" )
-ELSE()
-	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Wall -Wno-unused-function")
-    IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
-        SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer" )
-    ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
-ENDIF()
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Wall -Wno-unused-function")
+
+IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
+    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer" )
+ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
+
 
 FIND_PACKAGE(OpenMP)
 IF (OPENMP_FOUND)
@@ -55,34 +48,25 @@ IF (OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 ENDIF(OPENMP_FOUND)
 
-IF (NOT MSVC)
-    FIND_PACKAGE(CUDA)
-ENDIF()
-IF (CUDA_FOUND AND MSVC AND "${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
-            message(WARNING "You have CUDA installed, but we can't use it unless you put visual studio in 64bit mode.")
-            set(CUDA_FOUND 0)
-ENDIF()
+FIND_PACKAGE(CUDA)
 
 IF (CUDA_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
 
     #windos hack
-	IF (MSVC OR APPLE)
+	IF (APPLE)
         set(CUDA_PROPAGATE_HOST_FLAGS OFF)
        # Grab all the -D flags from CMAKE_CXX_FLAGS so we can pass them
        # to nvcc.
        string(REGEX MATCHALL "-D[^ ]*" FLAGS_FOR_NVCC "${CMAKE_CXX_FLAGS}")
-       IF(MSVC)
-           list(APPEND CUDA_NVCC_FLAGS "${FLAGS_FOR_NVCC} -Xcompiler \"-MDd  ${OpenMP_CXX_FLAGS}\" ")
-       ENDIF()
     ENDIF()
 ENDIF(CUDA_FOUND)
 
 SET(OpenGL_GL_PREFERENCE "GLVND")
 FIND_PACKAGE(OpenGL)
 
-IF(NOT MSVC AND OPENGL_FOUND AND OPENMP_FOUND)
+IF(OPENGL_FOUND AND OPENMP_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
 ENDIF()
 
@@ -95,7 +79,7 @@ ADD_SUBDIRECTORY(src/config)
 ADD_SUBDIRECTORY(src/graph)
 ADD_SUBDIRECTORY(src/vtk_utils)
 
-IF(NOT MSVC AND OPENGL_FOUND AND OPENMP_FOUND)
+IF(OPENGL_FOUND AND OPENMP_FOUND)
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
     ADD_SUBDIRECTORY(src/raylib/src)
@@ -103,33 +87,12 @@ IF(NOT MSVC AND OPENGL_FOUND AND OPENMP_FOUND)
     SET(OPT_DEPS ${OPT_DEPS} draw raylib)
 ENDIF()
 
-IF(MSVC)
-    ADD_SUBDIRECTORY(src/getopt)
-    ADD_SUBDIRECTORY(src/dlfcn-win32)
-    SET(OPT_DEPS ${OPT_DEPS} getopt)
-ENDIF()
-
 IF (CUDA_FOUND)
     ADD_SUBDIRECTORY(src/gpu_utils)
     SET(OPT_DEPS ${OPT_DEPS} gpu_utils)
 ENDIF()
 
-#SET(COMPILE_GUI FALSE)
-#
-#IF(${COMPILE_GUI})
-#    ADD_SUBDIRECTORY(src/libui)
-#    ADD_SUBDIRECTORY(src/fork_pipe)
-    #ADD_EXECUTABLE(MonoAlg3D_GUI src/main_gui.c)
-    #SET(GUI_DEPS raylib)
-    #IF(MSVC)
-    #    SET(GUI_DEPS ${GUI_DEPS} dl)
-    #ENDIF()
-#
-#    ADD_DEPENDENCIES(MonoAlg3D_GUI ${GUI_DEPS} )
-    #TARGET_LINK_LIBRARIES(MonoAlg3D_GUI ${GUI_DEPS})
-#ENDIF()
-
-ADD_EXECUTABLE(MonoAlg3D src/main.c)
+ADD_EXECUTABLE(MonoAlg3D src/main_simulator.c)
 ADD_DEPENDENCIES(MonoAlg3D utils alg solvers ini_parser string graph config ${OPT_DEPS})
 
 FIND_PACKAGE(MPI)
@@ -140,12 +103,9 @@ IF(MPI_C_FOUND)
     TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
 ENDIF(MPI_C_FOUND)
 
-IF(MSVC)
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl)
-    SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
-ELSE()
-    TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl m)
-ENDIF()
+
+TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl m)
+
 
 ADD_SUBDIRECTORY(src/models_library)
 
@@ -161,8 +121,17 @@ ADD_SUBDIRECTORY(src/save_mesh_library)
 ADD_SUBDIRECTORY(src/save_state_library)
 ADD_SUBDIRECTORY(src/restore_state_library)
 ADD_SUBDIRECTORY(src/update_monodomain_library)
+ADD_SUBDIRECTORY(src/xml_parser)
+
+#BUILDING VISUALIZER
+IF(OPENGL_FOUND AND OPENMP_FOUND)
+    ADD_EXECUTABLE(MonoAlg3D_visualizer src/main_visualizer.c)
+    ADD_DEPENDENCIES(MonoAlg3D_visualizer utils config vtk_utils draw)
+    TARGET_LINK_LIBRARIES(MonoAlg3D_visualizer utils config vtk_utils draw raylib)
+ENDIF(OPENGL_FOUND AND OPENMP_FOUND)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
+
 

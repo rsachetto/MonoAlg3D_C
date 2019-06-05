@@ -14,12 +14,7 @@
 #include <math.h>
 #include <time.h>
 
-#ifdef _MSC_VER
-#include <process.h>
-#define getpid _getpid
-#else
 #include <unistd.h>
-#endif
 
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
                                    real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
@@ -919,7 +914,7 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
     free(scar_mesh);
 }
 
-void set_plain_fibrosis_inside_hole (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
+void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
                         const double min_x, const double max_x,\
                         const double min_y, const double max_y,\
                         const double min_z, const double max_z) 

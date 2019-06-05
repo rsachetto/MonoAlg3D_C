@@ -6,11 +6,7 @@
 #include "../utils/file_utils.h"
 #include "../single_file_libraries/stb_ds.h"
 
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 
 #include <string.h>
 
@@ -18,20 +14,11 @@ void init_extra_data_functions(struct extra_data_config *config) {
 
     char *function_name = config->config_data.function_name;
 
-#ifdef _MSC_VER
-	char *default_function = "./shared_libs/default_extra_data.dll";
-#else
 	char *default_function = "./shared_libs/libdefault_extra_data.so";
-#endif
 
     if(config->config_data.library_file_path == NULL) {
-        print_to_stdout_and_file("Using the default library for extra data functions\n");
         config->config_data.library_file_path = strdup(default_function);
         config->config_data.library_file_path_was_set = true;
-    }
-    else {
-        print_to_stdout_and_file("Using %s as ODE extra data lib\n", config->config_data.library_file_path);
-
     }
 
     config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
@@ -65,11 +52,24 @@ struct extra_data_config* new_extra_data_config() {
 
 void print_extra_data_config_values(struct extra_data_config* s) {
 
-    printf("extra_data_function: %s\n",s->config_data.function_name);
-    printf("extra_data_library_file: %s\n",s->config_data.library_file_path);
-    printf("extra_data_config:\n");
+    if(s == NULL) {
+        print_to_stdout_and_file("No extra data configuration.\n");
+        return;
+    }
 
-    STRING_HASH_PRINT_KEY_VALUE(s->config_data.config);
+
+    print_to_stdout_and_file("Extra data ODE function configuration:\n");
+
+    print_to_stdout_and_file("Extra data library: %s\n", s->config_data.library_file_path);
+    print_to_stdout_and_file("Extra data function: %s\n", s->config_data.function_name);
+
+    if(shlen(s->config_data.config) == 1) {
+        print_to_stdout_and_file("Extra data parameter:\n");
+    } else if(shlen(s->config_data.config) > 1) {
+        print_to_stdout_and_file("Extra data parameters:\n");
+    }
+
+    STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data.config);
 }
 
 void free_extra_data_config(struct extra_data_config* s) {

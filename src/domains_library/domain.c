@@ -13,12 +13,7 @@
 #include <assert.h>
 #include <time.h>
 
-#ifdef _MSC_VER
-#include <process.h>
-#define getpid _getpid
-#else
 #include <unistd.h>
-#endif
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
@@ -693,7 +688,7 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
 
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_hole) 
+SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region) 
 {
 
     real_cpu phi = 0.0;
@@ -703,25 +698,25 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_hole)
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
 
     real min_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data.config, "hole_min_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data.config, "region_min_x");
 
     real max_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data.config, "hole_max_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data.config, "region_max_x");
 
     real min_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data.config, "hole_min_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data.config, "region_min_y");
 
     real max_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data.config, "hole_max_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data.config, "region_max_y");
 
     real min_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data.config, "hole_min_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data.config, "region_min_z");
 
     real max_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data.config, "hole_max_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data.config, "region_max_z");
 
     initialize_grid_with_square_mesh(config, the_grid);
-    set_plain_fibrosis_inside_hole(the_grid, phi, seed, min_x, max_x, min_y, max_y, min_z, max_z);
+    set_plain_fibrosis_inside_region(the_grid, phi, seed, min_x, max_x, min_y, max_y, min_z, max_z);
 
     return 1;
 }

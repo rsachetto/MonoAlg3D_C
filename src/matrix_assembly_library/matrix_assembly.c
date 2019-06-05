@@ -892,97 +892,7 @@ ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
     }
 }
 
-ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix) 
-{
-
-    static bool sigma_initialized = false;
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    struct cell_node *grid_cell;
-
-    initialize_diagonal_elements(the_solver, the_grid);
-
-    int i;
-
-    real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
-
-    real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
-
-    real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
-
-    real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
-
-    unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
-
-    real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
-
-    print_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
-
-    // Initialize the seed for the fibrosis
-    srand(seed);
-
-    print_to_stdout_and_file("Using %u as seed\n", seed);
-
-    if (!sigma_initialized)
-    {
-	grid_cell = the_grid->first_cell;
-	while(grid_cell != 0) 
-	{
-
-		if(grid_cell->active) 
-		{
-	    		real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-	    		if(p < phi) 
-			{
-				grid_cell->sigma_x = sigma_x * sigma_factor;
-				grid_cell->sigma_y = sigma_y * sigma_factor;
-				grid_cell->sigma_z = sigma_z * sigma_factor;
-	    		}
-			else
-			{
-				grid_cell->sigma_x = sigma_x;
-	    			grid_cell->sigma_y = sigma_y;
-	    			grid_cell->sigma_z = sigma_z;
-			}
-		}
-		grid_cell = grid_cell->next;
-	}
-
-	sigma_initialized = true;
-    }
-
-    #pragma omp parallel for
-    for(i = 0; i < num_active_cells; i++) {
-
-        // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
-
-        // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
-
-        // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
-
-        // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
-
-        // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
-
-        // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
-    }
-}
-
-ASSEMBLY_MATRIX(fibrotic_hole_with_factor_assembly_matrix) 
+ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix) 
 {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -1005,23 +915,22 @@ ASSEMBLY_MATRIX(fibrotic_hole_with_factor_assembly_matrix)
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
 
     real min_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data.config, "hole_min_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data.config, "region_min_x");
 
     real max_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data.config, "hole_max_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data.config, "region_max_x");
 
     real min_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data.config, "hole_min_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data.config, "region_min_y");
 
     real max_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data.config, "hole_max_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data.config, "region_max_y");
 
     real min_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data.config, "hole_min_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data.config, "region_min_z");
 
     real max_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data.config, "hole_max_z");
-
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data.config, "region_max_z");
 
     bool inside;
 
@@ -1079,6 +988,97 @@ ASSEMBLY_MATRIX(fibrotic_hole_with_factor_assembly_matrix)
         fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
     }
 
+}
+
+ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix) 
+{
+
+    static bool sigma_initialized = false;
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    struct cell_node *grid_cell;
+
+    initialize_diagonal_elements(the_solver, the_grid);
+
+    int i;
+
+    real sigma_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+
+    real sigma_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+
+    real sigma_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+
+    real_cpu phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+
+    unsigned seed = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+
+    real sigma_factor = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
+
+    print_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
+
+    // Initialize the seed for the fibrosis
+    srand(seed);
+
+    print_to_stdout_and_file("Using %u as seed\n", seed);
+
+    if (!sigma_initialized)
+    {
+	    grid_cell = the_grid->first_cell;
+	    while(grid_cell != 0) 
+	    {
+
+		    if(grid_cell->active) 
+		    {
+	    		real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+	    		if (p < phi) 
+			    {
+				    grid_cell->sigma_x = sigma_x * sigma_factor;
+				    grid_cell->sigma_y = sigma_y * sigma_factor;
+				    grid_cell->sigma_z = sigma_z * sigma_factor;
+	    		}
+			    else
+			    {
+				    grid_cell->sigma_x = sigma_x;
+	    			grid_cell->sigma_y = sigma_y;
+	    			grid_cell->sigma_z = sigma_z;
+			    }
+		    }
+		    grid_cell = grid_cell->next;
+    	}
+
+	    sigma_initialized = true;
+    }
+
+    #pragma omp parallel for
+    for(i = 0; i < num_active_cells; i++) 
+    {
+
+        // Computes and designates the flux due to south cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+
+        // Computes and designates the flux due to north cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+
+        // Computes and designates the flux due to east cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+
+        // Computes and designates the flux due to west cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+
+        // Computes and designates the flux due to front cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+
+        // Computes and designates the flux due to back cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+    }
 }
 
 // TODO: The kappas can be different from one cell to another

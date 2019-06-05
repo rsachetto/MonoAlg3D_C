@@ -14,11 +14,7 @@
 typedef float real;
 typedef double real_cpu;
 
-#ifdef _MSC_VER
-#define EXPORT_FN __declspec(dllexport)
-#else
-#define EXPORT_FN 
-#endif
+#define EXPORT_FN
 
 #define ALPHA(beta, cm, dt, dx, dy, dz) ((((beta) * (cm)) / (dt)) * UM2_TO_CM2) * ((dx)*(dy)*(dz))
 

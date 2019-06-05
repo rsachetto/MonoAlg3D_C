@@ -5,11 +5,7 @@
 #include "ode_solver.h"
 
 #include <string.h>
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 #include <assert.h>
 #include "../utils/file_utils.h"
 #include "../config/stim_config.h"
@@ -21,7 +17,6 @@
 #endif
 
 #include "../single_file_libraries/stb_ds.h"
-
 
 
 struct ode_solver* new_ode_solver() {
@@ -91,8 +86,6 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
         exit(1);
     }
 
-    print_to_stdout_and_file("Using %s as model lib\n", solver->model_data.model_library_path);
-
     solver->handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
     if (!solver->handle) {
         fprintf(stderr, "%s\n", dlerror());
@@ -138,18 +131,6 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
         fprintf(stderr, "\nsolve_model_odes_gpu function not found in the provided model library\n");
         exit(1);
     }
-
-
-    free(solver->model_data.model_library_path);
-    //We don't need this anymore...
-    solver->model_data.model_library_path = NULL;
-
-    /*solver->update_gpu_fn = dlsym(solver->handle, "update_gpu_after_refinement");
-    if ((error = dlerror()) != NULL)  {
-        fputs(error, stderr);
-        fprintf(stderr, "update_gpu_after_refinement function not found in the provided model library\n");
-        exit(1);
-    }*/
 #endif
 
 }

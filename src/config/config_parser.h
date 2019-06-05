@@ -8,11 +8,7 @@
 #ifndef MONOALG3D_CONFIG_PARSER_H
 #define MONOALG3D_CONFIG_PARSER_H
 
-#ifdef _MSC_VER
-#include "../getopt/getopt.h"
-#else
 #include <getopt.h>
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -126,13 +122,23 @@ struct batch_options {
     struct string_hash_entry *config_to_change;
 };
 
+struct visualization_options {
+    char *input_folder;
+    char *files_prefix;
+    char *pvd_file;
+    real_cpu max_v, min_v, dt;
+};
+
+
 void display_usage( char** argv );
 void display_batch_usage(char **argv);
 
 struct user_options * new_user_options();
 struct batch_options * new_batch_options();
+struct visualization_options * new_visualization_options();
 void parse_options(int argc, char**argv, struct user_options *user_args);
 void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
+void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
 
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
@@ -140,5 +146,6 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
 void free_user_options(struct user_options *s);
+void free_visualization_options(struct visualization_options * options);
 void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 #endif /* MONOALG3D_CONFIG_PARSER_H */

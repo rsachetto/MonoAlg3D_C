@@ -20,7 +20,7 @@ void set_cell_not_changeable (struct cell_node *c, real_cpu initial_discretizati
 
 void set_plain_fibrosis (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
 
-void set_plain_fibrosis_inside_hole (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
+void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
                         const double min_x, const double max_x,\
                         const double min_y, const double max_y,\
                         const double min_z, const double max_z);

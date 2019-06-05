@@ -44,6 +44,10 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
         sds buffer_log = sdsnew("");
         sds buffer_ini = sdsnew("");
 
+        if((*(options))->save_mesh_config->remove_older_simulation_dir) {
+            remove_directory((*(options))->save_mesh_config->out_dir_name);
+        }
+
         create_dir((*(options))->save_mesh_config->out_dir_name);
         buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", (*(options))->save_mesh_config->out_dir_name);
         open_logfile(buffer_log);
@@ -82,10 +86,11 @@ void free_current_simulation_resources(struct user_options *options, struct mono
     close_logfile();
 }
 
+#ifdef COMPILE_OPENGL
 void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
 
     draw_config->config_name = strdup(options->config_file);
-    draw_config->grid_to_draw = NULL;
+    draw_config->grid_info.grid_to_draw = NULL;
     draw_config->max_v = options->max_v;
     draw_config->min_v = options->min_v;
 
@@ -100,7 +105,11 @@ void init_draw_config(struct draw_config *draw_config, struct user_options *opti
 
     draw_config->exit = false;
     draw_config->restart = false;
+
+    draw_config->draw_type = DRAW_SIMULATION;
+    draw_config->error_message = NULL;
 }
+#endif
 
 int main(int argc, char **argv) {
 

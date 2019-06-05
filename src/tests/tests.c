@@ -334,7 +334,7 @@ int test_perlin_mesh(char* mesh_file, char *start_dx, char* side_length_x, bool 
         else if(binary)
         shput(save_mesh_config->config_data.config, "binary", "yes");
 
-        save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
+        save_mesh_config->save_mesh(0, 0.0, 0.0, save_mesh_config, grid);
 
     }
 
@@ -424,7 +424,7 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
 
         shput(save_mesh_config->config_data.config, "save_pvd", "no");
 
-        save_mesh_config->save_mesh(0, 0.0, save_mesh_config, grid);
+        save_mesh_config->save_mesh(0, 0.0, 0.0, save_mesh_config, grid);
 
     }
 
@@ -543,13 +543,11 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
         cr_assert(lines_gold);
         cr_assert(lines_tested);
 
-        sdsfree(full_path_gold);
-        sdsfree(full_path_tested);
-
         ptrdiff_t n_lines_gold = arrlen(lines_gold);
         ptrdiff_t n_lines_tested= arrlen(lines_tested);
 
         cr_assert_eq(n_lines_gold, n_lines_tested);
+
 
         for(int j = 0; j < n_lines_gold; j++) {
 
@@ -570,12 +568,15 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
             real_cpu value_gold = strtod(gold_values[count_gold-1], NULL);
             real_cpu value_tested = strtod(tested_simulation_values[count_gold-1], NULL);
 
-            cr_assert_float_eq(value_gold, value_tested, 1e-6);
-
+            cr_assert_float_eq(value_gold, value_tested, 1e-3, "Found %lf, Expected %lf on line %d of %s", value_tested, value_gold, i+1, full_path_tested);
             sdsfreesplitres(gold_values, count_gold);
             sdsfreesplitres(tested_simulation_values, count_tested);
         }
+
+        sdsfree(full_path_gold);
+        sdsfree(full_path_tested);
     }
+
 
     return 1;
 

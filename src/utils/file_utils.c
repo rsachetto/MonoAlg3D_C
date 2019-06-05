@@ -2,37 +2,34 @@
 // Created by sachetto on 18/10/17.
 //
 
-#include <stdarg.h>
-
 #include "file_utils.h"
-#include "../string/sds.h"
-#include <stdio.h>
-#include <fcntl.h>
-#include <string.h>
 
-#include <errno.h>
-
+#define STB_DS_IMPLEMENTATION
 #include "../single_file_libraries/stb_ds.h"
 
 
-#ifdef _WIN32
-#include <io.h>
-#include <Windows.h>
-#include <direct.h>
-#include <sys/stat.h>
-#define read _read
-#endif
-
-#ifdef linux
-
+#include "../string/sds.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/stat.h>
 
-#endif
 
 static FILE *logfile = NULL;
+
+char * get_dir_from_path(const char * path) {
+    char *last_slash = NULL;
+    char *parent = NULL;
+    last_slash = strrchr(path, '/');
+    parent = strndup(path, last_slash - path + 1);
+    return parent;
+}
 
 void print_to_stdout_and_file(char const *fmt, ...) {
     va_list ap;
@@ -139,7 +136,40 @@ int cp_file(const char *to, const char *from) {
     return -1;
 }
 
-char *read_entire_file(char *filename, long *size) {
+char *read_entire_file_with_mmap(const char *filename, size_t *size) {
+
+    char *f;
+
+
+    if (!filename) return NULL;
+
+    struct stat s;
+    int fd = open (filename, O_RDONLY);
+
+    if(fd == -1) {
+        return NULL;
+    }
+
+    /* Get the size of the file. */
+    fstat (fd, & s);
+    *size = s.st_size;
+
+    size_t to_page_size = *size;
+
+    int pagesize = getpagesize();
+    to_page_size += pagesize - (to_page_size%pagesize);
+
+    f = (char *) mmap (0, to_page_size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+    close(fd);
+
+    if (f == NULL)
+        return NULL;
+
+    return f;
+}
+
+char *read_entire_file(const char *filename, long *size) {
 
     FILE *infile;
     char *buffer;
@@ -179,59 +209,6 @@ buffer to hold the text */
     return buffer;
 }
 
-#ifdef _WIN32
-// if typedef doesn't exist (msvc, blah)
-typedef intptr_t ssize_t;
-
-ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
-    size_t pos;
-    int c;
-
-    if (lineptr == NULL || stream == NULL || n == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    c = fgetc(stream);
-    if (c == EOF) {
-        return -1;
-    }
-
-    if (*lineptr == NULL) {
-        *lineptr = malloc(128);
-        if (*lineptr == NULL) {
-            return -1;
-        }
-        *n = 128;
-    }
-
-    pos = 0;
-    while(c != EOF) {
-        if (pos + 1 >= *n) {
-            size_t new_size = *n + (*n >> 2);
-            if (new_size < 128) {
-                new_size = 128;
-            }
-            char *new_ptr = realloc(*lineptr, new_size);
-            if (new_ptr == NULL) {
-                return -1;
-            }
-            *n = new_size;
-            *lineptr = new_ptr;
-        }
-
-        ((unsigned char *)(*lineptr))[pos ++] = c;
-        if (c == '\n') {
-            break;
-        }
-        c = fgetc(stream);
-    }
-
-    (*lineptr)[pos] = '\0';
-    return pos;
-}
-#endif
-
 string_array read_lines(const char *filename) {
 
     string_array lines = NULL;
@@ -263,7 +240,6 @@ string_array read_lines(const char *filename) {
 }
 
 
-#ifndef _WIN32
 string_array list_files_from_dir(const char *dir, const char *prefix) {
 
     DIR *dp;
@@ -295,92 +271,68 @@ string_array list_files_from_dir(const char *dir, const char *prefix) {
     closedir(dp);
     return files;
 }
-#endif
 
-#ifdef _WIN32
-bool dir_exists(const char *path)
+/* qsort C-string comparison function */
+static int cstring_cmp(const void *a, const void *b)
 {
-    DWORD ftyp = GetFileAttributesA(path);
-    if (ftyp == INVALID_FILE_ATTRIBUTES)
-        return false;  //something is wrong with your path!
+    char *ia = *((char **)a);
+    char *ib = *((char **)b);
 
-    if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
-        return true;   // this is a directory!
+    int int_a = 0;
+    int int_b = 0;
 
-    return false;    // this is not a directory!
-}
-
-int is_dots(const char* str) {
-    if(strcmp(str,".") && strcmp(str,"..")) return FALSE;
-    return TRUE;
-}
-
-int remove_directory(const char *path) {
-    HANDLE hFind;    // file handle
-    WIN32_FIND_DATA FindFileData;
-
-    char DirPath[MAX_PATH];
-    char FileName[MAX_PATH];
-
-    strcpy(DirPath,path);
-    strcat(DirPath,"\\*");    // searching all files
-    strcpy(FileName,path);
-    strcat(FileName,"\\");
-
-    // find the first file
-    hFind = FindFirstFile(DirPath,&FindFileData);
-    if(hFind == INVALID_HANDLE_VALUE) return FALSE;
-    strcpy(DirPath,FileName);
-
-    bool bSearch = true;
-    while(bSearch) {    // until we find an entry
-        if(FindNextFile(hFind,&FindFileData)) {
-            if(is_dots(FindFileData.cFileName)) continue;
-            strcat(FileName,FindFileData.cFileName);
-            if((FindFileData.dwFileAttributes &
-                FILE_ATTRIBUTE_DIRECTORY)) {
-
-                // we have found a directory, recurse
-                if(!remove_directory(FileName)) {
-                    FindClose(hFind);
-                    return FALSE;    // directory couldn't be deleted
-                }
-                // remove the empty directory
-                RemoveDirectory(FileName);
-                strcpy(FileName,DirPath);
-            }
-            else {
-                if(FindFileData.dwFileAttributes &
-                   FILE_ATTRIBUTE_READONLY)
-                    // change read-only file mode
-                    _chmod(FileName, _S_IWRITE);
-                if(!DeleteFile(FileName)) {    // delete the file
-                    FindClose(hFind);
-                    return FALSE;
-                }
-                strcpy(FileName,DirPath);
-            }
-        }
-        else {
-            // no more files there
-            if(GetLastError() == ERROR_NO_MORE_FILES)
-                bSearch = false;
-            else {
-                // some error occurred; close the handle and return FALSE
-                FindClose(hFind);
-                return FALSE;
-            }
-
-        }
-
+    for(; *ia; ia++) {
+        if(isdigit(*ia))
+            int_a = int_a*10 + *ia - '0';
     }
-    FindClose(hFind);                  // close the file handle
 
-    return RemoveDirectory(path);     // remove the empty directory
+    for(; *ib; ib++) {
+        if(isdigit(*ib))
+            int_b = int_b*10 + *ib - '0';
+    }
 
+    return int_a - int_b;
+    /* strcmp functions works exactly as expected from
+    comparison function */
 }
 
-#else
+
+
+string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {
+
+    DIR *dp;
+
+    string_array files = NULL;
+
+    struct dirent *dirp;
+
+    if ((dp = opendir(dir)) == NULL) {
+        fprintf(stderr, "Error opening %s\n", dir);
+        return NULL;
+    }
+
+    while ((dirp = readdir(dp)) != NULL) {
+
+        char *file_name = strdup(dirp->d_name);
+
+        if (prefix) {
+
+            if (strncmp(prefix, file_name, strlen(prefix)) == 0) {
+                arrput(files, file_name);
+            }
+
+        } else {
+            arrput(files, file_name);
+        }
+    }
+
+    qsort(files, arrlen(files), sizeof(char *), cstring_cmp);
+
+    closedir(dp);
+    return files;
+}
+
+
 bool dir_exists(const char *path) {
     struct stat info;
 
@@ -454,42 +406,6 @@ int remove_directory(const char *path)
     return r;
 }
 
-#endif
-//
-//void create_dir(const char *out_dir) {
-//
-//    //TODO: check for windows dir separators
-//    int dirs_count;
-//
-//    sds *all_dirs = sdssplit(out_dir, "/", &dirs_count);
-//    sds new_dir = sdsempty();
-//
-//    for(int d = 0; d < dirs_count; d++) {
-//
-//        new_dir = sdscat(new_dir, all_dirs[d]);
-//        new_dir = sdscat(new_dir, "/");
-//
-//        if (!dir_exists (new_dir)) {
-//
-//            printf ("%s does not exist! Creating!\n", new_dir);
-//#if defined _MSC_VER
-//            if (_mkdir(out_dir) == -1)
-//#else
-//            if (mkdir(new_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
-//#endif
-//            {
-//
-//                fprintf (stderr, "Error creating directory %s Exiting!\n", new_dir);
-//                exit (EXIT_FAILURE);
-//            }
-//        }
-//    }
-//
-//    sdsfreesplitres(all_dirs, dirs_count);
-//    sdsfree(new_dir);
-//
-//}
-
 void fixpath(char *path)
 {
     for(; *path; ++path)
@@ -498,9 +414,6 @@ void fixpath(char *path)
 }
 
 void create_dir(char *out_dir) {
-
-    //TODO: check why this is not working in windows. It seems that out_dir is not null terminated.
-    //fixpath(out_dir);
 
     if(dir_exists(out_dir)) return;
 
@@ -532,11 +445,8 @@ void create_dir(char *out_dir) {
         if (!dir_exists (dir_to_create)) {
 
             printf ("%s does not exist! Creating!\n", dir_to_create);
-#if defined _MSC_VER
-            if (_mkdir(dir_to_create) == -1)
-#else
-                if (mkdir(dir_to_create, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
-#endif
+
+            if (mkdir(dir_to_create, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
             {
                 fprintf (stderr, "Error creating directory %s Exiting!\n", dir_to_create);
                 exit (EXIT_FAILURE);
@@ -550,4 +460,151 @@ void create_dir(char *out_dir) {
     free(new_dir);
 }
 
+
+/*
+ * Base64 encoding/decoding (RFC1341)
+ * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
+ *
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
+ */
+static const unsigned char base64_table[65] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/**
+ * base64_encode - Base64 encode
+ * @src: Data to be encoded
+ * @len: Length of the data to be encoded
+ * @out_len: Pointer to output length variable, or %NULL if not used
+ * Returns: Allocated buffer of out_len bytes of encoded data,
+ * or %NULL on failure
+ *
+ * Caller is responsible for freeing the returned buffer. Returned buffer is
+ * nul terminated to make it easier to use as a C string. The nul terminator is
+ * not included in out_len.
+ */
+unsigned char * base64_encode(const unsigned char *src, size_t len,
+                              size_t *out_len)
+{
+    unsigned char *out, *pos;
+    const unsigned char *end, *in;
+    size_t olen;
+    int line_len;
+
+    olen = len * 4 / 3 + 4; /* 3-byte blocks to 4-byte */
+    olen += olen / 72; /* line feeds */
+    olen++; /* nul termination */
+    if (olen < len)
+        return NULL; /* integer overflow */
+    out = malloc(olen);
+    if (out == NULL)
+        return NULL;
+
+    end = src + len;
+    in = src;
+    pos = out;
+    line_len = 0;
+    while (end - in >= 3) {
+        *pos++ = base64_table[in[0] >> 2];
+        *pos++ = base64_table[((in[0] & 0x03) << 4) | (in[1] >> 4)];
+        *pos++ = base64_table[((in[1] & 0x0f) << 2) | (in[2] >> 6)];
+        *pos++ = base64_table[in[2] & 0x3f];
+        in += 3;
+        line_len += 4;
+        if (line_len >= 72) {
+            *pos++ = '\n';
+            line_len = 0;
+        }
+    }
+
+    if (end - in) {
+        *pos++ = base64_table[in[0] >> 2];
+        if (end - in == 1) {
+            *pos++ = base64_table[(in[0] & 0x03) << 4];
+            *pos++ = '=';
+        } else {
+            *pos++ = base64_table[((in[0] & 0x03) << 4) |
+                                  (in[1] >> 4)];
+            *pos++ = base64_table[(in[1] & 0x0f) << 2];
+        }
+        *pos++ = '=';
+        line_len += 4;
+    }
+
+    if (line_len)
+        *pos++ = '\n';
+
+    *pos = '\0';
+    if (out_len)
+        *out_len = pos - out;
+    return out;
+}
+
+
+/**
+ * base64_decode - Base64 decode
+ * @src: Data to be decoded
+ * @len: Length of the data to be decoded
+ * @bytes_read: Pointer to the bytes read on the src stream
+ * Returns: out_len bytes of decoded data,
+ * or 0 on failure
+ *
+ * Caller is responsible for allocating the out buffer.
+ */
+size_t base64_decode(unsigned char *out, const char *src, size_t len, size_t *bytes_read)
+{
+    unsigned char dtable[256], *pos, block[4], tmp;
+    size_t i, count;
+    int pad = 0;
+
+    memset(dtable, 0x80, 256);
+    for (i = 0; i < sizeof(base64_table) - 1; i++)
+        dtable[base64_table[i]] = (unsigned char) i;
+    dtable['='] = 0;
+
+    count = 0;
+    for (i = 0; i < len; i++) {
+        if (dtable[src[i]] != 0x80)
+            count++;
+    }
+
+    if (count == 0 || count % 4)
+        return 0;
+
+    pos = out;
+    if (out == NULL)
+        return 0;
+
+    count = 0;
+    for (i = 0; i < len; i++) {
+        tmp = dtable[src[i]];
+        if (tmp == 0x80)
+            continue;
+
+        if (src[i] == '=')
+            pad++;
+        block[count] = tmp;
+        count++;
+        if (count == 4) {
+            *pos++ = (block[0] << 2) | (block[1] >> 4);
+            *pos++ = (block[1] << 4) | (block[2] >> 2);
+            *pos++ = (block[2] << 6) | block[3];
+            count = 0;
+            if (pad) {
+                if (pad == 1)
+                    pos--;
+                else if (pad == 2)
+                    pos -= 2;
+                else {
+                    return 0;
+                }
+                break;
+            }
+        }
+    }
+
+    *bytes_read = i + 1;
+
+    return pos - out;
+}
 

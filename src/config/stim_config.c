@@ -3,11 +3,7 @@
 //
 
 #include "stim_config.h"
-#ifdef _MSC_VER
-#include "../dlfcn-win32/dlfcn.h"
-#else
 #include <dlfcn.h>
-#endif
 #include <string.h>
 #include "../utils/file_utils.h"
 #include "../common_types/common_types.h"
@@ -16,21 +12,13 @@
 
 void init_stim_functions(struct stim_config *config, char* stim_name) {
 
-#ifdef _MSC_VER
-	char *default_library_name = "./shared_libs/default_stimuli.dll";
-#else
 	char *default_library_name = "./shared_libs/libdefault_stimuli.so";
-#endif
 
     char *function_name = config->config_data.function_name;
 
     if(config->config_data.library_file_path == NULL) {
-        print_to_stdout_and_file("Using the default library for stimuli functions for %s\n", stim_name);
         config->config_data.library_file_path = strdup(default_library_name);
         config->config_data.library_file_path_was_set = true;
-    }
-    else {
-        print_to_stdout_and_file("Using %s as stimuli lib for %s\n", config->config_data.library_file_path, stim_name);
     }
 
     config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
@@ -73,15 +61,31 @@ struct stim_config* new_stim_config() {
 }
 
 void print_stim_config_values(struct stim_config* s) {
-    print_to_stdout_and_file("stim_start %lf\n", s->stim_start);
-    print_to_stdout_and_file("stim_duration %lf\n", s->stim_duration);
 
-    if(s->stim_period > 0.0) {
-        print_to_stdout_and_file("stim_period %lf\n", s->stim_period);
+
+    if(s == NULL) {
+        print_to_stdout_and_file("No Stimulus configuration.\n");
+        return;
     }
 
-    print_to_stdout_and_file("stim_current %lf\n", s->stim_current);
-    print_to_stdout_and_file("stim_function %s\n", s->config_data.function_name);
+    print_to_stdout_and_file("Stimulus start: %lf\n",    s->stim_start);
+    print_to_stdout_and_file("Stimulus duration: %lf\n", s->stim_duration);
+    print_to_stdout_and_file("Stimulus current: %lf\n",  s->stim_current);
+    print_to_stdout_and_file("Stimulus library: %s\n",   s->config_data.library_file_path);
+    print_to_stdout_and_file("Stimulus function: %s\n",  s->config_data.function_name);
+
+    struct string_hash_entry *tmp = s->config_data.config;
+
+    if(shlen(tmp) == 1)
+    {
+        print_to_stdout_and_file("Stimulus extra parameter:\n");
+    }
+    else if(shlen(tmp)  > 1)
+    {
+        print_to_stdout_and_file("Stimulus extra parameters:\n");
+    }
+
+    STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
 
 }
 

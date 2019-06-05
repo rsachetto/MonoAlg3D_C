@@ -10,11 +10,23 @@
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 
+static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
-static const char *batch_opt_string = "c:h";
 
-//TODO: we need to document the complex options. See comments below
+static const char *visualization_opt_string = "x:m:d:p:v:h?";
+static const struct option long_visualization_options[] = {
+        {"visualization_max_v", required_argument, NULL, 'x'},
+        {"visualization_min_v", required_argument, NULL, 'm'},
+        {"dt", required_argument, NULL, 'd'},
+        {"prefix", required_argument, NULL, 'p'},
+        {"pvd", required_argument, NULL, 'v'},
+        {"help", no_argument, NULL, 'h'},
+        {NULL, no_argument, NULL, 0}
+    };
+
+
+static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh?";
 static const struct option long_options[] = {
     {"config_file", required_argument, NULL, 'c'},
     {"use_adaptivity", no_argument, NULL, 'a'},
@@ -55,7 +67,6 @@ static const struct option long_options[] = {
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
 
-static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh";
 
 void display_usage(char **argv) {
 
@@ -108,6 +119,19 @@ void display_batch_usage(char **argv) {
     exit(EXIT_FAILURE);
 }
 
+void display_visualization_usage(char **argv) {
+
+    printf("Usage: %s [options] input_folder \n\n", argv[0]);
+    printf("Options:\n");
+    printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
+    printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
+    printf("--dt | -d, dt for the simulation. Default: 0\n");
+    printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
+    printf("--pvd | -v, pvd file. Default: NULL\n");
+    printf("--help | -h. Shows this help and exit \n");
+    exit(EXIT_FAILURE);
+}
+
 void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file) {
     fprintf(stderr,
             "WARNING: option %s in %s was set in the file %s to %s and is being overwritten "
@@ -119,10 +143,32 @@ struct batch_options *new_batch_options() {
     struct batch_options *user_args = (struct batch_options *)malloc(sizeof(struct batch_options));
     user_args->batch_config_file = NULL;
     user_args->initial_config = NULL;
-    user_args->config_to_change = NULL;
     user_args->num_simulations = 0;
 
+    user_args->config_to_change = NULL;
+    sh_new_arena(user_args->config_to_change);
+    shdefault(user_args->config_to_change, NULL);
+
     return user_args;
+}
+
+struct visualization_options *new_visualization_options() {
+    struct visualization_options *options = (struct visualization_options *)malloc(sizeof(struct visualization_options));
+    options->input_folder = NULL;
+    options->max_v = 40.0f;
+    options->min_v = -86.0f;
+    options->dt = 0.0;
+    options->files_prefix = strdup("V_it");
+    options->pvd_file = NULL;
+
+    return options;
+}
+
+void free_visualization_options(struct visualization_options * options) {
+    free(options->input_folder);
+    free(options->files_prefix);
+    free(options->pvd_file);
+    free(options);
 }
 
 struct user_options *new_user_options() {
@@ -471,7 +517,31 @@ void set_save_mesh_config(const char *args, struct save_mesh_config *sm, const c
             }
             free(sm->out_dir_name);
             sm->out_dir_name = strdup(value);
-        } else if(strcmp(key, "function") == 0) {
+        }
+        else if(strcmp(key, "remove_older_simulation") == 0) {
+            if(sm->remove_older_simulation_dir_was_set) {
+
+                if(sm->remove_older_simulation_dir) {
+                    sprintf(old_value, "yes");
+                } else {
+                    sprintf(old_value, "no");
+                }
+
+                issue_overwrite_warning("remove_older_simulation", "save_mesh", old_value, optarg, config_file);
+            }
+            if(strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
+                sm->remove_older_simulation_dir = true;
+            } else if(strcmp(optarg, "false") == 0 || strcmp(optarg, "no") == 0) {
+                sm->remove_older_simulation_dir = false;
+            } else {
+                fprintf(stderr,
+                        "Warning: Invalid value for remove_older_simulation option: %s! Valid options are: true, yes, false, no. "
+                        "Setting the value to false\n",
+                        optarg);
+                sm->remove_older_simulation_dir = false;
+            }
+        }
+        else if(strcmp(key, "function") == 0) {
             if(sm->config_data.function_name_was_set) {
                 issue_overwrite_warning("function", "save_mesh", sm->config_data.function_name, value, config_file);
             }
@@ -581,6 +651,48 @@ void parse_batch_options(int argc, char **argv, struct batch_options *user_args)
     }
 }
 
+void parse_visualization_options(int argc, char **argv, struct visualization_options *user_args) {
+
+    int opt = 0;
+    int option_index;
+
+    opt = getopt_long_only(argc, argv, visualization_opt_string, long_visualization_options, &option_index);
+
+    while(opt != -1) {
+        switch(opt) {
+            case 'x':
+                user_args->max_v = strtod(optarg, NULL);
+                break;
+            case 'm':
+                user_args->min_v = strtod(optarg, NULL);
+                break;
+            case 'd':
+                user_args->dt = strtod(optarg, NULL);
+                break;
+            case 'p':
+                free(user_args->files_prefix);
+                user_args->files_prefix = strdup(optarg);
+                break;
+            case 'v':
+                user_args->pvd_file = strdup(optarg);
+                break;
+            case 'h': /* fall-through is intentional */
+            case '?':
+                display_visualization_usage(argv);
+                break;
+            default:
+                break;
+        }
+
+        opt = getopt_long(argc, argv, batch_opt_string, long_batch_options, &option_index);
+    }
+
+    for (int index = optind; index < argc; index++)
+        user_args->input_folder = strdup(argv[index]);
+
+
+}
+
 void get_config_file(int argc, char **argv, struct user_options *user_args) {
 
     optind = 0;
@@ -592,12 +704,9 @@ void get_config_file(int argc, char **argv, struct user_options *user_args) {
     opt = getopt_long(argc, argv, opt_string, long_options, &option_index);
 
     while(opt != -1) {
-        switch(opt) {
-        case 'c':
+        if(opt == 'c') {
             user_args->config_file = optarg;
             return;
-        default:
-            break;
         }
         opt = getopt_long(argc, argv, opt_string, long_options, &option_index);
     }
@@ -1156,6 +1265,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else if(MATCH_NAME("output_dir")) {
             pconfig->save_mesh_config->out_dir_name = strdup(value);
             pconfig->save_mesh_config->out_dir_name_was_set = true;
+        } else if(MATCH_NAME("remove_older_simulation")) {
+            if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+                pconfig->save_mesh_config->remove_older_simulation_dir = true;
+            } else {
+                pconfig->save_mesh_config->remove_older_simulation_dir = false;
+            }
+            pconfig->save_mesh_config->remove_older_simulation_dir_was_set = true;
         } else if(MATCH_NAME("function")) {
             pconfig->save_mesh_config->config_data.function_name = strdup(value);
             pconfig->save_mesh_config->config_data.function_name_was_set = true;

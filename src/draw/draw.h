@@ -7,11 +7,28 @@
 
 #include "../alg/grid/grid.h"
 #include "../monodomain/ode_solver.h"
+#include "../vtk_utils/vtk_unstructured_grid.h"
 
 #include <omp.h>
 
+#define DRAW_SIMULATION 0
+#define DRAW_FILE 1
+
+#define MIN_VERTICAL_TICKS 4
+#define MAX_VERTICAL_TICKS 20
+
+#define MIN_HORIZONTAL_TICKS 4
+#define MAX_HORIZONTAL_TICKS 20
+
+struct action_potential {
+    real_cpu v;
+    real_cpu t;
+};
+
+typedef struct action_potential * action_potential_array;
+
 struct draw_config {
-    struct grid *grid_to_draw;
+
     real_cpu max_v;
     real_cpu min_v;
     bool grid_only;
@@ -24,6 +41,8 @@ struct draw_config {
     real_cpu time;
     real_cpu final_time;
     real_cpu dt;
+    int step;
+
     char *config_name;
 
     long solver_time;
@@ -36,9 +55,22 @@ struct draw_config {
     long total_config_time;
     long total_cg_it;
 
+    int advance_or_return;
+    int draw_type;
     //If we are compiling this file, openmp is available.
     omp_lock_t draw_lock;
     omp_lock_t sleep_lock;
+
+    struct grid_info {
+        union {
+            struct vtk_unstructured_grid *vtk_grid;
+            struct grid *grid_to_draw;
+        };
+        char *file_name;
+    } grid_info;
+
+    char *error_message;
+
 };
 
 struct draw_config draw_config;

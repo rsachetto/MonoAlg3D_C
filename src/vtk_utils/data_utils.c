@@ -2,10 +2,12 @@
 // Created by sachetto on 01/11/18.
 //
 
-#include "data_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
+
+#include "data_utils.h"
 
 #define COMPRESED_BLOCK_SIZE 1 << 15
 
@@ -61,6 +63,32 @@ void calculate_blocks_and_compress_data(size_t total_data_size_before_compressio
     }
 }
 
+
+size_t uncompress_buffer(unsigned char const* compressed_data,
+                                        size_t compressed_size,
+                                        unsigned char* uncompressed_data,
+                                        size_t uncompressed_size)
+{
+    uLongf us = (uLongf) (uncompressed_size);
+    Bytef* ud = uncompressed_data;
+    const Bytef* cd = compressed_data;
+    uLong cs = (uLong)(compressed_size);
+
+    // Call zlib's uncompress function.
+    if(uncompress(ud, &us, cd, cs) != Z_OK) {
+        printf("Zlib error while uncompressing data.\n");
+        return 0;
+    }
+
+    // Make sure the output size matched that expected.
+    if(us != (uLongf)uncompressed_size ) {
+        printf("Decompression produced incorrect size.\n Expected %zu and got %lu\n", uncompressed_size, us);
+        return 0;
+    }
+
+    return (size_t) us;
+}
+
 size_t compress_buffer(unsigned char const *uncompressed_data, size_t uncompressed_data_size,
                        unsigned char *compressed_data, size_t compressed_buffer_size, int level) {
     uLongf cs = (uLongf)compressed_buffer_size;
@@ -96,6 +124,24 @@ int invert_bytes(int data) {
                   ((data >> 8) & 0xff00) |     // move byte 2 to byte 1
                   ((data << 24) & 0xff000000); // byte 0 to byte 3
     return swapped;
+}
+
+void read_binary_point(void *source, struct point_3d *p) {
+
+    int data = invert_bytes(*(int *)source);
+    p->x = *(float *)&(data);
+
+    source+=4;
+
+    data = invert_bytes(*(int *)source);
+    p->y = *(float *)&(data);
+
+    source+=4;
+
+    data = invert_bytes(*(int *)source);
+    p->z = *(float *)&(data);
+
+
 }
 
 sds write_binary_point(sds output_string, struct point_3d *p) {
@@ -134,4 +180,62 @@ sds write_binary_line (sds output_string, struct line *l)
     output_string = sdscatlen(output_string, &swapped, sizeof(int));
 
     return output_string;
+}
+
+size_t get_block_sizes_from_compressed_vtu_file(char *raw_data, size_t header_size, uint64_t *num_blocks, uint64_t *block_size_uncompressed, uint64_t *last_block_size, uint64_t  **block_sizes_compressed) {
+    size_t offset = 0;
+    *num_blocks = 0;
+    memcpy(num_blocks, raw_data, header_size);
+    raw_data += header_size;
+    offset += header_size;
+
+    *block_size_uncompressed = 0;
+    memcpy(block_size_uncompressed, raw_data, header_size);
+    raw_data += header_size;
+    offset += header_size;
+
+    *last_block_size = 0;
+    memcpy(last_block_size, raw_data, header_size);
+    raw_data += header_size;
+    offset += header_size;
+
+    *block_sizes_compressed = (uint64_t*)calloc(*num_blocks, sizeof(uint64_t));
+
+    for(int i = 0; i < *num_blocks; i++) {
+        memcpy(*block_sizes_compressed + i, raw_data, header_size);
+        uint64_t tmp = 0;
+        memcpy(&tmp, raw_data, header_size);
+        raw_data += header_size;
+        offset += header_size;
+    }
+
+    return offset;
+}
+
+
+void get_data_block_from_compressed_vtu_file(char *raw_data, void* values, size_t header_size, uint64_t num_blocks, uint64_t block_size_uncompressed, uint64_t last_block_size, uint64_t  *block_sizes_compressed) {
+
+    unsigned char* uncompressed_data = (unsigned char *)values;
+    unsigned char const* compressed_data = (unsigned char const*) raw_data;
+
+    for(int i = 0; i < num_blocks; i++) {
+        size_t uncompressed_size = block_size_uncompressed;
+        if(i == num_blocks - 1 && last_block_size != 0) {
+            uncompressed_size = last_block_size;
+        }
+
+        uncompress_buffer(compressed_data, block_sizes_compressed[i], uncompressed_data, uncompressed_size);
+        uncompressed_data += uncompressed_size;
+        compressed_data += block_sizes_compressed[i];
+    }
+
+    free(block_sizes_compressed);
+}
+
+void get_data_block_from_uncompressed_binary_vtu_file(char *raw_data, void* values, size_t header_size) {
+    uint64_t block_size = 0;
+    memcpy(&block_size, raw_data, header_size);
+    raw_data += header_size;
+    memcpy(values, raw_data, block_size);
+
 }
