@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <map>
 
 #include <cstdio>
 #include <cstdlib>
@@ -27,16 +28,13 @@
 #include "../utils/utils.h"
 
 #include "cell.h"
-#include "control_volume.h"
-#include "cell_data.h"
 
 // Size of the stencil used to calculate the propagation velocity
 static const uint32_t OFFSET = 5;
 
-struct tissue
+class Tissue
 {
-    std::string *folder_path;
-
+public:
     uint32_t num_cells_in_x;
     uint32_t num_cells_in_y;
 
@@ -46,45 +44,53 @@ struct tissue
 
     uint32_t print_rate;
 
-    uint32_t total_num_cells;
-    struct cell *cells;
+    double bounds[6];
+
+    uint32_t num_cells;
+    Cell *cells;
+public:
+    Tissue (const double dt, const double side_length_x, const double side_length_y,\
+            const double dx, const double dy, const uint32_t print_rate,\
+            const double min_x, const double max_x,\
+            const double min_y, const double max_y,\
+            const double min_z, const double max_z);
+    void print ();
+    void read_cells_from_vtu (vtkUnstructuredGrid *unstructured_grid);
 };
 
-struct tissue* new_tissue (const double dt, const double side_length_x, const double side_length_y,\
-                        const double dx, const double dy, const uint print_rate);
+void read_data_from_vtu (Tissue *the_tissue, const std::string filename);
+void read_cells_from_vtu (Tissue *the_tissue, vtkUnstructuredGrid *unstructured_grid);
 
+void get_vertex_positions_from_cell(vtkHexahedron *hexahedron,\
+    double p0[], double p1[], double p2[], double p3[], double p4[], double p5[], double p6[], double p7[]);
+void calculate_cell_middle_position(double center[], const double p0[], const double p1[], const double p3[], const double p4[]);
+void calculate_propagation_velocity (Tissue *the_tissue);
 
-void set_cells_position_with_vtu_file (struct tissue *the_tissue,\
-                        const std::string folder_path, const std::string filename);
-void set_control_volumes_middle_positions(struct tissue *the_tissue, struct control_volume *volumes);
-void set_activation_times (struct tissue *the_tissue, const std::string folder_path,\
-                    std::vector<struct vtu_file> vtu_files);
-void set_conduction_velocity (struct tissue *the_tissue);
-
-void load_activation_times (struct tissue *the_tissue, const std::string activation_map_filename);
-
-void read_transmembrane_potential_from_vtu(struct cell_data *the_data, const std::string folder_path,\
-                    std::vector<struct vtu_file> vtu_files);
-
-
-void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *the_cell,\
+void calculate_instantenous_velocity (Tissue *the_tissue, Cell *the_cell,\
                     const uint32_t i, const uint32_t j);
-double center_finite_difference (struct tissue *the_tissue,\
+double center_finite_difference (Tissue *the_tissue,\
                     const uint32_t i, const uint32_t j, const char axis);
-double forward_finite_difference (struct tissue *the_tissue,\
+double forward_finite_difference (Tissue *the_tissue,\
                     const uint32_t i, const uint32_t j, const char axis);
-double backward_finite_difference (struct tissue *the_tissue,\
+double backward_finite_difference (Tissue *the_tissue,\
                     const uint32_t i, const uint32_t j, const char axis);
 
+void insert_point_into_map (std::map<Point_3D,uint32_t> &points_map,\
+                            vtkSmartPointer<vtkPoints> &points, const double p[],\
+                            uint32_t *num_points_inside_bounds);
 
-void write_scalar_map_to_vtu (struct tissue *the_tissue,\
-                const std::string folder_path, const std::string filename, const std::string scalar_name);
-
-int sort_by_position (const void *a, const void *b);
-int sort_by_index (const void *a, const void *b);
+uint32_t get_point_index_from_map (std::map<Point_3D,uint32_t> points_map, const double p[]);
 
 bool check_position (const uint32_t i, const uint32_t j, const uint32_t num_cells_in_x, const uint32_t num_cells_in_y);
 
-void print_cells (struct cell *the_cells, const uint32_t total_num_cells);
+void write_scalar_maps_inside_bounds_to_vtu (Tissue *the_tissue);
+
+void write_scalar_maps_inside_bounds_to_vtu_v2 (Tissue *the_tissue);
+
+void insert_point_into_array (vtkSmartPointer<vtkPoints> &points, const double p[]);
+
+// Sorting functions
+int sort_by_position (const void *a, const void *b);
+int sort_by_index (const void *a, const void *b);
 
 #endif //MONOALG3D_UTILS_H_H

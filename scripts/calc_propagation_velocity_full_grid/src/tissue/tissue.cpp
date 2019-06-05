@@ -1,160 +1,105 @@
 #include "tissue.h"
 
-struct tissue* new_tissue (const double dt, const double side_length_x, const double side_length_y,\
-                        const double dx, const double dy, const uint32_t print_rate)
+void read_data_from_vtu (Tissue *the_tissue, const std::string filename)
 {
-    struct tissue *result = (struct tissue*)malloc(sizeof(struct tissue));
-
-    result->num_cells_in_x = nearbyint(side_length_x / dx);
-    result->num_cells_in_y = nearbyint(side_length_y / dy);
-
-    result->dt = dt;
-    result->dx = dx;
-    result->dy = dy;
-
-    result->print_rate = print_rate;
-
-    return result;
-}
-
-void set_control_volumes_middle_positions(struct tissue *the_tissue, struct control_volume *volumes)
-{
-    uint32_t total_num_cells = the_tissue->total_num_cells;
-    struct cell *the_cells = the_tissue->cells;
-
-    for (uint32_t i = 0; i < total_num_cells; i++)
-    {
-        double center[3];
-
-        calc_control_volume_middle_position(volumes[i],center);
-
-        set_new_cell(&the_cells[i],i,center[0],center[1],center[2]);
-
-    }
-}
-
-void set_cells_position_with_vtu_file (struct tissue *the_tissue,\
-                        const std::string folder_path, const std::string filename)
-{
-    std::string name = folder_path + "/" + filename;
-
-    // Read all the data from the file
-    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader =
-        vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-    reader->SetFileName(name.c_str());
+    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+    reader->SetFileName(filename.c_str());
     reader->Update();
 
     vtkUnstructuredGrid *unstructured_grid = reader->GetOutput();
 
-    // Update the total number of cells on the tissue
-    the_tissue->total_num_cells = unstructured_grid->GetNumberOfCells();
-
-    // Allocate memory for the cells and control volumes of the tissue
-    struct control_volume *volumes = (struct control_volume*)malloc(sizeof(struct control_volume)*the_tissue->total_num_cells);
-    the_tissue->cells = (struct cell*)malloc(sizeof(struct cell)*the_tissue->total_num_cells);
-
-    // Read the vertex positions from each control volume on the tissue 
-    read_control_volumes_from_vtu(volumes,unstructured_grid);
-
-    // Update the (x,y,z) positions of each cell in the tissue 
-    // with middle position from each control volume
-    set_control_volumes_middle_positions(the_tissue,volumes);
-
-    free(volumes);
+    // Read the data from every cell in grid and store into 'cells' array 
+    the_tissue->read_cells_from_vtu(unstructured_grid);
 
 }
 
-void set_activation_times (struct tissue *the_tissue, const std::string folder_path,\
-                    std::vector<struct vtu_file> vtu_files)
-{   
+void Tissue::read_cells_from_vtu (vtkUnstructuredGrid *unstructured_grid)
+{
+    num_cells = unstructured_grid->GetNumberOfCells();
+    cells = new Cell[num_cells];
 
-    uint32_t total_num_cells = the_tissue->total_num_cells;
-    uint32_t total_num_steps = vtu_files.size();
-    double dt = the_tissue->dt;
-    uint32_t print_rate = the_tissue->print_rate;
+    // Positions from the vertex of each cell
+    double p0[3];
+    double p1[3];
+    double p2[3];
+    double p3[3];
+    double p4[3];
+    double p5[3];
+    double p6[3];
+    double p7[3];
 
-    struct cell_data *data = new_cell_data(total_num_cells,total_num_steps);
+    // Center position from each cell
+    double center[3];
 
-    read_transmembrane_potential_from_vtu(data,folder_path,vtu_files);
-
-    // For each cell calculate the timestep where the maximum derivative occurs
-    for (uint32_t i = 0; i < total_num_cells; i++)
+    // Read cells positions
+    for (uint32_t i = 0; i < num_cells; i++)
     {
-        uint32_t max_timestep = -1;
-        double max_dvdt = __DBL_MIN__;
+        vtkCell *cell = unstructured_grid->GetCell(i);
 
-        for (uint32_t k = 0; k < total_num_steps-1; k++)
-        {
-            double dvdt = (data[k+1].vms[i] - data[k].vms[i]) / dt;
+        vtkHexahedron *hexahedron = dynamic_cast<vtkHexahedron*>(cell);
 
-            if (dvdt > max_dvdt)
-            {
-                max_dvdt = dvdt;
-                max_timestep = k;
-            }
-        }
+        get_vertex_positions_from_cell(hexahedron,p0,p1,p2,p3,p4,p5,p6,p7);
 
-        //printf("Cell %u -- Max timestep = %u\n",i,max_timestep);
-        
-        // Get the correct time where the maximum derivative occurs for the current cell
-        the_tissue->cells[i].at = max_timestep * dt * print_rate;
-         
+        calculate_cell_middle_position(center,p0,p1,p3,p4);
+
+        // Set the parameters of each Cell in the array
+        cells[i].setIndex(i);
+        cells[i].setCenter(center);
+        cells[i].setVertex(p0,p1,p2,p3,p4,p5,p6,p7);
     }
 
-    free_cell_data(data);
-
-    printf("\n[!] Calculated activation time of every cell in the tissue !\n");
-
-}
-
-void load_activation_times (struct tissue *the_tissue, const std::string activation_map_filename)
-{
-    printf("\n[!] Loading activation map of the tissue from '%s' ...\n",activation_map_filename.c_str());
-
+    // Read cells scalar values
     std::string array_name = "Scalars_";
 
-    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-
-    // Load with a Reader
-    reader->SetFileName(activation_map_filename.c_str());
-    reader->Update();
-
-    // Get the scalars from the 'vtkUnstructuredGrid' as a 'vtkFloatArray'
-    vtkUnstructuredGrid *unstructured_grid = reader->GetOutput();
-    vtkIdType total_num_cells = unstructured_grid->GetNumberOfCells();
-    vtkSmartPointer<vtkFloatArray> array = 
-            vtkFloatArray::SafeDownCast(unstructured_grid->GetCellData()->GetArray(array_name.c_str()));
+    vtkSmartPointer<vtkFloatArray> array = vtkFloatArray::SafeDownCast(unstructured_grid->GetCellData()->GetArray(array_name.c_str()));
 
     if(array)
     {
-        // Pass through the transmembrane of each cell on the tissue for the current timestep
-        for(int i = 0; i < total_num_cells; i++)
+        // Pass through the activation time of each cell on the tissue
+        for(int i = 0; i < num_cells; i++)
         {
-            double value;
-            value = array->GetValue(i);
+            double value = array->GetValue(i);
 
-            the_tissue->cells[i].at = value;
-            //printf("%u = %g\n",i,value);
+            cells[i].setActivationTime(value);
         }
     }
     else
     {
-        printf("[-] ERROR! Could not found scalar array '%s' on file '%s'\n",array_name.c_str(),activation_map_filename.c_str());
+        printf("[-] ERROR! Could not found scalar array '%s' on 'vtkUnstructuredGrid'\n",array_name.c_str());
         exit(EXIT_FAILURE);
     }
 }
 
-void set_conduction_velocity (struct tissue *the_tissue)
+void get_vertex_positions_from_cell(vtkHexahedron *hexahedron,\
+    double p0[], double p1[], double p2[], double p3[], double p4[], double p5[], double p6[], double p7[])
 {
-    struct cell *cells = the_tissue->cells;
-    uint32_t total_num_cells = the_tissue->total_num_cells;
+    hexahedron->GetPoints()->GetPoint(0, p0);
+    hexahedron->GetPoints()->GetPoint(1, p1);
+    hexahedron->GetPoints()->GetPoint(2, p2);
+    hexahedron->GetPoints()->GetPoint(3, p3);
+    hexahedron->GetPoints()->GetPoint(4, p4);
+    hexahedron->GetPoints()->GetPoint(5, p5);
+    hexahedron->GetPoints()->GetPoint(6, p6);
+    hexahedron->GetPoints()->GetPoint(7, p7);
+}
+
+void calculate_cell_middle_position(double center[], const double p0[], const double p1[], const double p3[], const double p4[])
+{
+    center[0] = (p0[0] + p1[0]) / 2.0;
+    center[1] = (p0[1] + p3[1]) / 2.0;
+    center[2] = (p0[2] + p4[2]) / 2.0;
+}
+
+void calculate_propagation_velocity (Tissue *the_tissue)
+{
+    Cell *cells = the_tissue->cells;
+    uint32_t num_cells = the_tissue->num_cells;
     uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
     uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
 
     // Sort the cells by (x, y, z)
-    qsort(cells,total_num_cells,sizeof(struct cell),sort_by_position);
-
-    //print_cells(cells,total_num_cells);
+    qsort(cells,num_cells,sizeof(Cell),sort_by_position);
+    //print_cells(cells,num_cells);
 
     for (uint32_t i = 0; i < num_cells_in_y; i++)
     {
@@ -162,67 +107,69 @@ void set_conduction_velocity (struct tissue *the_tissue)
         {
             uint32_t k = i * num_cells_in_y + j;
 
-            set_boundaries(&cells[k],i,j,num_cells_in_x,num_cells_in_y);
+            cells[k].setBoundaries(i,j,num_cells_in_x,num_cells_in_y);
 
             calculate_instantenous_velocity(the_tissue,&cells[k],i,j);
         }
     }
 
     // Sort the cells back its original state
-    qsort(cells,total_num_cells,sizeof(struct cell),sort_by_index);
+    qsort(cells,num_cells,sizeof(Cell),sort_by_index);
 
-    printf("\n[!] Calculated conduction velocity of every cell in the tissue !\n");
+    printf("[!] Calculated conduction velocity of every cell in the tissue !\n");
+}
+
+Tissue::Tissue (const double dt, const double side_length_x, const double side_length_y,\
+            const double dx, const double dy, const uint32_t print_rate,\
+            const double min_x, const double max_x,\
+            const double min_y, const double max_y,\
+            const double min_z, const double max_z)
+{
+    this->num_cells_in_x = nearbyint(side_length_x / dx);
+    this->num_cells_in_y = nearbyint(side_length_y / dy);
+
+    this->dt = dt;
+    this->dx = dx;
+    this->dy = dy;
+
+    this->bounds[0] = min_x;
+    this->bounds[1] = max_x;
+    this->bounds[2] = min_y;
+    this->bounds[3] = max_y;
+    this->bounds[4] = min_z;
+    this->bounds[5] = max_z;
+
+    this->print_rate = print_rate;
 
 }
 
-void read_transmembrane_potential_from_vtu(struct cell_data *the_data, const std::string folder_path,\
-                    std::vector<struct vtu_file> vtu_files)
+void Tissue::print ()
 {
-    printf("\n[!] Reading transmembrane potential of every cell in the tissue ...\n");
-
-    std::string array_name = "Scalars_";
-    uint32_t total_num_steps = the_data->num_steps;
-
-    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-
-    // For each timestep read the transmembrane potential of the corresponding 'vtu' file
-    for (uint32_t k = 0; k < total_num_steps; k++)
+    printf("======================== TISSUE ============================\n");
+    printf("Total number of cells = %u\n",num_cells);
+    printf("Number of cells in x = %u\n",num_cells_in_x);
+    printf("Number of cells in y = %u\n",num_cells_in_y);
+    printf("dt = %g\n",dt);
+    printf("dx = %g\n",dx);
+    printf("dy = %g\n",dy);
+    printf("print_rate = %u\n",print_rate);
+    printf("****** BOUNDS ******\n");
+    printf("min_x = %g\n",bounds[0]);
+    printf("max_x = %g\n",bounds[1]);
+    printf("min_y = %g\n",bounds[2]);
+    printf("max_y = %g\n",bounds[3]);
+    printf("min_z = %g\n",bounds[4]);
+    printf("max_z = %g\n",bounds[5]);
+    printf("****** CELLS ******\n");
+    for (uint32_t i = 0; i < num_cells; i++)
     {
-        // Build the name of path_name of the file
-        std::string name = folder_path + "/" + vtu_files[k].name;
-
-        // Load with a Reader
-        reader->SetFileName(name.c_str());
-        reader->Update();
-
-        // Get the scalars from the 'vtkUnstructuredGrid' as a 'vtkFloatArray'
-        vtkUnstructuredGrid *unstructured_grid = reader->GetOutput();
-        vtkIdType total_num_cells = unstructured_grid->GetNumberOfCells();
-        vtkSmartPointer<vtkFloatArray> array = 
-                vtkFloatArray::SafeDownCast(unstructured_grid->GetCellData()->GetArray(array_name.c_str()));
-    
-        if(array)
-        {
-            // Pass through the transmembrane of each cell on the tissue for the current timestep
-            for(int i = 0; i < total_num_cells; i++)
-            {
-                double value;
-                value = array->GetValue(i);
-
-                the_data[k].vms[i] = value;
-                //printf("%u = %g\n",i,value);
-            }
-        }
-        else
-        {
-            printf("[-] ERROR! Could not found scalar array '%s' on file '%s'\n",array_name.c_str(),name.c_str());
-            exit(EXIT_FAILURE);
-        }
+        cells[i].print();
     }
 
+    printf("======================== TISSUE ============================\n");
 }
 
-void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *the_cell,\
+void calculate_instantenous_velocity (Tissue *the_tissue, Cell *the_cell,\
                     const uint32_t i, const uint32_t j)
 {
     // Gradient of the activation time
@@ -302,21 +249,17 @@ void calculate_instantenous_velocity (struct tissue *the_tissue, struct cell *th
 
 }
 
-double center_finite_difference (struct tissue *the_tissue,\
+double center_finite_difference (Tissue *the_tissue,\
                     const uint32_t i, const uint32_t j, const char axis)
 {
 
-    struct cell *cells = the_tissue->cells;
+    Cell *cells = the_tissue->cells;
     uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
     uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
     double dx = the_tissue->dx;
     double dy = the_tissue->dy;
 
     // Check if the neighbour cells are out of the grid
-    //bool north_ok = true;
-    //bool east_ok = true;
-    //bool south_ok = true;
-    //bool west_ok = true;
     bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
     bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
     bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
@@ -335,21 +278,15 @@ double center_finite_difference (struct tissue *the_tissue,\
     west = (i+OFFSET) * num_cells_in_y + j;
     north = i * num_cells_in_y + (j-OFFSET);
     south = i * num_cells_in_y + (j+OFFSET);
-    
+
     if (north_ok && east_ok && south_ok && west_ok)
     {
         if (axis == 'x')
         {
-            east = (i-OFFSET) * num_cells_in_y + j;
-            west = (i+OFFSET) * num_cells_in_y + j;
-
             result = (cells[east].at - cells[west].at) / (2.0*OFFSET*dx);
         }
         else if (axis == 'y')
         {
-            north = i * num_cells_in_y + (j-OFFSET);
-            south = i * num_cells_in_y + (j+OFFSET);
-
             result = (cells[north].at - cells[south].at) / (2.0*OFFSET*dy);
         }
         else
@@ -363,12 +300,24 @@ double center_finite_difference (struct tissue *the_tissue,\
         result = -1.0;
     }
     
-
     return result;
 }
 
-double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, const uint32_t j, const char axis)
+double forward_finite_difference (Tissue *the_tissue,\
+                            const uint32_t i, const uint32_t j, const char axis)
 {
+    Cell *cells = the_tissue->cells;
+    uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
+    uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
+    double dx = the_tissue->dx;
+    double dy = the_tissue->dy;
+
+    // Check if the neighbour cells are out of the grid
+    bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
+    bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
+    bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
+    bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
+
     double result;
 
     uint32_t center;
@@ -377,36 +326,20 @@ double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, c
     uint32_t south;
     uint32_t west;
 
-    struct cell *cells = the_tissue->cells;
-    uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
-    uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
-    double dx = the_tissue->dx;
-    double dy = the_tissue->dy;
-
-    // Check if the neighbour cells are out of the grid
-    //bool north_ok = true;
-    //bool east_ok = true;
-    //bool south_ok = true;
-    //bool west_ok = true;
-    bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
-    bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
-    bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
-    bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
+    center = i * num_cells_in_y + j;
+    east = (i-OFFSET) * num_cells_in_y + j;
+    west = (i+OFFSET) * num_cells_in_y + j;
+    north = i * num_cells_in_y + (j-OFFSET);
+    south = i * num_cells_in_y + (j+OFFSET);
 
     if (north_ok && east_ok && south_ok && west_ok)
     {
         if (axis == 'x')
         {
-            center = i * num_cells_in_y + j;
-            west = (i+OFFSET) * num_cells_in_y + j;
-
             result = (cells[west].at - cells[center].at) / (dx);
         }
         else if (axis == 'y')
         {
-            center = i * num_cells_in_y + j;
-            south = i * num_cells_in_y + (j+OFFSET);
-
             result = (cells[south].at - cells[center].at) / (dy);
         }
         else
@@ -414,19 +347,30 @@ double forward_finite_difference (struct tissue *the_tissue, const uint32_t i, c
             printf("[-] ERROR! On 'forward_finite_difference', invalid axis!\n");
             exit(EXIT_FAILURE);
         }
-    }
+    }  
     else
     {
         result = -1.0;
     }
-
+    
     return result;
 }
 
-double backward_finite_difference (struct tissue *the_tissue,\
+double backward_finite_difference (Tissue *the_tissue,\
                     const uint32_t i, const uint32_t j, const char axis)
 {
-    double result;
+
+    Cell *cells = the_tissue->cells;
+    uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
+    uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
+    double dx = the_tissue->dx;
+    double dy = the_tissue->dy;
+
+    // Check if the neighbour cells are out of the grid
+    bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
+    bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
+    bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
+    bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
 
     uint32_t center;
     uint32_t north;
@@ -434,36 +378,16 @@ double backward_finite_difference (struct tissue *the_tissue,\
     uint32_t south;
     uint32_t west;
 
-    struct cell *cells = the_tissue->cells;
-    uint32_t num_cells_in_x = the_tissue->num_cells_in_x;
-    uint32_t num_cells_in_y = the_tissue->num_cells_in_y;
-    double dx = the_tissue->dx;
-    double dy = the_tissue->dy;
-
-    // Check if the neighbour cells are out of the grid
-    //bool north_ok = true;
-    //bool east_ok = true;
-    //bool south_ok = true;
-    //bool west_ok = true;
-    bool north_ok = check_position(i,j-OFFSET,num_cells_in_x,num_cells_in_y);
-    bool east_ok = check_position(i-OFFSET,j,num_cells_in_x,num_cells_in_y);
-    bool south_ok = check_position(i,j+OFFSET,num_cells_in_x,num_cells_in_y);
-    bool west_ok = check_position(i+OFFSET,j,num_cells_in_x,num_cells_in_y);
+    double result;
 
     if (north_ok && east_ok && south_ok && west_ok)
     {
         if (axis == 'x')
         {
-            center = i * num_cells_in_y + j;
-            east = (i-OFFSET) * num_cells_in_y + j;
-
             result = (cells[center].at - cells[east].at) / (dx);
         }
         else if (axis == 'y')
         {
-            center = i * num_cells_in_y + j;
-            north = i * num_cells_in_y + (j-OFFSET);
-
             result = (cells[center].at - cells[north].at) / (dy);
         }
         else
@@ -480,85 +404,257 @@ double backward_finite_difference (struct tissue *the_tissue,\
     return result;
 }
 
-void write_scalar_map_to_vtu (struct tissue *the_tissue,\
-                const std::string folder_path, const std::string filename, const std::string scalar_name)
+// This version uses a unique map to store the points
+void write_scalar_maps_inside_bounds_to_vtu (Tissue *the_tissue)
 {
+    Cell *cells = the_tissue->cells;
+    uint32_t num_cells = the_tissue->num_cells;
 
-    std::string name = folder_path + "/" + filename;
+    double center[3];
 
-    // Read all the data from the file
-    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader =
-        vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-    reader->SetFileName(name.c_str());
-    reader->Update();
+    double min_x = the_tissue->bounds[0];
+    double max_x = the_tissue->bounds[1];
+    double min_y = the_tissue->bounds[2];
+    double max_y = the_tissue->bounds[3];
+    double min_z = the_tissue->bounds[4];
+    double max_z = the_tissue->bounds[5];
 
-    vtkUnstructuredGrid *unstructured_grid = reader->GetOutput();
+    // Map to store the numbering of the points in a unique way
+    std::map<Point_3D,uint32_t> points_map;
 
-    uint32_t total_num_cells = the_tissue->total_num_cells;
-    struct cell *cells = the_tissue->cells;
+    // Array to store all the points inside the bounds
+    uint32_t num_points_inside_bounds = 0;
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
-    // Set the output name
-    std::string output_filename;
-    if (scalar_name == "activation_time" || scalar_name == "at" || scalar_name == "a")
-        output_filename = "outputs/activation_time_map.vtu";
-    else if (scalar_name == "conduction_velocity" || scalar_name == "cv" || scalar_name == "c")
-        output_filename = "outputs/conduction_velocity_map.vtu";
-    else
+    // Array to store all the cells inside the bounds
+    vtkSmartPointer<vtkCellArray> cell_array = vtkSmartPointer<vtkCellArray>::New();
+
+    // Arrays to store the activation time and conduction velocity values
+    vtkSmartPointer<vtkFloatArray> at_values = vtkSmartPointer<vtkFloatArray>::New();
+    vtkSmartPointer<vtkFloatArray> cv_values = vtkSmartPointer<vtkFloatArray>::New();
+
+    // For each cell check which ones are inside the bounded region
+    for (uint32_t i = 0; i < num_cells; i++)
     {
-        printf("[-] ERROR! Invalid scalar_name '%s'\n",scalar_name.c_str());
-        exit(EXIT_FAILURE);
+        center[0] = cells[i].x;
+        center[1] = cells[i].y;
+        center[2] = cells[i].z;
+
+        if (is_inside_bounds(center,min_x,max_x,min_y,max_y,min_z,max_z))
+        {
+            // Get a reference for each vertex from the cell
+            double *p0 = cells[i].p0;
+            double *p1 = cells[i].p1;
+            double *p2 = cells[i].p2;
+            double *p3 = cells[i].p3;
+            double *p4 = cells[i].p4;
+            double *p5 = cells[i].p5;
+            double *p6 = cells[i].p6;
+            double *p7 = cells[i].p7;
+
+            // Try to insert each point from the cell into the map
+            insert_point_into_map(points_map,points,p0,&num_points_inside_bounds);
+            insert_point_into_map(points_map,points,p1,&num_points_inside_bounds);
+            insert_point_into_map(points_map,points,p2,&num_points_inside_bounds);
+            insert_point_into_map(points_map,points,p3,&num_points_inside_bounds);
+            insert_point_into_map(points_map,points,p4,&num_points_inside_bounds);
+            insert_point_into_map(points_map,points,p5,&num_points_inside_bounds);
+            insert_point_into_map(points_map,points,p6,&num_points_inside_bounds);
+            insert_point_into_map(points_map,points,p7,&num_points_inside_bounds);
+
+            uint32_t id0;
+            uint32_t id1;
+            uint32_t id2;
+            uint32_t id3;
+            uint32_t id4;
+            uint32_t id5;
+            uint32_t id6;
+            uint32_t id7;
+
+            // Get the index from the points of each vertex from the cell
+            id0 = get_point_index_from_map(points_map,p0);
+            id1 = get_point_index_from_map(points_map,p1);
+            id2 = get_point_index_from_map(points_map,p2);
+            id3 = get_point_index_from_map(points_map,p4);
+            id4 = get_point_index_from_map(points_map,p4);
+            id5 = get_point_index_from_map(points_map,p5);
+            id6 = get_point_index_from_map(points_map,p6);
+            id7 = get_point_index_from_map(points_map,p7);
+
+            // Build a Hexahedron cell
+            vtkSmartPointer<vtkHexahedron> hexahedron = vtkSmartPointer<vtkHexahedron>::New();
+            hexahedron->GetPointIds()->SetId(0, id0);
+            hexahedron->GetPointIds()->SetId(1, id1);
+            hexahedron->GetPointIds()->SetId(2, id2);
+            hexahedron->GetPointIds()->SetId(3, id3);
+            hexahedron->GetPointIds()->SetId(4, id4);
+            hexahedron->GetPointIds()->SetId(5, id5);
+            hexahedron->GetPointIds()->SetId(6, id6);
+            hexahedron->GetPointIds()->SetId(7, id7);
+
+            // Add the cell on the cell array
+            cell_array->InsertNextCell(hexahedron);
+
+            // Insert the cell values into the arrays
+            at_values->InsertNextValue(cells[i].at);
+            cv_values->InsertNextValue(cells[i].cv);
+        }
     }
 
-    // Copy the conduction velocity from the tissue structure to a <vtkFloatArray>
-    double value;
-    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
-    
-    for (uint32_t i = 0; i < total_num_cells; i++)
-    {
-        if (scalar_name == "activation_time" || scalar_name == "at" || scalar_name == "a")
-        {
-            values->InsertNextValue(cells[i].at);
-        }
-        else if (scalar_name == "conduction_velocity" || scalar_name == "cv" || scalar_name == "c")
-        {
-            values->InsertNextValue(cells[i].cv);
-        }
-            
-        else
-        {
-            printf("[-] ERROR! Invalid scalar_name '%s'\n",scalar_name.c_str());
-            exit(EXIT_FAILURE);
-        }
-    }
+    vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid_new = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    unstructured_grid_new->SetPoints(points);
+    unstructured_grid_new->SetCells(VTK_HEXAHEDRON, cell_array);
+    unstructured_grid_new->GetCellData()->SetScalars(at_values);
 
-    // Set the conduction velocity data as the scalars of the CellData from the vtkUnstructuredGrid
-    unstructured_grid->GetCellData()->SetScalars(values);
-    
-    // Write the new grid to a VTU file
+    printf("[+] Writing clipped activation map on '%s'\n","outputs/activation_time_map.vtu");
     vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-    writer->SetFileName(output_filename.c_str());
-    writer->SetInputData(unstructured_grid);
-    int sucess = writer->Write();
+    writer->SetFileName("outputs/activation_time_map.vtu");
+    writer->SetInputData(unstructured_grid_new);
+    writer->Write();
+
+    printf("[+] Writing clipped conduction velocity map on '%s'\n","outputs/conduction_velocity_map.vtu");
+    unstructured_grid_new->GetCellData()->SetScalars(cv_values);
+    writer->SetFileName("outputs/conduction_velocity_map.vtu");
+    writer->Write();
+}
+
+// This version adds all the points inside the array without checking if it is already there
+void write_scalar_maps_inside_bounds_to_vtu_v2 (Tissue *the_tissue)
+{
+    Cell *cells = the_tissue->cells;
+    uint32_t num_cells = the_tissue->num_cells;
+
+    double center[3];
+
+    double min_x = the_tissue->bounds[0];
+    double max_x = the_tissue->bounds[1];
+    double min_y = the_tissue->bounds[2];
+    double max_y = the_tissue->bounds[3];
+    double min_z = the_tissue->bounds[4];
+    double max_z = the_tissue->bounds[5];
+
+    // Array to store all the points inside the bounds
+    uint32_t num_points_inside_bounds = 0;
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+
+    // Array to store all the cells inside the bounds
+    vtkSmartPointer<vtkCellArray> cell_array = vtkSmartPointer<vtkCellArray>::New();
+
+    // Arrays to store the activation time and conduction velocity values
+    vtkSmartPointer<vtkFloatArray> at_values = vtkSmartPointer<vtkFloatArray>::New();
+    vtkSmartPointer<vtkFloatArray> cv_values = vtkSmartPointer<vtkFloatArray>::New();
+
+    // For each cell check which ones are inside the bounded region
+    for (uint32_t i = 0; i < num_cells; i++)
+    {
+        center[0] = cells[i].x;
+        center[1] = cells[i].y;
+        center[2] = cells[i].z;
+
+        if (is_inside_bounds(center,min_x,max_x,min_y,max_y,min_z,max_z))
+        {
+            // Get a reference for each vertex from the cell
+            double *p0 = cells[i].p0;
+            double *p1 = cells[i].p1;
+            double *p2 = cells[i].p2;
+            double *p3 = cells[i].p3;
+            double *p4 = cells[i].p4;
+            double *p5 = cells[i].p5;
+            double *p6 = cells[i].p6;
+            double *p7 = cells[i].p7;
+
+            // Insert each point from the cell into the points array
+            insert_point_into_array(points,p0);
+            insert_point_into_array(points,p1);
+            insert_point_into_array(points,p2);
+            insert_point_into_array(points,p3);
+            insert_point_into_array(points,p4);
+            insert_point_into_array(points,p5);
+            insert_point_into_array(points,p6);
+            insert_point_into_array(points,p7);
+
+            // Build a Hexahedron cell
+            vtkSmartPointer<vtkHexahedron> hexahedron = vtkSmartPointer<vtkHexahedron>::New();
+            hexahedron->GetPointIds()->SetId(0, num_points_inside_bounds);
+            hexahedron->GetPointIds()->SetId(1, num_points_inside_bounds+1);
+            hexahedron->GetPointIds()->SetId(2, num_points_inside_bounds+2);
+            hexahedron->GetPointIds()->SetId(3, num_points_inside_bounds+3);
+            hexahedron->GetPointIds()->SetId(4, num_points_inside_bounds+4);
+            hexahedron->GetPointIds()->SetId(5, num_points_inside_bounds+5);
+            hexahedron->GetPointIds()->SetId(6, num_points_inside_bounds+6);
+            hexahedron->GetPointIds()->SetId(7, num_points_inside_bounds+7);
+
+            // Add the cell on the cell array
+            cell_array->InsertNextCell(hexahedron);
+
+            // Insert the cell values into the arrays
+            at_values->InsertNextValue(cells[i].at);
+            cv_values->InsertNextValue(cells[i].cv);
+
+            num_points_inside_bounds += 8;
+        }
+    }
+
+    vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid_new = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    unstructured_grid_new->SetPoints(points);
+    unstructured_grid_new->SetCells(VTK_HEXAHEDRON, cell_array);
+    unstructured_grid_new->GetCellData()->SetScalars(at_values);
+
+    printf("[+] Writing clipped activation map on '%s'\n","outputs/activation_time_map.vtu");
+    vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+    writer->SetFileName("outputs/activation_time_map.vtu");
+    writer->SetInputData(unstructured_grid_new);
+    writer->Write();
+
+    printf("[+] Writing clipped conduction velocity map on '%s'\n","outputs/conduction_velocity_map.vtu");
+    unstructured_grid_new->GetCellData()->SetScalars(cv_values);
+    writer->SetFileName("outputs/conduction_velocity_map.vtu");
+    writer->Write();
+}
+
+void insert_point_into_map (std::map<Point_3D,uint32_t> &points_map,\
+                            vtkSmartPointer<vtkPoints> &points, const double p[],\
+                            uint32_t *num_points_inside_bounds)
+{
+    Point_3D point(p[0],p[1],p[2]);
+
+    if (points_map.find(point) == points_map.end())
+    {
+        points_map.insert(std::pair<Point_3D,uint32_t>(point,*num_points_inside_bounds));
+        
+        points->InsertNextPoint(p[0],p[1],p[2]);
+        
+        *num_points_inside_bounds = *num_points_inside_bounds + 1;
+    }
+}
+
+void insert_point_into_array (vtkSmartPointer<vtkPoints> &points, const double p[])
+{
+    Point_3D point(p[0],p[1],p[2]);
+
+    points->InsertNextPoint(p[0],p[1],p[2]);
+}
+
+uint32_t get_point_index_from_map (std::map<Point_3D,uint32_t> points_map, const double p[])
+{
+    std::map<Point_3D,uint32_t>::iterator it;
     
-    if ((scalar_name == "activation_time" || scalar_name == "at" || scalar_name == "a") && (sucess))
-        printf("\n[+] Activation time map write into '%s' file!\n",output_filename.c_str());
-    else if ((scalar_name == "conduction_velocity" || scalar_name == "cv" || scalar_name == "c") && sucess)
-        printf("\n[+] Conduction velocity map write into '%s' file!\n",output_filename.c_str());
+    Point_3D point(p[0],p[1],p[2]);
+
+    it = points_map.find(point); 
+    if (it != points_map.end())
+        return it->second;
     else
     {
-        if (!sucess)
-            printf("[-] ERROR! Cannot open output file '%s'! Check if the folder 'outputs' exists!\n",output_filename.c_str());
-        else
-            printf("[-] ERROR! Invalid scalar_name '%s'\n",scalar_name.c_str());
+        printf("[-] ERROR! Point (%g,%g,%g) not found in the points map!\n",p[0],p[1],p[2]);
         exit(EXIT_FAILURE);
     }
-    
 }
 
 int sort_by_position (const void *a, const void *b)
 {
-    struct cell *c1 = (struct cell *)a;
-    struct cell *c2 = (struct cell *)b;
+    Cell *c1 = (Cell*)a;
+    Cell *c2 = (Cell*)b;
 
     if (c1->x < c2->x)
         return true;
@@ -592,8 +688,8 @@ int sort_by_position (const void *a, const void *b)
 
 int sort_by_index (const void *a, const void *b)
 {
-    struct cell *c1 = (struct cell *)a;
-    struct cell *c2 = (struct cell *)b;
+    Cell *c1 = (Cell*)a;
+    Cell *c2 = (Cell*)b;
 
     if (c1->id > c2->id)
         return true;
@@ -607,14 +703,4 @@ bool check_position (const uint32_t i, const uint32_t j, const uint32_t num_cell
         return true;
     else
         return false;
-}
-
-void print_cells (struct cell *the_cells, const uint32_t total_num_cells)
-{
-
-    for (uint32_t i = 0; i < total_num_cells; i++)
-    {
-        printf("%u -- Cell %u -- (%g,%g,%g)\n",i,the_cells[i].id,\
-                                the_cells[i].x,the_cells[i].y,the_cells[i].z);
-    }
 }

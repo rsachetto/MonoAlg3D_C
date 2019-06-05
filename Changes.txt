@@ -1,44 +1,27 @@
-1) Merged Sachetto changes since 22/04/2019
-    - Fill discretization matrix with different sigmas is working fine for the default case
-    - Each 'struct cell' now has a (sigma_x,sigma_y,sigma_z) 
+1) Merged Sachetto changes since 05/06/2019
+    - New base64 encoding 
+    - New 'save_activation_time' function on the save_mesh library 
 
-2) New features
-    - New mixed celular models
-        + A new "extra_library" has been added (extra_mixed_models)
-        + This library is responsible for deciding which celular model of each cell on the grid (mask_functions) 
-        + New examples for testing mixed celular models have been added 
-    - Different sigmas
-        + Simulations where we had cells with different sigmas are now working properly
-        + New "source_sink_mismatch" simulation with different sigmas has been added
+2) New simulations
+    - Elnaz:
+        + elnaz_plain_mesh_fibrotic_region:
+    Simulation where we specify a fibrotic region inside the tissue and cover this area with 
+    fibrotic cells based on the 'phi' parameter.
+        + elnaz_plain_mesh_spiral:
+    Simulation where we are trying to generate a spiral wave using the TenTusscher 2004 epi model
+        + elnaz_plain_mesh_tentusscher:
+    Simulation where we test several celular models in order to compare the activation times.
 
-2) New scripts
-    - New script to calculate the APD based on Elnaz's algorithm
-        + Works with multiples AP's by passing the pacing period
-        + We can now set the percentage of the APD we want
-
-    - New script to calculate the APD of specific cells in the grid (scripts/calc_apd_multiple_cells)
-    - New script to calculate the APD of all the cells in the grid (scripts/calc_apd_full_grid) 
-    - New script to plot the APD error as a VTU file
-    - New script for the butterfly plot
-
-3) New celular model
-    - New Mitchell & Shaeffer 2003
-    - New mixed celular models
-        + Mitchell & Shaeffer + FitzHugh-Nagumo
-        + TenTusscher Epicardium + TenTusscher Myocardium
-
-4) New stimulus 
-    - New concave stimulus
-    
-5) New assembly matrix function
-    - source_sink_discretization_matrix_with_different_sigma
-
-6) New domain function
-    - initialize_grid_with_plain_source_sink_fibrotic_mesh
-
-7) New simulations
-    - Source-Sink simulation
-    - Plain mesh Ohara & Rudy 2011 simulation
+    - Pedro:
+        + pedro_plain_mesh_fibrotic_region_with_slow_conductivity
+    Simulation where we can specify a fibrotic region and also change the conductivity of the
+    cells inside this area by setting a 'sigma_factor' parameter.
+        + pedro_scientific_reports_fig_4a
+    Simulation where we change all the cells that have fibrosis on the original simulation of the
+    Nature paper to cells where their conductivities are decreased by a certain factor.
  
-
+3) New scripts
+    - New version of the script to calculate propagation velocity of the whole grid using an activation map
+    - New script to plot the APD of the cells which are within a line over the tissue
+    - New script to calculate the absolute error between two VTU files.
 
