@@ -6,6 +6,7 @@
 #define MONOALG3D_DRAW_H
 
 #include "../alg/grid/grid.h"
+#include "../alg/cell/cell.h"
 #include "../monodomain/ode_solver.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
 

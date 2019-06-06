@@ -17,6 +17,7 @@
 
 #include "../vtk_utils/vtk_unstructured_grid.h"
 #include "../vtk_utils/vtk_polydata_grid.h"
+#include "../libraries_common/common_data_structures.h"
 
 char *file_prefix;
 bool binary = false;
@@ -436,9 +437,8 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
 SAVE_MESH(save_with_activation_times) {
 
-    //save_as_vtu(iteration_count, current_t, last_t, config, the_grid);
-
     save_as_text_or_binary(iteration_count, current_t, last_t, config, the_grid);
+
     float time_threshold = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data.config, "time_threshold");
 
@@ -446,7 +446,7 @@ SAVE_MESH(save_with_activation_times) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = create_base_name("activation_info", iteration_count, "txt");
+    sds base_name = create_base_name("activation_info", 0, "txt");
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     static struct point_hash_entry *last_time_v = NULL;
@@ -476,7 +476,7 @@ SAVE_MESH(save_with_activation_times) {
 
     while(grid_cell != 0) {
 
-        if(grid_cell->active) {
+        if( grid_cell->active || ( grid_cell->mesh_extra_info && ( FIBROTIC(grid_cell) || BORDER_ZONE(grid_cell) ) ) ) {
             center_x = grid_cell->center_x;
             center_y = grid_cell->center_y;
             center_z = grid_cell->center_z;
@@ -488,33 +488,32 @@ SAVE_MESH(save_with_activation_times) {
             p.y = center_y;
             p.z = center_z;
 
-            dx = grid_cell->dx/2.0;
-            dy = grid_cell->dy/2.0;
-            dz = grid_cell->dz/2.0;
+            dx = grid_cell->dx / 2.0;
+            dy = grid_cell->dy / 2.0;
+            dz = grid_cell->dz / 2.0;
 
-            fprintf(act_file, "%g,%g,%g,%g,%g,%g ", center_x, center_y, center_z, dx, dy, dz);
+            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d ", center_x, center_y, center_z, dx, dy, dz, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
+
             float last_v = hmget(last_time_v, p);
 
             int n_activations = (int) hmget(num_activations, p);
-            float *activation_times_array = (float*) hmget(activation_times, p);
+            float *activation_times_array = (float *) hmget(activation_times, p);
 
             int act_times_len = arrlen(activation_times_array);
 
-            if(current_t == 0.0f) {
+            if (current_t == 0.0f) {
                 hmput(last_time_v, p, v);
-            }
-            else {
-                if( (last_v < 0.0f)  && (v >= 0.0f) ) {
+            } else {
+                if ((last_v < 0.0f) && (v >= 0.0f)) {
 
-                    if(act_times_len == 0) {
+                    if (act_times_len == 0) {
                         n_activations++;
                         hmput(num_activations, p, n_activations);
-                        arrput(activation_times_array, current_t);
+                                arrput(activation_times_array, current_t);
                         hmput(activation_times, p, activation_times_array);
-                    }
-                    else {
-                        float last_act_time = activation_times_array[act_times_len-1];
-                        if(current_t - last_act_time > time_threshold) {
+                    } else {
+                        float last_act_time = activation_times_array[act_times_len - 1];
+                        if (current_t - last_act_time > time_threshold) {
                             n_activations++;
                             hmput(num_activations, p, n_activations);
                             arrput(activation_times_array, current_t);
@@ -527,14 +526,15 @@ SAVE_MESH(save_with_activation_times) {
 
             }
 
-            fprintf(act_file, "%d [ ",  n_activations);
+            fprintf(act_file, "%d [ ", n_activations);
 
-            for(int i = 0; i < arrlen(activation_times_array); i++) {
-                fprintf(act_file, "%lf ",  activation_times_array[i]);
+            for (int i = 0; i < arrlen(activation_times_array); i++) {
+                fprintf(act_file, "%lf ", activation_times_array[i]);
             }
             fprintf(act_file, "]\n");
 
         }
+
         grid_cell = grid_cell->next;
     }
 

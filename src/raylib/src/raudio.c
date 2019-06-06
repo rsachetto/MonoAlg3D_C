@@ -46,7 +46,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2014-2019 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2013-2019 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -457,7 +457,7 @@ static void MixAudioFrames(float *framesOut, const float *framesIn, ma_uint32 fr
                   float *frameOut = framesOut + (iFrame*device.playback.channels);
             const float *frameIn  = framesIn  + (iFrame*device.playback.channels);
 
-            frameOut[iChannel] += frameIn[iChannel]*masterVolume*localVolume;
+            frameOut[iChannel] += (frameIn[iChannel]*masterVolume*localVolume);
         }
     }
 }
@@ -525,7 +525,7 @@ void InitAudioDevice(void)
     TraceLog(LOG_INFO, "Audio channels: %d -> %d", device.playback.channels, device.playback.internalChannels);
     TraceLog(LOG_INFO, "Audio sample rate: %d -> %d", device.sampleRate, device.playback.internalSampleRate);
     TraceLog(LOG_INFO, "Audio buffer size: %d", device.playback.internalBufferSizeInFrames);
-    
+
     isAudioInitialized = MA_TRUE;
 }
 
@@ -567,7 +567,7 @@ void SetMasterVolume(float volume)
 // Create a new audio buffer. Initially filled with silence
 AudioBuffer *CreateAudioBuffer(ma_format format, ma_uint32 channels, ma_uint32 sampleRate, ma_uint32 bufferSizeInFrames, AudioBufferUsage usage)
 {
-    AudioBuffer *audioBuffer = (AudioBuffer *)calloc(sizeof(*audioBuffer) + (bufferSizeInFrames*channels*ma_get_bytes_per_sample(format)), 1);
+    AudioBuffer *audioBuffer = (AudioBuffer *)RL_CALLOC(sizeof(*audioBuffer) + (bufferSizeInFrames*channels*ma_get_bytes_per_sample(format)), 1);
     if (audioBuffer == NULL)
     {
         TraceLog(LOG_ERROR, "CreateAudioBuffer() : Failed to allocate memory for audio buffer");
@@ -587,19 +587,19 @@ AudioBuffer *CreateAudioBuffer(ma_format format, ma_uint32 channels, ma_uint32 s
     dspConfig.pUserData = audioBuffer;
     dspConfig.allowDynamicSampleRate = MA_TRUE;    // <-- Required for pitch shifting.
     ma_result result = ma_pcm_converter_init(&dspConfig, &audioBuffer->dsp);
-    
+
     if (result != MA_SUCCESS)
     {
         TraceLog(LOG_ERROR, "CreateAudioBuffer() : Failed to create data conversion pipeline");
-        free(audioBuffer);
+        RL_FREE(audioBuffer);
         return NULL;
     }
 
-    audioBuffer->volume = 1;
-    audioBuffer->pitch = 1;
-    audioBuffer->playing = 0;
-    audioBuffer->paused = 0;
-    audioBuffer->looping = 0;
+    audioBuffer->volume = 1.0f;
+    audioBuffer->pitch = 1.0f;
+    audioBuffer->playing = false;
+    audioBuffer->paused = false;
+    audioBuffer->looping = false;
     audioBuffer->usage = usage;
     audioBuffer->bufferSizeInFrames = bufferSizeInFrames;
     audioBuffer->frameCursorPos = 0;
@@ -623,7 +623,7 @@ void DeleteAudioBuffer(AudioBuffer *audioBuffer)
     }
 
     UntrackAudioBuffer(audioBuffer);
-    free(audioBuffer);
+    RL_FREE(audioBuffer);
 }
 
 // Check if an audio buffer is playing
@@ -702,7 +702,7 @@ void SetAudioBufferVolume(AudioBuffer *audioBuffer, float volume)
 {
     if (audioBuffer == NULL)
     {
-        TraceLog(LOG_ERROR, "SetAudioBufferVolume() : No audio buffer");
+        TraceLog(LOG_WARNING, "SetAudioBufferVolume() : No audio buffer");
         return;
     }
 
@@ -714,7 +714,7 @@ void SetAudioBufferPitch(AudioBuffer *audioBuffer, float pitch)
 {
     if (audioBuffer == NULL)
     {
-        TraceLog(LOG_ERROR, "SetAudioBufferPitch() : No audio buffer");
+        TraceLog(LOG_WARNING, "SetAudioBufferPitch() : No audio buffer");
         return;
     }
 
@@ -863,7 +863,7 @@ Sound LoadSoundFromWave(Wave wave)
 // Unload wave data
 void UnloadWave(Wave wave)
 {
-    if (wave.data != NULL) free(wave.data);
+    if (wave.data != NULL) RL_FREE(wave.data);
 
     TraceLog(LOG_INFO, "Unloaded wave data from RAM");
 }
@@ -1017,7 +1017,7 @@ void WaveFormat(Wave *wave, int sampleRate, int sampleSize, int channels)
         return;
     }
 
-    void *data = malloc(frameCount*channels*(sampleSize/8));
+    void *data = RL_MALLOC(frameCount*channels*(sampleSize/8));
 
     frameCount = (ma_uint32)ma_convert_frames(data, formatOut, channels, sampleRate, wave->data, formatIn, wave->channels, wave->sampleRate, frameCountIn);
     if (frameCount == 0)
@@ -1030,7 +1030,7 @@ void WaveFormat(Wave *wave, int sampleRate, int sampleSize, int channels)
     wave->sampleSize = sampleSize;
     wave->sampleRate = sampleRate;
     wave->channels = channels;
-    free(wave->data);
+    RL_FREE(wave->data);
     wave->data = data;
 }
 
@@ -1039,7 +1039,7 @@ Wave WaveCopy(Wave wave)
 {
     Wave newWave = { 0 };
 
-    newWave.data = malloc(wave.sampleCount*wave.sampleSize/8*wave.channels);
+    newWave.data = RL_MALLOC(wave.sampleCount*wave.sampleSize/8*wave.channels);
 
     if (newWave.data != NULL)
     {
@@ -1064,11 +1064,11 @@ void WaveCrop(Wave *wave, int initSample, int finalSample)
     {
         int sampleCount = finalSample - initSample;
 
-        void *data = malloc(sampleCount*wave->sampleSize/8*wave->channels);
+        void *data = RL_MALLOC(sampleCount*wave->sampleSize/8*wave->channels);
 
         memcpy(data, (unsigned char *)wave->data + (initSample*wave->channels*wave->sampleSize/8), sampleCount*wave->channels*wave->sampleSize/8);
 
-        free(wave->data);
+        RL_FREE(wave->data);
         wave->data = data;
     }
     else TraceLog(LOG_WARNING, "Wave crop range out of bounds");
@@ -1078,7 +1078,7 @@ void WaveCrop(Wave *wave, int initSample, int finalSample)
 // NOTE: Returned sample values are normalized to range [-1..1]
 float *GetWaveData(Wave wave)
 {
-    float *samples = (float *)malloc(wave.sampleCount*wave.channels*sizeof(float));
+    float *samples = (float *)RL_MALLOC(wave.sampleCount*wave.channels*sizeof(float));
 
     for (unsigned int i = 0; i < wave.sampleCount; i++)
     {
@@ -1100,7 +1100,7 @@ float *GetWaveData(Wave wave)
 // Load music stream from file
 Music LoadMusicStream(const char *fileName)
 {
-    Music music = (MusicData *)malloc(sizeof(MusicData));
+    Music music = (MusicData *)RL_MALLOC(sizeof(MusicData));
     bool musicLoaded = true;
 
 #if defined(SUPPORT_FILEFORMAT_OGG)
@@ -1240,7 +1240,7 @@ Music LoadMusicStream(const char *fileName)
         else if (music->ctxType == MUSIC_MODULE_MOD) jar_mod_unload(&music->ctxMod);
     #endif
 
-        free(music);
+        RL_FREE(music);
         music = NULL;
 
         TraceLog(LOG_WARNING, "[%s] Music file could not be opened", fileName);
@@ -1274,7 +1274,7 @@ void UnloadMusicStream(Music music)
     else if (music->ctxType == MUSIC_MODULE_MOD) jar_mod_unload(&music->ctxMod);
 #endif
 
-    free(music);
+    RL_FREE(music);
 }
 
 // Start music playing (open stream)
@@ -1335,7 +1335,7 @@ void StopMusicStream(Music music)
         case MUSIC_AUDIO_MP3: drmp3_seek_to_pcm_frame(&music->ctxMp3, 0); break;
 #endif
 #if defined(SUPPORT_FILEFORMAT_XM)
-        case MUSIC_MODULE_XM: /* TODO: Restart XM context */ break;
+        case MUSIC_MODULE_XM: jar_xm_reset(music->ctxXm); break;
 #endif
 #if defined(SUPPORT_FILEFORMAT_MOD)
         case MUSIC_MODULE_MOD: jar_mod_seek_start(&music->ctxMod); break;
@@ -1357,7 +1357,7 @@ void UpdateMusicStream(Music music)
     unsigned int subBufferSizeInFrames = ((AudioBuffer *)music->stream.audioBuffer)->bufferSizeInFrames/2;
 
     // NOTE: Using dynamic allocation because it could require more than 16KB
-    void *pcm = calloc(subBufferSizeInFrames*music->stream.channels*music->stream.sampleSize/8, 1);
+    void *pcm = RL_CALLOC(subBufferSizeInFrames*music->stream.channels*music->stream.sampleSize/8, 1);
 
     int samplesCount = 0;    // Total size of data steamed in L+R samples for xm floats, individual L or R for ogg shorts
 
@@ -1427,7 +1427,7 @@ void UpdateMusicStream(Music music)
     }
 
     // Free allocated pcm data
-    free(pcm);
+    RL_FREE(pcm);
 
     // Reset audio stream for looping
     if (streamEnding)
@@ -1750,7 +1750,7 @@ static Wave LoadWAV(const char *fileName)
                 else
                 {
                     // Allocate memory for data
-                    wave.data = malloc(wavData.subChunkSize);
+                    wave.data = RL_MALLOC(wavData.subChunkSize);
 
                     // Read in the sound data into the soundData variable
                     fread(wave.data, wavData.subChunkSize, 1, wavFile);
@@ -1891,7 +1891,7 @@ static Wave LoadOGG(const char *fileName)
         float totalSeconds = stb_vorbis_stream_length_in_seconds(oggFile);
         if (totalSeconds > 10) TraceLog(LOG_WARNING, "[%s] Ogg audio length is larger than 10 seconds (%f), that's a big file in memory, consider music streaming", fileName, totalSeconds);
 
-        wave.data = (short *)malloc(wave.sampleCount*wave.channels*sizeof(short));
+        wave.data = (short *)RL_MALLOC(wave.sampleCount*wave.channels*sizeof(short));
 
         // NOTE: Returns the number of samples to process (be careful! we ask for number of shorts!)
         int numSamplesOgg = stb_vorbis_get_samples_short_interleaved(oggFile, info.channels, (short *)wave.data, wave.sampleCount*wave.channels);
