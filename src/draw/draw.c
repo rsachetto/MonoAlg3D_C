@@ -15,6 +15,11 @@
 #include "../raylib/src/raymath.h"
 #include "../raylib/src/rlgl.h"
 
+#define RAYGUI_IMPLEMENTATION
+#define RAYGUI_RICONS_SUPPORT
+#define RAYGUI_TEXTBOX_EXTENDED
+#include "../raylib/src/raygui.h"
+
 static bool calc_center = false;
 static bool one_selected = false;
 static bool draw_selected_ap_text = false;
@@ -25,14 +30,33 @@ static bool c_pressed = false;
 static bool show_info_box = true;
 static bool show_end_info_box = true;
 static bool show_mesh_info_box = true;
+static bool show_selection_box = false;
 
 Vector3 max_size;
 Vector3 min_size;
 
 #define DOUBLE_CLICK_DELAY 0.5 //seconds
+double mouse_timer = -1;
 
 double selected_time = 0.0;
-Vector3 current_selected;
+Vector3 current_selected = {FLT_MAX, FLT_MAX, FLT_MAX};
+
+char center_x_text[128] = { 0 };
+char center_y_text[128] = { 0 };
+char center_z_text[128] = { 0 };
+
+float center_x;
+float center_y;
+float center_z;
+
+
+// General variables
+Vector2 mousePos = { 0 };
+Vector2 windowPos;
+bool dragWindow = false;
+
+#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))  // Get number of elements in array `A`. Total size of `A` should be known at compile time.
+
 
 #define WIDER_TEXT "------------------------------------------------------"
 
@@ -71,98 +95,24 @@ static inline Color get_color(real_cpu value)
     return result;
 }
 
-static bool have_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
-
-    struct cell_node *black_neighbor_cell;
-
-    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
-    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-
-    struct transition_node *white_neighbor_cell;
-
-    if(neighbour_grid_cell_level > grid_cell->cell_data.level)
-    {
-        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
-        {
-            while(true)
-            {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
-                {
-                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
-                    if(white_neighbor_cell->single_connector == NULL)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
-                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-                    }
-                }
-                else
-                {
-                    black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-                    return black_neighbor_cell->active;
-                }
-            }
-        }
-        else {
-            black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-            return black_neighbor_cell->active;
-        }
-
-    }
-    else
-    {
-        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
-        {
-            while(true)
-            {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
-                {
-                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
-                    if(white_neighbor_cell->single_connector == NULL)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        neighbour_grid_cell = white_neighbor_cell->single_connector;
-                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-                    }
-                }
-                else
-                {
-                    black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-                    return black_neighbor_cell->active;
-                }
-            }
-        }
-        else {
-            black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-            return black_neighbor_cell->active;
-        }
-    }
-}
-
 static bool skip_node(struct cell_node *grid_cell) {
 
-    if(!have_neighbour(grid_cell, grid_cell->north) ) {
+    if(!cell_has_neighbour(grid_cell, grid_cell->north) ) {
         return false;
     }
-    else if(!have_neighbour(grid_cell, grid_cell->south) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->south) ) {
         return false;
     }
-    else if(!have_neighbour(grid_cell, grid_cell->west) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->west) ) {
         return false;
     }
-    else if(!have_neighbour(grid_cell, grid_cell->east) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->east) ) {
         return false;
     }
-    else if(!have_neighbour(grid_cell, grid_cell->front) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->front) ) {
         return false;
     }
-    else if(!have_neighbour(grid_cell, grid_cell->back) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->back) ) {
         return false;
     }
     else {
@@ -401,6 +351,12 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
                                      (BoundingBox){(Vector3){ cube_position_draw.x - cube_size.x/2, cube_position_draw.y - cube_size.y/2, cube_position_draw.z - cube_size.z/2 },
                                                    (Vector3){ cube_position_draw.x + cube_size.x/2, cube_position_draw.y + cube_size.y/2, cube_position_draw.z + cube_size.z/2 }});
 
+    if(collision && !one_selected) {
+        current_selected = (Vector3){cube_position_mesh.x, cube_position_mesh.y, cube_position_mesh.z};
+        one_selected = true;
+        draw_selected_ap_text = true;
+    }
+
     color = get_color((v - min_v)/(max_v - min_v));
 
     if(grid_only) {
@@ -414,7 +370,7 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
             DrawCubeWiresV(cube_position_draw, cube_size, BLACK);
         }
 
-        if(collision && !one_selected) {
+        if(current_selected.x == cube_position_mesh.x && current_selected.y == cube_position_mesh.y && current_selected.z == cube_position_mesh.z) {
             DrawCubeWiresV(cube_position_draw, cube_size, GREEN);
 
             if(aps == NULL) {
@@ -425,12 +381,8 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
 
                 arrput(aps, ap1);
                 hmput(selected_aps, p, aps);
-                draw_selected_ap_text = true;
-                current_selected = (Vector3){cube_position_mesh.x, cube_position_mesh.y, cube_position_mesh.z};
-
                 selected_time = GetTime();
             }
-            one_selected = true;
         }
     }
 }
@@ -813,8 +765,6 @@ static inline void configure_end_info_box_strings (char ***info_string) {
 
     int index = 0;
 
-    (*(info_string))[index++] = strdup("Simulation finished!");
-
     sprintf(tmp, "Resolution Time: %lf s", draw_config.solver_time/1000.0/1000.0);
     (*(info_string))[index++]  = strdup(tmp);
 
@@ -929,7 +879,87 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
 
 }
 
-void handle_input(bool *mesh_loaded, Ray *ray) {
+const int box_width = 220;
+const int box_height = 100;
+
+static bool draw_selection_box(Font font, float font_size) {
+
+    const int text_box_width = 60;
+    const int text_box_height = 25;
+    const int text_box_y_dist = 40;
+    const int label_box_y_dist = 30;
+
+    const int x_off = 10;
+
+    int pos_x = (int) windowPos.x;
+    int pos_y = (int) windowPos.y;
+
+    int box_pos = pos_x + x_off;
+
+    bool clicked = GuiWindowBox((Rectangle){ pos_x, pos_y, box_width , box_height}, "Enter the center of the cell");
+
+    DrawTextEx(font, "Center X", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, font_size, 1, BLACK);
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_x_text, SIZEOF(center_x_text) - 1, true);
+    center_x = atof(center_x_text);
+
+    box_pos = pos_x + text_box_width + 2*x_off;
+    DrawTextEx(font, "Center Y", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, font_size, 1, BLACK);
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_y_text, SIZEOF(center_y_text) - 1, true);
+    center_y = atof(center_y_text);
+
+    box_pos = pos_x +  2*text_box_width + 3*x_off;
+    DrawTextEx(font, "Center Z", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, font_size, 1, BLACK);
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_z_text, SIZEOF(center_z_text) - 1, true);
+    center_z = atof(center_z_text);
+
+    bool btn_clicked = GuiButton((Rectangle){pos_x + text_box_width + 2*x_off, pos_y + 70, text_box_width, text_box_height}, "OK");
+
+    if(btn_clicked) {
+
+        current_selected.x = center_x;
+        current_selected.y = center_y;
+        current_selected.z = center_z;
+    }
+
+    return clicked | btn_clicked;
+}
+
+static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
+
+    {
+        mousePos = GetMousePosition();
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            if (CheckCollisionPointRec(mousePos, (Rectangle){  windowPos.x,  windowPos.y, box_width - 18 , WINDOW_STATUSBAR_HEIGHT }))
+            {
+                dragWindow = true;
+            }
+        }
+
+        if (dragWindow)
+        {
+            windowPos.x = (mousePos.x) - (box_width - 18)/2;
+            windowPos.y = (mousePos.y) - WINDOW_STATUSBAR_HEIGHT/2;
+
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragWindow = false;
+
+        }
+    }
+
+    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+        if(IsKeyPressed(KEY_F)) {
+            show_selection_box = true;
+            show_selection_box = true;
+            windowPos.x = GetScreenWidth() / 2 - box_width;
+            windowPos.y = GetScreenHeight() / 2 - box_height;
+        }
+    }
+
+    if (IsKeyPressed('S')) {
+        show_scale = !show_scale;
+        return;
+    }
 
     if(draw_config.paused) {
 
@@ -990,17 +1020,12 @@ void handle_input(bool *mesh_loaded, Ray *ray) {
         ray->direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
         calc_center = false;
         omp_unset_lock(&draw_config.sleep_lock);
+        current_selected = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
         return;
     }
 
     if (IsKeyPressed('A')) {
         show_ap = !show_ap;
-        return;
-    }
-
-
-    if (IsKeyPressed('S')) {
-        show_scale = !show_scale;
         return;
     }
 
@@ -1014,6 +1039,23 @@ void handle_input(bool *mesh_loaded, Ray *ray) {
         return;
     }
 
+    if(!show_selection_box) {
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (mouse_timer == -1) {
+                mouse_timer = GetTime();
+            } else {
+                double delay = GetTime() - mouse_timer;
+
+                if (delay < DOUBLE_CLICK_DELAY) {
+                    *ray = GetMouseRay(GetMousePosition(), *camera);
+                    mouse_timer = -1;
+                } else {
+                    mouse_timer = -1;
+                }
+
+            }
+        }
+    }
 }
 
 void init_and_open_visualization_window() {
@@ -1070,8 +1112,6 @@ void init_and_open_visualization_window() {
 
     Vector3 mesh_offset = (Vector3){ 0, 0, 0 };
 
-    double mouse_timer = -1;
-
     char **end_info_box_strings = NULL;
     char **mesh_info_box_strings = NULL;
 
@@ -1081,13 +1121,12 @@ void init_and_open_visualization_window() {
             " - Mouse Wheel Pressed to Pan",
             " - Alt + Mouse Wheel Pressed to Rotate",
             " - Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
-            " - Z to reset zoom",
+            " - Ctrl + F to search a cell based on it's center",
             " - G to only draw the grid lines",
             " - L to enable or disable the grid lines",
             " - R to restart simulation",
             " - A to show/hide AP visualization",
             " - S to show/hide scale",
-            " - C to show/hide everything except grid",
             " - C to show/hide everything except grid",
             " - Right arrow to advance one dt when paused",
             " - Hold up arrow to advance time when paused",
@@ -1095,15 +1134,15 @@ void init_and_open_visualization_window() {
             " - Space to start or pause simulation"
     };
 
-    int info_box_lines = sizeof(info_box_strings)/sizeof(info_box_strings[0]);
-    int end_info_box_lines = 11;
+    int info_box_lines = SIZEOF(info_box_strings);
+    int end_info_box_lines = 10;
     int mesh_info_box_lines = 9;
 
     Vector2 txt_w_h;
 
     int text_offset;
 
-    int box_w, box_h;
+    int box_w, box_h, info_box_h = 0;
 
     int pos_x;
     int font_size_small;
@@ -1113,15 +1152,17 @@ void init_and_open_visualization_window() {
     mesh_info_box_strings = (char **) malloc(sizeof(char *) * mesh_info_box_lines);
     bool have_grid;
 
-    while (!WindowShouldClose()) {
+    Vector2 error_message_witdh;
 
+    while (!WindowShouldClose()) {
+        //Configure font size according to monitor resolution
         current_monitor = GetCurrentMonitor();
 
         font_size_small  = (int)(10*(GetMonitorHeight(current_monitor)/1080.0));
         if(font_size_small < 10) font_size_small = 10;
 
         font_size_big    = (int)(16*(GetMonitorHeight(current_monitor)/1080.0));
-        if(font_size_big < 10) font_size_big = 16;
+        if(font_size_big < 16) font_size_big = 16;
 
         txt_w_h = MeasureTextV(WIDER_TEXT, font_size_small);
 
@@ -1129,35 +1170,13 @@ void init_and_open_visualization_window() {
 
         box_w = (int) (txt_w_h.x + 50);
 
-        if (IsKeyDown('Z')) {
-            camera.target = (Vector3){ 1.081274, -1.581945f, 0.196326};
-        }
-
         UpdateCamera(&camera);
-
-        handle_input(&mesh_loaded, &ray);
 
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if(mouse_timer == -1) {
-                mouse_timer = GetTime();
-            }
-            else {
-                double delay = GetTime()-mouse_timer;
-
-                if(delay < DOUBLE_CLICK_DELAY) {
-                    ray = GetMouseRay(GetMousePosition(), camera);
-                    mouse_timer = -1;
-                }
-                else {
-                    mouse_timer = -1;
-                }
-
-            }
-        }
+        handle_input(&mesh_loaded, &ray, &camera);
 
         if(draw_type == DRAW_SIMULATION) {
             have_grid = draw_config.grid_info.grid_to_draw;
@@ -1217,19 +1236,17 @@ void init_and_open_visualization_window() {
                 draw_ap(font, font_size_small, font_size_big);
             }
 
-            if(draw_config.simulating) {
-                if(show_info_box) {
-                    box_h = (text_offset * info_box_lines) + 10;
-                    draw_box(10, 10, box_w, box_h, text_offset, info_box_strings, info_box_lines, font_size_small);
-                }
+           if(show_info_box) {
+                info_box_h = (text_offset * info_box_lines) + 10;
+                draw_box(10, 10, box_w, info_box_h, text_offset, info_box_strings, info_box_lines, font_size_small);
             }
 
-            else {
+            if(!draw_config.simulating) {
                 if(draw_type == DRAW_SIMULATION) {
                     if (show_end_info_box) {
                         configure_end_info_box_strings(&end_info_box_strings);
                         box_h = (text_offset * end_info_box_lines) + 10;
-                        draw_box(10, 10, box_w, box_h, text_offset, (const char **) end_info_box_strings,
+                        draw_box(10, info_box_h + 30, box_w, box_h, text_offset, (const char **) end_info_box_strings,
                                  end_info_box_lines, font_size_small);
 
                         for (int i = 0; i < end_info_box_lines; i++) {
@@ -1252,9 +1269,16 @@ void init_and_open_visualization_window() {
                 }
             }
 
+
             if(!draw_config.paused) {
                 omp_unset_lock(&draw_config.sleep_lock);
             }
+
+
+            if(show_selection_box) {
+                show_selection_box = !draw_selection_box(font, font_size_small);
+            }
+
 
         }
         else if(!mesh_loaded) {
@@ -1268,12 +1292,12 @@ void init_and_open_visualization_window() {
                 c = WHITE;
             }
 
-            Vector2 width = MeasureTextEx(font, draw_config.error_message, 20, spacing);
+            error_message_witdh = MeasureTextEx(font, draw_config.error_message, 20, spacing);
 
-            int posx = GetScreenWidth()/2 - (int)width.x/2;
+            int posx = GetScreenWidth()/2 - (int)error_message_witdh.x/2;
             int posy = GetScreenHeight()/2 - 50;
 
-            int rec_width = (int)(width.x) + 40;
+            int rec_width = (int)(error_message_witdh.x) + 40;
 
             DrawRectangle(posx, posy, rec_width, 20, c);
             DrawRectangleLines(posx, posy, rec_width, 20, BLACK);
