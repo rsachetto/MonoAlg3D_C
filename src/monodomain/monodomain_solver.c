@@ -435,11 +435,20 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (save_to_file && (count % print_rate == 0)) {
 
             start_stop_watch(&write_time);
-            save_mesh_config->save_mesh(count, cur_time, finalT, save_mesh_config, the_grid);
+            save_mesh_config->save_mesh(count, cur_time, finalT, save_mesh_config, the_grid, 'v');
             total_write_time += stop_stop_watch(&write_time);
         }
 
         if (cur_time > 0.0) {
+
+            // -------------------------------------------------------------------
+            // NEW FEATURE !!! For each timestep compute the activation time
+            if (calc_activation_time)
+            {
+                calculate_activation_time(cur_time,dt_pde,the_ode_solver,the_grid);
+            }
+            // -------------------------------------------------------------------
+
             activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_grid);
 
             if (abort_on_no_activity && cur_time > last_stimulus_time) {
@@ -554,6 +563,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             print_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
         }
     }
+
+    // ------------------------------------------------------------
+    // NEW FEATURE ! Save the activation map in a VTU file
+    if (calc_activation_time)
+    {
+        print_to_stdout_and_file("Saving activation map!\n");
+        save_mesh_config->save_mesh(count,cur_time,finalT,save_mesh_config,the_grid,'a');
+    }
+    // ------------------------------------------------------------
 
     long res_time = stop_stop_watch(&solver_time);
     print_to_stdout_and_file("Resolution Time: %ld μs\n", res_time);
@@ -836,9 +854,10 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
     the_monodomain_solver->start_adapting_at = options->start_adapting_at;
 }
 
-// NEW FUNCTION
-/*
-void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, struct ode_solver *the_ode_solver, struct grid *the_grid)
+// ----------------------------------------------------------------------------------------------------------------------------------------
+// NEW FUNCTIONS !
+void calculate_activation_time (const real_cpu cur_time, const real_cpu dt,\
+                        struct ode_solver *the_ode_solver, struct grid *the_grid)
 {
     // V^n+1
     uint32_t n_active = the_grid->num_active_cells;
@@ -874,6 +893,14 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, stru
                 ac[i]->max_dvdt = dvdt;
                 ac[i]->activation_time = cur_time;
             }
+
+           /*
+           real v = (real)ac[i]->v;
+           if (v > 0.0)
+           {
+               ac[i]->activation_time = cur_time;
+           }
+           */
         }
 
         free(vms);
@@ -894,6 +921,13 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, stru
                 ac[i]->max_dvdt = dvdt;
                 ac[i]->activation_time = cur_time;
             }
+           /*
+           real v = (real)ac[i]->v;
+           if (v > 0.0)
+           {
+               ac[i]->activation_time = cur_time;
+           }
+           */
         }
     }
 
@@ -911,4 +945,3 @@ void print_activation_time (struct grid *the_grid)
         print_to_stdout_and_file("Cell %i -- Activation time = %g ms\n",i,ac[i]->activation_time);
     }
 }
-*/

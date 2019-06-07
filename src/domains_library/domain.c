@@ -571,7 +571,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
 
     initialize_grid_with_square_mesh(config, the_grid);
-    set_plain_fibrosis(the_grid, phi, seed);
+    //set_plain_fibrosis(the_grid, phi, seed);
+    set_plain_fibrosis_and_write_positions_to_file(the_grid, phi, seed);
 
     return 1;
 }
@@ -717,6 +718,23 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region)
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_plain_fibrosis_inside_region(the_grid, phi, seed, min_x, max_x, min_y, max_y, min_z, max_z);
+
+    return 1;
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_using_file) 
+{
+
+    real_cpu phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+
+    unsigned seed = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+
+    initialize_grid_with_square_mesh(config, the_grid);
+    set_plain_fibrosis_using_file(the_grid,"fibrotic_positions.txt");
+    //set_plain_fibrosis(the_grid, phi, seed);
+    //set_plain_fibrosis_and_write_positions_to_file(the_grid, phi, seed);
 
     return 1;
 }

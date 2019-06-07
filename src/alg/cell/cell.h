@@ -98,8 +98,8 @@ struct cell_node {
     real_cpu v;
 
     // [Berg] Variables used for propagation velocity calculation
-    //real max_dvdt;
-    //real activation_time;
+    real max_dvdt;
+    real activation_time;
 
     real_cpu sigma_x;
     real_cpu sigma_y;

@@ -956,3 +956,113 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
         grid_cell = grid_cell->next;
     }
 }
+
+void set_plain_fibrosis_and_write_positions_to_file (struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
+{
+
+    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0);
+
+    FILE *file = fopen("fibrotic_positions.txt","w+");
+    struct cell_node *grid_cell;
+
+    if(fib_seed == 0)
+        fib_seed = (unsigned)time(NULL) + getpid();
+
+    srand(fib_seed);
+
+    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+
+    grid_cell = the_grid->first_cell;
+
+    bool first_active_cell = false;
+
+    while(grid_cell != 0) 
+    {
+
+        if(grid_cell->active) 
+        {
+            if (!first_active_cell)
+            {
+                fprintf(file,"%g %g %g\n",grid_cell->dx,grid_cell->dy,grid_cell->dz);
+                first_active_cell = true;
+            }
+
+            real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+            if(p < phi) 
+            {
+                real_cpu x = grid_cell->center_x;
+                real_cpu y = grid_cell->center_y;
+                real_cpu z = grid_cell->center_z;
+
+                fprintf(file,"%g %g %g\n",x,y,z);
+
+                grid_cell->active = false;
+            }
+
+            INITIALIZE_FIBROTIC_INFO(grid_cell);
+            FIBROTIC(grid_cell) = true;
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fclose(file);
+}
+
+void set_plain_fibrosis_using_file (struct grid *the_grid, const char filename[]) 
+{
+
+    FILE *file = fopen(filename,"r");
+    struct cell_node *grid_cell;
+
+    if (file)
+        print_to_stdout_and_file("Opened file '%s' with sucess!\n", filename);
+
+    double dx, dy, dz;
+    double dx_2, dy_2, dz_2;
+    double fibrotic_cx, fibrotic_cy, fibrotic_cz;
+
+    fscanf(file,"%lf %lf %lf",&dx,&dy,&dz);
+
+    dx_2 = dx / 2.0;
+    dy_2 = dy / 2.0;
+    dz_2 = dz / 2.0;
+
+    while (fscanf(file,"%lf %lf %lf",&fibrotic_cx,&fibrotic_cy,&fibrotic_cz) != EOF)
+    {
+        // Calculate the fibrotic region limits
+        double min_x = fibrotic_cx - dx_2;
+        double max_x = fibrotic_cx + dx_2;
+        double min_y = fibrotic_cy - dy_2;
+        double max_y = fibrotic_cy + dy_2;
+        double min_z = fibrotic_cz - dz_2;
+        double max_z = fibrotic_cz + dz_2;
+
+        grid_cell = the_grid->first_cell;
+        while(grid_cell != 0) 
+        {
+
+            // For each active cell on the grid check if it is inside a fibrotic region from the file
+            if(grid_cell->active) 
+            {
+                real_cpu x = grid_cell->center_x;
+                real_cpu y = grid_cell->center_y;
+                real_cpu z = grid_cell->center_z;
+
+                bool inside = (x >= min_x && x <= max_x &&\
+                               y >= min_y && y <= max_y &&\
+                               z >= min_z && z <= max_z);
+                
+                if (inside)
+                {
+                    grid_cell->active = false;
+                }
+                
+                INITIALIZE_FIBROTIC_INFO(grid_cell);
+                FIBROTIC(grid_cell) = true;
+            }
+            grid_cell = grid_cell->next;
+        }
+    }
+
+    fclose(file);
+}

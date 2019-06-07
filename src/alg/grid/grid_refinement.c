@@ -51,8 +51,8 @@ bool refine_grid_with_bound(struct grid *the_grid, real_cpu refinement_bound, re
 
             maximum_flux = get_cell_maximum_flux(grid_cell);
 
-            if((grid_cell->can_change && grid_cell->active) && (grid_cell->dx > min_dx) && (grid_cell->dx > min_dy) &&
-               (grid_cell->dx > min_dz) && (maximum_flux >= refinement_bound)) {
+            if((grid_cell->can_change && grid_cell->active) && (grid_cell->dx > min_dx) && (grid_cell->dy > min_dy) &&
+               (grid_cell->dz > min_dz) && (maximum_flux >= refinement_bound)) {
                 auxiliar_grid_cell = grid_cell;
                 grid_cell = grid_cell->next;
                 refine_cell(auxiliar_grid_cell, free_sv_pos, &(the_grid->refined_this_step));
