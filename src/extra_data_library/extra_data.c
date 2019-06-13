@@ -10,14 +10,11 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(real)*(num_active_cells+1);
+    *extra_data_size = sizeof(real)*(num_active_cells+5);
 
     real *fibs = (real*)malloc(*extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
-
-    real atpi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, atpi, config, "atpi");
 
     real plain_center = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config, "plain_center");
@@ -28,12 +25,31 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config, "sphere_radius");
 
-    fibs[0] = atpi;    
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
+
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
+
+    real Ki_multiplicator = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
+
+    real K1_multiplicator = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
+
+    real acidosis = false;
+    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+
+    fibs[0] = atpi;
+    fibs[1] = Ko;
+    fibs[2] = Ki_multiplicator;
+    fibs[3] = K1_multiplicator;
+    fibs[4] = (real)acidosis;
 
 	int i;
 
 	#pragma omp parallel for
-    for (i = 0; i < num_active_cells; i++) {
+    for (i = 5; i < num_active_cells; i++) {
 
         if(FIBROTIC(ac[i])) {
             fibs[i+1] = 0.0;

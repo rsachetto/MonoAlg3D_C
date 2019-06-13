@@ -35,4 +35,6 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
                                    real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
                                    real_cpu *real_side_length_y, real_cpu *real_side_length_z);
 
+void set_fibrosis_from_file(struct grid *grid, const char *filename, int size);
+
 #endif // MONOALG3D_DOMAIN_HELPERS_H

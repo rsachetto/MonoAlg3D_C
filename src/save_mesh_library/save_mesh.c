@@ -330,6 +330,7 @@ SAVE_MESH(save_as_vtk_purkinje) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[1], config->config_data.config, "origin_y");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[2], config->config_data.config, "origin_z");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data.config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data.config, "normal_x");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[4], config->config_data.config, "normal_y");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[5], config->config_data.config, "normal_z");
     }
@@ -437,7 +438,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
 SAVE_MESH(save_with_activation_times) {
 
-    save_as_text_or_binary(iteration_count, current_t, last_t, config, the_grid);
+    save_as_text_or_binary(iteration_count, current_t, last_t, dt, config, the_grid);
 
     float time_threshold = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data.config, "time_threshold");
@@ -474,6 +475,8 @@ SAVE_MESH(save_with_activation_times) {
 
     FILE *act_file = fopen(output_dir_with_file, "w");
 
+    fprintf(act_file, "%d\n", (last_t-current_t) <= dt ); //rounding errors
+
     while(grid_cell != 0) {
 
         if( grid_cell->active || ( grid_cell->mesh_extra_info && ( FIBROTIC(grid_cell) || BORDER_ZONE(grid_cell) ) ) ) {
@@ -492,7 +495,7 @@ SAVE_MESH(save_with_activation_times) {
             dy = grid_cell->dy / 2.0;
             dz = grid_cell->dz / 2.0;
 
-            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d ", center_x, center_y, center_z, dx, dy, dz, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
+            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
 
             float last_v = hmget(last_time_v, p);
 

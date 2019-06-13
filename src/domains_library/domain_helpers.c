@@ -165,14 +165,25 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
         }
     }
 
-
-    if(start_dx == start_dy && start_dx == start_dz) {
+    if(start_dx == start_dy) {
         real_cpu aux = fmax(*real_side_length_x, *real_side_length_y);
-        real_cpu max_sl = fmax(aux, *real_side_length_z);
 
-        *real_side_length_x = max_sl;
-        *real_side_length_y = max_sl;
-        *real_side_length_z = max_sl;
+        *real_side_length_x = aux;
+        *real_side_length_y = aux;
+    }
+
+    if(start_dx == start_dz) {
+        real_cpu aux = fmax(*real_side_length_x, *real_side_length_z);
+
+        *real_side_length_x = aux;
+        *real_side_length_z = aux;
+    }
+
+    if(start_dy == start_dz) {
+        real_cpu aux = fmax(*real_side_length_y, *real_side_length_z);
+
+        *real_side_length_y = aux;
+        *real_side_length_z = aux;
     }
 
     return 1;
@@ -294,13 +305,6 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
 
     int i = 0;
     while(i < size) {
-
-//        if(read_fibrosis) {
-//            fscanf(file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
-//                   &fibrosis[i], &tag[i]);
-//        } else {
-//            fscanf(file, "%lf,%lf,%lf,%lf\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy);
-//        }
 
         fscanf(file, read_format, &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &fibrosis[i], &tag[i]);
 
@@ -904,6 +908,82 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
         }
 
         grid_cell = grid_cell->next;
+    }
+
+    for(int k = 0; k < size; k++) {
+        free(scar_mesh[k]);
+    }
+
+    free(scar_mesh);
+}
+
+void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
+
+    FILE *file = fopen(filename, "r");
+
+    if(!file) {
+        printf("Error opening file %s!!\n", filename);
+        exit(0);
+    }
+
+    real_cpu **scar_mesh = (real_cpu **)malloc(sizeof(real_cpu *) * size);
+
+    for(int i = 0; i < size; i++) {
+        scar_mesh[i] = (real_cpu *)malloc(sizeof(real_cpu) * 7);
+        if(scar_mesh[i] == NULL) {
+            printf("Failed to allocate memory\n");
+            exit(0);
+        }
+    }
+
+    for(int i = 0; i < size; i++) {
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &scar_mesh[i][3], &scar_mesh[i][4], &scar_mesh[i][5], &scar_mesh[i][6]);
+    }
+
+    fclose(file);
+
+    #pragma omp parallel for
+    for(int j = 0; j < size; j++) {
+
+        struct cell_node *grid_cell = grid->first_cell;
+
+        real_cpu b_center_x = scar_mesh[j][0];
+        real_cpu b_center_y = scar_mesh[j][1];
+
+        real_cpu b_h_dx = scar_mesh[j][3];
+        real_cpu b_h_dy = scar_mesh[j][4];
+
+        bool active = (bool) (scar_mesh[j][6]);
+
+        int c = 0;
+        while (grid_cell != 0) {
+
+            if(grid_cell->active) {
+
+                real_cpu center_x = grid_cell->center_x;
+                real_cpu center_y = grid_cell->center_y;
+
+                real_cpu half_dy = grid_cell->dy/2.0;
+
+                if(FIBROTIC_INFO(grid_cell) == NULL) {
+                    INITIALIZE_FIBROTIC_INFO(grid_cell);
+                    FIBROTIC(grid_cell) = 1;
+                }
+
+                struct point_3d p;
+
+                p.x = b_center_y + b_h_dy;
+                p.y = b_center_y - b_h_dy;
+
+                if (center_x == b_center_x && center_y + half_dy <= p.x && center_y - half_dy >= p.y)  {
+                    grid_cell->active = active;
+                    c++;
+                }
+            }
+            if(c == 4) break;
+
+            grid_cell = grid_cell->next;
+        }
     }
 
     for(int k = 0; k < size; k++) {
