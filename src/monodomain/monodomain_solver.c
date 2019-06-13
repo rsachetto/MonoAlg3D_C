@@ -434,7 +434,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (save_to_file && (count % print_rate == 0)) {
 
             start_stop_watch(&write_time);
-            save_mesh_config->save_mesh(count, cur_time, finalT, save_mesh_config, the_grid);
+            save_mesh_config->save_mesh(count, cur_time, finalT, dt_pde, save_mesh_config, the_grid);
             total_write_time += stop_stop_watch(&write_time);
         }
 

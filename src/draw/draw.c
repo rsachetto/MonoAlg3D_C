@@ -1304,7 +1304,7 @@ void init_and_open_visualization_window() {
             DrawText(draw_config.error_message, posx + 20, posy, 20, BLACK);
         }
 
-        DrawFPS(10,300);
+        DrawFPS(GetScreenWidth()  - 100,GetScreenHeight()-20);
         EndDrawing();
 
     }

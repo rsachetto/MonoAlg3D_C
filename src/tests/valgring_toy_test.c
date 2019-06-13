@@ -25,15 +25,15 @@ int main() {
     shput(save_mesh_config->config_data.config, "file_prefix", strdup("test_valgrind"));
     shput(save_mesh_config->config_data.config, "compress", strdup("yes"));
 
-    save_mesh_config->save_mesh(0, 0.0, 0.0, save_mesh_config, grid);
+    save_mesh_config->save_mesh(0, 0.0, 0.0, 0.0, save_mesh_config, grid);
 
     refine_grid_cell(grid, grid->first_cell);
 
-    save_mesh_config->save_mesh(1, 1.0, 1.0, save_mesh_config, grid);
+    save_mesh_config->save_mesh(1, 1.0, 1.0, 0.0, save_mesh_config, grid);
 
     derefine_grid_cell(grid, grid->first_cell);
 
-    save_mesh_config->save_mesh(2, 2.0, 2.0, save_mesh_config, grid);
+    save_mesh_config->save_mesh(2, 2.0, 2.0, 0.0, save_mesh_config, grid);
 
     free_save_mesh_config(save_mesh_config);
 
