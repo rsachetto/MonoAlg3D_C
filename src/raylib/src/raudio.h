@@ -50,17 +50,25 @@
 *
 **********************************************************************************************/
 
-#ifndef AUDIO_H
-#define AUDIO_H
+#ifndef RAUDIO_H
+#define RAUDIO_H
 
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-//...
+// Allow custom memory allocators
+#ifndef RL_MALLOC
+    #define RL_MALLOC(sz)       malloc(sz)
+#endif
+#ifndef RL_CALLOC
+    #define RL_CALLOC(n,sz)     calloc(n,sz)
+#endif
+#ifndef RL_FREE
+    #define RL_FREE(p)          free(p)
+#endif
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
-// NOTE: Below types are required for CAMERA_STANDALONE usage
 //----------------------------------------------------------------------------------
 #ifndef __cplusplus
 // Boolean type
@@ -174,4 +182,4 @@ void SetAudioStreamPitch(AudioStream stream, float pitch);      // Set pitch for
 }
 #endif
 
-#endif // AUDIO_H
+#endif // RAUDIO_H

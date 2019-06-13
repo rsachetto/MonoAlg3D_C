@@ -48,11 +48,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
         "Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x,
         side_length_y, side_length_z, start_dx, start_dy, start_dz);
 
-    int num_steps = get_num_refinement_steps_to_discretization(real_side_length_x, start_dx);
+    int num_steps = get_num_refinement_steps_to_discretization(real_side_length_z, start_dz);
 
     initialize_and_construct_grid(the_grid, real_side_length_x, real_side_length_y, real_side_length_z);
 
-    //TODO: maybe to this in all directions????
+
     if((real_side_length_z / 2.0f) > side_length_z) {
         real_cpu aux = real_side_length_z / 2.0f;
         int remaining_refinements = num_steps;
@@ -436,9 +436,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     char *mesh_file = NULL;
-
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
-
 
     real_cpu start_h = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data.config, "start_discretization");
@@ -573,6 +571,20 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     initialize_grid_with_square_mesh(config, the_grid);
     //set_plain_fibrosis(the_grid, phi, seed);
     set_plain_fibrosis_and_write_positions_to_file(the_grid, phi, seed);
+
+    return 1;
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
+
+    char *fib_file = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data.config, "fibrosis_file");
+
+    int fib_size = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data.config, "size");
+
+    initialize_grid_with_square_mesh(config, the_grid);
+    set_fibrosis_from_file(the_grid, fib_file, fib_size);
 
     return 1;
 }

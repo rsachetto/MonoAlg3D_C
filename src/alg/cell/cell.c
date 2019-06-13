@@ -368,3 +368,77 @@ real_cpu get_cell_maximum_flux(struct cell_node *the_cell) {
 
     return maximumFlux;
 }
+
+bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
+
+    struct cell_node *black_neighbor_cell;
+
+    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
+    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+
+    struct transition_node *white_neighbor_cell;
+
+    if(neighbour_grid_cell_level > grid_cell->cell_data.level)
+    {
+        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+        {
+            while(true)
+            {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+                {
+                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
+                    if(white_neighbor_cell->single_connector == NULL)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                }
+                else
+                {
+                    black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+                    return black_neighbor_cell->active;
+                }
+            }
+        }
+        else {
+            black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+            return black_neighbor_cell->active;
+        }
+
+    }
+    else
+    {
+        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+        {
+            while(true)
+            {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE)
+                {
+                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
+                    if(white_neighbor_cell->single_connector == NULL)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        neighbour_grid_cell = white_neighbor_cell->single_connector;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                }
+                else
+                {
+                    black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+                    return black_neighbor_cell->active;
+                }
+            }
+        }
+        else {
+            black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+            return black_neighbor_cell->active;
+        }
+    }
+}

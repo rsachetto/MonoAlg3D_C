@@ -435,7 +435,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (save_to_file && (count % print_rate == 0)) {
 
             start_stop_watch(&write_time);
-            save_mesh_config->save_mesh(count, cur_time, finalT, save_mesh_config, the_grid, 'v');
+            save_mesh_config->save_mesh(count, cur_time, finalT, dt_pde, save_mesh_config, the_grid);
             total_write_time += stop_stop_watch(&write_time);
         }
 
@@ -566,11 +566,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     // ------------------------------------------------------------
     // NEW FEATURE ! Save the activation map in a VTU file
-    if (calc_activation_time)
-    {
-        print_to_stdout_and_file("Saving activation map!\n");
-        save_mesh_config->save_mesh(count,cur_time,finalT,save_mesh_config,the_grid,'a');
-    }
+    //if (calc_activation_time)
+    //{
+    //    print_to_stdout_and_file("Saving activation map!\n");
+    //    save_mesh_config->save_mesh(count,cur_time,finalT,save_mesh_config,the_grid,'a');
+    //}
     // ------------------------------------------------------------
 
     long res_time = stop_stop_watch(&solver_time);

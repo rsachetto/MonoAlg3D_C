@@ -274,8 +274,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                              float *plain_coordinates, bool clip_with_bounds,
-                                             float *bounds, bool read_only_values,\
-                                             char scalar_name) {
+                                             float *bounds, bool read_only_values) {
 
     static bool mesh_already_loaded =  false;
 
@@ -388,15 +387,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                 }
             }
 
-            // --------------------------------------------------------------------------------
-            // NEW CODE !
-            if (scalar_name == 'v')
-                arrput((*vtk_grid)->values, grid_cell->v);
-            else if (scalar_name == 'a')
-                arrput((*vtk_grid)->values, grid_cell->activation_time);
-            else
-                print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
-            // --------------------------------------------------------------------------------
+            arrput((*vtk_grid)->values, grid_cell->v);
 
             if(mesh_already_loaded && read_only_values) {
                 grid_cell = grid_cell->next;
