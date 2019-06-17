@@ -22,8 +22,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     if(extra_data) {
         initial_conditions = (real *)extra_data;
         check_cuda_error(cudaMalloc((void **)&initial_conditions_device, extra_data_bytes_size));
-        check_cuda_error(
-            cudaMemcpy(initial_conditions_device, initial_conditions, extra_data_bytes_size, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMemcpy(initial_conditions_device, initial_conditions, extra_data_bytes_size, cudaMemcpyHostToDevice));
     }
 
     kernel_set_model_inital_conditions<<<GRID, BLOCK_SIZE>>>(*sv, initial_conditions_device, num_volumes);
@@ -52,8 +51,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     uint32_t *cells_to_solve_device = NULL;
     if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **)&cells_to_solve_device, cells_to_solve_size));
-        check_cuda_error(
-            cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
     solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve,
                                     num_steps);
