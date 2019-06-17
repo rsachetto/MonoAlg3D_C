@@ -291,14 +291,12 @@ void clean_grid(struct grid *the_grid) {
         }
     }
 
-    if(the_grid->refined_this_step) 
-    {
-        arrreset(the_grid->refined_this_step);
+    if(the_grid->refined_this_step) {
+        arrsetlen(the_grid->refined_this_step, 0);
     }
 
-    if(the_grid->free_sv_positions) 
-    {
-        arrreset(the_grid->free_sv_positions);
+    if(the_grid->free_sv_positions) {
+        arrsetlen(the_grid->free_sv_positions, 0);
     }
 }
 
