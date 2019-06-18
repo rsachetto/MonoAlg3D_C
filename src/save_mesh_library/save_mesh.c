@@ -193,22 +193,49 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data.config, "max_z");
     }
 
-    sds output_dir_with_file = sdsnew(output_dir);
-    output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
+    // TODO: Maybe later, think a way to avoid this if statement ... Configuration file option ?
 
-    //TODO: change this. We dont need the current_t here
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+    // Write the transmembrane potential
+    if  (scalar_name == 'v')
+    {
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/");
+        sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
 
-    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
+        //TODO: change this. We dont need the current_t here
+        output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, output_dir_with_file, binary);
+        new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
+
+        save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, output_dir_with_file, binary);
+
+        sdsfree(output_dir_with_file);
+        sdsfree(base_name);
+    }
+    else if (scalar_name == 'a')
+    {
+        char *output_dir = config->out_dir_name;
+
+        float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+        float bounds[6] = {0, 0, 0, 0, 0, 0};
+
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/activation-map.vtk");
+
+        new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'a');
+
+        save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, output_dir_with_file, binary);
+
+        sdsfree(output_dir_with_file);
+    }
+    else
+    {
+        fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
+        exit(EXIT_FAILURE);
+    }
 
     if(the_grid->adaptive)
         free_vtk_unstructured_grid(vtk_grid);
-
-    sdsfree(output_dir_with_file);
-    sdsfree(base_name);
 }
 
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name) {
@@ -282,31 +309,61 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data.config, "max_z");
     }
 
+    // TODO: Maybe later, think a way to avoid this if statement ... Configuration file option ?
 
-    sds output_dir_with_file = sdsnew(output_dir);
-    output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
+    // Write transmembrane potential
+    if (scalar_name == 'v')
+    {
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/");
+        sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
 
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+        output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    if(save_pvd) {
-        add_file_to_pvd(current_t, output_dir, base_name);
+        if(save_pvd) 
+        {
+            add_file_to_pvd(current_t, output_dir, base_name);
+        }
+
+        new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
+
+        if(compress) 
+        {
+            save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, output_dir_with_file, compression_level);
+        }
+        else 
+        {
+            save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
+        }
+
+        if(the_grid->adaptive)
+            free_vtk_unstructured_grid(vtk_grid);
+
+        sdsfree(output_dir_with_file);
+        sdsfree(base_name);
     }
+    // Write activation map
+    else if (scalar_name == 'a')
+    {
+        char *output_dir = config->out_dir_name;
 
-    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
+        float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+        float bounds[6] = {0, 0, 0, 0, 0, 0};
 
-    if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, output_dir_with_file, compression_level);
-    }
-    else {
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/activation-map.vtu");
+
+        new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'a');
+
         save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
+
+        sdsfree(output_dir_with_file);
     }
-
-    if(the_grid->adaptive)
-        free_vtk_unstructured_grid(vtk_grid);
-
-    sdsfree(output_dir_with_file);
-    sdsfree(base_name);
+    else
+    {
+        fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
+        exit(EXIT_FAILURE);
+    }
 
 }
 
@@ -438,7 +495,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
 SAVE_MESH(save_with_activation_times) {
 
-    save_as_text_or_binary(iteration_count, current_t, last_t, dt, config, the_grid);
+    save_as_text_or_binary(iteration_count, current_t, last_t, dt, config, the_grid, 'v');
 
     float time_threshold = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data.config, "time_threshold");
