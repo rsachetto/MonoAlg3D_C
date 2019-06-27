@@ -167,8 +167,8 @@ RESTORE_STATE (restore_simulation_state) {
         fread (&(the_ode_solver->rel_tol), sizeof (the_ode_solver->rel_tol), 1, input_file);
         fread (&(the_ode_solver->abs_tol), sizeof (the_ode_solver->abs_tol), 1, input_file);
 
-        fread (&(the_ode_solver->previous_dt), sizeof (the_ode_solver->previous_dt), 1, input_file);
-        fread (&(the_ode_solver->time_new), sizeof (the_ode_solver->time_new), 1, input_file);
+//        fread (&(the_ode_solver->previous_dt), sizeof (the_ode_solver->previous_dt), 1, input_file);
+//        fread (&(the_ode_solver->time_new), sizeof (the_ode_solver->time_new), 1, input_file);
 
         fread (&(the_ode_solver->num_cells_to_solve), sizeof (the_ode_solver->num_cells_to_solve), 1, input_file);
 

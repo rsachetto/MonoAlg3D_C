@@ -232,9 +232,13 @@ struct user_options *new_user_options() {
     user_args->quiet_was_set = false;
 
     user_args->stim_configs = NULL;
+    user_args->ode_extra_config = NULL;
 
     sh_new_arena(user_args->stim_configs);
     shdefault(user_args->stim_configs, NULL);
+
+    sh_new_arena(user_args->ode_extra_config);
+    shdefault(user_args->ode_extra_config, NULL);
 
     user_args->domain_config = NULL;
     user_args->purkinje_config = NULL;
@@ -1057,11 +1061,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "derefine_each")) {
         pconfig->derefine_each = (int)strtol(value, NULL, 10);
         pconfig->derefine_each_was_set = true;
-    } else if(MATCH_SECTION_AND_NAME(ODE_SECTION, "dt_ode")) {
-        pconfig->dt_ode = strtof(value, NULL);
-        pconfig->dt_ode_was_set = true;
     } else if(MATCH_SECTION(ODE_SECTION)) {
-        if(MATCH_NAME("use_gpu")) {
+
+        if(MATCH_NAME("dt_ode")) {
+            pconfig->dt_ode = strtof(value, NULL);
+            pconfig->dt_ode_was_set = true;
+        }
+        else if(MATCH_NAME("use_gpu")) {
             if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
                 pconfig->gpu = true;
             } else {
@@ -1074,6 +1080,9 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else if(MATCH_NAME("library_file")) {
             pconfig->model_file_path = strdup(value);
             pconfig->model_file_path_was_set = true;
+        }
+        else {
+            shput(pconfig->ode_extra_config, name, strdup(value));
         }
     } else if(SECTION_STARTS_WITH(STIM_SECTION)) {
 
@@ -1191,7 +1200,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->assembly_matrix_config->config_data.function_name = strdup(value);
             pconfig->assembly_matrix_config->config_data.function_name_was_set = true;
 
-        } else if(MATCH_NAME("library_file")) {
+        }
+        if(MATCH_NAME("ic_function")) {
+            pconfig->assembly_matrix_config->config_data_ic.function_name = strdup(value);
+            pconfig->assembly_matrix_config->config_data_ic.function_name_was_set = true;
+
+        }
+        else if(MATCH_NAME("library_file")) {
             pconfig->assembly_matrix_config->config_data.library_file_path = strdup(value);
             pconfig->assembly_matrix_config->config_data.library_file_path_was_set = true;
         } else {

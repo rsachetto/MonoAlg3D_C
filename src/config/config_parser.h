@@ -103,10 +103,9 @@ struct user_options {
     struct restore_state_config *restore_state_config;
     struct update_monodomain_config *update_monodomain_config;
 
+    struct string_hash_entry *ode_extra_config;
+
     real_cpu max_v, min_v;
-
-
-    bool main_found;
 
 };
 

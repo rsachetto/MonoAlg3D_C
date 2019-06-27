@@ -15,9 +15,16 @@ struct monodomain_solver;
 #define ASSEMBLY_MATRIX(name) EXPORT_FN void name(struct assembly_matrix_config *config, struct monodomain_solver *the_solver, struct grid *the_grid)
 typedef ASSEMBLY_MATRIX(assembly_matrix_fn);
 
+#define SET_PDE_INITIAL_CONDITION(name) EXPORT_FN void name(struct assembly_matrix_config *config, struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v)
+typedef SET_PDE_INITIAL_CONDITION(set_pde_initial_condition_fn);
+
 struct assembly_matrix_config {
     struct config_common config_data;
     assembly_matrix_fn *assembly_matrix;
+
+    struct config_common config_data_ic;
+    set_pde_initial_condition_fn *set_pde_initial_condition;
+
 };
 
 void init_assembly_matrix_functions(struct assembly_matrix_config *config);
