@@ -18,7 +18,6 @@ struct changed_parameters {
 };
 
 void configure_new_parameters(sds new_out_dir_name, struct changed_parameters *changed, struct user_options *options, int n, int p) {
-    new_out_dir_name = sdscatprintf(new_out_dir_name, "_%s_%lf", changed[n].name, changed[n].values[p]);
 
     sds char_value = sdscatprintf(sdsempty(), "%lf", changed[n].values[p]);
 
@@ -281,6 +280,8 @@ int main(int argc, char **argv) {
     }
 
     char *initial_out_dir_name  = strdup(options->save_mesh_config->out_dir_name);
+
+    no_stdout = options->quiet;
 
     //Parse the modification directives
     for(int s = simulation_number_start; s < simulation_number_start+num_simulations; s++) {
