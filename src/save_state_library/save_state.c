@@ -102,8 +102,8 @@ SAVE_STATE(save_simulation_state) {
         fwrite(&(the_ode_solver->rel_tol), sizeof(the_ode_solver->rel_tol), 1, output_file);
         fwrite(&(the_ode_solver->abs_tol), sizeof(the_ode_solver->abs_tol), 1, output_file);
 
-        fwrite(&(the_ode_solver->previous_dt), sizeof(the_ode_solver->previous_dt), 1, output_file);
-        fwrite(&(the_ode_solver->time_new), sizeof(the_ode_solver->time_new), 1, output_file);
+//        fwrite(&(the_ode_solver->previous_dt), sizeof(the_ode_solver->previous_dt), 1, output_file);
+//        fwrite(&(the_ode_solver->time_new), sizeof(the_ode_solver->time_new), 1, output_file);
 
 
         size_t num_cells_to_solve = 0;

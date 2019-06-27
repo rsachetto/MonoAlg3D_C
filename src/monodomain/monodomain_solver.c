@@ -317,7 +317,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 
     print_to_stdout_and_file("Setting ODE's initial conditions\n");
-    set_ode_initial_conditions_for_all_volumes(the_ode_solver);
+    set_ode_initial_conditions_for_all_volumes(the_ode_solver, configs->ode_extra_config);
 
     // We need to call this function after because of the pitch.... maybe we have to change the way
     // we pass this parameters to the cell model....
@@ -335,13 +335,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int ode_step = 1;
 
-    if(dt_pde >= dt_ode) 
-    {
+    if(dt_pde >= dt_ode) {
         ode_step = (int)(dt_pde / dt_ode);
         print_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
     } 
-    else 
-    {
+    else {
         print_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
                                  "step: %lf\n",
                                  dt_ode);
@@ -360,9 +358,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     init_stop_watch(&deref_time);
 
     start_stop_watch(&part_mat);
-    if(!restore_checkpoint) 
-    {
-        set_initial_conditions(the_monodomain_solver, the_grid, initial_v);
+
+    if(!restore_checkpoint) {
+        assembly_matrix_config->set_pde_initial_condition(assembly_matrix_config, the_monodomain_solver, the_grid, initial_v);
     }
     assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
     total_mat_time = stop_stop_watch(&part_mat);
@@ -373,8 +371,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int save_state_rate = 0;
 
-    if(save_checkpoint)
+    if(save_checkpoint) {
         save_state_rate = save_state_config->save_rate;
+    }
 
     real_cpu vm_threshold = configs->vm_threshold;
 
@@ -382,8 +381,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu solver_error;
     uint32_t solver_iterations = 0;
 
-    if(stimuli_configs)
+    if(stimuli_configs) {
         set_spatial_stim(stimuli_configs, the_grid);
+    }
 
     real_cpu cur_time = the_monodomain_solver->current_time;
 
@@ -452,7 +452,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         start_stop_watch(&ode_time);
 
         // REACTION
-        solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
+        solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs, configs->ode_extra_config);
         update_monodomain_config->update_monodomain(update_monodomain_config, original_num_cells, the_monodomain_solver, the_grid, the_ode_solver);
 
         ode_total_time += stop_stop_watch(&ode_time);
@@ -681,25 +681,6 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
     }
 }
 
-// TODO: MAYBE WE HAVE TO MOVE THIS TO THE USER PROVIDED LIBRARY (ASSEMBLY MATRIX)
-void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v) {
-
-    real_cpu alpha;
-    struct cell_node **ac = the_grid->active_cells;
-    uint32_t active_cells = the_grid->num_active_cells;
-    real_cpu beta = the_solver->beta;
-    real_cpu cm = the_solver->cm;
-    real_cpu dt = the_solver->dt;
-    int i;
-
-#pragma omp parallel for private(alpha)
-    for(i = 0; i < active_cells; i++) {
-
-        alpha = ALPHA(beta, cm, dt, ac[i]->dx, ac[i]->dy, ac[i]->dz);
-        ac[i]->v = initial_v;
-        ac[i]->b = initial_v * alpha;
-    }
-}
 
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                        struct grid *the_grid, struct user_options *options) {
@@ -727,6 +708,19 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file("PDE time step = %lf\n", the_monodomain_solver->dt);
     print_to_stdout_and_file("ODE min time step = %lf\n", the_ode_solver->min_dt);
     print_to_stdout_and_file("Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
+
+    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
+    if(options->ode_extra_config) {
+
+        if (shlen(options->ode_extra_config) == 1) {
+            print_to_stdout_and_file("Extra ODE Solver parameter:\n");
+        } else if (shlen(options->ode_extra_config) > 1) {
+            print_to_stdout_and_file("Extra ODE Solver parameters:\n");
+        }
+
+        STRING_HASH_PRINT_KEY_VALUE_LOG(options->ode_extra_config);
+    }
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 

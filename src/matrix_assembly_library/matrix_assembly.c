@@ -14,6 +14,26 @@
 #include "../utils/utils.h"
 #include "../single_file_libraries/stb_ds.h"
 
+
+SET_PDE_INITIAL_CONDITION(set_initial_conditions_fvm) {
+
+    real_cpu alpha;
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt = the_solver->dt;
+    int i;
+
+#pragma omp parallel for private(alpha)
+    for(i = 0; i < active_cells; i++) {
+
+        alpha = ALPHA(beta, cm, dt, ac[i]->dx, ac[i]->dy, ac[i]->dz);
+        ac[i]->v = initial_v;
+        ac[i]->b = initial_v * alpha;
+    }
+}
+
 static struct element fill_element(uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
                                    real_cpu sigma_x, real_cpu sigma_y, real_cpu sigma_z,\
                                    struct element *cell_elements);
