@@ -107,6 +107,8 @@ struct user_options {
 
     real_cpu max_v, min_v;
 
+    bool main_found;
+
 };
 
 struct batch_options {
