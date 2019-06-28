@@ -10,7 +10,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(real)*(num_active_cells+5);
+    *extra_data_size = sizeof(real)*(num_active_cells + 5);
 
     real *fibs = (real*)malloc(*extra_data_size);
 
@@ -49,10 +49,10 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 	int i;
 
 	#pragma omp parallel for
-    for (i = 5; i < num_active_cells; i++) {
+    for (i = 0; i < num_active_cells; i++) {
 
         if(FIBROTIC(ac[i])) {
-            fibs[i+1] = 0.0;
+            fibs[i+5] = 0.0;
         }
         else if(BORDER_ZONE(ac[i])) {
 
@@ -63,15 +63,14 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
             real distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
             distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;
-            fibs[i+1] = distanceFromCenter;
+            fibs[i+5] = distanceFromCenter;
 
         }
         else {
-            fibs[i+1] = 1.0;
+            fibs[i+5] = 1.0;
         }
 
     }
-
 
     return (void*)fibs;
 }

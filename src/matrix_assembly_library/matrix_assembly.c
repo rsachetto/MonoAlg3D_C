@@ -25,7 +25,7 @@ SET_PDE_INITIAL_CONDITION(set_initial_conditions_fvm) {
     real_cpu dt = the_solver->dt;
     int i;
 
-#pragma omp parallel for private(alpha)
+    #pragma omp parallel for private(alpha)
     for(i = 0; i < active_cells; i++) {
 
         alpha = ALPHA(beta, cm, dt, ac[i]->dx, ac[i]->dy, ac[i]->dz);

@@ -52,6 +52,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (i = 0; i < num_active_cells; i++) {
 
+
         if(CG_INFO(ac[i]) == NULL) {
             INITIALIZE_CONJUGATE_GRADIENT_INFO(ac[i]);
         }
@@ -78,10 +79,15 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
             CG_P(ac[i]) = CG_R(ac[i]);
         }
 
-        rTr += CG_R(ac[i]) * CG_R(ac[i]);
+        real_cpu r = CG_R(ac[i]);
+
+        rTr += r * r;
+
     }
 
     *error = rTr;
+
+
     //__________________________________________________________________________
     //Conjugate gradient iterations.
     if( *error >= precision ) {
@@ -145,13 +151,14 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
             }
 
             *error = r1Tr1;
+
             *number_of_iterations = *number_of_iterations + 1;
             if( *error <= precision ) {
                 break;
             }
             //__________________________________________________________________
             //Computes int_vector p1 = r1 + beta*p and uses it to upgrade p.
-#pragma omp parallel for
+            #pragma omp parallel for
             for (i = 0; i < num_active_cells; i++) {
                 if(use_jacobi) {
                     CG_P1(ac[i]) = CG_Z(ac[i]) + beta * CG_P(ac[i]);
