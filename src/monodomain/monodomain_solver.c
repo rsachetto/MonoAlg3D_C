@@ -469,6 +469,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations,
                                                          &solver_error);
 
+
+
         cg_partial = stop_stop_watch(&cg_time);
 
         cg_total_time += cg_partial;

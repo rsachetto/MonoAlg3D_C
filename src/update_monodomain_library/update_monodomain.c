@@ -222,8 +222,8 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
             }
         }
     }
-#ifdef COMPILE_CUDA
+    #ifdef COMPILE_CUDA
     free(vms);
-#endif
+    #endif
 
 }

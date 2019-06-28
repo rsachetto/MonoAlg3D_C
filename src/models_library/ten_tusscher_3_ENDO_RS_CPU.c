@@ -69,7 +69,6 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
         for (int j = 0; j < num_steps; ++j) {
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], atpi, Ko, Ki_mult, K1_mult, acidosis);
-
         }
     }
 
@@ -102,6 +101,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
     sv[9]  = rDY[9];
     sv[10]  = rDY[10];
     sv[11]  = rDY[11];
+
 }
 
 
@@ -444,6 +444,4 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     rDY_[9] = D_INF_new;
     rDY_[10] = R_INF_new;
     rDY_[11] = Xr2_INF_new;
-
-
 }
