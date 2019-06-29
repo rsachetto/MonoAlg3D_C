@@ -108,8 +108,6 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
     return (void*)fibs;
 }
 
-
-
 SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -141,30 +139,7 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
     fibs[4] = (real)acidosis;
 
     for(int i = 5; i < num_active_cells+5; i++) {
-        fibs[i] = 0.0;
-    }
-
-    return (void*)fibs;
-}
-
-SET_EXTRA_DATA(set_extra_data_for_fibrosis) {
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node ** ac = the_grid->active_cells;
-
-    *extra_data_size = sizeof(real)*(num_active_cells+1);
-
-    real *fibs = (real*)malloc(*extra_data_size);
-
-    fibs[0] = 6.8;
-
-    for(int i = 0; i < num_active_cells; i++) {
-        if(FIBROTIC(ac[i])) {
-            fibs[i+1] = 0.0;
-        }
-        else {
-            fibs[i+1] = 1.0;
-        }
+        fibs[i] = 1.0;
     }
 
     return (void*)fibs;

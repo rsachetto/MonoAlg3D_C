@@ -332,7 +332,17 @@ string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {
     return files;
 }
 
+bool file_exists(const char *path) {
 
+    if( access( path, F_OK ) != -1 ) {
+        // file exists
+        return true;
+    } else {
+        // file doesn't exist
+        return false;
+    }
+
+}
 bool dir_exists(const char *path) {
     struct stat info;
 
@@ -608,3 +618,41 @@ size_t base64_decode(unsigned char *out, const char *src, size_t len, size_t *by
     return pos - out;
 }
 
+bool check_simulation_completed(char *simulation_dir) {
+
+    if(!dir_exists(simulation_dir)) return false;
+
+    sds output_file_name =
+            sdscatprintf(sdsempty(), "%s/outputlog.txt", simulation_dir);
+
+
+    char *word = NULL;
+
+    long file_size = 0;
+    char *outputlog_content = read_entire_file(output_file_name, &file_size);
+
+    if(outputlog_content == NULL) {
+        sdsfree(output_file_name);
+        return false;
+    }
+
+    for(int c = 0; c < file_size; c++) {
+        char l = outputlog_content[c];
+        if(!isspace(l)) {
+            arrput(word, l);
+        }
+        else {
+            arrput(word, '\0');
+            if(strcmp(word, "Resolution") == 0) {
+                arrfree(word);
+                return true;
+            }
+            arrfree(word);
+            word = NULL;
+        }
+
+    }
+
+    return false;
+
+}
