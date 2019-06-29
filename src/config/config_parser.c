@@ -140,12 +140,7 @@ void issue_overwrite_warning(const char *var, const char *section, const char *o
 }
 
 struct batch_options *new_batch_options() {
-    struct batch_options *user_args = (struct batch_options *)malloc(sizeof(struct batch_options));
-    user_args->batch_config_file = NULL;
-    user_args->initial_config = NULL;
-    user_args->num_simulations = 0;
-
-    user_args->config_to_change = NULL;
+    struct batch_options *user_args = (struct batch_options *)calloc(1, sizeof(struct batch_options));
     sh_new_arena(user_args->config_to_change);
     shdefault(user_args->config_to_change, NULL);
 
@@ -989,7 +984,20 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
         } else if(MATCH_NAME("num_parameter_change")) {
             pconfig->num_par_change = (int)strtol(value, NULL, 10);
         }
+        else if(MATCH_NAME("skip_existing_run")) {
 
+            if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+                pconfig->skip_existing_run = true;
+            } else if(strcmp(value, "false") == 0 || strcmp(value, "no") == 0) {
+                pconfig->skip_existing_run = false;
+            } else {
+                fprintf(stderr,
+                        "Warning: Invalid value for skip_existing_run option: %s! Valid options are: true, yes, false, no. "
+                        "Setting the value to false\n",
+                        value);
+                pconfig->skip_existing_run = false;
+            }
+        }
     } else if(MATCH_SECTION(MODIFICATION_SECTION)) {
         shput(pconfig->config_to_change, name, strdup(value));
     } else {

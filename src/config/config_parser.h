@@ -112,11 +112,12 @@ struct user_options {
 };
 
 struct batch_options {
-    char *batch_config_file;     /*-c option*/
-    char *output_folder;         //TODO: maybe we can create here a option for this
+    char *batch_config_file;
+    char *output_folder;
     char *initial_config;
     int num_simulations;
     int num_par_change;
+    bool skip_existing_run;
     struct string_hash_entry *config_to_change;
 };
 

@@ -17,7 +17,7 @@ struct changed_parameters {
     real_cpu *values;
 };
 
-void configure_new_parameters(sds new_out_dir_name, struct changed_parameters *changed, struct user_options *options, int n, int p) {
+void configure_new_parameters(struct changed_parameters *changed, struct user_options *options, int n, int p) {
 
     sds char_value = sdscatprintf(sdsempty(), "%lf", changed[n].values[p]);
 
@@ -87,12 +87,13 @@ int main(int argc, char **argv) {
     char *entire_config_file = NULL;
     unsigned long config_file_size;
 
+    bool skip_existing;
+
     if(rank == 0) {
 
         struct batch_options *batch_options;
         batch_options = new_batch_options();
 
-        // TODO: maybe we want to get the config file first...
         parse_batch_options(argc, argv, batch_options);
 
         if(ini_parse(batch_options->batch_config_file, parse_batch_config_file, batch_options) < 0) {
@@ -147,6 +148,7 @@ int main(int argc, char **argv) {
             MPI_Send(&simulation_number_start, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(&size_out_folder, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(batch_options->output_folder, size_out_folder, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&batch_options->skip_existing_run, 1, MPI_C_BOOL, i, 0, MPI_COMM_WORLD);
             MPI_Send(&n, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
 
             for(int k = 0; k < n; k++) {
@@ -188,6 +190,8 @@ int main(int argc, char **argv) {
         output_folder = malloc((size_t)size_out_folder);
 
         MPI_Recv(output_folder, size_out_folder, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&skip_existing, 1, MPI_C_BOOL, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
 
         create_dir(output_folder);
 
@@ -226,7 +230,6 @@ int main(int argc, char **argv) {
 
     struct grid *the_grid;
 
-
     struct monodomain_solver *monodomain_solver;
     monodomain_solver = new_monodomain_solver();
 
@@ -262,7 +265,6 @@ int main(int argc, char **argv) {
             c.name = strdup(section_name[1]);
             sdsfreesplitres(section_name, count);
 
-
             sds *value_range = sdssplit(e.value, "|", &count);
 
             real_cpu value = strtod(value_range[0], NULL);
@@ -286,7 +288,7 @@ int main(int argc, char **argv) {
     //Parse the modification directives
     for(int s = simulation_number_start; s < simulation_number_start+num_simulations; s++) {
 
-        for (int p = 0; p <= num_par_change; p++) {
+        for (int p = 0; p < num_par_change; p++) {
             the_grid = new_grid();
             ode_solver = new_ode_solver();
 
@@ -294,7 +296,19 @@ int main(int argc, char **argv) {
                     sdscatprintf(sdsempty(), "%s/%s_run_%d", output_folder, initial_out_dir_name, s);
 
             for(int n = 0; n < config_n; n++) {
-                configure_new_parameters(new_out_dir_name, changed, options, n, p);
+                sdscatprintf(new_out_dir_name, "_%s_%f", changed[n].name, changed[n].values[p]);
+            }
+
+            if(skip_existing) {
+                if(check_simulation_completed(new_out_dir_name)) {
+                    printf("Rank %d skipping existing simulation on %s\n", rank, new_out_dir_name);
+                    sdsfree(new_out_dir_name);
+                    continue;
+                }
+            }
+
+            for(int n = 0; n < config_n; n++) {
+                configure_new_parameters(changed, options, n, p);
             }
 
             free(options->save_mesh_config->out_dir_name);

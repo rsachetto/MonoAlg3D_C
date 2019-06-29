@@ -216,18 +216,14 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
     pvd_name = sdscat(pvd_name, "/simulation_result.pvd");
 
     static FILE *pvd_file = NULL;
-    static bool first_save_call = true;
+    pvd_file = fopen(pvd_name, "r+");
 
-    if(first_save_call) {
+    if(!pvd_file) {
         pvd_file = fopen(pvd_name, "w");
         fprintf(pvd_file, "<VTKFile type=\"Collection\" version=\"0.1\" compressor=\"vtkZLibDataCompressor\">\n");
         fprintf(pvd_file, "\t<Collection>\n");
         fprintf(pvd_file, "\t</Collection>\n");
         fprintf(pvd_file, "</VTKFile>");
-        first_save_call = false;
-
-    } else {
-        pvd_file = fopen(pvd_name, "r+");
     }
 
     sdsfree(pvd_name);
