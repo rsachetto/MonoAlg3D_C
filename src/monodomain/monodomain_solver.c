@@ -363,8 +363,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         assembly_matrix_config->set_pde_initial_condition(assembly_matrix_config, the_monodomain_solver, the_grid, initial_v);
     }
     assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
-    total_mat_time = stop_stop_watch(&part_mat);
 
+    total_mat_time = stop_stop_watch(&part_mat);
     start_stop_watch(&solver_time);
 
     int print_rate = 1;

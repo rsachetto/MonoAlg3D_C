@@ -79,9 +79,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
 void free_current_simulation_resources(struct user_options *options, struct monodomain_solver *monodomain_solver,  struct ode_solver *ode_solver, struct grid *the_grid) {
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
-
     free(monodomain_solver);
-
     free_user_options(options);
     close_logfile();
 }

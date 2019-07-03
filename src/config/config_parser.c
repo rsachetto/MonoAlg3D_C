@@ -147,6 +147,12 @@ struct batch_options *new_batch_options() {
     return user_args;
 }
 
+void free_batch_options(struct batch_options * options) {
+    shfree(options->config_to_change);
+    free(options);
+}
+
+
 struct visualization_options *new_visualization_options() {
     struct visualization_options *options = (struct visualization_options *)malloc(sizeof(struct visualization_options));
     options->input_folder = NULL;
@@ -981,10 +987,7 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
             pconfig->num_simulations = (int)strtol(value, NULL, 10);
         } else if(MATCH_NAME("initial_config")) {
             pconfig->initial_config = strdup(value);
-        } else if(MATCH_NAME("num_parameter_change")) {
-            pconfig->num_par_change = (int)strtol(value, NULL, 10);
-        }
-        else if(MATCH_NAME("skip_existing_run")) {
+        } else if(MATCH_NAME("skip_existing_run")) {
 
             if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
                 pconfig->skip_existing_run = true;
