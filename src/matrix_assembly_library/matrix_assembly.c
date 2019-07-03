@@ -803,7 +803,6 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
 
 ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
 
-    static bool sigma_initialized = false;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
@@ -821,15 +820,11 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
 
-    if(!sigma_initialized) {
-        #pragma omp parallel for
-        for (i = 0; i < num_active_cells; i++) {
-            ac[i]->sigma_x = sigma_x;
-            ac[i]->sigma_y = sigma_y;
-            ac[i]->sigma_z = sigma_z;
-        }
-
-        sigma_initialized = true;
+    #pragma omp parallel for
+    for (i = 0; i < num_active_cells; i++) {
+        ac[i]->sigma_x = sigma_x;
+        ac[i]->sigma_y = sigma_y;
+        ac[i]->sigma_z = sigma_z;
     }
 
     #pragma omp parallel for

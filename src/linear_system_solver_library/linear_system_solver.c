@@ -52,7 +52,6 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (i = 0; i < num_active_cells; i++) {
 
-
         if(CG_INFO(ac[i]) == NULL) {
             INITIALIZE_CONJUGATE_GRADIENT_INFO(ac[i]);
         }
@@ -96,7 +95,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
             // Computes Ap and pTAp. Uses Ax to store Ap.
             pTAp = 0.0;
 
-#pragma omp parallel for private(element) reduction(+ : pTAp)
+            #pragma omp parallel for private(element) reduction(+ : pTAp)
             for (i = 0; i < num_active_cells; i++) {
 
                 ac[i]->Ax = 0.0;
@@ -126,7 +125,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
             r1Tz1 = 0.0;
 
             // Computes new value of solution: u = u + alpha*p.
-#pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
+            #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
             for (i = 0; i < num_active_cells; i++) {
                 ac[i]->v += alpha * CG_P(ac[i]);
 
@@ -139,7 +138,9 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
                     r1Tz1 += CG_Z(ac[i]) * CG_R(ac[i]);
                 }
 
-                r1Tr1 += CG_R(ac[i]) * CG_R(ac[i]);
+                real_cpu r = CG_R(ac[i]);
+
+                r1Tr1 += r * r;
             }
             //__________________________________________________________________
             //Computes beta.
