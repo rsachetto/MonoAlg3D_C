@@ -14,11 +14,12 @@ static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
 
-static const char *visualization_opt_string = "x:m:d:p:v:h?";
+static const char *visualization_opt_string = "x:m:d:p:v:a:h?";
 static const struct option long_visualization_options[] = {
         {"visualization_max_v", required_argument, NULL, 'x'},
         {"visualization_min_v", required_argument, NULL, 'm'},
         {"dt", required_argument, NULL, 'd'},
+        {"activation_map", required_argument, NULL, 'a'},
         {"prefix", required_argument, NULL, 'p'},
         {"pvd", required_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
@@ -126,6 +127,7 @@ void display_visualization_usage(char **argv) {
     printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
     printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
     printf("--dt | -d, dt for the simulation. Default: 0\n");
+    printf("--activation_map | -a activation_map_file, visualize only the activation map file. Default: NULL\n");
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--pvd | -v, pvd file. Default: NULL\n");
     printf("--help | -h. Shows this help and exit \n");
@@ -161,6 +163,7 @@ struct visualization_options *new_visualization_options() {
     options->dt = 0.0;
     options->files_prefix = strdup("V_it");
     options->pvd_file = NULL;
+    options->activation_map = NULL;
 
     return options;
 }
@@ -681,6 +684,9 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
             case 'v':
                 user_args->pvd_file = strdup(optarg);
                 break;
+            case 'a':
+                user_args->activation_map = strdup(optarg);
+                break;
             case 'h': /* fall-through is intentional */
             case '?':
                 display_visualization_usage(argv);
@@ -692,9 +698,10 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
         opt = getopt_long(argc, argv, batch_opt_string, long_batch_options, &option_index);
     }
 
-    for (int index = optind; index < argc; index++)
-        user_args->input_folder = strdup(argv[index]);
-
+    if(user_args->activation_map == NULL) {
+        for (int index = optind; index < argc; index++)
+            user_args->input_folder = strdup(argv[index]);
+    }
 
 }
 

@@ -54,6 +54,26 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->error_message = NULL;
 }
 
+static void read_and_render_activation_map(char *input_file) {
+
+    draw_config.grid_info.file_name = NULL;
+
+    omp_set_lock(&draw_config.draw_lock);
+    draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_activation_file(input_file);
+
+    draw_config.min_v = draw_config.grid_info.vtk_grid->min_v;
+    draw_config.max_v = draw_config.grid_info.vtk_grid->max_v;
+
+    if(!draw_config.grid_info.vtk_grid) {
+        char tmp[4096];
+        sprintf(tmp, "No activation map found in %s", input_file);
+        draw_config.error_message = strdup(tmp);
+        omp_unset_lock(&draw_config.draw_lock);
+        return;
+    }
+
+    omp_unset_lock(&draw_config.draw_lock);
+}
 
 static int read_and_render_files(const char* pvd_file, char *input_dir, char* prefix) {
 
@@ -217,16 +237,20 @@ int main(int argc, char **argv) {
 
     parse_visualization_options(argc, argv, options);
 
-    if(!options->input_folder) {
-        if(!options->pvd_file) {
-            fprintf(stderr, "Error!. You have to provide a pvd file or a input folder!\n");
-        }
-    } else {
-        if(options->pvd_file) {
-            fprintf(stderr, "Warning!. You provided a pvd file (%s) and an input folder (%s). The input folder will be ignored!\n", options->pvd_file, options->input_folder);
-            free(options->input_folder);
-            options->input_folder = NULL;
+    if(!options->activation_map) {
+        if (!options->input_folder) {
+            if (!options->pvd_file) {
+                fprintf(stderr, "Error!. You have to provide a pvd file or a input folder!\n");
+            }
+        } else {
+            if (options->pvd_file) {
+                fprintf(stderr,
+                        "Warning!. You provided a pvd file (%s) and an input folder (%s). The input folder will be ignored!\n",
+                        options->pvd_file, options->input_folder);
+                free(options->input_folder);
+                options->input_folder = NULL;
 
+            }
         }
     }
 
@@ -242,18 +266,23 @@ int main(int argc, char **argv) {
 
         #pragma omp section
         {
-            int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
+            if(options->activation_map) {
+                read_and_render_activation_map(options->activation_map);
+            }
+            else {
+                int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
 
-            while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
-                if(result == RESTART_SIMULATION) {
-                    init_draw_config(&draw_config, options);
-                    result = read_and_render_files(options->pvd_file, options->input_folder,  options->files_prefix);
-                }
+                while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
+                    if (result == RESTART_SIMULATION) {
+                        init_draw_config(&draw_config, options);
+                        result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
+                    }
 
-                if(draw_config.restart) result = RESTART_SIMULATION;
+                    if (draw_config.restart) result = RESTART_SIMULATION;
 
-                if(result == END_SIMULATION || draw_config.exit)  {
-                    break;
+                    if (result == END_SIMULATION || draw_config.exit) {
+                        break;
+                    }
                 }
             }
 

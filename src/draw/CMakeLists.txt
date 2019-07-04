@@ -1,4 +1,4 @@
 set(SOURCE_FILES_DRAW draw.h draw.c)
 
 ADD_LIBRARY(draw STATIC ${SOURCE_FILES_DRAW})
-TARGET_LINK_LIBRARIES(draw alg)
+TARGET_LINK_LIBRARIES(draw alg vtk_utils)
