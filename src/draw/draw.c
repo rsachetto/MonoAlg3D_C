@@ -5,6 +5,7 @@
 #include <float.h>
 #include <pthread.h>
 #include <time.h>
+#include <dnet.h>
 
 
 #include "draw.h"
@@ -31,6 +32,7 @@ static bool show_info_box = true;
 static bool show_end_info_box = true;
 static bool show_mesh_info_box = true;
 static bool show_selection_box = false;
+static bool show_save_box = false;
 
 Vector3 max_size;
 Vector3 min_size;
@@ -44,6 +46,7 @@ Vector3 current_selected = {FLT_MAX, FLT_MAX, FLT_MAX};
 char center_x_text[128] = { 0 };
 char center_y_text[128] = { 0 };
 char center_z_text[128] = { 0 };
+char save_path[PATH_MAX] = {0};
 
 float center_x;
 float center_y;
@@ -924,6 +927,35 @@ static bool draw_selection_box(Font font, float font_size) {
     return clicked | btn_clicked;
 }
 
+static bool draw_save_box(Font font, float font_size) {
+
+    const int text_box_width = 90;
+    const int text_box_height = 25;
+    const int text_box_y_dist = 40;
+
+    const int x_off = 10;
+
+    int pos_x = (int) windowPos.x;
+    int pos_y = (int) windowPos.y;
+
+    int box_pos = pos_x + x_off;
+
+    bool clicked = GuiWindowBox((Rectangle){ pos_x, pos_y, box_width , box_height}, "Enter the filename");
+
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, box_width - 2*x_off, text_box_height}, save_path, SIZEOF(save_path) - 1, true);
+
+    bool btn_clicked = GuiButton((Rectangle){pos_x +  x_off, pos_y + 70, text_box_width, text_box_height}, "OK");
+    bool btn2_clicked = GuiButton((Rectangle){pos_x + box_width - text_box_width - x_off, pos_y + 70, text_box_width, text_box_height}, "CANCEL");
+
+    if(btn_clicked) {
+        if( strlen(save_path) > 0 ) {
+            save_vtk_unstructured_grid_as_vtu_compressed(draw_config.grid_info.vtk_grid, save_path, 6);
+        }
+    }
+
+    return btn2_clicked | clicked | btn_clicked;
+}
+
 static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
 
     {
@@ -950,18 +982,25 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
     if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
         if(IsKeyPressed(KEY_F)) {
             show_selection_box = true;
-            show_selection_box = true;
             windowPos.x = GetScreenWidth() / 2 - box_width;
             windowPos.y = GetScreenHeight() / 2 - box_height;
         }
     }
 
-    if (IsKeyPressed('S')) {
+    if (IsKeyPressed('Q')) {
         show_scale = !show_scale;
         return;
     }
 
     if(draw_config.paused) {
+
+        if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+            if(IsKeyPressed(KEY_S)) {
+                show_save_box = true;
+                windowPos.x = GetScreenWidth() / 2 - box_width;
+                windowPos.y = GetScreenHeight() / 2 - box_height;
+            }
+        }
 
         if (IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
             draw_config.advance_or_return = 1;
@@ -1126,7 +1165,7 @@ void init_and_open_visualization_window() {
             " - L to enable or disable the grid lines",
             " - R to restart simulation",
             " - A to show/hide AP visualization",
-            " - S to show/hide scale",
+            " - Q to show/hide scale",
             " - C to show/hide everything except grid",
             " - Right arrow to advance one dt when paused",
             " - Hold up arrow to advance time when paused",
@@ -1277,6 +1316,10 @@ void init_and_open_visualization_window() {
 
             if(show_selection_box) {
                 show_selection_box = !draw_selection_box(font, font_size_small);
+            }
+
+            if(show_save_box) {
+                show_save_box = !draw_save_box(font, font_size_small);
             }
 
 

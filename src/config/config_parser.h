@@ -124,6 +124,7 @@ struct visualization_options {
     char *input_folder;
     char *files_prefix;
     char *pvd_file;
+    char *activation_map;
     real_cpu max_v, min_v, dt;
 };
 

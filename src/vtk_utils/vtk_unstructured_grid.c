@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <sys/mman.h>
+#include <float.h>
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
     struct vtk_unstructured_grid *grid = (struct vtk_unstructured_grid *)malloc(sizeof(struct vtk_unstructured_grid));
@@ -28,6 +29,9 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
     grid->num_points = 0;
     grid->points_per_cell = 8;
     grid->cell_type = 12;
+
+    grid->max_v = FLT_MIN;
+    grid->min_v = FLT_MAX;
 
     return grid;
 }
@@ -69,7 +73,7 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
 
     int active, fibrotic, bz;
 
-    while(source_size) {
+    while(*source) {
 
         int line_end = 0;
         while (*source != '[') {
@@ -77,6 +81,13 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
             source++;
             source_size--;
             line_end++;
+        }
+        source++;
+        source_size--;
+
+        while (*source != '\n') {
+            source++;
+            source_size--;
         }
         source++;
         source_size--;
@@ -90,7 +101,8 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
         if(!active) continue;
 
         arrput((*vtk_grid)->values, v);
-
+        if(v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = v;
+        if(v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = v;
 
         aux1.x = center_x - half_face_x;
         aux1.y = center_y - half_face_y;
@@ -182,6 +194,9 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
         arrput((*vtk_grid)->cells, hmget(hash, aux8));
         num_cells++;
     }
+
+    (*vtk_grid)->num_cells = num_cells;
+    (*vtk_grid)->num_points = id;
 
     arrfree(line);
     hmfree(hash);
@@ -283,6 +298,9 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
         }
 
         arrput((*vtk_grid)->values, v);
+
+        if(v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = v;
+        if(v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = v;
 
         if(mesh_already_loaded && read_only_values) {
             if(!binary) {
@@ -534,6 +552,9 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             }
 
             arrput((*vtk_grid)->values, grid_cell->v);
+
+            if(grid_cell->v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = grid_cell->v;
+            if(grid_cell->v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = grid_cell->v;
 
             if(mesh_already_loaded && read_only_values) {
                 grid_cell = grid_cell->next;
@@ -1729,7 +1750,6 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
     if(activation_info) {
         new_vtk_unstructured_grid_from_string_with_activation_info(vtk_grid, &source[2], size-2);
     }
-
     else if(xml) {
         //VTK XML file
         static char stack[8*1024];
@@ -1979,10 +1999,8 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
 
 }
 
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_activation_file(const char *vtu_file_name) {
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_activation_file(const char *activation_map_file) {
 
-    struct vtk_unstructured_grid *vtk_grid = NULL;
-    set_vtk_grid_from_file(&vtk_grid, vtu_file_name);
-    return vtk_grid;
+    return new_vtk_unstructured_grid_from_vtu_file(activation_map_file);
 
 }
