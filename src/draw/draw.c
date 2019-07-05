@@ -5,10 +5,10 @@
 #include <float.h>
 #include <pthread.h>
 #include <time.h>
-#include <dnet.h>
-
+#include <limits.h>
 
 #include "draw.h"
+#include "color_maps.h"
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 #include "../raylib/src/raylib.h"
@@ -51,12 +51,21 @@ char save_path[PATH_MAX] = {0};
 float center_x;
 float center_y;
 float center_z;
-
-
 // General variables
 Vector2 mousePos = { 0 };
 Vector2 windowPos;
 bool dragWindow = false;
+
+//typedef enum COLOR_SCALE {
+//    RAINBOW = 0,
+//    BERLIN,
+//    ACTON,
+//    BAMAKO,
+//    BATLOW
+//} color_scale;
+
+
+int current_scale = 0;
 
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))  // Get number of elements in array `A`. Total size of `A` should be known at compile time.
 
@@ -69,8 +78,18 @@ static inline float normalize(float r_min, float r_max, float t_min, float t_max
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
 }
 
+#define GET_COLOR(scale) \
+        do {\
+            red  = (unsigned char) (((scale[idx2][0] - scale[idx1][0])*fractBetween + scale[idx1][0]) * 255); \
+            green = (unsigned char) (((scale[idx2][1] - scale[idx1][1])*fractBetween + scale[idx1][1]) * 255); \
+            blue  = (unsigned char) (((scale[idx2][2] - scale[idx1][2])*fractBetween + scale[idx1][2]) * 255); \
+        } while(0)
+
+
+
 static inline Color get_color(real_cpu value)
 {
+
     int idx1;        // |-- Our desired color will be between these two indexes in "color".
     int idx2;        // |
     real_cpu fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
@@ -85,9 +104,13 @@ static inline Color get_color(real_cpu value)
         fractBetween = value - (real_cpu)idx1;    // Distance between the two indexes (0-1).
     }
 
-    unsigned char red   = (unsigned char) (((color[idx2][0] - color[idx1][0])*fractBetween + color[idx1][0]) * 255);
-    unsigned char green = (unsigned char) (((color[idx2][1] - color[idx1][1])*fractBetween + color[idx1][1]) * 255);
-    unsigned char blue  = (unsigned char) (((color[idx2][2] - color[idx1][2])*fractBetween + color[idx1][2]) * 255);
+    unsigned char red;
+    unsigned char green;
+    unsigned char blue;
+
+    red  = (unsigned char) (((color_scales[current_scale][idx2][0] - color_scales[current_scale][idx1][0])*fractBetween + color_scales[current_scale][idx1][0]) * 255);
+    green = (unsigned char) (((color_scales[current_scale][idx2][1] - color_scales[current_scale][idx1][1])*fractBetween + color_scales[current_scale][idx1][1]) * 255);
+    blue  = (unsigned char) (((color_scales[current_scale][idx2][2] - color_scales[current_scale][idx1][2])*fractBetween + color_scales[current_scale][idx1][2]) * 255);
 
     Color result;
     result.r = red;
@@ -700,8 +723,8 @@ static void draw_scale(Font font, int font_size_small) {
     real_cpu tick_ofsset = 12;
     num_ticks = (int) ((draw_config.max_v - draw_config.min_v)/tick_ofsset);
 
-    if(num_ticks < 4) {
-        num_ticks = 4;
+    if(num_ticks < 5) {
+        num_ticks = 5;
         tick_ofsset = (draw_config.max_v - draw_config.min_v)/num_ticks;
     }
 
@@ -1023,6 +1046,20 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
 
     if (IsKeyPressed('G'))  {
         draw_config.grid_only = !draw_config.grid_only;
+        return;
+    }
+
+    if (IsKeyPressed('M'))  {
+        current_scale = (current_scale + 1) % NUM_SCALES;
+        return;
+    }
+    if (IsKeyPressed('N'))  {
+        if(current_scale - 1 >= 0) {
+            current_scale = (current_scale - 1);
+        }
+        else {
+            current_scale = NUM_SCALES-1;
+        }
         return;
     }
 
