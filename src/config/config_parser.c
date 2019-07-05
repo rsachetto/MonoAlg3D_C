@@ -14,12 +14,13 @@ static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
 
-static const char *visualization_opt_string = "x:m:d:p:v:a:h?";
+static const char *visualization_opt_string = "x:m:d:p:v:a:c:h?";
 static const struct option long_visualization_options[] = {
         {"visualization_max_v", required_argument, NULL, 'x'},
         {"visualization_min_v", required_argument, NULL, 'm'},
         {"dt", required_argument, NULL, 'd'},
-        {"activation_map", required_argument, NULL, 'a'},
+        {"show_activation_map", required_argument, NULL, 'a'},
+        {"convert_activation_map", required_argument, NULL, 'c'},
         {"prefix", required_argument, NULL, 'p'},
         {"pvd", required_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
@@ -127,7 +128,8 @@ void display_visualization_usage(char **argv) {
     printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
     printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
     printf("--dt | -d, dt for the simulation. Default: 0\n");
-    printf("--activation_map | -a activation_map_file, visualize only the activation map file. Default: NULL\n");
+    printf("--show_activation_map | -a activation_map_file, visualize only the activation map file. Default: NULL\n");
+    printf("--convert_activation_map | -c activation_map_file, only convert the activation map file to VTU without opening it. Default: NULL\n");
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--pvd | -v, pvd file. Default: NULL\n");
     printf("--help | -h. Shows this help and exit \n");
@@ -164,6 +166,7 @@ struct visualization_options *new_visualization_options() {
     options->files_prefix = strdup("V_it");
     options->pvd_file = NULL;
     options->activation_map = NULL;
+    options->save_activation_only = false;
 
     return options;
 }
@@ -686,6 +689,10 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
                 break;
             case 'a':
                 user_args->activation_map = strdup(optarg);
+                break;
+            case 'c':
+                user_args->activation_map = strdup(optarg);
+                user_args->save_activation_only = true;
                 break;
             case 'h': /* fall-through is intentional */
             case '?':

@@ -254,38 +254,53 @@ int main(int argc, char **argv) {
         }
     }
 
-    #pragma omp parallel sections num_threads(2)
-    {
-        #pragma omp section
-        {
-            omp_init_lock(&draw_config.draw_lock);
-            omp_init_lock(&draw_config.sleep_lock);
-            init_draw_config(&draw_config, options);
-            init_and_open_visualization_window(DRAW_FILE);
+    if(options->save_activation_only) {
+        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_activation_file(options->activation_map);
+        if(!vtk_grid) {
+            fprintf(stderr, "Failed to convert %s\n", options->activation_map);
+            exit(EXIT_FAILURE);
         }
+        sds save_path = sdsnew(options->activation_map);
+        save_path = sdscat(save_path, ".vtu");
+        save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, save_path, 6);
+        free_vtk_unstructured_grid(vtk_grid);
+        sdsfree(save_path);
+    }
+    else {
 
-        #pragma omp section
+        #pragma omp parallel sections num_threads(2)
         {
-            if(options->activation_map) {
-                read_and_render_activation_map(options->activation_map);
+            #pragma omp section
+            {
+                omp_init_lock(&draw_config.draw_lock);
+                omp_init_lock(&draw_config.sleep_lock);
+                init_draw_config(&draw_config, options);
+                init_and_open_visualization_window(DRAW_FILE);
             }
-            else {
-                int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
 
-                while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
-                    if (result == RESTART_SIMULATION) {
-                        init_draw_config(&draw_config, options);
-                        result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
-                    }
+            #pragma omp section
+            {
+                if(options->activation_map) {
+                    read_and_render_activation_map(options->activation_map);
+                }
+                else {
+                    int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
 
-                    if (draw_config.restart) result = RESTART_SIMULATION;
+                    while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
+                        if (result == RESTART_SIMULATION) {
+                            init_draw_config(&draw_config, options);
+                            result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
+                        }
 
-                    if (result == END_SIMULATION || draw_config.exit) {
-                        break;
+                        if (draw_config.restart) result = RESTART_SIMULATION;
+
+                        if (result == END_SIMULATION || draw_config.exit) {
+                            break;
+                        }
                     }
                 }
-            }
 
+            }
         }
     }
     free_visualization_options(options);
