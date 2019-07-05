@@ -27,12 +27,16 @@ static bool draw_selected_ap_text = false;
 static bool show_ap = true;
 static bool show_scale = true;
 static bool c_pressed = false;
+static bool draw_grid_lines = false;
+static bool draw_grid_only = false;
 
 static bool show_info_box = true;
 static bool show_end_info_box = true;
 static bool show_mesh_info_box = true;
 static bool show_selection_box = false;
 static bool show_save_box = false;
+
+
 
 Vector3 max_size;
 Vector3 min_size;
@@ -77,15 +81,6 @@ struct point_voidp_hash_entry *selected_aps;
 static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
 }
-
-#define GET_COLOR(scale) \
-        do {\
-            red  = (unsigned char) (((scale[idx2][0] - scale[idx1][0])*fractBetween + scale[idx1][0]) * 255); \
-            green = (unsigned char) (((scale[idx2][1] - scale[idx1][1])*fractBetween + scale[idx1][1]) * 255); \
-            blue  = (unsigned char) (((scale[idx2][2] - scale[idx1][2])*fractBetween + scale[idx1][2]) * 255); \
-        } while(0)
-
-
 
 static inline Color get_color(real_cpu value)
 {
@@ -356,8 +351,6 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
     real_cpu max_v = draw_config.max_v;
     real_cpu min_v = draw_config.min_v;
 
-    bool grid_only = draw_config.grid_only;
-    bool grid_lines = draw_config.grid_lines;
     Color color;
 
     action_potential_array aps = (struct action_potential*) hmget(selected_aps, p);
@@ -385,14 +378,14 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
 
     color = get_color((v - min_v)/(max_v - min_v));
 
-    if(grid_only) {
+    if(draw_grid_only) {
         DrawCubeWiresV(cube_position_draw, cube_size, color);
     }
     else {
 
         DrawCubeV(cube_position_draw, cube_size, color);
 
-        if(grid_lines) {
+        if(draw_grid_lines) {
             DrawCubeWiresV(cube_position_draw, cube_size, BLACK);
         }
 
@@ -1045,7 +1038,7 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
     }
 
     if (IsKeyPressed('G'))  {
-        draw_config.grid_only = !draw_config.grid_only;
+        draw_grid_only = !draw_grid_only;
         return;
     }
 
@@ -1064,7 +1057,7 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
     }
 
     if (IsKeyPressed('L')) {
-        draw_config.grid_lines = !draw_config.grid_lines;
+        draw_grid_lines = !draw_grid_lines;
         return;
     }
 
@@ -1161,9 +1154,6 @@ void init_and_open_visualization_window() {
     Font font = GetFontDefault();
 
     bool mesh_loaded = false;
-
-    draw_config.grid_only = false;
-    draw_config.grid_lines = true;
 
     selected_aps = NULL;
     hmdefault(selected_aps, NULL);

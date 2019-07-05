@@ -32,8 +32,6 @@ struct draw_config {
 
     real_cpu max_v;
     real_cpu min_v;
-    bool grid_only;
-    bool grid_lines;
     bool simulating;
     bool paused;
     bool exit;

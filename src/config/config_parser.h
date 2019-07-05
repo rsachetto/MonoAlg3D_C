@@ -125,6 +125,7 @@ struct visualization_options {
     char *files_prefix;
     char *pvd_file;
     char *activation_map;
+    bool save_activation_only;
     real_cpu max_v, min_v, dt;
 };
 
