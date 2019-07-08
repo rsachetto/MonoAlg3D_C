@@ -373,7 +373,6 @@ int main(int argc, char **argv) {
 
             printf("Rank %d, performing simulation %d and saving in %s\n", rank, simulation_number_start, options->save_mesh_config->out_dir_name);
 
-            //TODO: we have to change the original configuration to be equal to the changed configuration...
             // Create the output dir and the logfile
             sds buffer_log = sdsnew("");
             sds buffer_ini = sdsnew("");
@@ -397,7 +396,7 @@ int main(int argc, char **argv) {
             print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
                                      buffer_ini);
 
-            cp_file(buffer_ini, batch_options->initial_config);
+            options_to_ini_file(options, buffer_ini);
 
             sdsfree(buffer_log);
             sdsfree(buffer_ini);

@@ -236,8 +236,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
         // Here we only restore the grid...
 
-        // TODO: 
-        // Create a Purkinje restore function in the 'restore_library' and put here ...
+        // TODO: Create a Purkinje restore function in the 'restore_library' and put here ...
         restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, the_grid, NULL, NULL);
     } 
     else 
@@ -412,7 +411,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     long iteration_time;
 
     init_stop_watch(&iteration_time_watch);
-
 
     // Main simulation loop start
     while(cur_time <= finalT)
@@ -616,7 +614,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
     bool act = false;
 
     if(the_ode_solver->gpu) {
-#ifdef COMPILE_CUDA
+    #ifdef COMPILE_CUDA
         uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
         real *vms;
         size_t mem_size = max_number_of_cells * sizeof(real);
@@ -624,7 +622,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
         vms = (real *)malloc(mem_size);
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-#pragma omp parallel for
+        #pragma omp parallel for
         for(i = 0; i < n_active; i++) {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
 
@@ -635,9 +633,9 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
-#endif
+    #endif
     } else {
-#pragma omp parallel for
+        #pragma omp parallel for
         for(i = 0; i < n_active; i++) {
             sv[ac[i]->sv_position * n_odes] = (real)ac[i]->v;
 
@@ -657,7 +655,7 @@ void save_old_cell_positions(struct grid *the_grid) {
 
     int i;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for(i = 0; i < n_active; i++) {
         ac[i]->sv_position = ac[i]->grid_position;
     }
@@ -677,7 +675,7 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
     uint32_t *cts = solver->cells_to_solve;
     int i;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for(i = 0; i < n_active; i++) {
         cts[i] = ac[i]->sv_position;
     }
@@ -690,9 +688,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     print_to_stdout_and_file("System parameters: \n");
-#if defined(_OPENMP)
+    #if defined(_OPENMP)
     print_to_stdout_and_file("Using OpenMP with %d threads\n", omp_get_max_threads());
-#endif
+    #endif
     if(the_ode_solver->gpu) {
         print_to_stdout_and_file("Using GPU to solve ODEs\n");
     }

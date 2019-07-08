@@ -144,6 +144,7 @@ void parse_visualization_options(int argc, char**argv, struct visualization_opti
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
+void options_to_ini_file(struct user_options *config, char *ini_file_path);
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
 void free_user_options(struct user_options *s);

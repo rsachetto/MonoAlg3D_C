@@ -369,7 +369,6 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
     struct element new_element;
     new_element.column = position;
 
-    //TODO: simplify with ||
     if(direction == 'n') { // Z direction
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;

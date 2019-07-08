@@ -58,7 +58,6 @@ void print_restore_state_config_values(struct restore_state_config* s) {
     printf("restore_state_function: %s\n",s->config_data.function_name);
     printf("restore_stateh_library_file: %s\n",s->config_data.library_file_path);
     printf("restore_state_config:\n");
-    //TODO: chan
     STRING_HASH_PRINT_KEY_VALUE(s->config_data.config);
 }
 
