@@ -93,7 +93,7 @@ void display_usage(char **argv) {
     printf("--beta. Value of beta for simulation (Default: 0.14 \n");
     printf("--cm. Value cm (Default: 1.0 \n");
     printf("--num_threads | -n [num-threads]. Solve using OpenMP. Default: 1 \n");
-    printf("--use_gpu | -g [yes|no|true|false]. Solve ODEs using GPU. Default: No \n");
+    printf("--use_gpu | -g [0|1|yes|no|true|false]. Solve ODEs using GPU. Default: No \n");
     printf("--use_preconditioner | -j Use Jacobi Preconditioner. Default: No \n");
     printf("--refine_each | -R [ts], Refine each ts timesteps. Default: 1 \n");
     printf("--derefine_each | -D [ts], Derefine each ts timesteps. Default: 1 \n");
@@ -540,7 +540,7 @@ void set_save_mesh_config(const char *args, struct save_mesh_config *sm, const c
 
                 issue_overwrite_warning("remove_older_simulation", "save_mesh", old_value, optarg, config_file);
             }
-            if(strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
+            if(strcmp(optarg, "1") == 0 || strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
                 sm->remove_older_simulation_dir = true;
             } else if(strcmp(optarg, "false") == 0 || strcmp(optarg, "no") == 0) {
                 sm->remove_older_simulation_dir = false;
@@ -832,7 +832,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
 
                 issue_overwrite_warning("use_gpu", "ode_solver", old_value, optarg, user_args->config_file);
             }
-            if(strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
+            if(strcmp(optarg, "1") == 0 || strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
                 user_args->gpu = true;
             } else if(strcmp(optarg, "false") == 0 || strcmp(optarg, "no") == 0) {
                 user_args->gpu = false;
@@ -1003,7 +1003,7 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
             pconfig->initial_config = strdup(value);
         } else if(MATCH_NAME("skip_existing_run")) {
 
-            if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
                 pconfig->skip_existing_run = true;
             } else if(strcmp(value, "false") == 0 || strcmp(value, "no") == 0) {
                 pconfig->skip_existing_run = false;
@@ -1051,7 +1051,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         pconfig->start_adapting_at = strtof(value, NULL);
         pconfig->start_adapting_at_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "abort_on_no_activity")) {
-        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+        if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
             pconfig->abort_no_activity = true;
         } else {
             pconfig->abort_no_activity = false;
@@ -1061,14 +1061,14 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         pconfig->vm_threshold = strtof(value, NULL);
         pconfig->vm_threshold_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "use_adaptivity")) {
-        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+        if( strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
             pconfig->adaptive = true;
         } else {
             pconfig->adaptive = false;
         }
         pconfig->adaptive_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "quiet")) {
-        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+        if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
             pconfig->quiet = true;
         } else {
             pconfig->quiet = false;
@@ -1093,7 +1093,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->dt_ode_was_set = true;
         }
         else if(MATCH_NAME("use_gpu")) {
-            if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
                 pconfig->gpu = true;
             } else {
                 pconfig->gpu = false;
@@ -1299,7 +1299,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->save_mesh_config->out_dir_name = strdup(value);
             pconfig->save_mesh_config->out_dir_name_was_set = true;
         } else if(MATCH_NAME("remove_older_simulation")) {
-            if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
                 pconfig->save_mesh_config->remove_older_simulation_dir = true;
             } else {
                 pconfig->save_mesh_config->remove_older_simulation_dir = false;
@@ -1354,6 +1354,185 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     }
 
     return 1;
+}
+
+void options_to_ini_file(struct user_options *config, char *ini_file_path) {
+
+    #define WRITE_INI_SECTION(SECTION) fprintf(ini_file, "[%s]\n", SECTION)
+
+    #define WRITE_NAME_VALUE_WITHOUT_CHECK(NAME, VALUE, SPECIFIER) fprintf(ini_file, "%s = %" SPECIFIER "\n", NAME, VALUE)
+
+    #define WRITE_NAME_VALUE(NAME, VALUE, SPECIFIER) \
+    do { \
+        if(VALUE ## _was_set) \
+            WRITE_NAME_VALUE_WITHOUT_CHECK(NAME, VALUE, SPECIFIER); \
+    }while(0)
+
+    #define WRITE_EXTRA_CONFIG(hash) \
+    do {\
+        for (int j = 0; j < hmlen(hash); j++) { \
+            char *name = hash[j].key; \
+            if (strcmp(name, "function") != 0 && strcmp(name, "library_file") != 0) { \
+                char *value = hash[j].value;\
+                WRITE_NAME_VALUE_WITHOUT_CHECK(name, value, "s");\
+            }\
+        }\
+    }\
+    while(0)
+
+        FILE *ini_file = fopen(ini_file_path, "w");
+
+    if(!ini_file) {
+        fprintf(stderr, "options_to_ini_file. Error creating %s\n",ini_file_path);
+        return;
+    }
+
+    WRITE_INI_SECTION(MAIN_SECTION);
+    WRITE_NAME_VALUE("num_threads", config->num_threads, "d");
+    WRITE_NAME_VALUE("dt_pde" , config->dt_pde, "f");
+    WRITE_NAME_VALUE("simulation_time", config->final_time, "f");
+    WRITE_NAME_VALUE("beta", config->beta, "f");
+    WRITE_NAME_VALUE("cm", config->cm, "f");
+    WRITE_NAME_VALUE("start_adapting_at", config->start_adapting_at, "f");
+    WRITE_NAME_VALUE("abort_on_no_activity", config->abort_no_activity, "d");
+    WRITE_NAME_VALUE("vm_threshold", config->vm_threshold, "f");
+    WRITE_NAME_VALUE("use_adaptivity", config->adaptive, "d");
+    WRITE_NAME_VALUE("quiet", config->quiet, "d");
+    WRITE_NAME_VALUE("refinement_bound", config->ref_bound, "f");
+    WRITE_NAME_VALUE("derefinement_bound", config->deref_bound, "f");
+    WRITE_NAME_VALUE("refine_each", config->refine_each, "d");
+    WRITE_NAME_VALUE("derefine_each", config->derefine_each, "d");
+
+    WRITE_INI_SECTION(ODE_SECTION);
+    WRITE_NAME_VALUE("dt_ode", config->dt_ode, "f");
+    WRITE_NAME_VALUE("use_gpu", config->gpu, "d");
+    WRITE_NAME_VALUE("gpu_id", config->gpu_id, "d");
+    WRITE_NAME_VALUE("library_file", config->model_file_path, "s");
+
+    for(int i = 0; i < hmlen(config->stim_configs); i++) {
+        struct string_voidp_hash_entry e = config->stim_configs[i];
+        WRITE_INI_SECTION(e.key);
+
+        struct stim_config *tmp = (struct stim_config*) e.value;
+
+        WRITE_NAME_VALUE("start", tmp->stim_start, "f");
+        WRITE_NAME_VALUE("duration", tmp->stim_duration, "f");
+        WRITE_NAME_VALUE("current", tmp->stim_current, "f");
+        WRITE_NAME_VALUE("period", tmp->stim_period, "f");
+        WRITE_NAME_VALUE("function", tmp->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", tmp->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(tmp->config_data.config);
+
+    }
+
+    if(config->domain_config) {
+        WRITE_INI_SECTION(DOMAIN_SECTION);
+        WRITE_NAME_VALUE("name", config->domain_config->domain_name, "s");
+        WRITE_NAME_VALUE("start_dx", config->domain_config->start_dx, "f");
+        WRITE_NAME_VALUE("start_dy", config->domain_config->start_dy, "f");
+        WRITE_NAME_VALUE("start_dz", config->domain_config->start_dz, "f");
+        WRITE_NAME_VALUE("maximum_dx", config->domain_config->max_dx, "f");
+        WRITE_NAME_VALUE("maximum_dy", config->domain_config->max_dy, "f");
+        WRITE_NAME_VALUE("maximum_dz", config->domain_config->max_dz, "f");
+        WRITE_NAME_VALUE("function", config->domain_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->domain_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->domain_config->config_data.config);
+    }
+
+    if(config->purkinje_config) {
+        WRITE_INI_SECTION(PURKINJE_SECTION);
+        WRITE_NAME_VALUE("name", config->purkinje_config->domain_name, "s");
+        WRITE_NAME_VALUE("start_discretization", config->purkinje_config->start_h, "f");
+
+        WRITE_NAME_VALUE("function", config->purkinje_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->purkinje_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->purkinje_config->config_data.config);
+
+    }
+
+    if(config->assembly_matrix_config) {
+        WRITE_INI_SECTION(MATRIX_ASSEMBLY_SECTION);
+
+        WRITE_NAME_VALUE("function", config->assembly_matrix_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("ic_function", config->assembly_matrix_config->config_data_ic.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->assembly_matrix_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->assembly_matrix_config->config_data.config);
+
+    }
+
+    if(config->update_monodomain_config) {
+        WRITE_INI_SECTION(UPDATE_MONODOMAIN_SECTION);
+
+        WRITE_NAME_VALUE("function", config->update_monodomain_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->update_monodomain_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->update_monodomain_config->config_data.config);
+    }
+
+    if(config->linear_system_solver_config) {
+
+        WRITE_INI_SECTION(LINEAR_SYSTEM_SOLVER_SECTION);
+
+        WRITE_NAME_VALUE("function", config->linear_system_solver_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->linear_system_solver_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->linear_system_solver_config->config_data.config);
+
+    }
+
+    if(config->extra_data_config) {
+        WRITE_INI_SECTION(EXTRA_DATA_SECTION);
+
+        WRITE_NAME_VALUE("function", config->extra_data_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->extra_data_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->extra_data_config->config_data.config);
+
+    }
+
+    if(config->save_mesh_config) {
+        WRITE_INI_SECTION(SAVE_RESULT_SECTION);
+
+        WRITE_NAME_VALUE("print_rate", config->save_mesh_config->print_rate, "d");
+        WRITE_NAME_VALUE("output_dir", config->save_mesh_config->out_dir_name, "s");
+        WRITE_NAME_VALUE("remove_older_simulation", config->save_mesh_config->remove_older_simulation_dir, "d");
+
+        WRITE_NAME_VALUE("function", config->save_mesh_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->save_mesh_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->save_mesh_config->config_data.config);
+
+    }
+
+    if(config->save_state_config) {
+        WRITE_INI_SECTION(SAVE_STATE_SECTION);
+
+        WRITE_NAME_VALUE("save_rate", config->save_state_config->save_rate, "d");
+        WRITE_NAME_VALUE("function", config->save_state_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->save_state_config->config_data.library_file_path, "s");
+
+        WRITE_EXTRA_CONFIG(config->save_state_config->config_data.config);
+
+    }
+
+    if(config->save_state_config) {
+        WRITE_INI_SECTION(RESTORE_STATE_SECTION);
+
+        WRITE_NAME_VALUE("function", config->restore_state_config->config_data.function_name, "s");
+        WRITE_NAME_VALUE("library_file", config->restore_state_config->config_data.library_file_path, "s");
+        WRITE_EXTRA_CONFIG(config->restore_state_config->config_data.config);
+    }
+
+
+#undef WRITE_INI_SECTION
+#undef WRITE_NAME_VALUE
+#undef WRITE_NAME_VALUE_WITHOUT_CHECK
+#undef WRITE_EXTRA_CONFIG
+
 }
 
 void configure_grid_from_options(struct grid *grid, struct user_options *options) {
