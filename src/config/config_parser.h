@@ -44,6 +44,9 @@
 #define CM 5000
 #define VISUALIZATION_PAUSED_OPT 5100
 
+#define IS_TRUE(str) ( strcmp((str), "true") == 0 || strcmp((str), "yes") == 0 || strcmp((str), "1") == 0 )
+#define IS_FALSE(str) ( strcmp((str), "false") == 0 || strcmp((str), "no") == 0 || strcmp((str), "0") == 0 )
+
 struct user_options {
     real_cpu final_time;				/*-f option */
     bool final_time_was_set;

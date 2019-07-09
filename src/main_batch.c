@@ -17,8 +17,8 @@ struct changed_parameters {
     char *section;
     char *name;
     union {
-        f32_array values;
-        float value;
+        string_array values;
+        char* value;
     };
 };
 
@@ -27,29 +27,27 @@ struct simulation {
     struct changed_parameters *parameters;
 };
 
-//TODO: For now, only numerical values can be changed by the modify directives.
-// We could change this and allow a list of strings (using void* in the get_combinations function)
 static void configure_new_parameters(struct changed_parameters *changed, struct user_options *options) {
     
     int len = arrlen(changed);
     
     for(int n = 0; n < len; n++) {
-        sds char_value = sdscatprintf(sdsempty(), "%lf", changed[n].value);
-        
+        float float_value = strtof(changed[n].value, NULL);
+
         if (strcmp(MAIN_SECTION, changed[n].section) == 0) {
             
             if (strcmp("num_threads", changed[n].name) == 0) {
-                options->num_threads = (int)changed[n].value;
+                options->num_threads = (int)float_value;
             } else if (strcmp("dt_pde", changed[n].name) == 0) {
-                options->dt_pde = changed[n].value;
+                options->dt_pde = float_value;
             } else if (strcmp("simulation_time", changed[n].name) == 0) {
-                options->final_time = changed[n].value;
+                options->final_time = float_value;
             } else if (strcmp("vm_threshold", changed[n].name) == 0) {
-                options->vm_threshold = changed[n].value;
+                options->vm_threshold = float_value;
             } else if (strcmp("use_adaptivity", changed[n].name) == 0) {
-                options->adaptive = (int) changed[n].value;
+                options->adaptive = IS_TRUE(changed[n].value);
             } else if (strcmp("abort_on_no_activity", changed[n].name) == 0) {
-                options->adaptive = (int)changed[n].value;
+                options->adaptive = IS_TRUE(changed[n].value);
             }
             else {
                 fprintf(stderr, "Parameter %s in section %s cannot be changed\n", changed[n].name, changed[n].section );
@@ -58,47 +56,77 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
         }
         else if (strcmp(ODE_SECTION, changed[n].section) == 0) {
             if (strcmp("dt_ode", changed[n].name) == 0) {
-                options->dt_ode = changed[n].value;
+                options->dt_ode = float_value;
             } else if (strcmp("gpu_id", changed[n].name) == 0) {
-                options->gpu_id  = (int)changed[n].value;
+                options->gpu_id  = (int)float_value;}
+            else if (strcmp("library_file", changed[n].name) == 0) {
+                free(options->model_file_path);
+                options->model_file_path  = strdup( changed[n].value);
             }
         }
         
         if (strcmp(EXTRA_DATA_SECTION, changed[n].section) == 0) {
             if (options->extra_data_config) {
                 shput(options->extra_data_config->config_data.config, changed[n].name,
-                      strdup(char_value));
+                      strdup(changed[n].value));
             }
         } else if (strcmp(DOMAIN_SECTION, changed[n].section) == 0) {
             
             if (options->domain_config) {
                 
                 if (strcmp("start_dx", changed[n].name) == 0) {
-                    options->domain_config->start_dx = changed[n].value;
+                    options->domain_config->start_dx = float_value;
                 } else if (strcmp("start_dy", changed[n].name) == 0) {
-                    options->domain_config->start_dy = changed[n].value;
+                    options->domain_config->start_dy = float_value;
                 } else if (strcmp("start_dz", changed[n].name) == 0) {
-                    options->domain_config->start_dz = changed[n].value;
+                    options->domain_config->start_dz = float_value;
                 } else if (strcmp("maximum_dx", changed[n].name) == 0) {
-                    options->domain_config->max_dx = changed[n].value;
+                    options->domain_config->max_dx = float_value;
                 } else if (strcmp("maximum_dy", changed[n].name) == 0) {
-                    options->domain_config->max_dy = changed[n].value;
+                    options->domain_config->max_dy = float_value;
                 } else if (strcmp("maximum_dz", changed[n].name) == 0) {
-                    options->domain_config->max_dz = changed[n].value;
+                    options->domain_config->max_dz = float_value;
+                }
+                else if (strcmp("library_file", changed[n].name) == 0) {
+                    free(options->domain_config->config_data.library_file_path);
+                    options->domain_config->config_data.library_file_path = strdup(changed[n].value);
+                }
+                else if (strcmp("function", changed[n].name) == 0) {
+                    free(options->domain_config->config_data.function_name);
+                    options->domain_config->config_data.function_name = strdup( changed[n].value);
                 } else {
                     shput(options->domain_config->config_data.config, changed[n].name,
-                          strdup(char_value));
+                          strdup(changed[n].value));
                 }
             }
         } else if (strcmp(MATRIX_ASSEMBLY_SECTION, changed[n].section) == 0) {
+
             if (options->assembly_matrix_config) {
-                shput(options->assembly_matrix_config->config_data.config,
-                      changed[n].name, strdup(char_value));
+                if (strcmp("library_file", changed[n].name) == 0) {
+                    free(options->assembly_matrix_config->config_data.library_file_path);
+                    options->assembly_matrix_config->config_data.library_file_path = strdup(changed[n].value);
+                } else if (strcmp("function", changed[n].name) == 0) {
+                    free(options->assembly_matrix_config->config_data.function_name);
+                    options->assembly_matrix_config->config_data.function_name = strdup(changed[n].value);
+                } else {
+                    shput(options->assembly_matrix_config->config_data.config,
+                          changed[n].name, strdup(changed[n].value));
+                }
             }
+
         } else if (strcmp(LINEAR_SYSTEM_SOLVER_SECTION, changed[n].section) == 0) {
             if (options->linear_system_solver_config) {
-                shput(options->linear_system_solver_config->config_data.config,
-                      changed[n].name, strdup(char_value));
+                if (strcmp("library_file", changed[n].name) == 0) {
+                    free(options->linear_system_solver_config->config_data.library_file_path);
+                    options->linear_system_solver_config->config_data.library_file_path = strdup(changed[n].value);
+                } else if (strcmp("function", changed[n].name) == 0) {
+                    free(options->linear_system_solver_config->config_data.function_name);
+                    options->linear_system_solver_config->config_data.function_name = strdup(changed[n].value);
+                }
+                else {
+                    shput(options->linear_system_solver_config->config_data.config,
+                          changed[n].name, strdup(changed[n].value));
+                }
             }
         }
         else if (strncmp(changed[n].section, STIM_SECTION, strlen(STIM_SECTION)) == 0){
@@ -106,13 +134,21 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
             struct stim_config *sc = (struct stim_config *)shget(options->stim_configs, changed[n].section);
             if(sc) {
                 if (strcmp("start", changed[n].name) == 0) {
-                    sc->stim_start = changed[n].value;
+                    sc->stim_start = float_value;
                 } else if (strcmp("duration", changed[n].name) == 0) {
-                    sc->stim_duration = changed[n].value;
+                    sc->stim_duration = float_value;
                 } else if (strcmp("current", changed[n].name) == 0) {
-                    sc->stim_current = changed[n].value;
+                    sc->stim_current = float_value;
+                }
+                else if (strcmp("library_file", changed[n].name) == 0) {
+                    free(sc->config_data.library_file_path);
+                    sc->config_data.library_file_path = strdup(changed[n].value);
+                } else if (strcmp("function", changed[n].name) == 0) {
+                    free(sc->config_data.function_name);
+                    sc->config_data.function_name = strdup(changed[n].value);
+
                 } else {
-                    shput(sc->config_data.config, changed[n].name, strdup(char_value));
+                    shput(sc->config_data.config, changed[n].name, strdup(changed[n].value));
                 }
 
                 shput(options->stim_configs, changed[n].section, sc);
@@ -120,9 +156,7 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
             }
 
         }
-        
-        
-        sdsfree(char_value);
+
     }
     
 }
@@ -148,7 +182,7 @@ static struct changed_parameters parse_range_or_list_values(char *directive_rhs,
     
     sds *value_directive = sdssplit(directive_lhs, "|", &count_value_directive);
     
-    f32_array values = NULL;
+    string_array values = NULL;
     
     if(strcmp(value_directive[0], "range") == 0) {
         
@@ -163,14 +197,15 @@ static struct changed_parameters parse_range_or_list_values(char *directive_rhs,
         double inc = strtod(value_directive[3], NULL);
         
         while (value_start <= value_end) {
-            arrpush(values, value_start);
+            char tmp[256];
+            sprintf(tmp, "%f", value_start);
+            arrpush(values, strdup(tmp));
             value_start += inc;
         }
     }
     else if(strcmp(value_directive[0], "list") == 0) {
         for(int i = 1; i < count_value_directive; i++) {
-            float val = strtof(value_directive[i], NULL);
-            arrpush(values, val);
+            arrpush(values, strdup(value_directive[i]));
         }
     }
     else {
@@ -189,12 +224,12 @@ static struct changed_parameters parse_range_or_list_values(char *directive_rhs,
     return c;
 }
 
-static f32_array get_combination(ui32_array counters, f32_array *sets);
-static bool increment(ui32_array counters, f32_array *sets);
+static string_array get_combination(ui32_array counters, string_array *sets);
+static bool increment(ui32_array counters, string_array *sets);
 
-static f32_array * get_combinations(f32_array *sets) {
-    
-    f32_array *combinations = NULL;
+static string_array * get_combinations(string_array *sets) {
+
+    string_array *combinations = NULL;
     ui32_array counters = NULL;
     
     for(int i = 0; i < arrlen(sets); i++) {
@@ -210,16 +245,16 @@ static f32_array * get_combinations(f32_array *sets) {
     return combinations;
 }
 
-static f32_array get_combination(ui32_array counters, f32_array *sets) {
-    
-    f32_array o = NULL;
+static string_array get_combination(ui32_array counters, string_array *sets) {
+
+    string_array o = NULL;
     for(int i = 0; i < arrlen(counters); i++) {
-        arrput(o, sets[i][counters[i]]);
+        arrput(o, strdup(sets[i][counters[i]]));
     }
     return o;
 }
 
-static bool increment(ui32_array counters, f32_array *sets) {
+static bool increment(ui32_array counters, string_array *sets) {
     for(int i = arrlen(counters) - 1; i >= 0; i--) {
         if(counters[i] < arrlen(sets[i]) - 1) {
             counters[i]++;
@@ -238,7 +273,7 @@ struct simulation * generate_all_simulations(struct string_hash_entry* modify_di
     int n = (int)shlen(modify_directives);
     
     struct simulation *all_simulations = NULL;
-    f32_array *sets = NULL;
+    string_array *sets = NULL;
     struct changed_parameters *section_names = NULL;
     
     for(int i = 0; i < n; i++) {
@@ -247,7 +282,7 @@ struct simulation * generate_all_simulations(struct string_hash_entry* modify_di
         arrput(sets, c.values);
     }
     
-    f32_array *a = get_combinations(sets);
+    string_array *a = get_combinations(sets);
     uint32_t sim_count = 1;
     
     for(int s = 0; s < num_sims; s++) {
@@ -302,7 +337,7 @@ void print_simulations( struct simulation *all_simulations) {
         printf("----------------SIMULATION %d--------------\n", all_simulations[i].run_number);
         
         for(int j = 0; j < k; j++) {
-            printf("SECTION: %s | NAME: %s | VALUE %f\n", c[j].section, c[j].name, c[j].value);
+            printf("SECTION: %s | NAME: %s | VALUE: %s\n", c[j].section, c[j].name, c[j].value);
         }
         
         printf("-------------------------------------------\n");
@@ -344,6 +379,8 @@ int main(int argc, char **argv) {
     }
     
     struct simulation *all_simulations = generate_all_simulations(batch_options->config_to_change, batch_options->num_simulations);
+
+    print_simulations(all_simulations);
     
     int total_simulations = arrlen(all_simulations);
     
@@ -404,7 +441,16 @@ int main(int argc, char **argv) {
         sds new_out_dir_name = sdscatprintf(sdsempty(), "%s/%s_run_%d", output_folder, initial_out_dir_name, simulation.run_number);
         
         for(int n = 0; n < config_n; n++) {
-            sdscatprintf(new_out_dir_name, "_%s_%f", simulation.parameters[n].name, simulation.parameters[n].value);
+            char *new_value = strdup(simulation.parameters[n].value);
+            char *tmp = new_value;
+
+            //If we have / on the value we need to change to another char...
+            for( ; *tmp; tmp++) {
+                if(*tmp == '/') *tmp = '_';
+            }
+
+            new_out_dir_name = sdscatprintf(new_out_dir_name, "_%s_%s", simulation.parameters[n].name, new_value);
+            free(new_value);
         }
         
         if(skip_existing) {
