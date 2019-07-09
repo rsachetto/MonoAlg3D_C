@@ -540,13 +540,13 @@ void set_save_mesh_config(const char *args, struct save_mesh_config *sm, const c
 
                 issue_overwrite_warning("remove_older_simulation", "save_mesh", old_value, optarg, config_file);
             }
-            if(strcmp(optarg, "1") == 0 || strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
+            if(IS_TRUE(optarg)) {
                 sm->remove_older_simulation_dir = true;
-            } else if(strcmp(optarg, "false") == 0 || strcmp(optarg, "no") == 0) {
+            } else if(IS_FALSE(optarg)) {
                 sm->remove_older_simulation_dir = false;
             } else {
                 fprintf(stderr,
-                        "Warning: Invalid value for remove_older_simulation option: %s! Valid options are: true, yes, false, no. "
+                        "Warning: Invalid value for remove_older_simulation option: %s! Valid options are: true, yes, false, no, 0 or 1 "
                         "Setting the value to false\n",
                         optarg);
                 sm->remove_older_simulation_dir = false;
@@ -832,13 +832,13 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
 
                 issue_overwrite_warning("use_gpu", "ode_solver", old_value, optarg, user_args->config_file);
             }
-            if(strcmp(optarg, "1") == 0 || strcmp(optarg, "true") == 0 || strcmp(optarg, "yes") == 0) {
+            if(IS_TRUE(optarg)) {
                 user_args->gpu = true;
-            } else if(strcmp(optarg, "false") == 0 || strcmp(optarg, "no") == 0) {
+            } else if(IS_FALSE(optarg)) {
                 user_args->gpu = false;
             } else {
                 fprintf(stderr,
-                        "Warning: Invalid value for use_gpu option: %s! Valid options are: true, yes, false, no. "
+                        "Warning: Invalid value for use_gpu option: %s! Valid options are: true, yes, false, no, 0 or 1. "
                         "Setting the value to false\n",
                         optarg);
                 user_args->gpu = false;
@@ -1003,13 +1003,13 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
             pconfig->initial_config = strdup(value);
         } else if(MATCH_NAME("skip_existing_run")) {
 
-            if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            if(IS_TRUE(value)) {
                 pconfig->skip_existing_run = true;
-            } else if(strcmp(value, "false") == 0 || strcmp(value, "no") == 0) {
+            } else if(IS_FALSE(value)) {
                 pconfig->skip_existing_run = false;
             } else {
                 fprintf(stderr,
-                        "Warning: Invalid value for skip_existing_run option: %s! Valid options are: true, yes, false, no. "
+                        "Warning: Invalid value for skip_existing_run option: %s! Valid options are: true, yes, false, no, 0 or 1. "
                         "Setting the value to false\n",
                         value);
                 pconfig->skip_existing_run = false;
@@ -1051,7 +1051,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         pconfig->start_adapting_at = strtof(value, NULL);
         pconfig->start_adapting_at_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "abort_on_no_activity")) {
-        if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+        if(IS_TRUE(value)) {
             pconfig->abort_no_activity = true;
         } else {
             pconfig->abort_no_activity = false;
@@ -1061,14 +1061,14 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         pconfig->vm_threshold = strtof(value, NULL);
         pconfig->vm_threshold_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "use_adaptivity")) {
-        if( strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+        if( IS_TRUE(value) ) {
             pconfig->adaptive = true;
         } else {
             pconfig->adaptive = false;
         }
         pconfig->adaptive_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "quiet")) {
-        if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+        if(IS_TRUE(value)) {
             pconfig->quiet = true;
         } else {
             pconfig->quiet = false;
@@ -1093,7 +1093,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->dt_ode_was_set = true;
         }
         else if(MATCH_NAME("use_gpu")) {
-            if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            if(IS_TRUE(value)) {
                 pconfig->gpu = true;
             } else {
                 pconfig->gpu = false;
@@ -1299,7 +1299,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->save_mesh_config->out_dir_name = strdup(value);
             pconfig->save_mesh_config->out_dir_name_was_set = true;
         } else if(MATCH_NAME("remove_older_simulation")) {
-            if(strcmp(value, "1") == 0 || strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            if(IS_TRUE(value)) {
                 pconfig->save_mesh_config->remove_older_simulation_dir = true;
             } else {
                 pconfig->save_mesh_config->remove_older_simulation_dir = false;
