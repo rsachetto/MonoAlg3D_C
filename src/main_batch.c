@@ -4,14 +4,12 @@
 #include "monodomain/ode_solver.h"
 #include "string/sds.h"
 #include "utils/file_utils.h"
-
-#include <mpi.h>
-#include <string.h>
-
-
 #include "single_file_libraries/stb_ds.h"
 #include "ini_parser/ini_file_sections.h"
 #include "config/stim_config.h"
+
+#include <mpi.h>
+#include <string.h>
 
 struct changed_parameters {
     char *section;
@@ -428,7 +426,8 @@ int main(int argc, char **argv) {
     
     output_folder = batch_options->output_folder;
     options->draw = false;
-    
+
+    MPI_Barrier(MPI_COMM_WORLD);
     for(int s = simulation_number_start; s < simulation_number_start+num_simulations; s++) {
         
         the_grid = new_grid();
@@ -472,7 +471,7 @@ int main(int argc, char **argv) {
         // Create the output dir and the logfile
         sds buffer_log = sdsnew("");
         sds buffer_ini = sdsnew("");
-        
+
         remove_directory(options->save_mesh_config->out_dir_name);
         create_dir(options->save_mesh_config->out_dir_name);
         

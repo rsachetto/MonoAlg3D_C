@@ -7,6 +7,7 @@
 #include "../libraries_common/config_helpers.h"
 #include "../config/purkinje_config.h"
 #include "../utils/file_utils.h"
+
 #include <assert.h>
 #include <time.h>
 #include <unistd.h>
