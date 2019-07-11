@@ -3,8 +3,9 @@
 //
 
 #include <stddef.h>
-#include "config_common.h"
 #include <dlfcn.h>
+
+#include "config_common.h"
 
 
 #include "../single_file_libraries/stb_ds.h"

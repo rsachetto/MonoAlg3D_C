@@ -36,8 +36,6 @@ static bool show_mesh_info_box = true;
 static bool show_selection_box = false;
 static bool show_save_box = false;
 
-
-
 Vector3 max_size;
 Vector3 min_size;
 
@@ -55,23 +53,14 @@ char save_path[PATH_MAX] = {0};
 float center_x;
 float center_y;
 float center_z;
-// General variables
+
 Vector2 mousePos = { 0 };
 Vector2 windowPos;
 bool dragWindow = false;
 
-//typedef enum COLOR_SCALE {
-//    RAINBOW = 0,
-//    BERLIN,
-//    ACTON,
-//    BAMAKO,
-//    BATLOW
-//} color_scale;
-
-
 int current_scale = 0;
 
-#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))  // Get number of elements in array `A`. Total size of `A` should be known at compile time.
+#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
 
 
 #define WIDER_TEXT "------------------------------------------------------"
@@ -410,16 +399,15 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray 
 
     struct vtk_unstructured_grid *grid_to_draw = draw_config.grid_info.vtk_grid;
 
+
     Vector3 cube_position;
     Vector3 cube_size;
-
+    float center_x, center_y, center_z;
+    real_cpu v;
     float dx, dy, dz;
 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
-
-    float center_x, center_y, center_z;
-    real_cpu v;
 
     uint32_t n_active = grid_to_draw->num_cells;
 
@@ -427,7 +415,6 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray 
     int j = num_points;
 
     for (int i = 0; i < n_active*num_points; i+=num_points) {
-
         dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
         dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
         dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
@@ -457,8 +444,8 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
     struct grid *grid_to_draw = draw_config.grid_info.grid_to_draw;
 
-    Vector3 cubePosition;
-    Vector3 cubeSize;
+    Vector3 cube_position;
+    Vector3 cube_size;
 
     if (grid_to_draw) {
 
@@ -475,16 +462,15 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
                     continue;
                 }
 
+                cube_position.x = (float)((grid_cell->center_x - mesh_offset.x)/scale);
+                cube_position.y = (float)((grid_cell->center_y - mesh_offset.y)/scale);
+                cube_position.z = (float)((grid_cell->center_z - mesh_offset.z)/scale);
 
-                cubePosition.x = (float)((grid_cell->center_x - mesh_offset.x)/scale);
-                cubePosition.y = (float)((grid_cell->center_y - mesh_offset.y)/scale);
-                cubePosition.z = (float)((grid_cell->center_z - mesh_offset.z)/scale);
+                cube_size.x = (float)(grid_cell->dx/scale);
+                cube_size.y = (float)(grid_cell->dy/scale);
+                cube_size.z = (float)(grid_cell->dz/scale);
 
-                cubeSize.x = (float)(grid_cell->dx/scale);
-                cubeSize.y = (float)(grid_cell->dy/scale);
-                cubeSize.z = (float)(grid_cell->dz/scale);
-
-                draw_voxel(cubePosition, (Vector3){grid_cell->center_x, grid_cell->center_y, grid_cell->center_z}, cubeSize, ac[i]->v, ray);
+                draw_voxel(cube_position, (Vector3){grid_cell->center_x, grid_cell->center_y, grid_cell->center_z}, cube_size, ac[i]->v, ray);
 
             }
         }
@@ -1042,11 +1028,11 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
         return;
     }
 
-    if (IsKeyPressed('M'))  {
+    if (IsKeyPressed('.'))  {
         current_scale = (current_scale + 1) % NUM_SCALES;
         return;
     }
-    if (IsKeyPressed('N'))  {
+    if (IsKeyPressed(','))  {
         if(current_scale - 1 >= 0) {
             current_scale = (current_scale - 1);
         }
@@ -1131,23 +1117,22 @@ void init_and_open_visualization_window() {
 
     omp_set_lock(&draw_config.sleep_lock);
 
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    char *tmp = NULL;
+    char *window_title = NULL;
 
     int draw_type = draw_config.draw_type;
 
     if(draw_type == DRAW_SIMULATION) {
-        tmp = (char *) malloc(strlen(draw_config.config_name) + strlen("Simulation visualization - ") + 2);
-        sprintf(tmp, "Simulation visualization - %s", draw_config.config_name);
+        window_title = (char *) malloc(strlen(draw_config.config_name) + strlen("Simulation visualization - ") + 2);
+        sprintf(window_title, "Simulation visualization - %s", draw_config.config_name);
     }
     else {
-        tmp = strdup("Opening mesh...");
+        window_title = strdup("Opening mesh...");
     }
 
-    InitWindow(0, 0, tmp);
+    InitWindow(0, 0, window_title);
 
-    free(tmp);
+    free(window_title);
 
     int current_monitor = 0;
 
@@ -1194,6 +1179,7 @@ void init_and_open_visualization_window() {
             " - A to show/hide AP visualization",
             " - Q to show/hide scale",
             " - C to show/hide everything except grid",
+            " - . or , to change color scales",
             " - Right arrow to advance one dt when paused",
             " - Hold up arrow to advance time when paused",
             " - Double click on a volume to show the AP",
@@ -1256,10 +1242,10 @@ void init_and_open_visualization_window() {
 
             if(draw_type == DRAW_FILE) {
                 if(draw_config.grid_info.file_name) {
-                    tmp = (char *) malloc(strlen(draw_config.grid_info.file_name) + strlen("Visualizing file - ") + 2);
-                    sprintf(tmp, "Visualizing file - %s", draw_config.grid_info.file_name);
-                    SetWindowTitle(tmp);
-                    free(tmp);
+                    window_title = (char *) malloc(strlen(draw_config.grid_info.file_name) + strlen("Visualizing file - ") + 2);
+                    sprintf(window_title, "Visualizing file - %s", draw_config.grid_info.file_name);
+                    SetWindowTitle(window_title);
+                    free(window_title);
                 }
             }
 
@@ -1335,11 +1321,9 @@ void init_and_open_visualization_window() {
                 }
             }
 
-
             if(!draw_config.paused) {
                 omp_unset_lock(&draw_config.sleep_lock);
             }
-
 
             if(show_selection_box) {
                 show_selection_box = !draw_selection_box(font, font_size_small);
@@ -1348,7 +1332,6 @@ void init_and_open_visualization_window() {
             if(show_save_box) {
                 show_save_box = !draw_save_box(font, font_size_small);
             }
-
 
         }
         else if(!mesh_loaded) {
@@ -1371,7 +1354,9 @@ void init_and_open_visualization_window() {
 
             DrawRectangle(posx, posy, rec_width, 20, c);
             DrawRectangleLines(posx, posy, rec_width, 20, BLACK);
-            DrawText(draw_config.error_message, posx + 20, posy, 20, BLACK);
+            if(draw_config.error_message) //This should not happen... but it does....
+                DrawText(draw_config.error_message, posx + 20, posy, 20, BLACK);
+
         }
 
         DrawFPS(GetScreenWidth()  - 100,GetScreenHeight()-20);

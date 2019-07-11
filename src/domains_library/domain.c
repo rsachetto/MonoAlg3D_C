@@ -272,7 +272,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     config->start_dx = 800.0;
     config->start_dy = 800.0;
     config->start_dz = 800.0;
-    uint8_t size_code;
+    uint8_t size_code = 0;
 
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
     refine_grid(the_grid, 7);

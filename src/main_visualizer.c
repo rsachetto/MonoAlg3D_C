@@ -61,16 +61,17 @@ static void read_and_render_activation_map(char *input_file) {
     omp_set_lock(&draw_config.draw_lock);
     draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_activation_file(input_file);
 
-    draw_config.min_v = draw_config.grid_info.vtk_grid->min_v;
-    draw_config.max_v = draw_config.grid_info.vtk_grid->max_v;
-
     if(!draw_config.grid_info.vtk_grid) {
         char tmp[4096];
-        sprintf(tmp, "No activation map found in %s", input_file);
+        sprintf(tmp, "%s is not an activation map", input_file);
         draw_config.error_message = strdup(tmp);
         omp_unset_lock(&draw_config.draw_lock);
         return;
     }
+
+    draw_config.grid_info.file_name = input_file;
+    draw_config.min_v = draw_config.grid_info.vtk_grid->min_v;
+    draw_config.max_v = draw_config.grid_info.vtk_grid->max_v;
 
     omp_unset_lock(&draw_config.draw_lock);
 }
@@ -267,6 +268,7 @@ int main(int argc, char **argv) {
         sdsfree(save_path);
     }
     else {
+
 
         #pragma omp parallel sections num_threads(2)
         {

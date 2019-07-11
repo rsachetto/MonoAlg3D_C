@@ -140,7 +140,6 @@ char *read_entire_file_with_mmap(const char *filename, size_t *size) {
 
     char *f;
 
-
     if (!filename) return NULL;
 
     struct stat s;
@@ -150,8 +149,12 @@ char *read_entire_file_with_mmap(const char *filename, size_t *size) {
         return NULL;
     }
 
-    /* Get the size of the file. */
-    fstat (fd, & s);
+    fstat (fd, &s);
+    if(!S_ISREG(s.st_mode)) {
+        close(fd);
+        return NULL;
+    }
+
     *size = s.st_size;
 
     size_t to_page_size = *size;
@@ -177,30 +180,21 @@ char *read_entire_file(const char *filename, long *size) {
 
     if (!filename) return NULL;
 
-/* open an existing file for reading */
     infile = fopen(filename, "r");
 
-/* quit if the file does not exist */
     if (infile == NULL)
         return NULL;
 
-/* Get the number of bytes */
     fseek(infile, 0L, SEEK_END);
     numbytes = ftell(infile);
 
-/* reset the file position indicator to
-the beginning of the file */
     fseek(infile, 0L, SEEK_SET);
 
-/* grab sufficient memory for the
-buffer to hold the text */
     buffer = (char *) malloc(numbytes * sizeof(char));
 
-/* memory error */
     if (buffer == NULL)
         return NULL;
 
-/* copy all the text into the buffer */
     fread(buffer, sizeof(char), numbytes, infile);
     fclose(infile);
 
@@ -213,9 +207,7 @@ string_array read_lines(const char *filename) {
 
     string_array lines = NULL;
 
-
     size_t len = 0;
-    ssize_t read;
 
     FILE *fp;
 
@@ -227,7 +219,7 @@ string_array read_lines(const char *filename) {
     }
 
     char * line = NULL;
-    while ((read = getline(&line, &len, fp)) != -1) {
+    while ((getline(&line, &len, fp)) != -1) {
         line[strlen(line) - 1] = '\0';
         arrput(lines, strdup(line));
     }
@@ -458,8 +450,10 @@ void create_dir(char *out_dir) {
 
             if (mkdir(dir_to_create, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
             {
-                fprintf (stderr, "Error creating directory %s Exiting!\n", dir_to_create);
-                exit (EXIT_FAILURE);
+                if(!dir_exists (dir_to_create)) { //HACK: this can avoid MPI or batch simualation problems...
+                    fprintf(stderr, "Error creating directory %s Exiting!\n", dir_to_create);
+                    exit(EXIT_FAILURE);
+                }
             }
         }
 
@@ -476,7 +470,6 @@ void create_dir(char *out_dir) {
  * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
- * See README for more details.
  */
 static const unsigned char base64_table[65] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
