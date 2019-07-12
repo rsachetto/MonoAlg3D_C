@@ -9,6 +9,7 @@
 #include "grid.h"
 
 #include "../../single_file_libraries/stb_ds.h"
+#include "../../utils/file_utils.h"
 
 struct grid *new_grid() {
     struct grid *result = (struct grid *)malloc(sizeof(struct grid));
@@ -587,4 +588,170 @@ void translate_mesh_to_origin(struct grid *grid) {
         grid_cell = grid_cell->next;
     }
 
+}
+
+static void sort_elements(struct element *cell_elements, int tam) {
+    int i, j, min;
+    struct element aux;
+    for (i = 0; i < (tam-1); i++)
+    {
+        min = i;
+        for (j = (i+1); j < tam; j++) {
+            if(cell_elements[j].column < cell_elements[min].column)
+                min = j;
+        }
+        if (cell_elements[i].column != cell_elements[min].column) {
+            aux = cell_elements[i];
+            cell_elements[i] = cell_elements[min];
+            cell_elements[min] = aux;
+        }
+    }
+}
+
+#define for_each_cell(grid) \
+    for(struct cell_node *cell = grid->first_cell; cell != NULL; cell = cell->next)
+
+void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
+
+    struct element element;
+
+    arrpush(*IA, 0);
+
+    int i = 0;
+    int nnz = 0;
+    size_t max_el = 0;
+    int nnz_local;
+
+    for_each_cell(the_grid) {
+
+        bool insert = cell->active;
+
+        if(arrlen(cell->elements) == 1 && cell->elements[0].value == 0.0) insert = false;
+
+        if(insert) {
+
+            if(i > 0) {
+                int tmp = (*IA)[i - 1];
+                arrpush(*IA, tmp + nnz_local);
+            }
+
+            nnz_local = 0;
+
+            struct element *cell_elements = cell->elements;
+            max_el = arrlen(cell_elements);
+
+            sort_elements(cell_elements, max_el);
+
+            for(int el = 0; el < max_el; el++) {
+                element = cell_elements[el];
+                if(element.value != 0) {
+                    arrpush(*A, element.value);
+                    arrpush(*JA, element.column);
+                    nnz++;
+                    nnz_local++;
+                }
+            }
+
+            i++;
+
+        }
+    }
+
+    arrpush(*IA, nnz);
+
+}
+
+void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b) {
+
+    uint32_t n_cells;
+    int num_lines_m = 0;
+    int num_lines_v = 0;
+    int nnz = 0;
+
+    real_cpu **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
+    real_cpu *vector = NULL;
+
+    if(vector_b)
+        vector = read_octave_vector_file_to_array(vector_b, &num_lines_v);
+
+    initialize_and_construct_grid(grid, 1.0, 1.0, 1.0);
+
+    n_cells = grid->number_of_cells;
+    while (n_cells < num_lines_m) {
+        refine_grid(grid, 1);
+        n_cells = grid->number_of_cells;
+    }
+
+    struct cell_node *cell = grid->first_cell;
+    while (cell) {
+        cell->active = false;
+        cell = cell->next;
+    }
+
+    int item_count = 0;
+    cell = grid->first_cell;
+    while (item_count < num_lines_m) {
+        cell->active = true;
+        cell = cell->next;
+        item_count++;
+    }
+
+    order_grid_cells(grid);
+
+    cell = grid->first_cell;
+    uint32_t cell_position;
+
+    real_cpu m_value;
+
+    for (int i = 0; i < num_lines_m; i++) {
+
+        cell_position = cell->grid_position;
+        m_value = matrix[cell_position][cell_position];
+        struct element el;
+        el.value = m_value;
+        el.column = cell_position;
+        el.cell = cell;
+
+        arrsetcap(cell->elements, 7);
+        arrput(cell->elements, el);
+
+        for (int j = 0; j < num_lines_m; j++) {
+            if (cell_position != j) {
+                m_value = matrix[cell_position][j];
+
+                if (m_value != 0.0) {
+                    struct element el2;
+                    el2.value = m_value;
+                    el2.column = (uint32_t) j;
+
+                    struct cell_node *aux = grid->first_cell;
+                    while (aux) {
+                        if (aux->grid_position == j)
+                            break;
+                        aux = aux->next;
+                    }
+                    el2.cell = aux;
+                    arrput(cell->elements, el2);
+                }
+            }
+        }
+
+        cell = cell->next;
+    }
+
+    if(vector) {
+        cell = grid->first_cell;
+        for (int i = 0; i < num_lines_v; i++) {
+            cell->b = vector[cell->grid_position];
+            cell->v = 1.0;
+            cell = cell->next;
+        }
+    }
+
+    for (int i = 0; i < num_lines_m; i++) {
+        free(matrix[i]);
+    }
+
+    free(matrix);
+    free(vector);
 }

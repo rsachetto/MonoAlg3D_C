@@ -32,195 +32,6 @@ real_cpu calc_mse(const real_cpu *x, const real_cpu *xapp, int n) {
     return sum_sq / n;
 }
 
-
-void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b) {
-
-    uint32_t n_cells;
-    int num_lines_m = 0;
-    int num_lines_v = 0;
-    int nnz = 0;
-
-    real_cpu **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
-    real_cpu *vector  = read_octave_vector_file_to_array(vector_b, &num_lines_v);
-
-    cr_assert_eq (num_lines_m, num_lines_v);
-    cr_assert (nnz);
-
-    initialize_and_construct_grid(grid, 1.0, 1.0, 1.0);
-
-    n_cells = grid->number_of_cells;
-    while (n_cells < num_lines_m) {
-        refine_grid(grid, 1);
-        n_cells = grid->number_of_cells;
-    }
-
-    struct cell_node *cell = grid->first_cell;
-    while (cell) {
-        cell->active = false;
-        cell = cell->next;
-    }
-
-    int item_count = 0;
-    cell = grid->first_cell;
-    while (item_count < num_lines_m) {
-        cell->active = true;
-        cell = cell->next;
-        item_count++;
-    }
-
-    order_grid_cells(grid);
-
-    cr_assert_eq (num_lines_m, grid->num_active_cells);
-
-    cell = grid->first_cell;
-    uint32_t cell_position;
-
-    real_cpu m_value;
-
-    for (int i = 0; i < num_lines_m; i++) {
-
-        cell_position = cell->grid_position;
-        m_value = matrix[cell_position][cell_position];
-        struct element el;
-        el.value = m_value;
-        el.column = cell_position;
-        el.cell = cell;
-
-        arrsetcap(cell->elements, 7);
-        arrput(cell->elements, el);
-
-        for (int j = 0; j < num_lines_m; j++) {
-            if (cell_position != j) {
-                m_value = matrix[cell_position][j];
-
-                if (m_value != 0.0) {
-                    struct element el2;
-                    el2.value = m_value;
-                    el2.column = (uint32_t) j;
-
-                    struct cell_node *aux = grid->first_cell;
-                    while (aux) {
-                        if (aux->grid_position == j)
-                            break;
-                        aux = aux->next;
-                    }
-                    el2.cell = aux;
-                    arrput(cell->elements, el2);
-                }
-            }
-        }
-
-        cell = cell->next;
-    }
-
-    cell = grid->first_cell;
-    for (int i = 0; i < num_lines_v; i++) {
-        cell->b = vector[cell->grid_position];
-        cell->v = 1.0;
-        cell = cell->next;
-    }
-
-    for (int i = 0; i < num_lines_m; i++) {
-        free(matrix[i]);
-    }
-
-    free(matrix);
-    free(vector);
-}
-
-real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
-    const char *sep = " ";
-    char *line_a = NULL;
-    size_t len;
-    int count;
-
-    do {
-        getline(&line_a, &len, matrix_file);
-        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
-        if (count) {
-            if (strcmp(tmp[1], "columns:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
-            }
-            if (strcmp(tmp[1], "nnz:") == 0) {
-                (*nnz) = atoi(tmp[2]);
-            }
-        }
-        sdsfreesplitres(tmp, count);
-    } while ((line_a)[0] == '#');
-
-    real_cpu **matrix = (real_cpu **) malloc(*num_lines * sizeof(real_cpu *));
-
-    for (int i = 0; i < *num_lines; i++) {
-        matrix[i] = (real_cpu *) calloc(*num_lines, sizeof(real_cpu));
-    }
-
-    int item_count = 0;
-    int m_line, m_column;
-    real_cpu m_value;
-
-    while (item_count < *nnz) {
-
-        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
-        if (tmp[0][0] != '\n') {
-            m_line = atoi(tmp[0]);
-            m_column = atoi(tmp[1]);
-            m_value = atof(tmp[2]);
-
-            matrix[m_line - 1][m_column - 1] = m_value;
-        }
-        sdsfreesplitres(tmp, count);
-
-        item_count++;
-        getline(&line_a, &len, matrix_file);
-    }
-
-    if (line_a)
-        free(line_a);
-
-    return matrix;
-}
-
-real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
-
-    ssize_t read;
-    size_t len;
-    char *line_b = NULL;
-    int count;
-    char *sep = " ";
-
-    do {
-        read = getline(&line_b, &len, vec_file);
-        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
-        if (count) {
-            if (strcmp(tmp[1], "rows:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
-            }
-        }
-        sdsfreesplitres(tmp, count);
-    } while ((line_b)[0] == '#');
-
-    real_cpu *vector = (real_cpu *) malloc(*num_lines * sizeof(real_cpu));
-
-    int item_count = 0;
-    while ((item_count < *num_lines) && read) {
-        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
-
-        if (tmp[0][0] != '\n') {
-            vector[item_count] = atof(tmp[1]);
-        }
-
-        sdsfreesplitres(tmp, count);
-
-        item_count++;
-        read = getline(&line_b, &len, vec_file);
-    }
-
-    if (line_b)
-        free(line_b);
-
-    return vector;
-}
-
 void test_solver(bool preconditioner, char *method_name, int nt, int version) {
 
     FILE *A = NULL;
@@ -917,5 +728,13 @@ Test (utils, arr_element) {
     cr_assert_eq(b.column, 3);
 
     free(c);
+
+}
+
+Test(grid, grid_to_csr) {
+
+    cr_assert(false);
+
+
 
 }

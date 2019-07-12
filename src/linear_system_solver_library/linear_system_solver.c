@@ -7,11 +7,146 @@
 #include "../libraries_common/common_data_structures.h"
 
 #include "../single_file_libraries/stb_ds.h"
+#include "../models_library/model_gpu_utils.h"
 
 bool initialized = false;
 bool use_jacobi;
 int max_its = 50;
 real_cpu tol = 1e-16;
+
+#include <cusparse_v2.h>
+#include <cublas_v2.h>
+
+
+#ifdef COMPILE_CUDA
+SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
+
+    /* Conjugate gradient without preconditioning.
+       ------------------------------------------
+       Follows the description by Golub & Van Loan, "Matrix Computations 3rd ed.", Section 10.2.6  */
+
+    int M = 0, N = 0, nz = 0, *I = NULL, *J = NULL;
+    real *val = NULL;
+    const real tol = 1e-5f;
+    const int max_iter = 10000;
+
+    real a, b, na, r0, r1;
+    int *d_col, *d_row;
+    real *d_val, *d_x, dot;
+    real *d_r, *d_p, *d_Ax;
+    int k;
+    real alpha, beta, alpham1;
+
+    real *rhs; //Vector B
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node** ac = the_grid->active_cells;
+
+    rhs = (real*) malloc(sizeof(real)*num_active_cells);
+
+    #pragma omp parallel for
+    for (int i = 0; i < num_active_cells; i++) {
+        rhs[i] = ac[i]->b;
+    }
+
+    /* Get handle to the CUBLAS context */
+    cublasHandle_t cublasHandle = 0;
+    cublasStatus_t cublasStatus;
+    cublasStatus = cublasCreate(&cublasHandle);
+
+    check_cuda_error((cudaError_t)cublasStatus);
+
+    /* Get handle to the CUSPARSE context */
+    cusparseHandle_t cusparseHandle = 0;
+    cusparseStatus_t cusparseStatus;
+    cusparseStatus = cusparseCreate(&cusparseHandle);
+
+    check_cuda_error((cudaError_t)cusparseStatus);
+
+    cusparseMatDescr_t descr = 0;
+    cusparseStatus = cusparseCreateMatDescr(&descr);
+
+    check_cuda_error((cudaError_t)cusparseStatus);
+
+    cusparseSetMatType(descr,CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(descr,CUSPARSE_INDEX_BASE_ZERO);
+
+    val = NULL;
+    I = NULL;
+    J = NULL;
+
+    grid_to_csr(the_grid, &val, &I, &J); 
+
+    nz = arrlen(val);
+    N = M = num_active_cells;
+
+    check_cuda_error(cudaMalloc((void **)&d_col, nz*sizeof(int)));
+    check_cuda_error(cudaMalloc((void **)&d_row, (N+1)*sizeof(int)));
+    check_cuda_error(cudaMalloc((void **)&d_val, nz*sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&d_x, N*sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&d_r, N*sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&d_p, N*sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&d_Ax, N*sizeof(float)));
+
+    
+    cudaMemcpy(d_col, J, nz*sizeof(int), cudaMemcpyHostToDevice); //JA
+    cudaMemcpy(d_row, I, (N+1)*sizeof(int), cudaMemcpyHostToDevice); //IA
+    cudaMemcpy(d_val, val, nz*sizeof(float), cudaMemcpyHostToDevice); //A
+    cudaMemcpy(d_x, rhs, N*sizeof(float), cudaMemcpyHostToDevice); //Result
+    cudaMemcpy(d_r, rhs, N*sizeof(float), cudaMemcpyHostToDevice); //B
+
+    alpha = 1.0;
+    alpham1 = -1.0;
+    beta = 0.0;
+    r0 = 0.;
+
+    cusparseScsrmv(cusparseHandle,CUSPARSE_OPERATION_NON_TRANSPOSE, N, N, nz, &alpha, descr, d_val, d_row, d_col, d_x, &beta, d_Ax);
+
+    cublasSaxpy(cublasHandle, N, &alpham1, d_Ax, 1, d_r, 1);
+    cublasStatus = cublasSdot(cublasHandle, N, d_r, 1, d_r, 1, &r1);
+
+    k = 1;
+
+    while (r1 > tol*tol && k <= max_iter)
+    {
+        if (k > 1)
+        {
+            b = r1 / r0;
+            cublasStatus = cublasSscal(cublasHandle, N, &b, d_p, 1);
+            cublasStatus = cublasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1);
+        }
+        else
+        {
+            cublasStatus = cublasScopy(cublasHandle, N, d_r, 1, d_p, 1);
+        }
+
+        cusparseScsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, N, nz, &alpha, descr, d_val, d_row, d_col, d_p, &beta, d_Ax);
+        cublasStatus = cublasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, &dot);
+        a = r1 / dot;
+
+        cublasStatus = cublasSaxpy(cublasHandle, N, &a, d_p, 1, d_x, 1);
+        na = -a;
+        cublasStatus = cublasSaxpy(cublasHandle, N, &na, d_Ax, 1, d_r, 1);
+
+        r0 = r1;
+        cublasStatus = cublasSdot(cublasHandle, N, d_r, 1, d_r, 1, &r1);
+        cudaDeviceSynchronize();
+        //printf("iteration = %3d, residual = %e\n", k, sqrt(r1));
+        k++;
+    }
+
+    cudaMemcpy(rhs, d_x, N*sizeof(float), cudaMemcpyDeviceToHost);
+
+    *number_of_iterations = k-1;
+    *error = r1;
+
+    #pragma omp parallel for
+    for (int i = 0; i < num_active_cells; i++) {
+        ac[i]->v = rhs[i];
+    }
+
+}
+#endif
 
 SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 

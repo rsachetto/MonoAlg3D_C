@@ -1,0 +1,21 @@
+# Created by Octave 4.2.1, Sun Oct 08 22:55:41 2017 -03 <sachetto@cnqp-notebook>
+# name: A
+# type: sparse matrix
+# nnz: 8
+# rows: 4
+# columns: 6
+1 1 10
+1 2 20
+2 2 30
+3 3 50
+2 4 40
+3 4 60
+3 5 70
+4 6 80
+
+
+
+
+
+
+
