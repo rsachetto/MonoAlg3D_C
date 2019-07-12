@@ -649,3 +649,100 @@ bool check_simulation_completed(char *simulation_dir) {
     return false;
 
 }
+
+
+
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
+    const char *sep = " ";
+    char *line_a = NULL;
+    size_t len;
+    int count;
+
+    assert(matrix_file);
+
+    do {
+        getline(&line_a, &len, matrix_file);
+        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
+        if (count) {
+            if (strcmp(tmp[1], "columns:") == 0) {
+                (*num_lines) = atoi(tmp[2]);
+            }
+            if (strcmp(tmp[1], "nnz:") == 0) {
+                (*nnz) = atoi(tmp[2]);
+            }
+        }
+        sdsfreesplitres(tmp, count);
+    } while ((line_a)[0] == '#');
+
+    real_cpu **matrix = (real_cpu **) malloc(*num_lines * sizeof(real_cpu *));
+
+    for (int i = 0; i < *num_lines; i++) {
+        matrix[i] = (real_cpu *) calloc(*num_lines, sizeof(real_cpu));
+    }
+
+    int item_count = 0;
+    int m_line, m_column;
+    real_cpu m_value;
+
+    while (item_count < *nnz) {
+
+        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
+        if (tmp[0][0] != '\n') {
+            m_line = atoi(tmp[0]);
+            m_column = atoi(tmp[1]);
+            m_value = atof(tmp[2]);
+
+            matrix[m_line - 1][m_column - 1] = m_value;
+        }
+        sdsfreesplitres(tmp, count);
+
+        item_count++;
+        getline(&line_a, &len, matrix_file);
+    }
+
+    if (line_a)
+        free(line_a);
+
+    return matrix;
+}
+
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
+
+    ssize_t read;
+    size_t len;
+    char *line_b = NULL;
+    int count;
+    char *sep = " ";
+
+    do {
+        read = getline(&line_b, &len, vec_file);
+        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
+        if (count) {
+            if (strcmp(tmp[1], "rows:") == 0) {
+                (*num_lines) = atoi(tmp[2]);
+            }
+        }
+        sdsfreesplitres(tmp, count);
+    } while ((line_b)[0] == '#');
+
+    real_cpu *vector = (real_cpu *) malloc(*num_lines * sizeof(real_cpu));
+
+    int item_count = 0;
+    while ((item_count < *num_lines) && read) {
+        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
+
+        if (tmp[0][0] != '\n') {
+            vector[item_count] = atof(tmp[1]);
+        }
+
+        sdsfreesplitres(tmp, count);
+
+        item_count++;
+        read = getline(&line_b, &len, vec_file);
+    }
+
+    if (line_b)
+        free(line_b);
+
+    return vector;
+}

@@ -136,7 +136,7 @@ void DrawCircle3D(Vector3 center, float radius, Vector3 rotationAxis, float rota
 void DrawCube(Vector3 position, float width, float height, float length, Color color)
 {
 
-    if (rlCheckBufferLimit(36)) {
+    if (rlCheckBufferLimit(24)) {
         rlglDraw();
     }
 
@@ -147,7 +147,6 @@ void DrawCube(Vector3 position, float width, float height, float length, Color c
     rlPushMatrix();
         // NOTE: Transformation is applied in inverse order (scale -> rotate -> translate)
         rlTranslatef(position.x, position.y, position.z);
-
         rlBegin(RL_TRIANGLES);
             rlColor4ub(color.r, color.g, color.b, color.a);
 
