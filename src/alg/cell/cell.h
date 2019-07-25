@@ -105,6 +105,10 @@ struct cell_node {
     real_cpu sigma_y;
     real_cpu sigma_z;
 
+    real_cpu kappa_x;
+    real_cpu kappa_y;
+    real_cpu kappa_z;
+
 #if defined(_OPENMP)
     omp_lock_t updating;
 #endif

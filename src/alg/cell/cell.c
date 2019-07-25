@@ -71,6 +71,10 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->sigma_y = 0.0;
     cell_node->sigma_z = 0.0;
 
+    cell_node->kappa_x = 0.0;
+    cell_node->kappa_y = 0.0;
+    cell_node->kappa_z = 0.0;
+
     cell_node->max_dvdt = __DBL_MIN__;
     cell_node->activation_time = -1.0;
 

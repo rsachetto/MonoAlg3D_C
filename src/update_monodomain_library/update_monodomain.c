@@ -60,7 +60,8 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     #endif
 }
 
-UPDATE_MONODOMAIN(update_monodomain_ddm) {
+UPDATE_MONODOMAIN(update_monodomain_ddm) 
+{
 
     real_cpu alpha;
     bool use_gpu = the_ode_solver->gpu;
@@ -73,9 +74,9 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
     int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
 
-    real_cpu kappa_x = the_solver->kappa_x;
-    real_cpu kappa_y = the_solver->kappa_y;
-    real_cpu kappa_z = the_solver->kappa_z;
+    //real_cpu kappa_x = the_solver->kappa_x;
+    //real_cpu kappa_y = the_solver->kappa_y;
+    //real_cpu kappa_z = the_solver->kappa_z;
 
 #ifdef COMPILE_CUDA
     real *vms = NULL;
@@ -93,8 +94,8 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
 #pragma omp parallel for private(alpha)
     for(i = 0; i < num_active_cells; i++)
     {
-        // 1) Calculate alpha for the diagonal element ...
-        alpha = ALPHA_CM(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
+        // 1) Calculate alpha for the diagonal element
+        alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
 
         if(use_gpu)
         {
@@ -112,13 +113,13 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
         struct element *cell_elements = active_cells[i]->elements;
         uint32_t max_elements = arrlen(cell_elements);
 
-        // Berg tip:
-        // TODO: The computation of the kappas will enter here ...
-        //       When we consider the anisotropic case
-
         real_cpu dx = active_cells[i]->dx;
         real_cpu dy = active_cells[i]->dy;
         real_cpu dz = active_cells[i]->dz;
+
+        real_cpu kappa_x = active_cells[i]->kappa_x;
+        real_cpu kappa_y = active_cells[i]->kappa_y;
+        real_cpu kappa_z = active_cells[i]->kappa_z;
 
         for (int j = 1; j < max_elements; j++)
         {
