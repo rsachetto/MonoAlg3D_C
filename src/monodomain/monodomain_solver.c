@@ -412,6 +412,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     init_stop_watch(&iteration_time_watch);
 
+    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
+
     // Main simulation loop start
     while(cur_time <= finalT)
     {
@@ -423,9 +425,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             omp_set_lock(&draw_config.sleep_lock);
             if (draw_config.restart) {
                 draw_config.time = 0.0;
+
+                CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+
                 return RESTART_SIMULATION;
             }
-            if (draw_config.exit) return END_SIMULATION;
+            if (draw_config.exit)  {
+
+                CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+
+                return END_SIMULATION;
+            }
         }
         #endif
 
@@ -577,6 +587,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
    draw_config.simulating = false;
 #endif
 
+    CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
     return SIMULATION_FINISHED;
 
 }

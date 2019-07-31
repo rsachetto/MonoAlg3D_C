@@ -1265,7 +1265,18 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->linear_system_solver_config->config_data.function_name = strdup(value);
             pconfig->linear_system_solver_config->config_data.function_name_was_set = true;
 
-        } else if(MATCH_NAME("library_file")) {
+        }
+        else if(MATCH_NAME("init_function")) {
+                pconfig->linear_system_solver_config->config_data.init_function_name = strdup(value);
+                pconfig->linear_system_solver_config->config_data.init_function_name_was_set = true;
+
+        }
+        else if(MATCH_NAME("end_function")) {
+            pconfig->linear_system_solver_config->config_data.end_function_name = strdup(value);
+            pconfig->linear_system_solver_config->config_data.end_function_name_was_set = true;
+
+        }
+        else if(MATCH_NAME("library_file")) {
             pconfig->linear_system_solver_config->config_data.library_file_path = strdup(value);
             pconfig->linear_system_solver_config->config_data.library_file_path_was_set = true;
         } else {

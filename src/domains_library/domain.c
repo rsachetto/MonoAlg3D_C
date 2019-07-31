@@ -154,7 +154,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
     char *mesh_file;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
 
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data.config, "fibrotic");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data.config, "fibrotic");
 
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
     refine_grid(the_grid, 7);

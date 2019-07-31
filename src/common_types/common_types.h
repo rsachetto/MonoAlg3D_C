@@ -39,6 +39,7 @@ typedef float * f32_array;
 typedef struct point_3d * point3d_array;
 typedef struct line * line_array;
 typedef int64_t * int64_array;
+typedef int * int_array;
 typedef char** string_array;
 
 struct vtk_files {

@@ -42,7 +42,7 @@ char *get_char_parameter(struct string_hash_entry *config, const char *parameter
         }                                                                                                              \
     } while(0)
 
-#define GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(value, config, parameter)                                            \
+#define GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(value, config, parameter)                                            \
     do {                                                                                                               \
         char *value_char = NULL;                                                                                       \
         GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value_char, config, parameter);                                        \

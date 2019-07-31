@@ -38,7 +38,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;
@@ -96,7 +96,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;
@@ -129,7 +129,7 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
 
 
     fibs[0] = atpi;
@@ -163,7 +163,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;

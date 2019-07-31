@@ -13,6 +13,8 @@
 void init_linear_system_solver_functions(struct linear_system_solver_config *config) {
 
     char *function_name = config->config_data.function_name;
+    char *init_function_name = config->config_data.init_function_name;
+    char *end_function_name = config->config_data.end_function_name;
 
 	char *default_function = "./shared_libs/libdefault_linear_system_solver.so";
 
@@ -38,6 +40,22 @@ void init_linear_system_solver_functions(struct linear_system_solver_config *con
         print_to_stderr_and_file_and_exit("No function name for matrix assembly library provided. Exiting!\n");
     }
 
+    if(init_function_name) {
+        config->init_linear_system = dlsym(config->config_data.handle, init_function_name);
+        if (dlerror() != NULL)  {
+            print_to_stderr_and_file_and_exit("\n%s function not found in the provided linear_system_solver library\n", init_function_name);
+        }
+    }
+
+    if(end_function_name) {
+        config->end_linear_system = dlsym(config->config_data.handle, end_function_name);
+        if (dlerror() != NULL)  {
+            print_to_stderr_and_file_and_exit("\n%s function not found in the provided linear_system_solver library\n", end_function_name);
+        }
+    }
+
+
+
 }
 
 struct linear_system_solver_config* new_linear_system_solver_config() {
@@ -45,6 +63,8 @@ struct linear_system_solver_config* new_linear_system_solver_config() {
 
     init_config_common_data(&(result->config_data));
     result->solve_linear_system = NULL;
+    result->init_linear_system = NULL;
+    result->end_linear_system = NULL;
     return result;
 }
 
@@ -59,6 +79,8 @@ void print_linear_system_solver_config_values(struct linear_system_solver_config
 
     print_to_stdout_and_file("Linear system solver library: %s\n", s->config_data.library_file_path);
     print_to_stdout_and_file("Linear system solver function: %s\n", s->config_data.function_name);
+    print_to_stdout_and_file("Init Linear system function: %s\n", s->config_data.init_function_name);
+    print_to_stdout_and_file("End Liner system function: %s\n", s->config_data.end_function_name);
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data.config);
 }

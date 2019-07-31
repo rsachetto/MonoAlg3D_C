@@ -146,9 +146,7 @@ static void fill_discretization_matrix_elements_ddm (real_cpu sigma_x, real_cpu 
                                                 char direction) 
 {
 
-    uint32_t position;
     bool has_found;
-    real_cpu dx, dy, dz;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
@@ -245,10 +243,14 @@ static void fill_discretization_matrix_elements_ddm (real_cpu sigma_x, real_cpu 
     if(neighbour_grid_cell_type == CELL_NODE_TYPE) 
     {
 
+
+
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
         if(black_neighbor_cell->active) 
         {
+            uint32_t position;
+            real_cpu dx, dy, dz;
 
             if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) 
             {
@@ -328,7 +330,6 @@ static void fill_discretization_matrix_elements_ddm (real_cpu sigma_x, real_cpu 
 
 void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) {
 
-    real_cpu alpha, dx, dy, dz;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     real_cpu beta = the_solver->beta;
@@ -336,10 +337,12 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     real_cpu dt = the_solver->dt;
 
-    int i;
+    uint32_t i;
 
-#pragma omp parallel for private(alpha, dx, dy, dz)
+    #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {
+        real_cpu alpha, dx, dy, dz;
+
         dx = ac[i]->dx;
         dy = ac[i]->dy;
         dz = ac[i]->dz;
@@ -399,9 +402,7 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
 
 static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, char direction) {
 
-    uint32_t position;
     bool has_found;
-    real_cpu dx, dy, dz;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
@@ -454,6 +455,9 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
         if(black_neighbor_cell->active) {
+
+            uint32_t position;
+            real_cpu dx, dy, dz;
 
             real_cpu sigma_x1 = grid_cell->sigma_x;
             real_cpu sigma_x2 = black_neighbor_cell->sigma_x;

@@ -47,9 +47,9 @@ SAVE_MESH(save_as_text_or_binary) {
     if(!initialized) {
 
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
         initialized = true;
     }
 
@@ -167,9 +167,9 @@ SAVE_MESH(save_as_vtk) {
 
     if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
         initialized = true;
     }
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
@@ -242,11 +242,11 @@ SAVE_MESH(save_as_vtu) {
 
     if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data.config, "compression_level");
 
         #ifndef COMPILE_ZLIB
@@ -313,9 +313,9 @@ SAVE_MESH(save_as_vtk_purkinje) {
     if(!initialized) 
     {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
         initialized = true;
     }
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
@@ -364,11 +364,11 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
     if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data.config, "file_prefix");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
-        GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data.config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data.config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data.config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data.config, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data.config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data.config, "compression_level");
 
 #ifndef DCOMPILE_ZLIB
