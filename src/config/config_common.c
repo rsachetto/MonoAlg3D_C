@@ -14,6 +14,13 @@ void init_config_common_data(struct config_common *cm) {
     cm->handle = NULL;
     cm->function_name = NULL;
     cm->function_name_was_set = false;
+
+    cm->init_function_name = NULL;
+    cm->init_function_name_was_set = false;
+
+    cm->end_function_name = NULL;
+    cm->end_function_name_was_set = false;
+
     cm->library_file_path = NULL;
     cm->library_file_path_was_set = false;
     cm->config = NULL;
@@ -25,12 +32,14 @@ void free_config_common_data(struct config_common *cm) {
 
     ptrdiff_t n = shlen(cm->config);
 
-    for(int i = 0; i < n; i++) {
+    for(long i = 0; i < n; i++) {
         free(cm->config[i].value);
     }
 
     free(cm->library_file_path);
     free(cm->function_name);
+    free(cm->init_function_name);
+    free(cm->end_function_name);
     if(cm->handle)
         dlclose(cm->handle);
 

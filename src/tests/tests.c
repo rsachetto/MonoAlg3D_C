@@ -32,7 +32,7 @@ real_cpu calc_mse(const real_cpu *x, const real_cpu *xapp, int n) {
     return sum_sq / n;
 }
 
-void test_solver(bool preconditioner, char *method_name, int nt, int version) {
+void test_solver(bool preconditioner, char *method_name, char *init_name, char *end_name, int nt, int version) {
 
     FILE *A = NULL;
     FILE *B = NULL;
@@ -70,6 +70,9 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     linear_system_solver_config = new_linear_system_solver_config();
     linear_system_solver_config->config_data.function_name = method_name;
 
+    if(init_name)  linear_system_solver_config->config_data.init_function_name = init_name;
+    if(end_name)  linear_system_solver_config->config_data.end_function_name = end_name;
+
     shput(linear_system_solver_config->config_data.config, "tolerance", "1e-16");
     if (preconditioner)
         shput(linear_system_solver_config->config_data.config, "use_preconditioner", "yes");
@@ -83,7 +86,9 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     init_linear_system_solver_functions(linear_system_solver_config);
 
 
+    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, grid);
     linear_system_solver_config->solve_linear_system(linear_system_solver_config, grid, &n_iter, &error);
+    CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
 
     int n_lines1;
     uint32_t n_lines2;
@@ -99,7 +104,7 @@ void test_solver(bool preconditioner, char *method_name, int nt, int version) {
     cr_assert_eq (n_lines1, n_lines2);
 
     for (int i = 0; i < n_lines1; i++) {
-        cr_assert_float_eq (x[i], x_grid[i], 1e-10);
+        cr_assert_float_eq (x[i], x_grid[i], 1e-3, "Found %lf, Expected %lf.", x_grid[i], x[i]);
     }
 
     clean_and_free_grid(grid);
@@ -248,10 +253,27 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
 
 }
 
-int run_simulation_with_config(char *config_file) {
+struct user_options *load_options_from_file(char *config_file) {
+    // Here we parse the config file
 
-    struct user_options *options;
-    options = new_user_options();
+    struct user_options *options = new_user_options();
+
+    if(config_file) {
+        options->config_file = strdup(config_file);
+
+        if(ini_parse(options->config_file, parse_config_file, options) < 0) {
+            fprintf(stderr, "Error: Can't load the config file %s\n", options->config_file);
+            return NULL;
+        }
+
+        return options;
+    }
+
+    return NULL;
+
+}
+
+int run_simulation_with_config(struct user_options *options, char *out_dir) {
 
     struct grid *the_grid;
     the_grid = new_grid();
@@ -262,29 +284,25 @@ int run_simulation_with_config(char *config_file) {
     struct ode_solver *ode_solver;
     ode_solver = new_ode_solver();
 
-    // Here we parse the config file
-    if(config_file) {
-        options->config_file = strdup(config_file);
-
-        if(ini_parse(options->config_file, parse_config_file, options) < 0) {
-            fprintf(stderr, "Error: Can't load the config file %s\n", options->config_file);
-            return 0;
-        }
-
-    }
-
     no_stdout = true;
 
     if(options->save_mesh_config->out_dir_name) {
         free(options->save_mesh_config->out_dir_name);
     }
 
-    options->save_mesh_config->out_dir_name = strdup("tests_bin/gold_tmp");
+    options->save_mesh_config->out_dir_name = strdup(out_dir);
 
     // Create the output dir and the logfile
     if(options->save_mesh_config->out_dir_name) {
         remove_directory(options->save_mesh_config->out_dir_name);
         create_dir(options->save_mesh_config->out_dir_name);
+
+        sds buffer_log = sdsempty();
+        buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", options->save_mesh_config->out_dir_name);
+        open_logfile(buffer_log);
+
+        sdsfree(buffer_log);
+
     }
     else {
         return 0;
@@ -294,21 +312,21 @@ int run_simulation_with_config(char *config_file) {
     configure_monodomain_solver_from_options(monodomain_solver, options);
     configure_grid_from_options(the_grid, options);
 
-#ifndef COMPILE_CUDA
+    #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
         print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
         ode_solver->gpu = false;
     }
-#endif
+    #endif
 
     int np = monodomain_solver->num_threads;
 
     if(np == 0)
         np = 1;
 
-#if defined(_OPENMP)
+    #if defined(_OPENMP)
     omp_set_num_threads(np);
-#endif
+    #endif
 
     solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 
@@ -317,16 +335,12 @@ int run_simulation_with_config(char *config_file) {
 
     free(monodomain_solver);
 
-    free_user_options(options);
     close_logfile();
 
     return 1;
 }
 
-
-
-int check_output_equals(const sds gold_output, const sds tested_output) {
-
+int check_output_equals(const sds gold_output, const sds tested_output, float tol) {
 
     string_array files_gold = list_files_from_dir(gold_output, "V_it_");
     string_array files_tested_sim = list_files_from_dir(tested_output, "V_it_");
@@ -355,10 +369,9 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
         cr_assert(lines_tested);
 
         ptrdiff_t n_lines_gold = arrlen(lines_gold);
-        ptrdiff_t n_lines_tested= arrlen(lines_tested);
+        ptrdiff_t n_lines_tested = arrlen(lines_tested);
 
-        cr_assert_eq(n_lines_gold, n_lines_tested);
-
+        cr_assert_eq(n_lines_gold, n_lines_tested, "%s %ld lines, %s %ld lines", full_path_gold, n_lines_gold, full_path_tested, n_lines_tested );
 
         for(int j = 0; j < n_lines_gold; j++) {
 
@@ -379,7 +392,7 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
             real_cpu value_gold = strtod(gold_values[count_gold-1], NULL);
             real_cpu value_tested = strtod(tested_simulation_values[count_gold-1], NULL);
 
-            cr_assert_float_eq(value_gold, value_tested, 1e-3, "Found %lf, Expected %lf on line %d of %s", value_tested, value_gold, i+1, full_path_tested);
+            cr_assert_float_eq(value_gold, value_tested, tol, "Found %lf, Expected %lf (error %e) on line %d of %s", value_tested, value_gold, fabs(value_tested-value_gold), i+1, full_path_tested);
             sdsfreesplitres(gold_values, count_gold);
             sdsfreesplitres(tested_simulation_values, count_tested);
         }
@@ -388,10 +401,7 @@ int check_output_equals(const sds gold_output, const sds tested_output) {
         sdsfree(full_path_tested);
     }
 
-
     return 1;
-
-
 }
 
 int compare_two_binary_files(FILE *fp1, FILE *fp2)
@@ -443,15 +453,104 @@ Test(run_gold_simulation, gpu_no_adapt) {
 
     printf("Running simulation for testing\n");
 
-    int success = run_simulation_with_config("example_configs/gold_simulation_no_adapt.ini");
+    char *out_dir  = "tests_bin/gold_tmp_no_gpu";
+
+    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt.ini");
+
+    int success = run_simulation_with_config(options, out_dir);
     cr_assert(success);
 
     sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
-    sds tested_simulation_dir = sdsnew("tests_bin/gold_tmp/");
+    sds tested_simulation_dir = sdsnew(out_dir);
 
-    success = check_output_equals(gold_dir, tested_simulation_dir);
+    success = check_output_equals(gold_dir, tested_simulation_dir, 1e-3f);
     cr_assert(success);
+
+    free_user_options(options);
 }
+
+Test(run_gold_simulation, gpu_no_adapt_cg_gpu) {
+
+    printf("Running simulation for testing\n");
+
+    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt_cg_gpu.ini");
+
+    char *out_dir  = "tests_bin/gold_tmp_gpu";
+    int success = run_simulation_with_config(options, out_dir);
+    cr_assert(success);
+
+    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
+    sds tested_simulation_dir = sdsnew(out_dir);
+
+    success = check_output_equals(gold_dir, tested_simulation_dir, 5e-2f);
+    cr_assert(success);
+    free_user_options(options);
+
+}
+
+Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
+
+    char *out_dir_no_gpu_no_precond  = "tests_bin/circle_cg_no_gpu_no_precond";
+    char *out_dir_no_gpu_precond  = "tests_bin/circle_cg_no_gpu_precond";
+
+    char *out_dir_gpu_no_precond  = "tests_bin/circle_cg_gpu_no_precond";
+    char *out_dir_gpu_precond  = "tests_bin/circle_cg_gpu_precond";
+
+
+    struct user_options *options = load_options_from_file("example_configs/plain_mesh_with_fibrosis_and_border_zone_inside_circle_example_2cm.ini");
+    options->final_time = 10.0;
+
+    free(options->save_mesh_config->config_data.function_name);
+
+    options->save_mesh_config->config_data.function_name = strdup("save_as_text_or_binary");
+    options->save_mesh_config->print_rate = 50;
+    shput(options->save_mesh_config->config_data.config, strdup("file_prefix"), strdup("V"));
+
+    shput(options->domain_config->config_data.config, strdup("seed"), strdup("150"));
+
+    free(options->linear_system_solver_config->config_data.function_name);
+    free(options->linear_system_solver_config->config_data.init_function_name);
+    free(options->linear_system_solver_config->config_data.end_function_name);
+
+    options->linear_system_solver_config->config_data.function_name = strdup("conjugate_gradient");
+    options->linear_system_solver_config->config_data.init_function_name = strdup("init_conjugate_gradient");
+    options->linear_system_solver_config->config_data.end_function_name = strdup("end_conjugate_gradient");
+
+    shput(options->linear_system_solver_config->config_data.config, strdup("use_gpu"), strdup("false"));
+    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("false"));
+
+    int success = run_simulation_with_config(options, out_dir_no_gpu_no_precond);
+    cr_assert(success);
+
+    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("true"));
+    success = run_simulation_with_config(options, out_dir_no_gpu_precond);
+    cr_assert(success);
+
+    shput(options->linear_system_solver_config->config_data.config, strdup("use_gpu"), strdup("true"));
+    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("false"));
+
+    success = run_simulation_with_config(options, out_dir_gpu_no_precond);
+    cr_assert(success);
+
+    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("true"));
+
+    success = run_simulation_with_config(options, out_dir_gpu_precond);
+    cr_assert(success);
+
+    success = check_output_equals(out_dir_no_gpu_no_precond, out_dir_no_gpu_precond, 5e-2f);
+    success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_no_precond, 5e-2f);
+    success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_precond, 5e-2f);
+    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
+    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_precond, 5e-2f);
+    success &= check_output_equals(out_dir_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
+
+    cr_assert(success);
+
+
+
+    free_user_options(options);
+}
+
 #endif
 
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_1000) {
@@ -549,77 +648,87 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_pla
     cr_assert(success == -1);
 }
 
-Test (solvers, cg_jacobi_1t) {
-    test_solver(true, "conjugate_gradient", 1, 1);
+Test (solvers, cpu_cg_jacobi_1t) {
+    test_solver(true, "cpu_conjugate_gradient", NULL, NULL, 1, 1);
 }
 
-Test (solvers, cg_no_jacobi_1t) {
-    test_solver(false, "conjugate_gradient", 1, 1);
+Test (solvers, cpu_cg_no_jacobi_1t) {
+    test_solver(false, "cpu_conjugate_gradient", NULL, NULL, 1, 1);
 }
+
+Test (solvers, gpu_cg_jacobi_1t) {
+    test_solver(true, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient", 1, 1);
+}
+
+Test (solvers, gpu_cg_no_jacobi_1t) {
+    test_solver(false, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient",  1, 1);
+}
+
+
 
 Test (solvers, bcg_jacobi_1t) {
-    test_solver(true, "biconjugate_gradient", 1, 1);
+    test_solver(true, "biconjugate_gradient", NULL, NULL, 1, 1);
 }
 
 Test (solvers, jacobi_1t) {
-    test_solver(false, "jacobi", 1, 1);
+    test_solver(false, "jacobi", NULL, NULL, 1, 1);
 }
 
 #if defined(_OPENMP)
 
 Test (solvers, cg_jacobi_6t) {
-    test_solver(true, "conjugate_gradient", 6, 1);
+    test_solver(true, "conjugate_gradient", NULL, NULL, 6, 1);
 }
 
 Test (solvers, cg_no_jacobi_6t) {
-    test_solver(false, "conjugate_gradient", 6, 1);
+    test_solver(false, "conjugate_gradient", NULL, NULL, 6, 1);
 }
 
 
 Test (solvers, bcg_no_jacobi_6t) {
-    test_solver(false, "biconjugate_gradient", 6, 1);
+    test_solver(false, "biconjugate_gradient", NULL, NULL, 6, 1);
 }
 
 Test (solvers, jacobi_6t) {
-    test_solver(false, "jacobi", 6, 1);
+    test_solver(false, "jacobi", NULL, NULL, 6, 1);
 }
 
 #endif
 
 
 Test (solvers, cg_jacobi_1t_2) {
-    test_solver(true, "conjugate_gradient", 1, 2);
+    test_solver(true, "conjugate_gradient", NULL, NULL, 1, 2);
 }
 
 Test (solvers, cg_no_jacobi_1t_2) {
-    test_solver(false, "conjugate_gradient", 1, 2);
+    test_solver(false, "conjugate_gradient", NULL, NULL, 1, 2);
 }
 
 Test (solvers, bcg_jacobi_1t_2) {
-    test_solver(true, "biconjugate_gradient", 1, 2);
+    test_solver(true, "biconjugate_gradient", NULL, NULL, 1, 2);
 }
 
 Test (solvers, jacobi_1t_2) {
-    test_solver(false, "jacobi", 1, 2);
+    test_solver(false, "jacobi", NULL, NULL, 1, 2);
 }
 
 #if defined(_OPENMP)
 
 Test (solvers, cg_jacobi_6t_2) {
-    test_solver(true, "conjugate_gradient", 6, 2);
+    test_solver(true, "conjugate_gradient", NULL, NULL, 6, 2);
 }
 
 Test (solvers, cg_no_jacobi_6t_2) {
-    test_solver(false, "conjugate_gradient", 6, 2);
+    test_solver(false, "conjugate_gradient", NULL, NULL, 6, 2);
 }
 
 
 Test (solvers, bcg_no_jacobi_6t_2) {
-    test_solver(false, "biconjugate_gradient", 6, 2);
+    test_solver(false, "biconjugate_gradient", NULL, NULL, 6, 2);
 }
 
 Test (solvers, jacobi_6t_2) {
-    test_solver(false, "jacobi", 6, 2);
+    test_solver(false, "jacobi", NULL, NULL, 6, 2);
 }
 
 #endif
@@ -728,13 +837,4 @@ Test (utils, arr_element) {
     cr_assert_eq(b.column, 3);
 
     free(c);
-
-}
-
-Test(grid, grid_to_csr) {
-
-    cr_assert(false);
-
-
-
 }
