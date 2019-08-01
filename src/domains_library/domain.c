@@ -569,8 +569,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
 
     initialize_grid_with_square_mesh(config, the_grid);
-    //set_plain_fibrosis(the_grid, phi, seed);
-    set_plain_fibrosis_and_write_positions_to_file(the_grid, phi, seed);
+    set_plain_fibrosis(the_grid, phi, seed);
+    //set_plain_fibrosis_and_write_positions_to_file(the_grid, phi, seed);
 
     return 1;
 }

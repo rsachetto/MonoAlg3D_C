@@ -359,6 +359,23 @@ SAVE_MESH(save_as_vtu) {
 
         sdsfree(output_dir_with_file);
     }
+    // Write conductivity map
+    else if (scalar_name == 'c')
+    {
+        char *output_dir = config->out_dir_name;
+
+        float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+        float bounds[6] = {0, 0, 0, 0, 0, 0};
+
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/conductivity-map.vtu");
+
+        new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'c');
+
+        save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
+
+        sdsfree(output_dir_with_file);
+    }
     else
     {
         fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");

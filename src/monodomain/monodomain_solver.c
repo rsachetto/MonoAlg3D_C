@@ -379,7 +379,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
+    // NEW
     bool calc_activation_time = the_monodomain_solver->calc_activation_time;
+    //bool print_conductivity = the_monodomain_solver->print_conductivity;
+    bool print_conductivity = true;
+    // NEW
     real_cpu solver_error;
     uint32_t solver_iterations = 0;
 
@@ -570,6 +574,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
         print_to_stdout_and_file("Saving activation map!\n");
         save_mesh_config->save_mesh(count, cur_time, finalT, dt_pde, save_mesh_config, the_grid,'a');
+    }
+    if (print_conductivity)
+    {
+        print_to_stdout_and_file("Saving conductivity map!\n");
+        save_mesh_config->save_mesh(count, cur_time, finalT, dt_pde, save_mesh_config, the_grid,'c');
     }
     // ------------------------------------------------------------
 

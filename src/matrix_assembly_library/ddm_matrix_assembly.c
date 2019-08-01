@@ -331,6 +331,8 @@ int randRange(int n) {
     return r % n;
 }
 
+// This function will read the fibrotic regions and for each cell that is inside the region and we will
+// reduce its conductivity value based on the 'sigma_factor'.
 ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
 {
     static bool sigma_initialized = false;
@@ -370,6 +372,19 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     // Calculate the kappa values on each cell of th grid
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
   
+    if(!sigma_initialized) 
+    {
+        #pragma omp parallel for
+        for (uint32_t i = 0; i < num_active_cells; i++) 
+        {
+            ac[i]->sigma_x = sigma_x;
+            ac[i]->sigma_y = sigma_y;
+            ac[i]->sigma_z = sigma_z;
+        }
+
+        sigma_initialized = true;
+    }
+
     // Read and store the fibrosis locations
     FILE *file = fopen(fib_file, "r");
 
@@ -391,21 +406,24 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
         }
     }
 
-    for(int i = 0; i < fib_size; i++) 
+    uint32_t i = 0;
+    while (fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &scar_mesh[i][3], &scar_mesh[i][4], &scar_mesh[i][5], &scar_mesh[i][6]) != EOF)
     {
-        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &scar_mesh[i][3], &scar_mesh[i][4], &scar_mesh[i][5], &scar_mesh[i][6]);
+        i++;
     }
 
     fclose(file); 
 
-    // For each fibrotic cell we change the values of the conductivity by multiplying by 'sigma_factor'
+    uint32_t num_fibrotic_regions = i;
+
+    // Pass through all the cells of the grid and check if its center is inside the current
+    // fibrotic region
     #pragma omp parallel for
-    for(int j = 0; j < fib_size; j++) 
+    for(int j = 0; j < num_fibrotic_regions; j++) 
     {
 
         struct cell_node *grid_cell = the_grid->first_cell;
     
-
         real_cpu b_center_x = scar_mesh[j][0];
         real_cpu b_center_y = scar_mesh[j][1];
 
@@ -416,6 +434,8 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
        
         while(grid_cell != 0) 
         {
+            if (grid_cell->active)
+            {
                 real_cpu center_x = grid_cell->center_x;
                 real_cpu center_y = grid_cell->center_y;
                 real_cpu half_dy = grid_cell->dy/2.0;
@@ -430,7 +450,8 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
                 q.x = b_center_x + b_h_dx;
                 q.y = b_center_x - b_h_dx; 
 
-                if (center_x + half_dx <= q.x && center_x - half_dx >= q.y && center_y + half_dy <= p.x && center_y - half_dy >= p.y)  
+                // Check if the current cell is inside the fibrotic region
+                if (center_x > q.y && center_x < q.x && center_y > p.y && center_y < p.x)  
                 {
                     if(active == 0)
                     {
@@ -438,15 +459,9 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
                         grid_cell->sigma_y = sigma_y * sigma_factor;
                         grid_cell->sigma_z = sigma_z * sigma_factor;
                     }
-                    else
-                    {    
-                        grid_cell->sigma_x = sigma_x;
-                        grid_cell->sigma_y = sigma_y;
-                        grid_cell->sigma_z = sigma_z; 
-                        
-                    }
                 }
-                grid_cell = grid_cell->next;
+            }    
+            grid_cell = grid_cell->next;
         }    
     }
 

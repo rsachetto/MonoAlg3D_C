@@ -395,6 +395,8 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                 arrput((*vtk_grid)->values, grid_cell->v);
             else if (scalar_name == 'a')
                 arrput((*vtk_grid)->values, grid_cell->activation_time);
+            else if (scalar_name == 'c')
+                arrput((*vtk_grid)->values, grid_cell->sigma_x);
             else
                 print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
             // --------------------------------------------------------------------------------

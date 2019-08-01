@@ -13,6 +13,7 @@
 #include "../monodomain/constants.h"
 #include "../utils/utils.h"
 #include "../single_file_libraries/stb_ds.h"
+#include "../libraries_common/common_data_structures.h"
 
 static struct element fill_element(uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
                                    real_cpu sigma_x, real_cpu sigma_y, real_cpu sigma_z,\
@@ -794,7 +795,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
 }
 
 // This function will read the fibrotic regions and for each cell that is inside the region we will
-// reduce the conductivity value based on the 'sigma_factor'.
+// reduce its conductivity value based on the 'sigma_factor'.
 ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file) 
 {
 
@@ -829,6 +830,19 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
     real sigma_factor = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
   
+    if(!sigma_initialized) 
+    {
+        #pragma omp parallel for
+        for (uint32_t i = 0; i < num_active_cells; i++) 
+        {
+            ac[i]->sigma_x = sigma_x;
+            ac[i]->sigma_y = sigma_y;
+            ac[i]->sigma_z = sigma_z;
+        }
+
+        sigma_initialized = true;
+    }
+
     // Reading the fibrotic regions from the input file
     FILE *file = fopen(fib_file, "r");
 
@@ -850,16 +864,20 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
         }
     }
 
-    for(int i = 0; i < fib_size; i++) 
+    uint32_t i = 0;
+    while (fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &scar_mesh[i][3], &scar_mesh[i][4], &scar_mesh[i][5], &scar_mesh[i][6]) != EOF)
     {
-        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &scar_mesh[i][3], &scar_mesh[i][4], &scar_mesh[i][5], &scar_mesh[i][6]);
+        i++;
     }
 
     fclose(file);    
-		
-    // Pass through all the fibrotic regions
+
+    uint32_t num_fibrotic_regions = i;
+
+    // Pass through all the cells of the grid and check if its center is inside the current
+    // fibrotic region
     #pragma omp parallel for
-    for(int j = 0; j < fib_size; j++) 
+    for(int j = 0; j < num_fibrotic_regions; j++) 
     {
         
         struct cell_node *grid_cell = the_grid->first_cell;
@@ -872,10 +890,10 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
 
         bool active = (bool) (scar_mesh[j][6]);
 
-        // Pass through all the cells of the grid and check if its center is inside the current
-        // fibrotic region
         while(grid_cell != 0) 
         {
+            if (grid_cell->active)
+            {
                 real_cpu center_x = grid_cell->center_x;
                 real_cpu center_y = grid_cell->center_y;
                 real_cpu half_dx = grid_cell->dx/2.0;
@@ -890,27 +908,20 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
                 q.x = b_center_x + b_h_dx;
                 q.y = b_center_x - b_h_dx;
 
-                if (center_x + half_dx <= q.x && center_x - half_dx >= q.y && center_y + half_dy <= p.x && center_y - half_dy >= p.y)  
+                // Check if the current cell is inside the fibrotic region
+                if (center_x > q.y && center_x < q.x && center_y > p.y && center_y < p.x)
                 {
-                    
-                    if(active==0)
+                    if(active == 0)
                     {
                         grid_cell->sigma_x = sigma_x * sigma_factor;
                         grid_cell->sigma_y = sigma_y * sigma_factor;
                         grid_cell->sigma_z = sigma_z * sigma_factor;
-                    }
-                    
-                    else
-                    {    
-                        grid_cell->sigma_x = sigma_x;
-                        grid_cell->sigma_y = sigma_y;
-                        grid_cell->sigma_z = sigma_z; 
                     }		
                 }
-                
-                grid_cell = grid_cell->next;
-        }    
-
+            }
+            
+            grid_cell = grid_cell->next;
+        } 
     }
 		
     #pragma omp parallel for
@@ -946,8 +957,9 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
 
 
 // This function will generate the fibrotic region file for the 120um x 120um grid by reescaling
-// the original Scientific Reports 4b grid from 40000 um side_length to 48000 um 
-ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write)
+// the original Scientific Reports 4b grid from 40000um side_length to 48000um
+// rescale_factor = 1.2 
+ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
 {
 
     static bool sigma_initialized = false;
@@ -977,12 +989,6 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write)
 
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
-
-    real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
-
-    unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
 
     real sigma_factor = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
@@ -1051,6 +1057,83 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write)
 
     // We just leave the program after this ...
     print_to_stdout_and_file("[!] Finish writing new fibrotic region file '%s'!\n",new_fib_file);
+    exit(EXIT_SUCCESS);
+}
+
+// This function will generate the fibrotic region file for the 120um x 120um grid by reescaling
+// the original Scientific Reports 4b grid from 40000um side_length to 48000um. The fibrotic region
+// will be mapped using the same idea used on the 'domains_library' function by using a fixed seed
+// for the random number generator.
+// rescale_factor = 1.2
+ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
+{
+
+    static bool sigma_initialized = false;
+    int num;
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    struct cell_node *grid_cell;
+
+    initialize_diagonal_elements(the_solver, the_grid);
+
+    real sigma_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+
+    real sigma_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+
+    real sigma_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+
+    real_cpu phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+
+    unsigned seed = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+
+    char *new_fib_file = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data.config, "rescaled_fibrosis_file");
+
+    double rescale_factor = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,rescale_factor, config->config_data.config, "rescale_factor");
+
+    // Write the new fibrotic region file
+	FILE *fileW = fopen(new_fib_file, "w+");
+
+    grid_cell = the_grid->first_cell;
+
+    // Initialize the random the generator with the same seed used by the original model
+    srand(seed);
+    while(grid_cell != 0) 
+    {
+
+        if(grid_cell->active) 
+        {
+            real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+            if(p < phi) 
+            {
+                // We reescale the cell position using the 'rescale_factor'
+                double center_x = grid_cell->center_x * rescale_factor;
+                double center_y = grid_cell->center_y * rescale_factor;
+                double center_z = grid_cell->center_z * rescale_factor;
+                double dx = grid_cell->dx * rescale_factor;
+                double dy = grid_cell->dy * rescale_factor;
+                double dz = grid_cell->dz * rescale_factor;
+                
+                // Then, we write only the fibrotic regions to the output file
+                fprintf(fileW,"%g,%g,%g,%g,%g,%g,0\n",center_x,center_y,center_z,dx/2.0,dy/2.0,dz/2.0);
+            }
+
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fclose(fileW);  	
+		
+    // We just leave the program after this ...
+    print_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }
 
