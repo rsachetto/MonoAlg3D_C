@@ -19,7 +19,7 @@ struct save_mesh_config {
     struct config_common config_data;
     int print_rate;
     bool print_rate_was_set;
-    char * out_dir_name;
+    char *out_dir_name;
     bool out_dir_name_was_set;
     bool remove_older_simulation_dir;
     bool remove_older_simulation_dir_was_set;

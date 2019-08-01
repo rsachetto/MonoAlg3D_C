@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_DIR="build"
+BUILD_DIR="cmake-build-release"
 BUILD_TYPE="Release"
 
 if [[ "$#" -eq 1 ]]; then

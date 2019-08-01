@@ -54,15 +54,11 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data.config, "use_preconditioner");
 
-    cublasStatus = cublasCreate(&cublasHandle);
-    check_cuda_error((cudaError_t)cublasStatus);
+    check_cuda_error((cudaError_t)cublasCreate(&cublasHandle));
 
-    cusparseStatus = cusparseCreate(&cusparseHandle);
-    check_cuda_error((cudaError_t)cusparseStatus);
+    check_cuda_error((cudaError_t)cusparseCreate(&cusparseHandle));
 
-    cusparseStatus = cusparseCreateMatDescr(&descr);
-
-    check_cuda_error((cudaError_t)cusparseStatus);
+    check_cuda_error((cudaError_t)cusparseCreateMatDescr(&descr));
 
     cusparseSetMatType(descr,CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(descr,CUSPARSE_INDEX_BASE_ZERO);
@@ -146,7 +142,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 }
 
 END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
-    check_cuda_error( (cudaError_t)cusparseDestroy(cusparseHandle) )
+    check_cuda_error( (cudaError_t)cusparseDestroy(cusparseHandle) );
     check_cuda_error( (cudaError_t)cublasDestroy(cublasHandle) );
     check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descr));
     check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descrL));
@@ -304,7 +300,6 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     }
 
     free(rhs);
-
 }
 
 #endif

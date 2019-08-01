@@ -52,7 +52,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     initialize_and_construct_grid(the_grid, real_side_length_x, real_side_length_y, real_side_length_z);
 
-
     if((real_side_length_z / 2.0f) > side_length_z) {
         real_cpu aux = real_side_length_z / 2.0f;
         int remaining_refinements = num_steps;

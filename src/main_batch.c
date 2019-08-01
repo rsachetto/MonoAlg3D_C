@@ -280,44 +280,47 @@ struct simulation * generate_all_simulations(struct string_hash_entry* modify_di
         arrput(sets, c.values);
     }
     
-    string_array *a = get_combinations(sets);
+    string_array *combinations = get_combinations(sets);
     uint32_t sim_count = 1;
+
+    long num_combinations = arrlen(combinations);
     
     for(int s = 0; s < num_sims; s++) {
         
-        for(int i = 0; i < arrlen(a); i++) {
+        for(long i = 0; i < num_combinations; i++) {
             
-            struct simulation s;
-            s.run_number = sim_count;
-            s.parameters = NULL;
-            
-            for(int k = 0; k < arrlen(a[i]); k++) {
+            struct simulation sim;
+            sim.run_number = sim_count;
+            sim.parameters = NULL;
+
+            long conbinations_i_size = arrlen(combinations[i]);
+
+            for(long k = 0; k < conbinations_i_size; k++) {
                 struct changed_parameters comb;
                 comb.section = strdup(section_names[k].section);
                 comb.name = strdup(section_names[k].name);
-                comb.value = a[i][k];
-                arrput(s.parameters, comb);
+                comb.value = combinations[i][k];
+                arrput(sim.parameters, comb);
             }
             
-            arrput(all_simulations, s);
+            arrput(all_simulations, sim);
             sim_count++;
         }
     }
     
-    for(int i = 0; i < arrlen(sets); i++) {
+    for(long i = 0; i < arrlen(sets); i++) {
         arrfree(sets[i]);
     }
     
     arrfree(sets);
-    arrfree(a);
-    for(int i = 0; i < arrlen(section_names); i++) {
+    arrfree(combinations);
+    for(long i = 0; i < arrlen(section_names); i++) {
         free(section_names[i].section);
         free(section_names[i].name);
     }
     arrfree(section_names);
     
     return all_simulations;
-    
     
 }
 
@@ -331,8 +334,8 @@ void print_simulations( struct simulation *all_simulations) {
         if(!c) continue;
         
         int k = arrlen(c);
-        
-        printf("----------------SIMULATION %d--------------\n", all_simulations[i].run_number);
+
+        printf("----------------SIMULATION %u--------------\n", all_simulations[i].run_number);
         
         for(int j = 0; j < k; j++) {
             printf("SECTION: %s | NAME: %s | VALUE: %s\n", c[j].section, c[j].name, c[j].value);
