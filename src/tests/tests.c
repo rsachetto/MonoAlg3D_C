@@ -160,7 +160,6 @@ int test_perlin_mesh(char* mesh_file, char *start_dx, char* side_length_x, bool 
 
 int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, char* side_length_x, char* side_length_y, char* side_length_z, bool save, bool compress,  bool binary, int id) {
 
-
     struct grid *grid = new_grid();
     struct domain_config *domain_config;
 
@@ -173,16 +172,17 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
     domain_config->config_data.function_name = strdup("initialize_grid_with_cuboid_mesh");
     domain_config->domain_name = strdup("Test cuboid");
 
-    shput(domain_config->config_data.config, "side_length_x", side_length_x);
-    shput(domain_config->config_data.config, "side_length_y", side_length_y);
-    shput(domain_config->config_data.config, "side_length_z", side_length_z);
-
+    shput(domain_config->config_data.config, "side_length_x", strdup(side_length_x));
+    shput(domain_config->config_data.config, "side_length_y", strdup(side_length_y));
+    shput(domain_config->config_data.config, "side_length_z", strdup(side_length_z));
 
     init_domain_functions(domain_config);
 
     int success = domain_config->set_spatial_domain(domain_config, grid);
 
     if(!success ) {
+        clean_and_free_grid(grid);
+        free_domain_config(domain_config);
         return 0;
     }
 
@@ -224,23 +224,29 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
     if(save) {
         struct save_mesh_config *save_mesh_config = new_save_mesh_config();
 
-        save_mesh_config->config_data.function_name = "save_as_vtu";
-        save_mesh_config->out_dir_name = "./tests_bin";
+        save_mesh_config->config_data.function_name = strdup("save_as_vtu");
+        save_mesh_config->out_dir_name = strdup("./tests_bin");
         save_mesh_config->print_rate = 1;
 
         sds file_prefix = sdscatprintf(sdsempty(), "test_%lf_%lf_%lf_%s_%s_%s_%d", start_dx, start_dy, start_dz,
                                        side_length_x, side_length_y, side_length_z, id);
         init_save_mesh_functions(save_mesh_config);
 
-        shput(save_mesh_config->config_data.config, "file_prefix", file_prefix);
-        if(compress)
-            shput(save_mesh_config->config_data.config, "compress", "yes");
-        else if(binary)
-        shput(save_mesh_config->config_data.config, "binary", "yes");
+        shput(save_mesh_config->config_data.config, "file_prefix", strdup(file_prefix));
 
-        shput(save_mesh_config->config_data.config, "save_pvd", "no");
+        if(compress) {
+            shput(save_mesh_config->config_data.config, "compress", strdup("yes"));
+        }
+        else if(binary) {
+            shput(save_mesh_config->config_data.config, "binary", strdup("yes"));
+        }
+
+        shput(save_mesh_config->config_data.config, "save_pvd", strdup("no"));
 
         save_mesh_config->save_mesh(0, 0.0, 0.0, 0.0, save_mesh_config, grid);
+
+        free_save_mesh_config(save_mesh_config);
+        sdsfree(file_prefix);
 
     }
 
@@ -248,6 +254,9 @@ int test_cuboid_mesh(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, ch
     cr_assert_float_eq(max_y+(start_dy/2.0), atof(side_length_y), 1e-16);
     cr_assert_float_eq(max_z+(start_dz/2.0), atof(side_length_z), 1e-16);
     cr_assert_eq(nx*ny*nz, grid->num_active_cells);
+
+    clean_and_free_grid(grid);
+    free_domain_config(domain_config);
 
     return 1;
 
@@ -441,118 +450,6 @@ int compare_two_binary_files(FILE *fp1, FILE *fp2)
     }
 }
 
-/////STARTING TESTS////////////////////////////////////////////////////////////////////////
-////Test(test_perlin_mesh, diffuse1) {
-//int main() {
-//    int success = test_perlin_mesh("meshes/diffuse1.mesh", "10.0", "20000.0", true, true, false);
-//    //cr_assert(success);
-//}
-////
-#ifdef COMPILE_CUDA
-Test(run_gold_simulation, gpu_no_adapt) {
-
-    printf("Running simulation for testing\n");
-
-    char *out_dir  = "tests_bin/gold_tmp_no_gpu";
-
-    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt.ini");
-
-    int success = run_simulation_with_config(options, out_dir);
-    cr_assert(success);
-
-    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
-    sds tested_simulation_dir = sdsnew(out_dir);
-
-    success = check_output_equals(gold_dir, tested_simulation_dir, 1e-3f);
-    cr_assert(success);
-
-    free_user_options(options);
-}
-
-Test(run_gold_simulation, gpu_no_adapt_cg_gpu) {
-
-    printf("Running simulation for testing\n");
-
-    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt_cg_gpu.ini");
-
-    char *out_dir  = "tests_bin/gold_tmp_gpu";
-    int success = run_simulation_with_config(options, out_dir);
-    cr_assert(success);
-
-    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
-    sds tested_simulation_dir = sdsnew(out_dir);
-
-    success = check_output_equals(gold_dir, tested_simulation_dir, 5e-2f);
-    cr_assert(success);
-    free_user_options(options);
-
-}
-
-Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
-
-    char *out_dir_no_gpu_no_precond  = "tests_bin/circle_cg_no_gpu_no_precond";
-    char *out_dir_no_gpu_precond  = "tests_bin/circle_cg_no_gpu_precond";
-
-    char *out_dir_gpu_no_precond  = "tests_bin/circle_cg_gpu_no_precond";
-    char *out_dir_gpu_precond  = "tests_bin/circle_cg_gpu_precond";
-
-
-    struct user_options *options = load_options_from_file("example_configs/plain_mesh_with_fibrosis_and_border_zone_inside_circle_example_2cm.ini");
-    options->final_time = 10.0;
-
-    free(options->save_mesh_config->config_data.function_name);
-
-    options->save_mesh_config->config_data.function_name = strdup("save_as_text_or_binary");
-    options->save_mesh_config->print_rate = 50;
-    shput(options->save_mesh_config->config_data.config, strdup("file_prefix"), strdup("V"));
-
-    shput(options->domain_config->config_data.config, strdup("seed"), strdup("150"));
-
-    free(options->linear_system_solver_config->config_data.function_name);
-    free(options->linear_system_solver_config->config_data.init_function_name);
-    free(options->linear_system_solver_config->config_data.end_function_name);
-
-    options->linear_system_solver_config->config_data.function_name = strdup("conjugate_gradient");
-    options->linear_system_solver_config->config_data.init_function_name = strdup("init_conjugate_gradient");
-    options->linear_system_solver_config->config_data.end_function_name = strdup("end_conjugate_gradient");
-
-    shput(options->linear_system_solver_config->config_data.config, strdup("use_gpu"), strdup("false"));
-    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("false"));
-
-    int success = run_simulation_with_config(options, out_dir_no_gpu_no_precond);
-    cr_assert(success);
-
-    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("true"));
-    success = run_simulation_with_config(options, out_dir_no_gpu_precond);
-    cr_assert(success);
-
-    shput(options->linear_system_solver_config->config_data.config, strdup("use_gpu"), strdup("true"));
-    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("false"));
-
-    success = run_simulation_with_config(options, out_dir_gpu_no_precond);
-    cr_assert(success);
-
-    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("true"));
-
-    success = run_simulation_with_config(options, out_dir_gpu_precond);
-    cr_assert(success);
-
-    success = check_output_equals(out_dir_no_gpu_no_precond, out_dir_no_gpu_precond, 5e-2f);
-    success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_no_precond, 5e-2f);
-    success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_precond, 5e-2f);
-    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
-    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_precond, 5e-2f);
-    success &= check_output_equals(out_dir_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
-
-    cr_assert(success);
-
-
-
-    free_user_options(options);
-}
-
-#endif
-
 Test (mesh_load, cuboid_mesh_100_100_100_1000_1000_1000) {
     int success  = test_cuboid_mesh(100, 100, 100, "1000", "1000", "1000", false, false, false, 0);
     cr_assert(success);
@@ -570,7 +467,6 @@ Test (mesh_load, cuboid_mesh_100_200_100_1000_1000_1000) {
 }
 
 Test (mesh_load, cuboid_mesh_100_100_200_1000_1000_1000) {
-
     int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", false, false, false, 0);
     cr_assert(success);
 
@@ -591,7 +487,6 @@ Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_3000) {
     int success  = test_cuboid_mesh(150, 150, 150, "1500", "1500", "3000", false, false, false, 0);
     cr_assert(success);
 }
-
 Test (mesh_load, cuboid_mesh_300_150_150_1500_1500_3000) {
     int success = test_cuboid_mesh(300, 150, 150, "1500", "1500", "3000", false, false, false, 0);
     cr_assert(!success);
@@ -612,229 +507,334 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_bin
 
     cr_assert(success == -1);
 }
-
-Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_compressed) {
-
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, true, false, 2);
-    cr_assert(success);
-
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_2_it_0.vtu", "r");
-    FILE *f2 = fopen("tests_bin/gold_vtu_mesh_compressed.vtu", "r");
-
-    success = compare_two_binary_files(f1, f2);
-
-    fclose(f1);
-    fclose(f2);
-
-    cr_assert(success == -1);
-}
-
-Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_plain) {
-
-    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, false, false, 3);
-    cr_assert(success);
-
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_3_it_0.vtu", "r");
-    FILE *f2 = fopen("tests_bin/gold_vtu_mesh.vtu", "r");
-
-    cr_assert(f1);
-    cr_assert(f2);
-
-    success = compare_two_binary_files(f1, f2);
-
-    fclose(f1);
-    fclose(f2);
-
-    cr_assert(success == -1);
-}
-
-Test (solvers, cpu_cg_jacobi_1t) {
-    test_solver(true, "cpu_conjugate_gradient", NULL, NULL, 1, 1);
-}
-
-Test (solvers, cpu_cg_no_jacobi_1t) {
-    test_solver(false, "cpu_conjugate_gradient", NULL, NULL, 1, 1);
-}
-
-Test (solvers, gpu_cg_jacobi_1t) {
-    test_solver(true, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient", 1, 1);
-}
-
-Test (solvers, gpu_cg_no_jacobi_1t) {
-    test_solver(false, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient",  1, 1);
-}
-
-
-
-Test (solvers, bcg_jacobi_1t) {
-    test_solver(true, "biconjugate_gradient", NULL, NULL, 1, 1);
-}
-
-Test (solvers, jacobi_1t) {
-    test_solver(false, "jacobi", NULL, NULL, 1, 1);
-}
-
-#if defined(_OPENMP)
-
-Test (solvers, cg_jacobi_6t) {
-    test_solver(true, "conjugate_gradient", NULL, NULL, 6, 1);
-}
-
-Test (solvers, cg_no_jacobi_6t) {
-    test_solver(false, "conjugate_gradient", NULL, NULL, 6, 1);
-}
-
-
-Test (solvers, bcg_no_jacobi_6t) {
-    test_solver(false, "biconjugate_gradient", NULL, NULL, 6, 1);
-}
-
-Test (solvers, jacobi_6t) {
-    test_solver(false, "jacobi", NULL, NULL, 6, 1);
-}
-
-#endif
-
-
-Test (solvers, cg_jacobi_1t_2) {
-    test_solver(true, "conjugate_gradient", NULL, NULL, 1, 2);
-}
-
-Test (solvers, cg_no_jacobi_1t_2) {
-    test_solver(false, "conjugate_gradient", NULL, NULL, 1, 2);
-}
-
-Test (solvers, bcg_jacobi_1t_2) {
-    test_solver(true, "biconjugate_gradient", NULL, NULL, 1, 2);
-}
-
-Test (solvers, jacobi_1t_2) {
-    test_solver(false, "jacobi", NULL, NULL, 1, 2);
-}
-
-#if defined(_OPENMP)
-
-Test (solvers, cg_jacobi_6t_2) {
-    test_solver(true, "conjugate_gradient", NULL, NULL, 6, 2);
-}
-
-Test (solvers, cg_no_jacobi_6t_2) {
-    test_solver(false, "conjugate_gradient", NULL, NULL, 6, 2);
-}
-
-
-Test (solvers, bcg_no_jacobi_6t_2) {
-    test_solver(false, "biconjugate_gradient", NULL, NULL, 6, 2);
-}
-
-Test (solvers, jacobi_6t_2) {
-    test_solver(false, "jacobi", NULL, NULL, 6, 2);
-}
-
-#endif
-
-
-Test (utils, arr_int) {
-
-    int *v = NULL;
-
-    arrsetcap(v, 1);
-
-    cr_assert_eq(arrlen(v), 0);
-    cr_assert_geq(arrcap(v), 1);
-
-    arrput(v, 0);
-    arrput(v, 1);
-    arrput(v, 2);
-
-    cr_assert_eq(arrlen(v), 3);
-
-    cr_assert_eq(v[0], 0);
-    cr_assert_eq(v[1], 1);
-    cr_assert_eq(v[2], 2);
-}
-
-Test (utils, arr_float) {
-
-    float *v = NULL;
-
-    arrsetcap(v, 1);
-
-    cr_assert_eq(arrlen(v), 0);
-    cr_assert_geq(arrcap(v), 1);
-
-    arrput(v, 0);
-    arrput(v, 0.5);
-    arrput(v, 2.5);
-
-    cr_assert_eq(arrlen(v), 3);
-
-    cr_assert_float_eq(v[0], 0.0, 1e-10);
-    cr_assert_float_eq(v[1], 0.5, 1e-10);
-    cr_assert_float_eq(v[2], 2.5, 1e-10);
-}
-
-Test (utils, arr_double) {
-
-    real_cpu *v = NULL;
-
-    arrsetcap(v, 1);
-
-    cr_assert_eq(arrlen(v), 0);
-    cr_assert_geq(arrcap(v), 1);
-
-    arrput(v, 0);
-    arrput(v, 0.5);
-    arrput(v, 2.5);
-
-    cr_assert_eq(arrlen(v), 3);
-
-    cr_assert_float_eq(v[0], 0.0, 1e-10);
-    cr_assert_float_eq(v[1], 0.5, 1e-10);
-    cr_assert_float_eq(v[2], 2.5, 1e-10);
-
-}
-
-Test (utils, arr_element) {
-
-    struct element *v = NULL;
-
-    arrsetcap(v, 1);
-
-    cr_assert_eq(arrlen(v), 0);
-    cr_assert_geq(arrcap(v), 1);
-
-    struct cell_node *c = new_cell_node();
-    struct element a = {'a', 0, 1, c};
-
-    arrput(v, a);
-
-    a.column = 2;
-    a.value = -2.2;
-    arrput(v, a);
-
-    a.column = 3;
-    a.value = 3.5;
-    arrput(v, a);
-
-    cr_assert_eq(arrlen(v), 3);
-
-    cr_assert_eq(v[0].column, 1);
-    cr_assert_float_eq(v[0].value, 0.0, 1e-10);
-    cr_assert_eq(v[0].cell, c);
-
-    cr_assert_eq(v[1].column, 2);
-    cr_assert_float_eq(v[1].value, -2.2, 1e-10);
-    cr_assert_eq(v[1].cell, c);
-
-    cr_assert_eq(v[2].column, 3);
-    cr_assert_float_eq(v[2].value, 3.5, 1e-10);
-    cr_assert_eq(v[2].cell, c);
-
-    struct element b = arrpop(v);
-    cr_assert_eq(arrlen(v), 2);
-
-    cr_assert_eq(b.column, 3);
-
-    free(c);
-}
+//
+//Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_compressed) {
+//
+//    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, true, false, 2);
+//    cr_assert(success);
+//
+//    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_2_it_0.vtu", "r");
+//    FILE *f2 = fopen("tests_bin/gold_vtu_mesh_compressed.vtu", "r");
+//
+//    success = compare_two_binary_files(f1, f2);
+//
+//    fclose(f1);
+//    fclose(f2);
+//
+//    cr_assert(success == -1);
+//}
+//
+//Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_plain) {
+//
+//    int success = test_cuboid_mesh(100, 100, 200, "1000", "1000", "1000", true, false, false, 3);
+//    cr_assert(success);
+//
+//    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_3_it_0.vtu", "r");
+//    FILE *f2 = fopen("tests_bin/gold_vtu_mesh.vtu", "r");
+//
+//    cr_assert(f1);
+//    cr_assert(f2);
+//
+//    success = compare_two_binary_files(f1, f2);
+//
+//    fclose(f1);
+//    fclose(f2);
+//
+//    cr_assert(success == -1);
+//}
+//
+//Test (solvers, cpu_cg_jacobi_1t) {
+//    test_solver(true, "cpu_conjugate_gradient", NULL, NULL, 1, 1);
+//}
+//
+//Test (solvers, cpu_cg_no_jacobi_1t) {
+//    test_solver(false, "cpu_conjugate_gradient", NULL, NULL, 1, 1);
+//}
+//
+//Test (solvers, gpu_cg_jacobi_1t) {
+//    test_solver(true, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient", 1, 1);
+//}
+//
+//Test (solvers, gpu_cg_no_jacobi_1t) {
+//    test_solver(false, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient",  1, 1);
+//}
+//
+//
+//
+//Test (solvers, bcg_jacobi_1t) {
+//    test_solver(true, "biconjugate_gradient", NULL, NULL, 1, 1);
+//}
+//
+//Test (solvers, jacobi_1t) {
+//    test_solver(false, "jacobi", NULL, NULL, 1, 1);
+//}
+//
+//#if defined(_OPENMP)
+//
+//Test (solvers, cg_jacobi_6t) {
+//    test_solver(true, "conjugate_gradient", NULL, NULL, 6, 1);
+//}
+//
+//Test (solvers, cg_no_jacobi_6t) {
+//    test_solver(false, "conjugate_gradient", NULL, NULL, 6, 1);
+//}
+//
+//
+//Test (solvers, bcg_no_jacobi_6t) {
+//    test_solver(false, "biconjugate_gradient", NULL, NULL, 6, 1);
+//}
+//
+//Test (solvers, jacobi_6t) {
+//    test_solver(false, "jacobi", NULL, NULL, 6, 1);
+//}
+//
+//#endif
+//
+//
+//Test (solvers, cg_jacobi_1t_2) {
+//    test_solver(true, "conjugate_gradient", NULL, NULL, 1, 2);
+//}
+//
+//Test (solvers, cg_no_jacobi_1t_2) {
+//    test_solver(false, "conjugate_gradient", NULL, NULL, 1, 2);
+//}
+//
+//Test (solvers, bcg_jacobi_1t_2) {
+//    test_solver(true, "biconjugate_gradient", NULL, NULL, 1, 2);
+//}
+//
+//Test (solvers, jacobi_1t_2) {
+//    test_solver(false, "jacobi", NULL, NULL, 1, 2);
+//}
+//
+//#if defined(_OPENMP)
+//
+//Test (solvers, cg_jacobi_6t_2) {
+//    test_solver(true, "conjugate_gradient", NULL, NULL, 6, 2);
+//}
+//
+//Test (solvers, cg_no_jacobi_6t_2) {
+//    test_solver(false, "conjugate_gradient", NULL, NULL, 6, 2);
+//}
+//
+//
+//Test (solvers, bcg_no_jacobi_6t_2) {
+//    test_solver(false, "biconjugate_gradient", NULL, NULL, 6, 2);
+//}
+//
+//Test (solvers, jacobi_6t_2) {
+//    test_solver(false, "jacobi", NULL, NULL, 6, 2);
+//}
+//
+//#endif
+
+//#ifdef COMPILE_CUDA
+//Test(run_gold_simulation, gpu_no_adapt) {
+//
+//    printf("Running simulation for testing\n");
+//
+//    char *out_dir  = "tests_bin/gold_tmp_no_gpu";
+//
+//    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt.ini");
+//
+//    int success = run_simulation_with_config(options, out_dir);
+//    cr_assert(success);
+//
+//    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
+//    sds tested_simulation_dir = sdsnew(out_dir);
+//
+//    success = check_output_equals(gold_dir, tested_simulation_dir, 1e-3f);
+//    cr_assert(success);
+//
+//    free_user_options(options);
+//}
+//
+//Test(run_gold_simulation, gpu_no_adapt_cg_gpu) {
+//
+//    printf("Running simulation for testing\n");
+//
+//    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt_cg_gpu.ini");
+//
+//    char *out_dir  = "tests_bin/gold_tmp_gpu";
+//    int success = run_simulation_with_config(options, out_dir);
+//    cr_assert(success);
+//
+//    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
+//    sds tested_simulation_dir = sdsnew(out_dir);
+//
+//    success = check_output_equals(gold_dir, tested_simulation_dir, 5e-2f);
+//    cr_assert(success);
+//    free_user_options(options);
+//
+//}
+//
+//Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
+//
+//    char *out_dir_no_gpu_no_precond  = "tests_bin/circle_cg_no_gpu_no_precond";
+//    char *out_dir_no_gpu_precond  = "tests_bin/circle_cg_no_gpu_precond";
+//
+//    char *out_dir_gpu_no_precond  = "tests_bin/circle_cg_gpu_no_precond";
+//    char *out_dir_gpu_precond  = "tests_bin/circle_cg_gpu_precond";
+//
+//
+//    struct user_options *options = load_options_from_file("example_configs/plain_mesh_with_fibrosis_and_border_zone_inside_circle_example_2cm.ini");
+//    options->final_time = 10.0;
+//
+//    free(options->save_mesh_config->config_data.function_name);
+//
+//    options->save_mesh_config->config_data.function_name = strdup("save_as_text_or_binary");
+//    options->save_mesh_config->print_rate = 50;
+//    shput(options->save_mesh_config->config_data.config, strdup("file_prefix"), strdup("V"));
+//
+//    shput(options->domain_config->config_data.config, strdup("seed"), strdup("150"));
+//
+//    free(options->linear_system_solver_config->config_data.function_name);
+//    free(options->linear_system_solver_config->config_data.init_function_name);
+//    free(options->linear_system_solver_config->config_data.end_function_name);
+//
+//    options->linear_system_solver_config->config_data.function_name = strdup("conjugate_gradient");
+//    options->linear_system_solver_config->config_data.init_function_name = strdup("init_conjugate_gradient");
+//    options->linear_system_solver_config->config_data.end_function_name = strdup("end_conjugate_gradient");
+//
+//    shput(options->linear_system_solver_config->config_data.config, strdup("use_gpu"), strdup("false"));
+//    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("false"));
+//
+//    int success = run_simulation_with_config(options, out_dir_no_gpu_no_precond);
+//    cr_assert(success);
+//
+//    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("true"));
+//    success = run_simulation_with_config(options, out_dir_no_gpu_precond);
+//    cr_assert(success);
+//
+//    shput(options->linear_system_solver_config->config_data.config, strdup("use_gpu"), strdup("true"));
+//    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("false"));
+//
+//    success = run_simulation_with_config(options, out_dir_gpu_no_precond);
+//    cr_assert(success);
+//
+//    shput(options->linear_system_solver_config->config_data.config, strdup("use_preconditioner"), strdup("true"));
+//
+//    success = run_simulation_with_config(options, out_dir_gpu_precond);
+//    cr_assert(success);
+//
+//    success = check_output_equals(out_dir_no_gpu_no_precond, out_dir_no_gpu_precond, 5e-2f);
+//    success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_no_precond, 5e-2f);
+//    success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_precond, 5e-2f);
+//    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
+//    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_precond, 5e-2f);
+//    success &= check_output_equals(out_dir_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
+//
+//    cr_assert(success);
+//
+//
+//
+//    free_user_options(options);
+//}
+
+//#endif
+
+//
+//Test (utils, arr_int) {
+//
+//    int *v = NULL;
+//
+//    arrsetcap(v, 1);
+//
+//    cr_assert_eq(arrlen(v), 0);
+//    cr_assert_geq(arrcap(v), 1);
+//
+//    arrput(v, 0);
+//    arrput(v, 1);
+//    arrput(v, 2);
+//
+//    cr_assert_eq(arrlen(v), 3);
+//
+//    cr_assert_eq(v[0], 0);
+//    cr_assert_eq(v[1], 1);
+//    cr_assert_eq(v[2], 2);
+//}
+//
+//Test (utils, arr_float) {
+//
+//    float *v = NULL;
+//
+//    arrsetcap(v, 1);
+//
+//    cr_assert_eq(arrlen(v), 0);
+//    cr_assert_geq(arrcap(v), 1);
+//
+//    arrput(v, 0);
+//    arrput(v, 0.5);
+//    arrput(v, 2.5);
+//
+//    cr_assert_eq(arrlen(v), 3);
+//
+//    cr_assert_float_eq(v[0], 0.0, 1e-10);
+//    cr_assert_float_eq(v[1], 0.5, 1e-10);
+//    cr_assert_float_eq(v[2], 2.5, 1e-10);
+//}
+//
+//Test (utils, arr_double) {
+//
+//    real_cpu *v = NULL;
+//
+//    arrsetcap(v, 1);
+//
+//    cr_assert_eq(arrlen(v), 0);
+//    cr_assert_geq(arrcap(v), 1);
+//
+//    arrput(v, 0);
+//    arrput(v, 0.5);
+//    arrput(v, 2.5);
+//
+//    cr_assert_eq(arrlen(v), 3);
+//
+//    cr_assert_float_eq(v[0], 0.0, 1e-10);
+//    cr_assert_float_eq(v[1], 0.5, 1e-10);
+//    cr_assert_float_eq(v[2], 2.5, 1e-10);
+//
+//}
+//
+//Test (utils, arr_element) {
+//
+//    struct element *v = NULL;
+//
+//    arrsetcap(v, 1);
+//
+//    cr_assert_eq(arrlen(v), 0);
+//    cr_assert_geq(arrcap(v), 1);
+//
+//    struct cell_node *c = new_cell_node();
+//    struct element a = {'a', 0, 1, c};
+//
+//    arrput(v, a);
+//
+//    a.column = 2;
+//    a.value = -2.2;
+//    arrput(v, a);
+//
+//    a.column = 3;
+//    a.value = 3.5;
+//    arrput(v, a);
+//
+//    cr_assert_eq(arrlen(v), 3);
+//
+//    cr_assert_eq(v[0].column, 1);
+//    cr_assert_float_eq(v[0].value, 0.0, 1e-10);
+//    cr_assert_eq(v[0].cell, c);
+//
+//    cr_assert_eq(v[1].column, 2);
+//    cr_assert_float_eq(v[1].value, -2.2, 1e-10);
+//    cr_assert_eq(v[1].cell, c);
+//
+//    cr_assert_eq(v[2].column, 3);
+//    cr_assert_float_eq(v[2].value, 3.5, 1e-10);
+//    cr_assert_eq(v[2].cell, c);
+//
+//    struct element b = arrpop(v);
+//    cr_assert_eq(arrlen(v), 2);
+//
+//    cr_assert_eq(b.column, 3);
+//
+//    free(c);
+//}

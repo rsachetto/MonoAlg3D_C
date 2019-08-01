@@ -107,6 +107,8 @@ bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_boun
  */
 void derefine_all_grid (struct grid *the_grid) {
 
+    if(!the_grid) return;
+
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
     long int bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
@@ -162,7 +164,6 @@ void derefine_all_grid (struct grid *the_grid) {
         if (!has_been_derefined)
             grid_cell = grid_cell->next;
     }
-    // ordergrid_cells();
 }
 
 bool derefine_grid_cell (struct grid *the_grid, struct cell_node *grid_cell) {

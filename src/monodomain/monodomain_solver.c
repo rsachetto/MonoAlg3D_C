@@ -620,8 +620,6 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 
     real *sv = the_ode_solver->sv;
 
-    int i;
-
     bool act = false;
 
     if(the_ode_solver->gpu) {
@@ -631,10 +629,12 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
         size_t mem_size = max_number_of_cells * sizeof(real);
 
         vms = (real *)malloc(mem_size);
-        check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+
+        if(the_grid->adaptive)
+            check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
         #pragma omp parallel for
-        for(i = 0; i < n_active; i++) {
+        for(uint32_t i = 0; i < n_active; i++) {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
 
             if(ac[i]->v > vm_threshold) {
@@ -647,7 +647,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
     #endif
     } else {
         #pragma omp parallel for
-        for(i = 0; i < n_active; i++) {
+        for(uint32_t i = 0; i < n_active; i++) {
             sv[ac[i]->sv_position * n_odes] = (real)ac[i]->v;
 
             if(ac[i]->v > vm_threshold) {

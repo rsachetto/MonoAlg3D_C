@@ -22,15 +22,20 @@ extern __cuda_fake_struct blockIdx;
 #include <stdio.h>
 #include "cuda_runtime.h"
 
-#define check_cuda_error(ans) { gpu_assert((ans), __FILE__, __LINE__); }
+#define check_cuda_error(ans)                                                                                          \
+        do {                                                                                                           \
+            gpu_assert((ans), __FILE__, __LINE__);                                                                     \
+        } while(0)                                                                                                     \
 
 void gpu_assert(cudaError_t code, const char *file, int line)
 {
+#ifdef DEBUG_INFO
     if (code != cudaSuccess)
     {
         fprintf(stderr,"GPU Error!: %s %s %d\n", cudaGetErrorString(code), file, line);
         exit(code);
     }
+#endif
 }
 
 #endif //MONOALG3D_MODEL_GPU_UTILS_H

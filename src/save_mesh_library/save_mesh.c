@@ -19,13 +19,13 @@
 #include "../vtk_utils/vtk_polydata_grid.h"
 #include "../libraries_common/common_data_structures.h"
 
-char *file_prefix;
-bool binary = false;
-bool clip_with_plain = false;
-bool clip_with_bounds = false;
-bool save_pvd = true;
-bool compress = false;
-int compression_level = 3;
+static char *file_prefix;
+static bool binary = false;
+static bool clip_with_plain = false;
+static bool clip_with_bounds = false;
+static bool save_pvd = true;
+static bool compress = false;
+static int compression_level = 3;
 
 static bool initialized = false;
 
@@ -298,7 +298,7 @@ SAVE_MESH(save_as_vtu) {
         save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
     }
 
-    if(the_grid->adaptive)
+    if(the_grid->adaptive) //LEAK
         free_vtk_unstructured_grid(vtk_grid);
 
     sdsfree(output_dir_with_file);

@@ -19,6 +19,7 @@ struct grid *new_grid() {
 
     result->refined_this_step = NULL;
     result->free_sv_positions = NULL;
+    result->num_active_cells = result->number_of_cells = 0;
 
     arrsetcap(result->refined_this_step, 128);
     arrsetcap(result->free_sv_positions, 128);
@@ -315,6 +316,7 @@ void clean_and_free_grid(struct grid *the_grid) {
     arrfree(the_grid->refined_this_step);
     arrfree(the_grid->free_sv_positions);
 
+    free(the_grid->the_purkinje_network);
     free(the_grid);
 }
 
