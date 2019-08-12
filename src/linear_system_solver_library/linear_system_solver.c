@@ -3,7 +3,7 @@
 //
 
 #include "../config/linear_system_solver_config.h"
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 
 #include "../single_file_libraries/stb_ds.h"
@@ -49,10 +49,9 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
-
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data.config, "tolerance");
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data.config, "use_preconditioner");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data, "use_preconditioner");
 
     check_cuda_error((cudaError_t)cublasCreate(&cublasHandle));
 
@@ -83,7 +82,6 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     cudaMemcpy(d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice); //IA
     cudaMemcpy(d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice); //A
     real *rhs = (real*) malloc(sizeof(real)*num_active_cells);
-
 
     #pragma omp parallel for
     for (uint32_t i = 0; i < num_active_cells; i++) {
@@ -142,6 +140,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 }
 
 END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
+
     check_cuda_error( (cudaError_t)cusparseDestroy(cusparseHandle) );
     check_cuda_error( (cudaError_t)cublasDestroy(cublasHandle) );
     check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descr));
@@ -305,9 +304,9 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
 #endif
 
 INIT_LINEAR_SYSTEM(init_cpu_conjugate_gradient) {
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data.config, "tolerance");
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data.config, "use_preconditioner");
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data, "use_preconditioner");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
 }
 
 END_LINEAR_SYSTEM(end_cpu_conjugate_gradient) {
@@ -474,7 +473,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     bool gpu = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data.config, "use_gpu");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data, "use_gpu");
 
     if(gpu) {
     #ifdef COMPILE_CUDA
@@ -487,14 +486,11 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
     else {
         cpu_conjugate_gradient(config, the_grid, number_of_iterations, error);
     }
-
-
 }
 
 INIT_LINEAR_SYSTEM(init_conjugate_gradient) {
-
     bool gpu = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data.config, "use_gpu");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data, "use_gpu");
 
     if(gpu) {
 #ifdef COMPILE_CUDA
@@ -513,7 +509,7 @@ INIT_LINEAR_SYSTEM(init_conjugate_gradient) {
 END_LINEAR_SYSTEM(end_conjugate_gradient) {
 
     bool gpu = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data.config, "use_gpu");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data, "use_gpu");
 
     if(gpu) {
 #ifdef COMPILE_CUDA
@@ -533,9 +529,9 @@ END_LINEAR_SYSTEM(end_conjugate_gradient) {
 SOLVE_LINEAR_SYSTEM(jacobi) {
 
     if(!jacobi_initialized) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data.config, "tolerance");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
         max_its = 500;
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
         jacobi_initialized = true;
     }
 
@@ -617,17 +613,17 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
 
     if(!bcg_initialized) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data.config, "tolerance");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
 
         char *preconditioner_char = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(preconditioner_char, config->config_data.config, "use_preconditioner");
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(preconditioner_char, config->config_data, "use_preconditioner");
         if (preconditioner_char != NULL)
         {
             use_preconditioner = ((strcmp (preconditioner_char, "yes") == 0) || (strcmp (preconditioner_char, "true") == 0));
         }
 
         max_its = 100;
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data.config, "max_iterations");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
         bcg_initialized = true;
     }
 

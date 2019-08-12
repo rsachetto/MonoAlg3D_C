@@ -6,29 +6,36 @@
 
 #include "../config/domain_config.h"
 #include "../libraries_common/common_data_structures.h"
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 #include "../string/sds.h"
 #include "../utils/file_utils.h"
 #include "../single_file_libraries/stb_ds.h"
+#include "../utils/utils.h"
 #include <assert.h>
 #include <time.h>
 
 #include <unistd.h>
+#include <float.h>
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
-    real_cpu start_dx = config->start_dx;
-    real_cpu start_dy = config->start_dy;
-    real_cpu start_dz = config->start_dz;
+    real_cpu start_dx = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dx");
+
+    real_cpu start_dy = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dy, config->config_data, "start_dy");
+
+    real_cpu start_dz = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");
 
     real_cpu side_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_x, config->config_data.config, "side_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_x, config->config_data, "side_length_x");
 
     real_cpu side_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_y, config->config_data.config, "side_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_y, config->config_data, "side_length_y");
 
     real_cpu side_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_z, config->config_data.config, "side_length_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_z, config->config_data, "side_length_z");
 
     real_cpu real_side_length_x;
     real_cpu real_side_length_y;
@@ -84,19 +91,21 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
 
     int num_layers = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, num_layers, config->config_data.config, "num_layers");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, num_layers, config->config_data, "num_layers");
 
     real_cpu side_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real_cpu, side_length, config->config_data.config, "side_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real_cpu, side_length, config->config_data, "side_length");
+
+    real_cpu start_dz = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");
 
     sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
     sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
-    sds sz_char = sdscatprintf(sdsempty(), "%lf", config->start_dz*num_layers);
+    sds sz_char = sdscatprintf(sdsempty(), "%lf", start_dz*num_layers);
 
-
-    shput(config->config_data.config, "side_length_x", strdup(sx_char));
-    shput(config->config_data.config, "side_length_y", strdup(sy_char));
-    shput(config->config_data.config, "side_length_z", strdup(sz_char));
+    shput_dup_value(config->config_data, "side_length_x", sx_char);
+    shput_dup_value(config->config_data, "side_length_y", sy_char);
+    shput_dup_value(config->config_data, "side_length_z", sz_char);
 
     return initialize_grid_with_cuboid_mesh(config, the_grid);
 
@@ -104,12 +113,17 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
-    real_cpu start_dx = config->start_dx;
-    real_cpu start_dy = config->start_dy;
-    real_cpu start_dz = config->start_dz;
+    real_cpu start_dx = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dz");
+
+    real_cpu start_dy = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dy, config->config_data, "start_dy");
+
+    real_cpu start_dz = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");
 
     real_cpu cable_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, cable_length, config->config_data.config, "cable_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, cable_length, config->config_data, "cable_length");
 
     real_cpu real_side_length_x;
     real_cpu real_side_length_y;
@@ -144,16 +158,16 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
 
-    config->start_dx = 800.0;
-    config->start_dy = 800.0;
-    config->start_dx = 800.0;
+    shput_dup_value(config->config_data, "start_dx", "800.0");
+    shput_dup_value(config->config_data, "start_dy", "800.0");
+    shput_dup_value(config->config_data, "start_dz", "800.0");
 
     bool fibrotic = false;
 
     char *mesh_file;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data.config, "fibrotic");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data, "fibrotic");
 
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
     refine_grid(the_grid, 7);
@@ -189,10 +203,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         refine_border_zone_cells(the_grid);
 
         char *scar_file_big = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_big, config->config_data.config, "big_scar_file");
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_big, config->config_data, "big_scar_file");
 
         char *scar_file_small = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_small, config->config_data.config, "small_scar_file");
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_small, config->config_data, "small_scar_file");
 
         if(scar_file_big) {
             print_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_big);
@@ -207,35 +221,35 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         if(!(scar_file_big || scar_file_small)) {
 
             real_cpu small_scar_center_x = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config->config_data.config,
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config->config_data,
                                                         "small_scar_center_x");
 
             real_cpu small_scar_center_y = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config->config_data.config,
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config->config_data,
                                                         "small_scar_center_y");
 
             real_cpu small_scar_center_z = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config->config_data.config,
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config->config_data,
                                                         "small_scar_center_z");
 
             real_cpu big_scar_center_x = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config->config_data.config,
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config->config_data,
                                                         "big_scar_center_x");
 
             real_cpu big_scar_center_y = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config->config_data.config,
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config->config_data,
                                                         "big_scar_center_y");
 
             real_cpu big_scar_center_z = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config->config_data.config,
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config->config_data,
                                                         "big_scar_center_z");
 
             real_cpu phi = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
 
             unsigned seed = 0;
             bool seed_success;
-            GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data.config, "seed", seed_success);
+            GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data, "seed", seed_success);
             if(!seed_success)
                 seed = 0;
 
@@ -251,26 +265,27 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     char *mesh_file;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     char *scar_size;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(scar_size, config->config_data.config, "scar_size");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(scar_size, config->config_data, "scar_size");
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
 
     unsigned fib_seed = 0;
     bool success;
-    GET_PARAMETER_NUMERIC_VALUE(unsigned, fib_seed, config->config_data.config, "seed", success);
+    GET_PARAMETER_NUMERIC_VALUE(unsigned, fib_seed, config->config_data, "seed", success);
 
     if(!success)
         fib_seed = (unsigned)time(NULL) + getpid();
 
     srand(fib_seed);
 
-    config->start_dx = 800.0;
-    config->start_dy = 800.0;
-    config->start_dz = 800.0;
+    shput_dup_value(config->config_data, "start_dx", "800.0");
+    shput_dup_value(config->config_data, "start_dy", "800.0");
+    shput_dup_value(config->config_data, "start_dz", "800.0");
+
     uint8_t size_code = 0;
 
     initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
@@ -388,18 +403,15 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 
-    config->start_dx = 250.0;
-    config->start_dy = 250.0;
-    config->start_dz = 250.0;
+    shput_dup_value(config->config_data, "start_dx", "250.0");
+    shput_dup_value(config->config_data, "start_dy", "250.0");
+    shput_dup_value(config->config_data, "start_dz", "250.0");
 
     char *mesh_file = strdup("meshes/rabheart.alg");
     //LEAK on mesh_file if mesh_file is defined on ini file
-    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(mesh_file, config->config_data.config, "mesh_file");
+    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(mesh_file, config->config_data, "mesh_file");
 
-    real_cpu max_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_h, config->config_data.config, "maximum_discretization");
-
-    initialize_and_construct_grid(the_grid, 64000.0, 64000.0, 64000.0);
+    initialize_and_construct_grid(the_grid, 64000.0f, 64000.0f, 64000.0f);
     refine_grid(the_grid, 7);
 
     print_to_stdout_and_file("Loading Rabbit Heart Mesh\n");
@@ -413,21 +425,146 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     }
     free(mesh_file);
 
-    config->max_dx = max_h;
-    config->max_dx_was_set = true;
+    char *mh = shget(config->config_data, "maximum_discretization");
+    shput_dup_value(config->config_data,  "maximum_dx", mh);
+    shput_dup_value(config->config_data,  "maximum_dy", mh);
+    shput_dup_value(config->config_data,  "maximum_dz", mh);
 
-    config->max_dy = max_h;
-    config->max_dy_was_set = true;
+    return 1;
+}
 
-    config->max_dz = max_h;
-    config->max_dz_was_set = true;
+SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
 
-    config->start_dx = 250.0;
-    config->start_dx_was_set = true;
-    config->start_dy = 250.0;
-    config->start_dy_was_set = true;
-    config->start_dz = 250.0;
-    config->start_dz_was_set = true;
+    char *file_name = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_name, config->config_data, "mesh_file");
+
+    initialize_grid_with_square_mesh(config, the_grid);
+
+    struct cell_node *grid_cell = the_grid->first_cell;
+    FILE *file = fopen(file_name, "r");
+
+    if(!file) {
+        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
+    }
+
+    int num_volumes = 160000;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, num_volumes, config->config_data, "num_volumes");
+
+    double **mesh_points = (double **)malloc(sizeof(double *) * num_volumes);
+    for(int i = 0; i < num_volumes; i++) {
+        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
+        if(mesh_points[i] == NULL) {
+            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+        }
+    }
+    real_cpu dummy1, dummy2, dummy3;
+
+
+    real_cpu maxy = 0.0;
+    real_cpu maxz = 0.0;
+    real_cpu miny = DBL_MAX;
+    real_cpu minz = DBL_MAX;
+    int *fibrosis = (int *)malloc(sizeof(int) * num_volumes);
+    int *active = (int *)malloc(sizeof(int) * num_volumes);
+    int *bz = (int *)malloc(sizeof(int) * num_volumes);
+
+    fibrosis[0] = -1;
+
+    int i = -1;
+    int reentry;
+
+    while(i < num_volumes) {
+
+        if(i==-1) {
+            fscanf(file, "%d", &reentry);
+        }
+        else {
+            fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%d", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2],
+                   &dummy1, &dummy2, &dummy3, &active[i], &fibrosis[i], &bz[i]);
+
+            int tmp = fgetc(file);
+            while(tmp != '\n') tmp = fgetc(file);
+
+            // we save the old index to reference fibrosis[i] and tags[i].
+            // this is needed because the array mesh_points is sorted after reading the mesh file.
+            mesh_points[i][3] = i;
+
+            if (mesh_points[i][1] > maxy)
+                maxy = mesh_points[i][1];
+            if (mesh_points[i][2] > maxz)
+                maxz = mesh_points[i][2];
+            if (mesh_points[i][1] < miny)
+                miny = mesh_points[i][1];
+            if (mesh_points[i][2] < minz)
+                minz = mesh_points[i][2];
+        }
+
+        i++;
+
+    }
+
+    sort_vector(mesh_points, num_volumes); // we need to sort because inside_mesh perform a binary search
+
+    real_cpu maxx = mesh_points[num_volumes - 1][0];
+    real_cpu minx = mesh_points[0][0];
+    int index;
+
+    while(grid_cell != 0) {
+
+        if(grid_cell->active) {
+            real_cpu x, y, z;
+            x = grid_cell->center_x;
+            y = grid_cell->center_y;
+            z = grid_cell->center_z;
+
+            if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+                grid_cell->active = false;
+            } else {
+                index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
+
+                if (index != -1) {
+
+                    int old_index = (int) mesh_points[index][3];
+
+                    grid_cell->active = (active[old_index] == 1);
+
+                    if (fibrosis[0] != -1) {
+
+                        INITIALIZE_FIBROTIC_INFO(grid_cell);
+                        FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
+                        BORDER_ZONE(grid_cell) = (bz[old_index] == 1);
+                    }
+                } else {
+                    grid_cell->active = false;
+                }
+            }
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fclose(file);
+
+    // deallocate memory
+    for(int l = 0; l < num_volumes; l++) {
+        free(mesh_points[l]);
+    }
+
+    free(mesh_points);
+    free(bz);
+    free(fibrosis);
+    free(active);
+
+    //TODO: we need to sum the cell discretization here...
+    the_grid->side_length_x = maxx;
+    the_grid->side_length_y = maxy;
+    the_grid->side_length_z = maxz;
+
+    print_to_stdout_and_file("Cleaning grid\n");
+
+    for(i = 0; i < 6; i++) {
+        derefine_grid_inactive_cells(the_grid);
+    }
+    free(file_name);
 
     return 1;
 }
@@ -435,13 +572,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     char *mesh_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     real_cpu start_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data.config, "start_discretization");
-
-    real_cpu max_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_h, config->config_data.config, "maximum_discretization");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
 
     assert(the_grid);
 
@@ -475,21 +609,17 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
         start_h = 100.0;
     }
 
-    config->max_dx = max_h;
-    config->max_dx_was_set = true;
+    char *mh = shget(config->config_data, "maximum_discretization");
 
-    config->max_dy = max_h;
-    config->max_dy_was_set = true;
+    shput_dup_value(config->config_data,  "maximum_dx", mh);
+    shput_dup_value(config->config_data,  "maximum_dy", mh);
+    shput_dup_value(config->config_data,  "maximum_dz", mh );
 
-    config->max_dz = max_h;
-    config->max_dz_was_set = true;
+    sds tmp = sdscatprintf(sdsempty(), "%lf", start_h);
 
-    config->start_dx = start_h;
-    config->start_dx_was_set = true;
-    config->start_dy = start_h;
-    config->start_dy_was_set = true;
-    config->start_dz = start_h;
-    config->start_dz_was_set = true;
+    shput_dup_value(config->config_data,  "start_dx", tmp);
+    shput_dup_value(config->config_data,  "start_dy", tmp);
+    shput_dup_value(config->config_data,  "start_dz", tmp);
 
     return 1;
 }
@@ -499,10 +629,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     real_cpu side_length;
 
     real_cpu start_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data.config, "start_discretization");
-
-    real_cpu max_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_h, config->config_data.config, "maximum_discretization");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
 
     print_to_stdout_and_file("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h,
                              start_h, start_h);
@@ -515,21 +642,18 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
 
     initialize_and_construct_grid(the_grid, side_length, side_length, side_length);
 
-    config->max_dx = max_h;
-    config->max_dx_was_set = true;
+    char *tmp = shget(config->config_data, "maximum_discretization");
 
-    config->max_dy = max_h;
-    config->max_dy_was_set = true;
+    shput_dup_value(config->config_data,  "maximum_dx", tmp);
+    shput_dup_value(config->config_data,  "maximum_dy", tmp);
+    shput_dup_value(config->config_data,  "maximum_dz", tmp);
 
-    config->max_dz = max_h;
-    config->max_dz_was_set = true;
 
-    config->start_dx = start_h;
-    config->start_dx_was_set = true;
-    config->start_dy = start_h;
-    config->start_dy_was_set = true;
-    config->start_dz = start_h;
-    config->start_dz_was_set = true;
+    tmp = shget(config->config_data, "start_discretization");
+
+    shput_dup_value(config->config_data,  "start_dx", tmp);
+    shput_dup_value(config->config_data,  "start_dy", tmp);
+    shput_dup_value(config->config_data,  "start_dz", tmp);
 
 
     int num_steps = get_num_refinement_steps_to_discretization(side_length, start_h);
@@ -562,10 +686,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_plain_fibrosis(the_grid, phi, seed);
@@ -576,10 +700,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data.config, "fibrosis_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data.config, "size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_fibrosis_from_file(the_grid, fib_file, fib_size);
@@ -591,10 +715,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_source_sink_fibrotic_mesh)
 {
 
     real_cpu channel_width = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_width, config->config_data.config, "channel_width");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_width, config->config_data, "channel_width");
 
     real_cpu channel_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_length, config->config_data.config, "channel_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_length, config->config_data, "channel_length");
 
 
     initialize_grid_with_square_mesh(config, the_grid);
@@ -606,25 +730,25 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_source_sink_fibrotic_mesh)
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
 
     real_cpu plain_center = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config->config_data.config, "plain_center");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config->config_data, "plain_center");
 
     real_cpu sphere_radius = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config->config_data.config, "sphere_radius");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config->config_data, "sphere_radius");
 
     real_cpu border_zone_size = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_size, config->config_data.config,
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_size, config->config_data,
                                                 "border_zone_size");
 
     real_cpu border_zone_radius = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data.config,
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data,
                                                 "border_zone_radius");
 
     bool success;
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data.config, "seed", success);
+    GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data, "seed", success);
     if(!success) {
         seed = 0;
     }
@@ -643,41 +767,36 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
 
     char *mesh_file = NULL;
 
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data.config, "mesh_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     real_cpu start_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data.config, "start_discretization");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
 
     real_cpu side_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length, config->config_data.config, "side_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length, config->config_data, "side_length");
 
     size_t n_points = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, n_points, config->config_data.config, "n_points");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, n_points, config->config_data, "n_points");
 
 
     sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
     sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
     sds sz_char = sdscatprintf(sdsempty(), "%lf", start_h);
 
-    shput(config->config_data.config, "side_length_x", strdup(sx_char));
-    shput(config->config_data.config, "side_length_y", strdup(sy_char));
-    shput(config->config_data.config, "side_length_z", strdup(sz_char));
+    shput(config->config_data, "side_length_x", strdup(sx_char));
+    shput(config->config_data, "side_length_y", strdup(sy_char));
+    shput(config->config_data, "side_length_z", strdup(sz_char));
 
-    config->max_dx = start_h;
-    config->max_dx_was_set = true;
+    char *tmp = shget(config->config_data, "start_discretization");
 
-    config->max_dy = start_h;
-    config->max_dy_was_set = true;
+    shput_dup_value(config->config_data,  "maximum_dx", tmp);
+    shput_dup_value(config->config_data,  "maximum_dy", tmp);
+    shput_dup_value(config->config_data,  "maximum_dz", tmp);
 
-    config->max_dz = start_h;
-    config->max_dz_was_set = true;
+    shput_dup_value(config->config_data,  "start_dx", tmp);
+    shput_dup_value(config->config_data,  "start_dy", tmp);
+    shput_dup_value(config->config_data,  "start_dz", tmp);
 
-    config->start_dx = start_h;
-    config->start_dx_was_set = true;
-    config->start_dy = start_h;
-    config->start_dy_was_set = true;
-    config->start_dz = start_h;
-    config->start_dz_was_set = true;
 
     initialize_grid_with_cuboid_mesh(config, the_grid);
 

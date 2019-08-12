@@ -82,3 +82,4 @@ scripts/output
 scripts/animations/frames
 scripts/animations/video
 batch_simulations/
+/src/main_graph_analyzer.c

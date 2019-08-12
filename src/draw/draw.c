@@ -50,14 +50,28 @@ char center_y_text[128] = { 0 };
 char center_z_text[128] = { 0 };
 char save_path[PATH_MAX] = {0};
 
-float center_x;
-float center_y;
-float center_z;
+static float center_x;
+static float center_y;
+static float center_z;
 
-Vector2 mousePos = { 0 };
-Vector2 windowPos;
-bool dragWindow = false;
+Vector2 mouse_pos = {0 };
+Vector2 selected_ap_point = { FLT_MAX, FLT_MAX };
+Vector2 selected_point_for_apd1 = { FLT_MAX, FLT_MAX };
+Vector2 selected_point_for_apd2 = { FLT_MAX, FLT_MAX };
+Vector2 window_pos;
+bool drag_window = false;
 
+//AP VARIABLES
+static int graph_height;
+static int graph_pos_x;
+static int graph_pos_y;
+static int graph_width;
+static float max_x;
+static float min_x;
+static float min_y;
+static float max_y;
+
+/////
 int current_scale = 0;
 
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
@@ -230,6 +244,7 @@ static Vector3 find_mesh_center_vtk() {
 
     float max_x, max_y, max_z;
     float min_x, min_y, min_z;
+
 
     max_x = FLT_MIN;
     max_y = FLT_MIN;
@@ -488,34 +503,33 @@ double clamp(double x, double min, double max) {
 
 void draw_ap(Font font, int font_size_small, int font_size_big) {
 
-    int graph_height = GetScreenHeight()/3;
+    graph_height = GetScreenHeight()/3;
 
-    int graph_pos_x = 1;
-    int graph_pos_y = GetScreenHeight() - graph_height;
+    graph_pos_x = 1;
+    graph_pos_y = GetScreenHeight() - graph_height;
 
-    int graph_width = GetScreenWidth();
+    graph_width = GetScreenWidth();
 
-    float spacing_big = font_size_big/(float)font.baseSize;
-    float spacing_small = font_size_small/(float)font.baseSize;
+    float spacing_big = (float)font_size_big/(float)font.baseSize;
+    float spacing_small = (float)font_size_small/(float)font.baseSize;
 
     DrawRectangle(graph_pos_x, graph_pos_y, graph_width, graph_height, WHITE);
 
-    char tmp[256];
+    char tmp[1024];
     sprintf(tmp, "%.2lf", draw_config.final_time);
 
-    Vector2 width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
+    Vector2 width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_small);
 
-    float min_x = graph_pos_x + 2.0f*width.x;
-    float max_x = graph_pos_x + graph_width - width.x;
+    min_x = (float)graph_pos_x + 2.0f*width.x;
+    max_x = (float)graph_pos_x + (float)graph_width - width.x;
 
-    float min_y = graph_pos_y + graph_height - 30.0f;
-    float max_y = graph_pos_y + 20.0f; //This is actually the smallest allowed y
+    min_y = (float) graph_pos_y + (float)graph_height - 30.0f;
+    max_y = (float) graph_pos_y + 20.0f; //This is actually the smallest allowed y
 
     int n = hmlen(selected_aps);
 
-    char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f )";
-
     if(draw_selected_ap_text) {
+        char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f )";
         double time_elapsed = GetTime() - selected_time;
         unsigned char alpha = (unsigned char) clamp(255 - time_elapsed*25, 0, 255);
         Color c = colors[(n-1) % num_colors];
@@ -523,7 +537,7 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
         sprintf(tmp, ap_text, n, current_selected.x, current_selected.y, current_selected.z);
 
-        width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
+        width = MeasureTextEx(font, ap_text, (float)font_size_big, spacing_big);
 
         DrawTextEx(font, tmp, (Vector2){graph_pos_x + graph_width/2.0f - width.x/2.0f - min_x, max_y}, font_size_big, 1, c);
 
@@ -547,9 +561,6 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
     Vector2 p1, p2;
 
-
-    real_cpu time = 0.0;
-
     uint num_ticks;
     real_cpu tick_ofsset = 10;
     num_ticks = (uint) ((draw_config.max_v - draw_config.min_v)/tick_ofsset);
@@ -566,33 +577,28 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
     real_cpu v = draw_config.min_v;
     sprintf(tmp, "%.2lf", v);
-    Vector2 max_w = MeasureTextEx(font, tmp, font_size_small, spacing_small);
+    Vector2 max_w = MeasureTextEx(font, tmp, (float)font_size_small, spacing_small);
 
-    float graph_min_y = min_y;
+    //Draw vertical ticks (Vm)
+    for(uint t = 0; t <= num_ticks; t++ ) {
 
-    //Draw vertical ticks
-    for(int t = 0; t <= num_ticks; t++ ) {
-
-        p1.x = graph_pos_x + 5.0f;
+        p1.x = (float)graph_pos_x + 5.0f;
         p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, v);
 
-        if(t == 0) {
-            graph_min_y = p1.y;
-        }
+        sprintf(tmp, "%.2lf",  normalize(min_y, max_y, draw_config.min_v, draw_config.max_v, p1.y));
+        width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_small);
 
-        sprintf(tmp, "%.2lf", v);
-        width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
+        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - width.x), p1.y - width.y/2.0f}, (float)font_size_small, spacing_small, RED);
 
-        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - width.x), p1.y - width.y/2.0f}, font_size_small, spacing_small, RED);
-
-        p1.x = p1.x + max_w.x + 5.0f;
+        p1.x = min_x - 5.0f;
         p2.x = p1.x + 10.0f;
         p2.y = p1.y;
 
+        //Grid line
         DrawLineV(p1, (Vector2){max_x, p1.y}, LIGHTGRAY);
 
+        //Tick line
         DrawLineV(p1, p2, RED);
-
 
         v += tick_ofsset;
     }
@@ -609,54 +615,48 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
         tick_ofsset = draw_config.final_time/num_ticks;
     }
 
+    real_cpu time = 0.0;
 
-    float graph_min_x = ((graph_pos_x + 5.0f + max_w.x + 5.0f) + (graph_pos_x + 5.0f + max_w.x + 5.0f + 10.0))/2.0;
+    //Draw horizontal ticks (t)
+    for(uint t = 0; t <= num_ticks; t++) {
 
-    //Draw horizontal ticks
-    for(int t = 0; t <= num_ticks; t++) {
-
-        if(t == 0) {
-            p1.x =  graph_min_x;
-        }
-        else {
-            p1.x = normalize(0.0, draw_config.final_time, min_x, max_x, time) - 20;
-
-        }
-        p1.y = graph_min_y - 5;
+        p1.x = normalize(0.0f, draw_config.final_time, min_x, max_x, time);
+        p1.y = min_y - 5;
 
         p2.x = p1.x;
-        p2.y = graph_min_y + 5;
+        p2.y = min_y + 5;
 
         if(!(t%2)) {
-            sprintf(tmp, "%.2lf", time);
-            width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
-            DrawTextEx(font, tmp, (Vector2){p1.x - width.x/2.0f, p1.y + 10}, font_size_small, spacing_small, RED);
+            sprintf(tmp, "%.2lf", normalize(min_x, max_x, 0.0f, draw_config.final_time, p1.x));
+            width = MeasureTextEx(font, tmp, (float) font_size_small, spacing_small);
+            DrawTextEx(font, tmp, (Vector2){p1.x - width.x/2.0f, p1.y + 10}, (float) font_size_small, spacing_small, RED);
         }
 
         DrawLineV(p1, p2, RED);
 
         DrawLineV(p1, (Vector2){p1.x, max_y}, LIGHTGRAY);
-
-
         time+= tick_ofsset;
     }
 
     //Draw vertical line
-    p1.x = ((graph_pos_x + 5.0f + max_w.x + 5.0f) + (graph_pos_x + 5.0f + max_w.x + 5.0f + 10.0))/2.0 ;
-    p1.y = min_y + 5;
+    {
+        p1.x = min_x;
+        p1.y = min_y + 5;
 
-    p2.x = p1.x;
-    p2.y  = max_y;
-    DrawLineV(p1, p2, RED);
+        p2.x = p1.x;
+        p2.y = max_y;
+        DrawLineV(p1, p2, RED);
+    }
 
     //Draw horizontal line
-    p1.x = min_x - 20;
-    p1.y = graph_min_y;
+    {
+        p1.x = min_x;
+        p1.y = min_y;
 
-    p2.x = max_x;
-    p2.y = p1.y;
-    DrawLineV(p1, p2, RED);
-
+        p2.x = max_x;
+        p2.y = p1.y;
+        DrawLineV(p1, p2, RED);
+    }
 
     struct action_potential *aps;
 
@@ -672,10 +672,10 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
                 if(aps[i].t <= draw_config.time) {
                     if (i + 1 < c) {
 
-                        p1.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i].t);
+                        p1.x = normalize(0.0f, draw_config.final_time, min_x, max_x, aps[i].t);
                         p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i].v);
 
-                        p2.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i + 1].t);
+                        p2.x = normalize(0.0f, draw_config.final_time, min_x, max_x, aps[i + 1].t);
                         p2.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i + 1].v);
 
                         //TODO: create an option for this???
@@ -688,15 +688,38 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
             }
         }
+    }
 
+    if(selected_ap_point.x != FLT_MAX && selected_ap_point.y != FLT_MAX) {
+        char *tmp_point = "%lf, %lf";
+        sprintf(tmp, tmp_point, selected_ap_point.x, selected_ap_point.y);
+        width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_big);
+        DrawTextEx(font, tmp, (Vector2){mouse_pos.x-width.x/2, mouse_pos.y-width.y}, (float)font_size_small, 1, BLACK);
+    }
+
+    if(selected_point_for_apd1.x != FLT_MAX && selected_point_for_apd1.y != FLT_MAX) {
+        DrawCircleV(selected_point_for_apd1, 4, RED);
+    }
+
+    if(selected_point_for_apd2.x != FLT_MAX && selected_point_for_apd2.y != FLT_MAX) {
+        DrawCircleV(selected_point_for_apd2, 4, RED);
+        DrawLineV(selected_point_for_apd1, selected_point_for_apd2, RED);
+
+        float t1 = normalize(min_x, max_x, 0.0f, draw_config.final_time, selected_point_for_apd1.x);
+        float t2 = normalize(min_x, max_x, 0.0f, draw_config.final_time, selected_point_for_apd2.x);
+
+        char *tmp_point = "dt = %lf";
+        sprintf(tmp, tmp_point, fabsf(t2-t1));
+        width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_big);
+        DrawTextEx(font, tmp, (Vector2){selected_point_for_apd1.x+width.x/2.0, selected_point_for_apd1.y-width.y}, (float)font_size_small, 1, BLACK);
     }
 }
 
 static void draw_scale(Font font, int font_size_small) {
 
-    float initial_y =  GetScreenHeight()/2.0;
+    float initial_y =  (float)GetScreenHeight()/2.0f;
 
-    float spacing_small = font_size_small/(float)font.baseSize;
+    float spacing_small = (float)font_size_small/(float)font.baseSize;
 
     int num_ticks;
     real_cpu tick_ofsset = 12;
@@ -809,7 +832,6 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
     int index = 0;
 
     uint32_t n_active = 0;
-//    float sx, sy, sz;
 
     if(draw_type == DRAW_SIMULATION) {
         n_active = draw_config.grid_info.grid_to_draw->num_active_cells;
@@ -896,8 +918,8 @@ static bool draw_selection_box(Font font, float font_size) {
 
     const int x_off = 10;
 
-    int pos_x = (int) windowPos.x;
-    int pos_y = (int) windowPos.y;
+    int pos_x = (int) window_pos.x;
+    int pos_y = (int) window_pos.y;
 
     int box_pos = pos_x + x_off;
 
@@ -937,8 +959,8 @@ static bool draw_save_box(Font font, float font_size) {
 
     const int x_off = 10;
 
-    int pos_x = (int) windowPos.x;
-    int pos_y = (int) windowPos.y;
+    int pos_x = (int) window_pos.x;
+    int pos_y = (int) window_pos.y;
 
     int box_pos = pos_x + x_off;
 
@@ -961,31 +983,70 @@ static bool draw_save_box(Font font, float font_size) {
 static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
 
     {
-        mousePos = GetMousePosition();
+        mouse_pos = GetMousePosition();
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
-            if (CheckCollisionPointRec(mousePos, (Rectangle){  windowPos.x,  windowPos.y, box_width - 18 , WINDOW_STATUSBAR_HEIGHT }))
+            if (CheckCollisionPointRec(mouse_pos, (Rectangle){window_pos.x, window_pos.y, box_width - 18 , WINDOW_STATUSBAR_HEIGHT }))
             {
-                dragWindow = true;
+                drag_window = true;
             }
         }
 
-        if (dragWindow)
+        if (drag_window)
         {
-            windowPos.x = (mousePos.x) - (box_width - 18)/2;
-            windowPos.y = (mousePos.y) - WINDOW_STATUSBAR_HEIGHT/2;
+            window_pos.x = (mouse_pos.x) - (box_width - 18) / 2;
+            window_pos.y = (mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2;
 
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragWindow = false;
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) drag_window = false;
 
         }
+
+        if(hmlen(selected_aps) && show_ap) {
+            float t = normalize(min_x, max_x, 0.0f, draw_config.final_time, mouse_pos.x);
+            float v = normalize(min_y, max_y, draw_config.min_v, draw_config.max_v, mouse_pos.y);
+            if (CheckCollisionPointRec(mouse_pos, (Rectangle) {graph_pos_x, graph_pos_y, graph_width, graph_height})) {
+                selected_ap_point.x = t;
+                selected_ap_point.y = v;
+            }
+            else {
+                selected_ap_point.x = FLT_MAX;
+                selected_ap_point.y = FLT_MAX;
+            }
+        }
+
+        if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            if(hmlen(selected_aps) && show_ap) {
+                if (CheckCollisionPointRec(mouse_pos, (Rectangle) {graph_pos_x, graph_pos_y, graph_width, graph_height})) {
+                    if(selected_point_for_apd1.x == FLT_MAX && selected_point_for_apd1.y == FLT_MAX) {
+                        selected_point_for_apd1.x = mouse_pos.x;
+                        selected_point_for_apd1.y = mouse_pos.y;
+                    }
+                    else {
+                        if(selected_point_for_apd2.x == FLT_MAX && selected_point_for_apd2.y == FLT_MAX) {
+                            selected_point_for_apd2.x = mouse_pos.x;
+                            selected_point_for_apd2.y = selected_point_for_apd1.y;
+                        }
+                        else {
+                            selected_point_for_apd1.x = mouse_pos.x;
+                            selected_point_for_apd1.y = mouse_pos.y;
+
+                            selected_point_for_apd2.x = FLT_MAX;
+                            selected_point_for_apd2.y = FLT_MAX;
+                        }
+                    }
+                }
+
+            }
+        }
     }
+
 
     if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
         if(IsKeyPressed(KEY_F)) {
             show_selection_box = true;
-            windowPos.x = GetScreenWidth() / 2 - box_width;
-            windowPos.y = GetScreenHeight() / 2 - box_height;
+            window_pos.x = GetScreenWidth() / 2 - box_width;
+            window_pos.y = GetScreenHeight() / 2 - box_height;
         }
     }
 
@@ -999,8 +1060,8 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
         if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
             if(IsKeyPressed(KEY_S)) {
                 show_save_box = true;
-                windowPos.x = GetScreenWidth() / 2 - box_width;
-                windowPos.y = GetScreenHeight() / 2 - box_height;
+                window_pos.x = GetScreenWidth() / 2 - box_width;
+                window_pos.y = GetScreenHeight() / 2 - box_height;
             }
         }
 
@@ -1053,7 +1114,7 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
     }
 
     if (IsKeyPressed('R')) {
-        for(int i = 0; i < hmlen(selected_aps); i++) {
+        for(long  i = 0; i < hmlen(selected_aps); i++) {
             arrfree(selected_aps[i].value);
         }
 
@@ -1076,6 +1137,8 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
         calc_center = false;
         omp_unset_lock(&draw_config.sleep_lock);
         current_selected = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+        selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
+        selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
         return;
     }
 

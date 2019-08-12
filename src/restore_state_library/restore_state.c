@@ -12,7 +12,7 @@
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 
 #ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"

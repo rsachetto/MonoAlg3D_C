@@ -8,6 +8,8 @@
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
+#include "config_helpers/config_helpers.h"
+
 #endif
 
 void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver,  struct ode_solver **ode_solver, struct grid **the_grid ) {
@@ -40,34 +42,43 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
     no_stdout = (*(options))->quiet;
 
     // Create the output dir and the logfile
-    if((*(options))->save_mesh_config && (*(options))->save_mesh_config->out_dir_name) {
-        sds buffer_log = sdsnew("");
-        sds buffer_ini = sdsnew("");
+    if((*(options))->save_mesh_config) {
 
-        if((*(options))->save_mesh_config->remove_older_simulation_dir) {
-            remove_directory((*(options))->save_mesh_config->out_dir_name);
+        char *out_dir_name = NULL;
+        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, (*(options))->save_mesh_config->config_data, "output_dir");
+
+        if(out_dir_name) {
+            sds buffer_log = sdsnew("");
+            sds buffer_ini = sdsnew("");
+
+            bool remove_older_simulation_dir = false;
+            GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(remove_older_simulation_dir, (*(options))->save_mesh_config->config_data, "remove_older_simulation");
+
+            if (remove_older_simulation_dir) {
+                remove_directory(out_dir_name);
+            }
+
+            create_dir(out_dir_name);
+            buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", out_dir_name);
+            open_logfile(buffer_log);
+
+            print_to_stdout_and_file("Command line to reproduce this simulation:\n");
+            for (int i = 0; i < argc; i++) {
+                print_to_stdout_and_file("%s ", argv[i]);
+            }
+
+            print_to_stdout_and_file("\n");
+
+            buffer_ini = sdscatfmt(buffer_ini, "%s/original_configuration.ini", out_dir_name);
+
+            print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
+                                     buffer_ini);
+
+            cp_file(buffer_ini, (*(options))->config_file);
+
+            sdsfree(buffer_log);
+            sdsfree(buffer_ini);
         }
-
-        create_dir((*(options))->save_mesh_config->out_dir_name);
-        buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", (*(options))->save_mesh_config->out_dir_name);
-        open_logfile(buffer_log);
-
-        print_to_stdout_and_file("Command line to reproduce this simulation:\n");
-        for(int i = 0; i < argc; i++) {
-            print_to_stdout_and_file("%s ", argv[i]);
-        }
-
-        print_to_stdout_and_file("\n");
-
-        buffer_ini = sdscatfmt(buffer_ini, "%s/original_configuration.ini", (*(options))->save_mesh_config->out_dir_name);
-
-        print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
-                                 buffer_ini);
-
-        cp_file(buffer_ini, (*(options))->config_file);
-
-        sdsfree(buffer_log);
-        sdsfree(buffer_ini);
     }
 
     configure_ode_solver_from_options(*ode_solver, *options);

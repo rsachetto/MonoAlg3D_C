@@ -3,7 +3,7 @@
 //
 
 #include "../config/extra_data_config.h"
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
@@ -17,28 +17,28 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     struct cell_node ** ac = the_grid->active_cells;
 
     real plain_center = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config, "plain_center");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config->config_data, "plain_center");
 
     real border_zone_size = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config, "border_zone_size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config->config_data, "border_zone_size");
 
     real sphere_radius = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config, "sphere_radius");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
 
     real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
 
     real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
 
     real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config->config_data, "Ki_multiplicator");
 
     real K1_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config->config_data, "K1_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config->config_data, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;
@@ -46,7 +46,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     fibs[3] = K1_multiplicator;
     fibs[4] = (real)acidosis;
 
-	int i;
+	uint32_t i;
 
 	#pragma omp parallel for
     for (i = 0; i < num_active_cells; i++) {
@@ -84,19 +84,19 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
     real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
 
     real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
 
     real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
 
     real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config->config_data, "Ki_multiplicator");
 
     real K1_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config->config_data, "K1_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config->config_data, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;
@@ -117,19 +117,19 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
     real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
 
     real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
 
     real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
 
     real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config->config_data, "Ki_multiplicator");
 
     real K1_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config->config_data, "K1_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config->config_data, "acidosis");
 
 
     fibs[0] = atpi;
@@ -138,7 +138,7 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
     fibs[3] = K1_multiplicator;
     fibs[4] = (real)acidosis;
 
-    for(int i = 5; i < num_active_cells+5; i++) {
+    for(uint32_t i = 5; i < num_active_cells+5; i++) {
         fibs[i] = 1.0;
     }
 
@@ -154,16 +154,16 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
 
     real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
 
     real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
 
     real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config->config_data, "Ki_multiplicator");
 
     real acidosis = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(acidosis, config->config_data, "acidosis");
 
     fibs[0] = atpi;
     fibs[1] = Ko;
@@ -173,32 +173,32 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
     struct cell_node ** ac = the_grid->active_cells;
 
     real_cpu small_scar_center_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config, "small_scar_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config->config_data, "small_scar_center_x");
 
     real_cpu small_scar_center_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config, "small_scar_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config->config_data, "small_scar_center_y");
 
     real_cpu small_scar_center_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config, "small_scar_center_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config->config_data, "small_scar_center_z");
 
     real_cpu big_scar_center_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config, "big_scar_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config->config_data, "big_scar_center_x");
 
     real_cpu big_scar_center_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config, "big_scar_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config->config_data, "big_scar_center_y");
 
     real_cpu big_scar_center_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config, "big_scar_center_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config->config_data, "big_scar_center_z");
 
     real_cpu bz_size_big = 0;
     real_cpu bz_size_small = 0;
     real_cpu dist_big = 0;
     real_cpu dist_small = 0;
 
-	int i;
+	uint32_t i;
 	bool fibrotic, border_zone;
 	char scar_type;
-    
+
     //#pragma omp parallel for private(dist_big, dist_small) reduction(max: bz_size_big, bz_size_small)
 	#pragma omp parallel for private(dist_big, dist_small)
     for (i = 0; i < num_active_cells; i++) {
@@ -251,7 +251,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
                                     (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
                                     (center_z - big_scar_center_z) * (center_z - big_scar_center_z));
                     fibs[i+1] = (real)(dist_big / bz_size_big);
-                    
+
                 }
                 else if(scar_type == 's') {
                     dist_small = sqrt((center_x - small_scar_center_x) * (center_x - small_scar_center_x) +
@@ -280,11 +280,11 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     struct cell_node ** ac = the_grid->active_cells;
 
     real atpi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,atpi,  config, "atpi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,atpi,  config->config_data, "atpi");
     fibs[0] = atpi;
 
     char *scar_size;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (scar_size, config, "scar_size");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (scar_size, config->config_data, "scar_size");
 
     uint8_t size_code;
 
@@ -320,7 +320,7 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     real_cpu bz_size = 0.0;
     real_cpu dist;
 
-	int i;
+	uint32_t i;
 	bool border_zone, fibrotic;
 
 //    #pragma omp parallel for private(dist) reduction(max: bz_size)

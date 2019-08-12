@@ -15,6 +15,8 @@
 #endif
 
 #include "../single_file_libraries/stb_ds.h"
+#include "../config_helpers/config_helpers.h"
+#include "../string/sds.h"
 
 
 struct ode_solver* new_ode_solver() {
@@ -188,7 +190,8 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
 }
 
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time, int num_steps,
-                            struct string_voidp_hash_entry *stim_configs, struct string_hash_entry *ode_extra_config) {
+                            struct string_voidp_hash_entry *stim_configs, real *spatial_stim_currents,
+                                    struct string_hash_entry *ode_extra_config) {
 
     assert(the_ode_solver->sv);
 
@@ -202,36 +205,44 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     real *merged_stims = (real*)calloc(sizeof(real), n_active);
 
-    struct stim_config *tmp = NULL;
-    real stim_start, stim_dur;
+    struct config *tmp = NULL;
 
-	int i;
+	uint32_t i;
     ptrdiff_t n = hmlen(stim_configs);
 
     if(stim_configs) {
-        for (int k = 0; k < n; k++) {
-                tmp = (struct stim_config*) stim_configs[k].value;
-                stim_start = tmp->stim_start;
-                stim_dur = tmp->stim_duration;
-                for (int j = 0; j < num_steps; ++j) {
-                    if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
-                        #pragma omp parallel for
-                        for (i = 0; i < n_active; i++) {
-                            merged_stims[i] = tmp->spatial_stim_currents[i];
-                        }
+        real stim_start = 0.0;
+        real  stim_dur = 0.0;
+        real  stim_period = 0.0;
+
+        for (long k = 0; k < n; k++) {
+            tmp = (struct config*) stim_configs[k].value;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp->config_data, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp->config_data, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp->config_data, "period");
+
+            for (int j = 0; j < num_steps; ++j) {
+                if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
+                    #pragma omp parallel for
+                    for (i = 0; i < n_active; i++) {
+                        merged_stims[i] = spatial_stim_currents[i];
                     }
-                    time += dt;
                 }
-
-                if(time >= stim_start + tmp->stim_period) {
-                    tmp->stim_start = stim_start + tmp->stim_period;
-                }
-
-                time = cur_time;
+                time += dt;
             }
 
-    }
+            if(stim_period > 0.0) {
+                if (time >= stim_start + stim_period) {
+                    stim_start = stim_start + stim_period;
+                    sds stim_start_char = sdscatprintf(sdsempty(), "%lf", stim_start);
+                    shput_dup_value(tmp->config_data, "start", stim_start_char);
+                    sdsfree(stim_start_char);
+                }
+            }
 
+            time = cur_time;
+        }
+    }
 
     if(the_ode_solver->gpu) {
         #ifdef COMPILE_CUDA

@@ -96,15 +96,15 @@ struct user_options {
     bool start_visualization_unpaused;
 
     struct string_voidp_hash_entry *stim_configs;
-    struct domain_config *domain_config;
-    struct purkinje_config *purkinje_config;
-    struct extra_data_config *extra_data_config;
-    struct assembly_matrix_config *assembly_matrix_config;
-    struct linear_system_solver_config *linear_system_solver_config;
-    struct save_mesh_config *save_mesh_config;
-    struct save_state_config *save_state_config;
-    struct restore_state_config *restore_state_config;
-    struct update_monodomain_config *update_monodomain_config;
+    struct config *domain_config;
+    struct config *purkinje_config;
+    struct config *extra_data_config;
+    struct config *assembly_matrix_config;
+    struct config *linear_system_solver_config;
+    struct config *save_mesh_config;
+    struct config *save_state_config;
+    struct config *restore_state_config;
+    struct config *update_monodomain_config;
 
     struct string_hash_entry *ode_extra_config;
 
@@ -154,4 +154,6 @@ void free_user_options(struct user_options *s);
 void free_batch_options(struct batch_options * options);
 void free_visualization_options(struct visualization_options * options);
 void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
+void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
+
 #endif /* MONOALG3D_CONFIG_PARSER_H */

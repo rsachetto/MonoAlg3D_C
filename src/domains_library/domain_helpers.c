@@ -3,12 +3,11 @@
 //
 
 #include "domain_helpers.h"
-#include "../alg/cell/cell.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include "../string/sds.h"
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 
 #include <float.h>
 #include <math.h>
@@ -969,7 +968,7 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 
                 struct point_3d p;
 
-                p.x = b_center_y + b_h_dy;
+                p.x = b_center_x + b_h_dx;
                 p.y = b_center_y - b_h_dy;
 
                 if (center_x == b_center_x && center_y + half_dy <= p.x && center_y - half_dy >= p.y)  {
