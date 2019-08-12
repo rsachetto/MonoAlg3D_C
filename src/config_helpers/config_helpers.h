@@ -62,9 +62,9 @@ char *get_char_parameter(struct string_hash_entry *config, const char *parameter
 
 #define GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(type, value, config, parameter)                                    \
     do {                                                                                                               \
-        bool s;                                                                                                        \
-        GET_PARAMETER_NUMERIC_VALUE(type, value, config, parameter, s);                                                \
-        if(!s) {                                                                                                       \
+        bool success;                                                                                                  \
+        GET_PARAMETER_NUMERIC_VALUE(type, value, config, parameter, success);                                          \
+        if(!success) {                                                                                                 \
             report_parameter_error_on_function(__func__, parameter);                                                   \
         }                                                                                                              \
     } while(0)

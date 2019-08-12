@@ -9,13 +9,12 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
-#include "../libraries_common/config_helpers.h"
-#include "../monodomain/constants.h"
+#include "../config_helpers/config_helpers.h"
 #include "../utils/utils.h"
 #include "../single_file_libraries/stb_ds.h"
 
 
-SET_PDE_INITIAL_CONDITION(set_initial_conditions_fvm) {
+INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     real_cpu alpha;
     struct cell_node **ac = the_grid->active_cells;
@@ -566,13 +565,13 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     srand((unsigned int)time(NULL));
 
@@ -629,19 +628,19 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real channel_width = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data.config, "channel_width");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data, "channel_width");
 
     real channel_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data.config, "channel_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data, "channel_length");
 
     bool inside;
 
@@ -712,25 +711,25 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real channel_width = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data.config, "channel_width");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data, "channel_width");
 
     real channel_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data.config, "channel_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data, "channel_length");
 
     real source_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data.config, "source_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data, "source_factor");
 
     real sink_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sink_factor, config->config_data.config, "sink_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sink_factor, config->config_data, "sink_factor");
 
     bool inside_3, inside_4;
 
@@ -815,13 +814,13 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     #pragma omp parallel for
     for (i = 0; i < num_active_cells; i++) {
@@ -861,22 +860,22 @@ ASSEMBLY_MATRIX(ddm_assembly_matrix)
     struct cell_node **ac = the_grid->active_cells;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real cell_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, cell_length_x, config->config_data.config, "cell_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, cell_length_x, config->config_data, "cell_length_x");
 
     real cell_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, cell_length_y, config->config_data.config, "cell_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, cell_length_y, config->config_data, "cell_length_y");
 
     real cell_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, cell_length_z, config->config_data.config, "cell_length_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, cell_length_z, config->config_data, "cell_length_z");
 
     // TODO: The kappas can change from one volume to another ...
     // Here we are considering dx, dy, dz equal for all cells over the domain ...
@@ -1049,7 +1048,7 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     fill_discretization_matrix_elements_purkinje(sigma_x,ac,num_active_cells,pk_node);
 

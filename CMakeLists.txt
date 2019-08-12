@@ -70,6 +70,7 @@ IF(OPENGL_FOUND AND OPENMP_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
 ENDIF()
 
+ADD_SUBDIRECTORY(src/config_helpers)
 ADD_SUBDIRECTORY(src/utils)
 ADD_SUBDIRECTORY(src/alg)
 ADD_SUBDIRECTORY(src/monodomain)
@@ -103,14 +104,9 @@ IF(MPI_C_FOUND)
     TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
 ENDIF(MPI_C_FOUND)
 
-
 TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl m)
 
-
 ADD_SUBDIRECTORY(src/models_library)
-
-SET(COMMON_SRC ../libraries_common/config_helpers.c ../libraries_common/config_helpers.h)
-
 ADD_SUBDIRECTORY(src/stimuli_library)
 ADD_SUBDIRECTORY(src/domains_library)
 ADD_SUBDIRECTORY(src/purkinje_library)
@@ -129,6 +125,10 @@ IF(OPENGL_FOUND AND OPENMP_FOUND)
     ADD_DEPENDENCIES(MonoAlg3D_visualizer utils config vtk_utils draw)
     TARGET_LINK_LIBRARIES(MonoAlg3D_visualizer utils config vtk_utils draw raylib)
 ENDIF(OPENGL_FOUND AND OPENMP_FOUND)
+
+ADD_EXECUTABLE(MonoAlg3D_activation_map_analyzer src/main_activation_map_analyzer.c)
+ADD_DEPENDENCIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
+TARGET_LINK_LIBRARIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 

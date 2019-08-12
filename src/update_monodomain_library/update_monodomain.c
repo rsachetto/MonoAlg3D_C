@@ -5,12 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include "../alg/grid/grid.h"
 #include "../config/update_monodomain_config.h"
-#include "../libraries_common/config_helpers.h"
-#include "../monodomain/constants.h"
 #include "../utils/utils.h"
 #include "../single_file_libraries/stb_ds.h"
 

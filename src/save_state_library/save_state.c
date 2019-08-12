@@ -2,13 +2,10 @@
 // Created by sachetto on 13/10/17.
 //
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <stdlib.h>
 
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
-#include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
 
 #ifdef COMPILE_CUDA
@@ -16,8 +13,6 @@
 #endif
 
 SAVE_STATE(save_simulation_state) {
-
-
     //Here we save the domain state
     if(the_grid){
         sds tmp = sdsnew(output_dir);

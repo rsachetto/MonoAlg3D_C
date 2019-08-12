@@ -3,7 +3,7 @@
 //
 
 #include "../config/extra_data_config.h"
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 
 SET_EXTRA_DATA (set_mixed_model_if_x_less_than)

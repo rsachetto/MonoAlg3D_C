@@ -370,6 +370,7 @@ CREDITS
 #define hmdefaults  stbds_hmdefaults
 
 #define shput       stbds_shput
+#define shput_dup_value  stbds_shput_dup_value
 #define shputs      stbds_shputs
 #define shget       stbds_shget
 #define shgets      stbds_shgets
@@ -520,6 +521,10 @@ extern void * stbds_shmode_func(size_t elemsize, int mode);
 #define stbds_shput(t, k, v) \
     ((t) = stbds_hmput_key_wrapper((t), sizeof *(t), (void*) (k), sizeof (t)->key, STBDS_HM_STRING),   \
      (t)[stbds_temp(t-1)].value = (v))
+
+#define stbds_shput_dup_value(t, k, v) \
+    ((t) = stbds_hmput_key_wrapper((t), sizeof *(t), (void*) (k), sizeof (t)->key, STBDS_HM_STRING),   \
+     (t)[stbds_temp(t-1)].value = strdup((v)))
 
 #define stbds_shputs(t, s) \
     ((t) = stbds_hmput_key_wrapper((t), sizeof *(t), (void*) (s).key, sizeof (s).key, STBDS_HM_STRING), \
