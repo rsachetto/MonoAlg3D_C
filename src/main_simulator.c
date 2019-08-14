@@ -5,12 +5,12 @@
 #include "string/sds.h"
 #include "utils/file_utils.h"
 #include <string.h>
+#include "config_helpers/config_helpers.h"
 
 #ifdef COMPILE_OPENGL
 #include "draw/draw.h"
-#include "config_helpers/config_helpers.h"
-
 #endif
+
 
 void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver,  struct ode_solver **ode_solver, struct grid **the_grid ) {
 
