@@ -280,6 +280,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     if(!success)
         fib_seed = (unsigned)time(NULL) + getpid();
 
+    char tmp[256];
+    sprintf(tmp, "%u", fib_seed);
+    shput_dup_value(config->config_data, "seed", "tmp");
+
     srand(fib_seed);
 
     shput_dup_value(config->config_data, "start_dx", "800.0");

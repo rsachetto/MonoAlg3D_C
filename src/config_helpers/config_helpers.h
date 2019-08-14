@@ -15,6 +15,9 @@ void report_parameter_error_on_function(const char *function, const char *parame
 void report_error_on_function(const char *function, const char *error);
 char *get_char_parameter(struct string_hash_entry *config, const char *parameter);
 
+#define IS_TRUE(str) ( strcmp((str), "true") == 0 || strcmp((str), "yes") == 0 || strcmp((str), "1") == 0 )
+#define IS_FALSE(str) ( strcmp((str), "false") == 0 || strcmp((str), "no") == 0 || strcmp((str), "0") == 0 )
+
 #define GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value, config, parameter)                                              \
     do {                                                                                                               \
         char *config_char = get_char_parameter(config, parameter);                                                     \
@@ -42,12 +45,12 @@ char *get_char_parameter(struct string_hash_entry *config, const char *parameter
         }                                                                                                              \
     } while(0)
 
-#define GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(value, config, parameter)                                            \
+#define GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(value, config, parameter)                                           \
     do {                                                                                                               \
         char *value_char = NULL;                                                                                       \
         GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value_char, config, parameter);                                        \
         if(value_char != NULL) {                                                                                       \
-            (value) = ((strcmp(value_char, "yes") == 0) || (strcmp(value_char, "true") == 0));                         \
+            (value) = IS_TRUE(value_char);                                                                             \
         }                                                                                                              \
         free(value_char);                                                                                              \
     } while(0)
