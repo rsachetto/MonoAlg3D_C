@@ -438,7 +438,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
 SAVE_MESH(save_with_activation_times) {
 
     int mesh_output_pr = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, mesh_output_pr, config->config_data, "mesh_output_print_rate");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, mesh_output_pr, config->config_data, "mesh_print_rate");
 
     if(mesh_output_pr) {
         if (iteration_count % mesh_output_pr == 0)
