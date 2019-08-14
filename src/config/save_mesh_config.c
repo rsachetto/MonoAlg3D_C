@@ -20,8 +20,8 @@ void print_save_mesh_config_values(struct config* s) {
         return;
     }
 
-    real_cpu print_rate = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, print_rate, s->config_data, "print_rate");
+    int print_rate = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, print_rate, s->config_data, "print_rate");
 
     char *out_dir_name = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(out_dir_name, s->config_data, "output_dir");
