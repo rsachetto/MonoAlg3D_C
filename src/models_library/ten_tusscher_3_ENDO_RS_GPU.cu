@@ -49,7 +49,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     real atpi = 6.8f;
     real Ko = 5.4f;
     real Ki_mult = 1.0f;
-    real acidosis = 0.0;
+    real acidosis = -1.0;
     real K1_mult = 1.0f;
     ////////////////////////////////////
 
@@ -151,7 +151,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 
     real svolt_acid = svolt;
 
-    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
+    if( (fibrosis == 0.0f) && (acidosis != -1.0f) ) {
         //These values are from In Electrophysiologic effects of acute myocardial ischemia: a theoretical
         //study of altered cell excitability and action potential duration
         svolt_acid = svolt - 3.4f;
@@ -248,8 +248,8 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 //Parameters for INa
 //if acidosis this has to change to 0.75*GNa
     real GNa=14.838;
-    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
-        GNa = GNa*0.75f;
+    if( (fibrosis == 0.0f) && (acidosis != -1.0f) ) {
+        GNa = GNa*acidosis;
     }
 //Parameters for IbNa
     const real GbNa=0.00029;
@@ -260,8 +260,8 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 //Parameters for ICaL
 //if acidosis this has to change to 0.75*GCaL
     real GCaL=0.2786f*pcal;
-    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
-        GCaL = GCaL*0.75f;
+    if( (fibrosis == 0.0f) && (acidosis != 1.0f) ) {
+        GCaL = GCaL*acidosis;
     }
 //Parameters for IbCa
     const real GbCa=0.000592;
