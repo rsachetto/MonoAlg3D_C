@@ -17,7 +17,7 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
     struct cell_node ** ac = the_grid->active_cells;
 
     real x_limit = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, x_limit, config, "x_limit");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, x_limit, config->config_data, "x_limit");
 
     int i;
     bool inside;

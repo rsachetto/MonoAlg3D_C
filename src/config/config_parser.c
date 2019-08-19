@@ -7,7 +7,6 @@
 #include "config_parser.h"
 #include "stim_config.h"
 
-#include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
@@ -15,7 +14,7 @@ static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
 
-static const char *visualization_opt_string = "x:m:d:p:v:a:c:h?";
+static const char *visualization_opt_string = "x:m:d:p:v:a:c:s:h?";
 static const struct option long_visualization_options[] = {
         {"visualization_max_v", required_argument, NULL, 'x'},
         {"visualization_min_v", required_argument, NULL, 'm'},
@@ -23,6 +22,7 @@ static const struct option long_visualization_options[] = {
         {"show_activation_map", required_argument, NULL, 'a'},
         {"convert_activation_map", required_argument, NULL, 'c'},
         {"prefix", required_argument, NULL, 'p'},
+        {"start_at", required_argument, NULL, 's'},
         {"pvd", required_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
         {NULL, no_argument, NULL, 0}
@@ -133,6 +133,7 @@ void display_visualization_usage(char **argv) {
     printf("--convert_activation_map | -c activation_map_file, only convert the activation map file to VTU without opening it. Default: NULL\n");
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--pvd | -v, pvd file. Default: NULL\n");
+    printf("--start_at | -s, Visualize starting at file number [n]. Default: 0\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
@@ -790,6 +791,8 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
                 user_args->activation_map = strdup(optarg);
                 user_args->save_activation_only = true;
                 break;
+            case 's':
+                user_args->start_file = (int)strtod(optarg, NULL);
             case 'h': /* fall-through is intentional */
             case '?':
                 display_visualization_usage(argv);
@@ -798,7 +801,7 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
                 break;
         }
 
-        opt = getopt_long(argc, argv, batch_opt_string, long_batch_options, &option_index);
+        opt = getopt_long(argc, argv, visualization_opt_string, long_visualization_options, &option_index);
     }
 
     if(user_args->activation_map == NULL) {
