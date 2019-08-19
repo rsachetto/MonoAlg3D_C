@@ -322,7 +322,8 @@ int main(int argc, char **argv) {
     struct simulation *all_simulations = generate_all_simulations(batch_options->config_to_change,
                                                                   batch_options->num_simulations);
 
-    print_simulations(all_simulations);
+    if(rank == 0)
+        print_simulations(all_simulations);
 
     int total_simulations = arrlen(all_simulations);
 
