@@ -425,7 +425,7 @@ SAVE_MESH(save_as_vtk_purkinje) {
 
     new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
                                     clip_with_plain, plain_coords, clip_with_bounds, bounds,\
-                                    !the_grid->adaptive);
+                                    !the_grid->adaptive,'v');
     save_vtk_polydata_grid_as_legacy_vtk(vtk_polydata, output_dir_with_file, binary);
 
     if(the_grid->adaptive)
@@ -477,36 +477,82 @@ SAVE_MESH(save_as_vtp_purkinje) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data.config, "max_z");
     }
 
-
-    sds output_dir_with_file = sdsnew(output_dir);
-    output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
-
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
-
-    if(save_pvd) 
+    // Write transmembrane potential
+    if (scalar_name == 'v')
     {
-        add_file_to_pvd(current_t, output_dir, base_name);
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/");
+        sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
+
+        output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+
+        if(save_pvd) 
+        {
+            add_file_to_pvd(current_t, output_dir, base_name);
+        }
+
+        new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
+                                        clip_with_plain, plain_coords, clip_with_bounds, bounds,\
+                                        !the_grid->adaptive,'v');
+
+        if(compress) 
+        {
+            save_vtk_polydata_grid_as_vtp_compressed(vtk_polydata, output_dir_with_file, compression_level);
+        }
+        else 
+        {
+            save_vtk_polydata_grid_as_vtp(vtk_polydata, output_dir_with_file, binary);
+        }
+
+        if(the_grid->adaptive)
+            free_vtk_polydata_grid(vtk_polydata);
+
+        sdsfree(output_dir_with_file);
+        sdsfree(base_name);
     }
-
-    new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
-                                    clip_with_plain, plain_coords, clip_with_bounds, bounds,\
-                                    !the_grid->adaptive);
-
-    if(compress) 
+    // Write activation map
+    else if (scalar_name == 'a')
     {
-        save_vtk_polydata_grid_as_vtp_compressed(vtk_polydata, output_dir_with_file, compression_level);
-    }
-    else 
-    {
+        char *output_dir = config->out_dir_name;
+
+        float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+        float bounds[6] = {0, 0, 0, 0, 0, 0};
+
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/activation-map.vtp");
+
+        new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
+                                        clip_with_plain, plain_coords, clip_with_bounds, bounds,\
+                                        !the_grid->adaptive,'a');
+
         save_vtk_polydata_grid_as_vtp(vtk_polydata, output_dir_with_file, binary);
+
+        sdsfree(output_dir_with_file);
     }
+    // Write conductivity map
+    else if (scalar_name == 'c')
+    {
+        char *output_dir = config->out_dir_name;
 
-    if(the_grid->adaptive)
-        free_vtk_polydata_grid(vtk_polydata);
+        float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+        float bounds[6] = {0, 0, 0, 0, 0, 0};
 
-    sdsfree(output_dir_with_file);
-    sdsfree(base_name);
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/conductivity-map.vtp");
+
+        new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
+                                        clip_with_plain, plain_coords, clip_with_bounds, bounds,\
+                                        !the_grid->adaptive,'c');
+
+        save_vtk_polydata_grid_as_vtp(vtk_polydata, output_dir_with_file, binary);
+
+        sdsfree(output_dir_with_file);
+    }
+    else
+    {
+        fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
+        exit(EXIT_FAILURE);
+    }
 
 }
 

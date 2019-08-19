@@ -1221,6 +1221,7 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
 
 ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix) 
 {
+    static bool sigma_initialized = false;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
@@ -1230,6 +1231,17 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+
+    if(!sigma_initialized) 
+    {
+        #pragma omp parallel for
+        for (uint32_t i = 0; i < num_active_cells; i++) 
+        {
+            ac[i]->sigma_x = sigma_x;
+        }
+
+        sigma_initialized = true;
+    }
 
     fill_discretization_matrix_elements_purkinje(sigma_x,ac,num_active_cells,pk_node);
 

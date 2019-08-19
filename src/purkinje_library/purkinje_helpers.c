@@ -3,8 +3,13 @@
 //
 
 #include "purkinje_helpers.h"
+
+#include "../libraries_common/common_data_structures.h"
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
+#include "../string/sds.h"
+#include "../libraries_common/config_helpers.h"
+
 #include <float.h>
 #include <math.h>
 #include <string.h>
@@ -26,6 +31,8 @@ void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, 
     struct graph *purkinje = the_grid->the_purkinje_network;
 
     set_purkinje_network_from_file(purkinje,file_name,side_length);
+
+    print_to_stdout_and_file("Number of Purkinje nodes = %u\n",purkinje->total_nodes);
 
 }
 
@@ -116,10 +123,11 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     assert(the_purkinje_network);
     assert(skeleton_network);
 
-    // TO DO: Maybe avoid this conversion by building a skeleton mesh directly in micrometers
+    // TODO: Maybe avoid this conversion by building a skeleton mesh directly in micrometers
     // The side_length of a Purkinje volume is given in micrometers, so we convert to centimeters
     // um -> cm
-    the_purkinje_network->dx = side_length*UM_TO_CM;
+    //the_purkinje_network->dx = side_length*UM_TO_CM;
+    the_purkinje_network->dx = side_length;
 
     uint32_t n = skeleton_network->total_nodes;
     // This map is needed to deal with bifurcations

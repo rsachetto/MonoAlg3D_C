@@ -246,6 +246,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (purkinje_config)
         {
             success = purkinje_config->set_spatial_purkinje(purkinje_config,the_grid);
+            //printf("Setup Purkinje ok ...\n");
             if(!success) 
             {
                 print_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");

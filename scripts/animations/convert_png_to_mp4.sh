@@ -7,8 +7,8 @@
 # Variables
 FILENAME="frames/frame"
 FRAME_RATE="50"
-END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="video/elnaz_plain_spiral_wave_comparison_exp2"
+END_FRAME="1000"
+OUTPUT_VIDEO_FILENAME="videos/cheat-purkinje-coupled"
 RESOLUTION="1030x730"
 
 # Execute the converting command using FFMPEG

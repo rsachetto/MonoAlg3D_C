@@ -219,7 +219,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                     if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
                         #pragma omp parallel for
                         for (i = 0; i < n_active; i++) {
-                            merged_stims[i] = tmp->spatial_stim_currents[i];
+                            merged_stims[i] += tmp->spatial_stim_currents[i];
                         }
                     }
                     time += dt;

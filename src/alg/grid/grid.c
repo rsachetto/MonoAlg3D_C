@@ -526,6 +526,9 @@ void construct_grid_purkinje (struct grid *the_grid)
         // Do not refine the Purkinje cells !
         cells[i]->can_change = false;
 
+        // Set the cell as active
+        cells[i]->active = true;
+
         n = n->next;
     }
     
