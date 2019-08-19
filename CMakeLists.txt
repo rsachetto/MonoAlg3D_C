@@ -8,7 +8,6 @@ ENDIF(EXISTS "/etc/manjaro-release")
 #    set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
 #ENDIF(EXISTS "/etc/debconf.conf")
 
-
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
 
@@ -34,13 +33,11 @@ ENDIF()
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
 SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Wall -Wno-unused-function")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Wall -Wno-unused-function -Wno-char-subscripts")
 
 IF(CMAKE_BUILD_TYPE MATCHES "Debug")
-    #SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -DDEBUG_INFO" )
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DDEBUG_INFO" )
 ENDIF(CMAKE_BUILD_TYPE MATCHES "Debug")
-
 
 FIND_PACKAGE(OpenMP)
 IF (OPENMP_FOUND)
@@ -66,9 +63,15 @@ ENDIF(CUDA_FOUND)
 SET(OpenGL_GL_PREFERENCE "GLVND")
 FIND_PACKAGE(OpenGL)
 
-IF(OPENGL_FOUND AND OPENMP_FOUND)
+if (OPENGL_FOUND AND OPENMP_FOUND)
+    set (COMPILE_GUI TRUE)
+else ()
+    set (COMPILE_GUI FALSE)
+endif ()
+
+IF(COMPILE_GUI)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
-ENDIF()
+ENDIF(COMPILE_GUI)
 
 ADD_SUBDIRECTORY(src/config_helpers)
 ADD_SUBDIRECTORY(src/utils)
@@ -80,13 +83,13 @@ ADD_SUBDIRECTORY(src/config)
 ADD_SUBDIRECTORY(src/graph)
 ADD_SUBDIRECTORY(src/vtk_utils)
 
-IF(OPENGL_FOUND AND OPENMP_FOUND)
+IF(COMPILE_GUI)
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
     ADD_SUBDIRECTORY(src/raylib/src)
     ADD_SUBDIRECTORY(src/draw)
     SET(OPT_DEPS ${OPT_DEPS} draw raylib)
-ENDIF()
+ENDIF(COMPILE_GUI)
 
 IF (CUDA_FOUND)
     ADD_SUBDIRECTORY(src/gpu_utils)
@@ -120,18 +123,16 @@ ADD_SUBDIRECTORY(src/update_monodomain_library)
 ADD_SUBDIRECTORY(src/xml_parser)
 
 #BUILDING VISUALIZER
-IF(OPENGL_FOUND AND OPENMP_FOUND)
+IF(COMPILE_GUI)
     ADD_EXECUTABLE(MonoAlg3D_visualizer src/main_visualizer.c)
     ADD_DEPENDENCIES(MonoAlg3D_visualizer utils config vtk_utils draw)
     TARGET_LINK_LIBRARIES(MonoAlg3D_visualizer utils config vtk_utils draw raylib)
-ENDIF(OPENGL_FOUND AND OPENMP_FOUND)
 
-ADD_EXECUTABLE(MonoAlg3D_activation_map_analyzer src/main_activation_map_analyzer.c)
-ADD_DEPENDENCIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
-TARGET_LINK_LIBRARIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
+#    ADD_EXECUTABLE(MonoAlg3D_activation_map_analyzer src/main_activation_map_analyzer.c)
+#    ADD_DEPENDENCIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
+#    TARGET_LINK_LIBRARIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
+ENDIF(COMPILE_GUI)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
-
-
