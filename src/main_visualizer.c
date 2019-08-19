@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+static int current_file = 0;
+
 static inline int get_step_from_filename(char *filename) {
 
     char *ia = filename;
@@ -108,8 +110,6 @@ static int read_and_render_files(const char* pvd_file, char *input_dir, char* pr
         return SIMULATION_FINISHED;
 
     }
-
-    int current_file = 0;
 
     int step;
     int step1;
@@ -238,6 +238,8 @@ int main(int argc, char **argv) {
 
     parse_visualization_options(argc, argv, options);
 
+    current_file = options->start_file;
+
     if(!options->activation_map) {
         if (!options->input_folder) {
             if (!options->pvd_file) {
@@ -268,8 +270,6 @@ int main(int argc, char **argv) {
         sdsfree(save_path);
     }
     else {
-
-
         #pragma omp parallel sections num_threads(2)
         {
             #pragma omp section

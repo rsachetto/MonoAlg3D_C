@@ -402,21 +402,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     real_cpu cur_time = the_monodomain_solver->current_time;
 
-    bool draw = configs->draw;
-
     if(save_mesh_config != NULL) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config->config_data, "print_rate");
     }
 
     #ifdef COMPILE_OPENGL
-    {
-        if (draw) {
-            draw_config.grid_info.grid_to_draw = the_grid;
-            draw_config.simulating = true;
-            draw_config.paused = !configs->start_visualization_unpaused;
-        } else {
-            draw_config.paused = false;
-        }
+    bool draw = configs->draw;
+    if (draw) {
+        draw_config.grid_info.grid_to_draw = the_grid;
+        draw_config.simulating = true;
+        draw_config.paused = !configs->start_visualization_unpaused;
+    } else {
+        draw_config.paused = false;
     }
     #endif
 
