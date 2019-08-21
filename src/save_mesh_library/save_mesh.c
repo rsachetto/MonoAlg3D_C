@@ -448,9 +448,9 @@ INIT_SAVE_MESH(init_save_with_activation_times) {
     config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
     hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
     hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config)->num_activations, 0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config)->activation_times, NULL);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config)->apds, NULL);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->num_activations, 0);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
 
 }
 
