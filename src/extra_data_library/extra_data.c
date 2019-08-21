@@ -37,7 +37,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     real K1_multiplicator = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config->config_data, "K1_multiplicator");
 
-    real acidosis = -1;
+    real acidosis = -1.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, acidosis, config->config_data, "acidosis");
 
     fibs[0] = atpi;
