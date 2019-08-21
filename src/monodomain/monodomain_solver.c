@@ -425,6 +425,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     init_stop_watch(&iteration_time_watch);
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
+    CALL_INIT_SAVE_MESH(save_mesh_config);
+
 
     // Main simulation loop start
     while(cur_time <= finalT)
@@ -438,10 +440,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 draw_config.time = 0.0;
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+                CALL_END_SAVE_MESH(save_mesh_config);
                 return RESTART_SIMULATION;
             }
             if (draw_config.exit)  {
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+                CALL_END_SAVE_MESH(save_mesh_config);
                 return END_SIMULATION;
             }
         }
@@ -593,6 +597,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+    CALL_END_SAVE_MESH(save_mesh_config);
+
     return SIMULATION_FINISHED;
 
 }

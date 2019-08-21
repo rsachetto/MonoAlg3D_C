@@ -435,6 +435,29 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
 }
 
+struct save_with_activation_times_persistent_data {
+    struct point_hash_entry *last_time_v;
+    struct point_hash_entry *num_activations;
+    struct point_hash_entry *cell_was_active;
+    struct point_voidp_hash_entry *activation_times;
+    struct point_voidp_hash_entry *apds;
+};
+
+INIT_SAVE_MESH(init_save_with_activation_times) {
+
+    config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config)->num_activations, 0);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config)->activation_times, NULL);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config)->apds, NULL);
+
+}
+
+END_SAVE_MESH(end_save_with_activation_times) {
+    free(config->persistent_data);
+}
+
 SAVE_MESH(save_with_activation_times) {
 
     int mesh_output_pr = 0;
@@ -462,27 +485,10 @@ SAVE_MESH(save_with_activation_times) {
     sds base_name = create_base_name("activation_info", 0, "txt");
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    static struct point_hash_entry *last_time_v = NULL;
-    static struct point_hash_entry *num_activations = NULL;
-    static struct point_hash_entry *cell_was_active = NULL;
 
-    hmdefault(cell_was_active, 0.0);
+    struct save_with_activation_times_persistent_data *persistent_data =
+            (struct save_with_activation_times_persistent_data*)config->persistent_data;
 
-    static struct point_voidp_hash_entry *activation_times = NULL;
-    static struct point_voidp_hash_entry *apds = NULL;
-
-
-    if(last_time_v == NULL) {
-        hmdefault(last_time_v, -100.0);
-    }
-
-    if(num_activations == NULL) {
-        hmdefault(num_activations, 0);
-    }
-
-    if(activation_times == NULL) {
-        hmdefault(activation_times, NULL);
-    }
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
@@ -519,55 +525,61 @@ SAVE_MESH(save_with_activation_times) {
 
             fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
 
-            float last_v = hmget(last_time_v, cell_coordinates);
+            int n_activations = 0;
+            float *apds_array = NULL;
+            struct apd_and_activation *activation_times_array = NULL;
 
-            int n_activations = (int) hmget(num_activations, cell_coordinates);
-            struct apd_and_activation *activation_times_array = (struct apd_and_activation *) hmget(activation_times, cell_coordinates);
-            float *apds_array = (float *) hmget(apds, cell_coordinates);
+            if(grid_cell->active) {
 
-            int act_times_len = arrlen(activation_times_array);
+                float last_v = hmget(persistent_data->last_time_v, cell_coordinates);
 
-            if (current_t == 0.0f) {
-                hmput(last_time_v, cell_coordinates, v);
-            } else {
-                if ((last_v < activation_threshold) && (v >= activation_threshold)) {
+                n_activations = (int) hmget(persistent_data->num_activations, cell_coordinates);
+                activation_times_array = (struct apd_and_activation *) hmget(persistent_data->activation_times, cell_coordinates);
+                apds_array = (float *) hmget(persistent_data->apds, cell_coordinates);
 
-                    if (act_times_len == 0) {
-                        n_activations++;
-                        hmput(num_activations, cell_coordinates, n_activations);
-                        struct apd_and_activation tmp = {0.0f, current_t};
-                        arrput(activation_times_array, tmp);
-                        hmput(activation_times, cell_coordinates, activation_times_array);
-                        hmput(cell_was_active, cell_coordinates, 1.0);
+                int act_times_len = arrlen(activation_times_array);
 
-                    } else { //This is to avoid spikes in the middle of an Action Potential
-                        float last_act_time = activation_times_array[act_times_len - 1].time_for_activation;
-                        if (current_t - last_act_time > time_threshold) {
+                if (current_t == 0.0f) {
+                    hmput(persistent_data->last_time_v, cell_coordinates, v);
+                } else {
+                    if ((last_v < activation_threshold) && (v >= activation_threshold)) {
+
+                        if (act_times_len == 0) {
                             n_activations++;
-                            hmput(num_activations, cell_coordinates, n_activations);
+                            hmput(persistent_data->num_activations, cell_coordinates, n_activations);
                             struct apd_and_activation tmp = {0.0f, current_t};
-                            arrput(activation_times_array, tmp);
-                            hmput(activation_times, cell_coordinates, activation_times_array);
-                            hmput(cell_was_active, cell_coordinates, 1.0);
+                                    arrput(activation_times_array, tmp);
+                            hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
+                            hmput(persistent_data->cell_was_active, cell_coordinates, 1.0);
+
+                        } else { //This is to avoid spikes in the middle of an Action Potential
+                            float last_act_time = activation_times_array[act_times_len - 1].time_for_activation;
+                            if (current_t - last_act_time > time_threshold) {
+                                n_activations++;
+                                hmput(persistent_data->num_activations, cell_coordinates, n_activations);
+                                struct apd_and_activation tmp = {0.0f, current_t};
+                                        arrput(activation_times_array, tmp);
+                                hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
+                                hmput(persistent_data->cell_was_active, cell_coordinates, 1.0);
+                            }
                         }
-                    }
-                }
-                else {
-                    bool was_active = (hmget(cell_was_active, cell_coordinates) != 0.0);
+                    } else {
+                        bool was_active = (hmget(persistent_data->cell_was_active, cell_coordinates) != 0.0);
 
-                    if(was_active) {
-                        if(v <= apd_threshold) {
-                            real_cpu last_act_time = activation_times_array[act_times_len - 1].time_for_activation;
-                            real_cpu apd = current_t - last_act_time;
-                            arrput(apds_array, apd);
-                            hmput(apds, cell_coordinates, apds_array);
-                            hmput(cell_was_active, cell_coordinates, 0.0);
+                        if (was_active) {
+                            if (v <= apd_threshold) {
+                                real_cpu last_act_time = activation_times_array[act_times_len - 1].time_for_activation;
+                                real_cpu apd = current_t - last_act_time;
+                                        arrput(apds_array, apd);
+                                hmput(persistent_data->apds, cell_coordinates, apds_array);
+                                hmput(persistent_data->cell_was_active, cell_coordinates, 0.0);
+                            }
                         }
+
                     }
 
+                    hmput(persistent_data->last_time_v, cell_coordinates, v);
                 }
-
-                hmput(last_time_v, cell_coordinates, v);
             }
 
             fprintf(act_file, "%d [ ", n_activations);
@@ -583,7 +595,6 @@ SAVE_MESH(save_with_activation_times) {
                 fprintf(act_file, "%lf ", apds_array[i]);
             }
             fprintf(act_file, "]\n");
-
 
         }
 

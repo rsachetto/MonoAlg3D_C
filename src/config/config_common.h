@@ -32,12 +32,6 @@ struct config {
     void *end_function;
 };
 
-struct generic_config { //TODO: maybe we will not need this anymore...
-    //This is used to cast any config that has only a config_common and a
-    //function pointer
-    struct config config_data;
-};
-
 struct config *alloc_and_init_config_data();
 void free_config_data(struct config *cm);
 void init_config_functions(struct config *config, char *default_lib, char *config_type);
