@@ -793,6 +793,7 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
                 break;
             case 's':
                 user_args->start_file = (int)strtod(optarg, NULL);
+                break;
             case 'h': /* fall-through is intentional */
             case '?':
                 display_visualization_usage(argv);

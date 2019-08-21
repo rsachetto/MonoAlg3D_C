@@ -260,7 +260,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 //Parameters for ICaL
 //if acidosis this has to change to 0.75*GCaL
     real GCaL=0.2786f*pcal;
-    if( (fibrosis == 0.0f) && (acidosis != 1.0f) ) {
+    if( (fibrosis == 0.0f) && (acidosis != -1.0f) ) {
         GCaL = GCaL*acidosis;
     }
 //Parameters for IbCa
