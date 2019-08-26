@@ -548,7 +548,7 @@ SAVE_MESH(save_with_activation_times) {
                             n_activations++;
                             hmput(persistent_data->num_activations, cell_coordinates, n_activations);
                             struct apd_and_activation tmp = {0.0f, current_t};
-                                    arrput(activation_times_array, tmp);
+                            arrput(activation_times_array, tmp);
                             hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
                             hmput(persistent_data->cell_was_active, cell_coordinates, 1.0);
 
@@ -558,40 +558,41 @@ SAVE_MESH(save_with_activation_times) {
                                 n_activations++;
                                 hmput(persistent_data->num_activations, cell_coordinates, n_activations);
                                 struct apd_and_activation tmp = {0.0f, current_t};
-                                        arrput(activation_times_array, tmp);
+                                arrput(activation_times_array, tmp);
                                 hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
                                 hmput(persistent_data->cell_was_active, cell_coordinates, 1.0);
                             }
                         }
-                    } else {
-                        bool was_active = (hmget(persistent_data->cell_was_active, cell_coordinates) != 0.0);
+                    }
 
-                        if (was_active) {
-                            if (v <= apd_threshold) {
-                                real_cpu last_act_time = activation_times_array[act_times_len - 1].time_for_activation;
-                                real_cpu apd = current_t - last_act_time;
-                                        arrput(apds_array, apd);
-                                hmput(persistent_data->apds, cell_coordinates, apds_array);
-                                hmput(persistent_data->cell_was_active, cell_coordinates, 0.0);
-                            }
+                    //CHECK APD
+                    bool was_active = (hmget(persistent_data->cell_was_active, cell_coordinates) != 0.0);
+                    if (was_active) {
+                        if (v <= apd_threshold) {
+                            real_cpu last_act_time = activation_times_array[act_times_len - 1].time_for_activation;
+                            real_cpu apd = current_t - last_act_time;
+                            arrput(apds_array, apd);
+                            hmput(persistent_data->apds, cell_coordinates, apds_array);
+                            hmput(persistent_data->cell_was_active, cell_coordinates, 0.0);
                         }
-
                     }
 
                     hmput(persistent_data->last_time_v, cell_coordinates, v);
                 }
             }
 
+            assert(arrlen(activation_times_array) == arrlen(apds_array));
+
             fprintf(act_file, "%d [ ", n_activations);
 
-            for (unsigned long i = 0; i < arrlen(activation_times_array); i++) {
+            for (unsigned long i = 0; i < n_activations; i++) {
                 fprintf(act_file, "%lf ", activation_times_array[i].time_for_activation);
             }
             fprintf(act_file, "] ");
 
             fprintf(act_file, "[ ");
 
-            for (unsigned long i = 0; i < arrlen(apds_array); i++) {
+            for (unsigned long i = 0; i < n_activations; i++) {
                 fprintf(act_file, "%lf ", apds_array[i]);
             }
             fprintf(act_file, "]\n");
