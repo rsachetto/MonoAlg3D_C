@@ -1373,7 +1373,6 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     WRITE_NAME_VALUE("use_gpu", config->gpu, "d");
     WRITE_NAME_VALUE("gpu_id", config->gpu_id, "d");
     WRITE_NAME_VALUE("library_file", config->model_file_path, "s");
-
     printf("\n");
 
     for(long i = 0; i < hmlen(config->stim_configs); i++) {

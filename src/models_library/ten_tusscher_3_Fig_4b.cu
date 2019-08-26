@@ -45,7 +45,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
-    // Default values for a healthy cell ///////////
+    // Default values for a' healthy cell ///////////
     real atpi = 6.8f;
     real Ko = 5.4f;
     real Ki_mult = 1.0f;
@@ -176,7 +176,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     //real katp = 0.306;
     //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
     //real katp = 0.306;
-    const real katp = -0.0942857142857*atpi + 0.683142857143; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
+    const real katp = -0.0942857142857*atpi + 0.683142857143; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischemia and Re-entry
 
 
     const real patp =  1/(1 + pow((atpi/katp),hatp));
