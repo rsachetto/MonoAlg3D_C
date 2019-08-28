@@ -54,6 +54,7 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->grid_info.vtk_grid = NULL;
     draw_config->grid_info.file_name = NULL;
     draw_config->error_message = NULL;
+
 }
 
 static void read_and_render_activation_map(char *input_file) {
@@ -291,6 +292,7 @@ int main(int argc, char **argv) {
                     while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                         if (result == RESTART_SIMULATION) {
                             init_draw_config(&draw_config, options);
+                            current_file = 0;
                             result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
                         }
 
