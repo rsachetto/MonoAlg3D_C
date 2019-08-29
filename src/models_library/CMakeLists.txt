@@ -211,3 +211,66 @@ else()
 endif(CUDA_FOUND)
 ############################################################################################
 
+############## NOBLE 1962 ##############################
+set(MODEL_FILE_CPU "noble_1962.c")
+set(MODEL_FILE_GPU "noble_1962.cu")
+set(COMMON_HEADERS model_common.h noble_1962.h)
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(noble_1962 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+        IF(MSVC)
+                set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+                TARGET_LINK_LIBRARIES(noble_1962 PUBLIC utils)
+        endif()
+else()
+    ADD_LIBRARY(noble_1962 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
+
+############## DI & FRANCESCO 1985 ##############################
+set(MODEL_FILE_CPU "difrancesco.c")
+set(MODEL_FILE_GPU "difrancesco.cu")
+set(COMMON_HEADERS model_common.h difrancesco.h)
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(difrancesco ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+        IF(MSVC)
+                set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+                TARGET_LINK_LIBRARIES(difrancesco PUBLIC utils)
+        endif()
+else()
+    ADD_LIBRARY(difrancesco ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
+
+############## ARPF 2009 ##############################
+set(MODEL_FILE_CPU "stewart_aslanidi_noble_2009.c")
+set(MODEL_FILE_GPU "stewart_aslanidi_noble_2009.cu")
+set(COMMON_HEADERS model_common.h stewart_aslanidi_noble_2009.h)
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(stewart_aslanidi_noble_2009 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+        IF(MSVC)
+                set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+                TARGET_LINK_LIBRARIES(stewart_aslanidi_noble_2009 PUBLIC utils)
+        endif()
+else()
+    ADD_LIBRARY(stewart_aslanidi_noble_2009 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################
+
+############## LIRUDY 2011 ##############################
+set(MODEL_FILE_CPU "li_rudy_2011.c")
+set(MODEL_FILE_GPU "li_rudy_2011.cu")
+set(COMMON_HEADERS model_common.h li_rudy_2011.h)
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(li_rudy_2011 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+        IF(MSVC)
+                set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+                TARGET_LINK_LIBRARIES(li_rudy_2011 PUBLIC utils)
+        endif()
+else()
+    ADD_LIBRARY(li_rudy_2011 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#########################################################

@@ -10,7 +10,7 @@
 
 static const uint32_t NUM_THREADS = 6;
 static const double DT_PDE = 0.02;
-static const double SIMULATION_TIME = 2000.0;
+static const double SIMULATION_TIME = 400.0;
 static const bool ABORT_ON_NO_ACTIVITY = false;
 static const bool USE_ADAPTIVITY = false;
 static const bool CALC_ACTIVATION_TIME = true;
@@ -25,12 +25,12 @@ static const char* FILE_PREFIX = "V";
 static const bool BINARY = false;
 static const bool COMPRESS = false;
 
-//static const double SIGMA_X = 0.0000176;
-//static const double SIGMA_Y = 0.00001334;
-//static const double SIGMA_Z = 0.0000176;
 static const double SIGMA_X = 0.00001334;
-static const double SIGMA_Y = 0.00001334;
-static const double SIGMA_Z = 0.00001334;
+static const double SIGMA_Y = 0.0000176;
+static const double SIGMA_Z = 0.0000176;
+//static const double SIGMA_X = 0.00001334;
+//static const double SIGMA_Y = 0.00001334;
+//static const double SIGMA_Z = 0.00001334;
 static const char* ASSEMBLY_MATRIX_LIBRARY = "shared_libs/libdefault_matrix_assembly.so";
 static const char* ASSEMBLY_MATRIX_FUNCTION = "homogeneous_sigma_assembly_matrix";
 
@@ -58,11 +58,11 @@ static const bool USE_GPU = true;
 static const uint32_t GPU_ID = 0;
 static const char* ODE_LIBRARY = "shared_libs/libten_tusscher_2006.so";
 
-static const double STIM_DURATION = 2.0;
+static const double STIM_DURATION = 0.5;
 static const double STIM_CURRENT = -50.0;
 static const double STIM_PERIOD = 500.0;
 static const char* STIM_FUNCTION = "stim_if_inside_circle_than";
 
-static const double PMJ_RADIUS = 400.0;
+static const double PMJ_RADIUS = 500.0;
 
 #endif
