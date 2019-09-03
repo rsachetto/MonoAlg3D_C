@@ -6,13 +6,8 @@ Sachetto
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 
 Berg
-- Improve the write activation time map function and make it work with the other save_mesh functions
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 - Implement coupling between Purkinje and tissue
-- Implement the following celular models:
-	- DiFrancescoNoble 1985 
-	- ARPF 2009
-	- Li & Rudy 2011
 
 Pedro
 

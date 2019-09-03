@@ -112,14 +112,21 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
 
             // --------------------------------------------------------------------------------
             // NEW CODE !
-            if (scalar_name == 'v')
-                arrput((*vtk_grid)->values, grid_cell->v);
-            else if (scalar_name == 'a')
-                arrput((*vtk_grid)->values, grid_cell->activation_time);
-            else if (scalar_name == 'c')
-                arrput((*vtk_grid)->values, grid_cell->sigma_x);
-            else
-                print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
+            switch (scalar_name)
+            {
+                case 'v':
+                    arrput((*vtk_grid)->values, grid_cell->v);
+                    break;
+                case 'a':
+                    arrput((*vtk_grid)->values, grid_cell->activation_time);
+                    break;
+                case 'c':
+                    arrput((*vtk_grid)->values, grid_cell->sigma_x);
+                    break;            
+                default:
+                    print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
+                    break;
+            }
             // --------------------------------------------------------------------------------
             
             // This 'if' statement do not let us re-insert points and lines to the arrays ... =)
