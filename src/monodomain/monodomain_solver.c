@@ -44,6 +44,9 @@ struct monodomain_solver *new_monodomain_solver() {
     result->kappa_x = 0.0;
     result->kappa_y = 0.0;
     result->kappa_z = 0.0;
+
+    result->calc_activation_time = false;
+    result->print_conductivity = false;
     
     return result;
 }
@@ -382,8 +385,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
     // NEW
     bool calc_activation_time = the_monodomain_solver->calc_activation_time;
-    //bool print_conductivity = the_monodomain_solver->print_conductivity;
-    bool print_conductivity = true;
+    bool print_conductivity = the_monodomain_solver->print_conductivity;
+    //bool print_conductivity = true;
     // NEW
     real_cpu solver_error;
     uint32_t solver_iterations = 0;
@@ -444,20 +447,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             total_write_time += stop_stop_watch(&write_time);
         }
 
-        if (cur_time > 0.0) {
-
-            // -------------------------------------------------------------------
-            // NEW FEATURE !!! For each timestep compute the activation time
-            if (calc_activation_time)
-            {
-                calculate_activation_time(cur_time,dt_pde,the_ode_solver,the_grid);
-            }
-            // -------------------------------------------------------------------
-
+        if (cur_time > 0.0) 
+        {
+            
             activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_grid);
 
-            if (abort_on_no_activity && cur_time > last_stimulus_time) {
-                if (!activity) {
+            if (abort_on_no_activity && cur_time > last_stimulus_time) 
+            {
+                if (!activity) 
+                {
                     print_to_stdout_and_file("No activity, aborting simulation\n");
                     break;
                 }
@@ -469,6 +467,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         // REACTION
         solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
+
+        ode_total_time += stop_stop_watch(&ode_time);
+
+        // NEW FEATURE! Calculate the activation time here !
+        if (cur_time > 0.0 && calc_activation_time)
+        {
+            calculate_activation_time(cur_time,dt_pde,the_ode_solver,the_grid);
+        }
+
+        start_stop_watch(&ode_time);
+
         update_monodomain_config->update_monodomain(update_monodomain_config, original_num_cells, the_monodomain_solver, the_grid, the_ode_solver);
 
         ode_total_time += stop_stop_watch(&ode_time);
@@ -481,7 +490,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
         #endif
 
-        // DIFUSION
+        // DIFFUSION
         linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations,
                                                          &solver_error);
 
@@ -491,7 +500,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         total_cg_it += solver_iterations;
 
-        if (count % print_rate == 0) {
+        if (count % print_rate == 0) 
+        {
             print_to_stdout_and_file("t = %lf, Iterations = "
                                      "%" PRIu32 ", Error Norm = %e, Number of Cells:"
                                      "%" PRIu32 ", CG Iterations time: %ld us",
@@ -499,37 +509,46 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                      cg_partial);
         }
 
-        if (adaptive) {
+        if (adaptive) 
+        {
             redo_matrix = false;
-            if (cur_time >= start_adpt_at) {
-                if (count % refine_each == 0) {
+            if (cur_time >= start_adpt_at) 
+            {
+                if (count % refine_each == 0) 
+                {
 
                     start_stop_watch(&ref_time);
                     redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_dx, start_dy, start_dz);
                     total_ref_time += stop_stop_watch(&ref_time);
                 }
 
-                if (count % derefine_each == 0) {
+                if (count % derefine_each == 0) 
+                {
                     start_stop_watch(&deref_time);
                     redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
                     total_deref_time += stop_stop_watch(&deref_time);
                 }
             }
-            if (redo_matrix) {
+            if (redo_matrix) 
+            {
                 order_grid_cells(the_grid);
 
-                if (stimuli_configs) {
-                    if (cur_time <= last_stimulus_time || has_any_periodic_stim) {
+                if (stimuli_configs) 
+                {
+                    if (cur_time <= last_stimulus_time || has_any_periodic_stim) 
+                    {
                         set_spatial_stim(stimuli_configs, the_grid);
                     }
                 }
-                if (has_extra_data) {
+                if (has_extra_data) 
+                {
                     set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
                 }
 
                 update_cells_to_solve(the_grid, the_ode_solver);
 
-                if (arrlen(the_grid->refined_this_step) > 0) {
+                if (arrlen(the_grid->refined_this_step) > 0) 
+                {
                     update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
                 }
 
@@ -550,8 +569,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         count++;
         cur_time += dt_pde;
 
-        if (save_checkpoint) {
-            if (count != 0 && (count % save_state_rate == 0)) {
+        if (save_checkpoint) 
+        {
+            if (count != 0 && (count % save_state_rate == 0)) 
+            {
                 the_monodomain_solver->current_count = count;
                 the_monodomain_solver->current_time = cur_time;
                 printf("Saving state with time = %lf, and count = %d\n", the_monodomain_solver->current_time,
@@ -564,7 +585,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         iteration_time = stop_stop_watch(&iteration_time_watch);
 
-        if ( (count - 1) % print_rate == 0) {
+        if ( (count - 1) % print_rate == 0) 
+        {
             print_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
         }
     }
@@ -856,6 +878,7 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
     the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
 
     the_monodomain_solver->calc_activation_time = options->calc_activation_time;
+    the_monodomain_solver->print_conductivity = options->print_conductivity_map;
 
     the_monodomain_solver->dt = options->dt_pde;
 
@@ -925,19 +948,13 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt,\
             real v_new = (real)ac[i]->v;
 
             real dvdt = (v_new - v_old) / dt;
-	    
-            if(dvdt > ac[i]->max_dvdt) 
+
+            if ( (dvdt > ac[i]->max_dvdt) ) 
             {
+
                 ac[i]->max_dvdt = dvdt;
                 ac[i]->activation_time = cur_time;
             }
-           /*
-           real v = (real)ac[i]->v;
-           if (v > 0.0)
-           {
-               ac[i]->activation_time = cur_time;
-           }
-           */
         }
     }
 

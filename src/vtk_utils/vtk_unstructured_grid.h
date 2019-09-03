@@ -92,4 +92,5 @@ void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values);
 void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *vtu_file_name);
 
+
 #endif // MONOALG3D_VTK_UNSTRUCTURED_GRID_H

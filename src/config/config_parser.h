@@ -74,6 +74,8 @@ struct user_options {
     // NEW VARIABLES !
     bool calc_activation_time;
     bool calc_activation_time_was_set;
+    bool print_conductivity_map;
+    bool print_conductivity_map_was_set;
 
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;

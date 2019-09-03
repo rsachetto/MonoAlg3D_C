@@ -1035,6 +1035,14 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->calc_activation_time = false;
         }
         pconfig->calc_activation_time_was_set = true;
+    } 
+    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "print_conductivity_map")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->print_conductivity_map = true;
+        } else {
+            pconfig->print_conductivity_map = false;
+        }
+        pconfig->print_conductivity_map_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
         pconfig->vm_threshold = strtof(value, NULL);
         pconfig->vm_threshold_was_set = true;
