@@ -117,6 +117,7 @@ void init_draw_config(struct draw_config *draw_config, struct user_options *opti
 
     draw_config->draw_type = DRAW_SIMULATION;
     draw_config->error_message = NULL;
+    draw_config->grid_info.loaded = false;
 }
 #endif
 

@@ -189,9 +189,9 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
     }
 }
 
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time, int num_steps,
-                            struct string_voidp_hash_entry *stim_configs, real *spatial_stim_currents,
-                                    struct string_hash_entry *ode_extra_config) {
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
+                            int num_steps, struct string_voidp_hash_entry *stim_configs,
+                            struct string_hash_entry *ode_extra_config) {
 
     assert(the_ode_solver->sv);
 
@@ -225,7 +225,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                 if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
                     #pragma omp parallel for
                     for (i = 0; i < n_active; i++) {
-                        merged_stims[i] = spatial_stim_currents[i];
+                        merged_stims[i] = ((real*)(tmp->persistent_data))[i];
                     }
                 }
                 time += dt;

@@ -46,7 +46,7 @@ int main() {
     struct grid *grid = new_grid();
     grid->adaptive = true;
 
-    initialize_and_construct_grid(grid, 1, 1, 1);
+    initialize_and_construct_grid(grid, POINT3D(1, 1, 1));
 
     struct config *save_mesh_config = alloc_and_init_config_data();
 

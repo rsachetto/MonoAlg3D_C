@@ -27,7 +27,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     #pragma omp parallel for private(alpha)
     for(i = 0; i < active_cells; i++) {
 
-        alpha = ALPHA(beta, cm, dt, ac[i]->dx, ac[i]->dy, ac[i]->dz);
+        alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;
     }
@@ -253,15 +253,15 @@ static void fill_discretization_matrix_elements_ddm (real_cpu sigma_x, real_cpu 
 
             if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) 
             {
-                dx = black_neighbor_cell->dx;
-                dy = black_neighbor_cell->dy;
-                dz = black_neighbor_cell->dz;
+                dx = black_neighbor_cell->discretization.x;
+                dy = black_neighbor_cell->discretization.y;
+                dz = black_neighbor_cell->discretization.z;
             } 
             else 
             {
-                dx = grid_cell->dx;
-                dy = grid_cell->dy;
-                dz = grid_cell->dz;
+                dx = grid_cell->discretization.x;
+                dy = grid_cell->discretization.y;
+                dz = grid_cell->discretization.z;
             }
 
             lock_cell_node(grid_cell);
@@ -342,9 +342,9 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
     for(i = 0; i < num_active_cells; i++) {
         real_cpu alpha, dx, dy, dz;
 
-        dx = ac[i]->dx;
-        dy = ac[i]->dy;
-        dz = ac[i]->dz;
+        dx = ac[i]->discretization.x;
+        dy = ac[i]->discretization.y;
+        dz = ac[i]->discretization.z;
 
         alpha = ALPHA(beta, cm, dt, dx, dy, dz);
 
@@ -458,24 +458,24 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             uint32_t position;
             real_cpu dx, dy, dz;
 
-            real_cpu sigma_x1 = grid_cell->sigma_x;
-            real_cpu sigma_x2 = black_neighbor_cell->sigma_x;
+            real_cpu sigma_x1 = grid_cell->sigma.x;
+            real_cpu sigma_x2 = black_neighbor_cell->sigma.x;
             real_cpu sigma_x = 0.0;
             
             if(sigma_x1 != 0.0 && sigma_x2 != 0.0) {
                 sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
             }
 
-            real_cpu sigma_y1 = grid_cell->sigma_y;
-            real_cpu sigma_y2 = black_neighbor_cell->sigma_y;
+            real_cpu sigma_y1 = grid_cell->sigma.y;
+            real_cpu sigma_y2 = black_neighbor_cell->sigma.y;
             real_cpu sigma_y = 0.0;
 
             if(sigma_y1 != 0.0 && sigma_y2 != 0.0) {
                 sigma_y = (2.0f * sigma_y1 * sigma_y2) / (sigma_y1 + sigma_y2);
             }
 
-            real_cpu sigma_z1 = grid_cell->sigma_z;
-            real_cpu sigma_z2 = black_neighbor_cell->sigma_z;
+            real_cpu sigma_z1 = grid_cell->sigma.z;
+            real_cpu sigma_z2 = black_neighbor_cell->sigma.z;
             real_cpu sigma_z = 0.0;
 
             if(sigma_z1 != 0.0 && sigma_z2 != 0.0) {
@@ -483,13 +483,13 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
             
             if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
-                dx = black_neighbor_cell->dx;
-                dy = black_neighbor_cell->dy;
-                dz = black_neighbor_cell->dz;
+                dx = black_neighbor_cell->discretization.x;
+                dy = black_neighbor_cell->discretization.y;
+                dz = black_neighbor_cell->discretization.z;
             } else {
-                dx = grid_cell->dx;
-                dy = grid_cell->dy;
-                dz = grid_cell->dz;
+                dx = grid_cell->discretization.x;
+                dy = grid_cell->discretization.y;
+                dz = grid_cell->discretization.z;
             }
 
             lock_cell_node(grid_cell);
@@ -588,9 +588,9 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
         real sigma_y_new = sigma_y * r;
         real sigma_z_new = sigma_z * r;
 
-        ac[i]->sigma_x = sigma_x_new;
-        ac[i]->sigma_y = sigma_y_new;
-        ac[i]->sigma_z = sigma_z_new;
+        ac[i]->sigma.x = sigma_x_new;
+        ac[i]->sigma.y = sigma_y_new;
+        ac[i]->sigma.z = sigma_z_new;
 
     }
 
@@ -644,9 +644,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
 
     bool inside;
 
-    real side_length_x = the_grid->side_length_x;
-    real side_length_y = the_grid->side_length_y;
-    real side_length_z = the_grid->side_length_z;
+    real side_length_x = the_grid->mesh_side_length.x;
+    real side_length_y = the_grid->mesh_side_length.y;
+    real side_length_z = the_grid->mesh_side_length.z;
 
     real region_height = (side_length_y - channel_width) / 2.0;
 
@@ -657,9 +657,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
         real sigma_y_new;
         real sigma_z_new;
 
-        double x = ac[i]->center_x;
-        double y = ac[i]->center_y;
-        double z = ac[i]->center_z;
+        double x = ac[i]->center.x;
+        double y = ac[i]->center.y;
+        double z = ac[i]->center.z;
 
         // Check region 1
         inside = (x >= 0.0) && (x <= channel_length) && (y >= 0.0) && (y <= region_height);
@@ -733,9 +733,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
 
     bool inside_3, inside_4;
 
-    real side_length_x = the_grid->side_length_x;
-    real side_length_y = the_grid->side_length_y;
-    real side_length_z = the_grid->side_length_z;
+    real side_length_x = the_grid->mesh_side_length.x;
+    real side_length_y = the_grid->mesh_side_length.y;
+    real side_length_z = the_grid->mesh_side_length.z;
 
     real region_height = (side_length_y - channel_width) / 2.0;
 
@@ -747,9 +747,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
         real sigma_y_new = sigma_y;
         real sigma_z_new = sigma_z;
 
-        real x = ac[i]->center_x;
-        real y = ac[i]->center_y;
-        real z = ac[i]->center_z;
+        real x = ac[i]->center.x;
+        real y = ac[i]->center.y;
+        real z = ac[i]->center.z;
 
         // Check region 3
         inside_3 = (x >= 0.0) && (x < channel_length) && (y >= region_height) && (y <= region_height + channel_width);
@@ -771,9 +771,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
             sigma_z_new = sigma_z * sink_factor;
         }
 
-        ac[i]->sigma_x = sigma_x_new;
-        ac[i]->sigma_y = sigma_y_new;
-        ac[i]->sigma_z = sigma_z_new;
+        ac[i]->sigma.x = sigma_x_new;
+        ac[i]->sigma.y = sigma_y_new;
+        ac[i]->sigma.z = sigma_z_new;
 
     }
 
@@ -824,9 +824,9 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
 
     #pragma omp parallel for
     for (i = 0; i < num_active_cells; i++) {
-        ac[i]->sigma_x = sigma_x;
-        ac[i]->sigma_y = sigma_y;
-        ac[i]->sigma_z = sigma_z;
+        ac[i]->sigma.x = sigma_x;
+        ac[i]->sigma.y = sigma_y;
+        ac[i]->sigma.z = sigma_z;
     }
 
     #pragma omp parallel for
@@ -879,9 +879,9 @@ ASSEMBLY_MATRIX(ddm_assembly_matrix)
 
     // TODO: The kappas can change from one volume to another ...
     // Here we are considering dx, dy, dz equal for all cells over the domain ...
-    real dx = ac[0]->dx;
-    real dy = ac[0]->dy;
-    real dz = ac[0]->dz;
+    real dx = ac[0]->discretization.x;
+    real dy = ac[0]->discretization.y;
+    real dz = ac[0]->discretization.z;
 
     real kappa_x = 0.0;
     kappa_x = calculate_kappa(cell_length_x,dx);
@@ -974,9 +974,9 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 
     for (i = 0; i < num_active_cells; i++) 
     {
-        dx = ac[i]->dx;
-        dy = ac[i]->dy;
-        dz = ac[i]->dz;
+        dx = ac[i]->discretization.x;
+        dy = ac[i]->discretization.y;
+        dz = ac[i]->discretization.z;
 
         alpha = ALPHA(beta, cm, dt, dx, dy, dz);
 
@@ -1014,7 +1014,7 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next)
     {
         cell_elements = &grid_cells[i]->elements;
-        dx = grid_cells[i]->dx;
+        dx = grid_cells[i]->discretization.x;
 
         e = pk_node->list_edges;
 

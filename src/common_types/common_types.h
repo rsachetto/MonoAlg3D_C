@@ -10,8 +10,10 @@ struct line {
 };
 
 struct point_3d {
-    float x, y, z;
+    real_cpu x, y, z;
 };
+#define POINT3D(x,y,z) (struct point_3d) {x,y,z}
+#define ZERO_POINT3D (struct point_3d) {0,0,0}
 
 struct point_hash_entry {
     struct point_3d key;

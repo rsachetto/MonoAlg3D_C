@@ -25,9 +25,9 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
     #pragma omp parallel for
     for (i = 0; i < num_active_cells; i++)
     {
-        real center_x = ac[i]->center_x;
-        real center_y = ac[i]->center_y;
-        real center_z = ac[i]->center_z;
+        real center_x = ac[i]->center.x;
+        real center_y = ac[i]->center.y;
+        real center_z = ac[i]->center.z;
 
         inside = (center_x <= x_limit);
 

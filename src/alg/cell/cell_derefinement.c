@@ -93,9 +93,9 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
 
     for (int i = 0; i < 8; i++) {
         v_average += auxiliar->v;
-        sigma_x_average += auxiliar->sigma_x;
-        sigma_y_average += auxiliar->sigma_y;
-        sigma_z_average += auxiliar->sigma_z;
+        sigma_x_average += auxiliar->sigma.x;
+        sigma_y_average += auxiliar->sigma.y;
+        sigma_z_average += auxiliar->sigma.z;
 
         auxiliar = auxiliar->next;
     }
@@ -142,24 +142,32 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     if (new_cell->next != 0)
         new_cell->next->previous = new_cell;
 
-    real_cpu aux_center_x = ((struct cell_node *)(new_cell->back))->center_x;
-    real_cpu aux_center_y = ((struct cell_node *)(new_cell->west))->center_y;
-    real_cpu aux_center_z = ((struct cell_node *)(new_cell->south))->center_z;
+    real_cpu aux_center_x = ((struct cell_node *)(new_cell->back))->center.x;
+    real_cpu aux_center_y = ((struct cell_node *)(new_cell->west))->center.y;
+    real_cpu aux_center_z = ((struct cell_node *)(new_cell->south))->center.z;
+
+    real_cpu aux_t_center_x = ((struct cell_node *)(new_cell->back))->translated_center.x;
+    real_cpu aux_t_center_y = ((struct cell_node *)(new_cell->west))->translated_center.y;
+    real_cpu aux_t_center_z = ((struct cell_node *)(new_cell->south))->translated_center.z;
 
     // New geometric variables.
-    new_cell->center_x = (new_cell->center_x + aux_center_x) / 2.0f;
-    new_cell->center_y = (new_cell->center_y + aux_center_y) / 2.0f;
-    new_cell->center_z = (new_cell->center_z + aux_center_z) / 2.0f;
+    new_cell->center.x = (new_cell->center.x + aux_center_x) / 2.0f;
+    new_cell->center.y = (new_cell->center.y + aux_center_y) / 2.0f;
+    new_cell->center.z = (new_cell->center.z + aux_center_z) / 2.0f;
 
-    new_cell->dx = 2.0f * new_cell->dx;
-    new_cell->dy = 2.0f * new_cell->dy;
-    new_cell->dz = 2.0f * new_cell->dz;
+    new_cell->translated_center.x = (new_cell->translated_center.x + aux_t_center_x) / 2.0f;
+    new_cell->translated_center.y = (new_cell->translated_center.y + aux_t_center_y) / 2.0f;
+    new_cell->translated_center.z = (new_cell->translated_center.z + aux_t_center_z) / 2.0f;
+
+    new_cell->discretization.x = 2.0f * new_cell->discretization.x;
+    new_cell->discretization.y = 2.0f * new_cell->discretization.y;
+    new_cell->discretization.z = 2.0f * new_cell->discretization.z;
 
     new_cell->v = v_average;
 
-    new_cell->sigma_x = sigma_x_average;
-    new_cell->sigma_y = sigma_y_average;
-    new_cell->sigma_z = sigma_z_average;
+    new_cell->sigma.x = sigma_x_average;
+    new_cell->sigma.y = sigma_y_average;
+    new_cell->sigma.z = sigma_z_average;
 
     new_cell->cell_data.level = bunch_level - (uint8_t)1;
     new_cell->hilbert_shape_number = hilbert_shape_number;
@@ -261,15 +269,15 @@ struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell) 
     struct cell_node *seventh_cell = sixth_cell->next;
     struct cell_node *eighth_cell = seventh_cell->next;
 
-    real_cpu coordinateSum1 = first_cell->center_x + first_cell->center_y + first_cell->center_z;
-    real_cpu coordinateSum2 = second_cell->center_x + second_cell->center_y + second_cell->center_z;
-    real_cpu coordinateSum3 = third_cell->center_x + third_cell->center_y + third_cell->center_z;
-    real_cpu coordinateSum4 = fourth_cell->center_x + fourth_cell->center_y + fourth_cell->center_z;
-    real_cpu coordinateSum5 = fifth_cell->center_x + fifth_cell->center_y + fifth_cell->center_z;
-    real_cpu coordinateSum6 = sixth_cell->center_x + sixth_cell->center_y + sixth_cell->center_z;
+    real_cpu coordinateSum1 = first_cell->center.x + first_cell->center.y + first_cell->center.z;
+    real_cpu coordinateSum2 = second_cell->center.x + second_cell->center.y + second_cell->center.z;
+    real_cpu coordinateSum3 = third_cell->center.x + third_cell->center.y + third_cell->center.z;
+    real_cpu coordinateSum4 = fourth_cell->center.x + fourth_cell->center.y + fourth_cell->center.z;
+    real_cpu coordinateSum5 = fifth_cell->center.x + fifth_cell->center.y + fifth_cell->center.z;
+    real_cpu coordinateSum6 = sixth_cell->center.x + sixth_cell->center.y + sixth_cell->center.z;
     real_cpu coordinateSum7 =
-        seventh_cell->center_x + seventh_cell->center_y + seventh_cell->center_z;
-    real_cpu coordinateSum8 = eighth_cell->center_x + eighth_cell->center_y + eighth_cell->center_z;
+        seventh_cell->center.x + seventh_cell->center.y + seventh_cell->center.z;
+    real_cpu coordinateSum8 = eighth_cell->center.x + eighth_cell->center.y + eighth_cell->center.z;
 
     real_cpu maximum;
     struct cell_node *front_northeast_cell = first_cell;

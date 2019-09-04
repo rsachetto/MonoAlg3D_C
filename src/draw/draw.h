@@ -66,6 +66,7 @@ struct draw_config {
             struct grid *grid_to_draw;
         };
         char *file_name;
+        bool loaded;
     } grid_info;
 
     char *error_message;

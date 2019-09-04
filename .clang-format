@@ -1,6 +1,6 @@
 AccessModifierOffset: 0
 AllowShortFunctionsOnASingleLine: None
-AllowShortIfStatementsOnASingleLine: WithoutElse
+#AllowShortIfStatementsOnASingleLine: False
 AllowShortLoopsOnASingleLine: false
 BinPackParameters: true
 BreakBeforeBinaryOperators: None
