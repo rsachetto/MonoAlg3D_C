@@ -30,21 +30,17 @@ struct grid *new_grid() {
     return result;
 }
 
-void initialize_and_construct_grid(struct grid *the_grid, float side_length_x, float side_length_y,
-                                   float side_length_z) {
+void initialize_and_construct_grid(struct grid *the_grid, struct point_3d side_length) {
     assert(the_grid);
 
-    initialize_grid(the_grid, side_length_x, side_length_y, side_length_z);
+    initialize_grid(the_grid, side_length);
     construct_grid(the_grid);
 }
 
-void initialize_grid(struct grid *the_grid, float side_length_x, float side_length_y, float side_length_z) {
+void initialize_grid(struct grid *the_grid, struct point_3d side_length) {
 
     assert(the_grid);
-
-    the_grid->side_length_x = side_length_x;
-    the_grid->side_length_y = side_length_y;
-    the_grid->side_length_z = side_length_z;
+    the_grid->cube_side_length = side_length;
     the_grid->number_of_cells = 0;
 }
 
@@ -52,9 +48,7 @@ void construct_grid(struct grid *the_grid) {
 
     assert(the_grid);
 
-    float side_length_x = the_grid->side_length_x;
-    float side_length_y = the_grid->side_length_y;
-    float side_length_z = the_grid->side_length_z;
+    struct point_3d side_length = the_grid->cube_side_length;
 
     // Cell nodes.
     struct cell_node *front_northeast_cell, *front_northwest_cell, *front_southeast_cell, *front_southwest_cell,
@@ -80,13 +74,9 @@ void construct_grid(struct grid *the_grid) {
     front_transition_node = new_transition_node();
     back_transition_node = new_transition_node();
 
-    real_cpu half_side_length_x = side_length_x / 2.0f;
-    real_cpu half_side_length_y = side_length_y / 2.0f;
-    real_cpu half_side_length_z = side_length_z / 2.0f;
 
-    real_cpu quarter_side_length_x = half_side_length_x / 2.0f;
-    real_cpu quarter_side_length_y = half_side_length_y / 2.0f;
-    real_cpu quarter_side_length_z = half_side_length_z / 2.0f;
+    struct point_3d half_side_length = POINT3D(side_length.x / 2.0f, side_length.y / 2.0,side_length.z / 2.0f);
+    struct point_3d quarter_side_length = POINT3D(half_side_length.x / 2.0f, half_side_length.y / 2.0,half_side_length.z / 2.0f);
 
     //__________________________________________________________________________
     //              Initialization of transition nodes.
@@ -119,56 +109,60 @@ void construct_grid(struct grid *the_grid) {
     //                      Initialization of cell nodes.
     //__________________________________________________________________________
     // front Northeast subcell initialization.
-    set_cell_node_data(front_northeast_cell, half_side_length_x, half_side_length_y, half_side_length_z, 1,
+    set_cell_node_data(front_northeast_cell, half_side_length, 1,
                        east_transition_node, north_transition_node, front_northwest_cell, front_southeast_cell,
                        front_transition_node, back_northeast_cell, NULL, back_northeast_cell, 0, 1,
-                       half_side_length_x + quarter_side_length_x, half_side_length_y + quarter_side_length_y,
-                       half_side_length_z + quarter_side_length_z);
+                       POINT3D(half_side_length.x + quarter_side_length.x, half_side_length.y + quarter_side_length.y,
+                               half_side_length.z + quarter_side_length.z), ZERO_POINT3D);
 
     // back Northeast subcell initialization.
-    set_cell_node_data(back_northeast_cell, half_side_length_x, half_side_length_y, half_side_length_z, 2,
+    set_cell_node_data(back_northeast_cell, half_side_length, 2,
                        east_transition_node, north_transition_node, back_northwest_cell, back_southeast_cell,
                        front_northeast_cell, back_transition_node, front_northeast_cell, back_northwest_cell, 1, 2,
-                       quarter_side_length_x, half_side_length_y + quarter_side_length_y,
-                       half_side_length_z + quarter_side_length_z);
+                       POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y,
+                       half_side_length.z + quarter_side_length.z), ZERO_POINT3D);
 
     // back Northwest subcell initialization.
-    set_cell_node_data(back_northwest_cell, half_side_length_x, half_side_length_y, half_side_length_z, 3,
+    set_cell_node_data(back_northwest_cell, half_side_length, 3,
                        back_northeast_cell, north_transition_node, west_transition_node, back_southwest_cell,
                        front_northwest_cell, back_transition_node, back_northeast_cell, front_northwest_cell, 2, 2,
-                       quarter_side_length_x, quarter_side_length_y, half_side_length_z + quarter_side_length_z);
+                       POINT3D(quarter_side_length.x, quarter_side_length.y, half_side_length.z + quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // front Northwest subcell initialization.
-    set_cell_node_data(front_northwest_cell, half_side_length_x, half_side_length_y, half_side_length_z, 4,
+    set_cell_node_data(front_northwest_cell, half_side_length, 4,
                        front_northeast_cell, north_transition_node, west_transition_node, front_southwest_cell,
                        front_transition_node, back_northwest_cell, back_northwest_cell, front_southwest_cell, 3, 3,
-                       half_side_length_x + quarter_side_length_x, quarter_side_length_y,
-                       half_side_length_z + quarter_side_length_z);
+                       POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y,
+                       half_side_length.z + quarter_side_length.z), ZERO_POINT3D);
 
     // front Southwest subcell initialization.
-    set_cell_node_data(front_southwest_cell, half_side_length_x, half_side_length_y, half_side_length_z, 5,
+    set_cell_node_data(front_southwest_cell, half_side_length, 5,
                        front_southeast_cell, front_northwest_cell, west_transition_node, south_transition_node,
                        front_transition_node, back_southwest_cell, front_northwest_cell, back_southwest_cell, 4, 3,
-                       half_side_length_x + quarter_side_length_x, quarter_side_length_y, quarter_side_length_z);
+                       POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y, quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // back Southwest subcell initialization.
-    set_cell_node_data(back_southwest_cell, half_side_length_x, half_side_length_y, half_side_length_z, 6,
+    set_cell_node_data(back_southwest_cell, half_side_length, 6,
                        back_southeast_cell, back_northwest_cell, west_transition_node, south_transition_node,
                        front_southwest_cell, back_transition_node, front_southwest_cell, back_southeast_cell, 5, 4,
-                       quarter_side_length_x, quarter_side_length_y, quarter_side_length_z);
+                       POINT3D(quarter_side_length.x, quarter_side_length.y, quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // back Southeast subcell initialization.
-    set_cell_node_data(back_southeast_cell, half_side_length_x, half_side_length_y, half_side_length_z, 7,
+    set_cell_node_data(back_southeast_cell, half_side_length, 7,
                        east_transition_node, back_northeast_cell, back_southwest_cell, south_transition_node,
                        front_southeast_cell, back_transition_node, back_southwest_cell, front_southeast_cell, 6, 4,
-                       quarter_side_length_x, half_side_length_y + quarter_side_length_y, quarter_side_length_z);
+                       POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y, quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // front Southeast subcell initialization.
-    set_cell_node_data(front_southeast_cell, half_side_length_x, half_side_length_y, half_side_length_z, 8,
+    set_cell_node_data(front_southeast_cell, half_side_length, 8,
                        east_transition_node, front_northeast_cell, front_southwest_cell, south_transition_node,
                        front_transition_node, back_southeast_cell, back_southeast_cell, NULL, 7, 5,
-                       half_side_length_x + quarter_side_length_x, half_side_length_y + quarter_side_length_y,
-                       quarter_side_length_z);
+                       POINT3D(half_side_length.x + quarter_side_length.x, half_side_length.y + quarter_side_length.y,
+                       quarter_side_length.z), ZERO_POINT3D);
 
     // Grid initialization
     the_grid->first_cell = front_northeast_cell;
@@ -186,13 +180,13 @@ void print_grid(struct grid *the_grid, FILE *output_file) {
 
         if(grid_cell->active) {
 
-            center_x = grid_cell->center_x;
-            center_y = grid_cell->center_y;
-            center_z = grid_cell->center_z;
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
 
-            dx = grid_cell->dx;
-            dy = grid_cell->dy;
-            dz = grid_cell->dz;
+            dx = grid_cell->discretization.x;
+            dy = grid_cell->discretization.y;
+            dz = grid_cell->discretization.z;
 
             v = grid_cell->v;
 
@@ -452,8 +446,8 @@ void save_grid_domain(struct grid *the_grid, const char *file_name) {
 
     while(grid_cell != 0) {
         if(grid_cell->active) {
-            fprintf(f, "%lf,%lf,%lf,%lf,%lf,%lf\n", grid_cell->center_x, grid_cell->center_y, grid_cell->center_z,
-                    grid_cell->dx, grid_cell->dy, grid_cell->dz);
+            fprintf(f, "%lf,%lf,%lf,%lf,%lf,%lf\n", grid_cell->center.x, grid_cell->center.y, grid_cell->center.z,
+                    grid_cell->discretization.x, grid_cell->discretization.y, grid_cell->discretization.z);
         }
         grid_cell = grid_cell->next;
     }
@@ -489,13 +483,7 @@ void construct_grid_purkinje (struct grid *the_grid)
     real_cpu side_length_y = the_grid->the_purkinje_network->dx;
     real_cpu side_length_z = the_grid->the_purkinje_network->dx;
 
-    real_cpu half_side_length_x = side_length_x / 2.0f;
-    real_cpu half_side_length_y = side_length_y / 2.0f;
-    real_cpu half_side_length_z = side_length_z / 2.0f;
-
-//    real_cpu quarter_side_length_x = half_side_length_x / 2.0f;
-//    real_cpu quarter_side_length_y = half_side_length_y / 2.0f;
-//    real_cpu quarter_side_length_z = half_side_length_z / 2.0f;
+    struct point_3d half_side_length = POINT3D(side_length_x / 2.0f, side_length_y / 2.0f, side_length_z / 2.0f);
 
     int total_nodes = the_grid->the_purkinje_network->total_nodes;
     
@@ -510,19 +498,18 @@ void construct_grid_purkinje (struct grid *the_grid)
     {
         
         if (i == 0)
-            set_cell_node_data (cells[i],half_side_length_x,half_side_length_y,half_side_length_z,\
-                            0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,cells[i+1],i,0,\
-                            n->x,n->y,n->z);
+            set_cell_node_data (cells[i],half_side_length, 0, NULL,NULL,NULL,NULL,NULL,NULL,NULL,cells[i+1],i,0,\
+                            POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
         else if (i == total_nodes-1)
-            set_cell_node_data (cells[i],half_side_length_x,half_side_length_y,half_side_length_z,\
+            set_cell_node_data (cells[i],half_side_length,\
                         0,NULL,NULL,NULL,NULL,NULL,NULL,\
                         cells[i-1],NULL,i,0,\
-                        n->x,n->y,n->z);
+                        POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
         else
-            set_cell_node_data (cells[i],half_side_length_x,half_side_length_y,half_side_length_z,\
+            set_cell_node_data (cells[i],half_side_length,\
                         0,NULL,NULL,NULL,NULL,NULL,NULL,\
                         cells[i-1],cells[i+1],i,0,\
-                        n->x,n->y,n->z);
+                        POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
 
         // Do not refine the Purkinje cells !
         cells[i]->can_change = false;
@@ -552,17 +539,12 @@ void translate_mesh_to_origin(struct grid *grid) {
 
     struct cell_node *grid_cell;
 
-    float center_x;
-    float center_y;
-    float center_z;
-
     grid_cell = grid->first_cell;
 
     while(grid_cell != 0) {
-
-        center_x = grid_cell->center_x;
-        center_y = grid_cell->center_y;
-        center_z = grid_cell->center_z;
+        real_cpu center_x = grid_cell->center.x;
+        real_cpu center_y = grid_cell->center.y;
+        real_cpu center_z = grid_cell->center.z;
 
         if(center_x < minx){
             minx = center_x;
@@ -583,9 +565,9 @@ void translate_mesh_to_origin(struct grid *grid) {
 
     while(grid_cell != 0) {
 
-        grid_cell->center_x = grid_cell->center_x - minx + (grid_cell->dx/2.0f);
-        grid_cell->center_y = grid_cell->center_y - miny + (grid_cell->dy/2.0f);
-        grid_cell->center_z = grid_cell->center_z - minz + (grid_cell->dz/2.0f);
+        grid_cell->translated_center.x = grid_cell->center.x - minx + (grid_cell->discretization.x/2.0f);
+        grid_cell->translated_center.y = grid_cell->center.y - miny + (grid_cell->discretization.y/2.0f);
+        grid_cell->translated_center.z = grid_cell->center.z - minz + (grid_cell->discretization.z/2.0f);
 
         grid_cell = grid_cell->next;
     }
@@ -676,7 +658,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     if(vector_b)
         vector = read_octave_vector_file_to_array(vector_b, &num_lines_v);
 
-    initialize_and_construct_grid(grid, 1.0, 1.0, 1.0);
+    initialize_and_construct_grid(grid, POINT3D(1.0, 1.0, 1.0));
 
     n_cells = grid->number_of_cells;
     while (n_cells < num_lines_m) {

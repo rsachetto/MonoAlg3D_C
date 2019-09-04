@@ -113,9 +113,9 @@ SAVE_MESH(save_as_text_or_binary) {
 
         if(grid_cell->active) {
 
-            center_x = grid_cell->center_x;
-            center_y = grid_cell->center_y;
-            center_z = grid_cell->center_z;
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
 
             if(clip_with_plain) {
                 side = A * center_x + B * center_y + C * center_z + D;
@@ -136,9 +136,9 @@ SAVE_MESH(save_as_text_or_binary) {
             }
 
             v = grid_cell->v;
-            dx = grid_cell->dx/2.0;
-            dy = grid_cell->dy/2.0;
-            dz = grid_cell->dz/2.0;
+            dx = grid_cell->discretization.x/2.0;
+            dy = grid_cell->discretization.y/2.0;
+            dz = grid_cell->discretization.z/2.0;
 
             if(binary) {
                 fwrite(&center_x, sizeof(center_x), 1, output_file);
@@ -501,9 +501,9 @@ SAVE_MESH(save_with_activation_times) {
 
         if( grid_cell->active || ( grid_cell->mesh_extra_info && ( FIBROTIC(grid_cell) || BORDER_ZONE(grid_cell) ) ) ) {
 
-            center_x = grid_cell->center_x;
-            center_y = grid_cell->center_y;
-            center_z = grid_cell->center_z;
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
 
             v = grid_cell->v;
 
@@ -512,9 +512,9 @@ SAVE_MESH(save_with_activation_times) {
             cell_coordinates.y = center_y;
             cell_coordinates.z = center_z;
 
-            dx = grid_cell->dx / 2.0;
-            dy = grid_cell->dy / 2.0;
-            dz = grid_cell->dz / 2.0;
+            dx = grid_cell->discretization.x / 2.0;
+            dy = grid_cell->discretization.y / 2.0;
+            dz = grid_cell->discretization.z / 2.0;
 
             fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
 

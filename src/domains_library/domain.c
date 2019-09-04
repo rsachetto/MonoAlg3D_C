@@ -57,7 +57,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_length_z, start_dz);
 
-    initialize_and_construct_grid(the_grid, real_side_length_x, real_side_length_y, real_side_length_z);
+    initialize_and_construct_grid(the_grid, POINT3D(real_side_length_x, real_side_length_y, real_side_length_z));
 
     if((real_side_length_z / 2.0f) > side_length_z) {
         real_cpu aux = real_side_length_z / 2.0f;
@@ -141,7 +141,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_length_x, start_dx);
 
-    initialize_and_construct_grid(the_grid, real_side_length_x, real_side_length_y, real_side_length_z);
+    initialize_and_construct_grid(the_grid, POINT3D(real_side_length_x, real_side_length_y, real_side_length_z));
 
     refine_grid(the_grid, num_steps);
 
@@ -151,7 +151,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
     for(i = 0; i < num_steps; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
-
 
     return 1;
 }
@@ -169,7 +168,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
 
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data, "fibrotic");
 
-    initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
+    initialize_and_construct_grid(the_grid, POINT3D(204800, 204800, 204800));
     refine_grid(the_grid, 7);
 
     char *read_format;
@@ -292,7 +291,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
     uint8_t size_code = 0;
 
-    initialize_and_construct_grid(the_grid, 204800, 204800, 204800);
+    initialize_and_construct_grid(the_grid, POINT3D(204800, 204800, 204800));
     refine_grid(the_grid, 7);
 
     if(strcmp(scar_size, "big") == 0) {
@@ -359,9 +358,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
                 if(p < phi)
                     grid_cell->active = false;
             } else if(border_zone) {
-                real_cpu center_x = grid_cell->center_x;
-                real_cpu center_y = grid_cell->center_y;
-                real_cpu center_z = grid_cell->center_z;
+                real_cpu center_x = grid_cell->center.x;
+                real_cpu center_y = grid_cell->center.y;
+                real_cpu center_z = grid_cell->center.z;
                 dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) +
                             (center_y - scar_center_y) * (center_y - scar_center_y) +
                             (center_z - scar_center_z) * (center_z - scar_center_z));
@@ -379,9 +378,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
         if(grid_cell->active) {
             border_zone = BORDER_ZONE(grid_cell);
             if(border_zone) {
-                real_cpu center_x = grid_cell->center_x;
-                real_cpu center_y = grid_cell->center_y;
-                real_cpu center_z = grid_cell->center_z;
+                real_cpu center_x = grid_cell->center.x;
+                real_cpu center_y = grid_cell->center.y;
+                real_cpu center_z = grid_cell->center.z;
                 dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) +
                             (center_y - scar_center_y) * (center_y - scar_center_y) +
                             (center_z - scar_center_z) * (center_z - scar_center_z));
@@ -415,7 +414,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     //LEAK on mesh_file if mesh_file is defined on ini file
     GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(mesh_file, config->config_data, "mesh_file");
 
-    initialize_and_construct_grid(the_grid, 64000.0f, 64000.0f, 64000.0f);
+    initialize_and_construct_grid(the_grid, POINT3D(64000.0f, 64000.0f, 64000.0f));
     refine_grid(the_grid, 7);
 
     print_to_stdout_and_file("Loading Rabbit Heart Mesh\n");
@@ -517,9 +516,9 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
 
         if(grid_cell->active) {
             real_cpu x, y, z;
-            x = grid_cell->center_x;
-            y = grid_cell->center_y;
-            z = grid_cell->center_z;
+            x = grid_cell->center.x;
+            y = grid_cell->center.y;
+            z = grid_cell->center.z;
 
             if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
                 grid_cell->active = false;
@@ -559,9 +558,9 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     free(active);
 
     //TODO: we need to sum the cell discretization here...
-    the_grid->side_length_x = maxx;
-    the_grid->side_length_y = maxy;
-    the_grid->side_length_z = maxz;
+    the_grid->mesh_side_length.x = maxx;
+    the_grid->mesh_side_length.y = maxy;
+    the_grid->mesh_side_length.z = maxz;
 
     print_to_stdout_and_file("Cleaning grid\n");
 
@@ -583,7 +582,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     assert(the_grid);
 
-    initialize_and_construct_grid(the_grid, 6400.0, 6400.0, 6400.0);
+    initialize_and_construct_grid(the_grid, POINT3D(6400.0, 6400.0, 6400.0));
 
     refine_grid(the_grid, 5);
 
@@ -644,7 +643,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
         side_length = side_length * 2.0;
     }
 
-    initialize_and_construct_grid(the_grid, side_length, side_length, side_length);
+    initialize_and_construct_grid(the_grid, POINT3D(side_length, side_length, side_length));
 
     char *tmp = shget(config->config_data, "maximum_discretization");
 

@@ -42,7 +42,7 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     int i;
     #pragma omp parallel for private(alpha)
     for(i = 0; i < num_active_cells; i++) {
-        alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
+        alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
 
         if(use_gpu) {
             #ifdef COMPILE_CUDA
@@ -91,7 +91,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
     for(i = 0; i < num_active_cells; i++)
     {
         // 1) Calculate alpha for the diagonal element ...
-        alpha = ALPHA_CM(beta, cm, dt_pde, active_cells[i]->dx, active_cells[i]->dy, active_cells[i]->dz);
+        alpha = ALPHA_CM(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
 
         if(use_gpu)
         {
@@ -113,9 +113,9 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
         // TODO: The computation of the kappas will enter here ...
         //       When we consider the anisotropic case
 
-        real_cpu dx = active_cells[i]->dx;
-        real_cpu dy = active_cells[i]->dy;
-        real_cpu dz = active_cells[i]->dz;
+        real_cpu dx = active_cells[i]->discretization.x;
+        real_cpu dy = active_cells[i]->discretization.y;
+        real_cpu dz = active_cells[i]->discretization.z;
 
         for (int j = 1; j < max_elements; j++)
         {

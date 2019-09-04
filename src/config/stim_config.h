@@ -9,7 +9,7 @@
 #include "../monodomain/constants.h"
 #include "config_common.h"
 
-#define SET_SPATIAL_STIM(name) EXPORT_FN void name(struct config *config, struct grid *the_grid, real *spatial_stim_currents)
+#define SET_SPATIAL_STIM(name) EXPORT_FN void name(struct config *config, struct grid *the_grid)
 typedef SET_SPATIAL_STIM(set_spatial_stim_fn);
 
 void print_stim_config_values(struct config* s);

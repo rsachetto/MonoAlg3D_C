@@ -69,8 +69,8 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
         }
         else if(BORDER_ZONE(ac[i])) {
 
-            real center_x = (real)ac[i]->center_x;
-            real center_y = (real)ac[i]->center_y;
+            real center_x = (real)ac[i]->center.x;
+            real center_y = (real)ac[i]->center.y;
             //TODO: Maybe we want the distance from the Z as well
             //real center_z = (real)ac[i]->center_z;
 
@@ -165,9 +165,9 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
         scar_type = SCAR_TYPE(ac[i]);
 
         if (ac[i]->active && border_zone) {
-            real_cpu center_x = ac[i]->center_x;
-            real_cpu center_y = ac[i]->center_y;
-            real_cpu center_z = ac[i]->center_z;
+            real_cpu center_x = ac[i]->center.x;
+            real_cpu center_y = ac[i]->center.y;
+            real_cpu center_z = ac[i]->center.z;
             if(scar_type == 'b') {
                 dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
                                 (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
@@ -201,9 +201,9 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
                 fibs[i+num_par] = 0.0f;
             }
             else if (border_zone) {
-                real_cpu center_x = ac[i]->center_x;
-                real_cpu center_y = ac[i]->center_y;
-                real_cpu center_z = ac[i]->center_z;
+                real_cpu center_x = ac[i]->center.x;
+                real_cpu center_y = ac[i]->center.y;
+                real_cpu center_z = ac[i]->center.z;
                 if(scar_type == 'b') {
                     dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
                                     (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
@@ -283,9 +283,9 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
         if(ac[i]->active) {
             border_zone = BORDER_ZONE(ac[i]);
             if(border_zone) {
-                real_cpu center_x = ac[i]->center_x;
-                real_cpu center_y = ac[i]->center_y;
-                real_cpu center_z = ac[i]->center_z;
+                real_cpu center_x = ac[i]->center.x;
+                real_cpu center_y = ac[i]->center.y;
+                real_cpu center_z = ac[i]->center.z;
                 dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
 				#pragma omp critical
                 if(dist > bz_size) {
@@ -308,9 +308,9 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
                 fibs[i+num_par] = 0.0;
             }
             else if(border_zone) {
-                real_cpu center_x = ac[i]->center_x;
-                real_cpu center_y = ac[i]->center_y;
-                real_cpu center_z = ac[i]->center_z;
+                real_cpu center_x = ac[i]->center.x;
+                real_cpu center_y = ac[i]->center.y;
+                real_cpu center_z = ac[i]->center.z;
                 dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
                 dist = dist/bz_size;
 

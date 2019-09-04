@@ -14,7 +14,7 @@
 //Forward declaration
 struct monodomain_solver;
 
-#define RESTORE_STATE(name) EXPORT_FN void name(char* input_dir,                                  \
+#define RESTORE_STATE(name) EXPORT_FN bool name(char* input_dir,                                  \
                                                 struct config *config,                            \
                                                 struct grid *the_grid,                            \
                                                 struct monodomain_solver *the_monodomain_solver,  \

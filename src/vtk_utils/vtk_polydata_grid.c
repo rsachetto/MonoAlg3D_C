@@ -106,9 +106,9 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     {
         if (grid_cell->active)
         {
-            center_x = grid_cell->center_x;
-            center_y = grid_cell->center_y;
-            center_z = grid_cell->center_z;
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
 
             arrput((*vtk_grid)->values, grid_cell->v);
 

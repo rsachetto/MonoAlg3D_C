@@ -529,9 +529,9 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
 
         if(grid_cell->active) {
 
-            center_x = grid_cell->center_x;
-            center_y = grid_cell->center_y;
-            center_z = grid_cell->center_z;
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
 
             if(clip_with_plain) {
                 side = A * center_x + B * center_y + C * center_z + D;
@@ -561,9 +561,9 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                 continue;
             }
 
-            real_cpu half_face_x = grid_cell->dx / 2.0f;
-            real_cpu half_face_y = grid_cell->dy / 2.0f;
-            real_cpu half_face_z = grid_cell->dz / 2.0f;
+            real_cpu half_face_x = grid_cell->discretization.x / 2.0f;
+            real_cpu half_face_y = grid_cell->discretization.y / 2.0f;
+            real_cpu half_face_z = grid_cell->discretization.z / 2.0f;
 
             aux1.x = center_x - half_face_x;
             aux1.y = center_y - half_face_y;

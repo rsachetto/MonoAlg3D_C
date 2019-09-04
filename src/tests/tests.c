@@ -191,9 +191,9 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
 
     order_grid_cells(grid);
 
-    real_cpu sx = grid->side_length_x;
-    real_cpu sy = grid->side_length_y;
-    real_cpu sz = grid->side_length_z;
+    real_cpu sx = grid->mesh_side_length.x;
+    real_cpu sy = grid->mesh_side_length.y;
+    real_cpu sz = grid->mesh_side_length.z;
 
     real_cpu start_dx_value = strtod(start_dx, NULL);
     real_cpu start_dy_value = strtod(start_dy, NULL);
@@ -212,16 +212,16 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
     while(cell) {
 
         if(cell->active) {
-            if (cell->center_x > max_x) {
-                max_x = cell->center_x;
+            if (cell->center.x > max_x) {
+                max_x = cell->center.x;
             }
 
-            if (cell->center_y > max_y) {
-                max_y = cell->center_y;
+            if (cell->center.y > max_y) {
+                max_y = cell->center.y;
             }
 
-            if (cell->center_z > max_z) {
-                max_z = cell->center_z;
+            if (cell->center.z > max_z) {
+                max_z = cell->center.z;
             }
         }
 

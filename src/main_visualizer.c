@@ -54,6 +54,7 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->grid_info.vtk_grid = NULL;
     draw_config->grid_info.file_name = NULL;
     draw_config->error_message = NULL;
+    draw_config->grid_info.loaded = false;
 
 }
 
@@ -176,6 +177,7 @@ static int read_and_render_files(const char* pvd_file, char *input_dir, char* pr
         omp_set_lock(&draw_config.draw_lock);
         free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
         draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_vtu_file(full_path);
+        draw_config.grid_info.loaded = true;
 
         if(!draw_config.grid_info.vtk_grid) {
             char tmp[4096];
