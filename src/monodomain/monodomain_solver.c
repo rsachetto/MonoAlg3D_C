@@ -52,7 +52,8 @@ struct monodomain_solver *new_monodomain_solver() {
 }
 
 int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                      struct grid *the_grid, struct user_options *configs) {
+                      struct grid *the_grid, struct user_options *configs) 
+{
 
     assert(configs);
 

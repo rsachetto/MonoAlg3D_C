@@ -7,8 +7,8 @@
 # Variables
 FILENAME="frames/frame"
 FRAME_RATE="50"
-END_FRAME="1000"
-OUTPUT_VIDEO_FILENAME="videos/cheat-purkinje-coupled"
+END_FRAME="501"
+OUTPUT_VIDEO_FILENAME="videos/pedro-source-sink-dm-cm-ddm-comparison"
 RESOLUTION="1030x730"
 
 # Execute the converting command using FFMPEG
