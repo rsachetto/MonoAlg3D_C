@@ -84,3 +84,4 @@ scripts/animations/frames
 scripts/animations/video
 batch_simulations/
 *.vscode*
+/src/main_graph_analyzer.c

@@ -2,22 +2,19 @@
 // Created by sachetto on 13/10/17.
 //
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
-#include "../libraries_common/config_helpers.h"
 #include "../string/sds.h"
+
 
 #ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"
 #endif
 
 SAVE_STATE(save_simulation_state) {
-
-
     //Here we save the domain state
     if(the_grid){
         sds tmp = sdsnew(output_dir);
@@ -32,9 +29,12 @@ SAVE_STATE(save_simulation_state) {
             return;
         }
 
-        fwrite(&(the_grid->side_length_x), sizeof(the_grid->side_length_x), 1, output_file);
-        fwrite(&(the_grid->side_length_y), sizeof(the_grid->side_length_y), 1, output_file);
-        fwrite(&(the_grid->side_length_z), sizeof(the_grid->side_length_z), 1, output_file);
+        fwrite(&(the_grid->cube_side_length.x), sizeof(the_grid->cube_side_length.x), 1, output_file);
+        fwrite(&(the_grid->cube_side_length.y), sizeof(the_grid->cube_side_length.y), 1, output_file);
+        fwrite(&(the_grid->cube_side_length.z), sizeof(the_grid->cube_side_length.z), 1, output_file);
+        fwrite(&(the_grid->mesh_side_length.x), sizeof(the_grid->mesh_side_length.x), 1, output_file);
+        fwrite(&(the_grid->mesh_side_length.y), sizeof(the_grid->mesh_side_length.y), 1, output_file);
+        fwrite(&(the_grid->mesh_side_length.z), sizeof(the_grid->mesh_side_length.z), 1, output_file);
         fwrite(&(the_grid->number_of_cells), sizeof(the_grid->number_of_cells), 1, output_file);
         fwrite(&(the_grid->num_active_cells), sizeof(the_grid->num_active_cells), 1, output_file);
 
@@ -42,9 +42,9 @@ SAVE_STATE(save_simulation_state) {
 
         while (grid_cell != 0) {
 
-            fwrite(&(grid_cell->center_x), sizeof(grid_cell->center_x), 1, output_file);
-            fwrite(&(grid_cell->center_y), sizeof(grid_cell->center_y), 1, output_file);
-            fwrite(&(grid_cell->center_z), sizeof(grid_cell->center_z), 1, output_file);
+            fwrite(&(grid_cell->center.x), sizeof(grid_cell->center.x), 1, output_file);
+            fwrite(&(grid_cell->center.y), sizeof(grid_cell->center.y), 1, output_file);
+            fwrite(&(grid_cell->center.z), sizeof(grid_cell->center.z), 1, output_file);
             fwrite(&(grid_cell->v), sizeof(grid_cell->v), 1, output_file);
             fwrite(&(grid_cell->north_flux), sizeof(grid_cell->north_flux), 1, output_file);
             fwrite(&(grid_cell->south_flux), sizeof(grid_cell->south_flux), 1, output_file);
@@ -102,8 +102,8 @@ SAVE_STATE(save_simulation_state) {
         fwrite(&(the_ode_solver->rel_tol), sizeof(the_ode_solver->rel_tol), 1, output_file);
         fwrite(&(the_ode_solver->abs_tol), sizeof(the_ode_solver->abs_tol), 1, output_file);
 
-        fwrite(&(the_ode_solver->previous_dt), sizeof(the_ode_solver->previous_dt), 1, output_file);
-        fwrite(&(the_ode_solver->time_new), sizeof(the_ode_solver->time_new), 1, output_file);
+//        fwrite(&(the_ode_solver->previous_dt), sizeof(the_ode_solver->previous_dt), 1, output_file);
+//        fwrite(&(the_ode_solver->time_new), sizeof(the_ode_solver->time_new), 1, output_file);
 
 
         size_t num_cells_to_solve = 0;
@@ -122,10 +122,14 @@ SAVE_STATE(save_simulation_state) {
         fwrite(&(the_ode_solver->gpu), sizeof(the_ode_solver->gpu), 1, output_file);
         fwrite(&(the_ode_solver->gpu_id), sizeof(the_ode_solver->gpu_id), 1, output_file);
 
-        fwrite(&(the_ode_solver->model_data), sizeof(the_ode_solver->model_data), 1, output_file);
-        fwrite(&(the_ode_solver->pitch), sizeof(the_ode_solver->pitch), 1, output_file);
+//        fwrite(&(the_ode_solver->model_data), sizeof(the_ode_solver->model_data), 1, output_file);
+//        unsigned long data_size = strlen(the_ode_solver->model_data.model_library_path);
+//        fwrite(&(data_size), sizeof(data_size), 1, output_file);
+//        fwrite(the_ode_solver->model_data.model_library_path, data_size, 1, output_file);
 
+        fwrite(&(the_ode_solver->pitch), sizeof(the_ode_solver->pitch), 1, output_file);
         fwrite(&(the_ode_solver->original_num_cells), sizeof(the_ode_solver->original_num_cells), 1, output_file);
+        
         if(the_ode_solver->gpu) {
 
         #ifdef COMPILE_CUDA

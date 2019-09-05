@@ -113,7 +113,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
 
     real svolt_acid = svolt;
 
-    if( (fibrosis == 0.0f) ) {
+    if( fibrosis == 0.0f ) {
         //These values are from In Electrophysiologic effects of acute myocardial ischemia: a theoretical
         //study of altered cell excitability and action potential duration
         svolt_acid = svolt - 3.4f;

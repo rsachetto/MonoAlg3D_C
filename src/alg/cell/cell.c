@@ -23,9 +23,9 @@ void init_cell_node(struct cell_node *cell_node) {
 
     init_basic_cell_data_with_type(&(cell_node->cell_data), CELL_NODE_TYPE);
 
-    cell_node->center_x = 0.0;
-    cell_node->center_y = 0.0;
-    cell_node->center_z = 0.0;
+    cell_node->center.x = 0.0;
+    cell_node->center.y = 0.0;
+    cell_node->center.z = 0.0;
 
     cell_node->active = true;
 
@@ -44,9 +44,9 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->grid_position = 0;
     cell_node->sv_position = 0;
     cell_node->hilbert_shape_number = 0;
-    cell_node->dx = 1.0;
-    cell_node->dy = 1.0;
-    cell_node->dz = 1.0;
+    cell_node->discretization.x = 1.0;
+    cell_node->discretization.y = 1.0;
+    cell_node->discretization.z = 1.0;
 
     cell_node->v = 0;
 
@@ -67,13 +67,13 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->linear_system_solver_extra_info = NULL;
     cell_node->mesh_extra_info = NULL;
 
-    cell_node->sigma_x = 0.0;
-    cell_node->sigma_y = 0.0;
-    cell_node->sigma_z = 0.0;
+    cell_node->sigma.x = 0.0;
+    cell_node->sigma.y = 0.0;
+    cell_node->sigma.z = 0.0;
 
-    cell_node->kappa_x = 0.0;
-    cell_node->kappa_y = 0.0;
-    cell_node->kappa_z = 0.0;
+    cell_node->kappa.x = 0.0;
+    cell_node->kappa.y = 0.0;
+    cell_node->kappa.z = 0.0;
 
     cell_node->max_dvdt = __DBL_MIN__;
     cell_node->activation_time = -1.0;
@@ -146,13 +146,13 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
     the_transition_node->quadruple_connector4 = quadruple_connector4;
 }
 
-void set_cell_node_data(struct cell_node *the_cell, real_cpu dx, real_cpu dy, real_cpu dz, uint64_t bunch_number,
-                        void *east, void *north, void *west, void *south, void *front, void *back, void *previous,
-                        void *next, uint32_t grid_position, uint8_t hilbert_shape_number, real_cpu center_x,
-                        real_cpu center_y, real_cpu center_z) {
-    the_cell->dx = dx;
-    the_cell->dy = dy;
-    the_cell->dz = dz;
+void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization,
+                        uint64_t bunch_number, void *east, void *north, void *west, void *south,
+                        void *front, void *back, void *previous, void *next,
+                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center,
+                        struct point_3d translated_center) {
+
+    the_cell->discretization = discretization;
     the_cell->bunch_number = bunch_number;
     the_cell->east = east;
     the_cell->north = north;
@@ -164,9 +164,8 @@ void set_cell_node_data(struct cell_node *the_cell, real_cpu dx, real_cpu dy, re
     the_cell->next = next;
     the_cell->grid_position = grid_position;
     the_cell->hilbert_shape_number = hilbert_shape_number;
-    the_cell->center_x = center_x;
-    the_cell->center_y = center_y;
-    the_cell->center_z = center_z;
+    the_cell->center = center;
+    the_cell->translated_center = translated_center;
 }
 
 void set_cell_flux(struct cell_node *the_cell, char direction) {
@@ -204,9 +203,9 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
         exit(10);
     }
 
-    real_cpu least_distance_x = the_cell->dx/2.0;
-    real_cpu least_distance_y = the_cell->dy/2.0;
-    real_cpu least_distance_z = the_cell->dz/2.0;
+    real_cpu least_distance_x = the_cell->discretization.x/2.0;
+    real_cpu least_distance_y = the_cell->discretization.y/2.0;
+    real_cpu least_distance_z = the_cell->discretization.z/2.0;
 
     real_cpu local_flux_x;
     real_cpu local_flux_y;
@@ -259,14 +258,14 @@ void set_cell_flux(struct cell_node *the_cell, char direction) {
 
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
-        if(black_neighbor_cell->dx/2.0 < least_distance_x)
-            least_distance_x = black_neighbor_cell->dx / 2.0;
+        if(black_neighbor_cell->discretization.x/2.0 < least_distance_x)
+            least_distance_x = black_neighbor_cell->discretization.x / 2.0;
 
-        if(black_neighbor_cell->dy/2.0 < least_distance_y)
-            least_distance_y = black_neighbor_cell->dy / 2.0;
+        if(black_neighbor_cell->discretization.y/2.0 < least_distance_y)
+            least_distance_y = black_neighbor_cell->discretization.y / 2.0;
 
-        if(black_neighbor_cell->dz/2.0 < least_distance_z)
-            least_distance_z = black_neighbor_cell->dz / 2.0;
+        if(black_neighbor_cell->discretization.z/2.0 < least_distance_z)
+            least_distance_z = black_neighbor_cell->discretization.z / 2.0;
 
         local_flux_x = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_x);
         local_flux_y = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_y);

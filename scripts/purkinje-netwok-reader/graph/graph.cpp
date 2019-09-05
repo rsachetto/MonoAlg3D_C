@@ -319,7 +319,7 @@ void write_configuration_file (struct terminal *the_terminals, const uint32_t nu
     fprintf(file,"[save_result]\n");
     fprintf(file,"print_rate = %u\n",PRINT_RATE);
     fprintf(file,"output_dir = %s\n",OUTPUT_DIR);
-    fprintf(file,"function = %s\n",SAVE_MESH_FUNCTION);
+    fprintf(file,"main_function = %s\n",SAVE_MESH_FUNCTION);
     if (SAVE_PVD)
         fprintf(file,"save_pvd = true\n");
     else
@@ -328,15 +328,16 @@ void write_configuration_file (struct terminal *the_terminals, const uint32_t nu
     fprintf(file,"\n");
 
     fprintf(file,"[update_monodomain]\n");
-    fprintf(file,"function = %s\n",UPDATE_MONODOMAIN_FUNCTION);
+    fprintf(file,"main_function = %s\n",UPDATE_MONODOMAIN_FUNCTION);
     fprintf(file,"\n");
 
     fprintf(file,"[assembly_matrix]\n");
+    fprintf(file,"init_function=set_initial_conditions_fvm\n");
     fprintf(file,"sigma_x = %g\n",SIGMA_X);
     fprintf(file,"sigma_y = %g\n",SIGMA_Y);
     fprintf(file,"sigma_z = %g\n",SIGMA_Z);
     fprintf(file,"library_file = %s\n",ASSEMBLY_MATRIX_LIBRARY);
-    fprintf(file,"function = %s\n",ASSEMBLY_MATRIX_FUNCTION);
+    fprintf(file,"main_function = %s\n",ASSEMBLY_MATRIX_FUNCTION);
     fprintf(file,"\n");
 
     fprintf(file,"[linear_system_solver]\n");
@@ -347,7 +348,7 @@ void write_configuration_file (struct terminal *the_terminals, const uint32_t nu
         fprintf(file,"use_preconditioner = false\n");
     fprintf(file,"max_iterations = %u\n",MAX_ITERATIONS);
     fprintf(file,"library_file = %s\n",LINEAR_SYSTEM_LIBRARY);
-    fprintf(file,"function = %s\n",LINEAR_SYSTEM_FUNCTION);
+    fprintf(file,"main_function = %s\n",LINEAR_SYSTEM_FUNCTION);
     fprintf(file,"\n");
 
     fprintf(file,"[alg]\n");
@@ -364,7 +365,7 @@ void write_configuration_file (struct terminal *the_terminals, const uint32_t nu
     fprintf(file,"start_dy = %g\n",START_DY);
     fprintf(file,"start_dz = %g\n",START_DZ);
     fprintf(file,"side_length = %g\n",SIDE_LENGTH);
-    fprintf(file,"function = %s\n",DOMAIN_FUNCTION);
+    fprintf(file,"main_function = %s\n",DOMAIN_FUNCTION);
     fprintf(file,"\n");
 
     fprintf(file,"[ode_solver]\n");
@@ -388,7 +389,7 @@ void write_configuration_file (struct terminal *the_terminals, const uint32_t nu
         fprintf(file,"center_y = %g\n",the_terminals[i].y);
         fprintf(file,"center_z = %g\n",the_terminals[i].z);
         fprintf(file,"radius = %g\n",PMJ_RADIUS);
-        fprintf(file,"function = %s\n",STIM_FUNCTION);
+        fprintf(file,"main_function = %s\n",STIM_FUNCTION);
         fprintf(file,"\n");
     }
 

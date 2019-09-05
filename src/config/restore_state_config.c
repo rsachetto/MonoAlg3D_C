@@ -14,56 +14,13 @@
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 
-void init_restore_state_functions(struct restore_state_config *config) {
+void print_restore_state_config_values(struct config* s) {
+    printf("Restore state library_file: %s\n", s->library_file_path);
+    printf("Restore state main function: %s\n", s->main_function_name);
 
-    char *function_name = config->config_data.function_name;
+    printf("Restore state init function: %s\n", s->init_function_name);
+    printf("Restore state end function: %s\n", s->end_function_name);
 
-	char *default_library = "./shared_libs/libdefault_restore_state.so";
-
-    if(config->config_data.library_file_path == NULL) {
-        config->config_data.library_file_path = strdup(default_library);
-        config->config_data.library_file_path_was_set = true;
-    }
-
-    config->config_data.handle = dlopen (config->config_data.library_file_path, RTLD_LAZY);
-    if (!config->config_data.handle) {
-        fputs (dlerror(), stderr);
-        fprintf(stderr, "\n");
-        exit(1);
-    }
-
-    if(function_name) {
-        config->restore_state = dlsym(config->config_data.handle, function_name);
-        if (dlerror() != NULL)  {
-            fprintf(stderr, "\n%s function not found in the provided restore state library\n", function_name);
-            exit(EXIT_FAILURE);
-        }
-    }
-    else {
-        fprintf(stderr, "No function name for restore state library provided. Exiting!\n");
-        exit(EXIT_FAILURE);
-    }
-
-}
-
-struct restore_state_config* new_restore_state_config() {
-    struct restore_state_config *result = (struct restore_state_config*) malloc(sizeof(struct restore_state_config));
-
-    init_config_common_data(&(result->config_data));
-    result->restore_state = NULL;
-    return result;
-}
-
-void print_restore_state_config_values(struct restore_state_config* s) {
-    printf("restore_state_function: %s\n",s->config_data.function_name);
-    printf("restore_stateh_library_file: %s\n",s->config_data.library_file_path);
-    printf("restore_state_config:\n");
-    //TODO: chan
-    STRING_HASH_PRINT_KEY_VALUE(s->config_data.config);
-}
-
-void free_restore_state_config(struct restore_state_config* s) {
-    free_config_common_data(&(s->config_data));
-    free(s);
-
+    printf("restore state_config:\n");
+    STRING_HASH_PRINT_KEY_VALUE(s->config_data);
 }

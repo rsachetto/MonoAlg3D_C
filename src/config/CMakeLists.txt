@@ -15,4 +15,5 @@ set(SOURCE_FILES_CONFIG
 
 ADD_LIBRARY(config STATIC ${SOURCE_FILES_CONFIG})
 
-TARGET_LINK_LIBRARIES(config string utils dl)
+TARGET_LINK_LIBRARIES(config config_helpers string utils dl)
+

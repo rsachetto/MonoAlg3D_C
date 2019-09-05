@@ -3,12 +3,11 @@
 //
 
 #include <float.h>
-#include <pthread.h>
 #include <time.h>
-
+#include <limits.h>
 
 #include "draw.h"
-#include "../common_types/common_types.h"
+#include "color_maps.h"
 #include "../single_file_libraries/stb_ds.h"
 #include "../raylib/src/raylib.h"
 #include "../raylib/src/camera.h"
@@ -26,41 +25,60 @@ static bool draw_selected_ap_text = false;
 static bool show_ap = true;
 static bool show_scale = true;
 static bool c_pressed = false;
+static bool draw_grid_lines = false;
+static bool draw_grid_only = false;
 
 static bool show_info_box = true;
 static bool show_end_info_box = true;
 static bool show_mesh_info_box = true;
 static bool show_selection_box = false;
+static bool show_save_box = false;
 
-Vector3 max_size;
-Vector3 min_size;
+static Vector3 max_size;
+static Vector3 min_size;
 
+#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
+#define WIDER_TEXT "------------------------------------------------------"
 #define DOUBLE_CLICK_DELAY 0.5 //seconds
-double mouse_timer = -1;
 
-double selected_time = 0.0;
-Vector3 current_selected = {FLT_MAX, FLT_MAX, FLT_MAX};
+static double mouse_timer = -1;
+
+static double selected_time = 0.0;
+static Vector3 current_selected = {FLT_MAX, FLT_MAX, FLT_MAX};
 
 char center_x_text[128] = { 0 };
 char center_y_text[128] = { 0 };
 char center_z_text[128] = { 0 };
+char save_path[PATH_MAX] = {0};
 
-float center_x;
-float center_y;
-float center_z;
+static float center_x;
+static float center_y;
+static float center_z;
 
+static Vector2 mouse_pos = {0 };
+static Vector2 selected_ap_point = { FLT_MAX, FLT_MAX };
+static Vector2 selected_point_for_apd1 = { FLT_MAX, FLT_MAX };
+static Vector2 selected_point_for_apd2 = { FLT_MAX, FLT_MAX };
+static Vector2 window_pos;
+static bool drag_window = false;
 
-// General variables
-Vector2 mousePos = { 0 };
-Vector2 windowPos;
-bool dragWindow = false;
+//AP VARIABLES
+static int graph_height;
+static int graph_pos_x;
+static int graph_pos_y;
+static int graph_width;
 
-#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))  // Get number of elements in array `A`. Total size of `A` should be known at compile time.
+static float max_x;
+static float min_x;
+static float min_y;
+static float max_y;
 
-
-#define WIDER_TEXT "------------------------------------------------------"
+static int current_scale = 0;
 
 struct point_voidp_hash_entry *selected_aps;
+
+static Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
+static int num_colors = SIZEOF(colors);
 
 static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
@@ -68,6 +86,7 @@ static inline float normalize(float r_min, float r_max, float t_min, float t_max
 
 static inline Color get_color(real_cpu value)
 {
+
     int idx1;        // |-- Our desired color will be between these two indexes in "color".
     int idx2;        // |
     real_cpu fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
@@ -82,9 +101,13 @@ static inline Color get_color(real_cpu value)
         fractBetween = value - (real_cpu)idx1;    // Distance between the two indexes (0-1).
     }
 
-    unsigned char red   = (unsigned char) (((color[idx2][0] - color[idx1][0])*fractBetween + color[idx1][0]) * 255);
-    unsigned char green = (unsigned char) (((color[idx2][1] - color[idx1][1])*fractBetween + color[idx1][1]) * 255);
-    unsigned char blue  = (unsigned char) (((color[idx2][2] - color[idx1][2])*fractBetween + color[idx1][2]) * 255);
+    unsigned char red;
+    unsigned char green;
+    unsigned char blue;
+
+    red  = (unsigned char) (((color_scales[current_scale][idx2][0] - color_scales[current_scale][idx1][0])*fractBetween + color_scales[current_scale][idx1][0]) * 255);
+    green = (unsigned char) (((color_scales[current_scale][idx2][1] - color_scales[current_scale][idx1][1])*fractBetween + color_scales[current_scale][idx1][1]) * 255);
+    blue  = (unsigned char) (((color_scales[current_scale][idx2][2] - color_scales[current_scale][idx1][2])*fractBetween + color_scales[current_scale][idx1][2]) * 255);
 
     Color result;
     result.r = red;
@@ -95,7 +118,7 @@ static inline Color get_color(real_cpu value)
     return result;
 }
 
-static bool skip_node(struct cell_node *grid_cell) {
+static inline bool skip_node(struct cell_node *grid_cell) {
 
     if(!cell_has_neighbour(grid_cell, grid_cell->north) ) {
         return false;
@@ -128,85 +151,85 @@ static Vector3 find_mesh_center() {
     struct cell_node **ac = grid_to_draw->active_cells;
     struct cell_node *grid_cell;
 
-    float max_x, max_y, max_z;
-    float min_x, min_y, min_z;
+    float mesh_max_x, mesh_max_y, mesh_max_z;
+    float mesh_min_x, mesh_min_y, mesh_min_z;
 
-    max_x = FLT_MIN;
-    max_y = FLT_MIN;
-    max_z = FLT_MIN;
+    mesh_max_x = FLT_MIN;
+    mesh_max_y = FLT_MIN;
+    mesh_max_z = FLT_MIN;
 
-    min_x = FLT_MAX;
-    min_y = FLT_MAX;
-    min_z = FLT_MAX;
+    mesh_min_x = FLT_MAX;
+    mesh_min_y = FLT_MAX;
+    mesh_min_z = FLT_MAX;
 
-    float max_dx, max_dy, max_dz;
-    float min_dx, min_dy, min_dz;
+    float mesh_max_dx, mesh_max_dy, mesh_max_dz;
+    float mesh_min_dx, mesh_min_dy, mesh_min_dz;
 
-    max_dx = FLT_MIN;
-    max_dy = FLT_MIN;
-    max_dz = FLT_MIN;
+    mesh_max_dx = FLT_MIN;
+    mesh_max_dy = FLT_MIN;
+    mesh_max_dz = FLT_MIN;
 
-    min_dx = FLT_MAX;
-    min_dy = FLT_MAX;
-    min_dz = FLT_MAX;
+    mesh_min_dx = FLT_MAX;
+    mesh_min_dy = FLT_MAX;
+    mesh_min_dz = FLT_MAX;
 
-    Vector3 result = (Vector3){0.0, 0.0, 0.0};
+    Vector3 result = (Vector3){0.0f, 0.0f, 0.0f};
 
     if (ac) {
-        for (int i = 0; i < n_active; i++) {
+        for (uint32_t i = 0; i < n_active; i++) {
             grid_cell = ac[i];
-            if(grid_cell->center_x > max_x) {
-                max_x = grid_cell->center_x;
-                max_dx = grid_cell->dx;
+            if(grid_cell->translated_center.x > mesh_max_x) {
+                mesh_max_x = grid_cell->translated_center.x;
+                mesh_max_dx = grid_cell->discretization.x;
             }
-            else if(grid_cell->center_x < min_x) {
-                min_x = grid_cell->center_x;
-                min_dx = grid_cell->dx;
-            }
-
-            if(grid_cell->center_y > max_y) {
-                max_y = grid_cell->center_y;
-                max_dy = grid_cell->dy;
-            }
-            else if(grid_cell->center_y < min_y) {
-                min_y = grid_cell->center_y;
-                min_dy = grid_cell->dy;
+            else if(grid_cell->translated_center.x < mesh_min_x) {
+                mesh_min_x = grid_cell->translated_center.x;
+                mesh_min_dx = grid_cell->discretization.x;
             }
 
-            if(grid_cell->center_z > max_z) {
-                max_z = grid_cell->center_z;
-                max_dz = grid_cell->dz;
+            if(grid_cell->translated_center.y > mesh_max_y) {
+                mesh_max_y = grid_cell->translated_center.y;
+                mesh_max_dy = grid_cell->discretization.y;
             }
-            else if(grid_cell->center_z < min_z) {
-                min_z = grid_cell->center_z;
-                min_dz = grid_cell->dz;
+            else if(grid_cell->translated_center.y < mesh_min_y) {
+                mesh_min_y = grid_cell->translated_center.y;
+                mesh_min_dy = grid_cell->discretization.y;
+            }
+
+            if(grid_cell->translated_center.z > mesh_max_z) {
+                mesh_max_z = grid_cell->translated_center.z;
+                mesh_max_dz = grid_cell->discretization.z;
+            }
+            else if(grid_cell->translated_center.z < mesh_min_z) {
+                mesh_min_z = grid_cell->translated_center.z;
+                mesh_min_dz = grid_cell->discretization.z;
             }
 
         }
     }
 
-    result.x = max_x;
-    if(max_x != min_x)
-        result.x = (max_x-min_x)/2.0f;
+    result.x = mesh_max_x;
+    if(mesh_max_x != mesh_min_x)
+        result.x = (mesh_max_x-mesh_min_x)/2.0f;
 
 
-    result.y = max_y;
-    if(max_y != min_y)
-        result.y = (max_y-min_y)/2.0f;
+    result.y = mesh_max_y;
+    if(mesh_max_y != mesh_min_y)
+        result.y = (mesh_max_y-mesh_min_y)/2.0f;
 
-    result.z = max_z;
-    if(max_z != min_z)
-        result.z = (max_z-min_z)/2.0f;
+    result.z = mesh_max_z;
+    if(mesh_max_z != mesh_min_z)
+        result.z = (mesh_max_z-mesh_min_z)/2.0f;
 
     calc_center = true;
 
-    max_size.x = max_x + max_dx/2.0;
-    max_size.y = max_y + max_dy/2.0;
-    max_size.z = max_z + max_dz/2.0;
+    max_size.x = mesh_max_x + mesh_max_dx/2.0f;
+    max_size.y = mesh_max_y + mesh_max_dy/2.0f;
+    max_size.z = mesh_max_z + mesh_max_dz/2.0f;
 
-    min_size.x = min_x - min_dx/2.0;
-    min_size.y = min_y - min_dy/2.0;
-    min_size.z = min_z - min_dz/2.0;
+    min_size.x = mesh_min_x - mesh_min_dx/2.0f;
+    min_size.y = mesh_min_y - mesh_min_dy/2.0f;
+    min_size.z = mesh_min_z - mesh_min_dz/2.0f;
 
     return result;
 
@@ -218,24 +241,24 @@ static Vector3 find_mesh_center_vtk() {
 
     uint32_t n_active = grid_to_draw->num_cells;
 
-    float max_x, max_y, max_z;
-    float min_x, min_y, min_z;
+    float mesh_max_x, mesh_max_y, mesh_max_z;
+    float mesh_min_x, mesh_min_y, mesh_min_z;
 
-    max_x = FLT_MIN;
-    max_y = FLT_MIN;
-    max_z = FLT_MIN;
+    mesh_max_x = FLT_MIN;
+    mesh_max_y = FLT_MIN;
+    mesh_max_z = FLT_MIN;
 
-    min_x = FLT_MAX;
-    min_y = FLT_MAX;
-    min_z = FLT_MAX;
+    mesh_min_x = FLT_MAX;
+    mesh_min_y = FLT_MAX;
+    mesh_min_z = FLT_MAX;
 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
 
-    Vector3 result = (Vector3){0.0, 0.0, 0.0};
+    Vector3 result = (Vector3){0.0f, 0.0f, 0.0f};
     float dx, dy, dz;
-    float center_x, center_y, center_z;
-    int num_points =grid_to_draw->points_per_cell;
+    float mesh_center_x, mesh_center_y, mesh_center_z;
+    uint32_t num_points =grid_to_draw->points_per_cell;
 
     float max_dx, max_dy, max_dz;
     float min_dx, min_dy, min_dz;
@@ -248,75 +271,72 @@ static Vector3 find_mesh_center_vtk() {
     min_dy = FLT_MAX;
     min_dz = FLT_MAX;
 
-    for (int i = 0; i < n_active*num_points; i+=num_points) {
+    for (uint32_t i = 0; i < n_active*num_points; i+=num_points) {
 
         dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
         dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
         dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
 
 
-        center_x = points[cells[i]].x + dx/2.0f;
-        center_y = points[cells[i]].y + dy/2.0f;
-        center_z = points[cells[i]].z + dz/2.0f;
+        mesh_center_x = points[cells[i]].x + dx/2.0f;
+        mesh_center_y = points[cells[i]].y + dy/2.0f;
+        mesh_center_z = points[cells[i]].z + dz/2.0f;
 
-        if(center_x > max_x) {
-            max_x = center_x;
+        if(mesh_center_x > mesh_max_x) {
+            mesh_max_x = mesh_center_x;
             max_dx = dx;
         }
-        else if(center_x < min_x) {
-            min_x = center_x;
+        else if(mesh_center_x < mesh_min_x) {
+            mesh_min_x = mesh_center_x;
             min_dx = dx;
         }
 
-        if(center_y > max_y) {
-            max_y = center_y;
+        if(mesh_center_y > mesh_max_y) {
+            mesh_max_y = mesh_center_y;
             max_dy = dy;
         }
-        else if(center_y < min_y) {
-            min_y = center_y;
+        else if(mesh_center_y < mesh_min_y) {
+            mesh_min_y = mesh_center_y;
             min_dy = dy;
         }
 
-        if(center_z > max_z) {
-            max_z = center_z;
+        if(mesh_center_z > mesh_max_z) {
+            mesh_max_z = mesh_center_z;
             max_dz = dz;
         }
-        else if(center_z < min_z) {
-            min_z = center_z;
+        else if(mesh_center_z < mesh_min_z) {
+            mesh_min_z = mesh_center_z;
             min_dz = dz;
         }
 
     }
 
-    result.x = max_x;
-    if(max_x != min_x)
-        result.x = (max_x-min_x)/2.0f;
+    result.x = mesh_max_x;
+    if(mesh_max_x != mesh_min_x)
+        result.x = (mesh_max_x-mesh_min_x)/2.0f;
 
 
-    result.y = max_y;
-    if(max_y != min_y)
-        result.y = (max_y-min_y)/2.0f;
+    result.y = mesh_max_y;
+    if(mesh_max_y != mesh_min_y)
+        result.y = (mesh_max_y-mesh_min_y)/2.0f;
 
-    result.z = max_z;
-    if(max_z != min_z)
-        result.z = (max_z-min_z)/2.0f;
+    result.z = mesh_max_z;
+    if(mesh_max_z != mesh_min_z)
+        result.z = (mesh_max_z-mesh_min_z)/2.0f;
 
     calc_center = true;
 
-    max_size.x = max_x + max_dx/2.0;
-    max_size.y = max_y + max_dy/2.0;
-    max_size.z = max_z + max_dz/2.0;
+    max_size.x = mesh_max_x + max_dx/2.0f;
+    max_size.y = mesh_max_y + max_dy/2.0f;
+    max_size.z = mesh_max_z + max_dz/2.0f;
 
-    min_size.x = min_x - min_dx/2.0;
-    min_size.y = min_y - min_dy/2.0;
-    min_size.z = min_z - min_dz/2.0;
+    min_size.x = mesh_min_x - min_dx/2.0f;
+    min_size.y = mesh_min_y - min_dy/2.0f;
+    min_size.z = mesh_min_z - min_dz/2.0f;
 
     return result;
 
 }
-
-Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
-int num_colors = 18;
 
 static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, Vector3 cube_size, real_cpu v, Ray ray) {
 
@@ -330,8 +350,6 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
     real_cpu max_v = draw_config.max_v;
     real_cpu min_v = draw_config.min_v;
 
-    bool grid_only = draw_config.grid_only;
-    bool grid_lines = draw_config.grid_lines;
     Color color;
 
     action_potential_array aps = (struct action_potential*) hmget(selected_aps, p);
@@ -339,9 +357,10 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
     struct action_potential ap1;
     ap1.t = draw_config.time;
     ap1.v = v;
+    size_t aps_len = arrlen(aps);
 
     if(aps != NULL) {
-        if(ap1.t > aps[arrlen(aps)-1].t ) {
+        if(ap1.t > aps[aps_len-1].t ) {
             arrput(aps, ap1);
             hmput(selected_aps, p, aps);
         }
@@ -359,14 +378,14 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
 
     color = get_color((v - min_v)/(max_v - min_v));
 
-    if(grid_only) {
+    if(draw_grid_only) {
         DrawCubeWiresV(cube_position_draw, cube_size, color);
     }
     else {
 
         DrawCubeV(cube_position_draw, cube_size, color);
 
-        if(grid_lines) {
+        if(draw_grid_lines) {
             DrawCubeWiresV(cube_position_draw, cube_size, BLACK);
         }
 
@@ -375,11 +394,11 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
 
             if(aps == NULL) {
                 arrsetcap(aps, 50);
-                struct action_potential ap1;
-                ap1.t = draw_config.time;
-                ap1.v = v;
+                struct action_potential ap;
+                ap.t = draw_config.time;
+                ap.v = v;
 
-                arrput(aps, ap1);
+                arrput(aps, ap);
                 hmput(selected_aps, p, aps);
                 selected_time = GetTime();
             }
@@ -391,44 +410,45 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, Ray 
 
     struct vtk_unstructured_grid *grid_to_draw = draw_config.grid_info.vtk_grid;
 
+
     Vector3 cube_position;
     Vector3 cube_size;
 
-    float dx, dy, dz;
 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
-
-    float center_x, center_y, center_z;
-    real_cpu v;
 
     uint32_t n_active = grid_to_draw->num_cells;
 
     int num_points = grid_to_draw->points_per_cell;
     int j = num_points;
 
-    for (int i = 0; i < n_active*num_points; i+=num_points) {
+    for (uint32_t i = 0; i < n_active*num_points; i+=num_points) {
+
+        float mesh_center_x, mesh_center_y, mesh_center_z;
+        real_cpu v;
+        float dx, dy, dz;
 
         dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
         dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
         dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
 
-        center_x = points[cells[i]].x + dx/2.0f;
-        center_y = points[cells[i]].y + dy/2.0f;
-        center_z = points[cells[i]].z + dz/2.0f;
+        mesh_center_x = points[cells[i]].x + dx/2.0f;
+        mesh_center_y = points[cells[i]].y + dy/2.0f;
+        mesh_center_z = points[cells[i]].z + dz/2.0f;
 
         v = grid_to_draw->values[j-num_points];
         j += 1;
 
-        cube_position.x = (float)((center_x - mesh_offset.x)/scale);
-        cube_position.y = (float)((center_y - mesh_offset.y)/scale);
-        cube_position.z = (float)((center_z - mesh_offset.z)/scale);
+        cube_position.x = (float)((mesh_center_x - mesh_offset.x)/scale);
+        cube_position.y = (float)((mesh_center_y - mesh_offset.y)/scale);
+        cube_position.z = (float)((mesh_center_z - mesh_offset.z)/scale);
 
         cube_size.x = (float)(dx/scale);
         cube_size.y = (float)(dy/scale);
         cube_size.z = (float)(dz/scale);
 
-        draw_voxel(cube_position, (Vector3){center_x, center_y, center_z}, cube_size, v, ray);
+        draw_voxel(cube_position, (Vector3){mesh_center_x, mesh_center_y, mesh_center_z}, cube_size, v, ray);
 
     }
     one_selected = false;
@@ -438,17 +458,18 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
 
     struct grid *grid_to_draw = draw_config.grid_info.grid_to_draw;
 
-    Vector3 cubePosition;
-    Vector3 cubeSize;
+    Vector3 cube_position;
+    Vector3 cube_size;
 
     if (grid_to_draw) {
 
         uint32_t n_active = grid_to_draw->num_active_cells;
         struct cell_node **ac = grid_to_draw->active_cells;
-        struct cell_node *grid_cell;
 
         if (ac) {
-            for (int i = 0; i < n_active; i++) {
+            for (uint32_t i = 0; i < n_active; i++) {
+
+                struct cell_node *grid_cell;
 
                 grid_cell = ac[i];
 
@@ -456,16 +477,15 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, Ray ray) {
                     continue;
                 }
 
+                cube_position.x = (float)((grid_cell->translated_center.x - mesh_offset.x)/scale);
+                cube_position.y = (float)((grid_cell->translated_center.y - mesh_offset.y)/scale);
+                cube_position.z = (float)((grid_cell->translated_center.z - mesh_offset.z)/scale);
 
-                cubePosition.x = (float)((grid_cell->center_x - mesh_offset.x)/scale);
-                cubePosition.y = (float)((grid_cell->center_y - mesh_offset.y)/scale);
-                cubePosition.z = (float)((grid_cell->center_z - mesh_offset.z)/scale);
+                cube_size.x = (float)(grid_cell->discretization.x/scale);
+                cube_size.y = (float)(grid_cell->discretization.y/scale);
+                cube_size.z = (float)(grid_cell->discretization.z/scale);
 
-                cubeSize.x = (float)(grid_cell->dx/scale);
-                cubeSize.y = (float)(grid_cell->dy/scale);
-                cubeSize.z = (float)(grid_cell->dz/scale);
-
-                draw_voxel(cubePosition, (Vector3){grid_cell->center_x, grid_cell->center_y, grid_cell->center_z}, cubeSize, ac[i]->v, ray);
+                draw_voxel(cube_position, (Vector3){grid_cell->translated_center.x, grid_cell->translated_center.y, grid_cell->translated_center.z}, cube_size, ac[i]->v, ray);
 
             }
         }
@@ -481,36 +501,35 @@ double clamp(double x, double min, double max) {
     return x;
 }
 
-void draw_ap(Font font, int font_size_small, int font_size_big) {
+void draw_ap(Font font, float font_size_small, float font_size_big) {
 
-    int graph_height = GetScreenHeight()/3;
+    graph_height = GetScreenHeight()/3;
 
-    int graph_pos_x = 1;
-    int graph_pos_y = GetScreenHeight() - graph_height;
+    graph_pos_x = 1;
+    graph_pos_y = GetScreenHeight() - graph_height;
 
-    int graph_width = GetScreenWidth();
+    graph_width = GetScreenWidth();
 
-    float spacing_big = font_size_big/(float)font.baseSize;
-    float spacing_small = font_size_small/(float)font.baseSize;
+    float spacing_big = (float)font_size_big/(float)font.baseSize;
+    float spacing_small = (float)font_size_small/(float)font.baseSize;
 
     DrawRectangle(graph_pos_x, graph_pos_y, graph_width, graph_height, WHITE);
 
-    char tmp[256];
+    char tmp[1024];
     sprintf(tmp, "%.2lf", draw_config.final_time);
 
-    Vector2 width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
+    Vector2 width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_small);
 
-    float min_x = graph_pos_x + 2.0f*width.x;
-    float max_x = graph_pos_x + graph_width - width.x;
+    min_x = (float)graph_pos_x + 2.0f*width.x;
+    max_x = (float)graph_pos_x + (float)graph_width - width.x;
 
-    float min_y = graph_pos_y + graph_height - 30.0f;
-    float max_y = graph_pos_y + 20.0f; //This is actually the smallest allowed y
+    min_y = (float) graph_pos_y + (float)graph_height - 30.0f;
+    max_y = (float) graph_pos_y + 20.0f; //This is actually the smallest allowed y
 
     int n = hmlen(selected_aps);
 
-    char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f )";
-
     if(draw_selected_ap_text) {
+        char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f )";
         double time_elapsed = GetTime() - selected_time;
         unsigned char alpha = (unsigned char) clamp(255 - time_elapsed*25, 0, 255);
         Color c = colors[(n-1) % num_colors];
@@ -518,9 +537,9 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
         sprintf(tmp, ap_text, n, current_selected.x, current_selected.y, current_selected.z);
 
-        width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
+        width = MeasureTextEx(font, ap_text, (float)font_size_big, spacing_big);
 
-        DrawTextEx(font, tmp, (Vector2){graph_pos_x + graph_width/2.0f - width.x/2.0f - min_x, max_y}, font_size_big, 1, c);
+        DrawTextEx(font, tmp, (Vector2){(float)graph_pos_x + (float)graph_width/2.0f - width.x/2.0f - min_x, max_y}, font_size_big, 1, c);
 
         if(alpha == 0) {
             draw_selected_ap_text = false;
@@ -538,12 +557,9 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
     }
     width = MeasureTextEx(font, time_text, font_size_big, spacing_big);
 
-    DrawTextEx(font, time_text, (Vector2){min_x + graph_width/2.0f - width.x/2.0f, (float)min_y + 50.0f}, font_size_big, spacing_big, BLACK);
+    DrawTextEx(font, time_text, (Vector2){min_x + (float)graph_width/2.0f - width.x/2.0f, (float)min_y + 50.0f}, font_size_big, spacing_big, BLACK);
 
     Vector2 p1, p2;
-
-
-    real_cpu time = 0.0;
 
     uint num_ticks;
     real_cpu tick_ofsset = 10;
@@ -561,33 +577,28 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
     real_cpu v = draw_config.min_v;
     sprintf(tmp, "%.2lf", v);
-    Vector2 max_w = MeasureTextEx(font, tmp, font_size_small, spacing_small);
+    Vector2 max_w = MeasureTextEx(font, tmp, (float)font_size_small, spacing_small);
 
-    float graph_min_y = min_y;
+    //Draw vertical ticks (Vm)
+    for(uint t = 0; t <= num_ticks; t++ ) {
 
-    //Draw vertical ticks
-    for(int t = 0; t <= num_ticks; t++ ) {
-
-        p1.x = graph_pos_x + 5.0f;
+        p1.x = (float)graph_pos_x + 5.0f;
         p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, v);
 
-        if(t == 0) {
-            graph_min_y = p1.y;
-        }
+        sprintf(tmp, "%.2lf",  normalize(min_y, max_y, draw_config.min_v, draw_config.max_v, p1.y));
+        width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_small);
 
-        sprintf(tmp, "%.2lf", v);
-        width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
+        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - width.x), p1.y - width.y/2.0f}, (float)font_size_small, spacing_small, RED);
 
-        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - width.x), p1.y - width.y/2.0f}, font_size_small, spacing_small, RED);
-
-        p1.x = p1.x + max_w.x + 5.0f;
+        p1.x = min_x - 5.0f;
         p2.x = p1.x + 10.0f;
         p2.y = p1.y;
 
+        //Grid line
         DrawLineV(p1, (Vector2){max_x, p1.y}, LIGHTGRAY);
 
+        //Tick line
         DrawLineV(p1, p2, RED);
-
 
         v += tick_ofsset;
     }
@@ -604,54 +615,48 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
         tick_ofsset = draw_config.final_time/num_ticks;
     }
 
+    real_cpu time = 0.0;
 
-    float graph_min_x = ((graph_pos_x + 5.0f + max_w.x + 5.0f) + (graph_pos_x + 5.0f + max_w.x + 5.0f + 10.0))/2.0;
+    //Draw horizontal ticks (t)
+    for(uint t = 0; t <= num_ticks; t++) {
 
-    //Draw horizontal ticks
-    for(int t = 0; t <= num_ticks; t++) {
-
-        if(t == 0) {
-            p1.x =  graph_min_x;
-        }
-        else {
-            p1.x = normalize(0.0, draw_config.final_time, min_x, max_x, time) - 20;
-
-        }
-        p1.y = graph_min_y - 5;
+        p1.x = normalize(0.0f, draw_config.final_time, min_x, max_x, time);
+        p1.y = min_y - 5;
 
         p2.x = p1.x;
-        p2.y = graph_min_y + 5;
+        p2.y = min_y + 5;
 
         if(!(t%2)) {
-            sprintf(tmp, "%.2lf", time);
-            width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
-            DrawTextEx(font, tmp, (Vector2){p1.x - width.x/2.0f, p1.y + 10}, font_size_small, spacing_small, RED);
+            sprintf(tmp, "%.2lf", normalize(min_x, max_x, 0.0f, draw_config.final_time, p1.x));
+            width = MeasureTextEx(font, tmp, (float) font_size_small, spacing_small);
+            DrawTextEx(font, tmp, (Vector2){p1.x - width.x/2.0f, p1.y + 10}, (float) font_size_small, spacing_small, RED);
         }
 
         DrawLineV(p1, p2, RED);
 
         DrawLineV(p1, (Vector2){p1.x, max_y}, LIGHTGRAY);
-
-
         time+= tick_ofsset;
     }
 
     //Draw vertical line
-    p1.x = ((graph_pos_x + 5.0f + max_w.x + 5.0f) + (graph_pos_x + 5.0f + max_w.x + 5.0f + 10.0))/2.0 ;
-    p1.y = min_y + 5;
+    {
+        p1.x = min_x;
+        p1.y = min_y + 5;
 
-    p2.x = p1.x;
-    p2.y  = max_y;
-    DrawLineV(p1, p2, RED);
+        p2.x = p1.x;
+        p2.y = max_y;
+        DrawLineV(p1, p2, RED);
+    }
 
     //Draw horizontal line
-    p1.x = min_x - 20;
-    p1.y = graph_min_y;
+    {
+        p1.x = min_x;
+        p1.y = min_y;
 
-    p2.x = max_x;
-    p2.y = p1.y;
-    DrawLineV(p1, p2, RED);
-
+        p2.x = max_x;
+        p2.y = p1.y;
+        DrawLineV(p1, p2, RED);
+    }
 
     struct action_potential *aps;
 
@@ -667,10 +672,10 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
                 if(aps[i].t <= draw_config.time) {
                     if (i + 1 < c) {
 
-                        p1.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i].t);
+                        p1.x = normalize(0.0f, draw_config.final_time, min_x, max_x, aps[i].t);
                         p1.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i].v);
 
-                        p2.x = normalize(0.0, draw_config.final_time, graph_min_x, max_x, aps[i + 1].t);
+                        p2.x = normalize(0.0f, draw_config.final_time, min_x, max_x, aps[i + 1].t);
                         p2.y = normalize(draw_config.min_v, draw_config.max_v, min_y, max_y, aps[i + 1].v);
 
                         //TODO: create an option for this???
@@ -683,22 +688,45 @@ void draw_ap(Font font, int font_size_small, int font_size_big) {
 
             }
         }
+    }
 
+    if(selected_ap_point.x != FLT_MAX && selected_ap_point.y != FLT_MAX) {
+        char *tmp_point = "%lf, %lf";
+        sprintf(tmp, tmp_point, selected_ap_point.x, selected_ap_point.y);
+        width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_big);
+        DrawTextEx(font, tmp, (Vector2){mouse_pos.x-width.x/2, mouse_pos.y-width.y}, (float)font_size_small, 1, BLACK);
+    }
+
+    if(selected_point_for_apd1.x != FLT_MAX && selected_point_for_apd1.y != FLT_MAX) {
+        DrawCircleV(selected_point_for_apd1, 4, RED);
+    }
+
+    if(selected_point_for_apd2.x != FLT_MAX && selected_point_for_apd2.y != FLT_MAX) {
+        DrawCircleV(selected_point_for_apd2, 4, RED);
+        DrawLineV(selected_point_for_apd1, selected_point_for_apd2, RED);
+
+        float t1 = normalize(min_x, max_x, 0.0f, draw_config.final_time, selected_point_for_apd1.x);
+        float t2 = normalize(min_x, max_x, 0.0f, draw_config.final_time, selected_point_for_apd2.x);
+
+        char *tmp_point = "dt = %lf";
+        sprintf(tmp, tmp_point, fabsf(t2-t1));
+        width = MeasureTextEx(font, tmp, (float)font_size_small, spacing_big);
+        DrawTextEx(font, tmp, (Vector2){selected_point_for_apd1.x+width.x/2.0, selected_point_for_apd1.y-width.y}, (float)font_size_small, 1, BLACK);
     }
 }
 
-static void draw_scale(Font font, int font_size_small) {
+static void draw_scale(Font font, float font_size_small) {
 
-    float initial_y =  GetScreenHeight()/2.0;
+    float initial_y =  (float)GetScreenHeight()/2.0f;
 
-    float spacing_small = font_size_small/(float)font.baseSize;
+    float spacing_small = (float)font_size_small/(float)font.baseSize;
 
     int num_ticks;
     real_cpu tick_ofsset = 12;
     num_ticks = (int) ((draw_config.max_v - draw_config.min_v)/tick_ofsset);
 
-    if(num_ticks < 4) {
-        num_ticks = 4;
+    if(num_ticks < 5) {
+        num_ticks = 5;
         tick_ofsset = (draw_config.max_v - draw_config.min_v)/num_ticks;
     }
 
@@ -709,9 +737,9 @@ static void draw_scale(Font font, int font_size_small) {
     Vector2 max_w = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
     Vector2 p1, p2, width;
-    float scale_pos_x = GetScreenWidth()-30.0;
+    float scale_pos_x = (float)GetScreenWidth()-30.0f;
 
-    float scale_rec_size = 30.0;
+    float scale_rec_size = 30.0f;
     Color color;
 
     real_cpu  min_v = draw_config.min_v;
@@ -720,7 +748,7 @@ static void draw_scale(Font font, int font_size_small) {
     for(int t = 0; t <= num_ticks; t++ ) {
 
         p1.x = scale_pos_x - 55.0f;
-        p1.y = initial_y + scale_rec_size/2.0;
+        p1.y = initial_y + scale_rec_size/2.0f;
 
         sprintf(tmp, "%.2lf", v);
         width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
@@ -765,28 +793,28 @@ static inline void configure_end_info_box_strings (char ***info_string) {
 
     int index = 0;
 
-    sprintf(tmp, "Resolution Time: %lf s", draw_config.solver_time/1000.0/1000.0);
+    sprintf(tmp, "Resolution Time: %ld s", draw_config.solver_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "ODE Total Time: %lf s", draw_config.ode_total_time/1000.0/1000.0);
+    sprintf(tmp, "ODE Total Time: %ld s", draw_config.ode_total_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "CG Total Time: %lf s", draw_config.cg_total_time/1000.0/1000.0);
+    sprintf(tmp, "CG Total Time: %ld s", draw_config.cg_total_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "Mat time: %lf s", draw_config.total_mat_time/1000.0/1000.0);
+    sprintf(tmp, "Mat time: %ld s", draw_config.total_mat_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "Refine time: %lf s", draw_config.total_ref_time/1000.0/1000.0);
+    sprintf(tmp, "Refine time: %ld s", draw_config.total_ref_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "Derefine time: %lf s", draw_config.total_deref_time/1000.0/1000.0);
+    sprintf(tmp, "Derefine time: %ld s", draw_config.total_deref_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "Write time: %lf s", draw_config.total_write_time/1000.0/1000.0);
+    sprintf(tmp, "Write time: %ld s", draw_config.total_write_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "Initial configuration time: %lf s", draw_config.total_config_time/1000.0/1000.0);
+    sprintf(tmp, "Initial configuration time: %ld s", draw_config.total_config_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
     sprintf(tmp, "CG Total Iterations: %ld", draw_config.total_cg_it);
@@ -804,7 +832,6 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
     int index = 0;
 
     uint32_t n_active = 0;
-//    float sx, sy, sz;
 
     if(draw_type == DRAW_SIMULATION) {
         n_active = draw_config.grid_info.grid_to_draw->num_active_cells;
@@ -815,7 +842,7 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
 
     (*(info_string))[index++] = strdup("Mesh information:");
 
-    sprintf(tmp, " - Num. of Volumes: %d", n_active);
+    sprintf(tmp, " - Num. of Volumes: %u", n_active);
     (*(info_string))[index++]  = strdup(tmp);
 
     sprintf(tmp, " - Max X: %f", max_size.x);
@@ -846,7 +873,6 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
         } else {
             sprintf(tmp, "Simulation finished: %lf of %lf ms", draw_config.time, draw_config.final_time);
         }
-
     }
     else {
         if (draw_config.paused) {
@@ -891,8 +917,8 @@ static bool draw_selection_box(Font font, float font_size) {
 
     const int x_off = 10;
 
-    int pos_x = (int) windowPos.x;
-    int pos_y = (int) windowPos.y;
+    int pos_x = (int) window_pos.x;
+    int pos_y = (int) window_pos.y;
 
     int box_pos = pos_x + x_off;
 
@@ -924,44 +950,119 @@ static bool draw_selection_box(Font font, float font_size) {
     return clicked | btn_clicked;
 }
 
+static bool draw_save_box(Font font, float font_size) {
+
+    const int text_box_width = 90;
+    const int text_box_height = 25;
+    const int text_box_y_dist = 40;
+
+    const int x_off = 10;
+
+    int pos_x = (int) window_pos.x;
+    int pos_y = (int) window_pos.y;
+
+    int box_pos = pos_x + x_off;
+
+    bool clicked = GuiWindowBox((Rectangle){ pos_x, pos_y, box_width , box_height}, "Enter the filename");
+
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, box_width - 2*x_off, text_box_height}, save_path, SIZEOF(save_path) - 1, true);
+
+    bool btn_clicked = GuiButton((Rectangle){pos_x +  x_off, pos_y + 70, text_box_width, text_box_height}, "OK");
+    bool btn2_clicked = GuiButton((Rectangle){pos_x + box_width - text_box_width - x_off, pos_y + 70, text_box_width, text_box_height}, "CANCEL");
+
+    if(btn_clicked) {
+        if( strlen(save_path) > 0 ) {
+            save_vtk_unstructured_grid_as_vtu_compressed(draw_config.grid_info.vtk_grid, save_path, 6);
+        }
+    }
+
+    return btn2_clicked | clicked | btn_clicked;
+}
+
 static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
 
     {
-        mousePos = GetMousePosition();
+        mouse_pos = GetMousePosition();
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
-            if (CheckCollisionPointRec(mousePos, (Rectangle){  windowPos.x,  windowPos.y, box_width - 18 , WINDOW_STATUSBAR_HEIGHT }))
+            if (CheckCollisionPointRec(mouse_pos, (Rectangle){window_pos.x, window_pos.y, box_width - 18 , WINDOW_STATUSBAR_HEIGHT }))
             {
-                dragWindow = true;
+                drag_window = true;
             }
         }
 
-        if (dragWindow)
+        if (drag_window)
         {
-            windowPos.x = (mousePos.x) - (box_width - 18)/2;
-            windowPos.y = (mousePos.y) - WINDOW_STATUSBAR_HEIGHT/2;
+            window_pos.x = (mouse_pos.x) - (box_width - 18) / 2;
+            window_pos.y = (mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2;
 
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragWindow = false;
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) drag_window = false;
 
         }
+
+        if(hmlen(selected_aps) && show_ap) {
+            float t = normalize(min_x, max_x, 0.0f, draw_config.final_time, mouse_pos.x);
+            float v = normalize(min_y, max_y, draw_config.min_v, draw_config.max_v, mouse_pos.y);
+            if (CheckCollisionPointRec(mouse_pos, (Rectangle) {graph_pos_x, graph_pos_y, graph_width, graph_height})) {
+                selected_ap_point.x = t;
+                selected_ap_point.y = v;
+            }
+            else {
+                selected_ap_point.x = FLT_MAX;
+                selected_ap_point.y = FLT_MAX;
+            }
+        }
+
+        if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            if(hmlen(selected_aps) && show_ap) {
+                if (CheckCollisionPointRec(mouse_pos, (Rectangle) {graph_pos_x, graph_pos_y, graph_width, graph_height})) {
+                    if(selected_point_for_apd1.x == FLT_MAX && selected_point_for_apd1.y == FLT_MAX) {
+                        selected_point_for_apd1.x = mouse_pos.x;
+                        selected_point_for_apd1.y = mouse_pos.y;
+                    }
+                    else {
+                        if(selected_point_for_apd2.x == FLT_MAX && selected_point_for_apd2.y == FLT_MAX) {
+                            selected_point_for_apd2.x = mouse_pos.x;
+                            selected_point_for_apd2.y = selected_point_for_apd1.y;
+                        }
+                        else {
+                            selected_point_for_apd1.x = mouse_pos.x;
+                            selected_point_for_apd1.y = mouse_pos.y;
+
+                            selected_point_for_apd2.x = FLT_MAX;
+                            selected_point_for_apd2.y = FLT_MAX;
+                        }
+                    }
+                }
+
+            }
+        }
     }
+
 
     if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
         if(IsKeyPressed(KEY_F)) {
             show_selection_box = true;
-            show_selection_box = true;
-            windowPos.x = GetScreenWidth() / 2 - box_width;
-            windowPos.y = GetScreenHeight() / 2 - box_height;
+            window_pos.x = GetScreenWidth() / 2 - box_width;
+            window_pos.y = GetScreenHeight() / 2 - box_height;
         }
     }
 
-    if (IsKeyPressed('S')) {
+    if (IsKeyPressed('Q')) {
         show_scale = !show_scale;
         return;
     }
 
     if(draw_config.paused) {
+
+        if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+            if(IsKeyPressed(KEY_S)) {
+                show_save_box = true;
+                window_pos.x = GetScreenWidth() / 2 - box_width;
+                window_pos.y = GetScreenHeight() / 2 - box_height;
+            }
+        }
 
         if (IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
             draw_config.advance_or_return = 1;
@@ -983,12 +1084,26 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
     }
 
     if (IsKeyPressed('G'))  {
-        draw_config.grid_only = !draw_config.grid_only;
+        draw_grid_only = !draw_grid_only;
+        return;
+    }
+
+    if (IsKeyPressed('.'))  {
+        current_scale = (current_scale + 1) % NUM_SCALES;
+        return;
+    }
+    if (IsKeyPressed(','))  {
+        if(current_scale - 1 >= 0) {
+            current_scale = (current_scale - 1);
+        }
+        else {
+            current_scale = NUM_SCALES-1;
+        }
         return;
     }
 
     if (IsKeyPressed('L')) {
-        draw_config.grid_lines = !draw_config.grid_lines;
+        draw_grid_lines = !draw_grid_lines;
         return;
     }
 
@@ -998,7 +1113,7 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
     }
 
     if (IsKeyPressed('R')) {
-        for(int i = 0; i < hmlen(selected_aps); i++) {
+        for(long  i = 0; i < hmlen(selected_aps); i++) {
             arrfree(selected_aps[i].value);
         }
 
@@ -1021,6 +1136,8 @@ static void handle_input(bool *mesh_loaded, Ray *ray, Camera3D *camera) {
         calc_center = false;
         omp_unset_lock(&draw_config.sleep_lock);
         current_selected = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+        selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
+        selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
         return;
     }
 
@@ -1062,40 +1179,34 @@ void init_and_open_visualization_window() {
 
     omp_set_lock(&draw_config.sleep_lock);
 
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    char *tmp = NULL;
+    char *window_title = NULL;
 
     int draw_type = draw_config.draw_type;
 
     if(draw_type == DRAW_SIMULATION) {
-        tmp = (char *) malloc(strlen(draw_config.config_name) + strlen("Simulation visualization - ") + 2);
-        sprintf(tmp, "Simulation visualization - %s", draw_config.config_name);
+        window_title = (char *) malloc(strlen(draw_config.config_name) + strlen("Simulation visualization - ") + 2);
+        sprintf(window_title, "Simulation visualization - %s", draw_config.config_name);
     }
     else {
-        tmp = strdup("Opening mesh...");
+        window_title = strdup("Opening mesh...");
     }
 
-    InitWindow(0, 0, tmp);
+    InitWindow(0, 0, window_title);
 
-    free(tmp);
+    free(window_title);
 
     int current_monitor = 0;
 
     Font font = GetFontDefault();
-
-    bool mesh_loaded = false;
-
-    draw_config.grid_only = false;
-    draw_config.grid_lines = true;
 
     selected_aps = NULL;
     hmdefault(selected_aps, NULL);
 
     Camera3D camera;
 
-    camera.position = (Vector3){  11.082402f, 6.763101, 8.921088  };  // Camera position
-    camera.target = (Vector3){ 1.081274, -1.581945f, 0.196326};
+    camera.position = (Vector3){11.082402f, 6.763101f, 8.921088f};  // Camera position
+    camera.target = (Vector3){ 1.081274f, -1.581945f, 0.196326f};
     camera.up       = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
     camera.fovy     = 45.0f;                                // Camera field-of-view Y
     camera.type     = CAMERA_PERSPECTIVE;                  // Camera mode type
@@ -1126,8 +1237,9 @@ void init_and_open_visualization_window() {
             " - L to enable or disable the grid lines",
             " - R to restart simulation",
             " - A to show/hide AP visualization",
-            " - S to show/hide scale",
+            " - Q to show/hide scale",
             " - C to show/hide everything except grid",
+            " - . or , to change color scales",
             " - Right arrow to advance one dt when paused",
             " - Hold up arrow to advance time when paused",
             " - Double click on a volume to show the AP",
@@ -1145,12 +1257,11 @@ void init_and_open_visualization_window() {
     int box_w, box_h, info_box_h = 0;
 
     int pos_x;
-    int font_size_small;
-    int font_size_big;
+    float font_size_small;
+    float font_size_big;
 
     end_info_box_strings = (char **) malloc(sizeof(char *) * end_info_box_lines);
     mesh_info_box_strings = (char **) malloc(sizeof(char *) * mesh_info_box_lines);
-    bool have_grid;
 
     Vector2 error_message_witdh;
 
@@ -1158,13 +1269,13 @@ void init_and_open_visualization_window() {
         //Configure font size according to monitor resolution
         current_monitor = GetCurrentMonitor();
 
-        font_size_small  = (int)(10*(GetMonitorHeight(current_monitor)/1080.0));
+        font_size_small  = (10.0f*((float)GetMonitorHeight(current_monitor)/1080.0f));
         if(font_size_small < 10) font_size_small = 10;
 
-        font_size_big    = (int)(16*(GetMonitorHeight(current_monitor)/1080.0));
+        font_size_big    = (16.0f*((float)GetMonitorHeight(current_monitor)/1080.0f));
         if(font_size_big < 16) font_size_big = 16;
 
-        txt_w_h = MeasureTextV(WIDER_TEXT, font_size_small);
+        txt_w_h = MeasureTextV(WIDER_TEXT, (int)font_size_small);
 
         text_offset = (int) (1.5 * txt_w_h.y);
 
@@ -1176,28 +1287,21 @@ void init_and_open_visualization_window() {
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        handle_input(&mesh_loaded, &ray, &camera);
+        handle_input(&draw_config.grid_info.loaded, &ray, &camera);
 
-        if(draw_type == DRAW_SIMULATION) {
-            have_grid = draw_config.grid_info.grid_to_draw;
-        } else {
-            have_grid = draw_config.grid_info.vtk_grid;
-        }
-
-        if(have_grid) {
+        if(draw_config.grid_info.loaded ) {
 
             omp_set_lock(&draw_config.draw_lock);
 
             if(draw_type == DRAW_FILE) {
                 if(draw_config.grid_info.file_name) {
-                    tmp = (char *) malloc(strlen(draw_config.grid_info.file_name) + strlen("Visualizing file - ") + 2);
-                    sprintf(tmp, "Visualizing file - %s", draw_config.grid_info.file_name);
-                    SetWindowTitle(tmp);
-                    free(tmp);
+                    window_title = (char *) malloc(strlen(draw_config.grid_info.file_name) + strlen("Visualizing file - ") + 2);
+                    sprintf(window_title, "Visualizing file - %s", draw_config.grid_info.file_name);
+                    SetWindowTitle(window_title);
+                    free(window_title);
                 }
             }
 
-            mesh_loaded = true;
             ClearBackground(GRAY);
 
             BeginMode3D(camera);
@@ -1205,9 +1309,9 @@ void init_and_open_visualization_window() {
             if(!calc_center) {
                 if(draw_type == DRAW_SIMULATION) {
                     mesh_offset = find_mesh_center();
-                    scale = fmaxf(draw_config.grid_info.grid_to_draw->side_length_x,
-                                  fmaxf(draw_config.grid_info.grid_to_draw->side_length_y,
-                                        draw_config.grid_info.grid_to_draw->side_length_z)) / 5.0f;
+                    scale = fmaxf(draw_config.grid_info.grid_to_draw->mesh_side_length.x,
+                                  fmaxf(draw_config.grid_info.grid_to_draw->mesh_side_length.y,
+                                        draw_config.grid_info.grid_to_draw->mesh_side_length.z)) / 5.0f;
                 }
                 else {
                     mesh_offset = find_mesh_center_vtk();
@@ -1269,19 +1373,20 @@ void init_and_open_visualization_window() {
                 }
             }
 
-
             if(!draw_config.paused) {
                 omp_unset_lock(&draw_config.sleep_lock);
             }
-
 
             if(show_selection_box) {
                 show_selection_box = !draw_selection_box(font, font_size_small);
             }
 
+            if(show_save_box) {
+                show_save_box = !draw_save_box(font, font_size_small);
+            }
 
         }
-        else if(!mesh_loaded) {
+        else {
 
             ClearBackground(GRAY);
             float spacing = 20/(float)font.baseSize;
@@ -1301,7 +1406,9 @@ void init_and_open_visualization_window() {
 
             DrawRectangle(posx, posy, rec_width, 20, c);
             DrawRectangleLines(posx, posy, rec_width, 20, BLACK);
-            DrawText(draw_config.error_message, posx + 20, posy, 20, BLACK);
+            if(draw_config.error_message) //This should not happen... but it does....
+                DrawText(draw_config.error_message, posx + 20, posy, 20, BLACK);
+
         }
 
         DrawFPS(GetScreenWidth()  - 100,GetScreenHeight()-20);

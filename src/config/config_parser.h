@@ -44,6 +44,8 @@
 #define CM 5000
 #define VISUALIZATION_PAUSED_OPT 5100
 
+
+
 struct user_options {
     real_cpu final_time;				/*-f option */
     bool final_time_was_set;
@@ -98,29 +100,30 @@ struct user_options {
     bool start_visualization_unpaused;
 
     struct string_voidp_hash_entry *stim_configs;
-    struct domain_config *domain_config;
-    struct purkinje_config *purkinje_config;
-    struct extra_data_config *extra_data_config;
-    struct assembly_matrix_config *assembly_matrix_config;
-    struct linear_system_solver_config *linear_system_solver_config;
-    struct save_mesh_config *save_mesh_config;
-    struct save_state_config *save_state_config;
-    struct restore_state_config *restore_state_config;
-    struct update_monodomain_config *update_monodomain_config;
+    struct config *domain_config;
+    struct config *purkinje_config;
+    struct config *extra_data_config;
+    struct config *assembly_matrix_config;
+    struct config *linear_system_solver_config;
+    struct config *save_mesh_config;
+    struct config *save_state_config;
+    struct config *restore_state_config;
+    struct config *update_monodomain_config;
+
+    struct string_hash_entry *ode_extra_config;
 
     real_cpu max_v, min_v;
-
 
     bool main_found;
 
 };
 
 struct batch_options {
-    char *batch_config_file;     /*-c option*/
-    char *output_folder;         //TODO: maybe we can create here a option for this
+    char *batch_config_file;
+    char *output_folder;
     char *initial_config;
     int num_simulations;
-    int num_par_change;
+    bool skip_existing_run;
     struct string_hash_entry *config_to_change;
 };
 
@@ -128,6 +131,9 @@ struct visualization_options {
     char *input_folder;
     char *files_prefix;
     char *pvd_file;
+    char *activation_map;
+    bool save_activation_only;
+    int start_file;
     real_cpu max_v, min_v, dt;
 };
 
@@ -138,6 +144,7 @@ void display_batch_usage(char **argv);
 struct user_options * new_user_options();
 struct batch_options * new_batch_options();
 struct visualization_options * new_visualization_options();
+
 void parse_options(int argc, char**argv, struct user_options *user_args);
 void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
 void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
@@ -145,9 +152,13 @@ void parse_visualization_options(int argc, char**argv, struct visualization_opti
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
+void options_to_ini_file(struct user_options *config, char *ini_file_path);
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
 void free_user_options(struct user_options *s);
+void free_batch_options(struct batch_options * options);
 void free_visualization_options(struct visualization_options * options);
 void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
+void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
+
 #endif /* MONOALG3D_CONFIG_PARSER_H */

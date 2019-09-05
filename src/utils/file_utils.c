@@ -51,16 +51,16 @@ void print_to_stdout_and_file(char const *fmt, ...) {
 
 void print_to_stderr_and_file_and_exit(char const *fmt, ...) {
     va_list ap;
-            va_start(ap, fmt);
+    va_start(ap, fmt);
     vprintf(fmt, ap);
     fflush(stderr);
-            va_end(ap);
-            va_start(ap, fmt);
+    va_end(ap);
+    va_start(ap, fmt);
     if (logfile) {
         vfprintf(logfile, fmt, ap);
         fflush(logfile);
     }
-            va_end(ap);
+    va_end(ap);
     exit(EXIT_FAILURE);
 }
 
@@ -140,7 +140,6 @@ char *read_entire_file_with_mmap(const char *filename, size_t *size) {
 
     char *f;
 
-
     if (!filename) return NULL;
 
     struct stat s;
@@ -150,8 +149,12 @@ char *read_entire_file_with_mmap(const char *filename, size_t *size) {
         return NULL;
     }
 
-    /* Get the size of the file. */
-    fstat (fd, & s);
+    fstat (fd, &s);
+    if(!S_ISREG(s.st_mode)) {
+        close(fd);
+        return NULL;
+    }
+
     *size = s.st_size;
 
     size_t to_page_size = *size;
@@ -177,30 +180,21 @@ char *read_entire_file(const char *filename, long *size) {
 
     if (!filename) return NULL;
 
-/* open an existing file for reading */
     infile = fopen(filename, "r");
 
-/* quit if the file does not exist */
     if (infile == NULL)
         return NULL;
 
-/* Get the number of bytes */
     fseek(infile, 0L, SEEK_END);
     numbytes = ftell(infile);
 
-/* reset the file position indicator to
-the beginning of the file */
     fseek(infile, 0L, SEEK_SET);
 
-/* grab sufficient memory for the
-buffer to hold the text */
     buffer = (char *) malloc(numbytes * sizeof(char));
 
-/* memory error */
     if (buffer == NULL)
         return NULL;
 
-/* copy all the text into the buffer */
     fread(buffer, sizeof(char), numbytes, infile);
     fclose(infile);
 
@@ -213,9 +207,7 @@ string_array read_lines(const char *filename) {
 
     string_array lines = NULL;
 
-
     size_t len = 0;
-    ssize_t read;
 
     FILE *fp;
 
@@ -227,7 +219,7 @@ string_array read_lines(const char *filename) {
     }
 
     char * line = NULL;
-    while ((read = getline(&line, &len, fp)) != -1) {
+    while ((getline(&line, &len, fp)) != -1) {
         line[strlen(line) - 1] = '\0';
         arrput(lines, strdup(line));
     }
@@ -332,7 +324,17 @@ string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {
     return files;
 }
 
+bool file_exists(const char *path) {
 
+    if( access( path, F_OK ) != -1 ) {
+        // file exists
+        return true;
+    } else {
+        // file doesn't exist
+        return false;
+    }
+
+}
 bool dir_exists(const char *path) {
     struct stat info;
 
@@ -448,8 +450,10 @@ void create_dir(char *out_dir) {
 
             if (mkdir(dir_to_create, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
             {
-                fprintf (stderr, "Error creating directory %s Exiting!\n", dir_to_create);
-                exit (EXIT_FAILURE);
+                if(!dir_exists (dir_to_create)) { //HACK: this can avoid MPI or batch simulation problems...
+                    fprintf(stderr, "Error creating directory %s Exiting!\n", dir_to_create);
+                    exit(EXIT_FAILURE);
+                }
             }
         }
 
@@ -466,7 +470,6 @@ void create_dir(char *out_dir) {
  * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
- * See README for more details.
  */
 static const unsigned char base64_table[65] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -608,3 +611,138 @@ size_t base64_decode(unsigned char *out, const char *src, size_t len, size_t *by
     return pos - out;
 }
 
+bool check_simulation_completed(char *simulation_dir) {
+
+    if(!dir_exists(simulation_dir)) return false;
+
+    sds output_file_name =
+            sdscatprintf(sdsempty(), "%s/outputlog.txt", simulation_dir);
+
+
+    char *word = NULL;
+
+    long file_size = 0;
+    char *outputlog_content = read_entire_file(output_file_name, &file_size);
+
+    if(outputlog_content == NULL) {
+        sdsfree(output_file_name);
+        return false;
+    }
+
+    for(int c = 0; c < file_size; c++) {
+        char l = outputlog_content[c];
+        if(!isspace(l)) {
+            arrput(word, l);
+        }
+        else {
+            arrput(word, '\0');
+            if(strcmp(word, "Resolution") == 0) {
+                arrfree(word);
+                return true;
+            }
+            arrfree(word);
+            word = NULL;
+        }
+
+    }
+
+    return false;
+
+}
+
+
+
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
+    const char *sep = " ";
+    char *line_a = NULL;
+    size_t len;
+    int count;
+
+    assert(matrix_file);
+
+    do {
+        getline(&line_a, &len, matrix_file);
+        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
+        if (count) {
+            if (strcmp(tmp[1], "columns:") == 0) {
+                (*num_lines) = atoi(tmp[2]);
+            }
+            if (strcmp(tmp[1], "nnz:") == 0) {
+                (*nnz) = atoi(tmp[2]);
+            }
+        }
+        sdsfreesplitres(tmp, count);
+    } while ((line_a)[0] == '#');
+
+    real_cpu **matrix = (real_cpu **) malloc(*num_lines * sizeof(real_cpu *));
+
+    for (int i = 0; i < *num_lines; i++) {
+        matrix[i] = (real_cpu *) calloc(*num_lines, sizeof(real_cpu));
+    }
+
+    int item_count = 0;
+    int m_line, m_column;
+    real_cpu m_value;
+
+    while (item_count < *nnz) {
+
+        sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
+        if (tmp[0][0] != '\n') {
+            m_line = atoi(tmp[0]);
+            m_column = atoi(tmp[1]);
+            m_value = atof(tmp[2]);
+
+            matrix[m_line - 1][m_column - 1] = m_value;
+        }
+        sdsfreesplitres(tmp, count);
+
+        item_count++;
+        getline(&line_a, &len, matrix_file);
+    }
+
+    if (line_a)
+        free(line_a);
+
+    return matrix;
+}
+
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
+
+    ssize_t read;
+    size_t len;
+    char *line_b = NULL;
+    int count;
+    char *sep = " ";
+
+    do {
+        read = getline(&line_b, &len, vec_file);
+        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
+        if (count) {
+            if (strcmp(tmp[1], "rows:") == 0) {
+                (*num_lines) = atoi(tmp[2]);
+            }
+        }
+        sdsfreesplitres(tmp, count);
+    } while ((line_b)[0] == '#');
+
+    real_cpu *vector = (real_cpu *) malloc(*num_lines * sizeof(real_cpu));
+
+    int item_count = 0;
+    while ((item_count < *num_lines) && read) {
+        sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
+
+        if (tmp[0][0] != '\n') {
+            vector[item_count] = atof(tmp[1]);
+        }
+
+        sdsfreesplitres(tmp, count);
+
+        item_count++;
+        read = getline(&line_b, &len, vec_file);
+    }
+
+    if (line_b)
+        free(line_b);
+
+    return vector;
+}

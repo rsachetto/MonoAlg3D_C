@@ -3,12 +3,11 @@
 //
 
 #include "domain_helpers.h"
-#include "../alg/cell/cell.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include "../string/sds.h"
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 
 #include <float.h>
 #include <math.h>
@@ -32,80 +31,77 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
     real_cpu proportion_dxdz = fmax(start_dx, start_dz)/fmin(start_dx, start_dz);
     real_cpu proportion_dydz = fmax(start_dz, start_dy)/fmin(start_dz, start_dy);
 
-    sds error;
+    bool error = false;
 
     if(start_dx > start_dy) {
         if (side_length_x < side_length_y) {
-            error = sdscatprintf(sdsempty(), "Incorrect configuration. If start_dx > start_dy, you need side_length_x > side_length_y");
-            REPORT_ERROR_ON_FUNCTION(error);
-            return 0;
+            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dx > start_dy, you need side_length_x > side_length_y");
+            error = true;
         }
     }
 
     if(start_dx > start_dz) {
         if (side_length_x < side_length_z) {
-            error = sdscatprintf(sdsempty(), "Incorrect configuration. If start_dx > start_dz, you need side_length_x > side_length_z");
-            REPORT_ERROR_ON_FUNCTION(error);
-            return 0;
+            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dx > start_dz, you need side_length_x > side_length_z");
+            error = true;
         }
     }
 
     if(start_dy > start_dx) {
         if (side_length_y < side_length_x) {
-            error = sdscatprintf(sdsempty(), "Incorrect configuration. If start_dy > start_dx, you need side_length_y > side_length_x");
-            REPORT_ERROR_ON_FUNCTION(error);
-            return 0;
-        }
+            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dy > start_dx, you need side_length_y > side_length_x");
+            error = true;                }
     }
 
     if(start_dy > start_dz) {
         if (side_length_y < side_length_z) {
-            error = sdscatprintf(sdsempty(), "Incorrect configuration. If start_dy > start_dz, you need side_length_y > side_length_z");
-            REPORT_ERROR_ON_FUNCTION(error);
-            return 0;
+            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dy > start_dz, you need side_length_y > side_length_z");
+            error = true;
         }
     }
 
 
     if(start_dz > start_dx) {
         if (side_length_z < side_length_x) {
-            error = sdscatprintf(sdsempty(), "Incorrect configuration. If start_dz > start_dx, you need side_length_z > side_length_x");
-            REPORT_ERROR_ON_FUNCTION(error);
-            return 0;
+            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dz > start_dx, you need side_length_z > side_length_x");
+            error = true;
         }
     }
 
     if(start_dz > start_dy) {
         if (side_length_z < side_length_y) {
-            error = sdscatprintf(sdsempty(), "Incorrect configuration. If start_dz > start_dy, you need side_length_z > side_length_y");
-            REPORT_ERROR_ON_FUNCTION(error);
-            return 0;
+            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dz > start_dy, you need side_length_z > side_length_y");
+            error = true;
         }
     }
 
 
     if(ceil(proportion_dxdy) != proportion_dxdy || ceil(proportion_dxdz) != proportion_dxdz || ceil(proportion_dydz) != proportion_dydz) {
-        error = sdscatprintf(sdsempty(), "start_dx, start_dy and start_dz need to be multiples");
-        REPORT_ERROR_ON_FUNCTION(error);
-        return 0;
+        REPORT_ERROR_ON_FUNCTION("Incorrect configuration. start_dx, start_dy and start_dz need to be multiples");
+        error = true;
     }
 
     if(ceil(nx) != nx) {
-        error =
-            sdscatprintf(sdsempty(), "start_dx: %lf is not multiple of side_length_x: %lf", start_dx, side_length_x);
-        REPORT_ERROR_ON_FUNCTION(error);
-        return 0;
+        sds error_str = sdscatprintf(sdsempty(), "start_dx: %lf is not multiple of side_length_x: %lf", start_dx, side_length_x);
+        REPORT_ERROR_ON_FUNCTION(error_str);
+        sdsfree(error_str);
+        error = true;
     }
     if(ceil(ny) != ny) {
-        error =
-            sdscatprintf(sdsempty(), "start_dy: %lf is not multiple of side_length_y: %lf", start_dy, side_length_y);
-        REPORT_ERROR_ON_FUNCTION(error);
-        return 0;
+        sds error_str = sdscatprintf(sdsempty(), "start_dy: %lf is not multiple of side_length_y: %lf", start_dy, side_length_y);
+        REPORT_ERROR_ON_FUNCTION(error_str);
+        sdsfree(error_str);
+        error = true;
     }
     if(ceil(nz) != nz) {
-        error =
+        sds error_str =
             sdscatprintf(sdsempty(), "start_dz: %lf is not multiple of side_length_z: %lf", start_dz, side_length_z);
-        REPORT_ERROR_ON_FUNCTION(error);
+        REPORT_ERROR_ON_FUNCTION(error_str);
+        sdsfree(error_str);
+        error = true;
+    }
+
+    if(error) {
         return 0;
     }
 
@@ -247,28 +243,28 @@ void set_benchmark_domain(struct grid *the_grid) {
     struct cell_node *grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
         grid_cell->active =
-            (grid_cell->center_y < 20000) && (grid_cell->center_x < 7000) && (grid_cell->center_z < 3000);
+            (grid_cell->center.y < 20000) && (grid_cell->center.x < 7000) && (grid_cell->center.z < 3000);
         grid_cell = grid_cell->next;
     }
 
-    the_grid->side_length_x = 7000;
-    the_grid->side_length_y = 20000;
-    the_grid->side_length_z = 3000;
+    the_grid->mesh_side_length.x = 7000;
+    the_grid->mesh_side_length.y = 20000;
+    the_grid->mesh_side_length.z = 3000;
 
 }
 
-void set_cuboid_domain(struct grid *the_grid, real_cpu sizeX, real_cpu sizeY, real_cpu sizeZ) {
+void set_cuboid_domain(struct grid *the_grid, real_cpu size_x, real_cpu size_y, real_cpu size_z) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
     while(grid_cell != 0) {
         grid_cell->active =
-            (grid_cell->center_y < sizeY) && (grid_cell->center_x < sizeX) && (grid_cell->center_z < sizeZ);
+            (grid_cell->center.y < size_y) && (grid_cell->center.x < size_x) && (grid_cell->center.z < size_z);
         grid_cell = grid_cell->next;
     }
 
-    the_grid->side_length_x = sizeX;
-    the_grid->side_length_y = sizeY;
-    the_grid->side_length_z = sizeZ;
+    the_grid->mesh_side_length.x = size_x;
+    the_grid->mesh_side_length.y = size_y;
+    the_grid->mesh_side_length.z = size_z;
 
 }
 
@@ -332,9 +328,9 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
 
     real_cpu x, y, z;
     while(grid_cell != 0) {
-        x = grid_cell->center_x;
-        y = grid_cell->center_y;
-        z = grid_cell->center_z;
+        x = grid_cell->center.x;
+        y = grid_cell->center.y;
+        z = grid_cell->center.z;
 
         if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
             grid_cell->active = false;
@@ -371,9 +367,9 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     free(fibrosis);
 
     //TODO: we need to sum the cell discretization here...
-    the_grid->side_length_x = maxx;
-    the_grid->side_length_y = maxy;
-    the_grid->side_length_z = maxz;
+    the_grid->mesh_side_length.x = maxx;
+    the_grid->mesh_side_length.y = maxy;
+    the_grid->mesh_side_length.z = maxz;
 
 }
 
@@ -419,9 +415,9 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
 
     real_cpu x, y, z;
     while(grid_cell != 0) {
-        x = grid_cell->center_x;
-        y = grid_cell->center_y;
-        z = grid_cell->center_z;
+        x = grid_cell->center.x;
+        y = grid_cell->center.y;
+        z = grid_cell->center.z;
 
         if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
             grid_cell->active = false;
@@ -454,9 +450,9 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
     }
 
 
-    the_grid->side_length_x = maxx;
-    the_grid->side_length_y = maxy;
-    the_grid->side_length_z = maxz;
+    the_grid->mesh_side_length.x = maxx;
+    the_grid->mesh_side_length.y = maxy;
+    the_grid->mesh_side_length.z = maxz;
 
     free(mesh_points);
     free(tag);
@@ -624,15 +620,15 @@ void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization
         Cy = -1;
         Cz = -1;
     }
-    bool cannotChange = ((c->center_x == P1x) && (c->center_y == P1y) && (c->center_z == P1z));
-    cannotChange |= ((c->center_x == P2x) && (c->center_y == P2y) && (c->center_z == P2z));
-    cannotChange |= ((c->center_x == P3x) && (c->center_y == P3y) && (c->center_z == P3z));
-    cannotChange |= ((c->center_x == P4x) && (c->center_y == P4y) && (c->center_z == P4z));
-    cannotChange |= ((c->center_x == P5x) && (c->center_y == P5y) && (c->center_z == P5z));
-    cannotChange |= ((c->center_x == P6x) && (c->center_y == P6y) && (c->center_z == P6z));
-    cannotChange |= ((c->center_x == P7x) && (c->center_y == P7y) && (c->center_z == P7z));
-    cannotChange |= ((c->center_x == P8x) && (c->center_y == P8y) && (c->center_z == P8z));
-    cannotChange |= ((c->center_x == Cx) && (c->center_y == Cy) && (c->center_z == Cz));
+    bool cannotChange = ((c->center.x == P1x) && (c->center.y == P1y) && (c->center.z == P1z));
+    cannotChange |= ((c->center.x == P2x) && (c->center.y == P2y) && (c->center.z == P2z));
+    cannotChange |= ((c->center.x == P3x) && (c->center.y == P3y) && (c->center.z == P3z));
+    cannotChange |= ((c->center.x == P4x) && (c->center.y == P4y) && (c->center.z == P4z));
+    cannotChange |= ((c->center.x == P5x) && (c->center.y == P5y) && (c->center.z == P5z));
+    cannotChange |= ((c->center.x == P6x) && (c->center.y == P6y) && (c->center.z == P6z));
+    cannotChange |= ((c->center.x == P7x) && (c->center.y == P7y) && (c->center.z == P7z));
+    cannotChange |= ((c->center.x == P8x) && (c->center.y == P8y) && (c->center.z == P8z));
+    cannotChange |= ((c->center.x == Cx) && (c->center.y == Cy) && (c->center.z == Cz));
 
     c->can_change = !cannotChange;
 }
@@ -674,9 +670,9 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 
     bool inside;
 
-    real_cpu side_length_x = the_grid->side_length_x;
-    real_cpu side_length_y = the_grid->side_length_y;
-    real_cpu side_length_z = the_grid->side_length_z;
+    real_cpu side_length_x = the_grid->mesh_side_length.x;
+    real_cpu side_length_y = the_grid->mesh_side_length.y;
+    real_cpu side_length_z = the_grid->mesh_side_length.z;
 
     real_cpu region_height = (side_length_y - channel_width) / 2.0;
 
@@ -689,9 +685,9 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
         if(grid_cell->active) 
         {
 
-            real_cpu x = grid_cell->center_x;
-            real_cpu y = grid_cell->center_y;
-            real_cpu z = grid_cell->center_z;
+            real_cpu x = grid_cell->center.x;
+            real_cpu y = grid_cell->center.y;
+            real_cpu z = grid_cell->center.z;
 
             // Check region 1
             inside = (x >= 0.0) && (x <= channel_length) &&\
@@ -733,7 +729,7 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
 
-        real_cpu distance = pow(grid_cell->center_x - plain_center, 2.0) + pow(grid_cell->center_y - plain_center, 2.0);
+        real_cpu distance = pow(grid_cell->center.x - plain_center, 2.0) + pow(grid_cell->center.y - plain_center, 2.0);
 
         if(grid_cell->active) {
 
@@ -762,8 +758,8 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
                 grid_cell->can_change = false;
             } else if(BORDER_ZONE(grid_cell)) {
                 real_cpu distance_from_center =
-                    sqrt((grid_cell->center_x - plain_center) * (grid_cell->center_x - plain_center) +
-                         (grid_cell->center_y - plain_center) * (grid_cell->center_y - plain_center));
+                    sqrt((grid_cell->center.x - plain_center) * (grid_cell->center.x - plain_center) +
+                         (grid_cell->center.y - plain_center) * (grid_cell->center.y - plain_center));
                 distance_from_center = (distance_from_center - sphere_radius) / bz_size;
                 real_cpu phi_local = phi - phi * distance_from_center;
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
@@ -804,9 +800,9 @@ void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, rea
                 if(p < phi)
                     grid_cell->active = false;
             } else if(BORDER_ZONE(grid_cell)) {
-                real_cpu centerX = grid_cell->center_x;
-                real_cpu centerY = grid_cell->center_y;
-                real_cpu centerZ = grid_cell->center_z;
+                real_cpu centerX = grid_cell->center.x;
+                real_cpu centerY = grid_cell->center.y;
+                real_cpu centerZ = grid_cell->center.z;
                 if(SCAR_TYPE(grid_cell) == 'b') {
                     dist_big = sqrt((centerX - big_scar_center_x) * (centerX - big_scar_center_x) +
                                     (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
@@ -832,9 +828,9 @@ void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, rea
 
         if(grid_cell->active) {
             if(BORDER_ZONE(grid_cell)) {
-                real_cpu centerX = grid_cell->center_x;
-                real_cpu centerY = grid_cell->center_y;
-                real_cpu centerZ = grid_cell->center_z;
+                real_cpu centerX = grid_cell->center.x;
+                real_cpu centerY = grid_cell->center.y;
+                real_cpu centerZ = grid_cell->center.z;
                 if(SCAR_TYPE(grid_cell) == 'b') {
                     dist_big = sqrt((centerX - big_scar_center_x) * (centerX - big_scar_center_x) +
                                     (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
@@ -899,11 +895,11 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
     struct cell_node *grid_cell = grid->first_cell;
     while(grid_cell != 0) {
 
-        real_cpu center_x = grid_cell->center_x;
-        real_cpu center_y = grid_cell->center_y;
-        real_cpu center_z = grid_cell->center_z;
+        real_cpu center_x = grid_cell->center.x;
+        real_cpu center_y = grid_cell->center.y;
+        real_cpu center_z = grid_cell->center.z;
 
-        if((grid_cell->dx == 100.0) && (SCAR_TYPE(grid_cell) == type)) {
+        if((grid_cell->discretization.x == 100.0) && (SCAR_TYPE(grid_cell) == type)) {
             int index = inside_mesh(scar_mesh, center_x, center_y, center_z, 0, size - 1);
             grid_cell->active = (index != -1);
         }
@@ -961,10 +957,10 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 
             if(grid_cell->active) {
 
-                real_cpu center_x = grid_cell->center_x;
-                real_cpu center_y = grid_cell->center_y;
+                real_cpu center_x = grid_cell->center.x;
+                real_cpu center_y = grid_cell->center.y;
 
-                real_cpu half_dy = grid_cell->dy/2.0;
+                real_cpu half_dy = grid_cell->discretization.y/2.0;
 
                 if(FIBROTIC_INFO(grid_cell) == NULL) {
                     INITIALIZE_FIBROTIC_INFO(grid_cell);
@@ -973,7 +969,7 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 
                 struct point_3d p;
 
-                p.x = b_center_y + b_h_dy;
+                p.x = b_center_x + b_h_dx;
                 p.y = b_center_y - b_h_dy;
 
                 if (center_x == b_center_x && center_y + half_dy <= p.x && center_y - half_dy >= p.y)  {
@@ -1014,9 +1010,9 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) 
     {
-        real center_x = grid_cell->center_x;
-        real center_y = grid_cell->center_y;
-        real center_z = grid_cell->center_z;
+        real center_x = grid_cell->center.x;
+        real center_y = grid_cell->center.y;
+        real center_z = grid_cell->center.z;
 
         if (center_x >= min_x && center_x <= max_x &&\
             center_y >= min_y && center_y <= max_y &&\

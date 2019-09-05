@@ -8,24 +8,32 @@
 #include <stdbool.h>
 #include "../common_types/common_types.h"
 
-struct config_common {
+struct config {
     void *handle;
-    char *function_name;
-    bool function_name_was_set;
+
+    char *main_function_name;
+    bool main_function_name_was_set;
+
+    char *init_function_name;
+    bool init_function_name_was_set;
+
+    char *end_function_name;
+    bool end_function_name_was_set;
+
     char *library_file_path;
     bool library_file_path_was_set;
-    struct string_hash_entry *config;
 
+    struct string_hash_entry *config_data;
+
+    void *persistent_data;
+
+    void *main_function;
+    void *init_function;
+    void *end_function;
 };
 
-struct generic_config {
-    //This is used to cast any config that has only a config_common and a
-    //function pointer
-    struct config_common config_data;
-};
-
-void init_config_common_data(struct config_common *cm);
-void free_config_common_data(struct config_common *cm);
-
+struct config *alloc_and_init_config_data();
+void free_config_data(struct config *cm);
+void init_config_functions(struct config *config, char *default_lib, char *config_type);
 
 #endif //MONOALG3D_CONFIG_COMMON_H
