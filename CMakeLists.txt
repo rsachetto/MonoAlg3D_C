@@ -8,7 +8,6 @@ ENDIF(EXISTS "/etc/manjaro-release")
 #    set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
 #ENDIF(EXISTS "/etc/debconf.conf")
 
-
 cmake_minimum_required(VERSION 3.0.1)
 project(MonoAlg3D)
 
@@ -34,12 +33,11 @@ ENDIF()
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin )
 SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shared_libs )
 
-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Wall -Wno-unused-function")
+SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Wall -Wno-unused-function -Wno-char-subscripts")
 
-IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer" )
-ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
-
+IF(CMAKE_BUILD_TYPE MATCHES "Debug")
+    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -DDEBUG_INFO" )
+ENDIF(CMAKE_BUILD_TYPE MATCHES "Debug")
 
 FIND_PACKAGE(OpenMP)
 IF (OPENMP_FOUND)
@@ -54,7 +52,6 @@ IF (CUDA_FOUND)
     SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I \"${CUDA_INCLUDE_DIRS}\" -DCOMPILE_CUDA")
 
-    #windos hack
 	IF (APPLE)
         set(CUDA_PROPAGATE_HOST_FLAGS OFF)
        # Grab all the -D flags from CMAKE_CXX_FLAGS so we can pass them
@@ -66,10 +63,17 @@ ENDIF(CUDA_FOUND)
 SET(OpenGL_GL_PREFERENCE "GLVND")
 FIND_PACKAGE(OpenGL)
 
-IF(OPENGL_FOUND AND OPENMP_FOUND)
-    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
-ENDIF()
+if (OPENGL_FOUND AND OPENMP_FOUND)
+    set (COMPILE_GUI TRUE)
+else ()
+    set (COMPILE_GUI FALSE)
+endif ()
 
+IF(COMPILE_GUI)
+    SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOMPILE_OPENGL")
+ENDIF(COMPILE_GUI)
+
+ADD_SUBDIRECTORY(src/config_helpers)
 ADD_SUBDIRECTORY(src/utils)
 ADD_SUBDIRECTORY(src/alg)
 ADD_SUBDIRECTORY(src/monodomain)
@@ -79,13 +83,13 @@ ADD_SUBDIRECTORY(src/config)
 ADD_SUBDIRECTORY(src/graph)
 ADD_SUBDIRECTORY(src/vtk_utils)
 
-IF(OPENGL_FOUND AND OPENMP_FOUND)
+IF(COMPILE_GUI)
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
     ADD_SUBDIRECTORY(src/raylib/src)
     ADD_SUBDIRECTORY(src/draw)
     SET(OPT_DEPS ${OPT_DEPS} draw raylib)
-ENDIF()
+ENDIF(COMPILE_GUI)
 
 IF (CUDA_FOUND)
     ADD_SUBDIRECTORY(src/gpu_utils)
@@ -103,14 +107,9 @@ IF(MPI_C_FOUND)
     TARGET_LINK_LIBRARIES(MonoAlg3D_batch alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} ${MPI_C_LIBRARIES}  dl m)
 ENDIF(MPI_C_FOUND)
 
-
 TARGET_LINK_LIBRARIES(MonoAlg3D alg solvers utils ini_parser string graph config ${OPT_DEPS} ${CUDA_LIBRARIES} dl m)
 
-
 ADD_SUBDIRECTORY(src/models_library)
-
-SET(COMMON_SRC ../libraries_common/config_helpers.c ../libraries_common/config_helpers.h)
-
 ADD_SUBDIRECTORY(src/stimuli_library)
 ADD_SUBDIRECTORY(src/domains_library)
 ADD_SUBDIRECTORY(src/purkinje_library)
@@ -124,14 +123,16 @@ ADD_SUBDIRECTORY(src/update_monodomain_library)
 ADD_SUBDIRECTORY(src/xml_parser)
 
 #BUILDING VISUALIZER
-IF(OPENGL_FOUND AND OPENMP_FOUND)
+IF(COMPILE_GUI)
     ADD_EXECUTABLE(MonoAlg3D_visualizer src/main_visualizer.c)
     ADD_DEPENDENCIES(MonoAlg3D_visualizer utils config vtk_utils draw)
     TARGET_LINK_LIBRARIES(MonoAlg3D_visualizer utils config vtk_utils draw raylib)
-ENDIF(OPENGL_FOUND AND OPENMP_FOUND)
+
+#    ADD_EXECUTABLE(MonoAlg3D_activation_map_analyzer src/main_activation_map_analyzer.c)
+#    ADD_DEPENDENCIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
+#    TARGET_LINK_LIBRARIES(MonoAlg3D_activation_map_analyzer alg utils config vtk_utils)
+ENDIF(COMPILE_GUI)
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests_bin )
 
 ADD_SUBDIRECTORY(src/tests)
-
-

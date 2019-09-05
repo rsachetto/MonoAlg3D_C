@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+static int current_file = 0;
+
 static inline int get_step_from_filename(char *filename) {
 
     char *ia = filename;
@@ -52,8 +54,31 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->grid_info.vtk_grid = NULL;
     draw_config->grid_info.file_name = NULL;
     draw_config->error_message = NULL;
+    draw_config->grid_info.loaded = false;
+
 }
 
+static void read_and_render_activation_map(char *input_file) {
+
+    draw_config.grid_info.file_name = NULL;
+
+    omp_set_lock(&draw_config.draw_lock);
+    draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_activation_file(input_file);
+
+    if(!draw_config.grid_info.vtk_grid) {
+        char tmp[4096];
+        sprintf(tmp, "%s is not an activation map", input_file);
+        draw_config.error_message = strdup(tmp);
+        omp_unset_lock(&draw_config.draw_lock);
+        return;
+    }
+
+    draw_config.grid_info.file_name = input_file;
+    draw_config.min_v = draw_config.grid_info.vtk_grid->min_v;
+    draw_config.max_v = draw_config.grid_info.vtk_grid->max_v;
+
+    omp_unset_lock(&draw_config.draw_lock);
+}
 
 static int read_and_render_files(const char* pvd_file, char *input_dir, char* prefix) {
 
@@ -87,8 +112,6 @@ static int read_and_render_files(const char* pvd_file, char *input_dir, char* pr
         return SIMULATION_FINISHED;
 
     }
-
-    int current_file = 0;
 
     int step;
     int step1;
@@ -154,6 +177,7 @@ static int read_and_render_files(const char* pvd_file, char *input_dir, char* pr
         omp_set_lock(&draw_config.draw_lock);
         free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
         draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_vtu_file(full_path);
+        draw_config.grid_info.loaded = true;
 
         if(!draw_config.grid_info.vtk_grid) {
             char tmp[4096];
@@ -217,46 +241,72 @@ int main(int argc, char **argv) {
 
     parse_visualization_options(argc, argv, options);
 
-    if(!options->input_folder) {
-        if(!options->pvd_file) {
-            fprintf(stderr, "Error!. You have to provide a pvd file or a input folder!\n");
-        }
-    } else {
-        if(options->pvd_file) {
-            fprintf(stderr, "Warning!. You provided a pvd file (%s) and an input folder (%s). The input folder will be ignored!\n", options->pvd_file, options->input_folder);
-            free(options->input_folder);
-            options->input_folder = NULL;
+    current_file = options->start_file;
 
+    if(!options->activation_map) {
+        if (!options->input_folder) {
+            if (!options->pvd_file) {
+                fprintf(stderr, "Error!. You have to provide a pvd file or a input folder!\n");
+            }
+        } else {
+            if (options->pvd_file) {
+                fprintf(stderr,
+                        "Warning!. You provided a pvd file (%s) and an input folder (%s). The input folder will be ignored!\n",
+                        options->pvd_file, options->input_folder);
+                free(options->input_folder);
+                options->input_folder = NULL;
+
+            }
         }
     }
 
-    #pragma omp parallel sections num_threads(2)
-    {
-        #pragma omp section
-        {
-            omp_init_lock(&draw_config.draw_lock);
-            omp_init_lock(&draw_config.sleep_lock);
-            init_draw_config(&draw_config, options);
-            init_and_open_visualization_window(DRAW_FILE);
+    if(options->save_activation_only) {
+        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_activation_file(options->activation_map);
+        if(!vtk_grid) {
+            fprintf(stderr, "Failed to convert %s\n", options->activation_map);
+            exit(EXIT_FAILURE);
         }
-
-        #pragma omp section
+        sds save_path = sdsnew(options->activation_map);
+        save_path = sdscat(save_path, ".vtu");
+        save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, save_path, 6);
+        free_vtk_unstructured_grid(vtk_grid);
+        sdsfree(save_path);
+    }
+    else {
+        #pragma omp parallel sections num_threads(2)
         {
-            int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
-
-            while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
-                if(result == RESTART_SIMULATION) {
-                    init_draw_config(&draw_config, options);
-                    result = read_and_render_files(options->pvd_file, options->input_folder,  options->files_prefix);
-                }
-
-                if(draw_config.restart) result = RESTART_SIMULATION;
-
-                if(result == END_SIMULATION || draw_config.exit)  {
-                    break;
-                }
+            #pragma omp section
+            {
+                omp_init_lock(&draw_config.draw_lock);
+                omp_init_lock(&draw_config.sleep_lock);
+                init_draw_config(&draw_config, options);
+                init_and_open_visualization_window(DRAW_FILE);
             }
 
+            #pragma omp section
+            {
+                if(options->activation_map) {
+                    read_and_render_activation_map(options->activation_map);
+                }
+                else {
+                    int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
+
+                    while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
+                        if (result == RESTART_SIMULATION) {
+                            init_draw_config(&draw_config, options);
+                            current_file = 0;
+                            result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
+                        }
+
+                        if (draw_config.restart) result = RESTART_SIMULATION;
+
+                        if (result == END_SIMULATION || draw_config.exit) {
+                            break;
+                        }
+                    }
+                }
+
+            }
         }
     }
     free_visualization_options(options);

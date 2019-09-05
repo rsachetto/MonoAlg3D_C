@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 void report_error_on_function(const char * function, const char *error) {
-    fprintf(stderr, "Error on function %s: %s. Exiting!\n", function, error);
+    fprintf(stderr, "Error on function %s: %s.\n", function, error);
 }
 
 void report_parameter_error_on_function(const char * function, const char *parameter) {

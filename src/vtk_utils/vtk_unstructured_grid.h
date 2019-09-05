@@ -72,6 +72,8 @@ struct vtk_unstructured_grid {
     int64_array cells;
     point3d_array points;
 
+    float min_v;
+    float max_v;
 };
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid();
@@ -90,6 +92,8 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const cha
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 
 void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values);
+void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_activation_file(const char *vtu_file_name);
 void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *vtu_file_name);
 
 

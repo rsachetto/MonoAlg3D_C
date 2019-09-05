@@ -9,11 +9,30 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
-#include "../libraries_common/config_helpers.h"
-#include "../monodomain/constants.h"
 #include "../utils/utils.h"
 #include "../single_file_libraries/stb_ds.h"
 #include "../libraries_common/common_data_structures.h"
+
+#include "../config_helpers/config_helpers.h"
+
+INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
+
+    real_cpu alpha;
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt = the_solver->dt;
+    int i;
+
+    #pragma omp parallel for private(alpha)
+    for(i = 0; i < active_cells; i++) {
+
+        alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
+        ac[i]->v = initial_v;
+        ac[i]->b = initial_v * alpha;
+    }
+}
 
 static struct element fill_element(uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
                                    real_cpu sigma_x, real_cpu sigma_y, real_cpu sigma_z,\
@@ -22,20 +41,21 @@ static struct element fill_element(uint32_t position, char direction, real_cpu d
 
 void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) {
 
-    real_cpu alpha, dx, dy, dz;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
 
-    int i;
+    uint32_t i;
 
-#pragma omp parallel for private(alpha, dx, dy, dz)
+    #pragma omp parallel for
     for(i = 0; i < num_active_cells; i++) {
-        dx = ac[i]->dx;
-        dy = ac[i]->dy;
-        dz = ac[i]->dz;
+        real_cpu alpha, dx, dy, dz;
+
+        dx = ac[i]->discretization.x;
+        dy = ac[i]->discretization.y;
+        dz = ac[i]->discretization.z;
 
         alpha = ALPHA(beta, cm, dt, dx, dy, dz);
 
@@ -62,7 +82,6 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
     struct element new_element;
     new_element.column = position;
 
-    //TODO: simplify with ||
     if(direction == 'n') { // Z direction
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;
@@ -93,9 +112,7 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
 
 static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, char direction) {
 
-    uint32_t position;
     bool has_found;
-    real_cpu dx, dy, dz;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
@@ -149,24 +166,27 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
 
         if(black_neighbor_cell->active) {
 
-            real_cpu sigma_x1 = grid_cell->sigma_x;
-            real_cpu sigma_x2 = black_neighbor_cell->sigma_x;
+            uint32_t position;
+            real_cpu dx, dy, dz;
+
+            real_cpu sigma_x1 = grid_cell->sigma.x;
+            real_cpu sigma_x2 = black_neighbor_cell->sigma.x;
             real_cpu sigma_x = 0.0;
             
             if(sigma_x1 != 0.0 && sigma_x2 != 0.0) {
                 sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
             }
 
-            real_cpu sigma_y1 = grid_cell->sigma_y;
-            real_cpu sigma_y2 = black_neighbor_cell->sigma_y;
+            real_cpu sigma_y1 = grid_cell->sigma.y;
+            real_cpu sigma_y2 = black_neighbor_cell->sigma.y;
             real_cpu sigma_y = 0.0;
 
             if(sigma_y1 != 0.0 && sigma_y2 != 0.0) {
                 sigma_y = (2.0f * sigma_y1 * sigma_y2) / (sigma_y1 + sigma_y2);
             }
 
-            real_cpu sigma_z1 = grid_cell->sigma_z;
-            real_cpu sigma_z2 = black_neighbor_cell->sigma_z;
+            real_cpu sigma_z1 = grid_cell->sigma.z;
+            real_cpu sigma_z2 = black_neighbor_cell->sigma.z;
             real_cpu sigma_z = 0.0;
 
             if(sigma_z1 != 0.0 && sigma_z2 != 0.0) {
@@ -174,13 +194,13 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
             
             if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
-                dx = black_neighbor_cell->dx;
-                dy = black_neighbor_cell->dy;
-                dz = black_neighbor_cell->dz;
+                dx = black_neighbor_cell->discretization.x;
+                dy = black_neighbor_cell->discretization.y;
+                dz = black_neighbor_cell->discretization.z;
             } else {
-                dx = grid_cell->dx;
-                dy = grid_cell->dy;
-                dz = grid_cell->dz;
+                dx = grid_cell->discretization.x;
+                dy = grid_cell->discretization.y;
+                dz = grid_cell->discretization.z;
             }
 
             lock_cell_node(grid_cell);
@@ -256,13 +276,13 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     srand((unsigned int)time(NULL));
 
@@ -279,9 +299,9 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
         real sigma_y_new = sigma_y * r;
         real sigma_z_new = sigma_z * r;
 
-        ac[i]->sigma_x = sigma_x_new;
-        ac[i]->sigma_y = sigma_y_new;
-        ac[i]->sigma_z = sigma_z_new;
+        ac[i]->sigma.x = sigma_x_new;
+        ac[i]->sigma.y = sigma_y_new;
+        ac[i]->sigma.z = sigma_z_new;
 
     }
 
@@ -319,25 +339,25 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real channel_width = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data.config, "channel_width");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data, "channel_width");
 
     real channel_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data.config, "channel_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data, "channel_length");
 
     bool inside;
 
-    real side_length_x = the_grid->side_length_x;
-    real side_length_y = the_grid->side_length_y;
-    real side_length_z = the_grid->side_length_z;
+    real side_length_x = the_grid->mesh_side_length.x;
+    real side_length_y = the_grid->mesh_side_length.y;
+    real side_length_z = the_grid->mesh_side_length.z;
 
     real region_height = (side_length_y - channel_width) / 2.0;
 
@@ -348,9 +368,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
         real sigma_y_new;
         real sigma_z_new;
 
-        double x = ac[i]->center_x;
-        double y = ac[i]->center_y;
-        double z = ac[i]->center_z;
+        double x = ac[i]->center.x;
+        double y = ac[i]->center.y;
+        double z = ac[i]->center.z;
 
         // Check region 1
         inside = (x >= 0.0) && (x <= channel_length) && (y >= 0.0) && (y <= region_height);
@@ -370,6 +390,17 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
             sigma_y_new = sigma_y;
             sigma_z_new = sigma_z;
         }
+
+        ac[i]->sigma.x = sigma_x_new;
+        ac[i]->sigma.y = sigma_y_new;
+        ac[i]->sigma.z = sigma_z_new;
+
+    }
+
+    // Then, we fill the discretization matrix
+    #pragma omp parallel for
+    for(i = 0; i < num_active_cells; i++) 
+    {
 
         // Computes and designates the flux due to south cells.
         fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
@@ -402,31 +433,31 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real channel_width = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data.config, "channel_width");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data, "channel_width");
 
     real channel_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data.config, "channel_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data, "channel_length");
 
     real source_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data.config, "source_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data, "source_factor");
 
     real sink_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sink_factor, config->config_data.config, "sink_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sink_factor, config->config_data, "sink_factor");
 
     bool inside_3, inside_4;
 
-    real side_length_x = the_grid->side_length_x;
-    real side_length_y = the_grid->side_length_y;
-    real side_length_z = the_grid->side_length_z;
+    real side_length_x = the_grid->mesh_side_length.x;
+    real side_length_y = the_grid->mesh_side_length.y;
+    real side_length_z = the_grid->mesh_side_length.z;
 
     real region_height = (side_length_y - channel_width) / 2.0;
 
@@ -438,9 +469,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
         real sigma_y_new = sigma_y;
         real sigma_z_new = sigma_z;
 
-        real x = ac[i]->center_x;
-        real y = ac[i]->center_y;
-        real z = ac[i]->center_z;
+        real x = ac[i]->center.x;
+        real y = ac[i]->center.y;
+        real z = ac[i]->center.z;
 
         // Check region 3
         inside_3 = (x >= 0.0) && (x < channel_length) && (y >= region_height) && (y <= region_height + channel_width);
@@ -462,9 +493,9 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
             sigma_z_new = sigma_z * sink_factor;
         }
 
-        ac[i]->sigma_x = sigma_x_new;
-        ac[i]->sigma_y = sigma_y_new;
-        ac[i]->sigma_z = sigma_z_new;
+        ac[i]->sigma.x = sigma_x_new;
+        ac[i]->sigma.y = sigma_y_new;
+        ac[i]->sigma.z = sigma_z_new;
 
     }
 
@@ -496,7 +527,6 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
 
 ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
 
-    static bool sigma_initialized = false;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
@@ -506,23 +536,19 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
-    if(!sigma_initialized) {
-        #pragma omp parallel for
-        for (i = 0; i < num_active_cells; i++) {
-            ac[i]->sigma_x = sigma_x;
-            ac[i]->sigma_y = sigma_y;
-            ac[i]->sigma_z = sigma_z;
-        }
-
-        sigma_initialized = true;
+    #pragma omp parallel for
+    for (i = 0; i < num_active_cells; i++) {
+        ac[i]->sigma.x = sigma_x;
+        ac[i]->sigma.y = sigma_y;
+        ac[i]->sigma.z = sigma_z;
     }
 
     #pragma omp parallel for
@@ -560,23 +586,23 @@ ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
     if(!sigma_initialized) {
         #pragma omp parallel for
         for (i = 0; i < num_active_cells; i++) {
-            ac[i]->sigma_x = sigma_x * sigma_factor;
-            ac[i]->sigma_y = sigma_y * sigma_factor;
-            ac[i]->sigma_z = sigma_z * sigma_factor;
+            ac[i]->sigma.x = sigma_x * sigma_factor;
+            ac[i]->sigma.y = sigma_y * sigma_factor;
+            ac[i]->sigma.z = sigma_z * sigma_factor;
         }
 
         sigma_initialized = true;
@@ -616,34 +642,34 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
     real min_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data.config, "region_min_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data, "region_min_x");
 
     real max_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data.config, "region_max_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data, "region_max_x");
 
     real min_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data.config, "region_min_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data, "region_min_y");
 
     real max_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data.config, "region_max_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data, "region_max_y");
 
     real min_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data.config, "region_min_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data, "region_min_z");
 
     real max_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data.config, "region_max_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data, "region_max_z");
 
     bool inside;
 
@@ -655,9 +681,9 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
         real sigma_y_new = sigma_y;
         real sigma_z_new = sigma_z;
 
-        real x = ac[i]->center_x;
-        real y = ac[i]->center_y;
-        real z = ac[i]->center_z;
+        real x = ac[i]->center.x;
+        real y = ac[i]->center.y;
+        real z = ac[i]->center.z;
 
         // Check if inside the region
         inside = (x >= min_x) && (x <= max_x) &&\
@@ -671,9 +697,9 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
             sigma_z_new = sigma_z * sigma_factor;
         }    
 
-        ac[i]->sigma_x = sigma_x_new;
-        ac[i]->sigma_y = sigma_y_new;
-        ac[i]->sigma_z = sigma_z_new;
+        ac[i]->sigma.x = sigma_x_new;
+        ac[i]->sigma.y = sigma_y_new;
+        ac[i]->sigma.z = sigma_z_new;
 
     }
 
@@ -718,22 +744,22 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
     print_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
 
@@ -753,15 +779,15 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
 	    		real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
 	    		if (p < phi) 
 			    {
-				    grid_cell->sigma_x = sigma_x * sigma_factor;
-				    grid_cell->sigma_y = sigma_y * sigma_factor;
-				    grid_cell->sigma_z = sigma_z * sigma_factor;
+				    grid_cell->sigma.x = sigma_x * sigma_factor;
+				    grid_cell->sigma.y = sigma_y * sigma_factor;
+				    grid_cell->sigma.z = sigma_z * sigma_factor;
 	    		}
 			    else
 			    {
-				    grid_cell->sigma_x = sigma_x;
-	    			grid_cell->sigma_y = sigma_y;
-	    			grid_cell->sigma_z = sigma_z;
+				    grid_cell->sigma.x = sigma_x;
+	    			grid_cell->sigma.y = sigma_y;
+	    			grid_cell->sigma.z = sigma_z;
 			    }
 		    }
 		    grid_cell = grid_cell->next;
@@ -807,37 +833,37 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data.config, "fibrosis_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data.config, "size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
   
     if(!sigma_initialized) 
     {
         #pragma omp parallel for
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
-            ac[i]->sigma_x = sigma_x;
-            ac[i]->sigma_y = sigma_y;
-            ac[i]->sigma_z = sigma_z;
+            ac[i]->sigma.x = sigma_x;
+            ac[i]->sigma.y = sigma_y;
+            ac[i]->sigma.z = sigma_z;
         }
 
         sigma_initialized = true;
@@ -894,10 +920,10 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
         {
             if (grid_cell->active)
             {
-                real_cpu center_x = grid_cell->center_x;
-                real_cpu center_y = grid_cell->center_y;
-                real_cpu half_dx = grid_cell->dx/2.0;
-                real_cpu half_dy = grid_cell->dy/2.0;
+                real_cpu center_x = grid_cell->center.x;
+                real_cpu center_y = grid_cell->center.y;
+                real_cpu half_dx = grid_cell->discretization.x/2.0;
+                real_cpu half_dy = grid_cell->discretization.y/2.0;
 
                 struct point_3d p;
                 struct point_3d q;
@@ -913,9 +939,9 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
                 {
                     if(active == 0)
                     {
-                        grid_cell->sigma_x = sigma_x * sigma_factor;
-                        grid_cell->sigma_y = sigma_y * sigma_factor;
-                        grid_cell->sigma_z = sigma_z * sigma_factor;
+                        grid_cell->sigma.x = sigma_x * sigma_factor;
+                        grid_cell->sigma.y = sigma_y * sigma_factor;
+                        grid_cell->sigma.z = sigma_z * sigma_factor;
                     }		
                 }
             }
@@ -973,28 +999,28 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data.config, "fibrosis_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data.config, "rescaled_fibrosis_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data.config, "size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data.config, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
     real rescale_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config->config_data.config, "rescale_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config->config_data, "rescale_factor");
 
     FILE *file = fopen(fib_file, "r");
 
@@ -1079,25 +1105,25 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     initialize_diagonal_elements(the_solver, the_grid);
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data.config, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data.config, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data.config, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data.config, "seed");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data.config, "rescaled_fibrosis_file");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
 
     double rescale_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,rescale_factor, config->config_data.config, "rescale_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,rescale_factor, config->config_data, "rescale_factor");
 
     // Write the new fibrotic region file
 	FILE *fileW = fopen(new_fib_file, "w+");
@@ -1115,12 +1141,12 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
             if(p < phi) 
             {
                 // We reescale the cell position using the 'rescale_factor'
-                double center_x = grid_cell->center_x * rescale_factor;
-                double center_y = grid_cell->center_y * rescale_factor;
-                double center_z = grid_cell->center_z * rescale_factor;
-                double dx = grid_cell->dx * rescale_factor;
-                double dy = grid_cell->dy * rescale_factor;
-                double dz = grid_cell->dz * rescale_factor;
+                double center_x = grid_cell->center.x * rescale_factor;
+                double center_y = grid_cell->center.y * rescale_factor;
+                double center_z = grid_cell->center.z * rescale_factor;
+                double dx = grid_cell->discretization.x * rescale_factor;
+                double dy = grid_cell->discretization.y * rescale_factor;
+                double dz = grid_cell->discretization.z * rescale_factor;
                 
                 // Then, we write only the fibrotic regions to the output file
                 fprintf(fileW,"%g,%g,%g,%g,%g,%g,0\n",center_x,center_y,center_z,dx/2.0,dy/2.0,dz/2.0);

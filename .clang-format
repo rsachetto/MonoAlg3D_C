@@ -1,9 +1,9 @@
 AccessModifierOffset: 0
-AllowShortFunctionsOnASingleLine: false
-AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+#AllowShortIfStatementsOnASingleLine: False
 AllowShortLoopsOnASingleLine: false
 BinPackParameters: true
-BreakBeforeBinaryOperators: false
+BreakBeforeBinaryOperators: None
 ColumnLimit: 120
 IndentWidth: 4
 Language: Cpp

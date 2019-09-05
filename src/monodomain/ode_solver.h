@@ -23,10 +23,6 @@ struct ode_solver {
     real rel_tol;
     real abs_tol;
 
-    //used for the adaptive time step solver
-    real previous_dt;
-    real time_new;
-
     size_t num_cells_to_solve;
     uint32_t *cells_to_solve;
 
@@ -38,6 +34,7 @@ struct ode_solver {
     void *ode_extra_data;
     size_t extra_data_size;
     struct cell_model_data model_data;
+
 
     size_t pitch;
 
@@ -52,14 +49,15 @@ struct ode_solver {
 
 };
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver);
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config);
 
 void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const uint32_t *refined_this_step);
 struct ode_solver* new_ode_solver();
 void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time, int num_steps,
-                            struct string_voidp_hash_entry *stim_configs);
+                            struct string_voidp_hash_entry *stim_configs, struct string_hash_entry *ode_extra_config);
+
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
 
 

@@ -12,7 +12,7 @@
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 
 #ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"
@@ -20,66 +20,91 @@
 
 #include "../string/sds.h"
 
+struct mesh_data {
+    real_cpu cube_side_length_x;
+    real_cpu cube_side_length_y;
+    real_cpu cube_side_length_z;
+    real_cpu mesh_side_length_x;
+    real_cpu mesh_side_length_y;
+    real_cpu mesh_side_length_z;
+    uint32_t number_of_cells;
+    uint32_t num_active_cells;
+} __attribute__((packed));
+
+
+struct cell_data {
+    real_cpu center_x;
+    real_cpu center_y;
+    real_cpu center_z;
+    real_cpu v;
+    real_cpu north_flux;
+    real_cpu south_flux;
+    real_cpu east_flux;
+    real_cpu west_flux;
+    real_cpu front_flux;
+    real_cpu back_flux;
+    real_cpu b;
+    bool can_change;
+    bool active;
+} __attribute__((packed));
+
+
 RESTORE_STATE (restore_simulation_state) {
 
     // Here we restore the saved domain
     if (the_grid) {
+
+        struct mesh_data mesh_data;
 
         sds tmp = sdsnew (input_dir);
         tmp = sdscat (tmp, "/grid_checkpoint.dat");
 
         FILE *input_file = fopen (tmp, "rb");
 
-        sdsfree (tmp);
-
         if (!input_file) {
             fprintf (stderr, "Error opening %s file for restoring the simulation state\n", tmp);
-            exit (10);
+            sdsfree (tmp);
+            return false;
         }
 
-        int number_of_cells = 0;
-        int num_active_cells = 0;
-        real_cpu side_length_x, side_length_y, side_length_z;
+        sdsfree (tmp);
+
         struct point_voidp_hash_entry *mesh_hash = NULL;
         hmdefault(mesh_hash, NULL);
 
-        fread (&side_length_x, sizeof (the_grid->side_length_x), 1, input_file);
-        fread (&side_length_y, sizeof (the_grid->side_length_y), 1, input_file);
-        fread (&side_length_z, sizeof (the_grid->side_length_z), 1, input_file);
-        fread (&number_of_cells, sizeof (the_grid->number_of_cells), 1, input_file);
-        fread (&num_active_cells, sizeof (the_grid->num_active_cells), 1, input_file);
+        fread (&mesh_data, sizeof (struct mesh_data), 1, input_file);
 
-        struct point_3d mp;
+        the_grid->cube_side_length.x = mesh_data.cube_side_length_x;
+        the_grid->cube_side_length.y = mesh_data.cube_side_length_y;
+        the_grid->cube_side_length.z = mesh_data.cube_side_length_z;
 
-        initialize_and_construct_grid (the_grid, side_length_x, side_length_y, side_length_z);
-        struct cell_node *grid_cell = the_grid->first_cell;
-
-        int num_data = 11;
+        the_grid->mesh_side_length.x = mesh_data.mesh_side_length_x;
+        the_grid->mesh_side_length.y = mesh_data.mesh_side_length_y;
+        the_grid->mesh_side_length.z = mesh_data.mesh_side_length_z;
 
         // Read the mesh to a point hash
-        for (int i = 0; i < number_of_cells; i++) {
-
-            real_cpu *mesh_data = (real_cpu *)calloc (num_data, sizeof (real_cpu));
-
+        for (uint32_t i = 0; i < mesh_data.number_of_cells; i++) {
+            struct cell_data *cell_data = (struct cell_data*) malloc(sizeof(struct cell_data));
             // Read center_x, center_y, center_z
-            fread (&mp, sizeof (mp), 1, input_file);
+            fread (cell_data, sizeof(struct cell_data), 1, input_file);
 
-            // Read v, north_flux, south_flux, east_flux, west_flux, front_flux,
-            // back_flux, b
-            fread (&mesh_data[0], sizeof (real_cpu), 8, input_file);
+            struct point_3d mesh_point;
+            mesh_point.x = cell_data->center_x;
+            mesh_point.y = cell_data->center_y;
+            mesh_point.z = cell_data->center_z;
 
-            // read can_change
-            fread (&mesh_data[8], sizeof (grid_cell->can_change), 1, input_file);
-
-            // read active
-            fread (&mesh_data[9], sizeof (grid_cell->active), 1, input_file);
-
-            hmput(mesh_hash, mp, mesh_data);
+            hmput(mesh_hash, mesh_point, cell_data);
         }
 
         printf ("Restoring grid state...\n");
 
-        real_cpu *cell_data;
+        if(the_grid->adaptive) {
+            construct_grid(the_grid);
+        }
+
+        struct cell_data * cell_data;
+
+        struct cell_node *grid_cell = the_grid->first_cell;
 
         while (grid_cell) {
 
@@ -89,29 +114,27 @@ RESTORE_STATE (restore_simulation_state) {
             } else {
 
                 struct point_3d mesh_point;
-                mesh_point.x = grid_cell->center_x;
-                mesh_point.y = grid_cell->center_y;
-                mesh_point.z = grid_cell->center_z;
+                mesh_point.x = grid_cell->center.x;
+                mesh_point.y = grid_cell->center.y;
+                mesh_point.z = grid_cell->center.z;
 
-                if ((cell_data = hmget (mesh_hash, mesh_point)) != NULL) {
+                if ((cell_data = (struct cell_data*)hmget (mesh_hash, mesh_point)) != NULL) {
+
+                    grid_cell->active = cell_data->active;
 
                     // This grid_cell is already in the mesh. We only need to restore the data associated to it...
                     // If the cell is not active we don't need to recover its state
-                    if (cell_data[9] == 0.0) {
-                        grid_cell->active = false;
-                    } else {
-                        grid_cell->v = cell_data[0];
-                        grid_cell->north_flux = cell_data[1];
-                        grid_cell->south_flux = cell_data[2];
-                        grid_cell->east_flux = cell_data[3];
-                        grid_cell->west_flux = cell_data[4];
-                        grid_cell->front_flux = cell_data[5];
-                        grid_cell->back_flux = cell_data[6];
-                        grid_cell->b = cell_data[7];
+                    if(grid_cell->active) {
+                        grid_cell->v = cell_data->v;
+                        grid_cell->north_flux = cell_data->north_flux;
+                        grid_cell->south_flux = cell_data->south_flux;
+                        grid_cell->east_flux = cell_data->east_flux;
+                        grid_cell->west_flux = cell_data->west_flux;
+                        grid_cell->front_flux = cell_data->front_flux;
+                        grid_cell->back_flux = cell_data->back_flux;
+                        grid_cell->b = cell_data->b;
+                        grid_cell->can_change = cell_data->can_change;
 
-                        if (cell_data[8] == 0.0) {
-                            grid_cell->can_change = false;
-                        }
                     }
 
                     grid_cell->visited = true;
@@ -125,9 +148,12 @@ RESTORE_STATE (restore_simulation_state) {
             }
         }
 
-        assert (number_of_cells == the_grid->number_of_cells);
+        assert (mesh_data.number_of_cells == the_grid->number_of_cells);
 
         fclose (input_file);
+        for(int i = 0; i < hmlen(mesh_hash); i++) {
+            free(mesh_hash[i].value);
+        }
         hmfree(mesh_hash);
     }
 
@@ -142,12 +168,20 @@ RESTORE_STATE (restore_simulation_state) {
 
         if (!input_file) {
             fprintf (stderr, "Error opening %s file for restoring the simulation state\n", tmp);
-            exit (10);
+            sdsfree (tmp);
+            return false;
         }
 
         sdsfree (tmp);
 
-        fread (the_monodomain_solver, sizeof (struct monodomain_solver), 1, input_file);
+        real_cpu config_final_time = the_monodomain_solver->final_time;
+        bool config_abort = the_monodomain_solver->abort_on_no_activity;
+
+        fread(the_monodomain_solver, sizeof (struct monodomain_solver), 1, input_file);
+
+        the_monodomain_solver->final_time = config_final_time;
+        the_monodomain_solver->abort_on_no_activity = config_abort;
+
         fclose (input_file);
     }
 
@@ -160,6 +194,12 @@ RESTORE_STATE (restore_simulation_state) {
 
         FILE *input_file = fopen (tmp, "rb");
 
+        if (!input_file) {
+            fprintf (stderr, "Error opening %s file for restoring the simulation state\n", tmp);
+            sdsfree (tmp);
+            return false;
+        }
+
         sdsfree (tmp);
 
         fread (&(the_ode_solver->max_dt), sizeof (the_ode_solver->max_dt), 1, input_file);
@@ -167,8 +207,8 @@ RESTORE_STATE (restore_simulation_state) {
         fread (&(the_ode_solver->rel_tol), sizeof (the_ode_solver->rel_tol), 1, input_file);
         fread (&(the_ode_solver->abs_tol), sizeof (the_ode_solver->abs_tol), 1, input_file);
 
-        fread (&(the_ode_solver->previous_dt), sizeof (the_ode_solver->previous_dt), 1, input_file);
-        fread (&(the_ode_solver->time_new), sizeof (the_ode_solver->time_new), 1, input_file);
+//        fread (&(the_ode_solver->previous_dt), sizeof (the_ode_solver->previous_dt), 1, input_file);
+//        fread (&(the_ode_solver->time_new), sizeof (the_ode_solver->time_new), 1, input_file);
 
         fread (&(the_ode_solver->num_cells_to_solve), sizeof (the_ode_solver->num_cells_to_solve), 1, input_file);
 
@@ -187,7 +227,10 @@ RESTORE_STATE (restore_simulation_state) {
         fread (&(the_ode_solver->gpu), sizeof (the_ode_solver->gpu), 1, input_file);
         fread (&(the_ode_solver->gpu_id), sizeof (the_ode_solver->gpu_id), 1, input_file);
 
-        fread (&(the_ode_solver->model_data), sizeof (the_ode_solver->model_data), 1, input_file);
+//        fread (&(the_ode_solver->model_data), sizeof (the_ode_solver->model_data), 1, input_file);
+//        unsigned long data_size;
+//        fread (&(data_size), sizeof(data_size), 1, input_file);
+//        fread (the_ode_solver->model_data.model_library_path, data_size, 1, input_file);
         fread (&(the_ode_solver->pitch), sizeof (the_ode_solver->pitch), 1, input_file);
 
         fread (&(the_ode_solver->original_num_cells), sizeof (the_ode_solver->original_num_cells), 1, input_file);
@@ -213,4 +256,6 @@ RESTORE_STATE (restore_simulation_state) {
 
         fclose (input_file);
     }
+
+    return true;
 }

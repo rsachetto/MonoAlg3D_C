@@ -9,12 +9,31 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
-#include "../libraries_common/config_helpers.h"
 #include "../monodomain/constants.h"
 #include "../utils/utils.h"
 #include "../single_file_libraries/stb_ds.h"
 #include "../libraries_common/common_data_structures.h"
 
+#include "../config_helpers/config_helpers.h"
+
+INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
+
+    real_cpu alpha;
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt = the_solver->dt;
+    int i;
+
+    #pragma omp parallel for private(alpha)
+    for(i = 0; i < active_cells; i++) {
+
+        alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
+        ac[i]->v = initial_v;
+        ac[i]->b = initial_v * alpha;
+    }
+}
 
 void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) 
 {
@@ -32,9 +51,9 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 
     for (i = 0; i < num_active_cells; i++) 
     {
-        dx = ac[i]->dx;
-        dy = ac[i]->dy;
-        dz = ac[i]->dz;
+        dx = ac[i]->discretization.x;
+        dy = ac[i]->discretization.y;
+        dz = ac[i]->discretization.z;
 
         alpha = ALPHA(beta, cm, dt, dx, dy, dz);
 
@@ -72,7 +91,7 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next)
     {
         cell_elements = &grid_cells[i]->elements;
-        dx = grid_cells[i]->dx;
+        dx = grid_cells[i]->discretization.x;
 
         e = pk_node->list_edges;
 
@@ -107,14 +126,14 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data.config, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
 
     if(!sigma_initialized) 
     {
         #pragma omp parallel for
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
-            ac[i]->sigma_x = sigma_x;
+            ac[i]->sigma.x = sigma_x;
         }
 
         sigma_initialized = true;

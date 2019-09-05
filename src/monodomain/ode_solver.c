@@ -12,11 +12,11 @@
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
-#include "../single_file_libraries/stb_ds.h"
-
 #endif
 
 #include "../single_file_libraries/stb_ds.h"
+#include "../config_helpers/config_helpers.h"
+#include "../string/sds.h"
 
 
 struct ode_solver* new_ode_solver() {
@@ -53,7 +53,6 @@ void free_ode_solver(struct ode_solver *solver) {
         else {
             free(solver->sv);
         }
-
     }
 
     if(solver->ode_extra_data) {
@@ -135,7 +134,7 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
 }
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config) {
 
     bool get_initial_v = !isfinite(solver->model_data.initial_v);
     bool get_neq = solver->model_data.number_of_ode_equations == -1;
@@ -160,7 +159,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
             check_cuda_errors(cudaFree(solver->sv));
         }
 
-        solver->pitch = soicg_fn_pt(&(solver->sv), num_cells, solver->ode_extra_data, solver->extra_data_size);
+        solver->pitch = soicg_fn_pt(ode_extra_config, &(solver->sv), num_cells, solver->ode_extra_data, solver->extra_data_size);
 #endif
     } else {
 
@@ -183,14 +182,15 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver) {
 
         #pragma omp parallel for
         for(i = 0; i < num_cells; i++) {
-            soicc_fn_pt(solver->sv + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
+            soicc_fn_pt(ode_extra_config, solver->sv + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
         }
 
     }
 }
 
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time, int num_steps,
-                            struct string_voidp_hash_entry *stim_configs) {
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
+                            int num_steps, struct string_voidp_hash_entry *stim_configs,
+                            struct string_hash_entry *ode_extra_config) {
 
     assert(the_ode_solver->sv);
 
@@ -204,49 +204,59 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     real *merged_stims = (real*)calloc(sizeof(real), n_active);
 
-    struct stim_config *tmp = NULL;
-    real stim_start, stim_dur;
+    struct config *tmp = NULL;
 
-	int i;
+	uint32_t i;
     ptrdiff_t n = hmlen(stim_configs);
 
     if(stim_configs) {
-        for (int k = 0; k < n; k++) {
-                tmp = (struct stim_config*) stim_configs[k].value;
-                stim_start = tmp->stim_start;
-                stim_dur = tmp->stim_duration;
-                for (int j = 0; j < num_steps; ++j) {
-                    if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
-                        #pragma omp parallel for
-                        for (i = 0; i < n_active; i++) {
-                            merged_stims[i] += tmp->spatial_stim_currents[i];
-                        }
+
+        real stim_start = 0.0;
+        real  stim_dur = 0.0;
+        real  stim_period = 0.0;
+
+        for (long k = 0; k < n; k++) {
+            tmp = (struct config*) stim_configs[k].value;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp->config_data, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp->config_data, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp->config_data, "period");
+
+            for (int j = 0; j < num_steps; ++j) {
+                if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
+                    #pragma omp parallel for
+                    for (i = 0; i < n_active; i++) {
+                        // This variable should be an accumulator to allow multiple stimulus
+                        merged_stims[i] += ((real*)(tmp->persistent_data))[i];
                     }
-                    time += dt;
                 }
-
-                if(time >= stim_start + tmp->stim_period) {
-                    tmp->stim_start = stim_start + tmp->stim_period;
-                }
-
-                time = cur_time;
+                time += dt;
             }
 
-    }
+            if(stim_period > 0.0) {
+                if (time >= stim_start + stim_period) {
+                    stim_start = stim_start + stim_period;
+                    sds stim_start_char = sdscatprintf(sdsempty(), "%lf", stim_start);
+                    shput_dup_value(tmp->config_data, "start", stim_start_char);
+                    sdsfree(stim_start_char);
+                }
+            }
 
+            time = cur_time;
+        }
+    }
 
     if(the_ode_solver->gpu) {
         #ifdef COMPILE_CUDA
         size_t extra_data_size = the_ode_solver->extra_data_size;
         solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
-        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
+        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
                       extra_data_size);
 
         #endif
     }
     else {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
-        solve_odes_pt(dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
     }
 
     free(merged_stims);

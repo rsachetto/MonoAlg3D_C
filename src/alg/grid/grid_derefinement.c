@@ -27,7 +27,7 @@ bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_boun
 
     while (grid_cell != 0) {
         has_been_derefined = false;
-        if (grid_cell->can_change && grid_cell->dx < max_dx && grid_cell->dx < max_dy && grid_cell->dx < max_dz && grid_cell->active) {
+        if (grid_cell->can_change && grid_cell->discretization.x < max_dx && grid_cell->discretization.y < max_dy && grid_cell->discretization.z < max_dz && grid_cell->active) {
 
             /* Verifies if each one of the next seven cells has  are
              * active */
@@ -107,6 +107,8 @@ bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_boun
  */
 void derefine_all_grid (struct grid *the_grid) {
 
+    if(!the_grid) return;
+
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
     long int bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
@@ -162,7 +164,6 @@ void derefine_all_grid (struct grid *the_grid) {
         if (!has_been_derefined)
             grid_cell = grid_cell->next;
     }
-    // ordergrid_cells();
 }
 
 bool derefine_grid_cell (struct grid *the_grid, struct cell_node *grid_cell) {

@@ -6,9 +6,9 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="50"
-END_FRAME="501"
-OUTPUT_VIDEO_FILENAME="videos/pedro-source-sink-dm-cm-ddm-comparison"
+FRAME_RATE="5"
+END_FRAME="200"
+OUTPUT_VIDEO_FILENAME="videos/lucas-cheat-purkinje"
 RESOLUTION="1030x730"
 
 # Execute the converting command using FFMPEG

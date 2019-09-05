@@ -26,6 +26,7 @@
 #include "../config/linear_system_solver_config.h"
 
 #include "../single_file_libraries/stb_ds.h"
+#include "../config_helpers/config_helpers.h"
 
 #include <unistd.h>
 
@@ -78,35 +79,44 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     ///////MAIN CONFIGURATION BEGIN//////////////////
     init_ode_solver_with_cell_model(the_ode_solver);
     struct string_voidp_hash_entry *stimuli_configs = configs->stim_configs;
-    struct extra_data_config *extra_data_config = configs->extra_data_config;
-    struct domain_config *domain_config = configs->domain_config;
-    struct purkinje_config *purkinje_config = configs->purkinje_config;
-    struct assembly_matrix_config *assembly_matrix_config = configs->assembly_matrix_config;
-    struct linear_system_solver_config *linear_system_solver_config = configs->linear_system_solver_config;
-    struct save_mesh_config *save_mesh_config = configs->save_mesh_config;
-    struct save_state_config *save_state_config = configs->save_state_config;
-    struct restore_state_config *restore_state_config = configs->restore_state_config;
-    struct update_monodomain_config *update_monodomain_config = configs->update_monodomain_config;
+    struct config *extra_data_config = configs->extra_data_config;
+    struct config *domain_config = configs->domain_config;
+    struct config *purkinje_config = configs->purkinje_config;
+    struct config *assembly_matrix_config = configs->assembly_matrix_config;
+    struct config *linear_system_solver_config = configs->linear_system_solver_config;
+    struct config *save_mesh_config = configs->save_mesh_config;
+    struct config *save_state_config = configs->save_state_config;
+    struct config *restore_state_config = configs->restore_state_config;
+    struct config *update_monodomain_config = configs->update_monodomain_config;
 
     bool has_extra_data = (extra_data_config != NULL);
 
     real_cpu last_stimulus_time = -1.0;
     bool has_any_periodic_stim = false;
 
-    if(stimuli_configs) 
-    {
+    if(stimuli_configs) {
         // Init all stimuli
-        STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(stimuli_configs, init_stim_functions);
+        STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(stimuli_configs);
 
         // Find last stimuli
         size_t s_size = shlen(stimuli_configs);
         real_cpu s_end;
-        for(int i = 0; i < s_size; i++) {
+        real_cpu stim_start = 0.0;
+        real_cpu stim_duration = 0.0;
+        real_cpu stim_period = 0;
+        bool unnused;
 
-            struct stim_config *sconfig = (struct stim_config*) stimuli_configs[i].value;
-            s_end = sconfig->stim_start + sconfig->stim_duration;
+        for(unsigned long i = 0; i < s_size; i++) {
 
-            has_any_periodic_stim |= (bool)(sconfig->stim_period > 0.0);
+            struct config *sconfig = (struct config*) stimuli_configs[i].value;
+
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_start, sconfig->config_data, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_duration, sconfig->config_data, "duration");
+            GET_PARAMETER_NUMERIC_VALUE(real_cpu, stim_period, sconfig->config_data, "period", unnused);
+
+            s_end = stim_start + stim_duration;
+
+            has_any_periodic_stim |= (bool)(stim_period > 0.0);
 
             if(s_end > last_stimulus_time) {
                 last_stimulus_time = s_end;
@@ -118,15 +128,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     // Configure the functions and set the Purkinje mesh domain
     if (purkinje_config)
     {
-        init_purkinje_functions(purkinje_config);
+        init_config_functions(purkinje_config, "shared_libs/libdefault_purkinje.so", "purkinje");
     }
 
     // Configure the functions and set the mesh domain
     if(domain_config) 
     {
-        init_domain_functions(domain_config);
+        init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
     } 
-
 
     if( !purkinje_config && !domain_config ) {
         print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
@@ -135,7 +144,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(assembly_matrix_config)
     {
-        init_assembly_matrix_functions(assembly_matrix_config);
+        init_config_functions(assembly_matrix_config, "./shared_libs/libdefault_matrix_assembly.so", "assembly_matrix");
     } 
     else 
     {
@@ -144,18 +153,24 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(linear_system_solver_config) 
     {
-        init_linear_system_solver_functions(linear_system_solver_config);
+        init_config_functions(linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "linear_system_solver");
     } 
     else 
     {
         print_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
     }
 
-    bool save_to_file = (save_mesh_config != NULL) && (save_mesh_config->print_rate > 0) && (save_mesh_config->out_dir_name);
+    int print_rate = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config->config_data, "print_rate");
+
+    char *out_dir_name = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, save_mesh_config->config_data, "output_dir");
+
+    bool save_to_file = (save_mesh_config != NULL) && (print_rate > 0) && (out_dir_name);
 
     if(save_to_file) 
     {
-        init_save_mesh_functions(save_mesh_config);
+        init_config_functions(save_mesh_config, "./shared_libs/libdefault_save_mesh.so", "save_result");
     } 
     else 
     {
@@ -163,9 +178,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     bool save_checkpoint = (save_state_config != NULL);
+
+    if(save_checkpoint && the_grid->adaptive) {
+        print_to_stdout_and_file("Saving checkpoint is not implemented for adaptive grids yet!\n");
+        save_checkpoint = false;
+    }
+
     if(save_checkpoint) 
     {
-        init_save_state_functions(save_state_config);
+        init_config_functions(save_state_config, "./shared_libs/libdefault_save_state.so", "save_state");
     } 
     else 
     {
@@ -174,28 +195,34 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     bool restore_checkpoint = (restore_state_config != NULL);
+
+    if(restore_checkpoint && the_grid->adaptive) {
+        print_to_stdout_and_file("Restoring checkpoint is not implemented for adaptive grids yet!\n");
+        restore_checkpoint = false;
+    }
+
     if(restore_state_config) 
     {
-        init_restore_state_functions(restore_state_config);
+        init_config_functions(restore_state_config, "./shared_libs/libdefault_restore_state.so", "restore_state");
     }
 
     if(has_extra_data) 
     {
-        init_extra_data_functions(extra_data_config);
+        init_config_functions(extra_data_config, "./shared_libs/libdefault_extra_data.so", "extra_data");
     }
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
+    bool restore_success = false;
 
-    if(restore_checkpoint) 
-    {
+    if(restore_checkpoint) {
         // Here we only restore the monodomain_solver_state...
-        restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, NULL,
+        restore_success = ((restore_state_fn *)restore_state_config->main_function)(out_dir_name, restore_state_config, NULL,
                                             the_monodomain_solver, NULL);
     }
 
     if(update_monodomain_config) {
-        init_update_monodomain_functions(update_monodomain_config);
+        init_config_functions(update_monodomain_config, "./shared_libs/libdefault_update_monodomain.so", "update_monodomain");
     }
     else {
         print_to_stderr_and_file_and_exit("No update monodomain configuration provided! Exiting!\n");
@@ -224,6 +251,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu finalT = the_monodomain_solver->final_time;
     real_cpu dt_ode = the_ode_solver->min_dt;
 
+#ifdef COMPILE_OPENGL
+    bool draw = configs->draw;
+    if (draw) {
+        draw_config.grid_info.grid_to_draw = the_grid;
+        draw_config.simulating = true;
+        draw_config.paused = !configs->start_visualization_unpaused;
+    } else {
+        draw_config.paused = false;
+    }
+#endif
+
 #ifdef COMPILE_CUDA
     if(gpu) {
         int device_count;
@@ -236,44 +274,32 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 #endif
 
-    if(restore_checkpoint) 
+    int success;
+
+    if (purkinje_config) {
+        success = ((set_spatial_purkinje_fn*) purkinje_config->main_function)(purkinje_config,the_grid);
+        if(!success)
+        {
+            print_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
+        }
+    }
+
+    if (domain_config) {
+        success = ((set_spatial_domain_fn *) domain_config->main_function)(domain_config, the_grid);
+
+        if (!success) {
+            print_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
+        }
+    }
+
+    if (!purkinje_config && !domain_config)
     {
-        // Here we only restore the grid...
+        print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
+    }
 
-        // TODO: 
-        // Create a Purkinje restore function in the 'restore_library' and put here ...
-        restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, the_grid, NULL, NULL);
-    } 
-    else 
-    {
-        int success;
-        if (purkinje_config)
-        {
-            success = purkinje_config->set_spatial_purkinje(purkinje_config,the_grid);
-            //printf("Setup Purkinje ok ...\n");
-            if(!success) 
-            {
-                print_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
-            }
-        }
-            
-        if (domain_config)
-        {
-            success = domain_config->set_spatial_domain(domain_config, the_grid);
-
-            if(configs->draw) {
-                translate_mesh_to_origin(the_grid);
-            }
-
-            if(!success) {
-                print_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
-            }
-        }
-
-        if (!purkinje_config && !domain_config)
-        {
-            print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
-        }
+    if(restore_checkpoint) {
+        // TODO: Create a Purkinje restore function in the 'restore_library' and put here ...
+        restore_success &= ((restore_state_fn*)restore_state_config->main_function)(out_dir_name, restore_state_config, the_grid, NULL, NULL);
     }
 
     real_cpu start_dx, start_dy, start_dz;
@@ -284,25 +310,25 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if (purkinje_config)
     {
-        start_dx = purkinje_config->start_h;
-        start_dy = purkinje_config->start_h;
-        start_dz = purkinje_config->start_h;
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dx, purkinje_config->config_data, "start_discretization");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dy, purkinje_config->config_data, "start_discretization");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dz, purkinje_config->config_data, "start_discretization");
 
-        max_dx = purkinje_config->start_h;
-        max_dy = purkinje_config->start_h;
-        max_dz = purkinje_config->start_h;
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dx, purkinje_config->config_data, "start_discretization");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dy, purkinje_config->config_data, "start_discretization");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dz, purkinje_config->config_data, "start_discretization");
     }
 
     if (domain_config)
     {
-        start_dx = domain_config->start_dx;
-        start_dy = domain_config->start_dy;
-        start_dz = domain_config->start_dz;
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dx, domain_config->config_data, "start_dx");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dy, domain_config->config_data, "start_dy");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dz, domain_config->config_data, "start_dz");
 
         if(!purkinje_config) {
-            max_dx = domain_config->max_dx;
-            max_dy = domain_config->max_dy;
-            max_dz = domain_config->max_dz;
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dx, domain_config->config_data, "maximum_dx");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dy, domain_config->config_data, "maximum_dy");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dz, domain_config->config_data, "maximum_dz");
         }
     }
 
@@ -322,14 +348,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
 
     print_to_stdout_and_file("Setting ODE's initial conditions\n");
-    set_ode_initial_conditions_for_all_volumes(the_ode_solver);
+    set_ode_initial_conditions_for_all_volumes(the_ode_solver, configs->ode_extra_config);
+
 
     // We need to call this function after because of the pitch.... maybe we have to change the way
     // we pass this parameters to the cell model....
     if(restore_checkpoint) 
     {
-        restore_state_config->restore_state(save_mesh_config->out_dir_name, restore_state_config, NULL, NULL,
-                                            the_ode_solver);
+        restore_success &= ((restore_state_fn*)restore_state_config->main_function)(out_dir_name, restore_state_config, NULL, NULL, the_ode_solver);
     }
 
     real_cpu initial_v = the_ode_solver->model_data.initial_v;
@@ -340,13 +366,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int ode_step = 1;
 
-    if(dt_pde >= dt_ode) 
-    {
+    if(dt_pde >= dt_ode) {
         ode_step = (int)(dt_pde / dt_ode);
         print_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
     } 
-    else 
-    {
+    else {
         print_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
                                  "step: %lf\n",
                                  dt_ode);
@@ -365,21 +389,21 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     init_stop_watch(&deref_time);
 
     start_stop_watch(&part_mat);
-    if(!restore_checkpoint) 
-    {
-        set_initial_conditions(the_monodomain_solver, the_grid, initial_v);
+
+    if(!restore_checkpoint || !restore_success) {
+        ((set_pde_initial_condition_fn*)assembly_matrix_config->init_function)(assembly_matrix_config, the_monodomain_solver, the_grid, initial_v);
     }
-    assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
+
+    ((assembly_matrix_fn*) assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
+
     total_mat_time = stop_stop_watch(&part_mat);
-
     start_stop_watch(&solver_time);
-
-    int print_rate = 1;
 
     int save_state_rate = 0;
 
-    if(save_checkpoint)
-        save_state_rate = save_state_config->save_rate;
+    if(save_checkpoint) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, save_state_rate, save_state_config->config_data, "save_rate");
+    }
 
     real_cpu vm_threshold = configs->vm_threshold;
 
@@ -392,29 +416,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu solver_error;
     uint32_t solver_iterations = 0;
 
-    if(stimuli_configs)
+    real *spatial_stim_currents = NULL;
+
+    if(stimuli_configs) {
+        spatial_stim_currents = (real*)malloc(sizeof(real)*original_num_cells);
         set_spatial_stim(stimuli_configs, the_grid);
+    }
 
     real_cpu cur_time = the_monodomain_solver->current_time;
 
-
-    bool draw = configs->draw;
-
     if(save_mesh_config != NULL) {
-        print_rate = save_mesh_config->print_rate;
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config->config_data, "print_rate");
     }
-
-    #ifdef COMPILE_OPENGL
-    {
-        if (draw) {
-            draw_config.grid_info.grid_to_draw = the_grid;
-            draw_config.simulating = true;
-            draw_config.paused = !configs->start_visualization_unpaused;
-        } else {
-            draw_config.paused = false;
-        }
-    }
-    #endif
 
     print_to_stdout_and_file("Starting simulation\n");
 
@@ -423,11 +436,20 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     init_stop_watch(&iteration_time_watch);
 
+    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
+    CALL_INIT_SAVE_MESH(save_mesh_config);
+
+
+#ifdef COMPILE_OPENGL
+    if(configs->draw) {
+        translate_mesh_to_origin(the_grid);
+    }
+    draw_config.grid_info.loaded = true;
+#endif
 
     // Main simulation loop start
     while(cur_time <= finalT)
     {
-
         start_stop_watch(&iteration_time_watch);
 
         #ifdef COMPILE_OPENGL
@@ -435,16 +457,22 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             omp_set_lock(&draw_config.sleep_lock);
             if (draw_config.restart) {
                 draw_config.time = 0.0;
+
+                CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+                CALL_END_SAVE_MESH(save_mesh_config);
                 return RESTART_SIMULATION;
             }
-            if (draw_config.exit) return END_SIMULATION;
+            if (draw_config.exit)  {
+                CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+                CALL_END_SAVE_MESH(save_mesh_config);
+                return END_SIMULATION;
+            }
         }
         #endif
 
         if (save_to_file && (count % print_rate == 0)) {
-
             start_stop_watch(&write_time);
-            save_mesh_config->save_mesh(count, cur_time, finalT, dt_pde, save_mesh_config, the_grid,'v');
+            ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'v');
             total_write_time += stop_stop_watch(&write_time);
         }
 
@@ -467,7 +495,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         start_stop_watch(&ode_time);
 
         // REACTION
-        solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs);
+        solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs, configs->ode_extra_config);
 
         ode_total_time += stop_stop_watch(&ode_time);
 
@@ -479,8 +507,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         start_stop_watch(&ode_time);
 
-        update_monodomain_config->update_monodomain(update_monodomain_config, original_num_cells, the_monodomain_solver, the_grid, the_ode_solver);
-
+        ((update_monodomain_fn*)update_monodomain_config->main_function)(update_monodomain_config, original_num_cells, the_monodomain_solver, the_grid, the_ode_solver);
+        
         ode_total_time += stop_stop_watch(&ode_time);
 
         start_stop_watch(&cg_time);
@@ -491,9 +519,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
         #endif
 
-        // DIFFUSION
-        linear_system_solver_config->solve_linear_system(linear_system_solver_config, the_grid, &solver_iterations,
-                                                         &solver_error);
+        // DIFUSION
+        ((linear_system_solver_fn *)linear_system_solver_config->main_function)(linear_system_solver_config, the_grid, &solver_iterations, &solver_error);
 
         cg_partial = stop_stop_watch(&cg_time);
 
@@ -534,10 +561,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             {
                 order_grid_cells(the_grid);
 
-                if (stimuli_configs) 
-                {
-                    if (cur_time <= last_stimulus_time || has_any_periodic_stim) 
-                    {
+                if (stimuli_configs) {
+                    if (cur_time <= last_stimulus_time || has_any_periodic_stim) {
+                        // TODO: I commented out those lines because the source of the stimulus bug was here ...
+                        //free(spatial_stim_currents);
+                        //spatial_stim_currents = (real*)malloc(sizeof(real)*the_grid->num_active_cells);
                         set_spatial_stim(stimuli_configs, the_grid);
                     }
                 }
@@ -554,7 +582,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 }
 
                 start_stop_watch(&part_mat);
-                assembly_matrix_config->assembly_matrix(assembly_matrix_config, the_monodomain_solver, the_grid);
+                ((assembly_matrix_fn *)assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
 
                 total_mat_time += stop_stop_watch(&part_mat);
             }
@@ -578,8 +606,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 the_monodomain_solver->current_time = cur_time;
                 printf("Saving state with time = %lf, and count = %d\n", the_monodomain_solver->current_time,
                        the_monodomain_solver->current_count);
-                save_state_config->save_state(save_mesh_config->out_dir_name, save_state_config, the_grid,
-                                              the_monodomain_solver, the_ode_solver);
+                ((save_state_fn *)save_state_config->main_function)(out_dir_name, save_state_config, the_grid, the_monodomain_solver, the_ode_solver);
             }
         }
 
@@ -593,16 +620,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     // ------------------------------------------------------------
-    // NEW FEATURE ! Save the activation map in a VTU file
+    // NEW FEATURE ! Save the activation map in a VTK-format file
     if (calc_activation_time)
     {
         print_to_stdout_and_file("Saving activation map!\n");
-        save_mesh_config->save_mesh(count, cur_time, finalT, dt_pde, save_mesh_config, the_grid,'a');
+        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'a');
     }
+    // NEW FEATURE ! Save the conductivity map in a VTK-format file
     if (print_conductivity)
     {
         print_to_stdout_and_file("Saving conductivity map!\n");
-        save_mesh_config->save_mesh(count, cur_time, finalT, dt_pde, save_mesh_config, the_grid,'c');
+        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'c');
     }
     // ------------------------------------------------------------
 
@@ -630,26 +658,29 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
    draw_config.simulating = false;
 #endif
 
+    CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+    CALL_END_SAVE_MESH(save_mesh_config);
+
     return SIMULATION_FINISHED;
 
 }
 
 void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid) {
 
-    struct stim_config *tmp = NULL;
+    struct config *tmp = NULL;
     size_t n = shlen(stim_configs);
 
-    for(int i = 0; i < n; i++) {
-        tmp = (struct stim_config *)stim_configs[i].value;
-        tmp->set_spatial_stim(tmp, the_grid);
+    for(size_t i = 0; i < n; i++) {
+        tmp = (struct config *)stim_configs[i].value;
+        ((set_spatial_stim_fn*)tmp->main_function)(tmp, the_grid);
     }
 }
 
-void set_ode_extra_data(struct extra_data_config *config, struct grid *the_grid, struct ode_solver *the_ode_solver) {
+void set_ode_extra_data(struct config *config, struct grid *the_grid, struct ode_solver *the_ode_solver) {
 
     free(the_ode_solver->ode_extra_data);
     the_ode_solver->ode_extra_data =
-        config->set_extra_data(the_grid, config->config_data.config, &(the_ode_solver->extra_data_size));
+            ((set_extra_data_fn*)config->main_function)(the_grid, config, &(the_ode_solver->extra_data_size));
 }
 
 bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver,
@@ -662,23 +693,21 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 
     real *sv = the_ode_solver->sv;
 
-    int i;
-
     bool act = false;
 
-    if(the_ode_solver->gpu) 
-    {
-#ifdef COMPILE_CUDA
+    if(the_ode_solver->gpu) {
+    #ifdef COMPILE_CUDA
         uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
         real *vms;
         size_t mem_size = max_number_of_cells * sizeof(real);
 
         vms = (real *)malloc(mem_size);
-        check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-#pragma omp parallel for
-        for(i = 0; i < n_active; i++) 
-        {
+        if(the_grid->adaptive)
+            check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+
+        #pragma omp parallel for
+        for(uint32_t i = 0; i < n_active; i++) {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
 
             if(ac[i]->v > vm_threshold) 
@@ -689,13 +718,10 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
-#endif
-    } 
-    else 
-    {
-#pragma omp parallel for
-        for(i = 0; i < n_active; i++) 
-        {
+    #endif
+    } else {
+        #pragma omp parallel for
+        for(uint32_t i = 0; i < n_active; i++) {
             sv[ac[i]->sv_position * n_odes] = (real)ac[i]->v;
 
             if(ac[i]->v > vm_threshold) 
@@ -715,7 +741,7 @@ void save_old_cell_positions(struct grid *the_grid) {
 
     int i;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for(i = 0; i < n_active; i++) {
         ac[i]->sv_position = ac[i]->grid_position;
     }
@@ -735,31 +761,12 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
     uint32_t *cts = solver->cells_to_solve;
     int i;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for(i = 0; i < n_active; i++) {
         cts[i] = ac[i]->sv_position;
     }
 }
 
-// TODO: MAYBE WE HAVE TO MOVE THIS TO THE USER PROVIDED LIBRARY (ASSEMBLY MATRIX)
-void set_initial_conditions(struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v) {
-
-    real_cpu alpha;
-    struct cell_node **ac = the_grid->active_cells;
-    uint32_t active_cells = the_grid->num_active_cells;
-    real_cpu beta = the_solver->beta;
-    real_cpu cm = the_solver->cm;
-    real_cpu dt = the_solver->dt;
-    int i;
-
-#pragma omp parallel for private(alpha)
-    for(i = 0; i < active_cells; i++) {
-
-        alpha = ALPHA(beta, cm, dt, ac[i]->dx, ac[i]->dy, ac[i]->dz);
-        ac[i]->v = initial_v;
-        ac[i]->b = initial_v * alpha;
-    }
-}
 
 void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                        struct grid *the_grid, struct user_options *options) {
@@ -767,9 +774,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     print_to_stdout_and_file("System parameters: \n");
-#if defined(_OPENMP)
+    #if defined(_OPENMP)
     print_to_stdout_and_file("Using OpenMP with %d threads\n", omp_get_max_threads());
-#endif
+    #endif
     if(the_ode_solver->gpu) {
         print_to_stdout_and_file("Using GPU to solve ODEs\n");
     }
@@ -790,6 +797,19 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
+    if(options->ode_extra_config) {
+
+        if (shlen(options->ode_extra_config) == 1) {
+            print_to_stdout_and_file("Extra ODE Solver parameter:\n");
+        } else if (shlen(options->ode_extra_config) > 1) {
+            print_to_stdout_and_file("Extra ODE Solver parameters:\n");
+        }
+
+        STRING_HASH_PRINT_KEY_VALUE_LOG(options->ode_extra_config);
+    }
+
+    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
     if(the_grid->adaptive)
     {
         print_to_stdout_and_file("Using adaptativity\n");
@@ -798,8 +818,15 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
         print_to_stdout_and_file("Refining each %d time steps\n", the_monodomain_solver->refine_each);
         print_to_stdout_and_file("Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
 
-        print_to_stdout_and_file("Domain maximum Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
-                                 options->domain_config->max_dx, options->domain_config->max_dy, options->domain_config->max_dz);
+        char *max_dx, *max_dy, *max_dz;
+
+        max_dx = shget(options->domain_config->config_data, "maximum_dx");
+        max_dy = shget(options->domain_config->config_data, "maximum_dy");
+        max_dz = shget(options->domain_config->config_data, "maximum_dz");
+
+        print_to_stdout_and_file("Domain maximum Space Discretization: dx %s um, dy %s um, dz %s um\n", max_dx, max_dy, max_dz);
+
+
         print_to_stdout_and_file("The adaptivity will start in time: %lf ms\n",
                                  the_monodomain_solver->start_adapting_at);
     }
@@ -828,7 +855,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
             struct string_voidp_hash_entry e = options->stim_configs[i];
             print_to_stdout_and_file("Stimulus name: %s\n", e.key);
-            print_stim_config_values((struct stim_config*) e.value);
+            print_stim_config_values((struct config*) e.value);
             print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
         }

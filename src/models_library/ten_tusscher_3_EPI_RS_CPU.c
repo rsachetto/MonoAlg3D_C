@@ -40,21 +40,27 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
     // Default values for a healthy cell ///////////
     real atpi = 6.8f;
     real Ko = 5.4f;
-    real Ki_mult = 1.0f;
-    real acidosis = 0.0;
-    real K1_mult = 1.0f;
+    real Ki = 138.3f;
+    real Vm_change = 0.0;
+    real GNa_multiplicator = 1.0f;
+    real GCa_multiplicator = 1.0f;
     ////////////////////////////////////
 
+    int num_extra_parameters = 6;
+    size_t extra_parameters_size = num_extra_parameters*sizeof(real);
+
     if(extra_data) {
-        atpi = ((real*)extra_data)[0]; //value
-        Ko = ((real*)extra_data)[1]; //value
-        Ki_mult = ((real*)extra_data)[2]; //value
-        K1_mult = ((real*)extra_data)[3]; //value
-        acidosis = ((real*)extra_data)[4]; //value
-        fibrosis = ((real*)extra_data) + 5; //pointer
+        fibrosis = ((real*)extra_data) + num_extra_parameters; //pointer
     }
     else {
-        atpi = 6.8;
+        extra_data = malloc(extra_parameters_size);
+        ((real*)extra_data)[0] = atpi;
+        ((real*)extra_data)[1] = Ko;
+        ((real*)extra_data)[2] = Ki;
+        ((real*)extra_data)[3] = Vm_change;
+        ((real*)extra_data)[4] = GNa_multiplicator;
+        ((real*)extra_data)[5] = GCa_multiplicator;
+
         fibrosis = calloc(num_cells_to_solve, sizeof(real));
     }
 
@@ -68,7 +74,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
             sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], atpi, Ko, Ki_mult, K1_mult, acidosis);
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], extra_data);
 
         }
     }
@@ -77,8 +83,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 }
 
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real atpi, real Ko, real Ki_mult,
-                         real K1_mult, real acidosis)  {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real *extra_parameters)  {
 
     assert(sv);
 
@@ -87,7 +92,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
     for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
 
-    RHS_cpu(rY, rDY, stim_current, dt, fibrosis, atpi,  Ko, Ki_mult, K1_mult, acidosis);
+    RHS_cpu(rY, rDY, stim_current, dt, fibrosis, extra_parameters);
 
     //THIS MODEL USES THE Rush Larsen Method TO SOLVE THE EDOS
     sv[0] = dt*rDY[0] + rY[0];
@@ -105,33 +110,37 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
 }
 
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real atpi, real Ko,
-             real Ki_multiplicator, real K1_multiplicator, real acidosis) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real *extra_parameters) {
 
-    // State variables
-    const real svolt = sv[0];      // Membrane variable
+    //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
+    const real svolt = sv[0];
 
-    real svolt_acid = svolt;
+    //printf("%lf, %lf, %lf, %lf, %lf\n", atpi, Ko, Ki_multiplicator, acidosis, fibrosis);
 
-    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
-        //These values are from In Electrophysiologic effects of acute myocardial ischemia: a theoretical
-        //study of altered cell excitability and action potential duration
-        svolt_acid = svolt - 3.4f;
-    }
+    real atpi              = extra_parameters[0];
+    real Ko                = extra_parameters[1];
+    real Ki                = extra_parameters[2];
+    real Vm_modifier       = extra_parameters[3];
+    real GNa_multiplicator = extra_parameters[4];
+    real GCa_multiplicator = extra_parameters[5];
 
-    const real sm   = sv[1];
-    const real sh   = sv[2];
-    const real sj   = sv[3];
-    const real sxr1 = sv[4];
-    const real sxs  = sv[5];
-    const real ss   = sv[6];
-    const real  sf   = sv[7];
-    const real sf2  = sv[8];
+    Vm_modifier = Vm_modifier - Vm_modifier*fibrosis;
 
-    const real D_INF  = sv[9];
-    const real Xr2_INF  = sv[10];
-    const real R_INF  = sv[11];
+    //These values are from In Electrophysiologic effects of acute myocardial ischemia: a theoretical
+    //study of altered cell excitability and action potential duration
+    real svolt_acid = svolt - Vm_modifier;
 
+    const real sh   =sv[2];
+    const real sm   =sv[1];
+    const real sj   =sv[3];
+    const real sxr1 =sv[4];
+    const real sxs  =sv[5];
+    const real ss   =sv[6];
+    const real sf  =sv[7];
+    const real sf2  =sv[8];
+    const real D_INF  =sv[9];
+    const real Xr2_INF  =sv[10];
+    const real R_INF  =sv[11];
 
     const real natp = 0.24;          // K dependence of ATP-sensitive K current
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
@@ -170,11 +179,15 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     //study of altered cell excitability and action potential duration
     //the authors change Ki by multiplying it to 0.863259669. Should we do the same here?
     //This changes are based on data from rat and guinea pig
-    real Ki_multiplicator_change  = 1.0f - Ki_multiplicator;
-    Ki_multiplicator = Ki_multiplicator + Ki_multiplicator_change*fibrosis;
+    real Ki_change  = 138.3f - Ki;
+    Ki = Ki + Ki_change*fibrosis;
 
+    real GNa_multiplicator_change  = 1.0f - GNa_multiplicator;
+    GNa_multiplicator = GNa_multiplicator + GNa_multiplicator_change*fibrosis;
 
-    real Ki=138.3f*Ki_multiplicator;
+    real GCa_multiplicator_change  = 1.0f - GCa_multiplicator;
+    GCa_multiplicator = GCa_multiplicator + GCa_multiplicator_change*fibrosis;
+
     //printf("Ki = %lf\n", Ki);
 
     //Constants
@@ -212,9 +225,8 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
 //Parameters for INa
 //if acidosis this has to change to 0.75*GNa
     real GNa=14.838;
-    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
-        GNa = GNa*0.75f;
-    }
+    GNa = GNa*GNa_multiplicator;
+
 //Parameters for IbNa
     const real GbNa=0.00029;
 //Parameters for INaK
@@ -224,9 +236,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
 //Parameters for ICaL
 //if acidosis this has to change to 0.75*GCaL
     real GCaL=0.2786f*pcal;
-    if( (fibrosis == 0.0f) && (acidosis == 1.0f) ) {
-        GCaL = GCaL*0.75f;
-    }
+    GCaL = GCaL*GCa_multiplicator;
 //Parameters for IbCa
     const real GbCa=0.000592;
 //Parameters for INaCa
@@ -325,7 +335,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     Ito=Gto*R_INF*ss*(svolt-Ek);
     IKr=Gkr*sqrtf(Ko/5.4f)*sxr1*Xr2_INF*(svolt-Ek);
     IKs=Gks*sxs*sxs*(svolt-Eks);
-    IK1=GK1*rec_iK1*(svolt-Ek)*K1_multiplicator;
+    IK1=GK1*rec_iK1*(svolt-Ek);
     INaCa=knaca*(1.0f/(KmNai*KmNai*KmNai+Nao*Nao*Nao))*(1.0f/(KmCa+Cao))*
           (1.0f/(1.0f+ksat*expf((n-1.0f)*svolt_acid*F/(R*T))))*
           (expf(n*svolt*F/(R*T))*Nai*Nai*Nai*Cao-
@@ -444,6 +454,5 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     rDY_[9] = D_INF_new;
     rDY_[10] = R_INF_new;
     rDY_[11] = Xr2_INF_new;
-
 
 }

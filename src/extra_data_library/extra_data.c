@@ -3,75 +3,87 @@
 //
 
 #include "../config/extra_data_config.h"
-#include "../libraries_common/config_helpers.h"
+#include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
+
+
+real* set_commom_schemia_data(struct config *config, uint32_t num_cells, int num_par, size_t *extra_data_size) {
+
+    *extra_data_size = sizeof(real)*(num_cells + num_par);
+
+    real *extra_data = (real*)malloc(*extra_data_size);
+
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
+
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
+
+    real Ki = 138.3;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki, config->config_data, "Ki");
+
+    real GNa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_multiplicator, config->config_data, "GNa_multiplicator");
+
+    real GCa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCa_multiplicator, config->config_data, "GCa_multiplicator");
+
+    real Vm_modifier = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config->config_data, "Vm_modifier");
+
+    extra_data[0] = atpi;
+    extra_data[1] = Ko;
+    extra_data[2] = Ki;
+    extra_data[3] = Vm_modifier;
+    extra_data[4] = GNa_multiplicator;
+    extra_data[5] = GCa_multiplicator;
+
+    return extra_data;
+
+}
 
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
-
-    *extra_data_size = sizeof(real)*(num_active_cells+5);
-
-    real *fibs = (real*)malloc(*extra_data_size);
-
     struct cell_node ** ac = the_grid->active_cells;
 
+    real *fibs = NULL;
+
     real plain_center = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config, "plain_center");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config->config_data, "plain_center");
 
     real border_zone_size = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config, "border_zone_size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config->config_data, "border_zone_size");
 
     real sphere_radius = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config, "sphere_radius");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
 
-    real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
-
-    real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
-
-    real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
-
-    real K1_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
-
-    real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
-
-    fibs[0] = atpi;
-    fibs[1] = Ko;
-    fibs[2] = Ki_multiplicator;
-    fibs[3] = K1_multiplicator;
-    fibs[4] = (real)acidosis;
-
-	int i;
+    int num_par = 6;
+    fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
 	#pragma omp parallel for
-    for (i = 5; i < num_active_cells; i++) {
+    for (uint32_t i = 0; i < num_active_cells; i++) {
 
         if(FIBROTIC(ac[i])) {
-            fibs[i+1] = 0.0;
+            fibs[i+num_par] = 0.0;
         }
         else if(BORDER_ZONE(ac[i])) {
 
-            real center_x = (real)ac[i]->center_x;
-            real center_y = (real)ac[i]->center_y;
+            real center_x = (real)ac[i]->center.x;
+            real center_y = (real)ac[i]->center.y;
             //TODO: Maybe we want the distance from the Z as well
             //real center_z = (real)ac[i]->center_z;
 
             real distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
             distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;
-            fibs[i+1] = distanceFromCenter;
+            fibs[i+num_par] = distanceFromCenter;
 
         }
         else {
-            fibs[i+1] = 1.0;
+            fibs[i+num_par] = 1.0;
         }
 
     }
-
 
     return (void*)fibs;
 }
@@ -79,93 +91,30 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
+    int num_par = 6;
 
-    *extra_data_size = sizeof(real)*(num_active_cells+5);
+    real *fibs = NULL;
 
-    real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
+    fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
-    real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
-
-    real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
-
-    real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
-
-    real K1_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
-
-    real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
-
-    fibs[0] = atpi;
-    fibs[1] = Ko;
-    fibs[2] = Ki_multiplicator;
-    fibs[3] = K1_multiplicator;
-    fibs[4] = (real)acidosis;
-
-
-    return (void*)fibs;
-}
-
-
-
-SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-
-    *extra_data_size = sizeof(real)*(num_active_cells+5);
-
-    real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
-
-    real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
-
-    real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
-
-    real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
-
-    real K1_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, K1_multiplicator, config, "K1_multiplicator");
-
-    real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
-
-
-    fibs[0] = atpi;
-    fibs[1] = Ko;
-    fibs[2] = Ki_multiplicator;
-    fibs[3] = K1_multiplicator;
-    fibs[4] = (real)acidosis;
-
-    for(int i = 5; i < num_active_cells+5; i++) {
+    for(uint32_t i = num_par; i < num_active_cells + num_par; i++) {
         fibs[i] = 0.0;
     }
 
     return (void*)fibs;
 }
 
-SET_EXTRA_DATA(set_extra_data_for_fibrosis) {
+SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node ** ac = the_grid->active_cells;
 
-    *extra_data_size = sizeof(real)*(num_active_cells+1);
+    int num_par = 6;
+    real *fibs = NULL;
 
-    real *fibs = (real*)malloc(*extra_data_size);
+    fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
-    fibs[0] = 6.8;
-
-    for(int i = 0; i < num_active_cells; i++) {
-        if(FIBROTIC(ac[i])) {
-            fibs[i+1] = 0.0;
-        }
-        else {
-            fibs[i+1] = 1.0;
-        }
+    for(uint32_t i = num_par; i < num_active_cells + num_par; i++) {
+        fibs[i] = 1.0;
     }
 
     return (void*)fibs;
@@ -175,56 +124,39 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(real)*(num_active_cells+4);
-
-    real *fibs = (real*)calloc(*extra_data_size, sizeof(real));
-
-    real atpi = 6.8;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
-
-    real Ko = 5.4;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config, "Ko");
-
-    real Ki_multiplicator = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_multiplicator, config, "Ki_multiplicator");
-
-    real acidosis = false;
-    GET_PARAMETER_BINARY_VALUE_OR_USE_DEFAULT(acidosis, config, "acidosis");
-
-    fibs[0] = atpi;
-    fibs[1] = Ko;
-    fibs[2] = Ki_multiplicator;
-    fibs[3] = (real)acidosis;
+     int num_par = 6;
+    real *fibs = NULL;
+    fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
 
     real_cpu small_scar_center_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config, "small_scar_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config->config_data, "small_scar_center_x");
 
     real_cpu small_scar_center_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config, "small_scar_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config->config_data, "small_scar_center_y");
 
     real_cpu small_scar_center_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config, "small_scar_center_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config->config_data, "small_scar_center_z");
 
     real_cpu big_scar_center_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config, "big_scar_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config->config_data, "big_scar_center_x");
 
     real_cpu big_scar_center_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config, "big_scar_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config->config_data, "big_scar_center_y");
 
     real_cpu big_scar_center_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config, "big_scar_center_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config->config_data, "big_scar_center_z");
 
     real_cpu bz_size_big = 0;
     real_cpu bz_size_small = 0;
     real_cpu dist_big = 0;
     real_cpu dist_small = 0;
 
-	int i;
+	uint32_t i;
 	bool fibrotic, border_zone;
 	char scar_type;
-    
+
     //#pragma omp parallel for private(dist_big, dist_small) reduction(max: bz_size_big, bz_size_small)
 	#pragma omp parallel for private(dist_big, dist_small)
     for (i = 0; i < num_active_cells; i++) {
@@ -233,9 +165,9 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
         scar_type = SCAR_TYPE(ac[i]);
 
         if (ac[i]->active && border_zone) {
-            real_cpu center_x = ac[i]->center_x;
-            real_cpu center_y = ac[i]->center_y;
-            real_cpu center_z = ac[i]->center_z;
+            real_cpu center_x = ac[i]->center.x;
+            real_cpu center_y = ac[i]->center.y;
+            real_cpu center_z = ac[i]->center.z;
             if(scar_type == 'b') {
                 dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
                                 (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
@@ -266,27 +198,27 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
             scar_type = SCAR_TYPE(ac[i]);
 
             if(fibrotic) {
-                fibs[i+1] = 0.0f;
+                fibs[i+num_par] = 0.0f;
             }
             else if (border_zone) {
-                real_cpu center_x = ac[i]->center_x;
-                real_cpu center_y = ac[i]->center_y;
-                real_cpu center_z = ac[i]->center_z;
+                real_cpu center_x = ac[i]->center.x;
+                real_cpu center_y = ac[i]->center.y;
+                real_cpu center_z = ac[i]->center.z;
                 if(scar_type == 'b') {
                     dist_big = sqrt((center_x - big_scar_center_x) * (center_x - big_scar_center_x) +
                                     (center_y - big_scar_center_y) * (center_y - big_scar_center_y) +
                                     (center_z - big_scar_center_z) * (center_z - big_scar_center_z));
-                    fibs[i+1] = (real)(dist_big / bz_size_big);
-                    
+                    fibs[i+num_par] = (real)(dist_big / bz_size_big);
+
                 }
                 else if(scar_type == 's') {
                     dist_small = sqrt((center_x - small_scar_center_x) * (center_x - small_scar_center_x) +
                                       (center_y - small_scar_center_y) * (center_y - small_scar_center_y) +
                                       (center_z - small_scar_center_z) * (center_z - small_scar_center_z));
-                    fibs[i+1] = (real)(dist_small / bz_size_small);
+                    fibs[i+num_par] = (real)(dist_small / bz_size_small);
                 }
                 else {
-                    fibs[i+1] = 1.0f;
+                    fibs[i+num_par] = 1.0f;
                 }
             }
         }
@@ -298,19 +230,15 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
+    real *fibs = NULL;
 
-    *extra_data_size = sizeof(real)*(num_active_cells+1);
-
-    real *fibs = (real*)malloc(*extra_data_size);
+    int num_par = 6;
+    fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
 
-    real atpi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,atpi,  config, "atpi");
-    fibs[0] = atpi;
-
     char *scar_size;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (scar_size, config, "scar_size");
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (scar_size, config->config_data, "scar_size");
 
     uint8_t size_code;
 
@@ -346,7 +274,7 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     real_cpu bz_size = 0.0;
     real_cpu dist;
 
-	int i;
+	uint32_t i;
 	bool border_zone, fibrotic;
 
 //    #pragma omp parallel for private(dist) reduction(max: bz_size)
@@ -355,9 +283,9 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
         if(ac[i]->active) {
             border_zone = BORDER_ZONE(ac[i]);
             if(border_zone) {
-                real_cpu center_x = ac[i]->center_x;
-                real_cpu center_y = ac[i]->center_y;
-                real_cpu center_z = ac[i]->center_z;
+                real_cpu center_x = ac[i]->center.x;
+                real_cpu center_y = ac[i]->center.y;
+                real_cpu center_z = ac[i]->center.z;
                 dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
 				#pragma omp critical
                 if(dist > bz_size) {
@@ -377,20 +305,20 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
             fibrotic = FIBROTIC(ac[i]);
 
             if(fibrotic) {
-                fibs[i+1] = 0.0;
+                fibs[i+num_par] = 0.0;
             }
             else if(border_zone) {
-                real_cpu center_x = ac[i]->center_x;
-                real_cpu center_y = ac[i]->center_y;
-                real_cpu center_z = ac[i]->center_z;
+                real_cpu center_x = ac[i]->center.x;
+                real_cpu center_y = ac[i]->center.y;
+                real_cpu center_z = ac[i]->center.z;
                 dist =  sqrt((center_x - scar_center_x)*(center_x - scar_center_x) + (center_y - scar_center_y)*(center_y - scar_center_y)  + (center_z - scar_center_z)*(center_z - scar_center_z)  );
                 dist = dist/bz_size;
 
-                fibs[i+1] = (real)dist;
+                fibs[i + num_par] = (real)dist;
 
             }
             else {
-                fibs[i+1] = 1.0f;
+                fibs[i + num_par] = 1.0f;
             }
 
         }

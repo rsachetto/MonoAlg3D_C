@@ -1,27 +1,45 @@
-1) Merged Sachetto changes since 05/06/2019
-    - New base64 encoding 
-    - New 'save_activation_time' function on the save_mesh library 
-
-2) New simulations
-    - Elnaz:
-        + elnaz_plain_mesh_fibrotic_region:
-    Simulation where we specify a fibrotic region inside the tissue and cover this area with 
-    fibrotic cells based on the 'phi' parameter.
-        + elnaz_plain_mesh_spiral:
-    Simulation where we are trying to generate a spiral wave using the TenTusscher 2004 epi model
-        + elnaz_plain_mesh_tentusscher:
-    Simulation where we test several celular models in order to compare the activation times.
-
-    - Pedro:
-        + pedro_plain_mesh_fibrotic_region_with_slow_conductivity
-    Simulation where we can specify a fibrotic region and also change the conductivity of the
-    cells inside this area by setting a 'sigma_factor' parameter.
-        + pedro_scientific_reports_fig_4a
-    Simulation where we change all the cells that have fibrosis on the original simulation of the
-    Nature paper to cells where their conductivities are decreased by a certain factor.
+1) Merged Sachetto changes since 05/09/2019
+    - Update the syntax of the configuration files
+    - Refactor the 'cell_node' structure to reduce the number of variables
+    - Update the stimulus library with macros
+    - Update the matrix assembly library with macros
+    - Add a 'save_activation_time' function with APD calculation on the fly
+    - New 'config_helpers' module
  
-3) New scripts
-    - New version of the script to calculate propagation velocity of the whole grid using an activation map
-    - New script to plot the APD of the cells which are within a line over the tissue
-    - New script to calculate the absolute error between two VTU files.
+2) Lucas improvements
+    - Change the SAVE_MESH macro to include a 'scalar_name' variable, so we could save the activation and also conductivity map (try to do the APD map ...)
+    - Fix the bug on the stimulus:
+        - It now possible to include 2 different stimuli happening at the same timestep
+        - The stimulus are not been overwritten anymore
+    - Add more celular models and an example simulation for each one
+        - Di & Francesco 1985 (Purkinje)
+        - Noble 1962 (Purkinje)
+        - Steward & Aslanidi & Noble 2009 (Purkinje)
+        - Li & Rudy 2011 (Purkinje)
+    - Create two new matrix assembly libraries:
+        - DDM
+        - Purkinje 
+    - Update the DDM functions
+        - Create a macro do calculate the KAPPA variable
+        - It is now working in micrometers
+        - All the examples are working now
+    - Update the Purkinje functions
+        - Solve a leak memory problem
+        - Add new functions to save the activation and conductivity map as a '.vtp'
+    - More two options in [main] section of the configuration file
+        - calc_activation_time
+        - print_conductivity_map
+    - Add a brief description for each configuration file
+    - Add a new cheat Purkinje simulation
+    
+3) Elnaz improvements:
+    - A new simulation to generate a sustained spiral wave using the TenTusscher 2004 model
+    - Fix a problem on the 'source_sink_mismatch' simulations
+    
+4) Pedro improvements:
+    - Add new fibrosis simulations to reproduce the Scientific reports work using conductivity reduction instead of fibrotic cells
+    - Add new source_sink_mismatch simulations
+        
+5) New scripts
+    - Add a new Purkinje-Network-Reader, which generates the 'purkinje-cheat' configuration file.
 

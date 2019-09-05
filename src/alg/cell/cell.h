@@ -39,7 +39,9 @@ struct cell_node {
 
     uint64_t bunch_number; // Bunch identifier
 
-    float center_x, center_y, center_z;
+    struct point_3d center;
+
+    struct point_3d translated_center;
 
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
@@ -75,7 +77,7 @@ struct cell_node {
     /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
     element_array elements;
 
-    real_cpu dx, dy, dz;
+    struct point_3d discretization;
 
     bool can_change;
     bool visited;
@@ -97,17 +99,12 @@ struct cell_node {
     // Variables used by some applications of partial differential equations.
     real_cpu v;
 
-    // [Berg] Variables used for propagation velocity calculation
+    // Variables used for propagation velocity calculation
     real max_dvdt;
     real activation_time;
 
-    real_cpu sigma_x;
-    real_cpu sigma_y;
-    real_cpu sigma_z;
-
-    real_cpu kappa_x;
-    real_cpu kappa_y;
-    real_cpu kappa_z;
+    struct point_3d sigma;
+    struct point_3d kappa;
 
 #if defined(_OPENMP)
     omp_lock_t updating;
@@ -156,19 +153,18 @@ void set_transition_node_data (struct transition_node *the_transition_node, uint
                                void *quadruple_connector2, void *quadruple_connector3,
                                void *quadruple_connector4);
 
-void set_cell_node_data(struct cell_node *the_cell, real_cpu dx, real_cpu dy, real_cpu dz,
+void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization,
                         uint64_t bunch_number, void *east, void *north, void *west, void *south,
                         void *front, void *back, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, real_cpu center_x,
-                        real_cpu center_y, real_cpu center_z);
+                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center,
+                        struct point_3d translated_center);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
 real_cpu get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            real_cpu dx, real_cpu dy, real_cpu dz, real_cpu center_x,
-                            real_cpu center_y, real_cpu center_z, uint64_t bunch_number,
-                            ui32_array free_sv_positions, ui32_array *refined_this_step);
+                            struct point_3d discretization, struct point_3d center, struct point_3d translated_center,
+                            uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
                                        struct cell_node *other_node, char direction);
