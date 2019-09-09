@@ -27,8 +27,11 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
 void depth_first_search (struct graph *the_purkinje_network, struct node *u, int level, uint32_t *map_skeleton_to_mesh);
 void grow_segment (struct graph *the_purkinje_network, struct node *u, struct edge *v, uint32_t *map_skeleton_to_mesh);
 void calc_unitary_vector (real_cpu d_ori[], struct node *u, struct node *v);
+void calculate_number_of_terminals (struct graph *the_purkinje_network);
 void read_purkinje_network_from_file (const char *filename, struct point **points, struct branch **branches, int *N, int *E);
 void write_purkinje_network_to_vtk (struct graph *the_purkinje_network);
+
+bool is_terminal (const struct node *n);
 
 int check_purkinje_input (const real_cpu side_length);
 

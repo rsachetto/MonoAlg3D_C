@@ -31,8 +31,13 @@ struct grid {
     struct cell_node **active_cells;
     bool adaptive;
 
+    // TODO: Move this to another structure ... (aka. struct grid_purkinje)
+    // Purkinje section
     struct graph *the_purkinje_network;
 
+    uint32_t number_of_purkinje_cells;
+    struct cell_node *first_purkinje_cell;
+    struct cell_node **purkinje_cells;
 };
 
 
@@ -78,5 +83,7 @@ void initialize_grid_purkinje (struct grid *the_grid);
 void construct_grid_purkinje (struct grid *the_grid);
 void translate_mesh_to_origin(struct grid *grid);
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b);
+
+void link_purkinje_to_endocardium (struct grid *the_grid ,struct terminal **the_terminals);
 
 #endif //MONOALG3D_GRID_H

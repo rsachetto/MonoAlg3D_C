@@ -44,7 +44,7 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     print_to_stdout_and_file("Discretization for the Purkinje Network Mesh: %g um\n",side_length);
     set_custom_purkinje_network(the_grid, network_file, side_length);
 
-    // TODO: Populate the 'grid_cell' linked-list with the nodes from the graph
+    // Populate the 'purkinje_cells' linked-list with the nodes from the graph
     //        Some parameters from the 'cell_node' structure will not be used
     initialize_and_construct_grid_purkinje(the_grid);
 

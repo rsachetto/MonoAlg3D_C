@@ -47,6 +47,15 @@ struct ode_solver {
     //update_gpu_fn_pt update_gpu_fn;
 
 
+    // TODO: Move this to another structure ...
+    // Purkinje section
+    uint32_t original_num_purkinje_cells;
+    real *sv_purkinje;
+
+    size_t num_purkinje_cells_to_solve;
+    uint32_t *purkinje_cells_to_solve;
+
+
 };
 
 void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config);
@@ -59,6 +68,12 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                             struct string_voidp_hash_entry *stim_configs, struct string_hash_entry *ode_extra_config);
 
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
+
+
+// NEW FUNCTIONS
+void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
+                            int num_steps, struct string_voidp_hash_entry *stim_configs,
+                            struct string_hash_entry *ode_extra_config);
 
 
 #endif //MONOALG3D_EDO_SOLVER_H

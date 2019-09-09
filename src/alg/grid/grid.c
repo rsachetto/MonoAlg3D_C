@@ -26,6 +26,7 @@ struct grid *new_grid() {
 
     // Purkinje
     result->the_purkinje_network = new_graph();
+    result->purkinje_cells = NULL;
 
     return result;
 }
@@ -488,10 +489,11 @@ void construct_grid_purkinje (struct grid *the_grid)
 
     int total_nodes = the_grid->the_purkinje_network->total_nodes;
     
-    // Create an array of cell nodes
-    struct cell_node **cells = (struct cell_node**)malloc(sizeof(struct cell_node*)*total_nodes);
+    // Create the Purkinje cells array
+    struct cell_node **purkinje_cells = the_grid->purkinje_cells;
+    purkinje_cells = (struct cell_node**)malloc(sizeof(struct cell_node*)*total_nodes);
     for (int i = 0; i < total_nodes; i++)
-        cells[i] = new_cell_node();
+        purkinje_cells[i] = new_cell_node();
     
     // Pass through the Purkinje graph and set the cell nodes.
     struct node *n = the_grid->the_purkinje_network->list_nodes;
@@ -499,31 +501,32 @@ void construct_grid_purkinje (struct grid *the_grid)
     {
         
         if (i == 0)
-            set_cell_node_data (cells[i],half_side_length, 0, NULL,NULL,NULL,NULL,NULL,NULL,NULL,cells[i+1],i,0,\
+            set_cell_node_data (purkinje_cells[i],half_side_length, 0, NULL,NULL,NULL,NULL,NULL,NULL,NULL,purkinje_cells[i+1],i,0,\
                             POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
         else if (i == total_nodes-1)
-            set_cell_node_data (cells[i],half_side_length,\
+            set_cell_node_data (purkinje_cells[i],half_side_length,\
                         0,NULL,NULL,NULL,NULL,NULL,NULL,\
-                        cells[i-1],NULL,i,0,\
+                        purkinje_cells[i-1],NULL,i,0,\
                         POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
         else
-            set_cell_node_data (cells[i],half_side_length,\
+            set_cell_node_data (purkinje_cells[i],half_side_length,\
                         0,NULL,NULL,NULL,NULL,NULL,NULL,\
-                        cells[i-1],cells[i+1],i,0,\
+                        purkinje_cells[i-1],purkinje_cells[i+1],i,0,\
                         POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
 
         // Do not refine the Purkinje cells !
-        cells[i]->can_change = false;
+        purkinje_cells[i]->can_change = false;
 
         // Set the cell as active
-        cells[i]->active = true;
+        purkinje_cells[i]->active = true;
 
         n = n->next;
     }
     
-    // Grid initialization
-    the_grid->first_cell = cells[0];
-    the_grid->number_of_cells = total_nodes;
+    // Purkinje initialization
+    the_grid->first_purkinje_cell = purkinje_cells[0];
+    the_grid->purkinje_cells = purkinje_cells;
+    the_grid->number_of_purkinje_cells = total_nodes;
     
 }
 
@@ -533,6 +536,7 @@ void initialize_and_construct_grid_purkinje (struct grid *the_grid)
 
     initialize_grid_purkinje(the_grid);
     construct_grid_purkinje(the_grid);
+    
 }
 
 void translate_mesh_to_origin(struct grid *grid) {
@@ -742,4 +746,62 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
 
     free(matrix);
     free(vector);
+}
+
+
+// TODO: Include a parameter that links more cells
+void link_purkinje_to_endocardium (struct grid *the_grid ,struct terminal **the_terminals)
+{
+    struct graph *the_purkinje_network = the_grid->the_purkinje_network;
+
+    uint32_t number_of_terminals = the_purkinje_network->number_of_terminals;
+
+    *the_terminals = (struct terminal *)malloc(sizeof(struct terminal)*number_of_terminals);
+
+    uint32_t j = 0;
+    struct node *n = the_purkinje_network->list_nodes;
+    while (n != NULL)
+    {
+        if (n->num_edges == 1 && n->id != 0)
+        {
+            uint32_t n_active = the_grid->num_active_cells;
+            struct cell_node **ac = the_grid->active_cells;
+            
+            uint32_t purkinje_index = n->id;
+            struct node *purkinje_cell = n;
+            
+            uint32_t closest_index;
+            double closest_dist = __DBL_MAX__;
+            for (uint32_t i = 0; i < n_active; i++)
+            {
+                double dist = calc_norm(n->x,n->y,n->z,ac[i]->center.x,ac[i]->center.y,ac[i]->center.z);
+                if (dist < closest_dist)
+                {
+                    closest_dist = dist;
+                    closest_index = i;
+                }
+            }
+
+            struct cell_node *endocardium_cell = ac[closest_index];
+            uint32_t endocardium_index = ac[closest_index]->grid_position;
+            
+            the_terminals[j]->endocardium_index = endocardium_index;
+            the_terminals[j]->endocardium_cell = endocardium_cell;
+            the_terminals[j]->purkinje_index = purkinje_index;
+            the_terminals[j]->purkinje_cell = purkinje_cell;
+
+            // Change the position of the Purkinje terminal to be on the center of the Endocardium cell
+            the_terminals[j]->purkinje_cell->x = the_terminals[j]->endocardium_cell->center.x;
+            the_terminals[j]->purkinje_cell->y = the_terminals[j]->endocardium_cell->center.y;
+            the_terminals[j]->purkinje_cell->z = the_terminals[j]->endocardium_cell->center.z;
+            
+            j++;
+
+        }
+        n = n->next;
+    }
+
+    //print_to_stdout_and_file("On 'link_purkinje_to_endocardium'\n");
+    //for (uint32_t i = 0; i < number_of_terminals; i++)
+    //    print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i]->purkinje_index,the_terminals[i]->endocardium_index);
 }

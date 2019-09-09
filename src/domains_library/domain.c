@@ -45,7 +45,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
         calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z,
                                       &real_side_length_x, &real_side_length_y, &real_side_length_z);
 
-    if(!success) {
+    if(!success) 
+    {
         return 0;
     }
 
@@ -59,11 +60,13 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     initialize_and_construct_grid(the_grid, POINT3D(real_side_length_x, real_side_length_y, real_side_length_z));
 
-    if((real_side_length_z / 2.0f) > side_length_z) {
+    if((real_side_length_z / 2.0f) > side_length_z) 
+    {
         real_cpu aux = real_side_length_z / 2.0f;
         int remaining_refinements = num_steps;
 
-        for(int i = 0; i < num_steps; i++) {
+        for(int i = 0; i < num_steps; i++) 
+        {
             set_cuboid_domain(the_grid, real_side_length_x, real_side_length_y, aux);
             refine_grid(the_grid, 1);
             derefine_grid_inactive_cells(the_grid);
@@ -74,16 +77,23 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
         refine_grid(the_grid, remaining_refinements);
 
-    } else {
+    } 
+    else 
+    {
         refine_grid(the_grid, num_steps);
     }
 
     set_cuboid_domain(the_grid, side_length_x, side_length_y, side_length_z);
 
     int i;
-    for(i = 0; i < num_steps; i++) {
+    for(i = 0; i < num_steps; i++) 
+    {
         derefine_grid_inactive_cells(the_grid);
     }
+
+    print_to_stdout_and_file("Number of tissue cells = %u\n",the_grid->number_of_cells);
+
+    //print_to_stderr_and_file_and_exit("Leaving program\n");
 
     return 1;
 }

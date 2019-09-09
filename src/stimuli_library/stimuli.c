@@ -543,3 +543,44 @@ SET_SPATIAL_STIM(stim_concave) {
         SET_STIM_VALUE(i, stim_value);
     }
 }
+
+// TODO: Move this to another library
+// Try to implement this function in a different way
+SET_SPATIAL_STIM(stim_purkinje_if_id_less_than) 
+{
+
+    // Total number of cells on the grid Purkinje + Tissue
+    uint32_t n_active_tissue = the_grid->active_cells;
+    uint32_t n_active_purkinje = the_grid->number_of_purkinje_cells;
+    uint32_t n_active = n_active_purkinje + n_active_tissue;
+
+    bool stim;
+    real stim_value;
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    int id = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, id, config->config_data, "id_limit");
+
+    int i;
+
+    ALLOCATE_STIMS();
+
+    #pragma omp parallel for private(stim, stim_value)
+    for(i = 0; i < n_active; i++) 
+    {
+        stim = i <= id;
+
+        if(stim) 
+        {
+            stim_value = stim_current;
+        } 
+        else 
+        {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+    }
+}

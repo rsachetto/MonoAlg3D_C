@@ -42,6 +42,7 @@ struct graph
     uint32_t total_edges;
 
     real_cpu dx;
+    uint32_t number_of_terminals;
 };
 
 struct node* new_node (uint32_t id, const real_cpu pos[]);

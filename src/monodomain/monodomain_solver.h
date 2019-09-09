@@ -75,4 +75,10 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt,\
 void print_activation_time (struct grid *the_grid);
 void print_conductivity (struct grid *the_grid);
 
+
+void update_monodomain_purkinje (struct config *config, uint32_t initial_number_of_cells, struct monodomain_solver *the_solver, struct grid *the_grid, struct ode_solver *the_ode_solver);
+void linear_system_solver_purkinje (struct config *config, struct grid *the_grid, uint32_t *number_of_iterations, real_cpu *error);
+void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
+void map_tissue_solution_to_purkinje(struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
+
 #endif // MONOALG3D_SOLVER_H

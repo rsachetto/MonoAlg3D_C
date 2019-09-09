@@ -39,6 +39,10 @@ struct ode_solver* new_ode_solver() {
     result->ode_extra_data = NULL;
     result->ode_extra_data = 0;
 
+    // TODO: Move this to another structure
+    // Purkinje section
+    result->sv_purkinje = NULL;
+    result->purkinje_cells_to_solve = NULL;
 
     return result;
 }
@@ -134,7 +138,8 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
 }
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config) {
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config) 
+{
 
     bool get_initial_v = !isfinite(solver->model_data.initial_v);
     bool get_neq = solver->model_data.number_of_ode_equations == -1;
@@ -143,36 +148,43 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
     (*(solver->get_cell_model_data))(&(solver->model_data), get_initial_v, get_neq);
     int n_odes = solver->model_data.number_of_ode_equations;
 
-    if (solver->gpu) {
+    if (solver->gpu) 
+    {
 #ifdef COMPILE_CUDA
 
         set_ode_initial_conditions_gpu_fn *soicg_fn_pt = solver->set_ode_initial_conditions_gpu;
 
-        if(!soicg_fn_pt) {
+        if(!soicg_fn_pt) 
+        {
             fprintf(stderr, "The ode solver was set to use the GPU, \n "
                     "but no function called set_model_initial_conditions_gpu "
                     "was provided in the %s shared library file\n", solver->model_data.model_library_path);
             exit(11);
         }
 
-        if(solver->sv != NULL) {
+        if(solver->sv != NULL) 
+        {
             check_cuda_errors(cudaFree(solver->sv));
         }
 
         solver->pitch = soicg_fn_pt(ode_extra_config, &(solver->sv), num_cells, solver->ode_extra_data, solver->extra_data_size);
 #endif
-    } else {
+    } 
+    else 
+    {
 
         set_ode_initial_conditions_cpu_fn *soicc_fn_pt = solver->set_ode_initial_conditions_cpu;
 
-        if(!soicc_fn_pt) {
+        if(!soicc_fn_pt) 
+        {
             fprintf(stderr, "The ode solver was set to use the CPU, \n "
                     "but no function called set_model_initial_conditions_cpu "
                     "was provided in the %s shared library file\n", solver->model_data.model_library_path);
             exit(11);
         }
 
-        if(solver->sv != NULL) {
+        if(solver->sv != NULL) 
+        {
             free(solver->sv);
         }
 
@@ -181,11 +193,27 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
 		int i;
 
         #pragma omp parallel for
-        for(i = 0; i < num_cells; i++) {
+        for(i = 0; i < num_cells; i++) 
+        {
             soicc_fn_pt(ode_extra_config, solver->sv + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
         }
 
+        // TODO: Create a function to do this and consider a separate Purkinje celular model for the 'sv_purkinje'
+        // Purkinje section
+        uint32_t num_purkinje_cells = solver->num_purkinje_cells_to_solve;
+        if (solver->sv_purkinje != NULL)
+        {
+            free(solver->sv_purkinje);
+        }
+
+        solver->sv_purkinje = (real*)malloc(n_odes*num_purkinje_cells*sizeof(real));
+        #pragma omp parallel for
+        for(i = 0; i < num_purkinje_cells; i++) 
+        {
+            soicc_fn_pt(ode_extra_config, solver->sv_purkinje + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
+        }
     }
+
 }
 
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
@@ -226,7 +254,8 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                     #pragma omp parallel for
                     for (i = 0; i < n_active; i++) {
                         // This variable should be an accumulator to allow multiple stimulus
-                        merged_stims[i] += ((real*)(tmp->persistent_data))[i];
+                        // TODO: Think about the stimulus for the tissue
+                        //merged_stims[i] += ((real*)(tmp->persistent_data))[i];
                     }
                 }
                 time += dt;
@@ -330,4 +359,88 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
         solver->model_data.model_library_path = strdup(options->model_file_path);
     }
 
+}
+
+void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
+                            int num_steps, struct string_voidp_hash_entry *stim_configs,
+                            struct string_hash_entry *ode_extra_config) 
+{
+
+    assert(the_ode_solver->sv_purkinje);
+
+    real dt = the_ode_solver->min_dt;
+    //int n_odes = the_ode_solver->model_data.number_of_ode_equations;
+    real *sv = the_ode_solver->sv_purkinje;
+
+    void *extra_data = the_ode_solver->ode_extra_data;
+
+    real_cpu time = cur_time;
+
+    real *merged_stims = (real*)calloc(sizeof(real), n_active);
+
+    struct config *tmp = NULL;
+
+	uint32_t i;
+    ptrdiff_t n = hmlen(stim_configs);
+
+    if(stim_configs) 
+    {
+
+        real stim_start = 0.0;
+        real  stim_dur = 0.0;
+        real  stim_period = 0.0;
+
+        for (long k = 0; k < n; k++) 
+        {
+            tmp = (struct config*) stim_configs[k].value;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp->config_data, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp->config_data, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp->config_data, "period");
+
+            for (int j = 0; j < num_steps; ++j) 
+            {
+                if ((time >= stim_start) && (time <= stim_start + stim_dur)) 
+                {
+                    #pragma omp parallel for
+                    for (i = 0; i < n_active; i++) 
+                    {
+                        // This variable should be an accumulator to allow multiple stimulus
+                        merged_stims[i] += ((real*)(tmp->persistent_data))[i];
+                    }
+                }
+                time += dt;
+            }
+
+            if(stim_period > 0.0) 
+            {
+                if (time >= stim_start + stim_period) 
+                {
+                    stim_start = stim_start + stim_period;
+                    sds stim_start_char = sdscatprintf(sdsempty(), "%lf", stim_start);
+                    shput_dup_value(tmp->config_data, "start", stim_start_char);
+                    sdsfree(stim_start_char);
+                }
+            }
+
+            time = cur_time;
+        }
+    }
+
+    if(the_ode_solver->gpu) 
+    {
+        #ifdef COMPILE_CUDA
+        size_t extra_data_size = the_ode_solver->extra_data_size;
+        solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
+        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
+                      extra_data_size);
+
+        #endif
+    }
+    else 
+    {
+        solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
+        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+    }
+
+    free(merged_stims);
 }

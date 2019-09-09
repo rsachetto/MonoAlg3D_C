@@ -132,6 +132,18 @@ struct transition_node {
     char direction;
 };
 
+// ----------------------------------------------------
+// NEW FEATURE !!!!!
+struct terminal
+{
+    uint32_t purkinje_index;
+    uint32_t endocardium_index;
+
+    struct cell_node *endocardium_cell;
+    struct node *purkinje_cell;
+};
+// ----------------------------------------------------
+
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type);
 
 struct cell_node* new_cell_node();

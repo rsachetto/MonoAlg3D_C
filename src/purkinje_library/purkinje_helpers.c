@@ -31,7 +31,10 @@ void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, 
 
     set_purkinje_network_from_file(purkinje,file_name,side_length);
 
-    print_to_stdout_and_file("Number of Purkinje nodes = %u\n",purkinje->total_nodes);
+    calculate_number_of_terminals(purkinje);
+
+    print_to_stdout_and_file("Number of Purkinje cells = %u\n",purkinje->total_nodes);
+    print_to_stdout_and_file("Number of Purkinje terminals = %u\n",purkinje->number_of_terminals);
 
 }
 
@@ -312,6 +315,35 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network)
     }
 
     fclose(file);
+}
+
+void calculate_number_of_terminals (struct graph *the_purkinje_network)
+{
+    assert(the_purkinje_network);
+
+    uint32_t number_of_terminals = 0;
+
+    struct node *n;
+    struct edge *e;
+
+    n = the_purkinje_network->list_nodes;
+    while (n != NULL)
+    {
+        if (is_terminal(n))
+            number_of_terminals++;
+
+        n = n->next;
+    }
+
+    the_purkinje_network->number_of_terminals = number_of_terminals;
+}
+
+bool is_terminal (const struct node *n)
+{
+    if (n->num_edges == 1 && n->id != 0)
+        return true;
+    else
+        return false;
 }
 
 // TODO: Some test for the network will be implemented here ...
