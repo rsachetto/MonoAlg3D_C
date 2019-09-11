@@ -544,14 +544,12 @@ SET_SPATIAL_STIM(stim_concave) {
     }
 }
 
-// TODO: Move this to another library
-// Try to implement this function in a different way
 SET_SPATIAL_STIM(stim_purkinje_if_id_less_than) 
 {
 
     // Total number of cells on the grid Purkinje + Tissue
     uint32_t n_active_tissue = the_grid->active_cells;
-    uint32_t n_active_purkinje = the_grid->number_of_purkinje_cells;
+    uint32_t n_active_purkinje = the_grid->the_purkinje->num_active_purkinje_cells;
     uint32_t n_active = n_active_purkinje + n_active_tissue;
 
     bool stim;

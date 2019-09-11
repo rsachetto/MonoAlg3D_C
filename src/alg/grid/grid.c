@@ -25,8 +25,7 @@ struct grid *new_grid() {
     arrsetcap(result->free_sv_positions, 128);
 
     // Purkinje
-    result->the_purkinje_network = new_graph();
-    result->purkinje_cells = NULL;
+    result->the_purkinje = new_grid_purkinje();
 
     return result;
 }
@@ -227,13 +226,13 @@ void clean_grid(struct grid *the_grid) {
 
     struct cell_node *grid_cell = NULL;
 
-    // TODO: Think about this function when the coupling happens ...
+    // TODO: Think about this function when the coupling happens ..
     // Delete nodes from the Purkinje network
-    if (the_grid->the_purkinje_network->list_nodes != NULL) 
+    if (the_grid->the_purkinje->the_network->list_nodes != NULL) 
     {
 
         // First free the Purkinje mesh structure
-        free_graph(the_grid->the_purkinje_network);
+        free_graph(the_grid->the_purkinje->the_network);
 
         grid_cell = the_grid->first_cell;
 
@@ -472,38 +471,43 @@ int get_num_refinement_steps_to_discretization(float side_len, real_cpu h) {
 void initialize_grid_purkinje (struct grid *the_grid)
 {
     assert(the_grid);
+    assert(the_grid->the_purkinje);
 
-    the_grid->number_of_cells = 0;
+    the_grid->the_purkinje->number_of_purkinje_cells = 0;
+
 }
 
 void construct_grid_purkinje (struct grid *the_grid)
 {
     assert(the_grid);
+    assert(the_grid->the_purkinje);
+
+    struct grid_purkinje *the_purkinje = the_grid->the_purkinje;
 
     // TODO: Allow dx, dy, dz to be different in the Purkinje code
-    real_cpu side_length_x = the_grid->the_purkinje_network->dx;
-    real_cpu side_length_y = the_grid->the_purkinje_network->dx;
-    real_cpu side_length_z = the_grid->the_purkinje_network->dx;
+    real_cpu side_length_x = the_purkinje->the_network->dx;
+    real_cpu side_length_y = the_purkinje->the_network->dx;
+    real_cpu side_length_z = the_purkinje->the_network->dx;
 
     struct point_3d half_side_length = POINT3D(side_length_x / 2.0f, side_length_y / 2.0f, side_length_z / 2.0f);
 
-    int total_nodes = the_grid->the_purkinje_network->total_nodes;
+    uint32_t total_purkinje_nodes = the_purkinje->the_network->total_nodes;
     
     // Create the Purkinje cells array
-    struct cell_node **purkinje_cells = the_grid->purkinje_cells;
-    purkinje_cells = (struct cell_node**)malloc(sizeof(struct cell_node*)*total_nodes);
-    for (int i = 0; i < total_nodes; i++)
+    struct cell_node **purkinje_cells = the_purkinje->purkinje_cells;
+    purkinje_cells = (struct cell_node**)malloc(sizeof(struct cell_node*)*total_purkinje_nodes);
+    for (int i = 0; i < total_purkinje_nodes; i++)
         purkinje_cells[i] = new_cell_node();
     
     // Pass through the Purkinje graph and set the cell nodes.
-    struct node *n = the_grid->the_purkinje_network->list_nodes;
-    for (int i = 0; i < total_nodes; i++)
+    struct node *n = the_purkinje->the_network->list_nodes;
+    for (int i = 0; i < total_purkinje_nodes; i++)
     {
         
         if (i == 0)
             set_cell_node_data (purkinje_cells[i],half_side_length, 0, NULL,NULL,NULL,NULL,NULL,NULL,NULL,purkinje_cells[i+1],i,0,\
                             POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
-        else if (i == total_nodes-1)
+        else if (i == total_purkinje_nodes-1)
             set_cell_node_data (purkinje_cells[i],half_side_length,\
                         0,NULL,NULL,NULL,NULL,NULL,NULL,\
                         purkinje_cells[i-1],NULL,i,0,\
@@ -524,9 +528,14 @@ void construct_grid_purkinje (struct grid *the_grid)
     }
     
     // Purkinje initialization
-    the_grid->first_purkinje_cell = purkinje_cells[0];
-    the_grid->purkinje_cells = purkinje_cells;
-    the_grid->number_of_purkinje_cells = total_nodes;
+    the_purkinje->first_cell = purkinje_cells[0];
+    the_purkinje->purkinje_cells = purkinje_cells;
+    the_purkinje->number_of_purkinje_cells = total_purkinje_nodes;
+    the_purkinje->num_active_purkinje_cells = total_purkinje_nodes;
+
+    //the_grid->first_purkinje_cell = purkinje_cells[0];
+    //the_grid->purkinje_cells = purkinje_cells;
+    //the_grid->number_of_purkinje_cells = total_nodes;
     
 }
 
@@ -752,14 +761,16 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
 // TODO: Include a parameter that links more cells
 void link_purkinje_to_endocardium (struct grid *the_grid ,struct terminal **the_terminals)
 {
-    struct graph *the_purkinje_network = the_grid->the_purkinje_network;
+    struct grid_purkinje *the_purkinje = the_grid->the_purkinje;
 
-    uint32_t number_of_terminals = the_purkinje_network->number_of_terminals;
+    struct graph *the_network = the_purkinje->the_network;
+
+    uint32_t number_of_terminals = the_network->number_of_terminals;
 
     *the_terminals = (struct terminal *)malloc(sizeof(struct terminal)*number_of_terminals);
 
     uint32_t j = 0;
-    struct node *n = the_purkinje_network->list_nodes;
+    struct node *n = the_network->list_nodes;
     while (n != NULL)
     {
         if (n->num_edges == 1 && n->id != 0)

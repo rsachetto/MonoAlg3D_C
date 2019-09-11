@@ -90,7 +90,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     }
 
     struct cell_node *grid_cell = grid->first_cell;
-    struct node *u = grid->the_purkinje_network->list_nodes;
+    struct node *u = grid->the_purkinje->the_network->list_nodes;
 
     struct point_3d aux;
     struct line auxl;
@@ -170,7 +170,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     if(!mesh_already_loaded)
     {
         (*vtk_grid)->num_points = id;
-        (*vtk_grid)->num_lines = grid->the_purkinje_network->total_edges;
+        (*vtk_grid)->num_lines = grid->the_purkinje->the_network->total_edges;
 
         if(read_only_values)
             mesh_already_loaded = true;
@@ -537,8 +537,8 @@ void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid 
 
     // TODO: Put a if statement and consider only the 'new_vtk_polydata_grid_from_purkinje_grid' function
     // Use the Purkinje linked list of cells
-    struct cell_node *grid_cell = grid->first_purkinje_cell;
-    struct node *u = grid->the_purkinje_network->list_nodes;
+    struct cell_node *grid_cell = grid->the_purkinje->first_cell;
+    struct node *u = grid->the_purkinje->the_network->list_nodes;
 
     struct point_3d aux;
     struct line auxl;
@@ -618,7 +618,7 @@ void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid 
     if(!mesh_already_loaded)
     {
         (*vtk_grid)->num_points = id;
-        (*vtk_grid)->num_lines = grid->the_purkinje_network->total_edges;
+        (*vtk_grid)->num_lines = grid->the_purkinje->the_network->total_edges;
 
         if(read_only_values)
             mesh_already_loaded = true;

@@ -41,7 +41,7 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
     real_cpu dx, dy, dz;
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    struct node *n = the_grid->the_purkinje_network->list_nodes;
+    struct node *n = the_grid->the_purkinje->the_network->list_nodes;
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
 
@@ -121,7 +121,7 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    struct node *pk_node = the_grid->the_purkinje_network->list_nodes;
+    struct node *pk_node = the_grid->the_purkinje->the_network->list_nodes;
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 

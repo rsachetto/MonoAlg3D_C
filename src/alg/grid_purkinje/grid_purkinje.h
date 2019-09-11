@@ -1,44 +1,38 @@
 //
-// Created by sachetto on 29/09/17.
+// Created by bergolho on 10/09/19.
 //
 
-#ifndef MONOALG3D_GRID_H
-#define MONOALG3D_GRID_H
+#ifndef MONOALG3D_GRID_PURKINJE_H
+#define MONOALG3D_GRID_PURKINJE_H
 
 #include "../cell/cell.h"
 #include "../../graph/graph.h"
-#include "../grid_purkinje/grid_purkinje.h"
 #include "../../common_types/common_types.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
-struct grid {
-
-    struct cell_node *first_cell;     // First cell of grid.
+struct grid_purkinje 
+{
 
     struct point_3d cube_side_length;
 
     struct point_3d mesh_side_length;
 
-    uint32_t number_of_cells;  // Number of cells of grid.
+    uint32_t number_of_purkinje_cells;      // Number of Purkinje cells of grid.
 
-    uint32_t num_active_cells;
+    uint32_t num_active_purkinje_cells;
 
-    //dynamic arrays, need to point to NULL
-    ui32_array free_sv_positions;
-    ui32_array refined_this_step;
+    struct cell_node **purkinje_cells;
+    struct cell_node *first_cell;           // First Purkinje cell of grid.
 
-    struct cell_node **active_cells;
-    bool adaptive;
+    struct graph *the_network;              // Purkinje network graph
 
-    // Purkinje section
-    struct grid_purkinje *the_purkinje;
-    
 };
 
 
-struct grid* new_grid();
+struct grid_purkinje* new_grid_purkinje ();
+/*
 void initialize_grid(struct grid *the_grid, struct point_3d side_length);
 void clean_and_free_grid(struct grid* the_grid);
 void construct_grid(struct grid *the_grid);
@@ -82,5 +76,6 @@ void translate_mesh_to_origin(struct grid *grid);
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b);
 
 void link_purkinje_to_endocardium (struct grid *the_grid ,struct terminal **the_terminals);
+*/
 
-#endif //MONOALG3D_GRID_H
+#endif //MONOALG3D_GRID_PURKINJE_H

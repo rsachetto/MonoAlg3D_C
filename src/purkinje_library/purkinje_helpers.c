@@ -22,19 +22,17 @@
 #endif
 
 // Set a a custom Purkinje network from a file that stores its graph structure
-void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, const real_cpu side_length)
+void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length)
 {
 
-//    struct cell_node *grid_cell = the_grid->first_cell;
+    struct graph *the_network = the_purkinje->the_network;
 
-    struct graph *purkinje = the_grid->the_purkinje_network;
+    set_purkinje_network_from_file(the_network,file_name,side_length);
 
-    set_purkinje_network_from_file(purkinje,file_name,side_length);
+    calculate_number_of_terminals(the_network);
 
-    calculate_number_of_terminals(purkinje);
-
-    print_to_stdout_and_file("Number of Purkinje cells = %u\n",purkinje->total_nodes);
-    print_to_stdout_and_file("Number of Purkinje terminals = %u\n",purkinje->number_of_terminals);
+    print_to_stdout_and_file("Number of Purkinje cells = %u\n",the_network->total_nodes);
+    print_to_stdout_and_file("Number of Purkinje terminals = %u\n",the_network->number_of_terminals);
 
 }
 
@@ -181,6 +179,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     d[1] = u->y;
     d[2] = u->z;
 
+    // DEBUG
     print_to_stdout_and_file("Node %d will grow %d points\n",u->id,n_points);
 
     // Grow the number of points of size 'h' until reaches the size of the segment
@@ -287,7 +286,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network)
     struct edge *e;
 
     char *filename = "meshes/purkinje_mesh.vtk";
-    print_to_stdout_and_file("[!] Purkinje mesh file will be saved in :> %s\n",filename);
+    print_to_stdout_and_file("Purkinje mesh file will be saved in :> %s\n",filename);
 
     FILE *file = fopen(filename,"w+");
     fprintf(file,"# vtk DataFile Version 3.0\n");
@@ -347,7 +346,7 @@ bool is_terminal (const struct node *n)
 }
 
 // TODO: Some test for the network will be implemented here ...
-int check_purkinje_input (const real_cpu side_length)
+int check_purkinje_input ()
 {
     return 1;
 }

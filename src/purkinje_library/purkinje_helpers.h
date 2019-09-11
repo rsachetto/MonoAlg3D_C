@@ -20,7 +20,7 @@ struct branch
     uint32_t destination;
 };
 
-void set_custom_purkinje_network (struct grid *the_grid, const char *file_name, const real_cpu side_length);
+void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length);
 void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length);
 void build_skeleton_purkinje (const char *filename, struct graph *skeleton_network);
 void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length);
@@ -33,7 +33,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network);
 
 bool is_terminal (const struct node *n);
 
-int check_purkinje_input (const real_cpu side_length);
+int check_purkinje_input ();
 
 // TO DO: Other types of network will be implemented here ...
 
