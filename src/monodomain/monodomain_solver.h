@@ -55,8 +55,9 @@ void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
 void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v);
 
-void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                       struct grid *the_grid, struct user_options *options);
+void print_solver_info(struct monodomain_solver *the_monodomain_solver,
+                        struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,
+                        struct grid *the_grid, struct user_options *options);
 
 bool update_ode_state_vector_and_check_for_activity(real_cpu vm_thresold, struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid);
 
@@ -70,13 +71,12 @@ bool print_result(const struct grid *the_grid, const struct user_options *config
 void debug_print_and_leave ();
 
 // NEW FUNCTIONS !
-void calculate_activation_time (const real_cpu cur_time, const real_cpu dt,\
-                struct ode_solver *the_ode_solver, struct grid *the_grid);
+void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, const uint32_t n_active, struct cell_node **ac,\
+                        struct ode_solver *the_ode_solver);
 void print_activation_time (struct grid *the_grid);
 void print_conductivity (struct grid *the_grid);
 
 
-void update_monodomain_purkinje (struct config *config, uint32_t initial_number_of_cells, struct monodomain_solver *the_solver, struct grid *the_grid, struct ode_solver *the_ode_solver);
 void linear_system_solver_purkinje (struct config *config, struct grid *the_grid, uint32_t *number_of_iterations, real_cpu *error);
 void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);

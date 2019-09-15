@@ -24,17 +24,13 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     char *name = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(name, config->config_data, "name");
 
-    // TODO: Consider also the diameter of the Purkinje cell ...
     real_cpu side_length = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,side_length, config->config_data, "start_discretization");
     
     char *network_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(network_file,config->config_data,"network_file");
 
-    char *celular_model_name = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(celular_model_name,config->config_data,"celular_model");
-
-    init_purkinje_ode_solver_with_cell_model(the_ode_solver,celular_model_name);
+    init_ode_solver_with_cell_model(the_ode_solver);
 
     // TODO: Implement this test
     int success = check_purkinje_input();

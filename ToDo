@@ -8,13 +8,11 @@ Sachetto
 Berg
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 - Implement coupling between Purkinje and tissue
-    - Build a separate module to only solve the Purkinje (Try to be as general as possible ...)
-    - Move the solution from the Purkinje as the RHS of the tissue (we need to map the cells Purkinje->Tissue)
-        - Create a (struct terminal), which will store the indexes from both domains ...
-        - Create a function to link the Purkinje cells with the tissue ones
-    - Create SAVE_MESH functions to properly write the outputs
+    - Include the Purkinje ODE extra_data
+    - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
 - Implement the GMRES linear system solver (see Bernardo's book as reference ...)
 - Implement an APD map writer to VTU
+- Implement a Purkinje restore state function
 
 Pedro
 

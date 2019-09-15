@@ -472,7 +472,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
             break;
         // Write conductivity map
         case 'c':
-            write_conductivity_map_vtp(&    vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_conductivity_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
         default:
             fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
@@ -701,23 +701,25 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
         case 'v':
             write_transmembrane_potential_vtu(&vtk_grid, the_grid, output_dir, file_prefix, iteration_count, current_t,\
                                             save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
-            write_transmembrane_potential_vtp_coupled(&vtk_polydata, the_grid, output_dir, file_prefix_purkinje, iteration_count, current_t,\
+            write_transmembrane_potential_vtp(&vtk_polydata, the_grid, output_dir, file_prefix_purkinje, iteration_count, current_t,\
                                             save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
         // Write activation map
         case 'a':
             write_activation_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_activation_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
         // Write conductivity map
         case 'c':
             write_conductivity_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_conductivity_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
         default:
             fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
             exit(EXIT_FAILURE);
     }
 
-    if(the_grid->adaptive) //LEAK
+    if(the_grid->adaptive) 
         free_vtk_unstructured_grid(vtk_grid);
 
 }
@@ -750,9 +752,6 @@ void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid,
     {
         save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
     }
-
-    if(the_grid->adaptive)
-        free_vtk_unstructured_grid(*vtk_grid);
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
@@ -796,6 +795,8 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
                                              bool clip_with_plain, float *plain_coords, 
                                              bool clip_with_bounds, float *bounds)
 {
+    assert(the_grid->the_purkinje);
+
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
@@ -807,7 +808,7 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
         add_file_to_pvd(current_t, output_dir, base_name);
     }
 
-    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
 
     if(compress) 
     {
@@ -834,7 +835,7 @@ void write_activation_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct g
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/activation-map.vtp");
 
-    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'a');
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'a');
 
     save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
 
@@ -850,44 +851,10 @@ void write_conductivity_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/conductivity-map.vtp");
 
-    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'c');
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'c');
 
     save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
 
     sdsfree(output_dir_with_file);
 }
 
-void write_transmembrane_potential_vtp_coupled (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
-                                             char *output_dir, char *file_prefix, int iteration_count, real_cpu current_t,
-                                             bool save_pvd, bool compress, int compression_level, bool binary,
-                                             bool clip_with_plain, float *plain_coords, 
-                                             bool clip_with_bounds, float *bounds)
-{
-    sds output_dir_with_file = sdsnew(output_dir);
-    output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
-
-    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
-
-    if(save_pvd) 
-    {
-        add_file_to_pvd(current_t, output_dir, base_name);
-    }
-
-    new_vtk_polydata_grid_from_purkinje_grid_coupled(vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
-
-    if(compress) 
-    {
-        save_vtk_polydata_grid_as_vtp_compressed(*vtk_polydata, output_dir_with_file, compression_level);
-    }
-    else 
-    {
-        save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
-    }
-
-    if(the_grid->adaptive)
-        free_vtk_polydata_grid(*vtk_polydata);
-
-    sdsfree(output_dir_with_file);
-    sdsfree(base_name);
-}

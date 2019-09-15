@@ -46,16 +46,6 @@ struct ode_solver {
     solve_model_ode_gpu_fn *solve_model_ode_gpu;
     //update_gpu_fn_pt update_gpu_fn;
 
-
-    // TODO: Move this to another structure ...
-    // Purkinje section
-    uint32_t original_num_purkinje_cells;
-    real *sv_purkinje;
-
-    size_t num_purkinje_cells_to_solve;
-    uint32_t *purkinje_cells_to_solve;
-
-
 };
 
 void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config);
@@ -68,7 +58,8 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                             struct string_voidp_hash_entry *stim_configs, struct string_hash_entry *ode_extra_config);
 
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options);
-void configure_purkinje_ode_solver (struct ode_solver *purkinje_solver, struct ode_solver *solver);
+void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_solver, struct user_options *options);
+void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_solver, struct ode_solver *solver);
 
 
 // NEW FUNCTIONS

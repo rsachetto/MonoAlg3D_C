@@ -39,11 +39,6 @@ struct ode_solver* new_ode_solver() {
     result->ode_extra_data = NULL;
     result->ode_extra_data = 0;
 
-    // TODO: Move this to another structure
-    // Purkinje section
-    result->sv_purkinje = NULL;
-    result->purkinje_cells_to_solve = NULL;
-
     return result;
 }
 
@@ -197,23 +192,6 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
         {
             soicc_fn_pt(ode_extra_config, solver->sv + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
         }
-
-        // TODO: Create a function to do this and consider a separate Purkinje celular model for the 'sv_purkinje'
-        // Purkinje section
-        /*
-        uint32_t num_purkinje_cells = solver->num_purkinje_cells_to_solve;
-        if (solver->sv_purkinje != NULL)
-        {
-            free(solver->sv_purkinje);
-        }
-
-        solver->sv_purkinje = (real*)malloc(n_odes*num_purkinje_cells*sizeof(real));
-        #pragma omp parallel for
-        for(i = 0; i < num_purkinje_cells; i++) 
-        {
-            soicc_fn_pt(ode_extra_config, solver->sv_purkinje + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
-        }
-        */
     }
 
 }
@@ -257,7 +235,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                     for (i = 0; i < n_active; i++) {
                         // This variable should be an accumulator to allow multiple stimulus
                         // TODO: Implement a stimuli_config just for the Purkinje
-                        //merged_stims[i] += ((real*)(tmp->persistent_data))[i];
+                        merged_stims[i] += ((real*)(tmp->persistent_data))[i];
                     }
                 }
                 time += dt;
@@ -363,11 +341,31 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
 
 }
 
-void configure_purkinje_ode_solver (struct ode_solver *purkinje_solver, struct ode_solver *solver)
+void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_solver, struct user_options *options)
 {
+
+    purkinje_solver->gpu_id = options->purkinje_gpu_id;
+    purkinje_solver->min_dt = (real)options->purkinje_dt_ode;
+    purkinje_solver->gpu = options->purkinje_gpu;
+
+    if(options->purkinje_model_file_path) 
+    {
+        free(purkinje_solver->model_data.model_library_path);
+        purkinje_solver->model_data.model_library_path = strdup(options->purkinje_model_file_path);
+    }
+}
+
+void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_solver, struct ode_solver *solver)
+{
+
     purkinje_solver->gpu_id = solver->gpu_id;
-    purkinje_solver->min_dt = solver->min_dt;
+    purkinje_solver->min_dt = (real)solver->min_dt;
     purkinje_solver->gpu = solver->gpu;
+
+    if(solver->model_data.model_library_path) 
+    {
+        purkinje_solver->model_data.model_library_path = strdup(solver->model_data.model_library_path);
+    }
 }
 
 void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,

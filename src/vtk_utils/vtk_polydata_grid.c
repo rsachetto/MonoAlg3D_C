@@ -53,13 +53,13 @@ sds create_common_vtp_header(bool compressed, int num_points, int num_lines)
     return header;
 }
 
-void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
+void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid_purkinje *the_purkinje, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
                                                                      float *bounds, bool read_only_values, const char scalar_name)
 {
     static bool mesh_already_loaded =  false;
 
-    if(grid == NULL) 
+    if(the_purkinje == NULL) 
     {
         return;
     }
@@ -89,8 +89,8 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
         }
     }
 
-    struct cell_node *grid_cell = grid->first_cell;
-    struct node *u = grid->the_purkinje->the_network->list_nodes;
+    struct cell_node *grid_cell = the_purkinje->first_cell;
+    struct node *u = the_purkinje->the_network->list_nodes;
 
     struct point_3d aux;
     struct line auxl;
@@ -170,7 +170,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     if(!mesh_already_loaded)
     {
         (*vtk_grid)->num_points = id;
-        (*vtk_grid)->num_lines = grid->the_purkinje->the_network->total_edges;
+        (*vtk_grid)->num_lines = the_purkinje->the_network->total_edges;
 
         if(read_only_values)
             mesh_already_loaded = true;
