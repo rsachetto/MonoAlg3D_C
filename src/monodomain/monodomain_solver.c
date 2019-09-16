@@ -426,7 +426,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     // =============================================
     struct terminal *the_terminals = NULL;
     if (domain_config && purkinje_config)
-        link_purkinje_to_endocardium(the_grid,&the_terminals);
+        the_terminals = link_purkinje_to_endocardium(the_grid);
     // =============================================
 
     print_to_stdout_and_file("Setting ODE's initial conditions\n");

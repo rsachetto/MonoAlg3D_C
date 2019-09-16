@@ -8,6 +8,7 @@ Sachetto
 Berg
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 - Implement coupling between Purkinje and tissue
+    - Fix when you run using the GPU
     - Include the Purkinje ODE extra_data
     - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
 - Implement the GMRES linear system solver (see Bernardo's book as reference ...)
