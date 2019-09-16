@@ -1524,25 +1524,65 @@ void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct g
     assert(the_grid);
     assert(the_terminals);
 
+
     // State vector from the tissue
+    struct cell_node **ac = the_grid->active_cells;
     real *sv = the_ode_solver->sv;
+    uint32_t n_active = the_grid->num_active_cells;
     uint32_t nodes = the_ode_solver->model_data.number_of_ode_equations;
 
     // Solution of the Purkinje problem will be stored on the Purkinje linked-list
     struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
 
-    uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
-    for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+    if(the_ode_solver->gpu) 
     {
-        //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+    #ifdef COMPILE_CUDA
+        uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
+        real *vms;
+        size_t mem_size = max_number_of_cells * sizeof(real);
 
-        uint32_t tissue_index = the_terminals[i].endocardium_index;
-        uint32_t purkinje_index = the_terminals[i].purkinje_index;
+        vms = (real *)malloc(mem_size);
 
-        // Copy the transmembrane potential from the Purkinje terminals to their linked endocardium cells
-        sv[tissue_index*nodes] = ac_purkinje[purkinje_index]->v;
-    
-    } 
+        if(the_grid->adaptive)
+            check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+
+        #pragma omp parallel for
+        for(uint32_t i = 0; i < n_active; i++) 
+        {
+            vms[ac[i]->sv_position] = (real)ac[i]->v;
+        }
+
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+
+            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Copy the transmembrane potential from the Purkinje terminals to their linked endocardium cells
+            vms[tissue_index] = ac_purkinje[purkinje_index]->v;
+        }    
+
+        check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
+        free(vms);
+    #endif
+    }
+    else
+    {
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+            //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+
+            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Copy the transmembrane potential from the Purkinje terminals to their linked endocardium cells
+            sv[tissue_index*nodes] = ac_purkinje[purkinje_index]->v;
+        
+        }
+    }
+     
 }
 
 void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals)
@@ -1553,21 +1593,57 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
 
     // State vector from the Purkinje
     real *sv = the_purkinje_ode_solver->sv;
+    uint32_t n_active = the_grid->the_purkinje->num_active_purkinje_cells;
     uint32_t nodes = the_purkinje_ode_solver->model_data.number_of_ode_equations;
 
     // Solution of the Tissue problem will be stored on the Tissue linked-list
     struct cell_node **ac = the_grid->active_cells;
+    struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
 
-    uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
-    for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+    if(the_purkinje_ode_solver->gpu) 
     {
-        //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+    #ifdef COMPILE_CUDA
+        uint32_t max_number_of_purkinje_cells = the_purkinje_ode_solver->original_num_cells;
+        real *vms;
+        size_t mem_size = max_number_of_purkinje_cells * sizeof(real);
 
-        uint32_t tissue_index = the_terminals[i].endocardium_index;
-        uint32_t purkinje_index = the_terminals[i].purkinje_index;
+        vms = (real *)malloc(mem_size);
 
-        // Copy the transmembrane potential from the linked endocardium cells to the Purkinje terminals
-        sv[purkinje_index*nodes] = ac[tissue_index]->v;
-    
-    } 
+        #pragma omp parallel for
+        for(uint32_t i = 0; i < n_active; i++) 
+        {
+            vms[ac[i]->sv_position] = (real)ac_purkinje[i]->v;
+        }
+
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+
+            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Copy the transmembrane potential from the Purkinje terminals to their linked endocardium cells
+            vms[purkinje_index] = ac[tissue_index]->v;
+        }    
+
+        check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
+        free(vms);
+    #endif
+    }
+    else
+    {
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+            //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+
+            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Copy the transmembrane potential from the linked endocardium cells to the Purkinje terminals
+            sv[purkinje_index*nodes] = ac[tissue_index]->v;
+        
+        }
+    }
+ 
 }

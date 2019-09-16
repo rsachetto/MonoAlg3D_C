@@ -812,9 +812,9 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
         n = n->next;
     }
 
-    print_to_stdout_and_file("On 'link_purkinje_to_endocardium'\n");
-    for (uint32_t i = 0; i < number_of_terminals; i++)
-        print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
+    //print_to_stdout_and_file("On 'link_purkinje_to_endocardium'\n");
+    //for (uint32_t i = 0; i < number_of_terminals; i++)
+    //    print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
 
     return the_terminals;
 }
