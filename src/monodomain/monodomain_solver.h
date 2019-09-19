@@ -81,4 +81,11 @@ void linear_system_solver_purkinje (struct config *config, struct grid *the_grid
 void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 
+void solve_explicit_purkinje_diffusion (struct grid *the_grid, struct ode_solver *the_purkinje_ode_solver, struct monodomain_solver *the_monodomain_solver);
+
+double** allocate_matrix_LU (const uint32_t num_rows, const uint32_t num_cols);
+void lu_decomposition (double **lu, uint32_t pivot[], struct cell_node **ac, const uint32_t n_active);
+void choose_pivot (double **lu, const uint32_t num_rows, uint32_t *pivot_line, double *Amax, const uint32_t i);
+void switch_lines (double **lu, const uint32_t num_cols, uint32_t pivot[], const int pivot_line, const int i);
+
 #endif // MONOALG3D_SOLVER_H

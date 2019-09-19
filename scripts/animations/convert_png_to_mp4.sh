@@ -8,7 +8,7 @@
 FILENAME="frames/frame"
 FRAME_RATE="50"
 END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="videos/lucas-purkinje-coupled-normal-and-retro-propagation"
+OUTPUT_VIDEO_FILENAME="videos/lucas-purkinje-coupled-multiple-beats"
 RESOLUTION="1030x730"
 
 # Execute the converting command using FFMPEG

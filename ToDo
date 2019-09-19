@@ -10,6 +10,7 @@ Berg
 - Implement coupling between Purkinje and tissue
     - Include the Purkinje ODE extra_data
     - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
+- Add a conduction velocity calculator for Purkinje fibers
 - Implement the GMRES linear system solver (see Bernardo's book as reference ...)
 - Implement an APD map writer to VTU
 - Implement a Purkinje restore state function

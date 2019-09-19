@@ -390,6 +390,9 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
+    real sigma_purkinje = sigma_x;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real,sigma_purkinje,config->config_data,"sigma_purkinje");
+
     if(!sigma_initialized) 
     {
         #pragma omp parallel for
@@ -441,13 +444,13 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
         #pragma omp parallel for
         for (uint32_t i = 0; i < num_purkinje_active_cells; i++) 
         {
-            ac_purkinje[i]->sigma.x = sigma_x;
+            ac_purkinje[i]->sigma.x = sigma_purkinje;
         }
 
         sigma_purkinje_initialized = true;
     }
 
-    fill_discretization_matrix_elements_purkinje(sigma_x,ac_purkinje,num_purkinje_active_cells,pk_node);
+    fill_discretization_matrix_elements_purkinje(sigma_purkinje,ac_purkinje,num_purkinje_active_cells,pk_node);
 
     // DEBUG
     // Endocardium cells

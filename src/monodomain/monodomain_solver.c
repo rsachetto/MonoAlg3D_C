@@ -496,6 +496,25 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     ((assembly_matrix_fn*) assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
+    
+    // TESTING LU DECOMPOSITION
+/*
+    real_cpu **lu = NULL;
+    uint32_t *pivot = NULL;
+    if (purkinje_config)
+    {
+        uint32_t num_rows = the_grid->the_purkinje->num_active_purkinje_cells;
+        uint32_t num_cols = the_grid->the_purkinje->num_active_purkinje_cells;
+        
+        pivot = (uint32_t*)calloc(num_rows,sizeof(uint32_t));
+
+        lu = allocate_matrix_LU(num_rows,num_cols);
+        lu_decomposition(lu,pivot,the_grid->the_purkinje->purkinje_cells,the_grid->the_purkinje->num_active_purkinje_cells);
+    }
+ */
+    // TESTING LU DECOMPOSITION
+
+    
 
     total_mat_time = stop_stop_watch(&part_mat);
     start_stop_watch(&solver_time);
@@ -625,6 +644,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             start_stop_watch(&purkinje_ode_time);
 
+    // Implicito
             // UPDATE: Purkinje
             ((update_monodomain_fn*)update_monodomain_config->main_function)(update_monodomain_config, original_num_purkinje_cells, the_monodomain_solver, the_grid->the_purkinje->num_active_purkinje_cells, the_grid->the_purkinje->purkinje_cells, the_purkinje_ode_solver);
 
@@ -640,6 +660,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             // DIFUSION: Purkinje
             linear_system_solver_purkinje(linear_system_solver_config, the_grid, &purkinje_solver_iterations, &purkinje_solver_error);
+            //linear_system_solver_purkinje_lu(lu,pivot,the_grid);
 
             purkinje_cg_partial = stop_stop_watch(&purkinje_cg_time);
 
@@ -1593,6 +1614,7 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
 
     // State vector from the Purkinje
     real *sv = the_purkinje_ode_solver->sv;
+    double purkinje_initial_v = the_purkinje_ode_solver->model_data.initial_v;
     uint32_t n_active = the_grid->the_purkinje->num_active_purkinje_cells;
     uint32_t nodes = the_purkinje_ode_solver->model_data.number_of_ode_equations;
 
@@ -1623,7 +1645,10 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
 
             // Copy the transmembrane potential from the Purkinje terminals to their linked endocardium cells
-            vms[purkinje_index] = ac[tissue_index]->v;
+            if (ac[tissue_index]->v >= purkinje_initial_v)
+            {
+                vms[purkinje_index] = ac[tissue_index]->v;
+            }
         }    
 
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
@@ -1633,17 +1658,237 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
     else
     {
         uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        
+        
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
             //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
 
             uint32_t tissue_index = the_terminals[i].endocardium_index;
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
-
+ 
             // Copy the transmembrane potential from the linked endocardium cells to the Purkinje terminals
-            sv[purkinje_index*nodes] = ac[tissue_index]->v;
-        
+            if (ac[tissue_index]->v >= purkinje_initial_v)
+            {
+                sv[purkinje_index*nodes] = ac[tissue_index]->v;
+            }        
         }
     }
  
 }
+
+double** allocate_matrix_LU (const uint32_t num_rows, const uint32_t num_cols)
+{
+    double **a = (double**)malloc(sizeof(double*)*num_rows);
+    a[0] = (double*)malloc(sizeof(double)*num_rows*num_cols);
+    // Hacking the addresses of the lines
+    for (int i = 1; i < num_rows; i++)
+        a[i] = a[0] + num_cols*i;
+    return a;
+}
+
+void lu_decomposition (double **lu, uint32_t pivot[], struct cell_node **ac, const uint32_t n_active)
+{
+
+// Init all elements to zero
+    uint32_t num_rows = n_active;
+    uint32_t num_cols = n_active;
+    for (uint32_t i = 0; i < num_rows; i++)
+        for (uint32_t j = 0; j < num_cols; j++)
+            lu[i][j] = 0.0;
+    
+// Fill the non-zero elements
+    for (uint32_t i = 0; i < n_active; i++)
+    {
+        struct element *cell_elements = ac[i]->elements;
+        size_t max_elements = arrlen(cell_elements);
+     
+        uint32_t row = i;
+
+        for(size_t j = 0; j < max_elements; j++) 
+        {
+            uint32_t col = cell_elements[j].column;
+            double value = cell_elements[j].value;
+            
+            lu[row][col] = value;
+        }
+    }
+
+// Apply the LU decomposition algorithm
+
+    uint32_t pivot_line;
+    double Amax;
+
+    for (uint32_t i = 0; i < num_rows; i++)
+        pivot[i] = i;
+
+    // For each line
+    for (int i = 0; i < num_rows-1; i++)
+    {
+        choose_pivot(lu,num_rows,&pivot_line,&Amax,i);
+        // The pivot element changed ? If so we need to switch lines
+        if (pivot_line != i)
+        {
+            switch_lines(lu,num_cols,pivot,pivot_line,i);
+        }
+
+    // Check if the matrix is not singular
+    // If not, apply a Gaussian Elimination on the current line
+    if (fabs(lu[i][i]) != 0.0)
+    {
+        double r = 1 / lu[i][i];
+        for (int j = i+1; j < num_rows; j++)
+        {
+            double m = lu[j][i] * r;
+
+            // Write the multiplier on the inferior triangular matrix L
+            lu[j][i] = m;
+
+            // Write the results on the superior triangular matrix U
+            for (int k = i+1; k < num_cols; k++)
+            {
+                lu[j][k] -= (m * lu[i][k]);
+            }
+        }
+    }   
+}
+        
+}
+
+void choose_pivot (double **lu, const uint32_t num_rows, uint32_t *pivot_line, double *Amax, const uint32_t i)
+{
+    *pivot_line = i;
+    *Amax = fabs(lu[i][i]);
+
+    // For all the lines below 'i' search for the maximum value in module
+    for (uint32_t j = i+1; j < num_rows; j++)
+    {
+        double value = fabs(lu[j][i]);
+        if (value > *Amax)
+        {
+            *Amax = value;
+            *pivot_line = j; 
+        }
+    }
+}
+
+void switch_lines (double **lu, const uint32_t num_cols, uint32_t pivot[], const int pivot_line, const int i)
+{
+    // Copy the role line
+    // TO DO: maybe a pointer swap will be faster ...
+    for (int j = 0; j < num_cols; j++)
+    {
+        double tmp = lu[i][j];
+        lu[i][j] = lu[pivot_line][j];
+        lu[pivot_line][j] = tmp;
+    }
+    int m = pivot[i];
+    pivot[i] = pivot[pivot_line];
+    pivot[pivot_line] = m;
+}
+
+void linear_system_solver_purkinje_lu(double **lu, uint32_t pivot[], struct grid *the_grid)
+{
+
+    uint32_t n_active = the_grid->the_purkinje->num_active_purkinje_cells;
+    struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
+
+    uint32_t num_rows = n_active;
+    uint32_t num_cols = n_active;
+
+    double y[num_rows];
+
+/*
+    printf("Before\n");
+    for (uint32_t i = 0; i < n_active; i++)
+        printf("Cell %u -- V = %g\n",i,ac[i]->v);
+*/
+    // Forward substitution using the pivot array    
+    uint32_t k = pivot[0];
+    y[0] = ac[k]->b;
+    for (uint32_t i = 1; i < num_rows; i++)
+    {
+        double sum = 0.0;
+        //for (uint32_t j = 0; j <= i; j++)
+        for (uint32_t j = 0; j < i; j++)
+        {
+            sum += lu[i][j] * y[j];
+        }
+        k = pivot[i];
+        y[i] = (ac[k]->b - sum);
+    }
+
+    // Backward substitution
+    ac[num_rows-1]->v = y[num_rows-1] / lu[num_rows-1][num_rows-1];
+    for (int i = num_rows-2; i >= 0; i--)
+    {
+        double sum = 0.0;
+        for (int j = i+1; j < num_cols; j++)
+            sum += lu[i][j] * ac[j]->v;
+        ac[i]->v = (y[i] - sum) / lu[i][i];
+    }
+
+/*
+    printf("After\n");
+    for (uint32_t i = 0; i < n_active; i++)
+        printf("Cell %u -- V = %g\n",i,ac[i]->v);
+
+    exit(EXIT_SUCCESS);
+*/
+}
+
+/*
+void solve_explicit_purkinje_diffusion (struct grid *the_grid, struct ode_solver *the_purkinje_ode_solver, struct monodomain_solver *the_monodomain_solver)
+{
+    assert(the_grid);
+    assert(the_purkinje_ode_solver);
+    assert(the_monodomain_solver);
+
+    struct graph *the_network = the_grid->the_purkinje->the_network;
+    real_cpu beta = the_monodomain_solver->beta;
+    real_cpu cm = the_monodomain_solver->cm;
+    real_cpu dt_pde = the_monodomain_solver->dt;    
+
+    uint32_t n_active = the_grid->the_purkinje->num_active_purkinje_cells;
+    struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
+
+    int n_equations_cell_model = the_purkinje_ode_solver->model_data.number_of_ode_equations;
+    real *sv = the_purkinje_ode_solver->sv;
+
+    real_cpu alpha, multiplier;
+    struct node *n;
+    struct edge *e;
+
+    n = the_network->list_nodes;
+    while (n != NULL)
+    {
+        uint32_t src_index = n->id;
+        real_cpu sigma_x = ac[src_index]->sigma.x;
+        real_cpu v_old = sv[ ac[src_index]->sv_position * n_equations_cell_model ];
+
+        real update = -( n->num_edges * sv[ac[src_index]->sv_position * n_equations_cell_model] );
+
+        alpha = ALPHA(beta,cm,dt_pde,ac[src_index]->discretization.x,ac[src_index]->discretization.y,ac[src_index]->discretization.z);
+        multiplier = (sigma_x * ac[src_index]->discretization.y * ac[src_index]->discretization.z)/(alpha * ac[src_index]->discretization.x);
+
+        e = n->list_edges;
+        while (e != NULL)
+        {
+            uint32_t dest_index = e->id;
+            //real_cpu sigma_x2 = ac[dest_index]->sigma.x;
+            //real sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
+            
+            update += sv[ ac[dest_index]->sv_position * n_equations_cell_model ];
+
+            e = e->next;
+        }
+        
+        update *= multiplier;
+
+        ac[src_index]->v = v_old + update;
+
+        n = n->next;
+    }
+    
+}
+*/
