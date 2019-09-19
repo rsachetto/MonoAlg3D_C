@@ -20,8 +20,6 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
 
     real_cpu alpha;
     bool use_gpu = the_ode_solver->gpu;
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **active_cells = the_grid->active_cells;
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt_pde = the_solver->dt;
@@ -62,8 +60,6 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
 
     real_cpu alpha;
     bool use_gpu = the_ode_solver->gpu;
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **active_cells = the_grid->active_cells;
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt_pde = the_solver->dt;
@@ -221,3 +217,4 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
     #endif
 
 }
+

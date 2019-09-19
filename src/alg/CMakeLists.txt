@@ -7,6 +7,8 @@ set(SOURCE_FILES_ALG
         cell/cell.c
         cell/cell_derefinement.c
         cell/cell_refinement.c
+        grid_purkinje/grid_purkinje.c
+        grid_purkinje/grid_purkinje.h
         )
 
 ADD_LIBRARY(alg STATIC ${SOURCE_FILES_ALG})

@@ -11,6 +11,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
+/*
     static bool first_call = true;
 
     if(first_call) {
@@ -22,6 +23,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
         first_call = false;
     }
+*/
 
     sv[0] = 0.000000f; //Vm millivolt
     sv[1] = 0.000000f; //v dimensionless

@@ -110,6 +110,8 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 
     if(threadID < num_volumes) {
 
+        // Default initial values from CellML
+        /*
         *((real *) ((char *) sv + pitch * 0) + threadID) = -86.2f;   // V;       millivolt
         *((real *) ((char *) sv + pitch * 1) + threadID) = 0.0f; //M
         *((real *) ((char *) sv + pitch * 2) + threadID) = 0.75; //H
@@ -122,6 +124,22 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
         *((real *) ((char *) sv + pitch * 9) + threadID) = 0.0; //D_INF
         *((real *) ((char *) sv + pitch * 10) + threadID) = 0.0; //R_INF
         *((real *) ((char *) sv + pitch * 11) + threadID) = 0.0; //Xr2_INF
+        */
+
+        // Steady-State after 12000 ms (atpi = 4.0, acidosis = 0.5, Ko = 7.0)
+        *((real *) ((char *) sv + pitch * 0) + threadID) = -86.0599;
+        *((real *) ((char *) sv + pitch * 1) + threadID) = 0.00143782;
+        *((real *) ((char *) sv + pitch * 2) + threadID) = 0.766944;
+        *((real *) ((char *) sv + pitch * 3) + threadID) = 0.756684;
+        *((real *) ((char *) sv + pitch * 4) + threadID) = 0.000894152;
+        *((real *) ((char *) sv + pitch * 5) + threadID) = 0.0054739;
+        *((real *) ((char *) sv + pitch * 6) + threadID) = 0.423763;
+        *((real *) ((char *) sv + pitch * 7) + threadID) = 0.851973;
+        *((real *) ((char *) sv + pitch * 8) + threadID) = 0.999545;
+        *((real *) ((char *) sv + pitch * 9) + threadID) = 3.01894e-05;
+        *((real *) ((char *) sv + pitch * 10) + threadID) = 2.10439e-08;
+        *((real *) ((char *) sv + pitch * 11) + threadID) = 0.479802;
+
     }
 }
 

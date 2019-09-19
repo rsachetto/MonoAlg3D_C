@@ -16,6 +16,7 @@
 #include "../libraries_common/common_data_structures.h"
 
 static char *file_prefix;
+static char *file_prefix_purkinje;
 static bool binary = false;
 static bool clip_with_plain = false;
 static bool clip_with_bounds = false;
@@ -471,7 +472,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
             break;
         // Write conductivity map
         case 'c':
-            write_conductivity_map_vtp(&    vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_conductivity_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
         default:
             fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
@@ -645,6 +646,83 @@ SAVE_MESH(no_save) {
     //Nop
 }
 
+SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje) 
+{
+
+    char *output_dir;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+
+
+    if(!initialized) 
+    {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix_purkinje, config->config_data, "file_prefix_purkinje");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
+
+        #ifndef COMPILE_ZLIB
+        compress = false;
+        #endif
+
+        if(compress) binary = true;
+
+        initialized = true;
+    }
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
+
+    if(clip_with_plain) 
+    {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
+    }
+
+    if(clip_with_bounds) 
+    {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
+    }
+
+    switch (scalar_name)
+    {
+        // Write transmembrane potential
+        case 'v':
+            write_transmembrane_potential_vtu(&vtk_grid, the_grid, output_dir, file_prefix, iteration_count, current_t,\
+                                            save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_transmembrane_potential_vtp(&vtk_polydata, the_grid, output_dir, file_prefix_purkinje, iteration_count, current_t,\
+                                            save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write activation map
+        case 'a':
+            write_activation_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_activation_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write conductivity map
+        case 'c':
+            write_conductivity_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_conductivity_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        default:
+            fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
+            exit(EXIT_FAILURE);
+    }
+
+    if(the_grid->adaptive) 
+        free_vtk_unstructured_grid(vtk_grid);
+
+}
 
 // NEW CODE !!!
 void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
@@ -674,9 +752,6 @@ void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid,
     {
         save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
     }
-
-    if(the_grid->adaptive)
-        free_vtk_unstructured_grid(*vtk_grid);
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
@@ -720,6 +795,8 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
                                              bool clip_with_plain, float *plain_coords, 
                                              bool clip_with_bounds, float *bounds)
 {
+    assert(the_grid->the_purkinje);
+
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
@@ -731,7 +808,7 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
         add_file_to_pvd(current_t, output_dir, base_name);
     }
 
-    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
 
     if(compress) 
     {
@@ -758,7 +835,7 @@ void write_activation_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct g
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/activation-map.vtp");
 
-    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'a');
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'a');
 
     save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
 
@@ -774,9 +851,10 @@ void write_conductivity_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/conductivity-map.vtp");
 
-    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'c');
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'c');
 
     save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
 
     sdsfree(output_dir_with_file);
 }
+

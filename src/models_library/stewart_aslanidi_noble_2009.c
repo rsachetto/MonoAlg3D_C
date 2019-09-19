@@ -26,6 +26,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     }
 
     // TODO: Describe the parameters ...
+    // Default initial conditions from the CellML
+/*
     sv[0] = -69.1370441635924;
     sv[1] = 136.781894160227;
     sv[2] = 8.80420286531673;
@@ -46,6 +48,30 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     sv[17] = 0.00103618091196912;
     sv[18] = 3.10836886659417;
     sv[19] = 0.991580051907845;
+*/
+
+    // Steady-State after 20000ms, BCL = 1000ms
+    sv[0] = -70.3543;
+    sv[1] = 136.603;
+    sv[2] = 8.91743;
+    sv[3] = 0.00010623;
+    sv[4] = 0.0406155;
+    sv[5] = 0.00948153;
+    sv[6] = 0.32415;
+    sv[7] = 0.00889219;
+    sv[8] = 0.0335849;
+    sv[9] = 0.222399;
+    sv[10] = 0.251454;
+    sv[11] = 0.00041241;
+    sv[12] = 0.000244885;
+    sv[13] = 0.98024;
+    sv[14] = 0.996029;
+    sv[15] = 0.999952;
+    sv[16] = 0.966603;
+    sv[17] = 0.00094868;
+    sv[18] = 3.3447;
+    sv[19] = 0.988314;
+
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) 
@@ -259,3 +285,5 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current)
     for (int i = 0; i < NEQ; i++)
         rDY_[i] = RATES[i];
 }
+
+// The automatic pacing from the Purkinje cells can be interrupted by blocking the INa current by 100% (ALGEBRAIC[54] = INa)
