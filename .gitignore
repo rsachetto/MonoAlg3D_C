@@ -98,3 +98,7 @@ build_*/
 src/raylib/src/rnet.c.review
 src/raylib/src/shell.html
 src/raylib/src/stZ2ziky
+GPATH
+GRTAGS
+GTAGS
+
