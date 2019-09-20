@@ -22,7 +22,7 @@ if [ "$BUILD_TYPE" == "cluster" ]; then
     COMPILE_GUI=''
 fi
 
-#User code
+###########User code#####################
 DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing -Wall -Wno-unused-function -Wno-char-subscripts"
 RUNTIME_OUTPUT_DIRECTORY=./bin
 LIBRARY_OUTPUT_DIRECTORY=./shared_libs
