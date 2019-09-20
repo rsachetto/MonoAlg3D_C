@@ -163,7 +163,7 @@ $ sudo dnf install gtk3-devel gtksourceview3-devel
 
 # Compile
 ----
-Change the current version of GCC to 5.3 by changing the following variables in bsbash/build_functions.sh
+Change the current version of GCC to 5.3 by changing the following variables in bsbash/build_functions.sh (For manjaro no changes are needed. For Fedora you need the following changes.)
 ```sh
 $ C_COMPILER=/usr/bin/gcc53
 $ CXX_COMPILER=/usr/bin/g++53
