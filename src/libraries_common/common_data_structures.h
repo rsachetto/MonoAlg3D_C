@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 
+
 // This is used when we are dealing with fibrotic meshes
 struct fibrotic_mesh_info {
     bool fibrotic;

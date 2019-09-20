@@ -9,6 +9,7 @@
 #define MAIN_SECTION "main"
 #define ALG_SECTION "alg"
 #define STIM_SECTION "stim"
+#define MODIFY_DOMAIN "modify_current_domain"
 #define DOMAIN_SECTION "domain"
 #define PURKINJE_SECTION "purkinje"
 #define SAVE_RESULT_SECTION "save_result"
@@ -20,6 +21,7 @@
 #define EXTRA_DATA_SECTION "extra_data"
 #define BATCH_SECTION "batch"
 #define MODIFICATION_SECTION "modify"
+#define MODIFYDOMAIN_SECTION "modify_current_domain"
 
 #define MATCH_SECTION_AND_NAME(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define MATCH_SECTION(s) strcmp(section, s) == 0

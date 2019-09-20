@@ -34,6 +34,7 @@
 #define ASSEMBLY_MATRIX_OPT 2100
 #define LINEAR_SYSTEM_SOLVER_OPT 2200
 #define UPDATE_MONODOMAIN_SOLVER_OPT 2300
+#define MODIFY_DOMAIN_OPT 2400
 #define DRAW_OPT 3000
 #define SAVE_OPT 3100
 #define SAVE_STATE_OPT 3200
@@ -71,6 +72,10 @@ struct user_options {
     bool gpu_id_was_set;
     bool abort_no_activity;         /*-b option*/
     bool abort_no_activity_was_set;
+
+    real_cpu only_abort_after_dt;
+    bool only_abort_after_dt_was_set;
+
     real_cpu vm_threshold;            /*-v option*/
     bool vm_threshold_was_set;
 
@@ -95,6 +100,7 @@ struct user_options {
     bool start_visualization_unpaused;
 
     struct string_voidp_hash_entry *stim_configs;
+    struct string_voidp_hash_entry *modify_domain_configs;
     struct config *domain_config;
     struct config *purkinje_config;
     struct config *extra_data_config;
@@ -108,8 +114,6 @@ struct user_options {
     struct string_hash_entry *ode_extra_config;
 
     real_cpu max_v, min_v;
-
-    bool main_found;
 
 };
 
@@ -129,6 +133,7 @@ struct visualization_options {
     char *activation_map;
     bool save_activation_only;
     int start_file;
+    int step;
     real_cpu max_v, min_v, dt;
 };
 

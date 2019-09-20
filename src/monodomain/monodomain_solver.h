@@ -34,11 +34,10 @@ struct monodomain_solver {
     real_cpu start_adapting_at;
 
     bool abort_on_no_activity;
+    real_cpu only_abort_after_dt;
 
     // Time used for solving wave equation.
     real_cpu dt;
-    real_cpu current_time;
-    int current_count;
 
 };
 
@@ -56,8 +55,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
 bool update_ode_state_vector_and_check_for_activity(real_cpu vm_thresold, struct ode_solver *the_ode_solver, struct grid *the_grid);
 
-void set_ode_extra_data(struct config *config, struct grid *the_grid, struct ode_solver *the_ode_solver);
-void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid);
+void set_spatial_stim(struct time_info *time_info, struct string_voidp_hash_entry *stim_configs, struct grid *the_grid);
                     
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver, struct user_options *options);
 

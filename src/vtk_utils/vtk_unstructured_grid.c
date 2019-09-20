@@ -204,26 +204,18 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
 
 void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values) {
 
-    static bool mesh_already_loaded =  false;
-
     if(!read_only_values) {
         *vtk_grid = new_vtk_unstructured_grid();
     }
     else {
-        if(!(*vtk_grid) && mesh_already_loaded) {
+        if(!(*vtk_grid)) {
             fprintf(stderr,
-                    "new_vtk_unstructured_grid_from_string can only be called with read_only_values if the grid is already loaded");
+                    "new_vtk_unstructured_grid_from_string can only be called with read_only_values if the grid is already loaded\n");
             exit(EXIT_FAILURE);
         }
 
-        if(mesh_already_loaded) {
-            assert(*vtk_grid);
-                    arrfree((*vtk_grid)->values);
-            (*vtk_grid)->values = NULL;
-        }
-        else {
-            *vtk_grid = new_vtk_unstructured_grid();
-        }
+        arrfree((*vtk_grid)->values);
+        (*vtk_grid)->values = NULL;
     }
 
     float center_x, center_y, center_z;
@@ -302,7 +294,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
         if(v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = v;
         if(v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = v;
 
-        if(mesh_already_loaded && read_only_values) {
+        if(read_only_values) {
             if(!binary) {
                 while (*source != '\n') {
                             arrput(line, *source);
@@ -425,12 +417,9 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
         num_cells++;
     }
 
-    if(!mesh_already_loaded) {
+    if(!read_only_values) {
         (*vtk_grid)->num_cells = num_cells;
         (*vtk_grid)->num_points = id;
-
-        if(read_only_values)
-            mesh_already_loaded = true;
     }
     arrfree(line);
     hmfree(hash);
@@ -440,8 +429,6 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                                              float *plain_coordinates, bool clip_with_bounds,
                                              float *bounds, bool read_only_values) {
 
-    static bool mesh_already_loaded =  false;
-
     if(grid == NULL) {
         return;
     }
@@ -450,31 +437,26 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         *vtk_grid = new_vtk_unstructured_grid();
     }
     else {
-        if(!(*vtk_grid) && mesh_already_loaded) {
+        if(!(*vtk_grid)) {
             fprintf(stderr,
-                    "Function new_vtk_unstructured_grid_from_alg_grid can only be called with read_only_values if the grid is already loaded");
+                    "Function new_vtk_unstructured_grid_from_alg_grid can only be called with read_only_values if the grid is already loaded!\n");
             exit(EXIT_FAILURE);
         }
 
-        if(mesh_already_loaded) {
-            assert(*vtk_grid);
-            arrfree((*vtk_grid)->values);
-            (*vtk_grid)->values = NULL;
-        }
-        else {
-            *vtk_grid = new_vtk_unstructured_grid();
-        }
+        assert(*vtk_grid);
+        arrfree((*vtk_grid)->values);
+        (*vtk_grid)->values = NULL;
     }
 
-    float min_x = 0.0;
-    float min_y = 0.0;
-    float min_z = 0.0;
-    float max_x = 0.0;
-    float max_y = 0.0;
-    float max_z = 0.0;
+    real_cpu min_x = 0.0;
+    real_cpu min_y = 0.0;
+    real_cpu min_z = 0.0;
+    real_cpu max_x = 0.0;
+    real_cpu max_y = 0.0;
+    real_cpu max_z = 0.0;
 
-    float p0[3] = {0, 0, 0};
-    float n[3] = {0, 0, 0};
+    real_cpu p0[3] = {0, 0, 0};
+    real_cpu n[3] = {0, 0, 0};
 
     if(!plain_coordinates) {
         clip_with_plain = false;
@@ -556,7 +538,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             if(grid_cell->v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = grid_cell->v;
             if(grid_cell->v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = grid_cell->v;
 
-            if(mesh_already_loaded && read_only_values) {
+            if(read_only_values) {
                 grid_cell = grid_cell->next;
                 continue;
             }
@@ -659,12 +641,9 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         grid_cell = grid_cell->next;
     }
 
-    if(!mesh_already_loaded) {
+    if(!read_only_values) {
         (*vtk_grid)->num_cells = num_cells;
         (*vtk_grid)->num_points = id;
-
-        if(read_only_values)
-            mesh_already_loaded = true;
     }
 
     hmfree(hash);
@@ -918,8 +897,16 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
     first_file_part = sdscat(first_file_part, "      </CellData>\n");
     first_file_part = sdscat(first_file_part, "      <Points>\n");
 
-    sds points_array_header = sdsnew("        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" "
+    sds points_array_header;
+
+    if(sizeof(real_cpu) == 4) {
+        points_array_header = sdsnew("        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" "
+                                         "format=\"appended\" offset=\"%zu\" />\n");
+    }
+    else {
+        points_array_header = sdsnew("        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" "
                                      "format=\"appended\" offset=\"%zu\" />\n");
+    }
 
     sds points_array_header_end = sdsnew("      </Points>\n");
     points_array_header_end = sdscat(points_array_header_end, "      <Cells>\n");
@@ -985,7 +972,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         size_t *block_sizes_compressed_for_points;
         size_t last_block_size_for_points;
 
-        data_size = vtk_grid->num_points * 4 * 3; // 3 points, with 32 bit float each point
+        data_size = vtk_grid->num_points * sizeof(real_cpu) * 3; // 3 points, with 64 bit float each point
 
         data_to_compress = (unsigned char *)vtk_grid->points;
 

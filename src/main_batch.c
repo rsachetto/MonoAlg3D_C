@@ -187,7 +187,7 @@ static string_array get_combination(ui32_array counters, string_array *sets) {
 
     string_array o = NULL;
     for (int i = 0; i < arrlen(counters); i++) {
-                arrput(o, strdup(sets[i][counters[i]]));
+        arrput(o, strdup(sets[i][counters[i]]));
     }
     return o;
 }
@@ -216,8 +216,8 @@ struct simulation *generate_all_simulations(struct string_hash_entry *modify_dir
 
     for (int i = 0; i < n; i++) {
         struct changed_parameters c = parse_range_or_list_values(modify_directives[i].key, modify_directives[i].value);
-                arrput(section_names, c);
-                arrput(sets, c.values);
+        arrput(section_names, c);
+        arrput(sets, c.values);
     }
 
     string_array *combinations = get_combinations(sets);
@@ -240,25 +240,26 @@ struct simulation *generate_all_simulations(struct string_hash_entry *modify_dir
                 comb.section = strdup(section_names[k].section);
                 comb.name = strdup(section_names[k].name);
                 comb.value = combinations[i][k];
-                        arrput(sim.parameters, comb);
+                arrput(sim.parameters, comb);
             }
 
-                    arrput(all_simulations, sim);
+            arrput(all_simulations, sim);
             sim_count++;
         }
     }
 
     for (long i = 0; i < arrlen(sets); i++) {
-                arrfree(sets[i]);
+        arrfree(sets[i]);
     }
 
-            arrfree(sets);
-            arrfree(combinations);
+    arrfree(sets);
+    arrfree(combinations);
     for (long i = 0; i < arrlen(section_names); i++) {
         free(section_names[i].section);
         free(section_names[i].name);
     }
-            arrfree(section_names);
+
+    arrfree(section_names);
 
     return all_simulations;
 
@@ -369,6 +370,7 @@ int main(int argc, char **argv) {
     GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
     char *initial_out_dir_name = strdup(out_dir_name);
 
+    
     no_stdout = options->quiet;
 
     output_folder = batch_options->output_folder;
@@ -440,10 +442,9 @@ int main(int argc, char **argv) {
         print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
                                  buffer_ini);
 
-        options_to_ini_file(options, buffer_ini);
+
 
         sdsfree(buffer_log);
-        sdsfree(buffer_ini);
 
         configure_ode_solver_from_options(ode_solver, options);
         configure_monodomain_solver_from_options(monodomain_solver, options);
@@ -465,6 +466,10 @@ int main(int argc, char **argv) {
         omp_set_num_threads(nt);
 #endif
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+
+        options_to_ini_file(options, buffer_ini);
+        sdsfree(buffer_ini);
+
         free_current_simulation_resources(monodomain_solver, ode_solver, the_grid);
 
     }

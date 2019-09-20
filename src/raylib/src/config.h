@@ -27,12 +27,6 @@
 
 #define RAYLIB_VERSION  "2.5"
 
-// Edit to control what features Makefile'd raylib is compiled with
-#if defined(RAYLIB_CMAKE)
-    // Edit CMakeOptions.txt for CMake instead
-    #include "cmake/config.h"
-#else
-
 //------------------------------------------------------------------------------------
 // Module: core - Configuration Flags
 //------------------------------------------------------------------------------------
@@ -140,7 +134,4 @@
 //------------------------------------------------------------------------------------
 // Show TraceLog() output messages
 // NOTE: By default LOG_DEBUG traces not shown
-#define SUPPORT_TRACELOG    1
-
-
-#endif  //defined(RAYLIB_CMAKE)
+//#define SUPPORT_TRACELOG    0

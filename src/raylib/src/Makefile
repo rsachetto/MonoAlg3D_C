@@ -61,7 +61,7 @@ RAYLIB_BUILD_MODE    ?= RELEASE
 
 # Include raylib modules on compilation
 # NOTE: Some programs like tools could not require those modules
-RAYLIB_MODULE_AUDIO  ?= TRUE
+RAYLIB_MODULE_AUDIO  ?= FALSE
 RAYLIB_MODULE_MODELS ?= TRUE
 RAYLIB_MODULE_RAYGUI ?= FALSE
 RAYLIB_MODULE_PHYSAC ?= FALSE

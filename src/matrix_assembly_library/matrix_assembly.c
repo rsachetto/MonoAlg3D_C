@@ -625,7 +625,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
@@ -679,6 +679,10 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
             sigma_y_new = sigma_y;
             sigma_z_new = sigma_z;
         }
+
+        ac[i]->sigma.x = sigma_x_new;
+        ac[i]->sigma.y = sigma_y_new;
+        ac[i]->sigma.z = sigma_z_new;
 
         // Computes and designates the flux due to south cells.
         fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');

@@ -2,10 +2,11 @@
 #include "../monodomain/constants.h"
 #include "model_gpu_utils.h"
 
-#include "ten_tusscher_3_Fig4b.h"
+#include "ten_tusscher_3_RS.h"
 
 #define ENDO
-
+#undef INITIAL_V
+#define INITIAL_V (-79.550919)
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
@@ -45,44 +46,64 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
-    // Default values for a' healthy cell ///////////
+    // Default values for a healthy cell ///////////
     real atpi = 6.8f;
     real Ko = 5.4f;
-    real Ki_mult = 1.0f;
-    real acidosis = 0.0;
-    real K1_mult = 1.0f;
+    real Ki = 138.3f;
+    real Vm_change = 0.0;
+    real GNa_multiplicator = 1.0f;
+    real GCaL_multiplicator = 1.0f;
+    real INaCa_multiplicator = 1.0f;
     ////////////////////////////////////
 
     real *fibrosis_device;
     real *fibs = NULL;
+    int num_extra_parameters = 7;
+    size_t extra_parameters_size = num_extra_parameters*sizeof(real);
+
+    real *extra_parameters_device;
+    real fibs_size = num_cells_to_solve*sizeof(real);
+
+    bool dealocate = false;
 
     if(extra_data) {
-        atpi = ((real*)extra_data)[0]; //value
-        Ko = ((real*)extra_data)[1]; //value
-        Ki_mult = ((real*)extra_data)[2]; //value
-        K1_mult = ((real*)extra_data)[3]; //value
-        acidosis = ((real*)extra_data)[4]; //value
-        fibs = ((real*)extra_data) + 5; //pointer
-
-        extra_data_bytes_size = extra_data_bytes_size-5*sizeof(real);
+        fibs = ((real*)extra_data) + num_extra_parameters; //pointer
     }
     else {
-        extra_data_bytes_size = num_cells_to_solve*sizeof(real);
+        extra_data = malloc(extra_parameters_size);
+        ((real*)extra_data)[0] = atpi;
+        ((real*)extra_data)[1] = Ko;
+        ((real*)extra_data)[2] = Ki;
+        ((real*)extra_data)[3] = Vm_change;
+        ((real*)extra_data)[4] = GNa_multiplicator;
+        ((real*)extra_data)[5] = GCaL_multiplicator;
+        ((real*)extra_data)[6] = INaCa_multiplicator;
+
         fibs = (real*)calloc(num_cells_to_solve, sizeof(real));
+
+        dealocate = true;
     }
 
-    check_cuda_error(cudaMalloc((void **) &fibrosis_device, extra_data_bytes_size));
-    check_cuda_error(cudaMemcpy(fibrosis_device, fibs, extra_data_bytes_size, cudaMemcpyHostToDevice));
+    check_cuda_error(cudaMalloc((void **) &extra_parameters_device, extra_parameters_size));
+    check_cuda_error(cudaMemcpy(extra_parameters_device, extra_data, extra_parameters_size, cudaMemcpyHostToDevice));
 
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, fibrosis_device, atpi, Ko, Ki_mult, K1_mult, acidosis);
+    check_cuda_error(cudaMalloc((void **) &fibrosis_device, fibs_size));
+    check_cuda_error(cudaMemcpy(fibrosis_device, fibs, fibs_size, cudaMemcpyHostToDevice));
+
+    solve_gpu<<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, fibrosis_device, extra_parameters_device);
 
     check_cuda_error( cudaPeekAtLastError() );
 
     check_cuda_error(cudaFree(stims_currents_device));
     check_cuda_error(cudaFree(fibrosis_device));
+    check_cuda_error(cudaFree(extra_parameters_device));
 
     if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
-    if(!extra_data) free(fibs);
+
+    if(dealocate) {
+        free(fibs);
+        free(extra_data);
+    }
 }
 
 
@@ -93,7 +114,7 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 
     if(threadID < num_volumes) {
 
-        *((real*)((char*)sv + pitch * 0) + threadID) = INITIAL_V;   // V;       millivolt
+        *((real*)((char*)sv + pitch * 0) + threadID) = -79.550919;   // V;       millivolt
         *((real*)((char*)sv + pitch * 1) + threadID) = 0.005619; //M
         *((real*)((char*)sv + pitch * 2) + threadID) = 0.551265; //H
         *((real*)((char*)sv + pitch * 3) + threadID) = 0.246963; //J
@@ -112,8 +133,7 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 // Solving the model for each cell in the tissue matrix ni x nj
 __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          int num_steps, real *fibrosis,  real atpi,
-                          real Ko, real Ki_multiplicator, real K1_multiplicator, real acidosis)
+                          int num_steps, real *fibrosis, real *extra_parameters)
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
@@ -129,7 +149,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         for (int n = 0; n < num_steps; ++n) {
 
-            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt, fibrosis[threadID], atpi, Ko, Ki_multiplicator, K1_multiplicator, acidosis);
+            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt, fibrosis[threadID], extra_parameters);
 
             *((real*)((char*)sv) + sv_id) = dt*rDY[0] + *((real*)((char*)sv) + sv_id);
 
@@ -143,7 +163,8 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 }
 
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real atpi, real Ko, real Ki_multiplicator, real K1_multiplicator, real acidosis) {
+inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real *extra_parameters) {
+
     //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
     const real svolt = *((real*)((char*)sv_ + pitch * 0) + threadID_);
 
@@ -163,21 +184,43 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
     const real hatp = 2;             // Hill coefficient
 
+    //Linear changing of atpi depending on the fibrosis and distance from the center of the scar (only for border zone cells)
+    real atpi = extra_parameters[0];
+    real atpi_change = 6.8f - atpi;
+    atpi = atpi +atpi_change*fibrosis;
+
     //Extracellular potassium concentration was elevated
     //from its default value of 5.4 mM to values between 6.0 and 8.0 mM
     //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischemia and Re-entry
+    real Ko = extra_parameters[1];
     real Ko_change  = 5.4f - Ko;
     Ko = Ko + Ko_change*fibrosis;
 
-    //Linear changing of atpi depending on the fibrosis and distance from the center of the scar (only for border zone cells)
-    real atpi_change = 6.8f - atpi;
-    atpi = atpi + atpi_change*fibrosis;
+    real GNa_multplicator = extra_parameters[4];
+    real GNa_multplicator_change  = 1.0f - GNa_multplicator;
+    GNa_multplicator = GNa_multplicator + GNa_multplicator_change*fibrosis;
+
+    real GCaL_multplicator = extra_parameters[5];
+    real GCaL_multplicator_change  = 1.0f - GCaL_multplicator;
+    GCaL_multplicator = GCaL_multplicator + GCaL_multplicator_change*fibrosis;
+
+    real INaCa_multplicator = extra_parameters[6];
+    real INaCa_multplicator_change  = 1.0f - INaCa_multplicator;
+    INaCa_multplicator = INaCa_multplicator + INaCa_multplicator_change*fibrosis;
+
+    real Vm_modifier = extra_parameters[3];
+    Vm_modifier = Vm_modifier - Vm_modifier*fibrosis;
+
+    real Ki = extra_parameters[2];
+    real Ki_change  = 138.3 - Ki;
+    Ki = Ki + Ki_change*fibrosis;
+
+    //printf("%lf, %lf, %lf, %lf, %lf, %lf, %lf\n", atpi, Ko, GCaL_multplicator, GCaL_multplicator, INaCa_multplicator, Vm_modifier, Ki);
 
     //real katp = 0.306;
     //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
     //real katp = 0.306;
-    const real katp = -0.0942857142857*atpi + 0.683142857143; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischemia and Re-entry
-
+    const real katp = -0.0942857142857*atpi + 0.683142857143; //Ref: A Comparison of Two Models of Human Ventricular Tissue: Simulated Ischaemia and Re-entry
 
     const real patp =  1/(1 + pow((atpi/katp),hatp));
     const real gkatp    =  0.000195/nicholsarea;
@@ -192,7 +235,6 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real Nao=140.0;
     const real Cai=0.00007;
     const real Nai=7.67;
-    const real Ki=138.3;
 
 //Constants
     const real R=8314.472;
@@ -227,7 +269,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real Gto=0.294;
 #endif
 //Parameters for INa
-    const real GNa=14.838*0.5; //ACIDOSIS
+    const real GNa=14.838*GNa_multplicator; //ACIDOSIS
 //Parameters for IbNa
     const real GbNa=0.00029;
 //Parameters for INaK
@@ -235,7 +277,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real KmNa=40.0;
     const real knak=2.724;
 //Parameters for ICaL
-    const real GCaL=0.2786*pcal*0.5; //ACIDOSIS
+    const real GCaL=0.2786*pcal*GCaL_multplicator; //ACIDOSIS
 //Parameters for IbCa
     const real GbCa=0.000592;
 //Parameters for INaCa
@@ -249,7 +291,6 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real KpCa=0.0005;
 //Parameters for IpK;
     const real GpK=0.0293;
-
 
     const real Ek=RTONF*(log((Ko/Ki)));
     const real Ena=RTONF*(log((Nao/Nai)));
@@ -326,8 +367,8 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 
 
     //Compute currents
-    INa=GNa*sm*sm*sm*sh*sj*((svolt-3.4)-Ena); //ACIDOSIS
-    ICaL=GCaL*D_INF*sf*sf2*((svolt-3.4)-60); //ACIDOSIS
+    INa=GNa*sm*sm*sm*sh*sj*((svolt-Vm_modifier)-Ena); //ACIDOSIS
+    ICaL=GCaL*D_INF*sf*sf2*((svolt-Vm_modifier)-60); //ACIDOSIS
     Ito=Gto*R_INF*ss*(svolt-Ek);
     IKr=Gkr*sqrt(Ko/5.4)*sxr1*Xr2_INF*(svolt-Ek);
     IKs=Gks*sxs*sxs*(svolt-Eks);
@@ -337,7 +378,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
           (exp(n*svolt*F/(R*T))*Nai*Nai*Nai*Cao-
            exp((n-1)*svolt*F/(R*T))*Nao*Nao*Nao*Cai*2.5);
 
-    INaCa = INaCa*0.6; //ACIDOSIS
+    INaCa = INaCa*INaCa_multplicator; //ACIDOSIS
 
     INaK=knak*(Ko/(Ko+KmK))*(Nai/(Nai+KmNa))*rec_iNaK;
     IpCa=GpCa*Cai/(KpCa+Cai);
@@ -455,7 +496,4 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     rDY_[9] = D_INF_new;
     rDY_[10] = R_INF_new;
     rDY_[11] = Xr2_INF_new;
-
-
-
 }

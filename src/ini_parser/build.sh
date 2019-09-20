@@ -1,0 +1,4 @@
+INI_SOURCE_FILES="ini.c"
+INI_HEADER_FILES="ini.h ini_file_sections.h"
+
+COMPILE_STATIC_LIB "ini_parser" "$INI_SOURCE_FILES" "$INI_HEADER_FILES"

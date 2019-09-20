@@ -4,6 +4,11 @@
 *.i*86
 *.x86_64
 *.hex
+*.o
+*.so
+*.a
+*.dll
+*.dll.*
 
 # Debug files
 *.dSYM/
@@ -59,6 +64,7 @@ bin/
 shared_libs/
 tmp*/
 tests_bin/TestSuite
+tests_bin/.TestSuite*
 tests_bin/ToyTest
 tests_bin/test_*
 meshes/*.pts
@@ -83,3 +89,11 @@ scripts/animations/frames
 scripts/animations/video
 batch_simulations/
 /src/main_graph_analyzer.c
+.idea/encodings.xml
+tests_bin/circle_cg*
+tests_bin/gold_tmp*
+tests_bin/simulation_result.pvd
+build_*/
+src/raylib/src/rnet.c.review
+src/raylib/src/shell.html
+src/raylib/src/stZ2ziky

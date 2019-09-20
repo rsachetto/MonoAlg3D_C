@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-static int current_file = 0;
 
 static inline int get_step_from_filename(char *filename) {
 
@@ -80,11 +79,18 @@ static void read_and_render_activation_map(char *input_file) {
     omp_unset_lock(&draw_config.draw_lock);
 }
 
-static int read_and_render_files(const char* pvd_file, char *input_dir, char* prefix) {
+static int read_and_render_files(struct visualization_options *options) {
 
-    bool using_pvd = (pvd_file != NULL);
+    bool using_pvd = (options->pvd_file != NULL);
 
     struct vtk_files *vtk_files;
+
+    const char *input_dir = options->input_folder;
+    const char *prefix = options->files_prefix;
+    const char *pvd_file = options->pvd_file;
+
+    int current_file = options->start_file;
+    int v_step = options->step;
 
     if(!using_pvd) {
         vtk_files = (struct vtk_files*) malloc(sizeof(struct vtk_files*));
@@ -224,9 +230,9 @@ static int read_and_render_files(const char* pvd_file, char *input_dir, char* pr
 
         }
         else {
-            current_file++;
+            current_file += v_step;
             if(current_file >= num_files) {
-                current_file--;
+                current_file -= v_step;
                 draw_config.paused = true;
             }
 
@@ -240,8 +246,6 @@ int main(int argc, char **argv) {
     struct visualization_options *options = new_visualization_options();
 
     parse_visualization_options(argc, argv, options);
-
-    current_file = options->start_file;
 
     if(!options->activation_map) {
         if (!options->input_folder) {
@@ -289,13 +293,12 @@ int main(int argc, char **argv) {
                     read_and_render_activation_map(options->activation_map);
                 }
                 else {
-                    int result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
+                    int result = read_and_render_files(options);
 
                     while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                         if (result == RESTART_SIMULATION) {
                             init_draw_config(&draw_config, options);
-                            current_file = 0;
-                            result = read_and_render_files(options->pvd_file, options->input_folder, options->files_prefix);
+                            result = read_and_render_files(options);
                         }
 
                         if (draw_config.restart) result = RESTART_SIMULATION;

@@ -14,7 +14,7 @@ static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
 
-static const char *visualization_opt_string = "x:m:d:p:v:a:c:s:h?";
+static const char *visualization_opt_string = "x:m:d:p:v:a:c:s:t:h?";
 static const struct option long_visualization_options[] = {
         {"visualization_max_v", required_argument, NULL, 'x'},
         {"visualization_min_v", required_argument, NULL, 'm'},
@@ -23,6 +23,7 @@ static const struct option long_visualization_options[] = {
         {"convert_activation_map", required_argument, NULL, 'c'},
         {"prefix", required_argument, NULL, 'p'},
         {"start_at", required_argument, NULL, 's'},
+        {"step", required_argument, NULL, 't'},
         {"pvd", required_argument, NULL, 'v'},
         {"help", no_argument, NULL, 'h'},
         {NULL, no_argument, NULL, 0}
@@ -58,6 +59,7 @@ static const struct option long_options[] = {
         {"assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT}, //Complex option
         {"extra_data", required_argument, NULL, EXTRA_DATA_OPT}, //Complex option
         {"stimulus", required_argument, NULL, STIM_OPT}, //Complex option
+        {"modify_current_domain", required_argument, NULL, MODIFY_DOMAIN_OPT}, //Complex option
         {"save_state", required_argument, NULL, SAVE_STATE_OPT}, //Complex option
         {"restore_state", required_argument, NULL, RESTORE_STATE_OPT}, //Complex option
         {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT}, //Complex option
@@ -134,6 +136,7 @@ void display_visualization_usage(char **argv) {
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--pvd | -v, pvd file. Default: NULL\n");
     printf("--start_at | -s, Visualize starting at file number [n]. Default: 0\n");
+    printf("--step | -t, Visualize each step [n]. Default: 1\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
@@ -169,6 +172,7 @@ struct visualization_options *new_visualization_options() {
     options->pvd_file = NULL;
     options->activation_map = NULL;
     options->save_activation_only = false;
+    options->step = 1;
 
     return options;
 }
@@ -241,11 +245,14 @@ struct user_options *new_user_options() {
     user_args->quiet_was_set = false;
 
     user_args->stim_configs = NULL;
-    user_args->ode_extra_config = NULL;
-
     sh_new_arena(user_args->stim_configs);
     shdefault(user_args->stim_configs, NULL);
 
+    user_args->modify_domain_configs = NULL;
+    sh_new_arena(user_args->modify_domain_configs);
+    shdefault(user_args->modify_domain_configs, NULL);
+
+    user_args->ode_extra_config = NULL;
     sh_new_arena(user_args->ode_extra_config);
     shdefault(user_args->ode_extra_config, NULL);
 
@@ -263,9 +270,10 @@ struct user_options *new_user_options() {
     user_args->max_v = 40.0f;
     user_args->min_v = -86.0f;
 
-    user_args->main_found = false;
-
     user_args->start_visualization_unpaused = false;
+
+    user_args->only_abort_after_dt = 0.0;
+    user_args->only_abort_after_dt_was_set = false;
 
     return user_args;
 }
@@ -344,6 +352,85 @@ void set_common_data(struct config* config, const char *key, const char *value) 
 
 }
 
+void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *modify_domain_configs, const char *config_file) {
+
+    sds extra_config;
+    sds *extra_config_tokens;
+    int tokens_count;
+    extra_config = sdsnew(args);
+    extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
+    char *modify_domain_name = NULL;
+    char old_value[32];
+    char *key, *value;
+
+    assert(modify_domain_configs);
+
+    for(int i = 0; i < tokens_count; i++) {
+        extra_config_tokens[i] = sdstrim(extra_config_tokens[i], " ");
+
+        int values_count;
+        sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
+
+        if(values_count != 2) {
+            fprintf(stderr, "Invalid format for option %s. Exiting!\n", args);
+            exit(EXIT_FAILURE);
+        }
+
+        if(strcmp(key_value[0], "name") == 0) {
+            modify_domain_name = strdup(key_value[1]);
+            sdsfreesplitres(key_value, values_count);
+            break;
+        }
+
+        sdsfreesplitres(key_value, values_count);
+    }
+
+    if(modify_domain_name == NULL) {
+        fprintf(stderr, "The stimulus name must be passed in the stimulus option! Exiting!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    struct config *sc = (struct config*) shget(modify_domain_configs, modify_domain_name);
+
+    if(sc == NULL) {
+        sc = alloc_and_init_config_data();
+        print_to_stdout_and_file("Creating new modify_domain named %s from command line options!\n", modify_domain_name);
+        shput(modify_domain_configs, modify_domain_name, sc);
+    }
+
+    for(int i = 0; i < tokens_count; i++) {
+
+        int values_count;
+        sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
+
+        key_value[0] = sdstrim(key_value[0], " ");
+        key_value[1] = sdstrim(key_value[1], " ");
+
+        key = key_value[0];
+        value = key_value[1];
+
+        if(strcmp(key, "modify_after_dt") == 0) {
+
+            bool modify_at_was_set;
+            real modify_at = 0.0;
+            GET_PARAMETER_NUMERIC_VALUE(real, modify_at, sc->config_data, key, modify_at_was_set);
+
+            if(modify_at_was_set) {
+                sprintf(old_value, "%lf", modify_at);
+                issue_overwrite_warning(key, modify_domain_name, old_value, value, config_file);
+            }
+            shput(sc->config_data, key, strdup(value));
+        }
+        else {
+            set_or_overwrite_common_data(sc, key, value, modify_domain_name, config_file);
+        }
+        sdsfreesplitres(key_value, values_count);
+    }
+
+    sdsfreesplitres(extra_config_tokens, tokens_count);
+    free(modify_domain_name);
+}
+
 void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_configs, const char *config_file) {
 
     sds extra_config;
@@ -364,7 +451,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
         sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
 
         if(values_count != 2) {
-            fprintf(stderr, "Invalid format for optios %s. Exiting!\n", args);
+            fprintf(stderr, "Invalid format for option %s. Exiting!\n", args);
             exit(EXIT_FAILURE);
         }
 
@@ -794,6 +881,9 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
             case 's':
                 user_args->start_file = (int)strtod(optarg, NULL);
                 break;
+            case 't':
+                user_args->step = (int)strtod(optarg, NULL);
+                break;
             case 'h': /* fall-through is intentional */
             case '?':
                 display_visualization_usage(argv);
@@ -1042,6 +1132,12 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
                 }
                 set_stim_config(optarg, user_args->stim_configs, user_args->config_file);
                 break;
+            case MODIFY_DOMAIN_OPT:
+                if(user_args->modify_domain_configs == NULL) {
+                    print_to_stdout_and_file("Creating new modify_domain config from command line!\n");
+                }
+                set_modify_domain_config(optarg, user_args->modify_domain_configs, user_args->config_file);
+                break;
             case SAVE_STATE_OPT:
                 if(user_args->save_state_config == NULL) {
                     print_to_stdout_and_file("Creating new save state config from command line!\n");
@@ -1128,9 +1224,6 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
 int parse_config_file(void *user, const char *section, const char *name, const char *value) {
     struct user_options *pconfig = (struct user_options *)user;
 
-    if(MATCH_SECTION(MAIN_SECTION)) {
-        pconfig->main_found = true;
-    }
 
     if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "num_threads")) {
         pconfig->num_threads = (int)strtol(value, NULL, 10);
@@ -1157,7 +1250,11 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->abort_no_activity = false;
         }
         pconfig->abort_no_activity_was_set = true;
-    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
+    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "only_abort_after_dt")) {
+        pconfig->only_abort_after_dt = strtof(value, NULL);;
+        pconfig->only_abort_after_dt_was_set = true;
+    }
+    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
         pconfig->vm_threshold = strtof(value, NULL);
         pconfig->vm_threshold_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "use_adaptivity")) {
@@ -1229,7 +1326,28 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             set_common_data(tmp, name, value);
         }
 
-    } else if(MATCH_SECTION(DOMAIN_SECTION)) {
+    } else if(SECTION_STARTS_WITH(MODIFY_DOMAIN)) {
+
+        struct config *tmp = (struct config *) shget(pconfig->modify_domain_configs, section);
+
+        if (tmp == NULL) {
+            tmp = alloc_and_init_config_data();
+            shput(pconfig->modify_domain_configs, section, tmp);
+        }
+
+        if (MATCH_NAME("name")) {
+            fprintf(stderr,
+                    "name is a reserved word and should not be used inside a stimulus config section. Found in %s. "
+                    "Exiting!\n",
+                    section);
+            exit(EXIT_FAILURE);
+        }
+        else {
+            set_common_data(tmp, name, value);
+        }
+
+    }
+    else if(MATCH_SECTION(DOMAIN_SECTION)) {
 
         if(pconfig->domain_config == NULL) {
             pconfig->domain_config = alloc_and_init_config_data();
@@ -1325,7 +1443,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     do {\
         for (long j = 0; j < hmlen(hash); j++) { \
             char *name = hash[j].key; \
-            if (strcmp(name, "main_function") != 0 && strcmp(name, "library_file") != 0) { \
+            if (strcmp(name, "init_function") != 0 && strcmp(name, "end_function") != 0 && strcmp(name, "main_function") != 0 && strcmp(name, "library_file") != 0 && strcmp(name, "modification_applied") != 0) { \
                 char *value = hash[j].value;\
                 WRITE_NAME_VALUE_WITHOUT_CHECK(name, value, "s");\
             }\
@@ -1437,6 +1555,15 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
         write_ini_options(config->restore_state_config, ini_file);
         printf("\n");
     }
+
+    for(long i = 0; i < hmlen(config->modify_domain_configs); i++) {
+        struct string_voidp_hash_entry e = config->modify_domain_configs[i];
+        WRITE_INI_SECTION(e.key);
+        struct config *tmp = (struct config*) e.value;
+        write_ini_options(tmp, ini_file);
+        printf("\n");
+    }
+
 
     fclose(ini_file);
 

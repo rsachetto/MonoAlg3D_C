@@ -2,9 +2,13 @@
 // Created by sachetto on 01/10/17.
 //
 
+#include <time.h>
+#include <unistd.h>
+
 #include "../config/extra_data_config.h"
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
+#include "../utils/file_utils.h"
 
 
 real* set_commom_schemia_data(struct config *config, uint32_t num_cells, int num_par, size_t *extra_data_size) {
@@ -25,8 +29,11 @@ real* set_commom_schemia_data(struct config *config, uint32_t num_cells, int num
     real GNa_multiplicator = 1.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_multiplicator, config->config_data, "GNa_multiplicator");
 
-    real GCa_multiplicator = 1.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCa_multiplicator, config->config_data, "GCa_multiplicator");
+    real GCaL_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCaL_multiplicator, config->config_data, "GCaL_multiplicator");
+
+    real INaCa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_multiplicator, config->config_data, "INaCa_multiplicator");
 
     real Vm_modifier = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config->config_data, "Vm_modifier");
@@ -36,7 +43,8 @@ real* set_commom_schemia_data(struct config *config, uint32_t num_cells, int num
     extra_data[2] = Ki;
     extra_data[3] = Vm_modifier;
     extra_data[4] = GNa_multiplicator;
-    extra_data[5] = GCa_multiplicator;
+    extra_data[5] = GCaL_multiplicator;
+    extra_data[6] = INaCa_multiplicator;
 
     return extra_data;
 
@@ -58,7 +66,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
 
-    int num_par = 6;
+    int num_par = 7;
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
 	#pragma omp parallel for
@@ -91,7 +99,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
-    int num_par = 6;
+    int num_par = 7;
 
     real *fibs = NULL;
 
@@ -108,7 +116,7 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    int num_par = 6;
+    int num_par = 7;
     real *fibs = NULL;
 
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
@@ -124,7 +132,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-     int num_par = 6;
+     int num_par = 7;
     real *fibs = NULL;
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
@@ -232,7 +240,7 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     uint32_t num_active_cells = the_grid->num_active_cells;
     real *fibs = NULL;
 
-    int num_par = 6;
+    int num_par = 7;
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;

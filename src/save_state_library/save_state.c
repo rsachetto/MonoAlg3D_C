@@ -79,6 +79,8 @@ SAVE_STATE(save_simulation_state) {
 
 
         fwrite(the_monodomain_solver, sizeof(struct monodomain_solver), 1, output_file);
+        fwrite(time_info, sizeof(struct time_info), 1, output_file);
+
         fclose(output_file);
 
     }

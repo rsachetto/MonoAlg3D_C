@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "Ohara_Rudy_2011.h"
-__device__ int celltype = 0;
+__device__ int celltype_gpu = 0;
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
@@ -263,7 +263,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real thLp=3.0*thL;
     hLp=hLssp-(hLssp-hLp)*exp(-dt/thLp);
     real GNaL=0.0075;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         GNaL*=0.6;
     }
@@ -275,7 +275,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     a=ass-(ass-a)*exp(-dt/ta);
     real iss=1.0/(1.0+exp((v+43.94)/5.711));
     real delta_epi;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         delta_epi=1.0-(0.95/(1.0+exp((v+70.0)/5.0)));
     }
@@ -302,11 +302,11 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     iSp=iss-(iss-iSp)*exp(-dt/tiSp);
     real ip=AiF*iFp+AiS*iSp;
     real Gto=0.02;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         Gto*=4.0;
     }
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         Gto*=4.0;
     }
@@ -350,11 +350,11 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real PhiCaK=1.0*vffrt*(0.75*kss*exp(1.0*vfrt)-0.75*ko)/(exp(1.0*vfrt)-1.0);
     real zca=2.0;
     real PCa=0.0001;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         PCa*=1.2;
     }
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         PCa*=2.5;
     }
@@ -378,11 +378,11 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real xr=Axrf*xrf+Axrs*xrs;
     real rkr=1.0/(1.0+exp((v+55.0)/75.0))*1.0/(1.0+exp((v-10.0)/30.0));
     real GKr=0.046;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         GKr*=1.3;
     }
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         GKr*=0.8;
     }
@@ -396,7 +396,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     xs2=xs2ss-(xs2ss-xs2)*exp(-dt/txs2);
     real KsCa=1.0+0.6/(1.0+powf(3.8e-5/cai,1.4));
     real GKs=0.0034;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         GKs*=1.4;
     }
@@ -407,11 +407,11 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     xk1=xk1ss-(xk1ss-xk1)*exp(-dt/txk1);
     real rk1=1.0/(1.0+exp((v+105.8-2.6*ko)/9.493));
     real GK1=0.1908;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         GK1*=1.2;
     }
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         GK1*=1.3;
     }
@@ -468,11 +468,11 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real JncxNa=3.0*(E4*k7-E1*k8)+E3*k4pp-E2*k3pp;
     real JncxCa=E2*k2-E1*k1;
     real Gncx=0.0008;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         Gncx*=1.1;
     }
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         Gncx*=1.4;
     }
@@ -563,11 +563,11 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real JnakNa=3.0*(E1*a3-E2*b3);
     real JnakK=2.0*(E4*b1-E3*a1);
     real Pnak=30;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         Pnak*=0.9;
     }
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         Pnak*=0.7;
     }
@@ -575,7 +575,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
 
     real xkb=1.0/(1.0+exp(-(v-14.48)/18.34));
     real GKb=0.003;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         GKb*=0.6;
     }
@@ -604,7 +604,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real bt=4.75;
     real a_rel=0.5*bt;
     real Jrel_inf=a_rel*(-ICaL)/(1.0+powf(1.5/cajsr,8.0));
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         Jrel_inf*=1.7;
     }
@@ -617,7 +617,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real btp=1.25*bt;
     real a_relp=0.5*btp;
     real Jrel_infp=a_relp*(-ICaL)/(1.0+powf(1.5/cajsr,8.0));
-    if (celltype==2)
+    if (celltype_gpu==2)
     {
         Jrel_infp*=1.7;
     }
@@ -632,7 +632,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
 
     real Jupnp=0.004375*cai/(cai+0.00092);
     real Jupp=2.75*0.004375*cai/(cai+0.00092-0.00017);
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         Jupnp*=1.3;
         Jupp*=1.3;
@@ -650,7 +650,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     kss+=dt*(-(ICaK)*Acap/(F*vss)-JdiffK);
 
     real Bcai;
-    if (celltype==1)
+    if (celltype_gpu==1)
     {
         Bcai=1.0/(1.0+1.3*cmdnmax*kmcmdn/powf(kmcmdn+cai,2.0)+trpnmax*kmtrpn/powf(kmtrpn+cai,2.0));
     }
