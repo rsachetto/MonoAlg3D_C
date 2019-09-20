@@ -38,9 +38,9 @@ struct ode_solver* new_ode_solver() {
 
     result->ode_extra_data = NULL;
     result->ode_extra_data = 0;
-
-
+    
     return result;
+
 }
 
 void free_ode_solver(struct ode_solver *solver) {

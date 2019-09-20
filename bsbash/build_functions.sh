@@ -97,8 +97,8 @@ RECOMPILE_OR_NOT () {
   diff_time=1
 
   if [ -f "$1" ] && [ -f "$2" ]; then
-    OBJ_TIME=$(date +%s -d"$( ls -l --time-style=full-iso $1 | awk ' { print $(NF-3)" "$(NF-2); }')")
-    SOURCE_TIME=$(date +%s -d"$( ls -l --time-style=full-iso $2 | awk ' { print $(NF-3)" "$(NF-2); }')")
+    OBJ_TIME=$(date +%s -d"$( ls -l --time-style=full-iso "$1" | awk ' { print $(NF-3)" "$(NF-2); }')")
+    SOURCE_TIME=$(date +%s -d"$( ls -l --time-style=full-iso "$2" | awk ' { print $(NF-3)" "$(NF-2); }')")
     (( diff_time =  SOURCE_TIME - OBJ_TIME ))
   fi
 
@@ -297,7 +297,7 @@ COMPILE_STATIC_LIB () {
 		OBJ_FILE=$BUILD_DIR/objs/${OBJ_FILE}.o
 		OBJECTS+=("$OBJ_FILE")
 
-		COMPILE_OBJECT "$s" "$OBJ_FILE" "$EXTRA_C_FLAGS -fPIC" "$FORCE_COMPILATION"
+		COMPILE_OBJECT "${PWD}/$s" "$OBJ_FILE" "$EXTRA_C_FLAGS -fPIC" "$FORCE_COMPILATION"
 
 		if [ -z "$ANY_COMPILED_LOCAL" ]; then
 		ANY_COMPILED_LOCAL=$ANY_COMPILED
@@ -328,7 +328,7 @@ COMPILE_SHARED_LIB () {
 	local EXTRA_C_FLAGS=$7
 	local IS_CUDA=$8
 
-	local STATIC_DEPS=()
+	local STATIC_DEPS=()	
 
 	for dep in $STATIC_DEPS_LIST; do
 	  STATIC_DEPS+=("${COMPILED_STATIC_LIBS[$dep]}")
@@ -387,7 +387,7 @@ COMPILE_SHARED_LIB () {
 		OBJ_FILE=$BUILD_DIR/objs/${OBJ_FILE}.o
 		OBJECTS+=("$OBJ_FILE")
 
-    	COMPILE_OBJECT "$s" "$OBJ_FILE" "${EXTRA_C_FLAGS} -fPIC" "$FORCE_COMPILATION" "$IS_CUDA"
+    	COMPILE_OBJECT "${PWD}/$s" "$OBJ_FILE" "${EXTRA_C_FLAGS} -fPIC" "$FORCE_COMPILATION" "$IS_CUDA"
 
 		if [ -z "$ANY_COMPILED_LOCAL" ]; then
 			ANY_COMPILED_LOCAL=$ANY_COMPILED
@@ -422,7 +422,7 @@ COMPILE_SHARED_LIB () {
 
 ADD_SUBDIRECTORY() {
 	local PREVIOUS_DIR
-	PREVIOUS_DIR=$(pwd)
+	PREVIOUS_DIR=$PWD
 	cd "$1" || exit
 	source build.sh
 	cd "$PREVIOUS_DIR" || exit
