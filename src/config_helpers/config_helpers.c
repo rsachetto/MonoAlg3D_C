@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void report_error_on_function(const char * function, const char *error) {
-    fprintf(stderr, "Error on function %s: %s.\n", function, error);
+void report_error_on_function(int line, const char * file, const char *error) {
+    fprintf(stderr, "Error on line %d of file %s: %s.\n", line, file, error);
 }
 
-void report_parameter_error_on_function(const char * function, const char *parameter) {
-    fprintf(stderr, "Error: User provided function %s needs a parameter named %s. Exiting!\n", function, parameter);
+void report_parameter_error_on_function(int line, const char * file, const char *parameter) {
+    fprintf(stderr, "Error: Call on line %d of file %s needs a parameter named %s. Exiting!\n", line, file, parameter);
     exit(EXIT_FAILURE);
 }
 

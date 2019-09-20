@@ -9,7 +9,7 @@
 #include "config_common.h"
 #include "../monodomain/constants.h"
 
-#define SET_SPATIAL_PURKINJE(name) EXPORT_FN int name(struct config *config, struct grid *the_grid)
+#define SET_SPATIAL_PURKINJE(name) EXPORT_FN int name(struct time_info *time_info, struct config *config, struct grid *the_grid)
 typedef SET_SPATIAL_PURKINJE(set_spatial_purkinje_fn);
 
 void print_purkinje_config_values(struct config* s);

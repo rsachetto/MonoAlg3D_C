@@ -40,8 +40,9 @@ void init_config_functions(struct config *config, char *default_lib, char *confi
 
     if(main_function_name){
         config->main_function = dlsym(config->handle, main_function_name);
-        if (dlerror() != NULL)  {
-            fprintf(stderr, "\n%s function not found in the provided in library %s\n", main_function_name, config->library_file_path);
+        char *error = dlerror();
+        if (error != NULL)  {
+            fprintf(stderr, "\n%s function not found in the provided in library %s. Error from dlsym %s\n", main_function_name, config->library_file_path, error);
             exit(EXIT_FAILURE);
         }
     }

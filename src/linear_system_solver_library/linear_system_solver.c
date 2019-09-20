@@ -1,7 +1,6 @@
 //
 // Created by sachetto on 04/10/17.
 //
-
 #include "../config/linear_system_solver_config.h"
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
@@ -15,10 +14,10 @@ static bool use_preconditioner = false;
 static int max_its = 50;
 static real_cpu tol = 1e-16;
 
+#ifdef COMPILE_CUDA
+
 #include <cusparse_v2.h>
 #include <cublas_v2.h>
-
-#ifdef COMPILE_CUDA
 
 static int *d_col, *d_row;
 static real *d_val, *d_x;
@@ -477,14 +476,14 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     if(gpu) {
     #ifdef COMPILE_CUDA
-        gpu_conjugate_gradient(config, the_grid, number_of_iterations, error);
+        gpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error);
     #else
         print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
         cpu_conjugate_gradient(config, the_grid, number_of_iterations, error);
     #endif
     }
     else {
-        cpu_conjugate_gradient(config, the_grid, number_of_iterations, error);
+        cpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error);
     }
 }
 

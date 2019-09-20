@@ -7,7 +7,6 @@
 #define STB_DS_IMPLEMENTATION
 #include "../single_file_libraries/stb_ds.h"
 
-
 #include "../string/sds.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -20,7 +19,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-
 static FILE *logfile = NULL;
 
 char * get_dir_from_path(const char * path) {
@@ -32,7 +30,7 @@ char * get_dir_from_path(const char * path) {
 }
 
 void print_to_stdout_and_file(char const *fmt, ...) {
-    va_list ap;
+    va_list ap;    
 
     if (!no_stdout) {
         va_start(ap, fmt);
@@ -66,11 +64,7 @@ void print_to_stderr_and_file_and_exit(char const *fmt, ...) {
 
 void open_logfile(const char *path) {
 
-#ifdef _WIN32
-    fopen_s(&logfile, path, "w");
-#else
     logfile = fopen(path, "w");
-#endif
 
     if (logfile == NULL) {
         fprintf(stderr, "Error opening %s, printing output only in the sdtout (Terminal)\n", path);

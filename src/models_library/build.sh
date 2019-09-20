@@ -1,0 +1,141 @@
+
+
+COMPILE_MODEL_LIB () {
+    local LIB_NAME=$1
+    local MODEL_FILE_CPU=$2
+    local MODEL_FILE_GPU=$3
+    local COMMON_HEADERS="model_common.h $4"
+    local EXTRA_C_FLAGS=$5
+
+    local MODEL_SOURCES="$MODEL_FILE_CPU"    
+
+    local MODELS_STATIC_DEPS="config_helpers utils"
+ 
+    if [ -n "$CUDA_FOUND" ]; then
+        MODELS_EXTRA_LIB_PATH=$CUDA_LIBRARY_PATH
+        MODELS_DYNAMIC_LIBS="c cuda cudart"
+
+        MODEL_SOURCES="$MODEL_SOURCES $MODEL_FILE_GPU"
+        COMMON_HEADERS="$COMMON_HEADERS model_gpu_utils.h"
+    fi
+    
+    COMPILE_SHARED_LIB "$LIB_NAME" "$MODEL_SOURCES" "$COMMON_HEADERS" "$MODELS_STATIC_DEPS" "$MODELS_DYNAMIC_LIBS" "$MODELS_EXTRA_LIB_PATH" "$EXTRA_C_FLAGS" "$CUDA_FOUND"
+
+}
+
+############## TEN TUSCHER 2006 ##############################
+MODEL_FILE_CPU="ten_tusscher_2006_RS_CPU.c"
+MODEL_FILE_GPU="ten_tusscher_2006_RS_GPU.cu"
+COMMON_HEADERS="ten_tusscher_2006.h"
+
+COMPILE_MODEL_LIB "ten_tusscher_2006" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+##########################################################
+
+############## TEN TUSCHER 2004 ##############################
+MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU.c"
+MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU.cu"
+COMMON_HEADERS="ten_tusscher_2004.h"
+
+COMPILE_MODEL_LIB "ten_tusscher_2004_endo" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+##########################################################
+
+############## TEN TUSCHER 3 ENDO ##############################
+MODEL_FILE_CPU="ten_tusscher_3_RS_CPU.c"
+MODEL_FILE_GPU="ten_tusscher_3_RS_GPU.cu"
+COMMON_HEADERS="ten_tusscher_3_RS.h"
+COMPILE_MODEL_LIB "ten_tusscher_3_endo" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DENDO"
+##########################################################
+
+############### BONDARENKO ##############################
+MODEL_FILE_CPU="bondarenko_2004.c"
+MODEL_FILE_GPU="bondarenko_2004_GPU.cu"
+COMMON_HEADERS="bondarenko_2004.h"
+
+COMPILE_MODEL_LIB "bondarenko_2004" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+##########################################################
+
+############### FABERRUDY 2000 ##############################
+MODEL_FILE_CPU="luo_rudy_1991.c"
+MODEL_FILE_GPU="luo_rudy_1991.cu"
+COMMON_HEADERS="luo_rudy_1991.h"
+
+COMPILE_MODEL_LIB "luo_rudy_1991" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+##########################################################
+
+############### OHARA_RUDY 2000 ##############################
+MODEL_FILE_CPU="Ohara_Rudy_2011.c"
+MODEL_FILE_GPU="Ohara_Rudy_2011.cu"
+COMMON_HEADERS="Ohara_Rudy_2011.h"
+
+COMPILE_MODEL_LIB "ohara_rudy_endo_2011" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+##########################################################
+
+############## FHN 1961 MOD ##############################
+MODEL_FILE_CPU="fhn_mod.c"
+MODEL_FILE_GPU="fhn_mod.cu"
+COMMON_HEADERS="fhn_mod.h"
+
+COMPILE_MODEL_LIB "fhn_mod" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+#########################################################
+
+############## MITCHELL SHAEFFER 2003 ##############################
+MODEL_FILE_CPU="mitchell_shaeffer_2003.c"
+MODEL_FILE_GPU="mitchell_shaeffer_2003.cu"
+COMMON_HEADERS="mitchell_shaeffer_2003.h"
+
+COMPILE_MODEL_LIB "mitchell_shaeffer_2003" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+#########################################################
+
+############## MIXED FHN + MITCHELL ##############################
+MODEL_FILE_CPU="mixed_fhn_mod_mitchell.c"
+MODEL_FILE_GPU="mixed_fhn_mod_mitchell.cu"
+COMMON_HEADERS="mixed_fhn_mod_mitchell.h"
+
+COMPILE_MODEL_LIB "mixed_fhn_mod_mitchell" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+#########################################################
+
+############## MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM ##############################
+MODEL_FILE_CPU="mixed_tentusscher_myo_epi_2004.c"
+MODEL_FILE_GPU="mixed_tentusscher_myo_epi_2004.cu"
+COMMON_HEADERS="mixed_tentusscher_myo_epi_2004.h"
+
+COMPILE_MODEL_LIB "mixed_tentusscher_myo_epi_2004" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+############################################################################################
+
+############## ELNAZ TENTUSSCHER ORIGINAL 2004 ##############################
+MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi.c"
+MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi.cu"
+COMMON_HEADERS="ten_tusscher_2004_epi.h"
+
+COMPILE_MODEL_LIB "ten_tusscher_2004_epi" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+############################################################################################
+
+############## ELNAZ TENTUSSCHER 2004 FOR SCENARIO 1 ##############################
+MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi_S1_tr6_pop69.c"
+MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi_S1_tr6_pop69.cu"
+COMMON_HEADERS="ten_tusscher_2004_epi_S1_tr6_pop69.h"
+
+COMPILE_MODEL_LIB "ten_tusscher_2004_epi_S1_tr6_pop69" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+############################################################################################
+
+############## ELNAZ TENTUSSCHER 2004 FOR SCENARIO 2 ##############################
+MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi_S2_tr4_pop53.c"
+MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi_S2_tr4_pop53.cu"
+COMMON_HEADERS="ten_tusscher_2004_epi_S2_tr4_pop53.h"
+
+COMPILE_MODEL_LIB "ten_tusscher_2004_epi_S2_tr4_pop53" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+############################################################################################
+
+############## ELNAZ TENTUSSCHER 2004 FOR SCENARIO 3 ##############################
+MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi_S3_tr2_pop41.c"
+MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi_S3_tr2_pop41.cu"
+COMMON_HEADERS="ten_tusscher_2004_epi_S3_tr2_pop41.h"
+
+COMPILE_MODEL_LIB "ten_tusscher_2004_epi_S3_tr2_pop41" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+############################################################################################

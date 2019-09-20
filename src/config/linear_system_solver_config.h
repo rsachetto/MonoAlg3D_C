@@ -11,7 +11,7 @@
 
 
 #define SOLVE_LINEAR_SYSTEM(name)                                                                                      \
-    EXPORT_FN void name(struct config *config, struct grid *the_grid,                                                  \
+    EXPORT_FN void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                     \
                         uint32_t *number_of_iterations, real_cpu *error)
 typedef SOLVE_LINEAR_SYSTEM(linear_system_solver_fn);
 
@@ -23,14 +23,14 @@ typedef END_LINEAR_SYSTEM(end_linear_system_solver_fn);
 
 #define CALL_INIT_LINEAR_SYSTEM(config, grid)                                                                          \
     do {                                                                                                               \
-        if(config->init_function) {                                                                                    \
+        if(config && config->init_function) {                                                                          \
             ((init_linear_system_solver_fn*) config->init_function)(config, grid);                                     \
         }                                                                                                              \
     } while(0)
 
 #define CALL_END_LINEAR_SYSTEM(config)                                                                                 \
     do {                                                                                                               \
-        if(config->end_function) {                                                                                     \
+        if(config && config->end_function) {                                                                                     \
             ((end_linear_system_solver_fn*)config->end_function)(config);                                              \
         }                                                                                                              \
     } while(0)

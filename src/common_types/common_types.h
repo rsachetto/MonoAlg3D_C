@@ -4,6 +4,17 @@
 #include <stdint.h>
 #include "../monodomain/constants.h"
 
+
+struct time_info {
+    real_cpu current_t;
+    real_cpu final_t;
+    real_cpu dt;
+    int iteration;
+};
+
+#define TIME_INFO(it, ct, dt, lt) (struct time_info) {it, ct, dt, lt}
+#define ZERO_TIME_INFO (struct time_info) {0, 0, 0, 0}
+
 struct line {
     uint64_t source;
     uint64_t destination;
@@ -87,6 +98,15 @@ struct vtk_files {
         for(long i = 0; i < hmlen(d); i++) {                                                                           \
             struct string_voidp_hash_entry e = d[i];                                                                   \
             init_config_functions(e.value, "./shared_libs/libdefault_stimuli.so", e.key);                              \
+        }                                                                                                              \
+    }                                                                                                                  \
+    while(0)
+
+#define MODIFY_DOMAIN_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                         \
+    do {                                                                                                               \
+        for(long i = 0; i < hmlen(d); i++) {                                                                           \
+            struct string_voidp_hash_entry e = d[i];                                                                   \
+            init_config_functions(e.value, "./shared_libs/libdefault_modify_domain.so", e.key);                              \
         }                                                                                                              \
     }                                                                                                                  \
     while(0)

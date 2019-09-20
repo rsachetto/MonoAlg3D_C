@@ -4,7 +4,6 @@
 *
 *   CONFIGURATION:
 *
-*   #define SUPPORT_TRACELOG
 *       Show TraceLog() output messages
 *       NOTE: By default LOG_DEBUG traces not shown
 *
@@ -32,10 +31,7 @@
 
 #include "raylib.h"                     // WARNING: Required for: LogType enum
 
-// Check if config flags have been externally provided on compilation line
-#if !defined(EXTERNAL_CONFIG_FLAGS)
-    #include "config.h"                 // Defines module configuration flags
-#endif
+#include "config.h"                 // Defines module configuration flags
 
 #include "utils.h"
 

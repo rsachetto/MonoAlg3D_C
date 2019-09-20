@@ -25,8 +25,6 @@ static int compression_level = 3;
 
 static bool initialized = false;
 
-static struct vtk_unstructured_grid *vtk_grid = NULL;
-
 static struct vtk_polydata_grid *vtk_polydata = NULL;
 
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name);
@@ -38,6 +36,7 @@ static sds create_base_name(char *file_prefix, int iteration_count, char *extens
 
 SAVE_MESH(save_as_text_or_binary) {
 
+    int iteration_count = time_info->iteration;
     char *output_dir;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
 
@@ -158,10 +157,21 @@ SAVE_MESH(save_as_text_or_binary) {
     fclose(output_file);
 }
 
+
+INIT_SAVE_MESH(init_save_as_vtk_or_vtu) {
+    config->persistent_data = NULL;
+}
+
+END_SAVE_MESH(end_save_as_vtk_or_vtu) {
+    free(config->persistent_data);
+    config->persistent_data = NULL;
+}
+
 SAVE_MESH(save_as_vtk) {
 
     char *output_dir;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+    int iteration_count = time_info->iteration;
 
     if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
@@ -195,17 +205,22 @@ SAVE_MESH(save_as_vtk) {
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
 
+    real_cpu current_t = time_info->current_t;
+
     //TODO: change this. We dont need the current_t here
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
+    bool read_only_data = config->persistent_data != NULL;
+    new_vtk_unstructured_grid_from_alg_grid((struct vtk_unstructured_grid**)(&(config->persistent_data)), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
 
-    save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, output_dir_with_file, binary);
+    save_vtk_unstructured_grid_as_legacy_vtk((struct vtk_unstructured_grid*)(config->persistent_data), output_dir_with_file, binary);
 
-    if(the_grid->adaptive)
-        free_vtk_unstructured_grid(vtk_grid);
+    if(the_grid->adaptive) {
+        free_vtk_unstructured_grid((struct vtk_unstructured_grid *) (config->persistent_data));
+        config->persistent_data = NULL;
+    }
 
-    sdsfree(output_dir_with_file);
+        sdsfree(output_dir_with_file);
     sdsfree(base_name);
 }
 
@@ -238,7 +253,7 @@ SAVE_MESH(save_as_vtu) {
 
     char *output_dir;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
-
+    int iteration_count = time_info->iteration;
 
     if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
@@ -283,23 +298,29 @@ SAVE_MESH(save_as_vtu) {
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
 
+    real_cpu current_t = time_info->current_t;
+
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) {
         add_file_to_pvd(current_t, output_dir, base_name);
     }
 
-    new_vtk_unstructured_grid_from_alg_grid(&vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive);
+    bool read_only_data = config->persistent_data != NULL;
+    new_vtk_unstructured_grid_from_alg_grid((struct vtk_unstructured_grid**)(&(config->persistent_data)), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
 
     if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, output_dir_with_file, compression_level);
+        save_vtk_unstructured_grid_as_vtu_compressed((struct vtk_unstructured_grid*)(config->persistent_data), output_dir_with_file, compression_level);
     }
     else {
-        save_vtk_unstructured_grid_as_vtu(vtk_grid, output_dir_with_file, binary);
+        save_vtk_unstructured_grid_as_vtu((struct vtk_unstructured_grid*)(config->persistent_data), output_dir_with_file, binary);
     }
 
-    if(the_grid->adaptive) //LEAK
-        free_vtk_unstructured_grid(vtk_grid);
+    //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
+    if(the_grid->adaptive) {
+        free_vtk_unstructured_grid((struct vtk_unstructured_grid *) (config->persistent_data));
+        config->persistent_data = NULL;
+    }
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
@@ -341,6 +362,9 @@ SAVE_MESH(save_as_vtk_purkinje) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config->config_data, "max_y");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data, "max_z");
     }
+
+    int iteration_count = time_info->iteration;
+    real_cpu current_t = time_info->current_t;
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
@@ -402,6 +426,8 @@ SAVE_MESH(save_as_vtp_purkinje) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data, "max_z");
     }
 
+    int iteration_count = time_info->iteration;
+    real_cpu current_t = time_info->current_t;
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
@@ -463,9 +489,11 @@ SAVE_MESH(save_with_activation_times) {
     int mesh_output_pr = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, mesh_output_pr, config->config_data, "mesh_print_rate");
 
+    int iteration_count = time_info->iteration;
+
     if(mesh_output_pr) {
         if (iteration_count % mesh_output_pr == 0)
-            save_as_text_or_binary(config, the_grid, iteration_count, current_t, last_t, dt);
+            save_as_text_or_binary(time_info, config, the_grid);
     }
 
     float time_threshold = 10.0f;
@@ -479,6 +507,10 @@ SAVE_MESH(save_with_activation_times) {
 
     float apd_threshold = -83.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, apd_threshold, config->config_data, "apd_threshold");
+
+    real_cpu current_t = time_info->current_t;
+    real_cpu last_t = time_info->final_t;
+    real_cpu dt = time_info->dt;
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");

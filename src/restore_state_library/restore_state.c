@@ -9,10 +9,8 @@
 #include "../alg/grid/grid.h"
 #include "../config/restore_state_config.h"
 
-#include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
 
-#include "../config_helpers/config_helpers.h"
 
 #ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"
@@ -181,6 +179,8 @@ RESTORE_STATE (restore_simulation_state) {
 
         the_monodomain_solver->final_time = config_final_time;
         the_monodomain_solver->abort_on_no_activity = config_abort;
+
+        fread(time_info, sizeof (struct time_info), 1, input_file);
 
         fclose (input_file);
     }

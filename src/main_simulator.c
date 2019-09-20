@@ -8,9 +8,8 @@
 #include "config_helpers/config_helpers.h"
 
 #ifdef COMPILE_OPENGL
-#include "draw/draw.h"
+    #include "draw/draw.h"
 #endif
-
 
 void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver,  struct ode_solver **ode_solver, struct grid **the_grid ) {
 
@@ -37,7 +36,6 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
 
     // The command line options always overwrite the config file
     parse_options(argc, argv, *options);
-
     //This variable is from file_utils.h
     no_stdout = (*(options))->quiet;
 

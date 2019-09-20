@@ -11,12 +11,12 @@
 
 #include "../single_file_libraries/stb_ds.h"
 
-void report_parameter_error_on_function(const char *function, const char *parameter);
-void report_error_on_function(const char *function, const char *error);
+void report_parameter_error_on_function(int line, const char *file, const char *parameter);
+void report_error_on_function(int line, const char *file, const char *error);
 char *get_char_parameter(struct string_hash_entry *config, const char *parameter);
 
-#define IS_TRUE(str) ( strcmp((str), "true") == 0 || strcmp((str), "yes") == 0 || strcmp((str), "1") == 0 )
-#define IS_FALSE(str) ( strcmp((str), "false") == 0 || strcmp((str), "no") == 0 || strcmp((str), "0") == 0 )
+#define IS_TRUE(str) (strcmp((str), "true") == 0 || strcmp((str), "yes") == 0 || strcmp((str), "1") == 0)
+#define IS_FALSE(str) (strcmp((str), "false") == 0 || strcmp((str), "no") == 0 || strcmp((str), "0") == 0)
 
 #define GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value, config, parameter)                                              \
     do {                                                                                                               \
@@ -31,7 +31,7 @@ char *get_char_parameter(struct string_hash_entry *config, const char *parameter
         (value) = NULL;                                                                                                \
         GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value, config, parameter);                                             \
         if(!(value)) {                                                                                                 \
-            report_parameter_error_on_function(__func__, parameter);                                                   \
+            report_parameter_error_on_function(__LINE__, __FILE__, parameter);                                         \
         }                                                                                                              \
     } while(0)
 
@@ -68,13 +68,13 @@ char *get_char_parameter(struct string_hash_entry *config, const char *parameter
         bool success;                                                                                                  \
         GET_PARAMETER_NUMERIC_VALUE(type, value, config, parameter, success);                                          \
         if(!success) {                                                                                                 \
-            report_parameter_error_on_function(__func__, parameter);                                                   \
+            report_parameter_error_on_function(__LINE__, __FILE__, parameter);                                         \
         }                                                                                                              \
     } while(0)
 
 #define REPORT_ERROR_ON_FUNCTION(error)                                                                                \
     do {                                                                                                               \
-        report_error_on_function(__func__, error);                                                                     \
+        report_error_on_function(__LINE__, __FILE__, error);                                                           \
     } while(0)
 
 #endif // MONOALG3D_CONFIG_HELPERS_H

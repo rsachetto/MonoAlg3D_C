@@ -107,7 +107,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
     shput_dup_value(config->config_data, "side_length_y", sy_char);
     shput_dup_value(config->config_data, "side_length_z", sz_char);
 
-    return initialize_grid_with_cuboid_mesh(config, the_grid);
+    return initialize_grid_with_cuboid_mesh(time_info, config, the_grid);
 
 }
 
@@ -441,7 +441,7 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     char *file_name = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_name, config->config_data, "mesh_file");
 
-    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_grid_with_square_mesh(time_info, config, the_grid);
 
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen(file_name, "r");
@@ -694,7 +694,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     unsigned seed = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
-    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_grid_with_square_mesh(time_info, config, the_grid);
     set_plain_fibrosis(the_grid, phi, seed);
 
     return 1;
@@ -708,7 +708,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
 
-    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_grid_with_square_mesh(time_info, config, the_grid);
     set_fibrosis_from_file(the_grid, fib_file, fib_size);
 
     return 1;
@@ -724,7 +724,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_source_sink_fibrotic_mesh)
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_length, config->config_data, "channel_length");
 
 
-    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_grid_with_square_mesh(time_info, config, the_grid);
     set_plain_source_sink_fibrosis(the_grid, channel_width, channel_length);
 
     return 1;
@@ -756,8 +756,29 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
         seed = 0;
     }
 
-    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_grid_with_square_mesh(time_info, config, the_grid);
     set_plain_sphere_fibrosis(the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, seed);
+
+    return 1;
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh_without_inactivating) {
+
+    real_cpu plain_center = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config->config_data, "plain_center");
+
+    real_cpu sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config->config_data, "sphere_radius");
+
+
+    real_cpu border_zone_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data,
+                                                "border_zone_radius");
+
+
+    initialize_grid_with_square_mesh(time_info, config, the_grid);
+
+    set_plain_sphere_fibrosis_without_inactivating(the_grid, plain_center, sphere_radius, border_zone_radius);
 
     return 1;
 }
@@ -801,7 +822,7 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
     shput_dup_value(config->config_data,  "start_dz", tmp);
 
 
-    initialize_grid_with_cuboid_mesh(config, the_grid);
+    initialize_grid_with_cuboid_mesh(time_info, config, the_grid);
 
     printf("Reading mesh file %s\n", mesh_file);
     set_custom_mesh(the_grid, mesh_file, n_points, "%lf,%lf,%lf,%lf,%d\n");

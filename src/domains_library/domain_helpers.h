@@ -25,9 +25,12 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 void set_plain_sphere_fibrosis (struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
                                 real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed);
 
+void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_radius);
+
+
 void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, real_cpu big_scar_center_x,
-                             real_cpu big_scar_center_y, real_cpu big_scar_center_z, real_cpu small_scar_center_x,
-                             real_cpu small_scar_center_y, real_cpu small_scar_center_z);
+                     real_cpu big_scar_center_y, real_cpu big_scar_center_z, real_cpu small_scar_center_x,
+                     real_cpu small_scar_center_y, real_cpu small_scar_center_z);
 
 void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char *filename, int size);
 

@@ -87,8 +87,10 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
     init_config_functions(linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "linear_system_solver");
 
 
+    struct time_info ti = ZERO_TIME_INFO;
+
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, grid);
-    ((linear_system_solver_fn*)linear_system_solver_config->main_function)(linear_system_solver_config, grid, &n_iter, &error);
+    ((linear_system_solver_fn*)linear_system_solver_config->main_function)(&ti, linear_system_solver_config, grid, &n_iter, &error);
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
 
     int n_lines1;
@@ -130,7 +132,9 @@ int test_perlin_mesh(char* mesh_file, char *start_dx, char* side_length_x, bool 
 
     init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
 
-    int success = ((set_spatial_domain_fn *)domain_config->main_function)(domain_config, grid);
+    struct time_info ti = ZERO_TIME_INFO;
+
+    int success = ((set_spatial_domain_fn *)domain_config->main_function)(&ti, domain_config, grid);
 
     if(!success ) {
         return 0;
@@ -153,7 +157,9 @@ int test_perlin_mesh(char* mesh_file, char *start_dx, char* side_length_x, bool 
         else if(binary)
         shput(save_mesh_config->config_data, "binary", "yes");
 
-        ((save_mesh_fn*)save_mesh_config->main_function)(save_mesh_config, grid, 0, 0.0, 0.0, 0.0);
+        struct time_info ti = ZERO_TIME_INFO;
+
+        ((save_mesh_fn*)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
 
     }
 
@@ -179,9 +185,11 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
     shput(domain_config->config_data, "side_length_y", strdup(side_length_y));
     shput(domain_config->config_data, "side_length_z", strdup(side_length_z));
 
-     init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
+    init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
 
-    int success = ((set_spatial_domain_fn*)domain_config->main_function)(domain_config, grid);
+    struct time_info ti = ZERO_TIME_INFO;
+
+    int success = ((set_spatial_domain_fn*)domain_config->main_function)(&ti, domain_config, grid);
 
     if(!success ) {
         clean_and_free_grid(grid);
@@ -251,7 +259,9 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
 
         shput(save_mesh_config->config_data, "save_pvd", strdup("no"));
 
-        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, grid, 0, 0.0, 0.0, 0.0);
+        struct time_info ti = ZERO_TIME_INFO;
+
+        ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
 
         free_config_data(save_mesh_config);
         sdsfree(file_prefix);
@@ -289,7 +299,7 @@ struct user_options *load_options_from_file(char *config_file) {
     return NULL;
 
 }
-
+    
 int run_simulation_with_config(struct user_options *options, char *out_dir) {
 
     struct grid *the_grid;
@@ -301,7 +311,6 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
     struct ode_solver *ode_solver;
     ode_solver = new_ode_solver();
 
-    no_stdout = true;
 
     shput_dup_value(options->save_mesh_config->config_data, "output_dir", out_dir);
 
@@ -343,6 +352,8 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
     #if defined(_OPENMP)
     omp_set_num_threads(np);
     #endif
+
+    no_stdout = true;
 
     solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 
@@ -632,7 +643,7 @@ Test (solvers, jacobi_6t_2) {
 }
 
 #endif
-Test(run_gold_simulation, gpu_no_adapt) {
+Test(run_gold_simulation, gpu_no_adapt_cg_no_gpu) {
 
     printf("Running simulation for testing\n");
 
@@ -670,6 +681,7 @@ Test(run_gold_simulation, gpu_no_adapt_cg_gpu) {
     free_user_options(options);
 
 }
+
 #ifdef COMPILE_CUDA
 Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
 
@@ -728,8 +740,6 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
     success &= check_output_equals(out_dir_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
 
     cr_assert(success);
-
-
 
     free_user_options(options);
 }

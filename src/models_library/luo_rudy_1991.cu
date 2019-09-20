@@ -53,7 +53,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
 
 }
 
-__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
+__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {\
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (threadID < num_volumes) {
