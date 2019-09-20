@@ -119,11 +119,8 @@ $ sudo ln -s /usr/bin/g++53 /usr/local/cuda/bin/g++
 
 **Reboot** your machine.
 
-#### Step 5 - Install CMake
-To install the CMake package just run the following command:
-```sh
-$ sudo dnf install cmake
-```
+
+##### Optional
 
 #### Step 6 - Install VTK libraries
 
@@ -149,7 +146,6 @@ Finally, we can build the VTK files by running:
 ```sh
 $ sudo make install 
 ```
-##### Optional
 You can speedup the building process by adding the ```-j``` flag to the ```make``` command. For example, running the below command will build the files using 3 cores from your CPU in parallel.
 ```sh
 $ sudo make -j3 install 
