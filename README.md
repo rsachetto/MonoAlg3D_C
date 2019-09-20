@@ -167,18 +167,15 @@ $ sudo dnf install gtk3-devel gtksourceview3-devel
 
 # Compile
 ----
-Change the current version of GCC to 5.3.0
+Change the current version of GCC to 5.3 by changing the following variables in bsbash/build_functions.sh
 ```sh
-$ export CC=/usr/bin/gcc53
-$ export CXX=/usr/bin/g++53
+$ C_COMPILER=/usr/bin/gcc53
+$ CXX_COMPILER=/usr/bin/g++53
 ```
 
 Build the binary
 ```sh
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
+$ ./build.sh
 ```
 The binary file for execution will be saved in the ```bin``` folder.
 
