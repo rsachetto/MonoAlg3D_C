@@ -7,9 +7,15 @@ Sachetto
 
 Berg
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
+
 - Implement coupling between Purkinje and tissue
     - Include the Purkinje ODE extra_data
     - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
+    - Fix a bug when using adaptativity (benchmark_purkinje.ini)
+    - Add the option to configure the conductivity of the segments from the Purkinje network on the input ".vtk"
+    - Ask Joventino for a simple endocardium mesh
+    - Ask Sachetto for the VTK -> ALG parser
+
 - Add a conduction velocity calculator for Purkinje fibers
 - Implement the GMRES linear system solver (see Bernardo's book as reference ...)
 - Implement an APD map writer to VTU

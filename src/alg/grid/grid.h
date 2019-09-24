@@ -82,5 +82,6 @@ void translate_mesh_to_origin(struct grid *grid);
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b);
 
 struct terminal* link_purkinje_to_endocardium (struct grid *the_grid);
+void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals);
 
 #endif //MONOALG3D_GRID_H

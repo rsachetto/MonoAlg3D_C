@@ -607,14 +607,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if (cur_time > 0.0) 
         {
-
             // UPDATE: Tissue and Purkinje (if it exists)
             activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_purkinje_ode_solver, the_grid);
 
             // MAPPING: Tissue -> Purkinje
             if (domain_config && purkinje_config)
                 map_tissue_solution_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
-
+            
+            
             if (abort_on_no_activity && cur_time > last_stimulus_time) 
             {
                 if (!activity) 
@@ -671,6 +671,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             // MAPPING: Purkinje -> Tissue
             if (domain_config)
                 map_purkinje_solution_to_tissue(the_ode_solver,the_grid,the_terminals);
+
         }
 
         if (domain_config)
@@ -712,6 +713,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             cg_total_time += cg_partial;
 
             total_cg_it += solver_iterations;
+
         }
         
 
@@ -759,6 +761,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                     redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
                     total_deref_time += stop_stop_watch(&deref_time);
                 }
+
             }
             if (redo_matrix) 
             {
@@ -787,6 +790,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 ((assembly_matrix_fn *)assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
 
                 total_mat_time += stop_stop_watch(&part_mat);
+
+                // MAPPING: Update the mapping between the Purkinje mesh and the refined/derefined grid
+                if (purkinje_config && domain_config)
+                    update_link_purkinje_to_endocardium(the_grid,the_terminals);
+
+                
             }
 
         }
@@ -1549,6 +1558,7 @@ void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct g
     // State vector from the tissue
     struct cell_node **ac = the_grid->active_cells;
     real *sv = the_ode_solver->sv;
+    real initial_v = the_ode_solver->model_data.initial_v;
     uint32_t n_active = the_grid->num_active_cells;
     uint32_t nodes = the_ode_solver->model_data.number_of_ode_equations;
 
@@ -1558,6 +1568,7 @@ void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct g
     if(the_ode_solver->gpu) 
     {
     #ifdef COMPILE_CUDA
+    
         uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
         real *vms;
         size_t mem_size = max_number_of_cells * sizeof(real);
@@ -1576,6 +1587,7 @@ void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct g
         uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
+            //printf("[map_purkinje_solution_to_tissue] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
 
             uint32_t tissue_index = the_terminals[i].endocardium_index;
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
@@ -1595,17 +1607,23 @@ void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct g
         {
             //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
 
-            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t tissue_index = the_terminals[i].endocardium_cell->sv_position;
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
 
             // Copy the transmembrane potential from the Purkinje terminals to their linked endocardium cells
-            sv[tissue_index*nodes] = ac_purkinje[purkinje_index]->v;
-        
+            /*
+            if (ac_purkinje[purkinje_index]->v >= initial_v)
+            {
+                sv[tissue_index*nodes] = ac_purkinje[purkinje_index]->v;
+            } 
+            */ 
+           sv[tissue_index*nodes] = ac_purkinje[purkinje_index]->v;
         }
     }
      
 }
 
+// TODO: Fix this function ...
 void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals)
 {
     assert(the_purkinje_ode_solver);
@@ -1634,21 +1652,27 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
         #pragma omp parallel for
         for(uint32_t i = 0; i < n_active; i++) 
         {
-            vms[ac[i]->sv_position] = (real)ac_purkinje[i]->v;
+            vms[ac_purkinje[i]->sv_position] = (real)ac_purkinje[i]->v;
         }
 
         uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
+            //printf("[map_tissue_solution_to_purkinje] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
 
-            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t tissue_index = the_terminals[i].endocardium_cell->sv_position;
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
 
             // Copy the transmembrane potential from the Purkinje terminals to their linked endocardium cells
+            /*
             if (ac[tissue_index]->v >= purkinje_initial_v)
             {
                 vms[purkinje_index] = ac[tissue_index]->v;
             }
+            */
+            //vms[purkinje_index] = ac[tissue_index]->v;
+            if (ac[tissue_index]->v > vms[purkinje_index])
+                vms[purkinje_index] = ac[tissue_index]->v;
         }    
 
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
@@ -1662,16 +1686,20 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
         
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
-            //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+            //printf("Terminal %u -- Tissue grid position = %u -- Tissue sv position = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_cell->grid_position,the_terminals[i].endocardium_cell->sv_position,the_terminals[i].purkinje_index);
 
-            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t tissue_index = the_terminals[i].endocardium_cell->sv_position;
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
  
             // Copy the transmembrane potential from the linked endocardium cells to the Purkinje terminals
+            /*
             if (ac[tissue_index]->v >= purkinje_initial_v)
             {
                 sv[purkinje_index*nodes] = ac[tissue_index]->v;
-            }        
+            } 
+            */
+           if (ac[tissue_index]->v > sv[purkinje_index*nodes])
+                sv[purkinje_index*nodes] = ac[tissue_index]->v;       
         }
     }
  
