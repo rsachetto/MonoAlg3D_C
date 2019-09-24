@@ -6,9 +6,9 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="50"
-END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="videos/lucas-purkinje-coupled-multiple-beats"
+FRAME_RATE="100"
+END_FRAME="2500"
+OUTPUT_VIDEO_FILENAME="videos/lucas-spiral-wave"
 RESOLUTION="1030x730"
 
 # Execute the converting command using FFMPEG

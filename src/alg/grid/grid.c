@@ -769,6 +769,8 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
 
     struct terminal *the_terminals = (struct terminal *)malloc(sizeof(struct terminal)*number_of_terminals);
 
+    struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
+
     uint32_t j = 0;
     struct node *n = the_network->list_nodes;
     while (n != NULL)
@@ -794,7 +796,7 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
             }
 
             struct cell_node *endocardium_cell = ac[closest_index];
-            uint32_t endocardium_index = ac[closest_index]->grid_position;
+            uint32_t endocardium_index = ac[closest_index]->sv_position;
             
             the_terminals[j].endocardium_index = endocardium_index;
             the_terminals[j].endocardium_cell = endocardium_cell;
@@ -805,6 +807,10 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
             the_terminals[j].purkinje_cell->x = the_terminals[j].endocardium_cell->center.x;
             the_terminals[j].purkinje_cell->y = the_terminals[j].endocardium_cell->center.y;
             the_terminals[j].purkinje_cell->z = the_terminals[j].endocardium_cell->center.z;
+
+            ac_purkinje[purkinje_index]->center.x = the_terminals[j].endocardium_cell->center.x;
+            ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
+            ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
             
             j++;
 
@@ -817,4 +823,66 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
     //    print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
 
     return the_terminals;
+}
+
+void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals)
+{
+    struct grid_purkinje *the_purkinje = the_grid->the_purkinje;
+
+    struct graph *the_network = the_purkinje->the_network;
+
+    uint32_t number_of_terminals = the_network->number_of_terminals;
+
+    struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
+
+    uint32_t j = 0;
+    struct node *n = the_network->list_nodes;
+    while (n != NULL)
+    {
+        if (n->num_edges == 1 && n->id != 0)
+        {
+            uint32_t n_active = the_grid->num_active_cells;
+            struct cell_node **ac = the_grid->active_cells;
+            
+            uint32_t purkinje_index = n->id;
+            struct node *purkinje_cell = n;
+            
+            uint32_t closest_index;
+            double closest_dist = __DBL_MAX__;
+            for (uint32_t i = 0; i < n_active; i++)
+            {
+                double dist = calc_norm(n->x,n->y,n->z,ac[i]->center.x,ac[i]->center.y,ac[i]->center.z);
+                if (dist < closest_dist)
+                {
+                    closest_dist = dist;
+                    closest_index = i;
+                }
+            }
+
+            struct cell_node *endocardium_cell = ac[closest_index];
+            uint32_t endocardium_index = ac[closest_index]->sv_position;
+            
+            the_terminals[j].endocardium_index = endocardium_index;
+            the_terminals[j].endocardium_cell = endocardium_cell;
+            //the_terminals[j].purkinje_index = purkinje_index;
+            //the_terminals[j].purkinje_cell = purkinje_cell;
+
+            // Change the position of the Purkinje terminal to be on the center of the Endocardium cell
+            the_terminals[j].purkinje_cell->x = the_terminals[j].endocardium_cell->center.x;
+            the_terminals[j].purkinje_cell->y = the_terminals[j].endocardium_cell->center.y;
+            the_terminals[j].purkinje_cell->z = the_terminals[j].endocardium_cell->center.z;
+
+            ac_purkinje[purkinje_index]->center.x = the_terminals[j].endocardium_cell->center.x;
+            ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
+            ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
+            
+            j++;
+
+        }
+        n = n->next;
+    }
+
+    //print_to_stdout_and_file("On 'update_link_purkinje_to_endocardium'\n");
+    //for (uint32_t i = 0; i < number_of_terminals; i++)
+    //    print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
 }
