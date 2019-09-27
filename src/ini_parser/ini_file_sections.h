@@ -6,9 +6,11 @@
 #define MONOALG3D_INI_FILE_HEADERS_H
 
 #define ODE_SECTION "ode_solver"
+#define ODE_PURKINJE_SECTION "purkinje_ode_solver"
 #define MAIN_SECTION "main"
 #define ALG_SECTION "alg"
 #define STIM_SECTION "stim"
+#define STIM_PURKINJE_SECTION "purkinje_stim"
 #define MODIFY_DOMAIN "modify_current_domain"
 #define DOMAIN_SECTION "domain"
 #define PURKINJE_SECTION "purkinje"

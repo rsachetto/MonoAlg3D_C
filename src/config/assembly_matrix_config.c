@@ -13,29 +13,23 @@
 
 void print_assembly_matrix_config_values(struct config* s) {
 
+void print_assembly_matrix_config_values(struct config* s) {
+
     if(s == NULL) {
-        print_to_stdout_and_file("No Assembly Matrix configuration.\n");
+        print_to_stdout_and_file("[assembly_matrix] No Assembly Matrix configuration.\n");
         return;
     }
 
-    print_to_stdout_and_file("Assembly Matrix function configuration:\n");
+    print_to_stdout_and_file("[assembly_matrix] Assembly Matrix function configuration:\n");
 
-    print_to_stdout_and_file("Assembly Matrix library: %s\n", s->library_file_path);
-//    print_to_stdout_and_file("Assembly Matrix main function: %s\n", s->main_function_name);
-//
-//    if(s->init_function_name) {
-//        print_to_stdout_and_file("Set initial condition function: %s\n", s->init_function_name);
-//    }
-//
-//    if(s->init_function_name) {
-//        print_to_stdout_and_file("Assembly Matrix end function: %s\n", s->end_function_name);
-//    }
+    print_to_stdout_and_file("[assembly_matrix] Assembly Matrix library: %s\n", s->library_file_path);
 
     if(shlen(s->config_data) == 1) {
-        print_to_stdout_and_file("Assembly Matrix parameter:\n");
+        print_to_stdout_and_file("[assembly_matrix] Assembly Matrix parameter:\n");
     } else if(shlen(s->config_data) > 1) {
-        print_to_stdout_and_file("Assembly Matrix parameters:\n");
+        print_to_stdout_and_file("[assembly_matrix] Assembly Matrix parameters:\n");
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data);
+}
 }

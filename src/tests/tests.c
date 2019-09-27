@@ -90,7 +90,7 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
     struct time_info ti = ZERO_TIME_INFO;
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, grid);
-    ((linear_system_solver_fn*)linear_system_solver_config->main_function)(&ti, linear_system_solver_config, grid, &n_iter, &error);
+    ((linear_system_solver_fn*)linear_system_solver_config->main_function)(&ti, linear_system_solver_config, grid, &n_iter, &error, false);
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
 
     int n_lines1;
@@ -359,7 +359,6 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
 
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
-
     free(monodomain_solver);
 
     close_logfile();
@@ -419,7 +418,7 @@ int check_output_equals(const sds gold_output, const sds tested_output, float to
             real_cpu value_gold = strtod(gold_values[count_gold-1], NULL);
             real_cpu value_tested = strtod(tested_simulation_values[count_gold-1], NULL);
 
-            cr_assert_float_eq(value_gold, value_tested, tol, "Found %lf, Expected %lf (error %e) on line %d of %s", value_tested, value_gold, fabs(value_tested-value_gold), i+1, full_path_tested);
+            cr_assert_float_eq(value_gold, value_tested, tol, "Found %lf, Expected %lf (error %e) on line %d of %s when comparing with %s", value_tested, value_gold, fabs(value_tested-value_gold), i+1, full_path_tested, full_path_gold);
             sdsfreesplitres(gold_values, count_gold);
             sdsfreesplitres(tested_simulation_values, count_tested);
         }
@@ -693,7 +692,7 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
 
 
     struct user_options *options = load_options_from_file("example_configs/plain_mesh_with_fibrosis_and_border_zone_inside_circle_example_2cm.ini");
-    options->final_time = 10.0;
+    options->final_time = 10.0;        
 
     free(options->save_mesh_config->main_function_name);
 
@@ -702,6 +701,7 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
     shput_dup_value(options->save_mesh_config->config_data, "file_prefix", "V");
 
     shput_dup_value(options->domain_config->config_data, strdup("seed"), "150");
+
 
     free(options->linear_system_solver_config->main_function_name);
     free(options->linear_system_solver_config->init_function_name);
@@ -713,13 +713,14 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
 
     shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "false");
     shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "false");
+    int success = 1;
 
-    int success = run_simulation_with_config(options, out_dir_no_gpu_no_precond);
+    success = run_simulation_with_config(options, out_dir_no_gpu_no_precond);
     cr_assert(success);
 
-    shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "true");
-    success = run_simulation_with_config(options, out_dir_no_gpu_precond);
-    cr_assert(success);
+     shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "true");
+     success = run_simulation_with_config(options, out_dir_no_gpu_precond);
+     cr_assert(success);
 
     shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "true");
     shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "false");
@@ -731,12 +732,11 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
 
     success = run_simulation_with_config(options, out_dir_gpu_precond);
     cr_assert(success);
-
     success = check_output_equals(out_dir_no_gpu_no_precond, out_dir_no_gpu_precond, 5e-2f);
     success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_no_precond, 5e-2f);
     success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_precond, 5e-2f);
     success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
-    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_precond, 5e-2f);
+    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_precond, 5e-2f);    
     success &= check_output_equals(out_dir_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
 
     cr_assert(success);

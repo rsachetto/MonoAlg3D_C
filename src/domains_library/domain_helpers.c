@@ -1018,3 +1018,49 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 
     free(scar_mesh);
 }
+
+void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
+                        const double min_x, const double max_x,\
+                        const double min_y, const double max_y,\
+                        const double min_z, const double max_z) 
+{
+
+    print_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
+
+    struct cell_node *grid_cell;
+
+    if(fib_seed == 0)
+        fib_seed = (unsigned)time(NULL) + getpid();
+
+    srand(fib_seed);
+
+    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+
+    grid_cell = the_grid->first_cell;
+    while(grid_cell != 0) 
+    {
+        real center_x = grid_cell->center.x;
+        real center_y = grid_cell->center.y;
+        real center_z = grid_cell->center.z;
+
+        if (center_x >= min_x && center_x <= max_x &&\
+            center_y >= min_y && center_y <= max_y &&\
+            center_z >= min_z && center_z <= max_z)
+        {
+            if(grid_cell->active) 
+            {
+                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+                if(p < phi) 
+                {
+                    grid_cell->active = false;
+                }
+
+                INITIALIZE_FIBROTIC_INFO(grid_cell);
+                FIBROTIC(grid_cell) = true;
+            }
+        }
+        
+        grid_cell = grid_cell->next;
+    }
+
+}

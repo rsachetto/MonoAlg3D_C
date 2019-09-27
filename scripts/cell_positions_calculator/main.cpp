@@ -225,7 +225,7 @@ int main (int argc, char *argv[])
     read_control_volumes_from_vtu(the_tissue,unstructuredGrid);
     print_control_volumes(the_tissue);
 
-    //write_control_volumes_middle_positions(the_tissue);
+    write_control_volumes_middle_positions(the_tissue);
     write_control_volumes_middle_positions_to_vtp(the_tissue);
 
     return 0;

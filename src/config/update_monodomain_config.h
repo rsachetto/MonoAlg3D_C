@@ -14,7 +14,7 @@ struct monodomain_solver;
 
 #define UPDATE_MONODOMAIN(name)                                                                                        \
     EXPORT_FN void name(struct time_info *time_info, struct config *config, struct monodomain_solver *the_solver,      \
-                        struct grid *the_grid, struct ode_solver *the_ode_solver, uint32_t initial_number_of_cells)
+                        struct grid *the_grid, struct ode_solver *the_ode_solver, uint32_t initial_number_of_cells, bool updating_purkinje)
 typedef UPDATE_MONODOMAIN(update_monodomain_fn);
 
 void print_update_monodomain_config_values(struct config *s);

@@ -79,6 +79,18 @@ struct user_options {
     real_cpu vm_threshold;            /*-v option*/
     bool vm_threshold_was_set;
 
+    real_cpu purkinje_dt_ode;
+    bool purkinje_dt_ode_was_set;
+
+    bool purkinje_gpu;
+    bool purkinje_gpu_was_set;
+
+    int purkinje_gpu_id;         
+    bool purkinje_gpu_id_was_set;
+    
+    char *purkinje_model_file_path;         
+    bool purkinje_model_file_path_was_set;
+
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
 
@@ -100,7 +112,9 @@ struct user_options {
     bool start_visualization_unpaused;
 
     struct string_voidp_hash_entry *stim_configs;
+    struct string_voidp_hash_entry *purkinje_stim_configs;
     struct string_voidp_hash_entry *modify_domain_configs;
+    
     struct config *domain_config;
     struct config *purkinje_config;
     struct config *extra_data_config;
@@ -112,6 +126,7 @@ struct user_options {
     struct config *update_monodomain_config;
 
     struct string_hash_entry *ode_extra_config;
+    struct string_hash_entry *purkinje_ode_extra_config;
 
     real_cpu max_v, min_v;
 

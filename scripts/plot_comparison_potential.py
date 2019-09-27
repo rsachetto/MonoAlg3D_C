@@ -10,7 +10,7 @@ def read_transmembrane_potential(input_file, dt, print_rate):
 
     end_simulation = n / ms_each_step
 
-    timesteps = np.arange(0,end_simulation)*ms_each_step
+    timesteps = np.arange(0,n)*ms_each_step
     vms = data
 
     return timesteps, vms
@@ -18,16 +18,16 @@ def read_transmembrane_potential(input_file, dt, print_rate):
 
 def plot_transmembrane_potential(t1, v1, t2, v2):
 
-    plt.plot(t1, v1, label="AP-1", c="red", linewidth=2.0)
-    plt.plot(t2, v2, label="AP-2", c="blue", linewidth=1.0)
+    plt.plot(t1, v1, label="Pass", c="green", linewidth=2.0)
+    plt.plot(t2, v2, label="Block", c="red", linewidth=2.0)
 
     plt.grid()
     plt.xlabel("t (ms)",fontsize=15)
     plt.ylabel("V (mV)",fontsize=15)
     plt.title("Action potential",fontsize=14)
     plt.legend(loc=0,fontsize=14)
-    #plt.savefig("output/comparison-aps.pdf")
-    plt.show()
+    plt.savefig("output/comparison-aps.pdf")
+    #plt.show()
 
 
 def main():

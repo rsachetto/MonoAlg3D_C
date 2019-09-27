@@ -139,3 +139,35 @@ COMMON_HEADERS="ten_tusscher_2004_epi_S3_tr2_pop41.h"
 
 COMPILE_MODEL_LIB "ten_tusscher_2004_epi_S3_tr2_pop41" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
 ############################################################################################
+
+############## NOBLE 1962 ##############################
+MODEL_FILE_CPU="noble_1962.c"
+MODEL_FILE_GPU="noble_1962.cu"
+COMMON_HEADERS="noble_1962.h"
+
+
+COMPILE_MODEL_LIB "noble_1962" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+#########################################################
+
+############## DI & FRANCESCO 1985 ##############################
+MODEL_FILE_CPU="difrancesco.c"
+MODEL_FILE_GPU="difrancesco.cu"
+COMMON_HEADERS="difrancesco.h"
+
+COMPILE_MODEL_LIB "difrancesco" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+#########################################################
+
+############## ARPF 2009 ##############################
+MODEL_FILE_CPU="stewart_aslanidi_noble_2009.c"
+MODEL_FILE_GPU="stewart_aslanidi_noble_2009.cu"
+COMMON_HEADERS="stewart_aslanidi_noble_2009.h"
+
+COMPILE_MODEL_LIB "stewart_aslanidi_noble_2009" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+#########################################################
+
+############## LIRUDY 2011 ##############################
+MODEL_FILE_CPU="li_rudy_2011.c"
+MODEL_FILE_GPU="li_rudy_2011.cu"
+COMMON_HEADERS="li_rudy_2011.h"
+
+COMPILE_MODEL_LIB "li_rudy_2011" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"

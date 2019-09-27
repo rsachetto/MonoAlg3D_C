@@ -225,7 +225,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
                 if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
                     #pragma omp parallel for
                     for (i = 0; i < n_active; i++) {
-                        merged_stims[i] = ((real*)(tmp->persistent_data))[i];
+                        merged_stims[i] += ((real*)(tmp->persistent_data))[i];
                     }
                 }
                 time += dt;
@@ -328,5 +328,185 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
         free(solver->model_data.model_library_path);
         solver->model_data.model_library_path = strdup(options->model_file_path);
     }
+
+}
+
+void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_solver, struct user_options *options) {
+
+    purkinje_solver->gpu_id = options->purkinje_gpu_id;
+    purkinje_solver->min_dt = (real)options->purkinje_dt_ode;
+    purkinje_solver->gpu = options->purkinje_gpu;
+
+    if(options->purkinje_model_file_path) 
+    {
+        free(purkinje_solver->model_data.model_library_path);
+        purkinje_solver->model_data.model_library_path = strdup(options->purkinje_model_file_path);
+    }
+}
+
+void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_solver, struct ode_solver *solver) {
+
+    purkinje_solver->gpu_id = solver->gpu_id;
+    purkinje_solver->min_dt = (real)solver->min_dt;
+    purkinje_solver->gpu = solver->gpu;
+
+    if(solver->model_data.model_library_path) 
+    {
+        purkinje_solver->model_data.model_library_path = strdup(solver->model_data.model_library_path);
+    }
+}
+
+void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
+                            int num_steps, struct string_voidp_hash_entry *stim_configs,
+                            struct string_hash_entry *ode_extra_config)  {
+
+    assert(the_ode_solver->sv);
+
+    real dt = the_ode_solver->min_dt;
+    //int n_odes = the_ode_solver->model_data.number_of_ode_equations;
+    real *sv = the_ode_solver->sv;
+
+    void *extra_data = the_ode_solver->ode_extra_data;
+
+    real_cpu time = cur_time;
+
+    real *merged_stims = (real*)calloc(sizeof(real), n_active);
+
+    struct config *tmp = NULL;
+
+	uint32_t i;
+    ptrdiff_t n = hmlen(stim_configs);
+
+    if(stim_configs) 
+    {
+
+        real stim_start = 0.0;
+        real  stim_dur = 0.0;
+        real  stim_period = 0.0;
+
+        for (long k = 0; k < n; k++) 
+        {
+            tmp = (struct config*) stim_configs[k].value;
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp->config_data, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp->config_data, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp->config_data, "period");
+
+            for (int j = 0; j < num_steps; ++j) 
+            {
+                if ((time >= stim_start) && (time <= stim_start + stim_dur)) 
+                {
+                    #pragma omp parallel for
+                    for (i = 0; i < n_active; i++) 
+                    {
+                        // This variable should be an accumulator to allow multiple stimulus
+                        merged_stims[i] += ((real*)(tmp->persistent_data))[i];
+                    }
+                }
+                time += dt;
+            }
+
+            if(stim_period > 0.0) 
+            {
+                if (time >= stim_start + stim_period) 
+                {
+                    stim_start = stim_start + stim_period;
+                    sds stim_start_char = sdscatprintf(sdsempty(), "%lf", stim_start);
+                    shput_dup_value(tmp->config_data, "start", stim_start_char);
+                    sdsfree(stim_start_char);
+                }
+            }
+
+            time = cur_time;
+        }
+    }
+
+    if(the_ode_solver->gpu) 
+    {
+        #ifdef COMPILE_CUDA
+        size_t extra_data_size = the_ode_solver->extra_data_size;
+        solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
+        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
+                      extra_data_size);
+
+        #endif
+    }
+    else 
+    {
+        solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
+        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+    }
+
+    free(merged_stims);
+}
+
+void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const char *model_library_path) {
+
+    char *error;
+
+    if(model_library_path) 
+    {
+        free(solver->model_data.model_library_path);
+        solver->model_data.model_library_path = strdup(model_library_path);
+    }
+
+    if(!solver->model_data.model_library_path) 
+    {
+        fprintf(stderr, "model_library_path not provided. Exiting!\n");
+        exit(1);
+    }
+
+    solver->handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
+    if (!solver->handle) 
+    {
+        fprintf(stderr, "%s\n", dlerror());
+        exit(1);
+    }
+
+    solver->get_cell_model_data = dlsym(solver->handle, "init_cell_model_data");
+    if ((error = dlerror()) != NULL)  
+    {
+        fprintf(stderr, "%s\n", error);
+        fprintf(stderr, "init_cell_model_data function not found in the provided model library\n");
+        if(!isfinite(solver->model_data.initial_v)) 
+        {
+            fprintf(stderr, "intial_v not provided in the [cell_model] of the config file! Exiting\n");
+            exit(1);
+        }
+
+    }
+
+    solver->set_ode_initial_conditions_cpu = dlsym(solver->handle, "set_model_initial_conditions_cpu");
+    if ((error = dlerror()) != NULL)  
+    {
+        fprintf(stderr, "%s\n", error);
+        fprintf(stderr, "set_model_initial_conditions function not found in the provided model library\n");
+        exit(1);
+    }
+
+    solver->solve_model_ode_cpu = dlsym(solver->handle, "solve_model_odes_cpu");
+    if ((error = dlerror()) != NULL)  
+    {
+        fprintf(stderr, "%s\n", error);
+        fprintf(stderr, "solve_model_odes_cpu function not found in the provided model library\n");
+        exit(1);
+    }
+
+#ifdef COMPILE_CUDA
+    solver->set_ode_initial_conditions_gpu = dlsym(solver->handle, "set_model_initial_conditions_gpu");
+    if ((error = dlerror()) != NULL)  
+    {
+        fputs(error, stderr);
+        fprintf(stderr, "set_model_initial_conditions_gpu function not found in the provided model library\n");
+        exit(1);
+    }
+
+    solver->solve_model_ode_gpu = dlsym(solver->handle, "solve_model_odes_gpu");
+    if ((error = dlerror()) != NULL)  
+    {
+        fputs(error, stderr);
+        fprintf(stderr, "\nsolve_model_odes_gpu function not found in the provided model library\n");
+        exit(1);
+    }
+#endif
 
 }

@@ -66,6 +66,8 @@ tmp*/
 tests_bin/TestSuite
 tests_bin/.TestSuite*
 tests_bin/ToyTest
+tests_bin/circle_cg*
+tests_bin/gold_tmp*
 tests_bin/test_*
 meshes/*.pts
 meshes/*.mesh
@@ -88,11 +90,12 @@ tags
 scripts/output
 scripts/animations/frames
 scripts/animations/video
+scripts/animations/*.mp4
+scripts/apd_error/*.png
+scr
 batch_simulations/
 /src/main_graph_analyzer.c
 .idea/encodings.xml
-tests_bin/circle_cg*
-tests_bin/gold_tmp*
 tests_bin/simulation_result.pvd
 build_*/
 src/raylib/src/rnet.c.review

@@ -1,3 +1,4 @@
+ 
 //
 // Created by sachetto on 13/10/17.
 //
@@ -13,7 +14,7 @@
 void print_domain_config_values(struct config* config) {
 
     if(config == NULL) {
-        print_to_stdout_and_file(" No Domain configuration.\n");
+        print_to_stdout_and_file("[domain] No Domain configuration.\n");
         return;
     }
 
@@ -29,17 +30,17 @@ void print_domain_config_values(struct config* config) {
 
 
     print_to_stdout_and_file("Domain configuration:\n");
-    print_to_stdout_and_file("Domain name: %s\n", name);
-    print_to_stdout_and_file("Domain initial Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
+    print_to_stdout_and_file("[domain] Domain name: %s\n", name);
+    print_to_stdout_and_file("[domain] Domain initial Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
                              start_dx, start_dy, start_dz);
 
     if(shlen(config->config_data) == 1)
     {
-        print_to_stdout_and_file("Domain extra parameter:\n");
+        print_to_stdout_and_file("[domain] Domain extra parameter:\n");
     }
     else if(shlen(config->config_data) > 1)
     {
-        print_to_stdout_and_file("Domain extra parameters:\n");
+        print_to_stdout_and_file("[domain] Domain extra parameters:\n");
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(config->config_data);

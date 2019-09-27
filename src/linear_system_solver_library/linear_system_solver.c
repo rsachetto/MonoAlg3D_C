@@ -184,6 +184,11 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node** ac = the_grid->active_cells;
 
+    if(solving_purkinje) {
+        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
     rhs = (real*) malloc(sizeof(real)*num_active_cells);
 
     #pragma omp parallel for
@@ -325,6 +330,12 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node** ac = the_grid->active_cells;
+
+    if(solving_purkinje) {
+        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
 
     *error = 1.0;
     *number_of_iterations = 1;
@@ -476,14 +487,14 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     if(gpu) {
     #ifdef COMPILE_CUDA
-        gpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error);
+        gpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error, solving_purkinje);
     #else
         print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
-        cpu_conjugate_gradient(config, the_grid, number_of_iterations, error);
+        cpu_conjugate_gradient(config, the_grid, number_of_iterations, error, solving_purkinje);
     #endif
     }
     else {
-        cpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error);
+        cpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error, solving_purkinje);
     }
 }
 
