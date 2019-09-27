@@ -248,6 +248,14 @@ struct user_options *new_user_options() {
     sh_new_arena(user_args->stim_configs);
     shdefault(user_args->stim_configs, NULL);
 
+    user_args->purkinje_stim_configs = NULL;
+    sh_new_arena(user_args->purkinje_stim_configs);
+    shdefault(user_args->purkinje_stim_configs, NULL);
+
+    user_args->purkinje_ode_extra_config = NULL;
+    sh_new_arena(user_args->purkinje_ode_extra_config);
+    shdefault(user_args->purkinje_ode_extra_config, NULL);
+
     user_args->modify_domain_configs = NULL;
     sh_new_arena(user_args->modify_domain_configs);
     shdefault(user_args->modify_domain_configs, NULL);
@@ -1305,6 +1313,47 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         }
         else {
             shput(pconfig->ode_extra_config, name, strdup(value));
+        }
+    } else if(MATCH_SECTION(ODE_PURKINJE_SECTION)) {
+        if(MATCH_NAME("dt_ode")) {
+            pconfig->purkinje_dt_ode = strtof(value, NULL);
+            pconfig->purkinje_dt_ode_was_set = true;
+        }
+        else if(MATCH_NAME("use_gpu")) {
+            if(IS_TRUE(value)) {
+                pconfig->purkinje_gpu = true;
+            } else {
+                pconfig->purkinje_gpu = false;
+            }
+            pconfig->purkinje_gpu_was_set = true;
+        } else if(MATCH_NAME("gpu_id")) {
+            pconfig->purkinje_gpu_id = (int)strtol(value, NULL, 10);
+            pconfig->purkinje_gpu_id_was_set = true;
+        } else if(MATCH_NAME("library_file")) {
+            pconfig->purkinje_model_file_path = strdup(value);
+            pconfig->purkinje_model_file_path_was_set = true;
+        }
+        else {
+            shput(pconfig->purkinje_ode_extra_config, name, strdup(value));
+        }
+    } else if(SECTION_STARTS_WITH(STIM_PURKINJE_SECTION)) {
+
+        struct config *tmp = (struct config *) shget(pconfig->purkinje_stim_configs, section);
+
+        if (tmp == NULL) {
+            tmp = alloc_and_init_config_data();
+            shput(pconfig->purkinje_stim_configs, section, tmp);
+        }
+
+        if (MATCH_NAME("name")) {
+            fprintf(stderr,
+                    "name is a reserved word and should not be used inside a stimulus config section. Found in %s. "
+                    "Exiting!\n",
+                    section);
+            exit(EXIT_FAILURE);
+        }
+        else {
+            set_common_data(tmp, name, value);
         }
     } else if(SECTION_STARTS_WITH(STIM_SECTION)) {
 

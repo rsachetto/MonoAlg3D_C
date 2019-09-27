@@ -22,6 +22,7 @@ struct node
     uint32_t num_edges;
     real_cpu x, y, z;
 
+
     struct edge *list_edges;
     struct node *next;
 };
@@ -40,6 +41,8 @@ struct graph
     struct node *last_node;
     uint32_t total_nodes;
     uint32_t total_edges;
+    uint32_t number_of_terminals;
+
 
     real_cpu dx;
 };

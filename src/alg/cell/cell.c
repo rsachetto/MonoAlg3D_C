@@ -71,6 +71,11 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->sigma.y = 0.0;
     cell_node->sigma.z = 0.0;
 
+    cell_node->kappa.x = 0.0;
+    cell_node->kappa.y = 0.0;
+    cell_node->kappa.z = 0.0;
+
+
 #if defined(_OPENMP)
     omp_init_lock(&(cell_node->updating));
 #endif

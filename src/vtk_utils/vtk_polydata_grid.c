@@ -12,6 +12,7 @@
 
 #include "../common_types/common_types.h"
 #include "../single_file_libraries/stb_ds.h"
+#include "../utils/file_utils.h"
 
 struct vtk_polydata_grid *new_vtk_polydata_grid ()
 {
@@ -53,13 +54,13 @@ sds create_common_vtp_header(bool compressed, int num_points, int num_lines)
     return header;
 }
 
-void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
+void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid_purkinje *the_purkinje, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values)
+                                                                     float *bounds, bool read_only_values, const char scalar_name)
 {
     static bool mesh_already_loaded =  false;
 
-    if(grid == NULL) 
+    if(the_purkinje == NULL) 
     {
         return;
     }
@@ -89,8 +90,8 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
         }
     }
 
-    struct cell_node *grid_cell = grid->first_cell;
-    struct node *u = grid->the_purkinje_network->list_nodes;
+    struct cell_node *grid_cell = the_purkinje->first_cell;
+    struct node *u = the_purkinje->network->list_nodes;
 
     struct point_3d aux;
     struct line auxl;
@@ -110,8 +111,25 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
             center_y = grid_cell->center.y;
             center_z = grid_cell->center.z;
 
-            arrput((*vtk_grid)->values, grid_cell->v);
-
+            // --------------------------------------------------------------------------------
+            // NEW CODE !
+            switch (scalar_name)
+            {
+                case 'v':
+                    arrput((*vtk_grid)->values, grid_cell->v);
+                    break;
+                case 'a':
+                    //arrput((*vtk_grid)->values, grid_cell->activation_time);
+                    //break;
+                case 'c':
+                    arrput((*vtk_grid)->values, grid_cell->sigma.x);
+                    break;            
+                default:
+                    print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
+                    break;
+            }
+            // --------------------------------------------------------------------------------
+            
             // This 'if' statement do not let us re-insert points and lines to the arrays ... =)
             if(mesh_already_loaded && read_only_values)
             {
@@ -153,7 +171,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     if(!mesh_already_loaded)
     {
         (*vtk_grid)->num_points = id;
-        (*vtk_grid)->num_lines = grid->the_purkinje_network->total_edges;
+        (*vtk_grid)->num_lines = the_purkinje->network->total_edges;
 
         if(read_only_values)
             mesh_already_loaded = true;
@@ -482,7 +500,132 @@ void save_vtk_polydata_grid_as_vtp_compressed (struct vtk_polydata_grid *vtk_gri
     exit(EXIT_FAILURE);
 }
 
+void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
+                                                                     float *plain_coordinates, bool clip_with_bounds,
+                                                                     float *bounds, bool read_only_values, const char scalar_name)
+{
+    static bool mesh_already_loaded =  false;
 
+    if(grid == NULL) 
+    {
+        return;
+    }
+
+    if(!read_only_values)
+    {
+        *vtk_grid = new_vtk_polydata_grid();
+    }
+    else
+    {
+        if(!(*vtk_grid) && mesh_already_loaded)
+        {
+            fprintf(stderr,
+                    "Function new_vtk_polydata_grid_from_purkinje_grid can only be called with read_only_values if the grid is already loaded");
+            exit(EXIT_FAILURE);
+        }
+
+        if(mesh_already_loaded)
+        {
+            assert(*vtk_grid);
+            arrfree((*vtk_grid)->values);
+            (*vtk_grid)->values = NULL;
+        }
+        else
+        {
+            *vtk_grid = new_vtk_polydata_grid();
+        }
+    }
+
+    // TODO: Put a if statement and consider only the 'new_vtk_polydata_grid_from_purkinje_grid' function
+    // Use the Purkinje linked list of cells
+    struct cell_node *grid_cell = grid->purkinje->first_cell;
+    struct node *u = grid->purkinje->network->list_nodes;
+
+    struct point_3d aux;
+    struct line auxl;
+    real_cpu center_x, center_y, center_z;
+
+    uint32_t id = 0;
+//    uint32_t num_cells = 0;
+
+    struct point_hash_entry *hash = NULL;
+    hmdefault(hash, -1);
+
+    while (grid_cell != NULL)
+    {
+        if (grid_cell->active)
+        {
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
+
+            // --------------------------------------------------------------------------------
+            // NEW CODE !
+            switch (scalar_name)
+            {
+                case 'v':
+                    arrput((*vtk_grid)->values, grid_cell->v);
+                    break;
+                case 'a':
+                   // arrput((*vtk_grid)->values, grid_cell->activation_time);
+                  //  break;
+                case 'c':
+                    arrput((*vtk_grid)->values, grid_cell->sigma.x);
+                    break;            
+                default:
+                    print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
+                    break;
+            }
+            // --------------------------------------------------------------------------------
+            
+            // This 'if' statement do not let us re-insert points and lines to the arrays ... =)
+            if(mesh_already_loaded && read_only_values)
+            {
+                grid_cell = grid_cell->next;
+                u = u->next;
+                continue;
+            }
+
+            // Insert the point to the array of points
+            aux.x = center_x;
+            aux.y = center_y;
+            aux.z = center_z;
+
+            // Search for duplicates
+            if(hmget(hash, aux) == -1)
+            {
+                arrput((*vtk_grid)->points, aux);
+                hmput(hash, aux, id);
+                id++;
+            }
+
+            // Insert the edge to the array of lines
+            struct edge *v = u->list_edges;
+            while (v != NULL)
+            {
+                auxl.source = u->id;
+                auxl.destination = v->id;
+
+                arrput((*vtk_grid)->lines, auxl);
+
+                v = v->next;
+            }
+
+        }
+        grid_cell = grid_cell->next;
+        u = u->next;
+    }
+
+    if(!mesh_already_loaded)
+    {
+        (*vtk_grid)->num_points = id;
+        (*vtk_grid)->num_lines = grid->purkinje->network->total_edges;
+
+        if(read_only_values)
+            mesh_already_loaded = true;
+    }
+
+}
 
 void free_vtk_polydata_grid(struct vtk_polydata_grid *vtk_grid)
 {

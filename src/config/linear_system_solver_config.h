@@ -10,9 +10,9 @@
 #include "config_common.h"
 
 
-#define SOLVE_LINEAR_SYSTEM(name)                                                                                      \
-    EXPORT_FN void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                     \
-                        uint32_t *number_of_iterations, real_cpu *error)
+#define SOLVE_LINEAR_SYSTEM(name)                                                                                        \
+    EXPORT_FN void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                        \
+                        uint32_t *number_of_iterations, real_cpu *error, bool solving_purkinje)
 typedef SOLVE_LINEAR_SYSTEM(linear_system_solver_fn);
 
 #define INIT_LINEAR_SYSTEM(name) EXPORT_FN void name(struct config *config, struct grid *the_grid)

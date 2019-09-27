@@ -100,12 +100,22 @@ struct cell_node {
     real_cpu v;
 
     struct point_3d sigma;
+    struct point_3d kappa;
 
 #if defined(_OPENMP)
     omp_lock_t updating;
 #endif
 
 };
+
+struct terminal {
+    uint32_t purkinje_index;
+    uint32_t endocardium_index;
+
+    struct cell_node *endocardium_cell;
+    struct node *purkinje_cell;
+};
+// ----------------------------------------------------
 
 struct transition_node {
     struct basic_cell_data cell_data; // DO NOT CHANGE THIS STRUCT POSITION

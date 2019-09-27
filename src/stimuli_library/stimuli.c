@@ -63,6 +63,11 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
+    if(is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+    }
+
     real stim_current = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
 
@@ -90,6 +95,85 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
     }
 }
 
+SET_SPATIAL_STIM(stim_if_y_less_than) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+
+    if(is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+    }
+
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    bool stim;
+    real stim_value;
+
+    real_cpu y_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, y_limit, config->config_data, "y_limit");
+
+    uint32_t i;
+
+    ALLOCATE_STIMS();
+
+    #pragma omp parallel for private(stim, stim_value)
+    for (i = 0; i < n_active; i++) {
+        stim = ac[i]->center.y < y_limit;
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+
+    }
+}
+
+SET_SPATIAL_STIM(stim_if_y_greater_or_equal_than) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+
+    if(is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+    }
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    bool stim;
+    real stim_value;
+
+    real_cpu y_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, y_limit, config->config_data, "y_limit");
+
+    uint32_t i;
+
+    ALLOCATE_STIMS();
+
+    #pragma omp parallel for private(stim, stim_value)
+    for (i = 0; i < n_active; i++) {
+        stim = ac[i]->center.y >= y_limit;
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+
+    }
+}
+
 SET_SPATIAL_STIM(set_stim_from_file) {
 
     char *stim_file = NULL;
@@ -98,6 +182,12 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
+
+    if(is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+    }
+
     size_t s_size;
 
     bool stim;

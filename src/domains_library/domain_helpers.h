@@ -40,4 +40,14 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
 
 void set_fibrosis_from_file(struct grid *grid, const char *filename, int size);
 
+void set_plain_fibrosis_and_write_positions_to_file (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
+void set_plain_fibrosis_using_file (struct grid *the_grid, const char filename[]);
+// ---------------------------------------------------------------------------------------------------------------
+
+void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
+                        const double min_x, const double max_x,\
+                        const double min_y, const double max_y,\
+                        const double min_z, const double max_z);
+
+
 #endif // MONOALG3D_DOMAIN_HELPERS_H

@@ -24,7 +24,7 @@ struct monodomain_solver {
     real_cpu beta, cm; // micrometers
 
     //TODO: maybe use an extra data variable as we did on the alg cell
-    real_cpu kappa_x, kappa_y, kappa_z;
+    struct point_3d kappa;
     
     int refine_each;
     int derefine_each;
@@ -50,16 +50,25 @@ void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
 void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v);
 
-void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                       struct grid *the_grid, struct user_options *options);
+void print_solver_info(struct monodomain_solver *the_monodomain_solver,
+                        struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,
+                        struct grid *the_grid, struct user_options *options);
 
-bool update_ode_state_vector_and_check_for_activity(real_cpu vm_thresold, struct ode_solver *the_ode_solver, struct grid *the_grid);
+void print_solver_info(struct monodomain_solver *the_monodomain_solver,
+                        struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,
+                        struct grid *the_grid, struct user_options *options);
 
-void set_spatial_stim(struct time_info *time_info, struct string_voidp_hash_entry *stim_configs, struct grid *the_grid);
+void set_spatial_stim(struct time_info *time_info, struct string_voidp_hash_entry *stim_configs, struct grid *the_grid, bool purkinje);
                     
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver, struct user_options *options);
 
 bool print_result(const struct grid *the_grid, const struct user_options *configs, int count);
+
+void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
+void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
+
+bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid);
+
 
 void debug_print_and_leave ();
 

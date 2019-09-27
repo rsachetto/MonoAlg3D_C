@@ -194,7 +194,11 @@ int main(int argc, char **argv) {
         #endif //COMPILE_OPENGL
     } else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+        //free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+
+        solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
         free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+
     }
 
     return EXIT_SUCCESS;
