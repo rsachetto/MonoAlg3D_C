@@ -123,6 +123,11 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current)
     real STATES[NEQ];
     for (int i = 0; i < NEQ; i++)
         STATES[i] = sv[i];
+    
+    // This statement if to avoid instability problems when we have a transmembrane potential below -70mV, 
+    // which generates NaN on the solution from the ODEs
+    if (STATES[0] < INITIAL_V)
+        STATES[0] = INITIAL_V;
 
     // Constants
     real CONSTANTS[52];

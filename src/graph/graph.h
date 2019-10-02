@@ -42,6 +42,7 @@ struct graph
     uint32_t total_edges;
 
     real_cpu dx;
+    real_cpu rpmj;
     uint32_t number_of_terminals;
 };
 

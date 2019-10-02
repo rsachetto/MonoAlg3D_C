@@ -611,8 +611,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_purkinje_ode_solver, the_grid);
 
             // MAPPING: Tissue -> Purkinje
-            if (domain_config && purkinje_config)
-                map_tissue_solution_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
+            //if (domain_config && purkinje_config)
+            //    map_tissue_solution_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
             
             
             if (abort_on_no_activity && cur_time > last_stimulus_time) 
@@ -626,7 +626,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             }
         }
 
-        // TODO: Transform this to a function solve_purkinje()
         if (purkinje_config)
         {
             start_stop_watch(&purkinje_ode_time);
@@ -658,6 +657,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             }
             #endif
 
+            // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
+            if (domain_config)
+                compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
+
             // DIFUSION: Purkinje
             linear_system_solver_purkinje(linear_system_solver_config, the_grid, &purkinje_solver_iterations, &purkinje_solver_error);
             //linear_system_solver_purkinje_lu(lu,pivot,the_grid);
@@ -669,8 +672,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             purkinje_total_cg_it += purkinje_solver_iterations;
 
             // MAPPING: Purkinje -> Tissue
-            if (domain_config)
-                map_purkinje_solution_to_tissue(the_ode_solver,the_grid,the_terminals);
+            //if (domain_config)
+            //    map_purkinje_solution_to_tissue(the_ode_solver,the_grid,the_terminals);
 
         }
 
@@ -704,6 +707,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 omp_set_lock(&draw_config.draw_lock);
             }
             #endif
+
+            // COUPLING: Calculate the PMJ current from the Purkinje to the Tissue
+            if (purkinje_config)
+                compute_pmj_current_purkinje_to_tissue(the_ode_solver,the_grid,the_terminals);
 
             // DIFUSION: Tissue
             ((linear_system_solver_fn *)linear_system_solver_config->main_function)(linear_system_solver_config, the_grid, &solver_iterations, &solver_error);
@@ -1673,6 +1680,8 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
             //vms[purkinje_index] = ac[tissue_index]->v;
             if (ac[tissue_index]->v > vms[purkinje_index])
                 vms[purkinje_index] = ac[tissue_index]->v;
+            
+            //vms[purkinje_index] = ac[tissue_index]->v;
         }    
 
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
@@ -1699,10 +1708,167 @@ void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver,
             } 
             */
            if (ac[tissue_index]->v > sv[purkinje_index*nodes])
-                sv[purkinje_index*nodes] = ac[tissue_index]->v;       
+                sv[purkinje_index*nodes] = ac[tissue_index]->v;
+           //sv[purkinje_index*nodes] = ac[tissue_index]->v;       
         }
     }
  
+}
+
+void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals)
+{
+    assert(the_ode_solver);
+    assert(the_grid);
+    assert(the_terminals);
+
+    // Tissue solution
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t n_active = the_grid->num_active_cells;
+    real *sv = the_ode_solver->sv;
+    real initial_v = the_ode_solver->model_data.initial_v;
+    uint32_t nodes = the_ode_solver->model_data.number_of_ode_equations;
+
+    // Purkinje solution
+    struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
+    
+    // TODO: Try to avoid those magic numbers ...
+    real rpmj = the_grid->the_purkinje->the_network->rpmj * 0.3;  // Mitchell + FitzHugh
+    //real rpmj = the_grid->the_purkinje->the_network->rpmj * 0.1;    // ARPF + TenTusscher 2006
+    real Gpmj = 1.0 / rpmj; 
+
+    if(the_ode_solver->gpu) 
+    {
+    #ifdef COMPILE_CUDA
+    
+        uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
+        real *vms;
+        size_t mem_size = max_number_of_cells * sizeof(real);
+
+        vms = (real *)malloc(mem_size);
+
+        if(the_grid->adaptive)
+            check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+
+        #pragma omp parallel for
+        for(uint32_t i = 0; i < n_active; i++) 
+        {
+            vms[ac[i]->sv_position] = (real)ac[i]->v;
+        }
+
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+            //printf("[map_purkinje_solution_to_tissue] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+
+            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Compute the PMJ current
+            real Ipmj = Gpmj * (vms[tissue_index] - ac_purkinje[purkinje_index]->v);
+
+            // Add this current to the RHS of this cell
+            ac[tissue_index]->b -= Ipmj;
+        }    
+
+        check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
+        free(vms);
+    #endif
+    }
+    else
+    {
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+            //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+
+            uint32_t tissue_index = the_terminals[i].endocardium_cell->sv_position;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Compute the PMJ current
+            real Ipmj = Gpmj * (sv[tissue_index*nodes] - ac_purkinje[purkinje_index]->v);
+            //printf("ac[tissue_index]->b = %g || Ipmj = %g || ac[tissue_index]->b = %g\n",ac[tissue_index]->b,Ipmj,ac[tissue_index]->b+Ipmj);
+
+            // Add this current to the RHS of this cell
+            ac[tissue_index]->b -= Ipmj;
+        }
+    }
+}
+
+void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals)
+{
+    assert(the_purkinje_ode_solver);
+    assert(the_grid);
+    assert(the_terminals);
+
+    // Tissue solution
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t n_active = the_grid->num_active_cells;
+
+    // Purkinje solution
+    struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
+    uint32_t n_active_purkinje = the_grid->the_purkinje->num_active_purkinje_cells;
+    real *sv = the_purkinje_ode_solver->sv;
+    real initial_v = the_purkinje_ode_solver->model_data.initial_v;
+    uint32_t nodes = the_purkinje_ode_solver->model_data.number_of_ode_equations;
+
+    real rpmj = the_grid->the_purkinje->the_network->rpmj;
+    real Gpmj = 1.0 / rpmj; 
+
+    if(the_purkinje_ode_solver->gpu) 
+    {
+    #ifdef COMPILE_CUDA
+    
+        uint32_t max_number_of_cells = the_purkinje_ode_solver->original_num_cells;
+        real *vms;
+        size_t mem_size = max_number_of_cells * sizeof(real);
+
+        vms = (real *)malloc(mem_size);
+
+        check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+
+        //#pragma omp parallel for
+        //for(uint32_t i = 0; i < n_active_purkinje; i++) 
+        //{
+        //    vms[ac_purkinje[i]->sv_position] = (real)ac_purkinje[i]->v;
+        //}
+
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+            //printf("[map_purkinje_solution_to_tissue] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+
+            uint32_t tissue_index = the_terminals[i].endocardium_index;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Compute the PMJ current
+            real Ipmj = Gpmj * (vms[purkinje_index] - ac[tissue_index]->v);
+
+            // Add this current to the RHS of this cell
+            ac_purkinje[purkinje_index]->b -= Ipmj;
+        }    
+
+        //check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
+        free(vms);
+    #endif
+    }
+    else
+    {
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
+        {
+            //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+
+            uint32_t tissue_index = the_terminals[i].endocardium_cell->sv_position;
+            uint32_t purkinje_index = the_terminals[i].purkinje_index;
+
+            // Compute the PMJ current
+            real Ipmj = Gpmj * (sv[purkinje_index*nodes] - ac[tissue_index]->v);
+            //printf("ac[tissue_index]->b = %g || Ipmj = %g || ac[tissue_index]->b = %g\n",ac[tissue_index]->b,Ipmj,ac[tissue_index]->b+Ipmj);
+
+            // Add this current to the RHS of this cell
+            ac_purkinje[purkinje_index]->b -= Ipmj;
+        }
+    }
 }
 
 double** allocate_matrix_LU (const uint32_t num_rows, const uint32_t num_cols)
