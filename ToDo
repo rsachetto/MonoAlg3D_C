@@ -13,6 +13,7 @@ Berg
     - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
     - Fix a bug when using adaptativity (benchmark_purkinje.ini)
     - Add the option to configure the conductivity of the segments from the Purkinje network on the input ".vtk"
+    - Couple more cells to the Purkinje fibers (create a Pmj_scale parameter)
     - Ask Joventino for a simple endocardium mesh
     - Ask Sachetto for the VTK -> ALG parser
 

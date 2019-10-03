@@ -6,9 +6,9 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="100"
-END_FRAME="2500"
-OUTPUT_VIDEO_FILENAME="videos/lucas-spiral-wave"
+FRAME_RATE="20"
+END_FRAME="250"
+OUTPUT_VIDEO_FILENAME="videos/lucas_purkinje_coupled_human_fractal_with_pmj_block"
 RESOLUTION="1030x730"
 
 # Execute the converting command using FFMPEG

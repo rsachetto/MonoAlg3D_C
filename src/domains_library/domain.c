@@ -773,6 +773,41 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
     return 1;
 }
 
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_and_fibrotic_hole_mesh) {
+
+    real_cpu phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
+
+    real_cpu plain_center = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config->config_data, "plain_center");
+
+    real_cpu sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config->config_data, "sphere_radius");
+
+    real_cpu fib_hole_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, fib_hole_radius, config->config_data, "fibrosis_radius");
+
+    real_cpu border_zone_size = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_size, config->config_data,
+                                                "border_zone_size");
+
+    real_cpu border_zone_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data,
+                                                "border_zone_radius");
+
+    bool success;
+    unsigned seed = 0;
+    GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data, "seed", success);
+    if(!success) {
+        seed = 0;
+    }
+
+    initialize_grid_with_square_mesh(config, the_grid);
+    set_plain_sphere_fibrosis_with_fibrotic_hole(the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, fib_hole_radius, seed);
+
+    return 1;
+}
+
 SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
 
     assert(the_grid);

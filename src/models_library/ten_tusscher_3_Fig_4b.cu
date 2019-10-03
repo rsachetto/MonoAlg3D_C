@@ -93,6 +93,8 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 
     if(threadID < num_volumes) {
 
+	// Original values from Sachetto
+/*
         *((real*)((char*)sv + pitch * 0) + threadID) = INITIAL_V;   // V;       millivolt
         *((real*)((char*)sv + pitch * 1) + threadID) = 0.005619; //M
         *((real*)((char*)sv + pitch * 2) + threadID) = 0.551265; //H
@@ -105,6 +107,69 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
         *((real*)((char*)sv + pitch * 9) + threadID) = 0.000072; //D_INF
         *((real*)((char*)sv + pitch * 10) + threadID) = 0.0; //R_INF
         *((real*)((char*)sv + pitch * 11) + threadID) = 0.412887; //Xr2_INF
+*/
+
+    // Steady-State Healthy cell after 12000ms with INaCa = 60%
+/*
+	*((real *) ((char *) sv + pitch * 0) + threadID) = -86.3071;
+	*((real *) ((char *) sv + pitch * 1) + threadID) = 0.00136401;
+	*((real *) ((char *) sv + pitch * 2) + threadID) = 0.77323;
+	*((real *) ((char *) sv + pitch * 3) + threadID) = 0.768732;
+	*((real *) ((char *) sv + pitch * 4) + threadID) = 0.000364856;
+	*((real *) ((char *) sv + pitch * 5) + threadID) = 0.00427237;
+	*((real *) ((char *) sv + pitch * 6) + threadID) = 0.447765;
+	*((real *) ((char *) sv + pitch * 7) + threadID) = 0.889209;
+	*((real *) ((char *) sv + pitch * 8) + threadID) = 0.999561;
+	*((real *) ((char *) sv + pitch * 9) + threadID) = 2.92107e-05;
+	*((real *) ((char *) sv + pitch * 10) + threadID) = 2.01946e-08;
+    *((real *) ((char *) sv + pitch * 11) + threadID) = 0.482373;
+*/
+
+	// Steady-State Healthy cell after 12000ms with INaCa = 100%
+/*
+	*((real *) ((char *) sv + pitch * 0) + threadID) = -86.0262;
+	*((real *) ((char *) sv + pitch * 1) + threadID) = 0.00144818;
+	*((real *) ((char *) sv + pitch * 2) + threadID) = 0.766091;
+	*((real *) ((char *) sv + pitch * 3) + threadID) = 0.761181;
+	*((real *) ((char *) sv + pitch * 4) + threadID) = 0.000413456;
+	*((real *) ((char *) sv + pitch * 5) + threadID) = 0.00430467;
+	*((real *) ((char *) sv + pitch * 6) + threadID) = 0.446116;
+	*((real *) ((char *) sv + pitch * 7) + threadID) = 0.890307;
+	*((real *) ((char *) sv + pitch * 8) + threadID) = 0.999543;
+	*((real *) ((char *) sv + pitch * 9) + threadID) = 3.03253e-05;
+	*((real *) ((char *) sv + pitch * 10) + threadID) = 2.11624e-08;
+	*((real *) ((char *) sv + pitch * 11) + threadID) = 0.479452;
+*/
+
+    // Steady-State Full fibrotic cell after 12000ms with INaCa = 60%
+/*
+    *((real *) ((char *) sv + pitch * 0) + threadID) = -79.5526;
+    *((real *) ((char *) sv + pitch * 1) + threadID) = 0.0056175;
+    *((real *) ((char *) sv + pitch * 2) + threadID) = 0.556426;
+    *((real *) ((char *) sv + pitch * 3) + threadID) = 0.544609;
+    *((real *) ((char *) sv + pitch * 4) + threadID) = 0.00112076;
+    *((real *) ((char *) sv + pitch * 5) + threadID) = 0.00489477;
+    *((real *) ((char *) sv + pitch * 6) + threadID) = 0.503451;
+    *((real *) ((char *) sv + pitch * 7) + threadID) = 0.985002;
+    *((real *) ((char *) sv + pitch * 8) + threadID) = 0.998849;
+    *((real *) ((char *) sv + pitch * 9) + threadID) = 7.18864e-05;
+    *((real *) ((char *) sv + pitch * 10) + threadID) = 6.22501e-08;
+    *((real *) ((char *) sv + pitch * 11) + threadID) = 0.412904;
+*/
+
+    // Steady-State Full fibrotic cell after 12000ms with INaCa = 100%
+    *((real *) ((char *) sv + pitch * 0) + threadID) = -79.3449;
+    *((real *) ((char *) sv + pitch * 1) + threadID) = 0.00586152;
+    *((real *) ((char *) sv + pitch * 2) + threadID) = 0.548496;
+    *((real *) ((char *) sv + pitch * 3) + threadID) = 0.535665;
+    *((real *) ((char *) sv + pitch * 4) + threadID) = 0.00120839;
+    *((real *) ((char *) sv + pitch * 5) + threadID) = 0.00496648;
+    *((real *) ((char *) sv + pitch * 6) + threadID) = 0.502701;
+    *((real *) ((char *) sv + pitch * 7) + threadID) = 0.985158;
+    *((real *) ((char *) sv + pitch * 8) + threadID) = 0.998814;
+    *((real *) ((char *) sv + pitch * 9) + threadID) = 7.39051e-05;
+    *((real *) ((char *) sv + pitch * 10) + threadID) = 6.4443e-08;
+    *((real *) ((char *) sv + pitch * 11) + threadID) = 0.410807;
     }
 }
 
@@ -156,8 +221,10 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real sf  = *((real*)((char*)sv_ + pitch * 7) + threadID_);
     const real sf2  = *((real*)((char*)sv_ + pitch * 8) + threadID_);
     const real D_INF  = *((real*)((char*)sv_ + pitch * 9) + threadID_);
-    const real Xr2_INF  = *((real*)((char*)sv_ + pitch * 10) + threadID_);
-    const real R_INF  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
+    const real R_INF  = *((real*)((char*)sv_ + pitch * 10) + threadID_);
+    const real Xr2_INF  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
+    //const real R_INF  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
+    //const real Xr2_INF  = *((real*)((char*)sv_ + pitch * 10) + threadID_);
 
     const real natp = 0.24;          // K dependence of ATP-sensitive K current
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
@@ -337,7 +404,8 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
           (exp(n*svolt*F/(R*T))*Nai*Nai*Nai*Cao-
            exp((n-1)*svolt*F/(R*T))*Nao*Nao*Nao*Cai*2.5);
 
-    INaCa = INaCa*0.6; //ACIDOSIS
+    real theta = 1.0;
+    INaCa = INaCa*theta; //ACIDOSIS
 
     INaK=knak*(Ko/(Ko+KmK))*(Nai/(Nai+KmNa))*rec_iNaK;
     IpCa=GpCa*Cai/(KpCa+Cai);

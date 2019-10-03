@@ -19,6 +19,8 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
+// Original values from Sachetto
+/*
     sv[0] = INITIAL_V;   // V;       millivolt
     sv[1] = 0.005619;; //M
     sv[2] = 0.551265; //H
@@ -31,6 +33,69 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     sv[9] = 0.000072; //D_INF
     sv[10] = 0.0; //R_INF
     sv[11] = 0.412887; //Xr2_INF}
+*/
+
+// Steady-State Healthy cell after 12000ms with INaCa = 60%
+/*
+sv[0] = -86.3071;
+sv[1] = 0.00136401;
+sv[2] = 0.77323;
+sv[3] = 0.768732;
+sv[4] = 0.000364856;
+sv[5] = 0.00427237;
+sv[6] = 0.447765;
+sv[7] = 0.889209;
+sv[8] = 0.999561;
+sv[9] = 2.92107e-05;
+sv[10] = 2.01946e-08;
+sv[11] = 0.482373;
+*/
+
+// Steady-State Healthy cell after 12000ms with INaCa = 100%
+/*
+sv[0] = -86.0262;
+sv[1] = 0.00144818;
+sv[2] = 0.766091;
+sv[3] = 0.761181;
+sv[4] = 0.000413456;
+sv[5] = 0.00430467;
+sv[6] = 0.446116;
+sv[7] = 0.890307;
+sv[8] = 0.999543;
+sv[9] = 3.03253e-05;
+sv[10] = 2.11624e-08;
+sv[11] = 0.479452;
+*/
+
+// Steady-State Full fibrotic cell after 12000ms with INaCa = 60%
+/*
+sv[0] = -79.5526;
+sv[1] = 0.0056175;
+sv[2] = 0.556426;
+sv[3] = 0.544609;
+sv[4] = 0.00112076;
+sv[5] = 0.00489477;
+sv[6] = 0.503451;
+sv[7] = 0.985002;
+sv[8] = 0.998849;
+sv[9] = 7.18864e-05;
+sv[10] = 6.22501e-08;
+sv[11] = 0.412904;
+*/
+
+// Steady-State Full fibrotic cell after 12000ms with INaCa = 100%
+sv[0] = -79.3449;
+sv[1] = 0.00586152;
+sv[2] = 0.548496;
+sv[3] = 0.535665;
+sv[4] = 0.00120839;
+sv[5] = 0.00496648;
+sv[6] = 0.502701;
+sv[7] = 0.985158;
+sv[8] = 0.998814;
+sv[9] = 7.39051e-05;
+sv[10] = 6.4443e-08;
+sv[11] = 0.410807;
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
@@ -129,8 +194,11 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     const real sf2  = sv[8];
 
     const real D_INF  = sv[9];
-    const real Xr2_INF  = sv[10];
-    const real R_INF  = sv[11];
+    const real R_INF  = sv[10];
+    const real Xr2_INF  = sv[11];
+    // BUGGY
+    //const real Xr2_INF  = sv[10];
+    //const real R_INF  = sv[11];
 
 
     const real natp = 0.24;          // K dependence of ATP-sensitive K current
@@ -310,7 +378,8 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
           (exp(n*svolt*F/(R*T))*Nai*Nai*Nai*Cao-
            exp((n-1)*svolt*F/(R*T))*Nao*Nao*Nao*Cai*2.5);
 
-    INaCa = INaCa*0.6; //ACIDOSIS
+    real theta = 1.0;
+    INaCa = INaCa*theta; //ACIDOSIS
 
     INaK=knak*(Ko/(Ko+KmK))*(Nai/(Nai+KmNa))*rec_iNaK;
     IpCa=GpCa*Cai/(KpCa+Cai);

@@ -20,8 +20,8 @@ def plot_transmembrane_potential(t, v):
 	plt.ylabel("V (mV)",fontsize=15)
 	plt.title("Action potential - Purkinje cell",fontsize=14)
 	plt.legend(loc=0,fontsize=14)
-	#plt.show()
-	plt.savefig("ap.pdf")
+	plt.show()
+	#plt.savefig("ap.pdf")
 
 
 def main():

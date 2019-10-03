@@ -111,7 +111,6 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
     if(threadID < num_volumes) {
 
         // Default initial values from CellML
-        /*
         *((real *) ((char *) sv + pitch * 0) + threadID) = -86.2f;   // V;       millivolt
         *((real *) ((char *) sv + pitch * 1) + threadID) = 0.0f; //M
         *((real *) ((char *) sv + pitch * 2) + threadID) = 0.75; //H
@@ -124,9 +123,9 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
         *((real *) ((char *) sv + pitch * 9) + threadID) = 0.0; //D_INF
         *((real *) ((char *) sv + pitch * 10) + threadID) = 0.0; //R_INF
         *((real *) ((char *) sv + pitch * 11) + threadID) = 0.0; //Xr2_INF
-        */
 
         // Steady-State after 12000 ms (atpi = 4.0, acidosis = 0.5, Ko = 7.0)
+    /*
         *((real *) ((char *) sv + pitch * 0) + threadID) = -86.0599;
         *((real *) ((char *) sv + pitch * 1) + threadID) = 0.00143782;
         *((real *) ((char *) sv + pitch * 2) + threadID) = 0.766944;
@@ -139,7 +138,7 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
         *((real *) ((char *) sv + pitch * 9) + threadID) = 3.01894e-05;
         *((real *) ((char *) sv + pitch * 10) + threadID) = 2.10439e-08;
         *((real *) ((char *) sv + pitch * 11) + threadID) = 0.479802;
-
+    */
     }
 }
 
@@ -205,8 +204,11 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real sf  = *((real*)((char*)sv_ + pitch * 7) + threadID_);
     const real sf2  = *((real*)((char*)sv_ + pitch * 8) + threadID_);
     const real D_INF  = *((real*)((char*)sv_ + pitch * 9) + threadID_);
-    const real Xr2_INF  = *((real*)((char*)sv_ + pitch * 10) + threadID_);
-    const real R_INF  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
+    const real R_INF  = *((real*)((char*)sv_ + pitch * 10) + threadID_);
+    const real Xr2_INF  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
+    // Buggy
+    //const real Xr2_INF  = *((real*)((char*)sv_ + pitch * 10) + threadID_);
+    //const real R_INF  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
 
     const real natp = 0.24;          // K dependence of ATP-sensitive K current
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)

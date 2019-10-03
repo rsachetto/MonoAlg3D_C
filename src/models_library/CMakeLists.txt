@@ -274,3 +274,19 @@ else()
     ADD_LIBRARY(li_rudy_2011 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 #########################################################
+
+############## PEDRO TENTUSSCHER ENDO PERCOLATION ##############################
+set(MODEL_FILE_CPU "ten_tusscher_3_percolation_ENDO_CPU.c")
+set(MODEL_FILE_GPU "ten_tusscher_3_percolation_ENDO_GPU.cu")
+set(COMMON_HEADERS model_common.h ten_tusscher_3_percolation.h)
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(ten_tusscher_3_percolation ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+        IF(MSVC)
+                set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+                TARGET_LINK_LIBRARIES(ten_tusscher_3_percolation PUBLIC utils)
+        endif()
+else()
+    ADD_LIBRARY(ten_tusscher_3_percolation ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+################################################################################

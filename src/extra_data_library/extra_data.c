@@ -356,3 +356,95 @@ SET_EXTRA_DATA(set_extra_data_for_benchmark) {
 
     return (void*)initial_conditions;
 }
+
+SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
+
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    real plain_center = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config->config_data, "plain_center");
+
+    real border_zone_size = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config->config_data, "border_zone_size");
+
+    real sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
+    
+    int num_par = 6;
+    int num_tt_par = 12;
+
+//num_tt_par = 12 initial conditions of tt3, num_par 6, extra data
+
+    *extra_data_size = sizeof(real)*(num_par+num_tt_par+num_active_cells);
+
+    real *extra_data = (real*)malloc(*extra_data_size);
+
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
+
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
+
+    real Ki = 138.3;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki, config->config_data, "Ki");
+
+    real GNa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_multiplicator, config->config_data, "GNa_multiplicator");
+
+    real GCa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCa_multiplicator, config->config_data, "GCa_multiplicator");
+
+    real Vm_modifier = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config->config_data, "Vm_modifier");
+
+    // Extra parameters section
+    extra_data[0] = atpi;
+    extra_data[1] = Ko;
+    extra_data[2] = Ki;
+    extra_data[3] = Vm_modifier;
+    extra_data[4] = GNa_multiplicator;
+    extra_data[5] = GCa_multiplicator;
+  
+    // Extra initial conditions section
+    extra_data[6] = -79.5089;
+    extra_data[7] = 0.0056681;
+    extra_data[8] = 0.554756;
+    extra_data[9] = 0.54673;
+    extra_data[10] = 0.000565801;
+    extra_data[11] = 0.00486328;
+    extra_data[12] = 0.787571;
+    extra_data[13] = 0.998604;
+    extra_data[14] = 0.998842;
+    extra_data[15] = 7.23073e-05;
+    extra_data[16] = 6.2706e-08;
+    extra_data[17] = 0.412462;
+
+    // Fibrotic cells configuration
+	#pragma omp parallel for
+    for (uint32_t i = 0; i < num_active_cells; i++) {
+
+        if(FIBROTIC(ac[i])) {
+            extra_data[i+num_par+num_tt_par] = 0.0;
+        }
+        else if(BORDER_ZONE(ac[i])) {
+
+            real center_x = (real)ac[i]->center.x;
+            real center_y = (real)ac[i]->center.y;
+            //TODO: Maybe we want the distance from the Z as well
+            //real center_z = (real)ac[i]->center_z;
+
+            real distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
+            distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;
+            extra_data[i+num_par+num_tt_par] = distanceFromCenter;
+
+        }
+        else {
+            extra_data[i+num_par+num_tt_par] = 1.0;
+        }
+
+    }
+
+    return (void*)extra_data;
+}

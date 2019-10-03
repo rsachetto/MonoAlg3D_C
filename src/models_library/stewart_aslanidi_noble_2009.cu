@@ -146,6 +146,11 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     for (int i = 0; i < NEQ; i++)
         STATES[i] = *((real*)((char*)sv_ + pitch * i) + threadID_);
 
+    // This statement if to avoid instability problems when we have a transmembrane potential below -70mV, 
+    // which generates NaN on the solution from the ODEs
+    if (STATES[0] < INITIAL_V)
+        STATES[0] = INITIAL_V;
+
     // Constants
     real CONSTANTS[52];
     CONSTANTS[0] = 8314.472;
