@@ -1732,8 +1732,8 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
     struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
     
     // TODO: Try to avoid those magic numbers ...
-    real rpmj = the_grid->the_purkinje->the_network->rpmj * 0.3;  // Mitchell + FitzHugh
-    //real rpmj = the_grid->the_purkinje->the_network->rpmj * 0.1;    // ARPF + TenTusscher 2006
+    //real rpmj = the_grid->the_purkinje->the_network->rpmj * 0.3;  // Mitchell + FitzHugh
+    real rpmj = the_grid->the_purkinje->the_network->rpmj * 0.1;    // ARPF + TenTusscher 2006
     real Gpmj = 1.0 / rpmj; 
 
     if(the_ode_solver->gpu) 
