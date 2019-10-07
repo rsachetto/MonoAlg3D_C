@@ -58,7 +58,6 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
                                                                      float *plain_coordinates, bool clip_with_bounds,
                                                                      float *bounds, bool read_only_values, const char scalar_name)
 {
-    static bool mesh_already_loaded =  false;
 
     if(the_purkinje == NULL) 
     {
@@ -69,25 +68,16 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
     {
         *vtk_grid = new_vtk_polydata_grid();
     }
-    else
-    {
-        if(!(*vtk_grid) && mesh_already_loaded)
-        {
+     else {
+        if(!(*vtk_grid)) {
             fprintf(stderr,
-                    "Function new_vtk_polydata_grid_from_purkinje_grid can only be called with read_only_values if the grid is already loaded");
+                    "Function new_vtk_unstructured_grid_from_alg_grid can only be called with read_only_values if the grid is already loaded!\n");
             exit(EXIT_FAILURE);
         }
 
-        if(mesh_already_loaded)
-        {
-            assert(*vtk_grid);
-            arrfree((*vtk_grid)->values);
-            (*vtk_grid)->values = NULL;
-        }
-        else
-        {
-            *vtk_grid = new_vtk_polydata_grid();
-        }
+        assert(*vtk_grid);
+        arrfree((*vtk_grid)->values);
+        (*vtk_grid)->values = NULL;
     }
 
     struct cell_node *grid_cell = the_purkinje->first_cell;
@@ -131,8 +121,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
             // --------------------------------------------------------------------------------
             
             // This 'if' statement do not let us re-insert points and lines to the arrays ... =)
-            if(mesh_already_loaded && read_only_values)
-            {
+            if(read_only_values) {
                 grid_cell = grid_cell->next;
                 u = u->next;
                 continue;
@@ -168,13 +157,10 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
         u = u->next;
     }
 
-    if(!mesh_already_loaded)
-    {
-        (*vtk_grid)->num_points = id;
-        (*vtk_grid)->num_lines = the_purkinje->network->total_edges;
 
-        if(read_only_values)
-            mesh_already_loaded = true;
+    if(!read_only_values) {
+        (*vtk_grid)->num_lines = the_purkinje->network->total_edges;
+        (*vtk_grid)->num_points = id;
     }
 
 }

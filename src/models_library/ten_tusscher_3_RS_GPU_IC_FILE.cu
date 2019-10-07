@@ -1,9 +1,84 @@
 #include <stddef.h>
 #include "../monodomain/constants.h"
 #include "model_gpu_utils.h"
+extern "C" {
+    #include "../string/sds.h"
+}
+
+#include "../single_file_libraries/stb_ds.h"
 
 #include "ten_tusscher_3_RS.h"
 
+
+extern "C" bool get_ic_from_file(real *params, real *ICs) {
+
+    string_array lines = read_lines("ICs_1000configs.txt");
+
+    size_t num_lines = arrlen(lines);
+    int tmp;
+
+    bool found = false;
+
+    for(size_t i = 0; i < num_lines; i++) {
+
+        sds *splitted_line = sdssplit(lines[i], " | ", &tmp);
+
+        int num_par;
+        sds *parameters = NULL;
+
+        if(splitted_line[2][0] == '1') {
+
+            parameters = sdssplit(splitted_line[1], " ", &num_par);
+
+            for(int p = 0; p < num_par; p++) {
+                
+                real value = strtof(parameters[p], NULL);
+
+                if(params[p] != value)  { 
+                    printf("%lf %lf\n", params[p], value);
+                    break;
+                }
+
+                found = true;
+            
+            }
+
+            if (found) { 
+                
+                int num_ICs;
+                sds *ICs_string = sdssplit(splitted_line[4], " ", &num_ICs);
+                
+                real V = strtof(splitted_line[3], NULL);
+
+               // printf("%d\n", num_ICs);
+               // printf("%lf\n", V);
+                ICs[0] = V;
+
+                for(int j = 0; j < NEQ-1; j++) {
+                    ICs[j+1] =  strtof(ICs_string[j], NULL);
+                    //printf("%s - %g\n", ICs_string[j], ICs[j+1]);
+                }
+
+                sdsfreesplitres(splitted_line, tmp);  
+                sdsfreesplitres(parameters, num_par);  
+                break; 
+            }
+
+        }
+
+        sdsfreesplitres(splitted_line, tmp);  
+        if(parameters) sdsfreesplitres(parameters, num_par);  
+
+    }
+
+    for(size_t i = 0; i < num_lines; i++) {
+        free(lines[i]);   
+    }
+
+    arrfree(lines);
+    return found;
+    
+}
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
@@ -31,8 +106,30 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));    
+    real *ICs_device = NULL;
+    
+    if(extra_data) {        
+        size_t mem = NEQ*sizeof(real);         
+        real *ICs = (real*) malloc(mem);
+        
+        if(get_ic_from_file((real*)extra_data, ICs)) {            
+            check_cuda_error(cudaMalloc((void **)&ICs_device, mem));
+            check_cuda_error(cudaMemcpy(ICs_device, ICs, mem, cudaMemcpyHostToDevice));        
+            free(ICs);
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, NULL, num_volumes);
+        }
+        else {
+            print_to_stderr_and_file_and_exit("Combination not found: %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",  
+                                               ((real*)extra_data)[0], ((real*)extra_data)[1],((real*)extra_data)[2],
+                                               ((real*)extra_data)[3], ((real*)extra_data)[4], ((real*)extra_data)[5], 
+                                               ((real*)extra_data)[6]);
+            free(ICs);
+
+            exit(0);
+        }
+    }
+
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, ICs_device, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();
@@ -118,25 +215,41 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     }
 }
 
-__global__ void kernel_set_model_inital_conditions(real *sv, real*IC, int num_volumes)
+__global__ void kernel_set_model_inital_conditions(real *sv, real *ICs, int num_volumes)
 {
     // Thread ID
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if(threadID < num_volumes) {
 
-        *((real *) ((char *) sv + pitch * 0) + threadID) = INITIAL_V;   // V;       millivolt
-        *((real *) ((char *) sv + pitch * 1) + threadID) = 0.0f; //M
-        *((real *) ((char *) sv + pitch * 2) + threadID) = 0.75; //H
-        *((real *) ((char *) sv + pitch * 3) + threadID) = 0.75; //J
-        *((real *) ((char *) sv + pitch * 4) + threadID) = 0.0f; //Xr1
-        *((real *) ((char *) sv + pitch * 5) + threadID) = 0.0f; //Xs
-        *((real *) ((char *) sv + pitch * 6) + threadID) = 1.0; //S
-        *((real *) ((char *) sv + pitch * 7) + threadID) = 1.0; //F
-        *((real *) ((char *) sv + pitch * 8) + threadID) = 1.0; //F2
-        *((real *) ((char *) sv + pitch * 9) + threadID) = 0.0; //D_INF
-        *((real *) ((char *) sv + pitch * 10) + threadID) = 0.0; //R_INF
-        *((real *) ((char *) sv + pitch * 11) + threadID) = 0.0; //Xr2_INF
+        if(ICs == NULL) {
+            *((real *) ((char *) sv + pitch * 0) + threadID) = INITIAL_V;   // V;       millivolt
+            *((real *) ((char *) sv + pitch * 1) + threadID) = 0.0f; //M
+            *((real *) ((char *) sv + pitch * 2) + threadID) = 0.75; //H
+            *((real *) ((char *) sv + pitch * 3) + threadID) = 0.75; //J
+            *((real *) ((char *) sv + pitch * 4) + threadID) = 0.0f; //Xr1
+            *((real *) ((char *) sv + pitch * 5) + threadID) = 0.0f; //Xs
+            *((real *) ((char *) sv + pitch * 6) + threadID) = 1.0; //S
+            *((real *) ((char *) sv + pitch * 7) + threadID) = 1.0; //F
+            *((real *) ((char *) sv + pitch * 8) + threadID) = 1.0; //F2
+            *((real *) ((char *) sv + pitch * 9) + threadID) = 0.0; //D_INF
+            *((real *) ((char *) sv + pitch * 10) + threadID) = 0.0; //R_INF
+            *((real *) ((char *) sv + pitch * 11) + threadID) = 0.0; //Xr2_INF
+        }
+        else {
+            *((real *) ((char *) sv + pitch * 0) + threadID) = ICs[0];   // V;       millivolt
+            *((real *) ((char *) sv + pitch * 1) + threadID) = ICs[1]; //M
+            *((real *) ((char *) sv + pitch * 2) + threadID) = ICs[2]; //H
+            *((real *) ((char *) sv + pitch * 3) + threadID) = ICs[3]; //J
+            *((real *) ((char *) sv + pitch * 4) + threadID) = ICs[4]; //Xr1
+            *((real *) ((char *) sv + pitch * 5) + threadID) = ICs[5]; //Xs
+            *((real *) ((char *) sv + pitch * 6) + threadID) = ICs[6]; //S
+            *((real *) ((char *) sv + pitch * 7) + threadID) = ICs[7]; //F
+            *((real *) ((char *) sv + pitch * 8) + threadID) = ICs[8]; //F2
+            *((real *) ((char *) sv + pitch * 9) + threadID) = ICs[9]; //D_INF
+            *((real *) ((char *) sv + pitch * 10) + threadID) = ICs[10]; //R_INF
+            *((real *) ((char *) sv + pitch * 11) + threadID) = ICs[11]; //Xr2_INF
+        }
     }
 }
 

@@ -118,6 +118,11 @@ static int read_and_render_files(struct visualization_options *options) {
         return SIMULATION_FINISHED;
 
     }
+    
+    if(current_file > num_files) {
+        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Settting start_at to %d\n", current_file, num_files, num_files);        
+        current_file = num_files-1;
+    }
 
     int step;
     int step1;

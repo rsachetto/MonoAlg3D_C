@@ -65,7 +65,7 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
 
     if(is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
-        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
     }
 
     real stim_current = 0.0;
@@ -103,7 +103,7 @@ SET_SPATIAL_STIM(stim_if_y_less_than) {
 
     if(is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
-        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
     }
 
 
@@ -143,7 +143,7 @@ SET_SPATIAL_STIM(stim_if_y_greater_or_equal_than) {
 
     if(is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
-        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
     }
 
     real stim_current = 0.0;
@@ -185,7 +185,7 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 
     if(is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
-        struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
     }
 
     size_t s_size;

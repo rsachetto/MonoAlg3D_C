@@ -37,7 +37,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
     // The command line options always overwrite the config file
     parse_options(argc, argv, *options);
     //This variable is from file_utils.h
-    no_stdout = (*(options))->quiet;
+    set_no_stdout( (*(options))->quiet);
 
     // Create the output dir and the logfile
     if((*(options))->save_mesh_config) {
@@ -72,7 +72,8 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
             print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
                                      buffer_ini);
 
-            cp_file(buffer_ini, (*(options))->config_file);
+            //moved to monodomain solver
+            //cp_file(buffer_ini, (*(options))->config_file);
 
             sdsfree(buffer_log);
             sdsfree(buffer_ini);
@@ -194,11 +195,7 @@ int main(int argc, char **argv) {
         #endif //COMPILE_OPENGL
     } else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
-        //free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
-
-        solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
         free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
-
     }
 
     return EXIT_SUCCESS;

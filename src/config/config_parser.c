@@ -1532,7 +1532,7 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     WRITE_NAME_VALUE("derefinement_bound", config->deref_bound, "f");
     WRITE_NAME_VALUE("refine_each", config->refine_each, "d");
     WRITE_NAME_VALUE("derefine_each", config->derefine_each, "d");
-    printf("\n");
+    fprintf(ini_file, "\n");
 
 
     WRITE_INI_SECTION(ODE_SECTION);
@@ -1540,69 +1540,69 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     WRITE_NAME_VALUE("use_gpu", config->gpu, "d");
     WRITE_NAME_VALUE("gpu_id", config->gpu_id, "d");
     WRITE_NAME_VALUE("library_file", config->model_file_path, "s");
-    printf("\n");
+    fprintf(ini_file, "\n");
 
     for(long i = 0; i < hmlen(config->stim_configs); i++) {
         struct string_voidp_hash_entry e = config->stim_configs[i];
         WRITE_INI_SECTION(e.key);
         struct config *tmp = (struct config*) e.value;
         write_ini_options(tmp, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->domain_config) {
         WRITE_INI_SECTION(DOMAIN_SECTION);
         write_ini_options(config->domain_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->purkinje_config) {
         WRITE_INI_SECTION(PURKINJE_SECTION);
         write_ini_options(config->purkinje_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
 
     }
 
     if(config->assembly_matrix_config) {
         WRITE_INI_SECTION(MATRIX_ASSEMBLY_SECTION);
         write_ini_options(config->assembly_matrix_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->update_monodomain_config) {
         WRITE_INI_SECTION(UPDATE_MONODOMAIN_SECTION);
         write_ini_options(config->update_monodomain_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->linear_system_solver_config) {
         WRITE_INI_SECTION(LINEAR_SYSTEM_SOLVER_SECTION);
         write_ini_options(config->linear_system_solver_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->extra_data_config) {
         WRITE_INI_SECTION(EXTRA_DATA_SECTION);
         write_ini_options(config->extra_data_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->save_mesh_config) {
         WRITE_INI_SECTION(SAVE_RESULT_SECTION);
         write_ini_options(config->save_mesh_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->save_state_config) {
         WRITE_INI_SECTION(SAVE_STATE_SECTION);
         write_ini_options(config->save_state_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     if(config->restore_state_config) {
         WRITE_INI_SECTION(RESTORE_STATE_SECTION);
         write_ini_options(config->restore_state_config, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
     for(long i = 0; i < hmlen(config->modify_domain_configs); i++) {
@@ -1610,7 +1610,7 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
         WRITE_INI_SECTION(e.key);
         struct config *tmp = (struct config*) e.value;
         write_ini_options(tmp, ini_file);
-        printf("\n");
+        fprintf(ini_file, "\n");
     }
 
 

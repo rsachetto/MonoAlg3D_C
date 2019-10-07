@@ -552,6 +552,7 @@ sds sdscatvprintf(sds s, const char *fmt, va_list ap) {
  * Often you need to create a string from scratch with the printf-alike
  * format. When this is the need, just use sdsempty() as the target string:
  *
+ * 
  * s = sdscatprintf(sdsempty(), "... your format ...", args);
  */
 sds sdscatprintf(sds s, const char *fmt, ...) {

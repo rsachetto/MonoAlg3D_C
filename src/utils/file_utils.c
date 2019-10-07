@@ -19,7 +19,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-static FILE *logfile = NULL;
+static struct logt L = {0, 0};
 
 char * get_dir_from_path(const char * path) {
     char *last_slash = NULL;
@@ -29,10 +29,15 @@ char * get_dir_from_path(const char * path) {
     return parent;
 }
 
-void print_to_stdout_and_file(char const *fmt, ...) {
-    va_list ap;    
+void set_no_stdout(bool val) {
+    L.quiet = val;
+}
 
-    if (!no_stdout) {
+void print_to_stdout_and_file(char const *fmt, ...) {
+    
+    va_list ap;    
+    
+    if (!L.quiet) {
         va_start(ap, fmt);
         vprintf(fmt, ap);
         fflush(stdout);
@@ -40,9 +45,9 @@ void print_to_stdout_and_file(char const *fmt, ...) {
     }
 
     va_start(ap, fmt);
-    if (logfile) {
-        vfprintf(logfile, fmt, ap);
-        fflush(logfile);
+    if (L.fp) {
+        vfprintf(L.fp, fmt, ap);
+        fflush(L.fp);
     }
     va_end(ap);
 }
@@ -54,19 +59,18 @@ void print_to_stderr_and_file_and_exit(char const *fmt, ...) {
     fflush(stderr);
     va_end(ap);
     va_start(ap, fmt);
-    if (logfile) {
-        vfprintf(logfile, fmt, ap);
-        fflush(logfile);
+    if (L.fp) {
+        vfprintf(L.fp, fmt, ap);
+        fflush(L.fp);
     }
     va_end(ap);
     exit(EXIT_FAILURE);
 }
 
 void open_logfile(const char *path) {
+    L.fp = fopen(path, "w");
 
-    logfile = fopen(path, "w");
-
-    if (logfile == NULL) {
+    if (L.fp == NULL) {
         fprintf(stderr, "Error opening %s, printing output only in the sdtout (Terminal)\n", path);
     } else {
         printf("Log will be saved in %s\n", path);
@@ -74,7 +78,7 @@ void open_logfile(const char *path) {
 }
 
 void close_logfile() {
-    if (logfile) fclose(logfile);
+    if (L.fp) fclose(L.fp);
 }
 
 

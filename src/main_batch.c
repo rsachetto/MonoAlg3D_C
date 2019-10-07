@@ -371,7 +371,7 @@ int main(int argc, char **argv) {
     char *initial_out_dir_name = strdup(out_dir_name);
 
     
-    no_stdout = options->quiet;
+    set_no_stdout(options->quiet);
 
     output_folder = batch_options->output_folder;
     options->draw = false;
@@ -467,7 +467,7 @@ int main(int argc, char **argv) {
 #endif
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 
-        options_to_ini_file(options, buffer_ini);
+        //options_to_ini_file(options, buffer_ini);
         sdsfree(buffer_ini);
 
         free_current_simulation_resources(monodomain_solver, ode_solver, the_grid);

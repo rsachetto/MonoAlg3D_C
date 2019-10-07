@@ -695,6 +695,17 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
     initialize_grid_with_square_mesh(time_info, config, the_grid);
+    
+    if(seed == 0)
+        seed = (unsigned)time(NULL) + getpid();
+
+    srand(seed);
+
+    sds seed_char = sdscatprintf(sdsempty(), "%u", seed);
+
+    stbds_shput_dup_value(config->config_data, "seed", seed_char);
+    sdsfree(seed_char);
+
     set_plain_fibrosis(the_grid, phi, seed);
 
     return 1;
