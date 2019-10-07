@@ -81,7 +81,7 @@ cuboid_tt2004_gpu/
 tags
 scripts/output
 scripts/animations/frames
-scripts/animations/video
+scripts/animations/videos
 batch_simulations/
 *.vscode*
 /src/main_graph_analyzer.c
