@@ -6,6 +6,7 @@
 #define MONOALG3D_GRID_H
 
 #include "../cell/cell.h"
+#include "../../graph/graph.h"
 #include "../grid_purkinje/grid_purkinje.h"
 #include "../../common_types/common_types.h"
 
@@ -31,8 +32,9 @@ struct grid {
     struct cell_node **active_cells;
     bool adaptive;
 
+    // Purkinje section
     struct grid_purkinje *purkinje;
-
+    
 };
 
 
@@ -78,6 +80,8 @@ void initialize_grid_purkinje (struct grid *the_grid);
 void construct_grid_purkinje (struct grid *the_grid);
 void translate_mesh_to_origin(struct grid *grid);
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b);
+
 struct terminal* link_purkinje_to_endocardium (struct grid *the_grid);
+void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals);
 
 #endif //MONOALG3D_GRID_H

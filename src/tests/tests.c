@@ -353,7 +353,7 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
     omp_set_num_threads(np);
     #endif
 
-    no_stdout = true;
+    set_no_stdout(true);
 
     solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 

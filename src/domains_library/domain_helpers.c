@@ -639,10 +639,7 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
 
     struct cell_node *grid_cell;
 
-    if(fib_seed == 0)
-        fib_seed = (unsigned)time(NULL) + getpid();
-
-    srand(fib_seed);
+    
 
     print_to_stdout_and_file("Using %u as seed\n", fib_seed);
 

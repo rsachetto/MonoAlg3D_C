@@ -15,7 +15,10 @@
 
 #include "../common_types/common_types.h"
 
-bool no_stdout;
+struct logt {
+  FILE *fp;
+  bool quiet;
+};
 
 void print_to_stdout_and_file(char const *fmt, ...);
 void print_to_stderr_and_file_and_exit(char const *fmt, ...);
@@ -35,6 +38,7 @@ int remove_directory(const char *path);
 size_t base64_decode(unsigned char* out, const char *src, size_t len, size_t *bytes_read);
 char * get_dir_from_path(const char * path);
 bool check_simulation_completed(char *simulation_dir);
+void set_no_stdout(bool val);
 
 real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
 real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);

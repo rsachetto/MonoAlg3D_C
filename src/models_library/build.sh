@@ -6,10 +6,11 @@ COMPILE_MODEL_LIB () {
     local MODEL_FILE_GPU=$3
     local COMMON_HEADERS="model_common.h $4"
     local EXTRA_C_FLAGS=$5
+    local EXTRA_STATIC_LIBS=$6
 
     local MODEL_SOURCES="$MODEL_FILE_CPU"    
 
-    local MODELS_STATIC_DEPS="config_helpers utils"
+    local MODELS_STATIC_DEPS="config_helpers utils $EXTRA_STATIC_LIBS"
  
     if [ -n "$CUDA_FOUND" ]; then
         MODELS_EXTRA_LIB_PATH=$CUDA_LIBRARY_PATH
@@ -45,6 +46,13 @@ MODEL_FILE_CPU="ten_tusscher_3_RS_CPU.c"
 MODEL_FILE_GPU="ten_tusscher_3_RS_GPU.cu"
 COMMON_HEADERS="ten_tusscher_3_RS.h"
 COMPILE_MODEL_LIB "ten_tusscher_3_endo" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DENDO"
+##########################################################
+
+############## TEN TUSCHER 3 ENDO ##############################
+MODEL_FILE_CPU="ten_tusscher_3_RS_CPU.c"
+MODEL_FILE_GPU="ten_tusscher_3_RS_GPU_IC_FILE.cu"
+COMMON_HEADERS="ten_tusscher_3_RS.h"
+COMPILE_MODEL_LIB "ten_tusscher_3_endo_ic_file" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DENDO" "string"
 ##########################################################
 
 ############### BONDARENKO ##############################
