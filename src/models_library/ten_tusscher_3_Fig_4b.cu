@@ -125,8 +125,8 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
     *((real *) ((char *) sv + pitch * 11) + threadID) = 0.482373;
 */
 
-	// Steady-State Healthy cell after 12000ms with INaCa = 100%
-/*
+    // Steady-State Healthy cell after 12000ms with INaCa = 100%
+    /*
 	*((real *) ((char *) sv + pitch * 0) + threadID) = -86.0262;
 	*((real *) ((char *) sv + pitch * 1) + threadID) = 0.00144818;
 	*((real *) ((char *) sv + pitch * 2) + threadID) = 0.766091;
@@ -138,9 +138,8 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 	*((real *) ((char *) sv + pitch * 8) + threadID) = 0.999543;
 	*((real *) ((char *) sv + pitch * 9) + threadID) = 3.03253e-05;
 	*((real *) ((char *) sv + pitch * 10) + threadID) = 2.11624e-08;
-	*((real *) ((char *) sv + pitch * 11) + threadID) = 0.479452;
+    *((real *) ((char *) sv + pitch * 11) + threadID) = 0.479452;
 */
-
     // Steady-State Full fibrotic cell after 12000ms with INaCa = 60%
 /*
     *((real *) ((char *) sv + pitch * 0) + threadID) = -79.5526;
@@ -158,6 +157,7 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 */
 
     // Steady-State Full fibrotic cell after 12000ms with INaCa = 100%
+/*
     *((real *) ((char *) sv + pitch * 0) + threadID) = -79.3449;
     *((real *) ((char *) sv + pitch * 1) + threadID) = 0.00586152;
     *((real *) ((char *) sv + pitch * 2) + threadID) = 0.548496;
@@ -170,7 +170,22 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
     *((real *) ((char *) sv + pitch * 9) + threadID) = 7.39051e-05;
     *((real *) ((char *) sv + pitch * 10) + threadID) = 6.4443e-08;
     *((real *) ((char *) sv + pitch * 11) + threadID) = 0.410807;
-    }
+*/
+
+// Steady-State Sachetto
+*((real *) ((char *) sv + pitch * 0) + threadID)  = -79.342369;
+*((real *) ((char *) sv + pitch * 1) + threadID)  = 0.005865;
+*((real *) ((char *) sv + pitch * 2) + threadID)  = 0.547718;
+*((real *) ((char *) sv + pitch * 3) + threadID)  = 0.311839;
+*((real *) ((char *) sv + pitch * 4) + threadID)  = 0.051881;
+*((real *) ((char *) sv + pitch * 5) + threadID)  = 0.015125;
+*((real *) ((char *) sv + pitch * 6) + threadID)  = 0.209739;
+*((real *) ((char *) sv + pitch * 7) + threadID)  = 0.829223;
+*((real *) ((char *) sv + pitch * 8) + threadID)  = 0.998682;
+*((real *) ((char *) sv + pitch * 9) + threadID)  = 0.000074;
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0.000000;
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.410782;
+}
 }
 
 
