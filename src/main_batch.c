@@ -339,12 +339,12 @@ int main(int argc, char **argv) {
 
     int last_rank_extra = total_simulations % num_max_proc;
 
-    simulation_number_start = rank * num_simulations;
-
     if (rank == num_max_proc - 1) {
         num_simulations += last_rank_extra;
     }
 
+    simulation_number_start = rank * num_simulations;
+    
     if (num_simulations == 0) {
         MPI_Finalize();
         return EXIT_SUCCESS;
