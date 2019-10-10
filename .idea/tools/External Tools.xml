@@ -1,0 +1,23 @@
+<toolSet name="External Tools">
+  <tool name="build_release" description="Build Release" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
+    <exec>
+      <option name="COMMAND" value="$USER_HOME$/Projects/MonoAlg3D_C/build.sh" />
+      <option name="PARAMETERS" value="-l release" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Projects/MonoAlg3D_C" />
+    </exec>
+  </tool>
+  <tool name="build_clean" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
+    <exec>
+      <option name="COMMAND" value="$USER_HOME$/Projects/MonoAlg3D_C/build.sh" />
+      <option name="PARAMETERS" value="clean" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Projects/MonoAlg3D_C" />
+    </exec>
+  </tool>
+  <tool name="build_debug" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
+    <exec>
+      <option name="COMMAND" value="$USER_HOME$/Projects/MonoAlg3D_C/build.sh" />
+      <option name="PARAMETERS" value="-l debug" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Projects/MonoAlg3D_C" />
+    </exec>
+  </tool>
+</toolSet>

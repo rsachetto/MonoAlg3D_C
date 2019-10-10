@@ -21,6 +21,7 @@ GLOBAL_FORCE_COMPILATION=""
 QUIET=''
 
 DEFAULT_BUILD_DIR="build_"
+COMPILE_COMMANDS_FILE="${ROOT_DIR}/compile_commands.json"
 
 declare -A COMPILED_STATIC_LIBS
 declare -A COMPILED_SHARED_LIBS
@@ -29,6 +30,7 @@ PRINT_USAGE () {
 	echo "Usage $0 [flags] [build_type]" >&2;
 	echo "Valid flags:" >&2;
 	echo "-f  - force recompilation" >&2;
+	echo "-l  - write build log on build_log.txt" >&2;
 	echo "-q  - quiet compilation. Only errors and warnings will be outputed" >&2;
 	exit 1
 }
@@ -40,9 +42,10 @@ GET_BUILD_OPTIONS () {
 	fi
 
 	while [ $# -gt 0 ] && [ "$1" != "--" ]; do
-		while getopts "fq" opt; do
+		while getopts "fql" opt; do
 			case $opt in
 			f) GLOBAL_FORCE_COMPILATION='y' ;;
+			l) WRITE_COMPILE_COMMANDS='y' ;;
 			q) QUIET='y' ;;
 			\?) PRINT_USAGE "$@";;
 		esac
@@ -106,15 +109,64 @@ RECOMPILE_OR_NOT () {
 
 }
 
+CREATE_COMPILE_COMMANDS_FILE() {
+	if [ -z "$COMPILE_COMMANDS_CREATED" ]; then
+		
+		if [ -f "$WRITE_COMPILE_COMMANDS" ]; then
+			rm "$COMPILE_COMMANDS_FILE"
+		fi
+
+		echo "[" > "$COMPILE_COMMANDS_FILE"
+		echo "]" >> "$COMPILE_COMMANDS_FILE"
+		INSERT_TO_LINE=2
+		COMPILE_COMMANDS_CREATED='y'
+	fi
+}
+
+ADD_COMPILE_COMMAND() {
+
+  COMMAND=$1
+	FILE_FULL_PATH=$2
+
+	printf -v ESCAPED_COMMAND "%q" "$COMMAND"
+
+	local FILE
+	FILE=$(basename "$FILE_FULL_PATH")
+
+	local DIR
+	DIR=$(dirname "$FILE_FULL_PATH")
+
+	CREATE_COMPILE_COMMANDS_FILE
+
+	sed -i "${INSERT_TO_LINE}i{" "$COMPILE_COMMANDS_FILE"
+	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+
+	sed -i "${INSERT_TO_LINE}i\"directory\": \"$DIR\", " "$COMPILE_COMMANDS_FILE"
+	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+
+	sed -i "${INSERT_TO_LINE}i\"command\": \"$ESCAPED_COMMAND\", " "$COMPILE_COMMANDS_FILE"
+	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+
+	sed -i "${INSERT_TO_LINE}i\"file\": \"$FILE\" " "$COMPILE_COMMANDS_FILE"
+	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+
+  sed -i "${INSERT_TO_LINE}i    }," "$COMPILE_COMMANDS_FILE"
+	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+}
+
 ECHO_AND_EXEC_COMMAND() {
+
 	if [ -z "$QUIET" ]; then
 		echo -e "$1"
 	fi
+	#EXEC THE COMMAND
 	$1
 }
 
+
+
 COMPILE_EXECUTABLE () {
-  	local EXECUTABLE_NAME=$1
+  local EXECUTABLE_NAME=$1
 	local SOURCES=$2
 	local HEADERS=$3
 	local STATIC_DEPS_LIST=$4
@@ -128,17 +180,17 @@ COMPILE_EXECUTABLE () {
 	  STATIC_DEPS+=("${COMPILED_STATIC_LIBS[$dep]}")
 	done
 
-  	local DYNAMIC_DEPS=()
+  local DYNAMIC_DEPS=()
 	for dep in $DYNAMIC_DEPS_LIST; do
 	  DYNAMIC_DEPS+=("-l${dep}")
 	done
 
-  	local EXTRA_LIBRARY_PATH=()
+  local EXTRA_LIBRARY_PATH=()
 	for libpath in $EXTRA_LIB_PATH_LIST; do
 	  EXTRA_LIBRARY_PATH+=("-L${libpath}")
 	done
 
-  	local BUILD_DIR=$ROOT_DIR/$RUNTIME_OUTPUT_DIRECTORY
+  local BUILD_DIR=$ROOT_DIR/$RUNTIME_OUTPUT_DIRECTORY
 
 	if [ ! -d "$BUILD_DIR" ]; then
 		mkdir -p "$BUILD_DIR"
@@ -194,15 +246,20 @@ COMPILE_EXECUTABLE () {
 
 	if [ -n "$FORCE_COMPILATION" ]; then
 		local MY_C_FLAGS="$C_FLAGS $EXTRA_C_FLAGS"
-		ECHO_AND_EXEC_COMMAND "gcc $MY_C_FLAGS $SOURCES ${STATIC_DEPS[*]} -o $BUILD_DIR/${EXECUTABLE_NAME} ${EXTRA_LIBRARY_PATH[*]} ${DYNAMIC_DEPS[*]}"
-		touch $TIME_FILE
-	fi
 
+		local COMPILER_COMMAND="gcc $MY_C_FLAGS $SOURCES ${STATIC_DEPS[*]} -o $BUILD_DIR/${EXECUTABLE_NAME} ${EXTRA_LIBRARY_PATH[*]} ${DYNAMIC_DEPS[*]}"
+
+		ECHO_AND_EXEC_COMMAND "${COMPILER_COMMAND}"
+		touch "$TIME_FILE"
+
+		ADD_COMPILE_COMMAND "$COMPILER_COMMAND"  "$PWD/${SOURCES}"
+
+	fi
 }
 
 COMPILE_OBJECT () {
 
-	local SRC_FILE=$1
+ local SRC_FILE=$1
 	local OBJ_FILE=$2
 
 	local MY_C_FLAGS="$C_FLAGS $3"
@@ -221,6 +278,8 @@ COMPILE_OBJECT () {
 		COMPILER=$CXX_COMPILER
 	fi
 
+  COMPILER_COMMAND=''
+
 	if [ -n "$FORCE_COMPILATION" ] || [ "$(RECOMPILE_OR_NOT "$OBJ_FILE" "$SRC_FILE")" -gt "0" ]; then
 		if [[ "$COMPILER" == "$NVCC" ]]; then
 			local X_COMPILER_FLAGS=()
@@ -232,16 +291,23 @@ COMPILE_OBJECT () {
 
 			local S_X_COMPILER_FLAGS
 			S_X_COMPILER_FLAGS=$( printf "%s" "${X_COMPILER_FLAGS[@]}" )
-
-			ECHO_AND_EXEC_COMMAND "$COMPILER $SRC_FILE -c  -o $OBJ_FILE -ccbin $C_COMPILER -m64 -Xcompiler ${S_X_COMPILER_FLAGS} -DNVCC -I$CUDA_INCLUDE_PATH"
+      		COMPILER_COMMAND="$COMPILER $SRC_FILE -c  -o $OBJ_FILE -ccbin $C_COMPILER -m64 -Xcompiler ${S_X_COMPILER_FLAGS} -DNVCC -I$CUDA_INCLUDE_PATH"
 
 		else 
-			ECHO_AND_EXEC_COMMAND "$COMPILER $MY_C_FLAGS -c $SRC_FILE -o $OBJ_FILE"
+			COMPILER_COMMAND="$COMPILER $MY_C_FLAGS -c $SRC_FILE -o $OBJ_FILE"
 		fi
+
+		ECHO_AND_EXEC_COMMAND "$COMPILER_COMMAND"
 
 		ANY_COMPILED="y"
 
 	fi
+
+		
+
+	if [ -n "$WRITE_COMPILE_COMMANDS" ] ; then #&& [[ "$COMPILER" != "$NVCC" ]]
+    	ADD_COMPILE_COMMAND "$COMPILER_COMMAND" "$SRC_FILE"
+  	fi
 
 }
 
@@ -310,7 +376,7 @@ COMPILE_STATIC_LIB () {
 	if [ -n "$ANY_COMPILED_LOCAL" ]; then
 		ECHO_AND_EXEC_COMMAND "$AR rcs $LIB_PATH ${OBJECTS[*]}"
 		ECHO_AND_EXEC_COMMAND "$RANLIB $LIB_PATH"
-		touch $TIME_FILE
+		touch "$TIME_FILE"
 	fi
 
 	COMPILED_STATIC_LIBS[$1]=$LIB_PATH
@@ -387,7 +453,7 @@ COMPILE_SHARED_LIB () {
 		OBJ_FILE=$BUILD_DIR/objs/${OBJ_FILE}.o
 		OBJECTS+=("$OBJ_FILE")
 
-    	COMPILE_OBJECT "${PWD}/$s" "$OBJ_FILE" "${EXTRA_C_FLAGS} -fPIC" "$FORCE_COMPILATION" "$IS_CUDA"
+    COMPILE_OBJECT "${PWD}/$s" "$OBJ_FILE" "${EXTRA_C_FLAGS} -fPIC" "$FORCE_COMPILATION" "$IS_CUDA"
 
 		if [ -z "$ANY_COMPILED_LOCAL" ]; then
 			ANY_COMPILED_LOCAL=$ANY_COMPILED
@@ -405,18 +471,15 @@ COMPILE_SHARED_LIB () {
 
 	if [ -n "$ANY_COMPILED_LOCAL" ]; then
 		ALL_FLAGS="-fPIC $C_FLAGS -shared -o $LIB_PATH ${OBJECTS[*]} ${STATIC_DEPS[*]} ${EXTRA_LIBRARY_PATH[*]} ${DYNAMIC_DEPS[*]}"
-		if [ -n "$IS_CUDA" ]; then
-			ECHO_AND_EXEC_COMMAND "$LINKER $ALL_FLAGS"
-		else
-			ECHO_AND_EXEC_COMMAND "$LINKER $ALL_FLAGS"
-		fi
-		
+
+		ECHO_AND_EXEC_COMMAND "$LINKER $ALL_FLAGS"
+
 		ECHO_AND_EXEC_COMMAND "cp $LIB_PATH $ROOT_DIR/$LIBRARY_OUTPUT_DIRECTORY"
-		touch $TIME_FILE
+		touch "$TIME_FILE"
 
 	fi
 
-  	COMPILED_SHARED_LIBS[$1]=$LIB_PATH
+  COMPILED_SHARED_LIBS[$1]=$LIB_PATH
 
 }
 

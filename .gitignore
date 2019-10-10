@@ -95,7 +95,6 @@ scripts/apd_error/*.png
 scr
 batch_simulations/
 /src/main_graph_analyzer.c
-.idea/encodings.xml
 tests_bin/simulation_result.pvd
 build_*/
 src/raylib/src/rnet.c.review
