@@ -124,5 +124,3 @@ if [ -n "$CRITERION_FOUND" ]; then
     RUNTIME_OUTPUT_DIRECTORY=./tests_bin
     ADD_SUBDIRECTORY "src/tests"
 fi
-
-
