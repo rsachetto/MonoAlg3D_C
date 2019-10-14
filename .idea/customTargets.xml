@@ -4,7 +4,7 @@
     <target id="886d7940-bc3b-4df3-9e39-9d0a7ef03be5" name="Release" projectName="MonoAlg3D_C">
       <configuration id="c2b067f9-40b8-45ca-8ad5-ba1f198ce00e" name="Release">
         <build type="TOOL">
-          <tool actionId="Tool_External Tools_build_debug" />
+          <tool actionId="Tool_External Tools_build_release" />
         </build>
         <clean type="TOOL">
           <tool actionId="Tool_External Tools_build_clean" />

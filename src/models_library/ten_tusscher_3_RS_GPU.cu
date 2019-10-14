@@ -163,11 +163,20 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
             *((real*)((char*)sv) + sv_id) = dt*rDY[0] + *((real*)((char*)sv) + sv_id);
 
-            for(int i = 1; i < 12; i++) {
+            for(int i = 1; i < NEQ; i++) {
                 *((real*)((char*)sv + pitch * i) + sv_id) = rDY[i];
             }
 
         }
+
+		//if(threadID == num_cells_to_solve-1) {
+		//	printf("------------------------\n");
+		//	for(int i = 0; i < NEQ; i++) {
+          //      printf("%lf\n", *((real*)((char*)sv + pitch * i) + sv_id));
+        //	}
+		//	printf("------------------------\n");
+		//}
+
 
     }
 }

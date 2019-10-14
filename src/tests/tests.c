@@ -90,7 +90,7 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
     struct time_info ti = ZERO_TIME_INFO;
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, grid);
-    ((linear_system_solver_fn*)linear_system_solver_config->main_function)(&ti, linear_system_solver_config, grid, &n_iter, &error, false);
+    ((linear_system_solver_fn*)linear_system_solver_config->main_function)(&ti, linear_system_solver_config, grid, grid->num_active_cells, grid->active_cells, &n_iter, &error);
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
 
     int n_lines1;

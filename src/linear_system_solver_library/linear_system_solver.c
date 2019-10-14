@@ -64,7 +64,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     grid_to_csr(the_grid, &val, &I, &J);
 
     uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node** ac = the_grid->active_cells;
+    struct cell_node** active_cells = the_grid->active_cells;
 
     nz = arrlen(val);
     N = num_active_cells;
@@ -84,7 +84,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
     #pragma omp parallel for
     for (uint32_t i = 0; i < num_active_cells; i++) {
-        rhs[i] = ac[i]->b;
+        rhs[i] = active_cells[i]->b;
     }
 
     check_cuda_error(cudaMemcpy(d_x, rhs, N * sizeof(float), cudaMemcpyHostToDevice)); //Result
@@ -180,20 +180,11 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     real alpha, beta, alpham1;
 
     real *rhs; //Vector B
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node** ac = the_grid->active_cells;
-
-    if(solving_purkinje) {
-        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
-        ac = the_grid->purkinje->purkinje_cells;
-    }
-
     rhs = (real*) malloc(sizeof(real)*num_active_cells);
 
     #pragma omp parallel for
     for (uint32_t i = 0; i < num_active_cells; i++) {
-        rhs[i] = ac[i]->b;
+        rhs[i] = active_cells[i]->b;
     }
 
     cudaMemcpy(d_r, rhs, N * sizeof(float), cudaMemcpyHostToDevice); //B
@@ -299,7 +290,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
 
     #pragma omp parallel for
     for (uint32_t i = 0; i < num_active_cells; i++) {
-        ac[i]->v = rhs[i];
+        active_cells[i]->v = rhs[i];
     }
 
     free(rhs);
@@ -328,15 +319,6 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             r1Tz1;
 
 
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node** ac = the_grid->active_cells;
-
-    if(solving_purkinje) {
-        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
-        ac = the_grid->purkinje->purkinje_cells;
-    }
-
-
     *error = 1.0;
     *number_of_iterations = 1;
 
@@ -353,33 +335,33 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
     for (i = 0; i < num_active_cells; i++) {
 
-        if(CG_INFO(ac[i]) == NULL) {
-            INITIALIZE_CONJUGATE_GRADIENT_INFO(ac[i]);
+        if(CG_INFO(active_cells[i]) == NULL) {
+            INITIALIZE_CONJUGATE_GRADIENT_INFO(active_cells[i]);
         }
 
-        struct element *cell_elements = ac[i]->elements;
-        ac[i]->Ax = 0.0;
+        struct element *cell_elements = active_cells[i]->elements;
+        active_cells[i]->Ax = 0.0;
 
         size_t max_el = arrlen(cell_elements);
 
-        for(int el = 0; el < max_el; el++) {
+        for(size_t el = 0; el < max_el; el++) {
             element = cell_elements[el];
-            ac[i]->Ax += element.value * element.cell->v;
+            active_cells[i]->Ax += element.value * element.cell->v;
         }
 
-        CG_R(ac[i]) = ac[i]->b - ac[i]->Ax;
+        CG_R(active_cells[i]) = active_cells[i]->b - active_cells[i]->Ax;
         if(use_preconditioner) {
             real_cpu value = cell_elements[0].value;
             if(value == 0.0) value = 1.0;
-            CG_Z(ac[i]) = (1.0/value) * CG_R(ac[i]); // preconditioner
-            rTz += CG_R(ac[i]) * CG_Z(ac[i]);
-            CG_P(ac[i]) = CG_Z(ac[i]);
+            CG_Z(active_cells[i]) = (1.0/value) * CG_R(active_cells[i]); // preconditioner
+            rTz += CG_R(active_cells[i]) * CG_Z(active_cells[i]);
+            CG_P(active_cells[i]) = CG_Z(active_cells[i]);
         }
         else {
-            CG_P(ac[i]) = CG_R(ac[i]);
+            CG_P(active_cells[i]) = CG_R(active_cells[i]);
         }
 
-        real_cpu r = CG_R(ac[i]);
+        real_cpu r = CG_R(active_cells[i]);
 
         rTr += r * r;
 
@@ -399,16 +381,16 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             #pragma omp parallel for private(element) reduction(+ : pTAp)
             for (i = 0; i < num_active_cells; i++) {
 
-                ac[i]->Ax = 0.0;
-                struct element *cell_elements = ac[i]->elements;
+                active_cells[i]->Ax = 0.0;
+                struct element *cell_elements = active_cells[i]->elements;
 
                 size_t max_el = arrlen(cell_elements);
-                for(int el = 0; el < max_el; el++) {
+                for(size_t el = 0; el < max_el; el++) {
                     element = cell_elements[el];
-                    ac[i]->Ax += element.value * CG_P(element.cell);
+                    active_cells[i]->Ax += element.value * CG_P(element.cell);
                 }
 
-                pTAp += CG_P(ac[i]) * ac[i]->Ax;
+                pTAp += CG_P(active_cells[i]) * active_cells[i]->Ax;
             }
 
             //__________________________________________________________________
@@ -428,17 +410,17 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             // Computes new value of solution: u = u + alpha*p.
             #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
             for (i = 0; i < num_active_cells; i++) {
-                ac[i]->v += alpha * CG_P(ac[i]);
+                active_cells[i]->v += alpha * CG_P(active_cells[i]);
 
-                CG_R(ac[i]) -= alpha * ac[i]->Ax;
+                CG_R(active_cells[i]) -= alpha * active_cells[i]->Ax;
 
-                real_cpu r = CG_R(ac[i]);
+                real_cpu r = CG_R(active_cells[i]);
 
                 if(use_preconditioner) {
-                    real_cpu value = ac[i]->elements[0].value;
+                    real_cpu value = active_cells[i]->elements[0].value;
                     if(value == 0.0) value = 1.0;
-                    CG_Z(ac[i]) = (1.0/value) * r;
-                    r1Tz1 += CG_Z(ac[i]) * r;
+                    CG_Z(active_cells[i]) = (1.0/value) * r;
+                    r1Tz1 += CG_Z(active_cells[i]) * r;
                 }
                 r1Tr1 += r * r;
             }
@@ -462,12 +444,12 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             #pragma omp parallel for
             for (i = 0; i < num_active_cells; i++) {
                 if(use_preconditioner) {
-                    CG_P1(ac[i]) = CG_Z(ac[i]) + beta * CG_P(ac[i]);
+                    CG_P1(active_cells[i]) = CG_Z(active_cells[i]) + beta * CG_P(active_cells[i]);
                 }
                 else {
-                    CG_P1(ac[i]) = CG_R(ac[i]) + beta * CG_P(ac[i]);
+                    CG_P1(active_cells[i]) = CG_R(active_cells[i]) + beta * CG_P(active_cells[i]);
                 }
-                CG_P(ac[i]) = CG_P1(ac[i]);
+                CG_P(active_cells[i]) = CG_P1(active_cells[i]);
             }
 
             rTz = r1Tz1;
@@ -487,14 +469,14 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     if(gpu) {
     #ifdef COMPILE_CUDA
-        gpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error, solving_purkinje);
+        gpu_conjugate_gradient(time_info, config, the_grid, num_active_cells, active_cells, number_of_iterations, error);
     #else
         print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
-        cpu_conjugate_gradient(config, the_grid, number_of_iterations, error, solving_purkinje);
+        cpu_conjugate_gradient(time_info, config, the_grid, num_active_cells, active_cells, number_of_iterations, error);
     #endif
     }
     else {
-        cpu_conjugate_gradient(time_info, config, the_grid, number_of_iterations, error, solving_purkinje);
+        cpu_conjugate_gradient(time_info, config, the_grid, num_active_cells, active_cells, number_of_iterations, error);
     }
 }
 
@@ -549,62 +531,57 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
     real_cpu  sigma,
             precision = tol;
 
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node** ac = the_grid->active_cells;
-
     *error = 1.0;
     *number_of_iterations = 1;
 
     struct element element;
-    int i;
 
     if (*error >= precision)
     {
         //__________________________________________________________________________
         //Jacobi iterations.
-        while (*number_of_iterations < max_its)
-        {
+        while (*number_of_iterations < max_its) {
+
             #pragma omp parallel for private (element,sigma)
-            for (i = 0; i < num_active_cells; i++)
-            {
-                if(JACOBI_INFO(ac[i]) == NULL) {
-                    INITIALIZE_JACOBI_INFO(ac[i]);
+            for (uint32_t i = 0; i < num_active_cells; i++) {
+                if(JACOBI_INFO(active_cells[i]) == NULL) {
+                    INITIALIZE_JACOBI_INFO(active_cells[i]);
                 }
 
-                struct element *cell_elements = ac[i]->elements;
+                struct element *cell_elements = active_cells[i]->elements;
                 sigma = 0.0;
 
                 size_t max_el = arrlen(cell_elements);
 
                 // Do not take the diagonal element
-                for(int el = 1; el < max_el; el++)
-                {
+                for(size_t el = 1; el < max_el; el++) {
                     element = cell_elements[el];
                     sigma += element.value * element.cell->v;
                 }
 
                 real_cpu value = cell_elements[0].value;
-                JACOBI_X_AUX(ac[i]) = (1.0/value)*(ac[i]->b - sigma);
+                JACOBI_X_AUX(active_cells[i]) = (1.0/value)*(active_cells[i]->b - sigma);
             }
             real_cpu residue = 0.0;
             real_cpu sum;
+
             #pragma omp parallel for private (element,sum) reduction (+:residue)
-            for (i = 0; i < num_active_cells; i++)
-            {
-                struct element *cell_elements = ac[i]->elements;
+            for (uint32_t i = 0; i < num_active_cells; i++) {
+
+                struct element *cell_elements = active_cells[i]->elements;
 
                 size_t max_el = arrlen(cell_elements);
 
                 // Do not take the diagonal element
                 sum = 0.0;
-                for(int el = 0; el < max_el; el++)
+                for(size_t el = 0; el < max_el; el++)
                 {
                     element = cell_elements[el];
                     sum += element.value * JACOBI_X_AUX(element.cell);
                 }
 
-                ac[i]->v = JACOBI_X_AUX(ac[i]);
-                residue += pow(ac[i]->b - sum,2);
+                active_cells[i]->v = JACOBI_X_AUX(active_cells[i]);
+                residue += pow(active_cells[i]->b - sum,2);
             }
             // The error is norm of the residue
             residue = sqrt(residue);
@@ -648,28 +625,23 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             r1Tz1;
 
 
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node** ac = the_grid->active_cells;
-
     *error = 1.0;
     *number_of_iterations = 1;
 
     struct element element;
-    int i;
-
     //__________________________________________________________________________
     // Zero all entries on the int_vector x*A
     // And initialize the second guess vector x_aux
     #pragma omp parallel for
-    for (i = 0; i < num_active_cells; i++)
+    for (uint32_t i = 0; i < num_active_cells; i++)
     {
 
-        if(BCG_INFO(ac[i]) == NULL) {
-            INITIALIZE_BICONJUGATE_GRADIENT_INFO(ac[i]);
+        if(BCG_INFO(active_cells[i]) == NULL) {
+            INITIALIZE_BICONJUGATE_GRADIENT_INFO(active_cells[i]);
         }
 
-        BCG_XA(ac[i]) = 0.0;
-        BCG_X_AUX(ac[i]) = ac[i]->v;
+        BCG_XA(active_cells[i]) = 0.0;
+        BCG_X_AUX(active_cells[i]) = active_cells[i]->v;
     }
 
 
@@ -677,21 +649,21 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     //Computes int_vector A*x, x*A
     //xA must be fully calculated to start doing anything over the r_aux vector
     #pragma omp parallel for private (element)
-    for (i = 0; i < num_active_cells; i++)
+    for (uint32_t i = 0; i < num_active_cells; i++)
     {
-        struct element *cell_elements = ac[i]->elements;
-        ac[i]->Ax = 0.0;
+        struct element *cell_elements = active_cells[i]->elements;
+        active_cells[i]->Ax = 0.0;
 
         size_t max_el = arrlen(cell_elements);
 
-        for(int el = 0; el < max_el; el++)
+        for(size_t el = 0; el < max_el; el++)
         {
             element = cell_elements[el];
             uint32_t col = element.column;
-            ac[i]->Ax += element.value * element.cell->v;
+            active_cells[i]->Ax += element.value * element.cell->v;
 
             #pragma omp critical
-            BCG_XA(ac[col]) += element.value * BCG_X_AUX(ac[i]);
+            BCG_XA(active_cells[col]) += element.value * BCG_X_AUX(active_cells[i]);
         }
     }
 
@@ -703,29 +675,29 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     //scalar rTr = r^T * r_aux and
     //sets initial search directions p and p_aux.
     #pragma omp parallel for private (element) reduction(+:rTr,rTz)
-    for (i = 0; i < num_active_cells; i++)
+    for (uint32_t i = 0; i < num_active_cells; i++)
     {
-        struct element *cell_elements = ac[i]->elements;
+        struct element *cell_elements = active_cells[i]->elements;
 
-        BCG_R(ac[i]) = ac[i]->b - ac[i]->Ax;
-        BCG_R_AUX(ac[i]) = ac[i]->b - BCG_XA(ac[i]);
+        BCG_R(active_cells[i]) = active_cells[i]->b - active_cells[i]->Ax;
+        BCG_R_AUX(active_cells[i]) = active_cells[i]->b - BCG_XA(active_cells[i]);
 
         if(use_preconditioner)
         {
             real_cpu value = cell_elements[0].value;
             if(value == 0.0) value = 1.0;
-            BCG_Z(ac[i]) = (1.0/value) * BCG_R(ac[i]); // preconditioner
-            BCG_Z_AUX(ac[i]) = (1.0/value) * BCG_R_AUX(ac[i]);
-            rTz += BCG_R_AUX(ac[i]) * BCG_Z(ac[i]);
-            BCG_P(ac[i]) = BCG_Z(ac[i]);
-            BCG_P_AUX(ac[i]) = BCG_Z_AUX(ac[i]);
+            BCG_Z(active_cells[i]) = (1.0/value) * BCG_R(active_cells[i]); // preconditioner
+            BCG_Z_AUX(active_cells[i]) = (1.0/value) * BCG_R_AUX(active_cells[i]);
+            rTz += BCG_R_AUX(active_cells[i]) * BCG_Z(active_cells[i]);
+            BCG_P(active_cells[i]) = BCG_Z(active_cells[i]);
+            BCG_P_AUX(active_cells[i]) = BCG_Z_AUX(active_cells[i]);
         }
         else
         {
-            BCG_P(ac[i]) = BCG_R(ac[i]);
-            BCG_P_AUX(ac[i])= BCG_R_AUX(ac[i]);
+            BCG_P(active_cells[i]) = BCG_R(active_cells[i]);
+            BCG_P_AUX(active_cells[i])= BCG_R_AUX(active_cells[i]);
         }
-        rTr += BCG_R_AUX(ac[i]) * BCG_R(ac[i]);
+        rTr += BCG_R_AUX(active_cells[i]) * BCG_R(active_cells[i]);
     }
 
     *error = rTr;
@@ -741,27 +713,27 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             pTAp = 0.0;
 
             #pragma omp parallel for
-            for (i = 0; i < num_active_cells; i++)
-                BCG_XA(ac[i]) = 0.0;
+            for (uint32_t i = 0; i < num_active_cells; i++)
+                BCG_XA(active_cells[i]) = 0.0;
 
             #pragma omp parallel for private(element) reduction(+ : pTAp)
-            for (i = 0; i < num_active_cells; i++)
+            for (uint32_t i = 0; i < num_active_cells; i++)
             {
-                ac[i]->Ax = 0.0;
-                struct element *cell_elements = ac[i]->elements;
+                active_cells[i]->Ax = 0.0;
+                struct element *cell_elements = active_cells[i]->elements;
 
                 size_t max_el = arrlen(cell_elements);
-                for(int el = 0; el < max_el; el++)
+                for(size_t el = 0; el < max_el; el++)
                 {
                     element = cell_elements[el];
                     uint32_t col = element.column;
-                    ac[i]->Ax += element.value * BCG_P(element.cell);
+                    active_cells[i]->Ax += element.value * BCG_P(element.cell);
 
                     #pragma omp critical
-                    BCG_XA(ac[col]) += element.value * BCG_P_AUX(ac[i]);
+                    BCG_XA(active_cells[col]) += element.value * BCG_P_AUX(active_cells[i]);
                 }
 
-                pTAp += BCG_P_AUX(ac[i]) * ac[i]->Ax;
+                pTAp += BCG_P_AUX(active_cells[i]) * active_cells[i]->Ax;
             }
 
             //__________________________________________________________________
@@ -782,24 +754,24 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             // Computes new value of solution: u = u + alpha*p.
             //                                 u_aux = u_aux + alpha*p_aux
             #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
-            for (i = 0; i < num_active_cells; i++)
-            {
-                ac[i]->v += alpha * BCG_P(ac[i]);
-                BCG_X_AUX(ac[i]) += alpha * BCG_P_AUX(ac[i]);
+            for (uint32_t i = 0; i < num_active_cells; i++) {
 
-                BCG_R(ac[i]) -= alpha * ac[i]->Ax;
-                BCG_R_AUX(ac[i]) -= alpha * BCG_XA(ac[i]);
+                active_cells[i]->v += alpha * BCG_P(active_cells[i]);
+                BCG_X_AUX(active_cells[i]) += alpha * BCG_P_AUX(active_cells[i]);
+
+                BCG_R(active_cells[i]) -= alpha * active_cells[i]->Ax;
+                BCG_R_AUX(active_cells[i]) -= alpha * BCG_XA(active_cells[i]);
 
                 if(use_preconditioner)
                 {
-                    real_cpu value = ac[i]->elements[0].value;
+                    real_cpu value = active_cells[i]->elements[0].value;
                     if(value == 0.0) value = 1.0;
-                    BCG_Z(ac[i]) = (1.0/value) * BCG_R(ac[i]);
-                    BCG_Z_AUX(ac[i]) = (1.0/value) * BCG_R_AUX(ac[i]);
-                    r1Tz1 += BCG_Z(ac[i]) * BCG_R_AUX(ac[i]);
+                    BCG_Z(active_cells[i]) = (1.0/value) * BCG_R(active_cells[i]);
+                    BCG_Z_AUX(active_cells[i]) = (1.0/value) * BCG_R_AUX(active_cells[i]);
+                    r1Tz1 += BCG_Z(active_cells[i]) * BCG_R_AUX(active_cells[i]);
                 }
 
-                r1Tr1 += BCG_R(ac[i]) * BCG_R_AUX(ac[i]);
+                r1Tr1 += BCG_R(active_cells[i]) * BCG_R_AUX(active_cells[i]);
             }
             //__________________________________________________________________
             //Computes beta.
@@ -822,20 +794,20 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             //__________________________________________________________________
             //Computes int_vector p1 = r1 + beta*p and uses it to upgrade p.
             #pragma omp parallel for
-            for (i = 0; i < num_active_cells; i++)
+            for (uint32_t i = 0; i < num_active_cells; i++)
             {
                 if(use_preconditioner)
                 {
-                    BCG_P1(ac[i]) = BCG_Z(ac[i]) + beta * BCG_P(ac[i]);
-                    BCG_P1_AUX(ac[i]) = BCG_Z_AUX(ac[i]) + beta * BCG_P_AUX(ac[i]);
+                    BCG_P1(active_cells[i]) = BCG_Z(active_cells[i]) + beta * BCG_P(active_cells[i]);
+                    BCG_P1_AUX(active_cells[i]) = BCG_Z_AUX(active_cells[i]) + beta * BCG_P_AUX(active_cells[i]);
                 }
                 else
                 {
-                    BCG_P1(ac[i]) = BCG_R(ac[i]) + beta * BCG_P(ac[i]);
-                    BCG_P1_AUX(ac[i]) = BCG_R_AUX(ac[i]) + beta * BCG_P_AUX(ac[i]);
+                    BCG_P1(active_cells[i]) = BCG_R(active_cells[i]) + beta * BCG_P(active_cells[i]);
+                    BCG_P1_AUX(active_cells[i]) = BCG_R_AUX(active_cells[i]) + beta * BCG_P_AUX(active_cells[i]);
                 }
-                BCG_P(ac[i]) = BCG_P1(ac[i]);
-                BCG_P_AUX(ac[i]) = BCG_P1_AUX(ac[i]);
+                BCG_P(active_cells[i]) = BCG_P1(active_cells[i]);
+                BCG_P_AUX(active_cells[i]) = BCG_P1_AUX(active_cells[i]);
             }
 
             rTz = r1Tz1;
