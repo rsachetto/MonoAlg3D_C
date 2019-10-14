@@ -624,7 +624,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             // Implicito
             // UPDATE: Purkinje
-            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_monodomain_solver, the_grid, the_purkinje_ode_solver, original_num_purkinje_cells, true);
+            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_monodomain_solver, the_grid, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells, the_purkinje_ode_solver, original_num_purkinje_cells);
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
@@ -638,7 +638,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             // DIFUSION: Purkinje
             //linear_system_solver_purkinje(linear_system_solver_config, the_grid, &purkinje_solver_iterations, &purkinje_solver_error);
-            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config, the_grid, &purkinje_solver_iterations, &purkinje_solver_error, true);
+            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config, the_grid, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells, &purkinje_solver_iterations, &purkinje_solver_error);
 
             purkinje_cg_partial = stop_stop_watch(&purkinje_cg_time);
 
@@ -658,7 +658,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             // REACTION
             solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs, configs->ode_extra_config);
-            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_monodomain_solver, the_grid, the_ode_solver, original_num_cells, false);
+            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_monodomain_solver, the_grid, the_grid->num_active_cells, the_grid->active_cells, the_ode_solver, original_num_cells);
 
             ode_total_time += stop_stop_watch(&ode_time);
 
@@ -671,7 +671,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             #endif
 
             // DIFUSION
-            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config, the_grid, &solver_iterations, &solver_error, false);
+            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config, the_grid, the_grid->num_active_cells, the_grid->active_cells, &solver_iterations, &solver_error);
 
             cg_partial = stop_stop_watch(&cg_time);
 
@@ -1192,9 +1192,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
         size_t num_stims = shlen(options->purkinje_stim_configs);
 
         if(num_stims == 1)
-            print_to_stdout_and_file("[stim_purkinje] Stimulus configuration:\n");
+            print_to_stdout_and_file("[purkinje_stim] Stimulus configuration:\n");
         else
-            print_to_stdout_and_file("[stim_purkinje] Stimuli configuration:\n");
+            print_to_stdout_and_file("[purkinje_stim] Stimuli configuration:\n");
 
         for(int i = 0; i < num_stims; i++) {
 

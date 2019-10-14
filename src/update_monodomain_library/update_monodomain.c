@@ -21,14 +21,6 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     real_cpu alpha;
     bool use_gpu = the_ode_solver->gpu;
 
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **active_cells = the_grid->active_cells;
-
-    if(updating_purkinje) {
-        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
-        active_cells = the_grid->purkinje->purkinje_cells;
-    }
-
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt_pde = the_solver->dt;
@@ -72,14 +64,6 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt_pde = the_solver->dt;
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **active_cells = the_grid->active_cells;
-
-    if(updating_purkinje) {
-        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
-        active_cells = the_grid->purkinje->purkinje_cells;
-    }
 
     int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;

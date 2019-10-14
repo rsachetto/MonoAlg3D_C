@@ -17,8 +17,8 @@
 #include <time.h>
 #include <unistd.h>
 
-SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh) 
-{
+SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh) {
+
     printf("On 'initialize_purkinje_with_custom_mesh'\n");
 
     char *name = NULL;
