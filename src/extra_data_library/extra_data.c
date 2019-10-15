@@ -25,8 +25,11 @@ real* set_commom_schemia_data(struct config *config, uint32_t num_cells, int num
     real GNa_multiplicator = 1.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_multiplicator, config->config_data, "GNa_multiplicator");
 
-    real GCa_multiplicator = 1.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCa_multiplicator, config->config_data, "GCa_multiplicator");
+    real GCaL_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCaL_multiplicator, config->config_data, "GCaL_multiplicator");
+
+    real INaCa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_multiplicator, config->config_data, "INaCa_multiplicator");
 
     real Vm_modifier = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config->config_data, "Vm_modifier");
@@ -36,7 +39,8 @@ real* set_commom_schemia_data(struct config *config, uint32_t num_cells, int num
     extra_data[2] = Ki;
     extra_data[3] = Vm_modifier;
     extra_data[4] = GNa_multiplicator;
-    extra_data[5] = GCa_multiplicator;
+    extra_data[5] = GCaL_multiplicator;
+    extra_data[6] = INaCa_multiplicator;
 
     return extra_data;
 
@@ -58,7 +62,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
 
-    int num_par = 6;
+    int num_par = 7;
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
 	#pragma omp parallel for
@@ -91,7 +95,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
-    int num_par = 6;
+    int num_par = 7;
 
     real *fibs = NULL;
 
@@ -108,7 +112,7 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    int num_par = 6;
+    int num_par = 7;
     real *fibs = NULL;
 
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
@@ -124,7 +128,7 @@ SET_EXTRA_DATA(set_extra_data_for_human_full_mesh) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-     int num_par = 6;
+     int num_par = 7;
     real *fibs = NULL;
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
@@ -232,7 +236,7 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     uint32_t num_active_cells = the_grid->num_active_cells;
     real *fibs = NULL;
 
-    int num_par = 6;
+    int num_par = 7;
     fibs = set_commom_schemia_data(config, num_active_cells, num_par, extra_data_size);
 
     struct cell_node ** ac = the_grid->active_cells;
@@ -357,6 +361,7 @@ SET_EXTRA_DATA(set_extra_data_for_benchmark) {
     return (void*)initial_conditions;
 }
 
+// TODO: Fix this function after the Scientific_reports_Fig4a test
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
 
 
@@ -372,10 +377,10 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
     real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
     
-    int num_par = 6;
+    int num_par = 7;
     int num_tt_par = 12;
 
-//num_tt_par = 12 initial conditions of tt3, num_par 6, extra data
+//num_tt_par = 12 initial conditions of tt3, num_par 7, extra data
 
     *extra_data_size = sizeof(real)*(num_par+num_tt_par+num_active_cells);
 
@@ -396,8 +401,12 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
     real GCa_multiplicator = 1.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCa_multiplicator, config->config_data, "GCa_multiplicator");
 
+    real INaCa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_multiplicator, config->config_data, "INaCa_multiplicator");
+
     real Vm_modifier = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config->config_data, "Vm_modifier");
+
 
     // Extra parameters section
     extra_data[0] = atpi;
@@ -406,20 +415,21 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
     extra_data[3] = Vm_modifier;
     extra_data[4] = GNa_multiplicator;
     extra_data[5] = GCa_multiplicator;
+    extra_data[6] = INaCa_multiplicator;
   
-    // Extra initial conditions section
-    extra_data[6] = -79.5089;
-    extra_data[7] = 0.0056681;
-    extra_data[8] = 0.554756;
-    extra_data[9] = 0.54673;
-    extra_data[10] = 0.000565801;
-    extra_data[11] = 0.00486328;
-    extra_data[12] = 0.787571;
-    extra_data[13] = 0.998604;
-    extra_data[14] = 0.998842;
-    extra_data[15] = 7.23073e-05;
-    extra_data[16] = 6.2706e-08;
-    extra_data[17] = 0.412462;
+    // Extra initial conditions section (atpi = 2.0)
+    extra_data[7] = -86.315208;
+    extra_data[8] = 0.001362;
+    extra_data[9] = 0.773427;
+    extra_data[10] = 0.717868;
+    extra_data[11] = 0.001977;
+    extra_data[12] = 0.003678;
+    extra_data[13] = 0.585249;
+    extra_data[14] = 0.987165;
+    extra_data[15] = 0.999538;
+    extra_data[16] = 0.000029;
+    extra_data[17] = 0.000000;
+    extra_data[18] = 0.482457;
 
     // Fibrotic cells configuration
 	#pragma omp parallel for

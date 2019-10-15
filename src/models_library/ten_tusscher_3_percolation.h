@@ -7,6 +7,8 @@
 #define NEQ 19
 #define INITIAL_V (-85.23f)
 
+#define ENDO
+
 #ifdef __CUDACC__
 
 extern "C" {
@@ -16,7 +18,7 @@ extern "C" {
 __constant__  size_t pitch;
 size_t pitch_h;
 
-__global__ void kernel_set_model_inital_conditions(real *sv, real *extra_data, int num_volumes);
+__global__ void kernel_set_model_inital_conditions(real *sv, real*IC, real *extra_data, int num_volumes);
 
 __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,

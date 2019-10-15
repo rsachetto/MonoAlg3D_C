@@ -82,6 +82,7 @@ tags
 scripts/output
 scripts/animations/frames
 scripts/animations/videos
+scripts/animations/cameras
 batch_simulations/
 *.vscode*
 /src/main_graph_analyzer.c
