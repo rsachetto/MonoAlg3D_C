@@ -798,8 +798,8 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
             struct cell_node *endocardium_cell = ac[closest_index];
             uint32_t endocardium_index = ac[closest_index]->sv_position;
             
-            the_terminals[j].endocardium_index = endocardium_index;
             the_terminals[j].endocardium_cell = endocardium_cell;
+            the_terminals[j].endocardium_index = endocardium_index;
             the_terminals[j].purkinje_index = purkinje_index;
             the_terminals[j].purkinje_cell = purkinje_cell;
 
@@ -862,8 +862,8 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
             struct cell_node *endocardium_cell = ac[closest_index];
             uint32_t endocardium_index = ac[closest_index]->sv_position;
             
-            the_terminals[j].endocardium_index = endocardium_index;
             the_terminals[j].endocardium_cell = endocardium_cell;
+            the_terminals[j].endocardium_index = endocardium_index;
             //the_terminals[j].purkinje_index = purkinje_index;
             //the_terminals[j].purkinje_cell = purkinje_cell;
 

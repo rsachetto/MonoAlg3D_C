@@ -78,8 +78,6 @@ void print_conductivity (struct grid *the_grid);
 
 
 void linear_system_solver_purkinje (struct config *config, struct grid *the_grid, uint32_t *number_of_iterations, real_cpu *error);
-void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
-void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 
