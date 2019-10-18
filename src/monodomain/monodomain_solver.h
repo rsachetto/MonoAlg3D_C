@@ -64,10 +64,10 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
 
 bool print_result(const struct grid *the_grid, const struct user_options *configs, int count);
 
-void map_purkinje_solution_to_tissue(struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
-void map_tissue_solution_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
-
 bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid);
+
+void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
+void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 
 
 void debug_print_and_leave ();
