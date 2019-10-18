@@ -488,8 +488,7 @@ INIT_LINEAR_SYSTEM(init_conjugate_gradient) {
 #ifdef COMPILE_CUDA
         init_gpu_conjugate_gradient(config, the_grid);
 #else
-        print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
-        cpu_conjugate_gradient(config, the_grid, number_of_iterations, error);
+        init_cpu_conjugate_gradient(config, the_grid);
 #endif
     }
     else {
@@ -507,8 +506,7 @@ END_LINEAR_SYSTEM(end_conjugate_gradient) {
 #ifdef COMPILE_CUDA
         end_gpu_conjugate_gradient(config);
 #else
-        print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
-        cpu_conjugate_gradient(config, the_grid, number_of_iterations, error);
+        end_cpu_conjugate_gradient(config);
 #endif
     }
     else {
