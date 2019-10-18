@@ -17,7 +17,7 @@ FIND_CUDA () {
 	fi
 
 	if [ -z "$NVCC" ]; then
-		NVCC=$(command -v nvcc)
+		NVCC=$(command -v nvcc | xargs) #in some systems command stops the script
 	fi
 
 	if [ ! -d "$CUDA_LIBRARY_PATH" ] || [ ! -d "$CUDA_INCLUDE_PATH" ] || [ ! -f "$NVCC" ]; then
