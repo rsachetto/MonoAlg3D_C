@@ -19,10 +19,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#ifndef logt
 static struct logt L = {0, 0};
-#define logt
-#endif
 
 char * get_dir_from_path(const char * path) {
     char *last_slash = NULL;

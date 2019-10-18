@@ -9,25 +9,16 @@
 #include "../utils/utils.h"
 #include "../string/sds.h"
 
-#include <float.h>
 #include <math.h>
 #include <string.h>
-#include <time.h>
-
-#ifdef _MSC_VER
-#include <process.h>
-    #define getpid _getpid
-#else
-#include <unistd.h>
-#endif
 
 // Set a a custom Purkinje network from a file that stores its graph structure
-void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length)
+void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
 
     struct graph *the_network = the_purkinje->network;
 
-    set_purkinje_network_from_file(the_network,file_name,side_length);
+    set_purkinje_network_from_file(the_network,file_name,side_length,rpmj,pmj_scale,calc_retro_propagation);
 
     calculate_number_of_terminals(the_network);
 
@@ -36,14 +27,14 @@ void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char
 
 }
 
-void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length)
+void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
     struct graph *skeleton_network = new_graph();
 
     //read_purkinje_network_from_file(file_name,&points,&branches,&N,&E);
     build_skeleton_purkinje(file_name,skeleton_network);
 
-    build_mesh_purkinje(the_purkinje_network,skeleton_network,side_length);
+    build_mesh_purkinje(the_purkinje_network,skeleton_network,side_length,rpmj,pmj_scale,calc_retro_propagation);
     
     // Write the Purkinje to a VTK file for visualization purposes.
     write_purkinje_network_to_vtk(the_purkinje_network);
@@ -118,7 +109,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     fclose(file);
 }
 
-void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length)
+void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
     assert(the_purkinje_network);
     assert(skeleton_network);
@@ -128,6 +119,9 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     // um -> cm
     //the_purkinje_network->dx = side_length*UM_TO_CM;
     the_purkinje_network->dx = side_length;
+    the_purkinje_network->rpmj = rpmj;
+    the_purkinje_network->pmj_scale = pmj_scale;
+    the_purkinje_network->calc_retropropagation = calc_retro_propagation;
 
     uint32_t n = skeleton_network->total_nodes;
     // This map is needed to deal with bifurcations
@@ -323,7 +317,7 @@ void calculate_number_of_terminals (struct graph *the_purkinje_network)
     uint32_t number_of_terminals = 0;
 
     struct node *n;
-    struct edge *e;
+    //struct edge *e;
 
     n = the_purkinje_network->list_nodes;
     while (n != NULL)

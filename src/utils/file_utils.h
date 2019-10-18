@@ -20,6 +20,7 @@ struct logt {
   bool quiet;
 };
 
+
 void print_to_stdout_and_file(char const *fmt, ...);
 void print_to_stderr_and_file_and_exit(char const *fmt, ...);
 void open_logfile(const char *path);

@@ -24,8 +24,8 @@ fi
 
 ###########User code#####################
 DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing -Wall -Wno-unused-function -Wno-char-subscripts"
-RUNTIME_OUTPUT_DIRECTORY=./bin
-LIBRARY_OUTPUT_DIRECTORY=./shared_libs
+RUNTIME_OUTPUT_DIRECTORY="$ROOT_DIR/bin"
+LIBRARY_OUTPUT_DIRECTORY="$ROOT_DIR/shared_libs"
 
 C_FLAGS="$C_FLAGS $DEFAULT_C_FLAGS"
 
@@ -81,14 +81,16 @@ fi
 SRC_FILES="src/main_simulator.c"
 HDR_FILES=""
 
-STATIC_DEPS="solvers utils ini_parser string config ${OPT_DEPS} config_helpers vtk_utils yxml alg graph"
+STATIC_DEPS="solvers ini_parser string config ${OPT_DEPS} config_helpers vtk_utils yxml alg graph"
 DYNAMIC_DEPS="dl m $CUDA_LIBRARIES z"
 
 if [ -n "$COMPILE_GUI" ]; then
     DYNAMIC_DEPS="$DYNAMIC_DEPS OpenGL GLX GLU pthread X11 rt"
 fi
 
-COMPILE_EXECUTABLE "MonoAlg3D" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH"
+DYNAMIC_DEPS="$DYNAMIC_DEPS utils"
+
+COMPILE_EXECUTABLE "MonoAlg3D" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
 FIND_MPI
 
@@ -96,7 +98,7 @@ if [ -n "$MPI_FOUND" ]; then
     SRC_FILES="src/main_batch.c"
     HDR_FILES=""
     DYNAMIC_DEPS="$DYNAMIC_DEPS $MPI_LIBRARIES"
-    EXTRA_LIB_PATH="$CUDA_LIBRARY_PATH $MPI_LIBRARY_PATH"
+    EXTRA_LIB_PATH="$CUDA_LIBRARY_PATH $MPI_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
     
     COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH" "$MPI_INCLUDE_PATH"
 fi

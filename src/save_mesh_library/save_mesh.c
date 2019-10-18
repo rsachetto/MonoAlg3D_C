@@ -29,8 +29,8 @@ static struct vtk_polydata_grid *vtk_polydata = NULL;
 
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name);
 
-static sds create_base_name(char *file_prefix, int iteration_count, char *extension) {
-    return sdscatprintf(sdsempty(), "%s_it_%d.%s", file_prefix, iteration_count, extension);
+static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
+    return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
 }
 
 
@@ -674,18 +674,22 @@ SAVE_MESH(save_with_activation_times) {
 
                          if (act_times_len == 0) {
                             n_activations++;
+                             hmput(persistent_data->num_activations, cell_coordinates, n_activations);
+                             arrput(activation_times_array, current_t);
+                             float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
+                             hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
+                             hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
                         } else { //This is to avoid spikes in the middle of an Action Potential
                             float last_act_time = activation_times_array[act_times_len - 1];
                             if (current_t - last_act_time > time_threshold) {
                                 n_activations++;
+                                hmput(persistent_data->num_activations, cell_coordinates, n_activations);
+                                arrput(activation_times_array, current_t);
+                                float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
+                                hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
+                                hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
                             }
                         }
-
-                        hmput(persistent_data->num_activations, cell_coordinates, n_activations);
-                        arrput(activation_times_array, current_t);
-                        float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
-                        hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
-                        hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
                     }
 
                     //CHECK APD
