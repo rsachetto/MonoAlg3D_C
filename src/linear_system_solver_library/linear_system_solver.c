@@ -4,9 +4,9 @@
 #include "../config/linear_system_solver_config.h"
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
+#include "../utils/file_utils.h"
 
 #include "../single_file_libraries/stb_ds.h"
-#include "../models_library/model_gpu_utils.h"
 
 bool jacobi_initialized = false;
 bool bcg_initialized = false;
@@ -15,7 +15,7 @@ static int max_its = 50;
 static real_cpu tol = 1e-16;
 
 #ifdef COMPILE_CUDA
-
+#include "../models_library/model_gpu_utils.h"
 #include <cusparse_v2.h>
 #include <cublas_v2.h>
 
