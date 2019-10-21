@@ -9,6 +9,7 @@
 #include "single_file_libraries/stb_ds.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
 #include "vtk_utils/pvd_utils.h"
+#include "draw/draw.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -54,6 +55,7 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->grid_info.file_name = NULL;
     draw_config->error_message = NULL;
     draw_config->grid_info.loaded = false;
+    draw_config->int_scale = false;
 
 }
 
@@ -63,6 +65,8 @@ static void read_and_render_activation_map(char *input_file) {
 
     omp_set_lock(&draw_config.draw_lock);
     draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_activation_file(input_file);
+    draw_config.grid_info.loaded = true;
+    draw_config.int_scale = true;
 
     if(!draw_config.grid_info.vtk_grid) {
         char tmp[4096];

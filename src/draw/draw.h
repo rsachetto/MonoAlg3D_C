@@ -70,7 +70,7 @@ struct draw_config {
     } grid_info;
 
     char *error_message;
-
+    bool int_scale;
 };
 
 struct draw_config draw_config;
