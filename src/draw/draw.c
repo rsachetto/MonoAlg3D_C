@@ -715,20 +715,31 @@ void draw_ap(Font font, float font_size_small, float font_size_big) {
     }
 }
 
-static void draw_scale(Font font, float font_size_small) {
+static void draw_scale(Font font, float font_size_small, bool int_scale) {
 
-    float initial_y =  (float)GetScreenHeight()/2.0f;
+    float initial_y = (float)GetScreenHeight()/2.0f;
 
     float spacing_small = (float)font_size_small/(float)font.baseSize;
 
     int num_ticks;
     real_cpu tick_ofsset = 12;
-    num_ticks = (int) ((draw_config.max_v - draw_config.min_v)/tick_ofsset);
 
-    if(num_ticks < 5) {
-        num_ticks = 5;
-        tick_ofsset = (draw_config.max_v - draw_config.min_v)/num_ticks;
+    if(!int_scale) {
+        num_ticks = (int) ((draw_config.max_v - draw_config.min_v) / tick_ofsset);
+
+        if (num_ticks < 5) {
+            num_ticks = 5;
+            tick_ofsset = (draw_config.max_v - draw_config.min_v) / num_ticks;
+        }
     }
+    else {
+        num_ticks = 0;
+        for(int i = draw_config.min_v; i < draw_config.max_v; i++) {
+            num_ticks++;
+        }
+        tick_ofsset = (draw_config.max_v - draw_config.min_v) / num_ticks;
+    }
+
 
     char tmp[256];
 
@@ -1333,7 +1344,7 @@ void init_and_open_visualization_window() {
             EndMode3D();
 
             if(show_scale) {
-                draw_scale(font, font_size_small);
+                draw_scale(font, font_size_small, draw_config.int_scale);
             }
 
             if(hmlen(selected_aps) && show_ap) {
