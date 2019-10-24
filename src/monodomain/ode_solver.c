@@ -133,7 +133,7 @@ void init_ode_solver_with_cell_model(struct ode_solver* solver) {
 
 }
 
-void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config) 
+void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struct string_hash_entry *ode_extra_config)
 {
 
     bool get_initial_v = !isfinite(solver->model_data.initial_v);
@@ -143,13 +143,13 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
     (*(solver->get_cell_model_data))(&(solver->model_data), get_initial_v, get_neq);
     int n_odes = solver->model_data.number_of_ode_equations;
 
-    if (solver->gpu) 
+    if (solver->gpu)
     {
 #ifdef COMPILE_CUDA
 
         set_ode_initial_conditions_gpu_fn *soicg_fn_pt = solver->set_ode_initial_conditions_gpu;
 
-        if(!soicg_fn_pt) 
+        if(!soicg_fn_pt)
         {
             fprintf(stderr, "The ode solver was set to use the GPU, \n "
                     "but no function called set_model_initial_conditions_gpu "
@@ -157,20 +157,20 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
             exit(11);
         }
 
-        if(solver->sv != NULL) 
+        if(solver->sv != NULL)
         {
             check_cuda_errors(cudaFree(solver->sv));
         }
 
         solver->pitch = soicg_fn_pt(ode_extra_config, &(solver->sv), num_cells, solver->ode_extra_data, solver->extra_data_size);
 #endif
-    } 
-    else 
+    }
+    else
     {
 
         set_ode_initial_conditions_cpu_fn *soicc_fn_pt = solver->set_ode_initial_conditions_cpu;
 
-        if(!soicc_fn_pt) 
+        if(!soicc_fn_pt)
         {
             fprintf(stderr, "The ode solver was set to use the CPU, \n "
                     "but no function called set_model_initial_conditions_cpu "
@@ -178,7 +178,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
             exit(11);
         }
 
-        if(solver->sv != NULL) 
+        if(solver->sv != NULL)
         {
             free(solver->sv);
         }
@@ -188,7 +188,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
 		int i;
 
         #pragma omp parallel for
-        for(i = 0; i < num_cells; i++) 
+        for(i = 0; i < num_cells; i++)
         {
             soicc_fn_pt(ode_extra_config, solver->sv + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
         }
@@ -348,7 +348,7 @@ void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_sol
     purkinje_solver->min_dt = (real)options->purkinje_dt_ode;
     purkinje_solver->gpu = options->purkinje_gpu;
 
-    if(options->purkinje_model_file_path) 
+    if(options->purkinje_model_file_path)
     {
         free(purkinje_solver->model_data.model_library_path);
         purkinje_solver->model_data.model_library_path = strdup(options->purkinje_model_file_path);
@@ -362,7 +362,7 @@ void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_
     purkinje_solver->min_dt = (real)solver->min_dt;
     purkinje_solver->gpu = solver->gpu;
 
-    if(solver->model_data.model_library_path) 
+    if(solver->model_data.model_library_path)
     {
         purkinje_solver->model_data.model_library_path = strdup(solver->model_data.model_library_path);
     }
@@ -370,7 +370,7 @@ void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_
 
 void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
                             int num_steps, struct string_voidp_hash_entry *stim_configs,
-                            struct string_hash_entry *ode_extra_config) 
+                            struct string_hash_entry *ode_extra_config)
 {
 
     assert(the_ode_solver->sv);
@@ -390,26 +390,26 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
 	uint32_t i;
     ptrdiff_t n = hmlen(stim_configs);
 
-    if(stim_configs) 
+    if(stim_configs)
     {
 
         real stim_start = 0.0;
         real  stim_dur = 0.0;
         real  stim_period = 0.0;
 
-        for (long k = 0; k < n; k++) 
+        for (long k = 0; k < n; k++)
         {
             tmp = (struct config*) stim_configs[k].value;
             GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp->config_data, "start");
             GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp->config_data, "duration");
             GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp->config_data, "period");
 
-            for (int j = 0; j < num_steps; ++j) 
+            for (int j = 0; j < num_steps; ++j)
             {
-                if ((time >= stim_start) && (time <= stim_start + stim_dur)) 
+                if ((time >= stim_start) && (time <= stim_start + stim_dur))
                 {
                     #pragma omp parallel for
-                    for (i = 0; i < n_active; i++) 
+                    for (i = 0; i < n_active; i++)
                     {
                         // This variable should be an accumulator to allow multiple stimulus
                         merged_stims[i] += ((real*)(tmp->persistent_data))[i];
@@ -418,9 +418,9 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
                 time += dt;
             }
 
-            if(stim_period > 0.0) 
+            if(stim_period > 0.0)
             {
-                if (time >= stim_start + stim_period) 
+                if (time >= stim_start + stim_period)
                 {
                     stim_start = stim_start + stim_period;
                     sds stim_start_char = sdscatprintf(sdsempty(), "%lf", stim_start);
@@ -433,7 +433,7 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
         }
     }
 
-    if(the_ode_solver->gpu) 
+    if(the_ode_solver->gpu)
     {
         #ifdef COMPILE_CUDA
         size_t extra_data_size = the_ode_solver->extra_data_size;
@@ -443,7 +443,7 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
 
         #endif
     }
-    else 
+    else
     {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
         solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
@@ -452,36 +452,36 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
     free(merged_stims);
 }
 
-void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const char *model_library_path) 
+void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const char *model_library_path)
 {
 
     char *error;
 
-    if(model_library_path) 
+    if(model_library_path)
     {
         free(solver->model_data.model_library_path);
         solver->model_data.model_library_path = strdup(model_library_path);
     }
 
-    if(!solver->model_data.model_library_path) 
+    if(!solver->model_data.model_library_path)
     {
         fprintf(stderr, "model_library_path not provided. Exiting!\n");
         exit(1);
     }
 
     solver->handle = dlopen (solver->model_data.model_library_path, RTLD_LAZY);
-    if (!solver->handle) 
+    if (!solver->handle)
     {
         fprintf(stderr, "%s\n", dlerror());
         exit(1);
     }
 
     solver->get_cell_model_data = dlsym(solver->handle, "init_cell_model_data");
-    if ((error = dlerror()) != NULL)  
+    if ((error = dlerror()) != NULL)
     {
         fprintf(stderr, "%s\n", error);
         fprintf(stderr, "init_cell_model_data function not found in the provided model library\n");
-        if(!isfinite(solver->model_data.initial_v)) 
+        if(!isfinite(solver->model_data.initial_v))
         {
             fprintf(stderr, "intial_v not provided in the [cell_model] of the config file! Exiting\n");
             exit(1);
@@ -490,7 +490,7 @@ void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const 
     }
 
     solver->set_ode_initial_conditions_cpu = dlsym(solver->handle, "set_model_initial_conditions_cpu");
-    if ((error = dlerror()) != NULL)  
+    if ((error = dlerror()) != NULL)
     {
         fprintf(stderr, "%s\n", error);
         fprintf(stderr, "set_model_initial_conditions function not found in the provided model library\n");
@@ -498,7 +498,7 @@ void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const 
     }
 
     solver->solve_model_ode_cpu = dlsym(solver->handle, "solve_model_odes_cpu");
-    if ((error = dlerror()) != NULL)  
+    if ((error = dlerror()) != NULL)
     {
         fprintf(stderr, "%s\n", error);
         fprintf(stderr, "solve_model_odes_cpu function not found in the provided model library\n");
@@ -507,7 +507,7 @@ void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const 
 
 #ifdef COMPILE_CUDA
     solver->set_ode_initial_conditions_gpu = dlsym(solver->handle, "set_model_initial_conditions_gpu");
-    if ((error = dlerror()) != NULL)  
+    if ((error = dlerror()) != NULL)
     {
         fputs(error, stderr);
         fprintf(stderr, "set_model_initial_conditions_gpu function not found in the provided model library\n");
@@ -515,7 +515,7 @@ void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const 
     }
 
     solver->solve_model_ode_gpu = dlsym(solver->handle, "solve_model_odes_gpu");
-    if ((error = dlerror()) != NULL)  
+    if ((error = dlerror()) != NULL)
     {
         fputs(error, stderr);
         fprintf(stderr, "\nsolve_model_odes_gpu function not found in the provided model library\n");

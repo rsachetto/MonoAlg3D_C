@@ -32,21 +32,6 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     sv[10] = 0.0; //R_INF
     sv[11] = 0.0; //Xr2_INF}
 
-    // Steady-State after 12000 ms (atpi = 4.0, acidosis = 0.5, Ko = 7.0)
-/*
-    sv[0] = -86.0599;
-    sv[1] = 0.00143782;
-    sv[2] = 0.766944;
-    sv[3] = 0.756684;
-    sv[4] = 0.000894152;
-    sv[5] = 0.0054739;
-    sv[6] = 0.423763;
-    sv[7] = 0.851973;
-    sv[8] = 0.999545;
-    sv[9] = 3.01894e-05;
-    sv[10] = 2.10439e-08;
-    sv[11] = 0.479802;
-*/
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {

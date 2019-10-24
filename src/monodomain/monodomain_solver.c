@@ -48,12 +48,12 @@ struct monodomain_solver *new_monodomain_solver() {
 
     result->calc_activation_time = false;
     result->print_conductivity = false;
-    
+
     return result;
 }
 
 int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                      struct grid *the_grid, struct user_options *configs) 
+                      struct grid *the_grid, struct user_options *configs)
 {
 
     assert(configs);
@@ -99,7 +99,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool has_any_periodic_stim = false;
 
     // Tissue stimuli
-    if(stimuli_configs) 
+    if(stimuli_configs)
     {
         // Init all stimuli
         STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(stimuli_configs);
@@ -112,7 +112,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         real_cpu stim_period = 0;
         bool unnused;
 
-        for(unsigned long i = 0; i < s_size; i++) 
+        for(unsigned long i = 0; i < s_size; i++)
         {
 
             struct config *sconfig = (struct config*) stimuli_configs[i].value;
@@ -125,7 +125,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             has_any_periodic_stim |= (bool)(stim_period > 0.0);
 
-            if(s_end > last_stimulus_time) 
+            if(s_end > last_stimulus_time)
             {
                 last_stimulus_time = s_end;
             }
@@ -147,7 +147,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         real_cpu stim_period = 0;
         bool unnused;
 
-        for(unsigned long i = 0; i < s_size; i++) 
+        for(unsigned long i = 0; i < s_size; i++)
         {
 
             struct config *sconfig = (struct config*) purkinje_stimuli_configs[i].value;
@@ -160,7 +160,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             has_any_periodic_stim |= (bool)(stim_period > 0.0);
 
-            if(s_end > last_stimulus_time) 
+            if(s_end > last_stimulus_time)
             {
                 last_stimulus_time = s_end;
             }
@@ -175,12 +175,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     // Configure the functions and set the mesh domain
-    if(domain_config) 
+    if(domain_config)
     {
         init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
-    } 
+    }
 
-    if( !purkinje_config && !domain_config ) 
+    if( !purkinje_config && !domain_config )
     {
         print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
@@ -189,17 +189,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(assembly_matrix_config)
     {
         init_config_functions(assembly_matrix_config, "./shared_libs/libdefault_matrix_assembly.so", "assembly_matrix");
-    } 
-    else 
+    }
+    else
     {
         print_to_stderr_and_file_and_exit("No assembly matrix configuration provided! Exiting!\n");
     }
 
-    if(linear_system_solver_config) 
+    if(linear_system_solver_config)
     {
         init_config_functions(linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "linear_system_solver");
-    } 
-    else 
+    }
+    else
     {
         print_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
     }
@@ -212,11 +212,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     bool save_to_file = (save_mesh_config != NULL) && (print_rate > 0) && (out_dir_name);
 
-    if(save_to_file) 
+    if(save_to_file)
     {
         init_config_functions(save_mesh_config, "./shared_libs/libdefault_save_mesh.so", "save_result");
-    } 
-    else 
+    }
+    else
     {
         print_to_stdout_and_file("No configuration provided to save the results! The results will not be saved!\n");
     }
@@ -228,11 +228,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         save_checkpoint = false;
     }
 
-    if(save_checkpoint) 
+    if(save_checkpoint)
     {
         init_config_functions(save_state_config, "./shared_libs/libdefault_save_state.so", "save_state");
-    } 
-    else 
+    }
+    else
     {
         print_to_stdout_and_file(
             "No configuration provided to make simulation checkpoints! Chekpoints will not be created!\n");
@@ -245,12 +245,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         restore_checkpoint = false;
     }
 
-    if(restore_state_config) 
+    if(restore_state_config)
     {
         init_config_functions(restore_state_config, "./shared_libs/libdefault_restore_state.so", "restore_state");
     }
 
-    if(has_extra_data) 
+    if(has_extra_data)
     {
         init_config_functions(extra_data_config, "./shared_libs/libdefault_extra_data.so", "extra_data");
     }
@@ -259,18 +259,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     bool restore_success = false;
 
-    if(restore_checkpoint) 
+    if(restore_checkpoint)
     {
         // Here we only restore the monodomain_solver_state...
         restore_success = ((restore_state_fn *)restore_state_config->main_function)(out_dir_name, restore_state_config, NULL,
                                             the_monodomain_solver, NULL);
     }
 
-    if(update_monodomain_config) 
+    if(update_monodomain_config)
     {
         init_config_functions(update_monodomain_config, "./shared_libs/libdefault_update_monodomain.so", "update_monodomain");
     }
-    else 
+    else
     {
         print_to_stderr_and_file_and_exit("No update monodomain configuration provided! Exiting!\n");
     }
@@ -324,7 +324,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     int success;
 
     struct ode_solver *the_purkinje_ode_solver = NULL;
-    if (purkinje_config) 
+    if (purkinje_config)
     {
         // Allocate a new 'ode_solver' for the Purkinje
         the_purkinje_ode_solver = new_ode_solver();
@@ -335,7 +335,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             configure_purkinje_ode_solver_from_ode_solver(the_purkinje_ode_solver,the_ode_solver);
         // Otherwise, there is a [purkinje_ode_solver] section and we are doing a coupled simulation
         else                    // Purkinje + Tissue simulation
-            configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver,configs);        
+            configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver,configs);
 
         success = ((set_spatial_purkinje_fn*) purkinje_config->main_function)(purkinje_config,the_grid,the_purkinje_ode_solver);
         if(!success)
@@ -345,11 +345,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     }
 
-    if (domain_config) 
+    if (domain_config)
     {
         success = ((set_spatial_domain_fn *) domain_config->main_function)(domain_config, the_grid);
 
-        if (!success) 
+        if (!success)
         {
             print_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
         }
@@ -360,7 +360,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
-    if(restore_checkpoint) 
+    if(restore_checkpoint)
     {
         // TODO: Create a Purkinje restore function in the 'restore_library' and put here ...
         restore_success &= ((restore_state_fn*)restore_state_config->main_function)(out_dir_name, restore_state_config, the_grid, NULL, NULL);
@@ -397,7 +397,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dz, domain_config->config_data, "maximum_dz");
     }
 
-    uint32_t original_num_cells, original_num_purkinje_cells; 
+    uint32_t original_num_cells, original_num_purkinje_cells;
     if (domain_config)
     {
         order_grid_cells(the_grid);
@@ -405,7 +405,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         the_ode_solver->original_num_cells = original_num_cells;
         the_ode_solver->num_cells_to_solve = original_num_cells;
     }
-    
+
     // Purkinje section
     if (purkinje_config)
     {
@@ -416,13 +416,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     save_old_cell_positions(the_grid);
 
-    if(adaptive) 
+    if(adaptive)
     {
         update_cells_to_solve(the_grid, the_ode_solver);
     }
 
     // NEW FUNCTION !!!
-    // Map the indexes from the closest endocardium cells that are next to the Purkinje terminals 
+    // Map the indexes from the closest endocardium cells that are next to the Purkinje terminals
     // =============================================
     struct terminal *the_terminals = NULL;
     if (domain_config && purkinje_config)
@@ -430,19 +430,24 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     // =============================================
 
     print_to_stdout_and_file("Setting ODE's initial conditions\n");
-    
+
     // TODO: Include the Purkinje extra data here ...
-    if(has_extra_data)
+    if (has_extra_data)
+    {
+      if (purkinje_config)
+        set_ode_extra_data(extra_data_config,the_grid,the_purkinje_ode_solver);
+      if (domain_config)
         set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
+    }
 
     if (domain_config)
         set_ode_initial_conditions_for_all_volumes(the_ode_solver, configs->ode_extra_config);
     if (purkinje_config)
-        set_ode_initial_conditions_for_all_volumes(the_purkinje_ode_solver, configs->purkinje_ode_extra_config);
+        set_ode_initial_conditions_for_all_volumes(the_purkinje_ode_solver, configs->ode_extra_config);
 
     // We need to call this function after because of the pitch.... maybe we have to change the way
     // we pass this parameters to the cell model....
-    if(restore_checkpoint) 
+    if(restore_checkpoint)
     {
         restore_success &= ((restore_state_fn*)restore_state_config->main_function)(out_dir_name, restore_state_config, NULL, NULL, the_ode_solver);
     }
@@ -458,12 +463,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int ode_step = 1;
 
-    if(dt_pde >= dt_ode) 
+    if(dt_pde >= dt_ode)
     {
         ode_step = (int)(dt_pde / dt_ode);
         print_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
-    } 
-    else 
+    }
+    else
     {
         print_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
                                  "step: %lf\n",
@@ -490,13 +495,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     start_stop_watch(&part_mat);
 
-    if(!restore_checkpoint || !restore_success) 
+    if(!restore_checkpoint || !restore_success)
     {
         ((set_pde_initial_condition_fn*)assembly_matrix_config->init_function)(assembly_matrix_config, the_monodomain_solver, the_grid, initial_v,purkinje_initial_v);
     }
 
     ((assembly_matrix_fn*) assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
-    
+
     // TESTING LU DECOMPOSITION
 /*
     real_cpu **lu = NULL;
@@ -505,7 +510,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
         uint32_t num_rows = the_grid->the_purkinje->num_active_purkinje_cells;
         uint32_t num_cols = the_grid->the_purkinje->num_active_purkinje_cells;
-        
+
         pivot = (uint32_t*)calloc(num_rows,sizeof(uint32_t));
 
         lu = allocate_matrix_LU(num_rows,num_cols);
@@ -514,14 +519,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
  */
     // TESTING LU DECOMPOSITION
 
-    
+
 
     total_mat_time = stop_stop_watch(&part_mat);
     start_stop_watch(&solver_time);
 
     int save_state_rate = 0;
 
-    if(save_checkpoint) 
+    if(save_checkpoint)
     {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, save_state_rate, save_state_config->config_data, "save_rate");
     }
@@ -532,14 +537,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool calc_activation_time = the_monodomain_solver->calc_activation_time;
     bool print_conductivity = the_monodomain_solver->print_conductivity;
     bool calc_retropropagation = the_grid->the_purkinje->the_network->calc_retropropagation;
-    
+
     real_cpu solver_error, purkinje_solver_error;
     uint32_t solver_iterations = 0, purkinje_solver_iterations = 0;
 
     real *spatial_stim_currents = NULL;
     real *purkinje_spatial_stim_currents = NULL;
 
-    if(stimuli_configs) 
+    if(stimuli_configs)
     {
         spatial_stim_currents = (real*)malloc(sizeof(real)*original_num_cells);
         set_spatial_stim(stimuli_configs, the_grid);
@@ -553,7 +558,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     real_cpu cur_time = the_monodomain_solver->current_time;
 
-    if(save_mesh_config != NULL) 
+    if(save_mesh_config != NULL)
     {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config->config_data, "print_rate");
     }
@@ -599,14 +604,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
         #endif
 
-        if (save_to_file && (count % print_rate == 0)) 
+        if (save_to_file && (count % print_rate == 0))
         {
             start_stop_watch(&write_time);
             ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'v');
             total_write_time += stop_stop_watch(&write_time);
         }
 
-        if (cur_time > 0.0) 
+        if (cur_time > 0.0)
         {
             // UPDATE: Tissue and Purkinje (if it exists)
             activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_purkinje_ode_solver, the_grid);
@@ -614,11 +619,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             // MAPPING: Tissue -> Purkinje
             //if (domain_config && purkinje_config)
             //    map_tissue_solution_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
-            
-            
-            if (abort_on_no_activity && cur_time > last_stimulus_time) 
+
+
+            if (abort_on_no_activity && cur_time > last_stimulus_time)
             {
-                if (!activity) 
+                if (!activity)
                 {
                     print_to_stdout_and_file("No activity, aborting simulation\n");
                     break;
@@ -632,7 +637,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&purkinje_ode_time);
 
             // REACTION: Purkinje
-            solve_purkinje_volumes_odes(the_purkinje_ode_solver, the_grid->the_purkinje->number_of_purkinje_cells, cur_time, ode_step, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
+            solve_purkinje_volumes_odes(the_purkinje_ode_solver, the_grid->the_purkinje->number_of_purkinje_cells, cur_time, ode_step, purkinje_stimuli_configs, configs->ode_extra_config);
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
@@ -659,7 +664,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             #endif
 
             // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
-            if (domain_config && calc_retropropagation)
+            if (domain_config)
                 compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
 
             // DIFUSION: Purkinje
@@ -723,9 +728,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             total_cg_it += solver_iterations;
 
         }
-        
 
-        if (count % print_rate == 0) 
+
+        if (count % print_rate == 0)
         {
             if (purkinje_config && domain_config)
                 print_to_stdout_and_file("t = %.5lf, Iterations = "
@@ -750,12 +755,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                      purkinje_cg_partial);
         }
 
-        if (adaptive) 
+        if (adaptive)
         {
             redo_matrix = false;
-            if (cur_time >= start_adpt_at) 
+            if (cur_time >= start_adpt_at)
             {
-                if (count % refine_each == 0) 
+                if (count % refine_each == 0)
                 {
 
                     start_stop_watch(&ref_time);
@@ -763,7 +768,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                     total_ref_time += stop_stop_watch(&ref_time);
                 }
 
-                if (count % derefine_each == 0) 
+                if (count % derefine_each == 0)
                 {
                     start_stop_watch(&deref_time);
                     redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
@@ -771,7 +776,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 }
 
             }
-            if (redo_matrix) 
+            if (redo_matrix)
             {
                 order_grid_cells(the_grid);
 
@@ -782,14 +787,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                         set_spatial_stim(stimuli_configs, the_grid);
                     }
                 }
-                if (has_extra_data) 
+                if (has_extra_data)
                 {
                     set_ode_extra_data(extra_data_config, the_grid, the_ode_solver);
                 }
 
                 update_cells_to_solve(the_grid, the_ode_solver);
 
-                if (arrlen(the_grid->refined_this_step) > 0) 
+                if (arrlen(the_grid->refined_this_step) > 0)
                 {
                     update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
                 }
@@ -802,7 +807,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                     update_link_purkinje_to_endocardium(the_grid,the_terminals);
 
                 total_mat_time += stop_stop_watch(&part_mat);
-                
+
             }
 
         }
@@ -816,9 +821,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         count++;
         cur_time += dt_pde;
 
-        if (save_checkpoint) 
+        if (save_checkpoint)
         {
-            if (count != 0 && (count % save_state_rate == 0)) 
+            if (count != 0 && (count % save_state_rate == 0))
             {
                 the_monodomain_solver->current_count = count;
                 the_monodomain_solver->current_time = cur_time;
@@ -831,7 +836,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         iteration_time = stop_stop_watch(&iteration_time_watch);
 
-        if ( (count - 1) % print_rate == 0) 
+        if ( (count - 1) % print_rate == 0)
         {
             print_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
         }
@@ -893,7 +898,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 }
 
-void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid) 
+void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid)
 {
 
     struct config *tmp = NULL;
@@ -903,14 +908,14 @@ void set_spatial_stim(struct string_voidp_hash_entry *stim_configs, struct grid 
     struct cell_node **ac = the_grid->active_cells;
     bool adaptive = the_grid->adaptive;
 
-    for(size_t i = 0; i < n; i++) 
+    for(size_t i = 0; i < n; i++)
     {
         tmp = (struct config *)stim_configs[i].value;
         ((set_spatial_stim_fn*)tmp->main_function)(tmp,n_active,ac,adaptive);
     }
 }
 
-void set_spatial_purkinje_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid) 
+void set_spatial_purkinje_stim(struct string_voidp_hash_entry *stim_configs, struct grid *the_grid)
 {
     assert(the_grid->the_purkinje);
 
@@ -921,7 +926,7 @@ void set_spatial_purkinje_stim(struct string_voidp_hash_entry *stim_configs, str
     struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
     bool adaptive = false;
 
-    for(size_t i = 0; i < n; i++) 
+    for(size_t i = 0; i < n; i++)
     {
         tmp = (struct config *)stim_configs[i].value;
         ((set_spatial_stim_fn*)tmp->main_function)(tmp,n_active,ac,adaptive);
@@ -935,11 +940,11 @@ void set_ode_extra_data(struct config *config, struct grid *the_grid, struct ode
             ((set_extra_data_fn*)config->main_function)(the_grid, config, &(the_ode_solver->extra_data_size));
 }
 
-bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid) 
+bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid)
 {
     bool act = false;
 
-    // Tissue section                                                 
+    // Tissue section
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
@@ -949,7 +954,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 
         real *sv = the_ode_solver->sv;
 
-        if(the_ode_solver->gpu) 
+        if(the_ode_solver->gpu)
         {
         #ifdef COMPILE_CUDA
             uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
@@ -962,11 +967,11 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
                 check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
             #pragma omp parallel for
-            for(uint32_t i = 0; i < n_active; i++) 
+            for(uint32_t i = 0; i < n_active; i++)
             {
                 vms[ac[i]->sv_position] = (real)ac[i]->v;
 
-                if(ac[i]->v > vm_threshold) 
+                if(ac[i]->v > vm_threshold)
                 {
                     act = true;
                 }
@@ -975,25 +980,25 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
             check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
             free(vms);
         #endif
-        } 
-        else 
+        }
+        else
         {
             #pragma omp parallel for
-            for(uint32_t i = 0; i < n_active; i++) 
+            for(uint32_t i = 0; i < n_active; i++)
             {
                 sv[ac[i]->sv_position * n_odes] = (real)ac[i]->v;
 
-                if(ac[i]->v > vm_threshold) 
+                if(ac[i]->v > vm_threshold)
                 {
                     act = true;
                 }
             }
         }
     }
-    
+
     if (the_purkinje_ode_solver)
     {
-        // Purkinje section                                                 
+        // Purkinje section
         uint32_t n_active_purkinje = the_grid->the_purkinje->number_of_purkinje_cells;
         struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
 
@@ -1001,7 +1006,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 
         real *sv_purkinje = the_purkinje_ode_solver->sv;
 
-        if(the_purkinje_ode_solver->gpu) 
+        if(the_purkinje_ode_solver->gpu)
         {
         #ifdef COMPILE_CUDA
             uint32_t max_number_of_purkinje_cells = the_purkinje_ode_solver->original_num_cells;
@@ -1014,11 +1019,11 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
                 check_cuda_errors(cudaMemcpy(vms_purkinje, sv_purkinje, mem_size_purkinje, cudaMemcpyDeviceToHost));
 
             #pragma omp parallel for
-            for(uint32_t i = 0; i < n_active_purkinje; i++) 
+            for(uint32_t i = 0; i < n_active_purkinje; i++)
             {
                 vms_purkinje[ac_purkinje[i]->sv_position] = (real)ac_purkinje[i]->v;
 
-                if(ac_purkinje[i]->v > vm_threshold) 
+                if(ac_purkinje[i]->v > vm_threshold)
                 {
                     act = true;
                 }
@@ -1027,15 +1032,15 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
             check_cuda_errors(cudaMemcpy(sv_purkinje, vms_purkinje, mem_size_purkinje, cudaMemcpyHostToDevice));
             free(vms_purkinje);
         #endif
-        } 
-        else 
+        }
+        else
         {
             #pragma omp parallel for
-            for(uint32_t i = 0; i < n_active_purkinje; i++) 
+            for(uint32_t i = 0; i < n_active_purkinje; i++)
             {
                 sv_purkinje[ac_purkinje[i]->sv_position * n_odes_purkinje] = (real)ac_purkinje[i]->v;
 
-                if(ac_purkinje[i]->v > vm_threshold) 
+                if(ac_purkinje[i]->v > vm_threshold)
                 {
                     act = true;
                 }
@@ -1046,7 +1051,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
     return act;
 }
 
-void save_old_cell_positions(struct grid *the_grid) 
+void save_old_cell_positions(struct grid *the_grid)
 {
 
     uint32_t n_active = the_grid->num_active_cells;
@@ -1055,20 +1060,20 @@ void save_old_cell_positions(struct grid *the_grid)
     int i;
 
     #pragma omp parallel for
-    for(i = 0; i < n_active; i++) 
+    for(i = 0; i < n_active; i++)
     {
         ac[i]->sv_position = ac[i]->grid_position;
     }
 
     // Purkinje section
     struct grid_purkinje *the_purkinje = the_grid->the_purkinje;
-    
+
     if (the_purkinje->first_cell)
     {
         uint32_t n_purkinje_active = the_purkinje->num_active_purkinje_cells;
         struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
         #pragma omp parallel for
-        for(i = 0; i < n_purkinje_active; i++) 
+        for(i = 0; i < n_purkinje_active; i++)
         {
             //print_to_stdout_and_file("Cell %u -- grid_position = %u\n",i,ac_purkinje[i]->grid_position);
             ac_purkinje[i]->sv_position = ac_purkinje[i]->grid_position;
@@ -1099,7 +1104,7 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
 
 void print_solver_info(struct monodomain_solver *the_monodomain_solver,
                         struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,
-                        struct grid *the_grid, struct user_options *options) 
+                        struct grid *the_grid, struct user_options *options)
 {
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
@@ -1108,7 +1113,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
     #if defined(_OPENMP)
     print_to_stdout_and_file("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
     #endif
-    
+
     print_to_stdout_and_file("[monodomain_solver] Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
     print_to_stdout_and_file("[monodomain_solver] PDE time step = %lf\n", the_monodomain_solver->dt);
     print_to_stdout_and_file("[monodomain_solver] ODE min time step = %lf\n", the_ode_solver->min_dt);
@@ -1116,22 +1121,22 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    if(the_ode_solver->gpu) 
+    if(the_ode_solver->gpu)
         print_to_stdout_and_file("[ode_solver] Using GPU to solve ODEs\n");
     print_to_stdout_and_file("[ode_solver] Using %s as model lib\n", the_ode_solver->model_data.model_library_path);
     print_to_stdout_and_file("[ode_solver] Initial V: %lf\n", the_ode_solver->model_data.initial_v);
-    print_to_stdout_and_file("[ode_solver] Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);    
+    print_to_stdout_and_file("[ode_solver] Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    if(options->ode_extra_config) 
+    if(options->ode_extra_config)
     {
 
-        if (shlen(options->ode_extra_config) == 1) 
+        if (shlen(options->ode_extra_config) == 1)
         {
             print_to_stdout_and_file("[ode_solver] Extra ODE Solver parameter:\n");
-        } 
-        else if (shlen(options->ode_extra_config) > 1) 
+        }
+        else if (shlen(options->ode_extra_config) > 1)
         {
             print_to_stdout_and_file("[ode_solver] Extra ODE Solver parameters:\n");
         }
@@ -1143,24 +1148,24 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
 
     if (the_purkinje_ode_solver)
     {
-        if(the_purkinje_ode_solver->gpu) 
+        if(the_purkinje_ode_solver->gpu)
             print_to_stdout_and_file("[purkinje_ode_solver] Using GPU to solve ODEs\n");
         print_to_stdout_and_file("[purkinje_ode_solver] Using %s as model lib\n", the_purkinje_ode_solver->model_data.model_library_path);
         print_to_stdout_and_file("[purkinje_ode_solver] Initial V: %lf\n", the_purkinje_ode_solver->model_data.initial_v);
         print_to_stdout_and_file("[purkinje_ode_solver] Number of ODEs in cell model: %d\n", the_purkinje_ode_solver->model_data.number_of_ode_equations);
     }
-        
+
 
     print_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    if(options->purkinje_ode_extra_config) 
+    if(options->purkinje_ode_extra_config)
     {
 
-        if (shlen(options->purkinje_ode_extra_config) == 1) 
+        if (shlen(options->purkinje_ode_extra_config) == 1)
         {
             print_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameter:\n");
-        } 
-        else if (shlen(options->purkinje_ode_extra_config) > 1) 
+        }
+        else if (shlen(options->purkinje_ode_extra_config) > 1)
         {
             print_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameters:\n");
         }
@@ -1195,19 +1200,19 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
                                  the_monodomain_solver->start_adapting_at);
     }
 
-    if(options->linear_system_solver_config) 
+    if(options->linear_system_solver_config)
     {
         print_linear_system_solver_config_values(options->linear_system_solver_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
-    if(options->save_mesh_config) 
+    if(options->save_mesh_config)
     {
         print_save_mesh_config_values(options->save_mesh_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
-    if(options->stim_configs) 
+    if(options->stim_configs)
     {
 
         size_t num_stims = shlen(options->stim_configs);
@@ -1227,7 +1232,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
         }
     }
 
-    if(options->purkinje_stim_configs) 
+    if(options->purkinje_stim_configs)
     {
 
         size_t num_stims = shlen(options->purkinje_stim_configs);
@@ -1259,19 +1264,19 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
         print_to_stdout_and_file (LOG_LINE_SEPARATOR);
     }
 
-    if(options->extra_data_config) 
+    if(options->extra_data_config)
     {
         print_extra_data_config_values(options->extra_data_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
-    if(options->update_monodomain_config) 
+    if(options->update_monodomain_config)
     {
         print_update_monodomain_config_values(options->update_monodomain_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
-    if(options->assembly_matrix_config) 
+    if(options->assembly_matrix_config)
     {
         print_assembly_matrix_config_values(options->assembly_matrix_config);
         print_to_stdout_and_file(LOG_LINE_SEPARATOR);
@@ -1320,7 +1325,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 
     int i;
 
-    if(the_ode_solver->gpu) 
+    if(the_ode_solver->gpu)
     {
 #ifdef COMPILE_CUDA
         uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
@@ -1331,14 +1336,14 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
 #pragma omp parallel for
-        for(i = 0; i < n_active; i++) 
+        for(i = 0; i < n_active; i++)
         {
             real v_old = vms[ac[i]->sv_position];
             real v_new = (real)ac[i]->v;
 
-            real dvdt = (v_new - v_old) / dt; 
+            real dvdt = (v_new - v_old) / dt;
 
-            if(dvdt > ac[i]->max_dvdt) 
+            if(dvdt > ac[i]->max_dvdt)
             {
                 ac[i]->max_dvdt = dvdt;
                 ac[i]->activation_time = cur_time;
@@ -1355,18 +1360,18 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 
         free(vms);
 #endif
-    } 
-    else 
+    }
+    else
     {
 #pragma omp parallel for
-        for(i = 0; i < n_active; i++) 
+        for(i = 0; i < n_active; i++)
         {
             real v_old = sv[ac[i]->sv_position * n_odes];
             real v_new = (real)ac[i]->v;
 
             real dvdt = (v_new - v_old) / dt;
 
-            if ( (dvdt > ac[i]->max_dvdt) ) 
+            if ( (dvdt > ac[i]->max_dvdt) )
             {
 
                 ac[i]->max_dvdt = dvdt;
@@ -1391,7 +1396,7 @@ void print_activation_time (struct grid *the_grid)
 }
 
 // TODO: Change the LINEAR_SYSTEM macro to (struct config *config, const uint32_t num_active_cells, struct cell_node **ac, uint32_t *number_of_iterations, real_cpu *error)
-void linear_system_solver_purkinje (struct config *config, struct grid *the_grid, uint32_t *number_of_iterations, real_cpu *error) 
+void linear_system_solver_purkinje (struct config *config, struct grid *the_grid, uint32_t *number_of_iterations, real_cpu *error)
 {
     bool jacobi_initialized = false;
     bool bcg_initialized = false;
@@ -1569,19 +1574,19 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
 
     // Purkinje solution
     struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
-    
+
     // Purkinje coupling parameters
     real rpmj = the_grid->the_purkinje->the_network->rpmj;
     real pmj_scale = the_grid->the_purkinje->the_network->pmj_scale;
 
     // TODO: Switch this to a region around the terminal
-    rpmj *= pmj_scale;  
-    real Gpmj = 1.0 / rpmj; 
+    rpmj *= pmj_scale;
+    real Gpmj = 1.0 / rpmj;
 
-    if(the_ode_solver->gpu) 
+    if(the_ode_solver->gpu)
     {
     #ifdef COMPILE_CUDA
-    
+
         uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
         real *vms;
         size_t mem_size = max_number_of_cells * sizeof(real);
@@ -1592,12 +1597,12 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
             check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
         #pragma omp parallel for
-        for(uint32_t i = 0; i < n_active; i++) 
+        for(uint32_t i = 0; i < n_active; i++)
         {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
         }
 
-        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals;
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
             //printf("[map_purkinje_solution_to_tissue] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
@@ -1610,7 +1615,7 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
 
             // Add this current to the RHS of this cell
             ac[tissue_index]->b -= Ipmj;
-        }    
+        }
 
         check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
@@ -1618,7 +1623,7 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
     }
     else
     {
-        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals;
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
             //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
@@ -1654,12 +1659,12 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
     uint32_t nodes = the_purkinje_ode_solver->model_data.number_of_ode_equations;
 
     real rpmj = the_grid->the_purkinje->the_network->rpmj;
-    real Gpmj = 1.0 / rpmj; 
+    real Gpmj = 1.0 / rpmj;
 
-    if(the_purkinje_ode_solver->gpu) 
+    if(the_purkinje_ode_solver->gpu)
     {
     #ifdef COMPILE_CUDA
-    
+
         uint32_t max_number_of_cells = the_purkinje_ode_solver->original_num_cells;
         real *vms;
         size_t mem_size = max_number_of_cells * sizeof(real);
@@ -1669,12 +1674,12 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
         //#pragma omp parallel for
-        //for(uint32_t i = 0; i < n_active_purkinje; i++) 
+        //for(uint32_t i = 0; i < n_active_purkinje; i++)
         //{
         //    vms[ac_purkinje[i]->sv_position] = (real)ac_purkinje[i]->v;
         //}
 
-        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals;
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
             //printf("[map_purkinje_solution_to_tissue] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
@@ -1687,7 +1692,7 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
 
             // Add this current to the RHS of this cell
             ac_purkinje[purkinje_index]->b -= Ipmj;
-        }    
+        }
 
         //check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
@@ -1695,7 +1700,7 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
     }
     else
     {
-        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals; 
+        uint32_t num_of_purkinje_terminals = the_grid->the_purkinje->the_network->number_of_terminals;
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
             //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
@@ -1732,20 +1737,20 @@ void lu_decomposition (double **lu, uint32_t pivot[], struct cell_node **ac, con
     for (uint32_t i = 0; i < num_rows; i++)
         for (uint32_t j = 0; j < num_cols; j++)
             lu[i][j] = 0.0;
-    
+
 // Fill the non-zero elements
     for (uint32_t i = 0; i < n_active; i++)
     {
         struct element *cell_elements = ac[i]->elements;
         size_t max_elements = arrlen(cell_elements);
-     
+
         uint32_t row = i;
 
-        for(size_t j = 0; j < max_elements; j++) 
+        for(size_t j = 0; j < max_elements; j++)
         {
             uint32_t col = cell_elements[j].column;
             double value = cell_elements[j].value;
-            
+
             lu[row][col] = value;
         }
     }
@@ -1786,9 +1791,9 @@ void lu_decomposition (double **lu, uint32_t pivot[], struct cell_node **ac, con
                 lu[j][k] -= (m * lu[i][k]);
             }
         }
-    }   
+    }
 }
-        
+
 }
 
 void choose_pivot (double **lu, const uint32_t num_rows, uint32_t *pivot_line, double *Amax, const uint32_t i)
@@ -1803,7 +1808,7 @@ void choose_pivot (double **lu, const uint32_t num_rows, uint32_t *pivot_line, d
         if (value > *Amax)
         {
             *Amax = value;
-            *pivot_line = j; 
+            *pivot_line = j;
         }
     }
 }
@@ -1839,7 +1844,7 @@ void linear_system_solver_purkinje_lu(double **lu, uint32_t pivot[], struct grid
     for (uint32_t i = 0; i < n_active; i++)
         printf("Cell %u -- V = %g\n",i,ac[i]->v);
 */
-    // Forward substitution using the pivot array    
+    // Forward substitution using the pivot array
     uint32_t k = pivot[0];
     y[0] = ac[k]->b;
     for (uint32_t i = 1; i < num_rows; i++)
@@ -1883,7 +1888,7 @@ void solve_explicit_purkinje_diffusion (struct grid *the_grid, struct ode_solver
     struct graph *the_network = the_grid->the_purkinje->the_network;
     real_cpu beta = the_monodomain_solver->beta;
     real_cpu cm = the_monodomain_solver->cm;
-    real_cpu dt_pde = the_monodomain_solver->dt;    
+    real_cpu dt_pde = the_monodomain_solver->dt;
 
     uint32_t n_active = the_grid->the_purkinje->num_active_purkinje_cells;
     struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
@@ -1913,18 +1918,18 @@ void solve_explicit_purkinje_diffusion (struct grid *the_grid, struct ode_solver
             uint32_t dest_index = e->id;
             //real_cpu sigma_x2 = ac[dest_index]->sigma.x;
             //real sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
-            
+
             update += sv[ ac[dest_index]->sv_position * n_equations_cell_model ];
 
             e = e->next;
         }
-        
+
         update *= multiplier;
 
         ac[src_index]->v = v_old + update;
 
         n = n->next;
     }
-    
+
 }
 */

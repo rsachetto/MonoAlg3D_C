@@ -298,7 +298,7 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
             }
 
         }
-    }	
+    }
 
     #pragma omp parallel for private(dist)
     for (i = 0; i < num_active_cells; i++) {
@@ -376,7 +376,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
 
     real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
-    
+
     int num_par = 7;
     int num_tt_par = 12;
 
@@ -416,7 +416,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
     extra_data[4] = GNa_multiplicator;
     extra_data[5] = GCa_multiplicator;
     extra_data[6] = INaCa_multiplicator;
-  
+
     // Extra initial conditions section (atpi = 2.0)
     extra_data[7] = -86.315208;
     extra_data[8] = 0.001362;
@@ -457,4 +457,111 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
     }
 
     return (void*)extra_data;
+}
+
+SET_EXTRA_DATA(set_extra_data_sensibility) {
+
+	  //uint32_t num_active_cells = the_grid->num_active_cells;
+    uint32_t num_active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
+    int num_par = 7;
+    int num_init_condit = 12;
+
+	// num_init_condit = 12 initial conditions of tt3, num_par 7, extra data
+
+    *extra_data_size = sizeof(real)*(num_par+num_init_condit+num_active_cells);
+
+    real *extra_data = (real*)malloc(*extra_data_size);
+
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
+
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
+
+    real Ki = 138.3;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki, config->config_data, "Ki");
+
+    real Vm_modifier = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config->config_data, "Vm_modifier");
+
+    real GNa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_multiplicator, config->config_data, "GNa_multiplicator");
+
+    real GCaL_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCaL_multiplicator, config->config_data, "GCaL_multiplicator");
+
+    real INaCa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_multiplicator, config->config_data, "INaCa_multiplicator");
+
+	real sv_0 = -86.2f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_0, config->config_data, "sv_0");
+
+	real sv_1 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_1, config->config_data, "sv_1");
+
+	real sv_2 = 0.75f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_2, config->config_data, "sv_2");
+
+	real sv_3 = 0.75f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_3, config->config_data, "sv_3");
+
+	real sv_4 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_4, config->config_data, "sv_4");
+
+	real sv_5 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_5, config->config_data, "sv_5");
+
+	real sv_6 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_6, config->config_data, "sv_6");
+
+	real sv_7 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_7, config->config_data, "sv_7");
+
+	real sv_8 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_8, config->config_data, "sv_8");
+
+	real sv_9 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_9, config->config_data, "sv_9");
+
+	real sv_10 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_10, config->config_data, "sv_10");
+
+	real sv_11 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_11, config->config_data, "sv_11");
+
+	// Set additional parameters section
+	extra_data[0] 	= atpi;
+    extra_data[1] 	= Ko;
+    extra_data[2] 	= Ki;
+    extra_data[3] 	= Vm_modifier;
+    extra_data[4] 	= GNa_multiplicator;
+    extra_data[5] 	= GCaL_multiplicator;
+    extra_data[6] 	= INaCa_multiplicator;
+
+    // Set initial conditions section
+    extra_data[7] 	= sv_0;
+    extra_data[8] 	= sv_1;
+    extra_data[9] 	= sv_2;
+    extra_data[10] 	= sv_3;
+    extra_data[11] 	= sv_4;
+    extra_data[12] 	= sv_5;
+    extra_data[13] 	= sv_6;
+    extra_data[14] 	= sv_7;
+    extra_data[15] 	= sv_8;
+    extra_data[16] 	= sv_9;
+    extra_data[17] 	= sv_10;
+    extra_data[18] 	= sv_11;
+
+    // Set fibrosis section
+    bool healthy_cell = false;
+    for(uint32_t i = num_par+num_init_condit; i < num_active_cells + num_par + num_init_condit; i++)
+    {
+		if (healthy_cell)
+			extra_data[i] = 1.0;
+		else
+			extra_data[i] = 0.0;
+    }
+
+	return (void*)extra_data;
+
 }
