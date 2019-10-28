@@ -326,15 +326,21 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     real_cpu minx = mesh_points[0][0];
     int index;
 
+    //print_to_stdout_and_file("[grid] minx = %g || maxx = %g || miny = %g || maxy = %g || minz = %g || maxz = %g ||\n",minx,maxx,miny,maxy,minz,maxz);
+
     real_cpu x, y, z;
     while(grid_cell != 0) {
         x = grid_cell->center.x;
         y = grid_cell->center.y;
         z = grid_cell->center.z;
 
+        //print_to_stdout_and_file("[grid] x = %g || y = %g || z = %g || ",x,y,z);
+
         if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            //print_to_stdout_and_file("Out\n");
             grid_cell->active = false;
         } else {
+            //print_to_stdout_and_file("Inside\n");
             index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
 
             if(index != -1) {
@@ -663,7 +669,7 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
 
 }
 
-void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) 
+void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length)
 {
 
     print_to_stdout_and_file("Making upper and down left corner inactive !\n");
@@ -679,10 +685,10 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
 
-    while(grid_cell != 0) 
+    while(grid_cell != 0)
     {
 
-        if(grid_cell->active) 
+        if(grid_cell->active)
         {
 
             real_cpu x = grid_cell->center.x;
@@ -692,12 +698,12 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
             // Check region 1
             inside = (x >= 0.0) && (x <= channel_length) &&\
                     (y >= 0.0) && (y <= region_height);
-            
+
             // Check region 2
             inside |= (x >= 0.0) && (x <= channel_length) &&\
                     (y >= region_height + channel_width) && (y <= side_length_y);
 
-            if(inside) 
+            if(inside)
             {
                 grid_cell->active = false;
             }
@@ -800,16 +806,16 @@ void set_plain_sphere_fibrosis_with_fibrotic_hole (struct grid *the_grid, real_c
             INITIALIZE_FIBROTIC_INFO(grid_cell);
 
             if(distance <= bz_radius_2) {
-				
+
                 if(distance <= sphere_radius_2) {
                     FIBROTIC(grid_cell) = true;
-                } 
-                
+                }
+
                 if (distance <= fib_radius_2){
 					grid_cell-> active = false;
 					grid_cell->can_change = false;
 				}
-                
+
                 else {
                     BORDER_ZONE(grid_cell) = true;
                 }
@@ -1066,7 +1072,7 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
                         const double min_x, const double max_x,\
                         const double min_y, const double max_y,\
-                        const double min_z, const double max_z) 
+                        const double min_z, const double max_z)
 {
 
     print_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
@@ -1081,7 +1087,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
     print_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
-    while(grid_cell != 0) 
+    while(grid_cell != 0)
     {
         real center_x = grid_cell->center.x;
         real center_y = grid_cell->center.y;
@@ -1091,10 +1097,10 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
             center_y >= min_y && center_y <= max_y &&\
             center_z >= min_z && center_z <= max_z)
         {
-            if(grid_cell->active) 
+            if(grid_cell->active)
             {
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi) 
+                if(p < phi)
                 {
                     grid_cell->active = false;
                 }
@@ -1103,7 +1109,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
                 FIBROTIC(grid_cell) = true;
             }
         }
-        
+
         grid_cell = grid_cell->next;
     }
 

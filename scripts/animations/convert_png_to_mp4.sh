@@ -7,8 +7,8 @@
 # Variables
 FILENAME="frames/frame"
 FRAME_RATE="50"
-END_FRAME="1200"
-OUTPUT_VIDEO_FILENAME="videos/lucas_bifurcation_fibrosis_comparison"
+END_FRAME="500"
+OUTPUT_VIDEO_FILENAME="videos/joventino_mesh"
 RESOLUTION="1580x740"
 
 # Execute the converting command using FFMPEG
