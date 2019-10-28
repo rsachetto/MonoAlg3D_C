@@ -461,8 +461,8 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere_atpi_changed) {
 
 SET_EXTRA_DATA(set_extra_data_sensibility) {
 
-	  //uint32_t num_active_cells = the_grid->num_active_cells;
-    uint32_t num_active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
+	  uint32_t num_active_cells = the_grid->num_active_cells;
+    //uint32_t num_active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
     int num_par = 7;
     int num_init_condit = 12;
 

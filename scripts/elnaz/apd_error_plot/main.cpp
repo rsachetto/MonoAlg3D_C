@@ -1,5 +1,6 @@
 // Author: Lucas Berg
 // Script to write the values from an input file to the cells of the tissue
+// ** This script only works for VTU files
 
 #include <iostream>
 #include <string>

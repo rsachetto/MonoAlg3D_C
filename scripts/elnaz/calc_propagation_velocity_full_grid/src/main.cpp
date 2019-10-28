@@ -2,7 +2,7 @@
 // ---------------------------------------------------------------------------------------------
 // Program that writes the activation time and conduction velocity map of a given simulation
 // The user needs to pass an activation map as an input parameter.
-// This program only works with plain mesh until now ...
+// *** This program only works with plain mesh until now ...
 // ---------------------------------------------------------------------------------------------
 
 #include <iostream>

@@ -1,3 +1,7 @@
+# Author: Lucas Berg and Elnaz
+# Script to plot a comparison between each of the 4 scenarios from Elnaz`s experiments
+
+
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
