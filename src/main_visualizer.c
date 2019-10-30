@@ -18,7 +18,6 @@
 
 
 static inline int get_step_from_filename(char *filename) {
-
     char *ia = filename;
 
     int int_a = 0;
@@ -29,7 +28,6 @@ static inline int get_step_from_filename(char *filename) {
     }
 
     return int_a;
-
 }
 
 void init_draw_config(struct draw_config *draw_config, struct visualization_options *options) {
@@ -39,7 +37,7 @@ void init_draw_config(struct draw_config *draw_config, struct visualization_opti
     draw_config->max_v = options->max_v;
     draw_config->min_v = options->min_v;
 
-    if(draw_config->min_v == 0) draw_config->min_v = 0.1f;
+    if(draw_config->min_v == 0) draw_config->min_v = 0.001f;
 
     draw_config->simulating = true;
 

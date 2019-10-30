@@ -194,7 +194,7 @@ COMPILE_EXECUTABLE () {
 		mkdir -p "$BUILD_DIR"
 	fi
 
-  	PRINT_INFO "COMPILING AND LINKING EXECUTABLE $EXECUTABLE_NAME"
+  PRINT_INFO "COMPILING AND LINKING EXECUTABLE $EXECUTABLE_NAME"
 
 	local FORCE_COMPILATION=$GLOBAL_FORCE_COMPILATION
 
@@ -259,7 +259,7 @@ COMPILE_EXECUTABLE () {
 
 COMPILE_OBJECT () {
 
- local SRC_FILE=$1
+  local SRC_FILE=$1
 	local OBJ_FILE=$2
 
 	local MY_C_FLAGS="$C_FLAGS $3"
@@ -364,7 +364,7 @@ COMPILE_STATIC_LIB () {
 		COMPILE_OBJECT "${PWD}/$s" "$OBJ_FILE" "$EXTRA_C_FLAGS -fPIC" "$FORCE_COMPILATION"
 
 		if [ -z "$ANY_COMPILED_LOCAL" ]; then
-		ANY_COMPILED_LOCAL=$ANY_COMPILED
+		  ANY_COMPILED_LOCAL=$ANY_COMPILED
 		fi
 
 	done
@@ -398,12 +398,12 @@ COMPILE_SHARED_LIB () {
 	  STATIC_DEPS+=("${COMPILED_STATIC_LIBS[$dep]}")
 	done
 
-  	local DYNAMIC_DEPS=()
+  local DYNAMIC_DEPS=()
 	for dep in $DYNAMIC_DEPS_LIST; do
 	  DYNAMIC_DEPS+=("-l${dep}")
 	done
 
-  	local EXTRA_LIBRARY_PATH=()
+  local EXTRA_LIBRARY_PATH=()
 	for libpath in $EXTRA_LIB_PATH_LIST; do
 	  if [ -n "${libpath}" ]; then
 	    EXTRA_LIBRARY_PATH+=("-L${libpath}")
@@ -412,8 +412,8 @@ COMPILE_SHARED_LIB () {
 
 	local BUILD_DIR=$ROOT_DIR/${DEFAULT_BUILD_DIR}${BUILD_TYPE}/$LIB_NAME
 
-  	if [ ! -d "$BUILD_DIR/objs" ]; then
-		mkdir -p "$BUILD_DIR/objs"
+  if [ ! -d "$BUILD_DIR/objs" ]; then
+	  mkdir -p "$BUILD_DIR/objs"
 	fi
 
 	local OBJECTS=()
@@ -424,8 +424,13 @@ COMPILE_SHARED_LIB () {
 
 	local ANY_COMPILED_LOCAL=''
 
-   	local FORCE_COMPILATION=$GLOBAL_FORCE_COMPILATION
+  local FORCE_COMPILATION=$GLOBAL_FORCE_COMPILATION
 	local TIME_FILE="$BUILD_DIR/.${LIB_NAME}_last_compiled_time_bbash"
+
+  if [ ! -d "$LIBRARY_OUTPUT_DIRECTORY" ]; then
+	  mkdir -p "$LIBRARY_OUTPUT_DIRECTORY"
+	  FORCE_COMPILATION='y'
+	fi
 
 	if [ -z $FORCE_COMPILATION ]; then
 		#CHECK IF BUILD SCRIPT CHANGED SINCE THE LAST COMPILATION
@@ -435,10 +440,10 @@ COMPILE_SHARED_LIB () {
 
 		for h in $HEADERS; do
 			if [ -f "$h" ]; then
-			if [ "$(RECOMPILE_OR_NOT "$LIB_PATH" "$h")" -gt "0" ]; then
-				FORCE_COMPILATION='y'
-				break
-			fi
+        if [ "$(RECOMPILE_OR_NOT "$LIB_PATH" "$h")" -gt "0" ]; then
+          FORCE_COMPILATION='y'
+          break
+        fi
 			else
 				PRINT_WARN "$h file does not exist! Check your build scripts!"
 			fi
@@ -459,7 +464,7 @@ COMPILE_SHARED_LIB () {
 
 	done
 
-  	PRINT_INFO "LINKING SHARED LIB $LIB_NAME"
+  PRINT_INFO "LINKING SHARED LIB $LIB_NAME"
 
 	if [ -n "$IS_CUDA" ]; then
 		LINKER=$CXX_COMPILER
@@ -471,11 +476,12 @@ COMPILE_SHARED_LIB () {
 		ALL_FLAGS="-fPIC $C_FLAGS -shared -o $LIB_PATH ${OBJECTS[*]} ${STATIC_DEPS[*]} ${EXTRA_LIBRARY_PATH[*]} ${DYNAMIC_DEPS[*]}"
 
 		ECHO_AND_EXEC_COMMAND "$LINKER $ALL_FLAGS"
-
-		ECHO_AND_EXEC_COMMAND "cp $LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 		touch "$TIME_FILE"
-
 	fi
+
+  if [ ! -f "$LIBRARY_OUTPUT_DIRECTORY/$LIB_NAME".so ]; then
+    ECHO_AND_EXEC_COMMAND "cp $LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+  fi
 
   COMPILED_SHARED_LIBS[$1]=$LIB_PATH
 
