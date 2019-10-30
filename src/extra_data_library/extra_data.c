@@ -565,3 +565,240 @@ SET_EXTRA_DATA(set_extra_data_sensibility) {
 	return (void*)extra_data;
 
 }
+
+//Extra data for percolation fibrosis with circle
+SET_EXTRA_DATA(set_extra_data_sensibility_sphere_fibrosis) {
+
+	uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node ** ac = the_grid->active_cells;
+    //~ int num_par = 7;
+    //~ int num_init_condit = 12;
+    int num_par = 14;
+    int num_init_condit = 24;
+
+
+	// num_init_condit = 14 initial conditions of tt3, num_par 24, extra data
+
+    *extra_data_size = sizeof(real)*(num_par+num_init_condit+num_active_cells);
+
+    real *extra_data = (real*)malloc(*extra_data_size);
+
+	/*Region 1*/
+
+    real atpi = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config->config_data, "atpi");
+
+    real Ko = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko, config->config_data, "Ko");
+
+    real Ki = 138.3;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki, config->config_data, "Ki");
+
+    real Vm_modifier = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config->config_data, "Vm_modifier");
+
+    real GNa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_multiplicator, config->config_data, "GNa_multiplicator");
+
+    real GCaL_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCaL_multiplicator, config->config_data, "GCaL_multiplicator");
+
+    real INaCa_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_multiplicator, config->config_data, "INaCa_multiplicator");
+
+
+    real sv_0 = -86.2f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_0, config->config_data, "sv_0");
+
+	real sv_1 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_1, config->config_data, "sv_1");
+
+	real sv_2 = 0.75f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_2, config->config_data, "sv_2");
+
+	real sv_3 = 0.75f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_3, config->config_data, "sv_3");
+
+	real sv_4 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_4, config->config_data, "sv_4");
+
+	real sv_5 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_5, config->config_data, "sv_5");
+
+	real sv_6 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_6, config->config_data, "sv_6");
+
+	real sv_7 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_7, config->config_data, "sv_7");
+
+	real sv_8 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_8, config->config_data, "sv_8");
+
+	real sv_9 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_9, config->config_data, "sv_9");
+
+	real sv_10 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_10, config->config_data, "sv_10");
+
+	real sv_11 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_11, config->config_data, "sv_11");
+
+
+	/*Region 2*/
+
+
+    real atpi_2 = 6.8;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi_2, config->config_data, "atpi_2");
+
+    real Ko_2 = 5.4;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ko_2, config->config_data, "Ko_2");
+
+    real Ki_2 = 138.3;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ki_2, config->config_data, "Ki_2");
+
+    real Vm_modifier_2 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier_2, config->config_data, "Vm_modifier_2");
+
+    real GNa_multiplicator_2 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_multiplicator_2, config->config_data, "GNa_multiplicator_2");
+
+    real GCaL_multiplicator_2 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCaL_multiplicator_2, config->config_data, "GCaL_multiplicator_2");
+
+    real INaCa_multiplicator_2 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_multiplicator_2, config->config_data, "INaCa_multiplicator_2");
+
+	real sv_0_2 = -86.2f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_0_2, config->config_data, "sv_0_2");
+
+	real sv_1_2 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_1_2, config->config_data, "sv_1_2");
+
+	real sv_2_2 = 0.75f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_2_2, config->config_data, "sv_2_2");
+
+	real sv_3_2 = 0.75f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_3_2, config->config_data, "sv_3_2");
+
+	real sv_4_2 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_4_2, config->config_data, "sv_4_2");
+
+	real sv_5_2 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_5_2, config->config_data, "sv_5_2");
+
+	real sv_6_2 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_6_2, config->config_data, "sv_6_2");
+
+	real sv_7_2 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_7_2, config->config_data, "sv_7_2");
+
+	real sv_8_2 = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_8_2, config->config_data, "sv_8_2");
+
+	real sv_9_2 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_9_2, config->config_data, "sv_9_2");
+
+	real sv_10_2 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_10_2, config->config_data, "sv_10_2");
+
+	real sv_11_2 = 0.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, sv_11_2, config->config_data, "sv_11_2");
+
+	/*Region 1*/
+
+	// Set additional parameters section Reg 1
+	extra_data[0] 	= atpi;
+    extra_data[1] 	= Ko;
+    extra_data[2] 	= Ki;
+    extra_data[3] 	= Vm_modifier;
+    extra_data[4] 	= GNa_multiplicator;
+    extra_data[5] 	= GCaL_multiplicator;
+    extra_data[6] 	= INaCa_multiplicator;
+
+    // Set initial conditions section   Reg 1
+    extra_data[7] 	= sv_0;
+    extra_data[8] 	= sv_1;
+    extra_data[9] 	= sv_2;
+    extra_data[10] 	= sv_3;
+    extra_data[11] 	= sv_4;
+    extra_data[12] 	= sv_5;
+    extra_data[13] 	= sv_6;
+    extra_data[14] 	= sv_7;
+    extra_data[15] 	= sv_8;
+    extra_data[16] 	= sv_9;
+    extra_data[17] 	= sv_10;
+    extra_data[18] 	= sv_11;
+
+    /*Region 2*/
+
+	// Set additional parameters section  Reg 2
+	  extra_data[19] 	= atpi_2;
+    extra_data[20] 	= Ko_2;
+    extra_data[21] 	= Ki_2;
+    extra_data[22] 	= Vm_modifier_2;
+    extra_data[23] 	= GNa_multiplicator_2;
+    extra_data[24] 	= GCaL_multiplicator_2;
+    extra_data[25] 	= INaCa_multiplicator_2;
+
+
+	// Set initial conditions section   Reg 2
+    extra_data[26] 	= sv_0_2;
+    extra_data[27] 	= sv_1_2;
+    extra_data[28] 	= sv_2_2;
+    extra_data[29] 	= sv_3_2;
+    extra_data[30] 	= sv_4_2;
+    extra_data[31] 	= sv_5_2;
+    extra_data[32] 	= sv_6_2;
+    extra_data[33] 	= sv_7_2;
+    extra_data[34] 	= sv_8_2;
+    extra_data[35] 	= sv_9_2;
+    extra_data[36] 	= sv_10_2;
+    extra_data[37] 	= sv_11_2;
+
+
+
+    real plain_center = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config->config_data, "plain_center");
+
+    real border_zone_size = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, border_zone_size, config->config_data, "border_zone_size");
+
+    real sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "sphere_radius");
+
+
+    real fib_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, fib_radius, config->config_data, "fibrosis_radius");
+
+
+	#pragma omp parallel for
+    for (uint32_t i = 0; i < num_active_cells; i++)
+    {
+
+        if(FIBROTIC(ac[i]))
+        {
+            extra_data[i+num_par+num_init_condit] = 0.0;
+        }
+        else if(BORDER_ZONE(ac[i]))
+        {
+
+            real center_x = (real)ac[i]->center.x;
+            real center_y = (real)ac[i]->center.y;
+            //TODO: Maybe we want the distance from the Z as well
+            //real center_z = (real)ac[i]->center_z;
+
+            real distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
+            distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;
+            extra_data[i+num_par+num_init_condit] = distanceFromCenter;
+
+        }
+        else
+        {
+            extra_data[i+num_par+num_init_condit] = 1.0;
+        }
+
+    }
+
+	return (void*)extra_data;
+
+}

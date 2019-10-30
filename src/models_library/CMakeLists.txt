@@ -319,3 +319,19 @@ else()
     ADD_LIBRARY(ten_tusscher_3_sensibility ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 ################################################################################
+
+############## PEDRO TENTUSSCHER TWO REGIONS ###################################
+set(MODEL_FILE_CPU "ten_tusscher_3_two_region.c")
+set(MODEL_FILE_GPU "ten_tusscher_3_two_region.cu")
+set(COMMON_HEADERS model_common.h ten_tusscher_3_two_region.h)
+
+if(CUDA_FOUND)
+    CUDA_ADD_LIBRARY(ten_tusscher_3_two_region ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+        IF(MSVC)
+                set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
+                TARGET_LINK_LIBRARIES(ten_tusscher_3_two_region PUBLIC utils)
+        endif()
+else()
+    ADD_LIBRARY(ten_tusscher_3_two_region ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+################################################################################
