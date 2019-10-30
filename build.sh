@@ -56,12 +56,12 @@ fi
 
 echo -e "${INFO}C FLAGS:${NC} $C_FLAGS"
 
+ADD_SUBDIRECTORY "src/string"
 ADD_SUBDIRECTORY "src/config_helpers"
 ADD_SUBDIRECTORY "src/utils"
 ADD_SUBDIRECTORY "src/alg"
 ADD_SUBDIRECTORY "src/monodomain"
 ADD_SUBDIRECTORY "src/ini_parser"
-ADD_SUBDIRECTORY "src/string"
 ADD_SUBDIRECTORY "src/config"
 ADD_SUBDIRECTORY "src/graph"
 ADD_SUBDIRECTORY "src/xml_parser"
@@ -121,6 +121,13 @@ ADD_SUBDIRECTORY "src/modify_domain"
 
 if [ -n "$COMPILE_GUI" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_visualizer" "src/main_visualizer.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH"
+fi
+
+COMPILE_ALG_TO_GRAPH='y'
+
+if [ -n "$COMPILE_ALG_TO_GRAPH" ]; then
+  DYNAMIC_DEPS="dl m utils"
+  COMPILE_EXECUTABLE "MonoAlg3D_to_graph" "src/main_alg_to_graph.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH"
 fi
 
 FIND_CRITERION

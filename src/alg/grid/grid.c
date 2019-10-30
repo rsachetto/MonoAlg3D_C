@@ -609,9 +609,6 @@ static void sort_elements(struct element *cell_elements, int tam) {
     }
 }
 
-#define for_each_cell(grid) \
-    for(struct cell_node *cell = grid->first_cell; cell != NULL; cell = cell->next)
-
 void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
 
     struct element element;

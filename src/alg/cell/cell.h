@@ -185,6 +185,7 @@ void simplify_derefinement(struct transition_node *transition_node);
 
 void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_sv_positions);
 
+struct cell_node * get_cell_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell);
 bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell);
 
 

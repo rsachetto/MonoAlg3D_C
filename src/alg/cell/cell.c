@@ -370,7 +370,7 @@ real_cpu get_cell_maximum_flux(struct cell_node *the_cell) {
     return maximumFlux;
 }
 
-bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
+struct cell_node *get_cell_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
 
     struct cell_node *black_neighbor_cell;
 
@@ -390,7 +390,7 @@ bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) 
                     white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
                     if(white_neighbor_cell->single_connector == NULL)
                     {
-                        return false;
+                        return NULL;
                     }
                     else
                     {
@@ -401,13 +401,19 @@ bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) 
                 else
                 {
                     black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-                    return black_neighbor_cell->active;
+                    if(black_neighbor_cell->active)
+                        return black_neighbor_cell;
+                    else
+                        return NULL;
                 }
             }
         }
         else {
             black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-            return black_neighbor_cell->active;
+            if(black_neighbor_cell->active)
+                return black_neighbor_cell;
+            else
+                return NULL;
         }
 
     }
@@ -422,7 +428,7 @@ bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) 
                     white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
                     if(white_neighbor_cell->single_connector == NULL)
                     {
-                        return false;
+                        return NULL;
                     }
                     else
                     {
@@ -433,13 +439,32 @@ bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) 
                 else
                 {
                     black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-                    return black_neighbor_cell->active;
+                    if(black_neighbor_cell->active)
+                        return black_neighbor_cell;
+                    else
+                        return NULL;
                 }
             }
         }
         else {
             black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-            return black_neighbor_cell->active;
+            if(black_neighbor_cell->active)
+                return black_neighbor_cell;
+            else
+                return NULL;
         }
     }
+}
+
+bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
+
+    struct cell_node *black_neighbor_cell = get_cell_neighbour(grid_cell, neighbour_grid_cell);
+
+    if(black_neighbor_cell) {
+        return true;
+    }
+    else {
+        return false;
+    }
+
 }

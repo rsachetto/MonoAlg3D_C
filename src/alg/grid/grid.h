@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define for_each_cell(grid) \
+    for(struct cell_node *cell = grid->first_cell; cell != NULL; cell = cell->next)
+
 struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.

@@ -33,6 +33,80 @@ static sds create_base_name(char *f_prefix, int iteration_count, char *extension
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
 }
 
+SAVE_MESH(save_as_adjacency_list) {
+
+    int iteration_count = time_info->iteration;
+    char *output_dir;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+
+    if(!initialized) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
+        initialized = true;
+    }
+
+    sds tmp = sdsnew(output_dir);
+    tmp = sdscat(tmp, "/");
+
+    sds base_name = NULL;
+    if(binary) {
+        base_name = create_base_name(file_prefix, iteration_count, "bin");
+    }
+    else {
+        base_name = create_base_name(file_prefix, iteration_count, "txt");
+    }
+
+    tmp = sdscat(tmp, base_name);
+
+    FILE *output_file = fopen(tmp, "w");
+
+    sdsfree(base_name);
+    sdsfree(tmp);
+
+    struct cell_node *neighbour;
+    
+    for_each_cell(the_grid) {
+
+        if(cell->active) {
+
+            fprintf(output_file, "%d ", cell->grid_position);
+
+            neighbour = get_cell_neighbour(cell, cell->north);
+            if(neighbour) {
+                fprintf(output_file, "%d ", neighbour->grid_position);
+            }
+            neighbour = get_cell_neighbour(cell, cell->south);
+            if(neighbour) {
+                fprintf(output_file, "%d ", neighbour->grid_position);
+            }
+
+            neighbour = get_cell_neighbour(cell, cell->west);
+            if(neighbour) {
+                fprintf(output_file, "%d ", neighbour->grid_position);
+            }
+
+            neighbour = get_cell_neighbour(cell, cell->east);
+            if(neighbour) {
+                fprintf(output_file, "%d ", neighbour->grid_position);
+            }
+
+            neighbour = get_cell_neighbour(cell, cell->front);
+            if(neighbour) {
+                fprintf(output_file, "%d ", neighbour->grid_position);
+            }
+
+            neighbour = get_cell_neighbour(cell, cell->back);
+            if(neighbour) {
+                fprintf(output_file, "%d", neighbour->grid_position);
+            }
+
+            fprintf(output_file, "\n");
+        }
+    }
+
+    fclose(output_file);
+
+
+}
 
 SAVE_MESH(save_as_text_or_binary) {
 
