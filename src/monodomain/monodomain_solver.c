@@ -711,7 +711,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             redo_matrix = false;
             if (cur_time >= start_adpt_at) {
                 if (count % refine_each == 0) {
-
                     start_stop_watch(&ref_time);
                     redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_dx, start_dy, start_dz);
                     total_ref_time += stop_stop_watch(&ref_time);

@@ -106,7 +106,6 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     sigma_y_average /= 8.0;
     sigma_z_average /= 8.0;
 
-
     // Front northeast node of the bunch becomes the derefined node.
     struct cell_node *new_cell = get_front_northeast_cell (first_bunch_cell);
 

@@ -270,6 +270,8 @@ void set_cuboid_domain(struct grid *the_grid, real_cpu size_x, real_cpu size_y, 
 
 void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, char *read_format) {
 
+    assert(the_grid);
+
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen(file_name, "r");
 
