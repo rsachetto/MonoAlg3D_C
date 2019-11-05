@@ -33,7 +33,6 @@
 #include <unistd.h>
 
 #include <stdio.h>
-#include <float.h>
 
 struct monodomain_solver *new_monodomain_solver() {
 
@@ -321,7 +320,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #ifdef COMPILE_OPENGL
     bool draw = configs->draw;
     if (draw) {
-        draw_config.grid_info.grid_to_draw = the_grid;
+        draw_config.grid_info.alg_grid = the_grid;
         draw_config.simulating = true;
         draw_config.paused = !configs->start_visualization_unpaused;
     } else {

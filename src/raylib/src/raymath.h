@@ -132,7 +132,7 @@
 #endif
 
 // NOTE: Helper types to be used instead of array return types for *ToFloat functions
-typedef struct float3 { float v[3]; } float3;
+typedef struct float_3 { float v[3]; } float_3;
 typedef struct float16 { float v[16]; } float16;
 
 #include <math.h>       // Required for: sinf(), cosf(), tan(), fabs()
@@ -535,9 +535,9 @@ RMDEF Vector3 Vector3Barycenter(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
 }
 
 // Returns Vector3 as float array
-RMDEF float3 Vector3ToFloatV(Vector3 v)
+RMDEF float_3 Vector3ToFloatV(Vector3 v)
 {
-    float3 buffer = { 0 };
+    float_3 buffer = { 0 };
 
     buffer.v[0] = v.x;
     buffer.v[1] = v.y;
