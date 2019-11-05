@@ -34,8 +34,8 @@ struct action_potential {
 struct ap_graph_config {
 
     int graph_height;
-    int graph_pos_x;
-    int graph_pos_y;
+    float graph_pos_x;
+    float graph_pos_y;
     int graph_width;
     float max_x;
     float min_y;
@@ -45,6 +45,7 @@ struct ap_graph_config {
     Vector2 selected_ap_point;
     Vector2 selected_point_for_apd1;
     Vector2 selected_point_for_apd2;
+    struct point_voidp_hash_entry *selected_aps;
 
 };
 
@@ -130,6 +131,7 @@ struct gui_state {
     Vector2 sub_window_pos;
     bool drag_sub_window;
 
+    struct ap_graph_config *ap_graph_config;
 };
 
 struct mesh_info {
