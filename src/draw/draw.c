@@ -37,15 +37,15 @@ struct gui_state * new_gui_state_with_font_and_colors(Font font, int num_colors)
     gui_state->mouse_timer = -1;
     gui_state->selected_time = 0.0;
     gui_state->drag_sub_window = false;
-    return gui_state;
-}
 
-struct ap_graph_config *new_ap_graph_config() {
-    struct ap_graph_config *ap_graph_config = (struct ap_graph_config *) malloc(sizeof(struct ap_graph_config));
-    ap_graph_config->selected_ap_point = (Vector2) {FLT_MAX, FLT_MAX};
-    ap_graph_config->selected_point_for_apd1 = (Vector2) {FLT_MAX, FLT_MAX};
-    ap_graph_config->selected_point_for_apd2 = (Vector2) {FLT_MAX, FLT_MAX};
-    return ap_graph_config;
+    gui_state->ap_graph_config = (struct ap_graph_config*) malloc(sizeof(struct ap_graph_config));
+    gui_state->ap_graph_config->selected_ap_point = (Vector2) {FLT_MAX, FLT_MAX};
+    gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2) {FLT_MAX, FLT_MAX};
+    gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2) {FLT_MAX, FLT_MAX};
+    gui_state->ap_graph_config->selected_aps = NULL;
+    hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
+
+    return gui_state;
 }
 
 struct mesh_info *new_mesh_info() {
@@ -56,8 +56,6 @@ struct mesh_info *new_mesh_info() {
 
 //TODO; can we get rid of this??
 static Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
-
-static struct point_voidp_hash_entry *selected_aps;
 
 static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
@@ -256,7 +254,6 @@ static Vector3 find_mesh_center_vtk(struct mesh_info *mesh_info) {
         dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
         dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
 
-
         mesh_center_x = points[cells[i]].x + dx/2.0f;
         mesh_center_y = points[cells[i]].y + dy/2.0f;
         mesh_center_z = points[cells[i]].z + dz/2.0f;
@@ -331,7 +328,7 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
 
     Color color;
 
-    action_potential_array aps = (struct action_potential*) hmget(selected_aps, p);
+    action_potential_array aps = (struct action_potential*) hmget(gui_state->ap_graph_config->selected_aps, p);
 
     struct action_potential ap1;
     ap1.t = draw_config.time;
@@ -341,7 +338,7 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
     if(aps != NULL) {
         if(ap1.t > aps[aps_len-1].t ) {
             arrput(aps, ap1);
-            hmput(selected_aps, p, aps);
+            hmput(gui_state->ap_graph_config->selected_aps, p, aps);
         }
     }
 
@@ -378,7 +375,7 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
                 ap.v = v;
 
                 arrput(aps, ap);
-                hmput(selected_aps, p, aps);
+                hmput(gui_state->ap_graph_config->selected_aps, p, aps);
                 gui_state->selected_time = GetTime();
             }
         }
@@ -409,8 +406,8 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
         float dx, dy, dz;
 
         dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
-        dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
-        dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
+        dy = fabs((points[cells[i]].y - points[cells[i+3]].y));
+        dz = fabs((points[cells[i]].z - points[cells[i+4]].z));
 
         mesh_center_x = points[cells[i]].x + dx/2.0f;
         mesh_center_y = points[cells[i]].y + dy/2.0f;
@@ -480,25 +477,25 @@ double clamp(double x, double min, double max) {
     return x;
 }
 
-void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) {
+void draw_ap(struct gui_state *gui_state) {
 
     float spacing_big = (float)gui_state->font_size_big/(float)gui_state->font.baseSize;
     float spacing_small = (float)gui_state->font_size_small/(float)gui_state->font.baseSize;
 
-    DrawRectangle(graph_config->graph_pos_x, graph_config->graph_pos_y, graph_config->graph_width, graph_config->graph_height, WHITE);
+    DrawRectangle(gui_state->ap_graph_config->graph_pos_x, gui_state->ap_graph_config->graph_pos_y, gui_state->ap_graph_config->graph_width, gui_state->ap_graph_config->graph_height, WHITE);
 
     char tmp[1024];
     sprintf(tmp, "%.2lf", draw_config.final_time);
 
     Vector2 width = MeasureTextEx(gui_state->font, tmp, (float)gui_state->font_size_small, spacing_small);
 
-    graph_config->min_x = (float)graph_config->graph_pos_x + 2.0f*width.x;
-    graph_config->max_x = (float)graph_config->graph_pos_x + (float)graph_config->graph_width - width.x;
+    gui_state->ap_graph_config->min_x = (float)gui_state->ap_graph_config->graph_pos_x + 2.0f*width.x;
+    gui_state->ap_graph_config->max_x = (float)gui_state->ap_graph_config->graph_pos_x + (float)gui_state->ap_graph_config->graph_width - width.x;
 
-    graph_config->min_y = (float) graph_config->graph_pos_y + (float)graph_config->graph_height - 30.0f;
-    graph_config->max_y = (float) graph_config->graph_pos_y + 20.0f; //This is actually the smallest allowed y
+    gui_state->ap_graph_config->min_y = (float) gui_state->ap_graph_config->graph_pos_y + (float)gui_state->ap_graph_config->graph_height - 30.0f;
+    gui_state->ap_graph_config->max_y = (float) gui_state->ap_graph_config->graph_pos_y + 20.0f; //This is actually the smallest allowed y
 
-    int n = hmlen(selected_aps);
+    int n = hmlen(gui_state->ap_graph_config->selected_aps);
 
     if(gui_state->draw_selected_ap_text) {
         char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f )";
@@ -511,7 +508,7 @@ void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) 
 
         width = MeasureTextEx(gui_state->font, ap_text, (float)gui_state->font_size_big, spacing_big);
 
-        DrawTextEx(gui_state->font, tmp, (Vector2){(float)graph_config->graph_pos_x + (float)graph_config->graph_width/2.0f - width.x/2.0f - graph_config->min_x, graph_config->max_y}, gui_state->font_size_big, 1, c);
+        DrawTextEx(gui_state->font, tmp, (Vector2){(float)gui_state->ap_graph_config->graph_pos_x + (float)gui_state->ap_graph_config->graph_width/2.0f - width.x/2.0f - gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_y}, gui_state->font_size_big, 1, c);
 
         if(alpha == 0) {
             gui_state->draw_selected_ap_text = false;
@@ -529,7 +526,7 @@ void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) 
     }
     width = MeasureTextEx(gui_state->font, time_text, gui_state->font_size_big, spacing_big);
 
-    DrawTextEx(gui_state->font, time_text, (Vector2){graph_config->min_x + (float)graph_config->graph_width/2.0f - width.x/2.0f, (float)graph_config->min_y + 50.0f}, gui_state->font_size_big, spacing_big, BLACK);
+    DrawTextEx(gui_state->font, time_text, (Vector2){gui_state->ap_graph_config->min_x + (float)gui_state->ap_graph_config->graph_width/2.0f - width.x/2.0f, (float)gui_state->ap_graph_config->min_y + 50.0f}, gui_state->font_size_big, spacing_big, BLACK);
 
     Vector2 p1, p2;
 
@@ -554,20 +551,20 @@ void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) 
     //Draw vertical ticks (Vm)
     for(uint t = 0; t <= num_ticks; t++ ) {
 
-        p1.x = (float)graph_config->graph_pos_x + 5.0f;
-        p1.y = normalize(draw_config.min_v, draw_config.max_v, graph_config->min_y, graph_config->max_y, v);
+        p1.x = (float)gui_state->ap_graph_config->graph_pos_x + 5.0f;
+        p1.y = normalize(draw_config.min_v, draw_config.max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, v);
 
-        sprintf(tmp, "%.2lf",  normalize(graph_config->min_y, graph_config->max_y, draw_config.min_v, draw_config.max_v, p1.y));
+        sprintf(tmp, "%.2lf",  normalize(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, draw_config.min_v, draw_config.max_v, p1.y));
         width = MeasureTextEx(gui_state->font, tmp, (float)gui_state->font_size_small, spacing_small);
 
         DrawTextEx(gui_state->font, tmp, (Vector2){p1.x + (max_w.x - width.x), p1.y - width.y/2.0f}, (float)gui_state->font_size_small, spacing_small, RED);
 
-        p1.x = graph_config->min_x - 5.0f;
+        p1.x = gui_state->ap_graph_config->min_x - 5.0f;
         p2.x = p1.x + 10.0f;
         p2.y = p1.y;
 
         //Grid line
-        DrawLineV(p1, (Vector2){graph_config->max_x, p1.y}, LIGHTGRAY);
+        DrawLineV(p1, (Vector2){gui_state->ap_graph_config->max_x, p1.y}, LIGHTGRAY);
 
         //Tick line
         DrawLineV(p1, p2, RED);
@@ -592,40 +589,40 @@ void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) 
     //Draw horizontal ticks (t)
     for(uint t = 0; t <= num_ticks; t++) {
 
-        p1.x = normalize(0.0f, draw_config.final_time, graph_config->min_x, graph_config->max_x, time);
-        p1.y = graph_config->min_y - 5;
+        p1.x = normalize(0.0f, draw_config.final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, time);
+        p1.y = gui_state->ap_graph_config->min_y - 5;
 
         p2.x = p1.x;
-        p2.y = graph_config->min_y + 5;
+        p2.y = gui_state->ap_graph_config->min_y + 5;
 
         if(!(t%2)) {
-            sprintf(tmp, "%.2lf", normalize(graph_config->min_x, graph_config->max_x, 0.0f, draw_config.final_time, p1.x));
+            sprintf(tmp, "%.2lf", normalize(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, draw_config.final_time, p1.x));
             width = MeasureTextEx(gui_state->font, tmp, (float) gui_state->font_size_small, spacing_small);
             DrawTextEx(gui_state->font, tmp, (Vector2){p1.x - width.x/2.0f, p1.y + 10}, (float) gui_state->font_size_small, spacing_small, RED);
         }
 
         DrawLineV(p1, p2, RED);
 
-        DrawLineV(p1, (Vector2){p1.x, graph_config->max_y}, LIGHTGRAY);
+        DrawLineV(p1, (Vector2){p1.x, gui_state->ap_graph_config->max_y}, LIGHTGRAY);
         time+= tick_ofsset;
     }
 
     //Draw vertical line
     {
-        p1.x = graph_config->min_x;
-        p1.y = graph_config->min_y + 5;
+        p1.x = gui_state->ap_graph_config->min_x;
+        p1.y = gui_state->ap_graph_config->min_y + 5;
 
         p2.x = p1.x;
-        p2.y = graph_config->max_y;
+        p2.y = gui_state->ap_graph_config->max_y;
         DrawLineV(p1, p2, RED);
     }
 
     //Draw horizontal line
     {
-        p1.x = graph_config->min_x;
-        p1.y = graph_config->min_y;
+        p1.x = gui_state->ap_graph_config->min_x;
+        p1.y = gui_state->ap_graph_config->min_y;
 
-        p2.x = graph_config->max_x;
+        p2.x = gui_state->ap_graph_config->max_x;
         p2.y = p1.y;
         DrawLineV(p1, p2, RED);
     }
@@ -634,7 +631,7 @@ void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) 
 
     for (int j = 0; j < n; j++) {
 
-        aps = (struct action_potential*) selected_aps[j].value;
+        aps = (struct action_potential*) gui_state->ap_graph_config->selected_aps[j].value;
         int c = arrlen(aps);
 
         if(c > 0) {
@@ -644,11 +641,11 @@ void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) 
                 if(aps[i].t <= draw_config.time) {
                     if (i + 1 < c) {
 
-                        p1.x = normalize(0.0f, draw_config.final_time, graph_config->min_x, graph_config->max_x, aps[i].t);
-                        p1.y = normalize(draw_config.min_v, draw_config.max_v, graph_config->min_y, graph_config->max_y, aps[i].v);
+                        p1.x = normalize(0.0f, draw_config.final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i].t);
+                        p1.y = normalize(draw_config.min_v, draw_config.max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, aps[i].v);
 
-                        p2.x = normalize(0.0f, draw_config.final_time, graph_config->min_x, graph_config->max_x, aps[i + 1].t);
-                        p2.y = normalize(draw_config.min_v, draw_config.max_v, graph_config->min_y, graph_config->max_y, aps[i + 1].v);
+                        p2.x = normalize(0.0f, draw_config.final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i + 1].t);
+                        p2.y = normalize(draw_config.min_v, draw_config.max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, aps[i + 1].v);
 
                         //TODO: create an option for this???
                         if (aps[i + 1].v > draw_config.max_v) draw_config.max_v = aps[i + 1].v;
@@ -662,28 +659,28 @@ void draw_ap(struct ap_graph_config *graph_config, struct gui_state *gui_state) 
         }
     }
 
-    if(graph_config->selected_ap_point.x != FLT_MAX && graph_config->selected_ap_point.y != FLT_MAX) {
+    if(gui_state->ap_graph_config->selected_ap_point.x != FLT_MAX && gui_state->ap_graph_config->selected_ap_point.y != FLT_MAX) {
         char *tmp_point = "%lf, %lf";
-        sprintf(tmp, tmp_point, graph_config->selected_ap_point.x, graph_config->selected_ap_point.y);
+        sprintf(tmp, tmp_point, gui_state->ap_graph_config->selected_ap_point.x, gui_state->ap_graph_config->selected_ap_point.y);
         width = MeasureTextEx(gui_state->font, tmp, (float)gui_state->font_size_small, spacing_big);
         DrawTextEx(gui_state->font, tmp, (Vector2){gui_state->mouse_pos.x-width.x/2, gui_state->mouse_pos.y-width.y}, (float)gui_state->font_size_small, 1, BLACK);
     }
 
-    if(graph_config->selected_point_for_apd1.x != FLT_MAX && graph_config->selected_point_for_apd1.y != FLT_MAX) {
-        DrawCircleV(graph_config->selected_point_for_apd1, 4, RED);
+    if(gui_state->ap_graph_config->selected_point_for_apd1.x != FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y != FLT_MAX) {
+        DrawCircleV(gui_state->ap_graph_config->selected_point_for_apd1, 4, RED);
     }
 
-    if(graph_config->selected_point_for_apd2.x != FLT_MAX && graph_config->selected_point_for_apd2.y != FLT_MAX) {
-        DrawCircleV(graph_config->selected_point_for_apd2, 4, RED);
-        DrawLineV(graph_config->selected_point_for_apd1, graph_config->selected_point_for_apd2, RED);
+    if(gui_state->ap_graph_config->selected_point_for_apd2.x != FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd2.y != FLT_MAX) {
+        DrawCircleV(gui_state->ap_graph_config->selected_point_for_apd2, 4, RED);
+        DrawLineV(gui_state->ap_graph_config->selected_point_for_apd1, gui_state->ap_graph_config->selected_point_for_apd2, RED);
 
-        float t1 = normalize(graph_config->min_x, graph_config->max_x, 0.0f, draw_config.final_time, graph_config->selected_point_for_apd1.x);
-        float t2 = normalize(graph_config->min_x, graph_config->max_x, 0.0f, draw_config.final_time, graph_config->selected_point_for_apd2.x);
+        float t1 = normalize(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, draw_config.final_time, gui_state->ap_graph_config->selected_point_for_apd1.x);
+        float t2 = normalize(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, draw_config.final_time, gui_state->ap_graph_config->selected_point_for_apd2.x);
 
         char *tmp_point = "dt = %lf";
         sprintf(tmp, tmp_point, fabsf(t2-t1));
         width = MeasureTextEx(gui_state->font, tmp, (float)gui_state->font_size_small, spacing_big);
-        DrawTextEx(gui_state->font, tmp, (Vector2){graph_config->selected_point_for_apd1.x+width.x/2.0, graph_config->selected_point_for_apd1.y-width.y}, (float)gui_state->font_size_small, 1, BLACK);
+        DrawTextEx(gui_state->font, tmp, (Vector2){gui_state->ap_graph_config->selected_point_for_apd1.x+width.x/2.0, gui_state->ap_graph_config->selected_point_for_apd1.y-width.y}, (float)gui_state->font_size_small, 1, BLACK);
     }
 }
 
@@ -964,7 +961,7 @@ static bool draw_save_box(struct gui_state *gui_state) {
     return btn2_clicked | clicked | btn_clicked;
 }
 
-static void handle_input(bool *mesh_loaded, Camera3D *camera, struct ap_graph_config *graph_config, struct mesh_info *mesh_info, struct gui_state *gui_state) {
+static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
     {
         gui_state->mouse_pos = GetMousePosition();
@@ -986,37 +983,37 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct ap_graph_co
 
         }
 
-        if(hmlen(selected_aps) && gui_state->show_ap) {
-            float t = normalize(graph_config->min_x, graph_config->max_x, 0.0f, draw_config.final_time, gui_state->mouse_pos.x);
-            float v = normalize(graph_config->min_y, graph_config->max_y, draw_config.min_v, draw_config.max_v, gui_state->mouse_pos.y);
-            if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle) {graph_config->graph_pos_x, graph_config->graph_pos_y, graph_config->graph_width, graph_config->graph_height})) {
-                graph_config->selected_ap_point.x = t;
-                graph_config->selected_ap_point.y = v;
+        if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
+            float t = normalize(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, draw_config.final_time, gui_state->mouse_pos.x);
+            float v = normalize(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, draw_config.min_v, draw_config.max_v, gui_state->mouse_pos.y);
+            if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle) {gui_state->ap_graph_config->graph_pos_x, gui_state->ap_graph_config->graph_pos_y, gui_state->ap_graph_config->graph_width, gui_state->ap_graph_config->graph_height})) {
+                gui_state->ap_graph_config->selected_ap_point.x = t;
+                gui_state->ap_graph_config->selected_ap_point.y = v;
             }
             else {
-                graph_config->selected_ap_point.x = FLT_MAX;
-                graph_config->selected_ap_point.y = FLT_MAX;
+                gui_state->ap_graph_config->selected_ap_point.x = FLT_MAX;
+                gui_state->ap_graph_config->selected_ap_point.y = FLT_MAX;
             }
         }
 
         if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-            if(hmlen(selected_aps) && gui_state->show_ap) {
-                if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle) {graph_config->graph_pos_x, graph_config->graph_pos_y, graph_config->graph_width, graph_config->graph_height})) {
-                    if(graph_config->selected_point_for_apd1.x == FLT_MAX && graph_config->selected_point_for_apd1.y == FLT_MAX) {
-                        graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
-                        graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
+            if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
+                if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle) {gui_state->ap_graph_config->graph_pos_x, gui_state->ap_graph_config->graph_pos_y, gui_state->ap_graph_config->graph_width, gui_state->ap_graph_config->graph_height})) {
+                    if(gui_state->ap_graph_config->selected_point_for_apd1.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y == FLT_MAX) {
+                        gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
+                        gui_state->ap_graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
                     }
                     else {
-                        if(graph_config->selected_point_for_apd2.x == FLT_MAX && graph_config->selected_point_for_apd2.y == FLT_MAX) {
-                            graph_config->selected_point_for_apd2.x = gui_state->mouse_pos.x;
-                            graph_config->selected_point_for_apd2.y = graph_config->selected_point_for_apd1.y;
+                        if(gui_state->ap_graph_config->selected_point_for_apd2.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd2.y == FLT_MAX) {
+                            gui_state->ap_graph_config->selected_point_for_apd2.x = gui_state->mouse_pos.x;
+                            gui_state->ap_graph_config->selected_point_for_apd2.y = gui_state->ap_graph_config->selected_point_for_apd1.y;
                         }
                         else {
-                            graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
-                            graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
+                            gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
+                            gui_state->ap_graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
 
-                            graph_config->selected_point_for_apd2.x = FLT_MAX;
-                            graph_config->selected_point_for_apd2.y = FLT_MAX;
+                            gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
+                            gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
                         }
                     }
                 }
@@ -1109,13 +1106,13 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct ap_graph_co
     }
 
     if (IsKeyPressed('R')) {
-        for(long  i = 0; i < hmlen(selected_aps); i++) {
-            arrfree(selected_aps[i].value);
+        for(long  i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+            arrfree(gui_state->ap_graph_config->selected_aps[i].value);
         }
 
-        hmfree(selected_aps);
-        selected_aps = NULL;
-        hmdefault(selected_aps, NULL);
+        hmfree(gui_state->ap_graph_config->selected_aps);
+        gui_state->ap_graph_config->selected_aps = NULL;
+        hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
 
         if(draw_config.paused) {
             omp_unset_lock(&draw_config.sleep_lock);
@@ -1132,8 +1129,8 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct ap_graph_co
         mesh_info->center_calculated = false;
         omp_unset_lock(&draw_config.sleep_lock);
         gui_state->current_selected_volume = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-        graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
-        graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
+        gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
+        gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
         return;
     }
 
@@ -1196,8 +1193,6 @@ void init_and_open_visualization_window() {
 
     Font font = GetFontDefault();
 
-    hmdefault(selected_aps, NULL);
-
     Camera3D camera;
 
     camera.position = (Vector3){11.082402f, 6.763101f, 8.921088f};  // Camera position
@@ -1256,7 +1251,6 @@ void init_and_open_visualization_window() {
 
     Vector2 error_message_witdh;
 
-    struct ap_graph_config *ap_graph_config = new_ap_graph_config();
     struct mesh_info *mesh_info = new_mesh_info();
     struct gui_state *gui_state = new_gui_state_with_font_and_colors(font, SIZEOF(colors));
 
@@ -1285,7 +1279,7 @@ void init_and_open_visualization_window() {
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        handle_input(&draw_config.grid_info.loaded, &camera, ap_graph_config, mesh_info, gui_state);
+        handle_input(&draw_config.grid_info.loaded, &camera,  mesh_info, gui_state);
 
         if(draw_config.grid_info.loaded ) {
 
@@ -1334,20 +1328,20 @@ void init_and_open_visualization_window() {
                 draw_scale(font, font_size_small, draw_config.int_scale, gui_state);
             }
 
-            if(hmlen(selected_aps) && gui_state->show_ap) {
+            if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
                 //TODO: maybe we dont need to call this every time
-                ap_graph_config->graph_height = GetScreenHeight()/3;
+                gui_state->ap_graph_config->graph_height = GetScreenHeight()/3;
 
-                ap_graph_config->graph_pos_x = 1;
-                ap_graph_config->graph_pos_y = GetScreenHeight() - ap_graph_config->graph_height;
+                gui_state->ap_graph_config->graph_pos_x = 1;
+                gui_state->ap_graph_config->graph_pos_y = GetScreenHeight() - gui_state->ap_graph_config->graph_height;
 
-                ap_graph_config->graph_width = GetScreenWidth();
-                draw_ap(ap_graph_config, gui_state);
+                gui_state->ap_graph_config->graph_width = GetScreenWidth();
+                draw_ap(gui_state);
             }
 
            if(gui_state->show_info_box) {
                 info_box_h = (text_offset * info_box_lines) + 10;
-                draw_box(10, 10, box_w, info_box_h, text_offset, info_box_strings, info_box_lines, font_size_small);
+                draw_box(10, 10, box_w, info_box_h, text_offset, info_box_strings, info_box_lines, (int)font_size_small);
             }
 
             if(!draw_config.simulating) {
@@ -1423,7 +1417,8 @@ void init_and_open_visualization_window() {
 
     draw_config.exit = true;
     free(mesh_info);
-    free(ap_graph_config);
+    arrfree(gui_state->ap_graph_config->selected_aps);
+    free(gui_state->ap_graph_config);
     free(gui_state);
 
     omp_unset_lock(&draw_config.draw_lock);
