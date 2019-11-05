@@ -98,7 +98,7 @@ void free_current_simulation_resources(struct user_options *options, struct mono
 void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
 
     draw_config->config_name = strdup(options->config_file);
-    draw_config->grid_info.grid_to_draw = NULL;
+    draw_config->grid_info.alg_grid = NULL;
     draw_config->max_v = options->max_v;
     draw_config->min_v = options->min_v;
 

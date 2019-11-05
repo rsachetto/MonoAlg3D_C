@@ -9,6 +9,7 @@
 #include "../alg/cell/cell.h"
 #include "../monodomain/ode_solver.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
+#include "../raylib/src/raymath.h"
 
 #include <omp.h>
 
@@ -21,9 +22,30 @@
 #define MIN_HORIZONTAL_TICKS 4
 #define MAX_HORIZONTAL_TICKS 20
 
+#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
+#define WIDER_TEXT "------------------------------------------------------"
+#define DOUBLE_CLICK_DELAY 0.5 //seconds
+
 struct action_potential {
     real_cpu v;
     real_cpu t;
+};
+
+struct ap_graph_config {
+
+    int graph_height;
+    int graph_pos_x;
+    int graph_pos_y;
+    int graph_width;
+    float max_x;
+    float min_y;
+    float max_y;
+    float min_x;
+
+    Vector2 selected_ap_point;
+    Vector2 selected_point_for_apd1;
+    Vector2 selected_point_for_apd2;
+
 };
 
 typedef struct action_potential * action_potential_array;
@@ -63,7 +85,7 @@ struct draw_config {
     struct grid_info {
         union {
             struct vtk_unstructured_grid *vtk_grid;
-            struct grid *grid_to_draw;
+            struct grid *alg_grid;
         };
         char *file_name;
         bool loaded;
@@ -71,6 +93,49 @@ struct draw_config {
 
     char *error_message;
     bool int_scale;
+};
+
+struct gui_state {
+    bool one_selected;
+    bool draw_selected_ap_text;
+    bool show_ap;
+    bool show_scale;
+    bool c_pressed;
+    bool draw_grid_lines;
+    bool draw_grid_only ;
+
+    bool show_info_box;
+    bool show_end_info_box;
+    bool show_mesh_info_box ;
+    bool show_selection_box;
+    bool show_save_box;
+
+    Ray ray;
+
+    int current_scale;
+    int scale_alpha;
+    int voxel_alpha;
+
+    Vector3 current_selected_volume;
+
+    Font font;
+    float font_size_small;
+    float font_size_big;
+
+    int num_colors;
+    double mouse_timer;
+    double selected_time;
+
+    Vector2 mouse_pos;
+    Vector2 sub_window_pos;
+    bool drag_sub_window;
+
+};
+
+struct mesh_info {
+    bool center_calculated;
+    Vector3 max_size;
+    Vector3 min_size;
 };
 
 struct draw_config draw_config;

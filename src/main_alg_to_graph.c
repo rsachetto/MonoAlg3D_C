@@ -145,109 +145,109 @@ int main(int argc, char **argv) {
     }
 
 
-    for(int i = 0; i < 13; i++) {
-        arrput(graph, NULL);
-    }
-
-    // add edges
-    addEdge(0, 1);
-    addEdge(1, 0);
-
-    addEdge(1, 2);
-    addEdge(2, 1);
-
-    addEdge(2, 3);
-    addEdge(3, 2);
-
-    addEdge(3, 5);
-    addEdge(5, 3);
-
-    addEdge(3, 6);
-    addEdge(6, 3);
-
-    addEdge(4, 5);
-    addEdge(5, 4);
-
-
-    addEdge(2, 4);
-    addEdge(4, 2);
-
-    addEdge(6, 7);
-    addEdge(7, 6);
-
-    addEdge(5, 9);
-    addEdge(9, 5);
-
-    addEdge(4, 8);
-    addEdge(8, 4);
-
-    addEdge(9, 10);
-    addEdge(10, 9);
-
-    addEdge(10, 11);
-    addEdge(11, 10);
-
-    addEdge(10, 12);
-    addEdge(12, 10);
-
-    addEdge(11, 12);
-    addEdge(12, 11);
-
-    struct cell_node *neighbour;
-
-    for_each_cell(the_grid) {
-
-        if(cell->active) {
-            arrput(graph, NULL);
-
-            neighbour = get_cell_neighbour(cell, cell->north);
-            if(neighbour) {
-                addEdge(cell->grid_position, neighbour->grid_position);
-            }
-            neighbour = get_cell_neighbour(cell, cell->south);
-            if(neighbour) {
-                addEdge(cell->grid_position, neighbour->grid_position);
-            }
-
-            neighbour = get_cell_neighbour(cell, cell->west);
-            if(neighbour) {
-                addEdge(cell->grid_position, neighbour->grid_position);
-            }
-
-            neighbour = get_cell_neighbour(cell, cell->east);
-            if(neighbour) {
-                addEdge(cell->grid_position, neighbour->grid_position);
-            }
-
-            neighbour = get_cell_neighbour(cell, cell->front);
-            if(neighbour) {
-                addEdge(cell->grid_position, neighbour->grid_position);
-            }
-
-            neighbour = get_cell_neighbour(cell, cell->back);
-            if(neighbour) {
-                addEdge(cell->grid_position, neighbour->grid_position);
-            }
-        }
-    }
-
-//    print_alg_graph();
-//    exit(0);
-
-    int *color = calloc(num_edges, sizeof(int));
-    int *par = calloc(num_edges, sizeof(int));
-
-    // mark with unique numbers
-    int *mark = calloc(num_edges, sizeof(int));
-
-    // store the numbers of cycle
-    int cyclenumber = 0;
-
-    // call DFS to mark the cycles
-    dfs_cycle(0, 0, color, mark, par, &cyclenumber);
-
-    // function to print the cycles
-    printCycles(num_edges, mark, &cyclenumber);
+//    for(int i = 0; i < 13; i++) {
+//        arrput(graph, NULL);
+//    }
+//
+//    // add edges
+//    addEdge(0, 1);
+//    addEdge(1, 0);
+//
+//    addEdge(1, 2);
+//    addEdge(2, 1);
+//
+//    addEdge(2, 3);
+//    addEdge(3, 2);
+//
+//    addEdge(3, 5);
+//    addEdge(5, 3);
+//
+//    addEdge(3, 6);
+//    addEdge(6, 3);
+//
+//    addEdge(4, 5);
+//    addEdge(5, 4);
+//
+//
+//    addEdge(2, 4);
+//    addEdge(4, 2);
+//
+//    addEdge(6, 7);
+//    addEdge(7, 6);
+//
+//    addEdge(5, 9);
+//    addEdge(9, 5);
+//
+//    addEdge(4, 8);
+//    addEdge(8, 4);
+//
+//    addEdge(9, 10);
+//    addEdge(10, 9);
+//
+//    addEdge(10, 11);
+//    addEdge(11, 10);
+//
+//    addEdge(10, 12);
+//    addEdge(12, 10);
+//
+//    addEdge(11, 12);
+//    addEdge(12, 11);
+//
+//    struct cell_node *neighbour;
+//
+//    for_each_cell(the_grid) {
+//
+//        if(cell->active) {
+//            arrput(graph, NULL);
+//
+//            neighbour = get_cell_neighbour(cell, cell->north);
+//            if(neighbour) {
+//                addEdge(cell->grid_position, neighbour->grid_position);
+//            }
+//            neighbour = get_cell_neighbour(cell, cell->south);
+//            if(neighbour) {
+//                addEdge(cell->grid_position, neighbour->grid_position);
+//            }
+//
+//            neighbour = get_cell_neighbour(cell, cell->west);
+//            if(neighbour) {
+//                addEdge(cell->grid_position, neighbour->grid_position);
+//            }
+//
+//            neighbour = get_cell_neighbour(cell, cell->east);
+//            if(neighbour) {
+//                addEdge(cell->grid_position, neighbour->grid_position);
+//            }
+//
+//            neighbour = get_cell_neighbour(cell, cell->front);
+//            if(neighbour) {
+//                addEdge(cell->grid_position, neighbour->grid_position);
+//            }
+//
+//            neighbour = get_cell_neighbour(cell, cell->back);
+//            if(neighbour) {
+//                addEdge(cell->grid_position, neighbour->grid_position);
+//            }
+//        }
+//    }
+//
+////    print_alg_graph();
+////    exit(0);
+//
+//    int *color = calloc(num_edges, sizeof(int));
+//    int *par = calloc(num_edges, sizeof(int));
+//
+//    // mark with unique numbers
+//    int *mark = calloc(num_edges, sizeof(int));
+//
+//    // store the numbers of cycle
+//    int cyclenumber = 0;
+//
+//    // call DFS to mark the cycles
+//    dfs_cycle(0, 0, color, mark, par, &cyclenumber);
+//
+//    // function to print the cycles
+//    printCycles(num_edges, mark, &cyclenumber);
 
     return EXIT_SUCCESS;
 }
