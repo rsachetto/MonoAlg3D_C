@@ -6,6 +6,7 @@
 #include "utils/file_utils.h"
 #include <string.h>
 #include "config_helpers/config_helpers.h"
+#include "logger/logger.h"
 
 #ifdef COMPILE_OPENGL
     #include "draw/draw.h"

@@ -43,6 +43,7 @@ struct gui_state * new_gui_state_with_font_and_colors(Font font, int num_colors)
     gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2) {FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2) {FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_aps = NULL;
+
     hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
 
     return gui_state;
@@ -1417,7 +1418,9 @@ void init_and_open_visualization_window() {
 
     draw_config.exit = true;
     free(mesh_info);
-    arrfree(gui_state->ap_graph_config->selected_aps);
+
+    hmfree(gui_state->ap_graph_config->selected_aps);
+
     free(gui_state->ap_graph_config);
     free(gui_state);
 

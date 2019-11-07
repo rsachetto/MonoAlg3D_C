@@ -8,6 +8,7 @@
 #include "ini_parser/ini_file_sections.h"
 #include "config/stim_config.h"
 #include "config_helpers/config_helpers.h"
+#include "logger/logger.h"
 
 #include <mpi.h>
 #include <string.h>

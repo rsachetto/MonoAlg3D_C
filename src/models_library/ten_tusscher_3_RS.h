@@ -14,10 +14,6 @@
 
 #define CUDA_INFO __host__ __device__ 
 
-extern "C" {
-    #include "../utils/file_utils.h"
-}
-
 static __device__ size_t pitch;
 static size_t pitch_h;
 
@@ -29,8 +25,6 @@ __global__ void solve_gpu(real dt, real *sv, real *stim_currents, uint32_t *cell
 inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis,
                                real *extra_parameters);
 
-#else
-    #include "../utils/file_utils.h"
 #endif
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real *extra_parameters);
