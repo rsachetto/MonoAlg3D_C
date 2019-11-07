@@ -15,16 +15,6 @@
 
 #include "../common_types/common_types.h"
 
-struct logt {
-  FILE *fp;
-  bool quiet;
-};
-
-
-void print_to_stdout_and_file(char const *fmt, ...);
-void print_to_stderr_and_file_and_exit(char const *fmt, ...);
-void open_logfile(const char *path);
-void close_logfile();
 int cp_file(const char *to, const char *from);
 char * read_entire_file(const char *filename, long *size);
 char *read_entire_file_with_mmap(const char *filename, size_t *size);
@@ -39,7 +29,6 @@ int remove_directory(const char *path);
 size_t base64_decode(unsigned char* out, const char *src, size_t len, size_t *bytes_read);
 char * get_dir_from_path(const char * path);
 bool check_simulation_completed(char *simulation_dir);
-void set_no_stdout(bool val);
 
 real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
 real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);

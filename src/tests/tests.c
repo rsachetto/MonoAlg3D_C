@@ -2,6 +2,8 @@
 //// Created by sachetto on 06/10/17.
 ////
 #include <criterion/criterion.h>
+#include <signal.h>
+
 #include "../alg/grid/grid.h"
 #include "../config/linear_system_solver_config.h"
 #include "../config/domain_config.h"
@@ -10,11 +12,11 @@
 #include "../utils/file_utils.h"
 #include "../ini_parser/ini.h"
 #include "../string/sds.h"
-#include <signal.h>
+#include "../logger/logger.h"
 
-//#define STB_DS_IMPLEMENTATION
 #include "../single_file_libraries/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
+
 
 
 real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);

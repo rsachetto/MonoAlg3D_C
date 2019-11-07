@@ -3,6 +3,7 @@
 #include "model_gpu_utils.h"
 extern "C" {
     #include "../string/sds.h"
+    #include "../utils/file_utils.h"
 }
 
 #include "../single_file_libraries/stb_ds.h"

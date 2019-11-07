@@ -67,6 +67,9 @@ ADD_SUBDIRECTORY "src/graph"
 ADD_SUBDIRECTORY "src/xml_parser"
 ADD_SUBDIRECTORY "src/vtk_utils"
 
+#DINAMIC DEPS
+ADD_SUBDIRECTORY "src/logger"
+
 if [ -n "$COMPILE_GUI" ]; then
     ADD_SUBDIRECTORY "src/raylib/src"
     ADD_SUBDIRECTORY "src/draw"
@@ -81,14 +84,14 @@ fi
 SRC_FILES="src/main_simulator.c"
 HDR_FILES=""
 
-STATIC_DEPS="solvers ini_parser string config ${OPT_DEPS} config_helpers vtk_utils yxml alg graph"
+STATIC_DEPS="solvers ini_parser config ${OPT_DEPS} config_helpers vtk_utils yxml alg graph utils string"
 DYNAMIC_DEPS="dl m $CUDA_LIBRARIES z"
 
 if [ -n "$COMPILE_GUI" ]; then
     DYNAMIC_DEPS="$DYNAMIC_DEPS OpenGL GLX GLU pthread X11 rt"
 fi
 
-DYNAMIC_DEPS="$DYNAMIC_DEPS utils"
+DYNAMIC_DEPS="$DYNAMIC_DEPS logger"
 
 COMPILE_EXECUTABLE "MonoAlg3D" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
@@ -126,7 +129,8 @@ fi
 COMPILE_ALG_TO_GRAPH='y'
 
 if [ -n "$COMPILE_ALG_TO_GRAPH" ]; then
-  DYNAMIC_DEPS="dl m utils"
+  #DYNAMIC_DEPS="dl m utils"
+  DYNAMIC_DEPS="dl m"
   COMPILE_EXECUTABLE "MonoAlg3D_to_graph" "src/main_alg_to_graph.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH"
 fi
 

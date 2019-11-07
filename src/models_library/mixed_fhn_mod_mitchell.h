@@ -15,10 +15,6 @@
 
 #ifdef __CUDACC__
 
-extern "C" {
-    #include "../utils/file_utils.h"
-}
-
 __constant__  size_t pitch;
 size_t pitch_h;
 
@@ -31,8 +27,6 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 inline __device__ void RHS_gpu_fhn(real *sv_, real *rDY_, real stim_current, int threadID_);
 inline __device__ void RHS_gpu_mitchell(real *sv_, real *rDY_, real stim_current, int threadID_);
 
-#else
-#include "../utils/file_utils.h"
 #endif
 
 void solve_model_ode_cpu_fhn(real dt, real *sv, real stim_current);

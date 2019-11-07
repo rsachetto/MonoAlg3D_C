@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "mixed_tentusscher_myo_epi_2004.h"
+#include "../logger/logger.h"
 
 GET_CELL_MODEL_DATA(init_cell_model_data) 
 {

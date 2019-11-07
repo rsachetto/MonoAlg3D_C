@@ -15,6 +15,15 @@
 #include <stdint.h>
 #include <stddef.h>
 
+
+#ifdef __CUDACC__
+extern "C" {
+    #include "../logger/logger.h"
+};
+#else
+#include "../logger/logger.h"
+#endif
+
 struct cell_model_data {
     int number_of_ode_equations;
     real initial_v;
