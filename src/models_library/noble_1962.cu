@@ -60,17 +60,24 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
     if (threadID < num_volumes) {
 
         // Default values
-        //*((real * )((char *) sv + pitch * 0) + threadID) = -75.5344986658f; //V millivolt 
-        //*((real * )((char *) sv + pitch * 1) + threadID) = 0.060546727200f;   //m dimensionless 
-        //*((real * )((char *) sv + pitch * 2) + threadID) = 0.725900135500f;   //h millivolt 
-        //*((real * )((char *) sv + pitch * 3) + threadID) = 0.470923970800f;   //n dimensionless 
+        //*((real * )((char *) sv + pitch * 0) + threadID) = -75.5344986658f; //V millivolt
+        //*((real * )((char *) sv + pitch * 1) + threadID) = 0.060546727200f;   //m dimensionless
+        //*((real * )((char *) sv + pitch * 2) + threadID) = 0.725900135500f;   //h millivolt
+        //*((real * )((char *) sv + pitch * 3) + threadID) = 0.470923970800f;   //n dimensionless
 
-        // BCL = 300ms
-        *((real * )((char *) sv + pitch * 0) + threadID) = -81.1893;    // V millivolt 
+        // BCL = 300ms | 10 pulses
+        *((real * )((char *) sv + pitch * 0) + threadID) = -81.1893;    // V millivolt
         *((real * )((char *) sv + pitch * 1) + threadID) = 0.0443563;    // m dimensionless
         *((real * )((char *) sv + pitch * 2) + threadID) = 0.851652;    // h dimensionless
         *((real * )((char *) sv + pitch * 3) + threadID) = 0.58291;    // n dimensionless
-         
+
+        // BCL = 500ms | 30 pulses
+        //*((real *) ((char *) sv + pitch * 0) + threadID) = -75.238;
+        //*((real *) ((char *) sv + pitch * 1) + threadID) = 0.0615111;
+        //*((real *) ((char *) sv + pitch * 2) + threadID) = 0.718401;
+        //*((real *) ((char *) sv + pitch * 3) + threadID) = 0.467409;
+
+
     }
 }
 
@@ -97,7 +104,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
             for(int i = 0; i < NEQ; i++) {
                 *((real *) ((char *) sv + pitch * i) + sv_id) = dt * rDY[i] + *((real *) ((char *) sv + pitch * i) + sv_id);
-            }            
+            }
 
         }
 
@@ -170,4 +177,3 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     rDY_[3] =  (alpha_n*(1.00000 - n_old_) -  beta_n*n_old_);
 
 }
-

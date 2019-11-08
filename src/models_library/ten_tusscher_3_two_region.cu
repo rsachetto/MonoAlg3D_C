@@ -256,17 +256,17 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
             }
 
         }
-
-		//~ if(threadID == num_cells_to_solve-1)
-		//~ {
-			//~ print_to_stdout_and_file("------------------------\n");
-			//~ for(int i = 0; i < NEQ; i++)
-			//~ {
-				//~ print_to_stdout_and_file("%lf\n", *((real*)((char*)sv + pitch * i) + sv_id));
-			//~ }
-			//~ print_to_stdout_and_file("------------------------\n");
-		//~ }
-
+/*
+		if(threadID == num_cells_to_solve-1)
+		 {
+			 printf("------------------------\n");
+			 for(int i = 0; i < NEQ; i++)
+			 {
+				printf("sv_%d_2=%lf\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
+			 }
+			 printf("------------------------\n");
+		 }
+*/
 
     }
 }

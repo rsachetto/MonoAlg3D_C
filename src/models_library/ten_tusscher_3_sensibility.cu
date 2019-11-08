@@ -240,7 +240,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 			 printf("------------------------\n");
 			 for(int i = 0; i < NEQ; i++)
 			 {
-				 printf("%lf\n", *((real*)((char*)sv + pitch * i) + sv_id));
+				 printf("sv_%d_2=%lf\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
 			 }
 			 printf("------------------------\n");
 		 }

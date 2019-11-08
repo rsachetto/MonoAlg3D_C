@@ -65,6 +65,7 @@ meshes/*.pts
 meshes/*.mesh
 meshes/human_800_tagged.alg
 meshes/mouse.alg
+meshes/hermenegild*
 .vscode/
 build/
 *~
@@ -83,6 +84,7 @@ scripts/output
 scripts/animations/frames
 scripts/animations/videos
 scripts/animations/cameras
+scripts/parser_vtu_to_alg/inputs
 batch_simulations/
 *.vscode*
 /src/main_graph_analyzer.c

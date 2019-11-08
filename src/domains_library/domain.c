@@ -938,11 +938,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     real_cpu z_domain_limit = 64000.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,z_domain_limit, config->config_data, "z_domain_limit");
 
+    uint32_t refinement_steps = 7;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(uint32_t,refinement_steps, config->config_data, "refinement_steps");
+
     uint32_t total_number_mesh_points;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, total_number_mesh_points, config->config_data, "total_number_mesh_points");
 
     initialize_and_construct_grid(the_grid, POINT3D(x_domain_limit, y_domain_limit, z_domain_limit));
-    refine_grid(the_grid, 7);
+    refine_grid(the_grid, refinement_steps);
 
     print_to_stdout_and_file("Loading Custom Mesh\n");
 
@@ -952,7 +955,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
     print_to_stdout_and_file("Cleaning grid\n");
     int i;
-    for(i = 0; i < 6; i++)
+    for(i = 0; i < refinement_steps-1; i++)
     {
         derefine_grid_inactive_cells(the_grid);
     }

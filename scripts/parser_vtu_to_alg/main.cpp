@@ -7,6 +7,7 @@
 #include <vtkDataArray.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
+#include <vtkXMLPolyDataReader.h>
 #include <vtkDataSetSurfaceFilter.h>
 #include <vtkFloatArray.h>
 #include<vtkMergePoints.h>
@@ -14,6 +15,8 @@
 #include <vtkCellArray.h>
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkSelectEnclosedPoints.h>
+#include <vtksys/SystemTools.hxx>
+#include "timer.h"
 
 #define PRINT_LINE "============================================================================================================="
 
@@ -31,6 +34,14 @@ void usage (const char pname[])
 	fprintf(stderr,"%s\n",PRINT_LINE);
 }
 
+void print_progress (int iter, int max_iter)
+{
+    double progress = iter / (double)max_iter;
+    
+    std::cout << "Progress: " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc-1 != 4)
@@ -39,18 +50,37 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	char *vtu_input_filename = argv[1];
+	char *input_filename = argv[1];
 	double dx = atof(argv[2]), dy = atof(argv[3]), dz = atof(argv[4]);
 
-	vtkSmartPointer<vtkUnstructuredGrid> surfaceMesh = vtkSmartPointer<vtkUnstructuredGrid>::New();
-	vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-	reader->SetFileName(vtu_input_filename);
-	reader->Update();
-
+	//vtkSmartPointer<vtkUnstructuredGrid> surfaceMesh = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
-	surfaceFilter->SetInputData(reader->GetOutput());
-	surfaceFilter->Update();
 
+	std::string extension = vtksys::SystemTools::GetFilenameLastExtension(input_filename);
+	if (extension == ".vtu")
+	{
+		vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+		reader->SetFileName(input_filename);
+		reader->Update();
+
+		surfaceFilter->SetInputData(reader->GetOutput());
+		surfaceFilter->Update();
+	}
+	else if (extension == ".vtp")
+	{
+		vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
+		reader->SetFileName(input_filename);
+		reader->Update();
+
+		surfaceFilter->SetInputData(reader->GetOutput());
+		surfaceFilter->Update();
+ 	}
+	else
+	{
+		std::cerr << "[-] ERROR ! Invalid format '" << extension << "'" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	
 	vtkPolyData* meshData = surfaceFilter->GetOutput();
 
 	double bounds[6];
@@ -141,6 +171,8 @@ int main(int argc, char *argv[])
 	double aux7[3];
 	double aux8[3];
 
+	//exit(1);
+
 	FILE *alg_output_file = fopen("outputs/mesh.alg","w+");
 
 	double halfl = dx/2.0;
@@ -148,6 +180,10 @@ int main(int argc, char *argv[])
 	vtkSmartPointer<vtkSelectEnclosedPoints> selectEnclosedPoints =	vtkSmartPointer<vtkSelectEnclosedPoints>::New();
 	selectEnclosedPoints->Initialize(meshData);
 	selectEnclosedPoints->SetTolerance(0.0);
+
+	// Print progress variables
+	unsigned int max_number_points = total_points_x * total_points_y * total_points_z;
+	unsigned int cur_point = 0;
 
 	double center_point[3];
 	for (int i = 0; i < total_points_x; ++i) {
@@ -158,6 +194,8 @@ int main(int argc, char *argv[])
 			centery = centery + dy;
 			centerz = min_z;
 			for (int z = 0; z < total_points_z; ++z) {
+
+				print_progress(cur_point,max_number_points);
 
 				centerz = centerz + dz;
 				center_point[0] = centerx;
@@ -261,6 +299,8 @@ int main(int argc, char *argv[])
 					cells->InsertCellPoint(pointLocator->IsInsertedPoint(aux8));
 				}
 
+				cur_point++;
+
 			}
 		}
 	}
@@ -280,5 +320,7 @@ int main(int argc, char *argv[])
 	writer->SetFileName("outputs/processed_mesh.vtu");
 	writer->Write();
 	cout << "[!] Processed VTU file saved at 'outputs/processed_mesh.vtu' !" << endl;
+
+	return 0;
 
 }
