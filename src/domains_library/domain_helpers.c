@@ -4,10 +4,10 @@
 
 #include "domain_helpers.h"
 #include "../libraries_common/common_data_structures.h"
-#include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include "../string/sds.h"
 #include "../config_helpers/config_helpers.h"
+#include "../logger/logger.h"
 
 #include <float.h>
 #include <math.h>
@@ -668,9 +668,9 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 
     bool inside;
 
-    real_cpu side_length_x = the_grid->mesh_side_length.x;
+ //   real_cpu side_length_x = the_grid->mesh_side_length.x;
     real_cpu side_length_y = the_grid->mesh_side_length.y;
-    real_cpu side_length_z = the_grid->mesh_side_length.z;
+//    real_cpu side_length_z = the_grid->mesh_side_length.z;
 
     real_cpu region_height = (side_length_y - channel_width) / 2.0;
 
@@ -685,7 +685,7 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 
             real_cpu x = grid_cell->center.x;
             real_cpu y = grid_cell->center.y;
-            real_cpu z = grid_cell->center.z;
+//            real_cpu z = grid_cell->center.z;
 
             // Check region 1
             inside = (x >= 0.0) && (x <= channel_length) &&\

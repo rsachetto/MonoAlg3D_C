@@ -101,7 +101,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     real alpha_m = (((1.0e-01*((-V_old_)-4.8e+01))/(exp((((-V_old_)-4.8e+01)/1.5e+01))-1.0e+00)));
     real alpha_n = (((1.0e-04*((-V_old_)-5.0e+01))/(exp((((-V_old_)-5.0e+01)/1.0e+01))-1.0e+00)));
     real i_na = (g_na+1.4e-01)*(V_old_ - E_na);
-    real i_na_no_oscilation = (g_na+1.2e-01)*(V_old_ - E_na);
+//    real i_na_no_oscilation = (g_na+1.2e-01)*(V_old_ - E_na);
     double beta_m = (((1.2e-01*(V_old_+8.0e+00))/(exp(((V_old_+8.0e+00)/5.0e+00))-1.0e+00)));
     double beta_h = ((1.0/(1.0e+00+exp((((-V_old_)-4.2e+01)/1.0e+01)))));
     double beta_n = ((2.0e-03*exp((((-V_old_)-9.0e+01)/8.0e+01))));

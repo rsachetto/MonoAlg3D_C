@@ -2,7 +2,6 @@
 // Created by sachetto on 01/10/17.
 //
 
-#include <time.h>
 #include <unistd.h>
 
 #include "../config/extra_data_config.h"

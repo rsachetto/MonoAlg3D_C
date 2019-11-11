@@ -494,14 +494,14 @@ void construct_grid_purkinje (struct grid *the_grid)
     uint32_t total_purkinje_nodes = the_purkinje->network->total_nodes;
     
     // Create the Purkinje cells array
-    struct cell_node **purkinje_cells = the_purkinje->purkinje_cells;
+    struct cell_node **purkinje_cells;
     purkinje_cells = (struct cell_node**)malloc(sizeof(struct cell_node*)*total_purkinje_nodes);
     for (int i = 0; i < total_purkinje_nodes; i++)
         purkinje_cells[i] = new_cell_node();
     
     // Pass through the Purkinje graph and set the cell nodes.
     struct node *n = the_purkinje->network->list_nodes;
-    for (int i = 0; i < total_purkinje_nodes; i++)
+    for (uint32_t i = 0; i < total_purkinje_nodes; i++)
     {
         
         if (i == 0)
@@ -533,10 +533,6 @@ void construct_grid_purkinje (struct grid *the_grid)
     the_purkinje->number_of_purkinje_cells = total_purkinje_nodes;
     the_purkinje->num_active_purkinje_cells = total_purkinje_nodes;
 
-    //the_grid->first_purkinje_cell = purkinje_cells[0];
-    //the_grid->purkinje_cells = purkinje_cells;
-    //the_grid->number_of_purkinje_cells = total_nodes;
-    
 }
 
 void initialize_and_construct_grid_purkinje (struct grid *the_grid)
@@ -780,7 +776,7 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
             uint32_t purkinje_index = n->id;
             struct node *purkinje_cell = n;
             
-            uint32_t closest_index;
+            uint32_t closest_index = 0;
             double closest_dist = __DBL_MAX__;
             for (uint32_t i = 0; i < n_active; i++)
             {
@@ -815,10 +811,6 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
         n = n->next;
     }
 
-    //print_to_stdout_and_file("On 'link_purkinje_to_endocardium'\n");
-    //for (uint32_t i = 0; i < number_of_terminals; i++)
-    //    print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
-
     return the_terminals;
 }
 
@@ -827,8 +819,6 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
     struct grid_purkinje *the_purkinje = the_grid->purkinje;
 
     struct graph *the_network = the_purkinje->network;
-
-    uint32_t number_of_terminals = the_network->number_of_terminals;
 
     struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
 
@@ -842,10 +832,10 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
             struct cell_node **ac = the_grid->active_cells;
             
             uint32_t purkinje_index = n->id;
-            struct node *purkinje_cell = n;
-            
-            uint32_t closest_index;
+
+            uint32_t closest_index = 0;
             double closest_dist = __DBL_MAX__;
+
             for (uint32_t i = 0; i < n_active; i++) {
                 double dist = calc_norm(n->x,n->y,n->z,ac[i]->center.x,ac[i]->center.y,ac[i]->center.z);
                 if (dist < closest_dist)
@@ -860,8 +850,6 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
             
             the_terminals[j].endocardium_cell = endocardium_cell;
             the_terminals[j].endocardium_index = endocardium_index;
-            //the_terminals[j].purkinje_index = purkinje_index;
-            //the_terminals[j].purkinje_cell = purkinje_cell;
 
             // Change the position of the Purkinje terminal to be on the center of the Endocardium cell
             the_terminals[j].purkinje_cell->x = the_terminals[j].endocardium_cell->center.x;
@@ -878,8 +866,4 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
 
         n = n->next;
     }
-
-    //print_to_stdout_and_file("On 'update_link_purkinje_to_endocardium'\n");
-    //for (uint32_t i = 0; i < number_of_terminals; i++)
-    //    print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
 }

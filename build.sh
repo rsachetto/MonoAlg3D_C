@@ -23,7 +23,7 @@ if [ "$BUILD_TYPE" == "cluster" ]; then
 fi
 
 ###########User code#####################
-DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing -Wall -Wno-unused-function -Wno-char-subscripts"
+DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts -Werror"
 RUNTIME_OUTPUT_DIRECTORY="$ROOT_DIR/bin"
 LIBRARY_OUTPUT_DIRECTORY="$ROOT_DIR/shared_libs"
 

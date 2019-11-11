@@ -442,9 +442,7 @@ SAVE_MESH(save_as_vtu) {
 //     sds base_name = create_base_name(file_prefix, iteration_count, "vtk");
 //     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-//     new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid,\
-//                                     clip_with_plain, plain_coords, clip_with_bounds, bounds,\
-//                                     !the_grid->adaptive,'v');
+//     new_vtk_polydata_grid_from_purkinje_grid(&vtk_polydata, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'v');
 //     save_vtk_polydata_grid_as_legacy_vtk(vtk_polydata, output_dir_with_file, binary);
 
 //     if(the_grid->adaptive)
@@ -566,8 +564,6 @@ SAVE_MESH(save_as_vtp_purkinje) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config->config_data, "max_y");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data, "max_z");
     }
-
-    char scalar_name = 'v';
 
     write_transmembrane_potential_vtp(&vtk_polydata, the_grid, output_dir, file_prefix, time_info->iteration, time_info->current_t,\
                                              save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);

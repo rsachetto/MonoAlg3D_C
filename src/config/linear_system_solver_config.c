@@ -4,10 +4,8 @@
 
 #include "linear_system_solver_config.h"
 
-#include <dlfcn.h>
 #include <string.h>
-#include "../utils/file_utils.h"
-#include "../common_types/common_types.h"
+#include "../logger/logger.h"
 #include "../single_file_libraries/stb_ds.h"
 
 void print_linear_system_solver_config_values(struct config* s) {

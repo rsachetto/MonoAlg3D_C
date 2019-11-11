@@ -48,7 +48,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
-void set_initial_conditions (struct monodomain_solver *the_solver, struct grid *the_grid, real_cpu initial_v);
 
 void print_solver_info(struct monodomain_solver *the_monodomain_solver,
                         struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,

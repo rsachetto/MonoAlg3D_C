@@ -8,7 +8,7 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../config_helpers/config_helpers.h"
 #include "../string/sds.h"
-#include "../utils/file_utils.h"
+#include "../logger/logger.h"
 #include "../single_file_libraries/stb_ds.h"
 #include "../utils/utils.h"
 #include <assert.h>
@@ -889,16 +889,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region)
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_using_file) 
 {
 
-    real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
-
-    unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
-
     initialize_grid_with_square_mesh(time_info, config, the_grid);
     set_plain_fibrosis_using_file(the_grid,"fibrotic_positions.txt");
-    //set_plain_fibrosis(the_grid, phi, seed);
-    //set_plain_fibrosis_and_write_positions_to_file(the_grid, phi, seed);
 
     return 1;
 }
@@ -922,7 +914,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
         real_cpu z_domain_limit = 64000.0f;
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,z_domain_limit, config->config_data, "z_domain_limit");
 
-        uint32_t total_number_mesh_points;
+        uint32_t total_number_mesh_points = 0;
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, total_number_mesh_points, config->config_data, "total_number_mesh_points");
 
         initialize_and_construct_grid(the_grid, POINT3D(x_domain_limit, y_domain_limit, z_domain_limit));

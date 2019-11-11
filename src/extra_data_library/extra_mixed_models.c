@@ -26,8 +26,8 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
     for (i = 0; i < num_active_cells; i++)
     {
         real center_x = ac[i]->center.x;
-        real center_y = ac[i]->center.y;
-        real center_z = ac[i]->center.z;
+//        real center_y = ac[i]->center.y;
+//        real center_z = ac[i]->center.z;
 
         inside = (center_x <= x_limit);
 
@@ -50,11 +50,11 @@ SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
 
     uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
 
-    struct cell_node ** ac = the_grid->active_cells;
-    struct cell_node ** ac_purkinje = the_grid->purkinje->purkinje_cells;
+//    struct cell_node ** ac = the_grid->active_cells;
+//    struct cell_node ** ac_purkinje = the_grid->purkinje->purkinje_cells;
 
     int i;
-    bool inside;
+//    bool inside;
 
     // Purkinje section
     #pragma omp parallel for
