@@ -571,7 +571,7 @@ bool check_simulation_completed(char *simulation_dir) {
         return false;
     }
 
-    for(int c = 0; c < file_size; c++) {
+    for(long c = 0; c < file_size; c++) {
         char l = outputlog_content[c];
         if(!isspace(l)) {
             arrput(word, l);
@@ -607,10 +607,10 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, lon
         sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
         if (count) {
             if (strcmp(tmp[1], "columns:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
+                (*num_lines) = strtol(tmp[2], NULL, 10);
             }
             if (strcmp(tmp[1], "nnz:") == 0) {
-                (*nnz) = atoi(tmp[2]);
+                (*nnz) = strtol(tmp[2], NULL, 10);
             }
         }
         sdsfreesplitres(tmp, count);
