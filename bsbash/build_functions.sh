@@ -3,13 +3,14 @@ set -e
 
 WARN='\033[0;31m'
 INFO='\033[0;34m'
+ERROR='\033[0;31m'
 NC='\033[0m' # No Color
 
 #MAIN BUILD VARIABLES
-C_COMPILER=gcc
-CXX_COMPILER=g++
-AR=ar
-RANLIB=ranlib
+C_COMPILER="gcc"
+CXX_COMPILER="g++"
+AR_COMMAND="ar"
+RANLIB="ranlib"
 C_FLAGS=
 ROOT_DIR=$(pwd)
 BUILD_TYPE="release"
@@ -37,7 +38,7 @@ PRINT_USAGE () {
 
 GET_BUILD_OPTIONS () {
 	
-	if [ $# -gt 2 ]; then
+	if [ $# -gt 1 ]; then
 		PRINT_USAGE "$@"
 	fi
 
@@ -54,18 +55,13 @@ GET_BUILD_OPTIONS () {
 		shift $((OPTIND-1))
 
 		while [ $# -gt 0 ] && ! [[ "$1" =~ ^- ]]; do
-			BUILD_TYPE=("${mandatory[@]}" "$1")
+			BUILD_TYPE_ARR=("${mandatory[@]}" "$1")
 			shift
 		done
 	done
 
-	if [ "$BUILD_TYPE" == "release" ]; then 
-		C_FLAGS="$C_FLAGS -O3"
-	elif [ "$BUILD_TYPE" == "debug" ]; then
-		C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
-	elif [ "$BUILD_TYPE" == "clean" ]; then
-		CLEAN_PROJECT
-		exit 0
+  if [ -n "${BUILD_TYPE_ARR[*]}" ]; then
+	  BUILD_TYPE=${BUILD_TYPE_ARR[*]}
 	fi
 
 }
@@ -95,6 +91,11 @@ PRINT_INFO () {
 PRINT_WARN () {
   printf "[WARN] ${WARN}%s${NC}\n" "$1" >&2
 }
+
+PRINT_ERROR () {
+  printf "[ERROR] ${ERROR}%s${NC}\n" "$1" >&2
+}
+
 
 RECOMPILE_OR_NOT () {
 
@@ -311,6 +312,26 @@ COMPILE_OBJECT () {
 
 }
 
+CHECK_HEADERS() {
+	if [ -z "$FORCE_COMPILATION" ]; then
+		#CHECK IF BUILD SCRIPT CHANGED SINCE THE LAST COMPILATION
+		if [ "$(RECOMPILE_OR_NOT "$TIME_FILE" "$0")" -gt "0" ]; then
+			FORCE_COMPILATION='y'
+		fi
+
+		for h in $HEADERS; do
+			if [ -f "$h" ]; then
+        if [ "$(RECOMPILE_OR_NOT "$LIB_PATH" "$h")" -gt "0" ]; then
+          FORCE_COMPILATION='y'
+          break
+        fi
+			else
+				PRINT_WARN "$h file does not exist! Check your build scripts!"
+			fi
+		done
+	fi
+}
+
 COMPILE_STATIC_LIB () {
  
 	local LIB_NAME=lib$1
@@ -333,27 +354,7 @@ COMPILE_STATIC_LIB () {
 
 	local TIME_FILE="$BUILD_DIR/.${LIB_NAME}_last_compiled_time_bbash"
 
-
-	if [ -z "$FORCE_COMPILATION" ]; then
-
-		#CHECK IF BUILD SCRIPT CHANGED SINCE THE LAST COMPILATION
-		if [ "$(RECOMPILE_OR_NOT "$TIME_FILE" "$0")" -gt "0" ]; then
-			FORCE_COMPILATION='y'
-		fi
-
-
-		for h in $HEADERS; do
-			if [ -f "$h" ]; then
-			if [ "$(RECOMPILE_OR_NOT "$LIB_PATH" "$h")" -gt "0" ]; then
-				FORCE_COMPILATION='y'
-				break
-			fi
-			else
-			PRINT_WARN "$h file does not exist! Check your build scripts!"
-			fi
-		done
-	
-	fi
+  CHECK_HEADERS
 
 	for s in $SOURCES; do
 		local OBJ_FILE
@@ -369,10 +370,9 @@ COMPILE_STATIC_LIB () {
 
 	done
 
-
 	if [ -n "$ANY_COMPILED_LOCAL" ]; then
 	  PRINT_INFO "CREATING STATIC LIB $LIB_NAME"
-		ECHO_AND_EXEC_COMMAND "$AR rcs $LIB_PATH ${OBJECTS[*]}"
+		ECHO_AND_EXEC_COMMAND "$AR_COMMAND rcs $LIB_PATH ${OBJECTS[*]}"
 		ECHO_AND_EXEC_COMMAND "$RANLIB $LIB_PATH"
 		touch "$TIME_FILE"
 	fi
@@ -430,23 +430,7 @@ COMPILE_SHARED_LIB () {
 	  FORCE_COMPILATION='y'
 	fi
 
-	if [ -z $FORCE_COMPILATION ]; then
-		#CHECK IF BUILD SCRIPT CHANGED SINCE THE LAST COMPILATION
-		if [ "$(RECOMPILE_OR_NOT "$TIME_FILE" "$0")" -gt "0" ]; then
-			FORCE_COMPILATION='y'
-		fi
-
-		for h in $HEADERS; do
-			if [ -f "$h" ]; then
-        if [ "$(RECOMPILE_OR_NOT "$LIB_PATH" "$h")" -gt "0" ]; then
-          FORCE_COMPILATION='y'
-          break
-        fi
-			else
-				PRINT_WARN "$h file does not exist! Check your build scripts!"
-			fi
-		done
-	fi
+  CHECK_HEADERS
 
 	for s in $SOURCES; do
 		local OBJ_FILE
