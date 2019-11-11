@@ -594,7 +594,7 @@ bool check_simulation_completed(char *simulation_dir) {
 
 
 
-real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, long *nnz) {
     const char *sep = " ";
     char *line_a = NULL;
     size_t len;
@@ -618,21 +618,21 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int 
 
     real_cpu **matrix = (real_cpu **) malloc(*num_lines * sizeof(real_cpu *));
 
-    for (int i = 0; i < *num_lines; i++) {
+    for (long i = 0; i < *num_lines; i++) {
         matrix[i] = (real_cpu *) calloc(*num_lines, sizeof(real_cpu));
     }
 
-    int item_count = 0;
-    int m_line, m_column;
+    long item_count = 0;
+    long m_line, m_column;
     real_cpu m_value;
 
     while (item_count < *nnz) {
 
         sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
         if (tmp[0][0] != '\n') {
-            m_line = atoi(tmp[0]);
-            m_column = atoi(tmp[1]);
-            m_value = atof(tmp[2]);
+            m_line = strtol(tmp[0], NULL, 10);
+            m_column = strtol(tmp[1], NULL, 10);
+            m_value = (real_cpu) strtod(tmp[2], NULL);
 
             matrix[m_line - 1][m_column - 1] = m_value;
         }
@@ -648,7 +648,7 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int 
     return matrix;
 }
 
-real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, long *num_lines) {
 
     ssize_t read;
     size_t len;
@@ -661,7 +661,7 @@ real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
         sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
         if (count) {
             if (strcmp(tmp[1], "rows:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
+                (*num_lines) = strtol(tmp[2], NULL, 10);
             }
         }
         sdsfreesplitres(tmp, count);
@@ -674,7 +674,7 @@ real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
         sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
 
         if (tmp[0][0] != '\n') {
-            vector[item_count] = atof(tmp[1]);
+            vector[item_count] = (real_cpu) strtod(tmp[1], NULL);
         }
 
         sdsfreesplitres(tmp, count);

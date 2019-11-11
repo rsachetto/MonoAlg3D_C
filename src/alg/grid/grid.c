@@ -658,9 +658,9 @@ void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b) {
 
     uint32_t n_cells;
-    int num_lines_m = 0;
-    int num_lines_v = 0;
-    int nnz = 0;
+    long num_lines_m = 0;
+    long num_lines_v = 0;
+    long nnz = 0;
 
     real_cpu **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
     real_cpu *vector = NULL;

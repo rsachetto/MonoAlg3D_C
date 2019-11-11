@@ -18,11 +18,6 @@
 #include "../config_helpers/config_helpers.h"
 
 
-
-real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
-
-real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
-
 real_cpu calc_mse(const real_cpu *x, const real_cpu *xapp, int n) {
 
     real_cpu sum_sq = 0;
@@ -95,7 +90,7 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
     ((linear_system_solver_fn*)linear_system_solver_config->main_function)(&ti, linear_system_solver_config, grid, grid->num_active_cells, grid->active_cells, &n_iter, &error);
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
 
-    int n_lines1;
+    long n_lines1;
     uint32_t n_lines2;
 
     real_cpu *x = read_octave_vector_file_to_array(X, &n_lines1);
