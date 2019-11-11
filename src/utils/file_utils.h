@@ -30,7 +30,7 @@ size_t base64_decode(unsigned char* out, const char *src, size_t len, size_t *by
 char * get_dir_from_path(const char * path);
 bool check_simulation_completed(char *simulation_dir);
 
-real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz);
-real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines);
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, long *nnz);
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, long *num_lines);
 
 #endif //MONOALG3D_FILE_UTILS_H
