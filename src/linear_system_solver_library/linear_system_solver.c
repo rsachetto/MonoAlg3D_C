@@ -310,13 +310,13 @@ END_LINEAR_SYSTEM(end_cpu_conjugate_gradient) {
 SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 
     real_cpu  rTr,
-            r1Tr1,
-            pTAp,
-            alpha,
-            beta,
-            precision = tol,
-            rTz,
-            r1Tz1;
+             r1Tr1,
+             pTAp,
+             alpha,
+             beta,
+             precision = tol,
+             rTz,
+             r1Tz1;
 
 
     *error = 1.0;
@@ -329,10 +329,9 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
     rTr = 0.0;
     rTz = 0.0;
 
-    struct element element;
     uint32_t i;
 
-    #pragma omp parallel for private (element) reduction(+:rTr,rTz)
+    #pragma omp parallel for reduction(+:rTr,rTz)
     for (i = 0; i < num_active_cells; i++) {
 
         if(CG_INFO(active_cells[i]) == NULL) {
@@ -341,12 +340,10 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 
         struct element *cell_elements = active_cells[i]->elements;
         active_cells[i]->Ax = 0.0;
-
         size_t max_el = arrlen(cell_elements);
 
         for(size_t el = 0; el < max_el; el++) {
-            element = cell_elements[el];
-            active_cells[i]->Ax += element.value * element.cell->v;
+            active_cells[i]->Ax +=  cell_elements[el].value *  cell_elements[el].cell->v;
         }
 
         CG_R(active_cells[i]) = active_cells[i]->b - active_cells[i]->Ax;
@@ -369,7 +366,6 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 
     *error = rTr;
 
-
     //__________________________________________________________________________
     //Conjugate gradient iterations.
     if( *error >= precision ) {
@@ -378,7 +374,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             // Computes Ap and pTAp. Uses Ax to store Ap.
             pTAp = 0.0;
 
-            #pragma omp parallel for private(element) reduction(+ : pTAp)
+            #pragma omp parallel for reduction(+ : pTAp)
             for (i = 0; i < num_active_cells; i++) {
 
                 active_cells[i]->Ax = 0.0;
@@ -386,8 +382,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 
                 size_t max_el = arrlen(cell_elements);
                 for(size_t el = 0; el < max_el; el++) {
-                    element = cell_elements[el];
-                    active_cells[i]->Ax += element.value * CG_P(element.cell);
+                    active_cells[i]->Ax += cell_elements[el].value * CG_P(cell_elements[el].cell);
                 }
 
                 pTAp += CG_P(active_cells[i]) * active_cells[i]->Ax;
@@ -403,13 +398,13 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             }
             //__________________________________________________________________
 
-
             r1Tr1 = 0.0;
             r1Tz1 = 0.0;
 
             // Computes new value of solution: u = u + alpha*p.
             #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
             for (i = 0; i < num_active_cells; i++) {
+
                 active_cells[i]->v += alpha * CG_P(active_cells[i]);
 
                 CG_R(active_cells[i]) -= alpha * active_cells[i]->Ax;

@@ -33,7 +33,7 @@ struct basic_cell_data {
 };
 
 struct cell_node {
-    struct basic_cell_data cell_data; // DO NOT CHANGE THIS STRUCT POSITION
+    struct basic_cell_data cell_data; // DO NOT CHANGE THIS MEMBER POSITION
 
     bool active;
 
@@ -61,10 +61,6 @@ struct cell_node {
     // created when this cell is refined.
     uint8_t hilbert_shape_number;
 
-//    // Cell geometry.
-//    real_cpu half_dx;
-//    real_cpu half_face_length_zy;
-
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
     real_cpu north_flux, // Flux coming from north direction.
@@ -87,7 +83,8 @@ struct cell_node {
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
     real_cpu Ax; /* Element of int_vector Ax = b associated to this cell. Also plays the role of Ap.*/
-    real_cpu b;  /* In Ax = b, corresponds to the element in int_vector b associated to this cell. */
+    real_cpu b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
+
     void *linear_system_solver_extra_info;
     size_t linear_system_solver_extra_info_size;
 

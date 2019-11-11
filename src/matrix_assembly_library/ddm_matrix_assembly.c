@@ -473,8 +473,8 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
             {
                 real_cpu center_x = grid_cell->center.x;
                 real_cpu center_y = grid_cell->center.y;
-                real_cpu half_dx = grid_cell->discretization.x/2.0;
-                real_cpu half_dy = grid_cell->discretization.y/2.0;
+//                real_cpu half_dx = grid_cell->discretization.x/2.0;
+//                real_cpu half_dy = grid_cell->discretization.y/2.0;
 
                 struct point_3d p;
                 struct point_3d q;
@@ -1232,9 +1232,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
 
     real cell_length_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");
-      
-    real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config->config_data, "sigma_factor");    
+
 
     // Calculate the kappa values on each cell of th grid
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
@@ -1400,13 +1398,6 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
 
 ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
 {
-
-    static bool sigma_initialized = false;
-    int num;
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
     struct cell_node *grid_cell;
 
     initialize_diagonal_elements(the_solver, the_grid);
@@ -1437,9 +1428,6 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
 
     char *new_fib_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
-
-    real rescale_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,rescale_factor, config->config_data, "rescale_factor");
     
     real x_shift = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,x_shift, config->config_data, "x_shift");        
@@ -1683,8 +1671,8 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
             {
                 real_cpu center_x = grid_cell->center.x;
                 real_cpu center_y = grid_cell->center.y;
-                real_cpu half_dy = grid_cell->discretization.y/2.0;
-                real_cpu half_dx = grid_cell->discretization.x/2.0;
+//                real_cpu half_dy = grid_cell->discretization.y/2.0;
+//                real_cpu half_dx = grid_cell->discretization.x/2.0;
 
                 struct point_3d p;
                 struct point_3d q;
@@ -1710,8 +1698,8 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 
     // Start building the channel block
 	real X_left  = side_length/12.0;
-	real X_left_1  = X_left + side_length/12.0;
-	real X_right = 3000;
+//	real X_left_1  = X_left + side_length/12.0;
+//	real X_right = 3000;
 	real Y_down  = 0.0;
 	real Y_up 	= 1200;
 	
@@ -1719,17 +1707,17 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 	for (i = 0; i < num_active_cells; i++) 
 	{	
 
-		double x = ac[i]->center.x;
-		double y = ac[i]->center.y;	
+//		double x = ac[i]->center.x;
+//		double y = ac[i]->center.y;
 		
     // Region 1 starts here ...
 
 		//Part 1 - (Channel construction)
 
 		int mid_scar_Y = (Y_down + 7500)/12.0;
-		int X_right_1 = X_left + cell_length_x;
+//		int X_right_1 = X_left + cell_length_x;
 		int Part1_x_right = X_left + 10.*(cell_length_x);
-		int Part2_x_left = Part1_x_right + cell_length_x;
+//		int Part2_x_left = Part1_x_right + cell_length_x;
 		
 		// Decrease the conductivity of every cell inside the region
 		create_sigma_low_block(ac[i],X_left,Part1_x_right,Y_down,Y_up,sigma_x,sigma_y,sigma_z,sigma_factor);
@@ -1757,7 +1745,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 		int X_right_3 = X_right_2;
 		int Y_up_3 = Part2_y_up + 5*cell_length_y;
 		int Y_down_3 = Part2_y_down - 5*cell_length_y;
-		real_cpu m_up = (Y_up_3-Part2_y_up)/(X_right_3-X_left_3);
+//		real_cpu m_up = (Y_up_3-Part2_y_up)/(X_right_3-X_left_3);
 
 
 		create_sigma_low_block(ac[i], X_left_3,X_right_3,Y_down_3,Y_up_3,sigma_x,sigma_y,sigma_z,1.0);		

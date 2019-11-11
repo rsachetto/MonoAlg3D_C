@@ -24,7 +24,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
-    int i;
+    uint32_t i;
 
     #pragma omp parallel for private(alpha)
     for(i = 0; i < active_cells; i++) 

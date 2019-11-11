@@ -6,7 +6,7 @@
 #include "domain_config.h"
 #include <dlfcn.h>
 #include <string.h>
-#include "../utils/file_utils.h"
+#include "../logger/logger.h"
 
 #include "../single_file_libraries/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
