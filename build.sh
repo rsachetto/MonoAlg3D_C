@@ -13,13 +13,24 @@ if [ -f "$FUNCTIONS_FILE" ]; then
 	source $FUNCTIONS_FILE
 fi
 
-GET_BUILD_OPTIONS "$@"
-
 COMPILE_GUI='y'
 
-if [ "$BUILD_TYPE" == "cluster" ]; then 
-	C_FLAGS="$C_FLAGS -O3"
-    COMPILE_GUI=''
+GET_BUILD_OPTIONS "$@"
+
+if [ "$BUILD_TYPE" == "release" ]; then
+  C_FLAGS="$C_FLAGS -O3"
+elif [ "$BUILD_TYPE" == "debug" ]; then
+  C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
+elif [ "$BUILD_TYPE" == "clean" ]; then
+  CLEAN_PROJECT
+  exit 0
+elif [ "$BUILD_TYPE" == "cluster" ]; then
+  C_FLAGS="$C_FLAGS -O3"
+  COMPILE_GUI=''
+else
+  PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
+  PRINT_ERROR "Valid BUILD_TYPE options are: release, debug, cluster or clean"
+  exit 1
 fi
 
 ###########User code#####################

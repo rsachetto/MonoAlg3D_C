@@ -1216,15 +1216,15 @@ void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_
 
     if(other_cell->mesh_extra_info) {
         the_cell->mesh_extra_info_size = other_cell->mesh_extra_info_size;
-        the_cell->mesh_extra_info = malloc(other_cell->mesh_extra_info_size);
-        memcpy(the_cell->mesh_extra_info, other_cell->mesh_extra_info, other_cell->mesh_extra_info_size);
+        the_cell->mesh_extra_info = malloc(the_cell->mesh_extra_info_size);
+        memcpy(the_cell->mesh_extra_info, other_cell->mesh_extra_info, the_cell->mesh_extra_info_size);
     }
 
     if(other_cell->linear_system_solver_extra_info) {
         the_cell->linear_system_solver_extra_info_size = other_cell->linear_system_solver_extra_info_size;
-        the_cell->linear_system_solver_extra_info = malloc(other_cell->linear_system_solver_extra_info_size);
+        the_cell->linear_system_solver_extra_info = malloc(the_cell->linear_system_solver_extra_info_size);
         memcpy(the_cell->linear_system_solver_extra_info, other_cell->linear_system_solver_extra_info,
-               other_cell->linear_system_solver_extra_info_size);
+               the_cell->linear_system_solver_extra_info_size);
     }
 
     the_cell->v = other_cell->v;
