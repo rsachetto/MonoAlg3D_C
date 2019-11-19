@@ -128,6 +128,7 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     // um -> cm
     //the_purkinje_network->dx = side_length*UM_TO_CM;
     the_purkinje_network->dx = side_length;
+    //the_purkinje_network->dx = side_length * 0.5;           // GAMBIARRA HARD !!!! Hermenegild
     the_purkinje_network->rpmj = rpmj;
     the_purkinje_network->pmj_scale = pmj_scale;
     the_purkinje_network->calc_retropropagation = calc_retro_propagation;
@@ -183,7 +184,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     d[2] = u->z;
 
     // DEBUG
-    print_to_stdout_and_file("Node %d will grow %d points\n",u->id,n_points);
+    //print_to_stdout_and_file("Node %d will grow %d points\n",u->id,n_points);
 
     // Grow the number of points of size 'h' until reaches the size of the segment
     for (int k = 1; k <= n_points; k++)

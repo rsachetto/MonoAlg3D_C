@@ -919,15 +919,23 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_using_file)
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
-    shput_dup_value(config->config_data, "start_dx", "250.0");
-    shput_dup_value(config->config_data, "start_dy", "250.0");
-    shput_dup_value(config->config_data, "start_dz", "250.0");
+    //shput_dup_value(config->config_data, "start_dx", "250.0");
+    //shput_dup_value(config->config_data, "start_dy", "250.0");
+    //shput_dup_value(config->config_data, "start_dz", "250.0");
 
     //char *mesh_file = strdup("meshes/rabheart.alg");
     //LEAK on mesh_file if mesh_file is defined on ini file
     char *mesh_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
+    double start_dx = 250.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dx");
+
+    double start_dy = 250.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dy, config->config_data, "start_dy");
+
+    double start_dz = 250.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");
 
     real_cpu x_domain_limit = 64000.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,x_domain_limit, config->config_data, "x_domain_limit");
@@ -947,7 +955,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     initialize_and_construct_grid(the_grid, POINT3D(x_domain_limit, y_domain_limit, z_domain_limit));
     refine_grid(the_grid, refinement_steps);
 
-    print_to_stdout_and_file("Loading Custom Mesh\n");
+    print_to_stdout_and_file("Loading Custom Tissue Mesh ...\n");
 
     set_custom_mesh(the_grid, mesh_file, total_number_mesh_points, "%lf,%lf,%lf,%lf\n");
 

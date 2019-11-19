@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "model_gpu_utils.h"
 
-#include "ten_tusscher_2004_epi_S2_tr4_pop53.h"
+#include "ten_tusscher_2004_epi_S3.h"
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
@@ -62,6 +62,8 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
 
     if(threadID < num_volumes) {
 
+        // Default initial condition
+    /*
         *((real*)((char*)sv + pitch * 0) + threadID)  = INITIAL_V;   // V;       millivolt
         *((real*)((char*)sv + pitch * 1) + threadID)  = 0.f;   //M
         *((real*)((char*)sv + pitch * 2) + threadID)  = 0.75;    //H
@@ -79,7 +81,13 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
         *((real*)((char*)sv + pitch * 14) + threadID) = 0.2f;      //CaSR
         *((real*)((char*)sv + pitch * 15) + threadID) = 11.6f;   //Nai
         *((real*)((char*)sv + pitch * 16) + threadID) = 138.3f;    //Ki
-
+    */
+    
+        // Elnaz's steady-state initial conditions
+        //real sv_sst[]={-86.7531659359261,0.00124010826721524,0.784213090011930,0.784063751337305,0.000170184867440439,0.487014769904825,0.00290183337641837,0.999998408105558,1.87481748650298e-08,1.84501422061852e-05,0.999773598689194,1.00768875506436,0.999999512997626,3.10350472687116e-05,1.04650592961489,10.1580626436712,139.167353745914};
+        real sv_sst[]={-86.7596599603487,0.00123838857632763,0.784369818846026,0.784223148947282,0.000169972136689011,0.487082365294413,0.00290049182352458,0.999998410215409,1.87279005544269e-08,1.84341746908718e-05,0.999781004659642,1.00771223118124,0.999999564103621,3.04673432492567e-05,0.993358298469861,10.1763606222150,139.168522102236};
+        for (uint32_t i = 0; i < NEQ; i++)
+            *((real*)((char*)sv + pitch * i) + threadID) = sv_sst[i];
 
     }
 }
@@ -155,8 +163,8 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     real Kbufsr=0.3f;
     real taufca=2.f;
     real taug=2.f;
-    //real Vmaxup=0.000425f;
-real Vmaxup=0.000415473030491458;
+   // real Vmaxup=0.000425f;
+real Vmaxup=0.000714016847624717;
     real Kup=0.00025f;
 
 //Constants
@@ -171,12 +179,12 @@ real Vmaxup=0.000415473030491458;
 //Parameters for currents
 //Parameters for IKr
   //  real Gkr=0.096;
-real Gkr=0.152206531817982;
+real Gkr=0.129819327185159;
 //Parameters for Iks
     real pKNa=0.03;
 #ifdef EPI
-    //real Gks=0.245;
-real Gks=0.140407204338257;
+  //  real Gks=0.245;
+real Gks=0.227808856917217;
 #endif
 #ifdef ENDO
     real Gks=0.245;
@@ -185,12 +193,12 @@ real Gks=0.140407204338257;
     real Gks=0.062;
 #endif
 //Parameters for Ik1
- //   real GK1=5.405;
-real GK1=4.52369210802209;
+    //real GK1=5.405;
+real GK1=3.92366049957936;
 //Parameters for Ito
 #ifdef EPI
-  //  real Gto=0.294;
-real Gto=0.222314250502583;
+ //  real Gto=0.294;
+real Gto=0.290683783819880;
 #endif
 #ifdef ENDO
     real Gto=0.073;
@@ -200,36 +208,56 @@ real Gto=0.222314250502583;
 #endif
 //Parameters for INa
  //   real GNa=14.838;
-real GNa=14.6018427634769;
+real GNa=13.4587995801200;
 //Parameters for IbNa
- //   real GbNa=0.00029;
-real GbNa=0.000103431028553912;
+  //  real GbNa=0.00029;
+real GbNa=0.000132990931598298;
 //Parameters for INaK
     real KmK=1.0;
     real KmNa=40.0;
   //  real knak=1.362;
-real knak=1.01158905985032;
+real knak=2.84430638940750;
 //Parameters for ICaL
   //  real GCaL=0.000175;
-real GCaL=0.000112974987722069;
+real GCaL=0.000158212114858015;
 //Parameters for IbCa
-    //real GbCa=0.000592;
-real GbCa=0.000261239945956946;
+  //  real GbCa=0.000592;
+real GbCa=0.000706297098320405;
 //Parameters for INaCa
-  //  real knaca=1000;
-real knaca=1089.25390973081;
+   // real knaca=1000;
+real knaca=1096.43133943582;
     real KmNai=87.5;
     real KmCa=1.38;
     real ksat=0.1;
     real n=0.35;
 //Parameters for IpCa
    // real GpCa=0.825;
-real GpCa=0.321919936027106;
+real GpCa=0.390810222439592;
     real KpCa=0.0005;
 //Parameters for IpK;
-   // real GpK=0.0146;
-real GpK=0.0117390465946764;
+  //  real GpK=0.0146;
+real GpK=0.0199551557341385;
 
+    // Setting Elnaz's parameters
+    real parameters []={14.6970262149558,2.32527331724419e-05,0.000121747898718481,0.000276971880166082,0.210038991991875,0.120908114803453,0.200498466936257,5.12988959137240,0.0151231713364490,1.26415205898593,1083.02600285230,0.000542147164379904,0.160470068504854,0.0146070055973378,0.00183114105726186,1.00487709573505e-05};
+
+
+    GNa=parameters[0];
+    GbNa=parameters[1];
+    GCaL=parameters[2];
+    GbCa=parameters[3];
+    Gto=parameters[4];
+    Gkr=parameters[5];
+    Gks=parameters[6];
+    GK1=parameters[7];
+    GpK=parameters[8];
+    knak=parameters[9];
+    knaca=parameters[10];
+    Vmaxup=parameters[11];
+    GpCa=parameters[12];
+    real arel=parameters[13];
+    real crel=parameters[14];
+    real Vleak=parameters[15];
 
     real IKr;
     real IKs;
@@ -387,11 +415,11 @@ real GpK=0.0117390465946764;
     Caisquare=Cai*Cai;
     CaSRsquare=CaSR*CaSR;
     CaCurrent=-(ICaL+IbCa+IpCa-2.0f*INaCa)*inverseVcF2*CAPACITANCE;
-   // A=0.016464f*CaSRsquare/(0.0625f+CaSRsquare)+0.008232f;
-A=0.00997732627616492*CaSRsquare/(0.0625f+CaSRsquare)+0.00444554679380322;
+    //A=0.016464f*CaSRsquare/(0.0625f+CaSRsquare)+0.008232f;
+A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
     Irel=A*sd*sg;
-   // Ileak=0.00008f*(CaSR-Cai);
-Ileak=4.34627628833166e-05*(CaSR-Cai);
+  //  Ileak=0.00008f*(CaSR-Cai);
+Ileak=Vleak*(CaSR-Cai);
     SERCA=Vmaxup/(1.f+(Kupsquare/Caisquare));
     CaSRCurrent=SERCA-Irel-Ileak;
     CaCSQN=Bufsr*CaSR/(CaSR+Kbufsr);
@@ -403,7 +431,7 @@ Ileak=4.34627628833166e-05*(CaSR-Cai);
     dCai=dt*(CaCurrent-CaSRCurrent);
     bc=Bufc-CaBuf-dCai-Cai+Kbufc;
     cc=Kbufc*(CaBuf+dCai+Cai);
-    Cai=(sqrt(bc*bc+4*cc)-bc)/2;
+    Cai=(sqrtf(bc*bc+4*cc)-bc)/2;
 
 
 

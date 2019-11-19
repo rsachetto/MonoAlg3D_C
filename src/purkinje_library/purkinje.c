@@ -55,6 +55,8 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     print_to_stdout_and_file("Purkinje-Muscle-Junction resistance:> %g um\n",rpmj);
     print_to_stdout_and_file("Purkinje-Muscle-Junction scale:> %g\n",pmj_scale);
     print_to_stdout_and_file("Celular model for the Purkinje :> %s\n",the_ode_solver->model_data.model_library_path);
+
+    print_to_stdout_and_file("Loading Purkinje mesh ...\n");
     set_custom_purkinje_network(the_grid->the_purkinje, network_file, side_length, rpmj, pmj_scale, calc_retro_propagation);
 
     // Populate the 'purkinje_cells' linked-list with the nodes from the graph

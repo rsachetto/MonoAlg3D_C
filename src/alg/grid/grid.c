@@ -808,9 +808,10 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
             the_terminals[j].purkinje_cell->y = the_terminals[j].endocardium_cell->center.y;
             the_terminals[j].purkinje_cell->z = the_terminals[j].endocardium_cell->center.z;
 
-            ac_purkinje[purkinje_index]->center.x = the_terminals[j].endocardium_cell->center.x;
-            ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
-            ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
+            // Those lines are commented to prevent duplicate points ...
+            //ac_purkinje[purkinje_index]->center.x = the_terminals[j].endocardium_cell->center.x;
+            //ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
+            //ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
             
             j++;
 

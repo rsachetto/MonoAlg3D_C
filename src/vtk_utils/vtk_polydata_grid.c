@@ -149,6 +149,10 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
                 hmput(hash, aux, id);
                 id++;
             }
+            else
+            {
+                printf("Duplicate\n");
+            }
 
             // Insert the edge to the array of lines
             struct edge *v = u->list_edges;
@@ -596,6 +600,10 @@ void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid 
                 arrput((*vtk_grid)->points, aux);
                 hmput(hash, aux, id);
                 id++;
+            }
+            else
+            {
+                printf("Duplicate\n");
             }
 
             // Insert the edge to the array of lines

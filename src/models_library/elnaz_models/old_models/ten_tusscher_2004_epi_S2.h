@@ -1,6 +1,5 @@
-//AP+Rd+Vmax:3obj: Tr2,pop41,
-#ifndef MONOALG3D_MODEL_TEN_TUSSCHER_2004_H
-#define MONOALG3D_MODEL_TEN_TUSSCHER_2004_H
+#ifndef MONOALG3D_MODEL_TEN_TUSSCHER_2004_S2_tr4_pop53_H
+#define MONOALG3D_MODEL_TEN_TUSSCHER_2004_S2_tr4_pop53_H
 
 #include <stdint.h>
 #include "model_common.h"

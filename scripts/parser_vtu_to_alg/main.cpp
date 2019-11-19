@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	double aux7[3];
 	double aux8[3];
 
-	//exit(1);
+//	exit(1);
 
 	FILE *alg_output_file = fopen("outputs/mesh.alg","w+");
 
