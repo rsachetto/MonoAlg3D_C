@@ -147,7 +147,7 @@ void solve_model_ode_cpu_myo (real dt, real *sv, real stim_current)
 void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt) 
 {
 
-    // State variables
+       // State variables
     real svolt = sv[0];
     real sm    = sv[1];
     real sh    = sv[2];
@@ -231,25 +231,6 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
 //Parameters for IpK;
     real GpK=0.0146;
 
-    real parameters []={14.6970262149558,2.32527331724419e-05,0.000121747898718481,0.000276971880166082,0.210038991991875,0.120908114803453,0.200498466936257,5.12988959137240,0.0151231713364490,1.26415205898593,1083.02600285230,0.000542147164379904,0.160470068504854,0.0146070055973378,0.00183114105726186,1.00487709573505e-05};
-
-
-    GNa=parameters[0];
-    GbNa=parameters[1];
-    GCaL=parameters[2];
-    GbCa=parameters[3];
-    Gto=parameters[4];
-    Gkr=parameters[5];
-    Gks=parameters[6];
-    GK1=parameters[7];
-    GpK=parameters[8];
-    knak=parameters[9];
-    knaca=parameters[10];
-    Vmaxup=parameters[11];
-    GpCa=parameters[12];
-    real arel=parameters[13];
-    real crel=parameters[14];
-    real Vleak=parameters[15];
 
     real IKr;
     real IKs;
@@ -407,9 +388,9 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     Caisquare=Cai*Cai;
     CaSRsquare=CaSR*CaSR;
     CaCurrent=-(ICaL+IbCa+IpCa-2.0f*INaCa)*inverseVcF2*CAPACITANCE;
-    A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
+    A=0.016464f*CaSRsquare/(0.0625f+CaSRsquare)+0.008232f;
     Irel=A*sd*sg;
-    Ileak=Vleak*(CaSR-Cai);
+    Ileak=0.00008f*(CaSR-Cai);
     SERCA=Vmaxup/(1.f+(Kupsquare/Caisquare));
     CaSRCurrent=SERCA-Irel-Ileak;
     CaCSQN=Bufsr*CaSR/(CaSR+Kbufsr);
@@ -532,7 +513,7 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;    
+    rDY_[16] = Ki;
 
 }
 
@@ -635,6 +616,25 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
 //Parameters for IpK;
     real GpK=0.0146;
 
+    real parameters []={14.6970262149558,2.32527331724419e-05,0.000121747898718481,0.000276971880166082,0.210038991991875,0.120908114803453,0.200498466936257,5.12988959137240,0.0151231713364490,1.26415205898593,1083.02600285230,0.000542147164379904,0.160470068504854,0.0146070055973378,0.00183114105726186,1.00487709573505e-05};
+
+
+    GNa=parameters[0];
+    GbNa=parameters[1];
+    GCaL=parameters[2];
+    GbCa=parameters[3];
+    Gto=parameters[4];
+    Gkr=parameters[5];
+    Gks=parameters[6];
+    GK1=parameters[7];
+    GpK=parameters[8];
+    knak=parameters[9];
+    knaca=parameters[10];
+    Vmaxup=parameters[11];
+    GpCa=parameters[12];
+    real arel=parameters[13];
+    real crel=parameters[14];
+    real Vleak=parameters[15];
 
     real IKr;
     real IKs;

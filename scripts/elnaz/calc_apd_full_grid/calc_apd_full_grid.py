@@ -82,14 +82,17 @@ def calc_apd (vms, start, end, h, percentage):
 
     index_maxV, maxV, minV = calc_ap_limits(vms,start,end)
 
-    refV = calc_reference_potential(minV,maxV,percentage)
+    #refV = calc_reference_potential(minV,maxV,percentage)
+    refV = -75.0
 
     index_peak, t_peak = calc_max_derivative(vms,start,end,h)
 
     index_ref, t_ref = calc_time_reference(vms,index_maxV,end,h,refV)
 
-    #print("Start = %g -- Finish = %g -- Peak = %d -- Ref = %d" % (start,end,t_peak,t_ref))
+    #print("Start = %g -- Finish = %g -- Peak = %d -- Ref = %d -- (Vm_ref = %g)" % (start,end,t_peak,t_ref,refV))
     #print("APD = %g ms" % (t_ref - t_peak))
+
+    #print("%g %g" % (t_ref - t_peak, maxV))
 
     if (index_ref == -1):
         print("[-] ERROR! Could not find reference potential!")
@@ -100,7 +103,8 @@ def calc_apd (vms, start, end, h, percentage):
 
 def calc_time_reference (vms, start, end, h, refV):
     
-    v = vms[start:(start+end)]
+    #v = vms[start:(start+end)]
+    v = vms[start:]
 
     for i in range(len(v)):
         if (v[i] < refV):

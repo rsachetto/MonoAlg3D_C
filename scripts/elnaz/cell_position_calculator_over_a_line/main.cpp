@@ -320,8 +320,8 @@ int main (int argc, char *argv[])
     read_control_volumes_from_vtu(the_tissue,unstructuredGrid);
     //print_control_volumes(the_tissue);
 
-    write_control_volumes_cells_indexes_inside_region(the_tissue,the_region);
-    //write_control_volumes_middle_positions_inside_region(the_tissue,the_region);
+    //write_control_volumes_cells_indexes_inside_region(the_tissue,the_region);
+    write_control_volumes_middle_positions_inside_region(the_tissue,the_region);
     //write_control_volumes_middle_positions_inside_region_to_vtp(the_tissue,the_region);
 
     return 0;
