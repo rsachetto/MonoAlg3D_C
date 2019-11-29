@@ -82,8 +82,8 @@ def calc_apd (vms, start, end, h, percentage):
 
     index_maxV, maxV, minV = calc_ap_limits(vms,start,end)
 
-    #refV = calc_reference_potential(minV,maxV,percentage)
-    refV = -75.0
+    refV = calc_reference_potential(minV,maxV,percentage)
+    #refV = -75.0
 
     index_peak, t_peak = calc_max_derivative(vms,start,end,h)
 
