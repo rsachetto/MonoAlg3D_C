@@ -115,7 +115,7 @@ def main():
     mean_apd_column_4_1 = []
     x_plot = []
     dx = 100.0
-    for i in range(100):
+    for i in range(200):
         cells_inside_column = []
     
         minx = i*dx

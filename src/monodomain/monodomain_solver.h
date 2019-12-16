@@ -38,6 +38,9 @@ struct monodomain_solver {
     // NEW VARIABLE!
     bool calc_activation_time;
     bool print_conductivity;
+    bool print_min_vm;
+    bool print_max_vm;
+    bool print_apd;
 
     // Time used for solving wave equation.
     real_cpu dt;

@@ -78,6 +78,13 @@ struct user_options {
     bool calc_activation_time_was_set;
     bool print_conductivity_map;
     bool print_conductivity_map_was_set;
+    bool print_min_vm_map;
+    bool print_min_vm_map_was_set;
+    bool print_max_vm_map;
+    bool print_max_vm_map_was_set;
+    bool print_apd_map;
+    bool print_apd_map_was_set;
+    // NEW VARIABLES !
     real_cpu purkinje_dt_ode;
     bool purkinje_dt_ode_was_set;
     bool purkinje_gpu;

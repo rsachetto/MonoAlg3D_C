@@ -1178,7 +1178,32 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->print_conductivity_map = false;
         }
         pconfig->print_conductivity_map_was_set = true;
-    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
+    } 
+    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "print_min_vm_map")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->print_min_vm_map = true;
+        } else {
+            pconfig->print_min_vm_map = false;
+        }
+        pconfig->print_min_vm_map_was_set = true;
+    }
+    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "print_max_vm_map")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->print_max_vm_map = true;
+        } else {
+            pconfig->print_max_vm_map = false;
+        }
+        pconfig->print_max_vm_map_was_set = true;
+    }
+    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "print_apd_map")) {
+        if(strcmp(value, "true") == 0 || strcmp(value, "yes") == 0) {
+            pconfig->print_apd_map = true;
+        } else {
+            pconfig->print_apd_map = false;
+        }
+        pconfig->print_apd_map_was_set = true;
+    }
+    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
         pconfig->vm_threshold = strtof(value, NULL);
         pconfig->vm_threshold_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "use_adaptivity")) {

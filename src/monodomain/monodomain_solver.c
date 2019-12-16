@@ -48,6 +48,9 @@ struct monodomain_solver *new_monodomain_solver() {
 
     result->calc_activation_time = false;
     result->print_conductivity = false;
+    result->print_min_vm = false;
+    result->print_max_vm = false;
+    result->print_apd = false;
 
     return result;
 }
@@ -536,6 +539,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
     bool calc_activation_time = the_monodomain_solver->calc_activation_time;
     bool print_conductivity = the_monodomain_solver->print_conductivity;
+    bool print_min_vm = the_monodomain_solver->print_min_vm;
+    bool print_max_vm = the_monodomain_solver->print_max_vm;
+    bool print_apd = the_monodomain_solver->print_apd;
     bool calc_retropropagation = the_grid->the_purkinje->the_network->calc_retropropagation;
 
     real_cpu solver_error, purkinje_solver_error;
@@ -855,6 +861,21 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
         print_to_stdout_and_file("Saving conductivity map!\n");
         ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'c');
+    }
+    if (print_min_vm)
+    {
+        print_to_stdout_and_file("Saving Minimum Vm map!\n");
+        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'m');
+    }
+    if (print_max_vm)
+    {
+        print_to_stdout_and_file("Saving Maximum Vm map!\n");
+        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'M');
+    }
+    if (print_apd)
+    {
+        print_to_stdout_and_file("Saving APD map!\n");
+        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'d');
     }
     // ------------------------------------------------------------
 
@@ -1301,6 +1322,9 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
 
     the_monodomain_solver->calc_activation_time = options->calc_activation_time;
     the_monodomain_solver->print_conductivity = options->print_conductivity_map;
+    the_monodomain_solver->print_min_vm = options->print_min_vm_map;
+    the_monodomain_solver->print_max_vm = options->print_max_vm_map;
+    the_monodomain_solver->print_apd = options->print_apd_map;
 
     the_monodomain_solver->dt = options->dt_pde;
 
@@ -1319,6 +1343,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
     //struct cell_node **ac;
 
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
+    const double apd_percentage = 0.9;
 
     // V^n+1/2
     real *sv = the_ode_solver->sv;
@@ -1338,24 +1363,41 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 #pragma omp parallel for
         for(i = 0; i < n_active; i++)
         {
-            real v_old = vms[ac[i]->sv_position];
-            real v_new = (real)ac[i]->v;
+            real v_new = vms[ac[i]->sv_position];
+            real v_old = (real)ac[i]->v;
 
             real dvdt = (v_new - v_old) / dt;
 
+            // Activation time
             if(dvdt > ac[i]->max_dvdt)
             {
                 ac[i]->max_dvdt = dvdt;
                 ac[i]->activation_time = cur_time;
             }
 
-           /*
-           real v = (real)ac[i]->v;
-           if (v > 0.0)
-           {
-               ac[i]->activation_time = cur_time;
-           }
-           */
+            // APD
+            if (v_old < ac[i]->min_v)
+                ac[i]->min_v = v_old;
+            
+            if (v_old > ac[i]->max_v)
+            {
+             	ac[i]->max_v = v_old;
+
+                ac[i]->v_threashold = ac[i]->min_v + (ac[i]->max_v - ac[i]->min_v)*(1.0-apd_percentage);
+
+                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+
+                ac[i]->after_peak = true;
+
+            }
+            if (v_old < ac[i]->v_threashold && ac[i]->after_peak)
+            {
+             	ac[i]->threashold_time = cur_time;
+                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+                ac[i]->after_peak = false;
+
+            }
+
         }
 
         free(vms);
@@ -1366,17 +1408,42 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 #pragma omp parallel for
         for(i = 0; i < n_active; i++)
         {
-            real v_old = sv[ac[i]->sv_position * n_odes];
-            real v_new = (real)ac[i]->v;
+            real v_new = sv[ac[i]->sv_position * n_odes];
+            real v_old = (real)ac[i]->v;
 
             real dvdt = (v_new - v_old) / dt;
 
+            // Activation time
             if ( (dvdt > ac[i]->max_dvdt) )
             {
 
                 ac[i]->max_dvdt = dvdt;
                 ac[i]->activation_time = cur_time;
             }
+
+            // APD
+            if (v_old < ac[i]->min_v)
+                ac[i]->min_v = v_old;
+            
+            if (v_old > ac[i]->max_v)
+            {
+             	ac[i]->max_v = v_old;
+
+                ac[i]->v_threashold = ac[i]->min_v + (ac[i]->max_v - ac[i]->min_v)*(1.0-apd_percentage);
+
+                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+
+                ac[i]->after_peak = true;
+
+            }
+            if (v_old < ac[i]->v_threashold && ac[i]->after_peak)
+            {
+             	ac[i]->threashold_time = cur_time;
+                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+                ac[i]->after_peak = false;
+
+            }
+
         }
     }
 

@@ -508,6 +508,18 @@ SAVE_MESH(save_as_vtp_purkinje) {
         case 'c':
             write_conductivity_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
+        // Write minimum Vm map
+        case 'm':
+            write_min_vm_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write maximum Vm map
+        case 'M':
+            write_max_vm_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write APD map
+        case 'd':
+            write_apd_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
         default:
             fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
             exit(EXIT_FAILURE);
@@ -886,6 +898,54 @@ void write_conductivity_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct
     output_dir_with_file = sdscat(output_dir_with_file, "/conductivity-map.vtp");
 
     new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'c');
+
+    save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
+
+    sdsfree(output_dir_with_file);
+}
+
+void write_min_vm_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds)
+{
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/minvm-map.vtp");
+
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'m');
+
+    save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
+
+    sdsfree(output_dir_with_file);
+}
+
+void write_max_vm_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds)
+{
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/maxvm-map.vtp");
+
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'M');
+
+    save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
+
+    sdsfree(output_dir_with_file);
+}
+
+void write_apd_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds)
+{
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/apd-map.vtp");
+
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->the_purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'d');
 
     save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
 

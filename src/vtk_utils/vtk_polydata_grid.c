@@ -122,7 +122,16 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
                     break;
                 case 'c':
                     arrput((*vtk_grid)->values, grid_cell->sigma.x);
-                    break;            
+                    break;
+                case 'm':
+                    arrput((*vtk_grid)->values, grid_cell->min_v);
+                    break;           
+                case 'M':
+                    arrput((*vtk_grid)->values, grid_cell->max_v);
+                    break; 
+                case 'd':
+                    arrput((*vtk_grid)->values, grid_cell->apd);
+                    break;
                 default:
                     print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
                     break;
@@ -575,6 +584,15 @@ void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid 
                 case 'c':
                     arrput((*vtk_grid)->values, grid_cell->sigma.x);
                     break;            
+                case 'm':
+                    arrput((*vtk_grid)->values, grid_cell->min_v);
+                    break;           
+                case 'M':
+                    arrput((*vtk_grid)->values, grid_cell->max_v);
+                    break; 
+                case 'd':
+                    arrput((*vtk_grid)->values, grid_cell->apd);
+                    break;
                 default:
                     print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
                     break;
