@@ -297,7 +297,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
         if(read_only_values) {
             if(!binary) {
                 while (*source != '\n') {
-                            arrput(line, *source);
+                    arrput(line, *source);
                     source++;
                 }
             }

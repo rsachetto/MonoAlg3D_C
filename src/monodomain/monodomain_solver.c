@@ -59,7 +59,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     assert(the_monodomain_solver);
     assert(the_ode_solver);
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
          total_deref_time = 0, cg_partial, total_config_time = 0;
@@ -239,13 +239,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     } 
     else 
     {
-        print_to_stdout_and_file("No configuration provided to save the results! The results will not be saved!\n");
+        log_to_stdout_and_file("No configuration provided to save the results! The results will not be saved!\n");
     }
 
     bool save_checkpoint = (save_state_config != NULL);
 
     if(save_checkpoint && the_grid->adaptive) {
-        print_to_stdout_and_file("Saving checkpoint is not implemented for adaptive grids yet!\n");
+        log_to_stdout_and_file("Saving checkpoint is not implemented for adaptive grids yet!\n");
         save_checkpoint = false;
     }
 
@@ -255,14 +255,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     } 
     else 
     {
-        print_to_stdout_and_file(
+        log_to_stdout_and_file(
             "No configuration provided to make simulation checkpoints! Chekpoints will not be created!\n");
     }
 
     bool restore_checkpoint = (restore_state_config != NULL);
 
     if(restore_checkpoint && the_grid->adaptive) {
-        print_to_stdout_and_file("Restoring checkpoint is not implemented for adaptive grids yet!\n");
+        log_to_stdout_and_file("Restoring checkpoint is not implemented for adaptive grids yet!\n");
         restore_checkpoint = false;
     }
 
@@ -276,7 +276,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         init_config_functions(extra_data_config, "./shared_libs/libdefault_extra_data.so", "extra_data");
     }
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     bool restore_success = false;
 
@@ -333,7 +333,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         check_cuda_errors(cudaGetDeviceCount(&device_count));
         struct cudaDeviceProp prop;
         check_cuda_errors(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
-        print_to_stdout_and_file("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
+        log_to_stdout_and_file("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
         check_cuda_errors(cudaSetDevice(device));
     }
 #endif
@@ -436,7 +436,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 ((set_extra_data_fn*)extra_data_config->main_function)(&time_info, extra_data_config, the_grid, &(the_ode_solver->extra_data_size));
     }
 
-    print_to_stdout_and_file("Setting ODE's initial conditions\n");
+    log_to_stdout_and_file("Setting ODE's initial conditions\n");
     
     if (domain_config) {
         set_ode_initial_conditions_for_all_volumes(the_ode_solver, configs->ode_extra_config);
@@ -467,10 +467,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(dt_pde >= dt_ode) {
         ode_step = (int)(dt_pde / dt_ode);
-        print_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
+        log_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
     } 
     else {
-        print_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
+        log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
                                  "step: %lf\n",
                                  dt_ode);
         dt_pde = dt_ode;
@@ -529,7 +529,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     real_cpu cur_time = time_info.current_t;
 
-    print_to_stdout_and_file("Starting simulation\n");
+    log_to_stdout_and_file("Starting simulation\n");
 
     struct stop_watch iteration_time_watch;
     long iteration_time;
@@ -591,7 +591,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             if (abort_on_no_activity && cur_time > last_stimulus_time && cur_time > only_abort_after_dt) {
                 if (!activity) {
-                    print_to_stdout_and_file("No activity, aborting simulation\n");
+                    log_to_stdout_and_file("No activity, aborting simulation\n");
                     break;
                 }
             }
@@ -676,7 +676,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if (count % output_print_rate == 0)  {
             if (purkinje_config && domain_config) {
-                print_to_stdout_and_file("t = %.5lf, Iterations = "
+                log_to_stdout_and_file("t = %.5lf, Iterations = "
                                          "%" PRIu32 ", Error Norm = %e, Number of Tissue Cells:"
                                          "%" PRIu32 ", Tissue CG Iterations time: %ld us\n"
                                          "            , Iterations = "
@@ -688,14 +688,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                          the_grid->purkinje->num_active_purkinje_cells, purkinje_cg_partial);
             }
             else if (domain_config) {
-                print_to_stdout_and_file("t = %lf, Iterations = "
+                log_to_stdout_and_file("t = %lf, Iterations = "
                                      "%" PRIu32 ", Error Norm = %e, Number of Cells:"
                                      "%" PRIu32 ", CG Iterations time: %ld us",
                                      cur_time, solver_iterations, solver_error, the_grid->num_active_cells,
                                      cg_partial);
             }
             else {
-                print_to_stdout_and_file("t = %lf, Iterations = "
+                log_to_stdout_and_file("t = %lf, Iterations = "
                                          "%" PRIu32 ", Error Norm = %e, Number of Purkinje Cells:"
                                          "%" PRIu32 ", Purkinje CG Iterations time: %ld us",
                                          cur_time, purkinje_solver_iterations, purkinje_solver_error,
@@ -832,28 +832,28 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         iteration_time = stop_stop_watch(&iteration_time_watch);
 
         if ( (count - 1) % output_print_rate == 0) {
-            print_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
+            log_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
         }
     }
 
     long res_time = stop_stop_watch(&solver_time);
-    print_to_stdout_and_file("Resolution Time: %ld μs\n", res_time);
-    print_to_stdout_and_file("Assembly matrix time: %ld μs\n", total_mat_time);
-    print_to_stdout_and_file("Write time: %ld μs\n", total_write_time);
-    print_to_stdout_and_file("Initial configuration time: %ld μs\n", total_config_time);
+    log_to_stdout_and_file("Resolution Time: %ld μs\n", res_time);
+    log_to_stdout_and_file("Assembly matrix time: %ld μs\n", total_mat_time);
+    log_to_stdout_and_file("Write time: %ld μs\n", total_write_time);
+    log_to_stdout_and_file("Initial configuration time: %ld μs\n", total_config_time);
     
     if (domain_config) {
-        print_to_stdout_and_file("ODE Total Time: %ld μs\n", ode_total_time);
-        print_to_stdout_and_file("CG Total Time: %ld μs\n", cg_total_time);
-        print_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
-        print_to_stdout_and_file("Refine time: %ld μs\n", total_ref_time);
-        print_to_stdout_and_file("Derefine time: %ld μs\n", total_deref_time);
+        log_to_stdout_and_file("ODE Total Time: %ld μs\n", ode_total_time);
+        log_to_stdout_and_file("CG Total Time: %ld μs\n", cg_total_time);
+        log_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
+        log_to_stdout_and_file("Refine time: %ld μs\n", total_ref_time);
+        log_to_stdout_and_file("Derefine time: %ld μs\n", total_deref_time);
     }
 
     if (purkinje_config) {
-        print_to_stdout_and_file("Purkinje ODE Total Time: %ld μs\n", purkinje_ode_total_time);
-        print_to_stdout_and_file("Purkinje CG Total Time: %ld μs\n", purkinje_cg_total_time);
-        print_to_stdout_and_file("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
+        log_to_stdout_and_file("Purkinje ODE Total Time: %ld μs\n", purkinje_ode_total_time);
+        log_to_stdout_and_file("Purkinje CG Total Time: %ld μs\n", purkinje_cg_total_time);
+        log_to_stdout_and_file("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
     }
 
 #ifdef COMPILE_OPENGL
@@ -1019,7 +1019,7 @@ void save_old_cell_positions(struct grid *the_grid) {
         #pragma omp parallel for
         for(i = 0; i < n_purkinje_active; i++) 
         {
-            //print_to_stdout_and_file("Cell %u -- grid_position = %u\n",i,ac_purkinje[i]->grid_position);
+            //log_to_stdout_and_file("Cell %u -- grid_position = %u\n",i,ac_purkinje[i]->grid_position);
             ac_purkinje[i]->sv_position = ac_purkinje[i]->grid_position;
         }
     }
@@ -1051,85 +1051,86 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
                         struct grid *the_grid, struct user_options *options) 
 {
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    print_to_stdout_and_file("System parameters: \n");
+    log_to_stdout_and_file("System parameters: \n");
     #if defined(_OPENMP)
-    print_to_stdout_and_file("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
+    log_to_stdout_and_file("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
     #endif
     
-    print_to_stdout_and_file("[monodomain_solver] Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
-    print_to_stdout_and_file("[monodomain_solver] PDE time step = %lf\n", the_monodomain_solver->dt);
-    print_to_stdout_and_file("[monodomain_solver] ODE min time step = %lf\n", the_ode_solver->min_dt);
-    print_to_stdout_and_file("[monodomain_solver] Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
+    log_to_stdout_and_file("[monodomain_solver] Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
+    log_to_stdout_and_file("[monodomain_solver] PDE time step = %lf\n", the_monodomain_solver->dt);
+    log_to_stdout_and_file("[monodomain_solver] ODE min time step = %lf\n", the_ode_solver->min_dt);
+    log_to_stdout_and_file("[monodomain_solver] Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     if(the_ode_solver->gpu) 
-        print_to_stdout_and_file("[ode_solver] Using GPU to solve ODEs\n");
-    print_to_stdout_and_file("[ode_solver] Using %s as model lib\n", the_ode_solver->model_data.model_library_path);
-    print_to_stdout_and_file("[ode_solver] Initial V: %lf\n", the_ode_solver->model_data.initial_v);
-    print_to_stdout_and_file("[ode_solver] Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);    
+        log_to_stdout_and_file("[ode_solver] Using GPU to solve ODEs\n");
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_to_stdout_and_file("[ode_solver] Using %s as model lib\n", the_ode_solver->model_data.model_library_path);
+    log_to_stdout_and_file("[ode_solver] Initial V: %lf\n", the_ode_solver->model_data.initial_v);
+    log_to_stdout_and_file("[ode_solver] Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
 
     if(options->ode_extra_config) 
     {
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
         if (shlen(options->ode_extra_config) == 1) 
         {
-            print_to_stdout_and_file("[ode_solver] Extra ODE Solver parameter:\n");
+            log_to_stdout_and_file("[ode_solver] Extra ODE Solver parameter:\n");
         } 
         else if (shlen(options->ode_extra_config) > 1) 
         {
-            print_to_stdout_and_file("[ode_solver] Extra ODE Solver parameters:\n");
+            log_to_stdout_and_file("[ode_solver] Extra ODE Solver parameters:\n");
         }
 
         STRING_HASH_PRINT_KEY_VALUE_LOG(options->ode_extra_config);
     }
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
-
     if (the_purkinje_ode_solver)
     {
-        if(the_purkinje_ode_solver->gpu) 
-            print_to_stdout_and_file("[purkinje_ode_solver] Using GPU to solve ODEs\n");
-        print_to_stdout_and_file("[purkinje_ode_solver] Using %s as model lib\n", the_purkinje_ode_solver->model_data.model_library_path);
-        print_to_stdout_and_file("[purkinje_ode_solver] Initial V: %lf\n", the_purkinje_ode_solver->model_data.initial_v);
-        print_to_stdout_and_file("[purkinje_ode_solver] Number of ODEs in cell model: %d\n", the_purkinje_ode_solver->model_data.number_of_ode_equations);
-    }
-        
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        if(the_purkinje_ode_solver->gpu) 
+            log_to_stdout_and_file("[purkinje_ode_solver] Using GPU to solve ODEs\n");
+        log_to_stdout_and_file("[purkinje_ode_solver] Using %s as model lib\n", the_purkinje_ode_solver->model_data.model_library_path);
+        log_to_stdout_and_file("[purkinje_ode_solver] Initial V: %lf\n", the_purkinje_ode_solver->model_data.initial_v);
+        log_to_stdout_and_file("[purkinje_ode_solver] Number of ODEs in cell model: %d\n", the_purkinje_ode_solver->model_data.number_of_ode_equations);
+    }
+
 
     if(options->purkinje_ode_extra_config) 
     {
 
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
+
         if (shlen(options->purkinje_ode_extra_config) == 1) 
         {
-            print_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameter:\n");
+            log_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameter:\n");
         } 
         else if (shlen(options->purkinje_ode_extra_config) > 1) 
         {
-            print_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameters:\n");
+            log_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameters:\n");
         }
 
         STRING_HASH_PRINT_KEY_VALUE_LOG(options->purkinje_ode_extra_config);
     }
 
-    print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    //log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
-    print_to_stdout_and_file("[grid] Initial N. of Elements = "
+    log_to_stdout_and_file("[grid] Initial N. of Elements = "
                              "%" PRIu32 "\n",
                              the_grid->num_active_cells);
 
     if(the_grid->adaptive)
     {
-        print_to_stdout_and_file("Using adaptativity\n");
-        print_to_stdout_and_file("[monodomain_solver] Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
-        print_to_stdout_and_file("[monodomain_solver] Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
-        print_to_stdout_and_file("[monodomain_solver] Refining each %d time steps\n", the_monodomain_solver->refine_each);
-        print_to_stdout_and_file("[monodomain_solver] Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
+        log_to_stdout_and_file("Using adaptativity\n");
+        log_to_stdout_and_file("[monodomain_solver] Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
+        log_to_stdout_and_file("[monodomain_solver] Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
+        log_to_stdout_and_file("[monodomain_solver] Refining each %d time steps\n", the_monodomain_solver->refine_each);
+        log_to_stdout_and_file("[monodomain_solver] Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
 
         char *max_dx, *max_dy, *max_dz;
 
@@ -1137,23 +1138,23 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
         max_dy = shget(options->domain_config->config_data, "maximum_dy");
         max_dz = shget(options->domain_config->config_data, "maximum_dz");
 
-        print_to_stdout_and_file("[domain] Domain maximum Space Discretization: dx %s um, dy %s um, dz %s um\n", max_dx, max_dy, max_dz);
+        log_to_stdout_and_file("[domain] Domain maximum Space Discretization: dx %s um, dy %s um, dz %s um\n", max_dx, max_dy, max_dz);
 
 
-        print_to_stdout_and_file("[monodomain_solver] The adaptivity will start in time: %lf ms\n",
+        log_to_stdout_and_file("[monodomain_solver] The adaptivity will start in time: %lf ms\n",
                                  the_monodomain_solver->start_adapting_at);
     }
 
     if(options->linear_system_solver_config) 
     {
         print_linear_system_solver_config_values(options->linear_system_solver_config);
-        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
     if(options->save_mesh_config) 
     {
         print_save_mesh_config_values(options->save_mesh_config);
-        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
     if(options->stim_configs) 
@@ -1162,16 +1163,16 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
         size_t num_stims = shlen(options->stim_configs);
 
         if(num_stims == 1)
-            print_to_stdout_and_file("[stim] Stimulus configuration:\n");
+            log_to_stdout_and_file("[stim] Stimulus configuration:\n");
         else
-            print_to_stdout_and_file("[stim] Stimuli configuration:\n");
+            log_to_stdout_and_file("[stim] Stimuli configuration:\n");
 
         for(int i = 0; i < num_stims; i++) {
 
             struct string_voidp_hash_entry e = options->stim_configs[i];
-            print_to_stdout_and_file("Stimulus name: %s\n", e.key);
+            log_to_stdout_and_file("Stimulus name: %s\n", e.key);
             print_stim_config_values((struct config*) e.value);
-            print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+            log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
         }
     }
@@ -1179,19 +1180,21 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
     if(options->purkinje_stim_configs) 
     {
 
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+
         size_t num_stims = shlen(options->purkinje_stim_configs);
 
         if(num_stims == 1)
-            print_to_stdout_and_file("[purkinje_stim] Stimulus configuration:\n");
+            log_to_stdout_and_file("[purkinje_stim] Stimulus configuration:\n");
         else
-            print_to_stdout_and_file("[purkinje_stim] Stimuli configuration:\n");
+            log_to_stdout_and_file("[purkinje_stim] Stimuli configuration:\n");
 
         for(int i = 0; i < num_stims; i++) {
 
             struct string_voidp_hash_entry e = options->purkinje_stim_configs[i];
-            print_to_stdout_and_file("Stimulus name: %s\n", e.key);
+            log_to_stdout_and_file("Stimulus name: %s\n", e.key);
             print_stim_config_values((struct config*) e.value);
-            print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+            log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
         }
     }
@@ -1199,31 +1202,31 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
     if (options->domain_config)
     {
         print_domain_config_values(options->domain_config);
-        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
     if (options->purkinje_config)
     {
         print_purkinje_config_values(options->purkinje_config);
-        print_to_stdout_and_file (LOG_LINE_SEPARATOR);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
     if(options->extra_data_config) 
     {
         print_extra_data_config_values(options->extra_data_config);
-        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
     if(options->update_monodomain_config) 
     {
         print_update_monodomain_config_values(options->update_monodomain_config);
-        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 
     if(options->assembly_matrix_config) 
     {
         print_assembly_matrix_config_values(options->assembly_matrix_config);
-        print_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 }
 

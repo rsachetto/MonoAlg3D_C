@@ -637,13 +637,13 @@ void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization
 
 void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) {
 
-    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0);
+    log_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0);
 
     struct cell_node *grid_cell;
 
     
 
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
@@ -664,7 +664,7 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
 void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) 
 {
 
-    print_to_stdout_and_file("Making upper and down left corner inactive !\n");
+    log_to_stdout_and_file("Making upper and down left corner inactive !\n");
 
     bool inside;
 
@@ -710,14 +710,14 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
                                real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed) {
 
-    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0f);
+    log_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0f);
 
     if(fib_seed == 0)
         fib_seed = (unsigned)time(NULL) + getpid();
 
     srand(fib_seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     real_cpu bz_radius_2 = pow(bz_radius, 2.0);
     real_cpu sphere_radius_2 = pow(sphere_radius, 2.0);
@@ -809,14 +809,14 @@ void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, rea
 
     srand(seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", seed);
+    log_to_stdout_and_file("Using %u as seed\n", seed);
 
     real_cpu bz_size_big = 0;
     real_cpu bz_size_small = 0;
     real_cpu dist_big = 0;
     real_cpu dist_small = 0;
 
-    print_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
+    log_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
     struct cell_node *grid_cell = grid->first_cell;
 
     while(grid_cell != NULL) {
@@ -1024,7 +1024,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
                         const double min_z, const double max_z) 
 {
 
-    print_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
+    log_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
 
     struct cell_node *grid_cell;
 
@@ -1033,7 +1033,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
 
     srand(fib_seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) 

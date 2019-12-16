@@ -49,9 +49,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
         return 0;
     }
 
-    print_to_stdout_and_file("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x,
+    log_to_stdout_and_file("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x,
                              real_side_length_y, real_side_length_z);
-    print_to_stdout_and_file(
+    log_to_stdout_and_file(
         "Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x,
         side_length_y, side_length_z, start_dx, start_dy, start_dz);
 
@@ -136,7 +136,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
         return 0;
     }
 
-    print_to_stdout_and_file("Loading cable mesh with %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", cable_length,
+    log_to_stdout_and_file("Loading cable mesh with %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", cable_length,
                              start_dy, start_dz);
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_length_x, start_dx);
@@ -180,10 +180,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         read_format = strdup("%lf,%lf,%lf,%lf\n");
     }
 
-    print_to_stdout_and_file("Loading Human Heart Mesh\n");
+    log_to_stdout_and_file("Loading Human Heart Mesh\n");
     set_custom_mesh(the_grid, mesh_file, 2025252, read_format);
 
-    print_to_stdout_and_file("Cleaning grid\n");
+    log_to_stdout_and_file("Cleaning grid\n");
     int i;
     for(i = 0; i < 7; i++) {
         derefine_grid_inactive_cells(the_grid);
@@ -208,12 +208,12 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_small, config->config_data, "small_scar_file");
 
         if(scar_file_big) {
-            print_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_big);
+            log_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_big);
             set_human_mesh_fibrosis_from_file(the_grid, 'b', scar_file_big, 2172089);
         }
 
         if(scar_file_small) {
-            print_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_small);
+            log_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_small);
             set_human_mesh_fibrosis_from_file(the_grid, 's', scar_file_small, 845051);
         }
 
@@ -252,7 +252,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
             if(!seed_success)
                 seed = 0;
 
-            print_to_stdout_and_file("Setting random fibrosis pattern\n");
+            log_to_stdout_and_file("Setting random fibrosis pattern\n");
             set_human_mesh_fibrosis(the_grid, phi, seed, big_scar_center_x, big_scar_center_y, big_scar_center_z,
                                     small_scar_center_x, small_scar_center_y, small_scar_center_z);
         }
@@ -295,11 +295,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     refine_grid(the_grid, 7);
 
     if(strcmp(scar_size, "big") == 0) {
-        print_to_stdout_and_file("Loading Human Heart Edge with big scar\n");
+        log_to_stdout_and_file("Loading Human Heart Edge with big scar\n");
         set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 79100, 121000, 66700, 106000, 11200, 61400, "%lf,%lf,%lf,%lf,%d,%c\n");
         size_code = 0;
     } else if(strcmp(scar_size, "small") == 0) {
-        print_to_stdout_and_file("Loading Human Heart Edge with small scar\n");
+        log_to_stdout_and_file("Loading Human Heart Edge with small scar\n");
         set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 30400, 81600, 59200, 103000, 13600, 48000, "%lf,%lf,%lf,%lf,%d,%c\n");
         size_code = 1;
     } else {
@@ -307,7 +307,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
             scar_size);
     }
 
-    print_to_stdout_and_file("Cleaning grid\n");
+    log_to_stdout_and_file("Cleaning grid\n");
     int i;
     for(i = 0; i < 7; i++) {
         derefine_grid_inactive_cells(the_grid);
@@ -341,8 +341,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     real_cpu bz_size = 0.0;
     real_cpu dist;
 
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
-    print_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
+    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
     struct cell_node *grid_cell = the_grid->first_cell;
     bool fibrotic, border_zone;
 
@@ -417,11 +417,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     initialize_and_construct_grid(the_grid, POINT3D(64000.0f, 64000.0f, 64000.0f));
     refine_grid(the_grid, 7);
 
-    print_to_stdout_and_file("Loading Rabbit Heart Mesh\n");
+    log_to_stdout_and_file("Loading Rabbit Heart Mesh\n");
 
     set_custom_mesh(the_grid, mesh_file, 470197, "%lf,%lf,%lf,%lf\n");
 
-    print_to_stdout_and_file("Cleaning grid\n");
+    log_to_stdout_and_file("Cleaning grid\n");
     int i;
     for(i = 0; i < 6; i++) {
         derefine_grid_inactive_cells(the_grid);
@@ -562,7 +562,7 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     the_grid->mesh_side_length.y = maxy;
     the_grid->mesh_side_length.z = maxz;
 
-    print_to_stdout_and_file("Cleaning grid\n");
+    log_to_stdout_and_file("Cleaning grid\n");
 
     for(i = 0; i < 6; i++) {
         derefine_grid_inactive_cells(the_grid);
@@ -586,7 +586,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     refine_grid(the_grid, 5);
 
-    print_to_stdout_and_file("Loading Mouse Heart Mesh\n");
+    log_to_stdout_and_file("Loading Mouse Heart Mesh\n");
 
     set_custom_mesh(the_grid, mesh_file, 96195, "%lf,%lf,%lf,%lf\n");
 
@@ -598,13 +598,13 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
     if(start_h == 100.0) {
 
     } else if(start_h == 50.0) {
-        print_to_stdout_and_file("Refining Mesh to 50um\n");
+        log_to_stdout_and_file("Refining Mesh to 50um\n");
         refine_grid(the_grid, 1);
     } else if(start_h == 25.0) {
-        print_to_stdout_and_file("Refining Mesh to 25um\n");
+        log_to_stdout_and_file("Refining Mesh to 25um\n");
         refine_grid(the_grid, 2);
     } else if(start_h == 12.5) {
-        print_to_stdout_and_file("Refining Mesh to 12.5um\n");
+        log_to_stdout_and_file("Refining Mesh to 12.5um\n");
         refine_grid(the_grid, 3);
     } else {
         print_to_stderr_and_file_and_exit("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
@@ -634,7 +634,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     real_cpu start_h = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
 
-    print_to_stdout_and_file("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h,
+    log_to_stdout_and_file("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h,
                              start_h, start_h);
 
     side_length = start_h;
@@ -664,7 +664,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     refine_grid(the_grid, num_steps);
     set_benchmark_domain(the_grid);
 
-    print_to_stdout_and_file("Cleaning grid\n");
+    log_to_stdout_and_file("Cleaning grid\n");
     int i;
 
     for(i = 0; i < num_steps; i++) {
@@ -798,7 +798,7 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
 
     assert(the_grid);
 
-    print_to_stdout_and_file("Loading perlin mesh\n");
+    log_to_stdout_and_file("Loading perlin mesh\n");
 
     char *mesh_file = NULL;
 
@@ -920,11 +920,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
         initialize_and_construct_grid(the_grid, POINT3D(x_domain_limit, y_domain_limit, z_domain_limit));
         refine_grid(the_grid, 7);
 
-        print_to_stdout_and_file("Loading Custom Mesh\n");
+        log_to_stdout_and_file("Loading Custom Mesh\n");
 
         set_custom_mesh(the_grid, mesh_file, total_number_mesh_points, "%lf,%lf,%lf,%lf\n");
 
-        print_to_stdout_and_file("Cleaning grid\n");
+        log_to_stdout_and_file("Cleaning grid\n");
         int i;
         for(i = 0; i < 6; i++) {
             derefine_grid_inactive_cells(the_grid);

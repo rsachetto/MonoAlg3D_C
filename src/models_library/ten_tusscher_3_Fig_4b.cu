@@ -10,7 +10,7 @@
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
-    print_to_stdout_and_file("Using ten Tusscher 3 GPU model\n");
+    log_to_stdout_and_file("Using ten Tusscher 3 GPU model\n");
 
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;

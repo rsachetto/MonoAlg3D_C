@@ -336,7 +336,7 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
 
     #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
-        print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        log_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
         ode_solver->gpu = false;
     }
     #endif

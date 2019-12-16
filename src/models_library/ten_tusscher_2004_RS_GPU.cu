@@ -7,11 +7,11 @@
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     #ifdef ENDO
-        print_to_stdout_and_file("Using ten Tusscher 2004 ENDO GPU model\n");
+        log_to_stdout_and_file("Using ten Tusscher 2004 ENDO GPU model\n");
     #endif
 
     #ifdef EPI
-        print_to_stdout_and_file("Using ten Tusscher 2004 EPI GPU model\n");
+        log_to_stdout_and_file("Using ten Tusscher 2004 EPI GPU model\n");
     #endif
 
     // execution configuration

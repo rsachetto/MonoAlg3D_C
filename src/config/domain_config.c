@@ -14,7 +14,7 @@
 void print_domain_config_values(struct config* config) {
 
     if(config == NULL) {
-        print_to_stdout_and_file("[domain] No Domain configuration.\n");
+        log_to_stdout_and_file("[domain] No Domain configuration.\n");
         return;
     }
 
@@ -29,18 +29,18 @@ void print_domain_config_values(struct config* config) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");
 
 
-    print_to_stdout_and_file("Domain configuration:\n");
-    print_to_stdout_and_file("[domain] Domain name: %s\n", name);
-    print_to_stdout_and_file("[domain] Domain initial Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
+    log_to_stdout_and_file("Domain configuration:\n");
+    log_to_stdout_and_file("[domain] Domain name: %s\n", name);
+    log_to_stdout_and_file("[domain] Domain initial Space Discretization: dx %lf um, dy %lf um, dz %lf um\n",
                              start_dx, start_dy, start_dz);
 
     if(shlen(config->config_data) == 1)
     {
-        print_to_stdout_and_file("[domain] Domain extra parameter:\n");
+        log_to_stdout_and_file("[domain] Domain extra parameter:\n");
     }
     else if(shlen(config->config_data) > 1)
     {
-        print_to_stdout_and_file("[domain] Domain extra parameters:\n");
+        log_to_stdout_and_file("[domain] Domain extra parameters:\n");
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(config->config_data);

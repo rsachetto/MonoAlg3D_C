@@ -6,7 +6,7 @@
 #define MONOALG3D_COMMON_DATA_STRUCTURES_H
 
 #include <stdbool.h>
-
+#include "../monodomain/constants.h"
 
 // This is used when we are dealing with fibrotic meshes
 struct fibrotic_mesh_info {

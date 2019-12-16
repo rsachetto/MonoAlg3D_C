@@ -22,8 +22,8 @@ void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char
 
     calculate_number_of_terminals(the_network);
 
-    print_to_stdout_and_file("Number of Purkinje cells = %u\n",the_network->total_nodes);
-    print_to_stdout_and_file("Number of Purkinje terminals = %u\n",the_network->number_of_terminals);
+    log_to_stdout_and_file("Number of Purkinje cells = %u\n",the_network->total_nodes);
+    log_to_stdout_and_file("Number of Purkinje terminals = %u\n",the_network->number_of_terminals);
 
 }
 
@@ -53,7 +53,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     FILE *file = fopen(filename,"r");
     if (!file)
     {
-        print_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
+        log_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
         exit (EXIT_FAILURE);
     }
 
@@ -174,7 +174,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     d[2] = u->z;
 
     // DEBUG
-    print_to_stdout_and_file("Node %d will grow %d points\n",u->id,n_points);
+    log_to_stdout_and_file("Node %d will grow %d points\n",u->id,n_points);
 
     // Grow the number of points of size 'h' until reaches the size of the segment
     for (int k = 1; k <= n_points; k++)
@@ -210,7 +210,7 @@ void read_purkinje_network_from_file (const char *filename, struct point **point
     FILE *file = fopen(filename,"r");
     if (!file)
     {
-        print_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
+        log_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
         exit (EXIT_FAILURE);
     }
 
@@ -280,7 +280,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network)
     struct edge *e;
 
     char *filename = "meshes/purkinje_mesh.vtk";
-    print_to_stdout_and_file("Purkinje mesh file will be saved in :> %s\n",filename);
+    log_to_stdout_and_file("Purkinje mesh file will be saved in :> %s\n",filename);
 
     FILE *file = fopen(filename,"w+");
     fprintf(file,"# vtk DataFile Version 3.0\n");

@@ -72,7 +72,7 @@ struct vtk_files {
     do {                                                                                                               \
         for(long i = 0; i < shlen(d); i++) {                                                                            \
             struct string_hash_entry e = d[i];                                                                         \
-            print_to_stdout_and_file("%s = %s\n", e.key, e.value);                                                     \
+            log_to_stdout_and_file("%s = %s\n", e.key, e.value);                                                     \
         }                                                                                                              \
     } while(0)
 

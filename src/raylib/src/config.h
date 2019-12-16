@@ -54,7 +54,7 @@
 // Module: rlgl - Configuration Flags
 //------------------------------------------------------------------------------------
 // Support VR simulation functionality (stereo rendering)
-#define SUPPORT_VR_SIMULATOR        1
+//#define SUPPORT_VR_SIMULATOR        1
 
 
 //------------------------------------------------------------------------------------

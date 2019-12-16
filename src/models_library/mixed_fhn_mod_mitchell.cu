@@ -7,7 +7,7 @@
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) 
 {
 
-    print_to_stdout_and_file("Using mixed version of modified FHN 1961 + Mitchell-Shaeffer 2003 GPU model\n\n");
+    log_to_stdout_and_file("Using mixed version of modified FHN 1961 + Mitchell-Shaeffer 2003 GPU model\n\n");
 
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;

@@ -16,18 +16,18 @@ void print_assembly_matrix_config_values(struct config* s) {
 void print_assembly_matrix_config_values(struct config* s) {
 
     if(s == NULL) {
-        print_to_stdout_and_file("[assembly_matrix] No Assembly Matrix configuration.\n");
+        log_to_stdout_and_file("[assembly_matrix] No Assembly Matrix configuration.\n");
         return;
     }
 
-    print_to_stdout_and_file("[assembly_matrix] Assembly Matrix function configuration:\n");
+    log_to_stdout_and_file("[assembly_matrix] Assembly Matrix function configuration:\n");
 
-    print_to_stdout_and_file("[assembly_matrix] Assembly Matrix library: %s\n", s->library_file_path);
+    log_to_stdout_and_file("[assembly_matrix] Assembly Matrix library: %s\n", s->library_file_path);
 
     if(shlen(s->config_data) == 1) {
-        print_to_stdout_and_file("[assembly_matrix] Assembly Matrix parameter:\n");
+        log_to_stdout_and_file("[assembly_matrix] Assembly Matrix parameter:\n");
     } else if(shlen(s->config_data) > 1) {
-        print_to_stdout_and_file("[assembly_matrix] Assembly Matrix parameters:\n");
+        log_to_stdout_and_file("[assembly_matrix] Assembly Matrix parameters:\n");
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data);
