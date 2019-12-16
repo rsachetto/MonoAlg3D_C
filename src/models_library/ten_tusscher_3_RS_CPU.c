@@ -32,7 +32,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             cell_type = strdup("MCELL");
         #endif
 
-        print_to_stdout_and_file("Using ten Tusscher 3 %s CPU model\n", cell_type);
+        log_to_stdout_and_file("Using ten Tusscher 3 %s CPU model\n", cell_type);
         free(cell_type);
         printed_info = true;
     }

@@ -49,12 +49,12 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
         return 0;
     }
 
-    print_to_stdout_and_file("Loading a custom Purkinje Network:> %s\n", name);
-    print_to_stdout_and_file("Using the Purkinje library function:> \"initialize_purkinje_with_custom_mesh\"\n");
-    print_to_stdout_and_file("Discretization for the Purkinje Network Mesh:> %g um\n",side_length);
-    print_to_stdout_and_file("Purkinje-Muscle-Junction resistance:> %g um\n",rpmj);
-    print_to_stdout_and_file("Purkinje-Muscle-Junction scale:> %g\n",pmj_scale);
-    print_to_stdout_and_file("Celular model for the Purkinje :> %s\n",the_ode_solver->model_data.model_library_path);
+    log_to_stdout_and_file("Loading a custom Purkinje Network:> %s\n", name);
+    log_to_stdout_and_file("Using the Purkinje library function:> \"initialize_purkinje_with_custom_mesh\"\n");
+    log_to_stdout_and_file("Discretization for the Purkinje Network Mesh:> %g um\n",side_length);
+    log_to_stdout_and_file("Purkinje-Muscle-Junction resistance:> %g um\n",rpmj);
+    log_to_stdout_and_file("Purkinje-Muscle-Junction scale:> %g\n",pmj_scale);
+    log_to_stdout_and_file("Celular model for the Purkinje :> %s\n",the_ode_solver->model_data.model_library_path);
     set_custom_purkinje_network(the_grid->purkinje, network_file, side_length, rpmj, pmj_scale, calc_retro_propagation);
 
     // Populate the 'purkinje_cells' linked-list with the nodes from the graph

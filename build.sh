@@ -23,6 +23,9 @@ elif [ "$BUILD_TYPE" == "debug" ]; then
   C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
 elif [ "$BUILD_TYPE" == "clean" ]; then
   CLEAN_PROJECT
+  cd src/raylib/src || exit 1;
+  make clean
+  cd - || exit 1;
   exit 0
 elif [ "$BUILD_TYPE" == "cluster" ]; then
   C_FLAGS="$C_FLAGS -O3"
@@ -34,7 +37,7 @@ else
 fi
 
 ###########User code#####################
-DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts -Werror"
+DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts"
 RUNTIME_OUTPUT_DIRECTORY="$ROOT_DIR/bin"
 LIBRARY_OUTPUT_DIRECTORY="$ROOT_DIR/shared_libs"
 

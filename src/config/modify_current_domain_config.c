@@ -12,7 +12,7 @@
 void print_modify_domain_config_values(struct config* s) {
 
     if(s == NULL) {
-        print_to_stdout_and_file("No Modify domain configuration.\n");
+        log_to_stdout_and_file("No Modify domain configuration.\n");
         return;
     }
 

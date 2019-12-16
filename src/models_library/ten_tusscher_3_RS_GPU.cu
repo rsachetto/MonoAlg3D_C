@@ -20,7 +20,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
         cell_type = strdup("MCELL");
     #endif
 
-    print_to_stdout_and_file("Using ten Tusscher 3 %s GPU model\n", cell_type);
+    log_to_stdout_and_file("Using ten Tusscher 3 %s GPU model\n", cell_type);
 
     free(cell_type);
 

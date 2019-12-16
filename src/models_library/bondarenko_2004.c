@@ -57,9 +57,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
-    uint32_t sv_id;
-
-	int i;
+    uint32_t sv_id, i;
 
 	#pragma omp parallel for private(sv_id)
     for (i = 0; i < num_cells_to_solve; i++) {

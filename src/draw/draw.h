@@ -131,6 +131,9 @@ struct gui_state {
     Vector2 sub_window_pos;
     bool drag_sub_window;
 
+    float box_width;
+    float box_height;
+
     struct ap_graph_config *ap_graph_config;
 };
 

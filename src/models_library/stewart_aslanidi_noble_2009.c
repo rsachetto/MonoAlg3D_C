@@ -19,7 +19,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 #ifdef _WIN32
         printf("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
 #else
-        print_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
+        log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
 #endif
 
         first_call = false;

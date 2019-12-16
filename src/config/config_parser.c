@@ -402,7 +402,7 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
 
     if(sc == NULL) {
         sc = alloc_and_init_config_data();
-        print_to_stdout_and_file("Creating new modify_domain named %s from command line options!\n", modify_domain_name);
+        log_to_stdout_and_file("Creating new modify_domain named %s from command line options!\n", modify_domain_name);
         shput(modify_domain_configs, modify_domain_name, sc);
     }
 
@@ -481,7 +481,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
 
     if(sc == NULL) {
         sc = alloc_and_init_config_data();
-        print_to_stdout_and_file("Creating new stimulus name %s from command line options!\n", stim_name);
+        log_to_stdout_and_file("Creating new stimulus name %s from command line options!\n", stim_name);
         shput(stim_configs, stim_name, sc);
     }
 
@@ -1094,68 +1094,68 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
 
             case DOMAIN_OPT:
                 if(user_args->domain_config == NULL) {
-                    print_to_stdout_and_file("Creating new domain config from command line!\n");
+                    log_to_stdout_and_file("Creating new domain config from command line!\n");
                     user_args->domain_config = alloc_and_init_config_data();
                 }
                 set_domain_config(optarg, user_args->domain_config, user_args->config_file);
                 break;
             case SAVE_OPT:
                 if(user_args->save_mesh_config == NULL) {
-                    print_to_stdout_and_file("Creating new save config from command line!\n");
+                    log_to_stdout_and_file("Creating new save config from command line!\n");
                     user_args->save_mesh_config = alloc_and_init_config_data();
                 }
                 set_save_mesh_config(optarg, user_args->save_mesh_config, user_args->config_file);
                 break;
             case ASSEMBLY_MATRIX_OPT:
                 if(user_args->assembly_matrix_config == NULL) {
-                    print_to_stdout_and_file("Creating new assembly_matrix config from command line!\n");
+                    log_to_stdout_and_file("Creating new assembly_matrix config from command line!\n");
                     user_args->assembly_matrix_config = alloc_and_init_config_data();
                 }
                 set_config(optarg, user_args->assembly_matrix_config, user_args->config_file, "assembly_matrix");
                 break;
             case LINEAR_SYSTEM_SOLVER_OPT:
                 if(user_args->linear_system_solver_config == NULL) {
-                    print_to_stdout_and_file("Creating new linear_system_solver config from command line!\n");
+                    log_to_stdout_and_file("Creating new linear_system_solver config from command line!\n");
                     user_args->linear_system_solver_config = alloc_and_init_config_data();
                 }
                 set_config(optarg, user_args->linear_system_solver_config, user_args->config_file, "linear_system_solver");
                 break;
             case UPDATE_MONODOMAIN_SOLVER_OPT:
                 if(user_args->update_monodomain_config == NULL) {
-                    print_to_stdout_and_file("Creating new update_monodomain config from command line!\n");
+                    log_to_stdout_and_file("Creating new update_monodomain config from command line!\n");
                     user_args->update_monodomain_config = alloc_and_init_config_data();
                 }
                 set_config(optarg, user_args->update_monodomain_config, user_args->config_file, "update_monodomain");
                 break;
             case EXTRA_DATA_OPT:
                 if(user_args->extra_data_config == NULL) {
-                    print_to_stdout_and_file("Creating new extra data config from command line!\n");
+                    log_to_stdout_and_file("Creating new extra data config from command line!\n");
                     user_args->extra_data_config = alloc_and_init_config_data();
                 }
                 set_config(optarg, user_args->extra_data_config, user_args->config_file, "extra_data");
                 break;
             case STIM_OPT:
                 if(user_args->stim_configs == NULL) {
-                    print_to_stdout_and_file("Creating new stim config from command line!\n");
+                    log_to_stdout_and_file("Creating new stim config from command line!\n");
                 }
                 set_stim_config(optarg, user_args->stim_configs, user_args->config_file);
                 break;
             case MODIFY_DOMAIN_OPT:
                 if(user_args->modify_domain_configs == NULL) {
-                    print_to_stdout_and_file("Creating new modify_domain config from command line!\n");
+                    log_to_stdout_and_file("Creating new modify_domain config from command line!\n");
                 }
                 set_modify_domain_config(optarg, user_args->modify_domain_configs, user_args->config_file);
                 break;
             case SAVE_STATE_OPT:
                 if(user_args->save_state_config == NULL) {
-                    print_to_stdout_and_file("Creating new save state config from command line!\n");
+                    log_to_stdout_and_file("Creating new save state config from command line!\n");
                     user_args->save_state_config = alloc_and_init_config_data();
                 }
                 set_config(optarg, user_args->save_state_config, user_args->config_file, "save_state");
                 break;
             case RESTORE_STATE_OPT:
                 if(user_args->restore_state_config == NULL) {
-                    print_to_stdout_and_file("Creating new restore state config from command line!\n");
+                    log_to_stdout_and_file("Creating new restore state config from command line!\n");
                     user_args->restore_state_config = alloc_and_init_config_data();
                 }
                 set_config(optarg, user_args->restore_state_config, user_args->config_file, "restore_state");

@@ -13,7 +13,7 @@ void set_no_stdout(bool val) {
     L.quiet = val;
 }
 
-void print_to_stdout_and_file(char const *fmt, ...) {
+void log_to_stdout_and_file(char const *fmt, ...) {
 
     va_list ap;
 
@@ -24,12 +24,12 @@ void print_to_stdout_and_file(char const *fmt, ...) {
         va_end(ap);
     }
 
-    va_start(ap, fmt);
     if (L.fp) {
+        va_start(ap, fmt);
         vfprintf(L.fp, fmt, ap);
         fflush(L.fp);
+        va_end(ap);
     }
-    va_end(ap);
 }
 
 void print_to_stderr_and_file_and_exit(char const *fmt, ...) {

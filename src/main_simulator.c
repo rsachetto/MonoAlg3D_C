@@ -61,16 +61,16 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
             buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", out_dir_name);
             open_logfile(buffer_log);
 
-            print_to_stdout_and_file("Command line to reproduce this simulation:\n");
+            log_to_stdout_and_file("Command line to reproduce this simulation:\n");
             for (int i = 0; i < argc; i++) {
-                print_to_stdout_and_file("%s ", argv[i]);
+                log_to_stdout_and_file("%s ", argv[i]);
             }
 
-            print_to_stdout_and_file("\n");
+            log_to_stdout_and_file("\n");
 
             buffer_ini = sdscatfmt(buffer_ini, "%s/original_configuration.ini", out_dir_name);
 
-            print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
+            log_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
                                      buffer_ini);
 
             //moved to monodomain solver
@@ -133,14 +133,14 @@ int main(int argc, char **argv) {
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
-        print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        log_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
         ode_solver->gpu = false;
     }
 #endif
 
 #ifndef COMPILE_OPENGL
     if(options->draw) {
-        print_to_stdout_and_file("OpenGL not found. The output will not be draw!!\n");
+        log_to_stdout_and_file("OpenGL not found. The output will not be draw!!\n");
         options->draw = false;
     }
 #endif

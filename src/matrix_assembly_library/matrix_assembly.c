@@ -765,12 +765,12 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
     real sigma_factor = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
-    print_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
+    log_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
 
     // Initialize the seed for the fibrosis
     srand(seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", seed);
+    log_to_stdout_and_file("Using %u as seed\n", seed);
 
     if (!sigma_initialized)
     {
@@ -1060,7 +1060,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
     free(scar_mesh);
 
     // We just leave the program after this ...
-    print_to_stdout_and_file("[!] Finish writing new fibrotic region file '%s'!\n",new_fib_file);
+    log_to_stdout_and_file("[!] Finish writing new fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }
 
@@ -1122,6 +1122,6 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     fclose(fileW);  	
 		
     // We just leave the program after this ...
-    print_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }

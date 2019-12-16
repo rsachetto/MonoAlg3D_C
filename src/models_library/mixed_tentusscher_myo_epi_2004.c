@@ -18,7 +18,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 
     if(first_call) 
     {
-        print_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
+        log_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
         first_call = false;
     }
     

@@ -19,7 +19,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 
     if(first_call) 
     {
-        print_to_stdout_and_file("Using mixed version of modified FHN 1961 + Mitchell-Shaeffer 2003 CPU model\n");
+        log_to_stdout_and_file("Using mixed version of modified FHN 1961 + Mitchell-Shaeffer 2003 CPU model\n");
         first_call = false;
     }
     

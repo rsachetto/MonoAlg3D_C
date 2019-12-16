@@ -44,6 +44,9 @@ struct gui_state * new_gui_state_with_font_and_colors(Font font, int num_colors)
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2) {FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_aps = NULL;
 
+    gui_state->box_width = 220;
+    gui_state->box_height = 100;
+
     hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
 
     return gui_state;
@@ -55,15 +58,14 @@ struct mesh_info *new_mesh_info() {
     return mesh_info;
 }
 
-//TODO; can we get rid of this??
+//TODO: can we get rid of this??
 static Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
 
 static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
 }
 
-static inline Color get_color(real_cpu value, int alpha, int current_scale)
-{
+static inline Color get_color(real_cpu value, int alpha, int current_scale) {
 
     int idx1;        // |-- Our desired color will be between these two indexes in "color".
     int idx2;        // |
@@ -886,9 +888,6 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
 
 }
 
-const float box_width = 220;
-const float box_height = 100;
-
 static bool draw_selection_box(struct gui_state *gui_state) {
 
     const float text_box_width = 60;
@@ -906,7 +905,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
     float box_pos = pos_x + x_off;
 
-    bool clicked = GuiWindowBox((Rectangle){ pos_x, pos_y, box_width , box_height}, "Enter the center of the cell");
+    bool clicked = GuiWindowBox((Rectangle){ pos_x, pos_y, gui_state->box_width , gui_state->box_height}, "Enter the center of the cell");
 
     DrawTextEx(gui_state->font, "Center X", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, 1, BLACK);
     GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_x_text, SIZEOF(center_x_text) - 1, true);
@@ -933,7 +932,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
 static bool draw_save_box(struct gui_state *gui_state) {
 
-    char save_path[PATH_MAX] = {0};
+    static char save_path[PATH_MAX] = {0};
 
     const float text_box_width = 90;
     const float text_box_height = 25;
@@ -946,20 +945,22 @@ static bool draw_save_box(struct gui_state *gui_state) {
 
     float box_pos = pos_x + x_off;
 
-    bool clicked = GuiWindowBox((Rectangle){ pos_x, pos_y, box_width , box_height}, "Enter the filename");
+    bool clicked = GuiWindowBox((Rectangle){ pos_x, pos_y, gui_state->box_width , gui_state->box_height}, "Enter the filename");
 
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, box_width - 2*x_off, text_box_height}, save_path, SIZEOF(save_path) - 1, true);
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, gui_state->box_width - 2*x_off, text_box_height}, save_path, SIZEOF(save_path) - 1, true);
 
     bool btn_clicked = GuiButton((Rectangle){pos_x +  x_off, pos_y + 70, text_box_width, text_box_height}, "OK");
-    bool btn2_clicked = GuiButton((Rectangle){pos_x + box_width - text_box_width - x_off, pos_y + 70, text_box_width, text_box_height}, "CANCEL");
+    bool btn2_clicked = GuiButton((Rectangle){pos_x + gui_state->box_width - text_box_width - x_off, pos_y + 70, text_box_width, text_box_height}, "CANCEL");
 
     if(btn_clicked) {
         if( strlen(save_path) > 0 ) {
             save_vtk_unstructured_grid_as_vtu_compressed(draw_config.grid_info.vtk_grid, save_path, 6);
+            log_to_stdout_and_file("Saved vtk file as %s\n", save_path);
+
         }
     }
 
-    return btn2_clicked | clicked | btn_clicked;
+    return btn2_clicked || clicked || btn_clicked;
 }
 
 static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *mesh_info, struct gui_state *gui_state) {
@@ -969,7 +970,7 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
-            if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y, box_width - 18 , WINDOW_STATUSBAR_HEIGHT }))
+            if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y, gui_state->box_width - 18 , WINDOW_STATUSBAR_HEIGHT }))
             {
                 gui_state->drag_sub_window = true;
             }
@@ -977,7 +978,7 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
 
         if (gui_state->drag_sub_window)
         {
-            gui_state->sub_window_pos.x = (gui_state->mouse_pos.x) - (box_width - 18) / 2;
+            gui_state->sub_window_pos.x = (gui_state->mouse_pos.x) - (gui_state->box_width - 18) / 2;
             gui_state->sub_window_pos.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2;
 
             if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->drag_sub_window = false;
@@ -1027,8 +1028,8 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
     if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
         if(IsKeyPressed(KEY_F)) {
             gui_state->show_selection_box = true;
-            gui_state->sub_window_pos.x = GetScreenWidth() / 2 - box_width;
-            gui_state->sub_window_pos.y = GetScreenHeight() / 2 - box_height;
+            gui_state->sub_window_pos.x = GetScreenWidth() / 2 - gui_state->box_width;
+            gui_state->sub_window_pos.y = GetScreenHeight() / 2 - gui_state->box_height;
         }
     }
 
@@ -1052,8 +1053,8 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
         if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
             if(IsKeyPressed(KEY_S)) {
                 gui_state->show_save_box = true;
-                gui_state->sub_window_pos.x = GetScreenWidth() / 2 - box_width;
-                gui_state->sub_window_pos.y = GetScreenHeight() / 2 - box_height;
+                gui_state->sub_window_pos.x = GetScreenWidth() / 2 - gui_state->box_width;
+                gui_state->sub_window_pos.y = GetScreenHeight() / 2 - gui_state->box_height;
                 return;
             }
         }
@@ -1204,7 +1205,7 @@ void init_and_open_visualization_window() {
 
     SetCameraMode(camera, CAMERA_FREE); // Set a free camera mode
 
-    SetTargetFPS(120);
+    SetTargetFPS(60);
 
     float scale = 1.0f;
 
