@@ -45,17 +45,18 @@ GET_BUILD_OPTIONS () {
 	while [ $# -gt 0 ] && [ "$1" != "--" ]; do
 		while getopts "fqlh" opt; do
 			case $opt in
-			f) GLOBAL_FORCE_COMPILATION='y' ;;
-			l) WRITE_COMPILE_COMMANDS='y'; GLOBAL_FORCE_COMPILATION='y' ;;
-			q) QUIET='y' ;;
-	    h) ;&
-			\?) PRINT_USAGE "$@";;
-		esac
+        f) GLOBAL_FORCE_COMPILATION='y' ;;
+        l) WRITE_COMPILE_COMMANDS='y'; GLOBAL_FORCE_COMPILATION='y' ;;
+        q) QUIET='y' ;;
+        h) ;&
+        \?) PRINT_USAGE "$@";;
+		  esac
 	done
-		shift $((OPTIND-1))
 
-		while [ $# -gt 0 ] && ! [[ "$1" =~ ^- ]]; do
-			BUILD_TYPE_ARR=("${mandatory[@]}" "$1")
+	shift $((OPTIND-1))
+
+	while [ $# -gt 0 ] && ! [[ "$1" =~ ^- ]]; do
+		  BUILD_TYPE_ARR=("${mandatory[@]}" "$1")
 			shift
 		done
 	done
