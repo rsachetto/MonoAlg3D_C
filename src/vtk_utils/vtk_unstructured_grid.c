@@ -565,6 +565,15 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                     break;
                 case 'c':
                     arrput((*vtk_grid)->values, grid_cell->sigma.x);
+                    break;
+                case 'm':
+                    arrput((*vtk_grid)->values, grid_cell->min_v);
+                    break;
+                case 'M':
+                    arrput((*vtk_grid)->values, grid_cell->max_v);
+                    break;
+                case 'd':
+                    arrput((*vtk_grid)->values, grid_cell->apd);
                     break;            
                 default:
                     print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");

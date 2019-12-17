@@ -240,6 +240,21 @@ struct user_options *new_user_options() {
     user_args->quiet = false;
     user_args->quiet_was_set = false;
 
+    user_args->calc_activation_time = false;
+    user_args->calc_activation_time_was_set = false;
+
+    user_args->print_min_vm_map = false;
+    user_args->print_min_vm_map_was_set = false;
+
+    user_args->print_max_vm_map = false;
+    user_args->print_max_vm_map_was_set = false;
+
+    user_args->print_apd_map = false;
+    user_args->print_apd_map_was_set = false;
+
+    user_args->print_conductivity_map = false;
+    user_args->print_conductivity_map_was_set = false;
+
     user_args->stim_configs = NULL;
     user_args->ode_extra_config = NULL;
 

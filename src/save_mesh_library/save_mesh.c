@@ -47,6 +47,21 @@ void write_conductivity_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct
                                              bool binary, 
                                              bool clip_with_plain, float *plain_coords, 
                                              bool clip_with_bounds, float *bounds);
+void write_min_vm_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds);
+void write_max_vm_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds);
+void write_apd_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds);
 void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
                                              char *output_dir, char *file_prefix, int iteration_count, real_cpu current_t,
                                              bool save_pvd, bool compress, int compression_level, bool binary,
@@ -58,6 +73,21 @@ void write_activation_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct g
                                              bool clip_with_plain, float *plain_coords, 
                                              bool clip_with_bounds, float *bounds);
 void write_conductivity_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds);
+void write_min_vm_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds);
+void write_max_vm_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds);
+void write_apd_map_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
                                              char *output_dir,
                                              bool binary, 
                                              bool clip_with_plain, float *plain_coords, 
@@ -366,6 +396,18 @@ SAVE_MESH(save_as_vtu) {
         // Write conductivity map
         case 'c':
             write_conductivity_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write minVm map
+        case 'm':
+            write_min_vm_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write maxVm map
+        case 'M':
+            write_max_vm_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write APD map
+        case 'd':
+            write_apd_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
         default:
             fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
@@ -760,6 +802,21 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
             write_conductivity_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             write_conductivity_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
             break;
+        // Write minimum Vm map
+        case 'm':
+            write_min_vm_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_min_vm_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write maximum Vm map
+        case 'M':
+            write_max_vm_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_max_vm_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
+        // Write APD map
+        case 'd':
+            write_apd_map_vtu(&vtk_grid, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            write_apd_map_vtp(&vtk_polydata, the_grid, output_dir, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+            break;
         default:
             fprintf(stderr,"[-] ERROR! Invalid scalar name!\n");
             exit(EXIT_FAILURE);
@@ -829,6 +886,54 @@ void write_conductivity_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct
     output_dir_with_file = sdscat(output_dir_with_file, "/conductivity-map.vtu");
 
     new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'c');
+
+    save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
+
+    sdsfree(output_dir_with_file);
+}
+
+void write_min_vm_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds)
+{
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/minvm-map.vtu");
+
+    new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'m');
+
+    save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
+
+    sdsfree(output_dir_with_file);
+}
+
+void write_max_vm_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds)
+{
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/maxvm-map.vtu");
+
+    new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'M');
+
+    save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
+
+    sdsfree(output_dir_with_file);
+}
+
+void write_apd_map_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
+                                             char *output_dir,
+                                             bool binary, 
+                                             bool clip_with_plain, float *plain_coords, 
+                                             bool clip_with_bounds, float *bounds)
+{
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/apd-map.vtu");
+
+    new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, !the_grid->adaptive,'d');
 
     save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
 
