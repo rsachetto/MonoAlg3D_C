@@ -489,6 +489,7 @@ void construct_grid_purkinje (struct grid *the_grid)
     real_cpu side_length_y = the_purkinje->the_network->dx;
     real_cpu side_length_z = the_purkinje->the_network->dx;
 
+    struct point_3d side_length = POINT3D(side_length_x, side_length_y, side_length_z);
     struct point_3d half_side_length = POINT3D(side_length_x / 2.0f, side_length_y / 2.0f, side_length_z / 2.0f);
 
     uint32_t total_purkinje_nodes = the_purkinje->the_network->total_nodes;
@@ -505,15 +506,15 @@ void construct_grid_purkinje (struct grid *the_grid)
     {
         
         if (i == 0)
-            set_cell_node_data (purkinje_cells[i],half_side_length, 0, NULL,NULL,NULL,NULL,NULL,NULL,NULL,purkinje_cells[i+1],i,0,\
+            set_cell_node_data (purkinje_cells[i],side_length, 0, NULL,NULL,NULL,NULL,NULL,NULL,NULL,purkinje_cells[i+1],i,0,\
                             POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
         else if (i == total_purkinje_nodes-1)
-            set_cell_node_data (purkinje_cells[i],half_side_length,\
+            set_cell_node_data (purkinje_cells[i],side_length,\
                         0,NULL,NULL,NULL,NULL,NULL,NULL,\
                         purkinje_cells[i-1],NULL,i,0,\
                         POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
         else
-            set_cell_node_data (purkinje_cells[i],half_side_length,\
+            set_cell_node_data (purkinje_cells[i],side_length,\
                         0,NULL,NULL,NULL,NULL,NULL,NULL,\
                         purkinje_cells[i-1],purkinje_cells[i+1],i,0,\
                         POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
