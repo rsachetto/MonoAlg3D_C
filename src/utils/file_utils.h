@@ -16,7 +16,7 @@
 #include "../common_types/common_types.h"
 
 int cp_file(const char *to, const char *from);
-char * read_entire_file(const char *filename, long *size);
+char * read_entire_file(const char *filename, size_t *size);
 char *read_entire_file_with_mmap(const char *filename, size_t *size);
 string_array list_files_from_dir(const char *dir, const char *prefix);
 string_array list_files_from_dir_sorted(const char *dir, const char *prefix);

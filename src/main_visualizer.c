@@ -95,8 +95,10 @@ static int read_and_render_files(struct visualization_options *options) {
     int v_step = options->step;
 
     if(!using_pvd) {
-        vtk_files = (struct vtk_files*) malloc(sizeof(struct vtk_files*));
-        vtk_files->files_list  = list_files_from_dir_sorted(input_dir, prefix);
+        vtk_files = (struct vtk_files*) malloc(sizeof(struct vtk_files));
+        vtk_files->files_list = NULL;
+        vtk_files->timesteps = NULL;
+        vtk_files->files_list = list_files_from_dir_sorted(input_dir, prefix);
     }
     else {
         vtk_files = list_files_from_and_timesteps_from_pvd(pvd_file);
@@ -164,7 +166,6 @@ static int read_and_render_files(struct visualization_options *options) {
         if(!using_pvd) {
             if (dt == 0) {
                 draw_config.time = get_step_from_filename(vtk_files->files_list[current_file]);
-
             } else {
                 draw_config.time = get_step_from_filename(vtk_files->files_list[current_file]) * dt;
             }
@@ -253,6 +254,8 @@ int main(int argc, char **argv) {
     struct visualization_options *options = new_visualization_options();
 
     parse_visualization_options(argc, argv, options);
+
+    omp_set_num_threads(2);
 
     if(!options->activation_map) {
         if (!options->input_folder) {
