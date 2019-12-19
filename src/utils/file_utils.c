@@ -106,15 +106,15 @@ char *read_entire_file_with_mmap(const char *filename, size_t *size) {
 
     f = (char *) mmap (0, to_page_size, PROT_READ, MAP_PRIVATE, fd, 0);
 
-    close(fd);
-
     if (f == NULL)
         return NULL;
+
+    close(fd);
 
     return f;
 }
 
-char *read_entire_file(const char *filename, long *size) {
+char *read_entire_file(const char *filename, size_t *size) {
 
     FILE *infile;
     char *buffer;
@@ -563,7 +563,7 @@ bool check_simulation_completed(char *simulation_dir) {
 
     char *word = NULL;
 
-    long file_size = 0;
+    size_t file_size = 0;
     char *outputlog_content = read_entire_file(output_file_name, &file_size);
 
     if(outputlog_content == NULL) {
@@ -571,7 +571,7 @@ bool check_simulation_completed(char *simulation_dir) {
         return false;
     }
 
-    for(long c = 0; c < file_size; c++) {
+    for(size_t c = 0; c < file_size; c++) {
         char l = outputlog_content[c];
         if(!isspace(l)) {
             arrput(word, l);

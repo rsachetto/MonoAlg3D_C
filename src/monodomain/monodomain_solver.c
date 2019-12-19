@@ -1140,9 +1140,7 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
 
         log_to_stdout_and_file("[domain] Domain maximum Space Discretization: dx %s um, dy %s um, dz %s um\n", max_dx, max_dy, max_dz);
 
-
-        log_to_stdout_and_file("[monodomain_solver] The adaptivity will start in time: %lf ms\n",
-                                 the_monodomain_solver->start_adapting_at);
+        log_to_stdout_and_file("[monodomain_solver] The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
     }
 
     if(options->linear_system_solver_config) 

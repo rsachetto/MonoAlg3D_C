@@ -104,3 +104,6 @@ GPATH
 GRTAGS
 GTAGS
 
+/generate_ini_with_configuration_and_run_simulation.sh
+/ICs_50configs.txt
+/ICs_1000configs.txt

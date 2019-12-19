@@ -33,10 +33,7 @@ struct action_potential {
 
 struct ap_graph_config {
 
-    int graph_height;
-    float graph_pos_x;
-    float graph_pos_y;
-    int graph_width;
+    Rectangle graph;
     float max_x;
     float min_y;
     float max_y;
@@ -46,6 +43,11 @@ struct ap_graph_config {
     Vector2 selected_point_for_apd1;
     Vector2 selected_point_for_apd2;
     struct point_voidp_hash_entry *selected_aps;
+    Rectangle drag_graph_button_position;
+    Rectangle move_graph_button_position;
+    bool drag_ap_graph;
+    bool move_ap_graph;
+    bool draw_selected_ap_text;
 
 };
 
@@ -98,16 +100,21 @@ struct draw_config {
 
 struct gui_state {
     bool one_selected;
-    bool draw_selected_ap_text;
     bool show_ap;
     bool show_scale;
     bool c_pressed;
     bool draw_grid_lines;
     bool draw_grid_only ;
 
-    bool show_info_box;
+    bool show_help_box;
+    Rectangle help_box;
+    bool move_help_box;
+
     bool show_end_info_box;
-    bool show_mesh_info_box ;
+
+    bool show_mesh_info_box;
+    Rectangle mesh_info_box;
+
     bool show_selection_box;
     bool show_save_box;
 
@@ -130,6 +137,7 @@ struct gui_state {
     Vector2 mouse_pos;
     Vector2 sub_window_pos;
     bool drag_sub_window;
+
 
     float box_width;
     float box_height;

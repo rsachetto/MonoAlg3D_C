@@ -1680,7 +1680,8 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
         case YXML_PIEND:
             break;
         default:
-            exit(0);
+           fprintf(stderr, "Error on xml %s \n", x->attr);
+          //  exit(0);
     }
 
     return 0;
@@ -1743,9 +1744,11 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
         yxml_t *x = (yxml_t *) malloc(sizeof(yxml_t));
         yxml_init(x, stack, sizeof(stack));
 
-        for (; *source; source++) {
-            yxml_ret_t r = yxml_parse(x, *source);
-            if (parse_vtk_xml(x, r, parser_state) == -1) break;
+        for (size_t i = 0; i < size; i++) {
+            yxml_ret_t r = yxml_parse(x, source[i]);
+            if (parse_vtk_xml(x, r, parser_state) == -1) {
+                break;
+            }
         }
 
         free(x);
@@ -1964,7 +1967,7 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
             while (!isdigit(*tmp_data)) tmp_data++;
 
-            for (int i = 0; i < (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell; i++) {
+            for (uint32_t i = 0; i < (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell; i++) {
                 arrput((*vtk_grid)->cells, strtol(tmp_data, &pEnd, 10));
                 tmp_data = pEnd;
             }

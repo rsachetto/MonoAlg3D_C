@@ -173,6 +173,7 @@ struct visualization_options *new_visualization_options() {
     options->activation_map = NULL;
     options->save_activation_only = false;
     options->step = 1;
+    options->start_file = 1;
 
     return options;
 }
