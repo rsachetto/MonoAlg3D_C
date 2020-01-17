@@ -153,7 +153,7 @@ int test_perlin_mesh(char* mesh_file, char *start_dx, char* side_length_x, bool 
         else if(binary)
         shput(save_mesh_config->config_data, "binary", "yes");
 
-        ((save_mesh_fn*)save_mesh_config->main_function)(save_mesh_config, grid, 0, 0.0, 0.0, 0.0);
+        ((save_mesh_fn*)save_mesh_config->main_function)(save_mesh_config, grid, 0, 0.0, 0.0, 0.0, 'v');
 
     }
 
@@ -251,7 +251,7 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
 
         shput(save_mesh_config->config_data, "save_pvd", strdup("no"));
 
-        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, grid, 0, 0.0, 0.0, 0.0);
+        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, grid, 0, 0.0, 0.0, 0.0, 'v');
 
         free_config_data(save_mesh_config);
         sdsfree(file_prefix);

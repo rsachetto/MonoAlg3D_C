@@ -1,170 +1,220 @@
-// Scenario 2 - Mixed-Model TenTusscher 2004 (Myocardium + Epicardium)
-// (AP + max:dvdt + Rc)
-#include <stdio.h>
-#include "mixed_tentusscher_myo_epi_2004_S2.h"
+#include <stddef.h>
+#include <stdint.h>
+#include "model_gpu_utils.h"
 
-GET_CELL_MODEL_DATA(init_cell_model_data) 
+#include "mixed_tentusscher_myo_epi_2004_S3_3.h"
+
+extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) 
 {
 
-    if(get_initial_v)
-        cell_model->initial_v = INITIAL_V;
-    if(get_neq)
-        cell_model->number_of_ode_equations = NEQ;
-}
+    print_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium GPU model\n\n");
 
-SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
-{
+    // execution configuration
+    const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
-    static bool first_call = true;
+    size_t size = num_volumes*sizeof(real);
 
-    if(first_call) 
+    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
+
+    // Get the mapping array
+    uint32_t *mapping = NULL;
+    uint32_t *mapping_device = NULL;
+    if(extra_data) 
     {
-        print_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
-        first_call = false;
+        mapping = (uint32_t*)extra_data;
+        check_cuda_error(cudaMalloc((void **)&mapping_device, extra_data_bytes_size));
+        check_cuda_error(cudaMemcpy(mapping_device, mapping, extra_data_bytes_size, cudaMemcpyHostToDevice));
     }
+
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, mapping_device, num_volumes);
+
+    check_cuda_error( cudaPeekAtLastError() );
+    cudaDeviceSynchronize();
     
-    // Get the mapping array
-    uint32_t *mapping = NULL;
-    if(extra_data) 
-    {
-        mapping = (uint32_t*)extra_data;
-    }
-    else 
-    {
-        print_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
-    }
+    check_cuda_error(cudaFree(mapping_device));
 
-    // Initial conditions for TenTusscher myocardium
-    if (mapping[sv_id] == 0)
-    {
-        // Default initial conditions
-    /*
-        sv[0] =  INITIAL_V;     // V;       millivolt
-        sv[1] =  0.f;           //M
-        sv[2] =  0.75;          //H
-        sv[3] =  0.75f;         //J
-        sv[4] =  0.f;           //Xr1
-        sv[5] =  1.f;           //Xr2
-        sv[6] =  0.f;           //Xs
-        sv[7] =  1.f;           //S
-        sv[8] =  0.f;           //R
-        sv[9] =  0.f;           //D
-        sv[10] = 1.f;           //F
-        sv[11] = 1.f;           //FCa
-        sv[12] = 1.f;           //G
-        sv[13] = 0.0002;        //Cai
-        sv[14] = 0.2f;          //CaSR
-        sv[15] = 11.6f;         //Nai
-        sv[16] = 138.3f;        //Ki
-    */
-        // Elnaz's steady-state initial conditions
-        real sv_sst[]={-86.3965119057144,0.00133824305081220,0.775463576993407,0.775278393595599,0.000179499343643571,0.483303039835057,0.00297647859235379,0.999998290403642,1.98961879737287e-08,1.93486789479597e-05,0.999599147019885,1.00646342475688,0.999975178010127,5.97703651642618e-05,0.418325344820368,10.7429775420171,138.918155900633};
-        for (uint32_t i = 0; i < NEQ; i++)
-            sv[i] = sv_sst[i];
-    }
-    // Initial conditions for TenTusscher epicardium
-    else
-    {
-        // Default initial conditions
-    /*
-        sv[0] =  INITIAL_V;     // V;       millivolt
-        sv[1] =  0.f;           //M
-        sv[2] =  0.75;          //H
-        sv[3] =  0.75f;         //J
-        sv[4] =  0.f;           //Xr1
-        sv[5] =  1.f;           //Xr2
-        sv[6] =  0.f;           //Xs
-        sv[7] =  1.f;           //S
-        sv[8] =  0.f;           //R
-        sv[9] =  0.f;           //D
-        sv[10] = 1.f;           //F
-        sv[11] = 1.f;           //FCa
-        sv[12] = 1.f;           //G
-        sv[13] = 0.0002;        //Cai
-        sv[14] = 0.2f;          //CaSR
-        sv[15] = 11.6f;         //Nai
-        sv[16] = 138.3f;        //Ki
-    */
-        // Elnaz's steady-state initial conditions
-        real sv_sst[]={-86.6902768323595,0.00125688376225555,0.782690257165761,0.782547892596001,0.000171750048746746,0.486360170563085,0.00291485827479809,0.999998387931464,1.89456679295569e-08,1.86054940017131e-05,0.999770742626069,1.00724037170339,0.999997113579370,4.17567836043613e-05,0.472458747863693,10.1478189383772,139.471917130272};
-        for (uint32_t i = 0; i < NEQ; i++)
-            sv[i] = sv_sst[i];
-    }
+    return pitch_h;
+
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) 
+extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) 
 {
+
+    // execution configuration
+    const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
+
+    size_t stim_currents_size = sizeof(real)*num_cells_to_solve;
+    size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
+
+    real *stims_currents_device;
+    check_cuda_error(cudaMalloc((void **) &stims_currents_device, stim_currents_size));
+    check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
+
+
+    //the array cells to solve is passed when we are using and adapative mesh
+    uint32_t *cells_to_solve_device = NULL;
+    if(cells_to_solve != NULL) 
+    {
+        check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
+        check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
+    }
 
     // Get the mapping array
     uint32_t *mapping = NULL;
+    uint32_t *mapping_device = NULL;
     if(extra_data) 
     {
         mapping = (uint32_t*)extra_data;
+        check_cuda_error(cudaMalloc((void **)&mapping_device, extra_data_bytes_size));
+        check_cuda_error(cudaMemcpy(mapping_device, mapping, extra_data_bytes_size, cudaMemcpyHostToDevice));
     }
     else 
     {
         print_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
-    uint32_t sv_id;
+    solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, mapping_device, num_cells_to_solve, num_steps);
 
-	int i;
+    check_cuda_error( cudaPeekAtLastError() );
 
-    #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) 
+    check_cuda_error(cudaFree(stims_currents_device));
+    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
+    if(mapping_device) check_cuda_error(cudaFree(mapping_device));
+
+}
+
+__global__ void kernel_set_model_inital_conditions(real *sv, uint32_t *mapping, int num_volumes) 
+{
+    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (threadID < num_volumes) 
     {
 
-        if(cells_to_solve)
-            sv_id = cells_to_solve[i];
-        else
-            sv_id = (uint32_t )i;
-
-        for (int j = 0; j < num_steps; ++j) 
+        // Initial conditions for TenTusscher 2004 myocardium
+        if (mapping[threadID] == 0)
         {
-            if (mapping[i] == 0)
-                solve_model_ode_cpu_myo(dt, sv + (sv_id * NEQ), stim_currents[i]);
-            else
-                solve_model_ode_cpu_epi(dt, sv + (sv_id * NEQ), stim_currents[i]);
+            // Default initial conditions
+        /*
+            *((real * )((char *) sv + pitch * 0) + threadID) =  INITIAL_V;     // V;       millivolt
+            *((real * )((char *) sv + pitch * 1) + threadID) =  0.f;           //M
+            *((real * )((char *) sv + pitch * 2) + threadID) =  0.75;          //H
+            *((real * )((char *) sv + pitch * 3) + threadID) =  0.75f;         //J
+            *((real * )((char *) sv + pitch * 4) + threadID) =  0.f;           //Xr1
+            *((real * )((char *) sv + pitch * 5) + threadID) =  1.f;           //Xr2
+            *((real * )((char *) sv + pitch * 6) + threadID) =  0.f;           //Xs
+            *((real * )((char *) sv + pitch * 7) + threadID) =  1.f;           //S
+            *((real * )((char *) sv + pitch * 8) + threadID) =  0.f;           //R
+            *((real * )((char *) sv + pitch * 9) + threadID) =  0.f;           //D
+            *((real * )((char *) sv + pitch * 10) + threadID) = 1.f;           //F
+            *((real * )((char *) sv + pitch * 11) + threadID) = 1.f;           //FCa
+            *((real * )((char *) sv + pitch * 12) + threadID) = 1.f;           //G
+            *((real * )((char *) sv + pitch * 13) + threadID) = 0.0002;        //Cai
+            *((real * )((char *) sv + pitch * 14) + threadID) = 0.2f;          //CaSR
+            *((real * )((char *) sv + pitch * 15) + threadID) = 11.6f;         //Nai
+            *((real * )((char *) sv + pitch * 16) + threadID) = 138.3f;        //Ki
+        */
+            // Elnaz's steady-state initial conditions
+            real sv_sst[]={-86.3965119057144,0.00133824305081220,0.775463576993407,0.775278393595599,0.000179499343643571,0.483303039835057,0.00297647859235379,0.999998290403642,1.98961879737287e-08,1.93486789479597e-05,0.999599147019885,1.00646342475688,0.999975178010127,5.97703651642618e-05,0.418325344820368,10.7429775420171,138.918155900633};
+            for (uint32_t i = 0; i < NEQ; i++)
+                *((real * )((char *) sv + pitch * i) + threadID) = sv_sst[i];
+        }
+        // Initial conditions for TenTusscher 2004 epicardium
+        else
+        {
+             // Default initial conditions
+        /*
+            *((real * )((char *) sv + pitch * 0) + threadID) =  INITIAL_V;     // V;       millivolt
+            *((real * )((char *) sv + pitch * 1) + threadID) =  0.f;           //M
+            *((real * )((char *) sv + pitch * 2) + threadID) =  0.75;          //H
+            *((real * )((char *) sv + pitch * 3) + threadID) =  0.75f;         //J
+            *((real * )((char *) sv + pitch * 4) + threadID) =  0.f;           //Xr1
+            *((real * )((char *) sv + pitch * 5) + threadID) =  1.f;           //Xr2
+            *((real * )((char *) sv + pitch * 6) + threadID) =  0.f;           //Xs
+            *((real * )((char *) sv + pitch * 7) + threadID) =  1.f;           //S
+            *((real * )((char *) sv + pitch * 8) + threadID) =  0.f;           //R
+            *((real * )((char *) sv + pitch * 9) + threadID) =  0.f;           //D
+            *((real * )((char *) sv + pitch * 10) + threadID) = 1.f;           //F
+            *((real * )((char *) sv + pitch * 11) + threadID) = 1.f;           //FCa
+            *((real * )((char *) sv + pitch * 12) + threadID) = 1.f;           //G
+            *((real * )((char *) sv + pitch * 13) + threadID) = 0.0002;        //Cai
+            *((real * )((char *) sv + pitch * 14) + threadID) = 0.2f;          //CaSR
+            *((real * )((char *) sv + pitch * 15) + threadID) = 11.6f;         //Nai
+            *((real * )((char *) sv + pitch * 16) + threadID) = 138.3f;        //Ki
+        */
+            // Elnaz's steady-state initial conditions
+            real sv_sst[]={-86.6404915792850,0.00127032163211322,0.781479753157976,0.781360816517016,0.000172969600594225,0.485842045427499,0.00292520813217015,0.999998371823369,1.91034113695031e-08,1.87293970187045e-05,0.999771221267447,1.00691525856031,0.999992103392003,4.93846276389813e-05,0.695256716079829,9.83880114557068,139.633017313049};
+            for (uint32_t i = 0; i < NEQ; i++)
+                *((real * )((char *) sv + pitch * i) + threadID) = sv_sst[i];
         }
     }
 }
 
-void solve_model_ode_cpu_myo (real dt, real *sv, real stim_current)  
+// Solving the model for each cell in the tissue matrix ni x nj
+__global__ void solve_gpu(real dt, real *sv, real* stim_currents,
+                          uint32_t *cells_to_solve, uint32_t *mapping, uint32_t num_cells_to_solve,
+                          int num_steps)
 {
+    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+    int sv_id;
 
-    real rY[NEQ], rDY[NEQ];
+    // Each thread solves one cell model
+    if(threadID < num_cells_to_solve) 
+    {
+        if(cells_to_solve)
+            sv_id = cells_to_solve[threadID];
+        else
+            sv_id = threadID;
 
-    for(int i = 0; i < NEQ; i++)
-        rY[i] = sv[i];
+        real rDY[NEQ];
 
-    RHS_cpu_myo(rY, rDY, stim_current, dt);
+        for (int n = 0; n < num_steps; ++n) 
+        {
 
-    for(int i = 0; i < NEQ; i++)
-        sv[i] = rDY[i];
-    
+            if (mapping[sv_id] == 0)
+            {
+                RHS_gpu_myo(sv, rDY, stim_currents[threadID], sv_id, dt);
+
+                for(int i = 0; i < NEQ; i++) 
+                {
+                    *((real *) ((char *) sv + pitch * i) + sv_id) = dt * rDY[i] + *((real *) ((char *) sv + pitch * i) + sv_id);
+                }
+            }
+            else
+            {
+                RHS_gpu_epi(sv, rDY, stim_currents[threadID], sv_id, dt);
+
+                for (int i = 0; i < NEQ; i++)
+                {
+                    *((real *) ((char *) sv + pitch * i) + sv_id) = dt * rDY[i] + *((real *) ((char *) sv + pitch * i) + sv_id);
+                }
+            }
+            
+        }
+    }
 }
 
-void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt) 
+inline __device__ void RHS_gpu_myo (real *sv_, real *rDY_, real stim_current, int threadID_, real dt) 
 {
 
-   // State variables
-    real svolt = sv[0];
-    real sm    = sv[1];
-    real sh    = sv[2];
-    real sj    = sv[3];
-    real sxr1  = sv[4];
-    real sxr2  = sv[5];
-    real sxs   = sv[6];
-    real ss    = sv[7];
-    real sr    = sv[8];
-    real sd    = sv[9];
-    real sf    = sv[10];
-    real sfca  = sv[11];
-    real sg    = sv[12];
-    real Cai   = sv[13];
-    real CaSR  = sv[14];
-    real Nai   = sv[15];
-    real Ki    = sv[16];
+    // State variables
+    real svolt = *((real*)((char*)sv_ + pitch * 0) + threadID_);
+    real sm    = *((real*)((char*)sv_ + pitch * 1) + threadID_);
+    real sh    = *((real*)((char*)sv_ + pitch * 2) + threadID_);
+    real sj    = *((real*)((char*)sv_ + pitch * 3) + threadID_);
+    real sxr1  = *((real*)((char*)sv_ + pitch * 4) + threadID_);
+    real sxr2  = *((real*)((char*)sv_ + pitch * 5) + threadID_);
+    real sxs   = *((real*)((char*)sv_ + pitch * 6) + threadID_);
+    real ss    = *((real*)((char*)sv_ + pitch * 7) + threadID_);
+    real sr    = *((real*)((char*)sv_ + pitch * 8) + threadID_);
+    real sd    = *((real*)((char*)sv_ + pitch * 9) + threadID_);
+    real sf    = *((real*)((char*)sv_ + pitch * 10) + threadID_);
+    real sfca  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
+    real sg    = *((real*)((char*)sv_ + pitch * 12) + threadID_);
+    real Cai   = *((real*)((char*)sv_ + pitch * 13) + threadID_);
+    real CaSR  = *((real*)((char*)sv_ + pitch * 14) + threadID_);
+    real Nai   = *((real*)((char*)sv_ + pitch * 15) + threadID_);
+    real Ki    = *((real*)((char*)sv_ + pitch * 16) + threadID_);
 
     //External concentrations
     real Ko=5.4;
@@ -513,44 +563,30 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;    
+    rDY_[16] = Ki;
 
 }
 
-void solve_model_ode_cpu_epi (real dt, real *sv, real stim_current)
-{
-
-    real rY[NEQ], rDY[NEQ];
-
-    for(int i = 0; i < NEQ; i++)
-        rY[i] = sv[i];
-
-    RHS_cpu_epi(rY, rDY, stim_current, dt);
-
-    for(int i = 0; i < NEQ; i++)
-        sv[i] = rDY[i];
-}
-
-void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
+inline __device__ void RHS_gpu_epi (real *sv_, real *rDY_, real stim_current, int threadID_, real dt)
 {
     // State variables
-    real svolt = sv[0];
-    real sm    = sv[1];
-    real sh    = sv[2];
-    real sj    = sv[3];
-    real sxr1  = sv[4];
-    real sxr2  = sv[5];
-    real sxs   = sv[6];
-    real ss    = sv[7];
-    real sr    = sv[8];
-    real sd    = sv[9];
-    real sf    = sv[10];
-    real sfca  = sv[11];
-    real sg    = sv[12];
-    real Cai   = sv[13];
-    real CaSR  = sv[14];
-    real Nai   = sv[15];
-    real Ki    = sv[16];
+     real svolt = *((real*)((char*)sv_ + pitch * 0) + threadID_);
+     real sm    = *((real*)((char*)sv_ + pitch * 1) + threadID_);
+     real sh    = *((real*)((char*)sv_ + pitch * 2) + threadID_);
+     real sj    = *((real*)((char*)sv_ + pitch * 3) + threadID_);
+     real sxr1  = *((real*)((char*)sv_ + pitch * 4) + threadID_);
+     real sxr2  = *((real*)((char*)sv_ + pitch * 5) + threadID_);
+     real sxs   = *((real*)((char*)sv_ + pitch * 6) + threadID_);
+     real ss    = *((real*)((char*)sv_ + pitch * 7) + threadID_);
+     real sr    = *((real*)((char*)sv_ + pitch * 8) + threadID_);
+     real sd    = *((real*)((char*)sv_ + pitch * 9) + threadID_);
+     real sf    = *((real*)((char*)sv_ + pitch * 10) + threadID_);
+     real sfca  = *((real*)((char*)sv_ + pitch * 11) + threadID_);
+     real sg    = *((real*)((char*)sv_ + pitch * 12) + threadID_);
+     real Cai   = *((real*)((char*)sv_ + pitch * 13) + threadID_);
+     real CaSR  = *((real*)((char*)sv_ + pitch * 14) + threadID_);
+     real Nai   = *((real*)((char*)sv_ + pitch * 15) + threadID_);
+     real Ki    = *((real*)((char*)sv_ + pitch * 16) + threadID_);
 
     //External concentrations
     real Ko=5.4;
@@ -616,8 +652,8 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
 //Parameters for IpK;
     real GpK=0.0146;
 
-    real parameters []={14.2265776064284,0.000280045021984329,0.000123702304592752,0.000251556675811958,0.224623739779267,0.145045477736859,0.132102752427711,4.42712254301024,0.0156948843567210,1.61691730440283,1100,0.000520888772463349,0.258756467150201,0.0191544497099730,0.00137164828832637,4.52996729499983e-05};
-
+    real parameters []={14.4701107547473,0.000162061905578968,0.000188488521383406,0.000572929459830166,0.335244898151308,0.119541023695594,0.248924317567785,5.19603253018384,0.0221271053316735,2.03169412747953,1099.72574265209,0.000483122952800270,0.478907546954075,0.0199668557152203,0.00562797831559110,3.64128969863145e-05};
+ 
     GNa=parameters[0];
     GbNa=parameters[1];
     GCaL=parameters[2];
@@ -791,9 +827,9 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     Caisquare=Cai*Cai;
     CaSRsquare=CaSR*CaSR;
     CaCurrent=-(ICaL+IbCa+IpCa-2.0f*INaCa)*inverseVcF2*CAPACITANCE;
-    A=0.016464f*CaSRsquare/(0.0625f+CaSRsquare)+0.008232f;
+    A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
     Irel=A*sd*sg;
-    Ileak=0.00008f*(CaSR-Cai);
+    Ileak=Vleak*(CaSR-Cai);
     SERCA=Vmaxup/(1.f+(Kupsquare/Caisquare));
     CaSRCurrent=SERCA-Irel-Ileak;
     CaCSQN=Bufsr*CaSR/(CaSR+Kbufsr);
@@ -916,7 +952,6 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
     rDY_[16] = Ki;    
-
 
 }
 

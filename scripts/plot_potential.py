@@ -9,7 +9,10 @@ def read_transmembrane_potential(input_file, dt, print_rate):
 
 	timesteps = np.arange(0,n)*dt*print_rate
 	vms = data
-	
+
+	timesteps = timesteps[1:]
+	vms = vms[1:]
+
 	return timesteps, vms
 
 

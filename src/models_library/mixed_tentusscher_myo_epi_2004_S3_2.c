@@ -1,7 +1,7 @@
-// Scenario 2 - Mixed-Model TenTusscher 2004 (Myocardium + Epicardium)
-// (AP + max:dvdt + Rc)
+// Scenario 3-1 - Mixed-Model TenTusscher 2004 (Myocardium + Epicardium)
+// (AP + max:dvdt + Rd)
 #include <stdio.h>
-#include "mixed_tentusscher_myo_epi_2004_S2.h"
+#include "mixed_tentusscher_myo_epi_2004_S3_2.h"
 
 GET_CELL_MODEL_DATA(init_cell_model_data) 
 {
@@ -86,7 +86,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
         sv[16] = 138.3f;        //Ki
     */
         // Elnaz's steady-state initial conditions
-        real sv_sst[]={-86.6902768323595,0.00125688376225555,0.782690257165761,0.782547892596001,0.000171750048746746,0.486360170563085,0.00291485827479809,0.999998387931464,1.89456679295569e-08,1.86054940017131e-05,0.999770742626069,1.00724037170339,0.999997113579370,4.17567836043613e-05,0.472458747863693,10.1478189383772,139.471917130272};
+        real sv_sst[]={-86.5236591284772,0.00130241284471985,0.778613483022969,0.778472769811598,0.000175875277625194,0.484626058693879,0.00294965177778795,0.999998333317616,1.94791112184908e-08,1.90234417053386e-05,0.999779558473224,1.00713872511970,0.999995965310622,4.41551215458988e-05,0.567040008888733,10.2464162625462,139.303734550690};
         for (uint32_t i = 0; i < NEQ; i++)
             sv[i] = sv_sst[i];
     }
@@ -147,7 +147,7 @@ void solve_model_ode_cpu_myo (real dt, real *sv, real stim_current)
 void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt) 
 {
 
-   // State variables
+    // State variables
     real svolt = sv[0];
     real sm    = sv[1];
     real sh    = sv[2];
@@ -513,8 +513,7 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;    
-
+    rDY_[16] = Ki;
 }
 
 void solve_model_ode_cpu_epi (real dt, real *sv, real stim_current)
@@ -616,8 +615,8 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
 //Parameters for IpK;
     real GpK=0.0146;
 
-    real parameters []={14.2265776064284,0.000280045021984329,0.000123702304592752,0.000251556675811958,0.224623739779267,0.145045477736859,0.132102752427711,4.42712254301024,0.0156948843567210,1.61691730440283,1100,0.000520888772463349,0.258756467150201,0.0191544497099730,0.00137164828832637,4.52996729499983e-05};
-
+    real parameters []={14.2751110459407,0.000197490405913840,0.000138093676576538,0.000459611951400222,0.248312214169369,0.146550920650185,0.141336894566835,4.51002424199619,0.0147942147525980,1.60874334855823,1098.91591518736,0.000497071049372500,0.357179450926053,0.0190817376935230,0.00515881032161095,3.63348608264117e-05};
+ 
     GNa=parameters[0];
     GbNa=parameters[1];
     GCaL=parameters[2];

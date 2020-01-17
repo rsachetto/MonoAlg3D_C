@@ -473,7 +473,8 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     Cd=1./(1.+exp((50-svolt)/20));
     TAU_D=Ad*Bd+Cd;
     F_INF=1./(1.+exp((svolt+20)/7));
-    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));
 
 
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
@@ -857,7 +858,8 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     Cd=1./(1.+exp((50-svolt)/20));
     TAU_D=Ad*Bd+Cd;
     F_INF=1./(1.+exp((svolt+20)/7));
-    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated version from CellML !!!
 
 
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+

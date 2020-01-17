@@ -509,8 +509,8 @@ inline __device__ void RHS_gpu_myo (real *sv_, real *rDY_, real stim_current, in
     Cd=1./(1.+exp((50-svolt)/20));
     TAU_D=Ad*Bd+Cd;
     F_INF=1./(1.+exp((svolt+20)/7));
-    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
-
+    //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
 
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
              0.1/(1.+exp((Cai-0.0005)/0.0001))+
@@ -879,8 +879,8 @@ inline __device__ void RHS_gpu_epi (real *sv_, real *rDY_, real stim_current, in
     Cd=1./(1.+exp((50-svolt)/20));
     TAU_D=Ad*Bd+Cd;
     F_INF=1./(1.+exp((svolt+20)/7));
-    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
-
+    //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
 
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
              0.1/(1.+exp((Cai-0.0005)/0.0001))+
