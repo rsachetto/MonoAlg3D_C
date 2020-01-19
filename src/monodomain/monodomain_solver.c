@@ -1344,6 +1344,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     const double apd_percentage = 0.9;
+    const double begin_time = 1599.0;
 
     // V^n+1/2
     real *sv = the_ode_solver->sv;
@@ -1363,40 +1364,43 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 #pragma omp parallel for
         for(i = 0; i < n_active; i++)
         {
-            real v_new = vms[ac[i]->sv_position];
-            real v_old = (real)ac[i]->v;
-
-            real dvdt = (v_new - v_old) / dt;
-
-            // Activation time
-            if(dvdt > ac[i]->max_dvdt)
+	    if (cur_time > begin_time)
             {
-                ac[i]->max_dvdt = dvdt;
-                ac[i]->activation_time = cur_time;
-            }
+		    real v_new = vms[ac[i]->sv_position];
+		    real v_old = (real)ac[i]->v;
 
-            // APD
-            if (v_old < ac[i]->min_v)
-                ac[i]->min_v = v_old;
-            
-            if (v_old > ac[i]->max_v)
-            {
-             	ac[i]->max_v = v_old;
+		    real dvdt = (v_new - v_old) / dt;
 
-                ac[i]->v_threashold = ac[i]->min_v + (ac[i]->max_v - ac[i]->min_v)*(1.0-apd_percentage);
+		    // Activation time
+		    if(dvdt > ac[i]->max_dvdt)
+		    {
+		        ac[i]->max_dvdt = dvdt;
+		        ac[i]->activation_time = cur_time;
+		    }
 
-                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+		    // APD
+		    if (v_old < ac[i]->min_v)
+		        ac[i]->min_v = v_old;
+		    
+		    if (v_old > ac[i]->max_v)
+		    {
+		     	ac[i]->max_v = v_old;
 
-                ac[i]->after_peak = true;
+		        ac[i]->v_threashold = ac[i]->min_v + (ac[i]->max_v - ac[i]->min_v)*(1.0-apd_percentage);
 
-            }
-            if (v_old < ac[i]->v_threashold && ac[i]->after_peak)
-            {
-             	ac[i]->threashold_time = cur_time;
-                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
-                ac[i]->after_peak = false;
+		        ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
 
-            }
+		        ac[i]->after_peak = true;
+
+		    }
+		    if (v_old < ac[i]->v_threashold && ac[i]->after_peak)
+		    {
+		     	ac[i]->threashold_time = cur_time;
+		        ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+		        ac[i]->after_peak = false;
+
+		    }
+	      }
 
         }
 
@@ -1408,41 +1412,44 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 #pragma omp parallel for
         for(i = 0; i < n_active; i++)
         {
-            real v_new = sv[ac[i]->sv_position * n_odes];
-            real v_old = (real)ac[i]->v;
+	    if (cur_time > begin_time)
+	    {
+		    real v_new = sv[ac[i]->sv_position * n_odes];
+		    real v_old = (real)ac[i]->v;
 
-            real dvdt = (v_new - v_old) / dt;
+		    real dvdt = (v_new - v_old) / dt;
 
-            // Activation time
-            if ( (dvdt > ac[i]->max_dvdt) )
-            {
+		    // Activation time
+		    if ( (dvdt > ac[i]->max_dvdt) )
+		    {
 
-                ac[i]->max_dvdt = dvdt;
-                ac[i]->activation_time = cur_time;
-            }
+		        ac[i]->max_dvdt = dvdt;
+		        ac[i]->activation_time = cur_time;
+		    }
 
-            // APD
-            if (v_old < ac[i]->min_v)
-                ac[i]->min_v = v_old;
-            
-            if (v_old > ac[i]->max_v)
-            {
-             	ac[i]->max_v = v_old;
+		    // APD
+		    if (v_old < ac[i]->min_v)
+		        ac[i]->min_v = v_old;
+		    
+		    if (v_old > ac[i]->max_v)
+		    {
+		     	ac[i]->max_v = v_old;
 
-                ac[i]->v_threashold = ac[i]->min_v + (ac[i]->max_v - ac[i]->min_v)*(1.0-apd_percentage);
+		        ac[i]->v_threashold = ac[i]->min_v + (ac[i]->max_v - ac[i]->min_v)*(1.0-apd_percentage);
 
-                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+		        ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
 
-                ac[i]->after_peak = true;
+		        ac[i]->after_peak = true;
 
-            }
-            if (v_old < ac[i]->v_threashold && ac[i]->after_peak)
-            {
-             	ac[i]->threashold_time = cur_time;
-                ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
-                ac[i]->after_peak = false;
+		    }
+		    if (v_old < ac[i]->v_threashold && ac[i]->after_peak)
+		    {
+		     	ac[i]->threashold_time = cur_time;
+		        ac[i]->apd = ac[i]->threashold_time - ac[i]->activation_time;
+		        ac[i]->after_peak = false;
 
-            }
+		    }
+             }
 
         }
     }
