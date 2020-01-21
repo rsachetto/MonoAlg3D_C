@@ -1,7 +1,7 @@
 #ifndef MONOALG3D_MIXED_MODEL_TEN_TUSSCHER_MYO_EPI_2004_H
 #define MONOALG3D_MIXED_MODEL_TEN_TUSSCHER_MYO_EPI_2004_H
 
-// Version 0 - Scenario 2 (AP + max:dvdt + Rc)
+// Scenario 1_1 - (AP + max:dvdt)
 // Model 1 = TenTusscher 2004 myocardium
 // Model 2 = TenTusscher 2004 epicardium
 

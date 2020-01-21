@@ -155,26 +155,12 @@ else()
 endif(CUDA_FOUND)
 #################################################################################################################
 
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 1 ##############################
-set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S1.c")
-set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S1.cu")
-set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S1.h)
+############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 1.1 ##############################
+set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S1_1.c")
+set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S1_1.cu")
+set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S1_1.h)
 
-set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S1")
-
-if(CUDA_FOUND)
-	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
-else()
-	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
-endif(CUDA_FOUND)
-#################################################################################################################\
-
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 2 ##############################
-set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S2.c")
-set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S2.cu")
-set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S2.h)
-
-set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S2")
+set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S1_1")
 
 if(CUDA_FOUND)
 	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
@@ -183,8 +169,21 @@ else()
 endif(CUDA_FOUND)
 #################################################################################################################
 
+############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 1.2 ##############################
+set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S1_2.c")
+set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S1_2.cu")
+set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S1_2.h)
 
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 2-1 ##############################
+set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S1_2")
+
+if(CUDA_FOUND)
+	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+else()
+	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+#################################################################################################################
+
+############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 2.1 ##############################
 set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S2_1.c")
 set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S2_1.cu")
 set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S2_1.h)
@@ -199,68 +198,12 @@ endif(CUDA_FOUND)
 #################################################################################################################
 
 
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 2-2 ##############################
+############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 2.2 ##############################
 set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S2_2.c")
 set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S2_2.cu")
 set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S2_2.h)
 
 set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S2_2")
-
-if(CUDA_FOUND)
-	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
-else()
-	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
-endif(CUDA_FOUND)
-#################################################################################################################
-
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 3 ##############################
-set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S3.c")
-set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S3.cu")
-set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S3.h)
-
-set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S3")
-
-if(CUDA_FOUND)
-	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
-else()
-	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
-endif(CUDA_FOUND)
-#################################################################################################################
-
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 3-1 ##############################
-set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S3_1.c")
-set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S3_1.cu")
-set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S3_1.h)
-
-set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S3_1")
-
-if(CUDA_FOUND)
-	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
-else()
-	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
-endif(CUDA_FOUND)
-#################################################################################################################
-
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 3-2 ##############################
-set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S3_2.c")
-set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S3_2.cu")
-set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S3_2.h)
-
-set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S3_2")
-
-if(CUDA_FOUND)
-	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
-else()
-	ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
-endif(CUDA_FOUND)
-#################################################################################################################
-
-############## ELNAZ MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM FOR SCENARIO 3-3 ##############################
-set(MODEL_FILE_CPU "mixed_tentusscher_myo_epi_2004_S3_3.c")
-set(MODEL_FILE_GPU "mixed_tentusscher_myo_epi_2004_S3_3.cu")
-set(COMMON_HEADERS model_common.h mixed_tentusscher_myo_epi_2004_S3_3.h)
-
-set(LIB_NAME "mixed_tentusscher_myo_epi_2004_S3_3")
 
 if(CUDA_FOUND)
 	CUDA_ADD_LIBRARY(${LIB_NAME} ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})

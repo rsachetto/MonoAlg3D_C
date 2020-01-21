@@ -1,7 +1,7 @@
-// Scenario 3-1 - Mixed-Model TenTusscher 2004 (Myocardium + Epicardium)
-// (AP + max:dvdt + Rd)
+// Scenario 1 - Mixed-Model TenTusscher 2004 (Myocardium + Epicardium)
+// (AP + max:dvdt)
 #include <stdio.h>
-#include "mixed_tentusscher_myo_epi_2004_S3_2.h"
+#include "mixed_tentusscher_myo_epi_2004_S1_1.h"
 
 GET_CELL_MODEL_DATA(init_cell_model_data) 
 {
@@ -86,7 +86,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
         sv[16] = 138.3f;        //Ki
     */
         // Elnaz's steady-state initial conditions
-        real sv_sst[]={-86.5236591284772,0.00130241284471985,0.778613483022969,0.778472769811598,0.000175875277625194,0.484626058693879,0.00294965177778795,0.999998333317616,1.94791112184908e-08,1.90234417053386e-05,0.999779558473224,1.00713872511970,0.999995965310622,4.41551215458988e-05,0.567040008888733,10.2464162625462,139.303734550690};
+        real sv_sst[]={-86.7787928226268,0.00123339508649700,0.784831144233936,0.784673023102172,0.000169405106163081,0.487281523786458,0.00289654265697758,0.999998418745548,1.86681673058670e-08,1.83872100639159e-05,0.999777546403090,1.00731261455043,0.999997755681027,4.00467125306598e-05,0.953040239833913,9.39175391367938,139.965667493392};
         for (uint32_t i = 0; i < NEQ; i++)
             sv[i] = sv_sst[i];
     }
@@ -147,7 +147,7 @@ void solve_model_ode_cpu_myo (real dt, real *sv, real stim_current)
 void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt) 
 {
 
-    // State variables
+   // State variables
     real svolt = sv[0];
     real sm    = sv[1];
     real sh    = sv[2];
@@ -476,6 +476,7 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
     TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
 
+
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
              0.1/(1.+exp((Cai-0.0005)/0.0001))+
              0.20/(1.+exp((Cai-0.00075)/0.0008))+
@@ -513,7 +514,7 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;
+    rDY_[16] = Ki;    
 }
 
 void solve_model_ode_cpu_epi (real dt, real *sv, real stim_current)
@@ -615,8 +616,8 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
 //Parameters for IpK;
     real GpK=0.0146;
 
-    real parameters []={14.2751110459407,0.000197490405913840,0.000138093676576538,0.000459611951400222,0.248312214169369,0.146550920650185,0.141336894566835,4.51002424199619,0.0147942147525980,1.60874334855823,1098.91591518736,0.000497071049372500,0.357179450926053,0.0190817376935230,0.00515881032161095,3.63348608264117e-05};
- 
+    real parameters []={13.7730247891532,0.000208550376791424,0.000166345602997405,0.000314427207496467,0.272150547490643,0.206045798160674,0.134878222351137,2.91860118931279,0.0222099400341836,2.12194476134155,1099.53480175178,0.000604923870766662,0.118384383617544,0.0193733747777405,0.00390066599158743,2.21704721596155e-05};
+
     GNa=parameters[0];
     GbNa=parameters[1];
     GCaL=parameters[2];
@@ -790,9 +791,9 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     Caisquare=Cai*Cai;
     CaSRsquare=CaSR*CaSR;
     CaCurrent=-(ICaL+IbCa+IpCa-2.0f*INaCa)*inverseVcF2*CAPACITANCE;
-    A=0.016464f*CaSRsquare/(0.0625f+CaSRsquare)+0.008232f;
+    A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
     Irel=A*sd*sg;
-    Ileak=0.00008f*(CaSR-Cai);
+    Ileak=Vleak*(CaSR-Cai);
     SERCA=Vmaxup/(1.f+(Kupsquare/Caisquare));
     CaSRCurrent=SERCA-Irel-Ileak;
     CaCSQN=Bufsr*CaSR/(CaSR+Kbufsr);
@@ -876,6 +877,7 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     F_INF=1./(1.+exp((svolt+20)/7));
     //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
     TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
+
 
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
              0.1/(1.+exp((Cai-0.0005)/0.0001))+
