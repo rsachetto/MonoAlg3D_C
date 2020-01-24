@@ -39,23 +39,29 @@ def read_transmembrane_potential(input_file, dt, print_rate):
     return timesteps, vms
 
 def plot_transmembrane_potential_v2 (t1, v1, t2, v2, name1, name2, colorname1, colorname2, cellname):
-    rms_value = calculate_rms(v1[3599:],v2[3599:])	# Calculate the RMS only for the last Action Potential
+    for i in range(20):
+	print("Working in AP number %d ..." % (i))
 
-    plt.clf()
-    plt.plot(t1, v1, label=name1, c=colorname1, linewidth=1.0)
-    plt.plot(t2, v2, label=name2, c=colorname2, linewidth=0.5)
+	start = i*1000
+	end = start + 1000
+	rms_value = calculate_rms(v1[start:end],v2[start:end])
+	#print("AP %d -- RMS = %g" % (i,rms_value))
 
-    #plt.grid()
-    plt.xlabel("t (ms)",fontsize=15)
-    plt.ylabel("V (mV)",fontsize=15)
-    plt.xlim([3599,4000])
-    plt.title("Action potential - Cell = %s - RMS = %g" % (cellname,rms_value))
-    plt.legend(loc=0,fontsize=12)
-    #plt.savefig("output/comparison_%s-%s.pdf" % (name1,name2))
-    plt.savefig("output/comparison_%s-%s.png" % (name1,name2))
+	plt.clf()
+    	plt.plot(t1, v1, label=name1, c=colorname1, linewidth=1.0)
+    	plt.plot(t2, v2, label=name2, c=colorname2, linewidth=0.5)
+
+    	#plt.grid()
+    	plt.xlabel("t (ms)",fontsize=15)
+    	plt.ylabel("V (mV)",fontsize=15)
+    	plt.xlim([start,end])
+    	plt.title("Action potential - Cell = %s - RMS = %g" % (cellname,rms_value))
+    	plt.legend(loc=1,fontsize=12)
+    	#plt.savefig("output/ap-%d-comparison_%s-%s.pdf" % (i,name1,name2))
+    	plt.savefig("output/ap-%d-comparison_%s-%s.png" % (i,name1,name2), dpi=300)
 
 def main():
-	
+
     if len(sys.argv) != 8:
         print("---------------------------------------------------------------------------------------------------------------------")
         print("Usage:> python %s <input_file_1> <input_file_2> <input_file_3> <input_file_4> <input_file_5> <dt> <print_rate>" % sys.argv[0])
@@ -87,10 +93,10 @@ def main():
     t5, vm5 = read_transmembrane_potential(input_file_5,dt,print_rate)
 
     #plot_transmembrane_potential(t1,vm1,t2,vm2,t3,vm3,t4,vm4)
-    plot_transmembrane_potential_v2(t1,vm1,t2,vm2,"sc0","sc1.1","blue","red","6240")
-    plot_transmembrane_potential_v2(t1,vm1,t3,vm3,"sc0","sc1.2","blue","red","6240")
-    plot_transmembrane_potential_v2(t1,vm1,t4,vm4,"sc0","sc2.1","blue","red","6240")
-    plot_transmembrane_potential_v2(t1,vm1,t5,vm5,"sc0","sc2.2","blue","red","6240")
+    plot_transmembrane_potential_v2(t1,vm1,t2,vm2,"sc0","sc1.1","blue","red","80")
+    plot_transmembrane_potential_v2(t1,vm1,t3,vm3,"sc0","sc1.2","blue","red","80")
+    plot_transmembrane_potential_v2(t1,vm1,t4,vm4,"sc0","sc2.1","blue","red","80")
+    plot_transmembrane_potential_v2(t1,vm1,t5,vm5,"sc0","sc2.2","blue","red","80")
 
 
 if __name__ == "__main__":

@@ -56,9 +56,9 @@ int main (int argc, char *argv[])
         cerr << "<dx> = Mesh discretization in {um}" << endl;
         cerr << PRINT_LINE << endl;
         cerr << "Example:" << endl;
-        cerr << argv[0] << " inputs/apd-map.vtu" << endl;
+        cerr << argv[0] << " inputs/apd-map.vtu 10000 100" << endl;
         cerr << PRINT_LINE << endl;
-        
+
         exit(EXIT_FAILURE);
     }
 
@@ -137,23 +137,12 @@ int main (int argc, char *argv[])
 
     // Write the mean APD per column into a file
     FILE *file = fopen("outputs/mean_apd.txt","w+");
-    uint32_t cell_per_column = nearbyint(side_length/dx); 
-    //uint32_t cell_per_column = 1;
-    for (uint32_t i = 0; i < cell_per_column; i++)
+    for (uint32_t i = 0; i < the_cells.size(); i++)
     {
-        uint32_t start = i*cell_per_column;
-        uint32_t end = start + cell_per_column;
+	double x = dx*i + (dx/2.0);
+	double apd = the_cells[i].apd;
 
-        double mean_value = 0.0;
-
-        for (uint32_t j = start; j < end; j++)
-        {
-            mean_value += the_cells[j].apd;
-        }
-
-        mean_value /= cell_per_column;
-
-        fprintf(file,"%g %g\n",dx*i + (cell_per_column/2.0), mean_value);
+	fprintf(file,"%g %g\n", x, apd);
     }
     fclose(file);
 
