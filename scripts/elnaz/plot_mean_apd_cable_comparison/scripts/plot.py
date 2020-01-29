@@ -69,6 +69,19 @@ def plot_apd_over_a_line (x, apd_1, apd_2, apd_3, apd_3_1, apd_3_2):
     plt.legend(loc=0,fontsize=14)
     plt.savefig("../outputs/apd-comparison-sc0-sc2_2.png")
 
+    plt.clf()
+    plt.grid()
+    plt.plot(x,apd_1,label="SC0",linewidth=1.0)
+    plt.plot(x,apd_2,label="SC1.1",linewidth=1.0)
+    plt.plot(x,apd_3,label="SC1.2",linewidth=1.0)
+    plt.plot(x,apd_3_1,label="SC2.1",linewidth=1.0)
+    plt.plot(x,apd_3_2,label="SC2.2",linewidth=1.0)
+    plt.xlabel("x (um)",fontsize=15)
+    plt.ylabel("APD (ms)",fontsize=15)
+    plt.title("RMS = %g" % (rms_13_2),fontsize=14)
+    plt.legend(loc=0,fontsize=14)
+    plt.savefig("../outputs/apd-comparison.png")
+
 def main():
 
     if len(sys.argv) != 6:

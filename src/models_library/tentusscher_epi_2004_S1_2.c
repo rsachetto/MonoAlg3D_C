@@ -1,7 +1,6 @@
-// Ten Tusscher version for the Scenario 2 (AP + max:dvdt + Rc) 
 #include <assert.h>
 #include <stdlib.h>
-#include "ten_tusscher_2004_epi_S2.h"
+#include "tentusscher_epi_2004_S1_2.h"
 
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
@@ -17,41 +16,39 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    // Default initial condition
-/*
-    sv[0] =  INITIAL_V;   // V;       millivolt
-    sv[1] =  0.f;   //M
-    sv[2] =  0.75;    //H
-    sv[3] =  0.75f;    //J
-    sv[4] =  0.f;   //Xr1
-    sv[5] =  1.f;    //Xr2
-    sv[6] =  0.f;    //Xs
-    sv[7] =  1.f;  //S
-    sv[8] =  0.f;    //R
-    sv[9] =  0.f;    //D
-    sv[10] = 1.f;   //F
-    sv[11] = 1.f; //FCa
-    sv[12] = 1.f;  //G
-    sv[13] = 0.0002;  //Cai
-    sv[14] = 0.2f;      //CaSR
-    sv[15] = 11.6f;   //Nai
-    sv[16] = 138.3f;    //Ki
-*/
+    // Default initial conditions
+    /*
+        sv[0] =  INITIAL_V;     // V;       millivolt
+        sv[1] =  0.f;           //M
+        sv[2] =  0.75;          //H
+        sv[3] =  0.75f;         //J
+        sv[4] =  0.f;           //Xr1
+        sv[5] =  1.f;           //Xr2
+        sv[6] =  0.f;           //Xs
+        sv[7] =  1.f;           //S
+        sv[8] =  0.f;           //R
+        sv[9] =  0.f;           //D
+        sv[10] = 1.f;           //F
+        sv[11] = 1.f;           //FCa
+        sv[12] = 1.f;           //G
+        sv[13] = 0.0002;        //Cai
+        sv[14] = 0.2f;          //CaSR
+        sv[15] = 11.6f;         //Nai
+        sv[16] = 138.3f;        //Ki
+    */
 
     // Elnaz's steady-state initial conditions
-    //real sv_sst[]={-86.6832615134402,0.00125876883400146,0.782519885686078,0.782385890597164,0.000171886605918564,0.486287153523371,0.00291631476093424,0.999998385692801,1.89678233086951e-08,1.86229043360926e-05,0.999783587315930,1.00721445029128,0.999996850289244,4.23696052205578e-05,0.487079901995765,10.1298949658907,139.478138182002};
-    real sv_sst[]={-86.6902768323595,0.00125688376225555,0.782690257165761,0.782547892596001,0.000171750048746746,0.486360170563085,0.00291485827479809,0.999998387931464,1.89456679295569e-08,1.86054940017131e-05,0.999770742626069,1.00724037170339,0.999997113579370,4.17567836043613e-05,0.472458747863693,10.1478189383772,139.471917130272};
+    real sv_sst[]={-86.6775309540028,0.00126031074107193,0.782379594133090,0.782216749001106,0.000172068343086772,0.486227463562957,0.00291750746806204,0.999998383839518,1.89860165324306e-08,1.86371442934849e-05,0.999771183306077,1.00730952275387,0.999997729764813,4.01181567168462e-05,0.661435383223664,9.89216406636310,139.601234209998};
     for (uint32_t i = 0; i < NEQ; i++)
         sv[i] = sv_sst[i];
-
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
     uint32_t sv_id;
-    int i;
+	int i;
 
-#pragma omp parallel for private(sv_id)
+    #pragma omp parallel for private(sv_id)
     for (i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
@@ -84,8 +81,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
 
-
-    // State variables
+   // State variables
     real svolt = sv[0];
     real sm    = sv[1];
     real sh    = sv[2];
@@ -120,83 +116,55 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     real Kbufsr=0.3f;
     real taufca=2.f;
     real taug=2.f;
-    //real Vmaxup=0.000425f;
-real Vmaxup=0.000714016847624717;
+    real Vmaxup=0.000425f;
     real Kup=0.00025f;
 
-//Constants
+    //Constants
     const real R = 8314.472f;
     const real F = 96485.3415f;
     const real T =310.0f;
     real RTONF   =(R*T)/F;
 
-//Cellular capacitance         
+    //Cellular capacitance         
     real CAPACITANCE=0.185;
 
-//Parameters for currents
-//Parameters for IKr
-   // real Gkr=0.096;
-real Gkr=0.129819327185159;
-//Parameters for Iks
+    //Parameters for currents
+    //Parameters for IKr
+    real Gkr=0.096;
+    //Parameters for Iks
     real pKNa=0.03;
-#ifdef EPI
- //   real Gks=0.245;
-real Gks=0.227808856917217;
-#endif
-#ifdef ENDO
+    // [!] Epicardium cell
     real Gks=0.245;
-#endif
-#ifdef MCELL
-    real Gks=0.062;
-#endif
-//Parameters for Ik1
-   // real GK1=5.405;
-real GK1=3.92366049957936;
-//Parameters for Ito
-#ifdef EPI
-   // real Gto=0.294;
-real Gto=0.290683783819880;
-#endif
-#ifdef ENDO
-    real Gto=0.073;
-#endif
-#ifdef MCELL
+    //Parameters for Ik1
+    real GK1=5.405;
+    //Parameters for Ito
+// [!] Epicardium cell
     real Gto=0.294;
-#endif
 //Parameters for INa
-    //real GNa=14.838;
-real GNa=13.4587995801200;
+    real GNa=14.838;
 //Parameters for IbNa
- //   real GbNa=0.00029;
-real GbNa=0.000132990931598298;
+    real GbNa=0.00029;
 //Parameters for INaK
     real KmK=1.0;
     real KmNa=40.0;
-   // real knak=1.362;
-real knak=2.84430638940750;
+    real knak=1.362;
 //Parameters for ICaL
-    //real GCaL=0.000175;
-real GCaL=0.000158212114858015;
+    real GCaL=0.000175;
 //Parameters for IbCa
-  //  real GbCa=0.000592;
-real GbCa=0.000706297098320405;
+    real GbCa=0.000592;
 //Parameters for INaCa
-    //real knaca=1000;
-real knaca=1096.43133943582;
+    real knaca=1000;
     real KmNai=87.5;
     real KmCa=1.38;
     real ksat=0.1;
     real n=0.35;
 //Parameters for IpCa
-//    real GpCa=0.825;
-real GpCa=0.390810222439592;
+    real GpCa=0.825;
     real KpCa=0.0005;
 //Parameters for IpK;
-  //  real GpK=0.0146;
-real GpK=0.0199551557341385;
+    real GpK=0.0146;
 
-    // Setting Elnaz's parameters
-    real parameters []={14.2265776064284,0.000280045021984329,0.000123702304592752,0.000251556675811958,0.224623739779267,0.145045477736859,0.132102752427711,4.42712254301024,0.0156948843567210,1.61691730440283,1100,0.000520888772463349,0.258756467150201,0.0191544497099730,0.00137164828832637,4.52996729499983e-05};
+    real parameters []={13.9645635317638,0.000234559273515713,0.000158508496150117,0.000387718953473422,0.271550011299244,0.171313643894679,0.148132634408518,3.52429749186627,0.0163232963007063,1.80625170161156,1099.99984094905,0.000508428591582056,0.426315288126368,0.0193610246251599,0.00342305438925442,2.79133840240607e-05};
 
     GNa=parameters[0];
     GbNa=parameters[1];
@@ -371,11 +339,9 @@ real GpK=0.0199551557341385;
     Caisquare=Cai*Cai;
     CaSRsquare=CaSR*CaSR;
     CaCurrent=-(ICaL+IbCa+IpCa-2.0f*INaCa)*inverseVcF2*CAPACITANCE;
-   // A=0.016464f*CaSRsquare/(0.0625f+CaSRsquare)+0.008232f;
-A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
+    A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
     Irel=A*sd*sg;
-   // Ileak=0.00008f*(CaSR-Cai);
-Ileak=Vleak*(CaSR-Cai);
+    Ileak=Vleak*(CaSR-Cai);
     SERCA=Vmaxup/(1.f+(Kupsquare/Caisquare));
     CaSRCurrent=SERCA-Irel-Ileak;
     CaCSQN=Bufsr*CaSR/(CaSR+Kbufsr);
@@ -387,7 +353,7 @@ Ileak=Vleak*(CaSR-Cai);
     dCai=dt*(CaCurrent-CaSRCurrent);
     bc=Bufc-CaBuf-dCai-Cai+Kbufc;
     cc=Kbufc*(CaBuf+dCai+Cai);
-    Cai=(sqrtf(bc*bc+4*cc)-bc)/2;
+    Cai=(sqrt(bc*bc+4*cc)-bc)/2;
 
 
 
@@ -445,24 +411,10 @@ Ileak=Vleak*(CaSR-Cai);
     Bxs=1./(1.+exp((svolt-60.)/20.));
     TAU_Xs=Axs*Bxs;
 
-#ifdef EPI
     R_INF=1./(1.+exp((20-svolt)/6.));
     S_INF=1./(1.+exp((svolt+20)/5.));
     TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
     TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
-#endif
-#ifdef ENDO
-    R_INF=1./(1.+exp((20-svolt)/6.));
-    S_INF=1./(1.+exp((svolt+28)/5.));
-    TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
-    TAU_S=1000.*exp(-(svolt+67)*(svolt+67)/1000.)+8.;
-#endif
-#ifdef MCELL
-    R_INF=1./(1.+exp((20-svolt)/6.));
-    S_INF=1./(1.+exp((svolt+20)/5.));
-    TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
-    TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
-#endif
 
 
     D_INF=1./(1.+exp((-5-svolt)/7.5));
@@ -471,7 +423,8 @@ Ileak=Vleak*(CaSR-Cai);
     Cd=1./(1.+exp((50-svolt)/20));
     TAU_D=Ad*Bd+Cd;
     F_INF=1./(1.+exp((svolt+20)/7));
-    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
 
 
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
@@ -511,6 +464,7 @@ Ileak=Vleak*(CaSR-Cai);
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;
+    rDY_[16] = Ki;    
+
 
 }

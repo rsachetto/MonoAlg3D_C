@@ -1,151 +1,104 @@
-#include <stddef.h>
-#include <stdint.h>
-#include "model_gpu_utils.h"
+#include <assert.h>
+#include <stdlib.h>
+#include "tentusscher_epi_2004_S2_1.h"
 
-#include "ten_tusscher_2004_epi_S2.h"
 
-extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
+GET_CELL_MODEL_DATA(init_cell_model_data) {
 
-    print_to_stdout_and_file("Using ten Tusscher 2004 epi GPU model\n");
+    assert(cell_model);
 
-    // execution configuration
-    const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
-
-    size_t size = num_volumes*sizeof(real);
-
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
-    check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
-
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, num_volumes);
-
-    check_cuda_error( cudaPeekAtLastError() );
-    cudaDeviceSynchronize();
-    return pitch_h;
+    if(get_initial_v)
+        cell_model->initial_v = INITIAL_V;
+    if(get_neq)
+        cell_model->number_of_ode_equations = NEQ;
 
 }
 
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
-
-
-    // execution configuration
-    const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
-
-
-    size_t stim_currents_size = sizeof(real)*num_cells_to_solve;
-    size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
-
-    real *stims_currents_device;
-    check_cuda_error(cudaMalloc((void **) &stims_currents_device, stim_currents_size));
-    check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
-
-
-    //the array cells to solve is passed when we are using and adapative mesh
-    uint32_t *cells_to_solve_device = NULL;
-    if(cells_to_solve != NULL) {
-        check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
-        check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
-    }
-    solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps);
-
-    check_cuda_error( cudaPeekAtLastError() );
-
-    check_cuda_error(cudaFree(stims_currents_device));
-    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
-
-}
-
-__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes)
-{
-    // Thread ID
-    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
-
-    if(threadID < num_volumes) {
-
-        // Default initial condition
+    // Default initial conditions
     /*
-        *((real*)((char*)sv + pitch * 0) + threadID)  = INITIAL_V;   // V;       millivolt
-        *((real*)((char*)sv + pitch * 1) + threadID)  = 0.f;   //M
-        *((real*)((char*)sv + pitch * 2) + threadID)  = 0.75;    //H
-        *((real*)((char*)sv + pitch * 3) + threadID)  = 0.75f;    //J
-        *((real*)((char*)sv + pitch * 4) + threadID)  = 0.f;   //Xr1
-        *((real*)((char*)sv + pitch * 5) + threadID)  = 1.f;    //Xr2
-        *((real*)((char*)sv + pitch * 6) + threadID)  = 0.f;    //Xs
-        *((real*)((char*)sv + pitch * 7) + threadID)  = 1.f;  //S
-        *((real*)((char*)sv + pitch * 8) + threadID)  = 0.f;    //R
-        *((real*)((char*)sv + pitch * 9) + threadID)  = 0.f;    //D
-        *((real*)((char*)sv + pitch * 10) + threadID) = 1.f;   //F
-        *((real*)((char*)sv + pitch * 11) + threadID) = 1.f; //FCa
-        *((real*)((char*)sv + pitch * 12) + threadID) = 1.f;  //G
-        *((real*)((char*)sv + pitch * 13) + threadID) = 0.0002;  //Cai
-        *((real*)((char*)sv + pitch * 14) + threadID) = 0.2f;      //CaSR
-        *((real*)((char*)sv + pitch * 15) + threadID) = 11.6f;   //Nai
-        *((real*)((char*)sv + pitch * 16) + threadID) = 138.3f;    //Ki
+        sv[0] =  INITIAL_V;     // V;       millivolt
+        sv[1] =  0.f;           //M
+        sv[2] =  0.75;          //H
+        sv[3] =  0.75f;         //J
+        sv[4] =  0.f;           //Xr1
+        sv[5] =  1.f;           //Xr2
+        sv[6] =  0.f;           //Xs
+        sv[7] =  1.f;           //S
+        sv[8] =  0.f;           //R
+        sv[9] =  0.f;           //D
+        sv[10] = 1.f;           //F
+        sv[11] = 1.f;           //FCa
+        sv[12] = 1.f;           //G
+        sv[13] = 0.0002;        //Cai
+        sv[14] = 0.2f;          //CaSR
+        sv[15] = 11.6f;         //Nai
+        sv[16] = 138.3f;        //Ki
     */
-    
-        // Elnaz's steady-state initial conditions
-        //real sv_sst[]={-86.6832615134402,0.00125876883400146,0.782519885686078,0.782385890597164,0.000171886605918564,0.486287153523371,0.00291631476093424,0.999998385692801,1.89678233086951e-08,1.86229043360926e-05,0.999783587315930,1.00721445029128,0.999996850289244,4.23696052205578e-05,0.487079901995765,10.1298949658907,139.478138182002};
-        real sv_sst[]={-86.6902768323595,0.00125688376225555,0.782690257165761,0.782547892596001,0.000171750048746746,0.486360170563085,0.00291485827479809,0.999998387931464,1.89456679295569e-08,1.86054940017131e-05,0.999770742626069,1.00724037170339,0.999997113579370,4.17567836043613e-05,0.472458747863693,10.1478189383772,139.471917130272};
-        for (uint32_t i = 0; i < NEQ; i++)
-            *((real*)((char*)sv + pitch * i) + threadID) = sv_sst[i];
 
-    }
+    // Elnaz's steady-state initial conditions
+    real sv_sst[]={-86.6902768323595,0.00125688376225555,0.782690257165761,0.782547892596001,0.000171750048746746,0.486360170563085,0.00291485827479809,0.999998387931464,1.89456679295569e-08,1.86054940017131e-05,0.999770742626069,1.00724037170339,0.999997113579370,4.17567836043613e-05,0.472458747863693,10.1478189383772,139.471917130272};
+    for (uint32_t i = 0; i < NEQ; i++)
+        sv[i] = sv_sst[i];
 }
 
+SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
-// Solving the model for each cell in the tissue matrix ni x nj
-__global__ void solve_gpu(real dt, real *sv, real* stim_currents,
-                          uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
-                          int num_steps)
-{
-    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
-    int sv_id;
+    uint32_t sv_id;
+	int i;
 
-    // Each thread solves one cell model
-    if(threadID < num_cells_to_solve) {
+    #pragma omp parallel for private(sv_id)
+    for (i = 0; i < num_cells_to_solve; i++) {
+
         if(cells_to_solve)
-            sv_id = cells_to_solve[threadID];
+            sv_id = cells_to_solve[i];
         else
-            sv_id = threadID;
+            sv_id = i;
 
-        real rDY[NEQ];
+        for (int j = 0; j < num_steps; ++j) {
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
 
-        for (int n = 0; n < num_steps; ++n) {
-
-            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt);
-
-            *((real*)((char*)sv) + sv_id) = dt*rDY[0] + *((real*)((char*)sv) + sv_id);
-
-            for(int i = 0; i < NEQ; i++) {
-                *((real*)((char*)sv + pitch * i) + sv_id) = rDY[i];
-            }
-            
         }
-
     }
 }
 
+void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
 
-inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int threadID_, real dt) {
+    assert(sv);
 
-    // State variables
-    real svolt = *((real*)((char*)sv + pitch * 0) + threadID_);
-    real sm    = *((real*)((char*)sv + pitch * 1) + threadID_);
-    real sh    = *((real*)((char*)sv + pitch * 2) + threadID_);
-    real sj    = *((real*)((char*)sv + pitch * 3) + threadID_);
-    real sxr1  = *((real*)((char*)sv + pitch * 4) + threadID_);
-    real sxr2  = *((real*)((char*)sv + pitch * 5) + threadID_);
-    real sxs   = *((real*)((char*)sv + pitch * 6) + threadID_);
-    real ss    = *((real*)((char*)sv + pitch * 7) + threadID_);
-    real sr    = *((real*)((char*)sv + pitch * 8) + threadID_);
-    real sd    = *((real*)((char*)sv + pitch * 9) + threadID_);
-    real sf    = *((real*)((char*)sv + pitch * 10) + threadID_);
-    real sfca  = *((real*)((char*)sv + pitch * 11) + threadID_);
-    real sg    = *((real*)((char*)sv + pitch * 12) + threadID_);
-    real Cai   = *((real*)((char*)sv + pitch * 13) + threadID_);
-    real CaSR  = *((real*)((char*)sv + pitch * 14) + threadID_);
-    real Nai   = *((real*)((char*)sv + pitch * 15) + threadID_);
-    real Ki    = *((real*)((char*)sv + pitch * 16) + threadID_);
+    real rY[NEQ], rDY[NEQ];
+
+    for(int i = 0; i < NEQ; i++)
+        rY[i] = sv[i];
+
+    RHS_cpu(rY, rDY, stim_current, dt);
+
+    for(int i = 0; i < NEQ; i++)
+        sv[i] = rDY[i];
+}
+
+
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
+
+   // State variables
+    real svolt = sv[0];
+    real sm    = sv[1];
+    real sh    = sv[2];
+    real sj    = sv[3];
+    real sxr1  = sv[4];
+    real sxr2  = sv[5];
+    real sxs   = sv[6];
+    real ss    = sv[7];
+    real sr    = sv[8];
+    real sd    = sv[9];
+    real sf    = sv[10];
+    real sfca  = sv[11];
+    real sg    = sv[12];
+    real Cai   = sv[13];
+    real CaSR  = sv[14];
+    real Nai   = sv[15];
+    real Ki    = sv[16];
 
     //External concentrations
     real Ko=5.4;
@@ -163,82 +116,54 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     real Kbufsr=0.3f;
     real taufca=2.f;
     real taug=2.f;
-   // real Vmaxup=0.000425f;
-real Vmaxup=0.000714016847624717;
+    real Vmaxup=0.000425f;
     real Kup=0.00025f;
 
-//Constants
+    //Constants
     const real R = 8314.472f;
     const real F = 96485.3415f;
     const real T =310.0f;
     real RTONF   =(R*T)/F;
 
-//Cellular capacitance
+    //Cellular capacitance         
     real CAPACITANCE=0.185;
 
-//Parameters for currents
-//Parameters for IKr
-  //  real Gkr=0.096;
-real Gkr=0.129819327185159;
-//Parameters for Iks
+    //Parameters for currents
+    //Parameters for IKr
+    real Gkr=0.096;
+    //Parameters for Iks
     real pKNa=0.03;
-#ifdef EPI
-  //  real Gks=0.245;
-real Gks=0.227808856917217;
-#endif
-#ifdef ENDO
+    // [!] Epicardium cell
     real Gks=0.245;
-#endif
-#ifdef MCELL
-    real Gks=0.062;
-#endif
-//Parameters for Ik1
-    //real GK1=5.405;
-real GK1=3.92366049957936;
-//Parameters for Ito
-#ifdef EPI
- //  real Gto=0.294;
-real Gto=0.290683783819880;
-#endif
-#ifdef ENDO
-    real Gto=0.073;
-#endif
-#ifdef MCELL
+    //Parameters for Ik1
+    real GK1=5.405;
+    //Parameters for Ito
+// [!] Epicardium cell
     real Gto=0.294;
-#endif
 //Parameters for INa
- //   real GNa=14.838;
-real GNa=13.4587995801200;
+    real GNa=14.838;
 //Parameters for IbNa
-  //  real GbNa=0.00029;
-real GbNa=0.000132990931598298;
+    real GbNa=0.00029;
 //Parameters for INaK
     real KmK=1.0;
     real KmNa=40.0;
-  //  real knak=1.362;
-real knak=2.84430638940750;
+    real knak=1.362;
 //Parameters for ICaL
-  //  real GCaL=0.000175;
-real GCaL=0.000158212114858015;
+    real GCaL=0.000175;
 //Parameters for IbCa
-  //  real GbCa=0.000592;
-real GbCa=0.000706297098320405;
+    real GbCa=0.000592;
 //Parameters for INaCa
-   // real knaca=1000;
-real knaca=1096.43133943582;
+    real knaca=1000;
     real KmNai=87.5;
     real KmCa=1.38;
     real ksat=0.1;
     real n=0.35;
 //Parameters for IpCa
-   // real GpCa=0.825;
-real GpCa=0.390810222439592;
+    real GpCa=0.825;
     real KpCa=0.0005;
 //Parameters for IpK;
-  //  real GpK=0.0146;
-real GpK=0.0199551557341385;
+    real GpK=0.0146;
 
-    // Setting Elnaz's parameters
     real parameters []={14.2265776064284,0.000280045021984329,0.000123702304592752,0.000251556675811958,0.224623739779267,0.145045477736859,0.132102752427711,4.42712254301024,0.0156948843567210,1.61691730440283,1100,0.000520888772463349,0.258756467150201,0.0191544497099730,0.00137164828832637,4.52996729499983e-05};
 
     GNa=parameters[0];
@@ -414,11 +339,9 @@ real GpK=0.0199551557341385;
     Caisquare=Cai*Cai;
     CaSRsquare=CaSR*CaSR;
     CaCurrent=-(ICaL+IbCa+IpCa-2.0f*INaCa)*inverseVcF2*CAPACITANCE;
-    //A=0.016464f*CaSRsquare/(0.0625f+CaSRsquare)+0.008232f;
-A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
+    A=arel*CaSRsquare/(0.0625f+CaSRsquare)+crel;
     Irel=A*sd*sg;
-  //  Ileak=0.00008f*(CaSR-Cai);
-Ileak=Vleak*(CaSR-Cai);
+    Ileak=Vleak*(CaSR-Cai);
     SERCA=Vmaxup/(1.f+(Kupsquare/Caisquare));
     CaSRCurrent=SERCA-Irel-Ileak;
     CaCSQN=Bufsr*CaSR/(CaSR+Kbufsr);
@@ -430,7 +353,7 @@ Ileak=Vleak*(CaSR-Cai);
     dCai=dt*(CaCurrent-CaSRCurrent);
     bc=Bufc-CaBuf-dCai-Cai+Kbufc;
     cc=Kbufc*(CaBuf+dCai+Cai);
-    Cai=(sqrtf(bc*bc+4*cc)-bc)/2;
+    Cai=(sqrt(bc*bc+4*cc)-bc)/2;
 
 
 
@@ -488,24 +411,10 @@ Ileak=Vleak*(CaSR-Cai);
     Bxs=1./(1.+exp((svolt-60.)/20.));
     TAU_Xs=Axs*Bxs;
 
-#ifdef EPI
     R_INF=1./(1.+exp((20-svolt)/6.));
     S_INF=1./(1.+exp((svolt+20)/5.));
     TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
     TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
-#endif
-#ifdef ENDO
-    R_INF=1./(1.+exp((20-svolt)/6.));
-    S_INF=1./(1.+exp((svolt+28)/5.));
-    TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
-    TAU_S=1000.*exp(-(svolt+67)*(svolt+67)/1000.)+8.;
-#endif
-#ifdef MCELL
-    R_INF=1./(1.+exp((20-svolt)/6.));
-    S_INF=1./(1.+exp((svolt+20)/5.));
-    TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
-    TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
-#endif
 
 
     D_INF=1./(1.+exp((-5-svolt)/7.5));
@@ -514,8 +423,8 @@ Ileak=Vleak*(CaSR-Cai);
     Cd=1./(1.+exp((50-svolt)/20));
     TAU_D=Ad*Bd+Cd;
     F_INF=1./(1.+exp((svolt+20)/7));
-    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
-
+    //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
+    TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
 
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
              0.1/(1.+exp((Cai-0.0005)/0.0001))+
@@ -539,12 +448,12 @@ Ileak=Vleak*(CaSR-Cai);
     rDY_[10] = F_INF-(F_INF-sf)*exp(-dt/TAU_F);
     fcaold= sfca;
     sfca = FCa_INF-(FCa_INF-sfca)*exptaufca;
-    if(sfca>fcaold && (svolt)>-37)
+    if(sfca>fcaold && (svolt)>-37.0)
         sfca = fcaold;
     gold = sg;
     sg = G_INF-(G_INF-sg)*exptaug;
 
-    if(sg>gold && (svolt)>-37)
+    if(sg>gold && (svolt)>-37.0)
         sg=gold;
 
     //update voltage
@@ -554,6 +463,6 @@ Ileak=Vleak*(CaSR-Cai);
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;
+    rDY_[16] = Ki;    
 
 }
