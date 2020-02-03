@@ -161,14 +161,14 @@ int main(int argc, char **argv) {
 
         omp_set_nested(true);
 
+        omp_init_lock(&draw_config.draw_lock);
+        omp_init_lock(&draw_config.sleep_lock);
+        init_draw_config(&draw_config, options);
+
         #pragma omp parallel sections num_threads(2)
         {
             #pragma omp section
             {
-
-                omp_init_lock(&draw_config.draw_lock);
-                omp_init_lock(&draw_config.sleep_lock);
-                init_draw_config(&draw_config, options);
                 init_and_open_visualization_window();
             }
 

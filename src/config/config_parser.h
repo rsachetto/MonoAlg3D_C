@@ -35,6 +35,7 @@
 #define LINEAR_SYSTEM_SOLVER_OPT 2200
 #define UPDATE_MONODOMAIN_SOLVER_OPT 2300
 #define MODIFY_DOMAIN_OPT 2400
+#define ODE_SOLVER_OPT 2500
 #define DRAW_OPT 3000
 #define SAVE_OPT 3100
 #define SAVE_STATE_OPT 3200
@@ -173,7 +174,7 @@ void configure_grid_from_options(struct grid* grid, struct user_options *options
 void free_user_options(struct user_options *s);
 void free_batch_options(struct batch_options * options);
 void free_visualization_options(struct visualization_options * options);
-void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
+void maybe_issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
 
 #endif /* MONOALG3D_CONFIG_PARSER_H */

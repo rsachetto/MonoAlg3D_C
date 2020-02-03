@@ -776,7 +776,6 @@ static void draw_scale(Font font, float font_size_small, bool int_scale, struct 
 
 static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, int font_size_for_line) {
 
-
     if(IsWindowResized()) {
         window_height_change = GetScreenHeight() - current_window_height;
         window_width_change = GetScreenWidth() - current_window_width;
@@ -786,7 +785,6 @@ static void draw_box(Rectangle *box, int text_offset, const char **lines, int nu
         box->x = box->x + (float)window_width_change;
         window_width_change = 0;
     }
-
 
     int text_x = (int)box->x + 20;
     int text_y = (int)box->y + 10;
@@ -799,7 +797,6 @@ static void draw_box(Rectangle *box, int text_offset, const char **lines, int nu
         DrawText(lines[i], text_x, text_y, font_size_for_line, BLACK);
         text_y += text_offset;
     }
-
 
 }
 
