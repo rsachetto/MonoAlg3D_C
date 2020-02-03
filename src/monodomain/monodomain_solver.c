@@ -398,7 +398,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dx, domain_config->config_data, "maximum_dx");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dy, domain_config->config_data, "maximum_dy");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dz, domain_config->config_data, "maximum_dz");
-    
 
         order_grid_cells(the_grid);
         original_num_cells = the_grid->num_active_cells;
@@ -406,7 +405,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         the_ode_solver->num_cells_to_solve = original_num_cells;
 
     }
-
     // Purkinje section
     if (purkinje_config)  {
         original_num_purkinje_cells = the_grid->purkinje->number_of_purkinje_cells;
@@ -1002,7 +1000,7 @@ void save_old_cell_positions(struct grid *the_grid) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    int i;
+    uint32_t i;
 
     #pragma omp parallel for
     for(i = 0; i < n_active; i++) {

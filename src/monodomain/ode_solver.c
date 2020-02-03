@@ -179,11 +179,9 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
 
         solver->sv = (real*)malloc(n_odes*num_cells*sizeof(real));
 
-		int i;
-
         #pragma omp parallel for
-        for(i = 0; i < num_cells; i++) {
-            soicc_fn_pt(ode_extra_config, solver->sv + (i*n_odes), i, solver->ode_extra_data, solver->extra_data_size);
+        for(uint32_t i = 0; i < num_cells; i++) {
+            soicc_fn_pt(ode_extra_config, &solver->sv[i*n_odes], i, solver->ode_extra_data, solver->extra_data_size);
         }
 
     }

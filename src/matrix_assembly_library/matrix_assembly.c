@@ -27,7 +27,6 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     #pragma omp parallel for private(alpha)
     for(i = 0; i < active_cells; i++) {
-
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;

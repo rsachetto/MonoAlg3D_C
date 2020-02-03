@@ -68,7 +68,7 @@ GET_BUILD_OPTIONS () {
 }
 
 CLEAN_PROJECT () {
-
+  #TODO: clean a specific build
 	local DIR_NAME
 
 	for T in debug release; do
@@ -78,7 +78,7 @@ CLEAN_PROJECT () {
 			find "${DIR_NAME}" -name "*.o" -exec rm -rf {} \;
 			find "${DIR_NAME}" -name "*.a" -exec rm -rf {} \;
 			find "${DIR_NAME}" -name ".*last_compiled_time_bbash" -exec rm -rf {} \;
-		fi	
+		fi
 	done
 
 }
