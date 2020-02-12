@@ -25,7 +25,6 @@
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
 #define WIDER_TEXT "------------------------------------------------------"
 #define DOUBLE_CLICK_DELAY 0.5 //seconds
-
 struct action_potential {
     real_cpu v;
     real_cpu t;
@@ -101,7 +100,6 @@ struct draw_config {
 struct gui_state {
     bool one_selected;
     bool show_ap;
-    bool show_scale;
     bool c_pressed;
     bool draw_grid_lines;
     bool draw_grid_only ;
@@ -110,13 +108,20 @@ struct gui_state {
     Rectangle help_box;
     bool move_help_box;
 
-    bool show_end_info_box;
-
     bool show_mesh_info_box;
     Rectangle mesh_info_box;
+    bool move_info_box;
 
     bool show_selection_box;
     bool show_save_box;
+
+    bool show_scale;
+    bool move_scale;
+    Rectangle scale_bounds;
+
+    bool show_end_info_box;
+    Rectangle end_info_box;
+    bool move_end_info_box;
 
     Ray ray;
 
@@ -126,7 +131,7 @@ struct gui_state {
 
     Vector3 current_selected_volume;
 
-    Font font;
+    //Font font;
     float font_size_small;
     float font_size_big;
 
@@ -137,12 +142,11 @@ struct gui_state {
     Vector2 mouse_pos;
     Vector2 sub_window_pos;
     bool drag_sub_window;
-
-
     float box_width;
     float box_height;
 
     struct ap_graph_config *ap_graph_config;
+    //uint current_font;
 };
 
 struct mesh_info {

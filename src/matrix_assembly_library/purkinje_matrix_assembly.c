@@ -83,9 +83,9 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     
     struct edge *e;
     struct element **cell_elements;
-    real_cpu dx;
 
-    real_cpu sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+    real_cpu dx, dy, dz;
+    real_cpu multiplier;
 
     int i;
 
@@ -93,6 +93,10 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     {
         cell_elements = &grid_cells[i]->elements;
         dx = grid_cells[i]->discretization.x;
+        dy = grid_cells[i]->discretization.x;
+        dz = grid_cells[i]->discretization.x;
+
+        multiplier = ((dy * dz) / dx);
 
         e = pk_node->list_edges;
 
@@ -103,11 +107,11 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
 
             // Neighbour elements ...
             new_element.column = e->id;
-            new_element.value = -sigma_x1 * dx;
+            new_element.value = (-sigma_x * multiplier);
             new_element.cell = grid_cells[e->id];
 
             // Diagonal element ...
-            cell_elements[0]->value += (sigma_x1 * dx);
+            cell_elements[0]->value += (sigma_x * multiplier);
 
             arrput(grid_cells[i]->elements,new_element);
 
