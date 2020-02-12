@@ -3,8 +3,8 @@
 //
 
 #include <assert.h>
-#include <inttypes.h>
 #include <float.h>
+#include <inttypes.h>
 
 #include "grid.h"
 
@@ -74,9 +74,9 @@ void construct_grid(struct grid *the_grid) {
     front_transition_node = new_transition_node();
     back_transition_node = new_transition_node();
 
-
-    struct point_3d half_side_length = POINT3D(side_length.x / 2.0f, side_length.y / 2.0,side_length.z / 2.0f);
-    struct point_3d quarter_side_length = POINT3D(half_side_length.x / 2.0f, half_side_length.y / 2.0,half_side_length.z / 2.0f);
+    struct point_3d half_side_length = POINT3D(side_length.x / 2.0f, side_length.y / 2.0, side_length.z / 2.0f);
+    struct point_3d quarter_side_length =
+        POINT3D(half_side_length.x / 2.0f, half_side_length.y / 2.0, half_side_length.z / 2.0f);
 
     //__________________________________________________________________________
     //              Initialization of transition nodes.
@@ -109,60 +109,63 @@ void construct_grid(struct grid *the_grid) {
     //                      Initialization of cell nodes.
     //__________________________________________________________________________
     // front Northeast subcell initialization.
-    set_cell_node_data(front_northeast_cell, half_side_length, 1,
-                       east_transition_node, north_transition_node, front_northwest_cell, front_southeast_cell,
-                       front_transition_node, back_northeast_cell, NULL, back_northeast_cell, 0, 1,
+    set_cell_node_data(front_northeast_cell, half_side_length, 1, east_transition_node, north_transition_node,
+                       front_northwest_cell, front_southeast_cell, front_transition_node, back_northeast_cell, NULL,
+                       back_northeast_cell, 0, 1,
                        POINT3D(half_side_length.x + quarter_side_length.x, half_side_length.y + quarter_side_length.y,
-                               half_side_length.z + quarter_side_length.z), ZERO_POINT3D);
+                               half_side_length.z + quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // back Northeast subcell initialization.
-    set_cell_node_data(back_northeast_cell, half_side_length, 2,
-                       east_transition_node, north_transition_node, back_northwest_cell, back_southeast_cell,
-                       front_northeast_cell, back_transition_node, front_northeast_cell, back_northwest_cell, 1, 2,
+    set_cell_node_data(back_northeast_cell, half_side_length, 2, east_transition_node, north_transition_node,
+                       back_northwest_cell, back_southeast_cell, front_northeast_cell, back_transition_node,
+                       front_northeast_cell, back_northwest_cell, 1, 2,
                        POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y,
-                       half_side_length.z + quarter_side_length.z), ZERO_POINT3D);
+                               half_side_length.z + quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // back Northwest subcell initialization.
-    set_cell_node_data(back_northwest_cell, half_side_length, 3,
-                       back_northeast_cell, north_transition_node, west_transition_node, back_southwest_cell,
-                       front_northwest_cell, back_transition_node, back_northeast_cell, front_northwest_cell, 2, 2,
-                       POINT3D(quarter_side_length.x, quarter_side_length.y, half_side_length.z + quarter_side_length.z),
-                       ZERO_POINT3D);
+    set_cell_node_data(
+        back_northwest_cell, half_side_length, 3, back_northeast_cell, north_transition_node, west_transition_node,
+        back_southwest_cell, front_northwest_cell, back_transition_node, back_northeast_cell, front_northwest_cell, 2,
+        2, POINT3D(quarter_side_length.x, quarter_side_length.y, half_side_length.z + quarter_side_length.z),
+        ZERO_POINT3D);
 
     // front Northwest subcell initialization.
-    set_cell_node_data(front_northwest_cell, half_side_length, 4,
-                       front_northeast_cell, north_transition_node, west_transition_node, front_southwest_cell,
-                       front_transition_node, back_northwest_cell, back_northwest_cell, front_southwest_cell, 3, 3,
+    set_cell_node_data(front_northwest_cell, half_side_length, 4, front_northeast_cell, north_transition_node,
+                       west_transition_node, front_southwest_cell, front_transition_node, back_northwest_cell,
+                       back_northwest_cell, front_southwest_cell, 3, 3,
                        POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y,
-                       half_side_length.z + quarter_side_length.z), ZERO_POINT3D);
+                               half_side_length.z + quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // front Southwest subcell initialization.
-    set_cell_node_data(front_southwest_cell, half_side_length, 5,
-                       front_southeast_cell, front_northwest_cell, west_transition_node, south_transition_node,
-                       front_transition_node, back_southwest_cell, front_northwest_cell, back_southwest_cell, 4, 3,
-                       POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y, quarter_side_length.z),
-                       ZERO_POINT3D);
+    set_cell_node_data(
+        front_southwest_cell, half_side_length, 5, front_southeast_cell, front_northwest_cell, west_transition_node,
+        south_transition_node, front_transition_node, back_southwest_cell, front_northwest_cell, back_southwest_cell, 4,
+        3, POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y, quarter_side_length.z),
+        ZERO_POINT3D);
 
     // back Southwest subcell initialization.
-    set_cell_node_data(back_southwest_cell, half_side_length, 6,
-                       back_southeast_cell, back_northwest_cell, west_transition_node, south_transition_node,
-                       front_southwest_cell, back_transition_node, front_southwest_cell, back_southeast_cell, 5, 4,
-                       POINT3D(quarter_side_length.x, quarter_side_length.y, quarter_side_length.z),
-                       ZERO_POINT3D);
+    set_cell_node_data(back_southwest_cell, half_side_length, 6, back_southeast_cell, back_northwest_cell,
+                       west_transition_node, south_transition_node, front_southwest_cell, back_transition_node,
+                       front_southwest_cell, back_southeast_cell, 5, 4,
+                       POINT3D(quarter_side_length.x, quarter_side_length.y, quarter_side_length.z), ZERO_POINT3D);
 
     // back Southeast subcell initialization.
-    set_cell_node_data(back_southeast_cell, half_side_length, 7,
-                       east_transition_node, back_northeast_cell, back_southwest_cell, south_transition_node,
-                       front_southeast_cell, back_transition_node, back_southwest_cell, front_southeast_cell, 6, 4,
-                       POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y, quarter_side_length.z),
-                       ZERO_POINT3D);
+    set_cell_node_data(
+        back_southeast_cell, half_side_length, 7, east_transition_node, back_northeast_cell, back_southwest_cell,
+        south_transition_node, front_southeast_cell, back_transition_node, back_southwest_cell, front_southeast_cell, 6,
+        4, POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y, quarter_side_length.z),
+        ZERO_POINT3D);
 
     // front Southeast subcell initialization.
-    set_cell_node_data(front_southeast_cell, half_side_length, 8,
-                       east_transition_node, front_northeast_cell, front_southwest_cell, south_transition_node,
-                       front_transition_node, back_southeast_cell, back_southeast_cell, NULL, 7, 5,
+    set_cell_node_data(front_southeast_cell, half_side_length, 8, east_transition_node, front_northeast_cell,
+                       front_southwest_cell, south_transition_node, front_transition_node, back_southeast_cell,
+                       back_southeast_cell, NULL, 7, 5,
                        POINT3D(half_side_length.x + quarter_side_length.x, half_side_length.y + quarter_side_length.y,
-                       quarter_side_length.z), ZERO_POINT3D);
+                               quarter_side_length.z),
+                       ZERO_POINT3D);
 
     // Grid initialization
     the_grid->first_cell = front_northeast_cell;
@@ -228,46 +231,39 @@ void clean_grid(struct grid *the_grid) {
 
     // TODO: Think about this function when the coupling happens ..
     // Delete nodes from the Purkinje network
-    if (the_grid->purkinje->network->list_nodes != NULL) 
-    {
+    if(the_grid->purkinje->network->list_nodes != NULL) {
 
         // First free the Purkinje mesh structure
         free_graph(the_grid->purkinje->network);
 
         grid_cell = the_grid->first_cell;
 
-        // Then, delete the cells from the Purkinje network 
-        if(grid_cell) 
-        {
-            while (grid_cell) 
-            {
+        // Then, delete the cells from the Purkinje network
+        if(grid_cell) {
+            while(grid_cell) {
 
                 struct cell_node *next = grid_cell->next;
                 free_cell_node(grid_cell);
                 grid_cell = next;
-
             }
         }
     }
     // Delete the tissue cells
-    else
-    {
+    else {
 
         // In order to release the memory allocated for the grid, the grid is
         // derefined to level 1. Thus, the grid shape is known and each node can
         // be easily reached.
 
         uint32_t number_of_cells = the_grid->number_of_cells;
-        while(number_of_cells > 8)
-        {
+        while(number_of_cells > 8) {
             derefine_all_grid(the_grid);
             number_of_cells = the_grid->number_of_cells;
         }
 
         grid_cell = the_grid->first_cell;
 
-        if(grid_cell)
-        {
+        if(grid_cell) {
 
             // Deleting transition nodes.
             free((struct transition_node *)(grid_cell->north));
@@ -278,8 +274,7 @@ void clean_grid(struct grid *the_grid) {
             free((struct transition_node *)(((struct cell_node *)(grid_cell->back))->back));
 
             // Deleting cells nodes.
-            while(grid_cell)
-            {
+            while(grid_cell) {
                 struct cell_node *next = grid_cell->next;
                 free_cell_node(grid_cell);
                 grid_cell = next;
@@ -302,17 +297,15 @@ void clean_and_free_grid(struct grid *the_grid) {
 
     clean_grid(the_grid);
 
-    if(the_grid->active_cells) 
-    {
+    if(the_grid->active_cells) {
         free(the_grid->active_cells);
     }
 
     arrfree(the_grid->refined_this_step);
     arrfree(the_grid->free_sv_positions);
 
-    //free(the_grid->purkinje_network); // TODO: Check for leaks with Valgrind
+    // free(the_grid->purkinje_network); // TODO: Check for leaks with Valgrind
     free(the_grid);
-
 }
 
 // Prints grid discretization matrix.
@@ -349,13 +342,15 @@ void print_grid_matrix(struct grid *the_grid, FILE *output_file) {
     }
 }
 
-int compare_elements (const void * a, const void * b)
-{
-    if ( (*(struct element*)a).column <  (*(struct element*)b).column ) return -1;
-    if ( (*(struct element*)a).column == (*(struct element*)b).column ) return 0;
-    if ( (*(struct element*)a).column >  (*(struct element*)b).column ) return 1;
+int compare_elements(const void *a, const void *b) {
+    if((*(struct element *)a).column < (*(struct element *)b).column)
+        return -1;
+    if((*(struct element *)a).column == (*(struct element *)b).column)
+        return 0;
+    if((*(struct element *)a).column > (*(struct element *)b).column)
+        return 1;
 
-    return 1;//Unreachable
+    return 1; // Unreachable
 }
 
 void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file) {
@@ -383,7 +378,7 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
             cell_elements = grid_cell->elements;
             size_t max_el = arrlen(cell_elements);
 
-            qsort (cell_elements, max_el, sizeof(struct element), compare_elements);
+            qsort(cell_elements, max_el, sizeof(struct element), compare_elements);
 
             for(size_t i = 0; i < max_el; i++) {
 
@@ -468,17 +463,14 @@ int get_num_refinement_steps_to_discretization(float side_len, real_cpu h) {
     return num_steps - 1;
 }
 
-void initialize_grid_purkinje (struct grid *the_grid)
-{
+void initialize_grid_purkinje(struct grid *the_grid) {
     assert(the_grid);
     assert(the_grid->purkinje);
 
     the_grid->purkinje->number_of_purkinje_cells = 0;
-
 }
 
-void construct_grid_purkinje (struct grid *the_grid)
-{
+void construct_grid_purkinje(struct grid *the_grid) {
     assert(the_grid);
     assert(the_grid->purkinje);
 
@@ -489,34 +481,31 @@ void construct_grid_purkinje (struct grid *the_grid)
     real_cpu side_length_y = the_purkinje->network->dx;
     real_cpu side_length_z = the_purkinje->network->dx;
 
-    struct point_3d half_side_length = POINT3D(side_length_x / 2.0f, side_length_y / 2.0f, side_length_z / 2.0f);
+    struct point_3d side_length = POINT3D(side_length_x, side_length_y, side_length_z);
 
     uint32_t total_purkinje_nodes = the_purkinje->network->total_nodes;
-    
+
     // Create the Purkinje cells array
     struct cell_node **purkinje_cells;
-    purkinje_cells = (struct cell_node**)malloc(sizeof(struct cell_node*)*total_purkinje_nodes);
-    for (int i = 0; i < total_purkinje_nodes; i++)
+    purkinje_cells = (struct cell_node **)malloc(sizeof(struct cell_node *) * total_purkinje_nodes);
+    for(int i = 0; i < total_purkinje_nodes; i++)
         purkinje_cells[i] = new_cell_node();
-    
+
     // Pass through the Purkinje graph and set the cell nodes.
     struct node *n = the_purkinje->network->list_nodes;
-    for (uint32_t i = 0; i < total_purkinje_nodes; i++)
-    {
-        
-        if (i == 0)
-            set_cell_node_data (purkinje_cells[i],half_side_length, 0, NULL,NULL,NULL,NULL,NULL,NULL,NULL,purkinje_cells[i+1],i,0,\
-                            POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
-        else if (i == total_purkinje_nodes-1)
-            set_cell_node_data (purkinje_cells[i],half_side_length,\
-                        0,NULL,NULL,NULL,NULL,NULL,NULL,\
-                        purkinje_cells[i-1],NULL,i,0,\
-                        POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
+    for(uint32_t i = 0; i < total_purkinje_nodes; i++) {
+
+        if(i == 0)
+            set_cell_node_data(purkinje_cells[i], side_length, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                               purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z), ZERO_POINT3D);
+
+        else if(i == total_purkinje_nodes - 1)
+            set_cell_node_data(purkinje_cells[i], side_length, 0, NULL, NULL, NULL, NULL, NULL, NULL,
+                               purkinje_cells[i - 1], NULL, i, 0, POINT3D(n->x, n->y, n->z), ZERO_POINT3D);
         else
-            set_cell_node_data (purkinje_cells[i],half_side_length,\
-                        0,NULL,NULL,NULL,NULL,NULL,NULL,\
-                        purkinje_cells[i-1],purkinje_cells[i+1],i,0,\
-                        POINT3D(n->x,n->y,n->z), ZERO_POINT3D);
+            set_cell_node_data(purkinje_cells[i], side_length, 0, NULL, NULL, NULL, NULL, NULL, NULL,
+                               purkinje_cells[i - 1], purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z),
+                               ZERO_POINT3D);
 
         // Do not refine the Purkinje cells !
         purkinje_cells[i]->can_change = false;
@@ -526,22 +515,19 @@ void construct_grid_purkinje (struct grid *the_grid)
 
         n = n->next;
     }
-    
+
     // Purkinje initialization
     the_purkinje->first_cell = purkinje_cells[0];
     the_purkinje->purkinje_cells = purkinje_cells;
     the_purkinje->number_of_purkinje_cells = total_purkinje_nodes;
     the_purkinje->num_active_purkinje_cells = total_purkinje_nodes;
-
 }
 
-void initialize_and_construct_grid_purkinje (struct grid *the_grid)
-{
+void initialize_and_construct_grid_purkinje(struct grid *the_grid) {
     assert(the_grid);
 
     initialize_grid_purkinje(the_grid);
     construct_grid_purkinje(the_grid);
-    
 }
 
 void translate_mesh_to_origin(struct grid *grid) {
@@ -559,15 +545,15 @@ void translate_mesh_to_origin(struct grid *grid) {
         real_cpu center_y = grid_cell->center.y;
         real_cpu center_z = grid_cell->center.z;
 
-        if(center_x < minx){
+        if(center_x < minx) {
             minx = center_x;
         }
 
-        if(center_y < miny){
+        if(center_y < miny) {
             miny = center_y;
         }
 
-        if(center_z < minz){
+        if(center_z < minz) {
             minz = center_z;
         }
 
@@ -578,26 +564,24 @@ void translate_mesh_to_origin(struct grid *grid) {
 
     while(grid_cell != 0) {
 
-        grid_cell->translated_center.x = grid_cell->center.x - minx + (grid_cell->discretization.x/2.0f);
-        grid_cell->translated_center.y = grid_cell->center.y - miny + (grid_cell->discretization.y/2.0f);
-        grid_cell->translated_center.z = grid_cell->center.z - minz + (grid_cell->discretization.z/2.0f);
+        grid_cell->translated_center.x = grid_cell->center.x - minx + (grid_cell->discretization.x / 2.0f);
+        grid_cell->translated_center.y = grid_cell->center.y - miny + (grid_cell->discretization.y / 2.0f);
+        grid_cell->translated_center.z = grid_cell->center.z - minz + (grid_cell->discretization.z / 2.0f);
 
         grid_cell = grid_cell->next;
     }
-
 }
 
 static void sort_elements(struct element *cell_elements, int tam) {
     int i, j, min;
     struct element aux;
-    for (i = 0; i < (tam-1); i++)
-    {
+    for(i = 0; i < (tam - 1); i++) {
         min = i;
-        for (j = (i+1); j < tam; j++) {
+        for(j = (i + 1); j < tam; j++) {
             if(cell_elements[j].column < cell_elements[min].column)
                 min = j;
         }
-        if (cell_elements[i].column != cell_elements[min].column) {
+        if(cell_elements[i].column != cell_elements[min].column) {
             aux = cell_elements[i];
             cell_elements[i] = cell_elements[min];
             cell_elements[min] = aux;
@@ -620,7 +604,8 @@ void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
 
         bool insert = cell->active;
 
-        if(arrlen(cell->elements) == 1 && cell->elements[0].value == 0.0) insert = false;
+        if(arrlen(cell->elements) == 1 && cell->elements[0].value == 0.0)
+            insert = false;
 
         if(insert) {
 
@@ -647,12 +632,10 @@ void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
             }
 
             i++;
-
         }
     }
 
     arrpush(*IA, nnz);
-
 }
 
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b) {
@@ -671,20 +654,20 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     initialize_and_construct_grid(grid, POINT3D(1.0, 1.0, 1.0));
 
     n_cells = grid->number_of_cells;
-    while (n_cells < num_lines_m) {
+    while(n_cells < num_lines_m) {
         refine_grid(grid, 1);
         n_cells = grid->number_of_cells;
     }
 
     struct cell_node *cell = grid->first_cell;
-    while (cell) {
+    while(cell) {
         cell->active = false;
         cell = cell->next;
     }
 
     int item_count = 0;
     cell = grid->first_cell;
-    while (item_count < num_lines_m) {
+    while(item_count < num_lines_m) {
         cell->active = true;
         cell = cell->next;
         item_count++;
@@ -697,7 +680,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
 
     real_cpu m_value;
 
-    for (int i = 0; i < num_lines_m; i++) {
+    for(int i = 0; i < num_lines_m; i++) {
 
         cell_position = cell->grid_position;
         m_value = matrix[cell_position][cell_position];
@@ -709,18 +692,18 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
         arrsetcap(cell->elements, 7);
         arrput(cell->elements, el);
 
-        for (int j = 0; j < num_lines_m; j++) {
-            if (cell_position != j) {
+        for(int j = 0; j < num_lines_m; j++) {
+            if(cell_position != j) {
                 m_value = matrix[cell_position][j];
 
-                if (m_value != 0.0) {
+                if(m_value != 0.0) {
                     struct element el2;
                     el2.value = m_value;
-                    el2.column = (uint32_t) j;
+                    el2.column = (uint32_t)j;
 
                     struct cell_node *aux = grid->first_cell;
-                    while (aux) {
-                        if (aux->grid_position == j)
+                    while(aux) {
+                        if(aux->grid_position == j)
                             break;
                         aux = aux->next;
                     }
@@ -735,14 +718,14 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
 
     if(vector) {
         cell = grid->first_cell;
-        for (int i = 0; i < num_lines_v; i++) {
+        for(int i = 0; i < num_lines_v; i++) {
             cell->b = vector[cell->grid_position];
             cell->v = 1.0;
             cell = cell->next;
         }
     }
 
-    for (int i = 0; i < num_lines_m; i++) {
+    for(int i = 0; i < num_lines_m; i++) {
         free(matrix[i]);
     }
 
@@ -750,39 +733,31 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     free(vector);
 }
 
-
 // TODO: Include a parameter that links more cells
-struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
-{
+struct terminal *link_purkinje_to_endocardium(struct grid *the_grid) {
     struct grid_purkinje *the_purkinje = the_grid->purkinje;
 
     struct graph *the_network = the_purkinje->network;
 
     uint32_t number_of_terminals = the_network->number_of_terminals;
 
-    struct terminal *the_terminals = (struct terminal *)malloc(sizeof(struct terminal)*number_of_terminals);
-
-    struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
+    struct terminal *the_terminals = (struct terminal *)malloc(sizeof(struct terminal) * number_of_terminals);
 
     uint32_t j = 0;
     struct node *n = the_network->list_nodes;
-    while (n != NULL)
-    {
-        if (n->num_edges == 1 && n->id != 0)
-        {
+    while(n != NULL) {
+        if(n->num_edges == 1 && n->id != 0) {
             uint32_t n_active = the_grid->num_active_cells;
             struct cell_node **ac = the_grid->active_cells;
-            
+
             uint32_t purkinje_index = n->id;
             struct node *purkinje_cell = n;
-            
+
             uint32_t closest_index = 0;
             double closest_dist = __DBL_MAX__;
-            for (uint32_t i = 0; i < n_active; i++)
-            {
-                double dist = calc_norm(n->x,n->y,n->z,ac[i]->center.x,ac[i]->center.y,ac[i]->center.z);
-                if (dist < closest_dist)
-                {
+            for(uint32_t i = 0; i < n_active; i++) {
+                double dist = calc_norm(n->x, n->y, n->z, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+                if(dist < closest_dist) {
                     closest_dist = dist;
                     closest_index = i;
                 }
@@ -790,7 +765,7 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
 
             struct cell_node *endocardium_cell = ac[closest_index];
             uint32_t endocardium_index = ac[closest_index]->sv_position;
-            
+
             the_terminals[j].endocardium_cell = endocardium_cell;
             the_terminals[j].endocardium_index = endocardium_index;
             the_terminals[j].purkinje_index = purkinje_index;
@@ -801,12 +776,11 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
             the_terminals[j].purkinje_cell->y = the_terminals[j].endocardium_cell->center.y;
             the_terminals[j].purkinje_cell->z = the_terminals[j].endocardium_cell->center.z;
 
-            ac_purkinje[purkinje_index]->center.x = the_terminals[j].endocardium_cell->center.x;
-            ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
-            ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
-            
-            j++;
+            //ac_purkinje[purkinje_index]->center.x = the_terminals[j].endocardium_cell->center.x;
+            //ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
+            //ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
 
+            j++;
         }
         n = n->next;
     }
@@ -814,8 +788,7 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
     return the_terminals;
 }
 
-void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals)
-{
+void update_link_purkinje_to_endocardium(struct grid *the_grid, struct terminal *the_terminals) {
     struct grid_purkinje *the_purkinje = the_grid->purkinje;
 
     struct graph *the_network = the_purkinje->network;
@@ -824,22 +797,19 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
 
     uint32_t j = 0;
     struct node *n = the_network->list_nodes;
-    while (n != NULL)
-    {
-        if (n->num_edges == 1 && n->id != 0)
-        {
+    while(n != NULL) {
+        if(n->num_edges == 1 && n->id != 0) {
             uint32_t n_active = the_grid->num_active_cells;
             struct cell_node **ac = the_grid->active_cells;
-            
+
             uint32_t purkinje_index = n->id;
 
             uint32_t closest_index = 0;
             double closest_dist = __DBL_MAX__;
 
-            for (uint32_t i = 0; i < n_active; i++) {
-                double dist = calc_norm(n->x,n->y,n->z,ac[i]->center.x,ac[i]->center.y,ac[i]->center.z);
-                if (dist < closest_dist)
-                {
+            for(uint32_t i = 0; i < n_active; i++) {
+                double dist = calc_norm(n->x, n->y, n->z, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+                if(dist < closest_dist) {
                     closest_dist = dist;
                     closest_index = i;
                 }
@@ -847,7 +817,7 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
 
             struct cell_node *endocardium_cell = ac[closest_index];
             uint32_t endocardium_index = ac[closest_index]->sv_position;
-            
+
             the_terminals[j].endocardium_cell = endocardium_cell;
             the_terminals[j].endocardium_index = endocardium_index;
 
@@ -859,9 +829,8 @@ void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal
             ac_purkinje[purkinje_index]->center.x = the_terminals[j].endocardium_cell->center.x;
             ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
             ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
-            
-            j++;
 
+            j++;
         }
 
         n = n->next;

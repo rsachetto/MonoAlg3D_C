@@ -875,6 +875,51 @@ void DrawTextEx(Font font, const char *text, Vector2 position, float fontSize, f
     }
 }
 
+void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
+{
+    int length = strlen(text);
+    int textOffsetY = 0;        // Required for line break!
+    float textOffsetX = 0.0f;   // Offset between characters
+    float scaleFactor = 0.0f;
+
+    int letter = 0;             // Current character
+    int index = 0;              // Index position in sprite font
+
+    scaleFactor = fontSize/font.baseSize;
+
+    for (int i = 0; i < length; i++)
+    {
+        int next = 1;
+        letter = GetNextCodepoint(&text[i], &next);
+        // NOTE: normally we exit the decoding sequence as soon as a bad byte is found (and return 0x3f)
+        // but we need to draw all of the bad bytes using the '?' symbol so to not skip any we set `next = 1`
+        if(letter == 0x3f) next = 1;
+        index = GetGlyphIndex(font, letter);
+        i += next - 1;
+
+        if (letter == '\n')
+        {
+            // NOTE: Fixed line spacing of 1.5 lines
+            textOffsetY += (int)((font.baseSize + font.baseSize/2)*scaleFactor);
+            textOffsetX = 0.0f;
+        }
+        else
+        {
+            if (letter != ' ')
+            {
+                DrawTexturePro(font.texture, font.chars[index].rec,
+                               (Rectangle){ position.x + textOffsetX + font.chars[index].offsetX*scaleFactor,
+                                            position.y - textOffsetY - font.chars[index].offsetY*scaleFactor,
+                                            font.chars[index].rec.width*scaleFactor,
+                                            font.chars[index].rec.height*scaleFactor }, (Vector2){ 0, 0 }, -90.0f, tint);
+            }
+
+            if (font.chars[index].advanceX == 0) textOffsetY += ((float)font.chars[index].rec.width*scaleFactor + spacing);
+            else textOffsetY += ((float)font.chars[index].advanceX*scaleFactor + spacing);
+        }
+    }
+}
+
 // Draw text using font inside rectangle limits
 void DrawTextRec(Font font, const char *text, Rectangle rec, float fontSize, float spacing, bool wordWrap, Color tint)
 {

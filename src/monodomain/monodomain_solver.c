@@ -132,7 +132,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     int num_purkinje_stims = shlen(purkinje_stimuli_configs);
-    if (purkinje_stimuli_configs) {
+    if (num_purkinje_stims) {
         // Init all stimuli
         STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(purkinje_stimuli_configs);
 
@@ -185,14 +185,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     // Configure the functions and set the Purkinje mesh domain
-    if (purkinje_config)
-    {
+    if (purkinje_config) {
         init_config_functions(purkinje_config, "shared_libs/libdefault_purkinje.so", "purkinje");
     }
 
     // Configure the functions and set the mesh domain
-    if(domain_config) 
-    {
+    if(domain_config) {
         init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
     } 
 
@@ -200,22 +198,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
-
-    if(assembly_matrix_config)
-    {
+    if(assembly_matrix_config) {
         init_config_functions(assembly_matrix_config, "./shared_libs/libdefault_matrix_assembly.so", "assembly_matrix");
     } 
-    else 
-    {
+    else {
         print_to_stderr_and_file_and_exit("No assembly matrix configuration provided! Exiting!\n");
     }
 
-    if(linear_system_solver_config) 
-    {
+    if(linear_system_solver_config) {
         init_config_functions(linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "linear_system_solver");
     } 
-    else 
-    {
+    else {
         print_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
     }
 
@@ -626,7 +619,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             #endif
 
             // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
-            if (domain_config && calc_retropropagation)
+            if (domain_config)
                 compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver, the_grid, the_terminals);
 
             // DIFUSION: Purkinje
