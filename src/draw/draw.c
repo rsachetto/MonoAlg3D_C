@@ -21,9 +21,6 @@
 static int current_window_height = 0;
 static int current_window_width = 0;
 
-static int window_height_change = 0;
-static int window_width_change = 0;
-
 struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
 
     struct gui_state *gui_state = (struct gui_state*) calloc(1, sizeof(struct gui_state));
@@ -61,7 +58,6 @@ struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
     gui_state->ap_graph_config->drag_ap_graph = false;
     gui_state->ap_graph_config->move_ap_graph = false;
 
-
     gui_state->box_width = 220;
     gui_state->box_height = 100;
 
@@ -73,12 +69,11 @@ struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
     gui_state->ap_graph_config->graph.x = 100;
     gui_state->ap_graph_config->graph.y = (float)current_window_height - gui_state->ap_graph_config->graph.height - 70;
 //    gui_state->current_font = 0;
-    gui_state->scale_bounds.x = (float)current_window_width-30.0f;
-    gui_state->scale_bounds.y = (float)current_window_height/2.0f;
+    gui_state->scale_bounds.x = (float)current_window_width - 30.0f;
+    gui_state->scale_bounds.y = (float)current_window_height/1.5f;
 
     gui_state->scale_bounds.width = 20;
     gui_state->scale_bounds.height = 0;
-
 
     return gui_state;
 }
@@ -420,7 +415,6 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
 
     struct vtk_unstructured_grid *grid_to_draw = draw_config.grid_info.vtk_grid;
 
-
     Vector3 cube_position;
     Vector3 cube_size;
 
@@ -745,7 +739,53 @@ static void draw_ap_graph(struct gui_state *gui_state, Font font) {
     }
 }
 
+static void move_rect(Vector2 new_pos, Rectangle *rect) {
+
+    float new_x = new_pos.x;
+    float new_y = new_pos.y;
+
+    if(new_x > 1 && new_x + rect->width < GetScreenWidth()) {
+        rect->x = new_x;
+    }
+    if(new_y > 1 && new_y + rect->height < GetScreenHeight()) {
+        rect->y = new_y;
+    }
+}
+
+static inline void drag_box(Vector2 mouse_pos, Rectangle *box) {
+    float new_x = mouse_pos.x - box->width / 2;
+    float new_y = mouse_pos.y - box->height / 2;
+    move_rect((Vector2){new_x, new_y}, box);
+}
+
+static inline void drag_scale(Vector2 new_pos, Rectangle *box) {
+    float new_x = new_pos.x - box->width / 2;
+    float new_y = new_pos.y + box->height / 2;
+    move_rect((Vector2){new_x, new_y}, box);
+}
+
+
+void check_window_change(Rectangle *box) {
+
+    if (IsWindowResized()) {
+
+        current_window_height = GetScreenHeight();
+        current_window_width = GetScreenWidth();
+
+        if (box->x + box->width > current_window_width)
+            move_rect((Vector2){current_window_width - box->width - 10, box->y}, box);
+
+        if (box->y + box->height > current_window_height)
+            move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
+
+//        if (box->x + box->width > current_window_width) box->x = clamp(current_window_width - box->width - 10,0,current_window_width - box->width - 10);
+//        if (box->y + box->height > current_window_height) box->y = clamp(current_window_height - box->height - 10,0,current_window_height - box->height - 10);
+    }
+}
+
 static void draw_scale(Font font, float font_size_small, bool int_scale, struct gui_state *gui_state) {
+
+   // check_window_change(&gui_state->scale_bounds);
 
     static bool calc_bounds = true;
 
@@ -819,15 +859,8 @@ static void draw_scale(Font font, float font_size_small, bool int_scale, struct 
 
 static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, int font_size_for_line, Font font) {
 
-    if(IsWindowResized()) {
-        window_height_change = GetScreenHeight() - current_window_height;
-        window_width_change = GetScreenWidth() - current_window_width;
 
-        current_window_height = GetScreenHeight();
-        current_window_width = GetScreenWidth();
-        box->x = box->x + (float)window_width_change;
-        window_width_change = 0;
-    }
+    check_window_change(box);
 
     int text_x = (int)box->x + 20;
     int text_y = (int)box->y + 10;
@@ -1069,18 +1102,6 @@ static void reset(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_sta
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
 }
 
-static void move_box(Vector2 mouse_pos, Rectangle *box) {
-    float new_x = mouse_pos.x - box->width / 2;
-    float new_y = mouse_pos.y - box->height / 2;
-
-    if(new_x > 1 && new_x + box->width < GetScreenWidth()) {
-        box->x = new_x;
-    }
-    if(new_y > 1 && new_y + box->height < GetScreenHeight()) {
-        box->y = new_y;
-    }
-}
-
 static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
 
@@ -1168,27 +1189,18 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
     }
 
     if (gui_state->move_help_box) {
-        move_box(gui_state->mouse_pos, &gui_state->help_box);
+        drag_box(gui_state->mouse_pos, &gui_state->help_box);
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_help_box = false;
     }
     else if(gui_state->move_info_box) {
-        move_box(gui_state->mouse_pos, &gui_state->mesh_info_box);
+        drag_box(gui_state->mouse_pos, &gui_state->mesh_info_box);
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_info_box = false;
     }
     else if(gui_state->move_scale) {
-        float new_x = gui_state->mouse_pos.x - gui_state->scale_bounds.width / 2;
-        float new_y = gui_state->mouse_pos.y + gui_state->scale_bounds.height / 2;
-
-        if(new_x > 1 && new_x + gui_state->scale_bounds.width < GetScreenWidth()) {
-            gui_state->scale_bounds.x = new_x;
-        }
-        if(new_y > 1 && (new_y - gui_state->scale_bounds.height) < GetScreenHeight()) {
-            gui_state->scale_bounds.y = new_y;
-        }
-
+        drag_scale(gui_state->mouse_pos, &gui_state->scale_bounds);
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_scale = false;
     } else if(gui_state->move_end_info_box) {
-        move_box(gui_state->mouse_pos, &gui_state->end_info_box);
+        drag_box(gui_state->mouse_pos, &gui_state->end_info_box);
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_end_info_box = false;
 
     }
@@ -1255,26 +1267,6 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
             gui_state->voxel_alpha = gui_state->voxel_alpha + 1;
         return;
     }
-
-//    if (IsKeyPressed('F'))  {
-//        gui_state->current_font = (gui_state->current_font + 1) % NUM_FONTS;
-//        printf("Current font %d\n", gui_state->current_font);
-//        return;
-//    }
-
-//    if (IsKeyPressed('='))  {
-//        gui_state->font_size_small++;
-//        gui_state->font_size_big++;
-//        printf("Current size %f\n", gui_state->font_size_small);
-//        return;
-//    }
-//
-//    if (IsKeyPressed('-'))  {
-//        gui_state->font_size_small--;
-//        gui_state->font_size_big--;
-//        printf("Current size %f\n", gui_state->font_size_small);
-//        return;
-//    }
 
     if(draw_config.paused) {
 
@@ -1402,13 +1394,12 @@ void init_and_open_visualization_window() {
     InitWindow(0, 0, window_title);
 
     current_monitor = GetCurrentMonitor();
-    current_window_height = GetMonitorHeight(current_monitor);
     current_window_width = GetMonitorWidth(current_monitor);
+    current_window_height = GetMonitorHeight(current_monitor);
 
     free(window_title);
 
     Font font = GetFontDefault();
-
 
     Camera3D camera;
 
