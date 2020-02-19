@@ -164,6 +164,12 @@ ECHO_AND_EXEC_COMMAND() {
 	fi
 	#EXEC THE COMMAND
 	$1
+
+	ret_val=$?
+  if [ $ret_val -ne 0 ]; then
+    echo "Error issuing command $1"
+  fi
+  exit $ret_val
 }
 
 COMPILE_EXECUTABLE () {
@@ -446,7 +452,6 @@ COMPILE_SHARED_LIB () {
 		fi
 
 	done
-
 
 	if [ -n "$IS_CUDA" ]; then
 		LINKER=$CXX_COMPILER
