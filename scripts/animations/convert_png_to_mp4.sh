@@ -6,10 +6,10 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="25"
-END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="videos/brodie-strange-simulation"
-RESOLUTION="1576x706"
+FRAME_RATE="50"
+END_FRAME="598"
+OUTPUT_VIDEO_FILENAME="videos/elizabeth_cco_tree_iterations"
+RESOLUTION="1576x744"
 
 # Execute the converting command using FFMPEG
 ffmpeg -r ${FRAME_RATE} -f image2 -s ${RESOLUTION} -start_number 1 -i ${FILENAME}.%04d.png -vframes ${END_FRAME} -vcodec libx264 -crf 25  -pix_fmt yuv420p ${OUTPUT_VIDEO_FILENAME}.mp4

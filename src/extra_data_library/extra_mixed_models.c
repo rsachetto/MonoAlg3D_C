@@ -40,6 +40,41 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
     return (void*)mapping;
 }
 
+SET_EXTRA_DATA (set_mixed_model_purkinje_if_x_less_than)
+{
+
+    uint32_t num_active_purkinje_cells = the_grid->the_purkinje->num_active_purkinje_cells;
+
+    *extra_data_size = sizeof(uint32_t)*(num_active_purkinje_cells + 1);
+
+    uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
+
+    struct cell_node ** ac_purkinje = the_grid->the_purkinje->purkinje_cells;
+
+    real x_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, x_limit, config->config_data, "x_limit");
+
+    int i;
+    bool inside;
+
+    #pragma omp parallel for
+    for (i = 0; i < num_active_purkinje_cells; i++)
+    {
+        real center_x = ac_purkinje[i]->center.x;
+        real center_y = ac_purkinje[i]->center.y;
+        real center_z = ac_purkinje[i]->center.z;
+
+        inside = (center_x <= x_limit);
+
+        if (inside)
+            mapping[i] = 0;
+        else
+            mapping[i] = 1;        
+    }
+
+    return (void*)mapping;
+}
+
 SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
 {
     uint32_t num_active_tissue_cells = the_grid->num_active_cells;
