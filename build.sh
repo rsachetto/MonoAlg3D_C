@@ -14,6 +14,7 @@ if [ -f "$FUNCTIONS_FILE" ]; then
 fi
 
 COMPILE_GUI='y'
+COMPILE_MPI='y'
 
 GET_BUILD_OPTIONS "$@"
 
@@ -30,6 +31,10 @@ elif [ "$BUILD_TYPE" == "clean" ]; then
 elif [ "$BUILD_TYPE" == "cluster" ]; then
   C_FLAGS="$C_FLAGS -O3"
   COMPILE_GUI=''
+elif [ "$BUILD_TYPE" == "github" ]; then
+  C_FLAGS="$C_FLAGS -O3"
+  COMPILE_GUI=''
+  COMPILE_MPI=''
 else
   PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
   PRINT_ERROR "Valid BUILD_TYPE options are: release, debug, cluster or clean"
@@ -109,19 +114,23 @@ DYNAMIC_DEPS="$DYNAMIC_DEPS logger"
 
 COMPILE_EXECUTABLE "MonoAlg3D" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
-FIND_MPI
+if [ -n "$COMPILE_MPI" ]; then
 
-if [ -n "$MPI_FOUND" ]; then
-    SRC_FILES="src/main_batch.c"
-    HDR_FILES=""
-    DYNAMIC_DEPS="$DYNAMIC_DEPS $MPI_LIBRARIES"
-    EXTRA_LIB_PATH="$EXTRA_LIB_PATH $CUDA_LIBRARY_PATH $MPI_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
+  FIND_MPI
 
-    if [ -n "$MPI_INCLUDE_PATH" ]; then
-      INCLUDE_P="-I$MPI_INCLUDE_PATH"
-    fi
-    COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH" "$INCLUDE_P"
-fi
+  if [ -n "$MPI_FOUND" ]; then
+      SRC_FILES="src/main_batch.c"
+      HDR_FILES=""
+      DYNAMIC_DEPS="$DYNAMIC_DEPS $MPI_LIBRARIES"
+      EXTRA_LIB_PATH="$EXTRA_LIB_PATH $CUDA_LIBRARY_PATH $MPI_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
+
+      if [ -n "$MPI_INCLUDE_PATH" ]; then
+        INCLUDE_P="-I$MPI_INCLUDE_PATH"
+      fi
+      COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH" "$INCLUDE_P"
+  fi
+
+endif
 
 ADD_SUBDIRECTORY "src/models_library"
 ADD_SUBDIRECTORY "src/stimuli_library"
