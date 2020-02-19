@@ -15,6 +15,7 @@ fi
 
 COMPILE_GUI='y'
 COMPILE_MPI='y'
+COMPILE_ALG_TO_GRAPH='y'
 
 GET_BUILD_OPTIONS "$@"
 
@@ -31,10 +32,12 @@ elif [ "$BUILD_TYPE" == "clean" ]; then
 elif [ "$BUILD_TYPE" == "cluster" ]; then
   C_FLAGS="$C_FLAGS -O3"
   COMPILE_GUI=''
+  COMPILE_ALG_TO_GRAPH=''
 elif [ "$BUILD_TYPE" == "github" ]; then
   C_FLAGS="$C_FLAGS -O3"
   COMPILE_GUI=''
   COMPILE_MPI=''
+  COMPILE_ALG_TO_GRAPH=''
 else
   PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
   PRINT_ERROR "Valid BUILD_TYPE options are: release, debug, cluster or clean"
@@ -148,8 +151,6 @@ ADD_SUBDIRECTORY "src/modify_domain"
 if [ -n "$COMPILE_GUI" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_visualizer" "src/main_visualizer.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH"
 fi
-
-COMPILE_ALG_TO_GRAPH='y'
 
 if [ -n "$COMPILE_ALG_TO_GRAPH" ]; then
   #DYNAMIC_DEPS="dl m utils"
