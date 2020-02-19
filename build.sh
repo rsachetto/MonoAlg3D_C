@@ -130,7 +130,7 @@ if [ -n "$COMPILE_MPI" ]; then
       COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH" "$INCLUDE_P"
   fi
 
-endif
+fi
 
 ADD_SUBDIRECTORY "src/models_library"
 ADD_SUBDIRECTORY "src/stimuli_library"
