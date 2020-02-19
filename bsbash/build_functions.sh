@@ -167,7 +167,7 @@ ECHO_AND_EXEC_COMMAND() {
 	$1
 
 	ret_val=$?
-	
+
   if [ $ret_val -ne 0 ]; then
     echo "Error issuing command $1"
     exit $ret_val
