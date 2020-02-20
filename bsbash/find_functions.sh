@@ -90,4 +90,15 @@ FIND_MPI () {
 	MPI_LIBRARIES=mpi
 	MPI_LIBRARY_PATH=/usr/lib/openmpi/
 	MPI_INCLUDE_PATH=''
+
+	if [ "$OS" == "Ubuntu" ]; then
+	  MPI_INCLUDE_PATH='/usr/lib/x86_64-linux-gnu/openmpi/include/'
+	fi
+}
+
+FIND_ZLIB () {
+	#TODO: implement
+	ZLIB_FOUND=''
+	ZLIB_LIBRARIES=''
+	ZLIB_INCLUDE_PATH=''
 }
