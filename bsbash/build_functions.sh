@@ -15,7 +15,6 @@ C_FLAGS=
 ROOT_DIR=$(pwd)
 BUILD_TYPE="release"
 
-
 RUNTIME_OUTPUT_DIRECTORY=$ROOT_DIR
 LIBRARY_OUTPUT_DIRECTORY=$ROOT_DIR
 
@@ -28,12 +27,48 @@ COMPILE_COMMANDS_FILE="${ROOT_DIR}/compile_commands.json"
 declare -A COMPILED_STATIC_LIBS
 declare -A COMPILED_SHARED_LIBS
 
+GET_LINUX_VERSION() {
+    if [ -f /etc/os-release ]; then
+        # freedesktop.org and systemd
+        . /etc/os-release
+        OS=$NAME
+        VER=$VERSION_ID
+    elif type lsb_release >/dev/null 2>&1; then
+        # linuxbase.org
+        OS=$(lsb_release -si)
+        VER=$(lsb_release -sr)
+    elif [ -f /etc/lsb-release ]; then
+        # For some versions of Debian/Ubuntu without lsb_release command
+        . /etc/lsb-release
+        OS=$DISTRIB_ID
+        VER=$DISTRIB_RELEASE
+    elif [ -f /etc/debian_version ]; then
+        # Older Debian/Ubuntu/etc.
+        OS=Debian
+        VER=$(cat /etc/debian_version)
+    elif [ -f /etc/SuSe-release ]; then
+        # Older SuSE/etc.
+        ...
+    elif [ -f /etc/redhat-release ]; then
+        # Older Red Hat, CentOS, etc.
+        ...
+    else
+        # Fall back to uname, e.g. "Linux <version>", also works for BSD, etc.
+        OS=$(uname -s)
+        VER=$(uname -r)
+    fi
+}
+
 PRINT_USAGE () { 
-	echo "Usage $0 [flags] [build_type]" >&2;
+	echo "Usage $0 [flags] [modules]" >&2;
 	echo "Valid flags:" >&2;
+	echo "Valid modules: all, gui, simulator or batch" >&2;
 	echo "-f  - force recompilation" >&2;
 	echo "-l  - write build log on build_log.txt" >&2;
 	echo "-q  - quiet compilation. Only errors and warnings will be outputed" >&2;
+	echo "-r  - build release version (Default)" >&2;
+	echo "-d  - build debug version" >&2;
+	echo "-c  - clean project" >&2;
 	exit 1
 }
 
@@ -58,21 +93,21 @@ shift $((OPTIND-1))
 
 BUILD_ARGS=( "$@" )
 
+if [ ${#BUILD_ARGS[@]} -eq 0 ]; then
+    BUILD_ARGS+=('all')
+fi
+
 }
 
 CLEAN_PROJECT () {
-  #TODO: clean a specific build
-	local DIR_NAME
+	
+  DIR_NAME="${DEFAULT_BUILD_DIR}${1}"
 
-	for T in debug release; do
-		DIR_NAME="${DEFAULT_BUILD_DIR}${T}"
-
-		if [ -d "${DIR_NAME}" ]; then
-			find "${DIR_NAME}" -name "*.o" -exec rm -rf {} \;
-			find "${DIR_NAME}" -name "*.a" -exec rm -rf {} \;
-			find "${DIR_NAME}" -name ".*last_compiled_time_bbash" -exec rm -rf {} \;
-		fi
-	done
+  if [ -d "${DIR_NAME}" ]; then
+    find "${DIR_NAME}" -name "*.o" -exec rm -rf {} \;
+    find "${DIR_NAME}" -name "*.a" -exec rm -rf {} \;
+    find "${DIR_NAME}" -name ".*last_compiled_time_bbash" -exec rm -rf {} \;
+  fi
 
 }
 
@@ -374,7 +409,7 @@ COMPILE_STATIC_LIB () {
 	done
 
 	if [ -n "$ANY_COMPILED_LOCAL" ]; then
-	  PRINT_INFO "CREATING STATIC LIB $LIB_NAME"
+    PRINT_INFO "CREATING STATIC LIB $LIB_NAME"
 		ECHO_AND_EXEC_COMMAND "$AR_COMMAND rcs $LIB_PATH ${OBJECTS[*]}"
 		ECHO_AND_EXEC_COMMAND "$RANLIB $LIB_PATH"
 		touch "$TIME_FILE"
@@ -386,7 +421,7 @@ COMPILE_STATIC_LIB () {
 
 COMPILE_SHARED_LIB () {
 
-	local LIB_NAME=lib$1
+  local LIB_NAME=lib$1
 	local SOURCES=$2
 	local HEADERS=$3
 	local STATIC_DEPS_LIST=$4
