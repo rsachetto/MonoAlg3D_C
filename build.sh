@@ -19,6 +19,10 @@ COMPILE_ALG_TO_GRAPH='y'
 
 GET_BUILD_OPTIONS "$@"
 
+echo "${BUILD_ARGS[*]}"
+
+exit 1
+
 if [ "$BUILD_TYPE" == "release" ]; then
   C_FLAGS="$C_FLAGS -O3"
 elif [ "$BUILD_TYPE" == "debug" ]; then

@@ -15,6 +15,7 @@ C_FLAGS=
 ROOT_DIR=$(pwd)
 BUILD_TYPE="release"
 
+
 RUNTIME_OUTPUT_DIRECTORY=$ROOT_DIR
 LIBRARY_OUTPUT_DIRECTORY=$ROOT_DIR
 
@@ -37,33 +38,25 @@ PRINT_USAGE () {
 }
 
 GET_BUILD_OPTIONS () {
-	
-	if [ $# -gt 1 ]; then
-		PRINT_USAGE "$@"
-	fi
 
-	while [ $# -gt 0 ] && [ "$1" != "--" ]; do
-		while getopts "fqlh" opt; do
-			case $opt in
-        f) GLOBAL_FORCE_COMPILATION='y' ;;
-        l) WRITE_COMPILE_COMMANDS='y'; GLOBAL_FORCE_COMPILATION='y' ;;
-        q) QUIET='y' ;;
-        h) ;&
-        \?) PRINT_USAGE "$@";;
-		  esac
-	done
+OPTIND=1
 
-	shift $((OPTIND-1))
+while getopts "h?fqlrd" opt; do
+    case "$opt" in
+      h|\?) PRINT_USAGE "$@" ;;
+      f) GLOBAL_FORCE_COMPILATION='y' ;;
+      l) WRITE_COMPILE_COMMANDS='y'; GLOBAL_FORCE_COMPILATION='y' ;;
+      r) BUILD_TYPE='release' ;;
+      d) BUILD_TYPE='debug' ;;
+      q) QUIET='y' ;;
+    esac
+done
 
-	while [ $# -gt 0 ] && ! [[ "$1" =~ ^- ]]; do
-		  BUILD_TYPE_ARR=("${mandatory[@]}" "$1")
-			shift
-		done
-	done
+shift $((OPTIND-1))
 
-  if [ -n "${BUILD_TYPE_ARR[*]}" ]; then
-	  BUILD_TYPE=${BUILD_TYPE_ARR[*]}
-	fi
+[ "${1:-}" = "--" ] && shift
+
+BUILD_ARGS=( "$@" )
 
 }
 
