@@ -62,7 +62,7 @@ static void read_and_render_activation_map(char *input_file) {
     draw_config.grid_info.file_name = NULL;
 
     omp_set_lock(&draw_config.draw_lock);
-    draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_activation_file(input_file);
+    draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file);
     draw_config.grid_info.loaded = true;
     draw_config.int_scale = true;
 
@@ -190,7 +190,7 @@ static int read_and_render_files(struct visualization_options *options) {
         full_path = sdscat(full_path, vtk_files->files_list[current_file]);
         omp_set_lock(&draw_config.draw_lock);
         free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
-        draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_vtu_file(full_path);
+        draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path);
         draw_config.grid_info.loaded = true;
 
         if(!draw_config.grid_info.vtk_grid) {
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
     }
 
     if(options->save_activation_only) {
-        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_activation_file(options->activation_map);
+        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file(options->activation_map);
         if(!vtk_grid) {
             fprintf(stderr, "Failed to convert %s\n", options->activation_map);
             exit(EXIT_FAILURE);
