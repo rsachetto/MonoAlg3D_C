@@ -7,7 +7,7 @@
           <tool actionId="Tool_External Tools_build_release" />
         </build>
         <clean type="TOOL">
-          <tool actionId="Tool_External Tools_build_clean" />
+          <tool actionId="Tool_External Tools_clean_release" />
         </clean>
       </configuration>
     </target>
@@ -17,7 +17,7 @@
           <tool actionId="Tool_External Tools_build_debug" />
         </build>
         <clean type="TOOL">
-          <tool actionId="Tool_External Tools_build_clean" />
+          <tool actionId="Tool_External Tools_clean_debug" />
         </clean>
       </configuration>
     </target>

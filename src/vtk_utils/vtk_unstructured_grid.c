@@ -1709,14 +1709,14 @@ static void free_parser_state(struct parser_state *parser_state) {
 }
 
 //TODO: implement read only values for non-adaptive meshes
-void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *vtu_file_name) {
+void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *file_name) {
 
     //TODO: this whole code is really convoluted. We can do better than this mess...
     size_t size;
 
     struct parser_state *parser_state = calloc(1, sizeof(struct parser_state));
 
-    char *tmp = read_entire_file_with_mmap(vtu_file_name, &size);
+    char *tmp = read_entire_file_with_mmap(file_name, &size);
 
     if(!tmp) {
         *vtk_grid = NULL;
@@ -1725,6 +1725,8 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
     char *source = tmp;
 
+    //TODO:
+    //TRYING TO INFER THE FILE TYPE//////////////////////
     bool legacy  = (source[0] == '#');
 
     bool plain_text = isdigit(source[0]);
@@ -1732,6 +1734,7 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
     bool xml = (source[0] == '<');
 
     bool activation_info = (source[0] == '0' || source[0] == '1') && (source[1] == '\n');
+    ///////////////////////////////////
 
     size_t base64_outlen = 0;
 
@@ -1981,16 +1984,8 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
 }
 
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const char *vtu_file_name) {
-
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *file_name) {
     struct vtk_unstructured_grid *vtk_grid = NULL;
-    set_vtk_grid_from_file(&vtk_grid, vtu_file_name);
+    set_vtk_grid_from_file(&vtk_grid, file_name);
     return vtk_grid;
-
-}
-
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_activation_file(const char *activation_map_file) {
-
-    return new_vtk_unstructured_grid_from_vtu_file(activation_map_file);
-
 }

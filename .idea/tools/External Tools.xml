@@ -2,21 +2,28 @@
   <tool name="build_release" description="Build Release" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
     <exec>
       <option name="COMMAND" value="$USER_HOME$/Projects/MonoAlg3D_C/build.sh" />
-      <option name="PARAMETERS" value="release" />
+      <option name="PARAMETERS" value="all" />
       <option name="WORKING_DIRECTORY" value="$USER_HOME$/Projects/MonoAlg3D_C" />
     </exec>
   </tool>
-  <tool name="build_clean" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
+  <tool name="clean_release" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
     <exec>
       <option name="COMMAND" value="$USER_HOME$/Projects/MonoAlg3D_C/build.sh" />
-      <option name="PARAMETERS" value="clean" />
+      <option name="PARAMETERS" value="-r clean" />
       <option name="WORKING_DIRECTORY" value="$USER_HOME$/Projects/MonoAlg3D_C" />
     </exec>
   </tool>
   <tool name="build_debug" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
     <exec>
       <option name="COMMAND" value="$USER_HOME$/Projects/MonoAlg3D_C/build.sh" />
-      <option name="PARAMETERS" value="debug" />
+      <option name="PARAMETERS" value="-d all" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/Projects/MonoAlg3D_C" />
+    </exec>
+  </tool>
+  <tool name="clean_debug" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="false" showConsoleOnStdErr="false" synchronizeAfterRun="true">
+    <exec>
+      <option name="COMMAND" value="$USER_HOME$/Projects/MonoAlg3D_C/build.sh" />
+      <option name="PARAMETERS" value="-d clean" />
       <option name="WORKING_DIRECTORY" value="$USER_HOME$/Projects/MonoAlg3D_C" />
     </exec>
   </tool>
