@@ -64,7 +64,7 @@ SAVE_MESH(save_as_adjacency_list) {
 
     struct cell_node *neighbour;
     
-    for_each_cell(the_grid) {
+    FOR_EACH_CELL(the_grid) {
 
         if(cell->active) {
 
@@ -177,23 +177,21 @@ SAVE_MESH(save_as_text_or_binary) {
     sdsfree(base_name);
     sdsfree(tmp);
 
-    struct cell_node *grid_cell = the_grid->first_cell;
-
     float center_x, center_y, center_z, dx, dy, dz;
     float v;
 
-    while(grid_cell != 0) {
+    FOR_EACH_CELL(the_grid) {
 
-        if(grid_cell->active) {
+        if(cell->active) {
 
-            center_x = grid_cell->center.x;
-            center_y = grid_cell->center.y;
-            center_z = grid_cell->center.z;
+            center_x = cell->center.x;
+            center_y = cell->center.y;
+            center_z = cell->center.z;
 
             if(clip_with_plain) {
                 side = A * center_x + B * center_y + C * center_z + D;
                 if(side < 0) {
-                    grid_cell = grid_cell->next;
+                    cell = cell->next;
                     continue;
                 }
             }
@@ -203,15 +201,15 @@ SAVE_MESH(save_as_text_or_binary) {
                                    center_z < min_z || center_z > max_z;
 
                 if(ignore_cell) {
-                    grid_cell = grid_cell->next;
+                    cell = cell->next;
                     continue;
                 }
             }
 
-            v = grid_cell->v;
-            dx = grid_cell->discretization.x/2.0;
-            dy = grid_cell->discretization.y/2.0;
-            dz = grid_cell->discretization.z/2.0;
+            v = cell->v;
+            dx = cell->discretization.x/2.0;
+            dy = cell->discretization.y/2.0;
+            dz = cell->discretization.z/2.0;
 
             if(binary) {
                 fwrite(&center_x, sizeof(center_x), 1, output_file);
@@ -225,7 +223,6 @@ SAVE_MESH(save_as_text_or_binary) {
                 fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
             }
         }
-        grid_cell = grid_cell->next;
     }
 
     fclose(output_file);
@@ -693,8 +690,6 @@ SAVE_MESH(save_with_activation_times) {
     struct save_with_activation_times_persistent_data *persistent_data =
             (struct save_with_activation_times_persistent_data*)config->persistent_data;
 
-    struct cell_node *grid_cell = the_grid->first_cell;
-
     real_cpu center_x, center_y, center_z, dx, dy, dz;
     real_cpu v;
 
@@ -702,32 +697,32 @@ SAVE_MESH(save_with_activation_times) {
 
     fprintf(act_file, "%d\n", (last_t-current_t) <= dt ); //rounding errors
 
-    while(grid_cell != 0) {
+    FOR_EACH_CELL(the_grid) {
 
-        if( grid_cell->active || ( grid_cell->mesh_extra_info && ( FIBROTIC(grid_cell) || BORDER_ZONE(grid_cell) ) ) ) {
+        if( cell->active || ( cell->mesh_extra_info && ( FIBROTIC(cell) || BORDER_ZONE(cell) ) ) ) {
 
-            center_x = grid_cell->center.x;
-            center_y = grid_cell->center.y;
-            center_z = grid_cell->center.z;
+            center_x = cell->center.x;
+            center_y = cell->center.y;
+            center_z = cell->center.z;
 
-            v = grid_cell->v;
+            v = cell->v;
 
             struct point_3d cell_coordinates;
             cell_coordinates.x = center_x;
             cell_coordinates.y = center_y;
             cell_coordinates.z = center_z;
 
-            dx = grid_cell->discretization.x / 2.0;
-            dy = grid_cell->discretization.y / 2.0;
-            dz = grid_cell->discretization.z / 2.0;
+            dx = cell->discretization.x / 2.0;
+            dy = cell->discretization.y / 2.0;
+            dz = cell->discretization.z / 2.0;
 
-            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
+            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, cell->active, FIBROTIC(cell), BORDER_ZONE(cell));
 
             int n_activations = 0;
             float *apds_array = NULL;
             float *activation_times_array = NULL;
 
-            if(grid_cell->active) {
+            if(cell->active) {
 
                 float last_v = hmget(persistent_data->last_time_v, cell_coordinates);
 
@@ -798,7 +793,6 @@ SAVE_MESH(save_with_activation_times) {
             fprintf(act_file, "]\n");
         }
 
-        grid_cell = grid_cell->next;
     }
 
     fclose(act_file);

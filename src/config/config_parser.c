@@ -166,7 +166,6 @@ void free_batch_options(struct batch_options * options) {
     free(options);
 }
 
-
 struct visualization_options *new_visualization_options() {
     struct visualization_options *options = (struct visualization_options *)malloc(sizeof(struct visualization_options));
     options->input_folder = NULL;
@@ -178,7 +177,7 @@ struct visualization_options *new_visualization_options() {
     options->activation_map = NULL;
     options->save_activation_only = false;
     options->step = 1;
-    options->start_file = 1;
+    options->start_file = 0;
 
     return options;
 }

@@ -740,8 +740,6 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    struct cell_node *grid_cell;
-
     initialize_diagonal_elements(the_solver, the_grid);
 
     int i;
@@ -771,29 +769,26 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
 
     log_to_stdout_and_file("Using %u as seed\n", seed);
 
-    if (!sigma_initialized)
-    {
-	    grid_cell = the_grid->first_cell;
-	    while(grid_cell != 0) 
-	    {
+    if (!sigma_initialized) {
 
-		    if(grid_cell->active) 
+	    FOR_EACH_CELL(the_grid)  {
+
+		    if(cell->active) 
 		    {
 	    		real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
 	    		if (p < phi) 
 			    {
-				    grid_cell->sigma.x = sigma_x * sigma_factor;
-				    grid_cell->sigma.y = sigma_y * sigma_factor;
-				    grid_cell->sigma.z = sigma_z * sigma_factor;
+				    cell->sigma.x = sigma_x * sigma_factor;
+				    cell->sigma.y = sigma_y * sigma_factor;
+				    cell->sigma.z = sigma_z * sigma_factor;
 	    		}
 			    else
 			    {
-				    grid_cell->sigma.x = sigma_x;
-	    			grid_cell->sigma.y = sigma_y;
-	    			grid_cell->sigma.z = sigma_z;
+				    cell->sigma.x = sigma_x;
+	    			cell->sigma.y = sigma_y;
+	    			cell->sigma.z = sigma_z;
 			    }
 		    }
-		    grid_cell = grid_cell->next;
     	}
 
 	    //sigma_initialized = true;
@@ -1071,8 +1066,6 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
 ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
 {
 
-    struct cell_node *grid_cell;
-
     initialize_diagonal_elements(the_solver, the_grid);
 
     real_cpu phi = 0.0;
@@ -1090,32 +1083,26 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     // Write the new fibrotic region file
 	FILE *fileW = fopen(new_fib_file, "w+");
 
-    grid_cell = the_grid->first_cell;
-
     // Initialize the random the generator with the same seed used by the original model
     srand(seed);
-    while(grid_cell != 0) 
-    {
+    FOR_EACH_CELL(the_grid) {
 
-        if(grid_cell->active) 
-        {
+        if(cell->active) {
             real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-            if(p < phi) 
-            {
+            if(p < phi) {
                 // We reescale the cell position using the 'rescale_factor'
-                double center_x = grid_cell->center.x * rescale_factor;
-                double center_y = grid_cell->center.y * rescale_factor;
-                double center_z = grid_cell->center.z * rescale_factor;
-                double dx = grid_cell->discretization.x * rescale_factor;
-                double dy = grid_cell->discretization.y * rescale_factor;
-                double dz = grid_cell->discretization.z * rescale_factor;
+                double center_x = cell->center.x * rescale_factor;
+                double center_y = cell->center.y * rescale_factor;
+                double center_z = cell->center.z * rescale_factor;
+                double dx = cell->discretization.x * rescale_factor;
+                double dy = cell->discretization.y * rescale_factor;
+                double dz = cell->discretization.z * rescale_factor;
                 
                 // Then, we write only the fibrotic regions to the output file
                 fprintf(fileW,"%g,%g,%g,%g,%g,%g,0\n",center_x,center_y,center_z,dx/2.0,dy/2.0,dz/2.0);
             }
 
         }
-        grid_cell = grid_cell->next;
     }
 
     fclose(fileW);  	
