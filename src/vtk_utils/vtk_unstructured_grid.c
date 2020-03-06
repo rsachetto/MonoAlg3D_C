@@ -481,8 +481,6 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         max_z = bounds[5];
     }
 
-    struct cell_node *grid_cell = grid->first_cell;
-
     real_cpu center_x, center_y, center_z;
     //double v;
 
@@ -507,18 +505,18 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     real_cpu side;
     struct point_hash_entry *hash =  NULL;
 
-    while(grid_cell != 0) {
+    FOR_EACH_CELL(grid) {
 
-        if(grid_cell->active) {
+        if(cell->active) {
 
-            center_x = grid_cell->center.x;
-            center_y = grid_cell->center.y;
-            center_z = grid_cell->center.z;
+            center_x = cell->center.x;
+            center_y = cell->center.y;
+            center_z = cell->center.z;
 
             if(clip_with_plain) {
                 side = A * center_x + B * center_y + C * center_z + D;
                 if(side < 0) {
-                    grid_cell = grid_cell->next;
+                    cell = cell->next;
                     continue;
                 }
             }
@@ -528,24 +526,24 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
                                    center_z < min_z || center_z > max_z;
 
                 if(ignore_cell) {
-                    grid_cell = grid_cell->next;
+                    cell = cell->next;
                     continue;
                 }
             }
 
-            arrput((*vtk_grid)->values, grid_cell->v);
+            arrput((*vtk_grid)->values, cell->v);
 
-            if(grid_cell->v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = grid_cell->v;
-            if(grid_cell->v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = grid_cell->v;
+            if(cell->v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = cell->v;
+            if(cell->v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = cell->v;
 
             if(read_only_values) {
-                grid_cell = grid_cell->next;
+                cell = cell->next;
                 continue;
             }
 
-            real_cpu half_face_x = grid_cell->discretization.x / 2.0f;
-            real_cpu half_face_y = grid_cell->discretization.y / 2.0f;
-            real_cpu half_face_z = grid_cell->discretization.z / 2.0f;
+            real_cpu half_face_x = cell->discretization.x / 2.0f;
+            real_cpu half_face_y = cell->discretization.y / 2.0f;
+            real_cpu half_face_z = cell->discretization.z / 2.0f;
 
             aux1.x = center_x - half_face_x;
             aux1.y = center_y - half_face_y;
@@ -638,7 +636,6 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             num_cells++;
         }
 
-        grid_cell = grid_cell->next;
     }
 
     if(!read_only_values) {

@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define for_each_cell(grid) \
+#define FOR_EACH_CELL(grid) \
     for(struct cell_node *cell = grid->first_cell; cell != NULL; cell = cell->next)
 
 struct grid {

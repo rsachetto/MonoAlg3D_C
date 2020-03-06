@@ -545,8 +545,6 @@ ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix)
 {
     static bool sigma_initialized = false;
 
-    struct cell_node *grid_cell;
-
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
@@ -582,26 +580,21 @@ ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix)
             cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z);
 
     // Initialize the conductivities of each cell
-    if (!sigma_initialized)
-    {
-	    grid_cell = the_grid->first_cell;
-	    while(grid_cell != 0) 
-	    {
+    if (!sigma_initialized) {
+	    FOR_EACH_CELL(the_grid) {
 
-		    if(grid_cell->active) 
-		    {
-	    		grid_cell->sigma.x = sigma_x;
-	    		grid_cell->sigma.y = sigma_y;
-	    		grid_cell->sigma.z = sigma_z;
+		    if(cell->active) {
+	    		cell->sigma.x = sigma_x;
+	    		cell->sigma.y = sigma_y;
+	    		cell->sigma.z = sigma_z;
 		    }
-		    grid_cell = grid_cell->next;
     	}
 
 	    sigma_initialized = true;
     }
 
     #pragma omp parallel for
-    for(int i = 0; i < num_active_cells; i++) 
+    for(uint32_t i = 0; i < num_active_cells; i++)
     {
 
         // Computes and designates the flux due to south cells.
@@ -905,8 +898,6 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-	struct cell_node *grid_cell;
-
 
     initialize_diagonal_elements(the_solver, the_grid);
 
@@ -1167,29 +1158,24 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
     // Write the new grid configuration on the rescaled_fibrosis file
 	FILE *fileW = fopen(new_fib_file, "w+");
 
-    grid_cell = the_grid->first_cell;
+    FOR_EACH_CELL(the_grid) {
 
-    while(grid_cell != 0) 
-    {
-
-        if(grid_cell->active) 
-        {
+        if(cell->active) {
             // We reescale the cell position using the 'rescale_factor'
-            double center_x = grid_cell->center.x ;
-            double center_y = grid_cell->center.y ;
-            double center_z = grid_cell->center.z ;
-            double dx = grid_cell->discretization.x;
-            double dy = grid_cell->discretization.y;
-            double dz = grid_cell->discretization.z;
-            double w_sigma_x = grid_cell->sigma.x;
-            double w_sigma_y = grid_cell->sigma.y;
-            double w_sigma_z = grid_cell->sigma.z;
+            double center_x = cell->center.x ;
+            double center_y = cell->center.y ;
+            double center_z = cell->center.z ;
+            double dx = cell->discretization.x;
+            double dy = cell->discretization.y;
+            double dz = cell->discretization.z;
+            double w_sigma_x = cell->sigma.x;
+            double w_sigma_y = cell->sigma.y;
+            double w_sigma_z = cell->sigma.z;
                 
             // Then, we write only the fibrotic regions to the output file
             fprintf(fileW,"%g,%g,%g,%g,%g,%g,%g,%g,%g\n",center_x,center_y,center_z,dx/2.0,dy/2.0,dz/2.0,w_sigma_x,w_sigma_y,w_sigma_z);
             
         }
-        grid_cell = grid_cell->next;
     }
 
 	fclose(fileW);  	

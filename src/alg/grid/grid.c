@@ -174,35 +174,29 @@ void construct_grid(struct grid *the_grid) {
 
 void print_grid(struct grid *the_grid, FILE *output_file) {
 
-    struct cell_node *grid_cell = the_grid->first_cell;
-
     real_cpu center_x, center_y, center_z, dx, dy, dz;
     real_cpu v;
 
-    while(grid_cell != 0) {
+    FOR_EACH_CELL(the_grid) {
 
-        if(grid_cell->active) {
+        if(cell->active) {
 
-            center_x = grid_cell->center.x;
-            center_y = grid_cell->center.y;
-            center_z = grid_cell->center.z;
+            center_x = cell->center.x;
+            center_y = cell->center.y;
+            center_z = cell->center.z;
 
-            dx = grid_cell->discretization.x;
-            dy = grid_cell->discretization.y;
-            dz = grid_cell->discretization.z;
+            dx = cell->discretization.x;
+            dy = cell->discretization.y;
+            dz = cell->discretization.z;
 
-            v = grid_cell->v;
+            v = cell->v;
 
             fprintf(output_file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", center_x, center_y, center_z, dx, dy, dz, v);
         }
-        grid_cell = grid_cell->next;
     }
 }
 
 void order_grid_cells(struct grid *the_grid) {
-
-    struct cell_node *grid_cell;
-    grid_cell = the_grid->first_cell;
 
     // Here we allocate the maximum number of cells we will need for the whole simulation
     if(the_grid->active_cells == NULL) {
@@ -210,14 +204,12 @@ void order_grid_cells(struct grid *the_grid) {
     }
 
     uint32_t counter = 0;
-    while(grid_cell != 0) {
-        if(grid_cell->active) {
-            grid_cell->grid_position = counter;
-            the_grid->active_cells[counter] = grid_cell;
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
+            cell->grid_position = counter;
+            the_grid->active_cells[counter] = cell;
             counter++;
         }
-
-        grid_cell = grid_cell->next;
     }
 
     the_grid->num_active_cells = counter;
@@ -314,15 +306,13 @@ void print_grid_matrix(struct grid *the_grid, FILE *output_file) {
     assert(the_grid);
     assert(output_file);
 
-    struct cell_node *grid_cell;
-    grid_cell = the_grid->first_cell;
     struct element element;
     element_array cell_elements;
 
-    while(grid_cell != 0) {
-        if(grid_cell->active) {
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
 
-            cell_elements = grid_cell->elements;
+            cell_elements = cell->elements;
             size_t max_el = arrlen(cell_elements);
 
             for(size_t i = 0; i < max_el; i++) {
@@ -332,13 +322,12 @@ void print_grid_matrix(struct grid *the_grid, FILE *output_file) {
                     fprintf(output_file,
                             "%" PRIu32 " "
                             "%" PRIu32 " %.15lf\n",
-                            grid_cell->grid_position + 1, (element.column) + 1, element.value);
+                            cell->grid_position + 1, (element.column) + 1, element.value);
                 } else {
                     break;
                 }
             }
         }
-        grid_cell = grid_cell->next;
     }
 }
 
@@ -358,8 +347,6 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
     assert(the_grid);
     assert(output_file);
 
-    struct cell_node *grid_cell;
-    grid_cell = the_grid->first_cell;
     struct element element;
     element_array cell_elements;
 
@@ -372,10 +359,10 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
 
     int nnz = 0;
 
-    while(grid_cell != 0) {
-        if(grid_cell->active) {
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
 
-            cell_elements = grid_cell->elements;
+            cell_elements = cell->elements;
             size_t max_el = arrlen(cell_elements);
 
             qsort(cell_elements, max_el, sizeof(struct element), compare_elements);
@@ -388,13 +375,12 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
                     fprintf(output_file,
                             "%" PRIu32 " "
                             "%" PRIu32 " %.15lf\n",
-                            grid_cell->grid_position + 1, (element.column) + 1, element.value);
+                            cell->grid_position + 1, (element.column) + 1, element.value);
                 } else {
                     break;
                 }
             }
         }
-        grid_cell = grid_cell->next;
     }
 
     fseek(output_file, 84, SEEK_SET);
@@ -402,50 +388,42 @@ void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file
 }
 
 void print_grid_vector(struct grid *the_grid, FILE *output_file, char name) {
-    struct cell_node *grid_cell;
-    grid_cell = the_grid->first_cell;
 
-    while(grid_cell != 0) {
-        if(grid_cell->active) {
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
             if(name == 'b')
-                fprintf(output_file, "%.15lf\n", grid_cell->b);
+                fprintf(output_file, "%.15lf\n", cell->b);
             else if(name == 'x')
-                fprintf(output_file, "%.15lf\n", grid_cell->v);
+                fprintf(output_file, "%.15lf\n", cell->v);
         }
-        grid_cell = grid_cell->next;
     }
 }
 
 real_cpu *grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines) {
-    struct cell_node *grid_cell;
-    grid_cell = the_grid->first_cell;
 
     *num_lines = the_grid->num_active_cells;
     real_cpu *vector = (real_cpu *)malloc(*num_lines * sizeof(real_cpu));
 
-    while(grid_cell != 0) {
-        if(grid_cell->active) {
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
             if(name == 'b')
-                vector[grid_cell->grid_position] = grid_cell->b;
+                vector[cell->grid_position] = cell->b;
             else if(name == 'x')
-                vector[grid_cell->grid_position] = grid_cell->v;
+                vector[cell->grid_position] = cell->v;
         }
-        grid_cell = grid_cell->next;
     }
 
     return vector;
 }
 
 void save_grid_domain(struct grid *the_grid, const char *file_name) {
-    struct cell_node *grid_cell = the_grid->first_cell;
     FILE *f = fopen(file_name, "w");
 
-    while(grid_cell != 0) {
-        if(grid_cell->active) {
-            fprintf(f, "%lf,%lf,%lf,%lf,%lf,%lf\n", grid_cell->center.x, grid_cell->center.y, grid_cell->center.z,
-                    grid_cell->discretization.x, grid_cell->discretization.y, grid_cell->discretization.z);
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
+            fprintf(f, "%lf,%lf,%lf,%lf,%lf,%lf\n", cell->center.x, cell->center.y, cell->center.z,
+                    cell->discretization.x, cell->discretization.y, cell->discretization.z);
         }
-        grid_cell = grid_cell->next;
     }
     fclose(f);
 }
@@ -530,20 +508,16 @@ void initialize_and_construct_grid_purkinje(struct grid *the_grid) {
     construct_grid_purkinje(the_grid);
 }
 
-void translate_mesh_to_origin(struct grid *grid) {
+void translate_mesh_to_origin(struct grid *the_grid) {
 
     real_cpu minx = FLT_MAX;
     real_cpu miny = FLT_MAX;
     real_cpu minz = FLT_MAX;
 
-    struct cell_node *grid_cell;
-
-    grid_cell = grid->first_cell;
-
-    while(grid_cell != 0) {
-        real_cpu center_x = grid_cell->center.x;
-        real_cpu center_y = grid_cell->center.y;
-        real_cpu center_z = grid_cell->center.z;
+    FOR_EACH_CELL(the_grid) {
+        real_cpu center_x = cell->center.x;
+        real_cpu center_y = cell->center.y;
+        real_cpu center_z = cell->center.z;
 
         if(center_x < minx) {
             minx = center_x;
@@ -557,18 +531,12 @@ void translate_mesh_to_origin(struct grid *grid) {
             minz = center_z;
         }
 
-        grid_cell = grid_cell->next;
     }
 
-    grid_cell = grid->first_cell;
-
-    while(grid_cell != 0) {
-
-        grid_cell->translated_center.x = grid_cell->center.x - minx + (grid_cell->discretization.x / 2.0f);
-        grid_cell->translated_center.y = grid_cell->center.y - miny + (grid_cell->discretization.y / 2.0f);
-        grid_cell->translated_center.z = grid_cell->center.z - minz + (grid_cell->discretization.z / 2.0f);
-
-        grid_cell = grid_cell->next;
+    FOR_EACH_CELL(the_grid) {
+        cell->translated_center.x = cell->center.x - minx + (cell->discretization.x / 2.0f);
+        cell->translated_center.y = cell->center.y - miny + (cell->discretization.y / 2.0f);
+        cell->translated_center.z = cell->center.z - minz + (cell->discretization.z / 2.0f);
     }
 }
 
@@ -600,7 +568,7 @@ void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
     size_t max_el = 0;
     int nnz_local;
 
-    for_each_cell(the_grid) {
+    FOR_EACH_CELL(the_grid) {
 
         bool insert = cell->active;
 
@@ -638,7 +606,7 @@ void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
     arrpush(*IA, nnz);
 }
 
-void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b) {
+void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vector_b) {
 
     uint32_t n_cells;
     long num_lines_m = 0;
@@ -651,36 +619,35 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     if(vector_b)
         vector = read_octave_vector_file_to_array(vector_b, &num_lines_v);
 
-    initialize_and_construct_grid(grid, POINT3D(1.0, 1.0, 1.0));
+    initialize_and_construct_grid(the_grid, POINT3D(1.0, 1.0, 1.0));
 
-    n_cells = grid->number_of_cells;
+    n_cells = the_grid->number_of_cells;
     while(n_cells < num_lines_m) {
-        refine_grid(grid, 1);
-        n_cells = grid->number_of_cells;
+        refine_grid(the_grid, 1);
+        n_cells = the_grid->number_of_cells;
     }
 
-    struct cell_node *cell = grid->first_cell;
-    while(cell) {
+    FOR_EACH_CELL(the_grid) {
         cell->active = false;
-        cell = cell->next;
     }
 
     int item_count = 0;
-    cell = grid->first_cell;
+
+    struct cell_node *cell = the_grid->first_cell;
     while(item_count < num_lines_m) {
         cell->active = true;
         cell = cell->next;
         item_count++;
     }
 
-    order_grid_cells(grid);
+    order_grid_cells(the_grid);
 
-    cell = grid->first_cell;
+    cell = the_grid->first_cell;
     uint32_t cell_position;
 
     real_cpu m_value;
 
-    for(int i = 0; i < num_lines_m; i++) {
+    for(long i = 0; i < num_lines_m; i++) {
 
         cell_position = cell->grid_position;
         m_value = matrix[cell_position][cell_position];
@@ -692,7 +659,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
         arrsetcap(cell->elements, 7);
         arrput(cell->elements, el);
 
-        for(int j = 0; j < num_lines_m; j++) {
+        for(long j = 0; j < num_lines_m; j++) {
             if(cell_position != j) {
                 m_value = matrix[cell_position][j];
 
@@ -701,7 +668,7 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
                     el2.value = m_value;
                     el2.column = (uint32_t)j;
 
-                    struct cell_node *aux = grid->first_cell;
+                    struct cell_node *aux = the_grid->first_cell;
                     while(aux) {
                         if(aux->grid_position == j)
                             break;
@@ -717,15 +684,15 @@ void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b)
     }
 
     if(vector) {
-        cell = grid->first_cell;
-        for(int i = 0; i < num_lines_v; i++) {
+        cell = the_grid->first_cell;
+        for(long i = 0; i < num_lines_v; i++) {
             cell->b = vector[cell->grid_position];
             cell->v = 1.0;
             cell = cell->next;
         }
     }
 
-    for(int i = 0; i < num_lines_m; i++) {
+    for(long i = 0; i < num_lines_m; i++) {
         free(matrix[i]);
     }
 

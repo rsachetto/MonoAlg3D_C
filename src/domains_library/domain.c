@@ -343,24 +343,23 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
     log_to_stdout_and_file("Using %u as seed\n", fib_seed);
     log_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
-    struct cell_node *grid_cell = the_grid->first_cell;
     bool fibrotic, border_zone;
 
-    while(grid_cell != 0) {
 
-        if(grid_cell->active) {
-            fibrotic = FIBROTIC(grid_cell);
-            border_zone = BORDER_ZONE(grid_cell);
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
+            fibrotic = FIBROTIC(cell);
+            border_zone = BORDER_ZONE(cell);
 
             if(fibrotic) {
-                grid_cell->can_change = false;
+                cell->can_change = false;
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX); // rand() has limited randomness
                 if(p < phi)
-                    grid_cell->active = false;
+                    cell->active = false;
             } else if(border_zone) {
-                real_cpu center_x = grid_cell->center.x;
-                real_cpu center_y = grid_cell->center.y;
-                real_cpu center_z = grid_cell->center.z;
+                real_cpu center_x = cell->center.x;
+                real_cpu center_y = cell->center.y;
+                real_cpu center_z = cell->center.z;
                 dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) +
                             (center_y - scar_center_y) * (center_y - scar_center_y) +
                             (center_z - scar_center_z) * (center_z - scar_center_z));
@@ -369,18 +368,15 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
                 }
             }
         }
-        grid_cell = grid_cell->next;
     }
 
-    grid_cell = the_grid->first_cell;
-    while(grid_cell != 0) {
-
-        if(grid_cell->active) {
-            border_zone = BORDER_ZONE(grid_cell);
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
+            border_zone = BORDER_ZONE(cell);
             if(border_zone) {
-                real_cpu center_x = grid_cell->center.x;
-                real_cpu center_y = grid_cell->center.y;
-                real_cpu center_z = grid_cell->center.z;
+                real_cpu center_x = cell->center.x;
+                real_cpu center_y = cell->center.y;
+                real_cpu center_z = cell->center.z;
                 dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) +
                             (center_y - scar_center_y) * (center_y - scar_center_y) +
                             (center_z - scar_center_z) * (center_z - scar_center_z));
@@ -390,12 +386,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
 
                 if(p < phi_local)
-                    grid_cell->active = false;
+                    cell->active = false;
 
-                grid_cell->can_change = false;
+                cell->can_change = false;
             }
         }
-        grid_cell = grid_cell->next;
     }
 
     free(mesh_file);
@@ -443,7 +438,6 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
 
     initialize_grid_with_square_mesh(time_info, config, the_grid);
 
-    struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
@@ -512,16 +506,15 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     real_cpu minx = mesh_points[0][0];
     int index;
 
-    while(grid_cell != 0) {
-
-        if(grid_cell->active) {
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
             real_cpu x, y, z;
-            x = grid_cell->center.x;
-            y = grid_cell->center.y;
-            z = grid_cell->center.z;
+            x = cell->center.x;
+            y = cell->center.y;
+            z = cell->center.z;
 
             if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
-                grid_cell->active = false;
+                cell->active = false;
             } else {
                 index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
 
@@ -529,20 +522,19 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
 
                     int old_index = (int) mesh_points[index][3];
 
-                    grid_cell->active = (active[old_index] == 1);
+                    cell->active = (active[old_index] == 1);
 
                     if (fibrosis[0] != -1) {
 
-                        INITIALIZE_FIBROTIC_INFO(grid_cell);
-                        FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
-                        BORDER_ZONE(grid_cell) = (bz[old_index] == 1);
+                        INITIALIZE_FIBROTIC_INFO(cell);
+                        FIBROTIC(cell) = (fibrosis[old_index] == 1);
+                        BORDER_ZONE(cell) = (bz[old_index] == 1);
                     }
                 } else {
-                    grid_cell->active = false;
+                    cell->active = false;
                 }
             }
         }
-        grid_cell = grid_cell->next;
     }
 
     fclose(file);
@@ -672,14 +664,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     }
 
     if(the_grid->adaptive) {
-        struct cell_node *grid_cell;
-        grid_cell = the_grid->first_cell;
 
-        while(grid_cell != 0) {
-            if(grid_cell->active) {
-                set_cell_not_changeable(grid_cell, start_h);
+        FOR_EACH_CELL(the_grid) {
+            if(cell->active) {
+                set_cell_not_changeable(cell, start_h);
             }
-            grid_cell = grid_cell->next;
         }
     }
 
@@ -838,15 +827,12 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
     printf("Reading mesh file %s\n", mesh_file);
     set_custom_mesh(the_grid, mesh_file, n_points, "%lf,%lf,%lf,%lf,%d\n");
 
-    struct cell_node* grid_cell = the_grid->first_cell;
-
-    while(grid_cell != NULL) {
-        if(grid_cell->active) {
-            if (FIBROTIC(grid_cell)) {
-                grid_cell->active = false;
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active) {
+            if (FIBROTIC(cell)) {
+                cell->active = false;
             }
         }
-        grid_cell = grid_cell->next;
     }
 
     return 1;

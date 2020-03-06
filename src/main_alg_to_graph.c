@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
 //
 //    struct cell_node *neighbour;
 //
-//    for_each_cell(the_grid) {
+//    FOR_EACH_CELL(the_grid) {
 //
 //        if(cell->active) {
 //            arrput(graph, NULL);
