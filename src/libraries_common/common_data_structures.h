@@ -22,9 +22,9 @@ struct fibrotic_mesh_info {
 
 #define INITIALIZE_FIBROTIC_INFO(grid_cell)                                                                            \
     do {                                                                                                               \
-        size_t __size__ = sizeof (struct fibrotic_mesh_info);                                                              \
-        (grid_cell)->mesh_extra_info = malloc (__size__);                                                                  \
-        (grid_cell)->mesh_extra_info_size = __size__;                                                                      \
+        size_t __size__ = sizeof (struct fibrotic_mesh_info);                                                          \
+        (grid_cell)->mesh_extra_info = malloc (__size__);                                                              \
+        (grid_cell)->mesh_extra_info_size = __size__;                                                                  \
         FIBROTIC ((grid_cell)) = false;                                                                                \
         BORDER_ZONE (grid_cell) = false;                                                                               \
         SCAR_TYPE ((grid_cell)) = 'n';                                                                                 \
@@ -76,11 +76,11 @@ struct jacobi_info {
 #define JACOBI_INFO(grid_cell) (struct jacobi_info *)grid_cell->linear_system_solver_extra_info
 #define JACOBI_X_AUX(grid_cell) (JACOBI_INFO(grid_cell))->x_aux
 
-#define INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO(grid_cell, info_struct)                                                                 \
+#define INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO(grid_cell, info_struct)                                                   \
     do {                                                                                                               \
-        size_t __size__ = sizeof (struct info_struct);                                                                     \
-        (grid_cell)->linear_system_solver_extra_info = malloc (__size__);                                                  \
-        (grid_cell)->linear_system_solver_extra_info_size = __size__;                                                      \
+        size_t __size__ = sizeof (struct info_struct);                                                                 \
+        (grid_cell)->linear_system_solver_extra_info = malloc (__size__);                                              \
+        (grid_cell)->linear_system_solver_extra_info_size = __size__;                                                  \
     } while (0)
 
 #define INITIALIZE_CONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO (grid_cell, conjugate_gradient_info)

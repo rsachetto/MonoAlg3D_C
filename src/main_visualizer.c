@@ -98,7 +98,9 @@ static int read_and_render_files(struct visualization_options *options) {
         vtk_files = (struct vtk_files*) malloc(sizeof(struct vtk_files));
         vtk_files->files_list = NULL;
         vtk_files->timesteps = NULL;
-        vtk_files->files_list = list_files_from_dir_sorted(input_dir, prefix);
+        if(input_dir) {
+            vtk_files->files_list = list_files_from_dir_sorted(input_dir, prefix);
+        }
     }
     else {
         vtk_files = list_files_from_and_timesteps_from_pvd(pvd_file);
@@ -116,7 +118,12 @@ static int read_and_render_files(struct visualization_options *options) {
 
     if(!num_files) {
         char tmp[4096];
-        sprintf(tmp, "No simulations file found in %s", full_path);
+        if(*full_path) {
+            sprintf(tmp, "No simulations file found in %s", full_path);
+        }
+        else {
+            sprintf(tmp, "No path or pvd file provided!");
+        }
         fprintf(stderr, "%s\n", tmp);
         draw_config.error_message = strdup(tmp);
         return SIMULATION_FINISHED;

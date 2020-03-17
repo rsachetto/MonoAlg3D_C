@@ -72,7 +72,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu)
     }
     else 
     {
-        print_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
+        log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
     solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, mapping_device, num_cells_to_solve, num_steps);

@@ -111,7 +111,7 @@ void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_gri
                     arrput((*vtk_grid)->values, grid_cell->sigma.x);
                     break;            
                 default:
-                    print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
+                    log_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
                     break;
             }
             // --------------------------------------------------------------------------------
@@ -555,7 +555,7 @@ void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid 
                     arrput((*vtk_grid)->values, grid_cell->sigma.x);
                     break;            
                 default:
-                    print_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
+                    log_to_stderr_and_file_and_exit("[-] ERROR! Invalid scalar name!\n");
                     break;
             }
             // --------------------------------------------------------------------------------

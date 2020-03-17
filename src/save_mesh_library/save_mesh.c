@@ -63,7 +63,7 @@ SAVE_MESH(save_as_adjacency_list) {
     sdsfree(tmp);
 
     struct cell_node *neighbour;
-    
+
     FOR_EACH_CELL(the_grid) {
 
         if(cell->active) {
@@ -177,21 +177,23 @@ SAVE_MESH(save_as_text_or_binary) {
     sdsfree(base_name);
     sdsfree(tmp);
 
+    struct cell_node *grid_cell = the_grid->first_cell;
+
     float center_x, center_y, center_z, dx, dy, dz;
     float v;
 
-    FOR_EACH_CELL(the_grid) {
+    while(grid_cell != 0) {
 
-        if(cell->active) {
+        if(grid_cell->active) {
 
-            center_x = cell->center.x;
-            center_y = cell->center.y;
-            center_z = cell->center.z;
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
 
             if(clip_with_plain) {
                 side = A * center_x + B * center_y + C * center_z + D;
                 if(side < 0) {
-                    cell = cell->next;
+                    grid_cell = grid_cell->next;
                     continue;
                 }
             }
@@ -201,15 +203,15 @@ SAVE_MESH(save_as_text_or_binary) {
                                    center_z < min_z || center_z > max_z;
 
                 if(ignore_cell) {
-                    cell = cell->next;
+                    grid_cell = grid_cell->next;
                     continue;
                 }
             }
 
-            v = cell->v;
-            dx = cell->discretization.x/2.0;
-            dy = cell->discretization.y/2.0;
-            dz = cell->discretization.z/2.0;
+            v = grid_cell->v;
+            dx = grid_cell->discretization.x/2.0;
+            dy = grid_cell->discretization.y/2.0;
+            dz = grid_cell->discretization.z/2.0;
 
             if(binary) {
                 fwrite(&center_x, sizeof(center_x), 1, output_file);
@@ -223,6 +225,7 @@ SAVE_MESH(save_as_text_or_binary) {
                 fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
             }
         }
+        grid_cell = grid_cell->next;
     }
 
     fclose(output_file);
@@ -335,9 +338,9 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
 
-        #ifndef COMPILE_ZLIB
+#ifndef COMPILE_ZLIB
         compress = false;
-        #endif
+#endif
 
         if(compress) binary = true;
 
@@ -404,7 +407,7 @@ SAVE_MESH(save_as_vtu) {
 //     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
 
 
-//     if(!initialized) 
+//     if(!initialized)
 //     {
 //         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
 //         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
@@ -450,11 +453,11 @@ SAVE_MESH(save_as_vtu) {
 
 // }
 
-void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid, 
-                                             char *output_dir, char *file_prefix, int iteration_count, real_cpu current_t,
-                                             bool save_pvd, bool compress, int compression_level, bool binary,
-                                             bool clip_with_plain, float *plain_coords, 
-                                             bool clip_with_bounds, float *bounds)
+void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata, struct grid *the_grid,
+                                        char *output_dir, char *file_prefix, int iteration_count, real_cpu current_t,
+                                        bool save_pvd, bool compress, int compression_level, bool binary,
+                                        bool clip_with_plain, float *plain_coords,
+                                        bool clip_with_bounds, float *bounds)
 {
     assert(the_grid->purkinje);
 
@@ -464,18 +467,18 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    if(save_pvd) 
+    if(save_pvd)
     {
         add_file_to_pvd(current_t, output_dir, base_name);
     }
 
     new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_polydata!=NULL,'v');
 
-    if(compress) 
+    if(compress)
     {
         save_vtk_polydata_grid_as_vtp_compressed(*vtk_polydata, output_dir_with_file, compression_level);
     }
-    else 
+    else
     {
         save_vtk_polydata_grid_as_vtp(*vtk_polydata, output_dir_with_file, binary);
     }
@@ -487,11 +490,11 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
     sdsfree(base_name);
 }
 
-void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid, 
-                                             char *output_dir, char *file_prefix, int iteration_count, real_cpu current_t,
-                                             bool save_pvd, bool compress, int compression_level, bool binary,
-                                             bool clip_with_plain, float *plain_coords, 
-                                             bool clip_with_bounds, float *bounds)
+void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid, struct grid *the_grid,
+                                        char *output_dir, char *file_prefix, int iteration_count, real_cpu current_t,
+                                        bool save_pvd, bool compress, int compression_level, bool binary,
+                                        bool clip_with_plain, float *plain_coords,
+                                        bool clip_with_bounds, float *bounds)
 {
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
@@ -499,18 +502,18 @@ void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid,
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    if(save_pvd) 
+    if(save_pvd)
     {
         add_file_to_pvd(current_t, output_dir, base_name);
     }
 
     new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_grid!=NULL);
 
-    if(compress) 
+    if(compress)
     {
         save_vtk_unstructured_grid_as_vtu_compressed(*vtk_grid, output_dir_with_file, compression_level);
     }
-    else 
+    else
     {
         save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
     }
@@ -570,14 +573,14 @@ static struct vtk_unstructured_grid *vtk_grid = NULL;
 static char *file_prefix;
 static char *file_prefix_purkinje;
 
-SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje) 
+SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
 {
 
     char *output_dir;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
 
 
-    if(!initialized) 
+    if(!initialized)
     {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix_purkinje, config->config_data, "file_prefix_purkinje");
@@ -588,9 +591,9 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
 
-        #ifndef COMPILE_ZLIB
+#ifndef COMPILE_ZLIB
         compress = false;
-        #endif
+#endif
 
         if(compress) binary = true;
 
@@ -599,7 +602,7 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
-    if(clip_with_plain) 
+    if(clip_with_plain)
     {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
@@ -609,7 +612,7 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
     }
 
-    if(clip_with_bounds) 
+    if(clip_with_bounds)
     {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
@@ -624,9 +627,9 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
                                             save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
     write_transmembrane_potential_vtp(&vtk_polydata, the_grid, output_dir, file_prefix_purkinje, time_info->iteration, time_info->current_t,\
                                             save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
-           
 
-    if(the_grid->adaptive) 
+
+    if(the_grid->adaptive)
         free_vtk_unstructured_grid(vtk_grid);
 
 }
@@ -642,11 +645,11 @@ struct save_with_activation_times_persistent_data {
 INIT_SAVE_MESH(init_save_with_activation_times) {
 
     config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->num_activations, 0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
+            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
+            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
+            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->num_activations, 0);
+            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
+            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
 
 }
 
@@ -690,6 +693,8 @@ SAVE_MESH(save_with_activation_times) {
     struct save_with_activation_times_persistent_data *persistent_data =
             (struct save_with_activation_times_persistent_data*)config->persistent_data;
 
+    struct cell_node *grid_cell = the_grid->first_cell;
+
     real_cpu center_x, center_y, center_z, dx, dy, dz;
     real_cpu v;
 
@@ -697,32 +702,32 @@ SAVE_MESH(save_with_activation_times) {
 
     fprintf(act_file, "%d\n", (last_t-current_t) <= dt ); //rounding errors
 
-    FOR_EACH_CELL(the_grid) {
+    while(grid_cell != 0) {
 
-        if( cell->active || ( cell->mesh_extra_info && ( FIBROTIC(cell) || BORDER_ZONE(cell) ) ) ) {
+        if( grid_cell->active || ( grid_cell->mesh_extra_info && ( FIBROTIC(grid_cell) || BORDER_ZONE(grid_cell) ) ) ) {
 
-            center_x = cell->center.x;
-            center_y = cell->center.y;
-            center_z = cell->center.z;
+            center_x = grid_cell->center.x;
+            center_y = grid_cell->center.y;
+            center_z = grid_cell->center.z;
 
-            v = cell->v;
+            v = grid_cell->v;
 
             struct point_3d cell_coordinates;
             cell_coordinates.x = center_x;
             cell_coordinates.y = center_y;
             cell_coordinates.z = center_z;
 
-            dx = cell->discretization.x / 2.0;
-            dy = cell->discretization.y / 2.0;
-            dz = cell->discretization.z / 2.0;
+            dx = grid_cell->discretization.x / 2.0;
+            dy = grid_cell->discretization.y / 2.0;
+            dz = grid_cell->discretization.z / 2.0;
 
-            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, cell->active, FIBROTIC(cell), BORDER_ZONE(cell));
+            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
 
             int n_activations = 0;
             float *apds_array = NULL;
             float *activation_times_array = NULL;
 
-            if(cell->active) {
+            if(grid_cell->active) {
 
                 float last_v = hmget(persistent_data->last_time_v, cell_coordinates);
 
@@ -737,19 +742,19 @@ SAVE_MESH(save_with_activation_times) {
                 } else {
                     if ((last_v < activation_threshold) && (v >= activation_threshold)) {
 
-                         if (act_times_len == 0) {
+                        if (act_times_len == 0) {
                             n_activations++;
-                             hmput(persistent_data->num_activations, cell_coordinates, n_activations);
-                             arrput(activation_times_array, current_t);
-                             float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
-                             hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
-                             hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
+                            hmput(persistent_data->num_activations, cell_coordinates, n_activations);
+                                    arrput(activation_times_array, current_t);
+                            float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
+                            hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
+                            hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
                         } else { //This is to avoid spikes in the middle of an Action Potential
                             float last_act_time = activation_times_array[act_times_len - 1];
                             if (current_t - last_act_time > time_threshold) {
                                 n_activations++;
                                 hmput(persistent_data->num_activations, cell_coordinates, n_activations);
-                                arrput(activation_times_array, current_t);
+                                        arrput(activation_times_array, current_t);
                                 float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
                                 hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
                                 hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
@@ -768,7 +773,7 @@ SAVE_MESH(save_with_activation_times) {
                             // we need to get the activation before this one
                             real_cpu last_act_time = activation_times_array[act_time_array_len  - tmp];
                             real_cpu apd = current_t - last_act_time;
-                            arrput(apds_array, apd);
+                                    arrput(apds_array, apd);
                             hmput(persistent_data->apds, cell_coordinates, apds_array);
                             hmput(persistent_data->cell_was_active, cell_coordinates, tmp - 1);
                         }
@@ -793,6 +798,7 @@ SAVE_MESH(save_with_activation_times) {
             fprintf(act_file, "]\n");
         }
 
+        grid_cell = grid_cell->next;
     }
 
     fclose(act_file);
