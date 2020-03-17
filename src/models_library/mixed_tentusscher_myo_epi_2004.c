@@ -30,7 +30,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     }
     else 
     {
-        print_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
+        log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
     // Initial conditions for TenTusscher myocardium
@@ -88,7 +88,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu)
     }
     else 
     {
-        print_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
+        log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
     uint32_t sv_id;

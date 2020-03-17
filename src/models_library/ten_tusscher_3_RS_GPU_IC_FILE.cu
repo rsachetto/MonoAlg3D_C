@@ -120,7 +120,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
         }
         else {
-            print_to_stderr_and_file_and_exit("Combination not found: %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",  
+            log_to_stderr_and_file_and_exit("Combination not found: %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
                                                ((real*)extra_data)[0], ((real*)extra_data)[1],((real*)extra_data)[2],
                                                ((real*)extra_data)[3], ((real*)extra_data)[4], ((real*)extra_data)[5], 
                                                ((real*)extra_data)[6]);

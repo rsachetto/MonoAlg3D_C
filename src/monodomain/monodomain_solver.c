@@ -195,21 +195,22 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     } 
 
     if( !purkinje_config && !domain_config ) {
-        print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
+        log_to_stderr_and_file_and_exit(
+                "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
     if(assembly_matrix_config) {
         init_config_functions(assembly_matrix_config, "./shared_libs/libdefault_matrix_assembly.so", "assembly_matrix");
     } 
     else {
-        print_to_stderr_and_file_and_exit("No assembly matrix configuration provided! Exiting!\n");
+        log_to_stderr_and_file_and_exit("No assembly matrix configuration provided! Exiting!\n");
     }
 
     if(linear_system_solver_config) {
         init_config_functions(linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "linear_system_solver");
     } 
     else {
-        print_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
+        log_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
     }
 
     int print_rate = 0;
@@ -284,7 +285,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         init_config_functions(update_monodomain_config, "./shared_libs/libdefault_update_monodomain.so", "update_monodomain");
     }
     else {
-        print_to_stderr_and_file_and_exit("No update monodomain configuration provided! Exiting!\n");
+        log_to_stderr_and_file_and_exit("No update monodomain configuration provided! Exiting!\n");
     }
 
     ///////MAIN CONFIGURATION END//////////////////
@@ -350,7 +351,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         success = ((set_spatial_purkinje_fn*) purkinje_config->main_function)(purkinje_config,the_grid,the_purkinje_ode_solver);
         if(!success)
         {
-            print_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
+            log_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
         }
 
     }
@@ -359,13 +360,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         success = ((set_spatial_domain_fn *) domain_config->main_function)(&time_info, domain_config, the_grid);
 
         if (!success) {
-            print_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
+            log_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
         }
     }
 
     if (!purkinje_config && !domain_config)
     {
-        print_to_stderr_and_file_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
+        log_to_stderr_and_file_and_exit(
+                "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
     if(restore_checkpoint) {

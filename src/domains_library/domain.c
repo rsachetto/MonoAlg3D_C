@@ -303,8 +303,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
         set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 30400, 81600, 59200, 103000, 13600, 48000, "%lf,%lf,%lf,%lf,%d,%c\n");
         size_code = 1;
     } else {
-        print_to_stderr_and_file_and_exit("Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n",
-            scar_size);
+        log_to_stderr_and_file_and_exit(
+                "Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n",
+                scar_size);
     }
 
     log_to_stdout_and_file("Cleaning grid\n");
@@ -441,7 +442,7 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
-        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
+        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
     }
 
     int num_volumes = 160000;
@@ -451,7 +452,7 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     for(int i = 0; i < num_volumes; i++) {
         mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
         if(mesh_points[i] == NULL) {
-            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
     }
     real_cpu dummy1, dummy2, dummy3;
@@ -599,8 +600,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
         log_to_stdout_and_file("Refining Mesh to 12.5um\n");
         refine_grid(the_grid, 3);
     } else {
-        print_to_stderr_and_file_and_exit("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
-                                 "or 12.5um. Using 100um!\n");
+        log_to_stderr_and_file_and_exit(
+                "Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
+                "or 12.5um. Using 100um!\n");
         start_h = 100.0;
     }
 

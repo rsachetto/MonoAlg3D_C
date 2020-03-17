@@ -98,8 +98,7 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
 
 }
 
-static void
-free_current_simulation_resources(struct monodomain_solver *monodomain_solver, struct ode_solver *ode_solver,
+static void free_current_simulation_resources(struct monodomain_solver *monodomain_solver, struct ode_solver *ode_solver,
                                   struct grid *the_grid) {
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
