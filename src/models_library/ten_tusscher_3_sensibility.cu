@@ -235,7 +235,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         }
 
-        /*
+    
 		 if(threadID == num_cells_to_solve-1)
 		 {
 			 printf("------------------------\n");
@@ -245,7 +245,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 			 }
 			 printf("------------------------\n");
 		 }
-         */
+         
     }
 }
 

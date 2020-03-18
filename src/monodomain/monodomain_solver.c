@@ -670,7 +670,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             #endif
 
             // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
-            if (domain_config)
+            // TODO: Check this retro_propagation parameter ...
+            if (domain_config && calc_retropropagation)
                 compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
 
             // DIFUSION: Purkinje
@@ -1344,7 +1345,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     const double apd_percentage = 0.9;
-    const double begin_time = 18999.0;
+    const double begin_time = 999.0;
 
     // V^n+1/2
     real *sv = the_ode_solver->sv;
