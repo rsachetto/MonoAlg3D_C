@@ -6,7 +6,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2018-2019 Ahmad Fatoum & Ramon Santamaria (@raysan5)
+*   Copyright (c) 2018-2020 Ahmad Fatoum & Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -25,7 +25,13 @@
 *
 **********************************************************************************************/
 
-#define RAYLIB_VERSION  "2.5"
+#define RAYLIB_VERSION  "3.0"
+
+// Edit to control what features Makefile'd raylib is compiled with
+#if defined(RAYLIB_CMAKE)
+    // Edit CMakeOptions.txt for CMake instead
+    #include "cmake/config.h"
+#else
 
 //------------------------------------------------------------------------------------
 // Module: core - Configuration Flags
@@ -38,24 +44,30 @@
 #define SUPPORT_MOUSE_GESTURES      1
 // Reconfigure standard input to receive key inputs, works with SSH connection.
 #define SUPPORT_SSH_KEYBOARD_RPI    1
+// Draw a mouse reference on screen (square cursor box)
+#define SUPPORT_MOUSE_CURSOR_RPI    1
 // Use busy wait loop for timing sync, if not defined, a high-resolution timer is setup and used
 //#define SUPPORT_BUSY_WAIT_LOOP      1
+// Use a half-busy wait loop, in this case frame sleeps for some time and runs a busy-wait-loop at the end
+#define SUPPORT_HALFBUSY_WAIT_LOOP
 // Wait for events passively (sleeping while no events) instead of polling them actively every frame
 //#define SUPPORT_EVENTS_WAITING      1
 // Allow automatic screen capture of current screen pressing F12, defined in KeyCallback()
-#define SUPPORT_SCREEN_CAPTURE      1
+//#define SUPPORT_SCREEN_CAPTURE      1
 // Allow automatic gif recording of current screen pressing CTRL+F12, defined in KeyCallback()
-#define SUPPORT_GIF_RECORDING       1
+//#define SUPPORT_GIF_RECORDING       1
 // Allow scale all the drawn content to match the high-DPI equivalent size (only PLATFORM_DESKTOP)
 //#define SUPPORT_HIGH_DPI            1
-
+// Support CompressData() and DecompressData() functions
+#define SUPPORT_COMPRESSION_API       1
+// Support saving binary data automatically to a generated storage.data file. This file is managed internally.
+#define SUPPORT_DATA_STORAGE          1
 
 //------------------------------------------------------------------------------------
 // Module: rlgl - Configuration Flags
 //------------------------------------------------------------------------------------
 // Support VR simulation functionality (stereo rendering)
-//#define SUPPORT_VR_SIMULATOR        1
-
+#define SUPPORT_VR_SIMULATOR        1
 
 //------------------------------------------------------------------------------------
 // Module: shapes - Configuration Flags
@@ -75,12 +87,12 @@
 //#define SUPPORT_FILEFORMAT_BMP    1
 //#define SUPPORT_FILEFORMAT_TGA    1
 //#define SUPPORT_FILEFORMAT_JPG    1
-//#define SUPPORT_FILEFORMAT_GIF    1
+#define SUPPORT_FILEFORMAT_GIF      1
 //#define SUPPORT_FILEFORMAT_PSD    1
-#define SUPPORT_FILEFORMAT_DDS      1
-#define SUPPORT_FILEFORMAT_HDR      1
-#define SUPPORT_FILEFORMAT_KTX      1
-#define SUPPORT_FILEFORMAT_ASTC     1
+//#define SUPPORT_FILEFORMAT_DDS    1
+//#define SUPPORT_FILEFORMAT_HDR    1
+//#define SUPPORT_FILEFORMAT_KTX    1
+//#define SUPPORT_FILEFORMAT_ASTC   1
 //#define SUPPORT_FILEFORMAT_PKM    1
 //#define SUPPORT_FILEFORMAT_PVR    1
 
@@ -92,7 +104,6 @@
 // Support procedural image generation functionality (gradient, spot, perlin-noise, cellular)
 #define SUPPORT_IMAGE_GENERATION    1
 
-
 //------------------------------------------------------------------------------------
 // Module: text - Configuration Flags
 //------------------------------------------------------------------------------------
@@ -103,19 +114,17 @@
 #define SUPPORT_FILEFORMAT_FNT      1
 #define SUPPORT_FILEFORMAT_TTF      1
 
-
 //------------------------------------------------------------------------------------
 // Module: models - Configuration Flags
 //------------------------------------------------------------------------------------
 // Selected desired model fileformats to be supported for loading
 #define SUPPORT_FILEFORMAT_OBJ      1
 #define SUPPORT_FILEFORMAT_MTL      1
-#define SUPPORT_FILEFORMAT_IQM      1
+//#define SUPPORT_FILEFORMAT_IQM      1
 #define SUPPORT_FILEFORMAT_GLTF     1
 // Support procedural mesh generation functions, uses external par_shapes.h library
 // NOTE: Some generated meshes DO NOT include generated texture coordinates
 #define SUPPORT_MESH_GENERATION     1
-
 
 //------------------------------------------------------------------------------------
 // Module: audio - Configuration Flags
@@ -125,13 +134,15 @@
 #define SUPPORT_FILEFORMAT_OGG      1
 #define SUPPORT_FILEFORMAT_XM       1
 #define SUPPORT_FILEFORMAT_MOD      1
-//#define SUPPORT_FILEFORMAT_FLAC   1
-#define SUPPORT_FILEFORMAT_MP3    1
-
+//#define SUPPORT_FILEFORMAT_FLAC     1
+//#define SUPPORT_FILEFORMAT_MP3      1
 
 //------------------------------------------------------------------------------------
 // Module: utils - Configuration Flags
 //------------------------------------------------------------------------------------
-// Show TraceLog() output messages
+// Show TRACELOG() output messages
 // NOTE: By default LOG_DEBUG traces not shown
-//#define SUPPORT_TRACELOG    0
+#define SUPPORT_TRACELOG            1
+//#define SUPPORT_TRACELOG_DEBUG      1
+
+#endif  //defined(RAYLIB_CMAKE)

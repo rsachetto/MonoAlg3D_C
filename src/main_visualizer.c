@@ -30,30 +30,32 @@ static inline int get_step_from_filename(char *filename) {
     return int_a;
 }
 
-void init_draw_config(struct draw_config *draw_config, struct visualization_options *options) {
+static void init_draw_config(struct draw_config *draw_config, struct visualization_options *options, bool only_restart) {
 
     draw_config->grid_info.vtk_grid = NULL;
 
-    draw_config->max_v = options->max_v;
-    draw_config->min_v = options->min_v;
-
-    if(draw_config->min_v == 0) draw_config->min_v = 0.001f;
-
     draw_config->simulating = true;
-
-    draw_config->dt = options->dt;
-
     draw_config->exit = false;
     draw_config->restart = false;
 
     draw_config->paused = true;
     draw_config->advance_or_return = 0;
-    draw_config->draw_type = DRAW_FILE;
-    draw_config->grid_info.vtk_grid = NULL;
-    draw_config->grid_info.file_name = NULL;
-    draw_config->error_message = NULL;
     draw_config->grid_info.loaded = false;
-    draw_config->int_scale = false;
+
+    if(!only_restart) {
+        draw_config->max_v = options->max_v;
+        draw_config->min_v = options->min_v;
+
+        if(draw_config->min_v == 0) {
+            draw_config->min_v = 0.001f;
+        }
+
+        draw_config->dt = options->dt;
+        draw_config->draw_type = DRAW_FILE;
+        draw_config->grid_info.file_name = NULL;
+        draw_config->error_message = NULL;
+        draw_config->int_scale = false;
+    }
 
 }
 
@@ -131,7 +133,7 @@ static int read_and_render_files(struct visualization_options *options) {
     }
     
     if(current_file > num_files) {
-        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Settting start_at to %d\n", current_file, num_files, num_files);        
+        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", current_file, num_files, num_files);
         current_file = num_files-1;
     }
 
@@ -253,7 +255,6 @@ static int read_and_render_files(struct visualization_options *options) {
 
         }
     }
-
 }
 
 int main(int argc, char **argv) {
@@ -300,7 +301,7 @@ int main(int argc, char **argv) {
             {
                 omp_init_lock(&draw_config.draw_lock);
                 omp_init_lock(&draw_config.sleep_lock);
-                init_draw_config(&draw_config, options);
+                init_draw_config(&draw_config, options, false);
                 init_and_open_visualization_window(DRAW_FILE);
             }
 
@@ -314,7 +315,7 @@ int main(int argc, char **argv) {
 
                     while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                         if (result == RESTART_SIMULATION) {
-                            init_draw_config(&draw_config, options);
+                            init_draw_config(&draw_config, options, true);
                             result = read_and_render_files(options);
                         }
 
@@ -329,6 +330,7 @@ int main(int argc, char **argv) {
             }
         }
     }
+
     free_visualization_options(options);
     return EXIT_SUCCESS;
 }
