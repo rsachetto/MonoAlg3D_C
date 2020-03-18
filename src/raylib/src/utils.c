@@ -4,13 +4,14 @@
 *
 *   CONFIGURATION:
 *
+*   #define SUPPORT_TRACELOG
 *       Show TraceLog() output messages
 *       NOTE: By default LOG_DEBUG traces not shown
 *
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2014-2019 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2014-2020 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -31,7 +32,10 @@
 
 #include "raylib.h"                     // WARNING: Required for: LogType enum
 
-#include "config.h"                 // Defines module configuration flags
+// Check if config flags have been externally provided on compilation line
+#if !defined(EXTERNAL_CONFIG_FLAGS)
+    #include "config.h"                 // Defines module configuration flags
+#endif
 
 #include "utils.h"
 
@@ -42,30 +46,39 @@
 #endif
 
 #include <stdlib.h>                     // Required for: exit()
-#include <stdio.h>                      // Required for: printf(), sprintf()
-#include <stdarg.h>                     // Required for: va_list, va_start(), vfprintf(), va_end()
+#include <stdio.h>                      // Required for: vprintf()
+#include <stdarg.h>                     // Required for: va_list, va_start(), va_end()
 #include <string.h>                     // Required for: strcpy(), strcat()
 
 #define MAX_TRACELOG_BUFFER_SIZE   128  // Max length of one trace-log message
+
+#define MAX_UWP_MESSAGES 512            // Max UWP messages to process
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 
 // Log types messages
-static int logTypeLevel = LOG_INFO;
-static int logTypeExit = LOG_ERROR;
-static TraceLogCallback logCallback = NULL;
+static int logTypeLevel = LOG_INFO;                     // Minimum log type level
+static int logTypeExit = LOG_ERROR;                     // Log type that exits
+static TraceLogCallback logCallback = NULL;             // Log callback function pointer
 
 #if defined(PLATFORM_ANDROID)
-AAssetManager *assetManager;
+static AAssetManager *assetManager = NULL;              // Android assets manager pointer
+static const char *internalDataPath = NULL;             // Android internal data path
+#endif
+
+#if defined(PLATFORM_UWP)
+static int UWPOutMessageId = -1;                        // Last index of output message
+static UWPMessage *UWPOutMessages[MAX_UWP_MESSAGES];    // Messages out to UWP
+static int UWPInMessageId = -1;                         // Last index of input message
+static UWPMessage *UWPInMessages[MAX_UWP_MESSAGES];     // Messages in from UWP
 #endif
 
 //----------------------------------------------------------------------------------
 // Module specific Functions Declaration
 //----------------------------------------------------------------------------------
 #if defined(PLATFORM_ANDROID)
-// This should be in <stdio.h>, but Travis does not find it...
 FILE *funopen(const void *cookie, int (*readfn)(void *, char *, int), int (*writefn)(void *, const char *, int),
               fpos_t (*seekfn)(void *, fpos_t, int), int (*closefn)(void *));
 
@@ -151,23 +164,163 @@ void TraceLog(int logType, const char *text, ...)
 #endif  // SUPPORT_TRACELOG
 }
 
+// Load data from file into a buffer
+unsigned char *LoadFileData(const char *fileName, int *bytesRead)
+{
+    unsigned char *data = NULL;
+    *bytesRead = 0;
+
+    if (fileName != NULL)
+    {
+        FILE *file = fopen(fileName, "rb");
+
+        if (file != NULL)
+        {
+            // WARNING: On binary streams SEEK_END could not be found,
+            // using fseek() and ftell() could not work in some (rare) cases
+            fseek(file, 0, SEEK_END);
+            int size = ftell(file);
+            fseek(file, 0, SEEK_SET);
+
+            if (size > 0)
+            {
+                data = (unsigned char *)RL_MALLOC(sizeof(unsigned char)*size);
+
+                // NOTE: fread() returns number of read elements instead of bytes, so we read [1 byte, size elements]
+                int count = fread(data, sizeof(unsigned char), size, file);
+                *bytesRead = count;
+
+                if (count != size) TRACELOG(LOG_WARNING, "[%s] File partially loaded", fileName);
+                else TRACELOG(LOG_INFO, "[%s] File loaded successfully", fileName);
+            }
+            else TRACELOG(LOG_WARNING, "[%s] File could not be read", fileName);
+
+            fclose(file);
+        }
+        else TRACELOG(LOG_WARNING, "[%s] File could not be opened", fileName);
+    }
+    else TRACELOG(LOG_WARNING, "File name provided is not valid");
+
+    return data;
+}
+
+// Save data to file from buffer
+void SaveFileData(const char *fileName, void *data, int bytesToWrite)
+{
+    if (fileName != NULL)
+    {
+        FILE *file = fopen(fileName, "wb");
+
+        if (file != NULL)
+        {
+            int count = fwrite(data, sizeof(unsigned char), bytesToWrite, file);
+
+            if (count == 0) TRACELOG(LOG_WARNING, "[%s] File could not be written", fileName);
+            else if (count != bytesToWrite) TRACELOG(LOG_WARNING, "[%s] File partially written", fileName);
+            else TRACELOG(LOG_INFO, "[%s] File successfully saved", fileName);
+
+            fclose(file);
+        }
+        else TRACELOG(LOG_WARNING, "[%s] File could not be opened", fileName);
+    }
+    else TRACELOG(LOG_WARNING, "File name provided is not valid");
+}
+
+// Load text data from file, returns a '\0' terminated string
+// NOTE: text chars array should be freed manually
+char *LoadFileText(const char *fileName)
+{
+    char *text = NULL;
+
+    if (fileName != NULL)
+    {
+        FILE *textFile = fopen(fileName, "rt");
+
+        if (textFile != NULL)
+        {
+            // WARNING: When reading a file as 'text' file,
+            // text mode causes carriage return-linefeed translation...
+            // ...but using fseek() should return correct byte-offset
+            fseek(textFile, 0, SEEK_END);
+            int size = ftell(textFile);
+            fseek(textFile, 0, SEEK_SET);
+
+            if (size > 0)
+            {
+                text = (char *)RL_MALLOC(sizeof(char)*(size + 1));
+                int count = fread(text, sizeof(char), size, textFile);
+
+                // WARNING: \r\n is converted to \n on reading, so,
+                // read bytes count gets reduced by the number of lines
+                if (count < size) text = RL_REALLOC(text, count + 1);
+
+                // Zero-terminate the string
+                text[count] = '\0';
+                
+                TRACELOG(LOG_INFO, "[%s] Text file loaded successfully", fileName);
+            }
+            else TRACELOG(LOG_WARNING, "[%s] Text file could not be read", fileName);
+
+            fclose(textFile);
+        }
+        else TRACELOG(LOG_WARNING, "[%s] Text file could not be opened", fileName);
+    }
+    else TRACELOG(LOG_WARNING, "File name provided is not valid");
+
+    return text;
+}
+
+// Save text data to file (write), string must be '\0' terminated
+void SaveFileText(const char *fileName, char *text)
+{
+    if (fileName != NULL)
+    {
+        FILE *file = fopen(fileName, "wt");
+
+        if (file != NULL)
+        {
+            int count = fprintf(file, "%s", text);
+
+            if (count == 0) TRACELOG(LOG_WARNING, "[%s] Text file could not be written", fileName);
+            else TRACELOG(LOG_INFO, "[%s] Text file successfully saved", fileName);
+
+            fclose(file);
+        }
+        else TRACELOG(LOG_WARNING, "[%s] Text file could not be opened", fileName);
+    }
+    else TRACELOG(LOG_WARNING, "File name provided is not valid");
+}
+
 #if defined(PLATFORM_ANDROID)
 // Initialize asset manager from android app
-void InitAssetManager(AAssetManager *manager)
+void InitAssetManager(AAssetManager *manager, const char *dataPath)
 {
     assetManager = manager;
+    internalDataPath = dataPath;
 }
 
 // Replacement for fopen
+// Ref: https://developer.android.com/ndk/reference/group/asset
 FILE *android_fopen(const char *fileName, const char *mode)
 {
-    if (mode[0] == 'w') return NULL;
+    if (mode[0] == 'w')     // TODO: Test!
+    {
+        // TODO: fopen() is mapped to android_fopen() that only grants read access
+        // to assets directory through AAssetManager but we want to also be able to
+        // write data when required using the standard stdio FILE access functions
+        // Ref: https://stackoverflow.com/questions/11294487/android-writing-saving-files-from-native-code-only
+        #undef fopen
+        return fopen(TextFormat("%s/%s", internalDataPath, fileName), mode);
+        #define fopen(name, mode) android_fopen(name, mode)
+    }
+    else
+    {
+        // NOTE: AAsset provides access to read-only asset
+        AAsset *asset = AAssetManager_open(assetManager, fileName, AASSET_MODE_UNKNOWN);
 
-    AAsset *asset = AAssetManager_open(assetManager, fileName, 0);
-
-    if (!asset) return NULL;
-
-    return funopen(asset, android_read, android_write, android_seek, android_close);
+        if (asset != NULL) return funopen(asset, android_read, android_write, android_seek, android_close);
+        else return NULL;
+    }
 }
 #endif  // PLATFORM_ANDROID
 
@@ -182,7 +335,7 @@ static int android_read(void *cookie, char *buf, int size)
 
 static int android_write(void *cookie, const char *buf, int size)
 {
-    TraceLog(LOG_ERROR, "Can't provide write access to the APK");
+    TRACELOG(LOG_ERROR, "Can't provide write access to the APK");
 
     return EACCES;
 }
@@ -200,16 +353,7 @@ static int android_close(void *cookie)
 #endif  // PLATFORM_ANDROID
 
 #if defined(PLATFORM_UWP)
-
-#define MAX_MESSAGES 512 // If there are over 128 messages, I will cry... either way, this may be too much EDIT: Welp, 512
-
-static int UWPOutMessageId = -1; // Stores the last index for the message
-static UWPMessage* UWPOutMessages[MAX_MESSAGES]; // Messages out to UWP
-
-static int UWPInMessageId = -1; // Stores the last index for the message
-static UWPMessage* UWPInMessages[MAX_MESSAGES]; // Messages in from UWP
-
-UWPMessage* CreateUWPMessage(void)
+UWPMessage *CreateUWPMessage(void)
 {
     UWPMessage *msg = (UWPMessage *)RL_MALLOC(sizeof(UWPMessage));
     msg->type = UWP_MSG_NONE;
@@ -243,22 +387,22 @@ UWPMessage *UWPGetMessage(void)
 
 void UWPSendMessage(UWPMessage *msg)
 {
-    if (UWPInMessageId + 1 < MAX_MESSAGES)
+    if ((UWPInMessageId + 1) < MAX_UWP_MESSAGES)
     {
         UWPInMessageId++;
         UWPInMessages[UWPInMessageId] = msg;
     }
-    else TraceLog(LOG_WARNING, "[UWP Messaging] Not enough array space to register new UWP inbound Message.");
+    else TRACELOG(LOG_WARNING, "[UWP Messaging] Not enough array space to register new UWP inbound Message.");
 }
 
 void SendMessageToUWP(UWPMessage *msg)
 {
-    if (UWPOutMessageId + 1 < MAX_MESSAGES)
+    if ((UWPOutMessageId + 1) < MAX_UWP_MESSAGES)
     {
         UWPOutMessageId++;
         UWPOutMessages[UWPOutMessageId] = msg;
     }
-    else TraceLog(LOG_WARNING, "[UWP Messaging] Not enough array space to register new UWP outward Message.");
+    else TRACELOG(LOG_WARNING, "[UWP Messaging] Not enough array space to register new UWP outward Message.");
 }
 
 bool HasMessageFromUWP(void)
@@ -266,7 +410,7 @@ bool HasMessageFromUWP(void)
     return UWPInMessageId > -1;
 }
 
-UWPMessage* GetMessageFromUWP(void)
+UWPMessage *GetMessageFromUWP(void)
 {
     if (HasMessageFromUWP()) return UWPInMessages[UWPInMessageId--];
 

@@ -42,8 +42,8 @@
 .PHONY: all clean install uninstall
 
 # Define required raylib variables
-RAYLIB_VERSION     = 2.5.0
-RAYLIB_API_VERSION = 251
+RAYLIB_VERSION     = 3.0.0
+RAYLIB_API_VERSION = 300
 
 # See below for alternatives.
 RAYLIB_PATH        = ..
@@ -61,7 +61,7 @@ RAYLIB_BUILD_MODE    ?= RELEASE
 
 # Include raylib modules on compilation
 # NOTE: Some programs like tools could not require those modules
-RAYLIB_MODULE_AUDIO  ?= FALSE
+RAYLIB_MODULE_AUDIO  ?= TRUE
 RAYLIB_MODULE_MODELS ?= TRUE
 RAYLIB_MODULE_RAYGUI ?= FALSE
 RAYLIB_MODULE_PHYSAC ?= FALSE
@@ -147,34 +147,42 @@ endif
 
 ifeq ($(PLATFORM),PLATFORM_WEB)
     # Emscripten required variables
-    EMSDK_PATH          ?= D:/emsdk
-    EMSCRIPTEN_VERSION  ?= 1.38.31
-    CLANG_VERSION       = e$(EMSCRIPTEN_VERSION)_64bit
-    PYTHON_VERSION      = 2.7.13.1_64bit\python-2.7.13.amd64
-    NODE_VERSION        = 8.9.1_64bit
-    export PATH         = $(EMSDK_PATH);$(EMSDK_PATH)\clang\$(CLANG_VERSION);$(EMSDK_PATH)\node\$(NODE_VERSION)\bin;$(EMSDK_PATH)\python\$(PYTHON_VERSION);$(EMSDK_PATH)\emscripten\$(EMSCRIPTEN_VERSION);C:\raylib\MinGW\bin:$$(PATH)
-    EMSCRIPTEN          = $(EMSDK_PATH)\emscripten\$(EMSCRIPTEN_VERSION)
+    EMSDK_PATH         ?= C:/emsdk
+    EMSCRIPTEN_PATH    ?= $(EMSDK_PATH)/upstream/emscripten
+    CLANG_PATH          = $(EMSDK_PATH)/upstream/bin
+    PYTHON_PATH         = $(EMSDK_PATH)/python/3.7.4_64bit
+    NODE_PATH           = $(EMSDK_PATH)/node/12.9.1_64bit/bin
+    export PATH         = $(EMSDK_PATH);$(EMSCRIPTEN_PATH);$(CLANG_PATH);$(NODE_PATH);$(PYTHON_PATH);C:\raylib\MinGW\bin:$$(PATH)
 endif
 
 ifeq ($(PLATFORM),PLATFORM_ANDROID)
     # Android architecture: ARM64
-    # Starting at 2019 using ARM64 is mandatory for published apps
+    # Starting at 2019 using ARM64 is mandatory for published apps,
+    # and minimum required target API is Android 9 (API level 28)
     ANDROID_ARCH ?= ARM
-    ANDROID_API_VERSION = 21
-    
-    # Android required path variables
-    # NOTE: Android NDK is just required to generate the standalone toolchain,
-    # in case is not already provided
-    ANDROID_NDK = C:/android-ndk
+    ANDROID_API_VERSION = 28
 
-    # Android standalone toolchain path
-    ANDROID_TOOLCHAIN = C:/android_toolchain_$(ANDROID_ARCH)_API$(ANDROID_API_VERSION)
-    
+    # Android required path variables
+    # NOTE: Starting with Android NDK r21, no more toolchain generation is required, NDK is the toolchain on itself
+    ifeq ($(OS),Windows_NT)
+        ANDROID_NDK = C:/android-ndk-r21
+        ANDROID_TOOLCHAIN = $(ANDROID_NDK)/toolchains/llvm/prebuilt/windows-x86_64
+    else
+        ANDROID_NDK = /usr/lib/android/ndk
+        ANDROID_TOOLCHAIN = $(ANDROID_NDK)/toolchains/llvm/prebuilt/linux
+    endif
+
     ifeq ($(ANDROID_ARCH),ARM)
         ANDROID_ARCH_NAME = armeabi-v7a
     endif
     ifeq ($(ANDROID_ARCH),ARM64)
         ANDROID_ARCH_NAME = arm64-v8a
+    endif
+    ifeq ($(ANDROID_ARCH),x86)
+        ANDROID_ARCH_NAME = i686
+    endif
+    ifeq ($(ANDROID_ARCH),x86_64)
+        ANDROID_ARCH_NAME = x86_64
     endif
 endif
 
@@ -206,8 +214,7 @@ ifeq ($(PLATFORM),PLATFORM_ANDROID)
 endif
 
 # Define default C compiler and archiver to pack library
-# NOTE: define g++ compiler if using C++
-CC = gcc
+CC ?= gcc
 AR = ar
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
@@ -236,12 +243,20 @@ endif
 ifeq ($(PLATFORM),PLATFORM_ANDROID)
     # Android toolchain (must be provided for desired architecture and compiler)
     ifeq ($(ANDROID_ARCH),ARM)
-        CC = $(ANDROID_TOOLCHAIN)/bin/arm-linux-androideabi-clang
+        CC = $(ANDROID_TOOLCHAIN)/bin/armv7a-linux-androideabi$(ANDROID_API_VERSION)-clang
         AR = $(ANDROID_TOOLCHAIN)/bin/arm-linux-androideabi-ar
     endif
     ifeq ($(ANDROID_ARCH),ARM64)
-        CC = $(ANDROID_TOOLCHAIN)/bin/aarch64-linux-android-clang
+        CC = $(ANDROID_TOOLCHAIN)/bin/aarch64-linux-android$(ANDROID_API_VERSION)-clang
         AR = $(ANDROID_TOOLCHAIN)/bin/aarch64-linux-android-ar
+    endif
+    ifeq ($(ANDROID_ARCH),x86)
+        CC = $(ANDROID_TOOLCHAIN)/bin/i686-linux-android$(ANDROID_API_VERSION)-clang
+        AR = $(ANDROID_TOOLCHAIN)/bin/i686-linux-android-ar
+    endif
+    ifeq ($(ANDROID_ARCH),x86_64)
+        CC = $(ANDROID_TOOLCHAIN)/bin/x86_64-linux-android$(ANDROID_API_VERSION)-clang
+        AR = $(ANDROID_TOOLCHAIN)/bin/x86_64-linux-android-ar
     endif
 endif
 
@@ -257,10 +272,34 @@ endif
 #  -D_DEFAULT_SOURCE        use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
 #  -Werror=pointer-arith    catch unportable code that does direct arithmetic on void pointers
 #  -fno-strict-aliasing     jar_xm.h does shady stuff (breaks strict aliasing)
-CFLAGS += -O1 -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
+CFLAGS += -Wall -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
+
+ifeq ($(PLATFORM), PLATFORM_WEB)
+    CFLAGS += -std=gnu99
+else
+    CFLAGS += -std=c99
+endif
+
+ifeq ($(PLATFORM_OS),LINUX)
+	CFLAGS += -fPIC
+endif
 
 ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
     CFLAGS += -g
+    ifeq ($(PLATFORM),PLATFORM_WEB)
+        CFLAGS += -s ASSERTIONS=1 --profiling
+    endif
+endif
+ifeq ($(RAYLIB_BUILD_MODE),RELEASE)
+    ifeq ($(PLATFORM),PLATFORM_WEB)
+        CFLAGS += -Os
+    endif
+    ifeq ($(PLATFORM),PLATFORM_DESKTOP)
+        CFLAGS += -s -O1
+    endif
+    ifeq ($(PLATFORM),PLATFORM_ANDROID)
+        CFLAGS += -O2
+    endif
 endif
 
 # Additional flags for compiler (if desired)
@@ -278,18 +317,12 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
     # -s ALLOW_MEMORY_GROWTH=1   # to allow memory resizing -> WARNING: Audio buffers could FAIL!
     # -s TOTAL_MEMORY=16777216   # to specify heap memory size (default = 16MB)
     # -s USE_PTHREADS=1          # multithreading support
-    # -s WASM=0                  # disable Web Assembly, emitted by default
-    # -s EMTERPRETIFY=1          # enable emscripten code interpreter (very slow)
-    # -s EMTERPRETIFY_ASYNC=1    # support synchronous loops by emterpreter
     # -s FORCE_FILESYSTEM=1      # force filesystem to load/save files data
     # -s ASSERTIONS=1            # enable runtime checks for common memory allocation errors (-O1 and above turn it off)
     # --profiling                # include information for code profiling
     # --memory-init-file 0       # to avoid an external memory initialization code file (.mem)
     # --preload-file resources   # specify a resources folder for data compilation
     CFLAGS += -s USE_GLFW=3
-    ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
-        CFLAGS += -s ASSERTIONS=1 --profiling
-    endif
 endif
 ifeq ($(PLATFORM),PLATFORM_ANDROID)
     # Compiler flags for arquitecture
@@ -298,6 +331,12 @@ ifeq ($(PLATFORM),PLATFORM_ANDROID)
     endif
     ifeq ($(ANDROID_ARCH),ARM64)
         CFLAGS += -target aarch64 -mfix-cortex-a53-835769
+    endif
+    ifeq ($(ANDROID_ARCH), x86)
+        CFLAGS += -march=i686
+    endif
+    ifeq ($(ANDROID_ARCH), x86_64)
+        CFLAGS += -march=x86-64
     endif
     # Compilation functions attributes options
     CFLAGS += -ffunction-sections -funwind-tables -fstack-protector-strong -fPIE -fPIC
@@ -321,6 +360,8 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS), LINUX)
         ifeq ($(USE_WAYLAND_DISPLAY),TRUE)
             CFLAGS += -D_GLFW_WAYLAND
+        else
+            LDLIBS = -lX11
         endif
     endif
 endif
@@ -350,11 +391,12 @@ ifeq ($(PLATFORM),PLATFORM_RPI)
     INCLUDE_PATHS += -I$(RPI_TOOLCHAIN_SYSROOT)/opt/vc/include/interface/vcos/pthreads
 endif
 ifeq ($(PLATFORM),PLATFORM_ANDROID)
+    NATIVE_APP_GLUE = $(RAYLIB_RELEASE_PATH)/external/android/native_app_glue
+    #NATIVE_APP_GLUE = $(ANDROID_NDK)/sources/android/native_app_glue
     # Android required libraries
     INCLUDE_PATHS += -I$(ANDROID_TOOLCHAIN)/sysroot/usr/include
     # Include android_native_app_glue.h
-    INCLUDE_PATHS += -Iexternal/android/native_app_glue
-    #INCLUDE_PATHS += -I$(ANDROID_NDK)/sources/android/native_app_glue
+    INCLUDE_PATHS += -I$(NATIVE_APP_GLUE)
 endif
 
 # Define linker options
@@ -435,7 +477,7 @@ endif
 raylib: $(OBJS)
 ifeq ($(PLATFORM),PLATFORM_WEB)
     # Compile raylib for web.
-	emcc -O1 $(OBJS) -o $(RAYLIB_RELEASE_PATH)/libraylib.bc
+	$(CC) -O1 $(OBJS) -o $(RAYLIB_RELEASE_PATH)/libraylib.bc
 	@echo "raylib library generated (libraylib.bc)!"
 else
     ifeq ($(RAYLIB_LIBTYPE),SHARED)
@@ -448,13 +490,13 @@ else
             ifeq ($(PLATFORM_OS),LINUX)
                 # Compile raylib shared library version $(RAYLIB_VERSION).
                 # WARNING: you should type "make clean" before doing this target
-				$(CC) -shared -o $(RAYLIB_RELEASE_PATH)/libraylib.so.$(RAYLIB_VERSION) $(OBJS) -Wl,-soname,libraylib.so.$(RAYLIB_API_VERSION) -lGL -lc -lm -lpthread -ldl -lrt
+				$(CC) -shared -o $(RAYLIB_RELEASE_PATH)/libraylib.so.$(RAYLIB_VERSION) $(OBJS) -Wl,-soname,libraylib.so.$(RAYLIB_API_VERSION) -lGL -lc -lm -lpthread -ldl -lrt $(LDLIBS)
 				@echo "raylib shared library generated (libraylib.so.$(RAYLIB_VERSION)) in $(RAYLIB_RELEASE_PATH)!"
 				cd $(RAYLIB_RELEASE_PATH) && ln -fsv libraylib.so.$(RAYLIB_VERSION) libraylib.so.$(RAYLIB_API_VERSION)
 				cd $(RAYLIB_RELEASE_PATH) && ln -fsv libraylib.so.$(RAYLIB_API_VERSION) libraylib.so
             endif
             ifeq ($(PLATFORM_OS),OSX)
-				$(CC) -dynamiclib -o $(RAYLIB_RELEASE_PATH)/libraylib.$(RAYLIB_VERSION).dylib $(OBJS) -compatibility_version $(RAYLIB_API_VERSION) -current_version $(RAYLIB_VERSION) -framework OpenGL -framework OpenAL -framework IOKit -framework CoreVideo -framework Cocoa
+				$(CC) -dynamiclib -o $(RAYLIB_RELEASE_PATH)/libraylib.$(RAYLIB_VERSION).dylib $(OBJS) -compatibility_version $(RAYLIB_API_VERSION) -current_version $(RAYLIB_VERSION) -framework OpenGL -framework Cocoa -framework IOKit -framework CoreAudio -framework CoreVideo 
 				install_name_tool -id "libraylib.$(VERSION).dylib" $(RAYLIB_RELEASE_PATH)/libraylib.$(RAYLIB_VERSION).dylib
 				@echo "raylib shared library generated (libraylib.$(RAYLIB_VERSION).dylib)!"
 				cd $(RAYLIB_RELEASE_PATH) && ln -fs libraylib.$(RAYLIB_VERSION).dylib libraylib.$(RAYLIB_API_VERSION).dylib
@@ -526,14 +568,15 @@ models.o : models.c raylib.h rlgl.h raymath.h
 # Compile audio module
 raudio.o : raudio.c raylib.h
 	$(CC) -c $< $(CFLAGS) $(INCLUDE_PATHS) -D$(PLATFORM)
-    
+
 # Compile raygui module
 # NOTE: raygui header should be distributed with raylib.h
-raygui.o : raygui.c raygui.h
-	@echo #define RAYGUI_IMPLEMENTATION > raygui.c
-	@echo #include "$(RAYLIB_MODULE_RAYGUI_PATH)/raygui.h" > raygui.c
+raygui.o : raygui.c raygui.h gui_textbox_extended.h ricons.h
 	$(CC) -c $< $(CFLAGS) $(INCLUDE_PATHS) -D$(PLATFORM) -DRAYGUI_IMPLEMENTATION
-    
+raygui.c:
+	echo '#define RAYGUI_IMPLEMENTATION' > raygui.c
+	echo '#include "$(RAYLIB_MODULE_RAYGUI_PATH)/raygui.h"' >> raygui.c
+
 # Compile physac module
 # NOTE: physac header should be distributed with raylib.h
 physac.o : physac.c physac.h
@@ -629,6 +672,6 @@ else
 	rm -fv *.o $(RAYLIB_RELEASE_PATH)/libraylib.a $(RAYLIB_RELEASE_PATH)/libraylib.bc $(RAYLIB_RELEASE_PATH)/libraylib.so*
 endif
 ifeq ($(PLATFORM),PLATFORM_ANDROID)
-	rm -rf $(ANDROID_TOOLCHAIN)
+	rm -rf $(ANDROID_TOOLCHAIN) $(NATIVE_APP_GLUE)/android_native_app_glue.o
 endif
 	@echo "removed all generated files!"

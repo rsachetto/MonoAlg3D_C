@@ -453,6 +453,11 @@ static void parseFloat3(float *x, float *y, float *z, const char **token) {
   (*z) = parseFloat(token);
 }
 
+static unsigned int my_strnlen(const char *s, unsigned int n) {
+    const char *p = memchr(s, 0, n);
+    return p ? (unsigned int)(p - s) : n;
+}
+
 static char *my_strdup(const char *s, unsigned int max_length) {
   char *d;
   unsigned int len;
@@ -478,15 +483,13 @@ static char *my_strndup(const char *s, unsigned int len) {
   if (s == NULL) return NULL;
   if (len == 0) return NULL;
 
-  d = (char *)TINYOBJ_MALLOC(len + 1); /* + '\0' */
-  slen = strlen(s);
-  if (slen < len) {
-    memcpy(d, s, slen);
-    d[slen] = '\0';
-  } else {
-    memcpy(d, s, len);
-    d[len] = '\0';
+  slen = my_strnlen(s, len);
+  d = (char *)TINYOBJ_MALLOC(slen + 1); /* + '\0' */
+  if (!d) {
+    return NULL;
   }
+  memcpy(d, s, slen);
+  d[slen] = '\0';
 
   return d;
 }
@@ -745,7 +748,7 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
 
   fp = fopen(filename, "r");
   if (!fp) {
-    fprintf(stderr, "TINYOBJ: Error reading file '%s': %s (%d)\n", filename, strerror(errno), errno);
+    //fprintf(stderr, "TINYOBJ: Error reading file '%s': %s (%d)\n", filename, strerror(errno), errno);     // @raysan5: commented
     return TINYOBJ_ERROR_FILE_OPERATION;
   }
 
@@ -1318,7 +1321,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
     if (ret != TINYOBJ_SUCCESS) {
       /* warning. */
-      fprintf(stderr, "TINYOBJ: Failed to parse material file '%s': %d\n", filename, ret);
+      //fprintf(stderr, "TINYOBJ: Failed to parse material file '%s': %d\n", filename, ret);     // @raysan5: commented
     }
 
     TINYOBJ_FREE(filename);

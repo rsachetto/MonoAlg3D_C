@@ -11,12 +11,15 @@
 #include "../raylib/src/raylib.h"
 #include "../raylib/src/camera.h"
 
-#include "../raylib/src/rlgl.h"
-
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_RICONS_SUPPORT
 #define RAYGUI_TEXTBOX_EXTENDED
 #include "../raylib/src/raygui.h"
+
+#undef RAYGUI_IMPLEMENTATION            // Avoid including raygui implementation again
+//
+//#define GUI_FILE_DIALOG_IMPLEMENTATION
+//#include "gui_file_dialog.h"
 
 static int current_window_height = 0;
 static int current_window_width = 0;
