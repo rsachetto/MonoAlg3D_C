@@ -1,15 +1,12 @@
 
 #include "utils/file_utils.h"
 
-#ifdef COMPILE_OPENGL
-#include "draw/draw.h"
-#endif
+#include "gui/gui.h"
 
 #include "string/sds.h"
 #include "single_file_libraries/stb_ds.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
 #include "vtk_utils/pvd_utils.h"
-#include "draw/draw.h"
 
 #include <string.h>
 #include <stdio.h>

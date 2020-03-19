@@ -9,7 +9,7 @@
 #include "logger/logger.h"
 
 #ifdef COMPILE_OPENGL
-    #include "draw/draw.h"
+    #include "gui/gui.h"
 #endif
 
 void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver,  struct ode_solver **ode_solver, struct grid **the_grid ) {

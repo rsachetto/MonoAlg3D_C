@@ -5,21 +5,19 @@
 #include <time.h>
 #include <limits.h>
 
-#include "draw.h"
+#include "gui.h"
 #include "color_maps.h"
 #include "../single_file_libraries/stb_ds.h"
 #include "../raylib/src/raylib.h"
+#include "../raylib/ricons.h"
 #include "../raylib/src/camera.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_RICONS_SUPPORT
 #define RAYGUI_TEXTBOX_EXTENDED
 #include "../raylib/src/raygui.h"
-
 #undef RAYGUI_IMPLEMENTATION            // Avoid including raygui implementation again
-//
-//#define GUI_FILE_DIALOG_IMPLEMENTATION
-//#include "gui_file_dialog.h"
+
 
 static int current_window_height = 0;
 static int current_window_width = 0;
@@ -1461,8 +1459,10 @@ void init_and_open_visualization_window() {
     struct mesh_info *mesh_info = new_mesh_info();
     struct gui_state *gui_state = new_gui_state_with_font_and_colors(SIZEOF(colors));
 
-    bool end_info_box_strings_configured = false;
+//    // Custom file dialog
+//    GuiFileDialogState fileDialogState = InitGuiFileDialog();
 
+    bool end_info_box_strings_configured = false;
 
     txt_w_h = MeasureTextV(WIDER_TEXT, (int) gui_state->font_size_small);
     text_offset = (int) (1.5 * txt_w_h.y);
@@ -1482,13 +1482,36 @@ void init_and_open_visualization_window() {
     gui_state->end_info_box.x =  gui_state->help_box.x;
     gui_state->end_info_box.y = gui_state->help_box.y + gui_state->help_box.height + 10;
 
+//    char fileNameToLoad[512] = { 0 };
+
     while (!WindowShouldClose()) {
+
+//        if (fileDialogState.SelectFilePressed)
+//        {
+//            // Load image file (if supported extension)
+//            if (IsFileExtension(fileDialogState.fileNameText, ".png"))
+//            {
+//                strcpy(fileNameToLoad, TextFormat("%s/%s", fileDialogState.dirPathText, fileDialogState.fileNameText));
+//            }
+//
+//            fileDialogState.SelectFilePressed = false;
+//        }
 
         UpdateCamera(&camera);
 
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
+
+//        if (fileDialogState.fileDialogActive) GuiLock();
+//
+//        if (GuiButton((Rectangle){ 20, 20, 140, 30 }, GuiIconText(RICON_FILE_OPEN, "Open Image"))) fileDialogState.fileDialogActive = true;
+//
+//        GuiUnlock();
+//
+//        // GUI: Dialog Window
+//        //--------------------------------------------------------------------------------
+//        GuiFileDialog(&fileDialogState);
 
         handle_input(&draw_config.grid_info.loaded, &camera,  mesh_info, gui_state);
 

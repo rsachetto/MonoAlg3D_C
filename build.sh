@@ -124,8 +124,8 @@ ADD_SUBDIRECTORY "src/logger"
 
 if [ -n "$COMPILE_GUI" ]; then
     ADD_SUBDIRECTORY "src/raylib/src"
-    ADD_SUBDIRECTORY "src/draw"
-    OPT_DEPS="draw raylib"
+    ADD_SUBDIRECTORY "src/gui"
+    OPT_DEPS="gui raylib"
 fi
 
 if [ -n "$CUDA_FOUND" ]; then
