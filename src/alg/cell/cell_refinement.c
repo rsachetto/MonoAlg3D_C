@@ -57,7 +57,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     real_cpu translated_center_y = cell->translated_center.y;
     real_cpu translated_center_z = cell->translated_center.z;
 
-#ifdef COMPILE_OPENGL
+#ifdef COMPILE_GUI
     front_northeast_sub_cell->translated_center.x = translated_center_x + cell_quarter_side_x;
     front_northeast_sub_cell->translated_center.y = translated_center_y + cell_quarter_side_y;
     front_northeast_sub_cell->translated_center.z = translated_center_z + cell_quarter_side_z;

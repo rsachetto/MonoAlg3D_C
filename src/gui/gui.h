@@ -52,7 +52,7 @@ struct ap_graph_config {
 
 typedef struct action_potential * action_potential_array;
 
-struct draw_config {
+struct gui_config {
 
     real_cpu max_v;
     real_cpu min_v;
@@ -146,7 +146,6 @@ struct gui_state {
     float box_height;
 
     struct ap_graph_config *ap_graph_config;
-    //uint current_font;
 };
 
 struct mesh_info {
@@ -155,7 +154,7 @@ struct mesh_info {
     Vector3 min_size;
 };
 
-struct draw_config draw_config;
+struct gui_config gui_config;
 
 void init_and_open_visualization_window();
 
