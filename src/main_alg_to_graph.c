@@ -6,9 +6,8 @@
 #include "utils/file_utils.h"
 #include <string.h>
 
-#ifdef COMPILE_OPENGL
+#ifdef COMPILE_GUI
 #include "config_helpers/config_helpers.h"
-
 #endif
 
 int **graph = NULL;

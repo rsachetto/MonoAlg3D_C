@@ -8,7 +8,7 @@
 #include "config_helpers/config_helpers.h"
 #include "logger/logger.h"
 
-#ifdef COMPILE_OPENGL
+#ifdef COMPILE_GUI
     #include "gui/gui.h"
 #endif
 
@@ -95,30 +95,30 @@ void free_current_simulation_resources(struct user_options *options, struct mono
     close_logfile();
 }
 
-#ifdef COMPILE_OPENGL
-void init_draw_config(struct draw_config *draw_config, struct user_options *options) {
+#ifdef COMPILE_GUI
+void init_gui_config(struct gui_config *gui_config, struct user_options *options) {
 
-    draw_config->config_name = strdup(options->config_file);
-    draw_config->grid_info.alg_grid = NULL;
-    draw_config->max_v = options->max_v;
-    draw_config->min_v = options->min_v;
+    gui_config->config_name = strdup(options->config_file);
+    gui_config->grid_info.alg_grid = NULL;
+    gui_config->max_v = options->max_v;
+    gui_config->min_v = options->min_v;
 
-    if(draw_config->min_v == 0) draw_config->min_v = 0.1f;
+    if(gui_config->min_v == 0) gui_config->min_v = 0.1f;
 
-    draw_config->simulating = false;
-    draw_config->time = 0.0;
+    gui_config->simulating = false;
+    gui_config->time = 0.0;
 
-    draw_config->adaptive = options->adaptive;
-    draw_config->final_time = options->final_time;
-    draw_config->dt = options->dt_pde;
+    gui_config->adaptive = options->adaptive;
+    gui_config->final_time = options->final_time;
+    gui_config->dt = options->dt_pde;
 
-    draw_config->exit = false;
-    draw_config->restart = false;
+    gui_config->exit = false;
+    gui_config->restart = false;
 
-    draw_config->draw_type = DRAW_SIMULATION;
-    draw_config->error_message = NULL;
-    draw_config->grid_info.loaded = false;
-    draw_config->int_scale = false;
+    gui_config->draw_type = DRAW_SIMULATION;
+    gui_config->error_message = NULL;
+    gui_config->grid_info.loaded = false;
+    gui_config->int_scale = false;
 }
 #endif
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-#ifndef COMPILE_OPENGL
+#ifndef COMPILE_GUI
     if(options->draw) {
         log_to_stdout_and_file("OpenGL not found. The output will not be draw!!\n");
         options->draw = false;
@@ -154,16 +154,16 @@ int main(int argc, char **argv) {
     omp_set_num_threads(np);
 #endif
 
-    //If COMPILE_OPENGL is not set this is always false. See above.
+    //If COMPILE_GUI is not set this is always false. See above.
     if(options->draw) {
 
-        #ifdef COMPILE_OPENGL //If this is defined so OMP is also defined
+        #ifdef COMPILE_GUI //If this is defined so OMP is also defined
 
         omp_set_nested(true);
 
-        omp_init_lock(&draw_config.draw_lock);
-        omp_init_lock(&draw_config.sleep_lock);
-        init_draw_config(&draw_config, options);
+        omp_init_lock(&gui_config.draw_lock);
+        omp_init_lock(&gui_config.sleep_lock);
+        init_gui_config(&gui_config, options);
 
         #pragma omp parallel sections num_threads(2)
         {
@@ -180,13 +180,13 @@ int main(int argc, char **argv) {
                     if(result == RESTART_SIMULATION) {
                         free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
                         configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
-                        init_draw_config(&draw_config, options);
+                        init_gui_config(&gui_config, options);
                         result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
                     }
 
-                    if(draw_config.restart) result = RESTART_SIMULATION;
+                    if(gui_config.restart) result = RESTART_SIMULATION;
 
-                    if(draw_config.exit)  {
+                    if(gui_config.exit)  {
                         free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
                         break;
                     }
@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        #endif //COMPILE_OPENGL
+        #endif //COMPILE_GUI
     } else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
         free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);

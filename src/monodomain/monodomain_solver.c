@@ -11,7 +11,7 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
-#ifdef COMPILE_OPENGL
+#ifdef COMPILE_GUI
 #include "../gui/gui.h"
 #endif
 
@@ -309,14 +309,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu start_adpt_at = the_monodomain_solver->start_adapting_at;
 
 
-#ifdef COMPILE_OPENGL
+#ifdef COMPILE_GUI
     bool draw = configs->draw;
     if (draw) {
-        draw_config.grid_info.alg_grid = the_grid;
-        draw_config.simulating = true;
-        draw_config.paused = !configs->start_visualization_unpaused;
+        gui_config.grid_info.alg_grid = the_grid;
+        gui_config.simulating = true;
+        gui_config.paused = !configs->start_visualization_unpaused;
     } else {
-        draw_config.paused = false;
+        gui_config.paused = false;
     }
 #endif
 
@@ -533,11 +533,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
 
-#ifdef COMPILE_OPENGL
+#ifdef COMPILE_GUI
     if(configs->draw) {
         translate_mesh_to_origin(the_grid);
     }
-    draw_config.grid_info.loaded = true;
+    gui_config.grid_info.loaded = true;
 #endif
 
     real_cpu only_abort_after_dt = the_monodomain_solver->only_abort_after_dt;
@@ -555,17 +555,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         time_info.current_t = cur_time;
         time_info.iteration = count;
 
-        #ifdef COMPILE_OPENGL
+        #ifdef COMPILE_GUI
         if(draw) {
-            omp_set_lock(&draw_config.sleep_lock);
-            if (draw_config.restart) {
-                draw_config.time = 0.0;
+            omp_set_lock(&gui_config.sleep_lock);
+            if (gui_config.restart) {
+                gui_config.time = 0.0;
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config);
                 return RESTART_SIMULATION;
             }
-            if (draw_config.exit)  {
+            if (gui_config.exit)  {
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config);
                 return END_SIMULATION;
@@ -614,9 +614,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             start_stop_watch(&purkinje_cg_time);
 
-            #ifdef COMPILE_OPENGL
+            #ifdef COMPILE_GUI
             if (draw) {
-                omp_set_lock(&draw_config.draw_lock);
+                omp_set_lock(&gui_config.draw_lock);
             }
             #endif
 
@@ -647,9 +647,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             start_stop_watch(&cg_time);
 
-            #ifdef COMPILE_OPENGL
+            #ifdef COMPILE_GUI
             if (draw) {
-                omp_set_lock(&draw_config.draw_lock);
+                omp_set_lock(&gui_config.draw_lock);
             }
             #endif
 
@@ -803,10 +803,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             }
         }
 
-        #ifdef COMPILE_OPENGL
+        #ifdef COMPILE_GUI
         if (configs->draw) {
-            omp_unset_lock(&draw_config.draw_lock);
-            draw_config.time = cur_time;
+            omp_unset_lock(&gui_config.draw_lock);
+            gui_config.time = cur_time;
         }
         #endif
         count++;
@@ -849,17 +849,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         log_to_stdout_and_file("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
     }
 
-#ifdef COMPILE_OPENGL
-   draw_config.solver_time = res_time;
-   draw_config.ode_total_time = ode_total_time;
-   draw_config.cg_total_time = cg_total_time;
-   draw_config.total_mat_time = total_mat_time;
-   draw_config.total_ref_time = total_ref_time;
-   draw_config.total_deref_time = total_deref_time;
-   draw_config.total_write_time = total_write_time;
-   draw_config.total_config_time = total_config_time;
-   draw_config.total_cg_it  = total_cg_it;
-   draw_config.simulating = false;
+#ifdef COMPILE_GUI
+    gui_config.solver_time = res_time;
+    gui_config.ode_total_time = ode_total_time;
+    gui_config.cg_total_time = cg_total_time;
+    gui_config.total_mat_time = total_mat_time;
+    gui_config.total_ref_time = total_ref_time;
+    gui_config.total_deref_time = total_deref_time;
+    gui_config.total_write_time = total_write_time;
+    gui_config.total_config_time = total_config_time;
+    gui_config.total_cg_it  = total_cg_it;
+    gui_config.simulating = false;
 #endif
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);

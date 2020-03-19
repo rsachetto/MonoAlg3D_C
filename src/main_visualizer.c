@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-
 static inline int get_step_from_filename(char *filename) {
     char *ia = filename;
 
@@ -27,57 +26,57 @@ static inline int get_step_from_filename(char *filename) {
     return int_a;
 }
 
-static void init_draw_config(struct draw_config *draw_config, struct visualization_options *options, bool only_restart) {
+static void init_gui_config(struct gui_config *gui_config, struct visualization_options *options, bool only_restart) {
 
-    draw_config->grid_info.vtk_grid = NULL;
+    gui_config->grid_info.vtk_grid = NULL;
 
-    draw_config->simulating = true;
-    draw_config->exit = false;
-    draw_config->restart = false;
+    gui_config->simulating = true;
+    gui_config->exit = false;
+    gui_config->restart = false;
 
-    draw_config->paused = true;
-    draw_config->advance_or_return = 0;
-    draw_config->grid_info.loaded = false;
+    gui_config->paused = true;
+    gui_config->advance_or_return = 0;
+    gui_config->grid_info.loaded = false;
 
     if(!only_restart) {
-        draw_config->max_v = options->max_v;
-        draw_config->min_v = options->min_v;
+        gui_config->max_v = options->max_v;
+        gui_config->min_v = options->min_v;
 
-        if(draw_config->min_v == 0) {
-            draw_config->min_v = 0.001f;
+        if(gui_config->min_v == 0) {
+            gui_config->min_v = 0.001f;
         }
 
-        draw_config->dt = options->dt;
-        draw_config->draw_type = DRAW_FILE;
-        draw_config->grid_info.file_name = NULL;
-        draw_config->error_message = NULL;
-        draw_config->int_scale = false;
+        gui_config->dt = options->dt;
+        gui_config->draw_type = DRAW_FILE;
+        gui_config->grid_info.file_name = NULL;
+        gui_config->error_message = NULL;
+        gui_config->int_scale = false;
     }
 
 }
 
 static void read_and_render_activation_map(char *input_file) {
 
-    draw_config.grid_info.file_name = NULL;
+    gui_config.grid_info.file_name = NULL;
 
-    omp_set_lock(&draw_config.draw_lock);
-    draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file);
-    draw_config.grid_info.loaded = true;
-    draw_config.int_scale = true;
+    omp_set_lock(&gui_config.draw_lock);
+    gui_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file);
+    gui_config.grid_info.loaded = true;
+    gui_config.int_scale = true;
 
-    if(!draw_config.grid_info.vtk_grid) {
+    if(!gui_config.grid_info.vtk_grid) {
         char tmp[4096];
         sprintf(tmp, "%s is not an activation map", input_file);
-        draw_config.error_message = strdup(tmp);
-        omp_unset_lock(&draw_config.draw_lock);
+        gui_config.error_message = strdup(tmp);
+        omp_unset_lock(&gui_config.draw_lock);
         return;
     }
 
-    draw_config.grid_info.file_name = input_file;
-    draw_config.min_v = draw_config.grid_info.vtk_grid->min_v;
-    draw_config.max_v = draw_config.grid_info.vtk_grid->max_v;
+    gui_config.grid_info.file_name = input_file;
+    gui_config.min_v = gui_config.grid_info.vtk_grid->min_v;
+    gui_config.max_v = gui_config.grid_info.vtk_grid->max_v;
 
-    omp_unset_lock(&draw_config.draw_lock);
+    omp_unset_lock(&gui_config.draw_lock);
 }
 
 static int read_and_render_files(struct visualization_options *options) {
@@ -124,7 +123,7 @@ static int read_and_render_files(struct visualization_options *options) {
             sprintf(tmp, "No path or pvd file provided!");
         }
         fprintf(stderr, "%s\n", tmp);
-        draw_config.error_message = strdup(tmp);
+        gui_config.error_message = strdup(tmp);
         return SIMULATION_FINISHED;
 
     }
@@ -152,32 +151,32 @@ static int read_and_render_files(struct visualization_options *options) {
 
         final_step = get_step_from_filename(vtk_files->files_list[num_files - 1]);
 
-        dt = draw_config.dt;
+        dt = gui_config.dt;
 
-        draw_config.step = step;
+        gui_config.step = step;
         if (dt == 0.0) {
-            draw_config.final_time = final_step;
+            gui_config.final_time = final_step;
 
         } else {
-            draw_config.final_time = final_step * dt;
+            gui_config.final_time = final_step * dt;
         }
     }
     else {
-        draw_config.final_time = vtk_files->timesteps[num_files-1];
-        draw_config.dt = -1; //we don't care about dt here as the timesteps are in the PVD file
+        gui_config.final_time = vtk_files->timesteps[num_files-1];
+        gui_config.dt = -1; //we don't care about dt here as the timesteps are in the PVD file
     }
 
     while(true) {
 
         if(!using_pvd) {
             if (dt == 0) {
-                draw_config.time = get_step_from_filename(vtk_files->files_list[current_file]);
+                gui_config.time = get_step_from_filename(vtk_files->files_list[current_file]);
             } else {
-                draw_config.time = get_step_from_filename(vtk_files->files_list[current_file]) * dt;
+                gui_config.time = get_step_from_filename(vtk_files->files_list[current_file]) * dt;
             }
         }
         else {
-            draw_config.time = vtk_files->timesteps[current_file];
+            gui_config.time = vtk_files->timesteps[current_file];
         }
 
         sdsfree(full_path);
@@ -191,20 +190,20 @@ static int read_and_render_files(struct visualization_options *options) {
 
         full_path = sdscat(full_path, "/");
 
-        draw_config.grid_info.file_name = NULL;
+        gui_config.grid_info.file_name = NULL;
 
         full_path = sdscat(full_path, vtk_files->files_list[current_file]);
-        omp_set_lock(&draw_config.draw_lock);
-        free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
-        draw_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path);
-        draw_config.grid_info.loaded = true;
+        omp_set_lock(&gui_config.draw_lock);
+        free_vtk_unstructured_grid(gui_config.grid_info.vtk_grid);
+        gui_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path);
+        gui_config.grid_info.loaded = true;
 
-        if(!draw_config.grid_info.vtk_grid) {
+        if(!gui_config.grid_info.vtk_grid) {
             char tmp[4096];
             sprintf(tmp, "Decoder not available for file %s", vtk_files->files_list[current_file]);
             fprintf(stderr, "%s\n", tmp);
-            draw_config.error_message = strdup(tmp);
-            omp_unset_lock(&draw_config.draw_lock);
+            gui_config.error_message = strdup(tmp);
+            omp_unset_lock(&gui_config.draw_lock);
             arrfree(vtk_files->files_list);
             arrfree(vtk_files->timesteps);
             free(vtk_files);
@@ -213,21 +212,21 @@ static int read_and_render_files(struct visualization_options *options) {
 
         }
 
-        draw_config.grid_info.file_name = full_path;
-        omp_unset_lock(&draw_config.draw_lock);
+        gui_config.grid_info.file_name = full_path;
+        omp_unset_lock(&gui_config.draw_lock);
 
-        omp_set_lock(&draw_config.sleep_lock);
+        omp_set_lock(&gui_config.sleep_lock);
 
-        if(draw_config.restart) {
-            draw_config.time = 0.0;
-            free_vtk_unstructured_grid(draw_config.grid_info.vtk_grid);
+        if(gui_config.restart) {
+            gui_config.time = 0.0;
+            free_vtk_unstructured_grid(gui_config.grid_info.vtk_grid);
             arrfree(vtk_files->files_list);
             arrfree(vtk_files->timesteps);
             free(vtk_files);
             sdsfree(full_path);
             return RESTART_SIMULATION;
         }
-        if(draw_config.exit) {
+        if(gui_config.exit) {
             arrfree(vtk_files->files_list);
             arrfree(vtk_files->timesteps);
             free(vtk_files);
@@ -236,9 +235,9 @@ static int read_and_render_files(struct visualization_options *options) {
         }
 
         //TODO: maybe change how we handle advance_return
-        if(draw_config.paused) {
-            current_file += draw_config.advance_or_return;
-            draw_config.advance_or_return = 0;
+        if(gui_config.paused) {
+            current_file += gui_config.advance_or_return;
+            gui_config.advance_or_return = 0;
             if(current_file < 0) current_file++;
             else if(current_file >= num_files) current_file--;
 
@@ -247,7 +246,7 @@ static int read_and_render_files(struct visualization_options *options) {
             current_file += v_step;
             if(current_file >= num_files) {
                 current_file -= v_step;
-                draw_config.paused = true;
+                gui_config.paused = true;
             }
 
         }
@@ -296,9 +295,9 @@ int main(int argc, char **argv) {
         {
             #pragma omp section
             {
-                omp_init_lock(&draw_config.draw_lock);
-                omp_init_lock(&draw_config.sleep_lock);
-                init_draw_config(&draw_config, options, false);
+                omp_init_lock(&gui_config.draw_lock);
+                omp_init_lock(&gui_config.sleep_lock);
+                init_gui_config(&gui_config, options, false);
                 init_and_open_visualization_window(DRAW_FILE);
             }
 
@@ -312,13 +311,13 @@ int main(int argc, char **argv) {
 
                     while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
                         if (result == RESTART_SIMULATION) {
-                            init_draw_config(&draw_config, options, true);
+                            init_gui_config(&gui_config, options, true);
                             result = read_and_render_files(options);
                         }
 
-                        if (draw_config.restart) result = RESTART_SIMULATION;
+                        if (gui_config.restart) result = RESTART_SIMULATION;
 
-                        if (result == END_SIMULATION || draw_config.exit) {
+                        if (result == END_SIMULATION || gui_config.exit) {
                             break;
                         }
                     }

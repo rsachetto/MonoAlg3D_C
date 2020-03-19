@@ -102,7 +102,7 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
 fi
 
 if [ -n "$COMPILE_GUI" ]; then
-    C_FLAGS="${C_FLAGS} -DCOMPILE_OPENGL"
+    C_FLAGS="${C_FLAGS} -DCOMPILE_GUI"
 fi
 
 echo -e "${INFO}C FLAGS:${NC} $C_FLAGS"
