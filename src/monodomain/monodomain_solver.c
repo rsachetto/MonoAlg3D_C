@@ -12,7 +12,7 @@
 #endif
 
 #ifdef COMPILE_OPENGL
-#include "../draw/draw.h"
+#include "../gui/gui.h"
 #endif
 
 #include "../string/sds.h"
