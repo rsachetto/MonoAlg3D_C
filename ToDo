@@ -6,18 +6,18 @@ Sachetto
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 
 Berg
+- Refactor the save map functions as a single one
 - Implement 'save_vtk_polydata_grid_as_vtu'
 - Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 
 - Implement coupling between Purkinje and tissue
+    - Fix the retropropagation code
     - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
     - Fix a bug when using adaptativity (benchmark_purkinje.ini)
     - Add the option to configure the conductivity of the segments from the Purkinje network on the input ".vtk"
-    - Couple more cells to the Purkinje fibers (create a Pmj_scale parameter)
 
 - Add a conduction velocity calculator for Purkinje fibers
 - Implement the GMRES linear system solver (see Bernardo's book as reference ...)
-- Implement an APD map writer to VTU
 - Implement a Purkinje restore state function
 
 Pedro

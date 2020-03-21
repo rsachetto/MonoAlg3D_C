@@ -66,6 +66,7 @@ meshes/*.mesh
 meshes/human_800_tagged.alg
 meshes/mouse.alg
 meshes/hermenegild*
+meshes/cadim*
 .vscode/
 build/
 *~

@@ -41,7 +41,8 @@ struct graph
     uint32_t total_nodes;
     uint32_t total_edges;
 
-    real_cpu dx;
+    real_cpu dx;                    // Control volume discretization
+    real_cpu h;                     // Mesh cell size
 
     bool calc_retropropagation;
     real_cpu rpmj;

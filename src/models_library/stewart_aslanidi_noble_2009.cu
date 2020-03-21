@@ -60,7 +60,7 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
     if (threadID < num_volumes) {
 
         // Default initial conditions from the CellML
-/*
+        /*
          *((real * )((char *) sv + pitch * 0) + threadID) = -69.1370441635924;
          *((real * )((char *) sv + pitch * 1) + threadID) = 136.781894160227;
          *((real * )((char *) sv + pitch * 2) + threadID) = 8.80420286531673;
@@ -81,29 +81,29 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
          *((real * )((char *) sv + pitch * 17) + threadID) = 0.00103618091196912;
          *((real * )((char *) sv + pitch * 18) + threadID) = 3.10836886659417;
          *((real * )((char *) sv + pitch * 19) + threadID) = 0.991580051907845;
-*/
+        */
 
-        // Steady-State after 20000ms, BCL = 1000ms
-        *((real *) ((char *) sv + pitch * 0) + threadID) = -70.3543;
-        *((real *) ((char *) sv + pitch * 1) + threadID) = 136.603;
-        *((real *) ((char *) sv + pitch * 2) + threadID) = 8.91743;
-        *((real *) ((char *) sv + pitch * 3) + threadID) = 0.00010623;
-        *((real *) ((char *) sv + pitch * 4) + threadID) = 0.0406155;
-        *((real *) ((char *) sv + pitch * 5) + threadID) = 0.00948153;
-        *((real *) ((char *) sv + pitch * 6) + threadID) = 0.32415;
-        *((real *) ((char *) sv + pitch * 7) + threadID) = 0.00889219;
-        *((real *) ((char *) sv + pitch * 8) + threadID) = 0.0335849;
-        *((real *) ((char *) sv + pitch * 9) + threadID) = 0.222399;
-        *((real *) ((char *) sv + pitch * 10) + threadID) = 0.251454;
-        *((real *) ((char *) sv + pitch * 11) + threadID) = 0.00041241;
-        *((real *) ((char *) sv + pitch * 12) + threadID) = 0.000244885;
-        *((real *) ((char *) sv + pitch * 13) + threadID) = 0.98024;
-        *((real *) ((char *) sv + pitch * 14) + threadID) = 0.996029;
-        *((real *) ((char *) sv + pitch * 15) + threadID) = 0.999952;
-        *((real *) ((char *) sv + pitch * 16) + threadID) = 0.966603;
-        *((real *) ((char *) sv + pitch * 17) + threadID) = 0.00094868;
-        *((real *) ((char *) sv + pitch * 18) + threadID) = 3.3447;
-        *((real *) ((char *) sv + pitch * 19) + threadID) = 0.988314;
+        // Steady-State after 10000ms in a 1cm cable --> BCL = 500ms
+        *((real * )((char *) sv + pitch * 0) + threadID) = -74.391220;
+        *((real * )((char *) sv + pitch * 1) + threadID) = 136.781891;
+        *((real * )((char *) sv + pitch * 2) + threadID) = 9.046331;
+        *((real * )((char *) sv + pitch * 3) + threadID) = 0.000147;
+        *((real * )((char *) sv + pitch * 4) + threadID) = 0.011298;
+        *((real * )((char *) sv + pitch * 5) + threadID) = 0.239796;
+        *((real * )((char *) sv + pitch * 6) + threadID) = 0.361989;
+        *((real * )((char *) sv + pitch * 7) + threadID) = 0.020117;
+        *((real * )((char *) sv + pitch * 8) + threadID) = 0.015747;
+        *((real * )((char *) sv + pitch * 9) + threadID) = 0.351714;
+        *((real * )((char *) sv + pitch * 10) + threadID) = 0.142322;
+        *((real * )((char *) sv + pitch * 11) + threadID) = 0.000474;
+        *((real * )((char *) sv + pitch * 12) + threadID) = 0.000143;
+        *((real * )((char *) sv + pitch * 13) + threadID) = 0.730152;
+        *((real * )((char *) sv + pitch * 14) + threadID) = 0.943502;
+        *((real * )((char *) sv + pitch * 15) + threadID) = 0.994737;
+        *((real * )((char *) sv + pitch * 16) + threadID) = 0.964095;
+        *((real * )((char *) sv + pitch * 17) + threadID) = 0.000698;
+        *((real * )((char *) sv + pitch * 18) + threadID) = 3.899154;
+        *((real * )((char *) sv + pitch * 19) + threadID) = 0.894456;
 
     }
 }
@@ -136,6 +136,22 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         }
 
+        /*
+        if(threadID == num_cells_to_solve-1)
+        {
+            printf("------------------------\n");
+            for(int i = 0; i < NEQ; i++)
+            {
+                printf("sv[%d] = %lf\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
+            }
+            for(int i = 0; i < NEQ; i++)
+            {
+                printf("*((real * )((char *) sv + pitch * %d) + threadID) = %lf\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
+            }
+            printf("------------------------\n");
+        }
+        */
+
     }
 }
 
@@ -148,8 +164,8 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 
     // This statement if to avoid instability problems when we have a transmembrane potential below -70mV, 
     // which generates NaN on the solution from the ODEs
-    if (STATES[0] < INITIAL_V)
-        STATES[0] = INITIAL_V;
+    //if (STATES[0] < INITIAL_V)
+    //    STATES[0] = INITIAL_V;
 
     // Constants
     real CONSTANTS[52];

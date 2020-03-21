@@ -24,8 +24,11 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     char *name = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(name, config->config_data, "name");
 
-    real_cpu side_length = 0.0;
+    real_cpu side_length = 10.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,side_length, config->config_data, "start_discretization");
+
+    real_cpu dx = 100.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,dx, config->config_data, "start_dx");
 
     char *network_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(network_file,config->config_data,"network_file");
@@ -57,7 +60,7 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     print_to_stdout_and_file("Celular model for the Purkinje :> %s\n",the_ode_solver->model_data.model_library_path);
 
     print_to_stdout_and_file("Loading Purkinje mesh ...\n");
-    set_custom_purkinje_network(the_grid->the_purkinje, network_file, side_length, rpmj, pmj_scale, calc_retro_propagation);
+    set_custom_purkinje_network(the_grid->the_purkinje, network_file, side_length, dx, rpmj, pmj_scale, calc_retro_propagation);
 
     // Populate the 'purkinje_cells' linked-list with the nodes from the graph
     //        Some parameters from the 'cell_node' structure will not be used

@@ -22,12 +22,12 @@
 #endif
 
 // Set a a custom Purkinje network from a file that stores its graph structure
-void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
+void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length, const real_cpu dx, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
 
     struct graph *the_network = the_purkinje->the_network;
 
-    set_purkinje_network_from_file(the_network,file_name,side_length,rpmj,pmj_scale,calc_retro_propagation);
+    set_purkinje_network_from_file(the_network,file_name,side_length,dx,rpmj,pmj_scale,calc_retro_propagation);
 
     calculate_number_of_terminals(the_network);
 
@@ -36,14 +36,14 @@ void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char
 
 }
 
-void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
+void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length, const real_cpu dx, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
     struct graph *skeleton_network = new_graph();
 
     //read_purkinje_network_from_file(file_name,&points,&branches,&N,&E);
     build_skeleton_purkinje(file_name,skeleton_network);
 
-    build_mesh_purkinje(the_purkinje_network,skeleton_network,side_length,rpmj,pmj_scale,calc_retro_propagation);
+    build_mesh_purkinje(the_purkinje_network,skeleton_network,side_length,dx,rpmj,pmj_scale,calc_retro_propagation);
     
     // Write the Purkinje to a VTK file for visualization purposes.
     write_purkinje_network_to_vtk(the_purkinje_network);
@@ -118,7 +118,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     fclose(file);
 }
 
-void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
+void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length, const real_cpu dx, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
     assert(the_purkinje_network);
     assert(skeleton_network);
@@ -126,8 +126,9 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     // TODO: Maybe avoid this conversion by building a skeleton mesh directly in micrometers
     // The side_length of a Purkinje volume is given in micrometers, so we convert to centimeters
     // um -> cm
-    //the_purkinje_network->dx = side_length*UM_TO_CM;
-    the_purkinje_network->dx = side_length;
+    the_purkinje_network->dx = dx;
+    the_purkinje_network->h = side_length;
+
     //the_purkinje_network->dx = side_length * 0.5;           // GAMBIARRA HARD !!!! Hermenegild
     the_purkinje_network->rpmj = rpmj;
     the_purkinje_network->pmj_scale = pmj_scale;
@@ -145,7 +146,7 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     // Make a Depth-First-Search to build the mesh of the Purkinje network
     depth_first_search(the_purkinje_network,tmp,0,map_skeleton_to_mesh);
 
-    the_purkinje_network->dx = side_length;
+    the_purkinje_network->dx = dx;
 
     free(map_skeleton_to_mesh);
 
@@ -167,7 +168,7 @@ void depth_first_search (struct graph *the_purkinje_network, struct node *u, int
 
 void grow_segment (struct graph *the_purkinje_network, struct node *u, struct edge *v, uint32_t *map_skeleton_to_mesh)
 {
-    real_cpu h = the_purkinje_network->dx;
+    real_cpu h = the_purkinje_network->h;
     real_cpu d_ori[3], d[3];
     real_cpu segment_length = v->w;
     uint32_t n_points = segment_length / h;
