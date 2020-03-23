@@ -18,6 +18,24 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+char *get_current_directory() {
+    long size;
+    char *buf = NULL;
+    size = pathconf(".", _PC_PATH_MAX);
+
+    if ((buf = (char *)malloc((size_t)size)) != NULL)
+        buf = getcwd(buf, (size_t)size);
+
+    buf = strcat(buf, "/");
+    return buf;
+}
+
+const char *get_filename_ext(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return NULL;
+    return dot + 1;
+}
+
 char * get_dir_from_path(const char * path) {
     char *last_slash = NULL;
     char *parent = NULL;
@@ -277,6 +295,7 @@ bool file_exists(const char *path) {
     }
 
 }
+
 bool dir_exists(const char *path) {
     struct stat info;
 
@@ -286,6 +305,27 @@ bool dir_exists(const char *path) {
         return true;
     else
         return false;
+}
+
+void get_path_information(const char *path, struct path_information *input_info ) {
+    struct stat info;
+
+    input_info->exists = false;
+
+    if(stat( path, &info ) != 0) {
+        return;
+    }
+
+    input_info->exists = true;
+    input_info->is_dir = info.st_mode & S_IFDIR;
+    input_info->is_file = !(input_info->is_dir);
+
+    if(input_info->is_file) {
+        input_info->file_extension = strdup(get_filename_ext(path));
+    }
+
+    return;
+
 }
 
 int remove_directory(const char *path)

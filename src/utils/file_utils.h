@@ -15,6 +15,13 @@
 
 #include "../common_types/common_types.h"
 
+struct path_information {
+    bool exists, is_file, is_dir;
+    char *file_extension;
+};
+
+char * get_current_directory();
+const char *get_filename_ext(const char *filename);
 int cp_file(const char *to, const char *from);
 char * read_entire_file(const char *filename, size_t *size);
 char *read_entire_file_with_mmap(const char *filename, size_t *size);
@@ -23,6 +30,7 @@ string_array list_files_from_dir_sorted(const char *dir, const char *prefix);
 string_array read_lines(const char *filename);
 bool dir_exists(const char *path);
 bool file_exists(const char *path);
+void get_path_information(const char *path, struct path_information *input_info );
 void fixpath(char *path);
 void create_dir(char *out_dir);
 int remove_directory(const char *path);

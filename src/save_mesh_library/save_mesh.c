@@ -687,7 +687,7 @@ SAVE_MESH(save_with_activation_times) {
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
-    sds base_name = create_base_name("activation_info", 0, "txt");
+    sds base_name = create_base_name("activation_info", 0, "acm");
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     struct save_with_activation_times_persistent_data *persistent_data =

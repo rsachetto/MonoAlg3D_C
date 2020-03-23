@@ -143,10 +143,8 @@ struct batch_options {
 };
 
 struct visualization_options {
-    char *input_folder;
+    char *input;
     char *files_prefix;
-    char *pvd_file;
-    char *activation_map;
     bool save_activation_only;
     int start_file;
     int step;

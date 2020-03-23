@@ -8,10 +8,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define RESTART_SIMULATION 42
-#define END_SIMULATION 43
-#define SIMULATION_FINISHED 44
-
 //Forward declarations
 struct user_options;
 struct ode_solver;
