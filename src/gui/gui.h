@@ -7,7 +7,6 @@
 
 #include "../alg/grid/grid.h"
 #include "../alg/cell/cell.h"
-#include "../monodomain/ode_solver.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
 #include "../raylib/src/raymath.h"
 
@@ -28,6 +27,13 @@
 struct action_potential {
     real_cpu v;
     real_cpu t;
+};
+
+
+enum simulation_status {
+    RESTART_SIMULATION,
+    END_SIMULATION,
+    SIMULATION_FINISHED,
 };
 
 struct ap_graph_config {
@@ -67,6 +73,7 @@ struct gui_config {
     int step;
 
     char *config_name;
+    char *input;
 
     long solver_time;
     long ode_total_time;
@@ -98,6 +105,7 @@ struct gui_config {
 };
 
 struct gui_state {
+    bool handle_keyboard_input;
     bool one_selected;
     bool show_ap;
     bool c_pressed;
@@ -113,7 +121,6 @@ struct gui_state {
     bool move_info_box;
 
     bool show_selection_box;
-    bool show_save_box;
 
     bool show_scale;
     bool move_scale;

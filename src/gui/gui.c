@@ -4,6 +4,8 @@
 #include <float.h>
 #include <time.h>
 #include <limits.h>
+#include <unistd.h>
+
 
 #include "gui.h"
 #include "color_maps.h"
@@ -11,23 +13,34 @@
 #include "../raylib/src/raylib.h"
 #include "../raylib/ricons.h"
 #include "../raylib/src/camera.h"
+#include "../utils/file_utils.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_RICONS_SUPPORT
-#define RAYGUI_TEXTBOX_EXTENDED
 #include "../raylib/src/raygui.h"
-#undef RAYGUI_IMPLEMENTATION            // Avoid including raygui implementation again
+#undef RAYGUI_IMPLEMENTATION
+
+#define GUI_TEXTBOX_EXTENDED_IMPLEMENTATION
+#include "../raylib/src/gui_textbox_extended.h"
+
+#include "../logger/logger.h"
+#include "tinyfiledialogs.h"
 
 
 static int current_window_height = 0;
 static int current_window_width = 0;
 
+int info_box_lines;
+const int end_info_box_lines = 10;
+const int mesh_info_box_lines = 9;
+
 struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
 
     struct gui_state *gui_state = (struct gui_state*) calloc(1, sizeof(struct gui_state));
 
-    gui_state->font_size_small = 10;
-    gui_state->font_size_big = 14;
+    gui_state->handle_keyboard_input = true;
+    gui_state->font_size_small = 12;
+    gui_state->font_size_big = 16;
 
     gui_state->show_ap = true;
     gui_state->show_scale = true;
@@ -45,7 +58,6 @@ struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
     gui_state->current_scale = 0;
     gui_state->voxel_alpha = 255;
     gui_state->scale_alpha = 255;
-    //gui_state->font = font;
     gui_state->num_colors = num_colors;
     gui_state->mouse_timer = -1;
     gui_state->selected_time = 0.0;
@@ -69,7 +81,6 @@ struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
 
     gui_state->ap_graph_config->graph.x = 100;
     gui_state->ap_graph_config->graph.y = (float)current_window_height - gui_state->ap_graph_config->graph.height - 70;
-//    gui_state->current_font = 0;
     gui_state->scale_bounds.x = (float)current_window_width - 30.0f;
     gui_state->scale_bounds.y = (float)current_window_height/1.5f;
 
@@ -280,9 +291,9 @@ static Vector3 find_mesh_center_vtk(struct mesh_info *mesh_info) {
 
     for (uint32_t i = 0; i < n_active*num_points; i+=num_points) {
 
-        dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
-        dy = fabsf((points[cells[i]].y - points[cells[i+3]].y));
-        dz = fabsf((points[cells[i]].z - points[cells[i+4]].z));
+        dx = fabs((points[cells[i]].x - points[cells[i+1]].x));
+        dy = fabs((points[cells[i]].y - points[cells[i+3]].y));
+        dz = fabs((points[cells[i]].z - points[cells[i+4]].z));
 
         mesh_center_x = points[cells[i]].x + dx/2.0f;
         mesh_center_y = points[cells[i]].y + dy/2.0f;
@@ -434,7 +445,7 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
         real_cpu v;
         float dx, dy, dz;
 
-        dx = fabsf((points[cells[i]].x - points[cells[i+1]].x));
+        dx = fabs((points[cells[i]].x - points[cells[i+1]].x));
         dy = fabs((points[cells[i]].y - points[cells[i+3]].y));
         dz = fabs((points[cells[i]].z - points[cells[i+4]].z));
 
@@ -685,27 +696,29 @@ static void draw_ap_graph(struct gui_state *gui_state, Font font) {
 
     struct action_potential *aps;
 
+    //Draw the function
     for (int j = 0; j < n; j++) {
 
         aps = (struct action_potential*) gui_state->ap_graph_config->selected_aps[j].value;
         int c = arrlen(aps);
+        int step = 1;
 
         if(c > 0) {
             Color line_color = colors[j % gui_state->num_colors];
-            for (int i = 0; i < c; i++) {
+            for (int i = 0; i < c; i+=step) {
 
                 if(aps[i].t <= gui_config.time) {
-                    if (i + 1 < c) {
+                    if (i + step < c) {
 
                         p1.x = normalize(0.0f, gui_config.final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i].t);
                         p1.y = normalize(gui_config.min_v, gui_config.max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, aps[i].v);
 
-                        p2.x = normalize(0.0f, gui_config.final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i + 1].t);
-                        p2.y = normalize(gui_config.min_v, gui_config.max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, aps[i + 1].v);
+                        p2.x = normalize(0.0f, gui_config.final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i + step].t);
+                        p2.y = normalize(gui_config.min_v, gui_config.max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, aps[i + step].v);
 
                         //TODO: create an option for this???
-                        if (aps[i + 1].v > gui_config.max_v) gui_config.max_v = aps[i + 1].v;
-                        if (aps[i + 1].v < gui_config.min_v) gui_config.min_v = aps[i + 1].v;
+                        if (aps[i + step].v > gui_config.max_v) gui_config.max_v = aps[i + step].v;
+                        if (aps[i + step].v < gui_config.min_v) gui_config.min_v = aps[i + step].v;
 
                         DrawLineV(p1, p2, line_color);
                     }
@@ -778,15 +791,12 @@ void check_window_change(Rectangle *box) {
 
         if (box->y + box->height > current_window_height)
             move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
-
-//        if (box->x + box->width > current_window_width) box->x = clamp(current_window_width - box->width - 10,0,current_window_width - box->width - 10);
-//        if (box->y + box->height > current_window_height) box->y = clamp(current_window_height - box->height - 10,0,current_window_height - box->height - 10);
     }
 }
 
 static void draw_scale(Font font, float font_size_small, bool int_scale, struct gui_state *gui_state) {
 
-   // check_window_change(&gui_state->scale_bounds);
+    check_window_change(&(gui_state->scale_bounds));
 
     static bool calc_bounds = true;
 
@@ -859,7 +869,6 @@ static void draw_scale(Font font, float font_size_small, bool int_scale, struct 
 }
 
 static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, int font_size_for_line, Font font) {
-
 
     check_window_change(box);
 
@@ -1014,15 +1023,15 @@ static bool draw_selection_box(struct gui_state *gui_state, Font font) {
     bool window_closed = GuiWindowBox((Rectangle){ pos_x, pos_y, gui_state->box_width , gui_state->box_height}, "Enter the center of the cell");
 
     DrawTextEx(font, "Center X", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, 1, BLACK);
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_x_text, SIZEOF(center_x_text) - 1, true);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_x_text, SIZEOF(center_x_text) - 1, true);
 
     box_pos = pos_x + text_box_width + 2*x_off;
     DrawTextEx(font, "Center Y", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, 1, BLACK);
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_y_text, SIZEOF(center_y_text) - 1, true);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_y_text, SIZEOF(center_y_text) - 1, true);
 
     box_pos = pos_x +  2*text_box_width + 3*x_off;
     DrawTextEx(font, "Center Z", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, 1, BLACK);
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_z_text, SIZEOF(center_z_text) - 1, true);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_z_text, SIZEOF(center_z_text) - 1, true);
 
     bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_width + 2*x_off, pos_y + 70, text_box_width, text_box_height}, "OK");
 
@@ -1033,38 +1042,6 @@ static bool draw_selection_box(struct gui_state *gui_state, Font font) {
     }
 
     return window_closed || btn_ok_clicked;
-}
-
-static bool draw_save_box(struct gui_state *gui_state) {
-
-    static char save_path[PATH_MAX] = {0};
-
-    const float text_box_width = 90;
-    const float text_box_height = 25;
-    const float text_box_y_dist = 40;
-
-    const float x_off = 10;
-
-    float pos_x = gui_state->sub_window_pos.x;
-    float pos_y = gui_state->sub_window_pos.y;
-
-    float box_pos = pos_x + x_off;
-
-    bool window_closed = GuiWindowBox((Rectangle){ pos_x, pos_y, gui_state->box_width , gui_state->box_height}, "Enter the filename");
-
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, gui_state->box_width - 2*x_off, text_box_height}, save_path, SIZEOF(save_path) - 1, true);
-
-    bool btn_ok_clicked = GuiButton((Rectangle){pos_x +  x_off, pos_y + 70, text_box_width, text_box_height}, "OK");
-    bool btn_cancel_clicked = GuiButton((Rectangle){pos_x + gui_state->box_width - text_box_width - x_off, pos_y + 70, text_box_width, text_box_height}, "CANCEL");
-
-    if(btn_ok_clicked) {
-        if( strlen(save_path) > 0 ) {
-            save_vtk_unstructured_grid_as_vtu_compressed(gui_config.grid_info.vtk_grid, save_path, 6);
-            log_to_stdout_and_file("Saved vtk file as %s\n", save_path);
-        }
-    }
-
-    return btn_cancel_clicked || window_closed || btn_ok_clicked;
 }
 
 static void reset(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_state *gui_state, bool reset_aps) {
@@ -1103,8 +1080,185 @@ static void reset(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_sta
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
 }
 
+
+static void handle_keyboard_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *mesh_info, struct gui_state *gui_state) {
+
+    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+        if(IsKeyPressed(KEY_F)) {
+            gui_state->show_selection_box = true;
+            gui_state->sub_window_pos.x = GetScreenWidth() / 2 - gui_state->box_width;
+            gui_state->sub_window_pos.y = GetScreenHeight() / 2 - gui_state->box_height;
+            return;
+
+        }
+    }
+
+    if (IsKeyPressed(KEY_Q)) {
+        gui_state->show_scale = !gui_state->show_scale;
+        return;
+    }
+    else if (IsKeyDown(KEY_A)) {
+        if(gui_state->voxel_alpha - 1 >= 0)
+            gui_state->voxel_alpha = gui_state->voxel_alpha - 1;
+        return;
+    }
+    else if(IsKeyDown(KEY_Z)) {
+        if(gui_state->voxel_alpha + 1 <= 255)
+            gui_state->voxel_alpha = gui_state->voxel_alpha + 1;
+        return;
+    }
+
+    if(gui_config.paused) {
+
+        if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+            //SAVE FILE AS VTK
+            if(IsKeyPressed(KEY_S)) {
+                char const * filter[1] = {"*.vtu"};
+
+                const char *save_path = tinyfd_saveFileDialog (
+                    "Save VTK file",
+                    gui_config.input,
+                    1,
+                    filter,
+                    "vtu files" );
+
+
+                if(save_path) {
+                    save_vtk_unstructured_grid_as_vtu_compressed(gui_config.grid_info.vtk_grid, save_path, 6);
+                    log_to_stdout_and_file("Saved vtk file as %s\n", save_path);
+                }
+
+                return;
+            }
+        }
+
+        if (IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
+            gui_config.advance_or_return = 1;
+            omp_unset_lock(&gui_config.sleep_lock);
+            nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
+            return;
+        }
+
+        if(gui_config.draw_type == DRAW_FILE) {
+            //Return one step only works on file visualization...
+            if (IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
+                gui_config.advance_or_return = -1;
+                nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
+                omp_unset_lock(&gui_config.sleep_lock);
+                return;
+            }
+        }
+
+    }
+
+    if (IsKeyPressed(KEY_G))  {
+        gui_state->draw_grid_only = !gui_state->draw_grid_only;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_PERIOD))  {
+        gui_state->current_scale = (gui_state->current_scale + 1) % NUM_SCALES;
+        return;
+    }
+    if (IsKeyPressed(KEY_COMMA))  {
+        if(gui_state->current_scale - 1 >= 0) {
+            gui_state->current_scale = (gui_state->current_scale - 1);
+        }
+        else {
+            gui_state->current_scale = NUM_SCALES-1;
+        }
+        return;
+    }
+
+    if (IsKeyPressed(KEY_L)) {
+        gui_state->draw_grid_lines = !gui_state->draw_grid_lines;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        gui_config.paused = !gui_config.paused;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_R)) {
+        bool full_reset = false;
+
+        if(IsKeyDown(KEY_LEFT_ALT)) {
+            full_reset = true;
+        }
+
+        reset(mesh_loaded, mesh_info, gui_state, full_reset);
+        return;
+    }
+
+    if (IsKeyPressed(KEY_X)) {
+        gui_state->show_ap = !gui_state->show_ap;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_C)) {
+        gui_state->show_scale = gui_state->c_pressed;
+        gui_state->show_ap = gui_state->c_pressed;
+        gui_state->show_help_box = gui_state->c_pressed;
+        gui_state->show_end_info_box = gui_state->c_pressed;
+        gui_state->show_mesh_info_box = gui_state->c_pressed;
+        gui_state-> c_pressed = !gui_state->c_pressed;
+        return;
+    }
+
+    if (IsKeyPressed(KEY_O)) {
+        GuiLock();
+
+        char *buf = get_current_directory();
+
+        char const *tmp = tinyfd_selectFolderDialog("Select a directory", buf);
+        if(tmp) {
+            gui_config.input = strdup(tmp);
+        }
+        else {
+            gui_config.input = NULL;
+        }
+
+        free(buf);
+        GuiUnlock();
+        return;
+    }
+
+    if (IsKeyPressed(KEY_F)) {
+        GuiLock();
+
+        char *buf = get_current_directory();
+
+        char const * filter[4] = {"*.pvd", "*.acm", "*.vtk", "*.vtu"};
+
+        char const *tmp = tinyfd_openFileDialog(
+            "Select a simulation file",
+            buf,
+            4,
+            filter,
+            "simulation result (pvd, vtk, vtu or acm)",
+            0);
+
+        if(tmp) {
+            gui_config.input = strdup(tmp);
+        }
+        else {
+            gui_config.input = NULL;
+        }
+
+        free(buf);
+        GuiUnlock();
+        return;
+    }
+
+}
+
+//TODO: we need to refactor this function
 static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
+    if(gui_state->handle_keyboard_input) {
+        handle_keyboard_input(mesh_loaded, camera, mesh_info, gui_state);
+    }
 
     gui_state->mouse_pos = GetMousePosition();
 
@@ -1243,116 +1397,7 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
 
         }
     }
-
-
-
-    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-        if(IsKeyPressed(KEY_F)) {
-            gui_state->show_selection_box = true;
-            gui_state->sub_window_pos.x = GetScreenWidth() / 2 - gui_state->box_width;
-            gui_state->sub_window_pos.y = GetScreenHeight() / 2 - gui_state->box_height;
-        }
-    }
-
-    if (IsKeyPressed('Q')) {
-        gui_state->show_scale = !gui_state->show_scale;
-        return;
-    }
-    else if (IsKeyDown('A')) {
-        if(gui_state->voxel_alpha - 1 >= 0)
-            gui_state->voxel_alpha = gui_state->voxel_alpha - 1;
-        return;
-    }
-    else if(IsKeyDown('Z')) {
-        if(gui_state->voxel_alpha + 1 <= 255)
-            gui_state->voxel_alpha = gui_state->voxel_alpha + 1;
-        return;
-    }
-
-    if(gui_config.paused) {
-
-        if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-            if(IsKeyPressed(KEY_S)) {
-                gui_state->show_save_box = true;
-                gui_state->sub_window_pos.x = GetScreenWidth() / 2 - gui_state->box_width;
-                gui_state->sub_window_pos.y = GetScreenHeight() / 2 - gui_state->box_height;
-                return;
-            }
-        }
-
-        if (IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
-            gui_config.advance_or_return = 1;
-            omp_unset_lock(&gui_config.sleep_lock);
-            nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
-            return;
-        }
-
-        if(gui_config.draw_type == DRAW_FILE) {
-            //Return one step only works on file visualization...
-            if (IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
-                gui_config.advance_or_return = -1;
-                nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
-                omp_unset_lock(&gui_config.sleep_lock);
-                return;
-            }
-        }
-
-    }
-
-    if (IsKeyPressed('G'))  {
-        gui_state->draw_grid_only = !gui_state->draw_grid_only;
-        return;
-    }
-
-    if (IsKeyPressed('.'))  {
-        gui_state->current_scale = (gui_state->current_scale + 1) % NUM_SCALES;
-        return;
-    }
-    if (IsKeyPressed(','))  {
-        if(gui_state->current_scale - 1 >= 0) {
-            gui_state->current_scale = (gui_state->current_scale - 1);
-        }
-        else {
-            gui_state->current_scale = NUM_SCALES-1;
-        }
-        return;
-    }
-
-    if (IsKeyPressed('L')) {
-        gui_state->draw_grid_lines = !gui_state->draw_grid_lines;
-        return;
-    }
-
-    if (IsKeyPressed(KEY_SPACE)) {
-        gui_config.paused = !gui_config.paused;
-        return;
-    }
-
-    if (IsKeyPressed('R')) {
-        bool full_reset = false;
-
-        if(IsKeyDown(KEY_LEFT_ALT)) {
-            full_reset = true;
-        }
-
-        reset(mesh_loaded, mesh_info, gui_state, full_reset);
-        return;
-    }
-
-    if (IsKeyPressed('X')) {
-        gui_state->show_ap = !gui_state->show_ap;
-        return;
-    }
-
-    if (IsKeyPressed('C')) {
-        gui_state->show_scale = gui_state->c_pressed;
-        gui_state->show_ap = gui_state->c_pressed;
-        gui_state->show_help_box = gui_state->c_pressed;
-        gui_state->show_end_info_box = gui_state->c_pressed;
-        gui_state->show_mesh_info_box = gui_state->c_pressed;
-       gui_state-> c_pressed = !gui_state->c_pressed;
-        return;
-    }
+    
 
     if(!gui_state->show_selection_box) {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -1441,9 +1486,7 @@ void init_and_open_visualization_window() {
             " - Space to start or pause simulation"
     };
 
-    int info_box_lines = SIZEOF(info_box_strings);
-    int end_info_box_lines = 10;
-    int mesh_info_box_lines = 9;
+    info_box_lines = SIZEOF(info_box_strings);
 
     Vector2 txt_w_h;
 
@@ -1458,9 +1501,6 @@ void init_and_open_visualization_window() {
 
     struct mesh_info *mesh_info = new_mesh_info();
     struct gui_state *gui_state = new_gui_state_with_font_and_colors(SIZEOF(colors));
-
-//    // Custom file dialog
-//    GuiFileDialogState fileDialogState = InitGuiFileDialog();
 
     bool end_info_box_strings_configured = false;
 
@@ -1482,20 +1522,7 @@ void init_and_open_visualization_window() {
     gui_state->end_info_box.x =  gui_state->help_box.x;
     gui_state->end_info_box.y = gui_state->help_box.y + gui_state->help_box.height + 10;
 
-//    char fileNameToLoad[512] = { 0 };
-
     while (!WindowShouldClose()) {
-
-//        if (fileDialogState.SelectFilePressed)
-//        {
-//            // Load image file (if supported extension)
-//            if (IsFileExtension(fileDialogState.fileNameText, ".png"))
-//            {
-//                strcpy(fileNameToLoad, TextFormat("%s/%s", fileDialogState.dirPathText, fileDialogState.fileNameText));
-//            }
-//
-//            fileDialogState.SelectFilePressed = false;
-//        }
 
         UpdateCamera(&camera);
 
@@ -1503,16 +1530,7 @@ void init_and_open_visualization_window() {
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-//        if (fileDialogState.fileDialogActive) GuiLock();
-//
-//        if (GuiButton((Rectangle){ 20, 20, 140, 30 }, GuiIconText(RICON_FILE_OPEN, "Open Image"))) fileDialogState.fileDialogActive = true;
-//
-//        GuiUnlock();
-//
-//        // GUI: Dialog Window
-//        //--------------------------------------------------------------------------------
-//        GuiFileDialog(&fileDialogState);
-
+        gui_state->handle_keyboard_input = !gui_state->show_selection_box;
         handle_input(&gui_config.grid_info.loaded, &camera,  mesh_info, gui_state);
 
         if(gui_config.grid_info.loaded ) {
@@ -1600,10 +1618,6 @@ void init_and_open_visualization_window() {
 
             if(gui_state->show_selection_box) {
                 gui_state->show_selection_box = !draw_selection_box(gui_state, font);
-            }
-
-            if(gui_state->show_save_box) {
-                gui_state->show_save_box = !draw_save_box(gui_state);
             }
 
         }

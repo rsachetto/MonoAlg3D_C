@@ -506,7 +506,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
-    bool calc_retropropagation = the_grid->purkinje->network->calc_retropropagation;
+//    bool calc_retropropagation = the_grid->purkinje->network->calc_retropropagation;
 
     real_cpu solver_error = 0, purkinje_solver_error = 0;
     uint32_t solver_iterations = 0, purkinje_solver_iterations = 0;;

@@ -134,8 +134,6 @@ void display_visualization_usage(char **argv) {
     printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
     printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
     printf("--dt | -d, dt for the simulation. Default: 0\n");
-    printf("--show_activation_map | -a activation_map_file, visualize only the activation map file. Default: NULL\n");
-    printf("--convert_activation_map | -c activation_map_file, only convert the activation map file to VTU without opening it. Default: NULL\n");
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--pvd | -v, pvd file. Default: NULL\n");
     printf("--start_at | -s, Visualize starting at file number [n]. Default: 0\n");
@@ -168,14 +166,11 @@ void free_batch_options(struct batch_options * options) {
 
 struct visualization_options *new_visualization_options() {
     struct visualization_options *options = (struct visualization_options *)malloc(sizeof(struct visualization_options));
-    options->input_folder = NULL;
+    options->input = NULL;
     options->max_v = 40.0f;
     options->min_v = -86.0f;
     options->dt = 0.0;
     options->files_prefix = strdup("V_it");
-    options->pvd_file = NULL;
-    options->activation_map = NULL;
-    options->save_activation_only = false;
     options->step = 1;
     options->start_file = 0;
 
@@ -183,9 +178,8 @@ struct visualization_options *new_visualization_options() {
 }
 
 void free_visualization_options(struct visualization_options * options) {
-    free(options->input_folder);
+    free(options->input);
     free(options->files_prefix);
-    free(options->pvd_file);
     free(options);
 }
 
@@ -942,14 +936,7 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
                 free(user_args->files_prefix);
                 user_args->files_prefix = strdup(optarg);
                 break;
-            case 'v':
-                user_args->pvd_file = strdup(optarg);
-                break;
-            case 'a':
-                user_args->activation_map = strdup(optarg);
-                break;
             case 'c':
-                user_args->activation_map = strdup(optarg);
                 user_args->save_activation_only = true;
                 break;
             case 's':
@@ -969,9 +956,8 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
         opt = getopt_long(argc, argv, visualization_opt_string, long_visualization_options, &option_index);
     }
 
-    if(user_args->activation_map == NULL) {
-        for (int index = optind; index < argc; index++)
-            user_args->input_folder = strdup(argv[index]);
+    for (int index = optind; index < argc; index++) {
+        user_args->input = strdup(argv[index]);
     }
 
 }
