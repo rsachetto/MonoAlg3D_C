@@ -104,8 +104,17 @@ GPATH
 GRTAGS
 GTAGS
 
-/generate_ini_with_configuration_and_run_simulation.sh
-/ICs_50configs.txt
-/ICs_1000configs.txt
-/src/3dparty/raylib/src/stZDHlko
-/src/3dparty/raylib/src/stzKLdHA
+generate_ini_with_configuration_and_run_simulation.sh
+ICs_50configs.txt
+ICs_1000configs.txt
+src/3dparty/raylib/src/stZDHlko
+src/3dparty/raylib/src/stzKLdHA
+src/3dparty/raylib/src/config.h.in
+src/3dparty/raylib/src/external/glfw/.mailmap
+src/3dparty/raylib/src/external/glfw/CMake/Info.plist.in
+src/3dparty/raylib/src/external/glfw/CMake/cmake_uninstall.cmake.in
+src/3dparty/raylib/src/external/glfw/CMakeLists.txt
+src/3dparty/raylib/src/external/glfw/src/CMakeLists.txt
+src/3dparty/raylib/src/external/glfw/src/glfw.rc.in
+
+
