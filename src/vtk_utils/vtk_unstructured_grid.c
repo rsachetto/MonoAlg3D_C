@@ -4,12 +4,12 @@
 
 #include "vtk_unstructured_grid.h"
 #include "../alg/cell/cell.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include "data_utils.h"
 #include "../common_types/common_types.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../utils/file_utils.h"
-#include "../xml_parser/yxml.h"
+#include "../3dparty/xml_parser/yxml.h"
 
 #include <inttypes.h>
 #include <math.h>
@@ -1836,7 +1836,6 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
             size_t raw_data_after_blocks_offset = 0;
 
             char *data_tmp =  parser_state->base64_content + scalars_offset_value;
-
 
             if(is_raw) {
                 raw_data = (source + scalars_offset_value);

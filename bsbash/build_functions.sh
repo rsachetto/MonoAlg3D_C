@@ -64,7 +64,7 @@ PRINT_USAGE () {
 	echo "Valid modules: all, gui, simulator or batch (default is all)" >&2;
 	echo "Valid flags:" >&2;
 	echo "-f  - force recompilation" >&2;
-	echo "-l  - write build log on build_log.txt" >&2;
+	echo "-l  - write build log on compile_commands.json" >&2;
 	echo "-q  - quiet compilation. Only errors and warnings will be outputed" >&2;
 	echo "-r  - build release version (Default)" >&2;
 	echo "-d  - build debug version" >&2;
@@ -232,7 +232,6 @@ COMPILE_EXECUTABLE () {
 	if [ ! -d "$BUILD_DIR" ]; then
 		mkdir -p "$BUILD_DIR"
 	fi
-
 
 	local FORCE_COMPILATION=$GLOBAL_FORCE_COMPILATION
 

@@ -3,11 +3,11 @@
 //
 
 #include "vtk_polydata_grid.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include "data_utils.h"
 #include <stdint.h>
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../logger/logger.h"
 
 struct vtk_polydata_grid *new_vtk_polydata_grid ()

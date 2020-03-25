@@ -14,9 +14,9 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
 
 struct ode_solver* new_ode_solver() {

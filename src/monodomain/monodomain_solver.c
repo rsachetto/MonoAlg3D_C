@@ -15,7 +15,7 @@
 #include "../gui/gui.h"
 #endif
 
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include <assert.h>
 #include <inttypes.h>
 
@@ -27,7 +27,7 @@
 #include "../config/modify_current_domain_config.h"
 
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
 #include <unistd.h>
@@ -310,8 +310,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 
 #ifdef COMPILE_GUI
-    bool draw = configs->draw;
-    if (draw) {
+    bool show_gui = configs->show_gui;
+    if (show_gui) {
         gui_config.grid_info.alg_grid = the_grid;
         gui_config.simulating = true;
         gui_config.paused = !configs->start_visualization_unpaused;
@@ -534,7 +534,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 
 #ifdef COMPILE_GUI
-    if(configs->draw) {
+    if(configs->show_gui) {
         translate_mesh_to_origin(the_grid);
     }
     gui_config.grid_info.loaded = true;
@@ -556,7 +556,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         time_info.iteration = count;
 
         #ifdef COMPILE_GUI
-        if(draw) {
+        if(show_gui) {
             omp_set_lock(&gui_config.sleep_lock);
             if (gui_config.restart) {
                 gui_config.time = 0.0;
@@ -615,7 +615,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&purkinje_cg_time);
 
             #ifdef COMPILE_GUI
-            if (draw) {
+            if (show_gui) {
                 omp_set_lock(&gui_config.draw_lock);
             }
             #endif
@@ -648,7 +648,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&cg_time);
 
             #ifdef COMPILE_GUI
-            if (draw) {
+            if (show_gui) {
                 omp_set_lock(&gui_config.draw_lock);
             }
             #endif
@@ -804,7 +804,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
 
         #ifdef COMPILE_GUI
-        if (configs->draw) {
+        if (configs->show_gui) {
             omp_unset_lock(&gui_config.draw_lock);
             gui_config.time = cur_time;
         }

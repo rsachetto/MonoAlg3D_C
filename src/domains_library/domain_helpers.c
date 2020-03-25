@@ -5,7 +5,7 @@
 #include "domain_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../utils/utils.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include "../config_helpers/config_helpers.h"
 #include "../logger/logger.h"
 

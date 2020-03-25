@@ -6,10 +6,11 @@
 #define MONOALG3D_CONFIG_HELPERS_H
 #include "../common_types/common_types.h"
 #include "../monodomain/constants.h"
+#include "../3dparty/tinyexpr/tinyexpr.h"
 #include <stdbool.h>
 #include <string.h>
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 void report_parameter_error_on_function(int line, const char *file, const char *parameter);
 void report_error_on_function(int line, const char *file, const char *error);
@@ -40,8 +41,10 @@ char *get_char_parameter(struct string_hash_entry *config, const char *parameter
         char *__config_char = get_char_parameter(config, parameter);                                                   \
         (__success) = false;                                                                                           \
         if(__config_char) {                                                                                            \
-            (value) = (type)strtod(__config_char, NULL);                                                               \
-            (__success) = true;                                                                                        \
+            int expr_parse_error__;                                                                                    \
+            real_cpu expr_parse_result__ = (real_cpu) te_interp(__config_char, &expr_parse_error__);                   \
+            (value) = (type) expr_parse_result__;                                                                      \
+            if(expr_parse_error__ == 0) (__success) = true;                                                            \
         }                                                                                                              \
     } while(0)
 
@@ -59,7 +62,9 @@ char *get_char_parameter(struct string_hash_entry *config, const char *parameter
     do {                                                                                                               \
         char *__config_char = get_char_parameter(config, parameter);                                                   \
         if(__config_char) {                                                                                            \
-            (value) = (type)strtod(__config_char, NULL);                                                               \
+            int expr_parse_error__;                                                                                    \
+            real_cpu expr_parse_result__ = (real_cpu) te_interp(__config_char, &expr_parse_error__);                   \
+            (value) = (type) expr_parse_result__;                                                                      \
         }                                                                                                              \
     } while(0)
 

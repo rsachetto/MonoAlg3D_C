@@ -3,9 +3,9 @@
 //
 
 #include "pvd_utils.h"
-#include "../xml_parser/yxml.h"
+#include "../3dparty/xml_parser/yxml.h"
 #include "../utils/file_utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 #include <stdlib.h>
 #include <string.h>

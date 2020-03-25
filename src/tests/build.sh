@@ -3,7 +3,7 @@ if [ -n "$CUDA_FOUND" ]; then
     TEST_OPT_DEPS=gpu_utils
 fi
 
-TESTS_STATIC_DEPS="solvers ini_parser  config ${TEST_OPT_DEPS} utils config_helpers vtk_utils yxml alg graph utils string"
+TESTS_STATIC_DEPS="solvers ini_parser config tinyexpr ${TEST_OPT_DEPS} utils config_helpers vtk_utils yxml alg graph utils sds"
 TESTS_DYNAMIC_DEPS="$CUDA_LIBRARIES $CRITERION_LIBRARIES z dl m logger"
 
 COMPILE_EXECUTABLE "TestSuite" "tests.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $CRITERION_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY" "-DCOMPILE_ZLIB $CRITERION_INCLUDE_PATH"

@@ -1,10 +1,11 @@
+#include <string.h>
+
 #include "alg/grid/grid.h"
-#include "ini_parser/ini.h"
+#include "3dparty/ini_parser/ini.h"
 #include "monodomain/monodomain_solver.h"
 #include "monodomain/ode_solver.h"
-#include "string/sds.h"
+#include "3dparty/sds/sds.h"
 #include "utils/file_utils.h"
-#include <string.h>
 #include "config_helpers/config_helpers.h"
 #include "logger/logger.h"
 
@@ -139,9 +140,9 @@ int main(int argc, char **argv) {
 #endif
 
 #ifndef COMPILE_GUI
-    if(options->draw) {
+    if(options->show_gui) {
         log_to_stdout_and_file("OpenGL not found. The output will not be draw!!\n");
-        options->draw = false;
+        options->show_gui = false;
     }
 #endif
 
@@ -155,7 +156,7 @@ int main(int argc, char **argv) {
 #endif
 
     //If COMPILE_GUI is not set this is always false. See above.
-    if(options->draw) {
+    if(options->show_gui) {
 
         #ifdef COMPILE_GUI //If this is defined so OMP is also defined
 
@@ -169,7 +170,7 @@ int main(int argc, char **argv) {
         {
             #pragma omp section
             {
-                init_and_open_visualization_window();
+                init_and_open_gui_window();
             }
 
             #pragma omp section

@@ -8,7 +8,7 @@
 #include "../alg/grid/grid.h"
 #include "../config/save_mesh_config.h"
 #include "../config_helpers/config_helpers.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include "../utils/utils.h"
 
 #include "../vtk_utils/vtk_unstructured_grid.h"

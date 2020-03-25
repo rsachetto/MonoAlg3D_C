@@ -9,14 +9,14 @@
 #include "../alg/grid/grid.h"
 #include "../config/restore_state_config.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 
 #ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"
 #endif
 
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
 struct mesh_data {
     real_cpu cube_side_length_x;

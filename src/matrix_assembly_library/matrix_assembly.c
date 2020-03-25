@@ -10,9 +10,8 @@
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
 #include "../utils/utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../libraries_common/common_data_structures.h"
-
 #include "../config_helpers/config_helpers.h"
 
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {

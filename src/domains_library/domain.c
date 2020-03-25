@@ -7,9 +7,9 @@
 #include "../config/domain_config.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../config_helpers/config_helpers.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include "../logger/logger.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../utils/utils.h"
 #include <assert.h>
 #include <time.h>

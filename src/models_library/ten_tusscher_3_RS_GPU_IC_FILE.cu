@@ -2,11 +2,11 @@
 #include "../monodomain/constants.h"
 #include "model_gpu_utils.h"
 extern "C" {
-    #include "../string/sds.h"
+    #include "../3dparty/sds/sds.h"
     #include "../utils/file_utils.h"
 }
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 #include "ten_tusscher_3_RS.h"
 

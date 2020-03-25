@@ -5,7 +5,7 @@
 #include "../alg/grid/grid.h"
 #include "../config/domain_config.h"
 #include "../config/save_mesh_config.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../string/sds.h"
 
 int main() {

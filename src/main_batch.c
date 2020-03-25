@@ -1,17 +1,19 @@
+#include <mpi.h>
+#include <string.h>
+
 #include "alg/grid/grid.h"
-#include "ini_parser/ini.h"
+#include "3dparty/ini_parser/ini.h"
+#include "3dparty/ini_parser/ini_file_sections.h"
 #include "monodomain/monodomain_solver.h"
 #include "monodomain/ode_solver.h"
-#include "string/sds.h"
+#include "3dparty/sds/sds.h"
 #include "utils/file_utils.h"
-#include "single_file_libraries/stb_ds.h"
-#include "ini_parser/ini_file_sections.h"
+#include "3dparty/stb_ds.h"
+
 #include "config/stim_config.h"
 #include "config_helpers/config_helpers.h"
 #include "logger/logger.h"
 
-#include <mpi.h>
-#include <string.h>
 
 struct changed_parameters {
     char *section;
@@ -374,7 +376,7 @@ int main(int argc, char **argv) {
     set_no_stdout(options->quiet);
 
     output_folder = batch_options->output_folder;
-    options->draw = false;
+    options->show_gui = false;
 
     MPI_Barrier(MPI_COMM_WORLD);
     for (int s = simulation_number_start; s < simulation_number_start + num_simulations; s++) {

@@ -4,7 +4,7 @@
 
 #include "cell.h"
 #include "string.h"
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 
 #include <assert.h>
 

@@ -6,7 +6,7 @@
 #include <dlfcn.h>
 #include "../logger/logger.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
 void print_stim_config_values(struct config* s) {

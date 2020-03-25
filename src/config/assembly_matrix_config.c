@@ -9,7 +9,7 @@
 #include "../utils/file_utils.h"
 
 #include "../common_types/common_types.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 void print_assembly_matrix_config_values(struct config* s) {
 

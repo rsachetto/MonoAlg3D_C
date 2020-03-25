@@ -9,7 +9,7 @@
 #include "../alg/grid/grid.h"
 #include "../config/update_monodomain_config.h"
 #include "../utils/utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"

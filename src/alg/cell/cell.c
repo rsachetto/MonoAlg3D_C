@@ -5,7 +5,7 @@
 #include "cell.h"
 #include <math.h>
 
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 
 
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {

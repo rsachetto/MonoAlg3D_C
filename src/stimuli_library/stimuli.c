@@ -54,7 +54,6 @@ SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
         }
 
         SET_STIM_VALUE(i, stim_value);
-        //((real*)(config->persistent_data))[i] = stim_value;
     }
 }
 

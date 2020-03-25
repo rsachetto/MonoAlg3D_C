@@ -7,7 +7,7 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
 
 #ifdef COMPILE_CUDA

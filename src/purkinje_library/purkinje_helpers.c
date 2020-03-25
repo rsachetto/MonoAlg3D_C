@@ -7,7 +7,7 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../logger/logger.h"
 #include "../utils/utils.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
 #include <math.h>
 #include <string.h>

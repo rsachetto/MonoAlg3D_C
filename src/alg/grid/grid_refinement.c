@@ -3,7 +3,7 @@
 //
 
 #include "grid.h"
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 
 /**
  * Decides if the grid should be refined by traversing the whole grid, according
