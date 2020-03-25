@@ -8,7 +8,7 @@
 #include "../alg/grid/grid.h"
 #include "../alg/cell/cell.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
-#include "../raylib/src/raymath.h"
+#include "../3dparty/raylib/src/raymath.h"
 
 #include <omp.h>
 
@@ -23,12 +23,12 @@
 
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
 #define WIDER_TEXT "------------------------------------------------------"
-#define DOUBLE_CLICK_DELAY 0.5 //seconds
+#define DOUBLE_CLICK_DELAY 0.8 //seconds
+
 struct action_potential {
     real_cpu v;
     real_cpu t;
 };
-
 
 enum simulation_status {
     RESTART_SIMULATION,
@@ -105,6 +105,7 @@ struct gui_config {
 };
 
 struct gui_state {
+
     bool handle_keyboard_input;
     bool one_selected;
     bool show_ap;
@@ -112,22 +113,22 @@ struct gui_state {
     bool draw_grid_lines;
     bool draw_grid_only ;
 
-    bool show_help_box;
     Rectangle help_box;
+    bool show_help_box;
     bool move_help_box;
 
-    bool show_mesh_info_box;
     Rectangle mesh_info_box;
+    bool show_mesh_info_box;
     bool move_info_box;
 
     bool show_selection_box;
 
+    Rectangle scale_bounds;
     bool show_scale;
     bool move_scale;
-    Rectangle scale_bounds;
 
-    bool show_end_info_box;
     Rectangle end_info_box;
+    bool show_end_info_box;
     bool move_end_info_box;
 
     Ray ray;
@@ -142,13 +143,13 @@ struct gui_state {
     float font_size_small;
     float font_size_big;
 
-    int num_colors;
     double mouse_timer;
     double selected_time;
 
     Vector2 mouse_pos;
     Vector2 sub_window_pos;
     bool drag_sub_window;
+
     float box_width;
     float box_height;
 
@@ -163,6 +164,6 @@ struct mesh_info {
 
 struct gui_config gui_config;
 
-void init_and_open_visualization_window();
+void init_and_open_gui_window();
 
 #endif //MONOALG3D_DRAW_H

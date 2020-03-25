@@ -60,7 +60,7 @@ COMPILE_MODEL_LIB "ten_tusscher_3_epi" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COM
 MODEL_FILE_CPU="ten_tusscher_3_RS_CPU.c"
 MODEL_FILE_GPU="ten_tusscher_3_RS_GPU_IC_FILE.cu"
 COMMON_HEADERS="ten_tusscher_3_RS.h"
-COMPILE_MODEL_LIB "ten_tusscher_3_endo_ic_file" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DENDO" "string"
+COMPILE_MODEL_LIB "ten_tusscher_3_endo_ic_file" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DENDO" "sds"
 ##########################################################
 
 ############### BONDARENKO ##############################

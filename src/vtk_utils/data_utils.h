@@ -5,7 +5,7 @@
 #ifndef MONOALG3D_DATA_UTILS_H
 #define MONOALG3D_DATA_UTILS_H
 
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
 #ifdef COMPILE_ZLIB
 #include <zlib.h>

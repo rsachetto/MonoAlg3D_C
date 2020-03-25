@@ -36,7 +36,7 @@ for i in "${BUILD_ARGS[@]}"; do
     if [ "$i" == "clean" ]; then
         echo "Cleaning $BUILD_TYPE"
         CLEAN_PROJECT $BUILD_TYPE
-        cd src/raylib/src || exit 1;
+        cd src/3dparty/raylib/src || exit 1;
         make clean
         cd - || exit 1;
         exit 0    
@@ -107,15 +107,16 @@ fi
 
 echo -e "${INFO}C FLAGS:${NC} $C_FLAGS"
 
-ADD_SUBDIRECTORY "src/string"
+ADD_SUBDIRECTORY "src/3dparty/sds"
 ADD_SUBDIRECTORY "src/config_helpers"
 ADD_SUBDIRECTORY "src/utils"
 ADD_SUBDIRECTORY "src/alg"
 ADD_SUBDIRECTORY "src/monodomain"
-ADD_SUBDIRECTORY "src/ini_parser"
+ADD_SUBDIRECTORY "src/3dparty/ini_parser"
 ADD_SUBDIRECTORY "src/config"
 ADD_SUBDIRECTORY "src/graph"
-ADD_SUBDIRECTORY "src/xml_parser"
+ADD_SUBDIRECTORY "src/3dparty/xml_parser"
+ADD_SUBDIRECTORY "src/3dparty/tinyexpr"
 ADD_SUBDIRECTORY "src/vtk_utils"
 
 
@@ -123,9 +124,10 @@ ADD_SUBDIRECTORY "src/vtk_utils"
 ADD_SUBDIRECTORY "src/logger"
 
 if [ -n "$COMPILE_GUI" ]; then
-    ADD_SUBDIRECTORY "src/raylib/src"
+    ADD_SUBDIRECTORY "src/3dparty/raylib/src"
+    ADD_SUBDIRECTORY "src/3dparty/tinyfiledialogs"
     ADD_SUBDIRECTORY "src/gui"
-    OPT_DEPS="gui raylib"
+    OPT_DEPS="gui raylib tinyfiledialogs"
 fi
 
 if [ -n "$CUDA_FOUND" ]; then
@@ -136,7 +138,7 @@ fi
 SRC_FILES="src/main_simulator.c"
 HDR_FILES=""
 
-STATIC_DEPS="solvers ini_parser config ${OPT_DEPS} config_helpers vtk_utils yxml alg graph utils string"
+STATIC_DEPS="solvers ini_parser  config tinyexpr ${OPT_DEPS} config_helpers vtk_utils yxml alg graph utils sds"
 DYNAMIC_DEPS="dl m $CUDA_LIBRARIES z"
 
 if [ -n "$COMPILE_GUI" ]; then

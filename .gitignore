@@ -97,9 +97,9 @@ batch_simulations/
 /src/main_graph_analyzer.c
 tests_bin/simulation_result.pvd
 build_*/
-src/raylib/src/rnet.c.review
-src/raylib/src/shell.html
-src/raylib/src/stZ2ziky
+src/3dparty/raylib/src/rnet.c.review
+src/3dparty/raylib/src/shell.html
+src/3dparty/raylib/src/stZ2ziky
 GPATH
 GRTAGS
 GTAGS
@@ -107,5 +107,5 @@ GTAGS
 /generate_ini_with_configuration_and_run_simulation.sh
 /ICs_50configs.txt
 /ICs_1000configs.txt
-/src/raylib/src/stZDHlko
-/src/raylib/src/stzKLdHA
+/src/3dparty/raylib/src/stZDHlko
+/src/3dparty/raylib/src/stzKLdHA

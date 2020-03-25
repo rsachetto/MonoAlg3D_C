@@ -7,7 +7,7 @@
 #include <string.h>
 #include "../utils/file_utils.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
 void print_purkinje_config_values (struct config* config) {

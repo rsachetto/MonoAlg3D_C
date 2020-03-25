@@ -4,7 +4,7 @@
 
 #include "grid_purkinje.h"
 
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 #include "../../utils/file_utils.h"
 
 struct grid_purkinje *new_grid_purkinje () 

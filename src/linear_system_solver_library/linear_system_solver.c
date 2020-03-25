@@ -6,7 +6,7 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../utils/file_utils.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 bool jacobi_initialized = false;
 bool bcg_initialized = false;

@@ -5,9 +5,9 @@
 #include "file_utils.h"
 
 #define STB_DS_IMPLEMENTATION
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
@@ -224,7 +224,7 @@ string_array list_files_from_dir(const char *dir, const char *prefix) {
     return files;
 }
 
-/* qsort C-string comparison function */
+/* qsort C-sds comparison function */
 static int cstring_cmp(const void *a, const void *b)
 {
     char *ia = *((char **)a);
@@ -465,7 +465,7 @@ static const unsigned char base64_table[65] =
  * or %NULL on failure
  *
  * Caller is responsible for freeing the returned buffer. Returned buffer is
- * nul terminated to make it easier to use as a C string. The nul terminator is
+ * nul terminated to make it easier to use as a C sds. The nul terminator is
  * not included in out_len.
  */
 unsigned char * base64_encode(const unsigned char *src, size_t len,

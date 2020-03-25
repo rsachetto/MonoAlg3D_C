@@ -5,9 +5,7 @@
 #ifndef MONOALG3D_COLOR_MAPS_H
 #define MONOALG3D_COLOR_MAPS_H
 
-
 #define NUM_SCALES 7
-
 #define NUM_COLORS 257
 static double color_scales[NUM_SCALES][NUM_COLORS][3] = {
         {

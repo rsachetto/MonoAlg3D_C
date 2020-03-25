@@ -1,1 +1,1 @@
-COMPILE_SHARED_LIB "default_stimuli" "stimuli.c" "" "alg config_helpers utils" "m"
+COMPILE_SHARED_LIB "default_stimuli" "stimuli.c" "" "alg config_helpers utils tinyexpr" "m"

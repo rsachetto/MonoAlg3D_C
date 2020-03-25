@@ -4,7 +4,7 @@
 
 #include "extra_data_config.h"
 #include "../logger/logger.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 void print_extra_data_config_values(struct config* s) {
 

@@ -5,27 +5,28 @@
 #include <time.h>
 #include <limits.h>
 #include <unistd.h>
+#include <string.h>
 
-
-#include "gui.h"
-#include "color_maps.h"
-#include "../single_file_libraries/stb_ds.h"
-#include "../raylib/src/raylib.h"
-#include "../raylib/ricons.h"
-#include "../raylib/src/camera.h"
+#include "../3dparty/tinyfiledialogs/tinyfiledialogs.h"
+#include "../logger/logger.h"
+#include "../3dparty/stb_ds.h"
 #include "../utils/file_utils.h"
+#include "color_maps.h"
+#include "gui.h"
+
+//RAYLIB//////
+#include "../3dparty/raylib/src/raylib.h"
+#include "../3dparty/raylib/ricons.h"
+#include "../3dparty/raylib/src/camera.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_RICONS_SUPPORT
-#include "../raylib/src/raygui.h"
+#include "../3dparty/raylib/src/raygui.h"
 #undef RAYGUI_IMPLEMENTATION
 
 #define GUI_TEXTBOX_EXTENDED_IMPLEMENTATION
-#include "../raylib/src/gui_textbox_extended.h"
-
-#include "../logger/logger.h"
-#include "tinyfiledialogs.h"
-
+#include "../3dparty/raylib/src/gui_textbox_extended.h"
+/////////
 
 static int current_window_height = 0;
 static int current_window_width = 0;
@@ -34,13 +35,13 @@ int info_box_lines;
 const int end_info_box_lines = 10;
 const int mesh_info_box_lines = 9;
 
-struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
+static struct gui_state * new_gui_state_with_font_sizes(int font_size_small, int font_size_big) {
 
     struct gui_state *gui_state = (struct gui_state*) calloc(1, sizeof(struct gui_state));
 
     gui_state->handle_keyboard_input = true;
-    gui_state->font_size_small = 12;
-    gui_state->font_size_big = 16;
+    gui_state->font_size_small = font_size_small;
+    gui_state->font_size_big = font_size_big;
 
     gui_state->show_ap = true;
     gui_state->show_scale = true;
@@ -58,7 +59,6 @@ struct gui_state * new_gui_state_with_font_and_colors(int num_colors) {
     gui_state->current_scale = 0;
     gui_state->voxel_alpha = 255;
     gui_state->scale_alpha = 255;
-    gui_state->num_colors = num_colors;
     gui_state->mouse_timer = -1;
     gui_state->selected_time = 0.0;
     gui_state->drag_sub_window = false;
@@ -95,9 +95,6 @@ struct mesh_info *new_mesh_info() {
     mesh_info->center_calculated = false;
     return mesh_info;
 }
-
-//TODO: can we get rid of this??
-static Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
 
 static inline float normalize(float r_min, float r_max, float t_min, float t_max, float m) {
     return ((m - r_min) / (r_max-r_min))*(t_max - t_min) + t_min;
@@ -509,7 +506,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, struct gui_state 
     gui_state->one_selected = false;
 }
 
-double clamp(double x, double min, double max) {
+static inline double clamp(double x, double min, double max) {
     if (x < min)
         x = min;
     else if (x > max)
@@ -518,6 +515,9 @@ double clamp(double x, double min, double max) {
 }
 
 static void draw_ap_graph(struct gui_state *gui_state, Font font) {
+
+    static const Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN, BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
+    int num_colors = SIZEOF(colors);
 
     float spacing_big = (float)gui_state->font_size_big/(float)font.baseSize;
     float spacing_small = (float)gui_state->font_size_small/(float)font.baseSize;
@@ -546,7 +546,7 @@ static void draw_ap_graph(struct gui_state *gui_state, Font font) {
         char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f )";
         double time_elapsed = GetTime() - gui_state->selected_time;
         unsigned char alpha = (unsigned char) clamp(255 - time_elapsed*25, 0, 255);
-        Color c = colors[(n-1) % gui_state->num_colors];
+        Color c = colors[(n-1) % num_colors];
         c.a = alpha;
 
         sprintf(tmp, ap_text, n, gui_state->current_selected_volume.x, gui_state->current_selected_volume.y, gui_state->current_selected_volume.z);
@@ -704,7 +704,7 @@ static void draw_ap_graph(struct gui_state *gui_state, Font font) {
         int step = 1;
 
         if(c > 0) {
-            Color line_color = colors[j % gui_state->num_colors];
+            Color line_color = colors[j % num_colors];
             for (int i = 0; i < c; i+=step) {
 
                 if(aps[i].t <= gui_config.time) {
@@ -821,7 +821,6 @@ static void draw_scale(Font font, float font_size_small, bool int_scale, struct 
         tick_ofsset = (gui_config.max_v - gui_config.min_v) / num_ticks;
     }
 
-
     char tmp[256];
 
     real_cpu v = gui_config.min_v;
@@ -906,7 +905,7 @@ static inline void configure_end_info_box_strings (char ***info_string) {
     sprintf(tmp, "Refine time: %ld s", gui_config.total_ref_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
-    sprintf(tmp, "Derefine time: %ld s", gui_config.total_deref_time/1000/1000);
+    sprintf(tmp, "Unrefine time: %ld s", gui_config.total_deref_time/1000/1000);
     (*(info_string))[index++]  = strdup(tmp);
 
     sprintf(tmp, "Write time: %ld s", gui_config.total_write_time/1000/1000);
@@ -1046,13 +1045,15 @@ static bool draw_selection_box(struct gui_state *gui_state, Font font) {
 
 static void reset(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_state *gui_state, bool reset_aps) {
 
+    gui_state->voxel_alpha = 255;
+
     for(long  i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
         arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
     }
 
     if(reset_aps) {
-        for(long  i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
-                    arrfree(gui_state->ap_graph_config->selected_aps[i].value);
+        for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+            arrfree(gui_state->ap_graph_config->selected_aps[i].value);
         }
         hmfree(gui_state->ap_graph_config->selected_aps);
         gui_state->ap_graph_config->selected_aps = NULL;
@@ -1097,12 +1098,14 @@ static void handle_keyboard_input(bool *mesh_loaded, Camera3D *camera, struct me
         gui_state->show_scale = !gui_state->show_scale;
         return;
     }
-    else if (IsKeyDown(KEY_A)) {
+
+    if (IsKeyDown(KEY_A)) {
         if(gui_state->voxel_alpha - 1 >= 0)
             gui_state->voxel_alpha = gui_state->voxel_alpha - 1;
         return;
     }
-    else if(IsKeyDown(KEY_Z)) {
+
+    if(IsKeyDown(KEY_Z)) {
         if(gui_state->voxel_alpha + 1 <= 255)
             gui_state->voxel_alpha = gui_state->voxel_alpha + 1;
         return;
@@ -1160,6 +1163,7 @@ static void handle_keyboard_input(bool *mesh_loaded, Camera3D *camera, struct me
         gui_state->current_scale = (gui_state->current_scale + 1) % NUM_SCALES;
         return;
     }
+
     if (IsKeyPressed(KEY_COMMA))  {
         if(gui_state->current_scale - 1 >= 0) {
             gui_state->current_scale = (gui_state->current_scale - 1);
@@ -1253,7 +1257,6 @@ static void handle_keyboard_input(bool *mesh_loaded, Camera3D *camera, struct me
 
 }
 
-//TODO: we need to refactor this function
 static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
     if(gui_state->handle_keyboard_input) {
@@ -1397,7 +1400,6 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
 
         }
     }
-    
 
     if(!gui_state->show_selection_box) {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -1418,7 +1420,33 @@ static void handle_input(bool *mesh_loaded, Camera3D *camera, struct mesh_info *
     }
 }
 
-void init_and_open_visualization_window() {
+static int configure_info_boxes_sizes(struct gui_state *gui_state) {
+    Vector2 txt_w_h;
+    int text_offset;
+    int box_w = 0;
+
+    txt_w_h = MeasureTextV(WIDER_TEXT, (int)gui_state->font_size_small);
+    text_offset = (int)(1.5 * txt_w_h.y);
+    box_w = (int)(txt_w_h.x + 50);
+
+    gui_state->help_box.width = (float)box_w;
+    gui_state->help_box.height = (float)(text_offset * info_box_lines) + 10.0f;
+
+    gui_state->mesh_info_box.width = (float)box_w;
+    gui_state->mesh_info_box.height = (float)(text_offset * mesh_info_box_lines) + 10;
+
+    gui_state->mesh_info_box.x = (float)(current_window_width - box_w - 10);
+    gui_state->mesh_info_box.y = 10.0f;
+
+    gui_state->end_info_box.width = (float)box_w;
+    gui_state->end_info_box.height = (float)(text_offset * end_info_box_lines) + 10;
+    gui_state->end_info_box.x = gui_state->help_box.x;
+    gui_state->end_info_box.y = gui_state->help_box.y + gui_state->help_box.height + 10;
+
+    return text_offset;
+}
+
+void init_and_open_gui_window() {
 
     omp_set_lock(&gui_config.sleep_lock);
 
@@ -1488,39 +1516,17 @@ void init_and_open_visualization_window() {
 
     info_box_lines = SIZEOF(info_box_strings);
 
-    Vector2 txt_w_h;
-
-    int text_offset;
-
-    int box_w = 0;
-
     end_info_box_strings = (char **) malloc(sizeof(char *) * end_info_box_lines);
     mesh_info_box_strings = (char **) malloc(sizeof(char *) * mesh_info_box_lines);
 
     Vector2 error_message_witdh;
 
     struct mesh_info *mesh_info = new_mesh_info();
-    struct gui_state *gui_state = new_gui_state_with_font_and_colors(SIZEOF(colors));
+    struct gui_state *gui_state = new_gui_state_with_font_sizes(12, 16);
 
     bool end_info_box_strings_configured = false;
 
-    txt_w_h = MeasureTextV(WIDER_TEXT, (int) gui_state->font_size_small);
-    text_offset = (int) (1.5 * txt_w_h.y);
-    box_w = (int) (txt_w_h.x + 50);
-
-    gui_state->help_box.width = (float)box_w;
-    gui_state->help_box.height = (float)(text_offset * info_box_lines) + 10.0f;
-
-    gui_state->mesh_info_box.width = (float)box_w;
-    gui_state->mesh_info_box.height = (float)(text_offset * mesh_info_box_lines) + 10;;
-
-    gui_state->mesh_info_box.x = (float)(current_window_width - box_w - 10);
-    gui_state->mesh_info_box.y = 10.0f;
-
-    gui_state->end_info_box.width = (float)box_w;
-    gui_state->end_info_box.height = (float)(text_offset * end_info_box_lines) + 10;
-    gui_state->end_info_box.x =  gui_state->help_box.x;
-    gui_state->end_info_box.y = gui_state->help_box.y + gui_state->help_box.height + 10;
+    int text_offset = configure_info_boxes_sizes(gui_state);
 
     while (!WindowShouldClose()) {
 
@@ -1646,7 +1652,8 @@ void init_and_open_visualization_window() {
 
         }
 
-        DrawFPS(GetScreenWidth()  - 100,GetScreenHeight()-20);
+        //Draw FPS
+        DrawText(TextFormat("%2i FPS", GetFPS()), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
         EndDrawing();
 
     }

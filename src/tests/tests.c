@@ -10,11 +10,11 @@
 #include "../config/save_mesh_config.h"
 #include "../config/config_parser.h"
 #include "../utils/file_utils.h"
-#include "../ini_parser/ini.h"
-#include "../string/sds.h"
+#include "../3dparty/ini_parser/ini.h"
+#include "../3dparty/sds/sds.h"
 #include "../logger/logger.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
 
@@ -511,7 +511,7 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_bin
     int success = test_cuboid_mesh("100", "100", "200", "1000", "1000", "1000", true, false, true, 1);
     cr_assert(success);
 
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_1_it_0.vtu", "r");
+    FILE *f1 = fopen("tests_bin/test_100_100_200_1000_1000_1000_1_it_0.vtu", "r");
     FILE *f2 = fopen("tests_bin/gold_vtu_mesh_binary.vtu", "r");
 
     success = compare_two_binary_files(f1, f2);
@@ -527,8 +527,11 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_com
     int success = test_cuboid_mesh("100", "100", "200", "1000", "1000", "1000", true, true, false, 2);
     cr_assert(success);
 
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_2_it_0.vtu", "r");
+    FILE *f1 = fopen("tests_bin/test_100_100_200_1000_1000_1000_2_it_0.vtu", "r");
     FILE *f2 = fopen("tests_bin/gold_vtu_mesh_compressed.vtu", "r");
+
+    cr_assert(f1);
+    cr_assert(f2);
 
     success = compare_two_binary_files(f1, f2);
 
@@ -543,7 +546,7 @@ Test (mesh_load_and_check_save, cuboid_mesh_100_100_200_1000_1000_1000_check_pla
     int success = test_cuboid_mesh("100", "100", "200", "1000", "1000", "1000", true, false, false, 3);
     cr_assert(success);
 
-    FILE *f1 = fopen("tests_bin/test_100.000000_100.000000_200.000000_1000_1000_1000_3_it_0.vtu", "r");
+    FILE *f1 = fopen("tests_bin/test_100_100_200_1000_1000_1000_3_it_0.vtu", "r");
     FILE *f2 = fopen("tests_bin/gold_vtu_mesh.vtu", "r");
 
     cr_assert(f1);

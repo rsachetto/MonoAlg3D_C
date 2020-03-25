@@ -1,77 +1,78 @@
 #include <assert.h>
 #include <string.h>
 
-#include "../ini_parser/ini_file_sections.h"
-#include "../string/sds.h"
+#include "../3dparty/ini_parser/ini_file_sections.h"
+#include "../3dparty/sds/sds.h"
+#include "../3dparty/tinyexpr/tinyexpr.h"
 #include "../utils/file_utils.h"
 #include "config_parser.h"
 #include "stim_config.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
 static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
 
-static const char *visualization_opt_string = "x:m:d:p:v:a:c:s:t:h?";
+static const char *visualization_opt_string = "x:m:d:p:v:a:cs:t:h?";
 static const struct option long_visualization_options[] = {
-        {"visualization_max_v", required_argument, NULL, 'x'},
-        {"visualization_min_v", required_argument, NULL, 'm'},
-        {"dt", required_argument, NULL, 'd'},
-        {"show_activation_map", required_argument, NULL, 'a'},
-        {"convert_activation_map", required_argument, NULL, 'c'},
-        {"prefix", required_argument, NULL, 'p'},
-        {"start_at", required_argument, NULL, 's'},
-        {"step", required_argument, NULL, 't'},
-        {"pvd", required_argument, NULL, 'v'},
-        {"help", no_argument, NULL, 'h'},
-        {NULL, no_argument, NULL, 0}
+    {"visualization_max_v", required_argument, NULL, 'x'},
+    {"visualization_min_v", required_argument, NULL, 'm'},
+    {"dt", required_argument, NULL, 'd'},
+    {"show_activation_map", required_argument, NULL, 'a'},
+    {"convert_activation_map", no_argument, NULL, 'c'},
+    {"prefix", required_argument, NULL, 'p'},
+    {"start_at", required_argument, NULL, 's'},
+    {"step", required_argument, NULL, 't'},
+    {"pvd", required_argument, NULL, 'v'},
+    {"help", no_argument, NULL, 'h'},
+    {NULL, no_argument, NULL, 0}
 };
 
 
 static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh?";
 static const struct option long_options[] = {
-        {"config_file", required_argument, NULL, 'c'},
-        {"use_adaptivity", no_argument, NULL, 'a'},
-        {"abort_on_no_activity", no_argument, NULL, 'b'},
-        {"vm_threshold", required_argument, NULL, 'v'},
-        {"num_threads", required_argument, NULL, 'n'},
-        {"use_gpu", required_argument, NULL, 'g'},
-        {"print_rate", required_argument, NULL, 'p'},
-        {"max_cg_its", required_argument, NULL, 'm'},
-        {"cg_tolerance", required_argument, NULL, 't'},
-        {"refinement_bound", required_argument, NULL, 'r'},
-        {"derefinement_bound", required_argument, NULL, 'd'},
-        {"dt_pde", required_argument, NULL, 'z'},
-        {"dt_ode", required_argument, NULL, 'e'},
-        {"simulation_time", required_argument, NULL, 'f'},
-        {"use_preconditioner", no_argument, NULL, 'j'},
-        {"refine_each", required_argument, NULL, 'R'},
-        {"derefine_each", required_argument, NULL, 'D'},
-        {"gpu_id", required_argument, NULL, 'G'},
-        {"model_file_path", required_argument, NULL, 'k'},
-        {"beta", required_argument, NULL, BETA},
-        {"cm", required_argument, NULL, CM},
-        {"start_adapting_at", required_argument, NULL, START_REFINING},
-        {"domain", required_argument, NULL, DOMAIN_OPT}, //Complex option in the format --domain "name='domain', start_dx=250.0" ...
-        {"ode_solver", required_argument, NULL, ODE_SOLVER_OPT}, //Complex option in the format --ode_solver "use_gpu='no'"...
-        {"save_result", required_argument, NULL, SAVE_OPT}, //Complex option
-        {"assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT}, //Complex option
-        {"extra_data", required_argument, NULL, EXTRA_DATA_OPT}, //Complex option
-        {"stimulus", required_argument, NULL, STIM_OPT}, //Complex option
-        {"modify_current_domain", required_argument, NULL, MODIFY_DOMAIN_OPT}, //Complex option
-        {"save_state", required_argument, NULL, SAVE_STATE_OPT}, //Complex option
-        {"restore_state", required_argument, NULL, RESTORE_STATE_OPT}, //Complex option
-        {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT}, //Complex option
-        {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, //Complex option
-        {"visualize", no_argument, NULL, DRAW_OPT},
-        {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
-        {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
-        {"start_simulation_unpaused", no_argument, NULL, VISUALIZATION_PAUSED_OPT},
-        {"quiet", no_argument, NULL, 'q'},
-        {"help", no_argument, NULL, 'h'},
-        {NULL, no_argument, NULL, 0}};
+    {"config_file", required_argument, NULL, 'c'},
+    {"use_adaptivity", no_argument, NULL, 'a'},
+    {"abort_on_no_activity", no_argument, NULL, 'b'},
+    {"vm_threshold", required_argument, NULL, 'v'},
+    {"num_threads", required_argument, NULL, 'n'},
+    {"use_gpu", required_argument, NULL, 'g'},
+    {"print_rate", required_argument, NULL, 'p'},
+    {"max_cg_its", required_argument, NULL, 'm'},
+    {"cg_tolerance", required_argument, NULL, 't'},
+    {"refinement_bound", required_argument, NULL, 'r'},
+    {"derefinement_bound", required_argument, NULL, 'd'},
+    {"dt_pde", required_argument, NULL, 'z'},
+    {"dt_ode", required_argument, NULL, 'e'},
+    {"simulation_time", required_argument, NULL, 'f'},
+    {"use_preconditioner", no_argument, NULL, 'j'},
+    {"refine_each", required_argument, NULL, 'R'},
+    {"derefine_each", required_argument, NULL, 'D'},
+    {"gpu_id", required_argument, NULL, 'G'},
+    {"model_file_path", required_argument, NULL, 'k'},
+    {"beta", required_argument, NULL, BETA},
+    {"cm", required_argument, NULL, CM},
+    {"start_adapting_at", required_argument, NULL, START_REFINING},
+    {"domain", required_argument, NULL, DOMAIN_OPT}, //Complex option in the format --domain "name='domain', start_dx=250.0" ...
+    {"ode_solver", required_argument, NULL, ODE_SOLVER_OPT}, //Complex option in the format --ode_solver "use_gpu='no'"...
+    {"save_result", required_argument, NULL, SAVE_OPT}, //Complex option
+    {"assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT}, //Complex option
+    {"extra_data", required_argument, NULL, EXTRA_DATA_OPT}, //Complex option
+    {"stimulus", required_argument, NULL, STIM_OPT}, //Complex option
+    {"modify_current_domain", required_argument, NULL, MODIFY_DOMAIN_OPT}, //Complex option
+    {"save_state", required_argument, NULL, SAVE_STATE_OPT}, //Complex option
+    {"restore_state", required_argument, NULL, RESTORE_STATE_OPT}, //Complex option
+    {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT}, //Complex option
+    {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, //Complex option
+    {"visualize", no_argument, NULL, DRAW_OPT},
+    {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
+    {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
+    {"start_simulation_unpaused", no_argument, NULL, VISUALIZATION_PAUSED_OPT},
+    {"quiet", no_argument, NULL, 'q'},
+    {"help", no_argument, NULL, 'h'},
+    {NULL, no_argument, NULL, 0}};
 
 
 void display_usage(char **argv) {
@@ -153,14 +154,14 @@ void maybe_issue_overwrite_warning(const char *var, const char *section, const c
 
 struct batch_options *new_batch_options() {
     struct batch_options *user_args = (struct batch_options *)calloc(1, sizeof(struct batch_options));
-            sh_new_arena(user_args->config_to_change);
-            shdefault(user_args->config_to_change, NULL);
+        sh_new_arena(user_args->config_to_change);
+        shdefault(user_args->config_to_change, NULL);
 
     return user_args;
 }
 
 void free_batch_options(struct batch_options * options) {
-            shfree(options->config_to_change);
+        shfree(options->config_to_change);
     free(options);
 }
 
@@ -173,7 +174,7 @@ struct visualization_options *new_visualization_options() {
     options->files_prefix = strdup("V_it");
     options->step = 1;
     options->start_file = 0;
-
+    options->save_activation_only = false;
     return options;
 }
 
@@ -244,24 +245,24 @@ struct user_options *new_user_options() {
     user_args->quiet_was_set = false;
 
     user_args->stim_configs = NULL;
-    sh_new_arena(user_args->stim_configs);
-    shdefault(user_args->stim_configs, NULL);
+        sh_new_arena(user_args->stim_configs);
+        shdefault(user_args->stim_configs, NULL);
 
     user_args->purkinje_stim_configs = NULL;
-    sh_new_arena(user_args->purkinje_stim_configs);
-    shdefault(user_args->purkinje_stim_configs, NULL);
+        sh_new_arena(user_args->purkinje_stim_configs);
+        shdefault(user_args->purkinje_stim_configs, NULL);
 
     user_args->purkinje_ode_extra_config = NULL;
-    sh_new_arena(user_args->purkinje_ode_extra_config);
-    shdefault(user_args->purkinje_ode_extra_config, NULL);
+        sh_new_arena(user_args->purkinje_ode_extra_config);
+        shdefault(user_args->purkinje_ode_extra_config, NULL);
 
     user_args->modify_domain_configs = NULL;
-    sh_new_arena(user_args->modify_domain_configs);
-    shdefault(user_args->modify_domain_configs, NULL);
+        sh_new_arena(user_args->modify_domain_configs);
+        shdefault(user_args->modify_domain_configs, NULL);
 
     user_args->ode_extra_config = NULL;
-    sh_new_arena(user_args->ode_extra_config);
-    shdefault(user_args->ode_extra_config, NULL);
+        sh_new_arena(user_args->ode_extra_config);
+        shdefault(user_args->ode_extra_config, NULL);
 
     user_args->domain_config = NULL;
     user_args->purkinje_config = NULL;
@@ -273,7 +274,7 @@ struct user_options *new_user_options() {
     user_args->restore_state_config = NULL;
     user_args->update_monodomain_config = NULL;
 
-    user_args->draw = false;
+    user_args->show_gui = false;
     user_args->max_v = 40.0f;
     user_args->min_v = -86.0f;
 
@@ -316,7 +317,7 @@ void set_or_overwrite_common_data(struct config* config, const char *key, const 
         free(config->end_function_name);
         config->end_function_name = strdup(value);
     }
-    
+
     else if(strcmp(key, "library_file") == 0) {
         if(section && config_file) {
             if (config->library_file_path_was_set) {
@@ -898,16 +899,16 @@ void parse_batch_options(int argc, char **argv, struct batch_options *user_args)
 
     while(opt != -1) {
         switch(opt) {
-            case 'c':
-                user_args->batch_config_file = strdup(optarg);
-                break;
-            case 'h': /* fall-through is intentional */
-            case '?':
-                display_batch_usage(argv);
-                break;
-            default:
-                /* You won't actually get here. */
-                break;
+        case 'c':
+            user_args->batch_config_file = strdup(optarg);
+            break;
+        case 'h': /* fall-through is intentional */
+        case '?':
+            display_batch_usage(argv);
+            break;
+        default:
+            /* You won't actually get here. */
+            break;
         }
 
         opt = getopt_long(argc, argv, batch_opt_string, long_batch_options, &option_index);
@@ -923,34 +924,34 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
 
     while(opt != -1) {
         switch(opt) {
-            case 'x':
-                user_args->max_v = strtod(optarg, NULL);
-                break;
-            case 'm':
-                user_args->min_v = strtod(optarg, NULL);
-                break;
-            case 'd':
-                user_args->dt = strtod(optarg, NULL);
-                break;
-            case 'p':
-                free(user_args->files_prefix);
-                user_args->files_prefix = strdup(optarg);
-                break;
-            case 'c':
-                user_args->save_activation_only = true;
-                break;
-            case 's':
-                user_args->start_file = (int)strtod(optarg, NULL);
-                break;
-            case 't':
-                user_args->step = (int)strtod(optarg, NULL);
-                break;
-            case 'h': /* fall-through is intentional */
-            case '?':
-                display_visualization_usage(argv);
-                break;
-            default:
-                break;
+        case 'x':
+            user_args->max_v = strtod(optarg, NULL);
+            break;
+        case 'm':
+            user_args->min_v = strtod(optarg, NULL);
+            break;
+        case 'd':
+            user_args->dt = strtod(optarg, NULL);
+            break;
+        case 'p':
+            free(user_args->files_prefix);
+            user_args->files_prefix = strdup(optarg);
+            break;
+        case 'c':
+            user_args->save_activation_only = true;
+            break;
+        case 's':
+            user_args->start_file = (int)strtod(optarg, NULL);
+            break;
+        case 't':
+            user_args->step = (int)strtod(optarg, NULL);
+            break;
+        case 'h': /* fall-through is intentional */
+        case '?':
+            display_visualization_usage(argv);
+            break;
+        default:
+            break;
         }
 
         opt = getopt_long(argc, argv, visualization_opt_string, long_visualization_options, &option_index);
@@ -994,258 +995,258 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
 
     while(opt != -1) {
         switch(opt) {
-            case 'R':
-                if(user_args->refine_each_was_set) {
-                    sprintf(old_value, "%d", user_args->refine_each);
-                    maybe_issue_overwrite_warning("refine_each", "alg", old_value, optarg, user_args->config_file);
-                }
-                user_args->refine_each = (int)strtol(optarg, NULL, 10);
+        case 'R':
+            if(user_args->refine_each_was_set) {
+                sprintf(old_value, "%d", user_args->refine_each);
+                maybe_issue_overwrite_warning("refine_each", "alg", old_value, optarg, user_args->config_file);
+            }
+            user_args->refine_each = (int)strtol(optarg, NULL, 10);
 
-                break;
-            case 'D':
-                if(user_args->derefine_each_was_set) {
-                    sprintf(old_value, "%d", user_args->derefine_each);
-                    maybe_issue_overwrite_warning("derefine_each", "alg", old_value, optarg, user_args->config_file);
-                }
-                user_args->derefine_each = (int)strtol(optarg, NULL, 10);
+            break;
+        case 'D':
+            if(user_args->derefine_each_was_set) {
+                sprintf(old_value, "%d", user_args->derefine_each);
+                maybe_issue_overwrite_warning("derefine_each", "alg", old_value, optarg, user_args->config_file);
+            }
+            user_args->derefine_each = (int)strtol(optarg, NULL, 10);
 
-                break;
-            case 'e':
-                if(user_args->dt_ode_was_set) {
-                    sprintf(old_value, "%lf", user_args->dt_ode);
-                    maybe_issue_overwrite_warning("dt_ode", "ode_solver", old_value, optarg, user_args->config_file);
-                }
-                user_args->dt_ode = strtof(optarg, NULL);
-                break;
-            case 'k':
-                if(user_args->model_file_path_was_set) {
-                    if(user_args->model_file_path) {
-                        maybe_issue_overwrite_warning("model_file_path", "ode_solver", user_args->model_file_path,
-                                                      optarg,
-                                                      user_args->config_file);
-                    } else {
-                        maybe_issue_overwrite_warning("model_file_path", "ode_solver", "No Save", optarg,
-                                                      user_args->config_file);
-                    }
-                }
-                free(user_args->model_file_path);
-                user_args->model_file_path = strdup(optarg);
-
-                break;
-            case 'f':
-                if(user_args->final_time_was_set) {
-                    sprintf(old_value, "%lf", user_args->final_time);
-                    maybe_issue_overwrite_warning("simulation_time", "main", old_value, optarg, user_args->config_file);
-                }
-                user_args->final_time = strtof(optarg, NULL);
-
-                break;
-            case 'r':
-                if(user_args->ref_bound_was_set) {
-                    sprintf(old_value, "%lf", user_args->ref_bound);
-                    maybe_issue_overwrite_warning("refinement_bound", "alg", old_value, optarg, user_args->config_file);
-                }
-                user_args->ref_bound = strtof(optarg, NULL);
-                break;
-            case 'd':
-                if(user_args->deref_bound_was_set) {
-                    sprintf(old_value, "%lf", user_args->deref_bound);
-                    maybe_issue_overwrite_warning("derefinement_bound", "alg", old_value, optarg,
+            break;
+        case 'e':
+            if(user_args->dt_ode_was_set) {
+                sprintf(old_value, "%lf", user_args->dt_ode);
+                maybe_issue_overwrite_warning("dt_ode", "ode_solver", old_value, optarg, user_args->config_file);
+            }
+            user_args->dt_ode = strtof(optarg, NULL);
+            break;
+        case 'k':
+            if(user_args->model_file_path_was_set) {
+                if(user_args->model_file_path) {
+                    maybe_issue_overwrite_warning("model_file_path", "ode_solver", user_args->model_file_path,
+                                                  optarg,
                                                   user_args->config_file);
-                }
-                user_args->deref_bound = strtof(optarg, NULL);
-                break;
-            case 'a':
-                if(user_args->adaptive_was_set) {
-                    sprintf(old_value, "%d", user_args->adaptive);
-                    maybe_issue_overwrite_warning("use_adaptivity", "main", old_value, optarg, user_args->config_file);
-                }
-                user_args->adaptive = true;
-                break;
-            case 'n':
-                if(((int)strtol(optarg, NULL, 10)) > 0) {
-                    if(user_args->num_threads_was_set) {
-                        sprintf(old_value, "%d", user_args->num_threads);
-                        maybe_issue_overwrite_warning("n"
-                                                      "main",
-                                                      "num_threads",
-                                                      old_value, optarg, user_args->config_file);
-                    }
-                    user_args->num_threads = (int)strtol(optarg, NULL, 10);
-                }
-                break;
-            case 'g':
-                if(user_args->gpu_was_set) {
-
-                    if(user_args->gpu) {
-                        sprintf(old_value, "yes");
-                    } else {
-                        sprintf(old_value, "no");
-                    }
-
-                    maybe_issue_overwrite_warning("use_gpu", "ode_solver", old_value, optarg, user_args->config_file);
-                }
-                if(IS_TRUE(optarg)) {
-                    user_args->gpu = true;
-                } else if(IS_FALSE(optarg)) {
-                    user_args->gpu = false;
                 } else {
-                    fprintf(stderr,
-                            "Warning: Invalid value for use_gpu option: %s! Valid options are: true, yes, false, no, 0 or 1. "
-                            "Setting the value to false\n",
-                            optarg);
-                    user_args->gpu = false;
-                }
-                break;
-            case 'z':
-                if(user_args->dt_pde_was_set) {
-                    sprintf(old_value, "%lf", user_args->dt_pde);
-                    maybe_issue_overwrite_warning("dt_pde", "main", old_value, optarg, user_args->config_file);
-                }
-                user_args->dt_pde = strtof(optarg, NULL);
-                break;
-            case BETA:
-                if(user_args->beta_was_set) {
-                    sprintf(old_value, "%lf", user_args->beta);
-                    maybe_issue_overwrite_warning("beta", "main", old_value, optarg, user_args->config_file);
-                }
-                user_args->beta = strtof(optarg, NULL);
-                break;
-            case CM:
-                if(user_args->cm) {
-                    sprintf(old_value, "%lf", user_args->cm);
-                    maybe_issue_overwrite_warning("cm", "main", old_value, optarg, user_args->config_file);
-                }
-                user_args->cm = strtof(optarg, NULL);
-                break;
-            case START_REFINING:
-                if(user_args->start_adapting_at_was_set) {
-                    sprintf(old_value, "%lf", user_args->start_adapting_at);
-                    maybe_issue_overwrite_warning("start_adapting_at", "main", old_value, optarg,
+                    maybe_issue_overwrite_warning("model_file_path", "ode_solver", "No Save", optarg,
                                                   user_args->config_file);
                 }
-                user_args->start_adapting_at = strtof(optarg, NULL);
-                break;
-            case 'G':
-                if(user_args->gpu_id_was_set) {
-                    sprintf(old_value, "%d", user_args->gpu_id);
-                    maybe_issue_overwrite_warning("gpu_id", "ode_solver", old_value, optarg, user_args->config_file);
-                }
-                user_args->gpu_id = (int)strtol(optarg, NULL, 10);
-                break;
-            case 'b':
-                if(user_args->abort_no_activity_was_set) {
-                    sprintf(old_value, "%d", user_args->abort_no_activity);
-                    maybe_issue_overwrite_warning("abort_on_no_activity", "main", old_value, optarg,
-                                                  user_args->config_file);
-                }
-                user_args->abort_no_activity = true;
-                break;
-            case 'v':
-                if(user_args->vm_threshold_was_set) {
-                    sprintf(old_value, "%lf", user_args->vm_threshold);
-                    maybe_issue_overwrite_warning("vm_threshold", "main", old_value, optarg, user_args->config_file);
-                }
-                user_args->vm_threshold = strtof(optarg, NULL);
-                break;
+            }
+            free(user_args->model_file_path);
+            user_args->model_file_path = strdup(optarg);
 
-            case DOMAIN_OPT:
-                if(user_args->domain_config == NULL) {
-                    log_to_stdout_and_file("Creating new domain config from command line!\n");
-                    user_args->domain_config = alloc_and_init_config_data();
+            break;
+        case 'f':
+            if(user_args->final_time_was_set) {
+                sprintf(old_value, "%lf", user_args->final_time);
+                maybe_issue_overwrite_warning("simulation_time", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->final_time = strtof(optarg, NULL);
+
+            break;
+        case 'r':
+            if(user_args->ref_bound_was_set) {
+                sprintf(old_value, "%lf", user_args->ref_bound);
+                maybe_issue_overwrite_warning("refinement_bound", "alg", old_value, optarg, user_args->config_file);
+            }
+            user_args->ref_bound = strtof(optarg, NULL);
+            break;
+        case 'd':
+            if(user_args->deref_bound_was_set) {
+                sprintf(old_value, "%lf", user_args->deref_bound);
+                maybe_issue_overwrite_warning("derefinement_bound", "alg", old_value, optarg,
+                                              user_args->config_file);
+            }
+            user_args->deref_bound = strtof(optarg, NULL);
+            break;
+        case 'a':
+            if(user_args->adaptive_was_set) {
+                sprintf(old_value, "%d", user_args->adaptive);
+                maybe_issue_overwrite_warning("use_adaptivity", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->adaptive = true;
+            break;
+        case 'n':
+            if(((int)strtol(optarg, NULL, 10)) > 0) {
+                if(user_args->num_threads_was_set) {
+                    sprintf(old_value, "%d", user_args->num_threads);
+                    maybe_issue_overwrite_warning("n"
+                                                  "main",
+                                                  "num_threads",
+                                                  old_value, optarg, user_args->config_file);
                 }
-                set_domain_config(optarg, user_args->domain_config, user_args->config_file);
-                break;
-            case ODE_SOLVER_OPT:
-                set_ode_solver_config(optarg, user_args, user_args->config_file);
-                break;
-            case SAVE_OPT:
-                if(user_args->save_mesh_config == NULL) {
-                    log_to_stdout_and_file("Creating new save config from command line!\n");
-                    user_args->save_mesh_config = alloc_and_init_config_data();
+                user_args->num_threads = (int)strtol(optarg, NULL, 10);
+            }
+            break;
+        case 'g':
+            if(user_args->gpu_was_set) {
+
+                if(user_args->gpu) {
+                    sprintf(old_value, "yes");
+                } else {
+                    sprintf(old_value, "no");
                 }
-                set_save_mesh_config(optarg, user_args->save_mesh_config, user_args->config_file);
-                break;
-            case ASSEMBLY_MATRIX_OPT:
-                if(user_args->assembly_matrix_config == NULL) {
-                    log_to_stdout_and_file("Creating new assembly_matrix config from command line!\n");
-                    user_args->assembly_matrix_config = alloc_and_init_config_data();
-                }
-                set_config(optarg, user_args->assembly_matrix_config, user_args->config_file, "assembly_matrix");
-                break;
-            case LINEAR_SYSTEM_SOLVER_OPT:
-                if(user_args->linear_system_solver_config == NULL) {
-                    log_to_stdout_and_file("Creating new linear_system_solver config from command line!\n");
-                    user_args->linear_system_solver_config = alloc_and_init_config_data();
-                }
-                set_config(optarg, user_args->linear_system_solver_config, user_args->config_file, "linear_system_solver");
-                break;
-            case UPDATE_MONODOMAIN_SOLVER_OPT:
-                if(user_args->update_monodomain_config == NULL) {
-                    log_to_stdout_and_file("Creating new update_monodomain config from command line!\n");
-                    user_args->update_monodomain_config = alloc_and_init_config_data();
-                }
-                set_config(optarg, user_args->update_monodomain_config, user_args->config_file, "update_monodomain");
-                break;
-            case EXTRA_DATA_OPT:
-                if(user_args->extra_data_config == NULL) {
-                    log_to_stdout_and_file("Creating new extra data config from command line!\n");
-                    user_args->extra_data_config = alloc_and_init_config_data();
-                }
-                set_config(optarg, user_args->extra_data_config, user_args->config_file, "extra_data");
-                break;
-            case STIM_OPT:
-                if(user_args->stim_configs == NULL) {
-                    log_to_stdout_and_file("Creating new stim config from command line!\n");
-                }
-                set_stim_config(optarg, user_args->stim_configs, user_args->config_file);
-                break;
-            case MODIFY_DOMAIN_OPT:
-                if(user_args->modify_domain_configs == NULL) {
-                    log_to_stdout_and_file("Creating new modify_domain config from command line!\n");
-                }
-                set_modify_domain_config(optarg, user_args->modify_domain_configs, user_args->config_file);
-                break;
-            case SAVE_STATE_OPT:
-                if(user_args->save_state_config == NULL) {
-                    log_to_stdout_and_file("Creating new save state config from command line!\n");
-                    user_args->save_state_config = alloc_and_init_config_data();
-                }
-                set_config(optarg, user_args->save_state_config, user_args->config_file, "save_state");
-                break;
-            case RESTORE_STATE_OPT:
-                if(user_args->restore_state_config == NULL) {
-                    log_to_stdout_and_file("Creating new restore state config from command line!\n");
-                    user_args->restore_state_config = alloc_and_init_config_data();
-                }
-                set_config(optarg, user_args->restore_state_config, user_args->config_file, "restore_state");
-                break;
-            case DRAW_OPT:
-                user_args->draw = true;
-                break;
-            case MAX_V_OPT:
-                user_args->max_v = strtof(optarg, NULL);
-                break;
-            case MIN_V_OPT:
-                user_args->min_v = strtof(optarg, NULL);
-                break;
-            case VISUALIZATION_PAUSED_OPT:
-                user_args->start_visualization_unpaused = true;
-                break;
-            case 'q':
-                if(user_args->quiet_was_set) {
-                    sprintf(old_value, "%d", user_args->quiet);
-                    maybe_issue_overwrite_warning("quiet", "main", old_value, optarg, user_args->config_file);
-                }
-                user_args->quiet = true;
-                break;
-            case 'h': /* fall-through is intentional */
-            case '?':
-                display_usage(argv);
-                break;
-            default:
-                /* You won't actually get here. */
-                break;
+
+                maybe_issue_overwrite_warning("use_gpu", "ode_solver", old_value, optarg, user_args->config_file);
+            }
+            if(IS_TRUE(optarg)) {
+                user_args->gpu = true;
+            } else if(IS_FALSE(optarg)) {
+                user_args->gpu = false;
+            } else {
+                fprintf(stderr,
+                        "Warning: Invalid value for use_gpu option: %s! Valid options are: true, yes, false, no, 0 or 1. "
+                        "Setting the value to false\n",
+                        optarg);
+                user_args->gpu = false;
+            }
+            break;
+        case 'z':
+            if(user_args->dt_pde_was_set) {
+                sprintf(old_value, "%lf", user_args->dt_pde);
+                maybe_issue_overwrite_warning("dt_pde", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->dt_pde = strtof(optarg, NULL);
+            break;
+        case BETA:
+            if(user_args->beta_was_set) {
+                sprintf(old_value, "%lf", user_args->beta);
+                maybe_issue_overwrite_warning("beta", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->beta = strtof(optarg, NULL);
+            break;
+        case CM:
+            if(user_args->cm) {
+                sprintf(old_value, "%lf", user_args->cm);
+                maybe_issue_overwrite_warning("cm", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->cm = strtof(optarg, NULL);
+            break;
+        case START_REFINING:
+            if(user_args->start_adapting_at_was_set) {
+                sprintf(old_value, "%lf", user_args->start_adapting_at);
+                maybe_issue_overwrite_warning("start_adapting_at", "main", old_value, optarg,
+                                              user_args->config_file);
+            }
+            user_args->start_adapting_at = strtof(optarg, NULL);
+            break;
+        case 'G':
+            if(user_args->gpu_id_was_set) {
+                sprintf(old_value, "%d", user_args->gpu_id);
+                maybe_issue_overwrite_warning("gpu_id", "ode_solver", old_value, optarg, user_args->config_file);
+            }
+            user_args->gpu_id = (int)strtol(optarg, NULL, 10);
+            break;
+        case 'b':
+            if(user_args->abort_no_activity_was_set) {
+                sprintf(old_value, "%d", user_args->abort_no_activity);
+                maybe_issue_overwrite_warning("abort_on_no_activity", "main", old_value, optarg,
+                                              user_args->config_file);
+            }
+            user_args->abort_no_activity = true;
+            break;
+        case 'v':
+            if(user_args->vm_threshold_was_set) {
+                sprintf(old_value, "%lf", user_args->vm_threshold);
+                maybe_issue_overwrite_warning("vm_threshold", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->vm_threshold = strtof(optarg, NULL);
+            break;
+
+        case DOMAIN_OPT:
+            if(user_args->domain_config == NULL) {
+                log_to_stdout_and_file("Creating new domain config from command line!\n");
+                user_args->domain_config = alloc_and_init_config_data();
+            }
+            set_domain_config(optarg, user_args->domain_config, user_args->config_file);
+            break;
+        case ODE_SOLVER_OPT:
+            set_ode_solver_config(optarg, user_args, user_args->config_file);
+            break;
+        case SAVE_OPT:
+            if(user_args->save_mesh_config == NULL) {
+                log_to_stdout_and_file("Creating new save config from command line!\n");
+                user_args->save_mesh_config = alloc_and_init_config_data();
+            }
+            set_save_mesh_config(optarg, user_args->save_mesh_config, user_args->config_file);
+            break;
+        case ASSEMBLY_MATRIX_OPT:
+            if(user_args->assembly_matrix_config == NULL) {
+                log_to_stdout_and_file("Creating new assembly_matrix config from command line!\n");
+                user_args->assembly_matrix_config = alloc_and_init_config_data();
+            }
+            set_config(optarg, user_args->assembly_matrix_config, user_args->config_file, "assembly_matrix");
+            break;
+        case LINEAR_SYSTEM_SOLVER_OPT:
+            if(user_args->linear_system_solver_config == NULL) {
+                log_to_stdout_and_file("Creating new linear_system_solver config from command line!\n");
+                user_args->linear_system_solver_config = alloc_and_init_config_data();
+            }
+            set_config(optarg, user_args->linear_system_solver_config, user_args->config_file, "linear_system_solver");
+            break;
+        case UPDATE_MONODOMAIN_SOLVER_OPT:
+            if(user_args->update_monodomain_config == NULL) {
+                log_to_stdout_and_file("Creating new update_monodomain config from command line!\n");
+                user_args->update_monodomain_config = alloc_and_init_config_data();
+            }
+            set_config(optarg, user_args->update_monodomain_config, user_args->config_file, "update_monodomain");
+            break;
+        case EXTRA_DATA_OPT:
+            if(user_args->extra_data_config == NULL) {
+                log_to_stdout_and_file("Creating new extra data config from command line!\n");
+                user_args->extra_data_config = alloc_and_init_config_data();
+            }
+            set_config(optarg, user_args->extra_data_config, user_args->config_file, "extra_data");
+            break;
+        case STIM_OPT:
+            if(user_args->stim_configs == NULL) {
+                log_to_stdout_and_file("Creating new stim config from command line!\n");
+            }
+            set_stim_config(optarg, user_args->stim_configs, user_args->config_file);
+            break;
+        case MODIFY_DOMAIN_OPT:
+            if(user_args->modify_domain_configs == NULL) {
+                log_to_stdout_and_file("Creating new modify_domain config from command line!\n");
+            }
+            set_modify_domain_config(optarg, user_args->modify_domain_configs, user_args->config_file);
+            break;
+        case SAVE_STATE_OPT:
+            if(user_args->save_state_config == NULL) {
+                log_to_stdout_and_file("Creating new save state config from command line!\n");
+                user_args->save_state_config = alloc_and_init_config_data();
+            }
+            set_config(optarg, user_args->save_state_config, user_args->config_file, "save_state");
+            break;
+        case RESTORE_STATE_OPT:
+            if(user_args->restore_state_config == NULL) {
+                log_to_stdout_and_file("Creating new restore state config from command line!\n");
+                user_args->restore_state_config = alloc_and_init_config_data();
+            }
+            set_config(optarg, user_args->restore_state_config, user_args->config_file, "restore_state");
+            break;
+        case DRAW_OPT:
+            user_args->show_gui = true;
+            break;
+        case MAX_V_OPT:
+            user_args->max_v = strtof(optarg, NULL);
+            break;
+        case MIN_V_OPT:
+            user_args->min_v = strtof(optarg, NULL);
+            break;
+        case VISUALIZATION_PAUSED_OPT:
+            user_args->start_visualization_unpaused = true;
+            break;
+        case 'q':
+            if(user_args->quiet_was_set) {
+                sprintf(old_value, "%d", user_args->quiet);
+                maybe_issue_overwrite_warning("quiet", "main", old_value, optarg, user_args->config_file);
+            }
+            user_args->quiet = true;
+            break;
+        case 'h': /* fall-through is intentional */
+        case '?':
+            display_usage(argv);
+            break;
+        default:
+            /* You won't actually get here. */
+            break;
         }
 
         opt = getopt_long(argc, argv, opt_string, long_options, &option_index);
@@ -1289,28 +1290,43 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
     return 1;
 }
 
+static void parse_expr_and_set_real_value(const char *filename, const char *expr, double *value, bool *was_set) {
+    int expr_parse_error;
+    real_cpu expr_parse_result = (real_cpu) te_interp(expr, &expr_parse_error);
+
+    if(!expr_parse_error) {
+        *value = expr_parse_result;
+        *was_set = true;
+    }
+    else {
+        log_to_stderr_and_file_and_exit("[ERR] Parse error at position %d in expression \"%s\"! (file: %s)\n", expr_parse_error, expr, filename);
+    }
+
+}
+
+static void parse_expr_and_set_int_value(const char *filename, const char *expr, int *value, bool *was_set) {
+    real_cpu local_value = 0;
+    parse_expr_and_set_real_value(filename, expr, &local_value, was_set);
+    *value = (int)local_value;
+}
+
 int parse_config_file(void *user, const char *section, const char *name, const char *value) {
+
     struct user_options *pconfig = (struct user_options *)user;
 
-
     if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "num_threads")) {
-        pconfig->num_threads = (int)strtol(value, NULL, 10);
-        pconfig->num_threads_was_set = true;
+        parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->num_threads, &pconfig->num_threads_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "dt_pde")) {
-        pconfig->dt_pde = strtof(value, NULL);
-        pconfig->dt_pde_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->dt_pde, &pconfig->dt_pde_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "simulation_time")) {
-        pconfig->final_time = strtof(value, NULL);
-        pconfig->final_time_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->final_time, &pconfig->final_time_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "beta")) {
-        pconfig->beta = strtof(value, NULL);
-        pconfig->beta_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->beta, &pconfig->beta_was_set);
+
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "cm")) {
-        pconfig->cm = strtof(value, NULL);
-        pconfig->cm_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->cm, &pconfig->cm_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "start_adapting_at")) {
-        pconfig->start_adapting_at = strtof(value, NULL);
-        pconfig->start_adapting_at_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->start_adapting_at, &pconfig->start_adapting_at_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "abort_on_no_activity")) {
         if(IS_TRUE(value)) {
             pconfig->abort_no_activity = true;
@@ -1319,12 +1335,10 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         }
         pconfig->abort_no_activity_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "only_abort_after_dt")) {
-        pconfig->only_abort_after_dt = strtof(value, NULL);;
-        pconfig->only_abort_after_dt_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->only_abort_after_dt, &pconfig->only_abort_after_dt_was_set);
     }
     else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
-        pconfig->vm_threshold = strtof(value, NULL);
-        pconfig->vm_threshold_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->vm_threshold, &pconfig->vm_threshold_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "use_adaptivity")) {
         if( IS_TRUE(value) ) {
             pconfig->adaptive = true;
@@ -1340,22 +1354,16 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         }
         pconfig->quiet = true;
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
-        pconfig->ref_bound = strtof(value, NULL);
-        pconfig->ref_bound_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->ref_bound, &pconfig->ref_bound_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "derefinement_bound")) {
-        pconfig->deref_bound = strtof(value, NULL);
-        pconfig->deref_bound_was_set = true;
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->deref_bound, &pconfig->deref_bound_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refine_each")) {
-        pconfig->refine_each = (int)strtol(value, NULL, 10);
-        pconfig->refine_each_was_set = true;
+        parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->refine_each, &pconfig->refine_each_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "derefine_each")) {
-        pconfig->derefine_each = (int)strtol(value, NULL, 10);
-        pconfig->derefine_each_was_set = true;
+        parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->derefine_each, &pconfig->derefine_each_was_set);
     } else if(MATCH_SECTION(ODE_SECTION)) {
-
         if(MATCH_NAME("dt_ode")) {
-            pconfig->dt_ode = strtof(value, NULL);
-            pconfig->dt_ode_was_set = true;
+            parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->dt_ode, &pconfig->dt_ode_was_set);
         }
         else if(MATCH_NAME("use_gpu")) {
             if(IS_TRUE(value)) {
@@ -1365,8 +1373,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             }
             pconfig->gpu_was_set = true;
         } else if(MATCH_NAME("gpu_id")) {
-            pconfig->gpu_id = (int)strtol(value, NULL, 10);
-            pconfig->gpu_id_was_set = true;
+            parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->gpu_id, &pconfig->gpu_id_was_set);
         } else if(MATCH_NAME("library_file")) {
             pconfig->model_file_path = strdup(value);
             pconfig->model_file_path_was_set = true;
@@ -1376,8 +1383,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         }
     } else if(MATCH_SECTION(ODE_PURKINJE_SECTION)) {
         if(MATCH_NAME("dt_ode")) {
-            pconfig->purkinje_dt_ode = strtof(value, NULL);
-            pconfig->purkinje_dt_ode_was_set = true;
+            parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->purkinje_dt_ode, &pconfig->purkinje_dt_ode_was_set);
         }
         else if(MATCH_NAME("use_gpu")) {
             if(IS_TRUE(value)) {
@@ -1387,8 +1393,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             }
             pconfig->purkinje_gpu_was_set = true;
         } else if(MATCH_NAME("gpu_id")) {
-            pconfig->purkinje_gpu_id = (int)strtol(value, NULL, 10);
-            pconfig->purkinje_gpu_id_was_set = true;
+            parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->purkinje_gpu_id, &pconfig->purkinje_gpu_id_was_set);
         } else if(MATCH_NAME("library_file")) {
             pconfig->purkinje_model_file_path = strdup(value);
             pconfig->purkinje_model_file_path_was_set = true;
@@ -1696,7 +1701,7 @@ void free_user_options(struct user_options *s) {
 
     if(s->stim_configs) {
         STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(s->stim_configs, free_config_data);
-                shfree(s->stim_configs);
+            shfree(s->stim_configs);
     }
 
     if(s->extra_data_config)

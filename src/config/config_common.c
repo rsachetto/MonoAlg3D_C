@@ -9,7 +9,7 @@
 #include "config_common.h"
 
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 struct config *alloc_and_init_config_data() {
     struct config *cm = (struct config *)calloc(1, sizeof(struct config));

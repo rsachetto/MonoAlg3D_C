@@ -3,8 +3,8 @@
 
 #include "gui/gui.h"
 
-#include "string/sds.h"
-#include "single_file_libraries/stb_ds.h"
+#include "3dparty/sds/sds.h"
+#include "3dparty/stb_ds.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
 #include "vtk_utils/pvd_utils.h"
 #include "config/config_parser.h"
@@ -315,7 +315,7 @@ int main(int argc, char **argv) {
                 omp_init_lock(&gui_config.draw_lock);
                 omp_init_lock(&gui_config.sleep_lock);
                 init_gui_config(&gui_config, options, false);
-                init_and_open_visualization_window(DRAW_FILE);
+                init_and_open_gui_window();
             }
 
             #pragma omp section

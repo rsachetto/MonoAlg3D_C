@@ -1,1 +1,1 @@
-COMPILE_SHARED_LIB "default_purkinje" "purkinje.c purkinje_helpers.c" "purkinje_helpers.h" "alg config_helpers utils solvers graph"
+COMPILE_SHARED_LIB "default_purkinje" "purkinje.c purkinje_helpers.c" "purkinje_helpers.h" "alg config_helpers utils solvers graph tinyexpr"

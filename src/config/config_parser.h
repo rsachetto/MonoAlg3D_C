@@ -95,7 +95,7 @@ struct user_options {
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
 
-    bool draw;
+    bool show_gui;
 
     real_cpu beta;
     bool beta_was_set;

@@ -10,7 +10,7 @@
 
 #include "../logger/logger.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
 void print_save_mesh_config_values(struct config* s) {

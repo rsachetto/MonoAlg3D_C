@@ -34,7 +34,7 @@
 ../src/gpu_utils/gpu_utils.h
 ../src/domains_library/domain_helpers.h
 ../src/libraries_common/common_data_structures.h
-../src/single_file_libraries/stb_ds.h
+../src/3dparty/stb_ds.h
 ../src/monodomain/monodomain_solver.h
 ../src/monodomain/ode_solver.h
 ../src/monodomain/constants.h

@@ -5,7 +5,7 @@
 #include <assert.h>
 
 #include "cell.h"
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 
 /**
 * Decides if the bunch should be derefined. A bunch will not be derefined if
