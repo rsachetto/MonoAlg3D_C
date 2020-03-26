@@ -201,4 +201,6 @@ This file represents 3 volumes with 100 micrometer of side. The first volume is 
 
 Oliveira RS, Rocha BM, Burgarelli D, Meira Jr W, Constantinides C, dos Santos RW. Performance evaluation of GPU parallelization, space‐time adaptive algorithms, and their combination for simulating cardiac electrophysiology. Int J Numer Meth Biomed Engng. 2018;34:e2913. https://doi.org/10.1002/cnm.2913
 
-
+# Credits
+----
+"Icon made by Pixel perfect from www.flaticon.com"

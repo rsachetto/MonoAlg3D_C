@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "ten_tusscher_3_RS.h"
+#include "../libraries_common/common_data_structures.h"
 
 #define ENDO
 
@@ -84,7 +85,7 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
 
     int i;
 
-#pragma omp parallel for private(sv_id)
+    OMP(parallel for private(sv_id))
     for (i = 0; i < num_cells_to_solve; i++) {
         if(cells_to_solve)
             sv_id = cells_to_solve[i];

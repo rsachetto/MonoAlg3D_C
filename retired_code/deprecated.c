@@ -18,7 +18,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
 
         rhs = (real*) malloc(sizeof(real)*num_active_cells);
 
-#pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) {
             rhs[i] = ac[i]->b;
         }
@@ -69,7 +69,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
         *number_of_iterations = k-1;
         *error = sqrt(r1);
 
-#pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) {
             ac[i]->v = rhs[i];
         }

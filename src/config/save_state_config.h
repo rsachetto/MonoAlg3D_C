@@ -16,7 +16,7 @@ struct ode_solver;
 struct monodomain_solver;
 
 #define SAVE_STATE(name)                                                                                               \
-    EXPORT_FN void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                      \
+     void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                      \
                         struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,            \
                         char *output_dir)
 

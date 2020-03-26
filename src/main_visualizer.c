@@ -99,7 +99,7 @@ static int read_and_render_files(struct visualization_options *options) {
     get_path_information(input, &input_info);
 
     if(!input_info.exists) {
-        sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory, 'f' to open a simulation file (pvd, vtu, vtk or acm)!");
+        sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk or acm)!");
         if(gui_config.error_message) free(gui_config.error_message);
         gui_config.error_message = strdup(error);
         return SIMULATION_FINISHED;
@@ -308,9 +308,9 @@ int main(int argc, char **argv) {
         sdsfree(save_path);
     }
     else {
-        #pragma omp parallel sections num_threads(2)
+        OMP(parallel sections num_threads(2))
         {
-            #pragma omp section
+            OMP(section)
             {
                 omp_init_lock(&gui_config.draw_lock);
                 omp_init_lock(&gui_config.sleep_lock);
@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
                 init_and_open_gui_window();
             }
 
-            #pragma omp section
+            OMP(section)
             {
                 int result = read_and_render_files(options);
 

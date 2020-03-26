@@ -166,14 +166,14 @@ int main(int argc, char **argv) {
         omp_init_lock(&gui_config.sleep_lock);
         init_gui_config(&gui_config, options);
 
-        #pragma omp parallel sections num_threads(2)
+        OMP(parallel sections num_threads(2))
         {
-            #pragma omp section
+            OMP(section)
             {
                 init_and_open_gui_window();
             }
 
-            #pragma omp section
+            OMP(section)
             {
                 int result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
 

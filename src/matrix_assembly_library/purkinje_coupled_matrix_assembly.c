@@ -34,7 +34,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     int i;
 
     // Tissue section
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_cells; i++) 
     {
 
@@ -44,7 +44,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     }
 
     // Purkinje section
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_purkinje_cells; i++) 
     {
 
@@ -69,7 +69,7 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     uint32_t i;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
         real_cpu alpha, dx, dy, dz;
 
@@ -395,7 +395,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
 
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -406,7 +406,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
         sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
@@ -441,7 +441,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     
     if(!sigma_purkinje_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_purkinje_active_cells; i++) 
         {
             ac_purkinje[i]->sigma.x = sigma_purkinje;

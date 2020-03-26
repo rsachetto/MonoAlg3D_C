@@ -923,7 +923,7 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 
     fclose(file);
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int j = 0; j < size; j++) {
 
         struct cell_node *grid_cell = grid->first_cell;

@@ -25,7 +25,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     real_cpu dt = the_solver->dt;
     int i;
 
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_cells; i++) {
 
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
@@ -63,8 +63,8 @@ void calculate_kappa_elements(struct monodomain_solver *the_solver, struct grid 
 
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
-    
-    #pragma omp parallel for
+
+    OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) 
 	{
         ac[i]->kappa.x = KAPPA(beta,cm,cell_length_x,ac[i]->discretization.x);
@@ -330,7 +330,7 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     int i;
 
-    #pragma omp parallel for private(alpha, dx, dy, dz)
+    OMP(parallel for private(alpha, dx, dy, dz))
     for(i = 0; i < num_active_cells; i++) 
     {
         dx = ac[i]->discretization.x;
@@ -409,7 +409,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
   
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -453,7 +453,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
 
     // Pass through all the cells of the grid and check if its center is inside the current
     // fibrotic region
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int j = 0; j < num_fibrotic_regions; j++) 
     {
 
@@ -506,10 +506,10 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     printf("[Y] Cell length = %.10lf || sigma_y = %.10lf || dy = %.10lf || kappa_y = %.10lf\n",\
             cell_length_y,ac[0]->sigma.y,ac[0]->discretization.y,ac[0]->kappa.y);
     printf("[Z] Cell length = %.10lf || sigma_z = %.10lf || dz = %.10lf || kappa_z = %.10lf\n",\
-            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z); 
+            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z);
 
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
 
@@ -593,7 +593,7 @@ ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix)
 	    sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(uint32_t i = 0; i < num_active_cells; i++)
     {
 
@@ -662,7 +662,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
     //~ bool inside;
 
 	// Initialize the conductivities
-    #pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
     {
 		ac[i]->sigma.x = sigma_x;
@@ -741,8 +741,8 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
 	
 
 //General square slow sigma *aquela divisao por 3 pode mudar*...
-	
-	#pragma omp parallel for
+
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{
 			double x_prev = ac[i]->center.x;
@@ -757,7 +757,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
 	}	
 	
 //Vou recuparando os triangulos do square	
-	#pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{	
 
@@ -865,10 +865,10 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
 	}
 
 // Aqui termina a construcao dos triangulos	
-	
-    	
 
-    #pragma omp parallel for
+
+
+    OMP(parallel for)
     for (i = 0; i < num_active_cells; i++)
     {
 
@@ -944,7 +944,7 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 
     //~ bool inside;
 
-	#pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) {
 		ac[i]->sigma.x = sigma_x;
 		ac[i]->sigma.y = sigma_y;
@@ -1021,8 +1021,8 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 
 
 //General square slow sigma *aquela divisao por 3 pode mudar*...
-	
-	#pragma omp parallel for
+
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{
 			double x_prev = ac[i]->center.x;
@@ -1037,8 +1037,8 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 	}	
 	
 //Vou recuparando os triangulos do square	
-	
-	#pragma omp parallel for
+
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{	
 
@@ -1225,7 +1225,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
   
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -1347,10 +1347,10 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     printf("[Y] Cell length = %.10lf || sigma_y = %.10lf || dy = %.10lf || kappa_y = %.10lf\n",\
             cell_length_y,ac[0]->sigma.y,ac[0]->discretization.y,ac[0]->kappa.y);
     printf("[Z] Cell length = %.10lf || sigma_z = %.10lf || dz = %.10lf || kappa_z = %.10lf\n",\
-            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z); 
+            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z);
 
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
 
@@ -1544,7 +1544,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
 
-	#pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{
 		ac[i]->sigma.x = sigma_x;
@@ -1637,7 +1637,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
     uint32_t num_fibrotic_regions = i;
 
     // Update the cells that are inside of the scar regions
-   #pragma omp parallel for
+    OMP(parallel for)
     for(int j = 0; j < num_fibrotic_regions; j++) 
     {
 
@@ -1688,8 +1688,8 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 //	real X_right = 3000;
 	real Y_down  = 0.0;
 	real Y_up 	= 1200;
-	
-	#pragma omp parallel for
+
+	OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{	
 

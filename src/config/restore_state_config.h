@@ -15,7 +15,7 @@
 struct monodomain_solver;
 struct ode_solver;
 
-#define RESTORE_STATE(name) EXPORT_FN bool name(struct time_info *time_info,                      \
+#define RESTORE_STATE(name)  bool name(struct time_info *time_info,                      \
                                                 struct config *config,                            \
                                                 struct grid *the_grid,                            \
                                                 struct monodomain_solver *the_monodomain_solver,  \

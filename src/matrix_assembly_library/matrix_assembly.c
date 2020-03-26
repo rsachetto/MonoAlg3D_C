@@ -17,15 +17,16 @@
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     real_cpu alpha;
-    struct cell_node **ac = the_grid->active_cells;
-    uint32_t active_cells = the_grid->num_active_cells;
+
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
-    uint32_t i;
 
-    #pragma omp parallel for private(alpha)
-    for(i = 0; i < active_cells; i++) {
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
+
+    OMP(parallel for private(alpha))
+    for(uint32_t i = 0; i < active_cells; i++) {
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;
@@ -47,7 +48,7 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     uint32_t i;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
         real_cpu alpha, dx, dy, dz;
 
@@ -285,11 +286,11 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     real_cpu modifiers[4] = {0.0f, 0.1f, 0.5f, 1.0f};
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
         real_cpu r;
 
-        #pragma omp critical
+        OMP(critical)
         r = modifiers[rand_range(4)];
 
         real sigma_x_new = sigma_x * r;
@@ -302,7 +303,7 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     }
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
@@ -358,7 +359,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
 
     real region_height = (side_length_y - channel_width) / 2.0;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for (i = 0; i < num_active_cells; i++)
     {
         real sigma_x_new;
@@ -395,7 +396,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
     }
 
     // Then, we fill the discretization matrix
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
@@ -459,7 +460,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     real region_height = (side_length_y - channel_width) / 2.0;
 
     // Set the conductivities for each cell on the grid
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
         real sigma_x_new = sigma_x;
@@ -497,7 +498,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     }
 
     // Then, we fill the discretization matrix
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
@@ -543,7 +544,7 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     if(!sigma_initialized) {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (i = 0; i < num_active_cells; i++) {
             ac[i]->sigma.x = sigma_x;
             ac[i]->sigma.y = sigma_y;
@@ -553,7 +554,7 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
         //sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
@@ -600,7 +601,7 @@ ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
     if(!sigma_initialized) {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (i = 0; i < num_active_cells; i++) {
             ac[i]->sigma.x = sigma_x * sigma_factor;
             ac[i]->sigma.y = sigma_y * sigma_factor;
@@ -610,7 +611,7 @@ ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
         //sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
@@ -676,7 +677,7 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
     bool inside;
 
     // Set the conductivities for each cell on the grid
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
         real sigma_x_new = sigma_x;
@@ -706,7 +707,7 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
     }
 
     // Then, we fill the discretization matrix
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
@@ -793,7 +794,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
 	    //sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
@@ -849,7 +850,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
   
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -893,7 +894,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
 
     // Pass through all the cells of the grid and check if its center is inside the current
     // fibrotic region
-    #pragma omp parallel for
+    OMP(parallel for)
     for(uint32_t j = 0; j < num_fibrotic_regions; j++)
     {
         
@@ -940,8 +941,8 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
             grid_cell = grid_cell->next;
         } 
     }
-		
-    #pragma omp parallel for
+
+    OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
 

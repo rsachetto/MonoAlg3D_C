@@ -10,7 +10,7 @@
 #include "config_common.h"
 
 #define SET_SPATIAL_STIM(name)                                                                                         \
-    EXPORT_FN void name(struct time_info *time_info, struct config *config, struct grid *the_grid, bool is_purkinje)
+     void name(struct time_info *time_info, struct config *config, struct grid *the_grid, bool is_purkinje)
 typedef SET_SPATIAL_STIM(set_spatial_stim_fn);
 
 void print_stim_config_values(struct config *s);
