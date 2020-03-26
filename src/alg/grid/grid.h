@@ -19,13 +19,10 @@
 struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.
-
     struct point_3d cube_side_length;
-
     struct point_3d mesh_side_length;
 
     uint32_t number_of_cells;  // Number of cells of grid.
-
     uint32_t num_active_cells;
 
     //dynamic arrays, need to point to NULL
@@ -39,7 +36,6 @@ struct grid {
     struct grid_purkinje *purkinje;
     
 };
-
 
 struct grid* new_grid();
 void initialize_grid(struct grid *the_grid, struct point_3d side_length);

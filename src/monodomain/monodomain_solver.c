@@ -489,7 +489,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     start_stop_watch(&part_mat);
 
     if(!restore_checkpoint || !restore_success) {
-        ((set_pde_initial_condition_fn*)assembly_matrix_config->init_function)(assembly_matrix_config, the_monodomain_solver, the_grid, initial_v, purkinje_initial_v);
+        if(assembly_matrix_config->init_function) {
+            ((set_pde_initial_condition_fn *)assembly_matrix_config->init_function)(
+                assembly_matrix_config, the_monodomain_solver, the_grid, initial_v, purkinje_initial_v);
+        }
+        else {
+            log_to_stderr_and_file_and_exit("Function for the Monodomain initial conditions not provided (init_function on [assembly_matrix] section)!\n");
+        }
     }
 
     ((assembly_matrix_fn*) assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
@@ -506,7 +512,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu vm_threshold = configs->vm_threshold;
 
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
-//    bool calc_retropropagation = the_grid->purkinje->network->calc_retropropagation;
 
     real_cpu solver_error = 0, purkinje_solver_error = 0;
     uint32_t solver_iterations = 0, purkinje_solver_iterations = 0;;
@@ -905,7 +910,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
             if(the_grid->adaptive)
                 check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-            #pragma omp parallel for
+            OMP(parallel for)
             for(uint32_t i = 0; i < n_active; i++) 
             {
                 vms[ac[i]->sv_position] = (real)ac[i]->v;
@@ -922,7 +927,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
         } 
         else 
         {
-            #pragma omp parallel for
+            OMP(parallel for)
             for(uint32_t i = 0; i < n_active; i++) 
             {
                 sv[ac[i]->sv_position * n_odes] = (real)ac[i]->v;
@@ -957,7 +962,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
             if(the_grid->adaptive)
                 check_cuda_errors(cudaMemcpy(vms_purkinje, sv_purkinje, mem_size_purkinje, cudaMemcpyDeviceToHost));
 
-            #pragma omp parallel for
+            OMP(parallel for)
             for(uint32_t i = 0; i < n_active_purkinje; i++) 
             {
                 vms_purkinje[ac_purkinje[i]->sv_position] = (real)ac_purkinje[i]->v;
@@ -974,7 +979,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
         } 
         else 
         {
-            #pragma omp parallel for
+            OMP(parallel for)
             for(uint32_t i = 0; i < n_active_purkinje; i++) 
             {
                 sv_purkinje[ac_purkinje[i]->sv_position * n_odes_purkinje] = (real)ac_purkinje[i]->v;
@@ -997,7 +1002,7 @@ void save_old_cell_positions(struct grid *the_grid) {
 
     uint32_t i;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < n_active; i++) {
         ac[i]->sv_position = ac[i]->grid_position;
     }
@@ -1009,7 +1014,7 @@ void save_old_cell_positions(struct grid *the_grid) {
     {
         uint32_t n_purkinje_active = the_purkinje->num_active_purkinje_cells;
         struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
-        #pragma omp parallel for
+        OMP(parallel for)
         for(i = 0; i < n_purkinje_active; i++) 
         {
             //log_to_stdout_and_file("Cell %u -- grid_position = %u\n",i,ac_purkinje[i]->grid_position);
@@ -1033,7 +1038,7 @@ void update_cells_to_solve(struct grid *the_grid, struct ode_solver *solver) {
     uint32_t *cts = solver->cells_to_solve;
     int i;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < n_active; i++) {
         cts[i] = ac[i]->sv_position;
     }
@@ -1282,7 +1287,7 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
         if(the_grid->adaptive)
             check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-#pragma omp parallel for
+        OMP(parallel for)
         for(uint32_t i = 0; i < n_active; i++)
         {
             vms[ac[i]->sv_position] = (real)ac[i]->v;
@@ -1355,17 +1360,8 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
 
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-        //#pragma omp parallel for
-        //for(uint32_t i = 0; i < n_active_purkinje; i++)
-        //{
-        //    vms[ac_purkinje[i]->sv_position] = (real)ac_purkinje[i]->v;
-        //}
-
         uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
-        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
-        {
-            //printf("[map_purkinje_solution_to_tissue] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
-
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++) {
             uint32_t tissue_index = the_terminals[i].endocardium_index;
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
 
@@ -1376,23 +1372,19 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
             ac_purkinje[purkinje_index]->b -= Ipmj;
         }
 
-        //check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
 #endif
     }
     else
     {
         uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
-        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
-        {
-            //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
+        for (uint32_t i = 0; i < num_of_purkinje_terminals; i++) {
 
             uint32_t tissue_index = the_terminals[i].endocardium_cell->sv_position;
             uint32_t purkinje_index = the_terminals[i].purkinje_index;
 
             // Compute the PMJ current
             real Ipmj = Gpmj * (sv[purkinje_index*nodes] - ac[tissue_index]->v);
-            //printf("ac[tissue_index]->b = %g || Ipmj = %g || ac[tissue_index]->b = %g\n",ac[tissue_index]->b,Ipmj,ac[tissue_index]->b+Ipmj);
 
             // Add this current to the RHS of this cell
             ac_purkinje[purkinje_index]->b -= Ipmj;

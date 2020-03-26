@@ -179,7 +179,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
 
         solver->sv = (real*)malloc(n_odes*num_cells*sizeof(real));
 
-        #pragma omp parallel for
+        OMP(parallel for)
         for(uint32_t i = 0; i < num_cells; i++) {
             soicc_fn_pt(ode_extra_config, &solver->sv[i*n_odes], i, solver->ode_extra_data, solver->extra_data_size);
         }
@@ -221,7 +221,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
             for (int j = 0; j < num_steps; ++j) {
                 if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
-                    #pragma omp parallel for
+                    OMP(parallel for)
                     for (i = 0; i < n_active; i++) {
                         merged_stims[i] += ((real*)(tmp->persistent_data))[i];
                     }
@@ -278,7 +278,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 
         size_t pitch_h = ode_solver->pitch;
 
-		#pragma omp parallel for private(sv_src, sv_dst)
+        OMP(parallel for private(sv_src, sv_dst))
         for (i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * (size_t )8;
@@ -297,7 +297,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
     }
     else {
 
-        #pragma omp parallel for private(sv_src, sv_dst)
+        OMP(parallel for private(sv_src, sv_dst))
         for (i = 0; i < num_refined_cells; i++) {
 
             size_t index_id = i * (size_t )8;
@@ -393,7 +393,7 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
             {
                 if ((time >= stim_start) && (time <= stim_start + stim_dur)) 
                 {
-                    #pragma omp parallel for
+                    OMP(parallel for)
                     for (i = 0; i < n_active; i++) 
                     {
                         // This variable should be an accumulator to allow multiple stimulus

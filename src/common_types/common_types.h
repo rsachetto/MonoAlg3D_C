@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include "../monodomain/constants.h"
 
+#define Pragma(x) _Pragma(#x)
+#define OMP(directive) Pragma(omp directive)
+
 
 struct time_info {
     real_cpu current_t;

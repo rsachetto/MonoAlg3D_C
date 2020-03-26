@@ -26,7 +26,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     real_cpu dt = the_solver->dt;
     uint32_t i;
 
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_cells; i++) 
     {
 
@@ -135,7 +135,7 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
 
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;

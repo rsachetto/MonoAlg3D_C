@@ -8,6 +8,9 @@
 #include <stdbool.h>
 #include "../monodomain/constants.h"
 
+#define Pragma(x) _Pragma(#x)
+#define OMP(directive) Pragma(omp directive)
+
 // This is used when we are dealing with fibrotic meshes
 struct fibrotic_mesh_info {
     bool fibrotic;

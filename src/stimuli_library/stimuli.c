@@ -39,7 +39,7 @@ SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for(uint32_t i = 0; i < n_active; i++) {
 
         stim = ac[i]->center.x > 5500.0;
@@ -80,7 +80,7 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for(i = 0; i < n_active; i++) {
         stim = ac[i]->center.x < x_limit;
 
@@ -119,7 +119,7 @@ SET_SPATIAL_STIM(stim_if_y_less_than) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for (i = 0; i < n_active; i++) {
         stim = ac[i]->center.y < y_limit;
 
@@ -158,7 +158,7 @@ SET_SPATIAL_STIM(stim_if_y_greater_or_equal_than) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for (i = 0; i < n_active; i++) {
         stim = ac[i]->center.y >= y_limit;
 
@@ -223,7 +223,7 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for(i = 0; i < n_active; i++) {
 
         real_cpu center_x = ac[i]->center.x;
@@ -260,7 +260,7 @@ SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim_value)
+    OMP(parallel for private(stim_value))
     for(i = 0; i < n_active; i++) {
         bool stim = (ac[i]->center.x >= x_limit);
 
@@ -291,7 +291,7 @@ SET_SPATIAL_STIM(stim_base_mouse) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim_value)
+    OMP(parallel for private(stim_value))
     for(i = 0; i < n_active; i++) {
 
         bool stim;
@@ -323,7 +323,7 @@ SET_SPATIAL_STIM(stim_mouse_spiral) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim_value)
+    OMP(parallel for private(stim_value))
     for(i = 0; i < n_active; i++) {
 
         bool stim;
@@ -368,7 +368,7 @@ SET_SPATIAL_STIM(stim_x_y_limits) {
 
     int i;
 
-#pragma omp parallel for private(stim_value)
+    OMP(parallel for private(stim_value))
     for(i = 0; i < n_active; i++) {
 
         bool stim;
@@ -417,7 +417,7 @@ SET_SPATIAL_STIM(stim_x_y_z_limits) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim_value)
+    OMP(parallel for private(stim_value))
     for(i = 0; i < n_active; i++) {
 
         bool stim;
@@ -461,7 +461,7 @@ SET_SPATIAL_STIM(stim_if_inside_circle_than) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for(i = 0; i < n_active; i++) {
         real_cpu dist = sqrt(pow(ac[i]->center.x - center_x, 2) + pow(ac[i]->center.y - center_y, 2) +
                              pow(ac[i]->center.z - center_z, 2));
@@ -495,7 +495,7 @@ SET_SPATIAL_STIM(stim_if_id_less_than) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for(i = 0; i < n_active; i++) {
         stim = i <= id;
 
@@ -527,7 +527,7 @@ SET_SPATIAL_STIM(stim_if_id_greater_than) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for(i = 0; i < n_active; i++) {
         stim = i >= id;
 
@@ -579,7 +579,7 @@ SET_SPATIAL_STIM(stim_concave) {
 
     ALLOCATE_STIMS();
 
-    #pragma omp parallel for private(stim_value)
+    OMP(parallel for private(stim_value))
     for(i = 0; i < n_active; i++) {
 
         bool stim_1, stim_2;
@@ -619,7 +619,7 @@ SET_SPATIAL_STIM(stim_if_z_less_than) {
 
     ALLOCATE_STIMS();
 
-#pragma omp parallel for private(stim, stim_value)
+    OMP(parallel for private(stim, stim_value))
     for (i = 0; i < n_active; i++) {
         stim = ac[i]->center.z < z_limit;
 

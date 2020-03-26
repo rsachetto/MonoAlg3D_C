@@ -38,7 +38,7 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     }
     #endif
 
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(uint32_t i = 0; i < num_active_cells; i++) {
         alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
 
@@ -78,7 +78,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
     }
 #endif
 
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(uint32_t i = 0; i < num_active_cells; i++)
     {
         // 1) Calculate alpha for the diagonal element

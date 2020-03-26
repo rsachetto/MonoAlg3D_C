@@ -109,7 +109,7 @@ void set_grid_flux(struct grid *the_grid) {
 
     int i;
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < active_cells; i++) {
         ac[i]->north_flux = 0.0;
         ac[i]->south_flux = 0.0;
@@ -119,7 +119,7 @@ void set_grid_flux(struct grid *the_grid) {
         ac[i]->back_flux = 0.0;
     }
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < active_cells; i++) {
         set_cell_flux(ac[i], 's'); // Computes south flux.
         set_cell_flux(ac[i], 'n'); // Computes north flux.

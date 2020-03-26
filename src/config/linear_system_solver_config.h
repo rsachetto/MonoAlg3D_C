@@ -10,15 +10,15 @@
 #include "config_common.h"
 
 #define SOLVE_LINEAR_SYSTEM(name)                                                                                      \
-    EXPORT_FN void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                     \
+              void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                     \
                         uint32_t num_active_cells, struct cell_node **active_cells,                                    \
                         uint32_t *number_of_iterations, real_cpu *error)
 typedef SOLVE_LINEAR_SYSTEM(linear_system_solver_fn);
 
-#define INIT_LINEAR_SYSTEM(name) EXPORT_FN void name(struct config *config, struct grid *the_grid)
+#define INIT_LINEAR_SYSTEM(name)  void name(struct config *config, struct grid *the_grid)
 typedef INIT_LINEAR_SYSTEM(init_linear_system_solver_fn);
 
-#define END_LINEAR_SYSTEM(name) EXPORT_FN void name(struct config *config)
+#define END_LINEAR_SYSTEM(name)  void name(struct config *config)
 typedef END_LINEAR_SYSTEM(end_linear_system_solver_fn);
 
 #define CALL_INIT_LINEAR_SYSTEM(config, grid)                                                                          \

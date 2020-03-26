@@ -22,7 +22,7 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
     int i;
     bool inside;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for (i = 0; i < num_active_cells; i++)
     {
         real center_x = ac[i]->center.x;
@@ -57,14 +57,14 @@ SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
 //    bool inside;
 
     // Purkinje section
-    #pragma omp parallel for
+    OMP(parallel for)
     for (i = 0; i < num_active_purkinje_cells; i++)
     {
         mapping[i] = 0;   
     }
 
     // Tissue section
-    #pragma omp parallel for
+    OMP(parallel for)
     for (i = num_active_purkinje_cells; i < num_active_cells; i++)
     {
         mapping[i] = 1;        

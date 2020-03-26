@@ -82,7 +82,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     cudaMemcpy(d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice); //A
     real *rhs = (real*) malloc(sizeof(real)*num_active_cells);
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
         rhs[i] = active_cells[i]->b;
     }
@@ -182,7 +182,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     real *rhs; //Vector B
     rhs = (real*) malloc(sizeof(real)*num_active_cells);
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
         rhs[i] = active_cells[i]->b;
     }
@@ -288,7 +288,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     *number_of_iterations = k-1;
     *error = r1;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
         active_cells[i]->v = rhs[i];
     }
@@ -331,7 +331,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 
     uint32_t i;
 
-    #pragma omp parallel for reduction(+:rTr,rTz)
+    OMP(parallel for reduction(+:rTr,rTz))
     for (i = 0; i < num_active_cells; i++) {
 
         if(CG_INFO(active_cells[i]) == NULL) {
@@ -374,7 +374,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             // Computes Ap and pTAp. Uses Ax to store Ap.
             pTAp = 0.0;
 
-            #pragma omp parallel for reduction(+ : pTAp)
+            OMP(parallel for reduction(+ : pTAp))
             for (i = 0; i < num_active_cells; i++) {
 
                 active_cells[i]->Ax = 0.0;
@@ -402,7 +402,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             r1Tz1 = 0.0;
 
             // Computes new value of solution: u = u + alpha*p.
-            #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
+            OMP(parallel for reduction (+:r1Tr1,r1Tz1))
             for (i = 0; i < num_active_cells; i++) {
 
                 active_cells[i]->v += alpha * CG_P(active_cells[i]);
@@ -436,7 +436,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
             }
             //__________________________________________________________________
             //Computes int_vector p1 = r1 + beta*p and uses it to upgrade p.
-            #pragma omp parallel for
+            OMP(parallel for)
             for (i = 0; i < num_active_cells; i++) {
                 if(use_preconditioner) {
                     CG_P1(active_cells[i]) = CG_Z(active_cells[i]) + beta * CG_P(active_cells[i]);
@@ -535,7 +535,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
         //Jacobi iterations.
         while (*number_of_iterations < max_its) {
 
-            #pragma omp parallel for private (element,sigma)
+            OMP(parallel for private (element,sigma))
             for (uint32_t i = 0; i < num_active_cells; i++) {
                 if(JACOBI_INFO(active_cells[i]) == NULL) {
                     INITIALIZE_JACOBI_INFO(active_cells[i]);
@@ -558,7 +558,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
             real_cpu residue = 0.0;
             real_cpu sum;
 
-            #pragma omp parallel for private (element,sum) reduction (+:residue)
+            OMP(parallel for private (element,sum) reduction (+:residue))
             for (uint32_t i = 0; i < num_active_cells; i++) {
 
                 struct element *cell_elements = active_cells[i]->elements;
@@ -625,7 +625,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     //__________________________________________________________________________
     // Zero all entries on the int_vector x*A
     // And initialize the second guess vector x_aux
-    #pragma omp parallel for
+    OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++)
     {
 
@@ -641,7 +641,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     //__________________________________________________________________________
     //Computes int_vector A*x, x*A
     //xA must be fully calculated to start doing anything over the r_aux vector
-    #pragma omp parallel for private (element)
+    OMP(parallel for private (element))
     for (uint32_t i = 0; i < num_active_cells; i++)
     {
         struct element *cell_elements = active_cells[i]->elements;
@@ -655,7 +655,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             uint32_t col = element.column;
             active_cells[i]->Ax += element.value * element.cell->v;
 
-            #pragma omp critical
+            OMP(critical)
             BCG_XA(active_cells[col]) += element.value * BCG_X_AUX(active_cells[i]);
         }
     }
@@ -667,7 +667,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
     //Computes residues r, r_aux
     //scalar rTr = r^T * r_aux and
     //sets initial search directions p and p_aux.
-    #pragma omp parallel for private (element) reduction(+:rTr,rTz)
+    OMP(parallel for private (element) reduction(+:rTr,rTz))
     for (uint32_t i = 0; i < num_active_cells; i++)
     {
         struct element *cell_elements = active_cells[i]->elements;
@@ -705,11 +705,11 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
             // Computes Ap, pA and pTAp. Uses Ax to store Ap and xA to store pA
             pTAp = 0.0;
 
-            #pragma omp parallel for
+            OMP(parallel for)
             for (uint32_t i = 0; i < num_active_cells; i++)
                 BCG_XA(active_cells[i]) = 0.0;
 
-            #pragma omp parallel for private(element) reduction(+ : pTAp)
+            OMP(parallel for private(element) reduction(+ : pTAp))
             for (uint32_t i = 0; i < num_active_cells; i++)
             {
                 active_cells[i]->Ax = 0.0;
@@ -722,7 +722,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
                     uint32_t col = element.column;
                     active_cells[i]->Ax += element.value * BCG_P(element.cell);
 
-                    #pragma omp critical
+                    OMP(critical)
                     BCG_XA(active_cells[col]) += element.value * BCG_P_AUX(active_cells[i]);
                 }
 
@@ -746,7 +746,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
             // Computes new value of solution: u = u + alpha*p.
             //                                 u_aux = u_aux + alpha*p_aux
-            #pragma omp parallel for reduction (+:r1Tr1,r1Tz1)
+            OMP(parallel for reduction (+:r1Tr1,r1Tz1))
             for (uint32_t i = 0; i < num_active_cells; i++) {
 
                 active_cells[i]->v += alpha * BCG_P(active_cells[i]);
@@ -786,7 +786,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient)
 
             //__________________________________________________________________
             //Computes int_vector p1 = r1 + beta*p and uses it to upgrade p.
-            #pragma omp parallel for
+            OMP(parallel for)
             for (uint32_t i = 0; i < num_active_cells; i++)
             {
                 if(use_preconditioner)

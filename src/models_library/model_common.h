@@ -30,24 +30,24 @@ struct cell_model_data {
     char *model_library_path;
 };
 
-#define GET_CELL_MODEL_DATA(name) EXPORT_FN void name (struct cell_model_data *cell_model, bool get_initial_v, bool get_neq)
+#define GET_CELL_MODEL_DATA(name)  void name (struct cell_model_data *cell_model, bool get_initial_v, bool get_neq)
 typedef GET_CELL_MODEL_DATA (get_cell_model_data_fn);
 
 // CPU FUNCTIONS
-#define SET_ODE_INITIAL_CONDITIONS_CPU(name) EXPORT_FN void name (struct string_hash_entry *ode_extra_config, real *sv, uint32_t sv_id,  void* extra_data, size_t extra_data_bytes_size)
+#define SET_ODE_INITIAL_CONDITIONS_CPU(name)  void name (struct string_hash_entry *ode_extra_config, real *sv, uint32_t sv_id,  void* extra_data, size_t extra_data_bytes_size)
 typedef SET_ODE_INITIAL_CONDITIONS_CPU (set_ode_initial_conditions_cpu_fn);
 
 #define SOLVE_MODEL_ODES_CPU(name)                                                                                     \
-EXPORT_FN void name (struct string_hash_entry *ode_extra_config, real dt, real *sv, real *stim_currents, const uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
+ void name (struct string_hash_entry *ode_extra_config, real dt, real *sv, real *stim_currents, const uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
                int num_steps, void *extra_data)
 typedef SOLVE_MODEL_ODES_CPU (solve_model_ode_cpu_fn);
 
 // GPU FUNCTIONS
-#define SET_ODE_INITIAL_CONDITIONS_GPU(name) EXPORT_FN size_t name (struct string_hash_entry *ode_extra_config, real **sv, uint32_t num_volumes, void* extra_data, size_t extra_data_bytes_size)
+#define SET_ODE_INITIAL_CONDITIONS_GPU(name)  size_t name (struct string_hash_entry *ode_extra_config, real **sv, uint32_t num_volumes, void* extra_data, size_t extra_data_bytes_size)
 typedef SET_ODE_INITIAL_CONDITIONS_GPU (set_ode_initial_conditions_gpu_fn);
 
 #define SOLVE_MODEL_ODES_GPU(name)                                                                                     \
-EXPORT_FN void name (struct string_hash_entry *ode_extra_config, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
+ void name (struct string_hash_entry *ode_extra_config, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
                int num_steps, void *extra_data, size_t extra_data_bytes_size)
 typedef SOLVE_MODEL_ODES_GPU(solve_model_ode_gpu_fn);
 

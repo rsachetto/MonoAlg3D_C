@@ -940,7 +940,7 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
     (*(info_string))[index++] = strdup("Mesh information:");
 
     sprintf(tmp, " - Num. of Volumes: %u", n_active);
-    (*(info_string))[index++]  = strdup(tmp);
+    (*(info_string))[index++] = strdup(tmp);
 
     sprintf(tmp, " - Max X: %f", mesh_info->max_size.x);
     (*(info_string))[index++]  = strdup(tmp);
@@ -959,7 +959,6 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
 
     sprintf(tmp, " - Min Z: %f", mesh_info->min_size.z);
     (*(info_string))[index++]  = strdup(tmp);
-
 
     if(draw_type == DRAW_SIMULATION) {
         if (gui_config.paused) {
@@ -1477,8 +1476,8 @@ void init_and_open_gui_window() {
 
     Camera3D camera;
 
-    camera.position = (Vector3){11.082402f, 6.763101f, 8.921088f};  // Camera position
-    camera.target = (Vector3){ 1.081274f, -1.581945f, 0.196326f};
+    camera.position = (Vector3){ 0.1f, 0.1f, 20.f};  // Camera position
+    camera.target = (Vector3){ 0.f, 0.f, 0.f};
     camera.up       = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
     camera.fovy     = 45.0f;                                // Camera field-of-view Y
     camera.type     = CAMERA_PERSPECTIVE;                  // Camera mode type
@@ -1486,6 +1485,13 @@ void init_and_open_gui_window() {
     SetCameraMode(camera, CAMERA_FREE); // Set a free camera mode
 
     SetTargetFPS(60);
+
+    Image icon = LoadImage("res/icon.png");
+
+    if(icon.data)
+        SetWindowIcon(icon);
+
+    UnloadImage(icon);
 
     float scale = 1.0f;
 
@@ -1507,6 +1513,8 @@ void init_and_open_gui_window() {
             " - X to show/hide AP visualization",
             " - Q to show/hide scale",
             " - C to show/hide everything except grid",
+            " - F to open a simulation file",
+            " - O to open a simulation directory",
             " - . or , to change color scales",
             " - Right arrow to advance one dt when paused",
             " - Hold up arrow to advance time when paused",
@@ -1522,7 +1530,7 @@ void init_and_open_gui_window() {
     Vector2 error_message_witdh;
 
     struct mesh_info *mesh_info = new_mesh_info();
-    struct gui_state *gui_state = new_gui_state_with_font_sizes(12, 16);
+    struct gui_state *gui_state = new_gui_state_with_font_sizes(14, 18);
 
     bool end_info_box_strings_configured = false;
 
@@ -1578,9 +1586,21 @@ void init_and_open_gui_window() {
                 draw_vtk_unstructured_grid(mesh_offset, scale, gui_state);
             }
 
-            omp_unset_lock(&gui_config.draw_lock);
 
             EndMode3D();
+
+            if(gui_state->show_mesh_info_box) {
+                configure_mesh_info_box_strings(&mesh_info_box_strings, draw_type, mesh_info);
+
+                draw_box(&gui_state->mesh_info_box, text_offset, (const char **) mesh_info_box_strings,
+                         mesh_info_box_lines, (int)gui_state->font_size_small, font);
+
+                for (int i = 0; i < mesh_info_box_lines; i++) {
+                    free(mesh_info_box_strings[i]);
+                }
+            }
+            omp_unset_lock(&gui_config.draw_lock);
+
 
             if(gui_state->show_scale) {
                 draw_scale(font, gui_state->font_size_small, gui_config.int_scale, gui_state);
@@ -1604,17 +1624,6 @@ void init_and_open_gui_window() {
                         draw_box(&gui_state->end_info_box, text_offset, (const char **) end_info_box_strings,
                                  end_info_box_lines, (int)gui_state->font_size_small, font);
                     }
-                }
-            }
-
-            if(gui_state->show_mesh_info_box) {
-                configure_mesh_info_box_strings(&mesh_info_box_strings, draw_type, mesh_info);
-
-                draw_box(&gui_state->mesh_info_box, text_offset, (const char **) mesh_info_box_strings,
-                         mesh_info_box_lines, (int)gui_state->font_size_small, font);
-
-                for (int i = 0; i < mesh_info_box_lines; i++) {
-                    free(mesh_info_box_strings[i]);
                 }
             }
 
@@ -1653,7 +1662,8 @@ void init_and_open_gui_window() {
         }
 
         //Draw FPS
-        DrawText(TextFormat("%2i FPS", GetFPS()), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
+        int fps = GetFPS();
+        DrawText(TextFormat("%2i FPS", fps), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
         EndDrawing();
 
     }
