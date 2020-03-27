@@ -27,7 +27,7 @@ static bool initialized = false;
 
 static struct vtk_polydata_grid *vtk_polydata = NULL;
 
-void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name);
+void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);
 
 static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
@@ -232,13 +232,19 @@ SAVE_MESH(save_as_text_or_binary) {
 }
 
 
+struct save_as_vtk_or_vtu_persistent_data {
+    struct vtk_unstructured_grid * grid;
+    bool first_save_call;
+};
+
 INIT_SAVE_MESH(init_save_as_vtk_or_vtu) {
-    config->persistent_data = NULL;
+    config->persistent_data = malloc(sizeof(struct save_as_vtk_or_vtu_persistent_data));
+    ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid = NULL;
+    ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = true;
 }
 
 END_SAVE_MESH(end_save_as_vtk_or_vtu) {
     free(config->persistent_data);
-    config->persistent_data = NULL;
 }
 
 SAVE_MESH(save_as_vtk) {
@@ -247,12 +253,14 @@ SAVE_MESH(save_as_vtk) {
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
     int iteration_count = time_info->iteration;
 
-    if(!initialized) {
+    if(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
-        initialized = true;
+
+        ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = false;
+
     }
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
@@ -284,21 +292,29 @@ SAVE_MESH(save_as_vtk) {
     //TODO: change this. We dont need the current_t here
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    bool read_only_data = config->persistent_data != NULL;
-    new_vtk_unstructured_grid_from_alg_grid((struct vtk_unstructured_grid**)(&(config->persistent_data)), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
 
-    save_vtk_unstructured_grid_as_legacy_vtk((struct vtk_unstructured_grid*)(config->persistent_data), output_dir_with_file, binary);
+    save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
 
     if(the_grid->adaptive) {
-        free_vtk_unstructured_grid((struct vtk_unstructured_grid *) (config->persistent_data));
-        config->persistent_data = NULL;
+        free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid);
+        ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid = NULL;
     }
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
 }
 
-void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name) {
+static inline void write_pvd_header(FILE *pvd_file) {
+    fprintf(pvd_file, "<VTKFile type=\"Collection\" version=\"0.1\" compressor=\"vtkZLibDataCompressor\">\n");
+    fprintf(pvd_file, "\t<Collection>\n");
+    fprintf(pvd_file, "\t</Collection>\n");
+    fprintf(pvd_file, "</VTKFile>");
+}
+
+void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_call) {
+
     sds pvd_name = sdsnew(output_dir);
     pvd_name = sdscat(pvd_name, "/simulation_result.pvd");
 
@@ -307,10 +323,14 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
 
     if(!pvd_file) {
         pvd_file = fopen(pvd_name, "w");
-        fprintf(pvd_file, "<VTKFile type=\"Collection\" version=\"0.1\" compressor=\"vtkZLibDataCompressor\">\n");
-        fprintf(pvd_file, "\t<Collection>\n");
-        fprintf(pvd_file, "\t</Collection>\n");
-        fprintf(pvd_file, "</VTKFile>");
+        write_pvd_header(pvd_file);
+    }
+    else {
+        if(first_call) {
+            fclose(pvd_file);
+            pvd_file = fopen(pvd_name, "w");
+            write_pvd_header(pvd_file);
+        }
     }
 
     sdsfree(pvd_name);
@@ -329,7 +349,7 @@ SAVE_MESH(save_as_vtu) {
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
     int iteration_count = time_info->iteration;
 
-    if(!initialized) {
+    if(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
@@ -344,8 +364,11 @@ SAVE_MESH(save_as_vtu) {
 
         if(compress) binary = true;
 
-        initialized = true;
+        if(!save_pvd) {
+            ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = false;
+        }
     }
+
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
@@ -377,23 +400,24 @@ SAVE_MESH(save_as_vtu) {
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) {
-        add_file_to_pvd(current_t, output_dir, base_name);
+        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call);
+        ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = false;
     }
 
-    bool read_only_data = config->persistent_data != NULL;
-    new_vtk_unstructured_grid_from_alg_grid((struct vtk_unstructured_grid**)(&(config->persistent_data)), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
+    new_vtk_unstructured_grid_from_alg_grid(&((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
 
     if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed((struct vtk_unstructured_grid*)(config->persistent_data), output_dir_with_file, compression_level);
+        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
     }
     else {
-        save_vtk_unstructured_grid_as_vtu((struct vtk_unstructured_grid*)(config->persistent_data), output_dir_with_file, binary);
+        save_vtk_unstructured_grid_as_vtu(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
     }
 
     //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
     if(the_grid->adaptive) {
-        free_vtk_unstructured_grid((struct vtk_unstructured_grid *) (config->persistent_data));
-        config->persistent_data = NULL;
+        free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid);
+        ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid = NULL;
     }
 
     sdsfree(output_dir_with_file);
@@ -469,7 +493,10 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
 
     if(save_pvd)
     {
-        add_file_to_pvd(current_t, output_dir, base_name);
+        //TODO: we need an INIT en END function for this
+        static bool first_call = true;
+        add_file_to_pvd(current_t, output_dir, base_name, first_call);
+        first_call = false;
     }
 
     new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_polydata!=NULL,'v');
@@ -502,19 +529,18 @@ void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid,
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    if(save_pvd)
-    {
-        add_file_to_pvd(current_t, output_dir, base_name);
+    if(save_pvd) {
+        static bool first_call = true;
+        add_file_to_pvd(current_t, output_dir, base_name, first_call);
+        first_call = false;
     }
 
     new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_grid!=NULL);
 
-    if(compress)
-    {
+    if(compress) {
         save_vtk_unstructured_grid_as_vtu_compressed(*vtk_grid, output_dir_with_file, compression_level);
     }
-    else
-    {
+    else {
         save_vtk_unstructured_grid_as_vtu(*vtk_grid, output_dir_with_file, binary);
     }
 
@@ -640,16 +666,18 @@ struct save_with_activation_times_persistent_data {
     struct point_hash_entry *cell_was_active;
     struct point_voidp_hash_entry *activation_times;
     struct point_voidp_hash_entry *apds;
+    bool first_save_call;
 };
 
 INIT_SAVE_MESH(init_save_with_activation_times) {
 
     config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
-            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
-            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
-            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->num_activations, 0);
-            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
-            hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->num_activations, 0);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
+    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
+    ((struct save_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
 
 }
 

@@ -154,6 +154,10 @@ struct gui_state {
     float box_height;
 
     struct ap_graph_config *ap_graph_config;
+
+    Font font;
+
+    Camera3D camera;
 };
 
 struct mesh_info {
