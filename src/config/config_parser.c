@@ -14,6 +14,11 @@
 static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
+static const char *conversion_opt_string = "i:o:h?";
+static const struct option long_conversion_options[] = {{"input", required_argument, NULL, 'i'},
+                                                        {"output", required_argument, NULL, 'o'}
+};
+
 
 static const char *visualization_opt_string = "x:m:d:p:v:a:cs:t:h?";
 static const struct option long_visualization_options[] = {
@@ -128,6 +133,16 @@ void display_batch_usage(char **argv) {
     exit(EXIT_FAILURE);
 }
 
+void display_conversion_usage(char **argv) {
+
+    printf("Usage: %s [options]\n\n", argv[0]);
+    printf("Options:\n");
+    printf("--input  | -i [input]. Input directory or file. Default NULL.\n");
+    printf("--output | -o [output]. Input directory to save the converted files. Default NULL.\n");
+    printf("--help | -h. Shows this help and exit \n");
+    exit(EXIT_FAILURE);
+}
+
 void display_visualization_usage(char **argv) {
 
     printf("Usage: %s [options] input_folder \n\n", argv[0]);
@@ -183,6 +198,21 @@ void free_visualization_options(struct visualization_options * options) {
     free(options->files_prefix);
     free(options);
 }
+
+
+struct conversion_options * new_conversion_options() {
+    struct conversion_options *options = (struct conversion_options *)malloc(sizeof(struct conversion_options));
+    options->input = NULL;
+    options->output = NULL;
+    return options;
+};
+
+void free_conversion_options(struct conversion_options *options) {
+    free(options->input);
+    free(options->output);
+    free(options);
+}
+
 
 struct user_options *new_user_options() {
 
@@ -912,6 +942,38 @@ void parse_batch_options(int argc, char **argv, struct batch_options *user_args)
         }
 
         opt = getopt_long(argc, argv, batch_opt_string, long_batch_options, &option_index);
+    }
+}
+
+void parse_conversion_options(int argc, char **argv, struct conversion_options *user_args) {
+
+    int opt = 0;
+    int option_index;
+
+    opt = getopt_long_only(argc, argv, conversion_opt_string, long_conversion_options, &option_index);
+
+    while(opt != -1) {
+        switch(opt) {
+        case 'i':
+            user_args->input = strdup(optarg);
+            break;
+        case 'o':
+            user_args->output = strdup(optarg);
+            break;
+        case 'h': /* fall-through is intentional */
+        case '?':
+            display_conversion_usage(argv);
+            break;
+        default:
+            /* You won't actually get here. */
+            break;
+        }
+
+        opt = getopt_long(argc, argv, conversion_opt_string, long_conversion_options, &option_index);
+    }
+
+    if(!user_args->input) {
+        display_conversion_usage(argv);
     }
 }
 

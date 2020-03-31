@@ -151,28 +151,41 @@ struct visualization_options {
     real_cpu max_v, min_v, dt;
 };
 
+struct conversion_options {
+    char *input;
+    char *output;
+};
 
 void display_usage( char** argv );
 void display_batch_usage(char **argv);
+void display_conversion_usage(char **argv);
 
 struct user_options * new_user_options();
 struct batch_options * new_batch_options();
 struct visualization_options * new_visualization_options();
+struct conversion_options * new_conversion_options();
 
 void parse_options(int argc, char**argv, struct user_options *user_args);
 void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
 void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
+void parse_conversion_options(int argc, char **argv, struct conversion_options *user_args);
 
 void get_config_file(int argc, char**argv, struct user_options *user_args);
+
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
+
 void options_to_ini_file(struct user_options *config, char *ini_file_path);
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
+
 void free_user_options(struct user_options *s);
 void free_batch_options(struct batch_options * options);
 void free_visualization_options(struct visualization_options * options);
+void free_conversion_options(struct conversion_options *options);
+
 void maybe_issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
+
 
 #endif /* MONOALG3D_CONFIG_PARSER_H */
