@@ -286,7 +286,7 @@ static Vector3 find_mesh_center_vtk(struct mesh_info *mesh_info) {
     Vector3 result = (Vector3){0.0f, 0.0f, 0.0f};
     float dx, dy, dz;
     float mesh_center_x, mesh_center_y, mesh_center_z;
-    uint32_t num_points =grid_to_draw->points_per_cell;
+    uint32_t num_points = grid_to_draw->points_per_cell;
 
     float max_dx, max_dy, max_dz;
     float min_dx, min_dy, min_dz;
@@ -439,7 +439,6 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
 
     Vector3 cube_position;
     Vector3 cube_size;
-
 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;

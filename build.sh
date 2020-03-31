@@ -17,6 +17,7 @@ fi
 COMPILE_GUI=''
 COMPILE_MPI=''
 COMPILE_ALG_TO_GRAPH=''
+COMPILE_CONVERTER=''
 COMPILE_SIMULATOR=''
 
 GET_BUILD_OPTIONS "$@"
@@ -47,6 +48,7 @@ for i in "${BUILD_ARGS[@]}"; do
         COMPILE_MPI='y'
         COMPILE_ALG_TO_GRAPH='y'
         COMPILE_SIMULATOR='y'
+        COMPILE_CONVERTER='y'
     fi
     
     if [ "$i" == "simulator" ]; then        
@@ -63,7 +65,11 @@ for i in "${BUILD_ARGS[@]}"; do
     
     if [ "$i" == "graph" ]; then        
         COMPILE_ALG_TO_GRAPH='y'
-    fi    
+    fi
+
+     if [ "$i" == "converter" ]; then
+        COMPILE_CONVERTER='y'
+    fi
     
 done
 
@@ -148,6 +154,23 @@ fi
 DYNAMIC_DEPS="$DYNAMIC_DEPS logger"
 
 
+if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
+    ADD_SUBDIRECTORY "src/models_library"
+    ADD_SUBDIRECTORY "src/stimuli_library"
+    ADD_SUBDIRECTORY "src/domains_library"
+    ADD_SUBDIRECTORY "src/purkinje_library"
+    ADD_SUBDIRECTORY "src/extra_data_library"
+    ADD_SUBDIRECTORY "src/matrix_assembly_library"
+    ADD_SUBDIRECTORY "src/linear_system_solver_library"
+    ADD_SUBDIRECTORY "src/save_mesh_library"
+    ADD_SUBDIRECTORY "src/save_state_library"
+    ADD_SUBDIRECTORY "src/restore_state_library"
+    ADD_SUBDIRECTORY "src/update_monodomain_library"
+    ADD_SUBDIRECTORY "src/modify_domain"
+fi
+
+#COMPILE THE EXECUTABLES NOW
+
 if [ -n "$COMPILE_SIMULATOR" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
@@ -170,34 +193,18 @@ if [ -n "$COMPILE_MPI" ]; then
 
 fi
 
-if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
-    ADD_SUBDIRECTORY "src/models_library"
-    ADD_SUBDIRECTORY "src/stimuli_library"
-    ADD_SUBDIRECTORY "src/domains_library"
-    ADD_SUBDIRECTORY "src/purkinje_library"
-    ADD_SUBDIRECTORY "src/extra_data_library"
-    ADD_SUBDIRECTORY "src/matrix_assembly_library"
-    ADD_SUBDIRECTORY "src/linear_system_solver_library"
-    ADD_SUBDIRECTORY "src/save_mesh_library"
-    ADD_SUBDIRECTORY "src/save_state_library"
-    ADD_SUBDIRECTORY "src/restore_state_library"
-    ADD_SUBDIRECTORY "src/update_monodomain_library"
-    ADD_SUBDIRECTORY "src/modify_domain"
-fi
-
 if [ -n "$COMPILE_GUI" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_visualizer" "src/main_visualizer.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
 
-if [ -n "$COMPILE_ALG_TO_GRAPH" ]; then
-  #DYNAMIC_DEPS="dl m utils"
-  DYNAMIC_DEPS="dl m"
-  COMPILE_EXECUTABLE "MonoAlg3D_to_graph" "src/main_alg_to_graph.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH"
+if [ -n "$COMPILE_CONVERTER" ]; then
+    COMPILE_EXECUTABLE "MonoAlg3D_converter" "src/main_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
 
 FIND_CRITERION
 
 if [ -n "$CRITERION_FOUND" ]; then
+    # shellcheck disable=SC2034
     RUNTIME_OUTPUT_DIRECTORY=$ROOT_DIR/tests_bin
     ADD_SUBDIRECTORY "src/tests"
 fi

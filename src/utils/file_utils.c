@@ -30,10 +30,10 @@ char *get_current_directory() {
     return buf;
 }
 
-const char *get_filename_ext(const char *filename) {
+char *get_filename_ext(const char *filename) {
     const char *dot = strrchr(filename, '.');
     if(!dot || dot == filename) return NULL;
-    return dot + 1;
+    return strdup(dot + 1);
 }
 
 char * get_dir_from_path(const char * path) {
@@ -42,6 +42,25 @@ char * get_dir_from_path(const char * path) {
     last_slash = strrchr(path, '/');
     parent = strndup(path, last_slash - path + 1);
     return parent;
+}
+
+char * get_file_from_path(const char * path) {
+    char *last_slash = NULL;
+    char *file = NULL;
+    last_slash = strrchr(path, '/');
+    file = strndup(last_slash + 1,  path - last_slash + 1);
+    return file;
+}
+
+char *get_filename_without_ext(const char *filename) {
+    char *last_dot = NULL;
+    char *file = NULL;
+    last_dot = strrchr(filename, '.');
+
+    if(!last_dot || last_dot == filename) return (char*)filename;
+
+    file = strndup(filename,  strlen(filename) - strlen(last_dot));
+    return file;
 }
 
 int cp_file(const char *to, const char *from) {
@@ -265,6 +284,8 @@ string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {
 
     while ((dirp = readdir(dp)) != NULL) {
 
+        if(dirp->d_type != DT_REG) continue;
+
         char *file_name = strdup(dirp->d_name);
 
         if (prefix) {
@@ -307,8 +328,18 @@ bool dir_exists(const char *path) {
         return false;
 }
 
+void free_path_information(struct path_information *input_info) {
+    free(input_info->dir_name);
+    free(input_info->filename_without_extension);
+    free(input_info->file_extension);
+}
+
 void get_path_information(const char *path, struct path_information *input_info ) {
     struct stat info;
+
+    input_info->dir_name = NULL;
+    input_info->filename_without_extension = NULL;
+    input_info->file_extension = NULL;
 
     input_info->exists = false;
 
@@ -321,7 +352,14 @@ void get_path_information(const char *path, struct path_information *input_info 
     input_info->is_file = !(input_info->is_dir);
 
     if(input_info->is_file) {
-        input_info->file_extension = strdup(get_filename_ext(path));
+        input_info->file_extension = get_filename_ext(path);
+        char *file_name = get_file_from_path(path);
+        input_info->filename_without_extension = get_filename_without_ext(file_name);
+        input_info->dir_name = get_dir_from_path(path);
+        free(file_name);
+    }
+    else {
+        input_info->dir_name = strdup(path);
     }
 
     return;

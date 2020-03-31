@@ -202,6 +202,11 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
     hmfree(hash);
 }
 
+void binary_grid_error(struct vtk_unstructured_grid **vtk_grid) {
+    free(*vtk_grid);
+    *vtk_grid = NULL;
+}
+
 void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values) {
 
     if(!read_only_values) {
@@ -240,6 +245,8 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
     float half_face_y;
     float half_face_z;
 
+    char* source_limit = source + source_size;
+
     while(source_size) {
 
         if(!binary) {
@@ -259,33 +266,77 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             arrsetlen(line, 0);
         }
         else {
-            center_x = *(float *)(source);
-            source += sizeof(center_x);
-            source_size -= sizeof(center_x);
 
-            center_y = *(float *)(source);
-            source += sizeof(center_y);
-            source_size -= sizeof(center_y);
+            if(source < source_limit) {
+                center_x = *(float *)(source);
+                source += sizeof(center_x);
+                source_size -= sizeof(center_x);
+            }
+            else {
+                binary_grid_error(vtk_grid);
+                return;
+            }
 
-            center_z = *(float *)(source);
-            source += sizeof(center_z);
-            source_size -= sizeof(center_z);
 
-            half_face_x = *(float *)(source);
-            source += sizeof(half_face_x);
-            source_size -= sizeof(half_face_x);
+            if(source < source_limit) {
+                center_y = *(float *)(source);
+                source += sizeof(center_y);
+                source_size -= sizeof(center_y);
+            }
+            else {
+                binary_grid_error(vtk_grid);
+                return;
+            }
 
-            half_face_y = *(float *)(source);
-            source += sizeof(half_face_y);
-            source_size -= sizeof(half_face_y);
+            if(source < source_limit) {
+                center_z = *(float *)(source);
+                source += sizeof(center_z);
+                source_size -= sizeof(center_z);
+            }
+            else {
+                binary_grid_error(vtk_grid);
+                return;
+            }
 
-            half_face_z = *(float *)(source);
-            source += sizeof(half_face_z);
-            source_size -= sizeof(half_face_z);
+            if(source < source_limit) {
+                half_face_x = *(float *)(source);
+                source += sizeof(half_face_x);
+                source_size -= sizeof(half_face_x);
+            }
+            else {
+                binary_grid_error(vtk_grid);
+                return;
+            }
 
-            v = *(float *)(source);
-            source += sizeof(v);
-            source_size -= sizeof(v);
+            if(source < source_limit) {
+                half_face_y = *(float *)(source);
+                source += sizeof(half_face_y);
+                source_size -= sizeof(half_face_y);
+            }
+            else {
+                binary_grid_error(vtk_grid);
+                return;
+            }
+
+            if(source < source_limit) {
+                half_face_z = *(float *)(source);
+                source += sizeof(half_face_z);
+                source_size -= sizeof(half_face_z);
+            }
+            else {
+                binary_grid_error(vtk_grid);
+                return;
+            }
+
+            if(source < source_limit) {
+                v = *(float *)(source);
+                source += sizeof(v);
+                source_size -= sizeof(v);
+            }
+            else {
+                binary_grid_error(vtk_grid);
+                return;
+            }
 
         }
 
@@ -680,15 +731,12 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
     sds file_content = create_common_vtu_header(false, num_points, num_cells);
 
     if(binary) {
-        file_content = sdscat(
-                file_content,
-                "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"appended\" offset=\"0\">\n"); // First
-        // offset is
-        // always 0
+        // First offset is always 0
+        file_content = sdscat(file_content,"        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"appended\" offset=\"0\">\n");
+
 
     } else {
-        file_content =
-                sdscat(file_content, "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"ascii\">\n");
+        file_content = sdscat(file_content, "        <DataArray type=\"Float32\" Name=\"Scalars_\" format=\"ascii\">\n");
     }
 
     if(!binary) {
@@ -706,16 +754,24 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     file_content = sdscat(file_content, "      <Points>\n");
 
+    char data_size[3] = "32";
+
+    if(sizeof(real_cpu) == 8) {
+        data_size[0] = '6';
+        data_size[1] = '4';
+
+    }
+
     if(binary) {
         file_content = sdscatprintf(file_content,
-                                    "        <DataArray type=\"Float32\" Name=\"Points\" "
+                                    "        <DataArray type=\"Float%s\" Name=\"Points\" "
                                     "NumberOfComponents=\"3\" format=\"appended\" offset=\"%zu\">\n",
-                                    offset);
+                                    data_size, offset);
 
     } else {
         file_content =
-                sdscat(file_content,
-                       "        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+                sdscatprintf(file_content,
+                       "        <DataArray type=\"Float%s\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n", data_size);
     }
 
     if(!binary) {
@@ -730,7 +786,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     file_content = sdscat(file_content, "      <Cells>\n");
 
-    offset += (num_points * 4 * 3) + 8; // 3*32 bits float for each point
+    offset += (num_points * sizeof(real_cpu) * 3) + 8; // 3 float point number for each point
 
     if(binary) {
         file_content = sdscatprintf(
@@ -1269,6 +1325,49 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
     fclose(output_file);
 }
 
+void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary) {
+
+    sds file_content = sdsempty();
+
+    int64_t *cells = vtk_grid->cells;
+    point3d_array points = vtk_grid->points;
+
+    uint32_t n_active = vtk_grid->num_cells;
+
+    int num_points = vtk_grid->points_per_cell;
+    int j = num_points;
+
+    for (uint32_t i = 0; i < n_active*num_points; i+=num_points) {
+
+        float mesh_center_x, mesh_center_y, mesh_center_z;
+        real_cpu v;
+        float dx, dy, dz;
+
+        dx = fabs((points[cells[i]].x - points[cells[i+1]].x));
+        dy = fabs((points[cells[i]].y - points[cells[i+3]].y));
+        dz = fabs((points[cells[i]].z - points[cells[i+4]].z));
+
+        mesh_center_x = points[cells[i]].x + dx/2.0f;
+        mesh_center_y = points[cells[i]].y + dy/2.0f;
+        mesh_center_z = points[cells[i]].z + dz/2.0f;
+
+        v = vtk_grid->values[j-num_points];
+        j += 1;
+
+        file_content = sdscatprintf(file_content, "%g,%g,%g,%g,%g,%g,%g\n", mesh_center_x, mesh_center_y, mesh_center_z, dx/2.0f, dy/2.0f, dz/2.0f, v);
+
+    }
+    FILE *output_file = fopen(filename, "w");
+    if(binary) {
+        fwrite(file_content, sdslen(file_content), 1, output_file);
+    } else {
+        fprintf(output_file, "%s", file_content);
+    }
+
+    sdsfree(file_content);
+    fclose(output_file);
+}
+
 static int parse_vtk_legacy(char *source, size_t source_size, struct parser_state *state) {
 
     //ignoring the first two lines...
@@ -1713,7 +1812,7 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
     //TODO: this whole code is really convoluted. We can do better than this mess...
     size_t size;
 
-    struct parser_state *parser_state = calloc(1, sizeof(struct parser_state));
+    struct parser_state *parser_state = NULL;
 
     char *tmp = read_entire_file_with_mmap(file_name, &size);
 
@@ -1724,7 +1823,7 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
     char *source = tmp;
 
-    //TODO:
+    //TODO: Improve the file type inference
     //TRYING TO INFER THE FILE TYPE//////////////////////
     bool legacy  = (source[0] == '#');
 
@@ -1736,6 +1835,10 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
     ///////////////////////////////////
 
     size_t base64_outlen = 0;
+
+    if(legacy || xml ) {
+        parser_state =  calloc(1, sizeof(struct parser_state));
+    }
 
     if(activation_info) {
         new_vtk_unstructured_grid_from_string_with_activation_info(vtk_grid, &source[2], size-2);

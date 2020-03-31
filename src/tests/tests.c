@@ -236,7 +236,9 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
     if(save) {
         struct config *save_mesh_config = alloc_and_init_config_data();
 
+        save_mesh_config->init_function_name = strdup("init_save_as_vtk_or_vtu");
         save_mesh_config->main_function_name = strdup("save_as_vtu");
+        save_mesh_config->end_function_name = strdup("end_save_as_vtk_or_vtu");
         shput_dup_value(save_mesh_config->config_data, "output_dir", "./tests_bin");
         shput_dup_value(save_mesh_config->config_data, "print_rate", "1");
 
@@ -258,7 +260,9 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
 
         struct time_info ti = ZERO_TIME_INFO;
 
+        ((init_save_mesh_fn *)save_mesh_config->init_function)(save_mesh_config);
         ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
+        ((end_save_mesh_fn *)save_mesh_config->end_function)(save_mesh_config);
 
         free_config_data(save_mesh_config);
         sdsfree(file_prefix);
@@ -692,7 +696,7 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
 
 
     struct user_options *options = load_options_from_file("example_configs/plain_mesh_with_fibrosis_and_border_zone_inside_circle_example_2cm.ini");
-    options->final_time = 10.0;        
+    options->final_time = 10.0;
 
     free(options->save_mesh_config->main_function_name);
 
@@ -736,7 +740,7 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
     success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_no_precond, 5e-2f);
     success &= check_output_equals(out_dir_no_gpu_no_precond, out_dir_gpu_precond, 5e-2f);
     success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
-    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_precond, 5e-2f);    
+    success &= check_output_equals(out_dir_no_gpu_precond, out_dir_gpu_precond, 5e-2f);
     success &= check_output_equals(out_dir_gpu_precond, out_dir_gpu_no_precond, 5e-2f);
 
     cr_assert(success);
@@ -850,3 +854,20 @@ Test (utils, arr_element) {
 
     free(c);
 }
+
+//int main() {
+//
+//    int success = test_cuboid_mesh("100", "100", "200", "1000", "1000", "1000", true, false, true, 1);
+//    cr_assert(success);
+//
+//    FILE *f1 = fopen("tests_bin/test_100_100_200_1000_1000_1000_1_it_0.vtu", "r");
+//    FILE *f2 = fopen("tests_bin/gold_vtu_mesh_binary.vtu", "r");
+//
+//    success = compare_two_binary_files(f1, f2);
+//
+//    fclose(f1);
+//    fclose(f2);
+//
+//    cr_assert(success == -1);
+//
+//}
