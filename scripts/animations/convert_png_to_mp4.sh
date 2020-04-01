@@ -8,7 +8,7 @@
 FILENAME="frames/frame"
 FRAME_RATE="50"
 END_FRAME="1000"
-OUTPUT_VIDEO_FILENAME="videos/elnaz_purkinje_coupled_comparison_individual_20"
+OUTPUT_VIDEO_FILENAME="videos/elnaz_purkinje_coupled_comparison_individual_8"
 RESOLUTION="1566x744"
 
 # Execute the converting command using FFMPEG

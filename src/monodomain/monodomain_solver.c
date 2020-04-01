@@ -1346,6 +1346,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     const double apd_percentage = 0.9;
     const double begin_time = 999.0;
+    const double end_time = 2000.0;
 
     // V^n+1/2
     real *sv = the_ode_solver->sv;
@@ -1365,7 +1366,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 #pragma omp parallel for
         for(i = 0; i < n_active; i++)
         {
-	    if (cur_time > begin_time)
+	    if (cur_time > begin_time && cur_time < end_time)
             {
 		    real v_new = vms[ac[i]->sv_position];
 		    real v_old = (real)ac[i]->v;
@@ -1413,7 +1414,7 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 #pragma omp parallel for
         for(i = 0; i < n_active; i++)
         {
-	    if (cur_time > begin_time)
+	    if (cur_time > begin_time && cur_time < end_time)
 	    {
 		    real v_new = sv[ac[i]->sv_position * n_odes];
 		    real v_old = (real)ac[i]->v;
