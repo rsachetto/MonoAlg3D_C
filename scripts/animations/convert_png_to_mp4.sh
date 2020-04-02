@@ -6,10 +6,10 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="50"
-END_FRAME="1000"
-OUTPUT_VIDEO_FILENAME="videos/elnaz_purkinje_coupled_comparison_individual_8"
-RESOLUTION="1566x744"
+FRAME_RATE="5"
+END_FRAME="50"
+OUTPUT_VIDEO_FILENAME="videos/elizabeth_biventricular_mesh"
+RESOLUTION="1584x470"
 
 # Execute the converting command using FFMPEG
 ffmpeg -r ${FRAME_RATE} -f image2 -s ${RESOLUTION} -start_number 1 -i ${FILENAME}.%04d.png -vframes ${END_FRAME} -vcodec libx264 -crf 25  -pix_fmt yuv420p ${OUTPUT_VIDEO_FILENAME}.mp4
