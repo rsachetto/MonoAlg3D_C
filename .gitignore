@@ -92,7 +92,6 @@ scripts/animations/frames
 scripts/animations/video
 scripts/animations/*.mp4
 scripts/apd_error/*.png
-scr
 batch_simulations/
 /src/main_graph_analyzer.c
 tests_bin/simulation_result.pvd
@@ -119,3 +118,8 @@ src/3dparty/raylib/src/external/glfw/src/glfw.rc.in
 */.*last_compiled_time_bbash
 
 
+/tests_bin/TestLibs
+/tests_bin/TestMesh
+/tests_bin/TestSimulations
+/tests_bin/TestSolver
+/tests_bin/TestSolvers
