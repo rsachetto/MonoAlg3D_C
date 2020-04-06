@@ -989,8 +989,8 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
 
     fwrite(first_file_part, sdslen(first_file_part), 1, output_file);
     sdsfree(first_file_part);
-    {
 
+    {
         size_t data_size;
 
         size_t data_size_after_compression_for_values;

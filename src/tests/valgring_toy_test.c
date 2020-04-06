@@ -59,7 +59,7 @@ int main() {
     shput_dup_value(save_mesh_config->config_data, "file_prefix", "test_valgrind");
     shput_dup_value(save_mesh_config->config_data, "compress", "yes");
 
-    struct time_info ti = TIME_INFO(0, 0.0, 0.0, 0.0);
+    struct time_info ti = ZERO_TIME_INFO;
 
     ((save_mesh_fn*)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
 

@@ -275,24 +275,24 @@ struct user_options *new_user_options() {
     user_args->quiet_was_set = false;
 
     user_args->stim_configs = NULL;
-        sh_new_arena(user_args->stim_configs);
-        shdefault(user_args->stim_configs, NULL);
+    sh_new_arena(user_args->stim_configs);
+    shdefault(user_args->stim_configs, NULL);
 
     user_args->purkinje_stim_configs = NULL;
-        sh_new_arena(user_args->purkinje_stim_configs);
-        shdefault(user_args->purkinje_stim_configs, NULL);
+    sh_new_arena(user_args->purkinje_stim_configs);
+    shdefault(user_args->purkinje_stim_configs, NULL);
 
     user_args->purkinje_ode_extra_config = NULL;
-        sh_new_arena(user_args->purkinje_ode_extra_config);
-        shdefault(user_args->purkinje_ode_extra_config, NULL);
+    sh_new_arena(user_args->purkinje_ode_extra_config);
+    shdefault(user_args->purkinje_ode_extra_config, NULL);
 
     user_args->modify_domain_configs = NULL;
-        sh_new_arena(user_args->modify_domain_configs);
-        shdefault(user_args->modify_domain_configs, NULL);
+    sh_new_arena(user_args->modify_domain_configs);
+    shdefault(user_args->modify_domain_configs, NULL);
 
     user_args->ode_extra_config = NULL;
-        sh_new_arena(user_args->ode_extra_config);
-        shdefault(user_args->ode_extra_config, NULL);
+    sh_new_arena(user_args->ode_extra_config);
+    shdefault(user_args->ode_extra_config, NULL);
 
     user_args->domain_config = NULL;
     user_args->purkinje_config = NULL;
@@ -489,8 +489,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
         sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
 
         if(values_count != 2) {
-            fprintf(stderr, "Invalid format for option %s. Exiting!\n", args);
-            exit(EXIT_FAILURE);
+            log_to_stderr_and_file_and_exit("Invalid format for option %s. Exiting!\n", args);
         }
 
         if(strcmp(key_value[0], "name") == 0) {
@@ -503,8 +502,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
     }
 
     if(stim_name == NULL) {
-        fprintf(stderr, "The stimulus name must be passed in the stimulus option! Exiting!\n");
-        exit(EXIT_FAILURE);
+        log_to_stderr_and_file_and_exit("The stimulus name must be passed in the stimulus option! Exiting!\n");
     }
 
     struct config *sc = (struct config*) shget(stim_configs, stim_name);

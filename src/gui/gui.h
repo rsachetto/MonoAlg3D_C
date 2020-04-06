@@ -148,16 +148,29 @@ struct gui_state {
 
     Vector2 mouse_pos;
     Vector2 sub_window_pos;
-    bool drag_sub_window;
+    bool move_sub_window;
 
     float box_width;
     float box_height;
 
     struct ap_graph_config *ap_graph_config;
 
+    Vector3 coordinates_cube;
+    Vector3 coordinates_cube_size;
+
+    bool show_coordinates;
+    bool move_coordinates;
+
+    Vector2 coordinates_label_x_position;
+    Vector2 coordinates_label_y_position;
+    Vector2 coordinates_label_z_position;
+
     Font font;
 
     Camera3D camera;
+
+    bool double_clicked;
+
 };
 
 struct mesh_info {
