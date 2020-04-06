@@ -3,8 +3,6 @@
 //
 #include <float.h>
 #include <time.h>
-#include <limits.h>
-#include <unistd.h>
 #include <string.h>
 
 #include "../3dparty/tinyfiledialogs/tinyfiledialogs.h"
@@ -15,7 +13,6 @@
 #include "gui.h"
 
 //RAYLIB//////
-#include "../3dparty/raylib/src/raylib.h"
 #include "../3dparty/raylib/ricons.h"
 #include "../3dparty/raylib/src/camera.h"
 
@@ -25,7 +22,9 @@
 #undef RAYGUI_IMPLEMENTATION
 
 #define GUI_TEXTBOX_EXTENDED_IMPLEMENTATION
+#include "../3dparty/raylib/src/external/glad.h"
 #include "../3dparty/raylib/src/gui_textbox_extended.h"
+#include "../3dparty/raylib/src/rlgl.h"
 /////////
 
 static int current_window_height = 0;
@@ -74,7 +73,7 @@ static struct gui_state * new_gui_state_with_font_sizes(int font_size_small, int
     gui_state->scale_alpha = 255;
     gui_state->mouse_timer = -1;
     gui_state->selected_time = 0.0;
-    gui_state->drag_sub_window = false;
+    gui_state->move_sub_window = false;
 
     gui_state->ap_graph_config = (struct ap_graph_config*) malloc(sizeof(struct ap_graph_config));
     gui_state->ap_graph_config->selected_ap_point = (Vector2) {FLT_MAX, FLT_MAX};
@@ -99,6 +98,12 @@ static struct gui_state * new_gui_state_with_font_sizes(int font_size_small, int
 
     gui_state->scale_bounds.width = 20;
     gui_state->scale_bounds.height = 0;
+
+    gui_state->show_coordinates = true;
+
+    gui_state->coordinates_cube_size = (Vector3){1.2,1.2,1.2};
+
+    gui_state->double_clicked = false;
 
     return gui_state;
 }
@@ -144,31 +149,6 @@ static inline Color get_color(real_cpu value, int alpha, int current_scale) {
     result.a = alpha;
 
     return result;
-}
-
-static inline bool skip_node(struct cell_node *grid_cell) {
-
-    if(!cell_has_neighbour(grid_cell, grid_cell->north) ) {
-        return false;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->south) ) {
-        return false;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->west) ) {
-        return false;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->east) ) {
-        return false;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->front) ) {
-        return false;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->back) ) {
-        return false;
-    }
-    else {
-        return true;
-    }
 }
 
 static Vector3 find_mesh_center(struct mesh_info *mesh_info) {
@@ -372,7 +352,7 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
     p.y = cube_position_draw.y;
     p.z = cube_position_draw.z;
 
-    bool collision;
+    bool collision = false;
 
     real_cpu max_v = gui_config.max_v;
     real_cpu min_v = gui_config.min_v;
@@ -393,9 +373,14 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
         }
     }
 
-    collision = CheckCollisionRayBox(gui_state->ray,
-                                     (BoundingBox){(Vector3){ cube_position_draw.x - cube_size.x/2, cube_position_draw.y - cube_size.y/2, cube_position_draw.z - cube_size.z/2 },
-                                                   (Vector3){ cube_position_draw.x + cube_size.x/2, cube_position_draw.y + cube_size.y/2, cube_position_draw.z + cube_size.z/2 }});
+    if(gui_state->double_clicked) {
+        collision = CheckCollisionRayBox(
+            gui_state->ray,
+            (BoundingBox){(Vector3){cube_position_draw.x - cube_size.x / 2, cube_position_draw.y - cube_size.y / 2,
+                                    cube_position_draw.z - cube_size.z / 2},
+                          (Vector3){cube_position_draw.x + cube_size.x / 2, cube_position_draw.y + cube_size.y / 2,
+                                    cube_position_draw.z + cube_size.z / 2}});
+    }
 
     if(collision && !gui_state->one_selected) {
         gui_state->current_selected_volume = (Vector3){cube_position_mesh.x, cube_position_mesh.y, cube_position_mesh.z};
@@ -474,7 +459,6 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
         cube_size.z = (float)(dz/scale);
 
         draw_voxel(cube_position, (Vector3){mesh_center_x, mesh_center_y, mesh_center_z}, cube_size, v, gui_state);
-
     }
     gui_state->one_selected = false;
 }
@@ -498,7 +482,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, struct gui_state 
 
                 grid_cell = ac[i];
 
-                if(skip_node(grid_cell)) {
+                if(!cell_is_visible(grid_cell)) {
                     continue;
                 }
 
@@ -740,6 +724,7 @@ static void draw_ap_graph(struct gui_state *gui_state, Font font) {
         }
     }
 
+    //Draw AP coordinates over mouse cursor
     if(!gui_state->ap_graph_config->drag_ap_graph && gui_state->ap_graph_config->selected_ap_point.x != FLT_MAX && gui_state->ap_graph_config->selected_ap_point.y != FLT_MAX) {
         char *tmp_point = "%lf, %lf";
         sprintf(tmp, tmp_point, gui_state->ap_graph_config->selected_ap_point.x, gui_state->ap_graph_config->selected_ap_point.y);
@@ -791,25 +776,18 @@ static inline void drag_scale(Vector2 new_pos, Rectangle *box) {
 }
 
 
-static void check_window_change(Rectangle *box) {
+static void check_window_bounds(Rectangle *box) {
+    if (box->x + box->width > current_window_width)
+        move_rect((Vector2){current_window_width - box->width - 10, box->y}, box);
 
-    if (IsWindowResized()) {
-
-        current_window_height = GetScreenHeight();
-        current_window_width = GetScreenWidth();
-
-        if (box->x + box->width > current_window_width)
-            move_rect((Vector2){current_window_width - box->width - 10, box->y}, box);
-
-        if (box->y + box->height > current_window_height)
-            move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
-    }
+    if (box->y + box->height > current_window_height)
+        move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
 }
 
 static void draw_scale(struct gui_state *gui_state, bool int_scale) {
 
     static const int scale_width = 20;
-    check_window_change(&(gui_state->scale_bounds));
+    check_window_bounds(&(gui_state->scale_bounds));
 
     static bool calc_bounds = true;
 
@@ -893,7 +871,7 @@ static void draw_scale(struct gui_state *gui_state, bool int_scale) {
 
 static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, int font_size_for_line, Font font) {
 
-    check_window_change(box);
+    check_window_bounds(box);
 
     int text_x = (int)box->x + 20;
     int text_y = (int)box->y + 10;
@@ -1225,7 +1203,8 @@ static void handle_keyboard_input(bool *mesh_loaded, struct mesh_info *mesh_info
         gui_state->show_help_box = gui_state->c_pressed;
         gui_state->show_end_info_box = gui_state->c_pressed;
         gui_state->show_mesh_info_box = gui_state->c_pressed;
-        gui_state-> c_pressed = !gui_state->c_pressed;
+        gui_state->c_pressed = !gui_state->c_pressed;
+        gui_state->show_coordinates = !gui_state->show_coordinates;
         return;
     }
 
@@ -1300,32 +1279,60 @@ static void handle_input(bool *mesh_loaded, struct mesh_info *mesh_info, struct 
     gui_state->mouse_pos = GetMousePosition();
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y,
-                                                                     gui_state->box_width - 18, WINDOW_STATUSBAR_HEIGHT })) {
-            gui_state->drag_sub_window = true;
+
+        gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
+
+        if(!gui_state->show_selection_box) {
+
+            if (gui_state->mouse_timer == -1) {
+
+                gui_state->double_clicked = false;
+                gui_state->mouse_timer = GetTime();
+
+            } else {
+
+                double delay = GetTime() - gui_state->mouse_timer;
+
+                if (delay < DOUBLE_CLICK_DELAY) {
+                    gui_state->double_clicked = true;
+                    gui_state->mouse_timer = -1;
+                } else {
+                    gui_state->mouse_timer = -1;
+                    gui_state->double_clicked = false;
+                }
+            }
         }
 
-        if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->drag_graph_button_position)) {
+        if (CheckCollisionRayBox(gui_state->ray,
+                                 (BoundingBox){(Vector3){ gui_state->coordinates_cube.x - gui_state->coordinates_cube_size.x/2.0,
+                                                          gui_state->coordinates_cube.y - gui_state->coordinates_cube_size.y/2.0,
+                                                          gui_state->coordinates_cube.z - gui_state->coordinates_cube_size.z/2.0},
+                                               (Vector3){ gui_state->coordinates_cube.x + gui_state->coordinates_cube_size.x/2.0,
+                                                          gui_state->coordinates_cube.y + gui_state->coordinates_cube_size.y/2.0,
+                                                          gui_state->coordinates_cube.z + gui_state->coordinates_cube_size.z/2.0}})) {
+            gui_state->move_coordinates = true;
+        }
+
+        else if (CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y,
+                                                                     gui_state->box_width - 18, WINDOW_STATUSBAR_HEIGHT })) {
+            gui_state->move_sub_window = true;
+        }
+        else if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->drag_graph_button_position)) {
             gui_state->ap_graph_config->drag_ap_graph = true;
         }
-
-        if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->move_graph_button_position)) {
+        else if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->move_graph_button_position)) {
             gui_state->ap_graph_config->move_ap_graph = true;
         }
-
-        if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->help_box)) {
+        else if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->help_box)) {
             gui_state->move_help_box = true;
         }
-
-        if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->mesh_info_box)) {
+        else if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->mesh_info_box)) {
             gui_state->move_info_box = true;
         }
-
-        if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->end_info_box)) {
+        else if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->end_info_box)) {
             gui_state->move_end_info_box = true;
         }
-
-        if (CheckCollisionPointRec(gui_state->mouse_pos,
+        else if (CheckCollisionPointRec(gui_state->mouse_pos,
                 (Rectangle){gui_state->scale_bounds.x, gui_state->scale_bounds.y - gui_state->scale_bounds.height,
                             gui_state->scale_bounds.width, gui_state->scale_bounds.height})) {
             gui_state->move_scale = true;
@@ -1333,84 +1340,7 @@ static void handle_input(bool *mesh_loaded, struct mesh_info *mesh_info, struct 
 
     }
 
-    if (gui_state->drag_sub_window) {
-        gui_state->sub_window_pos.x = (gui_state->mouse_pos.x) - (gui_state->box_width - 18) / 2;
-        gui_state->sub_window_pos.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2;
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->drag_sub_window = false;
-    }
-
-    if (gui_state->ap_graph_config->drag_ap_graph) {
-
-        float new_heigth  = gui_state->ap_graph_config->graph.height + (gui_state->ap_graph_config->graph.y -  gui_state->mouse_pos.y);
-
-        if(new_heigth > 100){
-            gui_state->ap_graph_config->graph.height = new_heigth;
-            gui_state->ap_graph_config->graph.y = gui_state->mouse_pos.y;
-        }
-
-        float new_width = gui_state->mouse_pos.x - gui_state->ap_graph_config->graph.x;
-
-        if(new_width > 200) {
-            gui_state->ap_graph_config->graph.width = new_width;
-        }
-
-        gui_state->ap_graph_config->selected_point_for_apd1.x = FLT_MAX;
-        gui_state->ap_graph_config->selected_point_for_apd1.y = FLT_MAX;
-        gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
-        gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
-
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->ap_graph_config->drag_ap_graph = false;
-    }
-
-    if (gui_state->ap_graph_config->move_ap_graph) {
-
-        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.x + gui_state->ap_graph_config->graph.width < (float)GetScreenWidth()) {
-            gui_state->ap_graph_config->graph.x = gui_state->mouse_pos.x;
-        }
-
-        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.y + gui_state->ap_graph_config->graph.height < (float)GetScreenHeight()) {
-            gui_state->ap_graph_config->graph.y = gui_state->mouse_pos.y;
-        }
-
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->ap_graph_config->move_ap_graph = false;
-
-        gui_state->ap_graph_config->selected_point_for_apd1.x = FLT_MAX;
-        gui_state->ap_graph_config->selected_point_for_apd1.y = FLT_MAX;
-        gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
-        gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
-    }
-
-    if (gui_state->move_help_box) {
-        drag_box(gui_state->mouse_pos, &gui_state->help_box);
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_help_box = false;
-    }
-    else if(gui_state->move_info_box) {
-        drag_box(gui_state->mouse_pos, &gui_state->mesh_info_box);
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_info_box = false;
-    }
-    else if(gui_state->move_scale) {
-        drag_scale(gui_state->mouse_pos, &gui_state->scale_bounds);
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_scale = false;
-    } else if(gui_state->move_end_info_box) {
-        drag_box(gui_state->mouse_pos, &gui_state->end_info_box);
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_end_info_box = false;
-
-    }
-
-    if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
-        float t = normalize(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config.final_time, gui_state->mouse_pos.x);
-        float v = normalize(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config.min_v, gui_config.max_v, gui_state->mouse_pos.y);
-        if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
-            gui_state->ap_graph_config->selected_ap_point.x = t;
-            gui_state->ap_graph_config->selected_ap_point.y = v;
-        }
-        else {
-            gui_state->ap_graph_config->selected_ap_point.x = FLT_MAX;
-            gui_state->ap_graph_config->selected_ap_point.y = FLT_MAX;
-        }
-    }
-
-    if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+    else if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
         if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
             if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
                 if(gui_state->ap_graph_config->selected_point_for_apd1.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y == FLT_MAX) {
@@ -1435,23 +1365,104 @@ static void handle_input(bool *mesh_loaded, struct mesh_info *mesh_info, struct 
         }
     }
 
-    if(!gui_state->show_selection_box) {
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (gui_state->mouse_timer == -1) {
-                gui_state->mouse_timer = GetTime();
-            } else {
-                double delay = GetTime() - gui_state->mouse_timer;
-
-                if (delay < DOUBLE_CLICK_DELAY) {
-                    gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
-                    gui_state->mouse_timer = -1;
-                } else {
-                    gui_state->mouse_timer = -1;
-                }
-
-            }
-        }
+    if (gui_state->move_sub_window) {
+        gui_state->sub_window_pos.x = (gui_state->mouse_pos.x) - (gui_state->box_width - 18) / 2;
+        gui_state->sub_window_pos.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2;
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_sub_window = false;
     }
+    else if (gui_state->move_coordinates) {
+
+        Matrix proj = MatrixPerspective(gui_state->camera.fovy * DEG2RAD, ((double)GetScreenWidth()/(double)GetScreenHeight()), DEFAULT_NEAR_CULL_DISTANCE, DEFAULT_FAR_CULL_DISTANCE);
+        Matrix view = MatrixLookAt(gui_state->camera.position, gui_state->camera.target, gui_state->camera.up);
+
+        float x = (2.0f*gui_state->mouse_pos.x)/(float)GetScreenWidth() - 1.0f;
+        float y = 1.0f - (2.0f*gui_state->mouse_pos.y)/(float)GetScreenHeight();
+        float z = 1.0f;
+
+        Vector3 result = rlUnproject((Vector3){x, y, -1}, proj, view);
+
+        gui_state->coordinates_cube = (Vector3){result.x,result.y, gui_state->coordinates_cube.z};
+
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_coordinates = false;
+    }
+
+    else if (gui_state->ap_graph_config->drag_ap_graph) {
+
+
+        float new_heigth  = gui_state->ap_graph_config->graph.height + (gui_state->ap_graph_config->graph.y -  gui_state->mouse_pos.y);
+
+        if(new_heigth > 100){
+            gui_state->ap_graph_config->graph.height = new_heigth;
+            gui_state->ap_graph_config->graph.y = gui_state->mouse_pos.y;
+        }
+
+        float new_width = gui_state->mouse_pos.x - gui_state->ap_graph_config->graph.x;
+
+        if(new_width > 200) {
+            gui_state->ap_graph_config->graph.width = new_width;
+        }
+
+        gui_state->ap_graph_config->selected_point_for_apd1.x = FLT_MAX;
+        gui_state->ap_graph_config->selected_point_for_apd1.y = FLT_MAX;
+        gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
+        gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
+
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->ap_graph_config->drag_ap_graph = false;
+    }
+
+    else if (gui_state->ap_graph_config->move_ap_graph) {
+
+        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.x + gui_state->ap_graph_config->graph.width < (float)GetScreenWidth()) {
+            gui_state->ap_graph_config->graph.x = gui_state->mouse_pos.x;
+        }
+
+        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.y + gui_state->ap_graph_config->graph.height < (float)GetScreenHeight()) {
+            gui_state->ap_graph_config->graph.y = gui_state->mouse_pos.y;
+        }
+
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->ap_graph_config->move_ap_graph = false;
+
+        gui_state->ap_graph_config->selected_point_for_apd1.x = FLT_MAX;
+        gui_state->ap_graph_config->selected_point_for_apd1.y = FLT_MAX;
+        gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
+        gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
+    }
+
+    else if (gui_state->move_help_box) {
+        drag_box(gui_state->mouse_pos, &gui_state->help_box);
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_help_box = false;
+    }
+    else if(gui_state->move_info_box) {
+        drag_box(gui_state->mouse_pos, &gui_state->mesh_info_box);
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_info_box = false;
+    }
+    else if(gui_state->move_scale) {
+        drag_scale(gui_state->mouse_pos, &gui_state->scale_bounds);
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_scale = false;
+    }
+    else if(gui_state->move_end_info_box) {
+        drag_box(gui_state->mouse_pos, &gui_state->end_info_box);
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_end_info_box = false;
+
+    }
+
+    if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
+        float t = normalize(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config.final_time, gui_state->mouse_pos.x);
+        float v = normalize(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config.min_v, gui_config.max_v, gui_state->mouse_pos.y);
+        if (CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
+            gui_state->ap_graph_config->selected_ap_point.x = t;
+            gui_state->ap_graph_config->selected_ap_point.y = v;
+        }
+        else {
+            gui_state->ap_graph_config->selected_ap_point.x = FLT_MAX;
+            gui_state->ap_graph_config->selected_ap_point.y = FLT_MAX;
+        }
+
+    }
+
+
+
+
 }
 
 static int configure_info_boxes_sizes(struct gui_state *gui_state) {
@@ -1479,6 +1490,51 @@ static int configure_info_boxes_sizes(struct gui_state *gui_state) {
 
     return text_offset;
 }
+
+
+
+void draw_coordinates(struct gui_state *gui_state) {
+
+    const float line_size = 1.0f;
+    const float arrow_offset = 0.1f;
+    static bool first_draw = true;
+
+    if(first_draw) {
+        gui_state->coordinates_cube = (Vector3){-(line_size / 2.0) + 0.5, -7 + 0.5, 0.5};
+        first_draw = false;
+    }
+
+    Vector3 start_pos = (Vector3){gui_state->coordinates_cube.x-0.5, gui_state->coordinates_cube.y-0.5, gui_state->coordinates_cube.z-0.5};
+    Vector3 end_pos = (Vector3){start_pos.x + line_size, start_pos.y, 0.0};
+
+    DrawLine3D(start_pos, end_pos,  RED);
+    DrawLine3D((Vector3){end_pos.x - arrow_offset, end_pos.y + arrow_offset, end_pos.z}, end_pos, RED);
+    DrawLine3D((Vector3){end_pos.x - arrow_offset, end_pos.y - arrow_offset, end_pos.z}, end_pos, RED);
+
+    gui_state->coordinates_label_x_position =  GetWorldToScreen(end_pos, gui_state->camera);
+
+    end_pos = (Vector3){start_pos.x, start_pos.y + line_size, end_pos.z};
+
+    DrawLine3D(start_pos, end_pos,  GREEN);
+    DrawLine3D((Vector3){end_pos.x - arrow_offset, end_pos.y - arrow_offset, end_pos.z}, end_pos, GREEN);
+    DrawLine3D((Vector3){end_pos.x + arrow_offset, end_pos.y - arrow_offset, end_pos.z}, end_pos, GREEN);
+
+    gui_state->coordinates_label_y_position =  GetWorldToScreen((Vector3){end_pos.x, end_pos.y + 0.2, end_pos.z}, gui_state->camera);
+
+    end_pos = (Vector3){start_pos.x, start_pos.y, start_pos.z + line_size};
+
+    DrawLine3D(start_pos, end_pos,  DARKBLUE);
+    DrawLine3D((Vector3){end_pos.x - arrow_offset, end_pos.y, end_pos.z - arrow_offset}, end_pos, DARKBLUE);
+    DrawLine3D((Vector3){end_pos.x + arrow_offset, end_pos.y, end_pos.z - arrow_offset}, end_pos, DARKBLUE);
+
+    gui_state->coordinates_label_z_position =  GetWorldToScreen(end_pos, gui_state->camera);
+
+
+
+    DrawCubeWiresV(gui_state->coordinates_cube, (Vector3){1.2,1.2,1.2}, WHITE);
+
+}
+
 
 void init_and_open_gui_window() {
 
@@ -1559,16 +1615,23 @@ void init_and_open_gui_window() {
 
     int text_offset = configure_info_boxes_sizes(gui_state);
 
+
     while (!WindowShouldClose()) {
 
         UpdateCamera(&(gui_state->camera));
+
 
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
+        if (IsWindowResized()) {
+            current_window_height = GetScreenHeight();
+            current_window_width = GetScreenWidth();
+        }
+
         gui_state->handle_keyboard_input = !gui_state->show_selection_box;
-        handle_input(&gui_config.grid_info.loaded, mesh_info, gui_state);
+
 
         if(gui_config.grid_info.loaded ) {
 
@@ -1586,6 +1649,7 @@ void init_and_open_gui_window() {
             ClearBackground(GRAY);
 
             BeginMode3D(gui_state->camera);
+            handle_input(&gui_config.grid_info.loaded, mesh_info, gui_state);
 
             if(!mesh_info->center_calculated) {
 
@@ -1610,8 +1674,17 @@ void init_and_open_gui_window() {
                 draw_vtk_unstructured_grid(mesh_offset, scale, gui_state);
             }
 
+            if(gui_state->show_coordinates) {
+                draw_coordinates(gui_state);
+            }
 
             EndMode3D();
+
+            if(gui_state->show_coordinates) {
+                DrawText("x", gui_state->coordinates_label_x_position.x, gui_state->coordinates_label_x_position.y, gui_state->font_size_big, RED);
+                DrawText("y", gui_state->coordinates_label_y_position.x, gui_state->coordinates_label_y_position.y, gui_state->font_size_big, GREEN);
+                DrawText("z", gui_state->coordinates_label_z_position.x, gui_state->coordinates_label_z_position.y, gui_state->font_size_big, DARKBLUE);
+            }
 
             if(gui_state->show_mesh_info_box) {
                 configure_mesh_info_box_strings(&mesh_info_box_strings, draw_type, mesh_info);
@@ -1687,7 +1760,11 @@ void init_and_open_gui_window() {
 
         //Draw FPS
         int fps = GetFPS();
-        DrawText(TextFormat("%2i FPS", fps), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
+        //DrawText(TextFormat("%2i FPS", fps), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
+        float ox = (GetMousePosition().x / (GetScreenWidth()/2.0) -1.0) * 10;
+        float oy = -(GetMousePosition().y / (GetScreenHeight()/2.0) -1.0) * 10;
+        //DrawText(TextFormat("%f %f", ox, oy), GetScreenWidth()  - 300, GetScreenHeight()-20, 20, BLACK);
+        DrawText(TextFormat("%f %f %f", gui_state->coordinates_cube.x, gui_state->coordinates_cube.y, gui_state->coordinates_cube.z), GetScreenWidth()  - 400, GetScreenHeight()-20, 20, BLACK);
         EndDrawing();
 
     }

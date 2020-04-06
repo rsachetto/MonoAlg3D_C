@@ -3,6 +3,7 @@ OPTIONS_FILE=./bsbash/build_functions.sh
 FUNCTIONS_FILE=./bsbash/find_functions.sh
 
 if [ -f "$OPTIONS_FILE" ]; then
+    # shellcheck disable=SC1090
     source $OPTIONS_FILE
 else
     echo "$OPTIONS_FILE not found, aborting compilation"
@@ -10,22 +11,22 @@ else
 fi
 
 if [ -f "$FUNCTIONS_FILE" ]; then
+	# shellcheck disable=SC1090
 	source $FUNCTIONS_FILE
 fi
 
 ###########User code#####################
 COMPILE_GUI=''
 COMPILE_MPI=''
-COMPILE_ALG_TO_GRAPH=''
 COMPILE_CONVERTER=''
 COMPILE_SIMULATOR=''
 
 GET_BUILD_OPTIONS "$@"
 
 if [ "$BUILD_TYPE" == "release" ]; then
-	C_FLAGS="$C_FLAGS -O3"
+    C_FLAGS="$C_FLAGS -O3"
 elif [ "$BUILD_TYPE" == "debug" ]; then
-  	C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
+    C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
 else
   	PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
   	PRINT_ERROR "Valid BUILD_TYPE options are: release, debug (-r or -d options)"
@@ -36,7 +37,7 @@ for i in "${BUILD_ARGS[@]}"; do
 
     if [ "$i" == "clean" ]; then
         echo "Cleaning $BUILD_TYPE"
-        CLEAN_PROJECT $BUILD_TYPE
+        CLEAN_PROJECT "$BUILD_TYPE"
         cd src/3dparty/raylib/src || exit 1;
         make clean
         cd - || exit 1;
@@ -46,7 +47,6 @@ for i in "${BUILD_ARGS[@]}"; do
     if [ "$i" == "all" ]; then
         COMPILE_GUI='y'
         COMPILE_MPI='y'
-        COMPILE_ALG_TO_GRAPH='y'
         COMPILE_SIMULATOR='y'
         COMPILE_CONVERTER='y'
     fi
@@ -62,10 +62,6 @@ for i in "${BUILD_ARGS[@]}"; do
     if [ "$i" == "batch" ]; then        
         COMPILE_MPI='y'
     fi
-    
-    if [ "$i" == "graph" ]; then        
-        COMPILE_ALG_TO_GRAPH='y'
-    fi
 
      if [ "$i" == "converter" ]; then
         COMPILE_CONVERTER='y'
@@ -73,7 +69,7 @@ for i in "${BUILD_ARGS[@]}"; do
     
 done
 
-DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts"
+DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts -Wno-unused-result"
 RUNTIME_OUTPUT_DIRECTORY="$ROOT_DIR/bin"
 LIBRARY_OUTPUT_DIRECTORY="$ROOT_DIR/shared_libs"
 
@@ -152,7 +148,6 @@ if [ -n "$COMPILE_GUI" ]; then
 fi
 
 DYNAMIC_DEPS="$DYNAMIC_DEPS logger"
-
 
 if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
     ADD_SUBDIRECTORY "src/models_library"

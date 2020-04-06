@@ -32,7 +32,7 @@ void log_to_stdout_and_file(char const *fmt, ...) {
     }
 }
 
-void log_to_stderr_and_file_and_exit(char const *fmt, ...) {
+void log_to_stderr_and_file(char const *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vprintf(fmt, ap);
@@ -43,6 +43,12 @@ void log_to_stderr_and_file_and_exit(char const *fmt, ...) {
         vfprintf(L.fp, fmt, ap);
         fflush(L.fp);
     }
+    va_end(ap);
+}
+void log_to_stderr_and_file_and_exit(char const *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    log_to_stderr_and_file_and_exit(fmt, ap);
     va_end(ap);
     exit(EXIT_FAILURE);
 }

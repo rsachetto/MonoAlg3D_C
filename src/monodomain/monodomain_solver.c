@@ -357,7 +357,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     if (domain_config) {
-        success = ((set_spatial_domain_fn *) domain_config->main_function)(&time_info, domain_config, the_grid);
+        success = ((set_spatial_domain_fn *) domain_config->main_function)(domain_config, the_grid);
 
         if (!success) {
             log_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
@@ -603,17 +603,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
-            // NEW FEATURE! Calculate the Purkinje activation time here !
-            // if (cur_time > 0.0 && calc_activation_time)
-            // {
-            //     calculate_activation_time(cur_time,dt_pde,the_grid->purkinje->num_active_purkinje_cells,the_grid->purkinje->purkinje_cells,the_purkinje_ode_solver);
-            // }
-
             start_stop_watch(&purkinje_ode_time);
 
             // Implicito
             // UPDATE: Purkinje
-            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_monodomain_solver, the_grid, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells, the_purkinje_ode_solver, original_num_purkinje_cells);
+            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells, the_purkinje_ode_solver, original_num_purkinje_cells);
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
@@ -646,7 +640,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             // REACTION
             solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs, configs->ode_extra_config);
-            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_monodomain_solver, the_grid, the_grid->num_active_cells, the_grid->active_cells, the_ode_solver, original_num_cells);
+            ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver, the_grid->num_active_cells, the_grid->active_cells, the_ode_solver, original_num_cells);
 
             ode_total_time += stop_stop_watch(&ode_time);
 

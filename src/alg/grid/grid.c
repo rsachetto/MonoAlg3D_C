@@ -803,3 +803,28 @@ void update_link_purkinje_to_endocardium(struct grid *the_grid, struct terminal 
         n = n->next;
     }
 }
+
+bool cell_is_visible(struct cell_node *grid_cell) {
+
+    if(!cell_has_neighbour(grid_cell, grid_cell->north) ) {
+        return true;
+    }
+    else if(!cell_has_neighbour(grid_cell, grid_cell->south) ) {
+        return true;
+    }
+    else if(!cell_has_neighbour(grid_cell, grid_cell->west) ) {
+        return true;
+    }
+    else if(!cell_has_neighbour(grid_cell, grid_cell->east) ) {
+        return true;
+    }
+    else if(!cell_has_neighbour(grid_cell, grid_cell->front) ) {
+        return true;
+    }
+    else if(!cell_has_neighbour(grid_cell, grid_cell->back) ) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}

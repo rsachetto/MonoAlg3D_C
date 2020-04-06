@@ -16,7 +16,7 @@ struct time_info {
 };
 
 #define TIME_INFO(it, ct, dt, lt) (struct time_info) {it, ct, dt, lt}
-#define ZERO_TIME_INFO (struct time_info) {0, 0, 0, 0}
+#define ZERO_TIME_INFO TIME_INFO(0, 0, 0, 0)
 
 struct line {
     uint64_t source;
@@ -26,8 +26,9 @@ struct line {
 struct point_3d {
     real_cpu x, y, z;
 };
+
 #define POINT3D(x,y,z) (struct point_3d) {x,y,z}
-#define ZERO_POINT3D (struct point_3d) {0,0,0}
+#define ZERO_POINT3D POINT3D(0,0,0)
 
 struct point_hash_entry {
     struct point_3d key;
@@ -55,6 +56,7 @@ typedef float * f32_array;
 typedef struct point_3d * point3d_array;
 typedef struct line * line_array;
 typedef int64_t * int64_array;
+typedef uint8_t * ui8_array;
 typedef int * int_array;
 typedef char** string_array;
 
