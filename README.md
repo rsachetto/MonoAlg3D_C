@@ -13,11 +13,11 @@ Ubuntu: Refer to [the ubuntu guide](guide-monoalg3d-ubuntu.md)
 
 Fedora: Refer to [the fedora guide](guide-monoalg3d-fedora.md)
 
-Build the binary
+### Compile
 ```sh
 $ ./build.sh
 ```
-The binary file for execution will be saved in the ```bin``` folder.
+The binary files will be saved in the ```bin``` folder.
 
 # Running examples
 ----
@@ -25,7 +25,7 @@ The binary file for execution will be saved in the ```bin``` folder.
 $ bin/MonoAlg3D -c example_configs/cuboid_ohara.ini 
 ```
 
-The output will be saved in the VTK format. In order to see the results you can use Paraview (https://www.paraview.org/). You can also set the output to plain text, by changing the option ```vtk_output``` to false in the configuration file. The text format is defined as following:
+The output will be saved in the VTK format. In order to see the results you can use Paraview (https://www.paraview.org/) or the compiled visualization tool in ```bin/MonoAlg3D_visualizer```. You can also set the output to plain text, by changing the option ```vtk_output``` to false in the configuration file. The text format is defined as following:
 
 - Each line represents a Volume
 - Each volume is represented by its center point (X, Y, and Z), the value of half of its side length and the calculated V
