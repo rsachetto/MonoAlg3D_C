@@ -199,7 +199,6 @@ Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_1500) {
     cr_assert(success);
 }
 
-
 Test (mesh_load, cuboid_mesh_150_150_150_1500_1500_3000) {
     int success  = test_cuboid_mesh("150", "150", "150", "1500", "1500", "3000", false, false, false, 0);
     cr_assert(success);

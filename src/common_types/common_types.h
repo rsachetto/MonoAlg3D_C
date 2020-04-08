@@ -6,7 +6,8 @@
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)
-
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
 
 struct time_info {
     real_cpu current_t;

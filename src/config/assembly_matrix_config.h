@@ -9,9 +9,7 @@
 #include "../monodomain/constants.h"
 #include "../monodomain/monodomain_solver.h"
 
-struct assembly_matrix_config;
 struct monodomain_solver;
-
 
 //TODO: split into two different configs
 #define ASSEMBLY_MATRIX(name)  void name(struct config *config, struct monodomain_solver *the_solver, struct grid *the_grid)
@@ -23,7 +21,5 @@ typedef ASSEMBLY_MATRIX(assembly_matrix_fn);
 typedef INIT_ASSEMBLY_MATRIX(set_pde_initial_condition_fn);
 
 void print_assembly_matrix_config_values(struct config* s);
-void print_init_pde_config_values(struct config* s);
-
 
 #endif //MONOALG3D_ASSEMBLY_CONFIG_H

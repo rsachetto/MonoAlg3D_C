@@ -22,6 +22,8 @@ static bool clip_with_bounds = false;
 static bool save_pvd = true;
 static bool compress = false;
 static int compression_level = 3;
+char *output_dir;
+
 
 static bool initialized = false;
 
@@ -36,10 +38,9 @@ static sds create_base_name(char *f_prefix, int iteration_count, char *extension
 SAVE_MESH(save_as_adjacency_list) {
 
     int iteration_count = time_info->iteration;
-    char *output_dir;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
 
     if(!initialized) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         initialized = true;
     }
@@ -111,11 +112,9 @@ SAVE_MESH(save_as_adjacency_list) {
 SAVE_MESH(save_as_text_or_binary) {
 
     int iteration_count = time_info->iteration;
-    char *output_dir;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
 
     if(!initialized) {
-
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
@@ -244,16 +243,16 @@ INIT_SAVE_MESH(init_save_as_vtk_or_vtu) {
 }
 
 END_SAVE_MESH(end_save_as_vtk_or_vtu) {
+    free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid);
     free(config->persistent_data);
 }
 
 SAVE_MESH(save_as_vtk) {
 
-    char *output_dir;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
     int iteration_count = time_info->iteration;
 
     if(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
@@ -345,11 +344,10 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
 
 SAVE_MESH(save_as_vtu) {
 
-    char *output_dir;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
     int iteration_count = time_info->iteration;
 
     if(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
@@ -361,7 +359,6 @@ SAVE_MESH(save_as_vtu) {
 #ifndef COMPILE_ZLIB
         compress = false;
 #endif
-
         if(compress) binary = true;
 
         if(!save_pvd) {
@@ -667,6 +664,7 @@ struct save_with_activation_times_persistent_data {
     struct point_voidp_hash_entry *activation_times;
     struct point_voidp_hash_entry *apds;
     bool first_save_call;
+
 };
 
 INIT_SAVE_MESH(init_save_with_activation_times) {
@@ -700,7 +698,6 @@ SAVE_MESH(save_with_activation_times) {
     float time_threshold = 10.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data, "time_threshold");
 
-    char *output_dir;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
 
     float activation_threshold = -30.0f;

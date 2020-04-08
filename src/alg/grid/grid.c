@@ -24,6 +24,7 @@ struct grid *new_grid() {
     arrsetcap(result->refined_this_step, 128);
     arrsetcap(result->free_sv_positions, 128);
 
+    //TODO: check if we need to always allocate this
     // Purkinje
     result->purkinje = new_grid_purkinje();
 
@@ -225,9 +226,6 @@ void clean_grid(struct grid *the_grid) {
     // Delete nodes from the Purkinje network
     if(the_grid->purkinje->network->list_nodes != NULL) {
 
-        // First free the Purkinje mesh structure
-        free_graph(the_grid->purkinje->network);
-
         grid_cell = the_grid->first_cell;
 
         // Then, delete the cells from the Purkinje network
@@ -296,7 +294,8 @@ void clean_and_free_grid(struct grid *the_grid) {
     arrfree(the_grid->refined_this_step);
     arrfree(the_grid->free_sv_positions);
 
-    // free(the_grid->purkinje_network); // TODO: Check for leaks with Valgrind
+    free_graph(the_grid->purkinje->network);
+    free(the_grid->purkinje); // TODO: Check for leaks with Valgrind
     free(the_grid);
 }
 

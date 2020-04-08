@@ -17,7 +17,6 @@
 #include "../3dparty/raylib/src/camera.h"
 
 #define RAYGUI_IMPLEMENTATION
-#define RAYGUI_RICONS_SUPPORT
 #include "../3dparty/raylib/src/raygui.h"
 #undef RAYGUI_IMPLEMENTATION
 
@@ -422,6 +421,8 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config.grid_info.vtk_grid;
 
+    if(!grid_to_draw) return;
+
     Vector3 cube_position;
     Vector3 cube_size;
 
@@ -466,6 +467,8 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
 static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state) {
 
     struct grid *grid_to_draw = gui_config.grid_info.alg_grid;
+
+    if(!grid_to_draw) return;
 
     Vector3 cube_position;
     Vector3 cube_size;
@@ -924,7 +927,9 @@ static inline void configure_end_info_box_strings (char ***info_string) {
 
 }
 
-static inline void configure_mesh_info_box_strings (char ***info_string, int draw_type, struct mesh_info *mesh_info) {
+static inline bool configure_mesh_info_box_strings (char ***info_string, int draw_type, struct mesh_info *mesh_info) {
+
+    if(!gui_config.grid_info.alg_grid && !gui_config.grid_info.vtk_grid) return false;
 
     char tmp[128];
 
@@ -1000,6 +1005,7 @@ static inline void configure_mesh_info_box_strings (char ***info_string, int dra
 
     (*(info_string))[index] = strdup(tmp);
 
+    return true;
 }
 
 static bool draw_selection_box(struct gui_state *gui_state) {
@@ -1043,7 +1049,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     return window_closed || btn_ok_clicked;
 }
 
-static void reset(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_state *gui_state, bool full_reset) {
+static void reset(struct mesh_info *mesh_info, struct gui_state *gui_state, bool full_reset) {
 
     gui_state->voxel_alpha = 255;
 
@@ -1072,19 +1078,16 @@ static void reset(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_sta
     gui_config.restart = true;
     gui_config.grid_info.alg_grid = NULL;
     gui_config.grid_info.vtk_grid = NULL;
-    *mesh_loaded = false;
 
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    mesh_info->center_calculated = false;
     omp_unset_lock(&gui_config.sleep_lock);
     gui_state->current_selected_volume = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
 }
 
-
-static void handle_keyboard_input(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_state *gui_state) {
+static void handle_keyboard_input(struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
     if(gui_config.paused) {
 
@@ -1188,7 +1191,7 @@ static void handle_keyboard_input(bool *mesh_loaded, struct mesh_info *mesh_info
             full_reset = true;
         }
 
-        reset(mesh_loaded, mesh_info, gui_state, full_reset);
+        reset(mesh_info, gui_state, full_reset);
         return;
     }
 
@@ -1228,7 +1231,7 @@ static void handle_keyboard_input(bool *mesh_loaded, struct mesh_info *mesh_info
         GuiUnlock();
 
         if(tmp) {
-            reset(mesh_loaded, mesh_info, gui_state, true);
+            reset(mesh_info, gui_state, true);
         }
 
         return;
@@ -1263,17 +1266,17 @@ static void handle_keyboard_input(bool *mesh_loaded, struct mesh_info *mesh_info
         GuiUnlock();
 
         if(tmp) {
-            reset(mesh_loaded, mesh_info, gui_state, true);
+            reset(mesh_info, gui_state, true);
         }
         return;
     }
 
 }
 
-static void handle_input(bool *mesh_loaded, struct mesh_info *mesh_info, struct gui_state *gui_state) {
+static void handle_input(struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
     if(gui_state->handle_keyboard_input) {
-        handle_keyboard_input(mesh_loaded, mesh_info, gui_state);
+        handle_keyboard_input(mesh_info, gui_state);
     }
 
     gui_state->mouse_pos = GetMousePosition();
@@ -1370,21 +1373,20 @@ static void handle_input(bool *mesh_loaded, struct mesh_info *mesh_info, struct 
         gui_state->sub_window_pos.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2;
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_sub_window = false;
     }
-    else if (gui_state->move_coordinates) {
-
-        Matrix proj = MatrixPerspective(gui_state->camera.fovy * DEG2RAD, ((double)GetScreenWidth()/(double)GetScreenHeight()), DEFAULT_NEAR_CULL_DISTANCE, DEFAULT_FAR_CULL_DISTANCE);
-        Matrix view = MatrixLookAt(gui_state->camera.position, gui_state->camera.target, gui_state->camera.up);
-
-        float x = (2.0f*gui_state->mouse_pos.x)/(float)GetScreenWidth() - 1.0f;
-        float y = 1.0f - (2.0f*gui_state->mouse_pos.y)/(float)GetScreenHeight();
-        float z = 1.0f;
-
-        Vector3 result = rlUnproject((Vector3){x, y, -1}, proj, view);
-
-        gui_state->coordinates_cube = (Vector3){result.x,result.y, gui_state->coordinates_cube.z};
-
-        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_coordinates = false;
-    }
+//    else if (gui_state->move_coordinates) {
+//
+//        Matrix proj = MatrixPerspective(gui_state->camera.fovy * DEG2RAD, ((double)GetScreenWidth()/(double)GetScreenHeight()), DEFAULT_NEAR_CULL_DISTANCE, DEFAULT_FAR_CULL_DISTANCE);
+//        Matrix view = MatrixLookAt(gui_state->camera.position, gui_state->camera.target, gui_state->camera.up);
+//
+//        float x = (2.0f*gui_state->mouse_pos.x)/(float)GetScreenWidth() - 1.0f;
+//        float y = 1.0f - (2.0f*gui_state->mouse_pos.y)/(float)GetScreenHeight();
+//
+//        Vector3 result = rlUnproject((Vector3){x, y, -1}, proj, view);
+//
+//        gui_state->coordinates_cube = (Vector3){result.x,result.y, gui_state->coordinates_cube.z};
+//
+//        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_coordinates = false;
+//    }
 
     else if (gui_state->ap_graph_config->drag_ap_graph) {
 
@@ -1491,8 +1493,6 @@ static int configure_info_boxes_sizes(struct gui_state *gui_state) {
     return text_offset;
 }
 
-
-
 void draw_coordinates(struct gui_state *gui_state) {
 
     const float line_size = 1.0f;
@@ -1500,12 +1500,12 @@ void draw_coordinates(struct gui_state *gui_state) {
     static bool first_draw = true;
 
     if(first_draw) {
-        gui_state->coordinates_cube = (Vector3){-(line_size / 2.0) + 0.5, -7 + 0.5, 0.5};
+        gui_state->coordinates_cube = (Vector3){-(line_size / 2.0) + 0.5, -7 + 0.5, -1.5};
         first_draw = false;
     }
 
     Vector3 start_pos = (Vector3){gui_state->coordinates_cube.x-0.5, gui_state->coordinates_cube.y-0.5, gui_state->coordinates_cube.z-0.5};
-    Vector3 end_pos = (Vector3){start_pos.x + line_size, start_pos.y, 0.0};
+    Vector3 end_pos = (Vector3){start_pos.x + line_size, start_pos.y, gui_state->coordinates_cube.z-0.5};
 
     DrawLine3D(start_pos, end_pos,  RED);
     DrawLine3D((Vector3){end_pos.x - arrow_offset, end_pos.y + arrow_offset, end_pos.z}, end_pos, RED);
@@ -1528,10 +1528,7 @@ void draw_coordinates(struct gui_state *gui_state) {
     DrawLine3D((Vector3){end_pos.x + arrow_offset, end_pos.y, end_pos.z - arrow_offset}, end_pos, DARKBLUE);
 
     gui_state->coordinates_label_z_position =  GetWorldToScreen(end_pos, gui_state->camera);
-
-
-
-    DrawCubeWiresV(gui_state->coordinates_cube, (Vector3){1.2,1.2,1.2}, WHITE);
+    //DrawCubeWiresV(gui_state->coordinates_cube, (Vector3){1.2,1.2,1.2}, WHITE);
 
 }
 
@@ -1633,7 +1630,7 @@ void init_and_open_gui_window() {
         gui_state->handle_keyboard_input = !gui_state->show_selection_box;
 
 
-        if(gui_config.grid_info.loaded ) {
+        if(gui_config.grid_info.loaded) {
 
             omp_set_lock(&gui_config.draw_lock);
 
@@ -1649,7 +1646,7 @@ void init_and_open_gui_window() {
             ClearBackground(GRAY);
 
             BeginMode3D(gui_state->camera);
-            handle_input(&gui_config.grid_info.loaded, mesh_info, gui_state);
+            handle_input(mesh_info, gui_state);
 
             if(!mesh_info->center_calculated) {
 
@@ -1687,13 +1684,15 @@ void init_and_open_gui_window() {
             }
 
             if(gui_state->show_mesh_info_box) {
-                configure_mesh_info_box_strings(&mesh_info_box_strings, draw_type, mesh_info);
+                bool configured = configure_mesh_info_box_strings(&mesh_info_box_strings, draw_type, mesh_info);
 
-                draw_box(&gui_state->mesh_info_box, text_offset, (const char **) mesh_info_box_strings,
-                         mesh_info_box_lines, (int)gui_state->font_size_small, gui_state->font);
+                if(configured) {
+                    draw_box(&gui_state->mesh_info_box, text_offset, (const char **) mesh_info_box_strings,
+                             mesh_info_box_lines, (int)gui_state->font_size_small, gui_state->font);
 
-                for (int i = 0; i < mesh_info_box_lines; i++) {
-                    free(mesh_info_box_strings[i]);
+                    for (int i = 0; i < mesh_info_box_lines; i++) {
+                        free(mesh_info_box_strings[i]);
+                    }
                 }
             }
             //We finished drawing everything that depends on the mesh being loaded
@@ -1760,11 +1759,7 @@ void init_and_open_gui_window() {
 
         //Draw FPS
         int fps = GetFPS();
-        //DrawText(TextFormat("%2i FPS", fps), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
-        float ox = (GetMousePosition().x / (GetScreenWidth()/2.0) -1.0) * 10;
-        float oy = -(GetMousePosition().y / (GetScreenHeight()/2.0) -1.0) * 10;
-        //DrawText(TextFormat("%f %f", ox, oy), GetScreenWidth()  - 300, GetScreenHeight()-20, 20, BLACK);
-        DrawText(TextFormat("%f %f %f", gui_state->coordinates_cube.x, gui_state->coordinates_cube.y, gui_state->coordinates_cube.z), GetScreenWidth()  - 400, GetScreenHeight()-20, 20, BLACK);
+        DrawText(TextFormat("%2i FPS", fps), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
         EndDrawing();
 
     }

@@ -329,14 +329,17 @@ int main(int argc, char **argv) {
                         result = RESTART_SIMULATION;
                     }
 
+                    if (gui_config.restart) {
+                        result = RESTART_SIMULATION;
+                        gui_config.grid_info.loaded = false;
+                    }
+
                     if (result == RESTART_SIMULATION) {
                         init_gui_config(&gui_config, options, true);
                         result = read_and_render_files(options);
                     }
 
-                    if (gui_config.restart) result = RESTART_SIMULATION;
-
-                    if (result == END_SIMULATION || gui_config.exit) {
+                    else if (result == END_SIMULATION || gui_config.exit) {
                         break;
                     }
                 }

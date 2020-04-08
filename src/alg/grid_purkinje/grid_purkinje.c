@@ -1,14 +1,9 @@
-#include <assert.h>
-#include <inttypes.h>
-#include <float.h>
-
 #include "grid_purkinje.h"
 
 #include "../../3dparty/stb_ds.h"
 #include "../../utils/file_utils.h"
 
-struct grid_purkinje *new_grid_purkinje () 
-{
+struct grid_purkinje *new_grid_purkinje() {
     struct grid_purkinje *result = (struct grid_purkinje *)malloc(sizeof(struct grid_purkinje));
     result->first_cell = NULL;
     result->purkinje_cells = NULL;
