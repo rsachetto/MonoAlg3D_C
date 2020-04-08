@@ -14,7 +14,6 @@ struct config *alloc_and_init_config_data() {
     sh_new_arena(cm->config_data);
     shdefault(cm->config_data, NULL);
     cm->persistent_data = NULL;
-
     return cm;
 }
 

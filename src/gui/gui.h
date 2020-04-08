@@ -12,9 +12,6 @@
 
 #include <omp.h>
 
-#define DRAW_SIMULATION 0
-#define DRAW_FILE 1
-
 #define MIN_VERTICAL_TICKS 4
 #define MAX_VERTICAL_TICKS 20
 
@@ -34,6 +31,11 @@ enum simulation_status {
     RESTART_SIMULATION,
     END_SIMULATION,
     SIMULATION_FINISHED,
+};
+
+enum draw_simulation_or_file {
+    DRAW_SIMULATION,
+    DRAW_FILE,
 };
 
 struct ap_graph_config {
