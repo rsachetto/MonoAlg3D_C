@@ -356,9 +356,6 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
 
-#ifndef COMPILE_ZLIB
-        compress = false;
-#endif
         if(compress) binary = true;
 
         if(!save_pvd) {
@@ -560,9 +557,6 @@ SAVE_MESH(save_as_vtp_purkinje) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
 
-#ifndef DCOMPILE_ZLIB
-        compress = false;
-#endif
         if(compress) binary = true;
 
         initialized = true;
@@ -613,10 +607,6 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje)
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
-
-#ifndef COMPILE_ZLIB
-        compress = false;
-#endif
 
         if(compress) binary = true;
 
