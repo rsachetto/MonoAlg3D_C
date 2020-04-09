@@ -123,5 +123,7 @@ src/3dparty/raylib/src/external/glfw/src/glfw.rc.in
 /tests_bin/TestSimulations
 /tests_bin/TestSolver
 /tests_bin/TestSolvers
-./perf.data*
+/tests_bin/MeshProfiler
+perf.data*
 .clangd/
+*.swp
