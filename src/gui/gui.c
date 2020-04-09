@@ -1373,20 +1373,6 @@ static void handle_input(struct mesh_info *mesh_info, struct gui_state *gui_stat
         gui_state->sub_window_pos.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2;
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_sub_window = false;
     }
-//    else if (gui_state->move_coordinates) {
-//
-//        Matrix proj = MatrixPerspective(gui_state->camera.fovy * DEG2RAD, ((double)GetScreenWidth()/(double)GetScreenHeight()), DEFAULT_NEAR_CULL_DISTANCE, DEFAULT_FAR_CULL_DISTANCE);
-//        Matrix view = MatrixLookAt(gui_state->camera.position, gui_state->camera.target, gui_state->camera.up);
-//
-//        float x = (2.0f*gui_state->mouse_pos.x)/(float)GetScreenWidth() - 1.0f;
-//        float y = 1.0f - (2.0f*gui_state->mouse_pos.y)/(float)GetScreenHeight();
-//
-//        Vector3 result = rlUnproject((Vector3){x, y, -1}, proj, view);
-//
-//        gui_state->coordinates_cube = (Vector3){result.x,result.y, gui_state->coordinates_cube.z};
-//
-//        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) gui_state->move_coordinates = false;
-//    }
 
     else if (gui_state->ap_graph_config->drag_ap_graph) {
 
@@ -1630,6 +1616,7 @@ void init_and_open_gui_window() {
         gui_state->handle_keyboard_input = !gui_state->show_selection_box;
 
 
+        handle_input(mesh_info, gui_state);
         if(gui_config.grid_info.loaded) {
 
             omp_set_lock(&gui_config.draw_lock);
@@ -1646,7 +1633,6 @@ void init_and_open_gui_window() {
             ClearBackground(GRAY);
 
             BeginMode3D(gui_state->camera);
-            handle_input(mesh_info, gui_state);
 
             if(!mesh_info->center_calculated) {
 

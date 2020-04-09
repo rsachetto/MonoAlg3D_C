@@ -48,8 +48,15 @@ char * get_file_from_path(const char * path) {
     char *last_slash = NULL;
     char *file = NULL;
     last_slash = strrchr(path, '/');
-    file = strndup(last_slash + 1,  path - last_slash + 1);
-    return file;
+    
+    if(last_slash) {
+        file = strndup(last_slash + 1,  path - last_slash + 1);
+        return file;
+    }
+    else { 
+        return strdup(path);
+    }
+
 }
 
 char *get_filename_without_ext(const char *filename) {

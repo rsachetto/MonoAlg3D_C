@@ -45,31 +45,73 @@ void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid) {
     }
 }
 
+static inline void set_point_data(point3d_array points, struct point_3d center, struct point_3d half_face) {
+    real_cpu center_x_plus  = center.x + half_face.x;
+    real_cpu center_x_minus = center.x - half_face.x;
+
+    real_cpu center_y_plus  = center.y + half_face.y;
+    real_cpu center_y_minus = center.y - half_face.y;
+
+    real_cpu center_z_plus  = center.z + half_face.z;
+    real_cpu center_z_minus = center.z - half_face.z;
+
+    points[0].x = center_x_minus;
+    points[0].y = center_y_minus;
+    points[0].z = center_z_minus;
+
+    points[1].x = center_x_plus;
+    points[1].y = center_y_minus;
+    points[1].z = center_z_minus;
+
+    points[2].x = center_x_plus;
+    points[2].y = center_y_plus;
+    points[2].z = center_z_minus;
+
+    points[3].x = center_x_minus;
+    points[3].y = center_y_plus;
+    points[3].z = center_z_minus;
+
+    points[4].x = center_x_minus;
+    points[4].y = center_y_minus;
+    points[4].z = center_z_plus;
+
+    points[5].x = center_x_plus;
+    points[5].y = center_y_minus;
+    points[5].z = center_z_plus;
+
+    points[6].x = center_x_plus;
+    points[6].y = center_y_plus;
+    points[6].z = center_z_plus;
+
+    points[7].x = center_x_minus;
+    points[7].y = center_y_plus;
+    points[7].z = center_z_plus;
+}
+
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size) {
 
     *vtk_grid = new_vtk_unstructured_grid();
 
-    float center_x, center_y, center_z;
+    struct point_3d center;
+    struct point_3d half_face;
     float  v;
 
-    struct point_3d aux1;
-    struct point_3d aux2;
-    struct point_3d aux3;
-    struct point_3d aux4;
-    struct point_3d aux5;
-    struct point_3d aux6;
-    struct point_3d aux7;
-    struct point_3d aux8;
+    struct point_3d points[8];
+
+    struct point_3d point1;
+    struct point_3d point2;
+    struct point_3d point3;
+    struct point_3d point4;
+    struct point_3d point5;
+    struct point_3d point6;
+    struct point_3d point7;
+    struct point_3d point8;
 
     uint32_t id = 0;
     uint32_t num_cells = 0;
 
     struct point_hash_entry *hash =  NULL;
     char *line = NULL;
-
-    float half_face_x;
-    float half_face_y;
-    float half_face_z;
 
     int active, fibrotic, bz;
 
@@ -94,7 +136,7 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
 
         line[line_end-1] = '\0';
 
-        sscanf(line, "%f,%f,%f,%f,%f,%f,%d,%d,%d %f", &center_x, &center_y, &center_z, &half_face_x, &half_face_y, &half_face_z, &active, &fibrotic, &bz, &v);
+        sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%d %f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &active, &fibrotic, &bz, &v);
 
         arrsetlen(line, 0);
 
@@ -104,94 +146,73 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
         if(v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = v;
         if(v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = v;
 
-        aux1.x = center_x - half_face_x;
-        aux1.y = center_y - half_face_y;
-        aux1.z = center_z - half_face_z;
+        set_point_data(points, center, half_face);
 
-        aux2.x = center_x + half_face_x;
-        aux2.y = center_y - half_face_y;
-        aux2.z = center_z - half_face_z;
+        point1 = points[0];
+        point2 = points[1];
+        point3 = points[2];
+        point4 = points[3];
+        point5 = points[4];
+        point6 = points[5];
+        point7 = points[6];
+        point8 = points[7];
 
-        aux3.x = center_x + half_face_x;
-        aux3.y = center_y + half_face_y;
-        aux3.z = center_z - half_face_z;
-
-        aux4.x = center_x - half_face_x;
-        aux4.y = center_y + half_face_y;
-        aux4.z = center_z - half_face_z;
-
-        aux5.x = center_x - half_face_x;
-        aux5.y = center_y - half_face_y;
-        aux5.z = center_z + half_face_z;
-
-        aux6.x = center_x + half_face_x;
-        aux6.y = center_y - half_face_y;
-        aux6.z = center_z + half_face_z;
-
-        aux7.x = center_x + half_face_x;
-        aux7.y = center_y + half_face_y;
-        aux7.z = center_z + half_face_z;
-
-        aux8.x = center_x - half_face_x;
-        aux8.y = center_y + half_face_y;
-        aux8.z = center_z + half_face_z;
-
-        if(hmgeti(hash, aux1) == -1) {
-            arrput((*vtk_grid)->points, aux1);
-            hmput(hash, aux1, id);
+        if(hmgeti(hash, point1) == -1) {
+            arrput((*vtk_grid)->points, point1);
+            hmput(hash, point1, id);
             id++;
         }
 
-        if(hmgeti(hash, aux2) == -1) {
-            arrput((*vtk_grid)->points, aux2);
-            hmput(hash, aux2, id);
+        if(hmgeti(hash, point2) == -1) {
+            arrput((*vtk_grid)->points, point2);
+            hmput(hash, point2, id);
             id++;
         }
 
-        if(hmgeti(hash, aux3) == -1) {
-            hmput(hash, aux3, id);
-            arrput((*vtk_grid)->points, aux3);
+        if(hmgeti(hash, point3) == -1) {
+            hmput(hash, point3, id);
+            arrput((*vtk_grid)->points, point3);
             id++;
         }
 
-        if(hmgeti(hash, aux4) == -1) {
-            hmput(hash, aux4, id);
-            arrput((*vtk_grid)->points, aux4);
+        if(hmgeti(hash, point4) == -1) {
+            hmput(hash, point4, id);
+            arrput((*vtk_grid)->points, point4);
             id++;
         }
 
-        if(hmgeti(hash, aux5) == -1) {
-            arrput((*vtk_grid)->points, aux5);
-            hmput(hash, aux5, id);
+        if(hmgeti(hash, point5) == -1) {
+            arrput((*vtk_grid)->points, point5);
+            hmput(hash, point5, id);
             id++;
         }
 
-        if(hmgeti(hash, aux6) == -1) {
-            arrput((*vtk_grid)->points, aux6);
-            hmput(hash, aux6, id);
+        if(hmgeti(hash, point6) == -1) {
+            arrput((*vtk_grid)->points, point6);
+            hmput(hash, point6, id);
             id++;
         }
 
-        if(hmgeti(hash, aux7) == -1) {
-            arrput((*vtk_grid)->points, aux7);
-            hmput(hash, aux7, id);
+        if(hmgeti(hash, point7) == -1) {
+            arrput((*vtk_grid)->points, point7);
+            hmput(hash, point7, id);
             id++;
         }
 
-        if(hmgeti(hash, aux8) == -1) {
-            arrput((*vtk_grid)->points, aux8);
-            hmput(hash, aux8, id);
+        if(hmgeti(hash, point8) == -1) {
+            arrput((*vtk_grid)->points, point8);
+            hmput(hash, point8, id);
             id++;
         }
 
-        arrput((*vtk_grid)->cells, hmget(hash, aux1));
-        arrput((*vtk_grid)->cells, hmget(hash, aux2));
-        arrput((*vtk_grid)->cells, hmget(hash, aux3));
-        arrput((*vtk_grid)->cells, hmget(hash, aux4));
-        arrput((*vtk_grid)->cells, hmget(hash, aux5));
-        arrput((*vtk_grid)->cells, hmget(hash, aux6));
-        arrput((*vtk_grid)->cells, hmget(hash, aux7));
-        arrput((*vtk_grid)->cells, hmget(hash, aux8));
+        arrput((*vtk_grid)->cells, hmget(hash, point1));
+        arrput((*vtk_grid)->cells, hmget(hash, point2));
+        arrput((*vtk_grid)->cells, hmget(hash, point3));
+        arrput((*vtk_grid)->cells, hmget(hash, point4));
+        arrput((*vtk_grid)->cells, hmget(hash, point5));
+        arrput((*vtk_grid)->cells, hmget(hash, point6));
+        arrput((*vtk_grid)->cells, hmget(hash, point7));
+        arrput((*vtk_grid)->cells, hmget(hash, point8));
         num_cells++;
     }
 
@@ -223,27 +244,27 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
         (*vtk_grid)->values = NULL;
     }
 
-    float center_x, center_y, center_z;
+    struct point_3d center;
+    struct point_3d half_face;
+
     float  v;
 
-    struct point_3d aux1;
-    struct point_3d aux2;
-    struct point_3d aux3;
-    struct point_3d aux4;
-    struct point_3d aux5;
-    struct point_3d aux6;
-    struct point_3d aux7;
-    struct point_3d aux8;
+    struct point_3d points[8];
+    
+    struct point_3d point1;
+    struct point_3d point2;
+    struct point_3d point3;
+    struct point_3d point4;
+    struct point_3d point5;
+    struct point_3d point6;
+    struct point_3d point7;
+    struct point_3d point8;
 
     uint32_t id = 0;
     uint32_t num_cells = 0;
 
     struct point_hash_entry *hash =  NULL;
     char *line = NULL;
-
-    float half_face_x;
-    float half_face_y;
-    float half_face_z;
 
     char* source_limit = source + source_size;
 
@@ -261,16 +282,16 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             arrput(line, '\0');
 
-            sscanf(line, "%f,%f,%f,%f,%f,%f,%f", &center_x, &center_y, &center_z, &half_face_x, &half_face_y, &half_face_z, &v);
+            sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &v);
 
             arrsetlen(line, 0);
         }
         else {
 
             if(source < source_limit) {
-                center_x = *(float *)(source);
-                source += sizeof(center_x);
-                source_size -= sizeof(center_x);
+                center.x = *(float *)(source);
+                source += sizeof(center.x);
+                source_size -= sizeof(center.x);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -279,9 +300,9 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
 
             if(source < source_limit) {
-                center_y = *(float *)(source);
-                source += sizeof(center_y);
-                source_size -= sizeof(center_y);
+                center.y = *(float *)(source);
+                source += sizeof(center.y);
+                source_size -= sizeof(center.y);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -289,9 +310,9 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                center_z = *(float *)(source);
-                source += sizeof(center_z);
-                source_size -= sizeof(center_z);
+                center.z = *(float *)(source);
+                source += sizeof(center.z);
+                source_size -= sizeof(center.z);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -299,9 +320,9 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                half_face_x = *(float *)(source);
-                source += sizeof(half_face_x);
-                source_size -= sizeof(half_face_x);
+                half_face.x = *(float *)(source);
+                source += sizeof(half_face.x);
+                source_size -= sizeof(half_face.x);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -309,9 +330,9 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                half_face_y = *(float *)(source);
-                source += sizeof(half_face_y);
-                source_size -= sizeof(half_face_y);
+                half_face.y = *(float *)(source);
+                source += sizeof(half_face.y);
+                source_size -= sizeof(half_face.y);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -319,9 +340,9 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                half_face_z = *(float *)(source);
-                source += sizeof(half_face_z);
-                source_size -= sizeof(half_face_z);
+                half_face.z = *(float *)(source);
+                source += sizeof(half_face.z);
+                source_size -= sizeof(half_face.z);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -353,23 +374,23 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
                 }
             }
             else {
-                source += sizeof(center_x);
-                source_size -= sizeof(center_x);
+                source += sizeof(center.x);
+                source_size -= sizeof(center.x);
 
-                source += sizeof(center_y);
-                source_size -= sizeof(center_y);
+                source += sizeof(center.y);
+                source_size -= sizeof(center.y);
 
-                source += sizeof(center_z);
-                source_size -= sizeof(center_z);
+                source += sizeof(center.z);
+                source_size -= sizeof(center.z);
 
-                source += sizeof(half_face_x);
-                source_size -= sizeof(half_face_x);
+                source += sizeof(half_face.x);
+                source_size -= sizeof(half_face.x);
 
-                source += sizeof(half_face_y);
-                source_size -= sizeof(half_face_y);
+                source += sizeof(half_face.y);
+                source_size -= sizeof(half_face.y);
 
-                source += sizeof(half_face_z);
-                source_size -= sizeof(half_face_z);
+                source += sizeof(half_face.z);
+                source_size -= sizeof(half_face.z);
 
                 source += sizeof(v);
                 source_size -= sizeof(v);
@@ -377,94 +398,74 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             continue;
         }
 
-        aux1.x = center_x - half_face_x;
-        aux1.y = center_y - half_face_y;
-        aux1.z = center_z - half_face_z;
+        set_point_data(points, center, half_face);
 
-        aux2.x = center_x + half_face_x;
-        aux2.y = center_y - half_face_y;
-        aux2.z = center_z - half_face_z;
+        point1 = points[0];
+        point2 = points[1];
+        point3 = points[2];
+        point4 = points[3];
+        point5 = points[4];
+        point6 = points[5];
+        point7 = points[6];
+        point8 = points[7];
 
-        aux3.x = center_x + half_face_x;
-        aux3.y = center_y + half_face_y;
-        aux3.z = center_z - half_face_z;
 
-        aux4.x = center_x - half_face_x;
-        aux4.y = center_y + half_face_y;
-        aux4.z = center_z - half_face_z;
-
-        aux5.x = center_x - half_face_x;
-        aux5.y = center_y - half_face_y;
-        aux5.z = center_z + half_face_z;
-
-        aux6.x = center_x + half_face_x;
-        aux6.y = center_y - half_face_y;
-        aux6.z = center_z + half_face_z;
-
-        aux7.x = center_x + half_face_x;
-        aux7.y = center_y + half_face_y;
-        aux7.z = center_z + half_face_z;
-
-        aux8.x = center_x - half_face_x;
-        aux8.y = center_y + half_face_y;
-        aux8.z = center_z + half_face_z;
-
-        if(hmgeti(hash, aux1) == -1) {
-            arrput((*vtk_grid)->points, aux1);
-            hmput(hash, aux1, id);
+        if(hmgeti(hash, point1) == -1) {
+            arrput((*vtk_grid)->points, point1);
+            hmput(hash, point1, id);
             id++;
         }
 
-        if(hmgeti(hash, aux2) == -1) {
-            arrput((*vtk_grid)->points, aux2);
-            hmput(hash, aux2, id);
+        if(hmgeti(hash, point2) == -1) {
+            arrput((*vtk_grid)->points, point2);
+            hmput(hash, point2, id);
             id++;
         }
 
-        if(hmgeti(hash, aux3) == -1) {
-            hmput(hash, aux3, id);
-            arrput((*vtk_grid)->points, aux3);
+        if(hmgeti(hash, point3) == -1) {
+            hmput(hash, point3, id);
+            arrput((*vtk_grid)->points, point3);
             id++;
         }
 
-        if(hmgeti(hash, aux4) == -1) {
-            hmput(hash, aux4, id);
-            arrput((*vtk_grid)->points, aux4);
+        if(hmgeti(hash, point4) == -1) {
+            hmput(hash, point4, id);
+            arrput((*vtk_grid)->points, point4);
             id++;
         }
 
-        if(hmgeti(hash, aux5) == -1) {
-            arrput((*vtk_grid)->points, aux5);
-            hmput(hash, aux5, id);
+        if(hmgeti(hash, point5) == -1) {
+            arrput((*vtk_grid)->points, point5);
+            hmput(hash, point5, id);
             id++;
         }
 
-        if(hmgeti(hash, aux6) == -1) {
-            arrput((*vtk_grid)->points, aux6);
-            hmput(hash, aux6, id);
+        if(hmgeti(hash, point6) == -1) {
+            arrput((*vtk_grid)->points, point6);
+            hmput(hash, point6, id);
             id++;
         }
 
-        if(hmgeti(hash, aux7) == -1) {
-            arrput((*vtk_grid)->points, aux7);
-            hmput(hash, aux7, id);
+        if(hmgeti(hash, point7) == -1) {
+            arrput((*vtk_grid)->points, point7);
+            hmput(hash, point7, id);
             id++;
         }
 
-        if(hmgeti(hash, aux8) == -1) {
-            arrput((*vtk_grid)->points, aux8);
-            hmput(hash, aux8, id);
+        if(hmgeti(hash, point8) == -1) {
+            arrput((*vtk_grid)->points, point8);
+            hmput(hash, point8, id);
             id++;
         }
 
-        arrput((*vtk_grid)->cells, hmget(hash, aux1));
-        arrput((*vtk_grid)->cells, hmget(hash, aux2));
-        arrput((*vtk_grid)->cells, hmget(hash, aux3));
-        arrput((*vtk_grid)->cells, hmget(hash, aux4));
-        arrput((*vtk_grid)->cells, hmget(hash, aux5));
-        arrput((*vtk_grid)->cells, hmget(hash, aux6));
-        arrput((*vtk_grid)->cells, hmget(hash, aux7));
-        arrput((*vtk_grid)->cells, hmget(hash, aux8));
+        arrput((*vtk_grid)->cells, hmget(hash, point1));
+        arrput((*vtk_grid)->cells, hmget(hash, point2));
+        arrput((*vtk_grid)->cells, hmget(hash, point3));
+        arrput((*vtk_grid)->cells, hmget(hash, point4));
+        arrput((*vtk_grid)->cells, hmget(hash, point5));
+        arrput((*vtk_grid)->cells, hmget(hash, point6));
+        arrput((*vtk_grid)->cells, hmget(hash, point7));
+        arrput((*vtk_grid)->cells, hmget(hash, point8));
         num_cells++;
     }
 
@@ -537,16 +538,8 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         max_z = bounds[5];
     }
 
-    real_cpu center_x, center_y, center_z;
-
-    struct point_3d aux1;
-    struct point_3d aux2;
-    struct point_3d aux3;
-    struct point_3d aux4;
-    struct point_3d aux5;
-    struct point_3d aux6;
-    struct point_3d aux7;
-    struct point_3d aux8;
+    struct point_3d points[8];
+    struct point_3d point1, point2, point3, point4, point5, point6, point7, point8;
 
     uint32_t id = 0;
     uint32_t num_cells = 0;
@@ -560,29 +553,25 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     real_cpu side;
     struct point_hash_entry *hash =  NULL;
 
-    real_cpu center_x_plus, center_x_minus;
-    real_cpu center_y_plus, center_y_minus;
-    real_cpu center_z_plus, center_z_minus;
+    struct point_3d half_face;
+    struct point_3d center;
 
     struct cell_node ** grid_cell = grid->active_cells;
 
     for(int i = 0; i < num_active_cells; i++) {
 
-
-        center_x = grid_cell[i]->center.x;
-        center_y = grid_cell[i]->center.y;
-        center_z = grid_cell[i]->center.z;
+        center = grid_cell[i]->center;
 
         if(clip_with_plain) {
-            side = A * center_x + B * center_y + C * center_z + D;
+            side = A * center.x + B * center.y + C * center.z + D;
             if(side < 0) {
                 continue;
             }
         }
 
         if(clip_with_bounds) {
-            bool ignore_cell = center_x < min_x || center_x > max_x || center_y < min_y || center_y > max_y ||
-                               center_z < min_z || center_z > max_z;
+            bool ignore_cell = center.x < min_x || center.x > max_x || center.y < min_y || center.y > max_y ||
+                center.z < min_z || center.z > max_z;
 
             if(ignore_cell) {
                 continue;
@@ -598,107 +587,77 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             continue;
         }
 
-        real_cpu half_face_x = grid_cell[i]->discretization.x / 2.0f;
-        real_cpu half_face_y = grid_cell[i]->discretization.y / 2.0f;
-        real_cpu half_face_z = grid_cell[i]->discretization.z / 2.0f;
+        half_face.x = grid_cell[i]->discretization.x / 2.0f;
+        half_face.y = grid_cell[i]->discretization.y / 2.0f;
+        half_face.z = grid_cell[i]->discretization.z / 2.0f;
 
-        center_x_plus  = center_x + half_face_x;
-        center_x_minus = center_x - half_face_x;
+        set_point_data(points, center, half_face);
 
-        center_y_plus  = center_y + half_face_y;
-        center_y_minus = center_y - half_face_y;
+        point1 = points[0];
+        point2 = points[1];
+        point3 = points[2];
+        point4 = points[3];
+        point5 = points[4];
+        point6 = points[5];
+        point7 = points[6];
+        point8 = points[7];
 
-        center_z_plus  = center_z + half_face_z;
-        center_z_minus = center_z - half_face_z;
-
-        aux1.x = center_x_minus;
-        aux1.y = center_y_minus;
-        aux1.z = center_z_minus;
-
-        aux2.x = center_x_plus;
-        aux2.y = center_y_minus;
-        aux2.z = center_z_minus;
-
-        aux3.x = center_x_plus;
-        aux3.y = center_y_plus;
-        aux3.z = center_z_minus;
-
-        aux4.x = center_x_minus;
-        aux4.y = center_y_plus;
-        aux4.z = center_z_minus;
-
-        aux5.x = center_x_minus;
-        aux5.y = center_y_minus;
-        aux5.z = center_z_plus;
-
-        aux6.x = center_x_plus;
-        aux6.y = center_y_minus;
-        aux6.z = center_z_plus;
-
-        aux7.x = center_x_plus;
-        aux7.y = center_y_plus;
-        aux7.z = center_z_plus;
-
-        aux8.x = center_x_minus;
-        aux8.y = center_y_plus;
-        aux8.z = center_z_plus;
-
-        if(hmgeti(hash, aux1) == -1) {
-            arrput((*vtk_grid)->points, aux1);
-            hmput(hash, aux1, id);
+        if(hmgeti(hash, point1) == -1) {
+            arrput((*vtk_grid)->points, point1);
+            hmput(hash, point1, id);
             id++;
         }
 
-        if(hmgeti(hash, aux2) == -1) {
-            arrput((*vtk_grid)->points, aux2);
-            hmput(hash, aux2, id);
+        if(hmgeti(hash, point2) == -1) {
+            arrput((*vtk_grid)->points, point2);
+            hmput(hash, point2, id);
             id++;
         }
 
-        if(hmgeti(hash, aux3) == -1) {
-            hmput(hash, aux3, id);
-            arrput((*vtk_grid)->points, aux3);
+        if(hmgeti(hash, point3) == -1) {
+            hmput(hash, point3, id);
+            arrput((*vtk_grid)->points, point3);
             id++;
         }
 
-        if(hmgeti(hash, aux4) == -1) {
-            hmput(hash, aux4, id);
-            arrput((*vtk_grid)->points, aux4);
+        if(hmgeti(hash, point4) == -1) {
+            hmput(hash, point4, id);
+            arrput((*vtk_grid)->points, point4);
             id++;
         }
 
-        if(hmgeti(hash, aux5) == -1) {
-            arrput((*vtk_grid)->points, aux5);
-            hmput(hash, aux5, id);
+        if(hmgeti(hash, point5) == -1) {
+            arrput((*vtk_grid)->points, point5);
+            hmput(hash, point5, id);
             id++;
         }
 
-        if(hmgeti(hash, aux6) == -1) {
-            arrput((*vtk_grid)->points, aux6);
-            hmput(hash, aux6, id);
+        if(hmgeti(hash, point6) == -1) {
+            arrput((*vtk_grid)->points, point6);
+            hmput(hash, point6, id);
             id++;
         }
 
-        if(hmgeti(hash, aux7) == -1) {
-            arrput((*vtk_grid)->points, aux7);
-            hmput(hash, aux7, id);
+        if(hmgeti(hash, point7) == -1) {
+            arrput((*vtk_grid)->points, point7);
+            hmput(hash, point7, id);
             id++;
         }
 
-        if(hmgeti(hash, aux8) == -1) {
-            arrput((*vtk_grid)->points, aux8);
-            hmput(hash, aux8, id);
+        if(hmgeti(hash, point8) == -1) {
+            arrput((*vtk_grid)->points, point8);
+            hmput(hash, point8, id);
             id++;
         }
 
-        arrput((*vtk_grid)->cells, hmget(hash, aux1));
-        arrput((*vtk_grid)->cells, hmget(hash, aux2));
-        arrput((*vtk_grid)->cells, hmget(hash, aux3));
-        arrput((*vtk_grid)->cells, hmget(hash, aux4));
-        arrput((*vtk_grid)->cells, hmget(hash, aux5));
-        arrput((*vtk_grid)->cells, hmget(hash, aux6));
-        arrput((*vtk_grid)->cells, hmget(hash, aux7));
-        arrput((*vtk_grid)->cells, hmget(hash, aux8));
+        arrput((*vtk_grid)->cells, hmget(hash, point1));
+        arrput((*vtk_grid)->cells, hmget(hash, point2));
+        arrput((*vtk_grid)->cells, hmget(hash, point3));
+        arrput((*vtk_grid)->cells, hmget(hash, point4));
+        arrput((*vtk_grid)->cells, hmget(hash, point5));
+        arrput((*vtk_grid)->cells, hmget(hash, point6));
+        arrput((*vtk_grid)->cells, hmget(hash, point7));
+        arrput((*vtk_grid)->cells, hmget(hash, point8));
         num_cells++;
     }
 
