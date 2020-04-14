@@ -13,8 +13,8 @@ FIND_CUDA () {
 
 	if [ -z "$CUDA_INCLUDE_PATH" ]; then
 
-	  	if [ "$OS" == "Manjaro Linux" ]; then
-	  	  CUDA_INCLUDE_PATH="${CUDA_LIBRARY_PATH}/lib64/include"
+	    if [ "$OS" == "Manjaro Linux" ]; then
+	      CUDA_INCLUDE_PATH="/opt/cuda/include"
 	    else
 	      CUDA_INCLUDE_PATH='/usr/include/'
 	    fi
