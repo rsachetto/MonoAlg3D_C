@@ -1215,8 +1215,6 @@ static void handle_keyboard_input(struct mesh_info *mesh_info, struct gui_state 
 
         gui_config.paused = true;
 
-        GuiLock();
-
         char *buf = get_current_directory();
 
         char const *tmp = tinyfd_selectFolderDialog("Select a directory", buf);
@@ -1228,7 +1226,6 @@ static void handle_keyboard_input(struct mesh_info *mesh_info, struct gui_state 
         }
 
         free(buf);
-        GuiUnlock();
 
         if(tmp) {
             reset(mesh_info, gui_state, true);
@@ -1240,8 +1237,6 @@ static void handle_keyboard_input(struct mesh_info *mesh_info, struct gui_state 
     if (IsKeyPressed(KEY_F)) {
 
         gui_config.paused = true;
-
-        GuiLock();
 
         char *buf = get_current_directory();
 
@@ -1263,7 +1258,6 @@ static void handle_keyboard_input(struct mesh_info *mesh_info, struct gui_state 
         }
 
         free(buf);
-        GuiUnlock();
 
         if(tmp) {
             reset(mesh_info, gui_state, true);
@@ -1376,7 +1370,6 @@ static void handle_input(struct mesh_info *mesh_info, struct gui_state *gui_stat
 
     else if (gui_state->ap_graph_config->drag_ap_graph) {
 
-
         float new_heigth  = gui_state->ap_graph_config->graph.height + (gui_state->ap_graph_config->graph.y -  gui_state->mouse_pos.y);
 
         if(new_heigth > 100){
@@ -1447,9 +1440,6 @@ static void handle_input(struct mesh_info *mesh_info, struct gui_state *gui_stat
         }
 
     }
-
-
-
 
 }
 
