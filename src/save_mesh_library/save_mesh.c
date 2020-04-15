@@ -113,14 +113,14 @@ SAVE_MESH(save_as_text_or_binary) {
 
     int iteration_count = time_info->iteration;
 
-    if(!initialized) {
+//    if(!initialized) {
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
         initialized = true;
-    }
+//    }
 
     real_cpu min_x = 0.0;
     real_cpu min_y = 0.0;

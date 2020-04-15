@@ -6,6 +6,7 @@
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)
+
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
@@ -68,7 +69,7 @@ struct vtk_files {
 
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                                 \
     do {                                                                                                               \
-        for(long i = 0; i < shlen(d); i++) {                                                                            \
+        for(long i = 0; i < shlen(d); i++) {                                                                           \
             struct string_hash_entry e = d[i];                                                                         \
             printf("%s = %s\n", e.key, e.value);                                                                       \
         }                                                                                                              \
@@ -76,15 +77,15 @@ struct vtk_files {
 
 #define STRING_HASH_PRINT_KEY_VALUE_LOG(d)                                                                             \
     do {                                                                                                               \
-        for(long i = 0; i < shlen(d); i++) {                                                                            \
+        for(long i = 0; i < shlen(d); i++) {                                                                           \
             struct string_hash_entry e = d[i];                                                                         \
-            log_to_stdout_and_file("%s = %s\n", e.key, e.value);                                                     \
+            log_to_stdout_and_file("%s = %s\n", e.key, e.value);                                                       \
         }                                                                                                              \
     } while(0)
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                         \
     do {                                                                                                               \
-        for(long i = 0; i < hmlen(d); i++) {                                                                            \
+        for(long i = 0; i < hmlen(d); i++) {                                                                           \
             struct string_voidp_hash_entry e = d[i];                                                                   \
             fn(e.value);                                                                                               \
         }                                                                                                              \
@@ -92,7 +93,7 @@ struct vtk_files {
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(d, fn)                                                 \
     do {                                                                                                               \
-        for(long i = 0; i < hmlen(d); i++) {                                                                            \
+        for(long i = 0; i < hmlen(d); i++) {                                                                           \
             struct string_voidp_hash_entry e = d[i];                                                                   \
             fn(e.value, e.key);                                                                                        \
         }                                                                                                              \
@@ -108,11 +109,11 @@ struct vtk_files {
     }                                                                                                                  \
     while(0)
 
-#define MODIFY_DOMAIN_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                         \
+#define MODIFY_DOMAIN_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                \
     do {                                                                                                               \
         for(long i = 0; i < hmlen(d); i++) {                                                                           \
             struct string_voidp_hash_entry e = d[i];                                                                   \
-            init_config_functions(e.value, "./shared_libs/libdefault_modify_domain.so", e.key);                              \
+            init_config_functions(e.value, "./shared_libs/libdefault_modify_domain.so", e.key);                        \
         }                                                                                                              \
     }                                                                                                                  \
     while(0)

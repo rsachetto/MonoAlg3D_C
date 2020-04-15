@@ -127,3 +127,5 @@ src/3dparty/raylib/src/external/glfw/src/glfw.rc.in
 perf.data*
 .clangd/
 *.swp
+
+tests_bin/SolversProfiler

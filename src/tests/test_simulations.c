@@ -167,52 +167,14 @@ int check_output_equals(const sds gold_output, const sds tested_output, float to
     return 1;
 }
 
-Test(run_gold_simulation, gpu_no_adapt_cg_no_gpu) {
-
-    printf("Running simulation for testing\n");
-
-    char *out_dir  = "tests_bin/gold_tmp_no_gpu";
-
-    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt.ini");
-
-    int success = run_simulation_with_config(options, out_dir);
-    cr_assert(success);
-
-    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
-    sds tested_simulation_dir = sdsnew(out_dir);
-
-    success = check_output_equals(gold_dir, tested_simulation_dir, 1e-3f);
-    cr_assert(success);
-
-    free_user_options(options);
-}
-
-Test(run_gold_simulation, gpu_no_adapt_cg_gpu) {
-
-    printf("Running simulation for testing\n");
-
-    struct user_options *options = load_options_from_file("example_configs/gold_simulation_no_adapt_cg_gpu.ini");
-
-    char *out_dir  = "tests_bin/gold_tmp_gpu";
-    int success = run_simulation_with_config(options, out_dir);
-    cr_assert(success);
-
-    sds gold_dir = sdsnew("tests_bin/gold_simulation_no_adapt_gpu/");
-    sds tested_simulation_dir = sdsnew(out_dir);
-
-    success = check_output_equals(gold_dir, tested_simulation_dir, 5e-2f);
-    cr_assert(success);
-    free_user_options(options);
-
-}
-
 #ifdef COMPILE_CUDA
 Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
+//int main() {
 
-    char *out_dir_no_gpu_no_precond  = "tests_bin/circle_cg_no_gpu_no_precond";
+    char *out_dir_no_gpu_no_precond = "tests_bin/circle_cg_no_gpu_no_precond";
     char *out_dir_no_gpu_precond  = "tests_bin/circle_cg_no_gpu_precond";
 
-    char *out_dir_gpu_no_precond  = "tests_bin/circle_cg_gpu_no_precond";
+    char *out_dir_gpu_no_precond = "tests_bin/circle_cg_gpu_no_precond";
     char *out_dir_gpu_precond  = "tests_bin/circle_cg_gpu_precond";
 
 
@@ -243,9 +205,9 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
     success = run_simulation_with_config(options, out_dir_no_gpu_no_precond);
     cr_assert(success);
 
-     shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "true");
-     success = run_simulation_with_config(options, out_dir_no_gpu_precond);
-     cr_assert(success);
+    shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "true");
+    success = run_simulation_with_config(options, out_dir_no_gpu_precond);
+    cr_assert(success);
 
     shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "true");
     shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "false");

@@ -17,8 +17,6 @@
 
 #include <gdbm.h>
 
-
-
 struct elapsed_times {
     long config_time;
     long create_grid_time;
@@ -142,7 +140,7 @@ int main(int argc, char **argv) {
     hash_key.dsize = strlen(hash_key.dptr);
 
     for(int i = 0; i < nruns; i++) {
-        profile_cuboid_mesh("100", "100", "100", "10000", "10000", "10000", &times);
+        profile_cuboid_mesh("200", "200", "200", "10000", "10000", "10000", &times);
 
         average_times.config_time      += times.config_time;
         average_times.create_grid_time += times.create_grid_time;
@@ -210,12 +208,12 @@ int main(int argc, char **argv) {
         double speedup = (double)best_run->total_time/(double)average_times.total_time;
 
         //10% speedup
-        if(speedup > 1.1) {
-            printf("Current run is %lf x faster than best run. Replacing record.\n", speedup);
+        if(speedup > 1.0) {
+            printf("Current run is %lfx faster than best run. Replacing record.\n", speedup);
             gdbm_store(f, hash_key, data, GDBM_REPLACE);
         }
         else if(speedup < 1.0) {
-            printf("Current run is %lf x slower than best run.\n", speedup);
+            printf("Current run is %lfx slower than best run.\n", speedup);
         }
 
         free(best_run);

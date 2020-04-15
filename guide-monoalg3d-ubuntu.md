@@ -22,5 +22,5 @@ $ nvidia-smi
 ```
 #### Step 3) Install other dependencies (optional, for GUI building)
 ```sh
-$ sudo apt-get install libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libz-dev libxi-dev libglu1-mesa-dev libglvnd-dev zlib1g-dev
+$ sudo apt-get install libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libz-dev libxi-dev libglu1-mesa-dev libglvnd-dev
 ```

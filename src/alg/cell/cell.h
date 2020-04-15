@@ -33,6 +33,7 @@ struct basic_cell_data {
 };
 
 struct cell_node {
+
     struct basic_cell_data cell_data; // DO NOT CHANGE THIS MEMBER POSITION
 
     bool active;
