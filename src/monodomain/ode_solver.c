@@ -275,7 +275,6 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 
     if(ode_solver->gpu) {
         #ifdef COMPILE_CUDA
-
         size_t pitch_h = ode_solver->pitch;
 
         OMP(parallel for private(sv_src, sv_dst))
@@ -292,7 +291,6 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
                 check_cuda_errors(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t )neq, cudaMemcpyDeviceToDevice));
             }
         }
-
         #endif
     }
     else {

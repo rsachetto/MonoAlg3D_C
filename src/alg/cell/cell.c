@@ -7,7 +7,6 @@
 
 #include "../../3dparty/stb_ds.h"
 
-
 void init_basic_cell_data_with_type(struct basic_cell_data *data, char type) {
     data->type = type;
     data->level = 1;
@@ -71,10 +70,11 @@ void init_cell_node(struct cell_node *cell_node) {
     cell_node->sigma.y = 0.0;
     cell_node->sigma.z = 0.0;
 
+#ifdef ENABLE_DDM
     cell_node->kappa.x = 0.0;
     cell_node->kappa.y = 0.0;
     cell_node->kappa.z = 0.0;
-
+#endif
 
 #if defined(_OPENMP)
     omp_init_lock(&(cell_node->updating));
@@ -93,15 +93,13 @@ void free_cell_node(struct cell_node *cell_node) {
     free(cell_node);
 }
 
-
-
-void lock_cell_node(struct cell_node *cell_node) {
+inline void lock_cell_node(struct cell_node *cell_node) {
 #if defined(_OPENMP)
     omp_set_lock(&(cell_node->updating));
 #endif
 }
 
-void unlock_cell_node(struct cell_node *cell_node) {
+inline void unlock_cell_node(struct cell_node *cell_node) {
 #if defined(_OPENMP)
     omp_unset_lock(&(cell_node->updating));
 #endif
@@ -163,7 +161,10 @@ void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretizati
     the_cell->grid_position = grid_position;
     the_cell->hilbert_shape_number = hilbert_shape_number;
     the_cell->center = center;
+
+#ifdef COMPILE_GUI
     the_cell->translated_center = translated_center;
+#endif
 }
 
 void set_cell_flux(struct cell_node *the_cell, char direction) {

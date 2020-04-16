@@ -55,6 +55,7 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     #endif
 }
 
+#ifdef ENABLE_DDM
 UPDATE_MONODOMAIN(update_monodomain_ddm) 
 {
 
@@ -213,5 +214,5 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
     #ifdef COMPILE_CUDA
     free(vms);
     #endif
-
 }
+#endif

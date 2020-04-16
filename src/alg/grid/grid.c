@@ -532,11 +532,13 @@ void translate_mesh_to_origin(struct grid *the_grid) {
 
     }
 
+#ifdef COMPILE_GUI
     FOR_EACH_CELL(the_grid) {
         cell->translated_center.x = cell->center.x - minx + (cell->discretization.x / 2.0f);
         cell->translated_center.y = cell->center.y - miny + (cell->discretization.y / 2.0f);
         cell->translated_center.z = cell->center.z - minz + (cell->discretization.z / 2.0f);
     }
+#endif
 }
 
 static void sort_elements(struct element *cell_elements, int tam) {

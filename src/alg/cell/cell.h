@@ -21,7 +21,9 @@
 #define TRANSITION_NODE_TYPE 'w'
 
 struct element {
+#ifdef ENABLE_DDM
     char direction;     // NEW parameter !!!
+#endif
     real_cpu value;
     uint32_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
@@ -36,13 +38,13 @@ struct cell_node {
 
     struct basic_cell_data cell_data; // DO NOT CHANGE THIS MEMBER POSITION
 
-    bool active;
-
     uint64_t bunch_number; // Bunch identifier
 
     struct point_3d center;
 
+#ifdef COMPILE_GUI
     struct point_3d translated_center;
+#endif
 
     void *north; // Points to cell node or transition node above this cell. Z right
     void *south; // Points to cell node or transition node below this cell. Z left
@@ -54,11 +56,11 @@ struct cell_node {
     struct cell_node *previous; // Previous cell in the Hilbert curve ordering.
     struct cell_node *next;     // Next cell of in the Hilbert curve ordering.
 
-    // Indicates position of cell on grid according to  ordering provided by
+    // Indicates position of cell on grid according to ordering provided by
     // the modified Hilbert curve.
     uint32_t grid_position;
 
-    // Variable used to storage the form of the  Hilbert curve in the  bunch
+    // Variable used to storage the form of the Hilbert curve in the  bunch
     // created when this cell is refined.
     uint8_t hilbert_shape_number;
 
@@ -76,14 +78,16 @@ struct cell_node {
 
     struct point_3d discretization;
 
+    bool active;
     bool can_change;
     bool visited;
+
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient
    method.
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
-    real_cpu Ax; /* Element of int_vector Ax = b associated to this cell. Also plays the role of Ap.*/
+    real_cpu Ax; /* Element of vector Ax = b associated to this cell. Also plays the role of Ap.*/
     real_cpu b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
 
     void *linear_system_solver_extra_info;
@@ -98,7 +102,10 @@ struct cell_node {
     real_cpu v;
 
     struct point_3d sigma;
+
+#ifdef ENABLE_DDM
     struct point_3d kappa;
+#endif
 
 #if defined(_OPENMP)
     omp_lock_t updating;

@@ -9,7 +9,6 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
-#include "../monodomain/constants.h"
 #include "../utils/utils.h"
 #include "../3dparty/stb_ds.h"
 
@@ -77,8 +76,7 @@ void calculate_kappa_elements(struct monodomain_solver *the_solver, struct grid 
 struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
                                  const real_cpu sigma_x, const real_cpu sigma_y, const real_cpu sigma_z,\
                                  const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
-                                 const real_cpu dt,\
-                                struct element *cell_elements) 
+                                 const real_cpu dt, struct element *cell_elements)
 {
 
     real_cpu multiplier;

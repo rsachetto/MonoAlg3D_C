@@ -88,8 +88,11 @@ Test (utils, arr_element) {
     cr_assert_geq(arrcap(v), 1);
 
     struct cell_node *c = new_cell_node();
+#ifdef ENABLE_DDM
     struct element a = {'a', 0, 1, c};
-
+#else
+    struct element a = {0, 1, c};
+#endif
     arrput(v, a);
 
     a.column = 2;

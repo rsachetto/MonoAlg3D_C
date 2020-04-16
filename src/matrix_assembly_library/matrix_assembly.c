@@ -771,25 +771,22 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
 
     if (!sigma_initialized) {
 
-	    FOR_EACH_CELL(the_grid)  {
+		FOR_EACH_CELL(the_grid) {
 
-		    if(cell->active) 
-		    {
-	    		real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-	    		if (p < phi) 
-			    {
-				    cell->sigma.x = sigma_x * sigma_factor;
-				    cell->sigma.y = sigma_y * sigma_factor;
-				    cell->sigma.z = sigma_z * sigma_factor;
-	    		}
-			    else
-			    {
-				    cell->sigma.x = sigma_x;
-	    			cell->sigma.y = sigma_y;
-	    			cell->sigma.z = sigma_z;
-			    }
-		    }
-    	}
+			if(cell->active) {
+				real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+				if (p < phi) {
+					cell->sigma.x = sigma_x * sigma_factor;
+					cell->sigma.y = sigma_y * sigma_factor;
+					cell->sigma.z = sigma_z * sigma_factor;
+				}
+				else {
+					cell->sigma.x = sigma_x;
+					cell->sigma.y = sigma_y;
+					cell->sigma.z = sigma_z;
+				}
+			}
+		}
 
 	    //sigma_initialized = true;
     }
