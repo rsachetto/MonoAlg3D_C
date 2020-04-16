@@ -27,12 +27,6 @@ struct action_potential {
     real_cpu t;
 };
 
-enum simulation_status {
-    RESTART_SIMULATION,
-    END_SIMULATION,
-    SIMULATION_FINISHED,
-};
-
 enum draw_simulation_or_file {
     DRAW_SIMULATION,
     DRAW_FILE,

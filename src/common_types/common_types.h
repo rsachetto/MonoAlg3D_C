@@ -10,6 +10,12 @@
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
+enum simulation_status {
+    RESTART_SIMULATION,
+    END_SIMULATION,
+    SIMULATION_FINISHED,
+};
+
 struct time_info {
     real_cpu current_t;
     real_cpu final_t;

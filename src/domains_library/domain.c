@@ -386,8 +386,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
                 real_cpu phi_local = phi - phi * dist;
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
 
-                if(p < phi_local)
+                if(p < phi_local) {
                     cell->active = false;
+				}
 
                 cell->can_change = false;
             }

@@ -30,34 +30,40 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
 
     uint8_t number_of_hilbert_shape;
 
-    real_cpu cell_center_x    = cell->center.x,
-            cell_center_y   = cell->center.y,
-            cell_center_z   = cell->center.z,
-            cell_half_side_x    = cell->discretization.x / 2.0f,
-            cell_half_side_y    = cell->discretization.y / 2.0f,
-            cell_half_side_z    = cell->discretization.z / 2.0f,
-            cell_quarter_side_x = cell->discretization.x / 4.0f,
-            cell_quarter_side_y = cell->discretization.y / 4.0f,
-            cell_quarter_side_z = cell->discretization.z / 4.0f;
+    real_cpu cell_center_x       = cell->center.x,
+             cell_center_y       = cell->center.y,
+             cell_center_z       = cell->center.z,
+             cell_half_side_x    = cell->discretization.x / 2.0f,
+             cell_half_side_y    = cell->discretization.y / 2.0f,
+             cell_half_side_z    = cell->discretization.z / 2.0f,
+             cell_quarter_side_x = cell->discretization.x / 4.0f,
+             cell_quarter_side_y = cell->discretization.y / 4.0f,
+             cell_quarter_side_z = cell->discretization.z / 4.0f;
 
     uint64_t old_bunch_number = cell->bunch_number;
 
-    // Creation of the front northeast cell. This cell, which is to be refined,
-    // becomes the frontNortheast cell of the new bunch.
-    front_northeast_sub_cell                     = cell;
-    front_northeast_sub_cell->cell_data.level    = cell->cell_data.level + (uint8_t )1;
-    front_northeast_sub_cell->discretization.x        = cell_half_side_x;
-    front_northeast_sub_cell->discretization.y        = cell_half_side_y;
-    front_northeast_sub_cell->discretization.z        = cell_half_side_z;
+    // Creation of the front northeast cell.
+    // This cell, which is to be refined,
+    // becomes the front northeast cell of the new bunch.
+    front_northeast_sub_cell                   = cell;
+    front_northeast_sub_cell->cell_data.level  = cell->cell_data.level + (uint8_t )1;
+    front_northeast_sub_cell->discretization.x = cell_half_side_x;
+    front_northeast_sub_cell->discretization.y = cell_half_side_y;
+    front_northeast_sub_cell->discretization.z = cell_half_side_z;
+
     front_northeast_sub_cell->center.x = cell_center_x + cell_quarter_side_x;
     front_northeast_sub_cell->center.y = cell_center_y + cell_quarter_side_y;
     front_northeast_sub_cell->center.z = cell_center_z + cell_quarter_side_z;
 
-    real_cpu translated_center_x = cell->translated_center.x;
-    real_cpu translated_center_y = cell->translated_center.y;
-    real_cpu translated_center_z = cell->translated_center.z;
+    real_cpu translated_center_x = 0;
+    real_cpu translated_center_y = 0;
+    real_cpu translated_center_z = 0;
 
 #ifdef COMPILE_GUI
+    translated_center_z = cell->translated_center.z;
+    translated_center_y = cell->translated_center.y;
+    translated_center_x = cell->translated_center.x;
+
     front_northeast_sub_cell->translated_center.x = translated_center_x + cell_quarter_side_x;
     front_northeast_sub_cell->translated_center.y = translated_center_y + cell_quarter_side_y;
     front_northeast_sub_cell->translated_center.z = translated_center_z + cell_quarter_side_z;
@@ -82,7 +88,9 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(translated_center_x - cell_quarter_side_x,
                                   translated_center_y + cell_quarter_side_y,
                                   translated_center_z + cell_quarter_side_z),
-                          old_bunch_number * 10 + 2, free_sv_positions, refined_this_step);
+                                  old_bunch_number * 10 + 2,
+                                  free_sv_positions,
+                          refined_this_step);
 
 
     // Creation of back Northwest node.
@@ -184,7 +192,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     west_transition_node = new_transition_node();
     set_refined_transition_node_data(west_transition_node, front_northeast_sub_cell, 'w');
 
-
     // north transition node.
     north_transition_node = new_transition_node();
     set_refined_transition_node_data(north_transition_node, front_northeast_sub_cell, 'n');
@@ -196,7 +203,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     // east transition node.
     east_transition_node = new_transition_node();
     set_refined_transition_node_data(east_transition_node, front_northeast_sub_cell, 'e');
-
 
     // front transition node.
     front_transition_node = new_transition_node();
@@ -338,8 +344,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     south_transition_node->quadruple_connector2 = front_southeast_sub_cell;
     south_transition_node->quadruple_connector3 = back_southeast_sub_cell;
     south_transition_node->quadruple_connector4 = back_southwest_sub_cell;
-
-
 
     // Linking bunch neighbor cells to the transition nodes just created.
     struct cell_node *neighbour_cell_node = NULL;
@@ -1212,7 +1216,7 @@ void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_
                             uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step) {
 
     the_cell->cell_data.level = other_cell->cell_data.level;
-    the_cell->active = other_cell->active;
+    the_cell-> active = other_cell-> active;
 
     if(other_cell->mesh_extra_info) {
         the_cell->mesh_extra_info_size = other_cell->mesh_extra_info_size;
@@ -1231,7 +1235,10 @@ void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_
     the_cell->sigma = other_cell->sigma;
     the_cell->discretization = discretization;
     the_cell->center = center;
+
+#ifdef COMPILE_GUI
     the_cell->translated_center = translated_center;
+#endif
 
     the_cell->bunch_number = bunch_number;
 

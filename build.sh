@@ -20,6 +20,7 @@ COMPILE_GUI=''
 COMPILE_MPI=''
 COMPILE_CONVERTER=''
 COMPILE_SIMULATOR=''
+COMPILE_WITH_DDM=''
 
 GET_BUILD_OPTIONS "$@"
 
@@ -43,7 +44,12 @@ for i in "${BUILD_ARGS[@]}"; do
         cd - || exit 1;
         exit 0    
     fi
-    
+
+    if [ "$i" == "ddm" ]; then
+        COMPILE_WITH_DDM='y'
+        C_FLAGS="$C_FLAGS -DENABLE_DDM"
+    fi
+
     if [ "$i" == "all" ]; then
         COMPILE_GUI='y'
         COMPILE_MPI='y'

@@ -53,8 +53,11 @@ MODIFY_DOMAIN(set_scar_fibrosis) {
                 distance_from_center = (distance_from_center - sphere_radius) / border_zone_size;
                 real_cpu phi_local = phi - phi * distance_from_center;
                 real_cpu p = (real_cpu) (rand()) / (RAND_MAX);
-                if (p < phi_local)
+
+                if (p < phi_local) {
                     grid_cell->active = false;
+                }
+
                 grid_cell->can_change = false;
             }
         }

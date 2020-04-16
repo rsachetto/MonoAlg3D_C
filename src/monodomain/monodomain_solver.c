@@ -52,7 +52,6 @@ struct monodomain_solver *new_monodomain_solver() {
 int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
                       struct grid *the_grid, struct user_options *configs) {
 
-
     assert(configs);
 
     assert(the_grid);
@@ -161,7 +160,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             }	            
         }
     }
-
 
     real_cpu modify_at_end = 0.0;
 
@@ -395,13 +393,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dz, domain_config->config_data, "maximum_dz");
 
         order_grid_cells(the_grid);
+
         original_num_cells = the_grid->num_active_cells;
         the_ode_solver->original_num_cells = original_num_cells;
         the_ode_solver->num_cells_to_solve = original_num_cells;
 
     }
     // Purkinje section
-    if (purkinje_config)  {
+    if (purkinje_config) {
         original_num_purkinje_cells = the_grid->purkinje->number_of_purkinje_cells;
         the_purkinje_ode_solver->original_num_cells = original_num_purkinje_cells;
         the_purkinje_ode_solver->num_cells_to_solve = original_num_purkinje_cells;
@@ -409,8 +408,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     save_old_cell_positions(the_grid);
 
-    if(adaptive) 
-    {
+    if(adaptive) {
         update_cells_to_solve(the_grid, the_ode_solver);
     }
 
@@ -463,9 +461,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         log_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
     } 
     else {
-        log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time "
-                                 "step: %lf\n",
-                                 dt_ode);
+        log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time step: %lf\n", dt_ode);
         dt_pde = dt_ode;
     }
 
@@ -524,7 +520,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         set_spatial_stim(&time_info, purkinje_stimuli_configs, the_grid, true);
     }
 
-
     real_cpu cur_time = time_info.current_t;
 
     log_to_stdout_and_file("Starting simulation\n");
@@ -536,7 +531,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
     CALL_INIT_SAVE_MESH(save_mesh_config);
-
 
 #ifdef COMPILE_GUI
     if(configs->show_gui) {
@@ -750,6 +744,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
                 struct config *dconfig = (struct config*) modify_domain_configs[i].value;
 
+                //TODO: if only one modification can be applied this does not make sense.
+                //We will need a boolean for each modification
                 GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(modification_applied, dconfig->config_data, "modification_applied");
 
                 if(!modification_applied) {
@@ -1004,8 +1000,7 @@ void save_old_cell_positions(struct grid *the_grid) {
     // Purkinje section
     struct grid_purkinje *the_purkinje = the_grid->purkinje;
     
-    if (the_purkinje->first_cell)
-    {
+    if (the_purkinje->first_cell) {
         uint32_t n_purkinje_active = the_purkinje->num_active_purkinje_cells;
         struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
         OMP(parallel for)
