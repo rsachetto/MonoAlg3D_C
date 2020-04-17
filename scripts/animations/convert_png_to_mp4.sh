@@ -6,8 +6,8 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="5"
-END_FRAME="50"
+FRAME_RATE="10"
+END_FRAME="100"
 OUTPUT_VIDEO_FILENAME="videos/elizabeth_biventricular_mesh"
 RESOLUTION="1584x470"
 

@@ -19,7 +19,9 @@ def plot_activation_time_results (data_sc1,data_sc2):
     #ax.set_xticks(x)
     #ax.set_xticklabels(labels)
     #ax.legend(loc=0,fontsize=10)
-    plt.ylabel("RMS",fontsize=15)
+    #plt.ylabel("RMSD",fontsize=15)
+    plt.ylabel("RMSD - abs",fontsize=15)
+    #plt.ylabel("Absolute error",fontsize=15)
     plt.title("Error activation time",fontsize=15)
     plt.xticks(x,labels)
     #plt.xticklabels(labels)
@@ -29,8 +31,19 @@ def plot_activation_time_results (data_sc1,data_sc2):
     #plt.savefig("error_activation_time.pdf")
     plt.savefig("error_activation_time.png",dpi=400)
 
+    # Box plot
+    plt.clf()
+    box_plot_data=[data_sc1,data_sc2]
+    plt.boxplot(box_plot_data,labels=['SC1','SC2'])
+    plt.title("Error activation time",fontsize=15)
+    #plt.ylabel("RMSD",fontsize=15)
+    plt.ylabel("RMSD - abs",fontsize=15)
+    #plt.ylabel("Absolute error",fontsize=15)
+    plt.savefig("box_plot_error_activation_time.png",dpi=400)
+
+
 def plot_apd_results (data_sc1,data_sc2):
-    
+
     labels = np.arange(1,21)    # Label name
     x = np.arange(1,21)         # Label position
     width = 0.35                # Bar width
@@ -47,7 +60,9 @@ def plot_apd_results (data_sc1,data_sc2):
     #ax.set_xticks(x)
     #ax.set_xticklabels(labels)
     #ax.legend(loc=0,fontsize=10)
-    plt.ylabel("RMS",fontsize=10)
+    #plt.ylabel("RMSD",fontsize=10)
+    plt.ylabel("RMSD - abs",fontsize=15)
+    #plt.ylabel("Absolute error",fontsize=15)
     plt.title("Error APD",fontsize=15)
     plt.xticks(x,labels)
     #plt.xticklabels(labels)
@@ -57,8 +72,18 @@ def plot_apd_results (data_sc1,data_sc2):
     #plt.savefig("error_apd.pdf")
     plt.savefig("error_apd.png",dpi=400)
 
+    # Box plot
+    plt.clf()
+    box_plot_data=[data_sc1,data_sc2]
+    plt.boxplot(box_plot_data,labels=['SC1','SC2'])
+    plt.title("Error APD",fontsize=15)
+    #plt.ylabel("RMSD",fontsize=15)
+    plt.ylabel("RMSD - abs",fontsize=15)
+    #plt.ylabel("Absolute error",fontsize=15)
+    plt.savefig("box_plot_error_apd.png",dpi=400)
+
 def main():
-	
+
     if len(sys.argv) != 5:
         print("------------------------------------------------------------------------------------------------------")
         print("Usage:> python %s <result_filename>" % sys.argv[0])

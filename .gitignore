@@ -68,6 +68,7 @@ meshes/mouse.alg
 meshes/hermenegild*
 meshes/cadim*
 meshes/elizabeth*
+networks/elizabeth*
 .vscode/
 build/
 *~
@@ -88,6 +89,7 @@ scripts/animations/videos
 scripts/animations/cameras
 scripts/parser_vtu_to_alg/inputs
 scripts/parser_vtu_to_alg/networks
+scripts/error_calculator/scripts/*-error*
 batch_simulations/
 *.vscode*
 /src/main_graph_analyzer.c

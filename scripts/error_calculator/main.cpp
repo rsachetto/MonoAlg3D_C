@@ -80,7 +80,7 @@ int main (int argc, char *argv[])
     if(array_1 && array_2)
     {
         double sum = 0.0;
-
+	
         // Pass through each cell on the tissue for the current timestep
         for(uint32_t i = 0; i < total_num_cells_1; i++)
         {
@@ -91,15 +91,16 @@ int main (int argc, char *argv[])
             values->InsertNextValue(fabs(value_1-value_2));
 
             // RMS calculus
-            double value = (value_1 - value_2) / (value_1);
+            //double value = (value_1 - value_2) / (value_1);		// Relative error
+	    double value = fabs(value_1 - value_2);			// Absolute error
             sum += powf(value,2);
 
         }
-        // RMS calculus
         sum /= (double)total_num_cells_1;
 
+        // RMS calculus
         double rms = sqrt(sum);
-        //printf("RMS = %g\n",rms);
+	//printf("RMS = %g\n",rms);
         printf("%g\n",rms);
     }
     else

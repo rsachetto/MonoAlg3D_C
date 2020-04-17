@@ -483,7 +483,7 @@ void construct_grid_purkinje (struct grid *the_grid)
     assert(the_grid->the_purkinje);
 
     struct grid_purkinje *the_purkinje = the_grid->the_purkinje;
-
+    
     // TODO: Allow dx, dy, dz to be different in the Purkinje code
     real_cpu side_length_x = the_purkinje->the_network->dx;
     real_cpu side_length_y = the_purkinje->the_network->dx;

@@ -522,8 +522,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
  */
     // TESTING LU DECOMPOSITION
 
-
-
     total_mat_time = stop_stop_watch(&part_mat);
     start_stop_watch(&solver_time);
 
@@ -623,9 +621,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_purkinje_ode_solver, the_grid);
 
             // MAPPING: Tissue -> Purkinje
-            //if (domain_config && purkinje_config)
+            //if (domain_config && purkinje_config && calc_retropropagation)
             //    map_tissue_solution_to_purkinje(the_purkinje_ode_solver,the_grid,the_terminals);
-
 
             if (abort_on_no_activity && cur_time > last_stimulus_time)
             {
@@ -655,7 +652,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             start_stop_watch(&purkinje_ode_time);
 
-    // Implicito
             // UPDATE: Purkinje
             ((update_monodomain_fn*)update_monodomain_config->main_function)(update_monodomain_config, original_num_purkinje_cells, the_monodomain_solver, the_grid->the_purkinje->num_active_purkinje_cells, the_grid->the_purkinje->purkinje_cells, the_purkinje_ode_solver);
 
@@ -1345,8 +1341,8 @@ void calculate_activation_time (const real_cpu cur_time, const real_cpu dt, cons
 
     int n_odes = the_ode_solver->model_data.number_of_ode_equations;
     const double apd_percentage = 0.9;
-    const double begin_time = 999.0;
-    const double end_time = 2000.0;
+    const double begin_time = 0.0;
+    const double end_time = 400.0;
 
     // V^n+1/2
     real *sv = the_ode_solver->sv;
