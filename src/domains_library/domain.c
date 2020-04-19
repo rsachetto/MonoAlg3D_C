@@ -103,6 +103,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
     sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
     sds sz_char = sdscatprintf(sdsempty(), "%lf", start_dz*num_layers);
 
+	//TODO: check if we can put this direct in the grid
     shput_dup_value(config->config_data, "side_length_x", sx_char);
     shput_dup_value(config->config_data, "side_length_y", sy_char);
     shput_dup_value(config->config_data, "side_length_z", sz_char);
@@ -113,6 +114,7 @@ SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
+	//TODO: check if this is startdz
     real_cpu start_dx = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dz");
 
@@ -155,8 +157,146 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
     return 1;
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
+SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
+	   
+	real_cpu original_discretization;
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, original_discretization, config->config_data, "original_discretization");
 
+	real_cpu start_discretization;
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_discretization, config->config_data, "start_discretization");
+	
+	//TODO: we should put this in the grid data again
+	//
+	//the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
+	//
+
+	//TODO: change this to the code above
+	char *tmp = shget(config->config_data, "start_discretization");
+    shput_dup_value(config->config_data,  "start_dx", tmp);
+    shput_dup_value(config->config_data,  "start_dy", tmp);
+    shput_dup_value(config->config_data,  "start_dz", tmp);
+
+	size_t size;
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, size, config->config_data, "num_volumes");
+
+    char *mesh_file;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+
+	int n_steps = 0;
+
+	if(original_discretization == 800) {
+	    initialize_and_construct_grid(the_grid, POINT3D(204800, 204800, 204800));
+		n_steps = 7;
+	}
+	else if(original_discretization == 500) {
+	    initialize_and_construct_grid(the_grid, POINT3D(256000, 256000, 256000));
+		n_steps = 8;
+	}
+	else {
+		log_to_stderr_and_file_and_exit("Invalid original_discretization: %lf. Valids values are 500 or 800\n", original_discretization);
+	}
+
+    refine_grid(the_grid, n_steps);
+    struct cell_node *grid_cell = the_grid->first_cell;
+    FILE *file = fopen(mesh_file, "r");
+
+    if(!file) {
+        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", mesh_file);
+    }
+
+    double **mesh_points = (double **)malloc(sizeof(double *) * size);
+    for(int i = 0; i < size; i++) {
+        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 3);
+        if(mesh_points[i] == NULL) {
+            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+        }
+    }
+
+    real_cpu maxy = 0.0;
+    real_cpu maxz = 0.0;
+    real_cpu miny = DBL_MAX;
+    real_cpu minz = DBL_MAX;
+    
+	real_cpu dummy;
+	int dummy1;
+
+    int i = 0;
+    while(i < size) {
+
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%d\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &dummy, &dummy, &dummy1);
+
+        if(mesh_points[i][1] > maxy)
+            maxy = mesh_points[i][1];
+        if(mesh_points[i][2] > maxz)
+            maxz = mesh_points[i][2];
+        if(mesh_points[i][1] < miny)
+            miny = mesh_points[i][1];
+        if(mesh_points[i][2] < minz)
+            minz = mesh_points[i][2];
+
+        i++;
+    }
+
+    sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
+
+    real_cpu maxx = mesh_points[size - 1][0];
+    real_cpu minx = mesh_points[0][0];
+    int index;
+
+    real_cpu x, y, z;
+    while(grid_cell != 0) {
+        x = grid_cell->center.x;
+        y = grid_cell->center.y;
+        z = grid_cell->center.z;
+
+        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            grid_cell->active = false;
+        } else {
+            index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
+
+            if(index != -1) {
+                grid_cell->active = true;
+            } else {
+                grid_cell->active = false;
+            }
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fclose(file);
+
+    // deallocate memory
+    for(int l = 0; l < size; l++) {
+        free(mesh_points[l]);
+    }
+
+    free(mesh_points);
+
+    //TODO: we need to sum the cell discretization here...
+    the_grid->mesh_side_length.x = maxx;
+    the_grid->mesh_side_length.y = maxy;
+    the_grid->mesh_side_length.z = maxz;
+
+	log_to_stdout_and_file("Cleaning grid\n");
+    
+	for(int i = 0; i < n_steps; i++) {
+    	derefine_grid_inactive_cells(the_grid);
+    }
+
+	int remaining_refinements = (original_discretization/start_discretization)-1;
+	refine_grid(the_grid, remaining_refinements);
+
+	return 1;
+
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
+	//TODO: we should put this in the grid data again
+	//
+	//real_cpu start_discretization = 800.0;
+	//the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
+	//
+	//TODO: change this to the code above
     shput_dup_value(config->config_data, "start_dx", "800.0");
     shput_dup_value(config->config_data, "start_dy", "800.0");
     shput_dup_value(config->config_data, "start_dz", "800.0");
@@ -184,8 +324,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
     set_custom_mesh(the_grid, mesh_file, 2025252, read_format);
 
     log_to_stdout_and_file("Cleaning grid\n");
-    int i;
-    for(i = 0; i < 7; i++) {
+    
+	for(int i = 0; i < 7; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
 

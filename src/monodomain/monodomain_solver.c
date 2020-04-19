@@ -384,6 +384,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 
     if (domain_config) {
+		//TODO: maybe add start_dx,dy, etc back to the grid. So it is easier to configure the domains....
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dx, domain_config->config_data, "start_dx");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dy, domain_config->config_data, "start_dy");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dz, domain_config->config_data, "start_dz");

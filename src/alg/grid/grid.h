@@ -34,7 +34,10 @@ struct grid {
 
     // Purkinje section
     struct grid_purkinje *purkinje;
-    
+
+   struct point_3d start_discretization;
+   struct point_3d max_discretization;
+
 };
 
 struct grid* new_grid();
