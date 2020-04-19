@@ -143,14 +143,10 @@ END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
     check_cuda_error( (cudaError_t)cusparseDestroy(cusparseHandle) );
     check_cuda_error( (cudaError_t)cublasDestroy(cublasHandle) );
     check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descr));
-    check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descrL));
-    check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descrU));
-
-    /* Destroy parameters */
-    cusparseDestroySolveAnalysisInfo(infoA);
-    cusparseDestroySolveAnalysisInfo(info_u);
+   
 
 
+    check_cuda_error(cudaFree(d_col));
     check_cuda_error(cudaFree(d_row));
     check_cuda_error(cudaFree(d_val));
     check_cuda_error(cudaFree(d_x));
@@ -159,10 +155,17 @@ END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
     check_cuda_error(cudaFree(d_Ax));
     check_cuda_error(cudaFree(d_y));
 
-    check_cuda_error(cudaFree(d_valsILU0));
-    check_cuda_error(cudaFree(d_zm1));
-    check_cuda_error(cudaFree(d_zm2));
-    check_cuda_error(cudaFree(d_rm2));
+	if(use_preconditioner) {
+	    /* Destroy parameters */
+	    cusparseDestroySolveAnalysisInfo(infoA);
+	    cusparseDestroySolveAnalysisInfo(info_u);
+		check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descrL));
+	    check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descrU));
+		check_cuda_error(cudaFree(d_valsILU0));
+		check_cuda_error(cudaFree(d_zm1));
+		check_cuda_error(cudaFree(d_zm2));
+		check_cuda_error(cudaFree(d_rm2));
+	}
 }
 
 

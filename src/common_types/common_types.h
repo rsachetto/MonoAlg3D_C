@@ -36,6 +36,7 @@ struct point_3d {
 };
 
 #define POINT3D(x,y,z) (struct point_3d) {x,y,z}
+#define SAME_POINT3D(x) (struct point_3d) {x,x,x}
 #define ZERO_POINT3D POINT3D(0,0,0)
 
 struct point_hash_entry {
