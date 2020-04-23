@@ -7,8 +7,6 @@ Sachetto
 
 Berg
 - Refactor the save map functions as a single one
-- Implement 'save_vtk_polydata_grid_as_vtu'
-- Implement 'save_vtk_polydata_grid_as_vtu_compressed' function
 
 - Implement coupling between Purkinje and tissue
     - Fix the retropropagation code
