@@ -53,14 +53,26 @@ struct user_options {
     bool final_time_was_set;
     bool adaptive;	                /*-a option */
     bool adaptive_was_set;
+
     real_cpu ref_bound;				/*-r option*/
     bool ref_bound_was_set;
     real_cpu deref_bound;				/*-d option*/
     bool deref_bound_was_set;
     real_cpu dt_pde;					/*-z option*/
     bool dt_pde_was_set;
-    real_cpu dt_ode;				    /*-e option*/
+
+    real_cpu dt_ode;
     bool dt_ode_was_set;
+
+    bool ode_adaptive;
+    bool ode_adaptive_was_set;
+
+    real ode_reltol;
+    bool ode_reltol_was_set;
+
+    real ode_abstol;
+    bool ode_abstol_was_set;
+
     int num_threads;                /*-n option*/
     bool num_threads_was_set;
     bool gpu;                       /*-g option*/

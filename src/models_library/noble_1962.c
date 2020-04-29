@@ -15,12 +15,18 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     //sv[1] = 0.060546727200f;    // m dimensionless
     //sv[2] = 0.725900135500f;    // h dimensionless
     //sv[3] = 0.470923970800f;    // n dimensionless
-    
-    // BCL = 300ms
-    sv[0] = -81.1893;    // V millivolt 
-    sv[1] = 0.0443563;    // m dimensionless
-    sv[2] = 0.851652;    // h dimensionless
-    sv[3] = 0.58291;    // n dimensionless
+
+    uint32_t num_volumes = solver->original_num_cells;
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ];
+        // BCL = 300ms
+        sv[0] = -81.1893;  // V millivolt
+        sv[1] = 0.0443563; // m dimensionless
+        sv[2] = 0.851652;  // h dimensionless
+        sv[3] = 0.58291;   // n dimensionless
+    }
        
 }
 

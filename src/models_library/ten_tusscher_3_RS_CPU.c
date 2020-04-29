@@ -1,4 +1,3 @@
-#include "model_common.h"
 #include <assert.h>
 #include <stdlib.h>
 #include "ten_tusscher_3_RS.h"
@@ -37,18 +36,26 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         printed_info = true;
     }
 
-    sv[0] = -86.2f;   // V;       millivolt
-    sv[1] = 0.0f; //M
-    sv[2] = 0.75; //H
-    sv[3] = 0.75; //J
-    sv[4] = 0.0f; //Xr1
-    sv[5] = 0.0f; //Xs
-    sv[6] = 1.0f; //S
-    sv[7] = 1.0f; //F
-    sv[8] = 1.0f; //F2
-    sv[9] = 0.0; //D_INF
-    sv[10] = 0.0; //R_INF
-    sv[11] = 0.0; //Xr2_INF}
+    uint32_t num_cells = solver->original_num_cells;
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+
+        real *sv = &solver->sv[i * NEQ];
+
+        sv[0] = -86.2f;   // V;       millivolt
+        sv[1] = 0.0f; //M
+        sv[2] = 0.75; //H
+        sv[3] = 0.75; //J
+        sv[4] = 0.0f; //Xr1
+        sv[5] = 0.0f; //Xs
+        sv[6] = 1.0f; //S
+        sv[7] = 1.0f; //F
+        sv[8] = 1.0f; //F2
+        sv[9] = 0.0; //D_INF
+        sv[10] = 0.0; //R_INF
+        sv[11] = 0.0; //Xr2_INF
+    }
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {

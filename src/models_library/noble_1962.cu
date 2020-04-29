@@ -7,17 +7,19 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     log_to_stdout_and_file("Using noble_1962 GPU model\n");
 
+    uint32_t num_volumes = solver->original_num_cells;
+
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t size = num_volumes*sizeof(real);
 
     // allocates a 2d contigous array
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, num_volumes);
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();

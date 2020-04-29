@@ -2,13 +2,16 @@
 #define MONOALG3D_COMMON_TYPES_H
 
 #include <stdint.h>
-#include "../monodomain/constants.h"
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)
 
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
+
+// Precision to be used for the calculations
+typedef float real;
+typedef double real_cpu;
 
 enum simulation_status {
     RESTART_SIMULATION,

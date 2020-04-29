@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include "../monodomain/constants.h"
+#include "../common_types/common_types.h"
 
 struct node;
 struct edge;

@@ -23,7 +23,6 @@
 ../src/models_library/model_gpu_utils.h
 ../src/models_library/mixed_fhn_mod_mitchell.h
 ../src/models_library/ten_tusscher_2006.h
-../src/models_library/model_common.h
 ../src/utils/stop_watch.h
 ../src/utils/file_utils.h
 ../src/utils/utils.h

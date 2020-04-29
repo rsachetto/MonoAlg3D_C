@@ -11,20 +11,17 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    static bool first_call = true;
+    log_to_stdout_and_file("Using modified FHN 1961 CPU model\n");
 
-    if(first_call) {
-#ifdef _WIN32
-        printf("Using modified FHN 1961 CPU model\n");
-#else
-        log_to_stdout_and_file("Using modified FHN 1961 CPU model\n");
-#endif
+    uint32_t num_cells = solver->original_num_cells;
 
-        first_call = false;
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+        real *sv = &solver->sv[i * NEQ];
+
+        sv[0] = 0.000000f; // Vm millivolt
+        sv[1] = 0.000000f; // v dimensionless
     }
-
-    sv[0] = 0.000000f; //Vm millivolt
-    sv[1] = 0.000000f; //v dimensionless
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {

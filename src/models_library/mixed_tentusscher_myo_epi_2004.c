@@ -14,66 +14,65 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
 {
 
-    static bool first_call = true;
+    log_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
 
-    if(first_call) 
-    {
-        log_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
-        first_call = false;
-    }
-    
     // Get the mapping array
     uint32_t *mapping = NULL;
-    if(extra_data) 
+    if(solver->ode_extra_data)
     {
-        mapping = (uint32_t*)extra_data;
+        mapping = (uint32_t*)solver->ode_extra_data;
     }
     else 
     {
         log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
-    // Initial conditions for TenTusscher myocardium
-    if (mapping[sv_id] == 0)
-    {
-        sv[0] =  INITIAL_V;     // V;       millivolt
-        sv[1] =  0.f;           //M
-        sv[2] =  0.75;          //H
-        sv[3] =  0.75f;         //J
-        sv[4] =  0.f;           //Xr1
-        sv[5] =  1.f;           //Xr2
-        sv[6] =  0.f;           //Xs
-        sv[7] =  1.f;           //S
-        sv[8] =  0.f;           //R
-        sv[9] =  0.f;           //D
-        sv[10] = 1.f;           //F
-        sv[11] = 1.f;           //FCa
-        sv[12] = 1.f;           //G
-        sv[13] = 0.0002;        //Cai
-        sv[14] = 0.2f;          //CaSR
-        sv[15] = 11.6f;         //Nai
-        sv[16] = 138.3f;        //Ki
-    }
-    // Initial conditions for TenTusscher epicardium
-    else
-    {
-        sv[0] =  INITIAL_V;     // V;       millivolt
-        sv[1] =  0.f;           //M
-        sv[2] =  0.75;          //H
-        sv[3] =  0.75f;         //J
-        sv[4] =  0.f;           //Xr1
-        sv[5] =  1.f;           //Xr2
-        sv[6] =  0.f;           //Xs
-        sv[7] =  1.f;           //S
-        sv[8] =  0.f;           //R
-        sv[9] =  0.f;           //D
-        sv[10] = 1.f;           //F
-        sv[11] = 1.f;           //FCa
-        sv[12] = 1.f;           //G
-        sv[13] = 0.0002;        //Cai
-        sv[14] = 0.2f;          //CaSR
-        sv[15] = 11.6f;         //Nai
-        sv[16] = 138.3f;        //Ki
+    uint32_t num_volumes = solver->original_num_cells;
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ];
+
+        // Initial conditions for TenTusscher myocardium
+        if(mapping[i] == 0) {
+            sv[0] = INITIAL_V; // V;       millivolt
+            sv[1] = 0.f;       // M
+            sv[2] = 0.75;      // H
+            sv[3] = 0.75f;     // J
+            sv[4] = 0.f;       // Xr1
+            sv[5] = 1.f;       // Xr2
+            sv[6] = 0.f;       // Xs
+            sv[7] = 1.f;       // S
+            sv[8] = 0.f;       // R
+            sv[9] = 0.f;       // D
+            sv[10] = 1.f;      // F
+            sv[11] = 1.f;      // FCa
+            sv[12] = 1.f;      // G
+            sv[13] = 0.0002;   // Cai
+            sv[14] = 0.2f;     // CaSR
+            sv[15] = 11.6f;    // Nai
+            sv[16] = 138.3f;   // Ki
+        }
+        // Initial conditions for TenTusscher epicardium
+        else {
+            sv[0] = INITIAL_V; // V;       millivolt
+            sv[1] = 0.f;       // M
+            sv[2] = 0.75;      // H
+            sv[3] = 0.75f;     // J
+            sv[4] = 0.f;       // Xr1
+            sv[5] = 1.f;       // Xr2
+            sv[6] = 0.f;       // Xs
+            sv[7] = 1.f;       // S
+            sv[8] = 0.f;       // R
+            sv[9] = 0.f;       // D
+            sv[10] = 1.f;      // F
+            sv[11] = 1.f;      // FCa
+            sv[12] = 1.f;      // G
+            sv[13] = 0.0002;   // Cai
+            sv[14] = 0.2f;     // CaSR
+            sv[15] = 11.6f;    // Nai
+            sv[16] = 138.3f;   // Ki
+        }
     }
 }
 

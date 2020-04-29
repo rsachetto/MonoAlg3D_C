@@ -159,10 +159,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
 	   
-	real_cpu original_discretization;
+	real_cpu original_discretization = 0;
 	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, original_discretization, config->config_data, "original_discretization");
 
-	real_cpu start_discretization;
+	real_cpu start_discretization = 0;
 	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_discretization, config->config_data, "start_discretization");
 	
 	//TODO: we should put this in the grid data again
@@ -176,7 +176,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     shput_dup_value(config->config_data,  "start_dy", tmp);
     shput_dup_value(config->config_data,  "start_dz", tmp);
 
-	size_t size;
+	size_t size=0;
 	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, size, config->config_data, "num_volumes");
 
     char *mesh_file;
