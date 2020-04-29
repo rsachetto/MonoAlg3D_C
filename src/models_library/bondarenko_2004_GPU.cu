@@ -8,16 +8,18 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     log_to_stdout_and_file("Using Bondarenko GPU model\n");
 
+    uint32_t num_volumes = solver->original_num_cells;
+
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t size = num_volumes*sizeof(real);
 
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, num_volumes);
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();
@@ -61,16 +63,16 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
 
     if (threadID < num_volumes) {
 
-        *((real * )((char *) sv + pitch * 0) + threadID) = -82.4202f;     // V millivolt
-        *((real * )((char *) sv + pitch * 1) + threadID) = 0.115001;     // Cai micromolar
-        *((real * )((char *) sv + pitch * 2) + threadID) = 0.115001;     // Cass micromolar
-        *((real * )((char *) sv + pitch * 3) + threadID) = 1299.5;     // CaJSR micromolar
-        *((real * )((char *) sv + pitch * 4) + threadID) = 1299.5;     // CaNSR micromolar
-        *((real * )((char *) sv + pitch * 5) + threadID) = 0.0;     // P_RyR dimensionless
-        *((real * )((char *) sv + pitch * 6) + threadID) = 11.2684;     // LTRPN_Ca micromolar
-        *((real * )((char *) sv + pitch * 7) + threadID) = 125.29;     // HTRPN_Ca micromolar
-        *((real * )((char *) sv + pitch * 8) + threadID) = 0.149102e-4;     // P_O1 dimensionless
-        *((real * )((char *) sv + pitch * 9) + threadID) = 0.951726e-10;     // P_O2 dimensionless
+        *((real * )((char *) sv + pitch * 0) + threadID)  = -82.4202f;     // V millivolt
+        *((real * )((char *) sv + pitch * 1) + threadID)  = 0.115001;     // Cai micromolar
+        *((real * )((char *) sv + pitch * 2) + threadID)  = 0.115001;     // Cass micromolar
+        *((real * )((char *) sv + pitch * 3) + threadID)  = 1299.5;     // CaJSR micromolar
+        *((real * )((char *) sv + pitch * 4) + threadID)  = 1299.5;     // CaNSR micromolar
+        *((real * )((char *) sv + pitch * 5) + threadID)  = 0.0;     // P_RyR dimensionless
+        *((real * )((char *) sv + pitch * 6) + threadID)  = 11.2684;     // LTRPN_Ca micromolar
+        *((real * )((char *) sv + pitch * 7) + threadID)  = 125.29;     // HTRPN_Ca micromolar
+        *((real * )((char *) sv + pitch * 8) + threadID)  = 0.149102e-4;     // P_O1 dimensionless
+        *((real * )((char *) sv + pitch * 9) + threadID)  = 0.951726e-10;     // P_O2 dimensionless
         *((real * )((char *) sv + pitch * 10) + threadID) = 0.16774e-3;     // P_C2 dimensionless
         *((real * )((char *) sv + pitch * 11) + threadID) = 0.930308e-18;     // O dimensionless
         *((real * )((char *) sv + pitch * 12) + threadID) = 0.124216e-3;     // C2 dimensionless

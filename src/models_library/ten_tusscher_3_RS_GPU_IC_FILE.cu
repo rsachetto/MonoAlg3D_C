@@ -100,20 +100,22 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     free(cell_type);
 
+    uint32_t num_volumes = solver->original_num_cells;
+
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t size = num_volumes*sizeof(real);
 
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));    
     real *ICs_device = NULL;
     
-    if(extra_data) {        
+    if(solver->ode_extra_data) {
         size_t mem = NEQ*sizeof(real);         
         real *ICs = (real*) malloc(mem);
         
-        if(get_ic_from_file((real*)extra_data, ICs)) {            
+        if(get_ic_from_file((real*)solver->ode_extra_data, ICs)) {
             check_cuda_error(cudaMalloc((void **)&ICs_device, mem));
             check_cuda_error(cudaMemcpy(ICs_device, ICs, mem, cudaMemcpyHostToDevice));        
             free(ICs);
@@ -121,16 +123,16 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
         }
         else {
             log_to_stderr_and_file_and_exit("Combination not found: %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-                                               ((real*)extra_data)[0], ((real*)extra_data)[1],((real*)extra_data)[2],
-                                               ((real*)extra_data)[3], ((real*)extra_data)[4], ((real*)extra_data)[5], 
-                                               ((real*)extra_data)[6]);
+                                               ((real*)solver->ode_extra_data)[0], ((real*)solver->ode_extra_data)[1],((real*)solver->ode_extra_data)[2],
+                                               ((real*)solver->ode_extra_data)[3], ((real*)solver->ode_extra_data)[4], ((real*)solver->ode_extra_data)[5],
+                                               ((real*)solver->ode_extra_data)[6]);
             free(ICs);
 
             exit(0);
         }
     }
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, ICs_device, num_volumes);
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, ICs_device, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();

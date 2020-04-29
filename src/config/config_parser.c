@@ -242,6 +242,15 @@ struct user_options *new_user_options() {
     user_args->dt_ode = 0.01;
     user_args->dt_ode_was_set = false;
 
+    user_args->ode_adaptive = false;
+    user_args->ode_adaptive_was_set = false;
+
+    user_args->ode_reltol = 1e-5;
+    user_args->ode_reltol_was_set = false;
+
+    user_args->ode_abstol = 1e-5;
+    user_args->ode_abstol_was_set = false;
+
     user_args->refine_each = 1;
     user_args->refine_each_was_set = false;
 
@@ -609,11 +618,11 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
         key = key_value[0];
         value = key_value[1];
 
-        if (strcmp(key, "dt_ode") == 0) {
+        if (strcmp(key, "dt") == 0) {
             real dt_ode = (real) strtod(value, NULL);
             if (dt_ode != user_args->dt_ode) {
                 sprintf(old_value, "%lf", user_args->dt_ode);
-                maybe_issue_overwrite_warning("dt_ode", "ode_solver", old_value, value, config_file);
+                maybe_issue_overwrite_warning("dt", "ode_solver", old_value, value, config_file);
             }
 
             user_args->dt_ode = dt_ode;
@@ -1074,7 +1083,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
         case 'e':
             if(user_args->dt_ode_was_set) {
                 sprintf(old_value, "%lf", user_args->dt_ode);
-                maybe_issue_overwrite_warning("dt_ode", "ode_solver", old_value, optarg, user_args->config_file);
+                maybe_issue_overwrite_warning("dt", "ode_solver", old_value, optarg, user_args->config_file);
             }
             user_args->dt_ode = strtof(optarg, NULL);
             break;
@@ -1350,7 +1359,7 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
     return 1;
 }
 
-static void parse_expr_and_set_real_value(const char *filename, const char *expr, double *value, bool *was_set) {
+static void parse_expr_and_set_real_cpu_value(const char *filename, const char *expr, real_cpu *value, bool *was_set) {
     int expr_parse_error;
     real_cpu expr_parse_result = (real_cpu) te_interp(expr, &expr_parse_error);
 
@@ -1361,12 +1370,17 @@ static void parse_expr_and_set_real_value(const char *filename, const char *expr
     else {
         log_to_stderr_and_file_and_exit("[ERR] Parse error at position %d in expression \"%s\"! (file: %s)\n", expr_parse_error, expr, filename);
     }
+}
 
+static void parse_expr_and_set_real_value(const char *filename, const char *expr, real *value, bool *was_set) {
+    real_cpu local_value = 0;
+    parse_expr_and_set_real_cpu_value(filename, expr, &local_value, was_set);
+    *value = local_value;
 }
 
 static void parse_expr_and_set_int_value(const char *filename, const char *expr, int *value, bool *was_set) {
     real_cpu local_value = 0;
-    parse_expr_and_set_real_value(filename, expr, &local_value, was_set);
+    parse_expr_and_set_real_cpu_value(filename, expr, &local_value, was_set);
     *value = (int)local_value;
 }
 
@@ -1377,16 +1391,16 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "num_threads")) {
         parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->num_threads, &pconfig->num_threads_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "dt_pde")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->dt_pde, &pconfig->dt_pde_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->dt_pde, &pconfig->dt_pde_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "simulation_time")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->final_time, &pconfig->final_time_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->final_time, &pconfig->final_time_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "beta")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->beta, &pconfig->beta_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->beta, &pconfig->beta_was_set);
 
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "cm")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->cm, &pconfig->cm_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->cm, &pconfig->cm_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "start_adapting_at")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->start_adapting_at, &pconfig->start_adapting_at_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->start_adapting_at, &pconfig->start_adapting_at_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "abort_on_no_activity")) {
         if(IS_TRUE(value)) {
             pconfig->abort_no_activity = true;
@@ -1395,10 +1409,10 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         }
         pconfig->abort_no_activity_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "only_abort_after_dt")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->only_abort_after_dt, &pconfig->only_abort_after_dt_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->only_abort_after_dt, &pconfig->only_abort_after_dt_was_set);
     }
     else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->vm_threshold, &pconfig->vm_threshold_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->vm_threshold, &pconfig->vm_threshold_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "use_adaptivity")) {
         if( IS_TRUE(value) ) {
             pconfig->adaptive = true;
@@ -1414,16 +1428,30 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         }
         pconfig->quiet = true;
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->ref_bound, &pconfig->ref_bound_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->ref_bound, &pconfig->ref_bound_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "derefinement_bound")) {
-        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->deref_bound, &pconfig->deref_bound_was_set);
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->deref_bound, &pconfig->deref_bound_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refine_each")) {
         parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->refine_each, &pconfig->refine_each_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "derefine_each")) {
         parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->derefine_each, &pconfig->derefine_each_was_set);
     } else if(MATCH_SECTION(ODE_SECTION)) {
-        if(MATCH_NAME("dt_ode")) {
-            parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->dt_ode, &pconfig->dt_ode_was_set);
+        if(MATCH_NAME("dt")) {
+            parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->dt_ode, &pconfig->dt_ode_was_set);
+        }
+        else if(MATCH_NAME("abstol")) {
+            parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->ode_abstol, &pconfig->ode_abstol_was_set);
+        }
+        else if(MATCH_NAME("reltol")) {
+            parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->ode_reltol, &pconfig->ode_reltol_was_set);
+        }
+        else if(MATCH_NAME("adaptive")) {
+            if(IS_TRUE(value)) {
+                pconfig->ode_adaptive = true;
+            } else {
+                pconfig->ode_adaptive = false;
+            }
+            pconfig->ode_adaptive_was_set = true;
         }
         else if(MATCH_NAME("use_gpu")) {
             if(IS_TRUE(value)) {
@@ -1442,8 +1470,8 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             shput(pconfig->ode_extra_config, name, strdup(value));
         }
     } else if(MATCH_SECTION(ODE_PURKINJE_SECTION)) {
-        if(MATCH_NAME("dt_ode")) {
-            parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->purkinje_dt_ode, &pconfig->purkinje_dt_ode_was_set);
+        if(MATCH_NAME("dt")) {
+            parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->purkinje_dt_ode, &pconfig->purkinje_dt_ode_was_set);
         }
         else if(MATCH_NAME("use_gpu")) {
             if(IS_TRUE(value)) {
@@ -1661,7 +1689,7 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
 
 
     WRITE_INI_SECTION(ODE_SECTION);
-    WRITE_NAME_VALUE("dt_ode", config->dt_ode, "f");
+    WRITE_NAME_VALUE("dt", config->dt_ode, "f");
     WRITE_NAME_VALUE("use_gpu", config->gpu, "d");
     WRITE_NAME_VALUE("gpu_id", config->gpu_id, "d");
     WRITE_NAME_VALUE("library_file", config->model_file_path, "s");

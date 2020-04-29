@@ -10,7 +10,7 @@ COMPILE_MODEL_LIB () {
 
     local MODEL_SOURCES="$MODEL_FILE_CPU"    
 
-    local MODELS_STATIC_DEPS="config_helpers utils $EXTRA_STATIC_LIBS"
+    local MODELS_STATIC_DEPS="config_helpers utils tinyexpr $EXTRA_STATIC_LIBS"
  
     if [ -n "$CUDA_FOUND" ]; then
         MODELS_EXTRA_LIB_PATH=$CUDA_LIBRARY_PATH
@@ -187,3 +187,10 @@ MODEL_FILE_GPU="li_rudy_2011.cu"
 COMMON_HEADERS="li_rudy_2011.h"
 
 COMPILE_MODEL_LIB "li_rudy_2011" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+############## ToTOTd ##############################
+MODEL_FILE_CPU="ToRORd_fkatp_endo.c"
+MODEL_FILE_GPU="ToRORd_fkatp_endo.cu"
+COMMON_HEADERS="ToRORd_fkatp_endo.h"
+
+COMPILE_MODEL_LIB "ToRORd_fkatp_endo" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"

@@ -9,25 +9,27 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu)
 
     log_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium GPU model\n\n");
 
+    uint32_t num_volumes = solver->original_num_cells;
+
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t size = num_volumes*sizeof(real);
 
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
     // Get the mapping array
     uint32_t *mapping = NULL;
     uint32_t *mapping_device = NULL;
-    if(extra_data) 
+    if(solver->ode_extra_data)
     {
-        mapping = (uint32_t*)extra_data;
-        check_cuda_error(cudaMalloc((void **)&mapping_device, extra_data_bytes_size));
-        check_cuda_error(cudaMemcpy(mapping_device, mapping, extra_data_bytes_size, cudaMemcpyHostToDevice));
+        mapping = (uint32_t*)solver->ode_extra_data;
+        check_cuda_error(cudaMalloc((void **)&mapping_device, solver->extra_data_size));
+        check_cuda_error(cudaMemcpy(mapping_device, mapping, solver->extra_data_size, cudaMemcpyHostToDevice));
     }
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, mapping_device, num_volumes);
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, mapping_device, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();

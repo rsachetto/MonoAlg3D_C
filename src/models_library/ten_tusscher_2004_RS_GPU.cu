@@ -6,6 +6,8 @@
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
+    uint32_t num_volumes = solver->original_num_cells;
+
     #ifdef ENDO
         log_to_stdout_and_file("Using ten Tusscher 2004 ENDO GPU model\n");
     #endif
@@ -19,10 +21,10 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     size_t size = num_volumes*sizeof(real);
 
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, num_volumes);
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();

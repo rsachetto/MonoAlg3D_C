@@ -13,17 +13,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
 {
 
-    static bool first_call = true;
-
-    if(first_call) {
-#ifdef _WIN32
-        printf("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
-#else
-        log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
-#endif
-
-        first_call = false;
-    }
+    log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
 
     // TODO: Describe the parameters ...
     // Default initial conditions from the CellML
@@ -50,27 +40,33 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     sv[19] = 0.991580051907845;
 */
 
-    // Steady-State after 20000ms, BCL = 1000ms
-    sv[0] = -70.3543;
-    sv[1] = 136.603;
-    sv[2] = 8.91743;
-    sv[3] = 0.00010623;
-    sv[4] = 0.0406155;
-    sv[5] = 0.00948153;
-    sv[6] = 0.32415;
-    sv[7] = 0.00889219;
-    sv[8] = 0.0335849;
-    sv[9] = 0.222399;
-    sv[10] = 0.251454;
-    sv[11] = 0.00041241;
-    sv[12] = 0.000244885;
-    sv[13] = 0.98024;
-    sv[14] = 0.996029;
-    sv[15] = 0.999952;
-    sv[16] = 0.966603;
-    sv[17] = 0.00094868;
-    sv[18] = 3.3447;
-    sv[19] = 0.988314;
+    uint32_t num_volumes = solver->original_num_cells;
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ];
+        // Steady-State after 20000ms, BCL = 1000ms
+        sv[0] = -70.3543;
+        sv[1] = 136.603;
+        sv[2] = 8.91743;
+        sv[3] = 0.00010623;
+        sv[4] = 0.0406155;
+        sv[5] = 0.00948153;
+        sv[6] = 0.32415;
+        sv[7] = 0.00889219;
+        sv[8] = 0.0335849;
+        sv[9] = 0.222399;
+        sv[10] = 0.251454;
+        sv[11] = 0.00041241;
+        sv[12] = 0.000244885;
+        sv[13] = 0.98024;
+        sv[14] = 0.996029;
+        sv[15] = 0.999952;
+        sv[16] = 0.966603;
+        sv[17] = 0.00094868;
+        sv[18] = 3.3447;
+        sv[19] = 0.988314;
+    }
 
 }
 

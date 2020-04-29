@@ -457,13 +457,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int ode_step = 1;
 
-    if(dt_pde >= dt_ode) {
-        ode_step = (int)(dt_pde / dt_ode);
-        log_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
-    } 
-    else {
-        log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting to EDO time step: %lf\n", dt_ode);
-        dt_pde = dt_ode;
+    if(!the_ode_solver->adaptive) {
+        if(dt_pde >= dt_ode) {
+            ode_step = (int)(dt_pde / dt_ode);
+            log_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
+        } else {
+            log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
+                                   dt_pde, dt_ode);
+            dt_pde = dt_ode;
+        }
     }
 
     fflush(stdout);
@@ -705,36 +707,39 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                     redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
                     total_deref_time += stop_stop_watch(&deref_time);
                 }
-            }
-            if (redo_matrix) {
-                order_grid_cells(the_grid);
+				if (redo_matrix) {
+					order_grid_cells(the_grid);
 
-                if (stimuli_configs) {
-                    if (cur_time <= last_stimulus_time || has_any_periodic_stim) {
-                        set_spatial_stim(&time_info, stimuli_configs, the_grid, false);
-                    }
-                }
-                if (has_extra_data) {
-                    free(the_ode_solver->ode_extra_data);
-                    the_ode_solver->ode_extra_data =
-                            ((set_extra_data_fn*)extra_data_config->main_function)(&time_info, extra_data_config, the_grid, &(the_ode_solver->extra_data_size));
-                }
+					if (stimuli_configs) {
+						if (cur_time <= last_stimulus_time || has_any_periodic_stim) {
+							set_spatial_stim(&time_info, stimuli_configs, the_grid, false);
+						}
+					}
+					if (has_extra_data) {
+						free(the_ode_solver->ode_extra_data);
+						the_ode_solver->ode_extra_data =
+								((set_extra_data_fn*)extra_data_config->main_function)(&time_info, extra_data_config, the_grid, &(the_ode_solver->extra_data_size));
+					}
 
-                update_cells_to_solve(the_grid, the_ode_solver);
+					update_cells_to_solve(the_grid, the_ode_solver);
 
-                if (arrlen(the_grid->refined_this_step) > 0) {
-                    update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
-                }
+					if (arrlen(the_grid->refined_this_step) > 0) {
+						update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
+					}
 
-                start_stop_watch(&part_mat);
-                ((assembly_matrix_fn *)assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
-                total_mat_time += stop_stop_watch(&part_mat);
+					start_stop_watch(&part_mat);
+					((assembly_matrix_fn *)assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
+					total_mat_time += stop_stop_watch(&part_mat);
 
-                // MAPPING: Update the mapping between the Purkinje mesh and the refined/derefined grid
-                if (purkinje_config && domain_config)
-                    update_link_purkinje_to_endocardium(the_grid,the_terminals);
+					// MAPPING: Update the mapping between the Purkinje mesh and the refined/derefined grid
+					if (purkinje_config && domain_config)
+						update_link_purkinje_to_endocardium(the_grid,the_terminals);
 
-            }
+
+					CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
+					CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
+				}
+			}
         }
 
         if(num_modify_domains) {
@@ -826,17 +831,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     long res_time = stop_stop_watch(&solver_time);
-    log_to_stdout_and_file("Resolution Time: %ld μs\n", res_time);
-    log_to_stdout_and_file("Assembly matrix time: %ld μs\n", total_mat_time);
-    log_to_stdout_and_file("Write time: %ld μs\n", total_write_time);
-    log_to_stdout_and_file("Initial configuration time: %ld μs\n", total_config_time);
-    
+
+	double conv_rate = 1000.0*1000.0*60.0;
+    log_to_stdout_and_file("Resolution Time: %ld μs (%lf min)\n", res_time, res_time/conv_rate );
+
+
     if (domain_config) {
-        log_to_stdout_and_file("ODE Total Time: %ld μs\n", ode_total_time);
-        log_to_stdout_and_file("CG Total Time: %ld μs\n", cg_total_time);
+        log_to_stdout_and_file("Total Write Time: %ld μs (%lf min)\n", total_write_time, total_write_time/conv_rate );
+        log_to_stdout_and_file("ODE Total Time: %ld μs (%lf min)\n", ode_total_time, ode_total_time/conv_rate );
+        log_to_stdout_and_file("CG Total Time: %ld μs (%lf min)\n", cg_total_time, cg_total_time/conv_rate );
+        log_to_stdout_and_file("Refine time: %ld μs (%lf min)\n", total_ref_time, total_ref_time/conv_rate);
+        log_to_stdout_and_file("Derefine time: %ld μs (%lf min)\n", total_deref_time, total_deref_time/conv_rate);
         log_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
-        log_to_stdout_and_file("Refine time: %ld μs\n", total_ref_time);
-        log_to_stdout_and_file("Derefine time: %ld μs\n", total_deref_time);
     }
 
     if (purkinje_config) {

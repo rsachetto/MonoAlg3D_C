@@ -55,7 +55,7 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
             }
 
         } else if (strcmp(ODE_SECTION, changed[n].section) == 0) {
-            if (strcmp("dt_ode", changed[n].name) == 0) {
+            if (strcmp("dt", changed[n].name) == 0) {
                 options->dt_ode = float_value;
             } else if (strcmp("gpu_id", changed[n].name) == 0) {
                 options->gpu_id = (int) float_value;

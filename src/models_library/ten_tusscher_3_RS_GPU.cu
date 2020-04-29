@@ -24,20 +24,22 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     free(cell_type);
 
+    uint32_t num_volumes = solver->original_num_cells;
+
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t size = num_volumes*sizeof(real);
 
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
-    check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));    
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, NULL, num_volumes);
+    check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
+
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, NULL, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();
     return pitch_h;
-
 }
 
 extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {

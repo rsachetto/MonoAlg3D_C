@@ -15,35 +15,33 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
 {
 
-    static bool first_call = true;
+    log_to_stdout_and_file("Using mixed version of modified FHN 1961 + Mitchell-Shaeffer 2003 CPU model\n");
 
-    if(first_call) 
-    {
-        log_to_stdout_and_file("Using mixed version of modified FHN 1961 + Mitchell-Shaeffer 2003 CPU model\n");
-        first_call = false;
-    }
-    
     // Get the mapping array
     uint32_t *mapping = NULL;
-    if(extra_data) 
+    if(solver->ode_extra_data)
     {
-        mapping = (uint32_t*)extra_data;
+        mapping = (uint32_t*)solver->ode_extra_data;
     }
     else 
     {
         log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
-    // Based on the mapping initialize the initial conditions from the correct celular model
-    if (mapping[sv_id] == 0)
-    {
-        sv[0] = 0.000000f; //Vm millivolt
-        sv[1] = 0.000000f; //v dimensionless
-    }
-    else
-    {
-        sv[0] = 0.00000820413566106744f; //Vm millivolt
-        sv[1] = 0.8789655121804799f;     //h dimensionless
+    uint32_t num_volumes = solver->original_num_cells;
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ_1];
+
+        // Based on the mapping initialize the initial conditions from the correct celular model
+        if(mapping[i] == 0) {
+            sv[0] = 0.000000f; // Vm millivolt
+            sv[1] = 0.000000f; // v dimensionless
+        } else {
+            sv[0] = 0.00000820413566106744f; // Vm millivolt
+            sv[1] = 0.8789655121804799f;     // h dimensionless
+        }
     }
 }
 

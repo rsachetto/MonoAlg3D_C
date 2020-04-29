@@ -160,7 +160,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
             check_cuda_errors(cudaFree(solver->sv));
         }
 
-        solver->pitch = soicg_fn_pt(ode_extra_config, &(solver->sv), num_cells, solver->ode_extra_data, solver->extra_data_size);
+        solver->pitch = soicg_fn_pt(solver, ode_extra_config);
 #endif
     } else {
 
@@ -178,13 +178,10 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
         }
 
         solver->sv = (real*)malloc(n_odes*num_cells*sizeof(real));
-
-        OMP(parallel for)
-        for(uint32_t i = 0; i < num_cells; i++) {
-            soicc_fn_pt(ode_extra_config, &solver->sv[i*n_odes], i, solver->ode_extra_data, solver->extra_data_size);
-        }
-
+        soicc_fn_pt(solver, ode_extra_config);
     }
+
+    assert(solver->sv);
 }
 
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
@@ -246,14 +243,14 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
         #ifdef COMPILE_CUDA
         size_t extra_data_size = the_ode_solver->extra_data_size;
         solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
-        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
+        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
                       extra_data_size);
 
         #endif
     }
     else {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
-        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
     }
 
     free(merged_stims);
@@ -317,7 +314,17 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
     solver->gpu_id = options->gpu_id;
+    solver->adaptive = options->ode_adaptive;
+
+    if(solver->adaptive) {
+        solver->max_dt = (real)options->dt_pde;
+    }
+
+    solver->abs_tol = options->ode_abstol;
+    solver->rel_tol = options->ode_reltol;
+
     solver->min_dt = (real)options->dt_ode;
+
     solver->gpu = options->gpu;
 
     if(options->model_file_path) {
@@ -421,7 +428,7 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
         #ifdef COMPILE_CUDA
         size_t extra_data_size = the_ode_solver->extra_data_size;
         solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
-        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
+        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
                       extra_data_size);
 
         #endif
@@ -429,7 +436,7 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
     else 
     {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
-        solve_odes_pt(ode_extra_config, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
     }
 
     free(merged_stims);
@@ -439,7 +446,7 @@ void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const 
 
     char *error;
 
-    if(model_library_path) 
+    if(model_library_path)
     {
         free(solver->model_data.model_library_path);
         solver->model_data.model_library_path = strdup(model_library_path);

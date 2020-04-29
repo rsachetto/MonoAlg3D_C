@@ -2,7 +2,8 @@
 #define MONOALG3D_MODEL_TEN_TUSSCHER_2006_H
 
 #include <stdint.h>
-#include "model_common.h"
+#include "../common_types/common_types.h"
+#include "../monodomain/ode_solver.h"
 
 #define NEQ 19
 #define INITIAL_V (-85.23f)
