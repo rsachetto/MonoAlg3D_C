@@ -11,8 +11,8 @@ def plot_activation_time_results (data_sc1,data_sc2):
     #fig, ax = plt.subplots()
     #ax.bar(x - width/2,data_sc1,width,label='SC1')
     #ax.bar(x + width/2,data_sc2,width,label='SC2')
-    plt.bar(x - width/2,data_sc1,width,label='SC1')
-    plt.bar(x + width/2,data_sc2,width,label='SC2')
+    plt.bar(x - width/2,data_sc1,width,label='SC2')
+    plt.bar(x + width/2,data_sc2,width,label='SC3')
 
     #ax.set_ylabel("RMS",fontsize=15)
     #ax.set_title("Error activation time",fontsize=15)
@@ -34,7 +34,7 @@ def plot_activation_time_results (data_sc1,data_sc2):
     # Box plot
     plt.clf()
     box_plot_data=[data_sc1,data_sc2]
-    plt.boxplot(box_plot_data,labels=['SC1','SC2'])
+    plt.boxplot(box_plot_data,labels=['SC2','SC3'])
     plt.title("Error activation time",fontsize=15)
     #plt.ylabel("RMSD",fontsize=15)
     plt.ylabel("RMSD - abs",fontsize=15)
@@ -52,8 +52,8 @@ def plot_apd_results (data_sc1,data_sc2):
     #ax = fig.add_axes([0,0,1,1])
     #ax.bar(x - width/2,data_sc1,width,label='SC1')
     #ax.bar(x + width/2,data_sc2,width,label='SC2')
-    plt.bar(x - width/2,data_sc1,width,label='SC1')
-    plt.bar(x + width/2,data_sc2,width,label='SC2')
+    plt.bar(x - width/2,data_sc1,width,label='SC2')
+    plt.bar(x + width/2,data_sc2,width,label='SC3')
 
     #ax.set_ylabel("RMS",fontsize=15)
     #ax.set_title("Error APD",fontsize=15)
@@ -75,7 +75,7 @@ def plot_apd_results (data_sc1,data_sc2):
     # Box plot
     plt.clf()
     box_plot_data=[data_sc1,data_sc2]
-    plt.boxplot(box_plot_data,labels=['SC1','SC2'])
+    plt.boxplot(box_plot_data,labels=['SC2','SC3'])
     plt.title("Error APD",fontsize=15)
     #plt.ylabel("RMSD",fontsize=15)
     plt.ylabel("RMSD - abs",fontsize=15)

@@ -3,7 +3,7 @@
 #define MONOALG3D_MODEL_TEN_TUSSCHER_change_H
 
 
-// //Scenario 2 (AP + max:dvdt + Rc)
+// Scenario 2 - (AP + max:dvdt)
 
 #include <stdint.h>
 #include "model_common.h"

@@ -61,6 +61,8 @@ tmp*/
 tests_bin/TestSuite
 tests_bin/ToyTest
 tests_bin/test_*
+example_configs/dla_samples/*
+example_configs/elizabeth_samples/*
 meshes/*.pts
 meshes/*.mesh
 meshes/human_800_tagged.alg
@@ -89,7 +91,9 @@ scripts/animations/videos
 scripts/animations/cameras
 scripts/parser_vtu_to_alg/inputs
 scripts/parser_vtu_to_alg/networks
+scripts/error_calculator/scripts/backups
 scripts/error_calculator/scripts/*-error*
+scripts/elnaz/scientific-reports-purkinje
 batch_simulations/
 *.vscode*
 /src/main_graph_analyzer.c

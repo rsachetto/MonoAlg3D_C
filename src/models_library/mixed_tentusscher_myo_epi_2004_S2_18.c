@@ -1,5 +1,5 @@
 // Scenario 2 - Mixed-Model TenTusscher 2004 (Myocardium + Epicardium)
-// (AP + max:dvdt + Rc)
+// (AP + max:dvdt)
 #include <stdio.h>
 #include "mixed_tentusscher_myo_epi_2004_S2_18.h"
 
@@ -86,7 +86,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
         sv[16] = 138.3f;        //Ki
     */
         // Elnaz's steady-state initial conditions
-        real sv_sst[]={-86.5952182591768,0.00128266400523176,0.780370393090429,0.780208222766858,0.000174041905078485,0.485370727173588,0.00293466121399432,0.999998357055344,1.92482840573537e-08,1.88428105751378e-05,0.999770837182767,1.00699532179645,0.999993733315635,4.75139548173797e-05,0.266377866651071,10.2975786179389,139.536672800382};        for (uint32_t i = 0; i < NEQ; i++)
+        real sv_sst[]={-86.5796889202933,0.00128692474306994,0.779986988202943,0.779770791697917,0.000174545903588985,0.485208984809148,0.00293791506502332,0.999998351833850,1.92983618570011e-08,1.88818815072613e-05,0.999771197687931,1.00750321613571,0.999998909683442,3.54972527811597e-05,0.944932711682890,9.89547163051393,139.466639319991};
+        for (uint32_t i = 0; i < NEQ; i++)
             sv[i] = sv_sst[i];
     }
 }
@@ -475,6 +476,7 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
     TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
 
+
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
              0.1/(1.+exp((Cai-0.0005)/0.0001))+
              0.20/(1.+exp((Cai-0.00075)/0.0008))+
@@ -513,7 +515,6 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
     rDY_[16] = Ki;    
-
 }
 
 void solve_model_ode_cpu_epi (real dt, real *sv, real stim_current)
@@ -615,7 +616,8 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
 //Parameters for IpK;
     real GpK=0.0146;
 
-    real parameters []={14.5369194152843,0.000421161732329444,0.000123555730992675,0.000438546024943873,0.268273630830681,0.123585165023946,0.171035514336793,5.02847725301225,0.0110176202871206,1.84752137000130,1095.52052508604,0.000393152126659795,0.528629865494676,0.00975540076461500,0.00491948125354052,8.11442676720905e-05};
+    real parameters []={14.1371645621504,0.000235463229709454,0.000162916042137935,0.000478823778054463,0.274861275791603,0.169442290631956,0.169502544648317,3.70994918819970,0.0182069316194050,1.80784826217638,1082.55200455351,0.000477041616507721,0.348836801394631,0.0189299653755662,0.00511025973273311,1.19845261627905e-05};
+
     GNa=parameters[0];
     GbNa=parameters[1];
     GCaL=parameters[2];
@@ -876,6 +878,7 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     //TAU_F=1125*exp(-(svolt+27)*(svolt+27)/300)+80+165/(1.+exp((25-svolt)/10));
     TAU_F=1125*exp(-(svolt+27)*(svolt+27)/240)+80+165/(1.+exp((25-svolt)/10));      // Updated from CellML
 
+
     FCa_INF=(1./(1.+pow((Cai/0.000325),8))+
              0.1/(1.+exp((Cai-0.0005)/0.0001))+
              0.20/(1.+exp((Cai-0.00075)/0.0008))+
@@ -905,6 +908,7 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
 
     if(sg>gold && (svolt)>-37.0)
         sg=gold;
+
 
     //update voltage
     rDY_[0] = svolt + dt*(-sItot);
