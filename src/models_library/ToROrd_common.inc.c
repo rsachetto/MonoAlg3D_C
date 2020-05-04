@@ -647,12 +647,10 @@ calc_Acap) /
 ((calc_JdiffNa * calc_vss) / calc_vmyo));
 rDY_[3] =
 ((((-(calc_ICaNa_ss + (3.000000000000000e+00f * calc_INaCa_ss))) * calc_Acap) / (F * calc_vss)) - calc_JdiffNa);
-rDY_[4] = ((((-(((calc_Ito + calc_IKr + calc_IKs + calc_IK1 + calc_IKb + calc_I_katp + stim_current) -
-(2.000000000000000e+00f * calc_INaK)) +
-calc_ICaK_i)) *
-calc_Acap) /
-(F * calc_vmyo)) +
-((calc_JdiffK * calc_vss) / calc_vmyo));
+
+//rDY_[4] = ((((-(((calc_Ito + calc_IKr + calc_IKs + calc_IK1 + calc_IKb + calc_I_katp + stim_current) - (2.000000000000000e+00f * calc_INaK)) + calc_ICaK_i))*calc_Acap)/(F * calc_vmyo)) +((calc_JdiffK * calc_vss) / calc_vmyo));
+rDY_[4] =-(calc_ICaK_i+calc_Ito+calc_IKr+calc_IKs+calc_IK1+calc_IKb+stim_current-2.0*calc_INaK)*calc_Acap/(F*calc_vmyo)+calc_JdiffK*calc_vss/calc_vmyo;
+
 rDY_[5] = ((((-calc_ICaK_ss) * calc_Acap) / (F * calc_vss)) - calc_JdiffK);
 rDY_[6] = (calc_Bcai *
 (((((-((calc_ICaL_i + calc_IpCa + calc_ICab) - (2.000000000000000e+00f * calc_INaCa_i))) * calc_Acap) /

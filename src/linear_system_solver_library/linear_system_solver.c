@@ -20,9 +20,9 @@ static real_cpu tol = 1e-16;
 #include <cublas_v2.h>
 
 static int *d_col, *d_row;
-static real *d_val, *d_x;
+static float *d_val, *d_x;
 
-static real *d_r, *d_p, *d_Ax;
+static float *d_r, *d_p, *d_Ax;
 
 static int N = 0, nz = 0;
 
@@ -37,7 +37,9 @@ static cusparseStatus_t cusparseStatus;
 cusparseMatDescr_t descr = 0;
 
 static int nzILU0;
-static real *d_valsILU0, *d_zm1, *d_zm2, *d_rm2, *d_y;
+static float *d_valsILU0;
+static float *d_zm1, *d_zm2, *d_rm2;
+static float *d_y;
 
 static cusparseSolveAnalysisInfo_t infoA = 0;
 static cusparseSolveAnalysisInfo_t info_u;
@@ -80,7 +82,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     cudaMemcpy(d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice); //JA
     cudaMemcpy(d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice); //IA
     cudaMemcpy(d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice); //A
-    real *rhs = (real*) malloc(sizeof(real)*num_active_cells);
+    float *rhs = (float*) malloc(sizeof(float)*num_active_cells);
 
     OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
@@ -143,7 +145,6 @@ END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
     check_cuda_error( (cudaError_t)cusparseDestroy(cusparseHandle) );
     check_cuda_error( (cudaError_t)cublasDestroy(cublasHandle) );
     check_cuda_error( (cudaError_t)cusparseDestroyMatDescr(descr));
-   
 
 
     check_cuda_error(cudaFree(d_col));
@@ -168,22 +169,21 @@ END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
 	}
 }
 
-
 SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
 
     /* Conjugate gradient without preconditioning.
        ------------------------------------------
        Follows the description by Golub & Van Loan, "Matrix Computations 3rd ed.", Section 10.2.6
     */
-    real dot;
+    float dot;
 
-    real a, b, na, r0, r1;
+    float a, b, na, r0, r1;
 
     int k;
-    real alpha, beta, alpham1;
+    float alpha, alpham1, beta;
 
-    real *rhs; //Vector B
-    rhs = (real*) malloc(sizeof(real)*num_active_cells);
+    float *rhs; //Vector B
+    rhs = (float*) malloc(sizeof(float)*num_active_cells);
 
     OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
@@ -197,7 +197,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     beta = 0.0;
     r0 = 0.;
 
-    real numerator, denominator;
+    float numerator, denominator;
 
     cusparseScsrmv(cusparseHandle,CUSPARSE_OPERATION_NON_TRANSPOSE, N, N, nz, &alpha, descr, d_val, d_row, d_col, d_x, &beta, d_Ax);
 
@@ -286,7 +286,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
         k++;
     }
 
-    cudaMemcpy(rhs, d_x, N*sizeof(real), cudaMemcpyDeviceToHost);
+    cudaMemcpy(rhs, d_x, N*sizeof(float), cudaMemcpyDeviceToHost);
 
     *number_of_iterations = k-1;
     *error = r1;

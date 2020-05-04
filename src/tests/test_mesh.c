@@ -110,7 +110,7 @@ int test_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_
         struct time_info ti = ZERO_TIME_INFO;
 
         ((init_save_mesh_fn *)save_mesh_config->init_function)(save_mesh_config);
-        ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
+        ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL);
         ((end_save_mesh_fn *)save_mesh_config->end_function)(save_mesh_config);
 
         free_config_data(save_mesh_config);

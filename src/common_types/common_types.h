@@ -9,8 +9,16 @@
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
+//TODO: remove
+//#define REAL_DOUBLE
+
 // Precision to be used for the calculations
+#ifdef REAL_DOUBLE
+typedef double real;
+#else
 typedef float real;
+#endif
+
 typedef double real_cpu;
 
 enum simulation_status {
@@ -65,6 +73,7 @@ struct string_voidp_hash_entry {
 typedef uint32_t * ui32_array;
 typedef  struct element * element_array;
 typedef float * f32_array;
+typedef real * real_array;
 typedef struct point_3d * point3d_array;
 typedef struct line * line_array;
 typedef int64_t * int64_array;

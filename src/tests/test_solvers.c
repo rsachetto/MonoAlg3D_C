@@ -87,7 +87,6 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
 
     init_config_functions(linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "linear_system_solver");
 
-
     struct time_info ti = ZERO_TIME_INFO;
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, grid);

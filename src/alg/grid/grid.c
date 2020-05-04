@@ -558,7 +558,7 @@ static void sort_elements(struct element *cell_elements, int tam) {
     }
 }
 
-void grid_to_csr(struct grid *the_grid, real **A, int **IA, int **JA) {
+void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA) {
 
     struct element element;
 
@@ -722,9 +722,9 @@ struct terminal *link_purkinje_to_endocardium(struct grid *the_grid) {
             struct node *purkinje_cell = n;
 
             uint32_t closest_index = 0;
-            double closest_dist = __DBL_MAX__;
+            real_cpu closest_dist = __DBL_MAX__;
             for(uint32_t i = 0; i < n_active; i++) {
-                double dist = calc_norm(n->x, n->y, n->z, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+                real_cpu dist = calc_norm(n->x, n->y, n->z, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
                 if(dist < closest_dist) {
                     closest_dist = dist;
                     closest_index = i;
