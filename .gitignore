@@ -129,3 +129,7 @@ perf.data*
 *.swp
 
 tests_bin/SolversProfiler
+meshes/VF_20120221_toBlanca-newCGAL1.vtu
+meshes/human_500_new.alg
+meshes/human_800_new.alg
+
