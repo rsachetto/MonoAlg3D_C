@@ -6,6 +6,12 @@
 #define TIME_NEW *((real *)((char *)sv + pitch * 44) + thread_id)
 #define PREVIOUS_DT *((real *)((char *)sv + pitch * 45) + thread_id)
 
+#ifndef REAL_DOUBLE
+#define pow powf
+#define sqrt sqrtf
+#define exp expf
+#endif
+
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     uint8_t use_adpt_h = (uint8_t)solver->adaptive;
@@ -84,49 +90,49 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes) {
 
     if(threadID < num_volumes) {
 
-        *((real *)((char *)sv + pitch * 0) + threadID) = -8.876380e+01f; // v millivolt
-        *((real *)((char *)sv + pitch * 1) + threadID) = 1.110000e-02f;  // CaMKt millimolar
-        *((real *)((char *)sv + pitch * 2) + threadID) = 1.210250e+01f;  // nai millimolar
-        *((real *)((char *)sv + pitch * 3) + threadID) = 1.210290e+01f;  // nass millimolar
-        *((real *)((char *)sv + pitch * 4) + threadID) = 1.423002e+02f;  // ki millimolar
-        *((real *)((char *)sv + pitch * 5) + threadID) = 1.423002e+02f;  // kss millimolar
-        *((real *)((char *)sv + pitch * 6) + threadID) = 8.158300e-05f;  // cai millimolar
-        *((real *)((char *)sv + pitch * 7) + threadID) = 7.030500e-05f;  // cass millimolar
-        *((real *)((char *)sv + pitch * 8) + threadID) = 1.521100e+00f;  // cansr millimolar
-        *((real *)((char *)sv + pitch * 9) + threadID) = 1.521400e+00f;  // cajsr millimolar
-        *((real *)((char *)sv + pitch * 10) + threadID) = 8.057200e-04f; // m dimensionless
-        *((real *)((char *)sv + pitch * 11) + threadID) = 8.286000e-01f; // h dimensionless
-        *((real *)((char *)sv + pitch * 12) + threadID) = 8.284000e-01f; // j dimensionless
-        *((real *)((char *)sv + pitch * 13) + threadID) = 6.707000e-01f; // hp dimensionless
-        *((real *)((char *)sv + pitch * 14) + threadID) = 8.281000e-01f; // jp dimensionless
-        *((real *)((char *)sv + pitch * 15) + threadID) = 1.629000e-04f; // mL dimensionless
-        *((real *)((char *)sv + pitch * 16) + threadID) = 5.255000e-01f; // hL dimensionless
-        *((real *)((char *)sv + pitch * 17) + threadID) = 2.872000e-01f; // hLp dimensionless
-        *((real *)((char *)sv + pitch * 18) + threadID) = 9.509800e-04f; // a dimensionless
-        *((real *)((char *)sv + pitch * 19) + threadID) = 9.996000e-01f; // iF dimensionless
-        *((real *)((char *)sv + pitch * 20) + threadID) = 5.936000e-01f; // iS dimensionless
-        *((real *)((char *)sv + pitch * 21) + threadID) = 4.845400e-04f; // ap dimensionless
-        *((real *)((char *)sv + pitch * 22) + threadID) = 9.996000e-01f; // iFp dimensionless
-        *((real *)((char *)sv + pitch * 23) + threadID) = 6.538000e-01f; // iSp dimensionless
-        *((real *)((char *)sv + pitch * 24) + threadID) = 8.108400e-09f; // d dimensionless
-        *((real *)((char *)sv + pitch * 25) + threadID) = 1.000000e+00f; // ff dimensionless
-        *((real *)((char *)sv + pitch * 26) + threadID) = 9.390000e-01f; // fs dimensionless
-        *((real *)((char *)sv + pitch * 27) + threadID) = 1.000000e+00f; // fcaf dimensionless
-        *((real *)((char *)sv + pitch * 28) + threadID) = 9.999000e-01f; // fcas dimensionless
-        *((real *)((char *)sv + pitch * 29) + threadID) = 1.000000e+00f; // jca dimensionless
-        *((real *)((char *)sv + pitch * 30) + threadID) = 1.000000e+00f; // ffp dimensionless
-        *((real *)((char *)sv + pitch * 31) + threadID) = 1.000000e+00f; // fcafp dimensionless
-        *((real *)((char *)sv + pitch * 32) + threadID) = 6.646200e-04f; // nca_ss dimensionless
-        *((real *)((char *)sv + pitch * 33) + threadID) = 1.200000e-03f; // nca_i dimensionless
-        *((real *)((char *)sv + pitch * 34) + threadID) = 9.981000e-01f; // C3 dimensionless
-        *((real *)((char *)sv + pitch * 35) + threadID) = 8.510900e-04f; // C2 dimensionless
-        *((real *)((char *)sv + pitch * 36) + threadID) = 7.034400e-04f; // C1 dimensionless
-        *((real *)((char *)sv + pitch * 37) + threadID) = 3.758500e-04f; // O dimensionless
-        *((real *)((char *)sv + pitch * 38) + threadID) = 1.328900e-05f; // I dimensionless
-        *((real *)((char *)sv + pitch * 39) + threadID) = 2.480000e-01f; // xs1 dimensionless
-        *((real *)((char *)sv + pitch * 40) + threadID) = 1.770700e-04f; // xs2 dimensionless
-        *((real *)((char *)sv + pitch * 41) + threadID) = 1.612900e-22f; // Jrel_np millimolar_per_millisecond
-        *((real *)((char *)sv + pitch * 42) + threadID) = 1.247500e-20f; // Jrel_p millimolar_per_millisecond
+        *((real *)((char *)sv + pitch * 0) + threadID)  = -88.8691566357934;     // v millivolt                                 // v   --
+        *((real *)((char *)sv + pitch * 1) + threadID)  = 0.0110752904836162;    // CaMKt millimolar                            // nai --
+        *((real *)((char *)sv + pitch * 2) + threadID)  = 12.0996647655188;      // nai millimolar                              // nass --
+        *((real *)((char *)sv + pitch * 3) + threadID)  = 12.1000028563765;      // nass millimolar                             // ki   --
+        *((real *)((char *)sv + pitch * 4) + threadID)  = 142.412524737626;      // ki millimolar                               // kss  --
+        *((real *)((char *)sv + pitch * 5) + threadID)  = 142.412481425842;      // kss millimolar                              // cai   --
+        *((real *)((char *)sv + pitch * 6) + threadID)  = 7.45541572746214e-05;  // cai millimolar                              // cass   --
+        *((real *)((char *)sv + pitch * 7) + threadID)  = 6.50418928341426e-05;  // cass millimolar                             // cansr  --
+        *((real *)((char *)sv + pitch * 8) + threadID)  = 1.53037019085812;      // cansr millimolar                            // cajsr --
+        *((real *)((char *)sv + pitch * 9) + threadID)  = 1.52803094224238;      // cajsr millimolar                            // m     -----
+        *((real *)((char *)sv + pitch * 10) + threadID) = 0.000787657400526199;  // m dimensionless                             // hp   13
+        *((real *)((char *)sv + pitch * 11) + threadID) = 0.830658198588696;     // h dimensionless                             // h  11
+        *((real *)((char *)sv + pitch * 12) + threadID) = 0.830466744399495;     // j dimensionless                             // j   12
+        *((real *)((char *)sv + pitch * 13) + threadID) = 0.674096901201792;     // hp dimensionless                            // jp
+        *((real *)((char *)sv + pitch * 14) + threadID) = 0.830093612199637;    // jp dimensionless                            // mL
+        *((real *)((char *)sv + pitch * 15) + threadID) = 0.000159670117055769; // mL dimensionless                            // hL
+        *((real *)((char *)sv + pitch * 16) + threadID) = 0.528261721740178;    // hL dimensionless                            // hLp
+        *((real *)((char *)sv + pitch * 17) + threadID) = 0.288775833197764;    // hLp dimensionless                           // a
+        *((real *)((char *)sv + pitch * 18) + threadID) = 0.000944249645410894; // a dimensionless                             // iF
+        *((real *)((char *)sv + pitch * 19) + threadID) = 0.999616956857814;    // iF dimensionless                            // iS
+        *((real *)((char *)sv + pitch * 20) + threadID) = 0.593680589620082;    // iS dimensionless                            // ap
+        *((real *)((char *)sv + pitch * 21) + threadID) = 0.000481107253796778; // ap dimensionless                            // iFp
+        *((real *)((char *)sv + pitch * 22) + threadID) = 0.999616964658062;    // iFp dimensionless                           // iSp
+        *((real *)((char *)sv + pitch * 23) + threadID) = 0.654092074678260;    // iSp dimensionless                           // d
+        *((real *)((char *)sv + pitch * 24) + threadID) = 8.86091322819384e-29; // d dimensionless                             // ff
+        *((real *)((char *)sv + pitch * 25) + threadID) = 0.999999992783113;    // ff dimensionless                            // fs
+        *((real *)((char *)sv + pitch * 26) + threadID) = 0.938965241412012;    // fs dimensionless                            // fcaf
+        *((real *)((char *)sv + pitch * 27) + threadID) = 0.999999992783179;    // fcaf dimensionless                          // fcas
+        *((real *)((char *)sv + pitch * 28) + threadID) = 0.999900458262832;    // fcas dimensionless                          // jca---
+        *((real *)((char *)sv + pitch * 29) + threadID) = 0.999977476316330;    // jca dimensionless                           // nca   32
+        *((real *)((char *)sv + pitch * 30) + threadID) = 0.999999992566681;    // ffp dimensionless                           // nca_i 33
+        *((real *)((char *)sv + pitch * 31) + threadID) = 0.999999992766279;    // fcafp dimensionless                         // ffp  30
+        *((real *)((char *)sv + pitch * 32) + threadID) = 0.000492094765239740; // nca_ss dimensionless                        // fcafp  31
+        *((real *)((char *)sv + pitch * 33) + threadID) = 0.000833711885764158; // nca_i dimensionless                         // xs1    39
+        *((real *)((char *)sv + pitch * 34) + threadID) = 0.998073652444028;    // C3 dimensionless                            // xs2    40
+        *((real *)((char *)sv + pitch * 35) + threadID) = 0.000844745297078649; // C2 dimensionless                            // Jrel_np  41
+        *((real *)((char *)sv + pitch * 36) + threadID) = 0.000698171876592920; // C1 dimensionless                            // CaMKt   1
+        *((real *)((char *)sv + pitch * 37) + threadID) = 0.000370404872169913; // O dimensionless                             // ikr_c0 34
+        *((real *)((char *)sv + pitch * 38) + threadID) = 1.30239063420973e-05; // I dimensionless                             // ikr_c1 35
+        *((real *)((char *)sv + pitch * 39) + threadID) = 0.247156543918935;    // xs1 dimensionless                           // ikr_c2 36
+        *((real *)((char *)sv + pitch * 40) + threadID) = 0.000175017075236424; // xs2 dimensionless                           // ikr_o   37
+        *((real *)((char *)sv + pitch * 41) + threadID) = 3.90843796133124e-24; // Jrel_np millimolar_per_millisecond          // ikr_i   38
+        *((real *)((char *)sv + pitch * 42) + threadID) = -1.88428892080206e-22; // Jrel_p millimolar_per_millisecond           // Jrel_p   42
 
         if(use_adpt) {
             *((real *)((char *)sv + pitch * 43) + threadID) = min_dt; // dt
@@ -186,7 +192,7 @@ inline __device__ void solve_Forward_Euler_gpu_adpt(real *sv, real stim_curr, re
 
     const real _beta_safety_ = 0.8;
 
-    const real __tiny_ = powf(abstol, 2.0f);
+    const real __tiny_ = pow(abstol, 2.0f);
 
     // dt = ((time_new + dt) > final_time) ? (final_time - time_new) : dt;
     if(time_new + dt > final_time) {
@@ -251,7 +257,7 @@ inline __device__ void solve_Forward_Euler_gpu_adpt(real *sv, real stim_curr, re
         greatestError += __tiny_;
         previous_dt = dt;
         /// adapt the time step
-        dt = _beta_safety_ * dt * sqrtf(1.0f / greatestError);
+        dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);
 
         if(time_new + dt > final_time) {
             dt = final_time - time_new;

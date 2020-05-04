@@ -6,10 +6,11 @@
 #define MONOALG3D_SAVE_MESH_CONFIG_H
 
 #include "../alg/grid/grid.h"
+#include "../monodomain/ode_solver.h"
 #include "../monodomain/constants.h"
 #include "config_common.h"
 
-#define SAVE_MESH(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid)
+#define SAVE_MESH(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid, struct ode_solver *ode_solver)
 typedef SAVE_MESH(save_mesh_fn);
 
 #define INIT_SAVE_MESH(name)  void name(struct config *config)

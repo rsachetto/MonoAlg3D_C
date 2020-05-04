@@ -419,7 +419,7 @@ COMPILE_STATIC_LIB () {
 
 COMPILE_SHARED_LIB () {
 
-  local LIB_NAME=lib$1
+    local LIB_NAME=lib$1
 	local SOURCES=$2
 	local HEADERS=$3
 	local STATIC_DEPS_LIST=$4
