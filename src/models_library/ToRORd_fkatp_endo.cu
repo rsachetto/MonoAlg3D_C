@@ -6,12 +6,6 @@
 #define TIME_NEW *((real *)((char *)sv + pitch * 44) + thread_id)
 #define PREVIOUS_DT *((real *)((char *)sv + pitch * 45) + thread_id)
 
-#ifndef REAL_DOUBLE
-#define pow powf
-#define sqrt sqrtf
-#define exp expf
-#endif
-
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     uint8_t use_adpt_h = (uint8_t)solver->adaptive;

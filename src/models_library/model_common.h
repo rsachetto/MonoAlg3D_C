@@ -6,6 +6,13 @@
 #define MONOALG3D_C_MODEL_COMMON_H
 
 #include "../common_types/common_types.h"
-#include "../monodomain/ode_solver.h"
+#include "../ode_solver/ode_solver.h"
+
+#ifndef REAL_DOUBLE
+#define pow powf
+#define sqrt sqrtf
+#define exp expf
+#endif
+
 
 #endif // MONOALG3D_C_MODEL_COMMON_H

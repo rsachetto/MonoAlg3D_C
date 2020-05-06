@@ -8,7 +8,7 @@
 #include "../alg/grid/grid.h"
 #include "../monodomain/constants.h"
 #include "../monodomain/monodomain_solver.h"
-#include "../monodomain/ode_solver.h"
+#include "../ode_solver/ode_solver.h"
 #include "config_common.h"
 
 // Forward declaration

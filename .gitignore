@@ -115,6 +115,7 @@ src/3dparty/raylib/src/external/glfw/CMake/cmake_uninstall.cmake.in
 src/3dparty/raylib/src/external/glfw/CMakeLists.txt
 src/3dparty/raylib/src/external/glfw/src/CMakeLists.txt
 src/3dparty/raylib/src/external/glfw/src/glfw.rc.in
+src/models_library/private_models
 */.*last_compiled_time_bbash
 
 

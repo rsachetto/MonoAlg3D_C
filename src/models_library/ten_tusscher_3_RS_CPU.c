@@ -15,47 +15,45 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    static bool printed_info = false;
 
-    if(!printed_info) {
-        char *cell_type;
-        #ifdef ENDO
-            cell_type = strdup("ENDO");
-        #endif
+	char *cell_type;
+#ifdef ENDO
+	cell_type = strdup("ENDO");
+#endif
 
-        #ifdef EPI
-            cell_type = strdup("EPI");
-        #endif
+#ifdef EPI
+	cell_type = strdup("EPI");
+#endif
 
-        #ifdef MCELL
-            cell_type = strdup("MCELL");
-        #endif
+#ifdef MCELL
+	cell_type = strdup("MCELL");
+#endif
 
-        log_to_stdout_and_file("Using ten Tusscher 3 %s CPU model\n", cell_type);
-        free(cell_type);
-        printed_info = true;
-    }
+	log_to_stdout_and_file("Using ten Tusscher 3 %s CPU model\n", cell_type);
+	free(cell_type);
 
-    uint32_t num_cells = solver->original_num_cells;
+	uint32_t num_cells = solver->original_num_cells;
 
-    OMP(parallel for)
-    for(uint32_t i = 0; i < num_cells; i++) {
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
-        real *sv = &solver->sv[i * NEQ];
+	OMP(parallel for)
+		for(uint32_t i = 0; i < num_cells; i++) {
 
-        sv[0] = -86.2f;   // V;       millivolt
-        sv[1] = 0.0f; //M
-        sv[2] = 0.75; //H
-        sv[3] = 0.75; //J
-        sv[4] = 0.0f; //Xr1
-        sv[5] = 0.0f; //Xs
-        sv[6] = 1.0f; //S
-        sv[7] = 1.0f; //F
-        sv[8] = 1.0f; //F2
-        sv[9] = 0.0; //D_INF
-        sv[10] = 0.0; //R_INF
-        sv[11] = 0.0; //Xr2_INF
-    }
+			real *sv = &solver->sv[i * NEQ];
+
+			sv[0] = -86.2f;   // V;       millivolt
+			sv[1] = 0.0f; //M
+			sv[2] = 0.75; //H
+			sv[3] = 0.75; //J
+			sv[4] = 0.0f; //Xr1
+			sv[5] = 0.0f; //Xs
+			sv[6] = 1.0f; //S
+			sv[7] = 1.0f; //F
+			sv[8] = 1.0f; //F2
+			sv[9] = 0.0; //D_INF
+			sv[10] = 0.0; //R_INF
+			sv[11] = 0.0; //Xr2_INF
+		}
 }
 
 SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {

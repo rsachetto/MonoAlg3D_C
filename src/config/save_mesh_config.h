@@ -6,7 +6,7 @@
 #define MONOALG3D_SAVE_MESH_CONFIG_H
 
 #include "../alg/grid/grid.h"
-#include "../monodomain/ode_solver.h"
+#include "../ode_solver/ode_solver.h"
 #include "../monodomain/constants.h"
 #include "config_common.h"
 

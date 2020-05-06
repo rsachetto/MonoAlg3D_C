@@ -18,10 +18,11 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
     log_to_stdout_and_file("Using Li & Rudy 2011 CPU model\n");
 
-    uint32_t num_volumes = solver->original_num_cells;
+    uint32_t num_cells = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     OMP(parallel for)
-    for(uint32_t i = 0; i < num_volumes; i++) {
+    for(uint32_t i = 0; i < num_cells; i++) {
         real *sv = &solver->sv[i * NEQ];
         sv[0] = -84.058830;  // V millivolt
         sv[1] = 0.000821;    // m dimensionless

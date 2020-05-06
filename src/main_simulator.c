@@ -3,7 +3,7 @@
 #include "alg/grid/grid.h"
 #include "3dparty/ini_parser/ini.h"
 #include "monodomain/monodomain_solver.h"
-#include "monodomain/ode_solver.h"
+#include "ode_solver/ode_solver.h"
 #include "3dparty/sds/sds.h"
 #include "utils/file_utils.h"
 #include "config_helpers/config_helpers.h"

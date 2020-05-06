@@ -86,8 +86,8 @@ static void read_and_render_activation_map(char *input_file) {
 static int read_and_render_files(struct visualization_options *options) {
 
     bool using_pvd = false;
-    bool single_vtk = false;
-    struct vtk_files *vtk_files = NULL;
+    bool single_file = false;
+    struct simulation_files *simulation_files = NULL;
 
     const char *input = options->input;
     const char *prefix = options->files_prefix;
@@ -106,34 +106,35 @@ static int read_and_render_files(struct visualization_options *options) {
     }
 
     if(input_info.is_dir) {
-        vtk_files = (struct vtk_files*) malloc(sizeof(struct vtk_files));
-        vtk_files->files_list = NULL;
-        vtk_files->timesteps = NULL;
+        simulation_files = (struct simulation_files*) malloc(sizeof(struct simulation_files));
+        simulation_files->files_list = NULL;
+        simulation_files->timesteps = NULL;
         if(input) {
-            vtk_files->files_list = list_files_from_dir_sorted(input, prefix);
+            simulation_files->files_list = list_files_from_dir_sorted(input, prefix);
         }
     }
     else {
         if(strcmp(input_info.file_extension, "pvd") == 0) {
             using_pvd = true;
-            vtk_files = list_files_from_and_timesteps_from_pvd(input);
+            simulation_files = list_files_from_and_timesteps_from_pvd(input);
         } else if(strcmp(input_info.file_extension, "acm") == 0) {
             read_and_render_activation_map((char *)input);
             return SIMULATION_FINISHED;
-        } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0) {
-            vtk_files = (struct vtk_files *)malloc(sizeof(struct vtk_files));
-            vtk_files->files_list = NULL;
-            vtk_files->timesteps = NULL;
-            single_vtk = true;
+        } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0 ||  strcmp(input_info.file_extension, "txt") == 0
+            || strcmp(input_info.file_extension, "bin") == 0 || strcmp(input_info.file_extension, "alg") == 0) {
+            simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
+            simulation_files->files_list = NULL;
+            simulation_files->timesteps = NULL;
+            single_file = true;
             if(input) {
-                arrput(vtk_files->files_list, (char*)input);
+                arrput(simulation_files->files_list, (char*)input);
             }
         }
     }
 
     int num_files = 0;
 
-    if(vtk_files) num_files = arrlen(vtk_files->files_list);
+    if(simulation_files) num_files = arrlen(simulation_files->files_list);
 
     sds full_path;
 
@@ -151,7 +152,7 @@ static int read_and_render_files(struct visualization_options *options) {
         gui_config.error_message = strdup(error);
 
         sdsfree(full_path);
-        free(vtk_files);
+        free(simulation_files);
 
         return SIMULATION_FINISHED;
     }
@@ -168,16 +169,16 @@ static int read_and_render_files(struct visualization_options *options) {
     real_cpu dt = 0;
 
     if(!using_pvd) {
-        step1 = get_step_from_filename(vtk_files->files_list[0]);
+        step1 = get_step_from_filename(simulation_files->files_list[0]);
 
         if (num_files > 1) {
-            step2 = get_step_from_filename(vtk_files->files_list[1]);
+            step2 = get_step_from_filename(simulation_files->files_list[1]);
             step = step2 - step1;
         } else {
             step = step1;
         }
 
-        final_step = get_step_from_filename(vtk_files->files_list[num_files - 1]);
+        final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
 
         dt = gui_config.dt;
 
@@ -190,7 +191,7 @@ static int read_and_render_files(struct visualization_options *options) {
         }
     }
     else {
-        gui_config.final_time = vtk_files->timesteps[num_files-1];
+        gui_config.final_time = simulation_files->timesteps[num_files-1];
         gui_config.dt = -1; //we don't care about dt here as the time steps are in the PVD file
     }
 
@@ -198,13 +199,13 @@ static int read_and_render_files(struct visualization_options *options) {
 
         if(!using_pvd) {
             if (dt == 0) {
-                gui_config.time = get_step_from_filename(vtk_files->files_list[current_file]);
+                gui_config.time = get_step_from_filename(simulation_files->files_list[current_file]);
             } else {
-                gui_config.time = get_step_from_filename(vtk_files->files_list[current_file]) * dt;
+                gui_config.time = get_step_from_filename(simulation_files->files_list[current_file]) * dt;
             }
         }
         else {
-            gui_config.time = vtk_files->timesteps[current_file];
+            gui_config.time = simulation_files->timesteps[current_file];
         }
 
         sdsfree(full_path);
@@ -219,9 +220,9 @@ static int read_and_render_files(struct visualization_options *options) {
 
         gui_config.grid_info.file_name = NULL;
 
-        if(!single_vtk) {
+        if(!single_file) {
             full_path = sdscat(full_path, "/");
-            full_path = sdscat(full_path, vtk_files->files_list[current_file]);
+            full_path = sdscat(full_path, simulation_files->files_list[current_file]);
         }
 
         omp_set_lock(&gui_config.draw_lock);
@@ -230,13 +231,13 @@ static int read_and_render_files(struct visualization_options *options) {
         gui_config.grid_info.loaded = true;
 
         if(!gui_config.grid_info.vtk_grid) {
-            sprintf(error, "Decoder not available for file %s", vtk_files->files_list[current_file]);
+            sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
             if(gui_config.error_message) free(gui_config.error_message);
             gui_config.error_message = strdup(error);
             omp_unset_lock(&gui_config.draw_lock);
-            arrfree(vtk_files->files_list);
-            arrfree(vtk_files->timesteps);
-            free(vtk_files);
+            arrfree(simulation_files->files_list);
+            arrfree(simulation_files->timesteps);
+            free(simulation_files);
             sdsfree(full_path);
             return SIMULATION_FINISHED;
         }
@@ -249,17 +250,17 @@ static int read_and_render_files(struct visualization_options *options) {
         if(gui_config.restart) {
             gui_config.time = 0.0;
             free_vtk_unstructured_grid(gui_config.grid_info.vtk_grid);
-            arrfree(vtk_files->files_list);
-            arrfree(vtk_files->timesteps);
-            free(vtk_files);
+            arrfree(simulation_files->files_list);
+            arrfree(simulation_files->timesteps);
+            free(simulation_files);
             sdsfree(full_path);
             return RESTART_SIMULATION;
         }
 
         if(gui_config.exit) {
-            arrfree(vtk_files->files_list);
-            arrfree(vtk_files->timesteps);
-            free(vtk_files);
+            arrfree(simulation_files->files_list);
+            arrfree(simulation_files->timesteps);
+            free(simulation_files);
             sdsfree(full_path);
             return END_SIMULATION;
         }

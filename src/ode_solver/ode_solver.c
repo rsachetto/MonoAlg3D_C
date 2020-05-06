@@ -139,10 +139,8 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
 
     bool get_initial_v = !isfinite(solver->model_data.initial_v);
     bool get_neq = solver->model_data.number_of_ode_equations == -1;
-    uint32_t num_cells = solver->original_num_cells;
 
     (*(solver->get_cell_model_data))(&(solver->model_data), get_initial_v, get_neq);
-    int n_odes = solver->model_data.number_of_ode_equations;
 
     if (solver->gpu) {
 #ifdef COMPILE_CUDA
@@ -177,7 +175,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
             free(solver->sv);
         }
 
-        solver->sv = (real*)malloc(n_odes*num_cells*sizeof(real));
+        //We do not malloc here sv anymore. This have to be done in the model solver
         soicc_fn_pt(solver, ode_extra_config);
     }
 

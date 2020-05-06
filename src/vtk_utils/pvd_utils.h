@@ -7,6 +7,6 @@
 
 #include "../common_types/common_types.h"
 
-struct vtk_files* list_files_from_and_timesteps_from_pvd(const char *pvd_file);
+struct simulation_files* list_files_from_and_timesteps_from_pvd(const char *pvd_file);
 
 #endif //MONOALG3D_PVD_UTILS_H

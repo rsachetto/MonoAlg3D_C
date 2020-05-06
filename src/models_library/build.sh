@@ -1,5 +1,3 @@
-
-
 COMPILE_MODEL_LIB () {
     local LIB_NAME=$1
     local MODEL_FILE_CPU=$2
@@ -55,20 +53,12 @@ COMMON_HEADERS="ten_tusscher_3_RS.h"
 COMPILE_MODEL_LIB "ten_tusscher_3_epi" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DEPI"
 ##########################################################
 
-
-############## TEN TUSCHER 3 ENDO ##############################
-MODEL_FILE_CPU="ten_tusscher_3_RS_CPU.c"
-MODEL_FILE_GPU="ten_tusscher_3_RS_GPU_IC_FILE.cu"
-COMMON_HEADERS="ten_tusscher_3_RS.h"
-COMPILE_MODEL_LIB "ten_tusscher_3_endo_ic_file" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DENDO" "sds"
-##########################################################
-
 ############### BONDARENKO ##############################
 MODEL_FILE_CPU="bondarenko_2004.c"
 MODEL_FILE_GPU="bondarenko_2004_GPU.cu"
 COMMON_HEADERS="bondarenko_2004.h"
 
-COMPILE_MODEL_LIB "bondarenko_2004" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+COMPILE_MODEL_LIB "bondarenko_2004" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-I$CUDA)"
 ##########################################################
 
 ############### FABERRUDY 2000 ##############################
@@ -105,24 +95,6 @@ COMPILE_MODEL_LIB "mitchell_shaeffer_2003" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "
 
 #########################################################
 
-############## MIXED FHN + MITCHELL ##############################
-MODEL_FILE_CPU="mixed_fhn_mod_mitchell.c"
-MODEL_FILE_GPU="mixed_fhn_mod_mitchell.cu"
-COMMON_HEADERS="mixed_fhn_mod_mitchell.h"
-
-COMPILE_MODEL_LIB "mixed_fhn_mod_mitchell" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
-
-#########################################################
-
-############## MIXED TENTUSSCHER 2004 MYOCARDIUM + EPICARDIUM ##############################
-MODEL_FILE_CPU="mixed_tentusscher_myo_epi_2004.c"
-MODEL_FILE_GPU="mixed_tentusscher_myo_epi_2004.cu"
-COMMON_HEADERS="mixed_tentusscher_myo_epi_2004.h"
-
-COMPILE_MODEL_LIB "mixed_tentusscher_myo_epi_2004" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
-
-############################################################################################
-
 ############## ELNAZ TENTUSSCHER ORIGINAL 2004 ##############################
 MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi.c"
 MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi.cu"
@@ -131,36 +103,10 @@ COMMON_HEADERS="ten_tusscher_2004_epi.h"
 COMPILE_MODEL_LIB "ten_tusscher_2004_epi" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
 ############################################################################################
 
-############## ELNAZ TENTUSSCHER 2004 FOR SCENARIO 1 ##############################
-MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi_S1_tr6_pop69.c"
-MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi_S1_tr6_pop69.cu"
-COMMON_HEADERS="ten_tusscher_2004_epi_S1_tr6_pop69.h"
-
-COMPILE_MODEL_LIB "ten_tusscher_2004_epi_S1_tr6_pop69" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
-
-############################################################################################
-
-############## ELNAZ TENTUSSCHER 2004 FOR SCENARIO 2 ##############################
-MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi_S2_tr4_pop53.c"
-MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi_S2_tr4_pop53.cu"
-COMMON_HEADERS="ten_tusscher_2004_epi_S2_tr4_pop53.h"
-
-COMPILE_MODEL_LIB "ten_tusscher_2004_epi_S2_tr4_pop53" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
-############################################################################################
-
-############## ELNAZ TENTUSSCHER 2004 FOR SCENARIO 3 ##############################
-MODEL_FILE_CPU="ten_tusscher_2004_RS_CPU_epi_S3_tr2_pop41.c"
-MODEL_FILE_GPU="ten_tusscher_2004_RS_GPU_epi_S3_tr2_pop41.cu"
-COMMON_HEADERS="ten_tusscher_2004_epi_S3_tr2_pop41.h"
-
-COMPILE_MODEL_LIB "ten_tusscher_2004_epi_S3_tr2_pop41" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
-############################################################################################
-
 ############## NOBLE 1962 ##############################
 MODEL_FILE_CPU="noble_1962.c"
 MODEL_FILE_GPU="noble_1962.cu"
 COMMON_HEADERS="noble_1962.h"
-
 
 COMPILE_MODEL_LIB "noble_1962" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
 #########################################################
