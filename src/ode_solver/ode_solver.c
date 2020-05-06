@@ -182,18 +182,14 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
     assert(solver->sv);
 }
 
-void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
-                            int num_steps, struct string_voidp_hash_entry *stim_configs,
+void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time, struct string_voidp_hash_entry *stim_configs,
                             struct string_hash_entry *ode_extra_config) {
 
     assert(the_ode_solver->sv);
 
+    size_t n_active = the_ode_solver->num_cells_to_solve;
+
     real dt = the_ode_solver->min_dt;
-    //int n_odes = the_ode_solver->model_data.number_of_ode_equations;
-    real *sv = the_ode_solver->sv;
-
-    void *extra_data = the_ode_solver->ode_extra_data;
-
     real_cpu time = cur_time;
 
     real *merged_stims = (real*)calloc(sizeof(real), n_active);
@@ -202,6 +198,8 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
 	uint32_t i;
     ptrdiff_t n = hmlen(stim_configs);
+
+    uint32_t num_steps = the_ode_solver->num_steps;
 
     if(stim_configs) {
         real stim_start = 0.0;
@@ -239,16 +237,18 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active
 
     if(the_ode_solver->gpu) {
         #ifdef COMPILE_CUDA
-        size_t extra_data_size = the_ode_solver->extra_data_size;
         solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
-        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
-                      extra_data_size);
+       // solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
+       //               extra_data_size);
+
+      solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims) ;
 
         #endif
     }
     else {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
-        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+        //solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+        solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims);
     }
 
     free(merged_stims);
@@ -357,18 +357,18 @@ void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_
     }
 }
 
-void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
-                            int num_steps, struct string_voidp_hash_entry *stim_configs,
-                            struct string_hash_entry *ode_extra_config)  {
+void solve_purkinje_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time,
+                                 struct string_voidp_hash_entry *stim_configs,
+                                 struct string_hash_entry *ode_extra_config) {
+
+
+    size_t n_active = the_ode_solver->num_cells_to_solve;
+    uint32_t num_steps = the_ode_solver->num_steps;
+
 
     assert(the_ode_solver->sv);
 
     real dt = the_ode_solver->min_dt;
-    //int n_odes = the_ode_solver->model_data.number_of_ode_equations;
-    real *sv = the_ode_solver->sv;
-
-    void *extra_data = the_ode_solver->ode_extra_data;
-
     real_cpu time = cur_time;
 
     real *merged_stims = (real*)calloc(sizeof(real), n_active);
@@ -424,17 +424,19 @@ void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_
     if(the_ode_solver->gpu) 
     {
         #ifdef COMPILE_CUDA
-        size_t extra_data_size = the_ode_solver->extra_data_size;
         solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
-        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
-                      extra_data_size);
+//        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
+//                      extra_data_size);
 
-        #endif
+        solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims);
+
+#endif
     }
     else 
     {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
-        solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+        //solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
+        solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims);
     }
 
     free(merged_stims);
