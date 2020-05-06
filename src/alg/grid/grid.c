@@ -427,7 +427,7 @@ void save_grid_domain(struct grid *the_grid, const char *file_name) {
     fclose(f);
 }
 
-int get_num_refinement_steps_to_discretization(float side_len, real_cpu h) {
+int get_num_refinement_steps_to_discretization(real_cpu side_len, real_cpu h) {
 
     int num_steps = 0;
     real_cpu aux = side_len;

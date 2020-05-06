@@ -74,7 +74,7 @@ void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
 real_cpu * grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines);
 void print_grid_matrix_as_octave_matrix(struct grid *the_grid, FILE *output_file);
 
-int get_num_refinement_steps_to_discretization (float side_len, real_cpu h);
+int get_num_refinement_steps_to_discretization (real_cpu side_len, real_cpu h);
 void save_grid_domain (struct grid * the_grid, const char *file_name);
 
 void initialize_and_construct_grid_purkinje (struct grid *the_grid);

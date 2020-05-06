@@ -7,7 +7,7 @@
 
 #include "config_common.h"
 #include "../monodomain/constants.h"
-#include "../monodomain/ode_solver.h"
+#include "../ode_solver/ode_solver.h"
 #include "../alg/grid/grid.h"
 
 struct ode_solver;

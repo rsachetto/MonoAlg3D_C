@@ -10,7 +10,7 @@
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
 //TODO: remove
-//#define REAL_DOUBLE
+#define REAL_DOUBLE
 
 // Precision to be used for the calculations
 #ifdef REAL_DOUBLE
@@ -81,7 +81,7 @@ typedef uint8_t * ui8_array;
 typedef int * int_array;
 typedef char** string_array;
 
-struct vtk_files {
+struct simulation_files {
     string_array files_list;
     f32_array    timesteps;
 };

@@ -120,6 +120,7 @@ ADD_SUBDIRECTORY "src/config_helpers"
 ADD_SUBDIRECTORY "src/utils"
 ADD_SUBDIRECTORY "src/alg"
 ADD_SUBDIRECTORY "src/monodomain"
+ADD_SUBDIRECTORY "src/ode_solver"
 ADD_SUBDIRECTORY "src/3dparty/ini_parser"
 ADD_SUBDIRECTORY "src/config"
 ADD_SUBDIRECTORY "src/graph"
@@ -147,7 +148,7 @@ fi
 SRC_FILES="src/main_simulator.c"
 HDR_FILES=""
 
-STATIC_DEPS="solvers ini_parser config tinyexpr ${OPT_DEPS} config_helpers vtk_utils yxml alg graph utils sds miniz"
+STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS} config_helpers vtk_utils yxml alg graph utils sds miniz"
 DYNAMIC_DEPS="dl m $CUDA_LIBRARIES"
 
 if [ -n "$COMPILE_GUI" ]; then

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "../common_types/common_types.h"
-#include "../monodomain/ode_solver.h"
+#include "../ode_solver/ode_solver.h"
 
 #define NEQ 19
 #define INITIAL_V (-85.23f)

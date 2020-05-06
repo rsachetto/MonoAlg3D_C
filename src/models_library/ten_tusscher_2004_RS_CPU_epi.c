@@ -15,10 +15,10 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 }
 
-//TODO: this should be called only once for the whole mesh, like in the GPU code
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
     uint32_t num_volumes = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_volumes*sizeof(real));
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_volumes; i++) {
