@@ -455,12 +455,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     print_solver_info(the_monodomain_solver, the_ode_solver, the_purkinje_ode_solver, the_grid, configs);
 
-    int ode_step = 1;
+    the_ode_solver->num_steps = 1;
 
     if(!the_ode_solver->adaptive) {
         if(dt_pde >= dt_ode) {
-            ode_step = (int)(dt_pde / dt_ode);
-            log_to_stdout_and_file("Solving EDO %d times before solving PDE\n", ode_step);
+            the_ode_solver->num_steps = (int)(dt_pde / dt_ode);
+            log_to_stdout_and_file("Solving EDO %d times before solving PDE\n", the_ode_solver->num_steps);
         } else {
             log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
                                    dt_pde, dt_ode);
@@ -549,6 +549,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         options_to_ini_file(configs, buffer_ini);
         sdsfree(buffer_ini);
     }
+
+
     // Main simulation loop start
     while(cur_time <= finalT) {
 
@@ -596,7 +598,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&purkinje_ode_time);
 
             // REACTION: Purkinje
-            solve_purkinje_volumes_odes(the_purkinje_ode_solver, the_grid->purkinje->number_of_purkinje_cells, cur_time, ode_step, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
+            //solve_purkinje_volumes_odes(the_purkinje_ode_solver, the_grid->purkinje->number_of_purkinje_cells, cur_time, ode_step, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
+            solve_purkinje_volumes_odes(the_purkinje_ode_solver, cur_time, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
+
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
@@ -636,7 +640,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&ode_time);
 
             // REACTION
-            solve_all_volumes_odes(the_ode_solver, the_grid->num_active_cells, cur_time, ode_step, stimuli_configs, configs->ode_extra_config);
+            solve_all_volumes_odes(the_ode_solver, cur_time, stimuli_configs, configs->ode_extra_config);
             ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver, the_grid->num_active_cells, the_grid->active_cells, the_ode_solver, original_num_cells);
 
             ode_total_time += stop_stop_watch(&ode_time);
