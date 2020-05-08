@@ -59,7 +59,7 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
 
     if (threadID < num_volumes) {
 
-        // Default values
+        // Default CellML values
         //*((real * )((char *) sv + pitch * 0) + threadID) = -75.5344986658f; //V millivolt
         //*((real * )((char *) sv + pitch * 1) + threadID) = 0.060546727200f;   //m dimensionless
         //*((real * )((char *) sv + pitch * 2) + threadID) = 0.725900135500f;   //h millivolt
@@ -90,7 +90,8 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
     int sv_id;
 
     // Each thread solves one cell model
-    if(threadID < num_cells_to_solve) {
+    if(threadID < num_cells_to_solve) 
+    {
         if(cells_to_solve)
             sv_id = cells_to_solve[threadID];
         else
@@ -98,20 +99,26 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         real rDY[NEQ];
 
-        for (int n = 0; n < num_steps; ++n) {
+        for (int n = 0; n < num_steps; ++n) 
+        {
 
-            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id);
+            RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt);
 
-            for(int i = 0; i < NEQ; i++) {
-                *((real *) ((char *) sv + pitch * i) + sv_id) = dt * rDY[i] + *((real *) ((char *) sv + pitch * i) + sv_id);
-            }
+            // FOrward Euler variables
+            *((real *) ((char *) sv + pitch * 0) + sv_id) = dt * rDY[0] + *((real *) ((char *) sv + pitch * 0) + sv_id);
+
+            // Rush Larsen variables
+            *((real *)((char *)sv + pitch * 1) + sv_id) = rDY[1];
+            *((real *)((char *)sv + pitch * 2) + sv_id) = rDY[2];
+            *((real *)((char *)sv + pitch * 3) + sv_id) = rDY[3];
 
         }
 
     }
 }
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_) {
+inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt) 
+{
 
     //State variables
     const real V_old_ =  *((real*)((char*)sv_ + pitch * 0) + threadID_);
@@ -155,13 +162,19 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     real alpha_n = (((1.0e-04*((-V_old_)-5.0e+01))/(exp((((-V_old_)-5.0e+01)/1.0e+01))-1.0e+00)));
     real i_na = (g_na+1.4e-01)*(V_old_ - E_na);
     real i_na_no_oscilation = (g_na+1.2e-01)*(V_old_ - E_na);
-    double beta_m = (((1.2e-01*(V_old_+8.0e+00))/(exp(((V_old_+8.0e+00)/5.0e+00))-1.0e+00)));
-    double beta_h = ((1.0/(1.0e+00+exp((((-V_old_)-4.2e+01)/1.0e+01)))));
-    double beta_n = ((2.0e-03*exp((((-V_old_)-9.0e+01)/8.0e+01))));
+    real beta_m = (((1.2e-01*(V_old_+8.0e+00))/(exp(((V_old_+8.0e+00)/5.0e+00))-1.0e+00)));
+    real beta_h = ((1.0/(1.0e+00+exp((((-V_old_)-4.2e+01)/1.0e+01)))));
+    real beta_n = ((2.0e-03*exp((((-V_old_)-9.0e+01)/8.0e+01))));
     real g_K1 = 1.2*exp((((-V_old_)-9.0e+01)/5.0e+01)) + (1.5e-02*exp(((V_old_+9.0e+01)/6.0e+01)));
     real g_K2 = 1.2*powf(n_old_,4.0e+00);
     real i_k =  (g_K1+g_K2)*(V_old_+100.000);
     real i_leak =  g_L*(V_old_ - E_L);
+    real tau_h = 1.0 / (alpha_h + beta_h);
+    real tau_m = 1.0 / (alpha_m + beta_m);
+    real tau_n = 1.0 / (alpha_n + beta_n);
+    real inf_h = alpha_h / (alpha_h + beta_h);
+    real inf_m = alpha_m / (alpha_m + beta_m);
+    real inf_n = alpha_n / (alpha_n + beta_n);
 
     // Rates
     //rDY_[0] = (- (i_na + i_k + i_leak + calc_I_stim)/Cm) * 1.0E-03;
@@ -170,10 +183,16 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     //rDY_[2] =  (alpha_h*(1.00000 - h_old_) -  beta_h*h_old_) * 1.0E-03;
     //rDY_[3] =  (alpha_n*(1.00000 - n_old_) -  beta_n*n_old_) * 1.0E-03;
 
+    // Forward Euler
     rDY_[0] = (- (i_na + i_k + i_leak + calc_I_stim)/Cm);
     //rDY_[0] = (- (i_na_no_oscilation + i_k + i_leak + calc_I_stim)/Cm);
-    rDY_[1] =  (alpha_m*(1.00000 - m_old_) -  beta_m*m_old_);
-    rDY_[2] =  (alpha_h*(1.00000 - h_old_) -  beta_h*h_old_);
-    rDY_[3] =  (alpha_n*(1.00000 - n_old_) -  beta_n*n_old_);
+    //rDY_[1] =  (alpha_m*(1.00000 - m_old_) -  beta_m*m_old_);
+    //rDY_[2] =  (alpha_h*(1.00000 - h_old_) -  beta_h*h_old_);
+    //rDY_[3] =  (alpha_n*(1.00000 - n_old_) -  beta_n*n_old_);
+
+    // Rush Larsen
+    rDY_[1] = inf_m + (m_old_-inf_m)*expf(-dt/tau_m);
+    rDY_[2] = inf_h + (h_old_-inf_h)*expf(-dt/tau_h);
+    rDY_[3] = inf_n + (n_old_-inf_n)*expf(-dt/tau_n);
 
 }

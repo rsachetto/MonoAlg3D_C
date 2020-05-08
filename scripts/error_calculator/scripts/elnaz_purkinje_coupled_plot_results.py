@@ -41,6 +41,35 @@ def plot_activation_time_results (data_sc1,data_sc2):
     #plt.ylabel("Absolute error",fontsize=15)
     plt.savefig("box_plot_error_activation_time.png",dpi=400)
 
+def plot_activation_time_results_2 (data_sc1,data_sc2):
+    
+    labels = np.arange(1,21)    # Label name
+    x = np.arange(1,21)         # Label position
+    width = 0.35                # Bar width
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True)
+
+    ax = axs[0]
+    ax.bar(x,data_sc1,width,label='SC2')
+    ax.set_title("Scenario 2",fontsize=15)
+    ax.set_ylabel("RMSD - abs",fontsize=10)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.tick_params(axis="x", labelsize=5)
+    ax.legend(loc=0,fontsize=10)
+
+    ax = axs[1]
+    ax.bar(x,data_sc2,width,label='SC3',color="orange")
+    ax.set_title("Scenario 3",fontsize=15)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.tick_params(axis="x", labelsize=5)
+    ax.legend(loc=0,fontsize=10)
+
+    fig.suptitle("Error activation time")
+
+    plt.savefig("error_activation_time_merged.png",dpi=400)
+
 
 def plot_apd_results (data_sc1,data_sc2):
 
@@ -82,6 +111,35 @@ def plot_apd_results (data_sc1,data_sc2):
     #plt.ylabel("Absolute error",fontsize=15)
     plt.savefig("box_plot_error_apd.png",dpi=400)
 
+def plot_apd_results_2 (data_sc1,data_sc2):
+    
+    labels = np.arange(1,21)    # Label name
+    x = np.arange(1,21)         # Label position
+    width = 0.35                # Bar width
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True)
+
+    ax = axs[0]
+    ax.bar(x,data_sc1,width,label='SC2')
+    ax.set_title("Scenario 2",fontsize=15)
+    ax.set_ylabel("RMSD - abs",fontsize=10)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.tick_params(axis="x", labelsize=5)
+    ax.legend(loc=0,fontsize=10)
+
+    ax = axs[1]
+    ax.bar(x,data_sc2,width,label='SC3',color="orange")
+    ax.set_title("Scenario 3",fontsize=15)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.tick_params(axis="x", labelsize=5)
+    ax.legend(loc=0,fontsize=10)
+
+    fig.suptitle("Error APD")
+
+    plt.savefig("error_apd_merged.png",dpi=400)
+
 def main():
 
     if len(sys.argv) != 5:
@@ -105,9 +163,11 @@ def main():
     error_apd_sc1 = np.genfromtxt(error_apd_sc1_filename)
     error_apd_sc2 = np.genfromtxt(error_apd_sc2_filename)
 
-    plot_activation_time_results(error_at_sc1,error_at_sc2)
+    #plot_activation_time_results(error_at_sc1,error_at_sc2)
+    plot_activation_time_results_2(error_at_sc1,error_at_sc2)
     plt.clf()
-    plot_apd_results(error_apd_sc1,error_apd_sc2)
+    #plot_apd_results(error_apd_sc1,error_apd_sc2)
+    plot_apd_results_2(error_apd_sc1,error_apd_sc2)
 
 if __name__ == "__main__":
 	main()

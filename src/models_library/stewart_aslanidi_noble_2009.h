@@ -22,14 +22,14 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
                           uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
                           int num_steps);
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_);
+inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt);
 
 #else
 #include "../utils/file_utils.h"
 #endif
 
 void solve_model_ode_cpu(real dt, real *sv, real stim_current);
-void RHS_cpu(const real *sv, real *rDY_, real stim_current);
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt);
 
 #endif //MONOALG3D_FHN_MOD_H
 

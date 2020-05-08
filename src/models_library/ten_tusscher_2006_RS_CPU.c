@@ -320,7 +320,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
 
 
     // Rush Larsen
-    rDY_[ 1] = xr1_inf + (Xr1-xr1_inf)*expf(-dt/tau_xr1) ;
+    rDY_[ 1] = xr1_inf + (Xr1-xr1_inf)*expf(-dt/tau_xr1);
     rDY_[ 2] = xr2_inf + (Xr2-xr2_inf)*expf(-dt/tau_xr2);
     rDY_[ 3] = xs_inf + (Xs-xs_inf)*expf(-dt/tau_xs);
     rDY_[ 4] = m_inf + (m-m_inf)*expf(-dt/tau_m);
