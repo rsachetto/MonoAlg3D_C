@@ -49,10 +49,6 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
                         struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,
                         struct grid *the_grid, struct user_options *options);
 
-void print_solver_info(struct monodomain_solver *the_monodomain_solver,
-                        struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,
-                        struct grid *the_grid, struct user_options *options);
-
 void set_spatial_stim(struct time_info *time_info, struct string_voidp_hash_entry *stim_configs, struct grid *the_grid, bool purkinje);
                     
 void configure_monodomain_solver_from_options(struct monodomain_solver *the_monodomain_solver, struct user_options *options);

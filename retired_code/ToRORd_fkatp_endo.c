@@ -61,7 +61,7 @@ real *ode_dt, *ode_previous_dt, *ode_time_new;
 static bool first_call = true;
 void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_new, real Istim, real abstol, real reltol, real min_step, real max_step);
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 

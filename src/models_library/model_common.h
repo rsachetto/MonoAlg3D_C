@@ -12,6 +12,8 @@
 #define pow powf
 #define sqrt sqrtf
 #define exp expf
+#define fabs fabsf
+#define log logf
 #endif
 
 

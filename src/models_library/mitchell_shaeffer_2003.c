@@ -35,17 +35,18 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     }
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) 
-{
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 
-	int i;
-
-//    uint32_t *mapping = ((uint32_t*)extra_data);
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
     OMP(parallel for private(sv_id))
-    for (i = 0; i < num_cells_to_solve; i++) 
+    for (uint32_t i = 0; i < num_cells_to_solve; i++)
     {
         if(cells_to_solve)
             sv_id = cells_to_solve[i];

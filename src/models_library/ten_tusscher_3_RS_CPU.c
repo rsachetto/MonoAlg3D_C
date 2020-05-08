@@ -56,10 +56,16 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 		}
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
     real *fibrosis;
+
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
     // Default values for a healthy cell ///////////
     real atpi = 6.8f;
@@ -73,17 +79,17 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
     int num_extra_parameters = 6;
     size_t extra_parameters_size = num_extra_parameters*sizeof(real);
 
-    if(extra_data) {
-        fibrosis = ((real*)extra_data) + num_extra_parameters; //pointer
+    if(ode_solver->ode_extra_data) {
+        fibrosis = ((real*)ode_solver->ode_extra_data) + num_extra_parameters; //pointer
     }
     else {
-        extra_data = malloc(extra_parameters_size);
-        ((real*)extra_data)[0] = atpi;
-        ((real*)extra_data)[1] = Ko;
-        ((real*)extra_data)[2] = Ki;
-        ((real*)extra_data)[3] = Vm_change;
-        ((real*)extra_data)[4] = GNa_multiplicator;
-        ((real*)extra_data)[5] = GCa_multiplicator;
+        ode_solver->ode_extra_data = malloc(extra_parameters_size);
+        ((real*)ode_solver->ode_extra_data)[0] = atpi;
+        ((real*)ode_solver->ode_extra_data)[1] = Ko;
+        ((real*)ode_solver->ode_extra_data)[2] = Ki;
+        ((real*)ode_solver->ode_extra_data)[3] = Vm_change;
+        ((real*)ode_solver->ode_extra_data)[4] = GNa_multiplicator;
+        ((real*)ode_solver->ode_extra_data)[5] = GCa_multiplicator;
 
         fibrosis = calloc(num_cells_to_solve, sizeof(real));
     }
@@ -98,12 +104,12 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
             sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], extra_data);
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], ode_solver->ode_extra_data);
 
         }
     }
 
-    if(extra_data == NULL) free(fibrosis);
+    if(ode_solver->ode_extra_data == NULL) free(fibrosis);
 }
 
 

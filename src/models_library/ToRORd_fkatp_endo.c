@@ -1,12 +1,5 @@
 #include "ToRORd_fkatp_endo.h"
 #include <stdlib.h>
-GET_CELL_MODEL_DATA(init_cell_model_data) {
-
-    if(get_initial_v)
-        cell_model->initial_v = INITIAL_V;
-    if(get_neq)
-        cell_model->number_of_ode_equations = NEQ; //for count and m
-}
 
 real max_step;
 real min_step;
@@ -14,6 +7,14 @@ real abstol;
 real reltol;
 bool adpt;
 real *ode_dt, *ode_previous_dt, *ode_time_new;
+
+GET_CELL_MODEL_DATA(init_cell_model_data) {
+
+    if(get_initial_v)
+        cell_model->initial_v = INITIAL_V;
+    if(get_neq)
+        cell_model->number_of_ode_equations = NEQ; //for count and m
+}
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
@@ -95,6 +96,37 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     }
 }
 
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
+
+    uint32_t sv_id;
+
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
+
+    #pragma omp parallel for private(sv_id)
+    for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
+
+        if(cells_to_solve)
+            sv_id = cells_to_solve[i];
+        else
+            sv_id = i;
+
+        if(adpt) {
+
+            solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id);
+        }
+        else {
+            for (int j = 0; j < num_steps; ++j) {
+                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
+            }
+
+        }
+
+    }
+}
 
 void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
 
@@ -109,34 +141,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
         sv[i] = dt*rDY[i] + rY[i];
 }
 
-void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_new, real Istim);
-
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
-
-    uint32_t sv_id;
-    #pragma omp parallel for private(sv_id)
-    for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
-
-        if(cells_to_solve)
-            sv_id = cells_to_solve[i];
-        else
-            sv_id = i;
-
-        if(adpt) {
-
-            addt2(sv + (sv_id * NEQ), current_t + dt, &ode_dt[sv_id], &ode_previous_dt[sv_id], &ode_time_new[sv_id], stim_currents[i]);
-        }
-        else {
-            for (int j = 0; j < num_steps; ++j) {
-                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
-            }
-
-        }
-
-    }
-}
-
-void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_new, real Istim) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
@@ -146,7 +151,7 @@ void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_ne
     real _tolerances_[numEDO];
     real _aux_tol = 0.0;
     //initializes the variables
-    *previous_dt = *dt;
+    ode_previous_dt[sv_id] = ode_dt[sv_id];
 
     real edos_old_aux_[numEDO];
     real edos_new_euler_[numEDO];
@@ -154,12 +159,15 @@ void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_ne
     real *_k2__ = (real*) malloc(sizeof(real)*numEDO);
     real *_k_aux__;
 
+    real *dt = &ode_dt[sv_id];
+    real *time_new = &ode_time_new[sv_id];
+    real *previous_dt = &ode_previous_dt[sv_id];
+
     if(*time_new + *dt > final_time) {
-        *dt = final_time - *time_new;
+       *dt = final_time - *time_new;
     }
 
-    //lado direito da primeira vez
-    RHS_cpu(sv, rDY, Istim, *dt);
+    RHS_cpu(sv, rDY, stim_curr, *dt);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++){
@@ -190,7 +198,7 @@ void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_ne
         }
 
         *time_new += *dt;
-        RHS_cpu(sv, rDY, Istim, *dt);
+        RHS_cpu(sv, rDY, stim_curr, *dt);
         *time_new -= *dt;//step back
 
         double greatestError = 0.0, auxError = 0.0;
@@ -210,8 +218,6 @@ void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_ne
         ///adapt the time step
         *dt = _beta_safety_ * (*dt) * sqrt(1.0f/greatestError);
 
-
-        //TALVEZ LIMITAR O DT AQUI MESMO PQ NAO FAZ SENTIDO IR MENOR DO QUE NOS SABEMOS QUE DA CERTO
         if (*time_new + *dt > final_time) {
             *dt = final_time - *time_new;
         }
@@ -223,13 +229,11 @@ void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_ne
                 sv[i] = edos_old_aux_[i];
             }
 
-            //printf("COUNT: %d of %d using dt = %lf\n", count, count_limit, _ode->__dt);
             count++;
             //throw the results away and compute again
         } else{//it accepts the solutions
 
 
-            // printf("Time %lf of %lf \n", _ode->time_new, final_time);
             if(greatestError >=1.0) {
                 printf("Accepting solution with error > %lf \n", greatestError);
             }
@@ -246,7 +250,7 @@ void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_ne
             if (*time_new + *dt > final_time) {
                 *dt = final_time - *time_new;
             }
-            //change vectors k1 e k2 , para que k2 seja aproveitado como k1 na proxima iteração
+
             _k_aux__ = _k2__;
             _k2__	= _k1__;
             _k1__	= _k_aux__;
@@ -256,28 +260,24 @@ void addt2(real *sv, real final_time, real *dt, real *previous_dt, real *time_ne
                 sv[i] = edos_new_euler_[i];
             }
 
-            //verifica se o incremento para a próxima iteração ultrapassa o tempo de salvar, q neste caso é o tempo final
             if(*time_new + *previous_dt >= final_time){
-                //se são iguais, ja foi calculada a iteração no ultimo passo de tempo e deve-se para o laço
-                //nao usar igualdade - usar esta conta, pode-se mudar a tolerância
                 if((fabs(final_time - *time_new) < 1.0e-5) ){
                     break;
-                    //se o passo de tempo + time_new ultrapassam o momento final, ajusta-se dt para que a próxima iteração do método ocorra exatamente no passo final.
                 }else if(*time_new < final_time){
                     *dt = *previous_dt = final_time - *time_new;
                     *time_new += *previous_dt;
                     break;
 
                 }else{
-                    printf("PAU - nao eh bom chegar aqui time_new %.20lf final_time %.20lf diff %e \n", *time_new , final_time, fabs(final_time - *time_new) );
+                    printf("Error: time_new %.20lf final_time %.20lf diff %e \n", *time_new , final_time, fabs(final_time - *time_new) );
                     break;
                 }
-            }else{//incremento normal - nao esta na "borda" do tempo
+            }else{
                 *time_new += *previous_dt;
             }
 
         }
-    }//fim-while
+    }
 
     free(_k1__);
     free(_k2__);
