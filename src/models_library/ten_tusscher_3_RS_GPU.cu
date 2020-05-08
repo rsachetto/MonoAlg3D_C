@@ -42,7 +42,13 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     return pitch_h;
 }
 
-extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
+extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
+
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
     // execution configuration
     const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
@@ -80,18 +86,18 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
 
     bool dealocate = false;
 
-    if(extra_data) {
-        fibs = ((real*)extra_data) + num_extra_parameters; //pointer
+    if(ode_solver->ode_extra_data) {
+        fibs = ((real*)ode_solver->ode_extra_data) + num_extra_parameters; //pointer
     }
     else {
-        extra_data = malloc(extra_parameters_size);
-        ((real*)extra_data)[0] = atpi;
-        ((real*)extra_data)[1] = Ko;
-        ((real*)extra_data)[2] = Ki;
-        ((real*)extra_data)[3] = Vm_change;
-        ((real*)extra_data)[4] = GNa_multiplicator;
-        ((real*)extra_data)[5] = GCaL_multiplicator;
-        ((real*)extra_data)[6] = INaCa_multiplicator;
+        ode_solver->ode_extra_data = malloc(extra_parameters_size);
+        ((real*)ode_solver->ode_extra_data)[0] = atpi;
+        ((real*)ode_solver->ode_extra_data)[1] = Ko;
+        ((real*)ode_solver->ode_extra_data)[2] = Ki;
+        ((real*)ode_solver->ode_extra_data)[3] = Vm_change;
+        ((real*)ode_solver->ode_extra_data)[4] = GNa_multiplicator;
+        ((real*)ode_solver->ode_extra_data)[5] = GCaL_multiplicator;
+        ((real*)ode_solver->ode_extra_data)[6] = INaCa_multiplicator;
 
         fibs = (real*)calloc(num_cells_to_solve, sizeof(real));
 
@@ -99,7 +105,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     }
 
     check_cuda_error(cudaMalloc((void **) &extra_parameters_device, extra_parameters_size));
-    check_cuda_error(cudaMemcpy(extra_parameters_device, extra_data, extra_parameters_size, cudaMemcpyHostToDevice));
+    check_cuda_error(cudaMemcpy(extra_parameters_device, ode_solver->ode_extra_data, extra_parameters_size, cudaMemcpyHostToDevice));
 
     check_cuda_error(cudaMalloc((void **) &fibrosis_device, fibs_size));
     check_cuda_error(cudaMemcpy(fibrosis_device, fibs, fibs_size, cudaMemcpyHostToDevice));
@@ -116,7 +122,7 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
 
     if(dealocate) {
         free(fibs);
-        free(extra_data);
+        free(ode_solver->ode_extra_data);
     }
 }
 

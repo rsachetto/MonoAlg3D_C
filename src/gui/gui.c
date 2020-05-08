@@ -1528,11 +1528,14 @@ void init_and_open_gui_window() {
 
     int current_monitor = 0;
 
-    InitWindow(0, 0, window_title);
+
+    InitWindow(current_window_width, current_window_height, window_title);
 
     current_monitor = GetCurrentMonitor();
     current_window_width = GetMonitorWidth(current_monitor);
     current_window_height = GetMonitorHeight(current_monitor);
+
+    SetWindowSize(current_window_width, current_window_height);
 
     free(window_title);
 

@@ -27,11 +27,16 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
 }
 
-extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
+extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
+
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
     // execution configuration
     const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
-
 
     size_t stim_currents_size = sizeof(real)*num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
@@ -39,7 +44,6 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     real *stims_currents_device;
     check_cuda_error(cudaMalloc((void **) &stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
-
 
     //the array cells to solve is passed when we are using and adapative mesh
     uint32_t *cells_to_solve_device = NULL;

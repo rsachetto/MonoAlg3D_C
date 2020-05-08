@@ -30,7 +30,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     sv[11] = 0.0; //Xr2_INF}
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
     real *fibrosis;

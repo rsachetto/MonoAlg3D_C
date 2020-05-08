@@ -658,7 +658,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 compute_pmj_current_purkinje_to_tissue(the_ode_solver,the_grid,the_terminals);
 
             // DIFUSION: Tissue
-            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config, the_grid, the_grid->num_active_cells, the_grid->active_cells, &solver_iterations, &solver_error);
+            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config,
+                                                                                    the_grid, the_grid->num_active_cells,
+                                                                                    the_grid->active_cells, &solver_iterations, &solver_error);
+            if(isnan(solver_error)) {
+                log_to_stderr_and_file("\n [ERR] Solver stoped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
+                return SIMULATION_FINISHED;
+            }
 
             cg_partial = stop_stop_watch(&cg_time);
 

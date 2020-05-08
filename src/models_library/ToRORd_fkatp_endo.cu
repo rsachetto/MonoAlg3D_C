@@ -2,9 +2,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define DT *((real *)((char *)sv + pitch * 43) + thread_id)
-#define TIME_NEW *((real *)((char *)sv + pitch * 44) + thread_id)
-#define PREVIOUS_DT *((real *)((char *)sv + pitch * 45) + thread_id)
+__constant__  size_t pitch;
+__constant__  real abstol;
+__constant__  real reltol;
+__constant__  real max_dt;
+__constant__  real min_dt;
+__constant__  uint8_t use_adpt;
+
+size_t pitch_h;
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
@@ -49,7 +54,13 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     return pitch_h;
 }
 
-extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
+extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
+
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
     // execution configuration
     const int GRID = ((int)num_cells_to_solve + BLOCK_SIZE - 1) / BLOCK_SIZE;
@@ -162,12 +173,16 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
                 }
             }
         } else {
-            solve_Forward_Euler_gpu_adpt(sv, stim_currents[threadID], cur_time + max_dt, sv_id);
+            solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], cur_time + max_dt, sv_id);
         }
     }
 }
 
-inline __device__ void solve_Forward_Euler_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id) {
+inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id) {
+
+    #define DT *((real *)((char *)sv + pitch * 43) + thread_id)
+    #define TIME_NEW *((real *)((char *)sv + pitch * 44) + thread_id)
+    #define PREVIOUS_DT *((real *)((char *)sv + pitch * 45) + thread_id)
 
     real rDY[NEQ];
 

@@ -44,21 +44,23 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     }
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
     int i;
 
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+
     OMP(parallel for private(sv_id))
     for (i = 0; i < num_cells_to_solve; i++) {
 
-        if(cells_to_solve)
-            sv_id = cells_to_solve[i];
+        if(ode_solver->cells_to_solve)
+            sv_id = ode_solver->cells_to_solve[i];
         else
             sv_id = i;
 
-        for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
+        for (int j = 0; j < ode_solver->num_steps; ++j) {
+            solve_model_ode_cpu(ode_solver->min_dt, ode_solver->sv + (sv_id * NEQ), stim_currents[i]);
 
         }
     }
