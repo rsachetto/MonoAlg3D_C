@@ -776,6 +776,7 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
     struct node *n = the_network->list_nodes;
     while (n != NULL)
     {
+        // Check if the Purkinje cell is a terminal
         if (n->num_edges == 1 && n->id != 0)
         {
             uint32_t n_active = the_grid->num_active_cells;
@@ -822,7 +823,8 @@ struct terminal* link_purkinje_to_endocardium (struct grid *the_grid)
 
     //print_to_stdout_and_file("On 'link_purkinje_to_endocardium'\n");
     //for (uint32_t i = 0; i < number_of_terminals; i++)
-    //    print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
+    //  print_to_stdout_and_file("%g %g %g\n",i,the_terminals[i].purkinje_cell->x,the_terminals[i].purkinje_cell->y,the_terminals[i].purkinje_cell->z);
+    //print_to_stdout_and_file("Terminal %u -- purkinje_index = %u -- endocardium_index = %u\n",i,the_terminals[i].purkinje_index,the_terminals[i].endocardium_index);
 
     return the_terminals;
 }

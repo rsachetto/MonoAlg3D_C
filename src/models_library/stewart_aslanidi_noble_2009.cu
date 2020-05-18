@@ -81,30 +81,6 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
         *((real * )((char *) sv + pitch * 18) + threadID) = 3.10836886659417;
         *((real * )((char *) sv + pitch * 19) + threadID) = 0.991580051907845;
         
-
-        // Steady-State after 10000ms in a 1cm cable --> BCL = 500ms
-    /*
-        *((real * )((char *) sv + pitch * 0) + threadID) = -74.391220;
-        *((real * )((char *) sv + pitch * 1) + threadID) = 136.781891;
-        *((real * )((char *) sv + pitch * 2) + threadID) = 9.046331;
-        *((real * )((char *) sv + pitch * 3) + threadID) = 0.000147;
-        *((real * )((char *) sv + pitch * 4) + threadID) = 0.011298;
-        *((real * )((char *) sv + pitch * 5) + threadID) = 0.239796;
-        *((real * )((char *) sv + pitch * 6) + threadID) = 0.361989;
-        *((real * )((char *) sv + pitch * 7) + threadID) = 0.020117;
-        *((real * )((char *) sv + pitch * 8) + threadID) = 0.015747;
-        *((real * )((char *) sv + pitch * 9) + threadID) = 0.351714;
-        *((real * )((char *) sv + pitch * 10) + threadID) = 0.142322;
-        *((real * )((char *) sv + pitch * 11) + threadID) = 0.000474;
-        *((real * )((char *) sv + pitch * 12) + threadID) = 0.000143;
-        *((real * )((char *) sv + pitch * 13) + threadID) = 0.730152;
-        *((real * )((char *) sv + pitch * 14) + threadID) = 0.943502;
-        *((real * )((char *) sv + pitch * 15) + threadID) = 0.994737;
-        *((real * )((char *) sv + pitch * 16) + threadID) = 0.964095;
-        *((real * )((char *) sv + pitch * 17) + threadID) = 0.000698;
-        *((real * )((char *) sv + pitch * 18) + threadID) = 3.899154;
-        *((real * )((char *) sv + pitch * 19) + threadID) = 0.894456;
-    */
     }
 }
 
@@ -157,21 +133,20 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         }
 
-        /*
         if(threadID == num_cells_to_solve-1)
         {
             printf("------------------------\n");
             for(int i = 0; i < NEQ; i++)
             {
-                printf("sv[%d] = %lf\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
+                printf("sv[%d] = %g;\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
             }
             for(int i = 0; i < NEQ; i++)
             {
-                printf("*((real * )((char *) sv + pitch * %d) + threadID) = %lf\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
+                printf("*((real * )((char *) sv + pitch * %d) + threadID) = %g;\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
             }
             printf("------------------------\n");
         }
-        */
+
 
     }
 }

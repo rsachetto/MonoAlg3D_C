@@ -48,7 +48,8 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     for(i = 0; i < active_purkinje_cells; i++) 
     {
 
-        alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
+        //alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);   // Elnaz simulation
+        alpha = ALPHA(beta, cm, dt, ac_purkinje[i]->discretization.x, ac_purkinje[i]->discretization.y, ac_purkinje[i]->discretization.z);  
         ac_purkinje[i]->v = purkinje_initial_v;
         ac_purkinje[i]->b = purkinje_initial_v * alpha;
     }

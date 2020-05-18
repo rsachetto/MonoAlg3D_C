@@ -79,6 +79,8 @@ int main (int argc, char *argv[])
 
     if(array_1 && array_2)
     {
+        // --------------------------------------------------------------------------------------------
+        // Calculate global RMS error
         double sum = 0.0;
 	
         // Pass through each cell on the tissue for the current timestep
@@ -92,7 +94,7 @@ int main (int argc, char *argv[])
 
             // RMS calculus
             //double value = (value_1 - value_2) / (value_1);		// Relative error
-	    double value = fabs(value_1 - value_2);			// Absolute error
+	        double value = fabs(value_1 - value_2);			// Absolute error
             sum += powf(value,2);
 
         }
@@ -100,8 +102,9 @@ int main (int argc, char *argv[])
 
         // RMS calculus
         double rms = sqrt(sum);
-	//printf("RMS = %g\n",rms);
+	    //printf("Global RMS = %g\n",rms);
         printf("%g\n",rms);
+        
     }
     else
     {

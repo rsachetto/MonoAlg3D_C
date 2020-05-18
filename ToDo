@@ -6,6 +6,9 @@ Sachetto
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 
 Berg
+- Merge the last modifications from Sachetto to my code and generate two branches (ShellScript build & CMake build)
+	- Send a pull request to him
+
 - Refactor the save map functions as a single one
 
 - Implement coupling between Purkinje and tissue

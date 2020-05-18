@@ -375,20 +375,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     start_dx = start_dy = start_dz = 100.0;
     max_dx = max_dy = max_dz = 100.0;
 
-/*
-    // TODO: Eliminate this ...
-    if (purkinje_config)
-    {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dx, purkinje_config->config_data, "start_discretization");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dy, purkinje_config->config_data, "start_discretization");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dz, purkinje_config->config_data, "start_discretization");
-
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dx, purkinje_config->config_data, "start_discretization");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dy, purkinje_config->config_data, "start_discretization");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dz, purkinje_config->config_data, "start_discretization");
-    }
-*/
-
     if (domain_config)
     {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dx, domain_config->config_data, "start_dx");
@@ -519,7 +505,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         lu = allocate_matrix_LU(num_rows,num_cols);
         lu_decomposition(lu,pivot,the_grid->the_purkinje->purkinje_cells,the_grid->the_purkinje->num_active_purkinje_cells);
     }
- */
+*/
     // TESTING LU DECOMPOSITION
 
     total_mat_time = stop_stop_watch(&part_mat);
@@ -1472,8 +1458,8 @@ void linear_system_solver_purkinje (struct config *config, struct grid *the_grid
 {
     bool jacobi_initialized = false;
     bool bcg_initialized = false;
-    bool use_preconditioner = false;
-    int max_its = 50;
+    bool use_preconditioner = true;
+    int max_its = 200;
     real_cpu tol = 1e-16;
 
     real_cpu  rTr,
