@@ -411,22 +411,22 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 
     // Purkinje section

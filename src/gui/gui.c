@@ -66,6 +66,7 @@ static struct gui_state * new_gui_state_with_font_sizes(int font_size_small, int
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->current_selected_volume = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    gui_state->current_mouse_over_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->mouse_pos = (Vector2){0, 0};
     gui_state->current_scale = 0;
     gui_state->voxel_alpha = 255;
@@ -344,45 +345,54 @@ static Vector3 find_mesh_center_vtk(struct mesh_info *mesh_info) {
 
 }
 
-static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, Vector3 cube_size, real_cpu v, struct gui_state *gui_state) {
+static void draw_voxel(struct voxel *voxel, struct gui_state *gui_state) {
 
-    struct point_3d p;
-    p.x = cube_position_draw.x;
-    p.y = cube_position_draw.y;
-    p.z = cube_position_draw.z;
+    Vector3 p_draw = voxel->position_draw;
+    Vector3 p_mesh = voxel->position_mesh;
+
+	Vector3 cube_size = voxel->size;
+	real_cpu v = voxel->v;
 
     bool collision = false;
+    bool collision_mouse_over = false;
 
     real_cpu max_v = gui_config.max_v;
     real_cpu min_v = gui_config.min_v;
 
     Color color;
 
-    action_potential_array aps = (struct action_potential*) hmget(gui_state->ap_graph_config->selected_aps, p);
+    action_potential_array aps = (struct action_potential*) hmget(gui_state->ap_graph_config->selected_aps, p_draw);
 
     struct action_potential ap1;
     ap1.t = gui_config.time;
-    ap1.v = v;
+    ap1.v = voxel->v;
     size_t aps_len = arrlen(aps);
 
     if(aps != NULL) {
         if(ap1.t > aps[aps_len-1].t ) {
             arrput(aps, ap1);
-            hmput(gui_state->ap_graph_config->selected_aps, p, aps);
+            hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
         }
     }
 
-    if(gui_state->double_clicked) {
-        collision = CheckCollisionRayBox(
-            gui_state->ray,
-            (BoundingBox){(Vector3){cube_position_draw.x - cube_size.x / 2, cube_position_draw.y - cube_size.y / 2,
-                                    cube_position_draw.z - cube_size.z / 2},
-                          (Vector3){cube_position_draw.x + cube_size.x / 2, cube_position_draw.y + cube_size.y / 2,
-                                    cube_position_draw.z + cube_size.z / 2}});
-    }
+	if(gui_state->double_clicked) {
+		collision = CheckCollisionRayBox( gui_state->ray,
+				(BoundingBox){(Vector3){p_draw.x - cube_size.x / 2, p_draw.y - cube_size.y / 2, p_draw.z - cube_size.z / 2},
+				(Vector3){p_draw.x + cube_size.x / 2, p_draw.y + cube_size.y / 2, p_draw.z + cube_size.z / 2}});
+	}
+
+	collision_mouse_over = CheckCollisionRayBox(
+				gui_state->ray_mouse_over, (BoundingBox){(Vector3){p_draw.x - cube_size.x / 2, p_draw.y - cube_size.y / 2, p_draw.z - cube_size.z / 2},
+				(Vector3){p_draw.x + cube_size.x / 2, p_draw.y + cube_size.y / 2, p_draw.z + cube_size.z / 2}});
+
+	if(collision_mouse_over) {
+		gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
+		gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
+	}
+
 
     if(collision && !gui_state->one_selected) {
-        gui_state->current_selected_volume = (Vector3){cube_position_mesh.x, cube_position_mesh.y, cube_position_mesh.z};
+        gui_state->current_selected_volume = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
         gui_state->one_selected = true;
         gui_state->ap_graph_config->draw_selected_ap_text = true;
     }
@@ -390,18 +400,19 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
     color = get_color((v - min_v)/(max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 
     if(gui_state->draw_grid_only) {
-        DrawCubeWiresV(cube_position_draw, cube_size, color);
+        DrawCubeWiresV(p_draw, cube_size, color);
     }
     else {
 
-        DrawCubeV(cube_position_draw, cube_size, color);
+        DrawCubeV(p_draw, cube_size, color);
 
         if(gui_state->draw_grid_lines) {
-            DrawCubeWiresV(cube_position_draw, cube_size, BLACK);
+            DrawCubeWiresV(p_draw, cube_size, BLACK);
         }
 
-        if(gui_state->current_selected_volume.x == cube_position_mesh.x && gui_state->current_selected_volume.y == cube_position_mesh.y && gui_state->current_selected_volume.z == cube_position_mesh.z) {
-            DrawCubeWiresV(cube_position_draw, cube_size, GREEN);
+        if(gui_state->current_selected_volume.x == p_mesh.x && gui_state->current_selected_volume.y == p_mesh.y && gui_state->current_selected_volume.z == p_mesh.z) {
+
+			DrawCubeWiresV(p_draw, cube_size, GREEN);
 
             if(aps == NULL) {
                 arrsetcap(aps, 50);
@@ -410,7 +421,7 @@ static void draw_voxel(Vector3 cube_position_draw, Vector3 cube_position_mesh, V
                 ap.v = v;
 
                 arrput(aps, ap);
-                hmput(gui_state->ap_graph_config->selected_aps, p, aps);
+                hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
                 gui_state->selected_time = GetTime();
             }
         }
@@ -423,9 +434,6 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
 
     if(!grid_to_draw) return;
 
-    Vector3 cube_position;
-    Vector3 cube_size;
-
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
 
@@ -433,11 +441,12 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
 
     int num_points = grid_to_draw->points_per_cell;
     int j = num_points;
+	
+	struct voxel voxel;
 
     for (uint32_t i = 0; i < n_active*num_points; i+=num_points) {
 
         float mesh_center_x, mesh_center_y, mesh_center_z;
-        real_cpu v;
         float dx, dy, dz;
 
         dx = fabs((points[cells[i]].x - points[cells[i+1]].x));
@@ -448,18 +457,20 @@ static void draw_vtk_unstructured_grid(Vector3 mesh_offset, real_cpu scale, stru
         mesh_center_y = points[cells[i]].y + dy/2.0f;
         mesh_center_z = points[cells[i]].z + dz/2.0f;
 
-        v = grid_to_draw->values[j-num_points];
+        voxel.v = grid_to_draw->values[j-num_points];
         j += 1;
 
-        cube_position.x = (float)((mesh_center_x - mesh_offset.x)/scale);
-        cube_position.y = (float)((mesh_center_y - mesh_offset.y)/scale);
-        cube_position.z = (float)((mesh_center_z - mesh_offset.z)/scale);
+        voxel.position_draw.x = (float)((mesh_center_x - mesh_offset.x)/scale);
+        voxel.position_draw.y = (float)((mesh_center_y - mesh_offset.y)/scale);
+        voxel.position_draw.z = (float)((mesh_center_z - mesh_offset.z)/scale);
 
-        cube_size.x = (float)(dx/scale);
-        cube_size.y = (float)(dy/scale);
-        cube_size.z = (float)(dz/scale);
+        voxel.size.x = (float)(dx/scale);
+        voxel.size.y = (float)(dy/scale);
+        voxel.size.z = (float)(dz/scale);
 
-        draw_voxel(cube_position, (Vector3){mesh_center_x, mesh_center_y, mesh_center_z}, cube_size, v, gui_state);
+		voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
+
+        draw_voxel(&voxel, gui_state);
     }
     gui_state->one_selected = false;
 }
@@ -470,8 +481,7 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, struct gui_state 
 
     if(!grid_to_draw) return;
 
-    Vector3 cube_position;
-    Vector3 cube_size;
+	struct voxel voxel;
 
     if (grid_to_draw) {
 
@@ -489,15 +499,18 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, struct gui_state 
                     continue;
                 }
 
-                cube_position.x = (float)((grid_cell->translated_center.x - mesh_offset.x)/scale);
-                cube_position.y = (float)((grid_cell->translated_center.y - mesh_offset.y)/scale);
-                cube_position.z = (float)((grid_cell->translated_center.z - mesh_offset.z)/scale);
+                voxel.position_draw.x = (float)((grid_cell->translated_center.x - mesh_offset.x)/scale);
+                voxel.position_draw.y = (float)((grid_cell->translated_center.y - mesh_offset.y)/scale);
+                voxel.position_draw.z = (float)((grid_cell->translated_center.z - mesh_offset.z)/scale);
 
-                cube_size.x = (float)(grid_cell->discretization.x/scale);
-                cube_size.y = (float)(grid_cell->discretization.y/scale);
-                cube_size.z = (float)(grid_cell->discretization.z/scale);
-
-                draw_voxel(cube_position, (Vector3){grid_cell->translated_center.x, grid_cell->translated_center.y, grid_cell->translated_center.z}, cube_size, ac[i]->v, gui_state);
+                voxel.size.x = (float)(grid_cell->discretization.x/scale);
+                voxel.size.y = (float)(grid_cell->discretization.y/scale);
+                voxel.size.z = (float)(grid_cell->discretization.z/scale);
+				
+				voxel.position_mesh = (Vector3){grid_cell->translated_center.x, grid_cell->translated_center.y, grid_cell->translated_center.z};
+				voxel.v = ac[i]->v;
+				voxel.matrix_position = ac[i]->grid_position;
+                draw_voxel(&voxel, gui_state);
 
             }
         }
@@ -1083,6 +1096,7 @@ static void reset(struct mesh_info *mesh_info, struct gui_state *gui_state, bool
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     omp_unset_lock(&gui_config.sleep_lock);
     gui_state->current_selected_volume = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    gui_state->current_mouse_over_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
 }
@@ -1274,10 +1288,11 @@ static void handle_input(struct mesh_info *mesh_info, struct gui_state *gui_stat
     }
 
     gui_state->mouse_pos = GetMousePosition();
+	gui_state->ray_mouse_over = GetMouseRay(GetMousePosition(), gui_state->camera);
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
 
-        gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
+    	gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
 
         if(!gui_state->show_selection_box) {
 
@@ -1591,10 +1606,10 @@ void init_and_open_gui_window() {
 
     int text_offset = configure_info_boxes_sizes(gui_state);
 
-
     while (!WindowShouldClose()) {
 
         UpdateCamera(&(gui_state->camera));
+		
 
 
         // Draw
@@ -1739,6 +1754,10 @@ void init_and_open_gui_window() {
         //Draw FPS
         int fps = GetFPS();
         DrawText(TextFormat("%2i FPS", fps), GetScreenWidth()  - 100, GetScreenHeight()-20, 20, BLACK);
+        DrawText(TextFormat("Mouse is on Volume: %lf, %lf, %lf with grid position %i", 
+				gui_state->current_mouse_over_volume.position_draw.x, gui_state->current_mouse_over_volume.position_draw.y, 
+				gui_state->current_mouse_over_volume.position_draw.z, gui_state->current_mouse_over_volume.matrix_position), 
+				GetScreenWidth() - MeasureText("Mouse is on Volume: 10000, 10000, 10000 with grid position 10", 20)*1.4, GetScreenHeight()-50, 20, BLACK);
         EndDrawing();
 
     }

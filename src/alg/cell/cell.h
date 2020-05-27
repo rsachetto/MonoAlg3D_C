@@ -19,6 +19,8 @@
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
+#define CELL_CENTER_EQUALS(cell, x1, y1, z1) (cell->center.x == x1 && cell->center.y == y1 && cell->center.z == z1)
+
 
 struct element {
 #ifdef ENABLE_DDM
@@ -46,12 +48,12 @@ struct cell_node {
     struct point_3d translated_center;
 #endif
 
-    void *north; // Points to cell node or transition node above this cell. Z right
-    void *south; // Points to cell node or transition node below this cell. Z left
-    void *east;  // Points to cell node or transition node rightward this cell.Y right
-    void *west;  // Points to cell node or transition node leftward this cell. Y left
-    void *front; // Points to cell node or transition node in front of this cell. X right
-    void *back;  // Points to cell node or transition node behind this cell. X left
+    void *z_front; // Points to cell node or transition node above this cell. Z front
+    void *z_back; // Points to cell node or transition node below this cell. Z back
+    void *y_top;  // Points to cell node or transition node rightward this cell.Y top
+    void *y_down;  // Points to cell node or transition node leftward this cell. Y down
+    void *x_right; // Points to cell node or transition node in front of this cell. X right
+    void *x_left;  // Points to cell node or transition node behind this cell. X left
 
     struct cell_node *previous; // Previous cell in the Hilbert curve ordering.
     struct cell_node *next;     // Next cell of in the Hilbert curve ordering.
@@ -66,12 +68,12 @@ struct cell_node {
 
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
-    real_cpu north_flux, // Flux coming from north direction.
-        south_flux,   // Flux coming from south direction.
-        east_flux,    // Flux coming from east direction.
-        west_flux,    // Flux coming from west direction.
-        front_flux,   // Flux coming from front direction.
-        back_flux;    // Flux coming from back direction.
+    real_cpu z_front_flux, // Flux coming from north direction.
+        z_back_flux,   // Flux coming from south direction.
+        y_top_flux,    // Flux coming from east direction.
+        y_down_flux,    // Flux coming from west direction.
+        x_right_flux,   // Flux coming from front direction.
+        x_left_flux;    // Flux coming from back direction.
 
     /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
     element_array elements;
@@ -192,6 +194,7 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
 
 struct cell_node * get_cell_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell);
 bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell);
+void * get_cell_neighbour_as_void(struct cell_node *grid_cell, void *neighbour_grid_cell, char *type);
 
 
 #endif // MONOALG3D_CELL_H

@@ -35,12 +35,12 @@ struct cell_data {
     real_cpu center_y;
     real_cpu center_z;
     real_cpu v;
-    real_cpu north_flux;
-    real_cpu south_flux;
-    real_cpu east_flux;
-    real_cpu west_flux;
-    real_cpu front_flux;
-    real_cpu back_flux;
+    real_cpu z_front_flux;
+    real_cpu z_back_flux;
+    real_cpu y_top_flux;
+    real_cpu y_down_flux;
+    real_cpu x_right_flux;
+    real_cpu x_left_flux;
     real_cpu b;
     bool can_change;
     bool active;
@@ -124,12 +124,12 @@ RESTORE_STATE (restore_simulation_state) {
                     // If the cell is not active we don't need to recover its state
                     if(grid_cell->active) {
                         grid_cell->v = cell_data->v;
-                        grid_cell->north_flux = cell_data->north_flux;
-                        grid_cell->south_flux = cell_data->south_flux;
-                        grid_cell->east_flux = cell_data->east_flux;
-                        grid_cell->west_flux = cell_data->west_flux;
-                        grid_cell->front_flux = cell_data->front_flux;
-                        grid_cell->back_flux = cell_data->back_flux;
+                        grid_cell->z_front_flux = cell_data->z_front_flux;
+                        grid_cell->z_back_flux = cell_data->z_back_flux;
+                        grid_cell->y_top_flux = cell_data->y_top_flux;
+                        grid_cell->y_down_flux = cell_data->y_down_flux;
+                        grid_cell->x_right_flux = cell_data->x_right_flux;
+                        grid_cell->x_left_flux = cell_data->x_left_flux;
                         grid_cell->b = cell_data->b;
                         grid_cell->can_change = cell_data->can_change;
 

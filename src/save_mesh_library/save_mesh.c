@@ -73,31 +73,31 @@ SAVE_MESH(save_as_adjacency_list) {
 
             fprintf(output_file, "%d ", cell->grid_position);
 
-            neighbour = get_cell_neighbour(cell, cell->north);
+            neighbour = get_cell_neighbour(cell, cell->z_front);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
-            neighbour = get_cell_neighbour(cell, cell->south);
-            if(neighbour) {
-                fprintf(output_file, "%d ", neighbour->grid_position);
-            }
-
-            neighbour = get_cell_neighbour(cell, cell->west);
+            neighbour = get_cell_neighbour(cell, cell->z_back);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
 
-            neighbour = get_cell_neighbour(cell, cell->east);
+            neighbour = get_cell_neighbour(cell, cell->y_down);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
 
-            neighbour = get_cell_neighbour(cell, cell->front);
+            neighbour = get_cell_neighbour(cell, cell->y_top);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
 
-            neighbour = get_cell_neighbour(cell, cell->back);
+            neighbour = get_cell_neighbour(cell, cell->x_right);
+            if(neighbour) {
+                fprintf(output_file, "%d ", neighbour->grid_position);
+            }
+
+            neighbour = get_cell_neighbour(cell, cell->x_left);
             if(neighbour) {
                 fprintf(output_file, "%d", neighbour->grid_position);
             }

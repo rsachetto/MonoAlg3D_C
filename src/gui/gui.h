@@ -32,6 +32,12 @@ enum draw_simulation_or_file {
     DRAW_FILE,
 };
 
+struct vector3_voidp_hash_entry {
+    Vector3 key;
+    void *value;
+};
+
+
 struct ap_graph_config {
 
     Rectangle graph;
@@ -43,7 +49,7 @@ struct ap_graph_config {
     Vector2 selected_ap_point;
     Vector2 selected_point_for_apd1;
     Vector2 selected_point_for_apd2;
-    struct point_voidp_hash_entry *selected_aps;
+    struct vector3_voidp_hash_entry *selected_aps;
     Rectangle drag_graph_button_position;
     Rectangle move_graph_button_position;
     bool drag_ap_graph;
@@ -53,6 +59,14 @@ struct ap_graph_config {
 };
 
 typedef struct action_potential * action_potential_array;
+
+struct voxel {
+	Vector3 position_draw;
+	Vector3 position_mesh;
+	Vector3 size;
+	real_cpu v;
+	uint32_t matrix_position;
+};
 
 struct gui_config {
 
@@ -128,12 +142,14 @@ struct gui_state {
     bool move_end_info_box;
 
     Ray ray;
+	Ray ray_mouse_over;
 
     int current_scale;
     int scale_alpha;
     int voxel_alpha;
 
     Vector3 current_selected_volume;
+    struct voxel current_mouse_over_volume;
 
     //Font font;
     float font_size_small;

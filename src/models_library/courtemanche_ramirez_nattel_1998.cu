@@ -25,9 +25,9 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
         real max_dt_h = solver->max_dt;
         real min_dt_h = solver->min_dt;
 
-        check_cuda_error(cudaMemcpyToSymbol(reltol, &reltol_h, sizeof(real)));
-        check_cuda_error(cudaMemcpyToSymbol(abstol, &abstol_h, sizeof(real)));
-        check_cuda_error(cudaMemcpyToSymbol(max_dt, &max_dt_h, sizeof(real)));
+		check_cuda_error(cudaMemcpyToSymbol(reltol, &reltol_h, sizeof(real)));
+        check_cuda_error(cudaMemcpyToSymbol(abstol, &abstol_h, sizeof(real)));        
+		check_cuda_error(cudaMemcpyToSymbol(max_dt, &max_dt_h, sizeof(real)));
         check_cuda_error(cudaMemcpyToSymbol(min_dt, &min_dt_h, sizeof(real)));
         log_to_stdout_and_file("Using Adaptive Euler model to solve the ODEs\n");
     } else {
@@ -35,7 +35,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     }
 
     // execution configuration
-    const int GRID = (num_volumes + BLOCK_SIZE - 1) / BLOCK_SIZE;
+	const int GRID = (num_volumes + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
     size_t size = num_volumes * sizeof(real);
 
@@ -85,6 +85,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     check_cuda_error(cudaPeekAtLastError());
 
     check_cuda_error(cudaFree(stims_currents_device));
+
     if(cells_to_solve_device)
         check_cuda_error(cudaFree(cells_to_solve_device));
 }
@@ -185,7 +186,6 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
         dt = final_time - time_new;
     }
 
-    //#pragma unroll
     for(int i = 0; i < NEQ; i++) {
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
@@ -193,7 +193,6 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     RHS_gpu(sv_local, rDY, stim_curr, thread_id, dt);
     time_new += dt;
 
-    //#pragma unroll
     for(int i = 0; i < NEQ; i++) {
         _k1__[i] = rDY[i];
     }
@@ -201,12 +200,6 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     int count = 0;
 
     int count_limit = (final_time - time_new) / min_dt;
-
-    int aux_count_limit = count_limit + 2000000;
-
-    if(aux_count_limit > 0) {
-        count_limit = aux_count_limit;
-    }
 
     while(1) {
 
@@ -301,7 +294,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
         }
     }
 
-    //#pragma unroll
+//    #pragma unroll
     for(int i = 0; i < NEQ; i++) {
         *((real *)((char *)sv + pitch * i) + thread_id) = sv_local[i];
     }
@@ -309,6 +302,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     DT = dt;
     TIME_NEW = time_new;
     PREVIOUS_DT = previous_dt;
+
 }
 
 
