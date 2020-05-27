@@ -769,8 +769,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
     real_cpu start_h = 500.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_h, config->config_data, "original_discretization");
 
-    real_cpu desired_h = 500.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, desired_h, config->config_data, "desired_discretization");
+	//TODO: implement this
+//    real_cpu desired_h = 500.0;
+//    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, desired_h, config->config_data, "desired_discretization");
 
     assert(the_grid);
 
@@ -994,6 +995,33 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_fibrosis_from_file(the_grid, fib_file, fib_size);
+
+    return 1;
+}
+
+SET_SPATIAL_DOMAIN(domino_mesh) {
+
+	real_cpu dz = 1.0;
+
+    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
+    sds sl_char = sdscatprintf(sdsempty(), "%lf", 300.0);
+    sds dx_char = sdscatprintf(sdsempty(), "%lf", 100.0);
+    sds dy_char = sdscatprintf(sdsempty(), "%lf", 100.0);
+    sds dz_char = sdscatprintf(sdsempty(), "%lf", dz);
+
+    shput_dup_value(config->config_data, "num_layers", nl_char);
+    shput_dup_value(config->config_data, "side_length", sl_char);
+    shput_dup_value(config->config_data, "start_dx", dx_char);
+    shput_dup_value(config->config_data, "start_dy", dy_char);
+    shput_dup_value(config->config_data, "start_dz", dz_char);
+
+    initialize_grid_with_square_mesh(config, the_grid);
+
+	sdsfree(nl_char);
+    sdsfree(sl_char);
+    sdsfree(dx_char);
+    sdsfree(dy_char);
+    sdsfree(dz_char);
 
     return 1;
 }

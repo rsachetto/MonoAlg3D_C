@@ -403,7 +403,6 @@ COMPILE_STATIC_LIB () {
 		if [ -z "$ANY_COMPILED_LOCAL" ]; then
 		  ANY_COMPILED_LOCAL=$ANY_COMPILED
 		fi
-
 	done
 
 	if [ -n "$ANY_COMPILED_LOCAL" ]; then
@@ -474,12 +473,11 @@ COMPILE_SHARED_LIB () {
 		OBJ_FILE=$BUILD_DIR/objs/${OBJ_FILE}.o
 		OBJECTS+=("$OBJ_FILE")
 
-    COMPILE_OBJECT "${PWD}/$s" "$OBJ_FILE" "${EXTRA_C_FLAGS} -fPIC" "$FORCE_COMPILATION" "$IS_CUDA"
+        COMPILE_OBJECT "${PWD}/$s" "$OBJ_FILE" "${EXTRA_C_FLAGS} -fPIC" "$FORCE_COMPILATION" "$IS_CUDA"
 
 		if [ -z "$ANY_COMPILED_LOCAL" ]; then
 			ANY_COMPILED_LOCAL=$ANY_COMPILED
 		fi
-
 	done
 
 	if [ -n "$IS_CUDA" ]; then

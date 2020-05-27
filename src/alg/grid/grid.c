@@ -256,12 +256,12 @@ void clean_grid(struct grid *the_grid) {
         if(grid_cell) {
 
             // Deleting transition nodes.
-            free((struct transition_node *)(grid_cell->north));
-            free((struct transition_node *)(grid_cell->front));
-            free((struct transition_node *)(grid_cell->east));
-            free((struct transition_node *)(((struct cell_node *)(grid_cell->west))->west));
-            free((struct transition_node *)(((struct cell_node *)(grid_cell->south))->south));
-            free((struct transition_node *)(((struct cell_node *)(grid_cell->back))->back));
+            free((struct transition_node *)(grid_cell->z_front));
+            free((struct transition_node *)(grid_cell->x_right));
+            free((struct transition_node *)(grid_cell->y_top));
+            free((struct transition_node *)(((struct cell_node *)(grid_cell->y_down))->y_down));
+            free((struct transition_node *)(((struct cell_node *)(grid_cell->z_back))->z_back));
+            free((struct transition_node *)(((struct cell_node *)(grid_cell->x_left))->x_left));
 
             // Deleting cells nodes.
             while(grid_cell) {
@@ -807,22 +807,22 @@ void update_link_purkinje_to_endocardium(struct grid *the_grid, struct terminal 
 
 bool cell_is_visible(struct cell_node *grid_cell) {
 
-    if(!cell_has_neighbour(grid_cell, grid_cell->north) ) {
+    if(!cell_has_neighbour(grid_cell, grid_cell->z_front) ) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->south) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->z_back) ) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->west) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->y_down) ) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->east) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->y_top) ) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->front) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->x_right) ) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->back) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->x_left) ) {
         return true;
     }
     else {

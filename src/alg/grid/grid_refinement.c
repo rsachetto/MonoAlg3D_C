@@ -112,12 +112,12 @@ void set_grid_flux(struct grid *the_grid) {
 
     OMP(parallel for)
     for(i = 0; i < active_cells; i++) {
-        ac[i]->north_flux = 0.0;
-        ac[i]->south_flux = 0.0;
-        ac[i]->east_flux = 0.0;
-        ac[i]->west_flux = 0.0;
-        ac[i]->front_flux = 0.0;
-        ac[i]->back_flux = 0.0;
+        ac[i]->z_front_flux = 0.0;
+        ac[i]->z_back_flux = 0.0;
+        ac[i]->y_top_flux = 0.0;
+        ac[i]->y_down_flux = 0.0;
+        ac[i]->x_right_flux = 0.0;
+        ac[i]->x_left_flux = 0.0;
     }
 
     OMP(parallel for)

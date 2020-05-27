@@ -81,32 +81,84 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
     struct element new_element;
     new_element.column = position;
 
-    if(direction == 'n') { // Z direction
+    if(direction == 'n') { // Z direction front
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;
         cell_elements[0].value += (sigma_z * multiplier);
-    } else if(direction == 's') { // Z direction
+    } else if(direction == 's') { // Z direction back
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;
         cell_elements[0].value += (sigma_z * multiplier);
-    } else if(direction == 'e') { // Y direction
+    } else if(direction == 'e') { // Y direction top
         multiplier = ((dx * dz) / dy);
         new_element.value = -sigma_y * multiplier;
         cell_elements[0].value += (sigma_y * multiplier);
-    } else if(direction == 'w') { // Y direction
+    } else if(direction == 'w') { // Y direction down
         multiplier = ((dx * dz) / dy);
         new_element.value = -sigma_y * multiplier;
         cell_elements[0].value += (sigma_y * multiplier);
-    } else if(direction == 'f') { // X direction
+    } else if(direction == 'f') { // X direction right
         multiplier = ((dy * dz) / dx);
-        new_element.value = -sigma_x * ((dy * dz) / dx);
+        new_element.value = -sigma_x * multiplier;
         cell_elements[0].value += (sigma_x * multiplier);
-    } else if(direction == 'b') { // X direction
+    } else if(direction == 'b') { // X direction left
         multiplier = ((dy * dz) / dx);
         new_element.value = -sigma_x * multiplier;
         cell_elements[0].value += (sigma_x * multiplier);
     }
     return new_element;
+}
+
+//TODO: we are going to start with no refinement first
+static int get_all_neighbours_of_direction(struct cell_node *cell, char direction, struct basic_cell_data ***neighbours) {
+
+
+	int num_not_null = 0;
+	void *n;
+
+	char cell_type;
+
+	switch(direction) {
+		case 'r':
+
+			n = get_cell_neighbour_as_void(cell, cell->y_top, &cell_type);
+			if(n) num_not_null++;
+			arrput(*neighbours, (struct basic_cell_data *)n);
+
+
+			n = get_cell_neighbour_as_void(cell, cell->y_top->x_right, &cell_type);
+			if(n) num_not_null++;
+			arrput(*neighbours, (struct basic_cell_data *)n);
+
+			n = get_cell_neighbour_as_void(cell, cell->x_right, &cell_type);
+			if(n) num_not_null++;
+			arrput(*neighbours, (struct basic_cell_data *)n);
+
+
+			break;
+		case 'l':
+			printf("b");
+			break;
+
+	}
+
+	return num_not_null;
+
+}
+
+static void fill_discretization_matrix_elements_aniso(struct cell_node *grid_cell) {
+
+	lock_cell_node(grid_cell);
+
+	printf("Filling volume %d with position %lf, %lf, %lf\n", grid_cell->grid_position, grid_cell->center.x, grid_cell->center.y, grid_cell->center.z);
+
+	struct basic_cell_data **r_neighbours = NULL;
+	int num_r_active;
+
+	num_r_active = get_all_neighbours_of_direction(grid_cell, 'r', &r_neighbours);
+	printf("%d\n", num_r_active);
+
+	unlock_cell_node(grid_cell);
 }
 
 static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, char direction) {
@@ -218,9 +270,7 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
 
             if(insert) {
-
                 struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements);
-
                 new_element.cell = black_neighbor_cell;
                 arrput(grid_cell->elements, new_element);
             }
@@ -241,9 +291,7 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
 
             if(insert) {
-
                 struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements);
-
                 new_element.cell = grid_cell;
                 arrput(black_neighbor_cell->elements, new_element);
             }
@@ -307,22 +355,22 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -401,22 +449,22 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -503,22 +551,22 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 
 }
@@ -558,22 +606,58 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
+    }
+}
+
+ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
+
+    static bool sigma_initialized = false;
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    initialize_diagonal_elements(the_solver, the_grid);
+
+    int i;
+
+    real sigma_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+
+    real sigma_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+
+    real sigma_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+
+    if(!sigma_initialized) {
+        OMP(parallel for)
+        for (i = 0; i < num_active_cells; i++) {
+            ac[i]->sigma.x = sigma_x;
+            ac[i]->sigma.y = sigma_y;
+            ac[i]->sigma.z = sigma_z;
+			//TODO: check if we need this
+        }
+    }
+
+    OMP(parallel for)
+    for(i = 0; i < num_active_cells; i++) {
+        fill_discretization_matrix_elements_aniso(ac[i]);
     }
 }
 
@@ -615,22 +699,22 @@ ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -712,22 +796,22 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 
 }
@@ -796,22 +880,22 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -944,22 +1028,22 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
     
     for(int k = 0; k < fib_size; k++) 

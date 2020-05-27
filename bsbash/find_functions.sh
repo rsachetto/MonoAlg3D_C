@@ -68,7 +68,6 @@ FIND_CRITERION() {
 	if [ -z "$PKG_CONFIG" ]; then
 		CRITERION_FOUND=''
 	else
-
 		if "$PKG_CONFIG" --exists criterion; then
 			CRITERION_FOUND='y'
 			CRITERIONS_LIBRARY_PATH=$($PKG_CONFIG --libs-only-L criterion)
