@@ -143,8 +143,7 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
 void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization,
                         uint64_t bunch_number, void *y_top, void *z_front, void *y_down, void *z_back,
                         void *x_rigth, void *x_left, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center,
-                        struct point_3d translated_center) {
+                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center) {
 
     the_cell->discretization = discretization;
     the_cell->bunch_number = bunch_number;
@@ -160,9 +159,6 @@ void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretizati
     the_cell->hilbert_shape_number = hilbert_shape_number;
     the_cell->center = center;
 
-#ifdef COMPILE_GUI
-    the_cell->translated_center = translated_center;
-#endif
 }
 
 void set_cell_flux(struct cell_node *the_cell, char direction) {

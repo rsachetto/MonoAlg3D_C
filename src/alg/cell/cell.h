@@ -44,10 +44,6 @@ struct cell_node {
 
     struct point_3d center;
 
-#ifdef COMPILE_GUI
-    struct point_3d translated_center;
-#endif
-
     void *z_front; // Points to cell node or transition node above this cell. Z front
     void *z_back; // Points to cell node or transition node below this cell. Z back
     void *y_top;  // Points to cell node or transition node rightward this cell.Y top
@@ -168,14 +164,13 @@ void set_transition_node_data (struct transition_node *the_transition_node, uint
 void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization,
                         uint64_t bunch_number, void *east, void *north, void *west, void *south,
                         void *front, void *back, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center,
-                        struct point_3d translated_center);
+                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
 real_cpu get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            struct point_3d discretization, struct point_3d center, struct point_3d translated_center,
+                            struct point_3d discretization, struct point_3d center,
                             uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
