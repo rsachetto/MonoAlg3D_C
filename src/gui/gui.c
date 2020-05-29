@@ -495,9 +495,9 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, struct gui_state 
 
                 grid_cell = ac[i];
 
-                if(!cell_is_visible(grid_cell)) {
-                    continue;
-                }
+                //if(!cell_is_visible(grid_cell)) {
+                //    continue;
+               // }
 
                 voxel.position_draw.x = (float)((grid_cell->translated_center.x - mesh_offset.x)/scale);
                 voxel.position_draw.y = (float)((grid_cell->translated_center.y - mesh_offset.y)/scale);
@@ -1646,16 +1646,17 @@ void init_and_open_gui_window() {
 
                 if(draw_type == DRAW_SIMULATION) {
                     mesh_offset = find_mesh_center(mesh_info);
-                    scale = fmaxf(gui_config.grid_info.alg_grid->mesh_side_length.x,
-                                  fmaxf(gui_config.grid_info.alg_grid->mesh_side_length.y,
-                                        gui_config.grid_info.alg_grid->mesh_side_length.z)) / 5.0f;
+					 //scale = fmaxf(gui_config.grid_info.alg_grid->mesh_side_length.x,
+                     //             fmaxf(gui_config.grid_info.alg_grid->mesh_side_length.y,
+                     //                   gui_config.grid_info.alg_grid->mesh_side_length.z)) / 5.0f;
                 }
                 else {
                     mesh_offset = find_mesh_center_vtk(mesh_info);
-                    scale = fmaxf(mesh_offset.x,
-                                  fmaxf(mesh_offset.y,
-                                        mesh_offset.z)) / 5.0f;
                 }
+				
+				scale = fmaxf(mesh_offset.x, fmaxf(mesh_offset.y, mesh_offset.z)) / 5.0f;
+					
+
             }
 
             if(draw_type == DRAW_SIMULATION) {
