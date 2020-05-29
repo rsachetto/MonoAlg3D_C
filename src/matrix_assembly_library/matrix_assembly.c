@@ -109,58 +109,6 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
     return new_element;
 }
 
-//TODO: we are going to start with no refinement first
-static int get_all_neighbours_of_direction(struct cell_node *cell, char direction, struct basic_cell_data ***neighbours) {
-
-
-	int num_not_null = 0;
-	void *n;
-
-	char cell_type;
-
-	switch(direction) {
-		case 'r':
-
-			n = get_cell_neighbour_as_void(cell, cell->y_top, &cell_type);
-			if(n) num_not_null++;
-			arrput(*neighbours, (struct basic_cell_data *)n);
-
-
-			n = get_cell_neighbour_as_void(cell, cell->y_top->x_right, &cell_type);
-			if(n) num_not_null++;
-			arrput(*neighbours, (struct basic_cell_data *)n);
-
-			n = get_cell_neighbour_as_void(cell, cell->x_right, &cell_type);
-			if(n) num_not_null++;
-			arrput(*neighbours, (struct basic_cell_data *)n);
-
-
-			break;
-		case 'l':
-			printf("b");
-			break;
-
-	}
-
-	return num_not_null;
-
-}
-
-static void fill_discretization_matrix_elements_aniso(struct cell_node *grid_cell) {
-
-	lock_cell_node(grid_cell);
-
-	printf("Filling volume %d with position %lf, %lf, %lf\n", grid_cell->grid_position, grid_cell->center.x, grid_cell->center.y, grid_cell->center.z);
-
-	struct basic_cell_data **r_neighbours = NULL;
-	int num_r_active;
-
-	num_r_active = get_all_neighbours_of_direction(grid_cell, 'r', &r_neighbours);
-	printf("%d\n", num_r_active);
-
-	unlock_cell_node(grid_cell);
-}
-
 static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, char direction) {
 
     bool has_found;
@@ -622,42 +570,6 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
 
         // Computes and designates the flux due to back cells.
         fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
-    }
-}
-
-ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
-
-    static bool sigma_initialized = false;
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    initialize_diagonal_elements(the_solver, the_grid);
-
-    int i;
-
-    real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
-
-    real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
-
-    real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
-
-    if(!sigma_initialized) {
-        OMP(parallel for)
-        for (i = 0; i < num_active_cells; i++) {
-            ac[i]->sigma.x = sigma_x;
-            ac[i]->sigma.y = sigma_y;
-            ac[i]->sigma.z = sigma_z;
-			//TODO: check if we need this
-        }
-    }
-
-    OMP(parallel for)
-    for(i = 0; i < num_active_cells; i++) {
-        fill_discretization_matrix_elements_aniso(ac[i]);
     }
 }
 
