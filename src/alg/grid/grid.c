@@ -114,59 +114,52 @@ void construct_grid(struct grid *the_grid) {
                        front_northwest_cell, front_southeast_cell, front_transition_node, back_northeast_cell, NULL,
                        back_northeast_cell, 0, 1,
                        POINT3D(half_side_length.x + quarter_side_length.x, half_side_length.y + quarter_side_length.y,
-                               half_side_length.z + quarter_side_length.z),
-                       ZERO_POINT3D);
+                               half_side_length.z + quarter_side_length.z));
 
     // back Northeast subcell initialization.
     set_cell_node_data(back_northeast_cell, half_side_length, 2, east_transition_node, north_transition_node,
                        back_northwest_cell, back_southeast_cell, front_northeast_cell, back_transition_node,
                        front_northeast_cell, back_northwest_cell, 1, 2,
                        POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y,
-                               half_side_length.z + quarter_side_length.z),
-                       ZERO_POINT3D);
+                               half_side_length.z + quarter_side_length.z));
 
     // back Northwest subcell initialization.
     set_cell_node_data(
         back_northwest_cell, half_side_length, 3, back_northeast_cell, north_transition_node, west_transition_node,
         back_southwest_cell, front_northwest_cell, back_transition_node, back_northeast_cell, front_northwest_cell, 2,
-        2, POINT3D(quarter_side_length.x, quarter_side_length.y, half_side_length.z + quarter_side_length.z),
-        ZERO_POINT3D);
+        2, POINT3D(quarter_side_length.x, quarter_side_length.y, half_side_length.z + quarter_side_length.z));
 
     // front Northwest subcell initialization.
     set_cell_node_data(front_northwest_cell, half_side_length, 4, front_northeast_cell, north_transition_node,
                        west_transition_node, front_southwest_cell, front_transition_node, back_northwest_cell,
                        back_northwest_cell, front_southwest_cell, 3, 3,
                        POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y,
-                               half_side_length.z + quarter_side_length.z),
-                       ZERO_POINT3D);
+                               half_side_length.z + quarter_side_length.z));
 
     // front Southwest subcell initialization.
     set_cell_node_data(
         front_southwest_cell, half_side_length, 5, front_southeast_cell, front_northwest_cell, west_transition_node,
         south_transition_node, front_transition_node, back_southwest_cell, front_northwest_cell, back_southwest_cell, 4,
-        3, POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y, quarter_side_length.z),
-        ZERO_POINT3D);
+        3, POINT3D(half_side_length.x + quarter_side_length.x, quarter_side_length.y, quarter_side_length.z));
 
     // back Southwest subcell initialization.
     set_cell_node_data(back_southwest_cell, half_side_length, 6, back_southeast_cell, back_northwest_cell,
                        west_transition_node, south_transition_node, front_southwest_cell, back_transition_node,
                        front_southwest_cell, back_southeast_cell, 5, 4,
-                       POINT3D(quarter_side_length.x, quarter_side_length.y, quarter_side_length.z), ZERO_POINT3D);
+                       POINT3D(quarter_side_length.x, quarter_side_length.y, quarter_side_length.z));
 
     // back Southeast subcell initialization.
     set_cell_node_data(
         back_southeast_cell, half_side_length, 7, east_transition_node, back_northeast_cell, back_southwest_cell,
         south_transition_node, front_southeast_cell, back_transition_node, back_southwest_cell, front_southeast_cell, 6,
-        4, POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y, quarter_side_length.z),
-        ZERO_POINT3D);
+        4, POINT3D(quarter_side_length.x, half_side_length.y + quarter_side_length.y, quarter_side_length.z));
 
     // front Southeast subcell initialization.
     set_cell_node_data(front_southeast_cell, half_side_length, 8, east_transition_node, front_northeast_cell,
                        front_southwest_cell, south_transition_node, front_transition_node, back_southeast_cell,
                        back_southeast_cell, NULL, 7, 5,
                        POINT3D(half_side_length.x + quarter_side_length.x, half_side_length.y + quarter_side_length.y,
-                               quarter_side_length.z),
-                       ZERO_POINT3D);
+                               quarter_side_length.z));
 
     // Grid initialization
     the_grid->first_cell = front_northeast_cell;
@@ -474,15 +467,14 @@ void construct_grid_purkinje(struct grid *the_grid) {
 
         if(i == 0)
             set_cell_node_data(purkinje_cells[i], side_length, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                               purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z), ZERO_POINT3D);
+                               purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z));
 
         else if(i == total_purkinje_nodes - 1)
             set_cell_node_data(purkinje_cells[i], side_length, 0, NULL, NULL, NULL, NULL, NULL, NULL,
-                               purkinje_cells[i - 1], NULL, i, 0, POINT3D(n->x, n->y, n->z), ZERO_POINT3D);
+                               purkinje_cells[i - 1], NULL, i, 0, POINT3D(n->x, n->y, n->z));
         else
             set_cell_node_data(purkinje_cells[i], side_length, 0, NULL, NULL, NULL, NULL, NULL, NULL,
-                               purkinje_cells[i - 1], purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z),
-                               ZERO_POINT3D);
+                               purkinje_cells[i - 1], purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z));
 
         // Do not refine the Purkinje cells !
         purkinje_cells[i]->can_change = false;
@@ -505,40 +497,6 @@ void initialize_and_construct_grid_purkinje(struct grid *the_grid) {
 
     initialize_grid_purkinje(the_grid);
     construct_grid_purkinje(the_grid);
-}
-
-void translate_mesh_to_origin(struct grid *the_grid) {
-
-    real_cpu minx = FLT_MAX;
-    real_cpu miny = FLT_MAX;
-    real_cpu minz = FLT_MAX;
-
-    FOR_EACH_CELL(the_grid) {
-        real_cpu center_x = cell->center.x;
-        real_cpu center_y = cell->center.y;
-        real_cpu center_z = cell->center.z;
-
-        if(center_x < minx) {
-            minx = center_x;
-        }
-
-        if(center_y < miny) {
-            miny = center_y;
-        }
-
-        if(center_z < minz) {
-            minz = center_z;
-        }
-
-    }
-
-#ifdef COMPILE_GUI
-    FOR_EACH_CELL(the_grid) {
-        cell->translated_center.x = cell->center.x - minx + (cell->discretization.x / 2.0f);
-        cell->translated_center.y = cell->center.y - miny + (cell->discretization.y / 2.0f);
-        cell->translated_center.z = cell->center.z - minz + (cell->discretization.z / 2.0f);
-    }
-#endif
 }
 
 static void sort_elements(struct element *cell_elements, int tam) {

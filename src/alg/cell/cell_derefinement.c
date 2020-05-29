@@ -151,16 +151,6 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     new_cell->center.y = (new_cell->center.y + aux_center_y) / 2.0f;
     new_cell->center.z = (new_cell->center.z + aux_center_z) / 2.0f;
 
-#ifdef COMPILE_GUI
-    real_cpu aux_t_center_x = ((struct cell_node *)(new_cell->x_left))->translated_center.x;
-    real_cpu aux_t_center_y = ((struct cell_node *)(new_cell->y_down))->translated_center.y;
-    real_cpu aux_t_center_z = ((struct cell_node *)(new_cell->z_back))->translated_center.z;
-
-    new_cell->translated_center.x = (new_cell->translated_center.x + aux_t_center_x) / 2.0f;
-    new_cell->translated_center.y = (new_cell->translated_center.y + aux_t_center_y) / 2.0f;
-    new_cell->translated_center.z = (new_cell->translated_center.z + aux_t_center_z) / 2.0f;
-#endif
-
     new_cell->discretization.x = 2.0f * new_cell->discretization.x;
     new_cell->discretization.y = 2.0f * new_cell->discretization.y;
     new_cell->discretization.z = 2.0f * new_cell->discretization.z;

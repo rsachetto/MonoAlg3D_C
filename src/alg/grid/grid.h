@@ -80,7 +80,6 @@ void save_grid_domain (struct grid * the_grid, const char *file_name);
 void initialize_and_construct_grid_purkinje (struct grid *the_grid);
 void initialize_grid_purkinje (struct grid *the_grid);
 void construct_grid_purkinje (struct grid *the_grid);
-void translate_mesh_to_origin(struct grid *grid);
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b);
 
 struct terminal* link_purkinje_to_endocardium (struct grid *the_grid);

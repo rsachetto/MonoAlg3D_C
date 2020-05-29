@@ -186,30 +186,30 @@ static Vector3 find_mesh_center(struct mesh_info *mesh_info) {
     if (ac) {
         for (uint32_t i = 0; i < n_active; i++) {
             grid_cell = ac[i];
-            if(grid_cell->translated_center.x > mesh_max_x) {
-                mesh_max_x = grid_cell->translated_center.x;
+            if(grid_cell->center.x > mesh_max_x) {
+                mesh_max_x = grid_cell->center.x;
                 mesh_max_dx = grid_cell->discretization.x;
             }
-            else if(grid_cell->translated_center.x < mesh_min_x) {
-                mesh_min_x = grid_cell->translated_center.x;
+            else if(grid_cell->center.x < mesh_min_x) {
+                mesh_min_x = grid_cell->center.x;
                 mesh_min_dx = grid_cell->discretization.x;
             }
 
-            if(grid_cell->translated_center.y > mesh_max_y) {
-                mesh_max_y = grid_cell->translated_center.y;
+            if(grid_cell->center.y > mesh_max_y) {
+                mesh_max_y = grid_cell->center.y;
                 mesh_max_dy = grid_cell->discretization.y;
             }
-            else if(grid_cell->translated_center.y < mesh_min_y) {
-                mesh_min_y = grid_cell->translated_center.y;
+            else if(grid_cell->center.y < mesh_min_y) {
+                mesh_min_y = grid_cell->center.y;
                 mesh_min_dy = grid_cell->discretization.y;
             }
 
-            if(grid_cell->translated_center.z > mesh_max_z) {
-                mesh_max_z = grid_cell->translated_center.z;
+            if(grid_cell->center.z > mesh_max_z) {
+                mesh_max_z = grid_cell->center.z;
                 mesh_max_dz = grid_cell->discretization.z;
             }
-            else if(grid_cell->translated_center.z < mesh_min_z) {
-                mesh_min_z = grid_cell->translated_center.z;
+            else if(grid_cell->center.z < mesh_min_z) {
+                mesh_min_z = grid_cell->center.z;
                 mesh_min_dz = grid_cell->discretization.z;
             }
 
@@ -499,15 +499,15 @@ static void draw_alg_mesh(Vector3 mesh_offset, real_cpu scale, struct gui_state 
                 //    continue;
                // }
 
-                voxel.position_draw.x = (float)((grid_cell->translated_center.x - mesh_offset.x)/scale);
-                voxel.position_draw.y = (float)((grid_cell->translated_center.y - mesh_offset.y)/scale);
-                voxel.position_draw.z = (float)((grid_cell->translated_center.z - mesh_offset.z)/scale);
+                voxel.position_draw.x = (float)((grid_cell->center.x - mesh_offset.x)/scale);
+                voxel.position_draw.y = (float)((grid_cell->center.y - mesh_offset.y)/scale);
+                voxel.position_draw.z = (float)((grid_cell->center.z - mesh_offset.z)/scale);
 
                 voxel.size.x = (float)(grid_cell->discretization.x/scale);
                 voxel.size.y = (float)(grid_cell->discretization.y/scale);
                 voxel.size.z = (float)(grid_cell->discretization.z/scale);
 				
-				voxel.position_mesh = (Vector3){grid_cell->translated_center.x, grid_cell->translated_center.y, grid_cell->translated_center.z};
+				voxel.position_mesh = (Vector3){grid_cell->center.x, grid_cell->center.y, grid_cell->center.z};
 				voxel.v = ac[i]->v;
 				voxel.matrix_position = ac[i]->grid_position;
                 draw_voxel(&voxel, gui_state);

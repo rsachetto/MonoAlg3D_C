@@ -536,9 +536,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
 #ifdef COMPILE_GUI
-    if(configs->show_gui) {
-        translate_mesh_to_origin(the_grid);
-    }
     gui_config.grid_info.loaded = true;
 #endif
 
