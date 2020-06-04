@@ -10,14 +10,14 @@ def read_transmembrane_potential(input_file, dt, print_rate):
 	timesteps = np.arange(0,n)*dt*print_rate
 	vms = data
 
-	#timesteps = timesteps[1:]
-	#vms = vms[1:]
+	timesteps = timesteps[500:]
+	vms = vms[500:]
 
 	return timesteps, vms
 
 
 def plot_transmembrane_potential(t, v1, v2):
-	plt.grid()
+	#plt.grid()
 	plt.plot(t, v1, label="Tissue", c="blue", linewidth=3.0)
 	plt.plot(t, v2, label="Purkinje", c="orange", linewidth=3.0)
 	plt.xlabel("t (ms)",fontsize=15)
@@ -25,7 +25,8 @@ def plot_transmembrane_potential(t, v1, v2):
 	plt.title("Action potential",fontsize=14)
 	plt.legend(loc=0,fontsize=14)
 	#plt.show()
-	plt.savefig("two_ap.pdf")
+	#plt.savefig("two_ap.pdf")
+	plt.savefig("two_ap.png",dpi=300)
 
 
 def main():

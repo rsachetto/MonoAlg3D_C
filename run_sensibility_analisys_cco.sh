@@ -7,6 +7,7 @@ SEEDS=( 1562046115 1562013988 1562042299 1562005513 1562009134 1562009769 156204
 RAND_OFFSET="9"
 
 for SEED in "${SEEDS[@]}"; do
-	${PROGRAM_NAME} -c ${MONOALG_EXAMPLES_FOLDER}/cco_classic/elizabeth_purkinje_cco_seed-${SEED}_offset-${RAND_OFFSET}_nterm-130.ini
-	#${PROGRAM_NAME} -c ${MONOALG_EXAMPLES_FOLDER}/co_fractal_classic/elizabeth_purkinje_co_seed-${SEED}_offset-${RAND_OFFSET}_nterm-130.ini
+	#${PROGRAM_NAME} -c ${MONOALG_EXAMPLES_FOLDER}/cco_classic/elizabeth_purkinje_cco_seed-${SEED}_offset-${RAND_OFFSET}_nterm-130.ini
+	#${PROGRAM_NAME} -c ${MONOALG_EXAMPLES_FOLDER}/co_length/elizabeth_purkinje_cco_seed-${SEED}_offset-${RAND_OFFSET}_nterm-130.ini
+	${PROGRAM_NAME} -c ${MONOALG_EXAMPLES_FOLDER}/co_activation_time/elizabeth_purkinje_cco_seed-${SEED}_offset-${RAND_OFFSET}_nterm-130.ini
 done
