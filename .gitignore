@@ -86,11 +86,14 @@ cuboid_tt2004_gpu/
 *.ctags
 tags
 scripts/output
+scripts/elizabeth
 scripts/animations/frames
 scripts/animations/videos
 scripts/animations/cameras
 scripts/parser_vtu_to_alg/inputs
 scripts/parser_vtu_to_alg/networks
+scripts/error_calculator/inputs/elizabeth*
+scripts/error_calculator/inputs/elnaz*
 scripts/error_calculator/scripts/backups
 scripts/error_calculator/scripts/*-error*
 scripts/elnaz/scientific-reports-purkinje
