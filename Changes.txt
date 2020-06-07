@@ -1,45 +1,10 @@
-1) Merged Sachetto changes since 05/09/2019
-    - Update the syntax of the configuration files
-    - Refactor the 'cell_node' structure to reduce the number of variables
-    - Update the stimulus library with macros
-    - Update the matrix assembly library with macros
-    - Add a 'save_activation_time' function with APD calculation on the fly
-    - New 'config_helpers' module
+1) Merged Sachetto changes since 04/06/2020
+    - New build using shell-script
+    - GPU-CG
+    - ODE adaptative
+    - Save activation_time and APD on ".acm"
  
 2) Lucas improvements
-    - Change the SAVE_MESH macro to include a 'scalar_name' variable, so we could save the activation and also conductivity map (try to do the APD map ...)
-    - Fix the bug on the stimulus:
-        - It now possible to include 2 different stimuli happening at the same timestep
-        - The stimulus are not been overwritten anymore
-    - Add more celular models and an example simulation for each one
-        - Di & Francesco 1985 (Purkinje)
-        - Noble 1962 (Purkinje)
-        - Steward & Aslanidi & Noble 2009 (Purkinje)
-        - Li & Rudy 2011 (Purkinje)
-    - Create two new matrix assembly libraries:
-        - DDM
-        - Purkinje 
-    - Update the DDM functions
-        - Create a macro do calculate the KAPPA variable
-        - It is now working in micrometers
-        - All the examples are working now
-    - Update the Purkinje functions
-        - Solve a leak memory problem
-        - Add new functions to save the activation and conductivity map as a '.vtp'
-    - More two options in [main] section of the configuration file
-        - calc_activation_time
-        - print_conductivity_map
-    - Add a brief description for each configuration file
-    - Add a new cheat Purkinje simulation
+    - Organize the example_configs folder in categories
+    - Add Fedora build options to the "build.sh"
     
-3) Elnaz improvements:
-    - A new simulation to generate a sustained spiral wave using the TenTusscher 2004 model
-    - Fix a problem on the 'source_sink_mismatch' simulations
-    
-4) Pedro improvements:
-    - Add new fibrosis simulations to reproduce the Scientific reports work using conductivity reduction instead of fibrotic cells
-    - Add new source_sink_mismatch simulations
-        
-5) New scripts
-    - Add a new Purkinje-Network-Reader, which generates the 'purkinje-cheat' configuration file.
-
