@@ -11,7 +11,7 @@
 #include "../config/assembly_matrix_config.h"
 #include "../monodomain/constants.h"
 #include "../utils/utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../libraries_common/common_data_structures.h"
 
 #include "../config_helpers/config_helpers.h"
@@ -19,14 +19,14 @@
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     real_cpu alpha;
-    struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
-    uint32_t active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
+    struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+    uint32_t active_cells = the_grid->purkinje->num_active_purkinje_cells;
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
-    int i;
+    uint32_t i;
 
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_cells; i++) 
     {
 
@@ -40,9 +40,9 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 {
     real_cpu alpha;
     real_cpu dx, dy, dz;
-    uint32_t num_active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
-    struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
-    struct node *n = the_grid->the_purkinje->the_network->list_nodes;
+    uint32_t num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+    struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+    struct node *n = the_grid->purkinje->network->list_nodes;
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
 
@@ -83,9 +83,9 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     
     struct edge *e;
     struct element **cell_elements;
-    real_cpu dx;
 
-    real_cpu sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+    real_cpu dx, dy, dz;
+    real_cpu multiplier;
 
     int i;
 
@@ -93,6 +93,10 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     {
         cell_elements = &grid_cells[i]->elements;
         dx = grid_cells[i]->discretization.x;
+        dy = grid_cells[i]->discretization.x;
+        dz = grid_cells[i]->discretization.x;
+
+        multiplier = ((dy * dz) / dx);
 
         e = pk_node->list_edges;
 
@@ -103,11 +107,11 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
 
             // Neighbour elements ...
             new_element.column = e->id;
-            new_element.value = -sigma_x1 * dx;
+            new_element.value = (-sigma_x * multiplier);
             new_element.cell = grid_cells[e->id];
 
             // Diagonal element ...
-            cell_elements[0]->value += (sigma_x1 * dx);
+            cell_elements[0]->value += (sigma_x * multiplier);
 
             arrput(grid_cells[i]->elements,new_element);
 
@@ -120,9 +124,9 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
 {
     static bool sigma_initialized = false;
 
-    uint32_t num_active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
-    struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
-    struct node *pk_node = the_grid->the_purkinje->the_network->list_nodes;
+    uint32_t num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+    struct cell_node **ac = the_grid->purkinje->purkinje_cells;
+    struct node *pk_node = the_grid->purkinje->network->list_nodes;
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
@@ -131,7 +135,7 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
 
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;

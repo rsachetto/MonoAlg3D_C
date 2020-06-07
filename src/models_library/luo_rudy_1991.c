@@ -10,24 +10,38 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    sv[0] = -84.380111f; //V millivolt 
-    sv[1] = 0.001713f; //m dimensionless 
-    sv[2] = 0.982661f; //h dimensionless 
-    sv[3] = 0.989108f; //j dimensionless 
-    sv[4] = 0.003021f; //d dimensionless 
-    sv[5] = 0.999968f; //f dimensionless 
-    sv[6] = 0.041760f; //X dimensionless 
-    sv[7] = 0.000179f; //Cai millimolar 
+    uint32_t num_cells = solver->original_num_cells;
+
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+
+        real *sv = &solver->sv[i * NEQ];
+
+        sv[0] = -84.380111f; // V millivolt
+        sv[1] = 0.001713f;   // m dimensionless
+        sv[2] = 0.982661f;   // h dimensionless
+        sv[3] = 0.989108f;   // j dimensionless
+        sv[4] = 0.003021f;   // d dimensionless
+        sv[5] = 0.999968f;   // f dimensionless
+        sv[6] = 0.041760f;   // X dimensionless
+        sv[7] = 0.000179f;   // Cai millimolar
+    }
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 
-	int i;
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
-    #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) {
+    OMP(parallel for private(sv_id))
+    for (uint32_t i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
             sv_id = cells_to_solve[i];

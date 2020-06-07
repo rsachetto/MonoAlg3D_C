@@ -1,0 +1,3 @@
+SOURCE_FILES="sds.c"
+HEADER_FILES="sds.h sdsalloc.h"
+COMPILE_STATIC_LIB "sds" "$SOURCE_FILES" "$HEADER_FILES"

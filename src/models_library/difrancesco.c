@@ -15,35 +15,33 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    static bool first_call = true;
+    log_to_stdout_and_file("Using DiFrancesco & Noble 1985 CPU model\n");
 
-    if(first_call) {
-#ifdef _WIN32
-        printf("Using DiFrancesco & Noble 1985 CPU model\n");
-#else
-        print_to_stdout_and_file("Using DiFrancesco & Noble 1985 CPU model\n");
-#endif
+    uint32_t num_volumes = solver->original_num_cells;
+	
+	solver->sv = (real*)malloc(NEQ*num_volumes*sizeof(real));
 
-        first_call = false;
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ];
+        // Normal
+        sv[0] = -87;    // V millivolt
+        sv[1] = 4;      // Kc millimolar
+        sv[2] = 140;    // Ki millimolar
+        sv[3] = 8;      // Nai millimolar
+        sv[4] = 0.2;    // y dimensionless
+        sv[5] = 0.01;   // x dimensionless
+        sv[6] = 5e-5;   // Cai millimolar
+        sv[7] = 1;      // s dimensionless
+        sv[8] = 0.01;   // m dimensionless
+        sv[9] = 0.8;    // h dimensionless
+        sv[10] = 0.005; // d dimensionless
+        sv[11] = 1;     // f dimensionless
+        sv[12] = 1;     // f2 dimensionless
+        sv[13] = 2;     // Ca_up millimolar
+        sv[14] = 1;     // Ca_rel millimolar
+        sv[15] = 1;     // p dimensionless
     }
-
-    // Normal
-    sv[0] = -87;    // V millivolt
-    sv[1] = 4;      // Kc millimolar
-    sv[2] = 140;    // Ki millimolar
-    sv[3] = 8;      // Nai millimolar
-    sv[4] = 0.2;    // y dimensionless
-    sv[5] = 0.01;   // x dimensionless
-    sv[6] = 5e-5;   // Cai millimolar
-    sv[7] = 1;      // s dimensionless
-    sv[8] = 0.01;   // m dimensionless
-    sv[9] = 0.8;    // h dimensionless
-    sv[10] = 0.005; // d dimensionless
-    sv[11] = 1;     // f dimensionless
-    sv[12] = 1;     // f2 dimensionless
-    sv[13] = 2;     // Ca_up millimolar
-    sv[14] = 1;     // Ca_rel millimolar
-    sv[15] = 1;     // p dimensionless
 
     // Pacing BCL = 300 ms
     /*
@@ -117,21 +115,23 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     CONSTANTS[49] = CONSTANTS[47]*0.0200000;
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 
-	int i;
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
-//    uint32_t *mapping = ((uint32_t*)extra_data);
-
-    #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) 
+    OMP(parallel for private(sv_id))
+    for (uint32_t i = 0; i < num_cells_to_solve; i++)
     {
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
         else
-            sv_id = (uint32_t )i;
+            sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) 
         {

@@ -5,8 +5,7 @@
 #include "../alg/grid/grid.h"
 #include "../config/domain_config.h"
 #include "../config/save_mesh_config.h"
-#include "../single_file_libraries/stb_ds.h"
-#include "../string/sds.h"
+#include "../3dparty/stb_ds.h"
 
 int main() {
 
@@ -59,15 +58,25 @@ int main() {
     shput_dup_value(save_mesh_config->config_data, "file_prefix", "test_valgrind");
     shput_dup_value(save_mesh_config->config_data, "compress", "yes");
 
-    ((save_mesh_fn*)save_mesh_config->main_function)(save_mesh_config, grid, 0, 0.0, 0.0, 0.0,'v');
+    struct time_info ti = ZERO_TIME_INFO;
+
+    ((save_mesh_fn*)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
 
     refine_grid_cell(grid, grid->first_cell);
 
-    ((save_mesh_fn*)save_mesh_config->main_function)(save_mesh_config, grid, 1, 1.0, 1.0, 0.0,'v');
+    ti.iteration = 1;
+    ti.current_t = 1;
+    ti.final_t = 1;
+
+    ((save_mesh_fn*)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
 
     derefine_grid_cell(grid, grid->first_cell);
 
-    ((save_mesh_fn*)save_mesh_config->main_function)(save_mesh_config, grid, 2, 2.0, 2.0, 0.0,'v');
+    ti.iteration = 2;
+    ti.current_t = 2;
+    ti.final_t = 2;
+
+    ((save_mesh_fn*)save_mesh_config->main_function)(&ti, save_mesh_config, grid);
 
     free_config_data(save_mesh_config);
 

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "ten_tusscher_2006.h"
 
-
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     assert(cell_model);
@@ -17,58 +16,73 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 //TODO: this should be called only once for the whole mesh, like in the GPU code
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    if(extra_data == NULL) {
-        sv[0] = -85.23f;   // V;       millivolt
-        sv[1] = 0.00621f;  // Xr1;     dimensionless
-        sv[2] = 0.4712f;   // Xr2;     dimensionless
-        sv[3] = 0.0095f;   // Xs;      dimensionless
-        sv[4] = 0.00172f;  // m;       dimensionless
-        sv[5] = 0.7444f;   // h;       dimensionless
-        sv[6] = 0.7045f;   // j;       dimensionless
-        sv[7] = 3.373e-5f; // d;       dimensionless
-        sv[8] = 0.7888f;   // f;       dimensionless
-        sv[9] = 0.9755f;   // f2;      dimensionless
-        sv[10] = 0.9953f;   // fCass;   dimensionless
-        sv[11] = 0.999998f; // s;       dimensionless
-        sv[12] = 2.42e-8f;  // r;       dimensionless
-        sv[13] = 0.000126f; // Ca_i;    millimolar
-        sv[14] = 3.64f;     // Ca_SR;   millimolar
-        sv[15] = 0.00036f;  // Ca_ss;   millimolar
-        sv[16] = 0.9073f;   // R_prime; dimensionless
-        sv[17] = 8.604f;    // Na_i;    millimolar
-        sv[18] = 136.89f;   // K_i;     millimolar
-    }
-    else {
-        real *initial = (real *)extra_data;
-        sv[0] =  initial[0];// V;       millivolt
-        sv[1] =  initial[1];// Xr1;     dimensionless
-        sv[2] =  initial[2];// Xr2;     dimensionless
-        sv[3] =  initial[3];// Xs;      dimensionless
-        sv[4] =  initial[4];// m;       dimensionless
-        sv[5] =  initial[5];// h;       dimensionless
-        sv[6] =  initial[6];// j;       dimensionless
-        sv[7] =  initial[7];// d;       dimensionless
-        sv[8] =  initial[8];// f;       dimensionless
-        sv[9] =  initial[9];// f2;      dimensionless
-        sv[10] = initial[10]; // fCass;   dimensionless
-        sv[11] = initial[11]; // s;       dimensionless
-        sv[12] = initial[12]; // r;       dimensionless
-        sv[13] = initial[13]; // Ca_i;    millimolar
-        sv[14] = initial[14]; // Ca_SR;   millimolar
-        sv[15] = initial[15]; // Ca_ss;   millimolar
-        sv[16] = initial[16]; // R_prime; dimensionless
-        sv[17] = initial[17]; // Na_i;    millimolar
-        sv[18] = initial[18]; // K_i;     millimolar
+    uint32_t num_cells = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+
+        real *sv = &solver->sv[i * NEQ];
+
+        if(solver->ode_extra_data == NULL) {
+            sv[0] = -85.23f;   // V;       millivolt
+            sv[1] = 0.00621f;  // Xr1;     dimensionless
+            sv[2] = 0.4712f;   // Xr2;     dimensionless
+            sv[3] = 0.0095f;   // Xs;      dimensionless
+            sv[4] = 0.00172f;  // m;       dimensionless
+            sv[5] = 0.7444f;   // h;       dimensionless
+            sv[6] = 0.7045f;   // j;       dimensionless
+            sv[7] = 3.373e-5f; // d;       dimensionless
+            sv[8] = 0.7888f;   // f;       dimensionless
+            sv[9] = 0.9755f;   // f2;      dimensionless
+            sv[10] = 0.9953f;   // fCass;   dimensionless
+            sv[11] = 0.999998f; // s;       dimensionless
+            sv[12] = 2.42e-8f;  // r;       dimensionless
+            sv[13] = 0.000126f; // Ca_i;    millimolar
+            sv[14] = 3.64f;     // Ca_SR;   millimolar
+            sv[15] = 0.00036f;  // Ca_ss;   millimolar
+            sv[16] = 0.9073f;   // R_prime; dimensionless
+            sv[17] = 8.604f;    // Na_i;    millimolar
+            sv[18] = 136.89f;   // K_i;     millimolar
+        }
+        else {
+            real *initial = (real *)solver->ode_extra_data;
+            sv[0] = initial[0];   // V;       millivolt
+            sv[1] = initial[1];   // Xr1;     dimensionless
+            sv[2] = initial[2];   // Xr2;     dimensionless
+            sv[3] = initial[3];   // Xs;      dimensionless
+            sv[4] = initial[4];   // m;       dimensionless
+            sv[5] = initial[5];   // h;       dimensionless
+            sv[6] = initial[6];   // j;       dimensionless
+            sv[7] = initial[7];   // d;       dimensionless
+            sv[8] = initial[8];   // f;       dimensionless
+            sv[9] = initial[9];   // f2;      dimensionless
+            sv[10] = initial[10]; // fCass;   dimensionless
+            sv[11] = initial[11]; // s;       dimensionless
+            sv[12] = initial[12]; // r;       dimensionless
+            sv[13] = initial[13]; // Ca_i;    millimolar
+            sv[14] = initial[14]; // Ca_SR;   millimolar
+            sv[15] = initial[15]; // Ca_ss;   millimolar
+            sv[16] = initial[16]; // R_prime; dimensionless
+            sv[17] = initial[17]; // Na_i;    millimolar
+            sv[18] = initial[18]; // K_i;     millimolar
+        }
 
     }
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 	int i;
 
-    #pragma omp parallel for private(sv_id)
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
+
+    OMP(parallel for private(sv_id))
     for (i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)

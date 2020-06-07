@@ -12,7 +12,7 @@
 #include "../utils/file_utils.h"
 
 #include "../common_types/common_types.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 void print_restore_state_config_values(struct config* s) {
     printf("Restore state library_file: %s\n", s->library_file_path);

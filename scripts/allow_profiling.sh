@@ -1,0 +1,2 @@
+modprobe nvidia NVreg_RestrictProfilingToAdminUsers=0
+#systemctl isolate graphical

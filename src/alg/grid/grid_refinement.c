@@ -2,8 +2,9 @@
 // Created by sachetto on 30/09/17.
 //
 
+#include "../../3dparty/stb_ds.h"
+#include "../../logger/logger.h"
 #include "grid.h"
-#include "../../single_file_libraries/stb_ds.h"
 
 /**
  * Decides if the grid should be refined by traversing the whole grid, according
@@ -19,17 +20,17 @@ bool refine_grid_with_bound(struct grid *the_grid, real_cpu refinement_bound, re
                             real_cpu min_dz) {
 
     if(min_dx <= 0.0) {
-        fprintf(stderr, "refine_grid(): Parameter min_dx must be positive, passed %lf.", min_dx);
+        log_to_stderr_and_file("refine_grid(): Parameter min_dx must be positive, passed %lf.", min_dx);
         return false;
     }
 
     if(min_dy <= 0.0) {
-        fprintf(stderr, "refine_grid(): Parameter min_dy must be positive, passed %lf.", min_dy);
+        log_to_stderr_and_file("refine_grid(): Parameter min_dy must be positive, passed %lf.", min_dy);
         return false;
     }
 
     if(min_dz <= 0.0) {
-        fprintf(stderr, "refine_grid(): Parameter min_dz must be positive, passed %lf.", min_dz);
+        log_to_stderr_and_file("refine_grid(): Parameter min_dz must be positive, passed %lf.", min_dz);
         return false;
     }
 
@@ -70,7 +71,7 @@ bool refine_grid_with_bound(struct grid *the_grid, real_cpu refinement_bound, re
 void refine_grid(struct grid *the_grid, int num_steps) {
 
     if(the_grid == NULL) {
-        fprintf(stderr, "refine_grid(): Parameter the_grid can't be null. Exiting!");
+        log_to_stderr_and_file("refine_grid(): Parameter the_grid can't be null. Exiting!");
         exit(10);
     }
 
@@ -94,7 +95,7 @@ void refine_grid(struct grid *the_grid, int num_steps) {
 void refine_grid_cell(struct grid *the_grid, struct cell_node *grid_cell) {
 
     if(!grid_cell) {
-        fprintf(stderr, "refine_grid_cell: grid_cell is NULL.\n");
+        log_to_stderr_and_file("refine_grid_cell: grid_cell is NULL.\n");
         exit(10);
     }
 
@@ -109,17 +110,17 @@ void set_grid_flux(struct grid *the_grid) {
 
     int i;
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < active_cells; i++) {
-        ac[i]->north_flux = 0.0;
-        ac[i]->south_flux = 0.0;
-        ac[i]->east_flux = 0.0;
-        ac[i]->west_flux = 0.0;
-        ac[i]->front_flux = 0.0;
-        ac[i]->back_flux = 0.0;
+        ac[i]->z_front_flux = 0.0;
+        ac[i]->z_back_flux = 0.0;
+        ac[i]->y_top_flux = 0.0;
+        ac[i]->y_down_flux = 0.0;
+        ac[i]->x_right_flux = 0.0;
+        ac[i]->x_left_flux = 0.0;
     }
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < active_cells; i++) {
         set_cell_flux(ac[i], 's'); // Computes south flux.
         set_cell_flux(ac[i], 'n'); // Computes north flux.

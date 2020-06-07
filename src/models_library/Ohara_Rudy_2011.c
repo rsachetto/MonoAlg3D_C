@@ -14,56 +14,71 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    sv[0] =   INITIAL_V;      //v
-    sv[1] =   7;              //nai
-    sv[2] =   7;              //nass
-    sv[3] =   145;            //ki
-    sv[4] =   145;            //kss
-    sv[5] =   1.0e-4;         //cai
-    sv[6] =   1.0e-4;         //cass
-    sv[7] =   1.2;            //cansr
-    sv[8] =   1.2;            //cajsr
-    sv[9] =   0;              //m
-    sv[10] =  1;              //hf
-    sv[11] =  1;              //hs
-    sv[12] =  1;              //j
-    sv[13] =  1;              //hsp
-    sv[14] =  1;              //jp
-    sv[15] =  0;              //mL
-    sv[16] =  1;              //hL
-    sv[17] =  1;              //hLp
-    sv[18] =  0;              //a
-    sv[19] =  1;              //iF
-    sv[20] =  1;              //iS
-    sv[21] =  0;              //ap
-    sv[22] =  1;              //iFp
-    sv[23] =  1;              //iSp
-    sv[24] =  0;              //d
-    sv[25] =  1;              //ff
-    sv[26] =  1;              //fs
-    sv[27] =  1;              //fcaf
-    sv[28] =  1;              //fcas
-    sv[29] =  1;              //jca
-    sv[30] =  0;              //nca
-    sv[31] =  1;              //ffp
-    sv[32] =  1;              //fcafp
-    sv[33] =  0;              //xrf
-    sv[34] =  0;              //xrs
-    sv[35] =  0;              //xs1
-    sv[36] =  0;              //xs2
-    sv[37] =  1;              //xk1
-    sv[38] =  0;              //Jrelnp
-    sv[39] =  0;              //Jrelp
-    sv[40] =  0;              //CaMKt
+    uint32_t num_cells = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+
+        real *sv = &solver->sv[i * NEQ];
+
+        sv[0] = INITIAL_V; // v
+        sv[1] = 7;         // nai
+        sv[2] = 7;         // nass
+        sv[3] = 145;       // ki
+        sv[4] = 145;       // kss
+        sv[5] = 1.0e-4;    // cai
+        sv[6] = 1.0e-4;    // cass
+        sv[7] = 1.2;       // cansr
+        sv[8] = 1.2;       // cajsr
+        sv[9] = 0;         // m
+        sv[10] = 1;        // hf
+        sv[11] = 1;        // hs
+        sv[12] = 1;        // j
+        sv[13] = 1;        // hsp
+        sv[14] = 1;        // jp
+        sv[15] = 0;        // mL
+        sv[16] = 1;        // hL
+        sv[17] = 1;        // hLp
+        sv[18] = 0;        // a
+        sv[19] = 1;        // iF
+        sv[20] = 1;        // iS
+        sv[21] = 0;        // ap
+        sv[22] = 1;        // iFp
+        sv[23] = 1;        // iSp
+        sv[24] = 0;        // d
+        sv[25] = 1;        // ff
+        sv[26] = 1;        // fs
+        sv[27] = 1;        // fcaf
+        sv[28] = 1;        // fcas
+        sv[29] = 1;        // jca
+        sv[30] = 0;        // nca
+        sv[31] = 1;        // ffp
+        sv[32] = 1;        // fcafp
+        sv[33] = 0;        // xrf
+        sv[34] = 0;        // xrs
+        sv[35] = 0;        // xs1
+        sv[36] = 0;        // xs2
+        sv[37] = 1;        // xk1
+        sv[38] = 0;        // Jrelnp
+        sv[39] = 0;        // Jrelp
+        sv[40] = 0;        // CaMKt
+    }
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 
     int i;
 
-#pragma omp parallel for private(sv_id)
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
+
+    OMP(parallel for private(sv_id))
     for (i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
