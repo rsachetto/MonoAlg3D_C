@@ -9,16 +9,14 @@
 #include "../alg/grid/grid.h"
 #include "../config/restore_state_config.h"
 
-#include "../common_types/common_types.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
-#include "../config_helpers/config_helpers.h"
 
 #ifdef COMPILE_CUDA
 #include "../models_library/model_gpu_utils.h"
 #endif
 
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
 struct mesh_data {
     real_cpu cube_side_length_x;
@@ -37,12 +35,12 @@ struct cell_data {
     real_cpu center_y;
     real_cpu center_z;
     real_cpu v;
-    real_cpu north_flux;
-    real_cpu south_flux;
-    real_cpu east_flux;
-    real_cpu west_flux;
-    real_cpu front_flux;
-    real_cpu back_flux;
+    real_cpu z_front_flux;
+    real_cpu z_back_flux;
+    real_cpu y_top_flux;
+    real_cpu y_down_flux;
+    real_cpu x_right_flux;
+    real_cpu x_left_flux;
     real_cpu b;
     bool can_change;
     bool active;
@@ -126,12 +124,12 @@ RESTORE_STATE (restore_simulation_state) {
                     // If the cell is not active we don't need to recover its state
                     if(grid_cell->active) {
                         grid_cell->v = cell_data->v;
-                        grid_cell->north_flux = cell_data->north_flux;
-                        grid_cell->south_flux = cell_data->south_flux;
-                        grid_cell->east_flux = cell_data->east_flux;
-                        grid_cell->west_flux = cell_data->west_flux;
-                        grid_cell->front_flux = cell_data->front_flux;
-                        grid_cell->back_flux = cell_data->back_flux;
+                        grid_cell->z_front_flux = cell_data->z_front_flux;
+                        grid_cell->z_back_flux = cell_data->z_back_flux;
+                        grid_cell->y_top_flux = cell_data->y_top_flux;
+                        grid_cell->y_down_flux = cell_data->y_down_flux;
+                        grid_cell->x_right_flux = cell_data->x_right_flux;
+                        grid_cell->x_left_flux = cell_data->x_left_flux;
                         grid_cell->b = cell_data->b;
                         grid_cell->can_change = cell_data->can_change;
 
@@ -181,6 +179,8 @@ RESTORE_STATE (restore_simulation_state) {
 
         the_monodomain_solver->final_time = config_final_time;
         the_monodomain_solver->abort_on_no_activity = config_abort;
+
+        fread(time_info, sizeof (struct time_info), 1, input_file);
 
         fclose (input_file);
     }

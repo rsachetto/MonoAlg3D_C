@@ -9,12 +9,10 @@
 #include "../monodomain/constants.h"
 #include "config_common.h"
 
-//#define SET_SPATIAL_STIM(name) EXPORT_FN void name(struct config *config, struct grid *the_grid)
-//typedef SET_SPATIAL_STIM(set_spatial_stim_fn);
-
-#define SET_SPATIAL_STIM(name) EXPORT_FN void name(struct config *config, const uint32_t n_active, struct cell_node **ac, const bool adaptive)
+#define SET_SPATIAL_STIM(name)                                                                                         \
+     void name(struct time_info *time_info, struct config *config, struct grid *the_grid, bool is_purkinje)
 typedef SET_SPATIAL_STIM(set_spatial_stim_fn);
 
-void print_stim_config_values(struct config* s);
+void print_stim_config_values(struct config *s);
 
-#endif //MONOALG3D_STIM_CONFIG_H
+#endif // MONOALG3D_STIM_CONFIG_H

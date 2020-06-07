@@ -15,23 +15,34 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     //sv[1] = 0.060546727200f;    // m dimensionless
     //sv[2] = 0.725900135500f;    // h dimensionless
     //sv[3] = 0.470923970800f;    // n dimensionless
-    
-    // BCL = 300ms
-    sv[0] = -81.1893;    // V millivolt 
-    sv[1] = 0.0443563;    // m dimensionless
-    sv[2] = 0.851652;    // h dimensionless
-    sv[3] = 0.58291;    // n dimensionless
+
+    uint32_t num_volumes = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_volumes*sizeof(real));
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ];
+        // BCL = 300ms
+        sv[0] = -81.1893;  // V millivolt
+        sv[1] = 0.0443563; // m dimensionless
+        sv[2] = 0.851652;  // h dimensionless
+        sv[3] = 0.58291;   // n dimensionless
+    }
        
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
+
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
     uint32_t sv_id;
 
-	int i;
-
-    #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) {
+    OMP(parallel for private(sv_id))
+    for (uint32_t i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
@@ -101,7 +112,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     real alpha_m = (((1.0e-01*((-V_old_)-4.8e+01))/(exp((((-V_old_)-4.8e+01)/1.5e+01))-1.0e+00)));
     real alpha_n = (((1.0e-04*((-V_old_)-5.0e+01))/(exp((((-V_old_)-5.0e+01)/1.0e+01))-1.0e+00)));
     real i_na = (g_na+1.4e-01)*(V_old_ - E_na);
-    real i_na_no_oscilation = (g_na+1.2e-01)*(V_old_ - E_na);
+//    real i_na_no_oscilation = (g_na+1.2e-01)*(V_old_ - E_na);
     double beta_m = (((1.2e-01*(V_old_+8.0e+00))/(exp(((V_old_+8.0e+00)/5.0e+00))-1.0e+00)));
     double beta_h = ((1.0/(1.0e+00+exp((((-V_old_)-4.2e+01)/1.0e+01)))));
     double beta_n = ((2.0e-03*exp((((-V_old_)-9.0e+01)/8.0e+01))));

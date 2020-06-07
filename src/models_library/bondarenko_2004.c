@@ -12,56 +12,72 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-        sv[0] = -82.4202f;	 // V millivolt
-        sv[1] = 0.115001f;	 // Cai msvromolar
-        sv[2] = 0.115001f;	 // Cass msvromolar
-        sv[3] = 1299.5f;	 // CaJSR msvromolar
-        sv[4] = 1299.5f;	 // CaNSR msvromolar
-        sv[5] = 0.0f;	 // P_RyR dimensionless
-        sv[6] = 11.2684f;	 // LTRPN_Ca msvromolar
-        sv[7] = 125.29f;	 // HTRPN_Ca msvromolar
-        sv[8] = 0.149102e-4f;	 // P_O1 dimensionless
-        sv[9] = 0.951726e-10f;	 // P_O2 dimensionless
-        sv[10] = 0.16774e-3f;	 // P_C2 dimensionless
-        sv[11] = 0.930308e-18f;	 // O dimensionless
-        sv[12] = 0.124216e-3f;	 // C2 dimensionless
-        sv[13] = 0.578679e-8f;	 // C3 dimensionless
-        sv[14] = 0.119816e-12f;	 // C4 dimensionless
-        sv[15] = 0.497923e-18f;	 // I1 dimensionless
-        sv[16] = 0.345847e-13f;	 // I2 dimensionless
-        sv[17] = 0.185106e-13f;	 // I3 dimensionless
-        sv[18] = 14237.1f;	 // Nai msvromolar
-        sv[19] = 0.020752f;	 // C_Na2 dimensionless
-        sv[20] = 0.279132e-3f;	 // C_Na1 dimensionless
-        sv[21] = 0.713483e-6f;	 // O_Na dimensionless
-        sv[22] = 0.153176e-3f;	 // IF_Na dimensionless
-        sv[23] = 0.673345e-6f;	 // I1_Na dimensionless
-        sv[24] = 0.155787e-8f;	 // I2_Na dimensionless
-        sv[25] = 0.0113879f;	 // sv_Na2 dimensionless
-        sv[26] = 0.34278f;	 // sv_Na3 dimensionless
-        sv[27] = 143720.0f;	 // Ki msvromolar
-        sv[28] = 0.265563e-2f;	 // ato_f dimensionless
-        sv[29] = 0.999977f;	 // ito_f dimensionless
-        sv[30] = 0.417069e-3f;	 // ato_s dimensionless
-        sv[31] = 0.998543f;	 // ito_s dimensionless
-        sv[32] = 0.262753e-3f;	 // nKs dimensionless
-        sv[33] = 0.417069e-3f;	 // aur dimensionless
-        sv[34] = 0.998543f;	 // iur dimensionless
-        sv[35] = 0.417069e-3f;	 // aKss dimensionless
-        sv[36] = 1.0f;	 // iKss dimensionless
-        sv[37] = 0.641229e-3f;	 // C_K2 dimensionless
-        sv[38] = 0.992513e-3f;	 // C_K1 dimensionless
-        sv[39] = 0.175298e-3f;	 // O_K dimensionless
-        sv[40] = 0.319129e-4f;	 // I_K dimensionless
+    uint32_t num_cells = solver->original_num_cells;
+
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+
+        real *sv = &solver->sv[i * NEQ];
+
+        sv[0] = -82.4202f;      // V millivolt
+        sv[1] = 0.115001f;      // Cai msvromolar
+        sv[2] = 0.115001f;      // Cass msvromolar
+        sv[3] = 1299.5f;        // CaJSR msvromolar
+        sv[4] = 1299.5f;        // CaNSR msvromolar
+        sv[5] = 0.0f;           // P_RyR dimensionless
+        sv[6] = 11.2684f;       // LTRPN_Ca msvromolar
+        sv[7] = 125.29f;        // HTRPN_Ca msvromolar
+        sv[8] = 0.149102e-4f;   // P_O1 dimensionless
+        sv[9] = 0.951726e-10f;  // P_O2 dimensionless
+        sv[10] = 0.16774e-3f;   // P_C2 dimensionless
+        sv[11] = 0.930308e-18f; // O dimensionless
+        sv[12] = 0.124216e-3f;  // C2 dimensionless
+        sv[13] = 0.578679e-8f;  // C3 dimensionless
+        sv[14] = 0.119816e-12f; // C4 dimensionless
+        sv[15] = 0.497923e-18f; // I1 dimensionless
+        sv[16] = 0.345847e-13f; // I2 dimensionless
+        sv[17] = 0.185106e-13f; // I3 dimensionless
+        sv[18] = 14237.1f;      // Nai msvromolar
+        sv[19] = 0.020752f;     // C_Na2 dimensionless
+        sv[20] = 0.279132e-3f;  // C_Na1 dimensionless
+        sv[21] = 0.713483e-6f;  // O_Na dimensionless
+        sv[22] = 0.153176e-3f;  // IF_Na dimensionless
+        sv[23] = 0.673345e-6f;  // I1_Na dimensionless
+        sv[24] = 0.155787e-8f;  // I2_Na dimensionless
+        sv[25] = 0.0113879f;    // sv_Na2 dimensionless
+        sv[26] = 0.34278f;      // sv_Na3 dimensionless
+        sv[27] = 143720.0f;     // Ki msvromolar
+        sv[28] = 0.265563e-2f;  // ato_f dimensionless
+        sv[29] = 0.999977f;     // ito_f dimensionless
+        sv[30] = 0.417069e-3f;  // ato_s dimensionless
+        sv[31] = 0.998543f;     // ito_s dimensionless
+        sv[32] = 0.262753e-3f;  // nKs dimensionless
+        sv[33] = 0.417069e-3f;  // aur dimensionless
+        sv[34] = 0.998543f;     // iur dimensionless
+        sv[35] = 0.417069e-3f;  // aKss dimensionless
+        sv[36] = 1.0f;          // iKss dimensionless
+        sv[37] = 0.641229e-3f;  // C_K2 dimensionless
+        sv[38] = 0.992513e-3f;  // C_K1 dimensionless
+        sv[39] = 0.175298e-3f;  // O_K dimensionless
+        sv[40] = 0.319129e-4f;  // I_K dimensionless
+    }
+
+
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
-    uint32_t sv_id;
+    uint32_t sv_id, i;
 
-	int i;
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
-	#pragma omp parallel for private(sv_id)
+    OMP(parallel for private(sv_id))
     for (i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)

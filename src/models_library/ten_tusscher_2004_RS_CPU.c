@@ -14,43 +14,53 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 }
 
-//TODO: this should be called only once for the whole mesh, like in the GPU code
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    sv[0] =  INITIAL_V;   // V;       millivolt
-    sv[1] =  0.f;   //M
-    sv[2] =  0.75;    //H
-    sv[3] =  0.75f;    //J
-    sv[4] =  0.f;   //Xr1
-    sv[5] =  1.f;    //Xr2
-    sv[6] =  0.f;    //Xs
-    sv[7] =  1.f;  //S
-    sv[8] =  0.f;    //R
-    sv[9] =  0.f;    //D
-    sv[10] = 1.f;   //F
-    sv[11] = 1.f; //FCa
-    sv[12] = 1.f;  //G
-    sv[13] = 0.0002;  //Cai
-    sv[14] = 0.2f;      //CaSR
-    sv[15] = 11.6f;   //Nai
-    sv[16] = 138.3f;    //Ki
+    uint32_t num_cells = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+
+        real *sv = &solver->sv[i * NEQ];
+
+        sv[0] = INITIAL_V; // V;       millivolt
+        sv[1] = 0.f;       // M
+        sv[2] = 0.75;      // H
+        sv[3] = 0.75f;     // J
+        sv[4] = 0.f;       // Xr1
+        sv[5] = 1.f;       // Xr2
+        sv[6] = 0.f;       // Xs
+        sv[7] = 1.f;       // S
+        sv[8] = 0.f;       // R
+        sv[9] = 0.f;       // D
+        sv[10] = 1.f;      // F
+        sv[11] = 1.f;      // FCa
+        sv[12] = 1.f;      // G
+        sv[13] = 0.0002;   // Cai
+        sv[14] = 0.2f;     // CaSR
+        sv[15] = 11.6f;    // Nai
+        sv[16] = 138.3f;   // Ki
+    }
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
     int i;
 
-#pragma omp parallel for private(sv_id)
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+
+    OMP(parallel for private(sv_id))
     for (i = 0; i < num_cells_to_solve; i++) {
 
-        if(cells_to_solve)
-            sv_id = cells_to_solve[i];
+        if(ode_solver->cells_to_solve)
+            sv_id = ode_solver->cells_to_solve[i];
         else
             sv_id = i;
 
-        for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
+        for (int j = 0; j < ode_solver->num_steps; ++j) {
+            solve_model_ode_cpu(ode_solver->min_dt, ode_solver->sv + (sv_id * NEQ), stim_currents[i]);
 
         }
     }

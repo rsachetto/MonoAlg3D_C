@@ -1,0 +1,3 @@
+SOURCE_FILES="gui.c"
+HEADER_FILES="gui.h color_maps.h"
+COMPILE_STATIC_LIB "gui" "$SOURCE_FILES" "$HEADER_FILES"

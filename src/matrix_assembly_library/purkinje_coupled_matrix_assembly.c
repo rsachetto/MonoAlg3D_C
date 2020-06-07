@@ -10,7 +10,7 @@
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
 #include "../utils/utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../libraries_common/common_data_structures.h"
 
 #include "../config_helpers/config_helpers.h"
@@ -24,8 +24,8 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     uint32_t active_cells = the_grid->num_active_cells;
 
     // Purkinje parameters
-    struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
-    uint32_t active_purkinje_cells = the_grid->the_purkinje->num_active_purkinje_cells;
+    struct cell_node **ac_purkinje = the_grid->purkinje->purkinje_cells;
+    uint32_t active_purkinje_cells = the_grid->purkinje->num_active_purkinje_cells;
 
     // Common parameters
     real_cpu beta = the_solver->beta;
@@ -34,7 +34,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     int i;
 
     // Tissue section
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_cells; i++) 
     {
 
@@ -44,7 +44,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     }
 
     // Purkinje section
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_purkinje_cells; i++) 
     {
 
@@ -69,7 +69,7 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     uint32_t i;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
         real_cpu alpha, dx, dy, dz;
 
@@ -291,10 +291,10 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
     real_cpu alpha;
     real_cpu dx, dy, dz;
 
-    uint32_t num_active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
-    struct cell_node **ac = the_grid->the_purkinje->purkinje_cells;
+    uint32_t num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+    struct cell_node **ac = the_grid->purkinje->purkinje_cells;
 
-    struct node *n = the_grid->the_purkinje->the_network->list_nodes;
+    struct node *n = the_grid->purkinje->network->list_nodes;
     
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
@@ -395,7 +395,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
 
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -406,42 +406,42 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
         sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 
     // Purkinje section
     static bool sigma_purkinje_initialized = false;
 
-    uint32_t num_purkinje_active_cells = the_grid->the_purkinje->num_active_purkinje_cells;
-    struct cell_node **ac_purkinje = the_grid->the_purkinje->purkinje_cells;
+    uint32_t num_purkinje_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+    struct cell_node **ac_purkinje = the_grid->purkinje->purkinje_cells;
 
-    struct node *pk_node = the_grid->the_purkinje->the_network->list_nodes;
+    struct node *pk_node = the_grid->purkinje->network->list_nodes;
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
     
     if(!sigma_purkinje_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_purkinje_active_cells; i++) 
         {
             ac_purkinje[i]->sigma.x = sigma_purkinje;

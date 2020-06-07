@@ -5,7 +5,7 @@
 #include <assert.h>
 
 #include "cell.h"
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 
 /**
 * Decides if the bunch should be derefined. A bunch will not be derefined if
@@ -106,22 +106,21 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     sigma_y_average /= 8.0;
     sigma_z_average /= 8.0;
 
-
     // Front northeast node of the bunch becomes the derefined node.
     struct cell_node *new_cell = get_front_northeast_cell (first_bunch_cell);
 
     if(free_sv_positions && *free_sv_positions) {
 
         //Free Sv Map positions//////////////////////////////////
-        struct cell_node *w = (struct cell_node *) new_cell->west;
-        struct cell_node *b = (struct cell_node *) new_cell->back;
-        struct cell_node *s = (struct cell_node *) new_cell->south;
+        struct cell_node *w = (struct cell_node *) new_cell->y_down;
+        struct cell_node *b = (struct cell_node *) new_cell->x_left;
+        struct cell_node *s = (struct cell_node *) new_cell->z_back;
 
-        struct cell_node *wb = (struct cell_node *) w->back;
-        struct cell_node *ws = (struct cell_node *) w->south;
-        struct cell_node *sb = (struct cell_node *) s->back;
+        struct cell_node *wb = (struct cell_node *) w->x_left;
+        struct cell_node *ws = (struct cell_node *) w->z_back;
+        struct cell_node *sb = (struct cell_node *) s->x_left;
 
-        struct cell_node *wsb = ws->back;
+        struct cell_node *wsb = ws->x_left;
 
         arrput(*free_sv_positions, w->sv_position);
         arrput(*free_sv_positions, b->sv_position);
@@ -139,25 +138,18 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
 
     if (new_cell->previous != 0)
         new_cell->previous->next = new_cell;
+
     if (new_cell->next != 0)
         new_cell->next->previous = new_cell;
 
-    real_cpu aux_center_x = ((struct cell_node *)(new_cell->back))->center.x;
-    real_cpu aux_center_y = ((struct cell_node *)(new_cell->west))->center.y;
-    real_cpu aux_center_z = ((struct cell_node *)(new_cell->south))->center.z;
-
-    real_cpu aux_t_center_x = ((struct cell_node *)(new_cell->back))->translated_center.x;
-    real_cpu aux_t_center_y = ((struct cell_node *)(new_cell->west))->translated_center.y;
-    real_cpu aux_t_center_z = ((struct cell_node *)(new_cell->south))->translated_center.z;
+    real_cpu aux_center_x = ((struct cell_node *)(new_cell->x_left))->center.x;
+    real_cpu aux_center_y = ((struct cell_node *)(new_cell->y_down))->center.y;
+    real_cpu aux_center_z = ((struct cell_node *)(new_cell->z_back))->center.z;
 
     // New geometric variables.
     new_cell->center.x = (new_cell->center.x + aux_center_x) / 2.0f;
     new_cell->center.y = (new_cell->center.y + aux_center_y) / 2.0f;
     new_cell->center.z = (new_cell->center.z + aux_center_z) / 2.0f;
-
-    new_cell->translated_center.x = (new_cell->translated_center.x + aux_t_center_x) / 2.0f;
-    new_cell->translated_center.y = (new_cell->translated_center.y + aux_t_center_y) / 2.0f;
-    new_cell->translated_center.z = (new_cell->translated_center.z + aux_t_center_z) / 2.0f;
 
     new_cell->discretization.x = 2.0f * new_cell->discretization.x;
     new_cell->discretization.y = 2.0f * new_cell->discretization.y;
@@ -174,49 +166,49 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     new_cell->bunch_number = bunch_number / (int)10;
 
     struct cell_node *front_northeast_cell = new_cell;
-    struct cell_node *front_southeast_cell = (struct cell_node *)(front_northeast_cell->south);
-    struct cell_node *front_northwest_cell = (struct cell_node *)(front_northeast_cell->west);
-    struct cell_node *front_southwest_cell = (struct cell_node *)(front_northwest_cell->south);
-    struct cell_node *back_northeast_cell = (struct cell_node *)(front_northeast_cell->back);
-    struct cell_node *back_southeast_cell = (struct cell_node *)(back_northeast_cell->south);
-    struct cell_node *back_northwest_cell = (struct cell_node *)(back_northeast_cell->west);
-    struct cell_node *back_southwest_cell = (struct cell_node *)(back_northwest_cell->south);
+    struct cell_node *front_southeast_cell = (struct cell_node *)(front_northeast_cell->z_back);
+    struct cell_node *front_northwest_cell = (struct cell_node *)(front_northeast_cell->y_down);
+    struct cell_node *front_southwest_cell = (struct cell_node *)(front_northwest_cell->z_back);
+    struct cell_node *back_northeast_cell = (struct cell_node *)(front_northeast_cell->x_left);
+    struct cell_node *back_southeast_cell = (struct cell_node *)(back_northeast_cell->z_back);
+    struct cell_node *back_northwest_cell = (struct cell_node *)(back_northeast_cell->y_down);
+    struct cell_node *back_southwest_cell = (struct cell_node *)(back_northwest_cell->z_back);
 
     // Creation of North Transition Node.
     struct transition_node *north_transition_node = new_transition_node();
     set_transition_node_data (north_transition_node, bunch_level, 'n', new_cell,
-                              front_northwest_cell->north, front_northeast_cell->north,
-                              back_northeast_cell->north, back_northwest_cell->north);
+                              front_northwest_cell->z_front, front_northeast_cell->z_front,
+                              back_northeast_cell->z_front, back_northwest_cell->z_front);
 
     // Creation of South Transition Node.
     struct transition_node *south_transition_node = new_transition_node();
     set_transition_node_data (south_transition_node, bunch_level, 's', new_cell,
-                              front_southwest_cell->south, front_southeast_cell->south,
-                              back_southeast_cell->south, back_southwest_cell->south);
+                              front_southwest_cell->z_back, front_southeast_cell->z_back,
+                              back_southeast_cell->z_back, back_southwest_cell->z_back);
 
     // Creation of East Transition Node.
     struct transition_node *east_transition_node = new_transition_node();
     set_transition_node_data (east_transition_node, bunch_level, 'e', new_cell,
-                              front_southeast_cell->east, back_southeast_cell->east,
-                              back_northeast_cell->east, front_northeast_cell->east);
+                              front_southeast_cell->y_top, back_southeast_cell->y_top,
+                              back_northeast_cell->y_top, front_northeast_cell->y_top);
 
     // Creation of West Transition Node.
     struct transition_node *west_transition_node = new_transition_node();
     set_transition_node_data (west_transition_node, bunch_level, 'w', new_cell,
-                              front_southwest_cell->west, back_southwest_cell->west,
-                              back_northwest_cell->west, front_northwest_cell->west);
+                              front_southwest_cell->y_down, back_southwest_cell->y_down,
+                              back_northwest_cell->y_down, front_northwest_cell->y_down);
 
     // Creation of Front Transition Node.
     struct transition_node *front_transition_node = new_transition_node();
     set_transition_node_data (front_transition_node, bunch_level, 'f', new_cell,
-                              front_southwest_cell->front, front_southeast_cell->front,
-                              front_northeast_cell->front, front_northwest_cell->front);
+                              front_southwest_cell->x_right, front_southeast_cell->x_right,
+                              front_northeast_cell->x_right, front_northwest_cell->x_right);
 
     // Creation of Back Transition Node.
     struct transition_node *back_transition_node = new_transition_node();
     set_transition_node_data (back_transition_node, bunch_level, 'b', new_cell,
-                              back_southwest_cell->back, back_southeast_cell->back,
-                              back_northeast_cell->back, back_northwest_cell->back);
+                              back_southwest_cell->x_left, back_southeast_cell->x_left,
+                              back_northeast_cell->x_left, back_northwest_cell->x_left);
 
     // Elimination of the seven unneeded bunch cells.
     free_cell_node (front_northwest_cell);
@@ -228,12 +220,12 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     free_cell_node (back_southwest_cell);
 
     // Linking of derefined cell and new transition nodes.
-    new_cell->north = north_transition_node;
-    new_cell->south = south_transition_node;
-    new_cell->east = east_transition_node;
-    new_cell->west = west_transition_node;
-    new_cell->front = front_transition_node;
-    new_cell->back = back_transition_node;
+    new_cell->z_front = north_transition_node;
+    new_cell->z_back = south_transition_node;
+    new_cell->y_top = east_transition_node;
+    new_cell->y_down = west_transition_node;
+    new_cell->x_right = front_transition_node;
+    new_cell->x_left = back_transition_node;
 
     // Simplification of grid Eliminating unneeded transition nodes.
     simplify_derefinement(north_transition_node);
@@ -445,27 +437,27 @@ void simplify_derefinement(struct transition_node *transition_node) {
 
         switch (direction) {
         case 'n': {
-            derefinedCell->north = neighbor_transition_node->single_connector;
+            derefinedCell->z_front = neighbor_transition_node->single_connector;
             break;
         }
         case 's': {
-            derefinedCell->south = neighbor_transition_node->single_connector;
+            derefinedCell->z_back = neighbor_transition_node->single_connector;
             break;
         }
         case 'e': {
-            derefinedCell->east = neighbor_transition_node->single_connector;
+            derefinedCell->y_top = neighbor_transition_node->single_connector;
             break;
         }
         case 'w': {
-            derefinedCell->west = neighbor_transition_node->single_connector;
+            derefinedCell->y_down = neighbor_transition_node->single_connector;
             break;
         }
         case 'f': {
-            derefinedCell->front = neighbor_transition_node->single_connector;
+            derefinedCell->x_right = neighbor_transition_node->single_connector;
             break;
         }
         case 'b': {
-            derefinedCell->back = neighbor_transition_node->single_connector;
+            derefinedCell->x_left = neighbor_transition_node->single_connector;
             break;
         }
         default: { break; }
@@ -475,27 +467,27 @@ void simplify_derefinement(struct transition_node *transition_node) {
             blackNeighborCell = (struct cell_node *)(neighbor_transition_node->single_connector);
             switch (direction) {
             case 'n': {
-                blackNeighborCell->south = derefinedCell;
+                blackNeighborCell->z_back = derefinedCell;
                 break;
             }
             case 's': {
-                blackNeighborCell->north = derefinedCell;
+                blackNeighborCell->z_front = derefinedCell;
                 break;
             }
             case 'e': {
-                blackNeighborCell->west = derefinedCell;
+                blackNeighborCell->y_down = derefinedCell;
                 break;
             }
             case 'w': {
-                blackNeighborCell->east = derefinedCell;
+                blackNeighborCell->y_top = derefinedCell;
                 break;
             }
             case 'f': {
-                blackNeighborCell->back = derefinedCell;
+                blackNeighborCell->x_left = derefinedCell;
                 break;
             }
             case 'b': {
-                blackNeighborCell->front = derefinedCell;
+                blackNeighborCell->x_right = derefinedCell;
                 break;
             }
             default: { break; }
@@ -540,27 +532,27 @@ void simplify_derefinement(struct transition_node *transition_node) {
                 blackNeighborCell = (struct cell_node *)(quadrupleConnector[i]);
                 switch (direction) {
                 case 'n': {
-                    blackNeighborCell->south = transition_node;
+                    blackNeighborCell->z_back = transition_node;
                     break;
                 }
                 case 's': {
-                    blackNeighborCell->north = transition_node;
+                    blackNeighborCell->z_front = transition_node;
                     break;
                 }
                 case 'e': {
-                    blackNeighborCell->west = transition_node;
+                    blackNeighborCell->y_down = transition_node;
                     break;
                 }
                 case 'w': {
-                    blackNeighborCell->east = transition_node;
+                    blackNeighborCell->y_top = transition_node;
                     break;
                 }
                 case 'f': {
-                    blackNeighborCell->back = transition_node;
+                    blackNeighborCell->x_left = transition_node;
                     break;
                 }
                 case 'b': {
-                    blackNeighborCell->front = transition_node;
+                    blackNeighborCell->x_right = transition_node;
                     break;
                 }
                 default: { break; }

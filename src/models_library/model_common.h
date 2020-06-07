@@ -1,45 +1,20 @@
 //
-// Created by sachetto on 05/10/17.
+// Created by sachetto on 29/04/2020.
 //
 
-// Every model need to implement the functions described in this model file in order to be loaded correctly from the
-// edo solver. This models_library should compile without using any dependency of our codebase
+#ifndef MONOALG3D_C_MODEL_COMMON_H
+#define MONOALG3D_C_MODEL_COMMON_H
 
-#ifndef MONOALG3D_MODEL_COMMON_H
-#define MONOALG3D_MODEL_COMMON_H
-
-#include "../monodomain/constants.h"
 #include "../common_types/common_types.h"
+#include "../ode_solver/ode_solver.h"
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stddef.h>
+#ifndef REAL_DOUBLE
+#define pow powf
+#define sqrt sqrtf
+#define exp expf
+#define fabs fabsf
+#define log logf
+#endif
 
-struct cell_model_data {
-    int number_of_ode_equations;
-    real initial_v;
-    char *model_library_path;
-};
 
-#define GET_CELL_MODEL_DATA(name) EXPORT_FN void name (struct cell_model_data *cell_model, bool get_initial_v, bool get_neq)
-typedef GET_CELL_MODEL_DATA (get_cell_model_data_fn);
-
-// CPU FUNCTIONS
-#define SET_ODE_INITIAL_CONDITIONS_CPU(name) EXPORT_FN void name (struct string_hash_entry *ode_extra_config, real *sv, uint32_t sv_id,  void* extra_data, size_t extra_data_bytes_size)
-typedef SET_ODE_INITIAL_CONDITIONS_CPU (set_ode_initial_conditions_cpu_fn);
-
-#define SOLVE_MODEL_ODES_CPU(name)                                                                                     \
-EXPORT_FN void name (struct string_hash_entry *ode_extra_config, real dt, real *sv, real *stim_currents, const uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
-               int num_steps, void *extra_data)
-typedef SOLVE_MODEL_ODES_CPU (solve_model_ode_cpu_fn);
-
-// GPU FUNCTIONS
-#define SET_ODE_INITIAL_CONDITIONS_GPU(name) EXPORT_FN size_t name (struct string_hash_entry *ode_extra_config, real **sv, uint32_t num_volumes, void* extra_data, size_t extra_data_bytes_size)
-typedef SET_ODE_INITIAL_CONDITIONS_GPU (set_ode_initial_conditions_gpu_fn);
-
-#define SOLVE_MODEL_ODES_GPU(name)                                                                                     \
-EXPORT_FN void name (struct string_hash_entry *ode_extra_config, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, uint32_t num_cells_to_solve,          \
-               int num_steps, void *extra_data, size_t extra_data_bytes_size)
-typedef SOLVE_MODEL_ODES_GPU(solve_model_ode_gpu_fn);
-
-#endif // MONOALG3D_MODEL_COMMON_H
+#endif // MONOALG3D_C_MODEL_COMMON_H

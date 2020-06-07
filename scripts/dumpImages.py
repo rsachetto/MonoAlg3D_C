@@ -4,8 +4,6 @@ from sys import argv, exit
 import glob
 import re
 
-
-
 def natural_sort(l): 
     convert = lambda text: int(text) if text.isdigit() else text.lower() 
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
@@ -55,7 +53,7 @@ dp.LookupTable = simple.MakeBlueToRedLT(-86.2, 40.0)
 dp.ColorArrayName = 'Scalars_'
 
 camera = simple.GetActiveCamera()
-camera.Elevation(args.elevation);
+camera.Elevation(args.elevation)
 camera.Azimuth(args.azimuth)
 
 simple.Render()

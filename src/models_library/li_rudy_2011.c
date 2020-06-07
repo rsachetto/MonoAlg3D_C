@@ -16,81 +16,81 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    static bool first_call = true;
+    log_to_stdout_and_file("Using Li & Rudy 2011 CPU model\n");
 
-    if(first_call) {
-#ifdef _WIN32
-        printf("Using Li & Rudy 2011 CPU model\n");
-#else
-        print_to_stdout_and_file("Using Li & Rudy 2011 CPU model\n");
-#endif
+    uint32_t num_cells = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
-        first_call = false;
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
+        real *sv = &solver->sv[i * NEQ];
+        sv[0] = -84.058830;  // V millivolt
+        sv[1] = 0.000821;    // m dimensionless
+        sv[2] = 0.995741;    // h dimensionless
+        sv[3] = 0.999872;    // j dimensionless
+        sv[4] = 0.000016;    // d dimensionless
+        sv[5] = 0.999193;    // f dimensionless
+        sv[6] = 0.988692;    // f2 dimensionless
+        sv[7] = 0.965405;    // fca dimensionless
+        sv[8] = 0.739378;    // fca2 dimensionless
+        sv[9] = 0.001114;    // xs1 dimensionless
+        sv[10] = 0.042234;   // xs2 dimensionless
+        sv[11] = 0.069808;   // xr dimensionless
+        sv[12] = 0.000119;   // a dimensionless
+        sv[13] = 0.992541;   // i dimensionless
+        sv[14] = 0.745628;   // i2 dimensionless
+        sv[15] = 0.000329;   // ml dimensionless
+        sv[16] = 0.046538;   // ml3 dimensionless
+        sv[17] = 0.984170;   // hl dimensionless
+        sv[18] = 0.853893;   // hl3 dimensionless
+        sv[19] = 0.912569;   // jl dimensionless
+        sv[20] = 0.827885;   // jl3 dimensionless
+        sv[21] = 0.000135;   // casss dimensionless
+        sv[22] = 1.510741;   // cajsr dimensionless
+        sv[23] = 1.537577;   // cacsr dimensionless
+        sv[24] = 1.538668;   // cansr dimensionless
+        sv[25] = 0.000130;   // cassl dimensionless
+        sv[26] = 11.501546;  // nai dimensionless
+        sv[27] = 11.501230;  // nassl dimensionless
+        sv[28] = 11.501240;  // nasss dimensionless
+        sv[29] = 136.422946; // ki dimensionless
+        sv[30] = 0.000053;   // cai millimolar
+        sv[31] = 0.000437;   // b dimensionless
+        sv[32] = 0.990384;   // g dimensionless
+        sv[33] = 0.535627;   // u dimensionless
+        sv[34] = 0.182859;   // y dimensionless
+        sv[35] = 0.010600;   // camktrap dimensionless
+
+        // Additional parameters
+        sv[36] = 0.0; // ical
+        sv[37] = 0.0; // camkactive
+        sv[38] = 0.0; // qrel1
+        sv[39] = 0.0; // qrel2
+        sv[40] = 0.0; // qup2
     }
-
-    sv[0]		= -84.058830;       // V millivolt
-    sv[1]		= 0.000821;         // m dimensionless
-    sv[2]		= 0.995741;         // h dimensionless
-    sv[3]		= 0.999872;         // j dimensionless
-    sv[4]		= 0.000016;         // d dimensionless
-    sv[5]		= 0.999193;         // f dimensionless
-    sv[6]		= 0.988692;         // f2 dimensionless
-    sv[7]		= 0.965405;         // fca dimensionless
-    sv[8]	    = 0.739378;         // fca2 dimensionless
-    sv[9]		= 0.001114;         // xs1 dimensionless
-    sv[10]		= 0.042234;         // xs2 dimensionless
-    sv[11]		= 0.069808;         // xr dimensionless
-    sv[12]		= 0.000119;         // a dimensionless
-    sv[13]		= 0.992541;         // i dimensionless
-    sv[14]		= 0.745628;         // i2 dimensionless
-    sv[15]		= 0.000329;         // ml dimensionless
-    sv[16]		= 0.046538;         // ml3 dimensionless
-    sv[17]		= 0.984170;         // hl dimensionless
-    sv[18]		= 0.853893;         // hl3 dimensionless
-    sv[19]		= 0.912569;         // jl dimensionless
-    sv[20]		= 0.827885;         // jl3 dimensionless
-    sv[21]	    = 0.000135;         // casss dimensionless
-    sv[22]	    = 1.510741;         // cajsr dimensionless
-    sv[23]	    = 1.537577;         // cacsr dimensionless
-    sv[24]	    = 1.538668;         // cansr dimensionless
-    sv[25]	    = 0.000130;         // cassl dimensionless
-    sv[26]	    = 11.501546;        // nai dimensionless
-    sv[27]	    = 11.501230;        // nassl dimensionless
-    sv[28]	    = 11.501240;        // nasss dimensionless
-    sv[29]		= 136.422946;       // ki dimensionless
-    sv[30]		= 0.000053;         // cai millimolar
-    sv[31]	    = 0.000437;         // b dimensionless
-    sv[32]	    = 0.990384;         // g dimensionless
-    sv[33]       = 0.535627;        // u dimensionless
-    sv[34]       = 0.182859;        // y dimensionless
-    sv[35]       = 0.010600;        // camktrap dimensionless
-
-    // Additional parameters
-    sv[36]      = 0.0;              // ical
-    sv[37]      = 0.0;              // camkactive
-    sv[38]      = 0.0;              // qrel1
-    sv[39]      = 0.0;              // qrel2
-    sv[40]      = 0.0;              // qup2
 
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 
-	int i;
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
-    #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) {
+    OMP(parallel for private(sv_id))
+    for (uint32_t i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
         else
-            sv_id = (uint32_t )i;
+            sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) {
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
-
         }
     }
 }
