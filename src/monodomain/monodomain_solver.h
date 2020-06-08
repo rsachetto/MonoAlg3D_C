@@ -32,10 +32,6 @@ struct monodomain_solver {
     bool abort_on_no_activity;
     real_cpu only_abort_after_dt;
 
-    // NEW VARIABLE!
-    bool calc_activation_time;
-    bool print_conductivity;
-
     // Time used for solving wave equation.
     real_cpu dt;
 

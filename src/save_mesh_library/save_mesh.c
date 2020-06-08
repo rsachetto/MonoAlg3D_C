@@ -544,6 +544,9 @@ SAVE_MESH(save_as_vtu) {
         ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid = NULL;
     }
 
+    sdsfree(output_dir_with_file);
+    sdsfree(base_name);
+
 }
 
 // SAVE_MESH(save_as_vtk_purkinje) {

@@ -132,41 +132,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
     }
 
-    // Purkinje stimuli
-    if (purkinje_stimuli_configs)
-    {
-        // Init all stimuli
-        STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(purkinje_stimuli_configs);
-
-        // Find last stimuli
-        size_t s_size = shlen(purkinje_stimuli_configs);
-        real_cpu s_end;
-        real_cpu stim_start = 0.0;
-        real_cpu stim_duration = 0.0;
-        real_cpu stim_period = 0;
-        bool unnused;
-
-        for(unsigned long i = 0; i < s_size; i++) 
-        {
-
-            struct config *sconfig = (struct config*) purkinje_stimuli_configs[i].value;
-
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_start, sconfig->config_data, "start");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_duration, sconfig->config_data, "duration");
-            GET_PARAMETER_NUMERIC_VALUE(real_cpu, stim_period, sconfig->config_data, "period", unnused);
-
-            s_end = stim_start + stim_duration;
-
-            has_any_periodic_stim |= (bool)(stim_period > 0.0);
-
-            if(s_end > last_stimulus_time) 
-            {
-                last_stimulus_time = s_end;
-            }
-
-        }
-    }
-
     int num_purkinje_stims = shlen(purkinje_stimuli_configs);
     if (num_purkinje_stims) {
         // Init all stimuli
@@ -527,6 +492,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         init_stop_watch(&purkinje_part_solver);
     }
 
+    if (purkinje_config) {
+        init_stop_watch(&purkinje_ode_time);
+        init_stop_watch(&purkinje_cg_time);
+        init_stop_watch(&purkinje_part_solver);
+    }
+
     start_stop_watch(&part_mat);
 
     if(!restore_checkpoint || !restore_success) {
@@ -591,7 +562,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
 
-    // MAIN SIMULATION LOOP STARTS HERE !!!
+    // Main simulation loop start
     while(cur_time <= finalT) {
 
         start_stop_watch(&iteration_time_watch);
@@ -1250,26 +1221,6 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
             log_to_stdout_and_file("[purkinje_stim] Stimulus configuration:\n");
         else
             log_to_stdout_and_file("[purkinje_stim] Stimuli configuration:\n");
-
-        for(int i = 0; i < num_stims; i++) {
-
-            struct string_voidp_hash_entry e = options->purkinje_stim_configs[i];
-            log_to_stdout_and_file("Stimulus name: %s\n", e.key);
-            print_stim_config_values((struct config*) e.value);
-            log_to_stdout_and_file(LOG_LINE_SEPARATOR);
-
-        }
-    }
-
-    if(options->purkinje_stim_configs) 
-    {
-
-        size_t num_stims = shlen(options->purkinje_stim_configs);
-
-        if(num_stims == 1)
-            log_to_stdout_and_file("[stim_purkinje] Stimulus configuration:\n");
-        else
-            log_to_stdout_and_file("[stim_purkinje] Stimuli configuration:\n");
 
         for(int i = 0; i < num_stims; i++) {
 

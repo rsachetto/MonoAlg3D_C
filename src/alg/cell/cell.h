@@ -110,6 +110,10 @@ struct cell_node {
     struct point_3d kappa;
 #endif
 
+#ifdef ENABLE_DDM
+    struct point_3d kappa;
+#endif
+
 #if defined(_OPENMP)
     omp_lock_t updating;
 #endif
