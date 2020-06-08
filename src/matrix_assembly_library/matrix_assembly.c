@@ -1104,5 +1104,3 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }
-
-

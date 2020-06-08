@@ -1011,8 +1011,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
 }
 
 SET_SPATIAL_DOMAIN(domino_mesh) {
-    
-	real_cpu dx = 300.0;
+
+
+
+		real_cpu dx = 300.0;
 	real_cpu dy = 300.0;
 	real_cpu dz = 300.0;
 
@@ -1200,7 +1202,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region)
     return 1;
 }
 
-// TODO: Allow that the "fibrotic_positions" file come from the user input ...
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_using_file) 
 {
 

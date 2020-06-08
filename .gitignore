@@ -91,8 +91,11 @@ scripts/output
 scripts/animations/frames
 scripts/animations/video
 scripts/animations/*.mp4
+<<<<<<< HEAD
 scripts/animations/videos/*.mp4
 scripts/animations/videos/backup*
+=======
+>>>>>>> aedb9fab964a0790f2b939b52af16e852aae9d83
 scripts/apd_error/*.png
 batch_simulations/
 *.vscode*
@@ -136,6 +139,7 @@ tests_bin/SolversProfiler
 meshes/VF_20120221_toBlanca-newCGAL1.vtu
 meshes/human_500_new.alg
 meshes/human_800_new.alg
+<<<<<<< HEAD
 meshes/elizabeth*
 meshes/cadim*
 meshes/hermenegild*
@@ -157,3 +161,6 @@ scripts/parser_vtu_to_alg/inputs/Patient*
 scripts/parser_vtu_to_alg/inputs/cadim*
 scripts/parser_vtu_to_alg/inputs/rabbit*
 scripts/parser_vtu_to_alg/outputs
+=======
+
+>>>>>>> aedb9fab964a0790f2b939b52af16e852aae9d83

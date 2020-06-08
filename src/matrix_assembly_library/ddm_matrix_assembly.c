@@ -1217,6 +1217,10 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     real cell_length_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> aedb9fab964a0790f2b939b52af16e852aae9d83
     // Calculate the kappa values on each cell of th grid
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
   
