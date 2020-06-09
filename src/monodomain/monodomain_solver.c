@@ -577,12 +577,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 gui_config.time = 0.0;
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-                CALL_END_SAVE_MESH(save_mesh_config);
+                CALL_END_SAVE_MESH(save_mesh_config,the_grid);
                 return RESTART_SIMULATION;
             }
             if (gui_config.exit)  {
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-                CALL_END_SAVE_MESH(save_mesh_config);
+                CALL_END_SAVE_MESH(save_mesh_config,the_grid);
                 return END_SIMULATION;
             }
         }
@@ -817,7 +817,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                         CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                         CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
 
-						CALL_END_SAVE_MESH(save_mesh_config);
+						CALL_END_SAVE_MESH(save_mesh_config,the_grid);
 						CALL_INIT_SAVE_MESH(save_mesh_config);
 
                         shput_dup_value(dconfig->config_data, "modification_applied", "true");
@@ -857,19 +857,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     // ------------------------------------------------------------
     // NEW FEATURE ! Save the activation map in a VTU-format file
-/*
-    if (calc_activation_time)
-    {
-        print_to_stdout_and_file("Saving activation map!\n");
-        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'a');
-    }
-    // NEW FEATURE ! Save the conductivity map in a VTK-format file
-    if (print_conductivity)
-    {
-        print_to_stdout_and_file("Saving conductivity map!\n");
-        ((save_mesh_fn *)save_mesh_config->main_function)(save_mesh_config, the_grid, count, cur_time, finalT, dt_pde,'c');
-    }
- */ 
+    
+    //save_maps(save_mesh_config,the_grid);
+
     // ------------------------------------------------------------
 
     long res_time = stop_stop_watch(&solver_time);
@@ -907,7 +897,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-    CALL_END_SAVE_MESH(save_mesh_config);
+    CALL_END_SAVE_MESH(save_mesh_config,the_grid);
 
     return SIMULATION_FINISHED;
 

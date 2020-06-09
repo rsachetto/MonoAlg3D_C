@@ -480,7 +480,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                              float *plain_coordinates, bool clip_with_bounds,
                                              float *bounds, bool read_only_values) {
-
+    
     if(grid == NULL) {
         return;
     }

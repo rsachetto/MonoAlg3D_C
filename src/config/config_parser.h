@@ -91,21 +91,12 @@ struct user_options {
 
     real_cpu vm_threshold;            /*-v option*/
     bool vm_threshold_was_set;
-    // NEW VARIABLES !
-/*
-    bool calc_activation_time;
-    bool calc_activation_time_was_set;
-    bool print_conductivity_map;
-    bool print_conductivity_map_was_set;
-    real_cpu purkinje_dt_ode;
-    bool purkinje_dt_ode_was_set;
-    bool purkinje_gpu;
-    bool purkinje_gpu_was_set;
-    int purkinje_gpu_id;         
-    bool purkinje_gpu_id_was_set;
-    char *purkinje_model_file_path;         
-    bool purkinje_model_file_path_was_set;
-*/
+
+    bool save_activation_time_map;
+    bool save_activation_time_map_was_set;
+
+    bool save_apd_map;
+    bool save_apd_map_was_set;
 
     real_cpu purkinje_dt_ode;
     bool purkinje_dt_ode_was_set;

@@ -283,6 +283,12 @@ struct user_options *new_user_options() {
     user_args->quiet = false;
     user_args->quiet_was_set = false;
 
+    user_args->save_activation_time_map = false;
+    user_args->save_activation_time_map_was_set = false;
+
+    user_args->save_apd_map = false;
+    user_args->save_apd_map_was_set = false;
+
     user_args->stim_configs = NULL;
     sh_new_arena(user_args->stim_configs);
     shdefault(user_args->stim_configs, NULL);

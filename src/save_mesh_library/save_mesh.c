@@ -32,10 +32,33 @@ static bool initialized = false;
 
 static struct vtk_polydata_grid *vtk_polydata = NULL;
 
+void write_activation_time_maps (struct config *config, struct grid *the_grid);
+void write_activation_time_for_each_pulse (struct config *config, struct grid *the_grid, float plain_coords[], float bounds[]);
+void set_vtk_values_with_activation_time_from_current_pulse (void **persistent_data, struct grid *the_grid, const int cur_pulse);
+
+void write_apd_map (struct config *config, struct grid *the_grid);
+void set_vtk_values_with_mean_apd (void **persistent_data, struct grid *the_grid);
+
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);
 
 static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
+}
+
+sds create_base_name_by_map_type(int map_type) {
+    switch (map_type)
+    {
+        case 1: {
+            return create_base_name("activation_time_map", 0, "vtu");
+        }
+        case 2: {
+            return create_base_name("apd_map", 0, "vtu");        
+        }
+        default: {
+            log_to_stderr_and_file_and_exit("Invalid saving map option!\n");
+            return NULL;
+        }
+    }
 }
 
 SAVE_MESH(save_as_adjacency_list) {
@@ -777,6 +800,7 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje) {
 }
 
 struct save_with_activation_times_persistent_data {
+    struct vtk_unstructured_grid * grid;
     struct point_hash_entry *last_time_v;
     struct point_hash_entry *num_activations;
     struct point_hash_entry *cell_was_active;
@@ -795,10 +819,30 @@ INIT_SAVE_MESH(init_save_with_activation_times) {
     hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
     hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
     ((struct save_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+    ((struct save_with_activation_times_persistent_data*) config->persistent_data)->grid = NULL;
 
 }
 
 END_SAVE_MESH(end_save_with_activation_times) {
+
+    bool save_activation_time_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config->config_data, "save_activation_time");
+
+    bool save_apd_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
+
+    if (save_activation_time_map)
+    {
+        log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
+        write_activation_time_maps(config,the_grid);
+    }
+        
+    if (save_apd_map)
+    {
+        log_to_stderr_and_file("[!] Saving APD map !!!!\n");
+        write_apd_map(config,the_grid);
+    }
+
     free(config->persistent_data);
 }
 
@@ -953,3 +997,243 @@ SAVE_MESH(save_with_activation_times) {
 SAVE_MESH(no_save) {
     //Nop
 }
+
+void write_activation_time_maps (struct config *config, struct grid *the_grid)
+{
+
+    if(((struct save_with_activation_times_persistent_data*) config->persistent_data)->first_save_call) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
+
+        if(compress) binary = true;
+
+        if(!save_pvd) {
+            ((struct save_with_activation_times_persistent_data *) config->persistent_data)->first_save_call = false;
+        }
+    }
+
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
+
+    if(clip_with_plain) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
+    }
+
+    if(clip_with_bounds) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
+    }
+
+    write_activation_time_for_each_pulse(config,the_grid,plain_coords,bounds);
+
+}
+
+void write_activation_time_for_each_pulse (struct config *config, struct grid *the_grid, float plain_coords[], float bounds[]) {
+
+    struct save_with_activation_times_persistent_data **data = (struct save_with_activation_times_persistent_data **)&config->persistent_data;
+
+    real_cpu current_t = 0.0;
+
+    struct cell_node **grid_cell = the_grid->active_cells;
+
+    real_cpu center_x, center_y, center_z;
+
+    center_x = grid_cell[0]->center.x;
+    center_y = grid_cell[0]->center.y;
+    center_z = grid_cell[0]->center.z;
+
+    struct point_3d cell_coordinates;
+    cell_coordinates.x = center_x;
+    cell_coordinates.y = center_y;
+    cell_coordinates.z = center_z;
+
+    // Get the number of pulses using one cell of the grid
+    int n_pulses = (int) hmget((*data)->num_activations, cell_coordinates);
+
+    // Write the activation time map for each pulse
+    for (int cur_pulse = 0; cur_pulse < n_pulses; cur_pulse++) {
+
+        sds base_name = create_base_name("activation_time_map_pulse", cur_pulse, "vtu");
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/");
+        output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, cur_pulse);
+
+        bool read_only_data = ((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid != NULL;
+        new_vtk_unstructured_grid_from_alg_grid(&((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+
+        set_vtk_values_with_activation_time_from_current_pulse(&config->persistent_data,the_grid,cur_pulse);
+
+        if(compress) {
+            save_vtk_unstructured_grid_as_vtu_compressed(((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
+        }
+        else {
+            save_vtk_unstructured_grid_as_vtu(((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+        }
+
+        free_vtk_unstructured_grid(((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid);
+        ((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid = NULL;
+
+        sdsfree(output_dir_with_file);
+        sdsfree(base_name);        
+    }    
+
+}
+
+void set_vtk_values_with_activation_time_from_current_pulse (void **persistent_data, struct grid *the_grid, const int cur_pulse) {
+
+    struct save_with_activation_times_persistent_data **data = (struct save_with_activation_times_persistent_data **)persistent_data;
+
+    struct cell_node **grid_cell = the_grid->active_cells;
+    uint32_t num_active_cells =  the_grid->num_active_cells;
+
+    real_cpu center_x, center_y, center_z;
+
+    // We need to pass through the cells in the same order as we did when the VTU grid was created
+    for(int i = 0; i < num_active_cells; i++) {
+
+        center_x = grid_cell[i]->center.x;
+        center_y = grid_cell[i]->center.y;
+        center_z = grid_cell[i]->center.z;
+
+        struct point_3d cell_coordinates;
+        cell_coordinates.x = center_x;
+        cell_coordinates.y = center_y;
+        cell_coordinates.z = center_z;
+
+        float *activation_times_array = NULL;
+
+        if(grid_cell[i]->active) {
+
+            activation_times_array = (float *) hmget((*data)->activation_times, cell_coordinates);
+
+            // Get the activation time from the current pulse for that particular cell
+            float at = activation_times_array[cur_pulse];           
+
+            // Update the scalar value from the "vtk_unstructured_grid"
+            (*data)->grid->values[i] = at;
+
+        }      
+    }    
+}
+
+void write_apd_map (struct config *config, struct grid *the_grid)
+{
+    real_cpu current_t = 0.0;
+
+    if(((struct save_with_activation_times_persistent_data*) config->persistent_data)->first_save_call) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
+
+        if(compress) binary = true;
+
+        if(!save_pvd) {
+            ((struct save_with_activation_times_persistent_data *) config->persistent_data)->first_save_call = false;
+        }
+    }
+
+    float plain_coords[6] = {0, 0, 0, 0, 0, 0};
+    float bounds[6] = {0, 0, 0, 0, 0, 0};
+
+    if(clip_with_plain) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
+    }
+
+    if(clip_with_bounds) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
+    }
+
+    sds base_name = create_base_name("apd_map", 0, "vtu");
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+
+    bool read_only_data = ((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid != NULL;
+    new_vtk_unstructured_grid_from_alg_grid(&((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+
+    set_vtk_values_with_mean_apd(&config->persistent_data,the_grid);
+
+    if(compress) {
+        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
+    }
+    else {
+        save_vtk_unstructured_grid_as_vtu(((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+    }
+
+    free_vtk_unstructured_grid(((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid);
+    ((struct save_with_activation_times_persistent_data *) config->persistent_data)->grid = NULL;
+
+    sdsfree(output_dir_with_file);
+    sdsfree(base_name);
+}
+
+void set_vtk_values_with_mean_apd (void **persistent_data, struct grid *the_grid)
+{
+    struct save_with_activation_times_persistent_data **data = (struct save_with_activation_times_persistent_data **)persistent_data;
+
+    struct cell_node **grid_cell = the_grid->active_cells;
+    uint32_t num_active_cells =  the_grid->num_active_cells;
+
+    real_cpu center_x, center_y, center_z;
+
+    // We need to pass through the cells in the same order as we did when the VTU grid was created
+    for(int i = 0; i < num_active_cells; i++) {
+
+        center_x = grid_cell[i]->center.x;
+        center_y = grid_cell[i]->center.y;
+        center_z = grid_cell[i]->center.z;
+
+        struct point_3d cell_coordinates;
+        cell_coordinates.x = center_x;
+        cell_coordinates.y = center_y;
+        cell_coordinates.z = center_z;
+
+        float *apds_array = NULL;
+
+        if(grid_cell[i]->active) {
+
+            apds_array = (float *) hmget((*data)->apds, cell_coordinates);
+
+            unsigned long apd_len = arrlen(apds_array);
+
+            // Calculate the mean APD values
+            float mean_value = 0.0;
+            mean_value = calculate_mean(apds_array,apd_len);
+            
+            // Update the scalar value from the "vtk_unstructured_grid"
+            (*data)->grid->values[i] = mean_value;
+
+        }      
+    }    
+}
+
