@@ -491,7 +491,12 @@ SET_SPATIAL_STIM(stim_if_id_less_than) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    int i;
+    if (is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
+    uint32_t i;
 
     ALLOCATE_STIMS();
 
@@ -523,7 +528,12 @@ SET_SPATIAL_STIM(stim_if_id_greater_than) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    int i;
+    if (is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
+    uint32_t i;
 
     ALLOCATE_STIMS();
 

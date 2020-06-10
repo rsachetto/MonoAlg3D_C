@@ -19,7 +19,6 @@
 
 SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh) 
 {
-    printf("On 'initialize_purkinje_with_custom_mesh'\n");
 
     char *name = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(name, config->config_data, "name");
@@ -31,15 +30,13 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(network_file,config->config_data,"network_file");
 
     real_cpu rpmj = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,rpmj, config->config_data, "rpmj");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,rpmj, config->config_data, "rpmj");
 
     real_cpu pmj_scale = 0.1;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,pmj_scale, config->config_data, "pmj_scale");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,pmj_scale, config->config_data, "pmj_scale");
 
     bool calc_retro_propagation = true;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(bool,calc_retro_propagation, config->config_data, "retro_propagation");
-
-    init_ode_solver_with_cell_model(the_ode_solver);
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(calc_retro_propagation, config->config_data, "retro_propagation");
 
     // TODO: Implement this test
     int success = check_purkinje_input();

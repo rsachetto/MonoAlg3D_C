@@ -373,7 +373,6 @@ void solve_purkinje_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur
     size_t n_active = the_ode_solver->num_cells_to_solve;
     uint32_t num_steps = the_ode_solver->num_steps;
 
-
     assert(the_ode_solver->sv);
 
     real dt = the_ode_solver->min_dt;

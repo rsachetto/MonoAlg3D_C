@@ -63,14 +63,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
          total_deref_time = 0, cg_partial, total_config_time = 0;
-    long purkinje_ode_total_time = 0, purkinje_cg_total_time = 0, purkinje_total_write_time = 0, purkinje_total_mat_time = 0,
-         purkinje_cg_partial = 0;
+    long purkinje_ode_total_time = 0, purkinje_cg_total_time = 0, purkinje_cg_partial = 0;
+    //long purkinje_total_mat_time = 0, purkinje_total_write_time = 0;
 
     uint32_t total_cg_it = 0, purkinje_total_cg_it = 0;
 
     struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time,
         config_time;
-    struct stop_watch purkinje_solver_time, purkinje_ode_time, purkinje_cg_time, purkinje_part_solver, purkinje_part_mat;
+    struct stop_watch purkinje_ode_time, purkinje_cg_time, purkinje_part_solver;
+    //struct stop_watch purkinje_part_mat, purkinje_solver_time, purkinje_total_mat_time, purkinje_total_write_time;
 
     init_stop_watch(&config_time);
 
@@ -347,7 +348,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             configure_purkinje_ode_solver_from_ode_solver(the_purkinje_ode_solver,the_ode_solver);
         // Otherwise, there is a [purkinje_ode_solver] section and we are doing a coupled simulation
         else                    // Purkinje + Tissue simulation
-            configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver,configs);        
+            configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver,configs);     
+
+        init_ode_solver_with_cell_model(the_purkinje_ode_solver);   
 
         success = ((set_spatial_purkinje_fn*) purkinje_config->main_function)(purkinje_config,the_grid,the_purkinje_ode_solver);
         if(!success)
@@ -469,6 +472,21 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
     }
 
+    if (purkinje_config) {
+        the_purkinje_ode_solver->num_steps = 1;
+
+        if (!the_purkinje_ode_solver->adaptive) {
+            if(dt_pde >= dt_ode) {
+                the_purkinje_ode_solver->num_steps = (int)(dt_pde / dt_ode);
+                log_to_stdout_and_file("Solving Purkinje EDO %d times before solving PDE\n", the_purkinje_ode_solver->num_steps);
+            } else {
+                log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
+                                    dt_pde, dt_ode);
+                dt_pde = dt_ode;
+            }
+        }        
+    }
+
     fflush(stdout);
 
     init_stop_watch(&solver_time);
@@ -481,18 +499,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     init_stop_watch(&deref_time);
     if (purkinje_config)
     {
-        init_stop_watch(&purkinje_ode_time);
-        init_stop_watch(&purkinje_cg_time);
-        init_stop_watch(&purkinje_part_solver);
-    }
-
-    if (purkinje_config) {
-        init_stop_watch(&purkinje_ode_time);
-        init_stop_watch(&purkinje_cg_time);
-        init_stop_watch(&purkinje_part_solver);
-    }
-
-    if (purkinje_config) {
         init_stop_watch(&purkinje_ode_time);
         init_stop_watch(&purkinje_cg_time);
         init_stop_watch(&purkinje_part_solver);
@@ -511,7 +517,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     ((assembly_matrix_fn*) assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
-    
+
     total_mat_time = stop_stop_watch(&part_mat);
     start_stop_watch(&solver_time);
 
@@ -610,9 +616,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&purkinje_ode_time);
 
             // REACTION: Purkinje
-            //solve_purkinje_volumes_odes(the_purkinje_ode_solver, the_grid->purkinje->number_of_purkinje_cells, cur_time, ode_step, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
+            //solve_all_volumes_odes(the_purkinje_ode_solver,cur_time,purkinje_stimuli_configs,configs->purkinje_ode_extra_config);
             solve_purkinje_volumes_odes(the_purkinje_ode_solver, cur_time, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
-
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 

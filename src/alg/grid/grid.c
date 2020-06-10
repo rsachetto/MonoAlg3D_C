@@ -455,7 +455,7 @@ void construct_grid_purkinje(struct grid *the_grid) {
     struct point_3d side_length = POINT3D(side_length_x, side_length_y, side_length_z);
 
     uint32_t total_purkinje_nodes = the_purkinje->network->total_nodes;
-
+    
     // Create the Purkinje cells array
     struct cell_node **purkinje_cells;
     purkinje_cells = (struct cell_node **)malloc(sizeof(struct cell_node *) * total_purkinje_nodes);

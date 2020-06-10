@@ -23,6 +23,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         sv[0] = 0.000000f; // Vm millivolt
         sv[1] = 0.000000f; // v dimensionless
     }
+
 }
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
