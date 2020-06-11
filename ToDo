@@ -18,14 +18,12 @@ Berg
 
 grid_purkinje:
 	- Check the Purkinje module
-	- Allocate the Purkinje structures only when necessary
-config:
-	- Add the option to save the LAT and the APD map in VTU/VTP format (use Sachetto structure that stores all the activation times) --> Calculate the mean APD
 
 domain:
 	- In function initialize_grid_with_plain_fibrotic_mesh_using_file() allow that the "fibrotic_positions" file come from the user input
 
 linear_system:
+	- Allow the Purkinje linear systemn to be solved by the GPU
 	- Implement the GMRES linear system solver (see Bernardo's book as reference ...) 
 
 DDM:
@@ -45,20 +43,11 @@ vtk_utils:
 	- Update the Purkinje Polydata VTK write
 
 example_configs:
-- Fix the Purkinje examples
 - Fix the custom mesh examples
 - Fix DDM examples
 - Fix Mixed Models examples
 - Fix Elnaz examples
 - Fix Pedro examples
-- Check why the "gold_simulation_no_adapt_cg_gpu" is giving the following error at the end of the simulation:
- 	malloc_consolidate(): invalid chunk size
-- Check why the "gold_simulation_no_adapt" is giving the following error at the end of the simulation:
-	free(): double free detected in tcache 2
-- Ask Sachetto about the "libten_tusscher_3_sast1.so" for the "plain_mesh_tentusscher_adapt" simulation.
-- Simulation "plain_mesh_ToRORd_fkatp_endo" is giving the following error:
-	[ERR] Solver stoped due to NaN on time 159.500000. This is probably a problem with the cellular model solver.
-- Simulation "plain_mesh_with_fibrosis_and_border_zone_inside_circle" is giving Segmentation fault.
 
 scripts:
 - Organize all the scripts

@@ -53,6 +53,13 @@ COMMON_HEADERS="ten_tusscher_3_RS.h"
 COMPILE_MODEL_LIB "ten_tusscher_3_epi" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DEPI"
 ##########################################################
 
+############## TEN TUSCHER 3 MCELL ##############################
+MODEL_FILE_CPU="ten_tusscher_3_RS_CPU.c"
+MODEL_FILE_GPU="ten_tusscher_3_RS_GPU.cu"
+COMMON_HEADERS="ten_tusscher_3_RS.h"
+COMPILE_MODEL_LIB "ten_tusscher_3_myo" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS" "-DMCELL"
+##########################################################
+
 ############### BONDARENKO ##############################
 MODEL_FILE_CPU="bondarenko_2004.c"
 MODEL_FILE_GPU="bondarenko_2004_GPU.cu"
@@ -147,3 +154,21 @@ MODEL_FILE_GPU="courtemanche_ramirez_nattel_1998.cu"
 COMMON_HEADERS="courtemanche_ramirez_nattel_1998.h"
 
 COMPILE_MODEL_LIB "courtemanche_ramirez_nattel_1998" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+
+#################################################################################################################################
+# MIXED MODELS
+
+########### FHN + Mitchell Shaeffer ##############
+MODEL_FILE_CPU="mixed_models/fhn_mitchell.c"
+MODEL_FILE_GPU="mixed_models/fhn_mitchell.cu"
+COMMON_HEADERS="mixed_models/fhn_mitchell.h"
+
+COMPILE_MODEL_LIB "mixed_fhn_mitchell" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+########### TT3: MCELL + EPI ##############
+MODEL_FILE_CPU="mixed_models/tt2004_myo_epi.c"
+MODEL_FILE_GPU="mixed_models/tt2004_myo_epi.cu"
+COMMON_HEADERS="mixed_models/tt2004_myo_epi.h"
+
+COMPILE_MODEL_LIB "mixed_tt2004_myo_epi" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
