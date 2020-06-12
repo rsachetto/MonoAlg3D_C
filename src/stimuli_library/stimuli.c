@@ -643,3 +643,39 @@ SET_SPATIAL_STIM(stim_if_z_less_than) {
 
     }
 }
+
+SET_SPATIAL_STIM(stim_if_z_between_than) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    bool stim;
+    real stim_value;
+
+    real_cpu z_min = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, z_min, config->config_data, "z_min");
+
+    real_cpu z_max = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, z_max, config->config_data, "z_max");
+
+    uint32_t i;
+
+    ALLOCATE_STIMS();
+
+    OMP(parallel for private(stim, stim_value))
+    for (i = 0; i < n_active; i++) {
+        stim = (ac[i]->center.z > z_min) && (ac[i]->center.z < z_max);
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+
+    }
+}
