@@ -11,21 +11,24 @@
 #include "../config/assembly_matrix_config.h"
 #include "../utils/utils.h"
 #include "../3dparty/stb_ds.h"
-
+#include "../libraries_common/common_data_structures.h"
 #include "../config_helpers/config_helpers.h"
+
+#ifdef ENABLE_DDM
 
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     real_cpu alpha;
-    struct cell_node **ac = the_grid->active_cells;
-    uint32_t active_cells = the_grid->num_active_cells;
+    
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
-    int i;
+
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
 
     OMP(parallel for private(alpha))
-    for(i = 0; i < active_cells; i++) {
+    for(uint32_t i = 0; i < active_cells; i++) {
 
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
         ac[i]->v = initial_v;
@@ -38,6 +41,227 @@ static struct element fill_element_ddm (uint32_t position, char direction, real_
                                  const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
                                  const real_cpu dt,\
                                 struct element *cell_elements);
+
+void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) {
+
+    real_cpu alpha, dx, dy, dz;
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt = the_solver->dt;
+
+    uint32_t i;
+
+    OMP(parallel for private(alpha, dx, dy, dz))
+    for(i = 0; i < num_active_cells; i++) 
+    {
+        dx = ac[i]->discretization.x;
+        dy = ac[i]->discretization.y;
+        dz = ac[i]->discretization.z;
+
+        alpha = ALPHA(beta, cm, dt, dx, dy, dz);
+
+        struct element element;
+        element.column = ac[i]->grid_position;
+        element.cell = ac[i];
+        element.value = alpha;
+
+        if(ac[i]->elements)
+            arrfree(ac[i]->elements);
+
+        ac[i]->elements = NULL;
+
+        arrsetcap(ac[i]->elements, 7);
+        arrput(ac[i]->elements, element);
+    }
+}
+
+struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
+                                 const real_cpu sigma_x, const real_cpu sigma_y, const real_cpu sigma_z,\
+                                 const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
+                                 const real_cpu dt, struct element *cell_elements) {
+
+    real_cpu multiplier;
+
+    struct element new_element;
+    new_element.column = position;
+    #ifdef ENABLE_DDM
+    new_element.direction = direction;
+    #endif
+
+    if(direction == 'n') { // Z direction front
+        multiplier = ((dx * dy) / dz);
+        new_element.value = ( multiplier * (-sigma_z - (kappa_z / dt)) );
+        cell_elements[0].value += ( multiplier * (sigma_z + (kappa_z / dt)) );
+    } else if(direction == 's') { // Z direction back
+        multiplier = ((dx * dy) / dz);
+        new_element.value = ( multiplier * (-sigma_z - (kappa_z / dt)) );
+        cell_elements[0].value += ( multiplier * (sigma_z + (kappa_z / dt)) );
+    } else if(direction == 'e') { // Y direction top
+        multiplier = ((dx * dz) / dy);
+        new_element.value = ( multiplier * (-sigma_y - (kappa_y / dt)) );
+        cell_elements[0].value += ( multiplier * (sigma_y + (kappa_y / dt)) );
+    } else if(direction == 'w') { // Y direction down
+        multiplier = ((dx * dz) / dy);
+        new_element.value = ( multiplier * (-sigma_y - (kappa_y / dt)) );
+        cell_elements[0].value += ( multiplier * (sigma_y + (kappa_y / dt)) );
+    } else if(direction == 'f') { // X direction right
+        multiplier = ((dy * dz) / dx);
+        new_element.value = ( multiplier * (-sigma_x - (kappa_x / dt)) );
+        cell_elements[0].value += ( multiplier * (sigma_x + (kappa_x / dt)) );
+    } else if(direction == 'b') { // X direction left
+        multiplier = ((dy * dz) / dx);
+        new_element.value = ( multiplier * (-sigma_x - (kappa_x / dt)) );
+        cell_elements[0].value += ( multiplier * (sigma_x + (kappa_x / dt)) );
+    }
+    return new_element;
+}
+
+static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell, void *neighbour_grid_cell, real_cpu dt ,char direction) {
+
+	bool has_found;
+
+    struct transition_node *white_neighbor_cell;
+    struct cell_node *black_neighbor_cell;
+
+    /* When neighbour_grid_cell is a transition node, looks for the next neighbor
+     * cell which is a cell node. */
+    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
+    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+
+    if(neighbour_grid_cell_level > grid_cell->cell_data.level) {
+        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+            has_found = false;
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
+                    if(white_neighbor_cell->single_connector == NULL) {
+                        has_found = true;
+                    } else {
+                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    } else {
+        if(neighbour_grid_cell_level <= grid_cell->cell_data.level &&
+           (neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
+            has_found = false;
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
+                    if(white_neighbor_cell->single_connector == 0) {
+                        has_found = true;
+                    } else {
+                        neighbour_grid_cell = white_neighbor_cell->single_connector;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // We care only with the interior points
+    if(neighbour_grid_cell_type == CELL_NODE_TYPE) {
+
+        black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+
+        if(black_neighbor_cell->active) {
+
+            uint32_t position;
+            real_cpu dx, dy, dz;
+
+            real_cpu sigma_x1 = grid_cell->sigma.x;
+            real_cpu sigma_x2 = black_neighbor_cell->sigma.x;
+            real_cpu sigma_x = 0.0;
+            
+            if(sigma_x1 != 0.0 && sigma_x2 != 0.0) {
+                sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
+            }
+
+            real_cpu sigma_y1 = grid_cell->sigma.y;
+            real_cpu sigma_y2 = black_neighbor_cell->sigma.y;
+            real_cpu sigma_y = 0.0;
+
+            if(sigma_y1 != 0.0 && sigma_y2 != 0.0) {
+                sigma_y = (2.0f * sigma_y1 * sigma_y2) / (sigma_y1 + sigma_y2);
+            }
+
+            real_cpu sigma_z1 = grid_cell->sigma.z;
+            real_cpu sigma_z2 = black_neighbor_cell->sigma.z;
+            real_cpu sigma_z = 0.0;
+
+            if(sigma_z1 != 0.0 && sigma_z2 != 0.0) {
+                sigma_z = (2.0f * sigma_z1 * sigma_z2) / (sigma_z1 + sigma_z2);
+            }
+            
+            if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
+                dx = black_neighbor_cell->discretization.x;
+                dy = black_neighbor_cell->discretization.y;
+                dz = black_neighbor_cell->discretization.z;
+            } else {
+                dx = grid_cell->discretization.x;
+                dy = grid_cell->discretization.y;
+                dz = grid_cell->discretization.z;
+            }
+
+
+            real_cpu kappa_x = grid_cell->kappa.x;
+            real_cpu kappa_y = grid_cell->kappa.y;
+            real_cpu kappa_z = grid_cell->kappa.z;
+
+            lock_cell_node(grid_cell);
+
+            struct element *cell_elements = grid_cell->elements;
+            position = black_neighbor_cell->grid_position;
+
+            size_t max_elements = arrlen(cell_elements);
+            bool insert = true;
+
+            for(size_t i = 1; i < max_elements; i++) {
+                if(cell_elements[i].column == position) {
+                    insert = false;
+                    break;
+                }
+            }
+
+            if(insert) {
+                struct element new_element = fill_element_ddm(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, kappa_x, kappa_y, kappa_z, dt, cell_elements);
+                new_element.cell = black_neighbor_cell;
+                arrput(grid_cell->elements, new_element);
+            }
+            unlock_cell_node(grid_cell);
+
+            lock_cell_node(black_neighbor_cell);
+            cell_elements = black_neighbor_cell->elements;
+            position = grid_cell->grid_position;
+
+            max_elements = arrlen(cell_elements);
+
+            insert = true;
+            for(size_t i = 1; i < max_elements; i++) {
+                if(cell_elements[i].column == position) {
+                    insert = false;
+                    break;
+                }
+            }
+
+            if(insert) {
+                struct element new_element = fill_element_ddm(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, kappa_x, kappa_y, kappa_z, dt, cell_elements);
+                new_element.cell = grid_cell;
+                arrput(black_neighbor_cell->elements, new_element);
+            }
+
+            unlock_cell_node(black_neighbor_cell);
+        }
+    }
+}
 
 void create_sigma_low_block(struct cell_node* ac,real_cpu x_left, real_cpu x_right, real_cpu y_down, real_cpu y_up,double b_sigma_x, double b_sigma_y, double b_sigma_z,double sigma_factor)
 {
@@ -73,301 +297,9 @@ void calculate_kappa_elements(struct monodomain_solver *the_solver, struct grid 
 	
 }
 
-struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
-                                 const real_cpu sigma_x, const real_cpu sigma_y, const real_cpu sigma_z,\
-                                 const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
-                                 const real_cpu dt, struct element *cell_elements)
-{
-
-    real_cpu multiplier;
-
-    struct element new_element;
-    new_element.column = position;
-    new_element.direction = direction;
-
-    // Z direction
-    if(direction == 'n') 
-    { 
-        multiplier = ((dx * dy) / dz);
-        new_element.value = ( multiplier * (-sigma_z - (kappa_z / dt)) );
-        cell_elements[0].value += ( multiplier * (sigma_z + (kappa_z / dt)) );
-    } 
-    // Z direction
-    else if(direction == 's') 
-    { 
-        multiplier = ((dx * dy) / dz);
-        new_element.value = ( multiplier * (-sigma_z - (kappa_z / dt)) );
-        cell_elements[0].value += ( multiplier * (sigma_z + (kappa_z / dt)) );
-    } 
-    // Y direction
-    else if(direction == 'e') 
-    { 
-        multiplier = ((dx * dz) / dy);
-        new_element.value = ( multiplier * (-sigma_y - (kappa_y / dt)) );
-        cell_elements[0].value += ( multiplier * (sigma_y + (kappa_y / dt)) );
-    } 
-    // Y direction
-    else if(direction == 'w') 
-    { 
-        multiplier = ((dx * dz) / dy);
-        new_element.value = ( multiplier * (-sigma_y - (kappa_y / dt)) );
-        cell_elements[0].value += ( multiplier * (sigma_y + (kappa_y / dt)) );
-    }
-    // X direction 
-    else if(direction == 'f') 
-    { 
-        multiplier = ((dy * dz) / dx);
-        new_element.value = ( multiplier * (-sigma_x - (kappa_x / dt)) );
-        cell_elements[0].value += ( multiplier * (sigma_x + (kappa_x / dt)) );
-    } 
-    // X direction
-    else if(direction == 'b') 
-    { 
-        multiplier = ((dy * dz) / dx);
-        new_element.value = ( multiplier * (-sigma_x - (kappa_x / dt)) );
-        cell_elements[0].value += ( multiplier * (sigma_x + (kappa_x / dt)) );
-    }
-    
-    return new_element;
-}
-
-static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell, void *neighbour_grid_cell, real_cpu dt ,char direction)                                                 
-
-{
-	uint32_t position;
-    bool has_found;
-    real_cpu dx, dy, dz;
-
-    struct transition_node *white_neighbor_cell;
-    struct cell_node *black_neighbor_cell;
-
-    /* When neighbour_grid_cell is a transition node, looks for the next neighbor
-     * cell which is a cell node. */
-    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
-    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-
-    if(neighbour_grid_cell_level > grid_cell->cell_data.level) 
-    {
-        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) 
-        {
-            has_found = false;
-            while(!has_found) 
-            {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) 
-                {
-                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
-                    if(white_neighbor_cell->single_connector == NULL) 
-                    {
-                        has_found = true;
-                    } 
-                    else 
-                    {
-                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
-                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-                    }
-                } 
-                else 
-                {
-                    break;
-                }
-            }
-        }
-    } 
-    else 
-    {
-        if(neighbour_grid_cell_level <= grid_cell->cell_data.level &&
-           (neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) 
-           {
-            has_found = false;
-            while(!has_found) 
-            {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) 
-                {
-                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
-                    if(white_neighbor_cell->single_connector == 0) 
-                    {
-                        has_found = true;
-                    } 
-                    else 
-                    {
-                        neighbour_grid_cell = white_neighbor_cell->single_connector;
-                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-                    }
-                } 
-                else 
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // We care only with the interior points
-    if(neighbour_grid_cell_type == CELL_NODE_TYPE) 
-    {
-
-        black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-
-        if(black_neighbor_cell->active) 
-        {
-
-            real_cpu sigma_x1 = grid_cell->sigma.x;
-            real_cpu sigma_x2 = black_neighbor_cell->sigma.x;
-            real_cpu sigma_x = 0.0;
-            
-            if(sigma_x1 != 0.0 && sigma_x2 != 0.0) 
-            {
-                sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
-            }
-
-            real_cpu sigma_y1 = grid_cell->sigma.y;
-            real_cpu sigma_y2 = black_neighbor_cell->sigma.y;
-            real_cpu sigma_y = 0.0;
-
-            if(sigma_y1 != 0.0 && sigma_y2 != 0.0) 
-            {
-                sigma_y = (2.0f * sigma_y1 * sigma_y2) / (sigma_y1 + sigma_y2);
-            }
-
-            real_cpu sigma_z1 = grid_cell->sigma.z;
-            real_cpu sigma_z2 = black_neighbor_cell->sigma.z;
-            real_cpu sigma_z = 0.0;
-
-            if(sigma_z1 != 0.0 && sigma_z2 != 0.0) 
-            {
-                sigma_z = (2.0f * sigma_z1 * sigma_z2) / (sigma_z1 + sigma_z2);
-            }
-            
-            if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) 
-            {
-                dx = black_neighbor_cell->discretization.x;
-                dy = black_neighbor_cell->discretization.y;
-                dz = black_neighbor_cell->discretization.z;
-            }
-            else 
-            {
-                dx = grid_cell->discretization.x;
-                dy = grid_cell->discretization.y;
-                dz = grid_cell->discretization.z;
-            }
-
-            lock_cell_node(grid_cell);
-
-            struct element *cell_elements = grid_cell->elements;
-            position = black_neighbor_cell->grid_position;
-
-            size_t max_elements = arrlen(cell_elements);
-            bool insert = true;
-
-            for(size_t i = 1; i < max_elements; i++) 
-            {
-                if(cell_elements[i].column == position) 
-                {
-                    insert = false;
-                    break;
-                }
-            }
-
-            if(insert) 
-            {
-
-                struct element new_element = fill_element_ddm(position, direction,\
-																dx, dy, dz,\
-                                                                sigma_x, sigma_y, sigma_z,\
-																grid_cell->kappa.x,grid_cell->kappa.y,grid_cell->kappa.z,\
-																dt, cell_elements);
-
-                new_element.cell = black_neighbor_cell;
-                arrput(grid_cell->elements, new_element);
-            }
-            unlock_cell_node(grid_cell);
-
-            lock_cell_node(black_neighbor_cell);
-            cell_elements = black_neighbor_cell->elements;
-            position = grid_cell->grid_position;
-
-            max_elements = arrlen(cell_elements);
-
-            insert = true;
-            for(size_t i = 1; i < max_elements; i++) 
-            {
-                if(cell_elements[i].column == position) 
-                {
-                    insert = false;
-                    break;
-                }
-            }
-
-            if(insert) 
-            {
-
-                struct element new_element = fill_element_ddm(position, direction,\
-																dx, dy, dz,\
-                                                                sigma_x, sigma_y, sigma_z,\
-																grid_cell->kappa.x,grid_cell->kappa.y,grid_cell->kappa.z,\
-																dt, cell_elements);
-
-                new_element.cell = grid_cell;
-                arrput(black_neighbor_cell->elements, new_element);
-            }
-
-            unlock_cell_node(black_neighbor_cell);
-        }
-    }
-}
-
-void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) 
-{
-
-    real_cpu alpha, dx, dy, dz;
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-    real_cpu beta = the_solver->beta;
-    real_cpu cm = the_solver->cm;
-    real_cpu dt = the_solver->dt;
-
-    int i;
-
-    OMP(parallel for private(alpha, dx, dy, dz))
-    for(i = 0; i < num_active_cells; i++) 
-    {
-        dx = ac[i]->discretization.x;
-        dy = ac[i]->discretization.y;
-        dz = ac[i]->discretization.z;
-
-        alpha = ALPHA(beta, cm, dt, dx, dy, dz);
-
-        struct element element;
-        element.column = ac[i]->grid_position;
-        element.cell = ac[i];
-        element.value = alpha;
-
-        if(ac[i]->elements)
-            arrfree(ac[i]->elements);
-
-        ac[i]->elements = NULL;
-
-        arrsetcap(ac[i]->elements, 7);
-        arrput(ac[i]->elements, element);
-    }
-}
-
-int randRange(int n) {
-    int limit;
-    int r;
-
-    limit = RAND_MAX - (RAND_MAX % n);
-
-    while((r = rand()) >= limit)
-        ;
-
-    return r % n;
-}
-
 // This function will read the fibrotic regions and for each cell that is inside the region and we will
 // reduce its conductivity value based on the 'sigma_factor'.
-ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
-{
+ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix) {
     static bool sigma_initialized = false;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -512,22 +444,22 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_back, the_solver->dt, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_front, the_solver->dt, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_top, the_solver->dt, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_down, the_solver->dt, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_right, the_solver->dt, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_left, the_solver->dt, 'b');
     }
 
 
@@ -596,22 +528,22 @@ ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_back, the_solver->dt, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_front, the_solver->dt, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_top, the_solver->dt, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_down, the_solver->dt, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_right, the_solver->dt, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_left, the_solver->dt, 'b');
     }
     
 }
@@ -863,30 +795,27 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
 	}
 
 // Aqui termina a construcao dos triangulos	
-
-
-
     OMP(parallel for)
     for (i = 0; i < num_active_cells; i++)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_back, the_solver->dt, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_front, the_solver->dt, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_top, the_solver->dt, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_down, the_solver->dt, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_right, the_solver->dt, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_left, the_solver->dt, 'b');
     }
 }
 
@@ -1217,10 +1146,6 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     real cell_length_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");
 
-<<<<<<< HEAD
-=======
-
->>>>>>> aedb9fab964a0790f2b939b52af16e852aae9d83
     // Calculate the kappa values on each cell of th grid
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
   
@@ -1356,22 +1281,22 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_back, the_solver->dt, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->z_front, the_solver->dt, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_top, the_solver->dt, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->y_down, the_solver->dt, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_right, the_solver->dt, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->x_left, the_solver->dt, 'b');
     }
 
 
@@ -1855,3 +1780,5 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
     exit(EXIT_SUCCESS);
 
 }
+
+#endif

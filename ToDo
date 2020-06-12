@@ -27,8 +27,7 @@ linear_system:
 	- Implement the GMRES linear system solver (see Bernardo's book as reference ...) 
 
 DDM:
-	- Fix the DDM assembly_matrix library
-	- Revise all the examples to see if is still working
+	- Revise the equations again with Pedro
 
 purkinje:
 	- Update the Purkinje code.
@@ -44,8 +43,6 @@ vtk_utils:
 
 example_configs:
 - Fix the custom mesh examples
-- Fix DDM examples
-- Fix Mixed Models examples
 - Fix Elnaz examples
 - Fix Pedro examples
 

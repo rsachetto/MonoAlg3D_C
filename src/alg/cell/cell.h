@@ -99,20 +99,12 @@ struct cell_node {
     // Variables used by some applications of partial differential equations.
     real_cpu v;
 
-    // Variables used for propagation velocity calculation
-    real max_dvdt;
-    real activation_time;
-
     struct point_3d sigma;
-    struct point_3d kappa;
 
 #ifdef ENABLE_DDM
     struct point_3d kappa;
 #endif
 
-#ifdef ENABLE_DDM
-    struct point_3d kappa;
-#endif
 
 #if defined(_OPENMP)
     omp_lock_t updating;
