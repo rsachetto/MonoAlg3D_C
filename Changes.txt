@@ -7,4 +7,5 @@
 2) Lucas improvements
     - Organize the example_configs folder in categories
     - Add Fedora build options to the "build.sh"
+    - It is now possible to set the conductivity of each segment from a Purkinje network
     

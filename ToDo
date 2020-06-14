@@ -16,9 +16,6 @@ inxi -CNM |grep -e Topology  -e Device-1 | sha256sum
 
 Berg
 
-grid_purkinje:
-	- Check the Purkinje module
-
 domain:
 	- In function initialize_grid_with_plain_fibrotic_mesh_using_file() allow that the "fibrotic_positions" file come from the user input
 
@@ -30,7 +27,6 @@ DDM:
 	- Revise the equations again with Pedro
 
 purkinje:
-	- Update the Purkinje code.
 	- Implement the Purkinje coupling using a sphere area
 	- Use the new vector structure
 	- Implement a Purkinje restore state function
@@ -42,7 +38,6 @@ vtk_utils:
 	- Update the Purkinje Polydata VTK write
 
 example_configs:
-- Fix the custom mesh examples
 - Fix Elnaz examples
 - Fix Pedro examples
 

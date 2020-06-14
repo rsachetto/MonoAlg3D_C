@@ -44,6 +44,7 @@ struct line {
 
 struct point_3d {
     real_cpu x, y, z;
+    real_cpu value;
 };
 
 #define POINT3D(x,y,z) (struct point_3d) {x,y,z}
