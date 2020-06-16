@@ -173,6 +173,14 @@ void print_graph (struct graph *g)
 
 }
 
+bool is_terminal (const struct node *n)
+{
+    if (n->num_edges == 1 && n->id != 0)
+        return true;
+    else
+        return false;
+}
+
 real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,\
                   const real_cpu x2, const real_cpu y2, const real_cpu z2)
 {

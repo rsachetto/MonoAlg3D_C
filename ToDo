@@ -27,15 +27,8 @@ DDM:
 	- Revise the equations again with Pedro
 
 purkinje:
-	- Implement the Purkinje coupling using a sphere area
-	- Use the new vector structure
+	- Build more Purkinje-Coupling examples
 	- Implement a Purkinje restore state function
-
-save_mesh:
-	- Update Purkinje/Coupling save mesh function
-
-vtk_utils:
-	- Update the Purkinje Polydata VTK write
 
 example_configs:
 - Fix Elnaz examples

@@ -30,7 +30,8 @@ char *output_dir;
 
 static bool initialized = false;
 
-static struct vtk_polydata_grid *vtk_polydata = NULL;
+//static struct vtk_polydata_grid *vtk_polydata = NULL;
+//static struct vtk_unstructured_grid *vtk_grid = NULL;
 
 void write_activation_time_maps (struct config *config, struct grid *the_grid);
 void write_activation_time_for_each_pulse (struct config *config, struct grid *the_grid, float plain_coords[], float bounds[]);
@@ -43,22 +44,6 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
 
 static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
-}
-
-sds create_base_name_by_map_type(int map_type) {
-    switch (map_type)
-    {
-        case 1: {
-            return create_base_name("activation_time_map", 0, "vtu");
-        }
-        case 2: {
-            return create_base_name("apd_map", 0, "vtu");        
-        }
-        default: {
-            log_to_stderr_and_file_and_exit("Invalid saving map option!\n");
-            return NULL;
-        }
-    }
 }
 
 SAVE_MESH(save_as_adjacency_list) {
@@ -646,7 +631,7 @@ void write_transmembrane_potential_vtp (struct vtk_polydata_grid **vtk_polydata,
         first_call = false;
     }
 
-    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_polydata!=NULL,'v');
+    new_vtk_polydata_grid_from_purkinje_grid(vtk_polydata, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_polydata!=NULL);
 
     if(compress)
     {
@@ -696,12 +681,28 @@ void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid,
 }
 
 
+struct save_as_vtp_persistent_data {
+    struct vtk_polydata_grid *grid;
+    bool first_save_call;
+};
+
+INIT_SAVE_MESH(init_save_as_vtp) {
+    config->persistent_data = malloc(sizeof(struct save_as_vtp_persistent_data));
+    ((struct save_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
+    ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call = true;
+}
+
+END_SAVE_MESH(end_save_as_vtp) {
+    free_vtk_polydata_grid(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid);
+    free(config->persistent_data);
+}
+
 SAVE_MESH(save_as_vtp_purkinje) {
 
-    char *output_dir;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+    int iteration_count = time_info->iteration;
 
-    if(!initialized) {
+    if(((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
@@ -712,45 +713,92 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
         if(compress) binary = true;
 
-        initialized = true;
+        if(!save_pvd) {
+            ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+        }
     }
+
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[1], config->config_data, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[2], config->config_data, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[4], config->config_data, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[5], config->config_data, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[0], config->config_data, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[1], config->config_data, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[2], config->config_data, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[3], config->config_data, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config->config_data, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
     }
 
-    write_transmembrane_potential_vtp(&vtk_polydata, the_grid, output_dir, file_prefix, time_info->iteration, time_info->current_t,\
-                                             save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+    sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
+
+    real_cpu current_t = time_info->current_t;
+
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+
+    if(save_pvd) {
+        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call);
+        ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+    }
+
+    bool read_only_data = ((struct save_as_vtp_persistent_data *) config->persistent_data)->grid != NULL;
+    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+
+    if(compress) {
+        save_vtk_polydata_grid_as_vtp_compressed(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
+    }
+    else {
+        save_vtk_polydata_grid_as_vtp(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+    }
+
+    //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
+    if(the_grid->adaptive) {
+        free_vtk_polydata_grid(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid);
+        ((struct save_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
+    }
+
+    sdsfree(output_dir_with_file);
+    sdsfree(base_name);
 }
 
-static struct vtk_unstructured_grid *vtk_grid = NULL;
-static char *file_prefix;
-static char *file_prefix_purkinje;
+struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data {
+    struct vtk_unstructured_grid *grid;
+    struct vtk_polydata_grid *grid_purkinje;
+    bool first_save_call;
+};
 
-SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje) {
+INIT_SAVE_MESH(init_save_tissue_as_vtk_or_vtu_purkinje_as_vtp) {
+    config->persistent_data = malloc(sizeof(struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data));
+    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
+    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje = NULL;
+    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = true;
+}
 
-    char *output_dir;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+END_SAVE_MESH(end_save_tissue_as_vtk_or_vtu_purkinje_as_vtp) {
+    free_vtk_polydata_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje);
+    free_vtk_unstructured_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid);
+    free(config->persistent_data);
+}
 
+SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
 
-    if(!initialized)
-    {
+// [TISSUE]
+    int iteration_count = time_info->iteration;
+
+    if(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call) {
+        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
         GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_prefix_purkinje, config->config_data, "file_prefix_purkinje");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
@@ -762,13 +810,15 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje) {
 
         if(compress) binary = true;
 
-        initialized = true;
+        if(!save_pvd) {
+            ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+        }
     }
+
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
-    if(clip_with_plain)
-    {
+    if(clip_with_plain) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
@@ -777,8 +827,7 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
     }
 
-    if(clip_with_bounds)
-    {
+    if(clip_with_bounds) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
@@ -788,14 +837,71 @@ SAVE_MESH(save_as_vtu_tissue_coupled_vtp_purkinje) {
     }
 
 
-    write_transmembrane_potential_vtu(&vtk_grid, the_grid, output_dir, file_prefix, time_info->iteration, time_info->current_t,\
-                                            save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
-    write_transmembrane_potential_vtp(&vtk_polydata, the_grid, output_dir, file_prefix_purkinje, time_info->iteration, time_info->current_t,\
-                                            save_pvd, compress, compression_level, binary, clip_with_plain, plain_coords, clip_with_bounds, bounds);
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+    sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
 
+    real_cpu current_t = time_info->current_t;
 
-    if(the_grid->adaptive)
-        free_vtk_unstructured_grid(vtk_grid);
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+
+    if(save_pvd) {
+        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call);
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+    }
+
+    bool read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid != NULL;
+    new_vtk_unstructured_grid_from_alg_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+
+    if(compress) {
+        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
+    }
+    else {
+        save_vtk_unstructured_grid_as_vtu(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+    }
+
+    //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
+    if(the_grid->adaptive) {
+        free_vtk_unstructured_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid);
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
+    }
+
+    sdsfree(output_dir_with_file);
+    sdsfree(base_name);
+
+// [PURKINJE]
+
+    output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+    base_name = create_base_name(file_prefix_purkinje, iteration_count, "vtp");
+
+    output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
+
+    if(save_pvd) {
+        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call);
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+    }
+
+    read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje != NULL;
+    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+
+    if(compress) {
+        save_vtk_polydata_grid_as_vtp_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje, output_dir_with_file, compression_level);
+    }
+    else {
+        save_vtk_polydata_grid_as_vtp(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje, output_dir_with_file, binary);
+    }
+
+    //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
+    if(the_grid->adaptive) {
+        free_vtk_polydata_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje);
+        free_vtk_unstructured_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid);
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje = NULL;
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
+    }
+
+    sdsfree(output_dir_with_file);
+    sdsfree(base_name);
 
 }
 
@@ -1046,8 +1152,6 @@ void write_activation_time_maps (struct config *config, struct grid *the_grid)
 void write_activation_time_for_each_pulse (struct config *config, struct grid *the_grid, float plain_coords[], float bounds[]) {
 
     struct save_with_activation_times_persistent_data **data = (struct save_with_activation_times_persistent_data **)&config->persistent_data;
-
-    real_cpu current_t = 0.0;
 
     struct cell_node **grid_cell = the_grid->active_cells;
 

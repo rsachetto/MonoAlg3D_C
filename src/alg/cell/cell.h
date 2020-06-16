@@ -135,13 +135,12 @@ struct transition_node {
 };
 
 // ----------------------------------------------------
-struct terminal
-{
-    uint32_t purkinje_index;
-    uint32_t endocardium_index;
-
-    struct cell_node *endocardium_cell;
+struct terminal {
+    
     struct node *purkinje_cell;
+
+    struct cell_node **tissue_cells;
+
 };
 // ----------------------------------------------------
 

@@ -7,12 +7,12 @@
 # Variables
 FILENAME="frames/frame"
 FRAME_RATE="20"
-END_FRAME="250"
-OUTPUT_VIDEO_FILENAME="videos/lucas_purkinje_coupled_human_fractal_with_pmj_block"
-RESOLUTION="1030x730"
+END_FRAME="600"
+OUTPUT_VIDEO_FILENAME="videos/benchmark_purkinje_coupling"
+RESOLUTION="1980x1024"
 
 # Execute the converting command using FFMPEG
 ffmpeg -r ${FRAME_RATE} -f image2 -s ${RESOLUTION} -start_number 1 -i ${FILENAME}.%04d.png -vframes ${END_FRAME} -vcodec libx264 -crf 25  -pix_fmt yuv420p ${OUTPUT_VIDEO_FILENAME}.mp4
 
 # Working version for sending .mp4 via WhatsApp
-ffmpeg -i ${OUTPUT_VIDEO_FILENAME}.mp4 -c:v libx264 -b:v 1500k -c:a aac fixedvideo.mp4
+#ffmpeg -i ${OUTPUT_VIDEO_FILENAME}.mp4 -c:v libx264 -b:v 1500k -c:a aac fixedvideo.mp4

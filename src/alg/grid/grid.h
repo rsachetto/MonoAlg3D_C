@@ -82,7 +82,7 @@ void initialize_grid_purkinje (struct grid *the_grid);
 void construct_grid_purkinje (struct grid *the_grid);
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b);
 
-struct terminal* link_purkinje_to_endocardium (struct grid *the_grid);
+struct terminal* link_purkinje_to_tissue (struct grid *the_grid);
 void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals);
 
 bool cell_is_visible(struct cell_node *grid_cell);

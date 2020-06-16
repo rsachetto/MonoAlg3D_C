@@ -8,4 +8,8 @@
     - Organize the example_configs folder in categories
     - Add Fedora build options to the "build.sh"
     - It is now possible to set the conductivity of each segment from a Purkinje network
-    
+    - Revamped the Purkinje-Coupling code. The PMJ current equation now follows the idea from the CARPentry solver:
+        https://carpentry.medunigraz.at/carputils/examples/tutorials/tutorials.02_EP_tissue.19_Pkje.run.html
+
+3) Bugs
+    - When "compress=true" the meshes are not right.  

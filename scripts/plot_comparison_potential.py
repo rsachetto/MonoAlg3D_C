@@ -13,20 +13,23 @@ def read_transmembrane_potential(input_file, dt, print_rate):
     timesteps = np.arange(0,n)*ms_each_step
     vms = data
 
+    timesteps = timesteps[430:470]
+    vms = vms[430:470]
+
     return timesteps, vms
 
 
 def plot_transmembrane_potential(t1, v1, t2, v2):
 
-    plt.plot(t1, v1, label="Pass", c="green", linewidth=2.0)
-    plt.plot(t2, v2, label="Block", c="red", linewidth=2.0)
+    plt.plot(t1, v1, label="Tissue", c="red", linewidth=2.0)
+    plt.plot(t2, v2, label="Purkinje", c="blue", linewidth=2.0)
 
     plt.grid()
     plt.xlabel("t (ms)",fontsize=15)
     plt.ylabel("V (mV)",fontsize=15)
-    plt.title("Action potential",fontsize=14)
+    plt.title("Action potential - Retrograde propagation",fontsize=14)
     plt.legend(loc=0,fontsize=14)
-    plt.savefig("output/comparison-aps.pdf")
+    plt.savefig("retrograde.pdf")
     #plt.show()
 
 

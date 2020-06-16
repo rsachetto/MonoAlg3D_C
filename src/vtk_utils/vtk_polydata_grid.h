@@ -17,13 +17,16 @@ struct vtk_polydata_grid
     f32_array values;
     point3d_array points;
     line_array lines;
+
+    float min_v;
+    float max_v;
 };
 
 struct vtk_polydata_grid *new_vtk_polydata_grid ();
 
 void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid_purkinje *the_purkinje, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values, const char scalar_name);
+                                                                     float *bounds, bool read_only_values);
                                                                      
 void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,

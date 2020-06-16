@@ -1,5 +1,5 @@
 //
-// Created by sachetto on 13/10/17.
+// Created by bergolho on 15/06/20.
 //
 
 #include <stdbool.h>
@@ -15,7 +15,7 @@
 
 #include "../config_helpers/config_helpers.h"
 
-INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
+INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupling_fvm) {
 
     real_cpu alpha;
     
@@ -274,18 +274,6 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
     }
 }
 
-int randRange(int n) {
-    int limit;
-    int r;
-
-    limit = RAND_MAX - (RAND_MAX % n);
-
-    while((r = rand()) >= limit)
-        ;
-
-    return r % n;
-}
-
 void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) 
 {
     real_cpu alpha;
@@ -368,10 +356,9 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     }
 }
 
-ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
-{
+ASSEMBLY_MATRIX (purkinje_coupling_assembly_matrix) {
 
-    // Endocardium section
+// [TISSUE]
     static bool sigma_initialized = false;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -379,7 +366,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
@@ -390,14 +377,9 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
-    real sigma_purkinje = sigma_x;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real,sigma_purkinje,config->config_data,"sigma_purkinje");
-
-    if(!sigma_initialized) 
-    {
+    if(!sigma_initialized) {
         OMP(parallel for)
-        for (i = 0; i < num_active_cells; i++) 
-        {
+        for (i = 0; i < num_active_cells; i++) {
             ac[i]->sigma.x = sigma_x;
             ac[i]->sigma.y = sigma_y;
             ac[i]->sigma.z = sigma_z;
@@ -409,7 +391,6 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
-
         // Computes and designates the flux due to south cells.
         fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
@@ -429,54 +410,49 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
         fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 
-    // Purkinje section
+// [PURKINJE]
     static bool sigma_purkinje_initialized = false;
 
     uint32_t num_purkinje_active_cells = the_grid->purkinje->num_active_purkinje_cells;
     struct cell_node **ac_purkinje = the_grid->purkinje->purkinje_cells;
-
     struct node *pk_node = the_grid->purkinje->network->list_nodes;
+    bool has_point_data = the_grid->purkinje->network->has_point_data;
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
-    
-    if(!sigma_purkinje_initialized) 
-    {
-        OMP(parallel for)
-        for (uint32_t i = 0; i < num_purkinje_active_cells; i++) 
-        {
-            ac_purkinje[i]->sigma.x = sigma_purkinje;
-        }
 
-        sigma_purkinje_initialized = true;
+    // The default value for the Purkinje conductivity is the x-component for the tissue cells
+    real sigma_purkinje = sigma_x;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real,sigma_purkinje,config->config_data,"sigma_purkinje");
+    
+    if(!sigma_purkinje_initialized) {
+
+        // Check if the Purkinje network file has the POINT_DATA section
+        if (has_point_data)
+        {
+            struct node *tmp = the_grid->purkinje->network->list_nodes;
+            uint32_t i = 0;
+            while (tmp != NULL)
+            {
+                // Copy the prescribed conductivity from the Purkinje network file into the ALG cell structure
+                ac_purkinje[i]->sigma.x = tmp->sigma;
+
+                i++;
+                tmp = tmp->next;
+            }
+        }
+        // Otherwise, initilize the conductivity of all cells homogenously with the value from the configuration file
+        else
+        {
+            OMP(parallel for)
+            for (uint32_t i = 0; i < num_purkinje_active_cells; i++) 
+            {
+                ac_purkinje[i]->sigma.x = sigma_x;
+            }
+        }
+        
+        sigma_initialized = true;
     }
 
     fill_discretization_matrix_elements_purkinje(sigma_purkinje,ac_purkinje,num_purkinje_active_cells,pk_node);
-
-    // DEBUG
-    // Endocardium cells
-    /*
-    for (uint32_t i = 0; i < num_active_cells; i++)
-    {
-        struct element *cell_elements = ac[i]->elements;
-        size_t max_elements = arrlen(cell_elements);
-
-        printf("Line %u\n",i);
-        printf("\tColumn = %u -- Value = %g\n",cell_elements[0].column,cell_elements[0].value);
-        for (uint32_t j = 1; j < max_elements; j++)
-            printf("\tColumn = %u -- Value = %g\n",cell_elements[j].column,cell_elements[j].value);
-    }
-
-    // Purkinje cells
-    for (uint32_t i = 0; i < num_purkinje_active_cells; i++)
-    {
-        struct element *cell_elements = ac_purkinje[i]->elements;
-        size_t max_elements = arrlen(cell_elements);
-
-        printf("Line %u\n",i);
-        printf("\tColumn = %u -- Value = %g\n",cell_elements[0].column,cell_elements[0].value);
-        for (uint32_t j = 1; j < max_elements; j++)
-            printf("\tColumn = %u -- Value = %g\n",cell_elements[j].column,cell_elements[j].value);
-    }
-    */
     
 }

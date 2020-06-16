@@ -23,7 +23,6 @@ struct node
     real_cpu sigma;
     real_cpu x, y, z;
 
-
     struct edge *list_edges;
     struct node *next;
 };
@@ -43,10 +42,13 @@ struct graph
     uint32_t total_nodes;
     uint32_t total_edges;
 
-    real_cpu dx;
     bool calc_retropropagation;
+    real_cpu dx;
     real_cpu rpmj;
+    real_cpu sigma;
     real_cpu pmj_scale;
+    uint32_t nmin_pmj;
+    uint32_t nmax_pmj;
     uint32_t number_of_terminals;
 
     bool has_point_data;
@@ -64,6 +66,8 @@ void print_graph (struct graph *g);
 void free_graph (struct graph *g);
 void free_list_nodes (struct graph *g);
 void free_list_edges (struct node *n);
+
+bool is_terminal (const struct node *n);
 
 real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,\
                   const real_cpu x2, const real_cpu y2, const real_cpu z2);

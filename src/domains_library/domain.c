@@ -91,10 +91,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
         derefine_grid_inactive_cells(the_grid);
     }
 
-    log_to_stdout_and_file("Number of tissue cells = %u\n",the_grid->number_of_cells);
-
-    //print_to_stderr_and_file_and_exit("Leaving program\n");
-
     return 1;
 }
 

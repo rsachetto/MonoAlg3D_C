@@ -1,5 +1,5 @@
 //
-// Created by bergolho on 04/09/19.
+// Created by bergolho on 15/06/20.
 //
 
 #include <stdbool.h>
@@ -143,7 +143,7 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_purkinje");
 
     if(!sigma_initialized) 
     {

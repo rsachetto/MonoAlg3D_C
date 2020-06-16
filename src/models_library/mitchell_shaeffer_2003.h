@@ -5,7 +5,7 @@
 #include "model_common.h"
 
 #define NEQ 2
-#define INITIAL_V (0.00000820413566106744)
+#define INITIAL_V (0.0)
 
 #ifdef __CUDACC__
 
