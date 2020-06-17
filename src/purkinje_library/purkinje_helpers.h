@@ -22,7 +22,7 @@ struct branch
 
 void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length);
 void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length);
-void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale,\
+void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale, const real_cpu assym_ratio,\
                                     const uint32_t nmin_pmj, const uint32_t nmax_pmj, const bool retro_propagation);
 
 void build_skeleton_purkinje (const char *filename, struct graph *skeleton_network);

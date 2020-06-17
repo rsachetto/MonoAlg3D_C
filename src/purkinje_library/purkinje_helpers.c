@@ -29,11 +29,12 @@ void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char
 
 }
 
-void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale,\
+void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale, const real_cpu asymm_ratio,\
                                     const uint32_t nmin_pmj, const uint32_t nmax_pmj, const bool retro_propagation)
 {
     the_purkinje_network->rpmj = rpmj;
     the_purkinje_network->pmj_scale = pmj_scale;
+    the_purkinje_network->asymm_ratio = asymm_ratio;
     the_purkinje_network->nmin_pmj = nmin_pmj;
     the_purkinje_network->nmax_pmj = nmax_pmj;
     the_purkinje_network->calc_retropropagation = retro_propagation;

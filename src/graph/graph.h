@@ -47,6 +47,7 @@ struct graph
     real_cpu rpmj;
     real_cpu sigma;
     real_cpu pmj_scale;
+    real_cpu asymm_ratio;
     uint32_t nmin_pmj;
     uint32_t nmax_pmj;
     uint32_t number_of_terminals;

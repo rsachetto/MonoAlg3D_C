@@ -13,8 +13,8 @@ def read_transmembrane_potential(input_file, dt, print_rate):
     timesteps = np.arange(0,n)*ms_each_step
     vms = data
 
-    timesteps = timesteps[430:470]
-    vms = vms[430:470]
+    #timesteps = timesteps[430:470]
+    #vms = vms[430:470]
 
     return timesteps, vms
 
@@ -29,8 +29,8 @@ def plot_transmembrane_potential(t1, v1, t2, v2):
     plt.ylabel("V (mV)",fontsize=15)
     plt.title("Action potential - Retrograde propagation",fontsize=14)
     plt.legend(loc=0,fontsize=14)
-    plt.savefig("retrograde.pdf")
-    #plt.show()
+    #plt.savefig("retrograde.pdf")
+    plt.show()
 
 
 def main():

@@ -409,8 +409,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     }
     // Purkinje section
+    bool retro_propagation = true;
     if (purkinje_config) {
         original_num_purkinje_cells = the_grid->purkinje->number_of_purkinje_cells;
+        retro_propagation = the_grid->purkinje->network->calc_retropropagation;
         the_purkinje_ode_solver->original_num_cells = original_num_purkinje_cells;
         the_purkinje_ode_solver->num_cells_to_solve = original_num_purkinje_cells;
     }
@@ -634,7 +636,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             #endif
 
             // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
-            if (domain_config)
+            if (domain_config && retro_propagation)
                 compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver, the_grid, the_terminals);
 
             // DIFUSION: Purkinje
@@ -1311,7 +1313,6 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
         if(the_grid->adaptive)
             check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-        // ?????
         OMP(parallel for)
         for(uint32_t i = 0; i < n_active; i++)
         {
@@ -1321,7 +1322,6 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
         uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
-            //printf("[map_purkinje_solution_to_tissue] Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
 
             // Compute the PMJ current
             real Ipmj = 0.0;
@@ -1354,7 +1354,6 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
         uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++)
         {
-            //printf("Terminal %u -- Tissue index = %u -- Purkinje index = %u\n",i,the_terminals[i].endocardium_index,the_terminals[i].purkinje_index);
 
             // Compute the PMJ current
             real Ipmj = 0.0;
@@ -1395,6 +1394,7 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
     // Purkinje coupling parameters
     real rpmj = the_grid->purkinje->network->rpmj;
     real pmj_scale = the_grid->purkinje->network->pmj_scale;
+    real asymm_ratio = the_grid->purkinje->network->asymm_ratio;
 
     real Gpmj = 1.0 / rpmj;
 
@@ -1423,7 +1423,7 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
                 Ipmj += (vms[purkinje_index] - ac[tissue_index]->v);
             }
             // Asymmetry of conduction across the PMJ
-            Ipmj *= (Gpmj / (pmj_scale*0.01));
+            Ipmj *= (Gpmj / (pmj_scale*asymm_ratio));
 
             // Add this current to the RHS of the Purkinje cell
             ac_purkinje[purkinje_index]->b -= Ipmj;
@@ -1446,9 +1446,8 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
                 uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
                 Ipmj += (sv[purkinje_index*nodes] - ac[tissue_index]->v);
             }
-            Ipmj *= (Gpmj / (pmj_scale*0.01));
-            //Ipmj *= Gpmj;
-
+            Ipmj *= (Gpmj / (pmj_scale*asymm_ratio));
+            
             // Add this current to the RHS of the Purkinje cell
             ac_purkinje[purkinje_index]->b -= Ipmj;
 
