@@ -189,13 +189,13 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
                               void *quadruple_connector1, void *quadruple_connector2, void *quadruple_connector3, void *quadruple_connector4);
 
 void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization, uint64_t bunch_number, void **neighbours, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center, struct point_3d translated_center);
+                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center);
 
 void set_cell_flux(struct cell_node *the_cell, enum transition_direction direction);
 real_cpu get_cell_maximum_flux(struct cell_node *the_cell);
 
 void set_refined_cell_data(struct cell_node *the_cell, struct cell_node *other_cell, struct point_3d discretization, struct point_3d center,
-                           struct point_3d translated_center, uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step);
+                           uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step);
 
 void set_refined_transition_node_data(struct transition_node *the_node, struct cell_node *other_node, enum transition_direction direction);
 
