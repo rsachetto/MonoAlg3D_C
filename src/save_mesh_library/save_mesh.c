@@ -23,7 +23,9 @@ static bool binary = false;
 static bool clip_with_plain = false;
 static bool clip_with_bounds = false;
 static bool save_pvd = true;
+static bool save_inactive = false;
 static bool compress = false;
+static bool save_f = false;
 static int compression_level = 3;
 char *output_dir;
 
@@ -73,31 +75,31 @@ SAVE_MESH(save_as_adjacency_list) {
 
             fprintf(output_file, "%d ", cell->grid_position);
 
-            neighbour = get_cell_neighbour(cell, cell->z_front);
+            neighbour = get_cell_neighbour(cell, cell->neighbours[FRONT]);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
-            neighbour = get_cell_neighbour(cell, cell->z_back);
-            if(neighbour) {
-                fprintf(output_file, "%d ", neighbour->grid_position);
-            }
-
-            neighbour = get_cell_neighbour(cell, cell->y_down);
+            neighbour = get_cell_neighbour(cell, cell->neighbours[BACK]);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
 
-            neighbour = get_cell_neighbour(cell, cell->y_top);
+            neighbour = get_cell_neighbour(cell, cell->neighbours[DOWN]);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
 
-            neighbour = get_cell_neighbour(cell, cell->x_right);
+            neighbour = get_cell_neighbour(cell, cell->neighbours[TOP]);
             if(neighbour) {
                 fprintf(output_file, "%d ", neighbour->grid_position);
             }
 
-            neighbour = get_cell_neighbour(cell, cell->x_left);
+            neighbour = get_cell_neighbour(cell, cell->neighbours[RIGHT]);
+            if(neighbour) {
+                fprintf(output_file, "%d ", neighbour->grid_position);
+            }
+
+            neighbour = get_cell_neighbour(cell, cell->neighbours[LEFT]);
             if(neighbour) {
                 fprintf(output_file, "%d", neighbour->grid_position);
             }
@@ -249,6 +251,7 @@ SAVE_MESH(save_as_text_or_binary) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_inactive, config->config_data, "save_inactive_cells");
         initialized = true;
 //    }
 
@@ -313,7 +316,7 @@ SAVE_MESH(save_as_text_or_binary) {
 
     while(grid_cell != 0) {
 
-        if(grid_cell->active) {
+        if(grid_cell->active || save_inactive) {
 
             center_x = grid_cell->center.x;
             center_y = grid_cell->center.y;
@@ -386,6 +389,7 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_f, config->config_data, "save_f");
 
         ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = false;
 
@@ -421,9 +425,9 @@ SAVE_MESH(save_as_vtk) {
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
 
-    save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+    save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary, save_f);
 
     if(the_grid->adaptive) {
         free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid);
@@ -528,7 +532,7 @@ SAVE_MESH(save_as_vtu) {
     }
 
     bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    new_vtk_unstructured_grid_from_alg_grid(&((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
 
     if(compress) {
         save_vtk_unstructured_grid_as_vtu_compressed(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
@@ -658,7 +662,7 @@ void write_transmembrane_potential_vtu (struct vtk_unstructured_grid **vtk_grid,
         first_call = false;
     }
 
-    new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_grid!=NULL);
+    new_vtk_unstructured_grid_from_alg_grid(vtk_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, *vtk_grid!=NULL, save_f);
 
     if(compress) {
         save_vtk_unstructured_grid_as_vtu_compressed(*vtk_grid, output_dir_with_file, compression_level);

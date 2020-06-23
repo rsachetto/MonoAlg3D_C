@@ -241,15 +241,21 @@ void refine_border_zone_cells(struct grid *the_grid) {
  */
 void set_benchmark_domain(struct grid *the_grid) {
     struct cell_node *grid_cell = the_grid->first_cell;
+
+	real_cpu sx, sy, sz;
+	sx = 20000;
+	sy = 7000;
+	sz = 3000;
+
     while(grid_cell != 0) {
         grid_cell->active =
-                (grid_cell->center.y < 20000) && (grid_cell->center.x < 7000) && (grid_cell->center.z < 3000);
+                (grid_cell->center.x < sx) && (grid_cell->center.y < sy) && (grid_cell->center.z < sz);
         grid_cell = grid_cell->next;
     }
 
-    the_grid->mesh_side_length.x = 7000;
-    the_grid->mesh_side_length.y = 20000;
-    the_grid->mesh_side_length.z = 3000;
+    the_grid->mesh_side_length.x = sx;
+    the_grid->mesh_side_length.y = sy;
+    the_grid->mesh_side_length.z = sz;
 
 }
 

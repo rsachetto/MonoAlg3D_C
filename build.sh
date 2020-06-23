@@ -19,6 +19,7 @@ fi
 COMPILE_GUI=''
 COMPILE_MPI=''
 COMPILE_CONVERTER=''
+COMPILE_FIBER_CONVERTER=''
 COMPILE_SIMULATOR=''
 COMPILE_WITH_DDM=''
 
@@ -55,6 +56,7 @@ for i in "${BUILD_ARGS[@]}"; do
         COMPILE_MPI='y'
         COMPILE_SIMULATOR='y'
         COMPILE_CONVERTER='y'
+        COMPILE_FIBER_CONVERTER='y'
     fi
     
     if [ "$i" == "simulator" ]; then        
@@ -202,6 +204,10 @@ fi
 
 if [ -n "$COMPILE_CONVERTER" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_converter" "src/main_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+fi
+
+if [ -n "$COMPILE_FIBER_CONVERTER" ]; then
+    COMPILE_EXECUTABLE "MonoAlg3D_fiber_converter" "src/main_fiber_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
 
 FIND_CRITERION

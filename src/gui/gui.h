@@ -148,7 +148,7 @@ struct gui_state {
     int scale_alpha;
     int voxel_alpha;
 
-    Vector3 current_selected_volume;
+    struct voxel current_selected_volume;
     struct voxel current_mouse_over_volume;
 
     //Font font;

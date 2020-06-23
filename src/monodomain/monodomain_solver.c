@@ -536,9 +536,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
 #ifdef COMPILE_GUI
-    if(configs->show_gui) {
-        translate_mesh_to_origin(the_grid);
-    }
     gui_config.grid_info.loaded = true;
 #endif
 
@@ -549,7 +546,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         options_to_ini_file(configs, buffer_ini);
         sdsfree(buffer_ini);
     }
-
 
     // Main simulation loop start
     while(cur_time <= finalT) {
@@ -663,6 +659,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                                                                     the_grid->active_cells, &solver_iterations, &solver_error);
             if(isnan(solver_error)) {
                 log_to_stderr_and_file("\n [ERR] Solver stoped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
+                #ifdef COMPILE_GUI
+                    omp_unset_lock(&gui_config.draw_lock);
+                #endif
                 return SIMULATION_FINISHED;
             }
 

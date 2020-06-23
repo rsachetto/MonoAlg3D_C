@@ -5,13 +5,7 @@
 #include "assembly_matrix_config.h"
 
 #include <dlfcn.h>
-#include <string.h>
-#include "../utils/file_utils.h"
-
-#include "../common_types/common_types.h"
 #include "../3dparty/stb_ds.h"
-
-void print_assembly_matrix_config_values(struct config* s) {
 
 void print_assembly_matrix_config_values(struct config* s) {
 
@@ -31,5 +25,5 @@ void print_assembly_matrix_config_values(struct config* s) {
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data);
-}
+
 }

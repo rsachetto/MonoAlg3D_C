@@ -69,6 +69,7 @@ struct vtk_unstructured_grid {
     uint8_t cell_type;
 
     f32_array values;
+    f32_array fibers;
     int64_array cells;
     point3d_array points;
 
@@ -80,11 +81,11 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid();
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values);
+                                                                     float *bounds, bool read_only_values, bool read_fibers_f);
 
 void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
 void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *vtk_grid, const char *filename, int compression_level);
-void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
+void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary, bool save_f);
 void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 

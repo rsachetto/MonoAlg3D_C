@@ -54,7 +54,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     }
 }
 
-static struct element fill_element(uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
+static struct element fill_element(uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz,\
                                    real_cpu sigma_x, real_cpu sigma_y, real_cpu sigma_z,\
                                    struct element *cell_elements);
 
@@ -94,7 +94,7 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
     }
 }
 
-struct element fill_element(uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x,
+struct element fill_element(uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x,
                             real_cpu sigma_y, real_cpu sigma_z, struct element *cell_elements) {
 
     real_cpu multiplier;
@@ -102,27 +102,27 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
     struct element new_element;
     new_element.column = position;
 
-    if(direction == 'n') { // Z direction
+    if(direction == FRONT) { // Z direction
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;
         cell_elements[0].value += (sigma_z * multiplier);
-    } else if(direction == 's') { // Z direction
+    } else if(direction == BACK) { // Z direction
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;
         cell_elements[0].value += (sigma_z * multiplier);
-    } else if(direction == 'e') { // Y direction
+    } else if(direction == TOP) { // Y direction
         multiplier = ((dx * dz) / dy);
         new_element.value = -sigma_y * multiplier;
         cell_elements[0].value += (sigma_y * multiplier);
-    } else if(direction == 'w') { // Y direction
+    } else if(direction == DOWN) { // Y direction
         multiplier = ((dx * dz) / dy);
         new_element.value = -sigma_y * multiplier;
         cell_elements[0].value += (sigma_y * multiplier);
-    } else if(direction == 'f') { // X direction
+    } else if(direction == RIGHT) { // X direction
         multiplier = ((dy * dz) / dx);
         new_element.value = -sigma_x * ((dy * dz) / dx);
         cell_elements[0].value += (sigma_x * multiplier);
-    } else if(direction == 'b') { // X direction
+    } else if(direction == LEFT) { // X direction
         multiplier = ((dy * dz) / dx);
         new_element.value = -sigma_x * multiplier;
         cell_elements[0].value += (sigma_x * multiplier);
@@ -130,7 +130,7 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
     return new_element;
 }
 
-static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, char direction) {
+static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, enum transition_direction direction) {
 
     bool has_found;
 
@@ -140,13 +140,13 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
      * cell which is a cell node. */
     uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
-    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+    enum cell_type neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
     if(neighbour_grid_cell_level > grid_cell->cell_data.level) {
-        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+        if(neighbour_grid_cell_type == TRANSITION_NODE) {
             has_found = false;
             while(!has_found) {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
                     white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
                     if(white_neighbor_cell->single_connector == NULL) {
                         has_found = true;
@@ -161,10 +161,10 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
         }
     } else {
         if(neighbour_grid_cell_level <= grid_cell->cell_data.level &&
-           (neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) {
+           (neighbour_grid_cell_type == TRANSITION_NODE)) {
             has_found = false;
             while(!has_found) {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
                     white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
                     if(white_neighbor_cell->single_connector == 0) {
                         has_found = true;
@@ -180,7 +180,7 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
     }
 
     // We care only with the interior points
-    if(neighbour_grid_cell_type == CELL_NODE_TYPE) {
+    if(neighbour_grid_cell_type == CELL_NODE) {
 
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
@@ -411,22 +411,22 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[BACK], BACK);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[FRONT], FRONT);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[TOP], TOP);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[DOWN], DOWN);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[RIGHT], RIGHT);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[LEFT], LEFT);
     }
 
     // Purkinje section

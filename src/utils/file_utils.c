@@ -18,6 +18,19 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+FILE *open_file_or_exit(char *filename, char *mode) {
+
+    FILE *f = fopen(filename, mode);
+
+    if(!f) {
+        fprintf(stderr, "Error! Could not open %s!\n", filename);
+        exit(EXIT_FAILURE);
+    }
+
+    return f;
+
+}
+
 char *get_current_directory() {
     long size;
     char *buf = NULL;
@@ -273,8 +286,6 @@ static int cstring_cmp(const void *a, const void *b)
     /* strcmp functions works exactly as expected from
     comparison function */
 }
-
-
 
 string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {
 

@@ -124,12 +124,12 @@ RESTORE_STATE (restore_simulation_state) {
                     // If the cell is not active we don't need to recover its state
                     if(grid_cell->active) {
                         grid_cell->v = cell_data->v;
-                        grid_cell->z_front_flux = cell_data->z_front_flux;
-                        grid_cell->z_back_flux = cell_data->z_back_flux;
-                        grid_cell->y_top_flux = cell_data->y_top_flux;
-                        grid_cell->y_down_flux = cell_data->y_down_flux;
-                        grid_cell->x_right_flux = cell_data->x_right_flux;
-                        grid_cell->x_left_flux = cell_data->x_left_flux;
+                        grid_cell->front_flux = cell_data->z_front_flux;
+                        grid_cell->back_flux = cell_data->z_back_flux;
+                        grid_cell->top_flux = cell_data->y_top_flux;
+                        grid_cell->down_flux = cell_data->y_down_flux;
+                        grid_cell->right_flux = cell_data->x_right_flux;
+                        grid_cell->left_flux = cell_data->x_left_flux;
                         grid_cell->b = cell_data->b;
                         grid_cell->can_change = cell_data->can_change;
 

@@ -16,25 +16,26 @@ static const struct option long_batch_options[] = {{"config_file", required_argu
 
 static const char *conversion_opt_string = "i:o:h?";
 static const struct option long_conversion_options[] = {{"input", required_argument, NULL, 'i'},
-                                                        {"output", required_argument, NULL, 'o'}
-};
+                                                        {"output", required_argument, NULL, 'o'}};
 
+static const char *fiber_conversion_opt_string = "f:e:n:a:h?";
+static const struct option long_fiber_conversion_options[] = {{"fib", required_argument, NULL, 'f'},
+                                                              {"ele", required_argument, NULL, 'e'},
+                                                              {"nod", required_argument, NULL, 'n'},
+                                                              {"alg", required_argument, NULL, 'a'}};
 
 static const char *visualization_opt_string = "x:m:d:p:v:a:cs:t:h?";
-static const struct option long_visualization_options[] = {
-    {"visualization_max_v", required_argument, NULL, 'x'},
-    {"visualization_min_v", required_argument, NULL, 'm'},
-    {"dt", required_argument, NULL, 'd'},
-    {"show_activation_map", required_argument, NULL, 'a'},
-    {"convert_activation_map", no_argument, NULL, 'c'},
-    {"prefix", required_argument, NULL, 'p'},
-    {"start_at", required_argument, NULL, 's'},
-    {"step", required_argument, NULL, 't'},
-    {"pvd", required_argument, NULL, 'v'},
-    {"help", no_argument, NULL, 'h'},
-    {NULL, no_argument, NULL, 0}
-};
-
+static const struct option long_visualization_options[] = {{"visualization_max_v", required_argument, NULL, 'x'},
+                                                           {"visualization_min_v", required_argument, NULL, 'm'},
+                                                           {"dt", required_argument, NULL, 'd'},
+                                                           {"show_activation_map", required_argument, NULL, 'a'},
+                                                           {"convert_activation_map", no_argument, NULL, 'c'},
+                                                           {"prefix", required_argument, NULL, 'p'},
+                                                           {"start_at", required_argument, NULL, 's'},
+                                                           {"step", required_argument, NULL, 't'},
+                                                           {"pvd", required_argument, NULL, 'v'},
+                                                           {"help", no_argument, NULL, 'h'},
+                                                           {NULL, no_argument, NULL, 0}};
 
 static const char *opt_string = "c:abn:g:m:t:r:d:z:e:f:jR:D:G:k:v:qh?";
 static const struct option long_options[] = {
@@ -60,17 +61,17 @@ static const struct option long_options[] = {
     {"beta", required_argument, NULL, BETA},
     {"cm", required_argument, NULL, CM},
     {"start_adapting_at", required_argument, NULL, START_REFINING},
-    {"domain", required_argument, NULL, DOMAIN_OPT}, //Complex option in the format --domain "name='domain', start_dx=250.0" ...
-    {"ode_solver", required_argument, NULL, ODE_SOLVER_OPT}, //Complex option in the format --ode_solver "use_gpu='no'"...
-    {"save_result", required_argument, NULL, SAVE_OPT}, //Complex option
-    {"assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT}, //Complex option
-    {"extra_data", required_argument, NULL, EXTRA_DATA_OPT}, //Complex option
-    {"stimulus", required_argument, NULL, STIM_OPT}, //Complex option
-    {"modify_current_domain", required_argument, NULL, MODIFY_DOMAIN_OPT}, //Complex option
-    {"save_state", required_argument, NULL, SAVE_STATE_OPT}, //Complex option
-    {"restore_state", required_argument, NULL, RESTORE_STATE_OPT}, //Complex option
-    {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT}, //Complex option
-    {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, //Complex option
+    {"domain", required_argument, NULL, DOMAIN_OPT},                              // Complex option in the format --domain "name='domain', start_dx=250.0" ...
+    {"ode_solver", required_argument, NULL, ODE_SOLVER_OPT},                      // Complex option in the format --ode_solver "use_gpu='no'"...
+    {"save_result", required_argument, NULL, SAVE_OPT},                           // Complex option
+    {"assembly_matrix", required_argument, NULL, ASSEMBLY_MATRIX_OPT},            // Complex option
+    {"extra_data", required_argument, NULL, EXTRA_DATA_OPT},                      // Complex option
+    {"stimulus", required_argument, NULL, STIM_OPT},                              // Complex option
+    {"modify_current_domain", required_argument, NULL, MODIFY_DOMAIN_OPT},        // Complex option
+    {"save_state", required_argument, NULL, SAVE_STATE_OPT},                      // Complex option
+    {"restore_state", required_argument, NULL, RESTORE_STATE_OPT},                // Complex option
+    {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT},  // Complex option
+    {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, // Complex option
     {"visualize", no_argument, NULL, DRAW_OPT},
     {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
     {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
@@ -78,7 +79,6 @@ static const struct option long_options[] = {
     {"quiet", no_argument, NULL, 'q'},
     {"help", no_argument, NULL, 'h'},
     {NULL, no_argument, NULL, 0}};
-
 
 void display_usage(char **argv) {
 
@@ -143,6 +143,12 @@ void display_conversion_usage(char **argv) {
     exit(EXIT_FAILURE);
 }
 
+void display_fibers_conversion_usage(char **argv) {
+    printf("Usage: %s -f fibers_file -e elemenst_file -n nodes_file -a alg_mesh_file output_file \n\n", argv[0]);
+    printf("--help | -h. Shows this help and exit \n");
+    exit(EXIT_FAILURE);
+}
+
 void display_visualization_usage(char **argv) {
 
     printf("Usage: %s [options] input_folder \n\n", argv[0]);
@@ -169,14 +175,28 @@ void maybe_issue_overwrite_warning(const char *var, const char *section, const c
 
 struct batch_options *new_batch_options() {
     struct batch_options *user_args = (struct batch_options *)calloc(1, sizeof(struct batch_options));
-        sh_new_arena(user_args->config_to_change);
-        shdefault(user_args->config_to_change, NULL);
+    sh_new_arena(user_args->config_to_change);
+    shdefault(user_args->config_to_change, NULL);
 
     return user_args;
 }
 
-void free_batch_options(struct batch_options * options) {
-        shfree(options->config_to_change);
+void free_batch_options(struct batch_options *options) {
+    shfree(options->config_to_change);
+    free(options);
+}
+
+struct fibers_conversion_options *new_fibers_conversion_options() {
+    struct fibers_conversion_options *user_args = (struct fibers_conversion_options *)calloc(1, sizeof(struct fibers_conversion_options));
+    return user_args;
+}
+
+void free_fibers_conversion_options(struct fibers_conversion_options *options) {
+    free(options->fibers_file);
+    free(options->ele_file);
+    free(options->nodes_file);
+    free(options->alg_file);
+    free(options->output_file);
     free(options);
 }
 
@@ -193,14 +213,13 @@ struct visualization_options *new_visualization_options() {
     return options;
 }
 
-void free_visualization_options(struct visualization_options * options) {
+void free_visualization_options(struct visualization_options *options) {
     free(options->input);
     free(options->files_prefix);
     free(options);
 }
 
-
-struct conversion_options * new_conversion_options() {
+struct conversion_options *new_conversion_options() {
     struct conversion_options *options = (struct conversion_options *)malloc(sizeof(struct conversion_options));
     options->input = NULL;
     options->output = NULL;
@@ -212,7 +231,6 @@ void free_conversion_options(struct conversion_options *options) {
     free(options->output);
     free(options);
 }
-
 
 struct user_options *new_user_options() {
 
@@ -325,21 +343,19 @@ struct user_options *new_user_options() {
     return user_args;
 }
 
-
-void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file) {
+void set_or_overwrite_common_data(struct config *config, const char *key, const char *value, const char *section, const char *config_file) {
     if(strcmp(key, "main_function") == 0) {
 
         if(section && config_file) {
-            if (config->main_function_name_was_set) {
+            if(config->main_function_name_was_set) {
                 maybe_issue_overwrite_warning("main_function", section, config->main_function_name, value, config_file);
             }
         }
         free(config->main_function_name);
         config->main_function_name = strdup(value);
-    }
-    else if(strcmp(key, "init_function") == 0) {
+    } else if(strcmp(key, "init_function") == 0) {
         if(section && config_file) {
-            if (config->init_function_name_was_set) {
+            if(config->init_function_name_was_set) {
                 maybe_issue_overwrite_warning("init_function", section, config->init_function_name, value, config_file);
             }
         }
@@ -349,7 +365,7 @@ void set_or_overwrite_common_data(struct config* config, const char *key, const 
 
     else if(strcmp(key, "end_function") == 0) {
         if(section && config_file) {
-            if (config->end_function_name_was_set) {
+            if(config->end_function_name_was_set) {
                 maybe_issue_overwrite_warning("end_function", section, config->end_function_name, value, config_file);
             }
         }
@@ -359,7 +375,7 @@ void set_or_overwrite_common_data(struct config* config, const char *key, const 
 
     else if(strcmp(key, "library_file") == 0) {
         if(section && config_file) {
-            if (config->library_file_path_was_set) {
+            if(config->library_file_path_was_set) {
                 maybe_issue_overwrite_warning("library_file", section, config->library_file_path, value, config_file);
             }
         }
@@ -368,7 +384,7 @@ void set_or_overwrite_common_data(struct config* config, const char *key, const 
     } else {
         char *opt_value = shget(config->config_data, key);
         if(section && config_file) {
-            if (opt_value) {
+            if(opt_value) {
                 maybe_issue_overwrite_warning(key, section, opt_value, value, config_file);
             }
         }
@@ -376,7 +392,7 @@ void set_or_overwrite_common_data(struct config* config, const char *key, const 
     }
 }
 
-void set_common_data(struct config* config, const char *key, const char *value) {
+void set_common_data(struct config *config, const char *key, const char *value) {
 
     if(strcmp(key, "main_function") == 0) {
         config->main_function_name = strdup(value);
@@ -389,14 +405,11 @@ void set_common_data(struct config* config, const char *key, const char *value) 
     if(strcmp(key, "end_function") == 0) {
         config->end_function_name = strdup(value);
         config->end_function_name_was_set = true;
-    }
-    else if(strcmp(key, "library_file") == 0) {
+    } else if(strcmp(key, "library_file") == 0) {
         config->library_file_path = strdup(value);
-    }
-    else {
+    } else {
         shput_dup_value(config->config_data, key, value);
     }
-
 }
 
 void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *modify_domain_configs, const char *config_file) {
@@ -437,7 +450,7 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
         exit(EXIT_FAILURE);
     }
 
-    struct config *sc = (struct config*) shget(modify_domain_configs, modify_domain_name);
+    struct config *sc = (struct config *)shget(modify_domain_configs, modify_domain_name);
 
     if(sc == NULL) {
         sc = alloc_and_init_config_data();
@@ -467,8 +480,7 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
                 maybe_issue_overwrite_warning(key, modify_domain_name, old_value, value, config_file);
             }
             shput(sc->config_data, key, strdup(value));
-        }
-        else {
+        } else {
             set_or_overwrite_common_data(sc, key, value, modify_domain_name, config_file);
         }
         sdsfreesplitres(key_value, values_count);
@@ -514,7 +526,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
         log_to_stderr_and_file_and_exit("The stimulus name must be passed in the stimulus option! Exiting!\n");
     }
 
-    struct config *sc = (struct config*) shget(stim_configs, stim_name);
+    struct config *sc = (struct config *)shget(stim_configs, stim_name);
 
     if(sc == NULL) {
         sc = alloc_and_init_config_data();
@@ -578,8 +590,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
                 maybe_issue_overwrite_warning(key, stim_name, old_value, value, config_file);
             }
             shput_dup_value(sc->config_data, key, value);
-        }
-        else {
+        } else {
             set_or_overwrite_common_data(sc, key, value, stim_name, config_file);
         }
         sdsfreesplitres(key_value, values_count);
@@ -607,7 +618,7 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
         int values_count;
         sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
 
-        if (values_count != 2) {
+        if(values_count != 2) {
             fprintf(stderr, "Invalid format for options %s. Exiting!\n", args);
             exit(EXIT_FAILURE);
         }
@@ -618,26 +629,24 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
         key = key_value[0];
         value = key_value[1];
 
-        if (strcmp(key, "dt") == 0) {
-            real dt_ode = (real) strtod(value, NULL);
-            if (dt_ode != user_args->dt_ode) {
+        if(strcmp(key, "dt") == 0) {
+            real dt_ode = (real)strtod(value, NULL);
+            if(dt_ode != user_args->dt_ode) {
                 sprintf(old_value, "%lf", user_args->dt_ode);
                 maybe_issue_overwrite_warning("dt", "ode_solver", old_value, value, config_file);
             }
 
             user_args->dt_ode = dt_ode;
-        } else if (strcmp(key, "use_gpu") == 0) {
+        } else if(strcmp(key, "use_gpu") == 0) {
 
             bool use_gpu = IS_TRUE(value);
 
-            if (use_gpu != user_args->gpu) {
+            if(use_gpu != user_args->gpu) {
                 sprintf(old_value, "%d", user_args->gpu);
                 maybe_issue_overwrite_warning("use_gpu", "domain", old_value, value, config_file);
-
             }
 
             user_args->gpu = use_gpu;
-
         }
 
         sdsfreesplitres(key_value, values_count);
@@ -691,7 +700,6 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
             if(start_dx_was_set) {
                 sprintf(old_value, "%lf", start_dx);
                 maybe_issue_overwrite_warning("start_dx", "domain", old_value, value, config_file);
-
             }
             shput_dup_value(dc->config_data, key, value);
 
@@ -756,8 +764,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
                 maybe_issue_overwrite_warning("maximum_dz", "domain", old_value, value, config_file);
             }
             shput_dup_value(dc->config_data, key, value);
-        }
-        else {
+        } else {
             set_or_overwrite_common_data(dc, key, value, "domain", config_file);
         }
         sdsfreesplitres(key_value, values_count);
@@ -817,8 +824,7 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
             }
 
             shput_dup_value(sm->config_data, key, value);
-        }
-        else if(strcmp(key, "remove_older_simulation") == 0) {
+        } else if(strcmp(key, "remove_older_simulation") == 0) {
 
             bool remove_older_simulation_was_set;
             bool remove_older_simulation = false;
@@ -843,8 +849,7 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
                         optarg);
                 shput_dup_value(sm->config_data, key, "false");
             }
-        }
-        else {
+        } else {
             set_or_overwrite_common_data(sm, key, value, "save_mesh", config_file);
         }
         sdsfreesplitres(key_value, values_count);
@@ -883,37 +888,31 @@ void set_config(const char *args, struct config *config, const char *config_file
 
         if(strcmp(key, "main_function") == 0) {
             if(config->main_function_name_was_set) {
-                maybe_issue_overwrite_warning("main_function", config_type, config->main_function_name, value,
-                                              config_file);
+                maybe_issue_overwrite_warning("main_function", config_type, config->main_function_name, value, config_file);
             }
             free(config->main_function_name);
             config->main_function_name = strdup(value);
         }
         if(strcmp(key, "init_function") == 0) {
             if(config->init_function_name_was_set) {
-                maybe_issue_overwrite_warning("init_function", config_type, config->init_function_name, value,
-                                              config_file);
+                maybe_issue_overwrite_warning("init_function", config_type, config->init_function_name, value, config_file);
             }
             free(config->init_function_name);
             config->init_function_name = strdup(value);
         }
         if(strcmp(key, "end_function") == 0) {
             if(config->end_function_name_was_set) {
-                maybe_issue_overwrite_warning("end_function", config_type, config->end_function_name, value,
-                                              config_file);
+                maybe_issue_overwrite_warning("end_function", config_type, config->end_function_name, value, config_file);
             }
             free(config->end_function_name);
             config->end_function_name = strdup(value);
-        }
-        else if(strcmp(key, "library_file") == 0) {
+        } else if(strcmp(key, "library_file") == 0) {
             if(config->library_file_path_was_set) {
-                maybe_issue_overwrite_warning("library_file", config_type, config->library_file_path, value,
-                                              config_file);
+                maybe_issue_overwrite_warning("library_file", config_type, config->library_file_path, value, config_file);
             }
             free(config->library_file_path);
             config->library_file_path = strdup(value);
-        }
-        else {
+        } else {
             opt_value = shget(sh, key);
             if(opt_value) {
                 maybe_issue_overwrite_warning(key, config_type, opt_value, value, config_file);
@@ -1026,10 +1025,46 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
         opt = getopt_long(argc, argv, visualization_opt_string, long_visualization_options, &option_index);
     }
 
-    for (int index = optind; index < argc; index++) {
+    for(int index = optind; index < argc; index++) {
         user_args->input = strdup(argv[index]);
     }
+}
 
+void parse_fibers_conversion_options(int argc, char **argv, struct fibers_conversion_options *user_args) {
+
+    int opt = 0;
+    int option_index;
+
+    opt = getopt_long_only(argc, argv, fiber_conversion_opt_string, long_fiber_conversion_options, &option_index);
+
+    while(opt != -1) {
+        switch(opt) {
+            case 'f':
+                user_args->fibers_file = strdup(optarg);
+                break;
+            case 'e':
+                user_args->ele_file = strdup(optarg);
+                break;
+            case 'n':
+                user_args->nodes_file = strdup(optarg);
+                break;
+            case 'a':
+                user_args->alg_file = strdup(optarg);
+                break;
+            case 'h': /* fall-through is intentional */
+            case '?':
+                display_fibers_conversion_usage(argv);
+                break;
+            default:
+                break;
+        }
+
+        opt = getopt_long(argc, argv, fiber_conversion_opt_string, long_fiber_conversion_options, &option_index);
+    }
+
+    for(int index = optind; index < argc; index++) {
+        user_args->output_file = strdup(argv[index]);
+    }
 }
 
 void get_config_file(int argc, char **argv, struct user_options *user_args) {
@@ -1090,12 +1125,9 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
         case 'k':
             if(user_args->model_file_path_was_set) {
                 if(user_args->model_file_path) {
-                    maybe_issue_overwrite_warning("model_file_path", "ode_solver", user_args->model_file_path,
-                                                  optarg,
-                                                  user_args->config_file);
+                    maybe_issue_overwrite_warning("model_file_path", "ode_solver", user_args->model_file_path, optarg, user_args->config_file);
                 } else {
-                    maybe_issue_overwrite_warning("model_file_path", "ode_solver", "No Save", optarg,
-                                                  user_args->config_file);
+                    maybe_issue_overwrite_warning("model_file_path", "ode_solver", "No Save", optarg, user_args->config_file);
                 }
             }
             free(user_args->model_file_path);
@@ -1120,8 +1152,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
         case 'd':
             if(user_args->deref_bound_was_set) {
                 sprintf(old_value, "%lf", user_args->deref_bound);
-                maybe_issue_overwrite_warning("derefinement_bound", "alg", old_value, optarg,
-                                              user_args->config_file);
+                maybe_issue_overwrite_warning("derefinement_bound", "alg", old_value, optarg, user_args->config_file);
             }
             user_args->deref_bound = strtof(optarg, NULL);
             break;
@@ -1138,8 +1169,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
                     sprintf(old_value, "%d", user_args->num_threads);
                     maybe_issue_overwrite_warning("n"
                                                   "main",
-                                                  "num_threads",
-                                                  old_value, optarg, user_args->config_file);
+                                                  "num_threads", old_value, optarg, user_args->config_file);
                 }
                 user_args->num_threads = (int)strtol(optarg, NULL, 10);
             }
@@ -1191,8 +1221,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
         case START_REFINING:
             if(user_args->start_adapting_at_was_set) {
                 sprintf(old_value, "%lf", user_args->start_adapting_at);
-                maybe_issue_overwrite_warning("start_adapting_at", "main", old_value, optarg,
-                                              user_args->config_file);
+                maybe_issue_overwrite_warning("start_adapting_at", "main", old_value, optarg, user_args->config_file);
             }
             user_args->start_adapting_at = strtof(optarg, NULL);
             break;
@@ -1206,8 +1235,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
         case 'b':
             if(user_args->abort_no_activity_was_set) {
                 sprintf(old_value, "%d", user_args->abort_no_activity);
-                maybe_issue_overwrite_warning("abort_on_no_activity", "main", old_value, optarg,
-                                              user_args->config_file);
+                maybe_issue_overwrite_warning("abort_on_no_activity", "main", old_value, optarg, user_args->config_file);
             }
             user_args->abort_no_activity = true;
             break;
@@ -1361,13 +1389,12 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
 
 static void parse_expr_and_set_real_cpu_value(const char *filename, const char *expr, real_cpu *value, bool *was_set) {
     int expr_parse_error;
-    real_cpu expr_parse_result = (real_cpu) te_interp(expr, &expr_parse_error);
+    real_cpu expr_parse_result = (real_cpu)te_interp(expr, &expr_parse_error);
 
     if(!expr_parse_error) {
         *value = expr_parse_result;
         *was_set = true;
-    }
-    else {
+    } else {
         log_to_stderr_and_file_and_exit("[ERR] Parse error at position %d in expression \"%s\"! (file: %s)\n", expr_parse_error, expr, filename);
     }
 }
@@ -1410,11 +1437,10 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         pconfig->abort_no_activity_was_set = true;
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "only_abort_after_dt")) {
         parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->only_abort_after_dt, &pconfig->only_abort_after_dt_was_set);
-    }
-    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
+    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "vm_threshold")) {
         parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->vm_threshold, &pconfig->vm_threshold_was_set);
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "use_adaptivity")) {
-        if( IS_TRUE(value) ) {
+        if(IS_TRUE(value)) {
             pconfig->adaptive = true;
         } else {
             pconfig->adaptive = false;
@@ -1438,22 +1464,18 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     } else if(MATCH_SECTION(ODE_SECTION)) {
         if(MATCH_NAME("dt")) {
             parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->dt_ode, &pconfig->dt_ode_was_set);
-        }
-        else if(MATCH_NAME("abstol")) {
+        } else if(MATCH_NAME("abstol")) {
             parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->ode_abstol, &pconfig->ode_abstol_was_set);
-        }
-        else if(MATCH_NAME("reltol")) {
+        } else if(MATCH_NAME("reltol")) {
             parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->ode_reltol, &pconfig->ode_reltol_was_set);
-        }
-        else if(MATCH_NAME("adaptive")) {
+        } else if(MATCH_NAME("adaptive")) {
             if(IS_TRUE(value)) {
                 pconfig->ode_adaptive = true;
             } else {
                 pconfig->ode_adaptive = false;
             }
             pconfig->ode_adaptive_was_set = true;
-        }
-        else if(MATCH_NAME("use_gpu")) {
+        } else if(MATCH_NAME("use_gpu")) {
             if(IS_TRUE(value)) {
                 pconfig->gpu = true;
             } else {
@@ -1465,15 +1487,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else if(MATCH_NAME("library_file")) {
             pconfig->model_file_path = strdup(value);
             pconfig->model_file_path_was_set = true;
-        }
-        else {
+        } else {
             shput(pconfig->ode_extra_config, name, strdup(value));
         }
     } else if(MATCH_SECTION(ODE_PURKINJE_SECTION)) {
         if(MATCH_NAME("dt")) {
             parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->purkinje_dt_ode, &pconfig->purkinje_dt_ode_was_set);
-        }
-        else if(MATCH_NAME("use_gpu")) {
+        } else if(MATCH_NAME("use_gpu")) {
             if(IS_TRUE(value)) {
                 pconfig->purkinje_gpu = true;
             } else {
@@ -1485,79 +1505,73 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else if(MATCH_NAME("library_file")) {
             pconfig->purkinje_model_file_path = strdup(value);
             pconfig->purkinje_model_file_path_was_set = true;
-        }
-        else {
+        } else {
             shput(pconfig->purkinje_ode_extra_config, name, strdup(value));
         }
     } else if(SECTION_STARTS_WITH(STIM_PURKINJE_SECTION)) {
 
-        struct config *tmp = (struct config *) shget(pconfig->purkinje_stim_configs, section);
+        struct config *tmp = (struct config *)shget(pconfig->purkinje_stim_configs, section);
 
-        if (tmp == NULL) {
+        if(tmp == NULL) {
             tmp = alloc_and_init_config_data();
             shput(pconfig->purkinje_stim_configs, section, tmp);
         }
 
-        if (MATCH_NAME("name")) {
+        if(MATCH_NAME("name")) {
             fprintf(stderr,
                     "name is a reserved word and should not be used inside a stimulus config section. Found in %s. "
                     "Exiting!\n",
                     section);
             exit(EXIT_FAILURE);
-        }
-        else {
+        } else {
             set_common_data(tmp, name, value);
         }
     } else if(SECTION_STARTS_WITH(STIM_SECTION)) {
 
-        struct config *tmp = (struct config *) shget(pconfig->stim_configs, section);
+        struct config *tmp = (struct config *)shget(pconfig->stim_configs, section);
 
-        if (tmp == NULL) {
+        if(tmp == NULL) {
             tmp = alloc_and_init_config_data();
             shput(pconfig->stim_configs, section, tmp);
         }
 
-        if (MATCH_NAME("name")) {
+        if(MATCH_NAME("name")) {
             fprintf(stderr,
                     "name is a reserved word and should not be used inside a stimulus config section. Found in %s. "
                     "Exiting!\n",
                     section);
             exit(EXIT_FAILURE);
-        }
-        else {
+        } else {
             set_common_data(tmp, name, value);
         }
 
     } else if(SECTION_STARTS_WITH(MODIFY_DOMAIN)) {
 
-        struct config *tmp = (struct config *) shget(pconfig->modify_domain_configs, section);
+        struct config *tmp = (struct config *)shget(pconfig->modify_domain_configs, section);
 
-        if (tmp == NULL) {
+        if(tmp == NULL) {
             tmp = alloc_and_init_config_data();
             shput(pconfig->modify_domain_configs, section, tmp);
         }
 
-        if (MATCH_NAME("name")) {
+        if(MATCH_NAME("name")) {
             fprintf(stderr,
                     "name is a reserved word and should not be used inside a stimulus config section. Found in %s. "
                     "Exiting!\n",
                     section);
             exit(EXIT_FAILURE);
-        }
-        else {
+        } else {
             set_common_data(tmp, name, value);
         }
 
-    }
-    else if(MATCH_SECTION(DOMAIN_SECTION)) {
+    } else if(MATCH_SECTION(DOMAIN_SECTION)) {
 
         if(pconfig->domain_config == NULL) {
             pconfig->domain_config = alloc_and_init_config_data();
         }
 
         set_common_data(pconfig->domain_config, name, value);
-    }
-    else if(MATCH_SECTION(PURKINJE_SECTION)) {
+    } else if(MATCH_SECTION(PURKINJE_SECTION)) {
 
         if(pconfig->purkinje_config == NULL) {
             pconfig->purkinje_config = alloc_and_init_config_data();
@@ -1573,16 +1587,14 @@ int parse_config_file(void *user, const char *section, const char *name, const c
 
         set_common_data(pconfig->assembly_matrix_config, name, value);
 
-    }
-    else if(MATCH_SECTION(UPDATE_MONODOMAIN_SECTION)) {
+    } else if(MATCH_SECTION(UPDATE_MONODOMAIN_SECTION)) {
 
-        if (pconfig->update_monodomain_config == NULL) {
+        if(pconfig->update_monodomain_config == NULL) {
             pconfig->update_monodomain_config = alloc_and_init_config_data();
         }
 
         set_common_data(pconfig->update_monodomain_config, name, value);
-    }
-    else if(MATCH_SECTION(LINEAR_SYSTEM_SOLVER_SECTION)) {
+    } else if(MATCH_SECTION(LINEAR_SYSTEM_SOLVER_SECTION)) {
 
         if(pconfig->linear_system_solver_config == NULL) {
             pconfig->linear_system_solver_config = alloc_and_init_config_data();
@@ -1635,23 +1647,23 @@ int parse_config_file(void *user, const char *section, const char *name, const c
 
 #define WRITE_NAME_VALUE_WITHOUT_CHECK(NAME, VALUE, SPECIFIER) fprintf(ini_file, "%s = %" SPECIFIER "\n", NAME, VALUE)
 
-#define WRITE_NAME_VALUE(NAME, VALUE, SPECIFIER) \
-    do { \
-        if(VALUE ## _was_set) \
-            WRITE_NAME_VALUE_WITHOUT_CHECK(NAME, VALUE, SPECIFIER); \
-    }while(0)
+#define WRITE_NAME_VALUE(NAME, VALUE, SPECIFIER)                                                                                                               \
+    do {                                                                                                                                                       \
+        if(VALUE##_was_set)                                                                                                                                    \
+            WRITE_NAME_VALUE_WITHOUT_CHECK(NAME, VALUE, SPECIFIER);                                                                                            \
+    } while(0)
 
-#define WRITE_EXTRA_CONFIG(hash) \
-    do {\
-        for (long j = 0; j < hmlen(hash); j++) { \
-            char *name = hash[j].key; \
-            if (strcmp(name, "init_function") != 0 && strcmp(name, "end_function") != 0 && strcmp(name, "main_function") != 0 && strcmp(name, "library_file") != 0 && strcmp(name, "modification_applied") != 0) { \
-                char *value = hash[j].value;\
-                WRITE_NAME_VALUE_WITHOUT_CHECK(name, value, "s");\
-            }\
-        }\
-    }\
-    while(0)
+#define WRITE_EXTRA_CONFIG(hash)                                                                                                                               \
+    do {                                                                                                                                                       \
+        for(long j = 0; j < hmlen(hash); j++) {                                                                                                                \
+            char *name = hash[j].key;                                                                                                                          \
+            if(strcmp(name, "init_function") != 0 && strcmp(name, "end_function") != 0 && strcmp(name, "main_function") != 0 &&                                \
+               strcmp(name, "library_file") != 0 && strcmp(name, "modification_applied") != 0) {                                                               \
+                char *value = hash[j].value;                                                                                                                   \
+                WRITE_NAME_VALUE_WITHOUT_CHECK(name, value, "s");                                                                                              \
+            }                                                                                                                                                  \
+        }                                                                                                                                                      \
+    } while(0)
 
 void write_ini_options(struct config *config, FILE *ini_file) {
     WRITE_NAME_VALUE("main_function", config->main_function_name, "s");
@@ -1666,13 +1678,13 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     FILE *ini_file = fopen(ini_file_path, "w");
 
     if(!ini_file) {
-        fprintf(stderr, "options_to_ini_file. Error creating %s\n",ini_file_path);
+        fprintf(stderr, "options_to_ini_file. Error creating %s\n", ini_file_path);
         return;
     }
 
     WRITE_INI_SECTION(MAIN_SECTION);
     WRITE_NAME_VALUE("num_threads", config->num_threads, "d");
-    WRITE_NAME_VALUE("dt_pde" , config->dt_pde, "f");
+    WRITE_NAME_VALUE("dt_pde", config->dt_pde, "f");
     WRITE_NAME_VALUE("simulation_time", config->final_time, "f");
     WRITE_NAME_VALUE("beta", config->beta, "f");
     WRITE_NAME_VALUE("cm", config->cm, "f");
@@ -1687,7 +1699,6 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     WRITE_NAME_VALUE("derefine_each", config->derefine_each, "d");
     fprintf(ini_file, "\n");
 
-
     WRITE_INI_SECTION(ODE_SECTION);
     WRITE_NAME_VALUE("dt", config->dt_ode, "f");
     WRITE_NAME_VALUE("use_gpu", config->gpu, "d");
@@ -1698,7 +1709,7 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     for(long i = 0; i < hmlen(config->stim_configs); i++) {
         struct string_voidp_hash_entry e = config->stim_configs[i];
         WRITE_INI_SECTION(e.key);
-        struct config *tmp = (struct config*) e.value;
+        struct config *tmp = (struct config *)e.value;
         write_ini_options(tmp, ini_file);
         fprintf(ini_file, "\n");
     }
@@ -1713,7 +1724,6 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
         WRITE_INI_SECTION(PURKINJE_SECTION);
         write_ini_options(config->purkinje_config, ini_file);
         fprintf(ini_file, "\n");
-
     }
 
     if(config->assembly_matrix_config) {
@@ -1761,14 +1771,12 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     for(long i = 0; i < hmlen(config->modify_domain_configs); i++) {
         struct string_voidp_hash_entry e = config->modify_domain_configs[i];
         WRITE_INI_SECTION(e.key);
-        struct config *tmp = (struct config*) e.value;
+        struct config *tmp = (struct config *)e.value;
         write_ini_options(tmp, ini_file);
         fprintf(ini_file, "\n");
     }
 
-
     fclose(ini_file);
-
 }
 #undef WRITE_INI_SECTION
 #undef WRITE_NAME_VALUE
@@ -1789,7 +1797,7 @@ void free_user_options(struct user_options *s) {
 
     if(s->stim_configs) {
         STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(s->stim_configs, free_config_data);
-            shfree(s->stim_configs);
+        shfree(s->stim_configs);
     }
 
     if(s->extra_data_config)

@@ -31,19 +31,22 @@ SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    bool stim;
     real stim_current = 0.0;
 
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
-    real stim_value;
 
     ALLOCATE_STIMS();
 
-    OMP(parallel for private(stim, stim_value))
+    OMP(parallel for)
     for(uint32_t i = 0; i < n_active; i++) {
 
-        stim = ac[i]->center.x > 5500.0;
-        stim &= ac[i]->center.x < 7000.0;
+        real stim_value;
+        bool stim = true;
+
+//        stim &= ac[i]->center.y < 3500 + 1500.0;
+//        stim &= ac[i]->center.y > 3500 - 1500.0;
+
+        stim &= ac[i]->center.x < 1500.0;
         stim &= ac[i]->center.y < 1500.0;
         stim &= ac[i]->center.z < 1500.0;
 
@@ -241,6 +244,56 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 
         SET_STIM_VALUE(i, stim_value);
     }
+}
+
+SET_SPATIAL_STIM(stim_sphere) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    real_cpu sphere_center_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_center_x, config->config_data, "center_x");
+
+    real_cpu sphere_center_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_center_y, config->config_data, "center_y");
+
+    real_cpu sphere_center_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_center_z, config->config_data, "center_z");
+
+    real sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config->config_data, "radius");
+    
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    real stim_value;
+
+    uint32_t i;
+
+    ALLOCATE_STIMS();
+
+    OMP(parallel for private(stim_value))
+    for(i = 0; i < n_active; i++) {
+
+        real_cpu x1 = pow((ac[i]->center.x - sphere_center_x), 2);
+        real_cpu y1 = pow((ac[i]->center.y - sphere_center_y), 2);
+        real_cpu z1 = pow((ac[i]->center.z - sphere_center_z), 2);
+
+        // distance between the centre
+        // and given point
+        real_cpu distance = (x1 + y1 + z1);
+
+        bool stim = (distance < (sphere_radius * sphere_radius));
+
+        if(stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+    }
+
 }
 
 SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
