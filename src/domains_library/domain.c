@@ -4,18 +4,18 @@
 
 #include "domain_helpers.h"
 
-#include "../config/domain_config.h"
-#include "../libraries_common/common_data_structures.h"
-#include "../config_helpers/config_helpers.h"
 #include "../3dparty/sds/sds.h"
-#include "../logger/logger.h"
 #include "../3dparty/stb_ds.h"
+#include "../config/domain_config.h"
+#include "../config_helpers/config_helpers.h"
+#include "../libraries_common/common_data_structures.h"
+#include "../logger/logger.h"
 #include "../utils/utils.h"
 #include <assert.h>
 #include <time.h>
 
-#include <unistd.h>
 #include <float.h>
+#include <unistd.h>
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
@@ -41,19 +41,16 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
     real_cpu real_side_length_y;
     real_cpu real_side_length_z;
 
-    int success =
-        calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z,
-                                      &real_side_length_x, &real_side_length_y, &real_side_length_z);
+    int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z, &real_side_length_x,
+                                                &real_side_length_y, &real_side_length_z);
 
     if(!success) {
         return 0;
     }
 
-    log_to_stdout_and_file("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x,
-                             real_side_length_y, real_side_length_z);
-    log_to_stdout_and_file(
-        "Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x,
-        side_length_y, side_length_z, start_dx, start_dy, start_dz);
+    log_to_stdout_and_file("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x, real_side_length_y, real_side_length_z);
+    log_to_stdout_and_file("Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x, side_length_y,
+                           side_length_z, start_dx, start_dy, start_dz);
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_length_z, start_dz);
 
@@ -69,7 +66,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
             derefine_grid_inactive_cells(the_grid);
             aux = aux / 2.0f;
             remaining_refinements--;
-            if(aux <= side_length_z) break;
+            if(aux <= side_length_z)
+                break;
         }
 
         refine_grid(the_grid, remaining_refinements);
@@ -88,33 +86,109 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
     return 1;
 }
 
-SET_SPATIAL_DOMAIN (initialize_grid_with_square_mesh) {
+SET_SPATIAL_DOMAIN(initialize_grid_with_spherical_mesh) {
 
-    int num_layers = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, num_layers, config->config_data, "num_layers");
+    real_cpu diameter = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, diameter, config->config_data, "diameter");
 
-    real_cpu side_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR (real_cpu, side_length, config->config_data, "side_length");
+    float radius = diameter/2.0;
 
-    real_cpu start_dz = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");
+    sds sx_char = sdscatprintf(sdsempty(), "%lf", diameter+1100);
+    sds sy_char = sdscatprintf(sdsempty(), "%lf", diameter+1100);
+    sds sz_char = sdscatprintf(sdsempty(), "%lf", diameter+1100);
 
-    sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
-    sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
-    sds sz_char = sdscatprintf(sdsempty(), "%lf", start_dz*num_layers);
-
-	//TODO: check if we can put this direct in the grid
+    // TODO: check if we can put this direct in the grid
     shput_dup_value(config->config_data, "side_length_x", sx_char);
     shput_dup_value(config->config_data, "side_length_y", sy_char);
     shput_dup_value(config->config_data, "side_length_z", sz_char);
 
     return initialize_grid_with_cuboid_mesh(config, the_grid);
 
+    // Distance between the sphere center and a cell.
+    double distance;
+
+    // Coordinates of the sphere center
+    const float x_c = 1050.0;
+    const float y_c = 1050.0;
+    const float z_c = 1050.0;
+
+    double x, y, z;
+    FOR_EACH_CELL(the_grid) {
+        x = cell->center.x;
+        y = cell->center.y;
+        z = cell->center.z;
+        distance = (x-x_c)*(x-x_c) + (y-y_c)*(y-y_c) + (z-z_c)*(z-z_c);
+
+        cell->active =
+            (distance <= (radius * radius));
+    }
+
+    return 1;
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh) {
+
+    int num_layers = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, num_layers, config->config_data, "num_layers");
+
+    real_cpu side_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length, config->config_data, "side_length");
+
+    real_cpu start_dz = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");
+
+    sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
+    sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
+    sds sz_char = sdscatprintf(sdsempty(), "%lf", start_dz * num_layers);
+
+    // TODO: check if we can put this direct in the grid
+    shput_dup_value(config->config_data, "side_length_x", sx_char);
+    shput_dup_value(config->config_data, "side_length_y", sy_char);
+    shput_dup_value(config->config_data, "side_length_z", sz_char);
+
+    return initialize_grid_with_cuboid_mesh(config, the_grid);
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_domino_mesh) {
+
+    real_cpu side_length = 3.0;
+
+    sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
+    sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
+    sds sz_char = sdscatprintf(sdsempty(), "%lf", side_length);
+
+    // TODO: check if we can put this direct in the grid
+    shput_dup_value(config->config_data, "side_length_x", sx_char);
+    shput_dup_value(config->config_data, "side_length_y", sy_char);
+    shput_dup_value(config->config_data, "side_length_z", sz_char);
+
+    // TODO: check if we can put this direct in the grid
+    shput_dup_value(config->config_data, "start_dx", "1.0");
+    shput_dup_value(config->config_data, "start_dy", "1.0");
+    shput_dup_value(config->config_data, "start_dz", "1.0");
+
+    initialize_grid_with_cuboid_mesh(config, the_grid);
+
+    //	FOR_EACH_CELL(the_grid) {
+    //
+    //        if(CENTER_EQUALS(cell->center, POINT3D(1.5, 1.5, 1.5)) || CENTER_EQUALS(cell->center, POINT3D(2.5, 1.5, 1.5))
+    //            || CENTER_EQUALS(cell->center, POINT3D(1.5, 2.5, 1.5)) || CENTER_EQUALS(cell->center, POINT3D(1.5, 1.5, 2.5))
+    //            || CENTER_EQUALS(cell->center, POINT3D(0.5, 1.5, 1.5))
+    //            || CENTER_EQUALS(cell->center, POINT3D(1.5, 0.5, 1.5)) || CENTER_EQUALS(cell->center, POINT3D(1.5, 1.5, 0.5)) ) {
+    //
+    //        }
+    //        else {
+    //            cell->active = false;
+    //        }
+    //
+    //	}
+
+    return 1;
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
-	//TODO: check if this is start_dz
+    // TODO: check if this is start_dz
     real_cpu start_dx = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dz");
 
@@ -131,15 +205,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
     real_cpu real_side_length_y;
     real_cpu real_side_length_z;
 
-    int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, cable_length, start_dy, start_dz,
-                                                &real_side_length_x, &real_side_length_y, &real_side_length_z);
+    int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, cable_length, start_dy, start_dz, &real_side_length_x, &real_side_length_y,
+                                                &real_side_length_z);
 
     if(!success) {
         return 0;
     }
 
-    log_to_stdout_and_file("Loading cable mesh with %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", cable_length,
-                             start_dy, start_dz);
+    log_to_stdout_and_file("Loading cable mesh with %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", cable_length, start_dy, start_dz);
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_length_x, start_dx);
 
@@ -158,43 +231,41 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
-	   
-	real_cpu original_discretization = 0;
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, original_discretization, config->config_data, "original_discretization");
 
-	real_cpu start_discretization = 0;
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_discretization, config->config_data, "start_discretization");
-	
-	//TODO: we should put this in the grid data again
-	//
-	//the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
-	//
+    real_cpu original_discretization = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, original_discretization, config->config_data, "original_discretization");
 
-	//TODO: change this to the code above
-	char *tmp = shget(config->config_data, "start_discretization");
-    shput_dup_value(config->config_data,  "start_dx", tmp);
-    shput_dup_value(config->config_data,  "start_dy", tmp);
-    shput_dup_value(config->config_data,  "start_dz", tmp);
+    real_cpu start_discretization = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_discretization, config->config_data, "start_discretization");
 
-	size_t size=0;
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, size, config->config_data, "num_volumes");
+    // TODO: we should put this in the grid data again
+    //
+    // the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
+    //
+
+    // TODO: change this to the code above
+    char *tmp = shget(config->config_data, "start_discretization");
+    shput_dup_value(config->config_data, "start_dx", tmp);
+    shput_dup_value(config->config_data, "start_dy", tmp);
+    shput_dup_value(config->config_data, "start_dz", tmp);
+
+    size_t size = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, size, config->config_data, "num_volumes");
 
     char *mesh_file;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
-	int n_steps = 0;
+    int n_steps = 0;
 
-	if(original_discretization == 800) {
-	    initialize_and_construct_grid(the_grid, POINT3D(204800, 204800, 204800));
-		n_steps = 7;
-	}
-	else if(original_discretization == 500) {
-	    initialize_and_construct_grid(the_grid, POINT3D(256000, 256000, 256000));
-		n_steps = 8;
-	}
-	else {
-		log_to_stderr_and_file_and_exit("Invalid original_discretization: %lf. Valids values are 500 or 800\n", original_discretization);
-	}
+    if(original_discretization == 800) {
+        initialize_and_construct_grid(the_grid, POINT3D(204800, 204800, 204800));
+        n_steps = 7;
+    } else if(original_discretization == 500) {
+        initialize_and_construct_grid(the_grid, POINT3D(256000, 256000, 256000));
+        n_steps = 8;
+    } else {
+        log_to_stderr_and_file_and_exit("Invalid original_discretization: %lf. Valids values are 500 or 800\n", original_discretization);
+    }
 
     refine_grid(the_grid, n_steps);
     struct cell_node *grid_cell = the_grid->first_cell;
@@ -216,9 +287,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     real_cpu maxz = 0.0;
     real_cpu miny = DBL_MAX;
     real_cpu minz = DBL_MAX;
-    
-	real_cpu dummy;
-	int dummy1;
+
+    real_cpu dummy;
+    int dummy1;
 
     int i = 0;
     while(i < size) {
@@ -272,31 +343,30 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
 
     free(mesh_points);
 
-    //TODO: we need to sum the cell discretization here...
+    // TODO: we need to sum the cell discretization here...
     the_grid->mesh_side_length.x = maxx;
     the_grid->mesh_side_length.y = maxy;
     the_grid->mesh_side_length.z = maxz;
 
-	log_to_stdout_and_file("Cleaning grid\n");
-    
-	for(int i = 0; i < n_steps; i++) {
-    	derefine_grid_inactive_cells(the_grid);
+    log_to_stdout_and_file("Cleaning grid\n");
+
+    for(int i = 0; i < n_steps; i++) {
+        derefine_grid_inactive_cells(the_grid);
     }
 
-	int remaining_refinements = (original_discretization/start_discretization)-1;
-	refine_grid(the_grid, remaining_refinements);
+    int remaining_refinements = (original_discretization / start_discretization) - 1;
+    refine_grid(the_grid, remaining_refinements);
 
-	return 1;
-
+    return 1;
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
-	//TODO: we should put this in the grid data again
-	//
-	//real_cpu start_discretization = 800.0;
-	//the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
-	//
-	//TODO: change this to the code above
+    // TODO: we should put this in the grid data again
+    //
+    // real_cpu start_discretization = 800.0;
+    // the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
+    //
+    // TODO: change this to the code above
     shput_dup_value(config->config_data, "start_dx", "800.0");
     shput_dup_value(config->config_data, "start_dy", "800.0");
     shput_dup_value(config->config_data, "start_dz", "800.0");
@@ -315,8 +385,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
 
     if(fibrotic) {
         read_format = strdup("%lf,%lf,%lf,%lf,%d,%c\n");
-    }
-    else {
+    } else {
         read_format = strdup("%lf,%lf,%lf,%lf\n");
     }
 
@@ -324,8 +393,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
     set_custom_mesh(the_grid, mesh_file, 2025252, read_format);
 
     log_to_stdout_and_file("Cleaning grid\n");
-    
-	for(int i = 0; i < 7; i++) {
+
+    for(int i = 0; i < 7; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
 
@@ -360,28 +429,22 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         if(!(scar_file_big || scar_file_small)) {
 
             real_cpu small_scar_center_x = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config->config_data,
-                                                        "small_scar_center_x");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_x, config->config_data, "small_scar_center_x");
 
             real_cpu small_scar_center_y = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config->config_data,
-                                                        "small_scar_center_y");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_y, config->config_data, "small_scar_center_y");
 
             real_cpu small_scar_center_z = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config->config_data,
-                                                        "small_scar_center_z");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, small_scar_center_z, config->config_data, "small_scar_center_z");
 
             real_cpu big_scar_center_x = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config->config_data,
-                                                        "big_scar_center_x");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_x, config->config_data, "big_scar_center_x");
 
             real_cpu big_scar_center_y = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config->config_data,
-                                                        "big_scar_center_y");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_y, config->config_data, "big_scar_center_y");
 
             real_cpu big_scar_center_z = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config->config_data,
-                                                        "big_scar_center_z");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, big_scar_center_z, config->config_data, "big_scar_center_z");
 
             real_cpu phi = 0.0;
             GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
@@ -393,8 +456,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
                 seed = 0;
 
             log_to_stdout_and_file("Setting random fibrosis pattern\n");
-            set_human_mesh_fibrosis(the_grid, phi, seed, big_scar_center_x, big_scar_center_y, big_scar_center_z,
-                                    small_scar_center_x, small_scar_center_y, small_scar_center_z);
+            set_human_mesh_fibrosis(the_grid, phi, seed, big_scar_center_x, big_scar_center_y, big_scar_center_z, small_scar_center_x, small_scar_center_y,
+                                    small_scar_center_z);
         }
     }
 
@@ -443,9 +506,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
         set_custom_mesh_with_bounds(the_grid, mesh_file, 2025252, 30400, 81600, 59200, 103000, 13600, 48000, "%lf,%lf,%lf,%lf,%d,%c\n");
         size_code = 1;
     } else {
-        log_to_stderr_and_file_and_exit(
-                "Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n",
-                scar_size);
+        log_to_stderr_and_file_and_exit("Function: initialize_grid_with_scar_edge, invalid scar size %s. Valid sizes are big or small. Exiting!\n", scar_size);
     }
 
     log_to_stdout_and_file("Cleaning grid\n");
@@ -486,7 +547,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     log_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
     bool fibrotic, border_zone;
 
-
     FOR_EACH_CELL(the_grid) {
         if(cell->active) {
             fibrotic = FIBROTIC(cell);
@@ -501,8 +561,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
                 real_cpu center_x = cell->center.x;
                 real_cpu center_y = cell->center.y;
                 real_cpu center_z = cell->center.z;
-                dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) +
-                            (center_y - scar_center_y) * (center_y - scar_center_y) +
+                dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) + (center_y - scar_center_y) * (center_y - scar_center_y) +
                             (center_z - scar_center_z) * (center_z - scar_center_z));
                 if(dist > bz_size) {
                     bz_size = dist;
@@ -518,8 +577,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
                 real_cpu center_x = cell->center.x;
                 real_cpu center_y = cell->center.y;
                 real_cpu center_z = cell->center.z;
-                dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) +
-                            (center_y - scar_center_y) * (center_y - scar_center_y) +
+                dist = sqrt((center_x - scar_center_x) * (center_x - scar_center_x) + (center_y - scar_center_y) * (center_y - scar_center_y) +
                             (center_z - scar_center_z) * (center_z - scar_center_z));
                 dist = dist / bz_size;
 
@@ -528,7 +586,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
 
                 if(p < phi_local) {
                     cell->active = false;
-				}
+                }
 
                 cell->can_change = false;
             }
@@ -548,7 +606,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     shput_dup_value(config->config_data, "start_dz", "250.0");
 
     char *mesh_file = strdup("meshes/rabheart.alg");
-    //LEAK on mesh_file if mesh_file is defined on ini file
+    // LEAK on mesh_file if mesh_file is defined on ini file
     GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(mesh_file, config->config_data, "mesh_file");
 
     initialize_and_construct_grid(the_grid, POINT3D(64000.0f, 64000.0f, 64000.0f));
@@ -566,9 +624,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     free(mesh_file);
 
     char *mh = shget(config->config_data, "maximum_discretization");
-    shput_dup_value(config->config_data,  "maximum_dx", mh);
-    shput_dup_value(config->config_data,  "maximum_dy", mh);
-    shput_dup_value(config->config_data,  "maximum_dz", mh);
+    shput_dup_value(config->config_data, "maximum_dx", mh);
+    shput_dup_value(config->config_data, "maximum_dy", mh);
+    shput_dup_value(config->config_data, "maximum_dz", mh);
 
     return 1;
 }
@@ -613,32 +671,31 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
 
     while(i < num_volumes) {
 
-        if(i==-1) {
+        if(i == -1) {
             fscanf(file, "%d", &reentry);
-        }
-        else {
-            fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%d", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2],
-                   &dummy1, &dummy2, &dummy3, &active[i], &fibrosis[i], &bz[i]);
+        } else {
+            fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%d", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy1, &dummy2, &dummy3, &active[i],
+                   &fibrosis[i], &bz[i]);
 
             int tmp = fgetc(file);
-            while(tmp != '\n') tmp = fgetc(file);
+            while(tmp != '\n')
+                tmp = fgetc(file);
 
             // we save the old index to reference fibrosis[i] and tags[i].
             // this is needed because the array mesh_points is sorted after reading the mesh file.
             mesh_points[i][3] = i;
 
-            if (mesh_points[i][1] > maxy)
+            if(mesh_points[i][1] > maxy)
                 maxy = mesh_points[i][1];
-            if (mesh_points[i][2] > maxz)
+            if(mesh_points[i][2] > maxz)
                 maxz = mesh_points[i][2];
-            if (mesh_points[i][1] < miny)
+            if(mesh_points[i][1] < miny)
                 miny = mesh_points[i][1];
-            if (mesh_points[i][2] < minz)
+            if(mesh_points[i][2] < minz)
                 minz = mesh_points[i][2];
         }
 
         i++;
-
     }
 
     sort_vector(mesh_points, num_volumes); // we need to sort because inside_mesh perform a binary search
@@ -654,18 +711,18 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
             y = cell->center.y;
             z = cell->center.z;
 
-            if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
                 cell->active = false;
             } else {
                 index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
 
-                if (index != -1) {
+                if(index != -1) {
 
-                    int old_index = (int) mesh_points[index][3];
+                    int old_index = (int)mesh_points[index][3];
 
                     cell->active = (active[old_index] == 1);
 
-                    if (fibrosis[0] != -1) {
+                    if(fibrosis[0] != -1) {
 
                         INITIALIZE_FIBROTIC_INFO(cell);
                         FIBROTIC(cell) = (fibrosis[old_index] == 1);
@@ -690,7 +747,7 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     free(fibrosis);
     free(active);
 
-    //TODO: we need to sum the cell discretization here...
+    // TODO: we need to sum the cell discretization here...
     the_grid->mesh_side_length.x = maxx;
     the_grid->mesh_side_length.y = maxy;
     the_grid->mesh_side_length.z = maxz;
@@ -740,23 +797,22 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
         log_to_stdout_and_file("Refining Mesh to 12.5um\n");
         refine_grid(the_grid, 3);
     } else {
-        log_to_stderr_and_file_and_exit(
-                "Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
-                "or 12.5um. Using 100um!\n");
+        log_to_stderr_and_file_and_exit("Invalid discretizations for this mesh. Valid discretizations are: 100um, 50um, 25um "
+                                        "or 12.5um. Using 100um!\n");
         start_h = 100.0;
     }
 
     char *mh = shget(config->config_data, "maximum_discretization");
 
-    shput_dup_value(config->config_data,  "maximum_dx", mh);
-    shput_dup_value(config->config_data,  "maximum_dy", mh);
-    shput_dup_value(config->config_data,  "maximum_dz", mh );
+    shput_dup_value(config->config_data, "maximum_dx", mh);
+    shput_dup_value(config->config_data, "maximum_dy", mh);
+    shput_dup_value(config->config_data, "maximum_dz", mh);
 
     sds tmp = sdscatprintf(sdsempty(), "%lf", start_h);
 
-    shput_dup_value(config->config_data,  "start_dx", tmp);
-    shput_dup_value(config->config_data,  "start_dy", tmp);
-    shput_dup_value(config->config_data,  "start_dz", tmp);
+    shput_dup_value(config->config_data, "start_dx", tmp);
+    shput_dup_value(config->config_data, "start_dy", tmp);
+    shput_dup_value(config->config_data, "start_dz", tmp);
 
     return 1;
 }
@@ -769,26 +825,26 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
     real_cpu start_h = 500.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_h, config->config_data, "original_discretization");
 
-	//TODO: implement this
-//    real_cpu desired_h = 500.0;
-//    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, desired_h, config->config_data, "desired_discretization");
+    // TODO: implement this
+    //    real_cpu desired_h = 500.0;
+    //    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, desired_h, config->config_data, "desired_discretization");
 
     assert(the_grid);
 
-	//TODO: we should put this in the grid data again
-	//
-	//the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
-	//
+    // TODO: we should put this in the grid data again
+    //
+    // the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
+    //
 
-	//TODO: change this to the code above
-	char *tmp = shget(config->config_data, "desired_discretization");
-    shput_dup_value(config->config_data,  "start_dx", tmp);
-    shput_dup_value(config->config_data,  "start_dy", tmp);
-    shput_dup_value(config->config_data,  "start_dz", tmp);
+    // TODO: change this to the code above
+    char *tmp = shget(config->config_data, "desired_discretization");
+    shput_dup_value(config->config_data, "start_dx", tmp);
+    shput_dup_value(config->config_data, "start_dy", tmp);
+    shput_dup_value(config->config_data, "start_dz", tmp);
 
     float cube_side = 128000;
 
-    int tmp_size = cube_side/2;
+    int tmp_size = cube_side / 2;
     int num_ref = 0;
     while(tmp_size > start_h) {
         tmp_size = tmp_size / 2;
@@ -812,12 +868,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
 
     real_cpu **mesh_points = (real_cpu **)malloc(sizeof(real_cpu *) * num_volumes);
     for(int i = 0; i < num_volumes; i++) {
-        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 3);
+        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
 
-		if(mesh_points[i] == NULL) {
+        if(mesh_points[i] == NULL) {
             log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
-
     }
     real_cpu dummy;
 
@@ -830,19 +885,20 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
 
     while(i < num_volumes) {
 
-            fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &dummy, &dummy);
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &dummy, &dummy);
 
-            if (mesh_points[i][1] > maxy)
-                maxy = mesh_points[i][1];
-            if (mesh_points[i][2] > maxz)
-                maxz = mesh_points[i][2];
-            if (mesh_points[i][1] < miny)
-                miny = mesh_points[i][1];
-            if (mesh_points[i][2] < minz)
-                minz = mesh_points[i][2];
+        if(mesh_points[i][1] > maxy)
+            maxy = mesh_points[i][1];
+        if(mesh_points[i][2] > maxz)
+            maxz = mesh_points[i][2];
+        if(mesh_points[i][1] < miny)
+            miny = mesh_points[i][1];
+        if(mesh_points[i][2] < minz)
+            minz = mesh_points[i][2];
+
+        mesh_points[i][4] = i; //This is the original volume position in the mesh file
 
         i++;
-
     }
 
     sort_vector(mesh_points, num_volumes); // we need to sort because inside_mesh perform a binary search
@@ -853,29 +909,30 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
 
     int num_loaded = 0;
 
-	real_cpu x, y, z;
+    real_cpu x, y, z;
 
-	FOR_EACH_CELL(the_grid) {
-		x = cell->center.x;
-		y = cell->center.y;
-		z = cell->center.z;
+    FOR_EACH_CELL(the_grid) {
+        x = cell->center.x;
+        y = cell->center.y;
+        z = cell->center.z;
 
-		if (x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
-			cell->active = false;
-		} else {
-			index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
+        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            cell->active = false;
+        } else {
+            index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
 
-			if (index != -1) {
-				cell->active = true;
-				num_loaded++;
+            if(index != -1) {
+                cell->active = true;
+                cell->original_position_in_file = mesh_points[index][4];
+                num_loaded++;
 
-			} else {
-				cell->active = false;
-			}
-		}
-	}
+            } else {
+                cell->active = false;
+            }
+        }
+    }
 
-    log_to_stdout_and_file("Num volumes loaded from file: %d\n", num_loaded);
+    log_to_stdout_and_file("Read %d volumes from file: %s\n", num_loaded, mesh_file);
 
     fclose(file);
 
@@ -911,8 +968,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     real_cpu start_h = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
 
-    log_to_stdout_and_file("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h,
-                             start_h, start_h);
+    log_to_stdout_and_file("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h, start_h, start_h);
 
     side_length = start_h;
 
@@ -924,17 +980,15 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
 
     char *tmp = shget(config->config_data, "maximum_discretization");
 
-    shput_dup_value(config->config_data,  "maximum_dx", tmp);
-    shput_dup_value(config->config_data,  "maximum_dy", tmp);
-    shput_dup_value(config->config_data,  "maximum_dz", tmp);
-
+    shput_dup_value(config->config_data, "maximum_dx", tmp);
+    shput_dup_value(config->config_data, "maximum_dy", tmp);
+    shput_dup_value(config->config_data, "maximum_dz", tmp);
 
     tmp = shget(config->config_data, "start_discretization");
 
-    shput_dup_value(config->config_data,  "start_dx", tmp);
-    shput_dup_value(config->config_data,  "start_dy", tmp);
-    shput_dup_value(config->config_data,  "start_dz", tmp);
-
+    shput_dup_value(config->config_data, "start_dx", tmp);
+    shput_dup_value(config->config_data, "start_dy", tmp);
+    shput_dup_value(config->config_data, "start_dz", tmp);
 
     int num_steps = get_num_refinement_steps_to_discretization(side_length, start_h);
 
@@ -969,7 +1023,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
     initialize_grid_with_square_mesh(config, the_grid);
-    
+
     if(seed == 0)
         seed = (unsigned)time(NULL) + getpid();
 
@@ -999,26 +1053,23 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
     return 1;
 }
 
-SET_SPATIAL_DOMAIN(domino_mesh) {
+SET_SPATIAL_DOMAIN(cube_one_refined) {
 
-	real_cpu dz = 1.0;
+    real_cpu dx = 300.0;
+    real_cpu dy = 300.0;
+    real_cpu dz = 300.0;
 
-    sds nl_char = sdscatprintf(sdsempty(), "%d", 1);
-    sds sl_char = sdscatprintf(sdsempty(), "%lf", 300.0);
-    sds dx_char = sdscatprintf(sdsempty(), "%lf", 100.0);
-    sds dy_char = sdscatprintf(sdsempty(), "%lf", 100.0);
+    sds dx_char = sdscatprintf(sdsempty(), "%lf", dx);
+    sds dy_char = sdscatprintf(sdsempty(), "%lf", dy);
     sds dz_char = sdscatprintf(sdsempty(), "%lf", dz);
 
-    shput_dup_value(config->config_data, "num_layers", nl_char);
-    shput_dup_value(config->config_data, "side_length", sl_char);
     shput_dup_value(config->config_data, "start_dx", dx_char);
     shput_dup_value(config->config_data, "start_dy", dy_char);
     shput_dup_value(config->config_data, "start_dz", dz_char);
 
-    initialize_grid_with_square_mesh(config, the_grid);
+    initialize_and_construct_grid(the_grid, POINT3D(600, 600, 600));
+    // refine_grid_cell(the_grid, the_grid->first_cell->next);
 
-	sdsfree(nl_char);
-    sdsfree(sl_char);
     sdsfree(dx_char);
     sdsfree(dy_char);
     sdsfree(dz_char);
@@ -1026,15 +1077,13 @@ SET_SPATIAL_DOMAIN(domino_mesh) {
     return 1;
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_plain_source_sink_fibrotic_mesh) 
-{
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_source_sink_fibrotic_mesh) {
 
     real_cpu channel_width = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_width, config->config_data, "channel_width");
 
     real_cpu channel_length = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, channel_length, config->config_data, "channel_length");
-
 
     initialize_grid_with_square_mesh(config, the_grid);
     set_plain_source_sink_fibrosis(the_grid, channel_width, channel_length);
@@ -1054,16 +1103,15 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config->config_data, "sphere_radius");
 
     real_cpu border_zone_size = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_size, config->config_data,
-                                                "border_zone_size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_size, config->config_data, "border_zone_size");
 
     real_cpu border_zone_radius = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data,
-                                                "border_zone_radius");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data, "border_zone_radius");
 
     bool success;
     unsigned seed = 0;
     GET_PARAMETER_NUMERIC_VALUE(unsigned, seed, config->config_data, "seed", success);
+
     if(!success) {
         seed = 0;
     }
@@ -1082,11 +1130,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh_without_i
     real_cpu sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config->config_data, "sphere_radius");
 
-
     real_cpu border_zone_radius = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data,
-                                                "border_zone_radius");
-
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, border_zone_radius, config->config_data, "border_zone_radius");
 
     initialize_grid_with_square_mesh(config, the_grid);
 
@@ -1114,7 +1159,6 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
     size_t n_points = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, n_points, config->config_data, "n_points");
 
-
     sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
     sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
     sds sz_char = sdscatprintf(sdsempty(), "%lf", start_h);
@@ -1125,14 +1169,13 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
 
     char *tmp = shget(config->config_data, "start_discretization");
 
-    shput_dup_value(config->config_data,  "maximum_dx", tmp);
-    shput_dup_value(config->config_data,  "maximum_dy", tmp);
-    shput_dup_value(config->config_data,  "maximum_dz", tmp);
+    shput_dup_value(config->config_data, "maximum_dx", tmp);
+    shput_dup_value(config->config_data, "maximum_dy", tmp);
+    shput_dup_value(config->config_data, "maximum_dz", tmp);
 
-    shput_dup_value(config->config_data,  "start_dx", tmp);
-    shput_dup_value(config->config_data,  "start_dy", tmp);
-    shput_dup_value(config->config_data,  "start_dz", tmp);
-
+    shput_dup_value(config->config_data, "start_dx", tmp);
+    shput_dup_value(config->config_data, "start_dy", tmp);
+    shput_dup_value(config->config_data, "start_dz", tmp);
 
     initialize_grid_with_cuboid_mesh(config, the_grid);
 
@@ -1141,18 +1184,16 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
 
     FOR_EACH_CELL(the_grid) {
         if(cell->active) {
-            if (FIBROTIC(cell)) {
+            if(FIBROTIC(cell)) {
                 cell->active = false;
             }
         }
     }
 
     return 1;
-
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region) 
-{
+SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region) {
 
     real_cpu phi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
@@ -1184,55 +1225,54 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region)
     return 1;
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_using_file) 
-{
+SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_using_file) {
 
     initialize_grid_with_square_mesh(config, the_grid);
-    set_plain_fibrosis_using_file(the_grid,"fibrotic_positions.txt");
+    set_plain_fibrosis_using_file(the_grid, "fibrotic_positions.txt");
 
     return 1;
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
-        shput_dup_value(config->config_data, "start_dx", "500.0");
-        shput_dup_value(config->config_data, "start_dy", "500.0");
-        shput_dup_value(config->config_data, "start_dz", "500.0");
+    shput_dup_value(config->config_data, "start_dx", "500.0");
+    shput_dup_value(config->config_data, "start_dy", "500.0");
+    shput_dup_value(config->config_data, "start_dz", "500.0");
 
-        //LEAK on mesh_file if mesh_file is defined on ini file
-        char *mesh_file = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    // LEAK on mesh_file if mesh_file is defined on ini file
+    char *mesh_file = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
-        real_cpu x_domain_limit = 64000.0f;
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,x_domain_limit, config->config_data, "x_domain_limit");
+    real_cpu x_domain_limit = 64000.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, x_domain_limit, config->config_data, "x_domain_limit");
 
-        real_cpu y_domain_limit = 64000.0f;
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,y_domain_limit, config->config_data, "y_domain_limit");
+    real_cpu y_domain_limit = 64000.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, y_domain_limit, config->config_data, "y_domain_limit");
 
-        real_cpu z_domain_limit = 64000.0f;
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,z_domain_limit, config->config_data, "z_domain_limit");
+    real_cpu z_domain_limit = 64000.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, z_domain_limit, config->config_data, "z_domain_limit");
 
-        uint32_t total_number_mesh_points = 0;
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, total_number_mesh_points, config->config_data, "total_number_mesh_points");
+    uint32_t total_number_mesh_points = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, total_number_mesh_points, config->config_data, "total_number_mesh_points");
 
-        initialize_and_construct_grid(the_grid, POINT3D(x_domain_limit, y_domain_limit, z_domain_limit));
-        refine_grid(the_grid, 7);
+    initialize_and_construct_grid(the_grid, POINT3D(x_domain_limit, y_domain_limit, z_domain_limit));
+    refine_grid(the_grid, 7);
 
-        log_to_stdout_and_file("Loading Custom Mesh\n");
+    log_to_stdout_and_file("Loading Custom Mesh\n");
 
-        set_custom_mesh(the_grid, mesh_file, total_number_mesh_points, "%lf,%lf,%lf,%lf\n");
+    set_custom_mesh(the_grid, mesh_file, total_number_mesh_points, "%lf,%lf,%lf,%lf\n");
 
-        log_to_stdout_and_file("Cleaning grid\n");
-        int i;
-        for(i = 0; i < 6; i++) {
-            derefine_grid_inactive_cells(the_grid);
-        }
-        free(mesh_file);
+    log_to_stdout_and_file("Cleaning grid\n");
+    int i;
+    for(i = 0; i < 6; i++) {
+        derefine_grid_inactive_cells(the_grid);
+    }
+    free(mesh_file);
 
-        char *mh = shget(config->config_data, "maximum_discretization");
-        shput_dup_value(config->config_data,  "maximum_dx", mh);
-        shput_dup_value(config->config_data,  "maximum_dy", mh);
-        shput_dup_value(config->config_data,  "maximum_dz", mh);
+    char *mh = shget(config->config_data, "maximum_discretization");
+    shput_dup_value(config->config_data, "maximum_dx", mh);
+    shput_dup_value(config->config_data, "maximum_dy", mh);
+    shput_dup_value(config->config_data, "maximum_dz", mh);
 
-        return 1;
+    return 1;
 }

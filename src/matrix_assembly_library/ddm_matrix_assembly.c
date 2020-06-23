@@ -512,22 +512,22 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[BACK], the_solver->dt, BACK);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[FRONT], the_solver->dt, FRONT);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[TOP], the_solver->dt, TOP);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[DOWN], the_solver->dt, DOWN);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[RIGHT], the_solver->dt, RIGHT);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[LEFT], the_solver->dt,LEFT);
     }
 
 

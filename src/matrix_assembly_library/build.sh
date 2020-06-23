@@ -1,4 +1,4 @@
-LIB_STATIC_DEPS="utils alg config_helpers tinyexpr"
+LIB_STATIC_DEPS="utils alg config_helpers tinyexpr sds"
 
 COMPILE_SHARED_LIB "default_matrix_assembly" "matrix_assembly.c" "" "${LIB_STATIC_DEPS}"
 

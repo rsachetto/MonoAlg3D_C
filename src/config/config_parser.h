@@ -168,19 +168,30 @@ struct conversion_options {
     char *output;
 };
 
+struct fibers_conversion_options {
+    char *fibers_file;
+    char *ele_file;
+    char *nodes_file;
+    char *alg_file;
+    char *output_file;
+};
+
 void display_usage( char** argv );
 void display_batch_usage(char **argv);
 void display_conversion_usage(char **argv);
+void display_fibers_conversion_usage(char **argv);
 
 struct user_options * new_user_options();
 struct batch_options * new_batch_options();
 struct visualization_options * new_visualization_options();
 struct conversion_options * new_conversion_options();
+struct fibers_conversion_options * new_fibers_conversion_options();
 
 void parse_options(int argc, char**argv, struct user_options *user_args);
 void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
 void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
 void parse_conversion_options(int argc, char **argv, struct conversion_options *user_args);
+void parse_fibers_conversion_options(int argc, char **argv, struct fibers_conversion_options *user_args);
 
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 
@@ -195,6 +206,7 @@ void free_user_options(struct user_options *s);
 void free_batch_options(struct batch_options * options);
 void free_visualization_options(struct visualization_options * options);
 void free_conversion_options(struct conversion_options *options);
+void free_fibers_conversion_options(struct fibers_conversion_options *options);
 
 void maybe_issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);

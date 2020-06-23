@@ -110,6 +110,17 @@ CLEAN_PROJECT () {
 
 }
 
+CLEAN_PROJECT_LIBS () {
+
+  DIR_NAME="${DEFAULT_BUILD_DIR}${1}"
+
+    for DIR in "${DIR_NAME}"/lib*; do
+        ECHO_AND_EXEC_COMMAND "find ${DIR} -name "*.o" -exec rm -rf {} \\";
+        ECHO_AND_EXEC_COMMAND "find ${DIR} -name "*.a" -exec rm -rf {} \\";
+        ECHO_AND_EXEC_COMMAND "find ${DIR} -name ".*last_compiled_time_bbash" -exec rm -rf {} \\";
+    done
+}
+
 PRINT_INFO () {
 	if [ -z "$QUIET" ]; then
   		printf "[INFO] ${INFO}%s${NC}\n" "$1"	

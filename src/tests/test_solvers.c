@@ -115,24 +115,28 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
     fclose(B);
 }
 
-Test (solvers, cpu_cg_jacobi_1t) {
+Test (solvers, cpu_cg_jacobi_preconditioner_1t) {
     test_solver(true, "cpu_conjugate_gradient", "init_cpu_conjugate_gradient", NULL, 1, 1);
 }
 
-Test (solvers, cpu_cg_no_jacobi_1t) {
+Test (solvers, cpu_cg_no_preconditioner_1t) {
     test_solver(false, "cpu_conjugate_gradient", "init_cpu_conjugate_gradient", NULL, 1, 1);
 }
 
-Test (solvers, gpu_cg_jacobi_1t) {
+Test (solvers, gpu_cg_jacobi_preconditioner_1t) {
     test_solver(true, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient", 1, 1);
 }
 
-Test (solvers, gpu_cg_no_jacobi_1t) {
+Test (solvers, gpu_cg_no_preconditioner_1t) {
     test_solver(false, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient",  1, 1);
 }
 
-Test (solvers, bcg_jacobi_1t) {
+Test (solvers, bcg_jacobi_preconditioner_1t) {
     test_solver(true, "biconjugate_gradient", NULL, NULL, 1, 1);
+}
+
+Test (solvers, bcg_gpu_no_preconditioner_1t) {
+    test_solver(false, "gpu_biconjugate_gradient", "init_gpu_biconjugate_gradient", NULL, 1, 1);
 }
 
 Test (solvers, jacobi_1t) {
@@ -228,13 +232,18 @@ Test (solvers, cg_no_jacobi_6t_3) {
     test_solver(false, "cpu_conjugate_gradient", "init_cpu_conjugate_gradient", NULL, 6, 3);
 }
 
-
 Test (solvers, bcg_no_jacobi_6t_3) {
     test_solver(false, "biconjugate_gradient", NULL, NULL, 6, 3);
 }
 
-Test (solvers, jacobi_6t_3) {
-    test_solver(false, "jacobi", NULL, NULL, 6, 3);
+
+Test (solvers, bcg_gpu_no_preconditioner_1t_2) {
+    test_solver(false, "gpu_biconjugate_gradient", "init_gpu_biconjugate_gradient", NULL, 1, 2);
 }
+
+Test (solvers, bcg_gpu_no_preconditioner_6t_2) {
+    test_solver(false, "gpu_biconjugate_gradient", "init_gpu_biconjugate_gradient", NULL, 6, 2);
+}
+
 
 #endif

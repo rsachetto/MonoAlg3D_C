@@ -24,6 +24,7 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
     grid->cells = NULL;
     grid->values = NULL;
     grid->points = NULL;
+    grid->fibers = NULL;
 
     grid->num_cells = 0;
     grid->num_points = 0;
@@ -479,7 +480,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                              float *plain_coordinates, bool clip_with_bounds,
-                                             float *bounds, bool read_only_values) {
+                                             float *bounds, bool read_only_values, bool read_fibers_f) {
 
     if(grid == NULL) {
         return;
@@ -576,6 +577,12 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             if(ignore_cell) {
                 continue;
             }
+        }
+
+        if(read_fibers_f) {
+            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f[0]);
+            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f[1]);
+            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f[2]);
         }
 
         arrput((*vtk_grid)->values, grid_cell[i]->v);
@@ -1172,7 +1179,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
     fclose(output_file);
 }
 
-void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary) {
+void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary, bool save_f) {
 
     sds file_content = sdsempty();
 
@@ -1263,7 +1270,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
 
     {
         sds tmp = sdscatprintf(sdsempty(), "\nCELL_DATA %d\n", num_cells);
-        tmp = sdscat(tmp, "SCALARS Scalars_ float\n");
+        tmp = sdscat(tmp, "SCALARS Transmembrane_Potential float\n");
         tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
         size_until_now += sdslen(tmp);
@@ -1282,6 +1289,38 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         } else {
             file_content = sdscatprintf(file_content, "%lf ", vtk_grid->values[i]);
         }
+    }
+
+    if(save_f){
+        sds tmp = sdscat(sdsempty(), "\nSCALARS fibers float 3\n");
+        tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
+
+        size_until_now += sdslen(tmp);
+
+        file_content = sdscatsds(file_content, tmp);
+        sdsfree(tmp);
+
+        for(size_t i = 0; i < num_cells; i++) {
+            if(binary) {
+                int aux = invert_bytes(*((int *)&(vtk_grid->fibers[i])));
+                file_content = sdscatlen(file_content, &aux, sizeof(int));
+                size_until_now += sizeof(int);
+
+                aux = invert_bytes(*((int *)&(vtk_grid->fibers[i+1])));
+                file_content = sdscatlen(file_content, &aux, sizeof(int));
+                size_until_now += sizeof(int);
+
+                aux = invert_bytes(*((int *)&(vtk_grid->fibers[i+2])));
+                file_content = sdscatlen(file_content, &aux, sizeof(int));
+                size_until_now += sizeof(int);
+
+            } else {
+                file_content = sdscatprintf(file_content, "%lf ", vtk_grid->fibers[i]);
+                file_content = sdscatprintf(file_content, " %lf ", vtk_grid->fibers[i+1]);
+                file_content = sdscatprintf(file_content, " %lf\n", vtk_grid->fibers[i+2]);
+            }
+        }
+
     }
 
     FILE *output_file = fopen(filename, "w");

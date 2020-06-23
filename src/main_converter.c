@@ -110,11 +110,20 @@ int main(int argc, char **argv) {
 
         output = sdsempty();
 
-        if(ENDS_WITH_SLASH(input)) {
-            output = sdscatfmt(output, "%sconverted_files", input);
-        } else {
-            output = sdscatfmt(output, "%s/converted_files", input);
-        }
+		if(input_info.is_dir) {
+			if(ENDS_WITH_SLASH(input)) {
+				output = sdscatfmt(output, "%sconverted_files", input);
+			} else {
+				output = sdscatfmt(output, "%s/converted_files", input);
+			}
+		}
+		else if(input_info.exists && input_info.is_file) {
+			if(ENDS_WITH_SLASH(input_info.dir_name)) {
+				output = sdscatfmt(output, "%sconverted_files", input_info.dir_name);
+			} else {
+				output = sdscatfmt(output, "%s/converted_files", input_info.dir_name);
+			}
+		}
     }
 
    if(!input_info.exists) {
