@@ -102,10 +102,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
     right_front_top_sub_cell->center.y = cell_center_y + cell_quarter_side_y;
     right_front_top_sub_cell->center.z = cell_center_z + cell_quarter_side_z;
 
-    real_cpu translated_center_x = 0;
-    real_cpu translated_center_y = 0;
-    real_cpu translated_center_z = 0;
-
     right_front_top_sub_cell->bunch_number = old_bunch_number * 10 + 1;
 
     if(refined_this_step && *refined_this_step) {
@@ -120,11 +116,8 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),
-                                  old_bunch_number * 10 + 2,
-                                  free_sv_positions,
+                          old_bunch_number * 10 + 2,
+                          free_sv_positions,
                           refined_this_step);
 
 
@@ -136,9 +129,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),
                           old_bunch_number * 10 + 3, free_sv_positions, refined_this_step);
 
     right_front_down_sub_cell = new_cell_node();
@@ -149,9 +139,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),
                           old_bunch_number * 10 + 4, free_sv_positions, refined_this_step);
 
     right_back_down_sub_cell = new_cell_node();
@@ -162,9 +149,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),
                           old_bunch_number * 10 + 5, free_sv_positions, refined_this_step);
 
     left_back_down_sub_cell = new_cell_node();
@@ -175,9 +159,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),
                           old_bunch_number * 10 + 6, free_sv_positions, refined_this_step);
 
     left_back_top_sub_cell = new_cell_node();
@@ -188,9 +169,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),
                           old_bunch_number * 10 + 7, free_sv_positions, refined_this_step);
 
 
@@ -202,9 +180,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),
                           old_bunch_number * 10 + 8, free_sv_positions, refined_this_step);
 
 
@@ -1251,7 +1226,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            struct point_3d discretization, struct point_3d center, struct point_3d translated_center,
+                            struct point_3d discretization, struct point_3d center,
                             uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step) {
 
     the_cell->cell_data.level = other_cell->cell_data.level;
