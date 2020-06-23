@@ -155,8 +155,7 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
 
 void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization,
                         uint64_t bunch_number, void **neighbours, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center,
-                        struct point_3d translated_center) {
+                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center) {
 
     the_cell->discretization = discretization;
     the_cell->bunch_number = bunch_number;
