@@ -347,8 +347,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver,configs);        
 
         success = ((set_spatial_purkinje_fn*) purkinje_config->main_function)(purkinje_config,the_grid,the_purkinje_ode_solver);
-        if(!success)
-        {
+        if(!success) {
             log_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
         }
 
