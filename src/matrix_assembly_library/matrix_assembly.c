@@ -1602,27 +1602,62 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_t, config->config_data, "sigma_t");
 	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_n, config->config_data, "sigma_n");
 
+    real_cpu *f = NULL;
+    real_cpu *s = NULL;
+    real_cpu *n = NULL;
+
 	if(fiber_file) {
 		log_to_stdout_and_file("Loading mesh fibers\n");
 		fibers = read_fibers(fiber_file, false);
 	}
+    else {
+        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config->config_data, "f", 3);
+        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config->config_data, "s", 3);
+        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config->config_data, "n", 3);
+
+        if(!f) {
+            f = malloc(sizeof(real_cpu)*3);
+            f[0] = 1.0;
+            f[1] = 0.0;
+            f[2] = 0.0;
+        }
+
+		if(!s) {
+            s = malloc(sizeof(real_cpu)*3);
+            s[0] = 0.0;
+            s[1] = 1.0;
+            s[2] = 0.0;
+        }
+	
+		if(!n) {
+            n = malloc(sizeof(real_cpu)*3);
+            n[0] = 0.0;
+            n[1] = 0.0;
+            n[2] = 1.0;
+        }
+
+    }
 
 	OMP(parallel for private(D))
 	for(i = 0; i < num_active_cells; i++) {
 
 		if(fibers) {
 			int fiber_index = ac[i]->original_position_in_file;
-			// calc_tensor(D, fibers[fiber_index].f, fibers[fiber_index].s, fibers[fiber_index].n, sigma_l, sigma_t, sigma_n);
-			calc_tensor2(D, fibers[fiber_index].f, sigma_l, sigma_t);
+			if(sigma_t == sigma_n) {
+				calc_tensor2(D, fibers[fiber_index].f, sigma_l, sigma_t);
+			}
+			else {
+				calc_tensor(D, fibers[fiber_index].f, fibers[fiber_index].s, fibers[fiber_index].n, sigma_l, sigma_t, sigma_n);
+			}
 			ac[i]->sigma.fibers = fibers[fiber_index];
 		}
 		else {
-			//TODO: allow f to be passed from the config file
-			real_cpu f[3];
-			f[0] = 1;
-			f[1] = 1;
-			f[2] = 1;
-			calc_tensor2(D, f, sigma_l, sigma_t);
+			if(sigma_t == sigma_n) {
+				calc_tensor2(D, f, sigma_l, sigma_t);
+			}
+			else {
+				calc_tensor(D, f, s, n, sigma_l, sigma_t, sigma_n);				
+			}
 		}
 
 		ac[i]->sigma.x = D[0][0];
@@ -1639,6 +1674,10 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 	for(i = 0; i < num_active_cells; i++) {
 		fill_discretization_matrix_elements_aniso(ac[i]);
 	}
+
+    free(f);
+    free(s);
+    free(n);
 
 #ifdef DEBUG_INFO
 	FILE *m = fopen("m.txt", "w");
