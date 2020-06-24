@@ -588,6 +588,7 @@ INIT_SAVE_MESH(init_save_with_activation_times) {
 }
 
 END_SAVE_MESH(end_save_with_activation_times) {
+
     free(config->persistent_data);
 }
 
@@ -623,16 +624,19 @@ SAVE_MESH(save_with_activation_times) {
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
+    uint32_t id;
     real_cpu center_x, center_y, center_z, dx, dy, dz;
     real_cpu v;
 
     FILE *act_file = fopen(output_dir_with_file, "w");
 
-    fprintf(act_file, "%d\n", (last_t-current_t) <= dt ); //rounding errors
+    //fprintf(act_file, "%d\n", (last_t-current_t) <= dt ); //rounding errors
 
     while(grid_cell != 0) {
 
         if( grid_cell->active || ( grid_cell->mesh_extra_info && ( FIBROTIC(grid_cell) || BORDER_ZONE(grid_cell) ) ) ) {
+
+            id = grid_cell->sv_position;
 
             center_x = grid_cell->center.x;
             center_y = grid_cell->center.y;
@@ -649,7 +653,8 @@ SAVE_MESH(save_with_activation_times) {
             dy = grid_cell->discretization.y / 2.0;
             dz = grid_cell->discretization.z / 2.0;
 
-            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
+            //fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
+            fprintf(act_file, "%d %g %g %g ", id, center_x, center_y, center_z);
 
             int n_activations = 0;
             float *apds_array = NULL;
@@ -707,6 +712,11 @@ SAVE_MESH(save_with_activation_times) {
                 }
             }
 
+            for (unsigned long i = 0; i < arrlen(apds_array); i++) {
+                fprintf(act_file, "%lf ", apds_array[i]);
+            }
+            fprintf(act_file, "\n");
+/*
             fprintf(act_file, "%d [ ", n_activations);
 
             for (unsigned long i = 0; i < n_activations; i++) {
@@ -720,6 +730,7 @@ SAVE_MESH(save_with_activation_times) {
                 fprintf(act_file, "%lf ", apds_array[i]);
             }
             fprintf(act_file, "]\n");
+*/
         }
 
         grid_cell = grid_cell->next;
