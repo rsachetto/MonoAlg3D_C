@@ -554,7 +554,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
             switch(direction) {
             case FRONT:
                 new_element.value += - sigma_z_f*dz;
-				
+
 				if(neighbours[BACK]) {
 					new_element.value += - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
 						                 + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz
@@ -565,7 +565,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
                 break;
             case BACK:
                 new_element.value += - sigma_z_b*dz;
-				
+
 				if(neighbours[FRONT]) {
 					new_element.value +=   DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
 						                 - DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz
@@ -629,13 +629,13 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s2 += - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
 						  - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
 						  + DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP], -s2);
 
 				}
 
                 new_element.value += s1 + s2;
-				                                                     
+
 				break;
 
             case FRONT_DOWN:
@@ -646,12 +646,12 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s1  += DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz
                          - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
                          + DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN], s1);
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN], -s1);
 				}
 
-                                     
+
                 break;
 
 			case BACK_TOP:
@@ -680,7 +680,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s1 += - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
 						  - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
                           + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_RIGHT] ,  -s1);
 				}
 
@@ -688,7 +688,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s2 += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
 						  - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx
 						  + DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_LEFT] ,  -s2);
 				}
 
@@ -717,7 +717,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s1 +=   DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
 						  - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx
 						  + DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_RIGHT] ,  s1);
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_LEFT] ,  -s1);
 				}
@@ -742,7 +742,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s2 += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
 						  + DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
 						  - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[TOP_LEFT], -s2);
 
 				}
@@ -757,7 +757,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s1 += - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy
 						  + DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy
 						  + DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[TOP_LEFT] ,  s1);
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_LEFT] ,  -s1);
 
@@ -769,7 +769,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 					s1 += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
                           + DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
                           + DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_RIGHT] ,  s1);
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_LEFT] ,  -s1);
 
@@ -785,13 +785,13 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 				if(neighbours[FRONT_DOWN_RIGHT]) {
 					s1 += - DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
 						  - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_RIGHT], -s1);
 				}
 				if(neighbours[BACK_TOP_RIGHT]) {
 					s2 += - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
                           - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP_RIGHT], -s2);
 				}
 				if(neighbours[FRONT_TOP_LEFT]) {
@@ -802,7 +802,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 				}
 				new_element.value += s1 + s2 + s3;
                 break;
-               
+
            case FRONT_TOP_LEFT:
 
 				s1 = 0;
@@ -811,7 +811,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 				if(neighbours[FRONT_DOWN_LEFT]) {
 					s1 +=   DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy
 					      - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_TOP_LEFT], s1);
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_LEFT], -s1);
 				}
@@ -833,7 +833,7 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 				if(neighbours[BACK_DOWN_RIGHT]) {
 					s1 += - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
                           + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_RIGHT], s1);
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN_RIGHT], -s1);
 				}
@@ -841,11 +841,11 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 				if(neighbours[FRONT_DOWN_LEFT]) {
 					s2 +=  DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx
                          - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx;
-					
+
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_RIGHT], s2);
 					UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_LEFT], -s2);
 				}
-					
+
                 break;
            case FRONT_DOWN_LEFT:
 				s1 = 0;
@@ -1628,7 +1628,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
             s[1] = 1.0;
             s[2] = 0.0;
         }
-	
+
 		if(!n) {
             n = malloc(sizeof(real_cpu)*3);
             n[0] = 0.0;

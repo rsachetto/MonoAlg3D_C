@@ -825,9 +825,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
     real_cpu start_h = 500.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_h, config->config_data, "original_discretization");
 
-    // TODO: implement this
-    //    real_cpu desired_h = 500.0;
-    //    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, desired_h, config->config_data, "desired_discretization");
+    real_cpu desired_h = 500.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, desired_h, config->config_data, "desired_discretization");
 
     assert(the_grid);
 
@@ -955,6 +954,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
             derefine_grid_inactive_cells(the_grid);
         }
     }
+
+	int num_refs = start_h/desired_h;
+	refine_grid(the_grid, num_refs);
 
     free(mesh_file);
 

@@ -44,5 +44,6 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
         }
     }
     sdsfreesplitres(components, c);
+
     return true;
 }
