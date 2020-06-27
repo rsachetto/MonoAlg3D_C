@@ -4,11 +4,11 @@
 
 #include "cell.h"
 #include "string.h"
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 
 #include <assert.h>
 
-void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_array *refined_this_step)  {
+void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_array *refined_this_step)  {
 
     assert(cell);
 
@@ -30,38 +30,30 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
 
     uint8_t number_of_hilbert_shape;
 
-    real_cpu cell_center_x    = cell->center.x,
-            cell_center_y   = cell->center.y,
-            cell_center_z   = cell->center.z,
-            cell_half_side_x    = cell->discretization.x / 2.0f,
-            cell_half_side_y    = cell->discretization.y / 2.0f,
-            cell_half_side_z    = cell->discretization.z / 2.0f,
-            cell_quarter_side_x = cell->discretization.x / 4.0f,
-            cell_quarter_side_y = cell->discretization.y / 4.0f,
-            cell_quarter_side_z = cell->discretization.z / 4.0f;
+    real_cpu cell_center_x       = cell->center.x,
+             cell_center_y       = cell->center.y,
+             cell_center_z       = cell->center.z,
+             cell_half_side_x    = cell->discretization.x / 2.0f,
+             cell_half_side_y    = cell->discretization.y / 2.0f,
+             cell_half_side_z    = cell->discretization.z / 2.0f,
+             cell_quarter_side_x = cell->discretization.x / 4.0f,
+             cell_quarter_side_y = cell->discretization.y / 4.0f,
+             cell_quarter_side_z = cell->discretization.z / 4.0f;
 
     uint64_t old_bunch_number = cell->bunch_number;
 
-    // Creation of the front northeast cell. This cell, which is to be refined,
-    // becomes the frontNortheast cell of the new bunch.
-    front_northeast_sub_cell                     = cell;
-    front_northeast_sub_cell->cell_data.level    = cell->cell_data.level + (uint8_t )1;
-    front_northeast_sub_cell->discretization.x        = cell_half_side_x;
-    front_northeast_sub_cell->discretization.y        = cell_half_side_y;
-    front_northeast_sub_cell->discretization.z        = cell_half_side_z;
+    // Creation of the front northeast cell.
+    // This cell, which is to be refined,
+    // becomes the front northeast cell of the new bunch.
+    front_northeast_sub_cell                   = cell;
+    front_northeast_sub_cell->cell_data.level  = cell->cell_data.level + (uint8_t )1;
+    front_northeast_sub_cell->discretization.x = cell_half_side_x;
+    front_northeast_sub_cell->discretization.y = cell_half_side_y;
+    front_northeast_sub_cell->discretization.z = cell_half_side_z;
+
     front_northeast_sub_cell->center.x = cell_center_x + cell_quarter_side_x;
     front_northeast_sub_cell->center.y = cell_center_y + cell_quarter_side_y;
     front_northeast_sub_cell->center.z = cell_center_z + cell_quarter_side_z;
-
-    real_cpu translated_center_x = cell->translated_center.x;
-    real_cpu translated_center_y = cell->translated_center.y;
-    real_cpu translated_center_z = cell->translated_center.z;
-
-#ifdef COMPILE_OPENGL
-    front_northeast_sub_cell->translated_center.x = translated_center_x + cell_quarter_side_x;
-    front_northeast_sub_cell->translated_center.y = translated_center_y + cell_quarter_side_y;
-    front_northeast_sub_cell->translated_center.z = translated_center_z + cell_quarter_side_z;
-#endif
 
     front_northeast_sub_cell->bunch_number = old_bunch_number * 10 + 1;
 
@@ -79,10 +71,9 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),
-                          old_bunch_number * 10 + 2, free_sv_positions, refined_this_step);
+                          old_bunch_number * 10 + 2,
+                          free_sv_positions,
+                          refined_this_step);
 
 
     // Creation of back Northwest node.
@@ -95,9 +86,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),
                           old_bunch_number * 10 + 3, free_sv_positions, refined_this_step);
 
     // Creation of front Northwest node.
@@ -110,9 +98,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),                          
                           old_bunch_number * 10 + 4, free_sv_positions, refined_this_step);
 
 
@@ -126,9 +111,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),                          
                           old_bunch_number * 10 + 5, free_sv_positions, refined_this_step);
 
 
@@ -142,9 +124,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),                          
                           old_bunch_number * 10 + 6, free_sv_positions, refined_this_step);
 
 
@@ -159,9 +138,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),
                           old_bunch_number * 10 + 7, free_sv_positions, refined_this_step);
 
 
@@ -175,15 +151,11 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),                          
                           old_bunch_number * 10 + 8, free_sv_positions, refined_this_step);
 
     // west transition node.
     west_transition_node = new_transition_node();
     set_refined_transition_node_data(west_transition_node, front_northeast_sub_cell, 'w');
-
 
     // north transition node.
     north_transition_node = new_transition_node();
@@ -197,7 +169,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     east_transition_node = new_transition_node();
     set_refined_transition_node_data(east_transition_node, front_northeast_sub_cell, 'e');
 
-
     // front transition node.
     front_transition_node = new_transition_node();
     set_refined_transition_node_data(front_transition_node, front_northeast_sub_cell, 'f');
@@ -207,61 +178,61 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     set_refined_transition_node_data(back_transition_node, front_northeast_sub_cell, 'b');
 
     // Linking of new cell nodes and transition nodes.
-    front_northeast_sub_cell->north = north_transition_node;
-    front_northeast_sub_cell->south = front_southeast_sub_cell;
-    front_northeast_sub_cell->east  = east_transition_node;
-    front_northeast_sub_cell->west  = front_northwest_sub_cell;
-    front_northeast_sub_cell->front = front_transition_node;
-    front_northeast_sub_cell->back  = back_northeast_sub_cell;
+    front_northeast_sub_cell->z_front = north_transition_node;
+    front_northeast_sub_cell->z_back = front_southeast_sub_cell;
+    front_northeast_sub_cell->y_top  = east_transition_node;
+    front_northeast_sub_cell->y_down  = front_northwest_sub_cell;
+    front_northeast_sub_cell->x_right = front_transition_node;
+    front_northeast_sub_cell->x_left  = back_northeast_sub_cell;
 
-    back_northeast_sub_cell->north = north_transition_node;
-    back_northeast_sub_cell->south = back_southeast_sub_cell;
-    back_northeast_sub_cell->east  = east_transition_node;
-    back_northeast_sub_cell->west  = back_northwest_sub_cell;
-    back_northeast_sub_cell->front = front_northeast_sub_cell;
-    back_northeast_sub_cell->back  = back_transition_node;
+    back_northeast_sub_cell->z_front = north_transition_node;
+    back_northeast_sub_cell->z_back = back_southeast_sub_cell;
+    back_northeast_sub_cell->y_top  = east_transition_node;
+    back_northeast_sub_cell->y_down  = back_northwest_sub_cell;
+    back_northeast_sub_cell->x_right = front_northeast_sub_cell;
+    back_northeast_sub_cell->x_left  = back_transition_node;
 
-    back_northwest_sub_cell->north = north_transition_node;
-    back_northwest_sub_cell->south = back_southwest_sub_cell;
-    back_northwest_sub_cell->east  = back_northeast_sub_cell;
-    back_northwest_sub_cell->west  = west_transition_node;
-    back_northwest_sub_cell->front = front_northwest_sub_cell;
-    back_northwest_sub_cell->back  = back_transition_node;
+    back_northwest_sub_cell->z_front = north_transition_node;
+    back_northwest_sub_cell->z_back = back_southwest_sub_cell;
+    back_northwest_sub_cell->y_top  = back_northeast_sub_cell;
+    back_northwest_sub_cell->y_down  = west_transition_node;
+    back_northwest_sub_cell->x_right = front_northwest_sub_cell;
+    back_northwest_sub_cell->x_left  = back_transition_node;
 
-    front_northwest_sub_cell->north = north_transition_node;
-    front_northwest_sub_cell->south = front_southwest_sub_cell;
-    front_northwest_sub_cell->east  = front_northeast_sub_cell;
-    front_northwest_sub_cell->west  = west_transition_node;
-    front_northwest_sub_cell->front = front_transition_node;
-    front_northwest_sub_cell->back  = back_northwest_sub_cell;
+    front_northwest_sub_cell->z_front = north_transition_node;
+    front_northwest_sub_cell->z_back = front_southwest_sub_cell;
+    front_northwest_sub_cell->y_top  = front_northeast_sub_cell;
+    front_northwest_sub_cell->y_down  = west_transition_node;
+    front_northwest_sub_cell->x_right = front_transition_node;
+    front_northwest_sub_cell->x_left  = back_northwest_sub_cell;
 
-    front_southwest_sub_cell->north = front_northwest_sub_cell;
-    front_southwest_sub_cell->south = south_transition_node;
-    front_southwest_sub_cell->east  = front_southeast_sub_cell;
-    front_southwest_sub_cell->west  = west_transition_node;
-    front_southwest_sub_cell->front = front_transition_node;
-    front_southwest_sub_cell->back  = back_southwest_sub_cell;
+    front_southwest_sub_cell->z_front = front_northwest_sub_cell;
+    front_southwest_sub_cell->z_back = south_transition_node;
+    front_southwest_sub_cell->y_top  = front_southeast_sub_cell;
+    front_southwest_sub_cell->y_down  = west_transition_node;
+    front_southwest_sub_cell->x_right = front_transition_node;
+    front_southwest_sub_cell->x_left  = back_southwest_sub_cell;
 
-    back_southwest_sub_cell->north = back_northwest_sub_cell;
-    back_southwest_sub_cell->south = south_transition_node;
-    back_southwest_sub_cell->east  = back_southeast_sub_cell;
-    back_southwest_sub_cell->west  = west_transition_node;
-    back_southwest_sub_cell->front = front_southwest_sub_cell;
-    back_southwest_sub_cell->back  = back_transition_node;
+    back_southwest_sub_cell->z_front = back_northwest_sub_cell;
+    back_southwest_sub_cell->z_back = south_transition_node;
+    back_southwest_sub_cell->y_top  = back_southeast_sub_cell;
+    back_southwest_sub_cell->y_down  = west_transition_node;
+    back_southwest_sub_cell->x_right = front_southwest_sub_cell;
+    back_southwest_sub_cell->x_left  = back_transition_node;
 
-    back_southeast_sub_cell->north = back_northeast_sub_cell;
-    back_southeast_sub_cell->south = south_transition_node;
-    back_southeast_sub_cell->east  = east_transition_node;
-    back_southeast_sub_cell->west  = back_southwest_sub_cell;
-    back_southeast_sub_cell->front = front_southeast_sub_cell;
-    back_southeast_sub_cell->back  = back_transition_node;
+    back_southeast_sub_cell->z_front = back_northeast_sub_cell;
+    back_southeast_sub_cell->z_back = south_transition_node;
+    back_southeast_sub_cell->y_top  = east_transition_node;
+    back_southeast_sub_cell->y_down  = back_southwest_sub_cell;
+    back_southeast_sub_cell->x_right = front_southeast_sub_cell;
+    back_southeast_sub_cell->x_left  = back_transition_node;
 
-    front_southeast_sub_cell->north = front_northeast_sub_cell;
-    front_southeast_sub_cell->south = south_transition_node;
-    front_southeast_sub_cell->east  = east_transition_node;
-    front_southeast_sub_cell->west  = front_southwest_sub_cell;
-    front_southeast_sub_cell->front = front_transition_node;
-    front_southeast_sub_cell->back  = back_southeast_sub_cell;
+    front_southeast_sub_cell->z_front = front_northeast_sub_cell;
+    front_southeast_sub_cell->z_back = south_transition_node;
+    front_southeast_sub_cell->y_top  = east_transition_node;
+    front_southeast_sub_cell->y_down  = front_southwest_sub_cell;
+    front_southeast_sub_cell->x_right = front_transition_node;
+    front_southeast_sub_cell->x_left  = back_southeast_sub_cell;
 
     /* Connects the cell nodes with the transition nodes.  Quadruple  connectors
     1, 2, 3 and 4 are connected to neighbor cells  in  the  way  depicted below.
@@ -339,8 +310,6 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     south_transition_node->quadruple_connector3 = back_southeast_sub_cell;
     south_transition_node->quadruple_connector4 = back_southwest_sub_cell;
 
-
-
     // Linking bunch neighbor cells to the transition nodes just created.
     struct cell_node *neighbour_cell_node = NULL;
     struct transition_node *neighbour_transition_node = NULL;
@@ -361,7 +330,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     char node_type = ((struct basic_cell_data*)west_transition_node->single_connector)->type;
     if( node_type == 'b' ) {
         neighbour_cell_node = (struct cell_node*)(west_transition_node->single_connector);
-        neighbour_cell_node->east = west_transition_node;
+        neighbour_cell_node->y_top = west_transition_node;
     }
     else if( node_type == 'w' ) {
         neighbour_transition_node = (struct transition_node*)(west_transition_node->single_connector);
@@ -399,7 +368,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     node_type = ((struct basic_cell_data*)north_transition_node->single_connector)->type;
     if( node_type == 'b' ) {
         neighbour_cell_node = (struct cell_node*)(north_transition_node->single_connector);
-        neighbour_cell_node->south = north_transition_node;
+        neighbour_cell_node->z_back = north_transition_node;
     }
     else if( node_type == 'w' )	{
         neighbour_transition_node = (struct transition_node*)(north_transition_node->single_connector);
@@ -437,7 +406,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     node_type = ((struct basic_cell_data*)south_transition_node->single_connector)->type;
     if( node_type == 'b' ) {
         neighbour_cell_node = (struct cell_node*)(south_transition_node->single_connector);
-        neighbour_cell_node->north = south_transition_node;
+        neighbour_cell_node->z_front = south_transition_node;
     }
     else if( node_type == 'w' )	{
         neighbour_transition_node = (struct transition_node*)(south_transition_node->single_connector);
@@ -473,7 +442,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     node_type = ((struct basic_cell_data*)east_transition_node->single_connector)->type;
     if( node_type == 'b' ) {
         neighbour_cell_node = (struct cell_node*)(east_transition_node->single_connector);
-        neighbour_cell_node->west = east_transition_node;
+        neighbour_cell_node->y_down = east_transition_node;
     }
     else if( node_type == 'w' ) {
         neighbour_transition_node = (struct transition_node*)(east_transition_node->single_connector);
@@ -511,7 +480,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     node_type = ((struct basic_cell_data*)front_transition_node->single_connector)->type;
     if( node_type == 'b' ) {
         neighbour_cell_node = (struct cell_node*)(front_transition_node->single_connector);
-        neighbour_cell_node->back = front_transition_node;
+        neighbour_cell_node->x_left = front_transition_node;
     }
     else if( node_type == 'w' ) {
         neighbour_transition_node = (struct transition_node*)(front_transition_node->single_connector);
@@ -549,7 +518,7 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
     node_type = ((struct basic_cell_data*)back_transition_node->single_connector)->type;
     if( node_type == 'b' ) {
         neighbour_cell_node = (struct cell_node*)(back_transition_node->single_connector);
-        neighbour_cell_node->front = back_transition_node;
+        neighbour_cell_node->x_right = back_transition_node;
     }
     else if( node_type == 'w' ) {
         neighbour_transition_node = (struct transition_node*)(back_transition_node->single_connector);
@@ -1153,12 +1122,12 @@ void simplify_refinement( struct transition_node *transition_node ) {
 
             for( int i = 0; i < 4; i++ ) {
                 switch( direction ) {
-                    case 'n': { cellNode[i]->north = neighborCell[i]; break; }
-                    case 's': { cellNode[i]->south = neighborCell[i]; break; }
-                    case 'e': { cellNode[i]->east  = neighborCell[i]; break; }
-                    case 'w': { cellNode[i]->west  = neighborCell[i]; break; }
-                    case 'f': { cellNode[i]->front = neighborCell[i]; break; }
-                    case 'b': { cellNode[i]->back  = neighborCell[i]; break; }
+                    case 'n': { cellNode[i]->z_front = neighborCell[i]; break; }
+                    case 's': { cellNode[i]->z_back = neighborCell[i]; break; }
+                    case 'e': { cellNode[i]->y_top  = neighborCell[i]; break; }
+                    case 'w': { cellNode[i]->y_down  = neighborCell[i]; break; }
+                    case 'f': { cellNode[i]->x_right = neighborCell[i]; break; }
+                    case 'b': { cellNode[i]->x_left  = neighborCell[i]; break; }
                     default: break;
                 }
 
@@ -1167,12 +1136,12 @@ void simplify_refinement( struct transition_node *transition_node ) {
                     case CELL_NODE_TYPE: {
                         neighbour_cell_node = neighborCell[i];
                         switch( direction )	{
-                            case 'n': { neighbour_cell_node->south = cellNode[i]; break; }
-                            case 's': { neighbour_cell_node->north = cellNode[i]; break; }
-                            case 'e': { neighbour_cell_node->west  = cellNode[i]; break; }
-                            case 'w': { neighbour_cell_node->east  = cellNode[i]; break; }
-                            case 'f': { neighbour_cell_node->back  = cellNode[i]; break; }
-                            case 'b': { neighbour_cell_node->front = cellNode[i]; break; }
+                            case 'n': { neighbour_cell_node->z_back = cellNode[i];  break; }
+                            case 's': { neighbour_cell_node->z_front = cellNode[i]; break; }
+                            case 'e': { neighbour_cell_node->y_down  = cellNode[i]; break; }
+                            case 'w': { neighbour_cell_node->y_top  = cellNode[i];  break; }
+                            case 'f': { neighbour_cell_node->x_left  = cellNode[i]; break; }
+                            case 'b': { neighbour_cell_node->x_right = cellNode[i]; break; }
                             default: break;
                         }
                         break;
@@ -1208,30 +1177,29 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            struct point_3d discretization, struct point_3d center, struct point_3d translated_center,
+                            struct point_3d discretization, struct point_3d center,
                             uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step) {
 
     the_cell->cell_data.level = other_cell->cell_data.level;
-    the_cell->active = other_cell->active;
+    the_cell-> active = other_cell-> active;
 
     if(other_cell->mesh_extra_info) {
         the_cell->mesh_extra_info_size = other_cell->mesh_extra_info_size;
-        the_cell->mesh_extra_info = malloc(other_cell->mesh_extra_info_size);
-        memcpy(the_cell->mesh_extra_info, other_cell->mesh_extra_info, other_cell->mesh_extra_info_size);
+        the_cell->mesh_extra_info = malloc(the_cell->mesh_extra_info_size);
+        memcpy(the_cell->mesh_extra_info, other_cell->mesh_extra_info, the_cell->mesh_extra_info_size);
     }
 
     if(other_cell->linear_system_solver_extra_info) {
         the_cell->linear_system_solver_extra_info_size = other_cell->linear_system_solver_extra_info_size;
-        the_cell->linear_system_solver_extra_info = malloc(other_cell->linear_system_solver_extra_info_size);
+        the_cell->linear_system_solver_extra_info = malloc(the_cell->linear_system_solver_extra_info_size);
         memcpy(the_cell->linear_system_solver_extra_info, other_cell->linear_system_solver_extra_info,
-               other_cell->linear_system_solver_extra_info_size);
+               the_cell->linear_system_solver_extra_info_size);
     }
 
     the_cell->v = other_cell->v;
     the_cell->sigma = other_cell->sigma;
     the_cell->discretization = discretization;
     the_cell->center = center;
-    the_cell->translated_center = translated_center;
 
     the_cell->bunch_number = bunch_number;
 
@@ -1252,12 +1220,12 @@ void set_refined_transition_node_data(struct transition_node *the_node, struct c
     the_node->cell_data.level    = other_node->cell_data.level;
 
     switch(direction) {
-        case 'w': the_node->single_connector   = other_node->west; break;
-        case 'n': the_node->single_connector   = other_node->north; break;
-        case 's': the_node->single_connector   = other_node->south; break;
-        case 'e': the_node->single_connector   = other_node->east; break;
-        case 'f': the_node->single_connector   = other_node->front; break;
-        case 'b': the_node->single_connector   = other_node->back; break;
+        case 'w': the_node->single_connector   = other_node->y_down; break;
+        case 'n': the_node->single_connector   = other_node->z_front; break;
+        case 's': the_node->single_connector   = other_node->z_back; break;
+        case 'e': the_node->single_connector   = other_node->y_top; break;
+        case 'f': the_node->single_connector   = other_node->x_right; break;
+        case 'b': the_node->single_connector   = other_node->x_left; break;
         default:
             fprintf(stderr, "set_refined_transition_node_data() invalid direction %c Exiting!", direction);
             exit(10);

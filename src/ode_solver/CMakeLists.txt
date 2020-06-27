@@ -1,0 +1,4 @@
+set(SOURCE_FILES_ODE_SOLVER ode_solver.h ode_solver.c)
+
+ADD_LIBRARY(ode_solver STATIC ${SOURCE_FILES_ODE_SOLVER})
+set_property(TARGET ode_solver PROPERTY POSITION_INDEPENDENT_CODE ON)

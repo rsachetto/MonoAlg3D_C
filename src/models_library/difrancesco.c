@@ -15,55 +15,33 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    static bool first_call = true;
+    log_to_stdout_and_file("Using DiFrancesco & Noble 1985 CPU model\n");
 
-    if(first_call) {
-#ifdef _WIN32
-        printf("Using DiFrancesco & Noble 1985 CPU model\n");
-#else
-        print_to_stdout_and_file("Using DiFrancesco & Noble 1985 CPU model\n");
-#endif
+    uint32_t num_volumes = solver->original_num_cells;
+	
+	solver->sv = (real*)malloc(NEQ*num_volumes*sizeof(real));
 
-        first_call = false;
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ];
+        // Normal
+        sv[0] = -87;    // V millivolt
+        sv[1] = 4;      // Kc millimolar
+        sv[2] = 140;    // Ki millimolar
+        sv[3] = 8;      // Nai millimolar
+        sv[4] = 0.2;    // y dimensionless
+        sv[5] = 0.01;   // x dimensionless
+        sv[6] = 5e-5;   // Cai millimolar
+        sv[7] = 1;      // s dimensionless
+        sv[8] = 0.01;   // m dimensionless
+        sv[9] = 0.8;    // h dimensionless
+        sv[10] = 0.005; // d dimensionless
+        sv[11] = 1;     // f dimensionless
+        sv[12] = 1;     // f2 dimensionless
+        sv[13] = 2;     // Ca_up millimolar
+        sv[14] = 1;     // Ca_rel millimolar
+        sv[15] = 1;     // p dimensionless
     }
-
-    // Normal
-    sv[0] = -87;    // V millivolt
-    sv[1] = 4;      // Kc millimolar
-    sv[2] = 140;    // Ki millimolar
-    sv[3] = 8;      // Nai millimolar
-    sv[4] = 0.2;    // y dimensionless
-    sv[5] = 0.01;   // x dimensionless
-    sv[6] = 5e-5;   // Cai millimolar
-    sv[7] = 1;      // s dimensionless
-    sv[8] = 0.01;   // m dimensionless
-    sv[9] = 0.8;    // h dimensionless
-    sv[10] = 0.005; // d dimensionless
-    sv[11] = 1;     // f dimensionless
-    sv[12] = 1;     // f2 dimensionless
-    sv[13] = 2;     // Ca_up millimolar
-    sv[14] = 1;     // Ca_rel millimolar
-    sv[15] = 1;     // p dimensionless
-
-    // Pacing BCL = 300 ms
-    /*
-    sv[0] = -89.523;    // V millivolt
-    sv[1] = 4.25602;      // Kc millimolar
-    sv[2] = 139.882;    // Ki millimolar
-    sv[3] = 8.09539;      // Nai millimolar
-    sv[4] = 0.0826828;    // y dimensionless
-    sv[5] = 0.194361;   // x dimensionless
-    sv[6] = 2.57238e-05;   // Cai millimolar
-    sv[7] = 0.420488;      // s dimensionless
-    sv[8] = 0.00255133;   // m dimensionless
-    sv[9] = 0.986752;    // h dimensionless
-    sv[10] = 5.50534e-08; // d dimensionless
-    sv[11] = 1.0;     // f dimensionless
-    sv[12] = 0.742853;     // f2 dimensionless
-    sv[13] = 2.09383;     // Ca_up millimolar
-    sv[14] = 0.205441;     // Ca_rel millimolar
-    sv[15] = 0.987422;     // p dimensionless
-    */               
 
     CONSTANTS[0] = 8314.472;
     CONSTANTS[1] = 310;
@@ -117,21 +95,23 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     CONSTANTS[49] = CONSTANTS[47]*0.0200000;
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) {
+SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
 
-	int i;
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
-//    uint32_t *mapping = ((uint32_t*)extra_data);
-
-    #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) 
+    OMP(parallel for private(sv_id))
+    for (uint32_t i = 0; i < num_cells_to_solve; i++)
     {
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
         else
-            sv_id = (uint32_t )i;
+            sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) 
         {
@@ -261,159 +241,135 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     rDY_[14] = RATES[14];
     rDY_[15] = RATES[15];
 
-
-    //printf("\nInside\n");
-    //for (uint32_t i = 0; i < 10; i++)
-    //    printf("%g\n",sv[i]);
-
-/*
-    //State variables
-    const real V_old_ = sv[0];
-    const real kc_old_ = sv[1];
-    const real ki_old_ = sv[2];
-    const real nai_old_ = sv[3];
-    const real y_old_ = sv[4];
-    const real x_old_ = sv[5];
-    const real cai_old_ = sv[6];
-    const real s_old_ = sv[7];
-    const real m_old_ = sv[8];
-    const real h_old_ = sv[9];
-    const real d_old_ = sv[10];
-    const real f_old_ = sv[11];
-    const real f2_old_ = sv[12];
-    const real ca_up_old_ = sv[13];
-    const real ca_rel_old_ = sv[14];
-    const real p_old_ = sv[15];
-
-    //Parameters
-    const real R = 8314.472;
-    const real T = 310;
-    const real F = 96485.3415;
-    const real C = 0.075;
-    const real i_pulse = 0;
-    const real g_f_Na = 3;
-    const real g_f_K = 3;
-    const real Km_f = 45;
-    const real Nao = 140;
-    const real delta_y = 1e-5;
-    const real i_K_max = 180;
-    const real g_K1 = 920;
-    const real Km_K1 = 210;
-    const real Km_to = 10;
-    const real Km_Ca = 0.0005;
-    const real g_to = 0.28;
-    const real g_Nab = 0.18;
-    const real g_Cab = 0.02;
-    const real Cao = 2;
-    const real I_p = 125;
-    const real K_mK = 1;
-    const real K_mNa = 40;
-    const real n_NaCa = 3;
-    const real K_NaCa = 0.02;
-    const real d_NaCa = 0.001;
-    const real gamma = 0.5;
-    const real g_Na = 750;
-    const real delta_m = 1e-5;
-    const real P_si = 15;
-    const real delta_d = 0.0001;
-    const real delta_f = 0.0001;
-    const real alpha_f2 = 5;
-    const real K_mf2 = 0.001;
-    const real radius = 0.05;
-    const real length = 2;
-    const real V_e_ratio = 0.1;
-    const real Ca_up_max  = 5;
-    const real K_mCa = 0.001;
-    const real tau_up = 0.025;
-    const real tau_rep = 2;
-    const real tau_rel = 0.05;
-    const real rCa = 2;
-    const real Ve = 0.00157;
-    const real Kb = 4;
-    const real pf = 0.7;
-    const real RTONF = ( R*T)/F;
-    const real V_cell =  3.14159*pow(radius, 2.00000)*length;
-    const real Vi =  V_cell*(1.00000 - V_e_ratio);
-    const real V_up =  Vi*0.0500000;
-    const real V_rel =  Vi*0.0200000;    
-
-    // Algebraics
-    const real beta_f2 = ( cai_old_*alpha_f2)/K_mf2;
-    const real alpha_x = ( 0.500000*exp( 0.0826000*(V_old_+50.0000)))/(1.00000+exp( 0.0570000*(V_old_+50.0000)));
-    const real beta_x = ( 1.30000*exp( - 0.0600000*(V_old_+20.0000)))/(1.00000+exp( - 0.0400000*(V_old_+20.0000)));
-    
-    const real alpha_s =  0.0330000*exp(- V_old_/17.0000);
-    const real beta_s = 33.0000/(1.00000+exp(- (V_old_+10.0000)/8.00000));
-    
-    const real alpha_h =  20.0000*exp( - 0.125000*(V_old_+75.0000));
-    const real beta_h = 2000.00/( 320.000*exp( - 0.100000*(V_old_+75.0000))+1.00000);
-    
-    const real alpha_p = ( 0.625000*(V_old_+34.0000))/(exp((V_old_+34.0000)/4.00000) - 1.00000);
-    const real beta_p = 5.00000/(1.00000+exp(( - 1.00000*(V_old_+34.0000))/4.00000));
-    
-    const real alpha_y =  0.0500000*exp( - 0.0670000*((V_old_+52.0000) - 10.0000));
-    const real E0_y = (V_old_+52.0000) - 10.0000;
-    const real beta_y = (fabs(E0_y)<delta_y ? 2.50000 : ( 1.00000*E0_y)/(1.00000 - exp( - 0.200000*E0_y)));
-    
-    const real E0_m = V_old_+41.0000;
-    const real alpha_m = (fabs(E0_m)<delta_m ? 2000.00 : ( 200.000*E0_m)/(1.00000 - exp( - 0.100000*E0_m)));
-    const real beta_m =  8000.00*exp( - 0.0560000*(V_old_+66.0000));
-    
-    const real E0_d = (V_old_+24.0000) - 5.00000;
-    const real alpha_d = (fabs(E0_d)<delta_d ? 120.000 : ( 30.0000*E0_d)/(1.00000 - exp(( - 1.00000*E0_d)/4.00000)));
-    const real beta_d = (fabs(E0_d)<delta_d ? 120.000 : ( 12.0000*E0_d)/(exp(E0_d/10.0000) - 1.00000));
-    
-    const real E0_f = V_old_+34.0000;
-    const real alpha_f = (fabs(E0_f)<delta_f ? 25.0000 : ( 6.25000*E0_f)/(exp(E0_f/4.00000) - 1.00000));
-    const real beta_f = 50.0000/(1.00000+exp(( - 1.00000*(V_old_+34.0000))/4.00000));
-    
-    const real E_Na =  RTONF*log(Nao/nai_old_);
-    const real i_Na_b =  g_Nab*(V_old_ - E_Na);
-    const real i_p = ( (( I_p*kc_old_)/(K_mK+kc_old_))*nai_old_)/(K_mNa+nai_old_);
-    const real i_NaCa = ( K_NaCa*( exp(( gamma*(n_NaCa - 2.00000)*V_old_)/RTONF)*pow(nai_old_, n_NaCa)*Cao -  exp(( (gamma - 1.00000)*(n_NaCa - 2.00000)*V_old_)/RTONF)*pow(Nao, n_NaCa)*cai_old_))/( (1.00000+ d_NaCa*( cai_old_*pow(Nao, n_NaCa)+ Cao*pow(nai_old_, n_NaCa)))*(1.00000+cai_old_/0.00690000));
-    const real E_mh =  RTONF*log((Nao+ 0.120000*kc_old_)/(nai_old_+ 0.120000*ki_old_));
-    const real i_Na =  g_Na*pow(m_old_, 3.00000)*h_old_*(V_old_ - E_mh);
-    const real i_fNa =  (( y_old_*kc_old_)/(kc_old_+Km_f))*g_f_Na*(V_old_ - E_Na);
-    const real i_siNa =  (( 0.0100000*P_si*(V_old_ - 50.0000))/( RTONF*(1.00000 - exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))))*( nai_old_*exp(50.0000/RTONF) -  Nao*exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))*d_old_*f_old_*f2_old_;
-    
-    const real i_up =  (( 2.00000*1.00000*Vi*F)/( 1.00000*tau_up*Ca_up_max))*cai_old_*(Ca_up_max - ca_up_old_);
-    const real i_tr =  (( 2.00000*1.00000*V_rel*F)/( 1.00000*tau_rep))*p_old_*(ca_up_old_ - ca_rel_old_);
-    
-    const real I_K = ( i_K_max*(ki_old_ -  kc_old_*exp(- V_old_/RTONF)))/140.000;
-    const real i_K =  x_old_*I_K;
-    const real E_K =  RTONF*log(kc_old_/ki_old_);
-    const real i_K1 = ( (( g_K1*kc_old_)/(kc_old_+Km_K1))*(V_old_ - E_K))/(1.00000+exp(( ((V_old_+10.0000) - E_K)*2.00000)/RTONF));
-    const real i_to =  (( (( s_old_*g_to*(0.200000+kc_old_/(Km_to+kc_old_))*cai_old_)/(Km_Ca+cai_old_))*(V_old_+10.0000))/(1.00000 - exp( - 0.200000*(V_old_+10.0000))))*( ki_old_*exp(( 0.500000*V_old_)/RTONF) -  kc_old_*exp(( - 0.500000*V_old_)/RTONF));
-    const real i_fK =  (( y_old_*kc_old_)/(kc_old_+Km_f))*g_f_K*(V_old_ - E_K);
-    const real i_siK =  (( 0.0100000*P_si*(V_old_ - 50.0000))/( RTONF*(1.00000 - exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))))*( ki_old_*exp(50.0000/RTONF) -  kc_old_*exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))*d_old_*f_old_*f2_old_;
-    const real i_mK = (i_K1+i_K+i_fK+i_siK+i_to) -  2.00000*i_p;
-    
-    const real i_f = i_fNa+i_fK;
-    const real E_Ca =  0.500000*RTONF*log(Cao/cai_old_);
-    const real i_Ca_b =  g_Cab*(V_old_ - E_Ca);
-    const real i_siCa =  (( 4.00000*P_si*(V_old_ - 50.0000))/( RTONF*(1.00000 - exp(( - 1.00000*(V_old_ - 50.0000)*2.00000)/RTONF))))*( cai_old_*exp(100.000/RTONF) -  Cao*exp(( - 2.00000*(V_old_ - 50.0000))/RTONF))*d_old_*f_old_*f2_old_;
-    const real i_si = i_siCa+i_siK+i_siNa;
-    
-    const real i_rel = ( (( 2.00000*1.00000*V_rel*F)/( 1.00000*tau_rel))*ca_rel_old_*pow(cai_old_, rCa))/(pow(cai_old_, rCa)+pow(K_mCa, rCa));
-
-    // Rates of change
-    rDY_[0] = - (i_f+i_K+i_K1+i_to+i_Na_b+i_Ca_b+i_p+i_NaCa+i_Na+i_si+i_pulse)/C;
-    rDY_[1] =  - pf*(kc_old_ - Kb)+( 1.00000*i_mK)/( 1.00000*Ve*F);
-    rDY_[2] = ( - 1.00000*i_mK)/( 1.00000*Vi*F);
-    rDY_[3] = ( - 1.00000*(i_Na+i_Na_b+i_fNa+i_siNa+ i_p*3.00000+( i_NaCa*n_NaCa)/(n_NaCa - 2.00000)))/( 1.00000*Vi*F);
-    rDY_[4] =  alpha_y*(1.00000 - y_old_) -  beta_y*y_old_;
-    rDY_[5] =  alpha_x*(1.00000 - x_old_) -  beta_x*x_old_;
-    rDY_[6] = ( - 1.00000*((((i_siCa+i_Ca_b) - ( 2.00000*i_NaCa)/(n_NaCa - 2.00000)) - i_rel)+i_up))/( 2.00000*1.00000*Vi*F);
-    rDY_[7] =  alpha_s*(1.00000 - s_old_) -  beta_s*s_old_;
-    rDY_[8] =  alpha_m*(1.00000 - m_old_) -  beta_m*m_old_;
-    rDY_[9] =  alpha_h*(1.00000 - h_old_) -  beta_h*h_old_;
-    rDY_[10] =  alpha_d*(1.00000 - d_old_) -  beta_d*d_old_;
-    rDY_[11] =  alpha_f*(1.00000 - f_old_) -  beta_f*f_old_;
-    rDY_[12] = alpha_f2 -  f2_old_*(alpha_f2+beta_f2);
-    rDY_[13] = ( 1.00000*(i_up - i_tr))/( 2.00000*1.00000*V_up*F);
-    rDY_[14] = ( 1.00000*(i_tr - i_rel))/( 2.00000*1.00000*V_rel*F);
-    rDY_[15] =  alpha_p*(1.00000 - p_old_) -  beta_p*p_old_;
-*/
-
 }
 
+/*
+ * VOI is time in component environment (second).
+ * STATES[0] is V in component membrane (millivolt).
+ * CONSTANTS[0] is R in component membrane (joule_per_kilomole_kelvin).
+ * CONSTANTS[1] is T in component membrane (kelvin).
+ * CONSTANTS[2] is F in component membrane (coulomb_per_mole).
+ * CONSTANTS[45] is RTONF in component membrane (millivolt).
+ * CONSTANTS[3] is C in component membrane (microF).
+ * CONSTANTS[4] is i_pulse in component membrane (nanoA).
+ * ALGEBRAIC[25] is i_f in component hyperpolarising_activated_current (nanoA).
+ * ALGEBRAIC[27] is i_K in component time_dependent_potassium_current (nanoA).
+ * ALGEBRAIC[28] is i_K1 in component time_independent_potassium_current (nanoA).
+ * ALGEBRAIC[29] is i_to in component transient_outward_current (nanoA).
+ * ALGEBRAIC[30] is i_Na_b in component sodium_background_current (nanoA).
+ * ALGEBRAIC[32] is i_Ca_b in component calcium_background_current (nanoA).
+ * ALGEBRAIC[33] is i_p in component sodium_potassium_pump (nanoA).
+ * ALGEBRAIC[34] is i_NaCa in component Na_Ca_exchanger (nanoA).
+ * ALGEBRAIC[36] is i_Na in component fast_sodium_current (nanoA).
+ * ALGEBRAIC[43] is i_si in component second_inward_current (nanoA).
+ * ALGEBRAIC[23] is i_fNa in component hyperpolarising_activated_current (nanoA).
+ * ALGEBRAIC[0] is E_Na in component hyperpolarising_activated_current (millivolt).
+ * ALGEBRAIC[10] is E_K in component hyperpolarising_activated_current (millivolt).
+ * ALGEBRAIC[24] is i_fK in component hyperpolarising_activated_current (nanoA).
+ * CONSTANTS[5] is g_f_Na in component hyperpolarising_activated_current (microS).
+ * CONSTANTS[6] is g_f_K in component hyperpolarising_activated_current (microS).
+ * CONSTANTS[7] is Km_f in component hyperpolarising_activated_current (millimolar).
+ * STATES[1] is Kc in component extracellular_potassium_concentration (millimolar).
+ * STATES[2] is Ki in component intracellular_potassium_concentration (millimolar).
+ * STATES[3] is Nai in component intracellular_sodium_concentration (millimolar).
+ * CONSTANTS[8] is Nao in component extracellular_sodium_concentration (millimolar).
+ * STATES[4] is y in component hyperpolarising_activated_current_y_gate (dimensionless).
+ * ALGEBRAIC[1] is alpha_y in component hyperpolarising_activated_current_y_gate (per_second).
+ * ALGEBRAIC[19] is beta_y in component hyperpolarising_activated_current_y_gate (per_second).
+ * CONSTANTS[9] is delta_y in component hyperpolarising_activated_current_y_gate (millivolt).
+ * ALGEBRAIC[11] is E0_y in component hyperpolarising_activated_current_y_gate (millivolt).
+ * ALGEBRAIC[26] is I_K in component time_dependent_potassium_current (nanoA).
+ * CONSTANTS[10] is i_K_max in component time_dependent_potassium_current (nanoA).
+ * STATES[5] is x in component time_dependent_potassium_current_x_gate (dimensionless).
+ * ALGEBRAIC[2] is alpha_x in component time_dependent_potassium_current_x_gate (per_second).
+ * ALGEBRAIC[12] is beta_x in component time_dependent_potassium_current_x_gate (per_second).
+ * CONSTANTS[11] is g_K1 in component time_independent_potassium_current (microS).
+ * CONSTANTS[12] is Km_K1 in component time_independent_potassium_current (millimolar).
+ * CONSTANTS[13] is Km_to in component transient_outward_current (millimolar).
+ * CONSTANTS[14] is Km_Ca in component transient_outward_current (millimolar).
+ * CONSTANTS[15] is g_to in component transient_outward_current (microS_per_millimolar).
+ * STATES[6] is Cai in component intracellular_calcium_concentration (millimolar).
+ * STATES[7] is s in component transient_outward_current_s_gate (dimensionless).
+ * ALGEBRAIC[3] is alpha_s in component transient_outward_current_s_gate (per_second).
+ * ALGEBRAIC[13] is beta_s in component transient_outward_current_s_gate (per_second).
+ * CONSTANTS[16] is g_Nab in component sodium_background_current (microS).
+ * ALGEBRAIC[31] is E_Ca in component calcium_background_current (millivolt).
+ * CONSTANTS[17] is g_Cab in component calcium_background_current (microS).
+ * CONSTANTS[18] is Cao in component extracellular_calcium_concentration (millimolar).
+ * CONSTANTS[19] is I_p in component sodium_potassium_pump (nanoA).
+ * CONSTANTS[20] is K_mK in component sodium_potassium_pump (millimolar).
+ * CONSTANTS[21] is K_mNa in component sodium_potassium_pump (millimolar).
+ * CONSTANTS[22] is n_NaCa in component Na_Ca_exchanger (dimensionless).
+ * CONSTANTS[23] is K_NaCa in component Na_Ca_exchanger (nanoA).
+ * CONSTANTS[24] is d_NaCa in component Na_Ca_exchanger (dimensionless).
+ * CONSTANTS[25] is gamma in component Na_Ca_exchanger (dimensionless).
+ * CONSTANTS[26] is g_Na in component fast_sodium_current (microS).
+ * ALGEBRAIC[35] is E_mh in component fast_sodium_current (millivolt).
+ * STATES[8] is m in component fast_sodium_current_m_gate (dimensionless).
+ * STATES[9] is h in component fast_sodium_current_h_gate (dimensionless).
+ * ALGEBRAIC[14] is alpha_m in component fast_sodium_current_m_gate (per_second).
+ * ALGEBRAIC[20] is beta_m in component fast_sodium_current_m_gate (per_second).
+ * CONSTANTS[27] is delta_m in component fast_sodium_current_m_gate (millivolt).
+ * ALGEBRAIC[4] is E0_m in component fast_sodium_current_m_gate (millivolt).
+ * ALGEBRAIC[5] is alpha_h in component fast_sodium_current_h_gate (per_second).
+ * ALGEBRAIC[15] is beta_h in component fast_sodium_current_h_gate (per_second).
+ * ALGEBRAIC[37] is i_siCa in component second_inward_current (nanoA).
+ * ALGEBRAIC[38] is i_siK in component second_inward_current (nanoA).
+ * ALGEBRAIC[40] is i_siNa in component second_inward_current (nanoA).
+ * CONSTANTS[28] is P_si in component second_inward_current (nanoA_per_millimolar).
+ * STATES[10] is d in component second_inward_current_d_gate (dimensionless).
+ * STATES[11] is f in component second_inward_current_f_gate (dimensionless).
+ * STATES[12] is f2 in component second_inward_current_f2_gate (dimensionless).
+ * ALGEBRAIC[16] is alpha_d in component second_inward_current_d_gate (per_second).
+ * ALGEBRAIC[21] is beta_d in component second_inward_current_d_gate (per_second).
+ * CONSTANTS[29] is delta_d in component second_inward_current_d_gate (millivolt).
+ * ALGEBRAIC[6] is E0_d in component second_inward_current_d_gate (millivolt).
+ * ALGEBRAIC[17] is alpha_f in component second_inward_current_f_gate (per_second).
+ * ALGEBRAIC[22] is beta_f in component second_inward_current_f_gate (per_second).
+ * CONSTANTS[30] is delta_f in component second_inward_current_f_gate (millivolt).
+ * ALGEBRAIC[7] is E0_f in component second_inward_current_f_gate (millivolt).
+ * CONSTANTS[31] is alpha_f2 in component second_inward_current_f2_gate (per_second).
+ * ALGEBRAIC[8] is beta_f2 in component second_inward_current_f2_gate (per_second).
+ * CONSTANTS[32] is K_mf2 in component second_inward_current_f2_gate (millimolar).
+ * CONSTANTS[33] is radius in component intracellular_sodium_concentration (micrometre).
+ * CONSTANTS[34] is length in component intracellular_sodium_concentration (micrometre).
+ * CONSTANTS[35] is V_e_ratio in component intracellular_sodium_concentration (dimensionless).
+ * CONSTANTS[46] is V_Cell in component intracellular_sodium_concentration (micrometre3).
+ * CONSTANTS[47] is Vi in component intracellular_sodium_concentration (micrometre3).
+ * CONSTANTS[48] is V_up in component intracellular_calcium_concentration (micrometre3).
+ * CONSTANTS[49] is V_rel in component intracellular_calcium_concentration (micrometre3).
+ * ALGEBRAIC[39] is i_up in component intracellular_calcium_concentration (nanoA).
+ * ALGEBRAIC[41] is i_tr in component intracellular_calcium_concentration (nanoA).
+ * ALGEBRAIC[44] is i_rel in component intracellular_calcium_concentration (nanoA).
+ * STATES[13] is Ca_up in component intracellular_calcium_concentration (millimolar).
+ * STATES[14] is Ca_rel in component intracellular_calcium_concentration (millimolar).
+ * CONSTANTS[36] is Ca_up_max in component intracellular_calcium_concentration (millimolar).
+ * CONSTANTS[37] is K_mCa in component intracellular_calcium_concentration (millimolar).
+ * STATES[15] is p in component intracellular_calcium_concentration (dimensionless).
+ * ALGEBRAIC[9] is alpha_p in component intracellular_calcium_concentration (per_second).
+ * ALGEBRAIC[18] is beta_p in component intracellular_calcium_concentration (per_second).
+ * CONSTANTS[38] is tau_up in component intracellular_calcium_concentration (second).
+ * CONSTANTS[39] is tau_rep in component intracellular_calcium_concentration (second).
+ * CONSTANTS[40] is tau_rel in component intracellular_calcium_concentration (second).
+ * CONSTANTS[41] is rCa in component intracellular_calcium_concentration (dimensionless).
+ * CONSTANTS[42] is Ve in component extracellular_potassium_concentration (micrometre3).
+ * CONSTANTS[43] is Kb in component extracellular_potassium_concentration (millimolar).
+ * ALGEBRAIC[42] is i_mK in component extracellular_potassium_concentration (nanoA).
+ * CONSTANTS[44] is pf in component extracellular_potassium_concentration (per_second).
+ * RATES[0] is d/dt V in component membrane (millivolt).
+ * RATES[4] is d/dt y in component hyperpolarising_activated_current_y_gate (dimensionless).
+ * RATES[5] is d/dt x in component time_dependent_potassium_current_x_gate (dimensionless).
+ * RATES[7] is d/dt s in component transient_outward_current_s_gate (dimensionless).
+ * RATES[8] is d/dt m in component fast_sodium_current_m_gate (dimensionless).
+ * RATES[9] is d/dt h in component fast_sodium_current_h_gate (dimensionless).
+ * RATES[10] is d/dt d in component second_inward_current_d_gate (dimensionless).
+ * RATES[11] is d/dt f in component second_inward_current_f_gate (dimensionless).
+ * RATES[12] is d/dt f2 in component second_inward_current_f2_gate (dimensionless).
+ * RATES[3] is d/dt Nai in component intracellular_sodium_concentration (millimolar).
+ * RATES[15] is d/dt p in component intracellular_calcium_concentration (dimensionless).
+ * RATES[13] is d/dt Ca_up in component intracellular_calcium_concentration (millimolar).
+ * RATES[14] is d/dt Ca_rel in component intracellular_calcium_concentration (millimolar).
+ * RATES[6] is d/dt Cai in component intracellular_calcium_concentration (millimolar).
+ * RATES[1] is d/dt Kc in component extracellular_potassium_concentration (millimolar).
+ * RATES[2] is d/dt Ki in component intracellular_potassium_concentration (millimolar).
+ */

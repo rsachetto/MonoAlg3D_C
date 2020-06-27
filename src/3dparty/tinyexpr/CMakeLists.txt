@@ -1,0 +1,3 @@
+set(SOURCE_FILES_TINYEXPR tinyexpr.c tinyexpr.h)
+
+ADD_LIBRARY(tinyexpr STATIC ${SOURCE_FILES_TINYEXPR})

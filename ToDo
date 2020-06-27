@@ -6,21 +6,12 @@ Sachetto
 - Rewrite some library APIs (maybe we need only the config to be passed to the library function)
 
 Berg
-- Merge the last modifications from Sachetto to my code and generate two branches (ShellScript build & CMake build)
-	- Send a pull request to him
-
-- Refactor the save map functions as a single one
-
-- Implement coupling between Purkinje and tissue
-    - Fix the retropropagation code
-    - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
-    - Fix a bug when using adaptativity (benchmark_purkinje.ini)
-    - Add the option to configure the conductivity of the segments from the Purkinje network on the input ".vtk"
-
+- Refactor the save mesh functions
 - Add a conduction velocity calculator for Purkinje fibers
 - Implement the GMRES linear system solver (see Bernardo's book as reference ...)
 - Implement a Purkinje restore state function
 
 Pedro
+- Double-check the DDM equations
 
 Elnaz

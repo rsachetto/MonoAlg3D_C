@@ -4,15 +4,15 @@
 
 #include "stim_config.h"
 #include <dlfcn.h>
-#include "../utils/file_utils.h"
+#include "../logger/logger.h"
 
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
 void print_stim_config_values(struct config* s) {
 
     if(s == NULL) {
-        print_to_stdout_and_file("No Stimulus configuration.\n");
+        log_to_stdout_and_file("No Stimulus configuration.\n");
         return;
     }
     
@@ -25,27 +25,27 @@ void print_stim_config_values(struct config* s) {
     real stim_current = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, s->config_data, "current");
 
-    print_to_stdout_and_file("Stimulus start: %lf\n",    stim_start);
-    print_to_stdout_and_file("Stimulus duration: %lf\n", stim_duration);
-    print_to_stdout_and_file("Stimulus current: %lf\n",  stim_current);
-    print_to_stdout_and_file("Stimulus library: %s\n",   s->library_file_path);
-    print_to_stdout_and_file("Main Stimulus function: %s\n",  s->main_function_name);
+    log_to_stdout_and_file("[stim] Stimulus start: %lf\n",    stim_start);
+    log_to_stdout_and_file("[stim] Stimulus duration: %lf\n", stim_duration);
+    log_to_stdout_and_file("[stim] Stimulus current: %lf\n",  stim_current);
+    log_to_stdout_and_file("[stim] Stimulus library: %s\n",   s->library_file_path);
+    log_to_stdout_and_file("[stim] Main Stimulus function: %s\n",  s->main_function_name);
 
     if(s->init_function_name)
-        print_to_stdout_and_file("Init Stimulus function: %s\n",  s->init_function_name);
+        log_to_stdout_and_file("[stim] Init Stimulus function: %s\n",  s->init_function_name);
 
     if(s->end_function_name)
-        print_to_stdout_and_file("End Stimulus function: %s\n",  s->end_function_name);
+        log_to_stdout_and_file("[stim] End Stimulus function: %s\n",  s->end_function_name);
 
     struct string_hash_entry *tmp = s->config_data;
 
     if(shlen(tmp) == 1)
     {
-        print_to_stdout_and_file("Stimulus extra parameter:\n");
+        log_to_stdout_and_file("[stim] Stimulus extra parameter:\n");
     }
     else if(shlen(tmp)  > 1)
     {
-        print_to_stdout_and_file("Stimulus extra parameters:\n");
+        log_to_stdout_and_file("[stim] Stimulus extra parameters:\n");
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);

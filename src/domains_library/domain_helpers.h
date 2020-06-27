@@ -20,11 +20,8 @@ void set_cell_not_changeable (struct cell_node *c, real_cpu initial_discretizati
 
 void set_plain_fibrosis (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
 
-// ---------------------------------------------------------------------------------------------------------------
-// NEW FUNCTIONS!
 void set_plain_fibrosis_and_write_positions_to_file (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
 void set_plain_fibrosis_using_file (struct grid *the_grid, const char filename[]);
-// ---------------------------------------------------------------------------------------------------------------
 
 void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
                         const double min_x, const double max_x,\
@@ -36,9 +33,12 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 void set_plain_sphere_fibrosis (struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
                                 real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed);
 
+void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_radius);
+
+
 void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, real_cpu big_scar_center_x,
-                             real_cpu big_scar_center_y, real_cpu big_scar_center_z, real_cpu small_scar_center_x,
-                             real_cpu small_scar_center_y, real_cpu small_scar_center_z);
+                     real_cpu big_scar_center_y, real_cpu big_scar_center_z, real_cpu small_scar_center_x,
+                     real_cpu small_scar_center_y, real_cpu small_scar_center_z);
 
 void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char *filename, int size);
 
@@ -47,5 +47,15 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
                                    real_cpu *real_side_length_y, real_cpu *real_side_length_z);
 
 void set_fibrosis_from_file(struct grid *grid, const char *filename, int size);
+
+void set_plain_fibrosis_and_write_positions_to_file (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
+void set_plain_fibrosis_using_file (struct grid *the_grid, const char filename[]);
+// ---------------------------------------------------------------------------------------------------------------
+
+void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
+                        const double min_x, const double max_x,\
+                        const double min_y, const double max_y,\
+                        const double min_z, const double max_z);
+
 
 #endif // MONOALG3D_DOMAIN_HELPERS_H

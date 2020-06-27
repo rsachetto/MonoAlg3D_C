@@ -1,0 +1,3 @@
+set(SOURCE_FILES_MINIZ miniz.c miniz.h)
+
+ADD_LIBRARY(miniz STATIC ${SOURCE_FILES_MINIZ})

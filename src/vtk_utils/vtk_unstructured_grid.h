@@ -79,22 +79,18 @@ struct vtk_unstructured_grid {
 struct vtk_unstructured_grid *new_vtk_unstructured_grid();
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                             float *plain_coordinates, bool clip_with_bounds,
-                                             float *bounds, bool read_only_values,\
-                                             const char scalar_name);
+                                                                     float *plain_coordinates, bool clip_with_bounds,
+                                                                     float *bounds, bool read_only_values);
 
 void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
-void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *vtk_grid, char *filename, int compression_level);
+void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *vtk_grid, const char *filename, int compression_level);
 void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
-
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_vtu_file(const char *vtu_file_name);
-
+void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *vtu_file_name);
 void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values);
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_activation_file(const char *vtu_file_name);
-void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *vtu_file_name);
-
+void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *file_name);
 
 #endif // MONOALG3D_VTK_UNSTRUCTURED_GRID_H

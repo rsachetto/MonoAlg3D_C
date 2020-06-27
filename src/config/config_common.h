@@ -30,6 +30,8 @@ struct config {
     void *main_function;
     void *init_function;
     void *end_function;
+
+    real_cpu current_t;
 };
 
 struct config *alloc_and_init_config_data();

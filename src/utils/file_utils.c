@@ -5,11 +5,9 @@
 #include "file_utils.h"
 
 #define STB_DS_IMPLEMENTATION
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
-
-#include "../string/sds.h"
-#include <stdarg.h>
+#include "../3dparty/sds/sds.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
@@ -20,8 +18,23 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+char *get_current_directory() {
+    long size;
+    char *buf = NULL;
+    size = pathconf(".", _PC_PATH_MAX);
 
-static FILE *logfile = NULL;
+    if ((buf = (char *)malloc((size_t)size)) != NULL)
+        buf = getcwd(buf, (size_t)size);
+
+    buf = strcat(buf, "/");
+    return buf;
+}
+
+char *get_filename_ext(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return NULL;
+    return strdup(dot + 1);
+}
 
 char * get_dir_from_path(const char * path) {
     char *last_slash = NULL;
@@ -31,58 +44,31 @@ char * get_dir_from_path(const char * path) {
     return parent;
 }
 
-void print_to_stdout_and_file(char const *fmt, ...) {
-    va_list ap;
-
-    if (!no_stdout) {
-        va_start(ap, fmt);
-        vprintf(fmt, ap);
-        fflush(stdout);
-        va_end(ap);
+char * get_file_from_path(const char * path) {
+    char *last_slash = NULL;
+    char *file = NULL;
+    last_slash = strrchr(path, '/');
+    
+    if(last_slash) {
+        file = strndup(last_slash + 1,  path - last_slash + 1);
+        return file;
+    }
+    else { 
+        return strdup(path);
     }
 
-    va_start(ap, fmt);
-    if (logfile) {
-        vfprintf(logfile, fmt, ap);
-        fflush(logfile);
-    }
-    va_end(ap);
 }
 
-void print_to_stderr_and_file_and_exit(char const *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    vprintf(fmt, ap);
-    fflush(stderr);
-    va_end(ap);
-    va_start(ap, fmt);
-    if (logfile) {
-        vfprintf(logfile, fmt, ap);
-        fflush(logfile);
-    }
-    va_end(ap);
-    exit(EXIT_FAILURE);
+char *get_filename_without_ext(const char *filename) {
+    char *last_dot = NULL;
+    char *file = NULL;
+    last_dot = strrchr(filename, '.');
+
+    if(!last_dot || last_dot == filename) return (char*)filename;
+
+    file = strndup(filename,  strlen(filename) - strlen(last_dot));
+    return file;
 }
-
-void open_logfile(const char *path) {
-
-#ifdef _WIN32
-    fopen_s(&logfile, path, "w");
-#else
-    logfile = fopen(path, "w");
-#endif
-
-    if (logfile == NULL) {
-        fprintf(stderr, "Error opening %s, printing output only in the sdtout (Terminal)\n", path);
-    } else {
-        printf("Log will be saved in %s\n", path);
-    }
-}
-
-void close_logfile() {
-    if (logfile) fclose(logfile);
-}
-
 
 int cp_file(const char *to, const char *from) {
     int fd_to, fd_from;
@@ -164,15 +150,15 @@ char *read_entire_file_with_mmap(const char *filename, size_t *size) {
 
     f = (char *) mmap (0, to_page_size, PROT_READ, MAP_PRIVATE, fd, 0);
 
-    close(fd);
-
     if (f == NULL)
         return NULL;
+
+    close(fd);
 
     return f;
 }
 
-char *read_entire_file(const char *filename, long *size) {
+char *read_entire_file(const char *filename, size_t *size) {
 
     FILE *infile;
     char *buffer;
@@ -264,7 +250,7 @@ string_array list_files_from_dir(const char *dir, const char *prefix) {
     return files;
 }
 
-/* qsort C-string comparison function */
+/* qsort C-sds comparison function */
 static int cstring_cmp(const void *a, const void *b)
 {
     char *ia = *((char **)a);
@@ -305,6 +291,8 @@ string_array list_files_from_dir_sorted(const char *dir, const char *prefix) {
 
     while ((dirp = readdir(dp)) != NULL) {
 
+        if(dirp->d_type != DT_REG) continue;
+
         char *file_name = strdup(dirp->d_name);
 
         if (prefix) {
@@ -335,6 +323,7 @@ bool file_exists(const char *path) {
     }
 
 }
+
 bool dir_exists(const char *path) {
     struct stat info;
 
@@ -344,6 +333,44 @@ bool dir_exists(const char *path) {
         return true;
     else
         return false;
+}
+
+void free_path_information(struct path_information *input_info) {
+    free(input_info->dir_name);
+    free(input_info->filename_without_extension);
+    free(input_info->file_extension);
+}
+
+void get_path_information(const char *path, struct path_information *input_info ) {
+    struct stat info;
+
+    input_info->dir_name = NULL;
+    input_info->filename_without_extension = NULL;
+    input_info->file_extension = NULL;
+
+    input_info->exists = false;
+
+    if(stat( path, &info ) != 0) {
+        return;
+    }
+
+    input_info->exists = true;
+    input_info->is_dir = info.st_mode & S_IFDIR;
+    input_info->is_file = !(input_info->is_dir);
+
+    if(input_info->is_file) {
+        input_info->file_extension = get_filename_ext(path);
+        char *file_name = get_file_from_path(path);
+        input_info->filename_without_extension = get_filename_without_ext(file_name);
+        input_info->dir_name = get_dir_from_path(path);
+        free(file_name);
+    }
+    else {
+        input_info->dir_name = strdup(path);
+    }
+
+    return;
+
 }
 
 int remove_directory(const char *path)
@@ -483,7 +510,7 @@ static const unsigned char base64_table[65] =
  * or %NULL on failure
  *
  * Caller is responsible for freeing the returned buffer. Returned buffer is
- * nul terminated to make it easier to use as a C string. The nul terminator is
+ * nul terminated to make it easier to use as a C sds. The nul terminator is
  * not included in out_len.
  */
 unsigned char * base64_encode(const unsigned char *src, size_t len,
@@ -621,7 +648,7 @@ bool check_simulation_completed(char *simulation_dir) {
 
     char *word = NULL;
 
-    long file_size = 0;
+    size_t file_size = 0;
     char *outputlog_content = read_entire_file(output_file_name, &file_size);
 
     if(outputlog_content == NULL) {
@@ -629,7 +656,7 @@ bool check_simulation_completed(char *simulation_dir) {
         return false;
     }
 
-    for(int c = 0; c < file_size; c++) {
+    for(size_t c = 0; c < file_size; c++) {
         char l = outputlog_content[c];
         if(!isspace(l)) {
             arrput(word, l);
@@ -652,7 +679,7 @@ bool check_simulation_completed(char *simulation_dir) {
 
 
 
-real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int *nnz) {
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, long *nnz) {
     const char *sep = " ";
     char *line_a = NULL;
     size_t len;
@@ -665,10 +692,10 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int 
         sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
         if (count) {
             if (strcmp(tmp[1], "columns:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
+                (*num_lines) = strtol(tmp[2], NULL, 10);
             }
             if (strcmp(tmp[1], "nnz:") == 0) {
-                (*nnz) = atoi(tmp[2]);
+                (*nnz) = strtol(tmp[2], NULL, 10);
             }
         }
         sdsfreesplitres(tmp, count);
@@ -676,21 +703,21 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int 
 
     real_cpu **matrix = (real_cpu **) malloc(*num_lines * sizeof(real_cpu *));
 
-    for (int i = 0; i < *num_lines; i++) {
+    for (long i = 0; i < *num_lines; i++) {
         matrix[i] = (real_cpu *) calloc(*num_lines, sizeof(real_cpu));
     }
 
-    int item_count = 0;
-    int m_line, m_column;
+    long item_count = 0;
+    long m_line, m_column;
     real_cpu m_value;
 
     while (item_count < *nnz) {
 
         sds *tmp = sdssplitlen(line_a, (int) strlen(line_a), sep, (int) strlen(sep), &count);
         if (tmp[0][0] != '\n') {
-            m_line = atoi(tmp[0]);
-            m_column = atoi(tmp[1]);
-            m_value = atof(tmp[2]);
+            m_line = strtol(tmp[0], NULL, 10);
+            m_column = strtol(tmp[1], NULL, 10);
+            m_value = (real_cpu) strtod(tmp[2], NULL);
 
             matrix[m_line - 1][m_column - 1] = m_value;
         }
@@ -706,7 +733,7 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, int *num_lines, int 
     return matrix;
 }
 
-real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, long *num_lines) {
 
     ssize_t read;
     size_t len;
@@ -719,7 +746,7 @@ real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
         sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
         if (count) {
             if (strcmp(tmp[1], "rows:") == 0) {
-                (*num_lines) = atoi(tmp[2]);
+                (*num_lines) = strtol(tmp[2], NULL, 10);
             }
         }
         sdsfreesplitres(tmp, count);
@@ -732,7 +759,7 @@ real_cpu *read_octave_vector_file_to_array(FILE *vec_file, int *num_lines) {
         sds *tmp = sdssplitlen(line_b, (int) strlen(line_b), sep, (int) strlen(sep), &count);
 
         if (tmp[0][0] != '\n') {
-            vector[item_count] = atof(tmp[1]);
+            vector[item_count] = (real_cpu) strtod(tmp[1], NULL);
         }
 
         sdsfreesplitres(tmp, count);

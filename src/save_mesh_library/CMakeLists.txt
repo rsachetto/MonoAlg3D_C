@@ -1,7 +1,6 @@
 SET(LIB_TYPE MODULE) #set the lib type
 
 ############## DEFAULT SAVE MESH LIBRARY ##############################
-
 FIND_PACKAGE(ZLIB)
 
 ADD_LIBRARY(default_save_mesh ${LIB_TYPE} ${COMMON_SRC} save_mesh.c)
@@ -13,6 +12,5 @@ ELSE()
     TARGET_LINK_LIBRARIES(default_save_mesh config_helpers vtk_utils utils alg string)
 ENDIF(ZLIB_FOUND)
 
-#######################################################################
 
 

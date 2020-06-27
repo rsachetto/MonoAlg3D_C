@@ -1,0 +1,4 @@
+set(SOURCE_FILES_GUI gui.h gui.c)
+
+ADD_LIBRARY(gui STATIC ${SOURCE_FILES_GUI})
+TARGET_LINK_LIBRARIES(gui alg vtk_utils)

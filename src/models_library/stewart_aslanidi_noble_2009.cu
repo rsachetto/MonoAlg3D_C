@@ -6,18 +6,20 @@
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
-    print_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 GPU model\n");
+    log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 GPU model\n");
+
+    uint32_t num_volumes = solver->original_num_cells;
 
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
     size_t size = num_volumes*sizeof(real);
 
-    check_cuda_error(cudaMallocPitch((void **) &(*sv), &pitch_h, size, (size_t )NEQ));
+    check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(*sv, num_volumes);
+    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();
@@ -25,11 +27,16 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
 }
 
-extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
+extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
+
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
     // execution configuration
     const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
-
 
     size_t stim_currents_size = sizeof(real)*num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
@@ -37,7 +44,6 @@ extern "C" SOLVE_MODEL_ODES_GPU(solve_model_odes_gpu) {
     real *stims_currents_device;
     check_cuda_error(cudaMalloc((void **) &stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
-
 
     //the array cells to solve is passed when we are using and adapative mesh
     uint32_t *cells_to_solve_device = NULL;
@@ -59,28 +65,28 @@ __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
 
     if (threadID < num_volumes) {
 
-        // Default initial conditions from the CellML
-        *((real * )((char *) sv + pitch * 0) + threadID) = -69.1370441635924;
-        *((real * )((char *) sv + pitch * 1) + threadID) = 136.781894160227;
-        *((real * )((char *) sv + pitch * 2) + threadID) = 8.80420286531673;
-        *((real * )((char *) sv + pitch * 3) + threadID) = 0.000101878186157052;
-        *((real * )((char *) sv + pitch * 4) + threadID) = 0.0457562667986602;
-        *((real * )((char *) sv + pitch * 5) + threadID) = 0.00550281999719088;
-        *((real * )((char *) sv + pitch * 6) + threadID) = 0.313213286437995;
-        *((real * )((char *) sv + pitch * 7) + threadID) = 0.00953708522974789;
-        *((real * )((char *) sv + pitch * 8) + threadID) = 0.0417391656294997;
-        *((real * )((char *) sv + pitch * 9) + threadID) = 0.190678733735145;
-        *((real * )((char *) sv + pitch * 10) + threadID) = 0.238219836154029;
-        *((real * )((char *) sv + pitch * 11) + threadID) = 0.000446818714055411;
-        *((real * )((char *) sv + pitch * 12) + threadID) = 0.000287906256206415;
-        *((real * )((char *) sv + pitch * 13) + threadID) = 0.989328560287987;
-        *((real * )((char *) sv + pitch * 14) + threadID) = 0.995474890442185;
-        *((real * )((char *) sv + pitch * 15) + threadID) = 0.999955429598213;
-        *((real * )((char *) sv + pitch * 16) + threadID) = 0.96386101799501;
-        *((real * )((char *) sv + pitch * 17) + threadID) = 0.00103618091196912;
-        *((real * )((char *) sv + pitch * 18) + threadID) = 3.10836886659417;
-        *((real * )((char *) sv + pitch * 19) + threadID) = 0.991580051907845;
-        
+        // Initial conditions from the original paper (<-- WORKS)
+        *((real * )((char *) sv + pitch * 0) + threadID) = -74.7890522727;
+        *((real * )((char *) sv + pitch * 1) + threadID) = 136.9896086978;
+        *((real * )((char *) sv + pitch * 2) + threadID) = 8.5447311020;
+        *((real * )((char *) sv + pitch * 3) + threadID) = 0.0001720623;
+        *((real * )((char *) sv + pitch * 4) + threadID) = 0.0184308075;
+        *((real * )((char *) sv + pitch * 5) + threadID) = 0.4663168269;
+        *((real * )((char *) sv + pitch * 6) + threadID) = 0.3657472179;
+        *((real * )((char *) sv + pitch * 7) + threadID) = 0.0486609588;
+        *((real * )((char *) sv + pitch * 8) + threadID) = 0.0145766758;
+        *((real * )((char *) sv + pitch * 9) + threadID) = 0.2979720207;
+        *((real * )((char *) sv + pitch * 10) + threadID) = 0.0692509548;
+        *((real * )((char *) sv + pitch * 11) + threadID) = 0.0006146554;
+        *((real * )((char *) sv + pitch * 12) + threadID) = 0.0001356656;
+        *((real * )((char *) sv + pitch * 13) + threadID) = 0.5943228461;
+        *((real * )((char *) sv + pitch * 14) + threadID) = 0.8265709174;
+        *((real * )((char *) sv + pitch * 15) + threadID) = 0.9767040566;
+        *((real * )((char *) sv + pitch * 16) + threadID) = 0.9717098312;
+        *((real * )((char *) sv + pitch * 17) + threadID) = 0.0006830833;
+        *((real * )((char *) sv + pitch * 18) + threadID) = 3.2830723338;
+        *((real * )((char *) sv + pitch * 19) + threadID) = 0.8199969443;
+
     }
 }
 
@@ -93,8 +99,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
     int sv_id;
 
     // Each thread solves one cell model
-    if(threadID < num_cells_to_solve) 
-    {
+    if(threadID < num_cells_to_solve) {
         if(cells_to_solve)
             sv_id = cells_to_solve[threadID];
         else
@@ -102,8 +107,7 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         real rDY[NEQ];
 
-        for (int n = 0; n < num_steps; ++n) 
-        {
+        for (int n = 0; n < num_steps; ++n) {
 
             RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt);
 
@@ -129,30 +133,15 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
             *((real *)((char *)sv + pitch * 14) + sv_id) = rDY[14];
             *((real *)((char *)sv + pitch * 15) + sv_id) = rDY[15];
             *((real *)((char *)sv + pitch * 16) + sv_id) = rDY[16];
-            *((real *)((char *)sv + pitch * 17) + sv_id) = rDY[17];
+            *((real *)((char *)sv + pitch * 17) + sv_id) = rDY[17];           
 
         }
-
-        if(threadID == num_cells_to_solve-1)
-        {
-            printf("------------------------\n");
-            for(int i = 0; i < NEQ; i++)
-            {
-                printf("sv[%d] = %g;\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
-            }
-            for(int i = 0; i < NEQ; i++)
-            {
-                printf("*((real * )((char *) sv + pitch * %d) + threadID) = %g;\n", i, *((real*)((char*)sv + pitch * i) + sv_id));
-            }
-            printf("------------------------\n");
-        }
-
 
     }
 }
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt) 
-{
+inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt) {
+
     // States variables
     const real V = *((real*)((char*)sv_ + pitch * 0) + threadID_);
     const real K_i = *((real*)((char*)sv_ + pitch * 1) + threadID_);

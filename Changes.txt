@@ -1,17 +1,2 @@
-1) Merged Sachetto changes since 05/09/2019
-    - Update the syntax of the configuration files
-    - Refactor the 'cell_node' structure to reduce the number of variables
-    - Update the stimulus library with macros
-    - Update the matrix assembly library with macros
-    - Add a 'save_activation_time' function with APD calculation on the fly
-    - New 'config_helpers' module
- 
-2) Lucas improvements
-
-    
-3) Elnaz improvements:
-    
-4) Pedro improvements:
-        
-5) New scripts
+1) Merged Sachetto changes since 04/06/2020
 

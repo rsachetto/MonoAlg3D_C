@@ -22,6 +22,8 @@ extern __cuda_fake_struct blockIdx;
 #include <stdio.h>
 #include "cuda_runtime.h"
 
+#define BLOCK_SIZE 32
+
 #define check_cuda_error(ans)                                                                                          \
         do {                                                                                                           \
             gpu_assert((ans), __FILE__, __LINE__);                                                                     \

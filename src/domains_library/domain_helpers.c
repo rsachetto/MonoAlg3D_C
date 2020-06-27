@@ -4,10 +4,10 @@
 
 #include "domain_helpers.h"
 #include "../libraries_common/common_data_structures.h"
-#include "../utils/file_utils.h"
 #include "../utils/utils.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 #include "../config_helpers/config_helpers.h"
+#include "../logger/logger.h"
 
 #include <float.h>
 #include <math.h>
@@ -16,8 +16,8 @@
 #include <unistd.h>
 
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
-                                   real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
-                                   real_cpu *real_side_length_y, real_cpu *real_side_length_z) {
+                                  real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
+                                  real_cpu *real_side_length_y, real_cpu *real_side_length_z) {
 
     *real_side_length_x = start_dx * 2.0;
     *real_side_length_y = start_dy * 2.0;
@@ -95,7 +95,7 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
     }
     if(ceil(nz) != nz) {
         sds error_str =
-            sdscatprintf(sdsempty(), "start_dz: %lf is not multiple of side_length_z: %lf", start_dz, side_length_z);
+                sdscatprintf(sdsempty(), "start_dz: %lf is not multiple of side_length_z: %lf", start_dz, side_length_z);
         REPORT_ERROR_ON_FUNCTION(error_str);
         sdsfree(error_str);
         error = true;
@@ -243,7 +243,7 @@ void set_benchmark_domain(struct grid *the_grid) {
     struct cell_node *grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
         grid_cell->active =
-            (grid_cell->center.y < 20000) && (grid_cell->center.x < 7000) && (grid_cell->center.z < 3000);
+                (grid_cell->center.y < 20000) && (grid_cell->center.x < 7000) && (grid_cell->center.z < 3000);
         grid_cell = grid_cell->next;
     }
 
@@ -258,7 +258,7 @@ void set_cuboid_domain(struct grid *the_grid, real_cpu size_x, real_cpu size_y, 
 
     while(grid_cell != 0) {
         grid_cell->active =
-            (grid_cell->center.y < size_y) && (grid_cell->center.x < size_x) && (grid_cell->center.z < size_z);
+                (grid_cell->center.y < size_y) && (grid_cell->center.x < size_x) && (grid_cell->center.z < size_z);
         grid_cell = grid_cell->next;
     }
 
@@ -270,18 +270,20 @@ void set_cuboid_domain(struct grid *the_grid, real_cpu size_x, real_cpu size_y, 
 
 void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, char *read_format) {
 
+    assert(the_grid);
+
     struct cell_node *grid_cell = the_grid->first_cell;
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
-        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
+        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
     }
 
     double **mesh_points = (double **)malloc(sizeof(double *) * size);
     for(int i = 0; i < size; i++) {
         mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
         if(mesh_points[i] == NULL) {
-            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
     }
     real_cpu dummy; // we don't use this value here
@@ -326,21 +328,15 @@ void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, 
     real_cpu minx = mesh_points[0][0];
     int index;
 
-    //print_to_stdout_and_file("[grid] minx = %g || maxx = %g || miny = %g || maxy = %g || minz = %g || maxz = %g ||\n",minx,maxx,miny,maxy,minz,maxz);
-
     real_cpu x, y, z;
     while(grid_cell != 0) {
         x = grid_cell->center.x;
         y = grid_cell->center.y;
         z = grid_cell->center.z;
 
-        //print_to_stdout_and_file("[grid] x = %g || y = %g || z = %g || ",x,y,z);
-
         if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
-            //print_to_stdout_and_file("Out\n");
             grid_cell->active = false;
         } else {
-            //print_to_stdout_and_file("Inside\n");
             index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
 
             if(index != -1) {
@@ -386,15 +382,14 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
     FILE *file = fopen(file_name, "r");
 
     if(!file) {
-        print_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
-
+        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
     }
 
     real_cpu **mesh_points = (real_cpu **)malloc(sizeof(real_cpu *) * size);
-    for(int i = 0; i < size; i++) {
+    for(size_t i = 0; i < size; i++) {
         mesh_points[i] = (real_cpu *)calloc(4, sizeof(real_cpu));
         if(mesh_points[i] == NULL) {
-            print_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
     }
     real_cpu dummy; // we don't use this value here
@@ -408,8 +403,13 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
     int i = 0;
     while(i < size) {
 
-        fscanf(file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
+        int ret = fscanf(file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
                &fibrosis[i], &tag[i]);
+
+        if(ret == 0) {
+            fclose(file);
+            log_to_stderr_and_file_and_exit("Error reading mesh described in %s. Check the size parameter!\n", file_name);
+        }
 
         // we save the old index to reference fibrosis[i] and tags[i]. T
         // this is needed because the array mesh_points is sorted after reading the mesh file.
@@ -451,7 +451,7 @@ void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, s
     fclose(file);
 
     // deallocate memory
-    for(int l = 0; l < size; l++) {
+    for(size_t l = 0; l < size; l++) {
         free(mesh_points[l]);
     }
 
@@ -641,16 +641,12 @@ void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization
 
 void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) {
 
-    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0);
+    log_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0);
+
+    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     struct cell_node *grid_cell;
 
-    if(fib_seed == 0)
-        fib_seed = (unsigned)time(NULL) + getpid();
-
-    srand(fib_seed);
-
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
@@ -669,16 +665,15 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
 
 }
 
-void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length)
-{
+void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) {
 
-    print_to_stdout_and_file("Making upper and down left corner inactive !\n");
+    log_to_stdout_and_file("Making upper and down left corner inactive !\n");
 
     bool inside;
 
-    real_cpu side_length_x = the_grid->mesh_side_length.x;
+    //   real_cpu side_length_x = the_grid->mesh_side_length.x;
     real_cpu side_length_y = the_grid->mesh_side_length.y;
-    real_cpu side_length_z = the_grid->mesh_side_length.z;
+//    real_cpu side_length_z = the_grid->mesh_side_length.z;
 
     real_cpu region_height = (side_length_y - channel_width) / 2.0;
 
@@ -693,7 +688,7 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 
             real_cpu x = grid_cell->center.x;
             real_cpu y = grid_cell->center.y;
-            real_cpu z = grid_cell->center.z;
+//            real_cpu z = grid_cell->center.z;
 
             // Check region 1
             inside = (x >= 0.0) && (x <= channel_length) &&\
@@ -718,14 +713,14 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
                                real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed) {
 
-    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0f);
+    log_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0f);
 
     if(fib_seed == 0)
         fib_seed = (unsigned)time(NULL) + getpid();
 
     srand(fib_seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     real_cpu bz_radius_2 = pow(bz_radius, 2.0);
     real_cpu sphere_radius_2 = pow(sphere_radius, 2.0);
@@ -764,8 +759,8 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
                 grid_cell->can_change = false;
             } else if(BORDER_ZONE(grid_cell)) {
                 real_cpu distance_from_center =
-                    sqrt((grid_cell->center.x - plain_center) * (grid_cell->center.x - plain_center) +
-                         (grid_cell->center.y - plain_center) * (grid_cell->center.y - plain_center));
+                        sqrt((grid_cell->center.x - plain_center) * (grid_cell->center.x - plain_center) +
+                             (grid_cell->center.y - plain_center) * (grid_cell->center.y - plain_center));
                 distance_from_center = (distance_from_center - sphere_radius) / bz_size;
                 real_cpu phi_local = phi - phi * distance_from_center;
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
@@ -778,21 +773,10 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
     }
 }
 
-void set_plain_sphere_fibrosis_with_fibrotic_hole (struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
-                               real_cpu bz_size, real_cpu bz_radius, real_cpu fib_hole_radius,unsigned fib_seed) {
-
-    print_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0f);
-
-    if(fib_seed == 0)
-        fib_seed = (unsigned)time(NULL) + getpid();
-
-    srand(fib_seed);
-
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_radius) {
 
     real_cpu bz_radius_2 = pow(bz_radius, 2.0);
     real_cpu sphere_radius_2 = pow(sphere_radius, 2.0);
-    real_cpu fib_radius_2 = pow(fib_hole_radius, 2.0);
 
     struct cell_node *grid_cell;
 
@@ -806,17 +790,9 @@ void set_plain_sphere_fibrosis_with_fibrotic_hole (struct grid *the_grid, real_c
             INITIALIZE_FIBROTIC_INFO(grid_cell);
 
             if(distance <= bz_radius_2) {
-
                 if(distance <= sphere_radius_2) {
                     FIBROTIC(grid_cell) = true;
-                }
-
-                if (distance <= fib_radius_2){
-					grid_cell-> active = false;
-					grid_cell->can_change = false;
-				}
-
-                else {
+                } else {
                     BORDER_ZONE(grid_cell) = true;
                 }
             }
@@ -824,32 +800,8 @@ void set_plain_sphere_fibrosis_with_fibrotic_hole (struct grid *the_grid, real_c
         grid_cell = grid_cell->next;
     }
 
-    grid_cell = the_grid->first_cell;
 
-    while(grid_cell != 0) {
-
-        if(grid_cell->active) {
-            if(FIBROTIC(grid_cell)) {
-                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi)
-                    grid_cell->active = false;
-                grid_cell->can_change = false;
-            } else if(BORDER_ZONE(grid_cell)) {
-                real_cpu distance_from_center =
-                    sqrt((grid_cell->center.x - plain_center) * (grid_cell->center.x - plain_center) +
-                         (grid_cell->center.y - plain_center) * (grid_cell->center.y - plain_center));
-                distance_from_center = (distance_from_center - sphere_radius) / bz_size;
-                real_cpu phi_local = phi - phi * distance_from_center;
-                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi_local)
-                    grid_cell->active = false;
-                grid_cell->can_change = false;
-            }
-        }
-        grid_cell = grid_cell->next;
-    }
 }
-
 
 void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, real_cpu big_scar_center_x,
                              real_cpu big_scar_center_y, real_cpu big_scar_center_z, real_cpu small_scar_center_x,
@@ -860,14 +812,14 @@ void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, rea
 
     srand(seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", seed);
+    log_to_stdout_and_file("Using %u as seed\n", seed);
 
     real_cpu bz_size_big = 0;
     real_cpu bz_size_small = 0;
     real_cpu dist_big = 0;
     real_cpu dist_small = 0;
 
-    print_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
+    log_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
     struct cell_node *grid_cell = grid->first_cell;
 
     while(grid_cell != NULL) {
@@ -1018,7 +970,7 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 
     fclose(file);
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int j = 0; j < size; j++) {
 
         struct cell_node *grid_cell = grid->first_cell;
@@ -1075,7 +1027,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
                         const double min_z, const double max_z)
 {
 
-    print_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
+    log_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
 
     struct cell_node *grid_cell;
 
@@ -1084,7 +1036,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
 
     srand(fib_seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0)
@@ -1109,7 +1061,6 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
                 FIBROTIC(grid_cell) = true;
             }
         }
-
         grid_cell = grid_cell->next;
     }
 

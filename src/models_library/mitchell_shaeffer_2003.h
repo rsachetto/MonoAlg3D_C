@@ -5,13 +5,9 @@
 #include "model_common.h"
 
 #define NEQ 2
-#define INITIAL_V (0.00000820413566106744)
+#define INITIAL_V (0.0)
 
 #ifdef __CUDACC__
-
-extern "C" {
-    #include "../utils/file_utils.h"
-}
 
 __constant__  size_t pitch;
 size_t pitch_h;
@@ -24,8 +20,6 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
 inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_);
 
-#else
-#include "../utils/file_utils.h"
 #endif
 
 void solve_model_ode_cpu(real dt, real *sv, real stim_current);

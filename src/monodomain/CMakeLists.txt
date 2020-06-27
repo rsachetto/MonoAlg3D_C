@@ -1,8 +1,7 @@
-set(SOURCE_FILES_SOLVER
-        ode_solver.c ode_solver.h
+set(SOURCE_FILES_MONODOMAIN_SOLVER
         monodomain_solver.h monodomain_solver.c
         constants.h)
 
-ADD_LIBRARY(solvers STATIC ${SOURCE_FILES_SOLVER})
+ADD_LIBRARY(monodomain STATIC ${SOURCE_FILES_MONODOMAIN_SOLVER})
 
-TARGET_LINK_LIBRARIES(solvers alg)
+TARGET_LINK_LIBRARIES(monodomain alg)

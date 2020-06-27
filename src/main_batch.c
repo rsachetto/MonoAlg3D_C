@@ -1,16 +1,19 @@
-#include "alg/grid/grid.h"
-#include "ini_parser/ini.h"
-#include "monodomain/monodomain_solver.h"
-#include "monodomain/ode_solver.h"
-#include "string/sds.h"
-#include "utils/file_utils.h"
-#include "single_file_libraries/stb_ds.h"
-#include "ini_parser/ini_file_sections.h"
-#include "config/stim_config.h"
-#include "config_helpers/config_helpers.h"
-
 #include <mpi.h>
 #include <string.h>
+
+#include "alg/grid/grid.h"
+#include "3dparty/ini_parser/ini.h"
+#include "3dparty/ini_parser/ini_file_sections.h"
+#include "monodomain/monodomain_solver.h"
+#include "ode_solver/ode_solver.h"
+#include "3dparty/sds/sds.h"
+#include "utils/file_utils.h"
+#include "3dparty/stb_ds.h"
+
+#include "config/stim_config.h"
+#include "config_helpers/config_helpers.h"
+#include "logger/logger.h"
+
 
 struct changed_parameters {
     char *section;
@@ -52,7 +55,7 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
             }
 
         } else if (strcmp(ODE_SECTION, changed[n].section) == 0) {
-            if (strcmp("dt_ode", changed[n].name) == 0) {
+            if (strcmp("dt", changed[n].name) == 0) {
                 options->dt_ode = float_value;
             } else if (strcmp("gpu_id", changed[n].name) == 0) {
                 options->gpu_id = (int) float_value;
@@ -97,8 +100,7 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
 
 }
 
-static void
-free_current_simulation_resources(struct monodomain_solver *monodomain_solver, struct ode_solver *ode_solver,
+static void free_current_simulation_resources(struct monodomain_solver *monodomain_solver, struct ode_solver *ode_solver,
                                   struct grid *the_grid) {
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
@@ -187,7 +189,7 @@ static string_array get_combination(ui32_array counters, string_array *sets) {
 
     string_array o = NULL;
     for (int i = 0; i < arrlen(counters); i++) {
-                arrput(o, strdup(sets[i][counters[i]]));
+        arrput(o, strdup(sets[i][counters[i]]));
     }
     return o;
 }
@@ -216,8 +218,8 @@ struct simulation *generate_all_simulations(struct string_hash_entry *modify_dir
 
     for (int i = 0; i < n; i++) {
         struct changed_parameters c = parse_range_or_list_values(modify_directives[i].key, modify_directives[i].value);
-                arrput(section_names, c);
-                arrput(sets, c.values);
+        arrput(section_names, c);
+        arrput(sets, c.values);
     }
 
     string_array *combinations = get_combinations(sets);
@@ -240,25 +242,26 @@ struct simulation *generate_all_simulations(struct string_hash_entry *modify_dir
                 comb.section = strdup(section_names[k].section);
                 comb.name = strdup(section_names[k].name);
                 comb.value = combinations[i][k];
-                        arrput(sim.parameters, comb);
+                arrput(sim.parameters, comb);
             }
 
-                    arrput(all_simulations, sim);
+            arrput(all_simulations, sim);
             sim_count++;
         }
     }
 
     for (long i = 0; i < arrlen(sets); i++) {
-                arrfree(sets[i]);
+        arrfree(sets[i]);
     }
 
-            arrfree(sets);
-            arrfree(combinations);
+    arrfree(sets);
+    arrfree(combinations);
     for (long i = 0; i < arrlen(section_names); i++) {
         free(section_names[i].section);
         free(section_names[i].name);
     }
-            arrfree(section_names);
+
+    arrfree(section_names);
 
     return all_simulations;
 
@@ -338,12 +341,12 @@ int main(int argc, char **argv) {
 
     int last_rank_extra = total_simulations % num_max_proc;
 
-    simulation_number_start = rank * num_simulations;
-
     if (rank == num_max_proc - 1) {
         num_simulations += last_rank_extra;
     }
 
+    simulation_number_start = rank * num_simulations;
+    
     if (num_simulations == 0) {
         MPI_Finalize();
         return EXIT_SUCCESS;
@@ -369,10 +372,11 @@ int main(int argc, char **argv) {
     GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
     char *initial_out_dir_name = strdup(out_dir_name);
 
-    no_stdout = options->quiet;
+    
+    set_no_stdout(options->quiet);
 
     output_folder = batch_options->output_folder;
-    options->draw = false;
+    options->show_gui = false;
 
     MPI_Barrier(MPI_COMM_WORLD);
     for (int s = simulation_number_start; s < simulation_number_start + num_simulations; s++) {
@@ -427,23 +431,22 @@ int main(int argc, char **argv) {
         buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", out_dir_name);
         open_logfile(buffer_log);
 
-        print_to_stdout_and_file("Command line to reproduce this simulation:\n");
+        log_to_stdout_and_file("Command line to reproduce this simulation:\n");
         for (int i = 0; i < argc; i++) {
-            print_to_stdout_and_file("%s ", argv[i]);
+            log_to_stdout_and_file("%s ", argv[i]);
         }
 
-        print_to_stdout_and_file("\n");
+        log_to_stdout_and_file("\n");
 
         buffer_ini =
                 sdscatfmt(buffer_ini, "%s/original_configuration.ini", out_dir_name);
 
-        print_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
+        log_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
                                  buffer_ini);
 
-        options_to_ini_file(options, buffer_ini);
+
 
         sdsfree(buffer_log);
-        sdsfree(buffer_ini);
 
         configure_ode_solver_from_options(ode_solver, options);
         configure_monodomain_solver_from_options(monodomain_solver, options);
@@ -451,7 +454,7 @@ int main(int argc, char **argv) {
 
 #ifndef COMPILE_CUDA
         if(ode_solver->gpu) {
-            print_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+            log_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
             ode_solver->gpu = false;
         }
 #endif
@@ -465,6 +468,10 @@ int main(int argc, char **argv) {
         omp_set_num_threads(nt);
 #endif
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+
+        //options_to_ini_file(options, buffer_ini);
+        sdsfree(buffer_ini);
+
         free_current_simulation_resources(monodomain_solver, ode_solver, the_grid);
 
     }

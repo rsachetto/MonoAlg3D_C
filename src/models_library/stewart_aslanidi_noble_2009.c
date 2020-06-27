@@ -13,53 +13,55 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
 {
 
-    static bool first_call = true;
+    log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
 
-    if(first_call) {
-#ifdef _WIN32
-        printf("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
-#else
-        print_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
-#endif
+    uint32_t num_volumes = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_volumes*sizeof(real));
 
-        first_call = false;
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_volumes; i++) {
+        real *sv = &solver->sv[i * NEQ];
+
+        // Initial conditions from the original paper (<-- WORKS)
+        sv[0] = -74.7890522727;
+        sv[1] = 136.9896086978;
+        sv[2] = 8.5447311020;
+        sv[3] = 0.0001720623;
+        sv[4] = 0.0184308075;
+        sv[5] = 0.4663168269;
+        sv[6] = 0.3657472179;
+        sv[7] = 0.0486609588;
+        sv[8] = 0.0145766758;
+        sv[9] = 0.2979720207;
+        sv[10] = 0.0692509548;
+        sv[11] = 0.0006146554;
+        sv[12] = 0.0001356656;
+        sv[13] = 0.5943228461;
+        sv[14] = 0.8265709174;
+        sv[15] = 0.9767040566;
+        sv[16] = 0.9717098312;
+        sv[17] = 0.0006830833;
+        sv[18] = 3.2830723338;
+        sv[19] = 0.8199969443;
     }
-
-    // Initial conditions from the original paper (<-- WORKS)
-    sv[0] = -74.7890522727;
-    sv[1] = 136.9896086978;
-    sv[2] = 8.5447311020;
-    sv[3] = 0.0001720623;
-    sv[4] = 0.0184308075;
-    sv[5] = 0.4663168269;
-    sv[6] = 0.3657472179;
-    sv[7] = 0.0486609588;
-    sv[8] = 0.0145766758;
-    sv[9] = 0.2979720207;
-    sv[10] = 0.0692509548;
-    sv[11] = 0.0006146554;
-    sv[12] = 0.0001356656;
-    sv[13] = 0.5943228461;
-    sv[14] = 0.8265709174;
-    sv[15] = 0.9767040566;
-    sv[16] = 0.9717098312;
-    sv[17] = 0.0006830833;
-    sv[18] = 3.2830723338;
-    sv[19] = 0.8199969443;
 
 }
 
-SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu) 
+SOLVE_MODEL_ODES(solve_model_odes_cpu)
 {
 
     uint32_t sv_id;
 
-	int i;
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+    real *sv = ode_solver->sv;
+    real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
 
 //    uint32_t *mapping = ((uint32_t*)extra_data);
 
-    #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) 
+    OMP(parallel for private(sv_id))
+    for (uint32_t i = 0; i < num_cells_to_solve; i++)
     {
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
@@ -76,7 +78,6 @@ SOLVE_MODEL_ODES_CPU(solve_model_odes_cpu)
 
 void solve_model_ode_cpu(real dt, real *sv, real stim_current)  
 {
-
     real rY[NEQ], rDY[NEQ];
 
     // Save old value of the state vector
@@ -86,7 +87,6 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current)
     // Solve Right-hand-side of the ODE's
     RHS_cpu(rY, rDY, stim_current,dt);
 
-    //THIS MODEL USES THE Rush Larsen Method TO SOLVE THE EDOS
     // Forward Euler variables
     sv[0] = dt*rDY[0] + rY[0];
 
@@ -111,12 +111,10 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current)
     sv[15] = rDY[15];
     sv[16] = rDY[16];
     sv[17] = rDY[17];
-    
 }
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) 
 {
-
     // States variables
     const real V = sv[0];
     const real K_i = sv[1];
@@ -313,4 +311,4 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt)
 
 }
 
-// The automatic pacing from the Purkinje cells can be interrupted by blocking the INa current by 100% (i_Na = INa)
+// The automatic pacing from the Purkinje cells can be interrupted by blocking the INa current by 100% (ALGEBRAIC[54] = INa)

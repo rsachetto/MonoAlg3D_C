@@ -19,6 +19,8 @@
 
 #define CELL_NODE_TYPE 'b'
 #define TRANSITION_NODE_TYPE 'w'
+#define CELL_CENTER_EQUALS(cell, x1, y1, z1) (cell->center.x == x1 && cell->center.y == y1 && cell->center.z == z1)
+
 
 struct element {
     char direction;     // NEW parameter !!!
@@ -33,61 +35,57 @@ struct basic_cell_data {
 };
 
 struct cell_node {
-    struct basic_cell_data cell_data; // DO NOT CHANGE THIS STRUCT POSITION
 
-    bool active;
+    struct basic_cell_data cell_data; // DO NOT CHANGE THIS MEMBER POSITION
 
     uint64_t bunch_number; // Bunch identifier
 
     struct point_3d center;
 
-    struct point_3d translated_center;
-
-    void *north; // Points to cell node or transition node above this cell. Z right
-    void *south; // Points to cell node or transition node below this cell. Z left
-    void *east;  // Points to cell node or transition node rightward this cell.Y right
-    void *west;  // Points to cell node or transition node leftward this cell. Y left
-    void *front; // Points to cell node or transition node in front of this cell. X right
-    void *back;  // Points to cell node or transition node behind this cell. X left
+    void *z_front; // Points to cell node or transition node above this cell. Z front
+    void *z_back; // Points to cell node or transition node below this cell. Z back
+    void *y_top;  // Points to cell node or transition node rightward this cell.Y top
+    void *y_down;  // Points to cell node or transition node leftward this cell. Y down
+    void *x_right; // Points to cell node or transition node in front of this cell. X right
+    void *x_left;  // Points to cell node or transition node behind this cell. X left
 
     struct cell_node *previous; // Previous cell in the Hilbert curve ordering.
     struct cell_node *next;     // Next cell of in the Hilbert curve ordering.
 
-    // Indicates position of cell on grid according to  ordering provided by
+    // Indicates position of cell on grid according to ordering provided by
     // the modified Hilbert curve.
     uint32_t grid_position;
 
-    // Variable used to storage the form of the  Hilbert curve in the  bunch
+    // Variable used to storage the form of the Hilbert curve in the  bunch
     // created when this cell is refined.
     uint8_t hilbert_shape_number;
 
-//    // Cell geometry.
-//    real_cpu half_dx;
-//    real_cpu half_face_length_zy;
-
     // Fluxes used to decide if a cell should be refined or if a bunch
     // should be derefined.
-    real_cpu north_flux, // Flux coming from north direction.
-        south_flux,   // Flux coming from south direction.
-        east_flux,    // Flux coming from east direction.
-        west_flux,    // Flux coming from west direction.
-        front_flux,   // Flux coming from front direction.
-        back_flux;    // Flux coming from back direction.
+    real_cpu z_front_flux, // Flux coming from north direction.
+        z_back_flux,   // Flux coming from south direction.
+        y_top_flux,    // Flux coming from east direction.
+        y_down_flux,    // Flux coming from west direction.
+        x_right_flux,   // Flux coming from front direction.
+        x_left_flux;    // Flux coming from back direction.
 
     /* The matrix row. The elements[0] corresponds to the diagonal element of the row. */
     element_array elements;
 
     struct point_3d discretization;
 
+    bool active;
     bool can_change;
     bool visited;
+
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient
    method.
    The grid discretization matrix and its resolution are directly implemented on the grid,
    which improves performance. There is no independent linear algebra package. */
-    real_cpu Ax; /* Element of int_vector Ax = b associated to this cell. Also plays the role of Ap.*/
-    real_cpu b;  /* In Ax = b, corresponds to the element in int_vector b associated to this cell. */
+    real_cpu Ax; /* Element of vector Ax = b associated to this cell. Also plays the role of Ap.*/
+    real_cpu b;  /* In Ax = b, corresponds to the element in vector b associated to this cell. */
+
     void *linear_system_solver_extra_info;
     size_t linear_system_solver_extra_info_size;
 
@@ -99,26 +97,18 @@ struct cell_node {
     // Variables used by some applications of partial differential equations.
     real_cpu v;
 
-    // Variables used for activation time and APD calculation
-    real max_dvdt;
-    real activation_time;
-    real threashold_time;
-    real v_threashold;
-    real min_v;
-    real max_v;
-    real apd;
-    bool after_peak;
-
-
-
     struct point_3d sigma;
+
     struct point_3d kappa;
+
 
 #if defined(_OPENMP)
     omp_lock_t updating;
 #endif
 
 };
+
+// ----------------------------------------------------
 
 struct transition_node {
     struct basic_cell_data cell_data; // DO NOT CHANGE THIS STRUCT POSITION
@@ -141,14 +131,12 @@ struct transition_node {
 };
 
 // ----------------------------------------------------
-// NEW FEATURE !!!!!
-struct terminal
-{
-    uint32_t purkinje_index;
-    uint32_t endocardium_index;
-
-    struct cell_node *endocardium_cell;
+struct terminal {
+    
     struct node *purkinje_cell;
+
+    struct cell_node **tissue_cells;
+
 };
 // ----------------------------------------------------
 
@@ -176,14 +164,13 @@ void set_transition_node_data (struct transition_node *the_transition_node, uint
 void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization,
                         uint64_t bunch_number, void *east, void *north, void *west, void *south,
                         void *front, void *back, void *previous, void *next,
-                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center,
-                        struct point_3d translated_center);
+                        uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center);
 
 void set_cell_flux (struct cell_node *the_cell, char direction);
 real_cpu get_cell_maximum_flux (struct cell_node *the_cell);
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            struct point_3d discretization, struct point_3d center, struct point_3d translated_center,
+                            struct point_3d discretization, struct point_3d center,
                             uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step);
 
 void set_refined_transition_node_data (struct transition_node *the_node,
@@ -200,7 +187,9 @@ void simplify_derefinement(struct transition_node *transition_node);
 
 void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_sv_positions);
 
+struct cell_node * get_cell_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell);
 bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell);
+void * get_cell_neighbour_as_void(struct cell_node *grid_cell, void *neighbour_grid_cell, char *type);
 
 
 #endif // MONOALG3D_CELL_H

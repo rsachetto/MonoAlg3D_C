@@ -10,24 +10,23 @@
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
 #include "../utils/utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 #include "../libraries_common/common_data_structures.h"
-
 #include "../config_helpers/config_helpers.h"
 
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     real_cpu alpha;
-    struct cell_node **ac = the_grid->active_cells;
-    uint32_t active_cells = the_grid->num_active_cells;
+
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
-    int i;
 
-    #pragma omp parallel for private(alpha)
-    for(i = 0; i < active_cells; i++) {
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
 
+    OMP(parallel for private(alpha))
+    for(uint32_t i = 0; i < active_cells; i++) {
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;
@@ -49,7 +48,7 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     uint32_t i;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
         real_cpu alpha, dx, dy, dz;
 
@@ -82,27 +81,27 @@ struct element fill_element(uint32_t position, char direction, real_cpu dx, real
     struct element new_element;
     new_element.column = position;
 
-    if(direction == 'n') { // Z direction
+    if(direction == 'n') { // Z direction front
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;
         cell_elements[0].value += (sigma_z * multiplier);
-    } else if(direction == 's') { // Z direction
+    } else if(direction == 's') { // Z direction back
         multiplier = ((dx * dy) / dz);
         new_element.value = -sigma_z * multiplier;
         cell_elements[0].value += (sigma_z * multiplier);
-    } else if(direction == 'e') { // Y direction
+    } else if(direction == 'e') { // Y direction top
         multiplier = ((dx * dz) / dy);
         new_element.value = -sigma_y * multiplier;
         cell_elements[0].value += (sigma_y * multiplier);
-    } else if(direction == 'w') { // Y direction
+    } else if(direction == 'w') { // Y direction down
         multiplier = ((dx * dz) / dy);
         new_element.value = -sigma_y * multiplier;
         cell_elements[0].value += (sigma_y * multiplier);
-    } else if(direction == 'f') { // X direction
+    } else if(direction == 'f') { // X direction right
         multiplier = ((dy * dz) / dx);
-        new_element.value = -sigma_x * ((dy * dz) / dx);
+        new_element.value = -sigma_x * multiplier;
         cell_elements[0].value += (sigma_x * multiplier);
-    } else if(direction == 'b') { // X direction
+    } else if(direction == 'b') { // X direction left
         multiplier = ((dy * dz) / dx);
         new_element.value = -sigma_x * multiplier;
         cell_elements[0].value += (sigma_x * multiplier);
@@ -219,9 +218,7 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
 
             if(insert) {
-
                 struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements);
-
                 new_element.cell = black_neighbor_cell;
                 arrput(grid_cell->elements, new_element);
             }
@@ -242,9 +239,7 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
 
             if(insert) {
-
                 struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements);
-
                 new_element.cell = grid_cell;
                 arrput(black_neighbor_cell->elements, new_element);
             }
@@ -254,14 +249,13 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
     }
 }
 
-int randRange(int n) {
+static int rand_range(int n) {
     int limit;
     int r;
 
     limit = RAND_MAX - (RAND_MAX % n);
 
-    while((r = rand()) >= limit)
-        ;
+    while((r = rand()) >= limit);
 
     return r % n;
 }
@@ -288,12 +282,12 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     real_cpu modifiers[4] = {0.0f, 0.1f, 0.5f, 1.0f};
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
         real_cpu r;
 
-        #pragma omp critical
-        r = modifiers[randRange(4)];
+        OMP(critical)
+        r = modifiers[rand_range(4)];
 
         real sigma_x_new = sigma_x * r;
         real sigma_y_new = sigma_y * r;
@@ -305,26 +299,26 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     }
 
-#pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -336,7 +330,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
@@ -355,13 +349,13 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
 
     bool inside;
 
-    real side_length_x = the_grid->mesh_side_length.x;
+    //real side_length_x = the_grid->mesh_side_length.x;
     real side_length_y = the_grid->mesh_side_length.y;
-    real side_length_z = the_grid->mesh_side_length.z;
+    //real side_length_z = the_grid->mesh_side_length.z;
 
     real region_height = (side_length_y - channel_width) / 2.0;
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for (i = 0; i < num_active_cells; i++)
     {
         real sigma_x_new;
@@ -370,7 +364,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
 
         double x = ac[i]->center.x;
         double y = ac[i]->center.y;
-        double z = ac[i]->center.z;
+//        double z = ac[i]->center.z;
 
         // Check region 1
         inside = (x >= 0.0) && (x <= channel_length) && (y >= 0.0) && (y <= region_height);
@@ -398,27 +392,27 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix)
     }
 
     // Then, we fill the discretization matrix
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -457,12 +451,12 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
 
     real side_length_x = the_grid->mesh_side_length.x;
     real side_length_y = the_grid->mesh_side_length.y;
-    real side_length_z = the_grid->mesh_side_length.z;
+   // real side_length_z = the_grid->mesh_side_length.z;
 
     real region_height = (side_length_y - channel_width) / 2.0;
 
     // Set the conductivities for each cell on the grid
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
         real sigma_x_new = sigma_x;
@@ -471,7 +465,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
 
         real x = ac[i]->center.x;
         real y = ac[i]->center.y;
-        real z = ac[i]->center.z;
+//        real z = ac[i]->center.z;
 
         // Check region 3
         inside_3 = (x >= 0.0) && (x < channel_length) && (y >= region_height) && (y <= region_height + channel_width);
@@ -500,27 +494,27 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma)
     }
 
     // Then, we fill the discretization matrix
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 
 }
@@ -546,36 +540,36 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     if(!sigma_initialized) {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (i = 0; i < num_active_cells; i++) {
             ac[i]->sigma.x = sigma_x;
             ac[i]->sigma.y = sigma_y;
             ac[i]->sigma.z = sigma_z;
         }
 
-        sigma_initialized = true;
+        //sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -603,36 +597,36 @@ ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
     if(!sigma_initialized) {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (i = 0; i < num_active_cells; i++) {
             ac[i]->sigma.x = sigma_x * sigma_factor;
             ac[i]->sigma.y = sigma_y * sigma_factor;
             ac[i]->sigma.z = sigma_z * sigma_factor;
         }
 
-        sigma_initialized = true;
+        //sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -679,7 +673,7 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
     bool inside;
 
     // Set the conductivities for each cell on the grid
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
         real sigma_x_new = sigma_x;
@@ -709,27 +703,27 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix)
     }
 
     // Then, we fill the discretization matrix
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 
 }
@@ -741,8 +735,6 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-
-    struct cell_node *grid_cell;
 
     initialize_diagonal_elements(the_solver, the_grid);
 
@@ -766,62 +758,56 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix)
     real sigma_factor = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
-    print_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
+    log_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
 
     // Initialize the seed for the fibrosis
     srand(seed);
 
-    print_to_stdout_and_file("Using %u as seed\n", seed);
+    log_to_stdout_and_file("Using %u as seed\n", seed);
 
-    if (!sigma_initialized)
-    {
-	    grid_cell = the_grid->first_cell;
-	    while(grid_cell != 0) 
-	    {
+    if (!sigma_initialized) {
 
-		    if(grid_cell->active) 
-		    {
-	    		real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-	    		if (p < phi) 
-			    {
-				    grid_cell->sigma.x = sigma_x * sigma_factor;
-				    grid_cell->sigma.y = sigma_y * sigma_factor;
-				    grid_cell->sigma.z = sigma_z * sigma_factor;
-	    		}
-			    else
-			    {
-				    grid_cell->sigma.x = sigma_x;
-	    			grid_cell->sigma.y = sigma_y;
-	    			grid_cell->sigma.z = sigma_z;
-			    }
-		    }
-		    grid_cell = grid_cell->next;
-    	}
+		FOR_EACH_CELL(the_grid) {
 
-	    sigma_initialized = true;
+			if(cell->active) {
+				real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+				if (p < phi) {
+					cell->sigma.x = sigma_x * sigma_factor;
+					cell->sigma.y = sigma_y * sigma_factor;
+					cell->sigma.z = sigma_z * sigma_factor;
+				}
+				else {
+					cell->sigma.x = sigma_x;
+					cell->sigma.y = sigma_y;
+					cell->sigma.z = sigma_z;
+				}
+			}
+		}
+
+	    //sigma_initialized = true;
     }
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(i = 0; i < num_active_cells; i++) 
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
 }
 
@@ -852,18 +838,12 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
     real sigma_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
-    real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
-
-    unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
-
     real sigma_factor = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
   
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -871,7 +851,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
             ac[i]->sigma.z = sigma_z;
         }
 
-        sigma_initialized = true;
+        //sigma_initialized = true;
     }
 
     // Reading the fibrotic regions from the input file
@@ -907,8 +887,8 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
 
     // Pass through all the cells of the grid and check if its center is inside the current
     // fibrotic region
-    #pragma omp parallel for
-    for(int j = 0; j < num_fibrotic_regions; j++) 
+    OMP(parallel for)
+    for(uint32_t j = 0; j < num_fibrotic_regions; j++)
     {
         
         struct cell_node *grid_cell = the_grid->first_cell;
@@ -927,8 +907,8 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
             {
                 real_cpu center_x = grid_cell->center.x;
                 real_cpu center_y = grid_cell->center.y;
-                real_cpu half_dx = grid_cell->discretization.x/2.0;
-                real_cpu half_dy = grid_cell->discretization.y/2.0;
+ //               real_cpu half_dx = grid_cell->discretization.x/2.0;
+//                real_cpu half_dy = grid_cell->discretization.y/2.0;
 
                 struct point_3d p;
                 struct point_3d q;
@@ -954,28 +934,28 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
             grid_cell = grid_cell->next;
         } 
     }
-		
-    #pragma omp parallel for
+
+    OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->south, 's');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_back, 's');
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->north, 'n');
+        fill_discretization_matrix_elements(ac[i], ac[i]->z_front, 'n');
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->east, 'e');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_top, 'e');
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->west, 'w');
+        fill_discretization_matrix_elements(ac[i], ac[i]->y_down, 'w');
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->front, 'f');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_right, 'f');
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements(ac[i], ac[i]->back, 'b');
+        fill_discretization_matrix_elements(ac[i], ac[i]->x_left, 'b');
     }
     
     for(int k = 0; k < fib_size; k++) 
@@ -993,14 +973,6 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file)
 ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
 {
 
-    static bool sigma_initialized = false;
-    int num;
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    struct cell_node *grid_cell;
-
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
@@ -1011,18 +983,6 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
-
-    real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
-
-    real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
-
-    real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
-
-    real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
 
     real rescale_factor = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config->config_data, "rescale_factor");
@@ -1087,7 +1047,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
     free(scar_mesh);
 
     // We just leave the program after this ...
-    print_to_stdout_and_file("[!] Finish writing new fibrotic region file '%s'!\n",new_fib_file);
+    log_to_stdout_and_file("[!] Finish writing new fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }
 
@@ -1099,24 +1059,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file)
 ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
 {
 
-    static bool sigma_initialized = false;
-    int num;
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    struct cell_node *grid_cell;
-
     initialize_diagonal_elements(the_solver, the_grid);
-
-    real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
-
-    real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
-
-    real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
 
     real_cpu phi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
@@ -1133,37 +1076,31 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     // Write the new fibrotic region file
 	FILE *fileW = fopen(new_fib_file, "w+");
 
-    grid_cell = the_grid->first_cell;
-
     // Initialize the random the generator with the same seed used by the original model
     srand(seed);
-    while(grid_cell != 0) 
-    {
+    FOR_EACH_CELL(the_grid) {
 
-        if(grid_cell->active) 
-        {
+        if(cell->active) {
             real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-            if(p < phi) 
-            {
+            if(p < phi) {
                 // We reescale the cell position using the 'rescale_factor'
-                double center_x = grid_cell->center.x * rescale_factor;
-                double center_y = grid_cell->center.y * rescale_factor;
-                double center_z = grid_cell->center.z * rescale_factor;
-                double dx = grid_cell->discretization.x * rescale_factor;
-                double dy = grid_cell->discretization.y * rescale_factor;
-                double dz = grid_cell->discretization.z * rescale_factor;
+                double center_x = cell->center.x * rescale_factor;
+                double center_y = cell->center.y * rescale_factor;
+                double center_z = cell->center.z * rescale_factor;
+                double dx = cell->discretization.x * rescale_factor;
+                double dy = cell->discretization.y * rescale_factor;
+                double dz = cell->discretization.z * rescale_factor;
                 
                 // Then, we write only the fibrotic regions to the output file
                 fprintf(fileW,"%g,%g,%g,%g,%g,%g,0\n",center_x,center_y,center_z,dx/2.0,dy/2.0,dz/2.0);
             }
 
         }
-        grid_cell = grid_cell->next;
     }
 
     fclose(fileW);  	
 		
     // We just leave the program after this ...
-    print_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }
