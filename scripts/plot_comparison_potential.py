@@ -27,10 +27,10 @@ def plot_transmembrane_potential(t1, v1, t2, v2):
     plt.grid()
     plt.xlabel("t (ms)",fontsize=15)
     plt.ylabel("V (mV)",fontsize=15)
-    plt.title("Action potential - Retrograde propagation",fontsize=14)
+    plt.title("Action potential - Electrotonic Effect",fontsize=14)
     plt.legend(loc=0,fontsize=14)
-    #plt.savefig("retrograde.pdf")
-    plt.show()
+    plt.savefig("purkinje-coupling.pdf")
+    #plt.show()
 
 
 def main():

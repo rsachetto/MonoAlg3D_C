@@ -1,0 +1,560 @@
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.0_Ko_7.0_ACID_0.4.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.3422;
+
+sv[1] = 0.005865;
+
+sv[2] = 0.547439;
+
+sv[3] = 0.301612;
+
+sv[4] = 0.04645;
+
+sv[5] = 0.016107;
+
+sv[6] = 0.222264;
+
+sv[7] = 0.867319;
+
+sv[8] = 0.998633;
+
+sv[9] = 7.4e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.41078;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.3422;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005865;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.547439;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.301612;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.04645;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.016107;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.222264;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.867319;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998633;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.4e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.41078;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.0_Ko_7.1_ACID_0.5.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -78.9733;
+
+sv[1] = 0.006324;
+
+sv[2] = 0.533152;
+
+sv[3] = 0.290191;
+
+sv[4] = 0.057124;
+
+sv[5] = 0.016126;
+
+sv[6] = 0.204504;
+
+sv[7] = 0.821667;
+
+sv[8] = 0.998595;
+
+sv[9] = 7.8e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.407065;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -78.9733;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.006324;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.533152;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.290191;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.057124;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.016126;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.204504;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.821667;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998595;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.8e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.407065;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.0_Ko_7.0_ACID_0.3.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.3437;
+
+sv[1] = 0.005863;
+
+sv[2] = 0.54834;
+
+sv[3] = 0.361045;
+
+sv[4] = 0.008579;
+
+sv[5] = 0.008344;
+
+sv[6] = 0.45314;
+
+sv[7] = 0.96978;
+
+sv[8] = 0.99879;
+
+sv[9] = 7.4e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.410796;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.3437;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005863;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.54834;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.361045;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.008579;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.008344;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.45314;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.96978;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.99879;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.4e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.410796;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.0_Ko_7.0_ACID_0.5.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.3424;
+
+sv[1] = 0.005865;
+
+sv[2] = 0.547717;
+
+sv[3] = 0.311807;
+
+sv[4] = 0.051793;
+
+sv[5] = 0.015136;
+
+sv[6] = 0.209817;
+
+sv[7] = 0.828881;
+
+sv[8] = 0.998682;
+
+sv[9] = 7.4e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.410782;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.3424;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005865;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.547717;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.311807;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.051793;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.015136;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.209817;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.828881;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998682;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.4e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.410782;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.0_Ko_6.8_ACID_0.5.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -80.0961;
+
+sv[1] = 0.005024;
+
+sv[2] = 0.576607;
+
+sv[3] = 0.352844;
+
+sv[4] = 0.044748;
+
+sv[5] = 0.013956;
+
+sv[6] = 0.216551;
+
+sv[7] = 0.839481;
+
+sv[8] = 0.998825;
+
+sv[9] = 6.7e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.418403;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -80.0961;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005024;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.576607;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.352844;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.044748;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.013956;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.216551;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.839481;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998825;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 6.7e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.418403;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_3.9_Ko_7.0_ACID_0.5.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.3459;
+
+sv[1] = 0.00586;
+
+sv[2] = 0.547974;
+
+sv[3] = 0.317686;
+
+sv[4] = 0.045604;
+
+sv[5] = 0.014297;
+
+sv[6] = 0.21878;
+
+sv[7] = 0.849158;
+
+sv[8] = 0.998708;
+
+sv[9] = 7.4e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.410817;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.3459;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.00586;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.547974;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.317686;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.045604;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.014297;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.21878;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.849158;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998708;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.4e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.410817;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_3.8_Ko_7.0_ACID_0.5.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.3495;
+
+sv[1] = 0.005856;
+
+sv[2] = 0.548174;
+
+sv[3] = 0.321064;
+
+sv[4] = 0.040779;
+
+sv[5] = 0.013894;
+
+sv[6] = 0.228942;
+
+sv[7] = 0.868827;
+
+sv[8] = 0.998723;
+
+sv[9] = 7.4e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.410854;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.3495;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005856;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.548174;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.321064;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.040779;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.013894;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.228942;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.868827;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998723;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.4e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.410854;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.0_Ko_6.9_ACID_0.5.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.7165;
+
+sv[1] = 0.005432;
+
+sv[2] = 0.562187;
+
+sv[3] = 0.332393;
+
+sv[4] = 0.047887;
+
+sv[5] = 0.014475;
+
+sv[6] = 0.213172;
+
+sv[7] = 0.834704;
+
+sv[8] = 0.998758;
+
+sv[9] = 7e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.41456;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.7165;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005432;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.562187;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.332393;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.047887;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.014475;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.213172;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.834704;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998758;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.41456;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.1_Ko_7.0_ACID_0.5.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.339;
+
+sv[1] = 0.005869;
+
+sv[2] = 0.54739;
+
+sv[3] = 0.303996;
+
+sv[4] = 0.059646;
+
+sv[5] = 0.016364;
+
+sv[6] = 0.201255;
+
+sv[7] = 0.806725;
+
+sv[8] = 0.99864;
+
+sv[9] = 7.4e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.410748;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.339;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005869;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.54739;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.303996;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.059646;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.016364;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.201255;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.806725;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.99864;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.4e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.410748;
+
+-------------------------------------------------------------------
+
+Filename :> ic_atpi_4.0_Ko_7.0_ACID_0.6.txt
+
+-------------------------------------------------------------------
+CPU
+sv[0] = -79.3423;
+
+sv[1] = 0.005865;
+
+sv[2] = 0.547748;
+
+sv[3] = 0.313;
+
+sv[4] = 0.062948;
+
+sv[5] = 0.014906;
+
+sv[6] = 0.199945;
+
+sv[7] = 0.813265;
+
+sv[8] = 0.998682;
+
+sv[9] = 7.4e-05;
+
+sv[10] = 0;
+
+sv[11] = 0.410781;
+
+********************************************************************
+GPU
+*((real *) ((char *) sv + pitch * 0) + threadID) = -79.3423;
+
+*((real *) ((char *) sv + pitch * 1) + threadID) = 0.005865;
+
+*((real *) ((char *) sv + pitch * 2) + threadID) = 0.547748;
+
+*((real *) ((char *) sv + pitch * 3) + threadID) = 0.313;
+
+*((real *) ((char *) sv + pitch * 4) + threadID) = 0.062948;
+
+*((real *) ((char *) sv + pitch * 5) + threadID) = 0.014906;
+
+*((real *) ((char *) sv + pitch * 6) + threadID) = 0.199945;
+
+*((real *) ((char *) sv + pitch * 7) + threadID) = 0.813265;
+
+*((real *) ((char *) sv + pitch * 8) + threadID) = 0.998682;
+
+*((real *) ((char *) sv + pitch * 9) + threadID) = 7.4e-05;
+
+*((real *) ((char *) sv + pitch * 10) + threadID) = 0;
+
+*((real *) ((char *) sv + pitch * 11) + threadID) = 0.410781;
+

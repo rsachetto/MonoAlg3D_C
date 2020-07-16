@@ -20,11 +20,8 @@ void set_cell_not_changeable (struct cell_node *c, real_cpu initial_discretizati
 
 void set_plain_fibrosis (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
 
-// ---------------------------------------------------------------------------------------------------------------
-// NEW FUNCTIONS!
 void set_plain_fibrosis_and_write_positions_to_file (struct grid *the_grid, real_cpu phi, unsigned fib_seed);
 void set_plain_fibrosis_using_file (struct grid *the_grid, const char filename[]);
-// ---------------------------------------------------------------------------------------------------------------
 
 void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
                         const double min_x, const double max_x,\

@@ -136,31 +136,12 @@ perf.data*
 *.swp
 
 tests_bin/SolversProfiler
-meshes/VF_20120221_toBlanca-newCGAL1.vtu
-meshes/human_500_new.alg
-meshes/human_800_new.alg
-<<<<<<< HEAD
-meshes/elizabeth*
-meshes/cadim*
-meshes/hermenegild*
-meshes/purkinje*
+meshes/02_Mouse/*
+meshes/03_Human/*
+meshes/05_Lucas/*
 
-networks/elizabeth*
+networks/03_Lucas/*
 
-example_configs/private
-
-scripts/elizabeth
-scripts/elnaz
-
-scripts/error_calculator/inputs/elizabeth*
-scripts/error_calculator/scripts/backups
-
-scripts/parser_vtu_to_alg/networks/elizabeth*
-scripts/parser_vtu_to_alg/inputs/elizabeth*
-scripts/parser_vtu_to_alg/inputs/Patient*
-scripts/parser_vtu_to_alg/inputs/cadim*
-scripts/parser_vtu_to_alg/inputs/rabbit*
-scripts/parser_vtu_to_alg/outputs
-=======
-
->>>>>>> aedb9fab964a0790f2b939b52af16e852aae9d83
+run_co_at_simulations.sh
+run_co_length_simulations.sh
+run_dla_simulations.sh

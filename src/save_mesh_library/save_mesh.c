@@ -654,6 +654,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
     }
     else {
         save_vtk_polydata_grid_as_vtp(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+        //save_vtk_polydata_grid_as_legacy_vtk(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
     }
 
     //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....

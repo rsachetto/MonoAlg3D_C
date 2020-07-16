@@ -136,7 +136,8 @@ struct transition_node {
 
 // ----------------------------------------------------
 struct terminal {
-    
+    bool active;
+
     struct node *purkinje_cell;
 
     struct cell_node **tissue_cells;

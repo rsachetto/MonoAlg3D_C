@@ -423,9 +423,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         update_cells_to_solve(the_grid, the_ode_solver);
     }
 
-    // [Purkinje coupling] Map the indexes from the closest endocardium cells that are next to the Purkinje terminals 
+    // [Purkinje coupling] Map the indexes from the closest endocardium cells that are next to the Purkinje terminals
+    // TODO: Remember to free this structure ... 
     struct terminal *the_terminals = NULL;
-    if (domain_config && purkinje_config) {
+    if (domain_config && purkinje_config) 
+    {
         the_terminals = link_purkinje_to_tissue(the_grid);
     }
         

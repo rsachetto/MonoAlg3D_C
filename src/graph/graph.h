@@ -51,7 +51,9 @@ struct graph
     uint32_t nmin_pmj;
     uint32_t nmax_pmj;
     uint32_t number_of_terminals;
+    char *pmj_location_file;
 
+    bool using_pmj_location;
     bool has_point_data;
 };
 
