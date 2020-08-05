@@ -22,13 +22,13 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
     printf("On 'initialize_purkinje_with_custom_mesh'\n");
 
     char *name = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(name, config->config_data, "name");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config->config_data, "name");
 
     real_cpu side_length = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,side_length, config->config_data, "start_discretization");
     
     char *network_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(network_file,config->config_data,"network_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(network_file,config->config_data,"network_file");
 
     real_cpu rpmj = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,rpmj, config->config_data, "rpmj");

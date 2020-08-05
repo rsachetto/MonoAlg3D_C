@@ -376,7 +376,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	
@@ -930,7 +930,7 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config->config_data, "side_length");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");    
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");    
 
     //~ real scar_length = 0.0;
     //~ GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(scar_length, config->config_data, "scar_length");
@@ -1194,7 +1194,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	
@@ -1411,7 +1411,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned,seed, config->config_data, "seed");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
     
     real x_shift = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,x_shift, config->config_data, "x_shift");        
@@ -1499,16 +1499,16 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
     int i;
 
     char *fib_file_1 = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file_1, config->config_data, "fibrosis_file_1");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_1, config->config_data, "fibrosis_file_1");
 
     char *fib_file_2 = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file_2, config->config_data, "fibrosis_file_2");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_2, config->config_data, "fibrosis_file_2");
 
     char *fib_file_3 = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file_3, config->config_data, "fibrosis_file_3");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_3, config->config_data, "fibrosis_file_3");
     
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "new_fib_file");    
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "new_fib_file");    
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	    

@@ -180,7 +180,7 @@ SET_SPATIAL_STIM(set_stim_from_file) {
 
     char *stim_file = NULL;
 
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(stim_file, config->config_data, "stim_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(stim_file, config->config_data, "stim_file");
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
