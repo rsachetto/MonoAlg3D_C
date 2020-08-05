@@ -23,7 +23,7 @@ void print_domain_config_values(struct config* config) {
     real_cpu start_dy = 0;
     real_cpu start_dz = 0;
 
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(name, config->config_data, "name");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config->config_data, "name");
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dx");
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dy, config->config_data, "start_dy");
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config->config_data, "start_dz");

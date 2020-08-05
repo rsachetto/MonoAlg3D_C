@@ -222,7 +222,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     {
         init_config_functions(save_mesh_config, "./shared_libs/libdefault_save_mesh.so", "save_result");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config->config_data, "print_rate");
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, save_mesh_config->config_data, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, save_mesh_config->config_data, "output_dir");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_saving_after_dt, save_mesh_config->config_data, "start_saving_after_dt");
         save_to_file &= (print_rate > 0) && (out_dir_name);
 

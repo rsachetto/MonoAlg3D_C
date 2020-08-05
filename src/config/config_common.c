@@ -59,7 +59,6 @@ void init_config_functions(struct config *config, char *default_lib, char *confi
     }
 }
 
-
 void free_config_data(struct config *cm) {
 
     ptrdiff_t n = shlen(cm->config_data);

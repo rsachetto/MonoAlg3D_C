@@ -22,6 +22,7 @@ COMPILE_CONVERTER=''
 COMPILE_FIBER_CONVERTER=''
 COMPILE_SIMULATOR=''
 COMPILE_WITH_DDM=''
+COMPILE_POSTPROCESSOR=''
 
 GET_BUILD_OPTIONS "$@"
 
@@ -57,6 +58,7 @@ for i in "${BUILD_ARGS[@]}"; do
         COMPILE_SIMULATOR='y'
         COMPILE_CONVERTER='y'
         COMPILE_FIBER_CONVERTER='y'
+		COMPILE_POSTPROCESSOR='y'
     fi
     
     if [ "$i" == "simulator" ]; then        
@@ -209,6 +211,12 @@ fi
 if [ -n "$COMPILE_FIBER_CONVERTER" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_fiber_converter" "src/main_fiber_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
+
+if [ -n "$COMPILE_POSTPROCESSOR" ]; then
+    COMPILE_EXECUTABLE "MonoAlg3D_postprocessor" "src/main_postprocessor.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+	ADD_SUBDIRECTORY "src/postprocessing_library/"
+fi
+
 
 FIND_CRITERION
 

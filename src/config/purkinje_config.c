@@ -19,7 +19,7 @@ void print_purkinje_config_values (struct config* config) {
 
     char *name = NULL;
     real_cpu start_h = 0.0;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(name, config->config_data, "name");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config->config_data, "name");
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
 
     log_to_stdout_and_file("Purkinje configuration:\n");

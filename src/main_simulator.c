@@ -46,7 +46,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
     if((*(options))->save_mesh_config) {
 
         char *out_dir_name = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, (*(options))->save_mesh_config->config_data, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, (*(options))->save_mesh_config->config_data, "output_dir");
 
         if(out_dir_name) {
             sds buffer_log = sdsnew("");

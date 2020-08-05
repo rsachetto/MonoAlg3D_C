@@ -24,7 +24,7 @@ void print_save_mesh_config_values(struct config* s) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, print_rate, s->config_data, "print_rate");
 
     char *out_dir_name = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(out_dir_name, s->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(out_dir_name, s->config_data, "output_dir");
 
     log_to_stdout_and_file("Save results configuration:\n");
     log_to_stdout_and_file("[save_mesh] Print Rate = %d\n", print_rate);
