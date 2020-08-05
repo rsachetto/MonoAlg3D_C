@@ -52,7 +52,7 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
     shput_dup_value(options->save_mesh_config->config_data, "output_dir", out_dir);
 
     char *out_dir_name = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
 
     // Create the output dir and the logfile
     if(out_dir_name) {

@@ -1594,7 +1594,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 	real_cpu sigma_n = 0.0;
 
 	char *fiber_file = NULL;
-	GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(fiber_file, config->config_data, "fibers_file");
+	GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(fiber_file, config->config_data, "fibers_file");
 
 	struct fiber_coords *fibers = NULL;
 
@@ -1926,7 +1926,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file) {
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
@@ -2064,10 +2064,10 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file) {
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
@@ -2150,7 +2150,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
 
     double rescale_factor = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config->config_data, "rescale_factor");

@@ -7,7 +7,7 @@ POSTPROCESS(calculate_all_cells_activation_time) {
 
 	char *input_type;
 /*
-	GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(int, a, config, "input_type");
+	GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(int, a, config, "input_type");
 	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, b, config, "b");
 
 	printf("AAAAA %d\n", a);

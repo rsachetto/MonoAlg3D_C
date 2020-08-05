@@ -244,7 +244,7 @@ SET_EXTRA_DATA(set_extra_data_for_scar_wedge) {
     struct cell_node ** ac = the_grid->active_cells;
 
     char *scar_size;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR (scar_size, config->config_data, "scar_size");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR (scar_size, config->config_data, "scar_size");
 
     uint8_t size_code;
 

@@ -560,7 +560,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
 
         char *preconditioner_char = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(preconditioner_char, config->config_data, "use_preconditioner");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(preconditioner_char, config->config_data, "use_preconditioner");
         if(preconditioner_char != NULL) {
             use_preconditioner = ((strcmp(preconditioner_char, "yes") == 0) || (strcmp(preconditioner_char, "true") == 0));
         }
