@@ -253,7 +253,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, size, config->config_data, "num_volumes");
 
     char *mesh_file;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     int n_steps = 0;
 
@@ -374,7 +374,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
     bool fibrotic = false;
 
     char *mesh_file;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibrotic, config->config_data, "fibrotic");
 
@@ -411,10 +411,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
         refine_border_zone_cells(the_grid);
 
         char *scar_file_big = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_big, config->config_data, "big_scar_file");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(scar_file_big, config->config_data, "big_scar_file");
 
         char *scar_file_small = NULL;
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(scar_file_small, config->config_data, "small_scar_file");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(scar_file_small, config->config_data, "small_scar_file");
 
         if(scar_file_big) {
             log_to_stdout_and_file("Loading fibrosis patterns from file %s\n", scar_file_big);
@@ -467,10 +467,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh_with_two_scars) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_scar_wedge) {
     char *mesh_file;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     char *scar_size;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(scar_size, config->config_data, "scar_size");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(scar_size, config->config_data, "scar_size");
 
     real_cpu phi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
@@ -607,7 +607,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 
     char *mesh_file = strdup("meshes/rabheart.alg");
     // LEAK on mesh_file if mesh_file is defined on ini file
-    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_file, config->config_data, "mesh_file");
 
     initialize_and_construct_grid(the_grid, POINT3D(64000.0f, 64000.0f, 64000.0f));
     refine_grid(the_grid, 7);
@@ -634,7 +634,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
 
     char *file_name = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(file_name, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_name, config->config_data, "mesh_file");
 
     initialize_grid_with_square_mesh(config, the_grid);
 
@@ -765,7 +765,7 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     char *mesh_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     real_cpu start_h = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
@@ -820,7 +820,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
 
     char *mesh_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     real_cpu start_h = 500.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_h, config->config_data, "original_discretization");
@@ -1044,7 +1044,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
@@ -1150,7 +1150,7 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
 
     char *mesh_file = NULL;
 
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     real_cpu start_h = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
@@ -1243,7 +1243,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
     // LEAK on mesh_file if mesh_file is defined on ini file
     char *mesh_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     real_cpu x_domain_limit = 64000.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, x_domain_limit, config->config_data, "x_domain_limit");

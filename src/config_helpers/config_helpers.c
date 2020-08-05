@@ -17,7 +17,7 @@ void report_parameter_error_on_function(int line, const char * file, const char 
     log_to_stderr_and_file_and_exit("Error: Call on line %d of file %s needs a parameter named %s. Exiting!\n", line, file, parameter);
 }
 
-char *get_char_parameter (struct string_hash_entry *config, const char *parameter) {
+char *get_string_parameter (struct string_hash_entry *config, const char *parameter) {
     char *config_value = shget (config, parameter);
     return config_value;
 }

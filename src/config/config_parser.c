@@ -11,6 +11,8 @@
 #include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 
+#include "postprocessor_config.h"
+
 static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
@@ -686,7 +688,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
         if(strcmp(key, "name") == 0) {
             char *domain_name = NULL;
-            GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(domain_name, dc->config_data, "name");
+            GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(domain_name, dc->config_data, "name");
             if(domain_name) {
                 maybe_issue_overwrite_warning("name", "domain", domain_name, value, config_file);
             }
@@ -817,7 +819,7 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
         } else if(strcmp(key, "output_dir") == 0) {
 
             char *out_dir_name = NULL;
-            GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, sm->config_data, key);
+            GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, sm->config_data, key);
 
             if(out_dir_name) {
                 maybe_issue_overwrite_warning(key, "save_mesh", out_dir_name, value, config_file);
@@ -1641,6 +1643,41 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     }
 
     return 1;
+}
+
+int parse_preprocessor_config(void *user, const char *section, const char *name, const char *value) {
+
+	static int function_counter = 0;
+	static char *current_section = NULL;
+	static bool create_new_function = true;
+
+	if(current_section == NULL) {
+		current_section = strdup(section);
+	}
+	else if(strcmp(section, current_section) != 0) {
+		free(current_section);
+		current_section = strdup(section);
+		function_counter++;
+		create_new_function = true;
+	}
+
+	postprocess_list *function_list = (postprocess_list*) user;
+
+	struct postprocess_function *function;
+
+	if(create_new_function) {
+		function = new_postprocess_function();
+		init_postprocess_function(function, section);
+		arrput(*function_list, function);
+		create_new_function = false;
+	}
+	else {
+		function = (*function_list)[function_counter];
+	}
+
+	shput(function->function_params, name, strdup(value));
+
+	return 1;
 }
 
 #define WRITE_INI_SECTION(SECTION) fprintf(ini_file, "[%s]\n", SECTION)

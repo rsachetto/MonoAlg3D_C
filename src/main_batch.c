@@ -369,7 +369,7 @@ int main(int argc, char **argv) {
     }
 
     char *out_dir_name = "";
-    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
     char *initial_out_dir_name = strdup(out_dir_name);
 
     
@@ -417,7 +417,7 @@ int main(int argc, char **argv) {
         shput_dup_value(options->save_mesh_config->config_data, "output_dir", new_out_dir_name);
         sdsfree(new_out_dir_name);
 
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
 
         printf("Rank %d, performing simulation %d and saving in %s\n", rank, simulation_number_start, out_dir_name);
 

@@ -192,11 +192,11 @@ void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
 void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
 void parse_conversion_options(int argc, char **argv, struct conversion_options *user_args);
 void parse_fibers_conversion_options(int argc, char **argv, struct fibers_conversion_options *user_args);
-
 void get_config_file(int argc, char**argv, struct user_options *user_args);
 
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
+int parse_preprocessor_config(void* user, const char* section, const char* name, const char* value);
 
 void options_to_ini_file(struct user_options *config, char *ini_file_path);
 

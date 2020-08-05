@@ -14,7 +14,7 @@
 
 void report_parameter_error_on_function(int line, const char *file, const char *parameter);
 void report_error_on_function(int line, const char *file, const char *error);
-char *get_char_parameter(struct string_hash_entry *config, const char *parameter);
+char *get_string_parameter(struct string_hash_entry *config, const char *parameter);
 bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int n);
 
 #define IS_TRUE(str) (strcmp((str), "true") == 0 || strcmp((str), "yes") == 0 || strcmp((str), "1") == 0)
@@ -25,18 +25,18 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
         report_error_on_function(__LINE__, __FILE__, error);                                                                                                   \
     } while(0)
 
-#define GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value, config, parameter)                                                                                      \
+#define GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                                                    \
     do {                                                                                                                                                       \
-        char *__config_char = get_char_parameter(config, parameter);                                                                                           \
+        char *__config_char = get_string_parameter(config, parameter);                                                                                           \
         if(__config_char) {                                                                                                                                    \
             (value) = strdup(__config_char);                                                                                                                   \
         }                                                                                                                                                      \
     } while(0)
 
-#define GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(value, config, parameter)                                                                                     \
+#define GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(value, config, parameter)                                                                                   \
     do {                                                                                                                                                       \
         (value) = NULL;                                                                                                                                        \
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value, config, parameter);                                                                                     \
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(value, config, parameter);                                                                                   \
         if(!(value)) {                                                                                                                                         \
             report_parameter_error_on_function(__LINE__, __FILE__, parameter);                                                                                 \
         }                                                                                                                                                      \
@@ -44,7 +44,7 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
 
 #define GET_PARAMETER_NUMERIC_VALUE(type, value, config, parameter, __success)                                                                                 \
     do {                                                                                                                                                       \
-        char *__config_char = get_char_parameter(config, parameter);                                                                                           \
+        char *__config_char = get_string_parameter(config, parameter);                                                                                           \
         (__success) = false;                                                                                                                                   \
         if(__config_char) {                                                                                                                                    \
             int expr_parse_error__;                                                                                                                            \
@@ -58,7 +58,7 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
 #define GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                                                   \
     do {                                                                                                                                                       \
         char *value_char = NULL;                                                                                                                               \
-        GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(value_char, config, parameter);                                                                                \
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(value_char, config, parameter);                                                                              \
         if(value_char != NULL) {                                                                                                                               \
             (value) = IS_TRUE(value_char);                                                                                                                     \
         }                                                                                                                                                      \
@@ -67,7 +67,7 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
 
 #define GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(type, value, config, parameter)                                                                             \
     do {                                                                                                                                                       \
-        char *__config_char = get_char_parameter(config, parameter);                                                                                           \
+        char *__config_char = get_string_parameter(config, parameter);                                                                                           \
         if(__config_char) {                                                                                                                                    \
             int expr_parse_error__;                                                                                                                            \
             real_cpu expr_parse_result__ = (real_cpu)te_interp(__config_char, &expr_parse_error__);                                                            \
@@ -86,7 +86,7 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
 
 #define GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(value, config, parameter, n)                                                                                 \
     do {                                                                                                                                                       \
-        char *__config_char = get_char_parameter(config, parameter);                                                                                           \
+        char *__config_char = get_string_parameter(config, parameter);                                                                                           \
         if(__config_char) {                                                                                                                                    \
             bool __success = get_vector_parameter(&value, config, __config_char, n);                                                                           \
             if(!__success) {                                                                                                                                   \
