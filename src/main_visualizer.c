@@ -5,29 +5,16 @@
 
 #include "3dparty/sds/sds.h"
 #include "3dparty/stb_ds.h"
-#include "vtk_utils/vtk_unstructured_grid.h"
-#include "vtk_utils/pvd_utils.h"
 #include "config/config_parser.h"
+#include "vtk_utils/pvd_utils.h"
+#include "vtk_utils/vtk_unstructured_grid.h"
 
-#include <string.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
+#include <string.h>
 
 static char error[4096];
-
-static inline int get_step_from_filename(char *filename) {
-    char *ia = filename;
-
-    int int_a = 0;
-
-    for(; *ia; ia++) {
-        if(isdigit(*ia))
-            int_a = int_a*10 + *ia - '0';
-    }
-
-    return int_a;
-}
 
 static void init_gui_config(struct gui_config *gui_config, struct visualization_options *options, bool only_restart) {
 
@@ -56,7 +43,6 @@ static void init_gui_config(struct gui_config *gui_config, struct visualization_
         gui_config->error_message = NULL;
         gui_config->int_scale = false;
     }
-
 }
 
 static void read_and_render_activation_map(char *input_file) {
@@ -70,7 +56,8 @@ static void read_and_render_activation_map(char *input_file) {
 
     if(!gui_config.grid_info.vtk_grid) {
         sprintf(error, "%s is not an activation map", input_file);
-        if(gui_config.error_message) free(gui_config.error_message);
+        if(gui_config.error_message)
+            free(gui_config.error_message);
         gui_config.error_message = strdup(error);
         omp_unset_lock(&gui_config.draw_lock);
         return;
@@ -100,55 +87,57 @@ static int read_and_render_files(struct visualization_options *options) {
 
     if(!input_info.exists) {
         sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk or acm)!");
-        if(gui_config.error_message) free(gui_config.error_message);
+        if(gui_config.error_message)
+            free(gui_config.error_message);
         gui_config.error_message = strdup(error);
         return SIMULATION_FINISHED;
     }
 
     if(input_info.is_dir) {
-        simulation_files = (struct simulation_files*) malloc(sizeof(struct simulation_files));
+        simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
         simulation_files->files_list = NULL;
         simulation_files->timesteps = NULL;
         if(input) {
-            simulation_files->files_list = list_files_from_dir_sorted(input, prefix);
+            simulation_files->files_list = list_files_from_dir(input, prefix, NULL, true);
         }
-    }
-    else {
+    } else {
         if(strcmp(input_info.file_extension, "pvd") == 0) {
             using_pvd = true;
             simulation_files = list_files_from_and_timesteps_from_pvd(input);
         } else if(strcmp(input_info.file_extension, "acm") == 0) {
             read_and_render_activation_map((char *)input);
             return SIMULATION_FINISHED;
-        } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0 ||  strcmp(input_info.file_extension, "txt") == 0
-            || strcmp(input_info.file_extension, "bin") == 0 || strcmp(input_info.file_extension, "alg") == 0) {
+        } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0 ||
+                  strcmp(input_info.file_extension, "txt") == 0 || strcmp(input_info.file_extension, "bin") == 0 ||
+                  strcmp(input_info.file_extension, "alg") == 0) {
             simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
             simulation_files->files_list = NULL;
             simulation_files->timesteps = NULL;
             single_file = true;
             if(input) {
-                arrput(simulation_files->files_list, (char*)input);
+                arrput(simulation_files->files_list, (char *)input);
             }
         }
     }
 
     int num_files = 0;
 
-    if(simulation_files) num_files = arrlen(simulation_files->files_list);
+    if(simulation_files)
+        num_files = arrlen(simulation_files->files_list);
 
     sds full_path;
 
     if(!using_pvd) {
         full_path = sdsnew(input);
-    }
-    else {
+    } else {
         full_path = sdsnew(get_dir_from_path(input));
     }
 
     if(!num_files) {
         sprintf(error, "No simulations file found in %s", full_path);
 
-        if(gui_config.error_message) free(gui_config.error_message);
+        if(gui_config.error_message)
+            free(gui_config.error_message);
         gui_config.error_message = strdup(error);
 
         sdsfree(full_path);
@@ -156,10 +145,10 @@ static int read_and_render_files(struct visualization_options *options) {
 
         return SIMULATION_FINISHED;
     }
-    
+
     if(current_file > num_files) {
         fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", current_file, num_files, num_files);
-        current_file = num_files-1;
+        current_file = num_files - 1;
     }
 
     int step;
@@ -171,7 +160,7 @@ static int read_and_render_files(struct visualization_options *options) {
     if(!using_pvd) {
         step1 = get_step_from_filename(simulation_files->files_list[0]);
 
-        if (num_files > 1) {
+        if(num_files > 1) {
             step2 = get_step_from_filename(simulation_files->files_list[1]);
             step = step2 - step1;
         } else {
@@ -183,28 +172,26 @@ static int read_and_render_files(struct visualization_options *options) {
         dt = gui_config.dt;
 
         gui_config.step = step;
-        if (dt == 0.0) {
+        if(dt == 0.0) {
             gui_config.final_time = final_step;
 
         } else {
             gui_config.final_time = final_step * dt;
         }
-    }
-    else {
-        gui_config.final_time = simulation_files->timesteps[num_files-1];
-        gui_config.dt = -1; //we don't care about dt here as the time steps are in the PVD file
+    } else {
+        gui_config.final_time = simulation_files->timesteps[num_files - 1];
+        gui_config.dt = -1; // we don't care about dt here as the time steps are in the PVD file
     }
 
     while(true) {
 
         if(!using_pvd) {
-            if (dt == 0) {
+            if(dt == 0) {
                 gui_config.time = get_step_from_filename(simulation_files->files_list[current_file]);
             } else {
                 gui_config.time = get_step_from_filename(simulation_files->files_list[current_file]) * dt;
             }
-        }
-        else {
+        } else {
             gui_config.time = simulation_files->timesteps[current_file];
         }
 
@@ -212,8 +199,7 @@ static int read_and_render_files(struct visualization_options *options) {
 
         if(!using_pvd) {
             full_path = sdsnew(input);
-        }
-        else {
+        } else {
             if(using_pvd)
                 full_path = sdsnew(get_dir_from_path(input));
         }
@@ -232,7 +218,8 @@ static int read_and_render_files(struct visualization_options *options) {
 
         if(!gui_config.grid_info.vtk_grid) {
             sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
-            if(gui_config.error_message) free(gui_config.error_message);
+            if(gui_config.error_message)
+                free(gui_config.error_message);
             gui_config.error_message = strdup(error);
             omp_unset_lock(&gui_config.draw_lock);
             arrfree(simulation_files->files_list);
@@ -265,21 +252,21 @@ static int read_and_render_files(struct visualization_options *options) {
             return END_SIMULATION;
         }
 
-        //TODO: maybe change how we handle advance_return
+        // TODO: maybe change how we handle advance_return
         if(gui_config.paused) {
             current_file += gui_config.advance_or_return;
             gui_config.advance_or_return = 0;
-            if(current_file < 0) current_file++;
-            else if(current_file >= num_files) current_file--;
+            if(current_file < 0)
+                current_file++;
+            else if(current_file >= num_files)
+                current_file--;
 
-        }
-        else {
+        } else {
             current_file += v_step;
             if(current_file >= num_files) {
                 current_file -= v_step;
                 gui_config.paused = true;
             }
-
         }
     }
 }
@@ -292,7 +279,7 @@ int main(int argc, char **argv) {
 
     omp_set_num_threads(2);
 
-    if (!options->input) {
+    if(!options->input) {
         fprintf(stderr, "[ERR] You have to provide a pvd file, a input folder or an activation map!\n");
     }
 
@@ -307,44 +294,39 @@ int main(int argc, char **argv) {
         save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, save_path, 6);
         free_vtk_unstructured_grid(vtk_grid);
         sdsfree(save_path);
-    }
-    else {
-        OMP(parallel sections num_threads(2))
-        {
-            OMP(section)
-            {
+    } else {
+        OMP(parallel sections num_threads(2)) {
+            OMP(section) {
                 omp_init_lock(&gui_config.draw_lock);
                 omp_init_lock(&gui_config.sleep_lock);
                 init_gui_config(&gui_config, options, false);
                 init_and_open_gui_window();
             }
 
-            OMP(section)
-            {
+            OMP(section) {
                 int result = read_and_render_files(options);
 
-                while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
+                while(result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
 
                     if(gui_config.input) {
                         options->input = gui_config.input;
                         result = RESTART_SIMULATION;
                     }
 
-                    if (gui_config.restart) {
+                    if(gui_config.restart) {
                         result = RESTART_SIMULATION;
                         gui_config.grid_info.loaded = false;
                     }
 
-                    if (result == RESTART_SIMULATION) {
+                    if(result == RESTART_SIMULATION) {
                         init_gui_config(&gui_config, options, true);
                         result = read_and_render_files(options);
                     }
 
-                    else if (result == END_SIMULATION || gui_config.exit) {
+                    else if(result == END_SIMULATION || gui_config.exit) {
                         break;
                     }
                 }
-
             }
         }
     }
