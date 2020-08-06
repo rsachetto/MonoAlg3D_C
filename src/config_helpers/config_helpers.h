@@ -20,6 +20,8 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
 #define IS_TRUE(str) (strcmp((str), "true") == 0 || strcmp((str), "yes") == 0 || strcmp((str), "1") == 0)
 #define IS_FALSE(str) (strcmp((str), "false") == 0 || strcmp((str), "no") == 0 || strcmp((str), "0") == 0)
 
+#define ARRAY_FOR_EACH(array) for(int i = 0; i < arrlen((array)); i++)
+
 #define REPORT_ERROR_ON_FUNCTION(error)                                                                                                                        \
     do {                                                                                                                                                       \
         report_error_on_function(__LINE__, __FILE__, error);                                                                                                   \
