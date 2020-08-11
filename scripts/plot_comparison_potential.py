@@ -13,8 +13,8 @@ def read_transmembrane_potential(input_file, dt, print_rate):
     timesteps = np.arange(0,n)*ms_each_step
     vms = data
 
-    #timesteps = timesteps[430:470]
-    #vms = vms[430:470]
+    timesteps = timesteps[0:50]
+    vms = vms[0:50]
 
     return timesteps, vms
 
@@ -27,9 +27,13 @@ def plot_transmembrane_potential(t1, v1, t2, v2):
     plt.grid()
     plt.xlabel("t (ms)",fontsize=15)
     plt.ylabel("V (mV)",fontsize=15)
-    plt.title("Action potential - Electrotonic Effect",fontsize=14)
+    #plt.title("Action potential - Cells not within a PMJ site",fontsize=14)
+    #plt.title("Action potential - PMJ delay",fontsize=14)
+    plt.title("Action potential - PMJ block",fontsize=14)
     plt.legend(loc=0,fontsize=14)
-    plt.savefig("purkinje-coupling.pdf")
+    #plt.savefig("pmj-delay.png")
+    plt.savefig("pmj-block.png")
+    #plt.savefig("normal-cells.png")
     #plt.show()
 
 

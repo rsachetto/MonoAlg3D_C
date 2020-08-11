@@ -145,3 +145,6 @@ networks/03_Lucas/*
 run_co_at_simulations.sh
 run_co_length_simulations.sh
 run_dla_simulations.sh
+run_co_at_with_pruning_simulations.sh
+run_co_length_with_pruning_simulations.sh
+run_oxford.sh

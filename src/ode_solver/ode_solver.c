@@ -343,7 +343,7 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
 void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_solver, struct user_options *options) {
 
     purkinje_solver->gpu_id = options->purkinje_gpu_id;
-    purkinje_solver->adaptive = options->adaptive;
+    purkinje_solver->adaptive = options->purkinje_ode_adaptive;
 
     if(purkinje_solver->adaptive) {
         purkinje_solver->max_dt = (real)options->dt_pde;

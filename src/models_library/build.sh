@@ -162,6 +162,13 @@ COMMON_HEADERS="trovato_2019.h"
 
 COMPILE_MODEL_LIB "trovato_2019" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
 
+############## NEW ToRORd ##############################
+MODEL_FILE_CPU="new_torord_fkatp_endo.c"
+MODEL_FILE_GPU="new_torord_fkatp_endo.cu"
+COMMON_HEADERS="new_torord_fkatp_endo.h"
+
+COMPILE_MODEL_LIB "new_torord_fkatp_endo" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
 
 #################################################################################################################################
 # MIXED MODELS
