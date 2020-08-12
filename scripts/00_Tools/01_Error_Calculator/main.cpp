@@ -81,7 +81,8 @@ int main (int argc, char *argv[])
     {
         // --------------------------------------------------------------------------------------------
         // Calculate global RMS error
-        double sum = 0.0;
+        double sum_num = 0.0;
+        double sum_den = 0.0;
 	
         // Pass through each cell on the tissue for the current timestep
         for(uint32_t i = 0; i < total_num_cells_1; i++)
@@ -94,17 +95,22 @@ int main (int argc, char *argv[])
 
             // RMS calculus
             //double value = (value_1 - value_2) / (value_1);		// Relative error
-	        double value = fabs(value_1 - value_2);			// Absolute error
-            sum += powf(value,2);
+	        double value = fabs(value_1 - value_2);			        // Absolute error
+            sum_num += powf(value,2);                               // RMSE
+            sum_den += powf(value_1,2);                             // L2_NORM
 
         }
-        sum /= (double)total_num_cells_1;
 
         // RMS calculus
-        double rms = sqrt(sum);
-	    //printf("Global RMS = %g\n",rms);
-        printf("%g\n",rms);
-        
+        double rmse = sqrt(sum_num/(double)total_num_cells_1);
+        double l2_norm = sqrt(sum_den);
+        double rrmse = sqrt(sum_num/sum_den);
+
+	//printf("Global RMS = %g\n",rms);
+        //printf("RMSE = %g\n",rmse);
+        //printf("L2_NORM = %g\n",l2_norm);
+        //printf("RRMSE = %g\n",rrmse);
+	printf("%g\n",rrmse);
     }
     else
     {

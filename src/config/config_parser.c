@@ -251,6 +251,9 @@ struct user_options *new_user_options() {
     user_args->ode_abstol = 1e-5;
     user_args->ode_abstol_was_set = false;
 
+    user_args->purkinje_ode_adaptive = false;
+    user_args->purkinje_ode_adaptive_was_set = false;
+
     user_args->refine_each = 1;
     user_args->refine_each_was_set = false;
 
@@ -1481,6 +1484,14 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     } else if(MATCH_SECTION(ODE_PURKINJE_SECTION)) {
         if(MATCH_NAME("dt")) {
             parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->purkinje_dt_ode, &pconfig->purkinje_dt_ode_was_set);
+        }
+        else if(MATCH_NAME("adaptive")) {
+            if(IS_TRUE(value)) {
+                pconfig->purkinje_ode_adaptive = true;
+            } else {
+                pconfig->purkinje_ode_adaptive = false;
+            }
+            pconfig->purkinje_ode_adaptive_was_set = true;
         }
         else if(MATCH_NAME("use_gpu")) {
             if(IS_TRUE(value)) {

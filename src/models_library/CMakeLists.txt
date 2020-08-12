@@ -210,10 +210,10 @@ else()
 endif(CUDA_FOUND)
 #########################################################
 
-############## ToTOTd ##############################
-set(MODEL_FILE_CPU "ToRORd_fkatp_endo.c")
-set(MODEL_FILE_GPU "ToRORd_fkatp_endo.cu")
-set(COMMON_HEADERS model_common.h ToRORd_fkatp_endo.h)
+############## ToRORd (Working version) ##############################
+set(MODEL_FILE_CPU "new_torord_fkatp_endo.c")
+set(MODEL_FILE_GPU "new_torord_fkatp_endo.cu")
+set(COMMON_HEADERS model_common.h new_torord_fkatp_endo.h)
 
 if(CUDA_FOUND)
 	CUDA_ADD_LIBRARY(ToRORd_fkatp_endo ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
@@ -233,6 +233,19 @@ else()
 	ADD_LIBRARY(courtemanche_ramirez_nattel_1998 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
 endif(CUDA_FOUND)
 ################################################################################
+
+############## TROVATO ##############################
+set(MODEL_FILE_CPU "trovato_2019.c")
+set(MODEL_FILE_GPU "trovato_2019.cu")
+set(COMMON_HEADERS model_common.h trovato_2019.h)
+
+if(CUDA_FOUND)
+	CUDA_ADD_LIBRARY(trovato_2019 ${LIB_TYPE} model_gpu_utils.h ${COMMON_HEADERS} ${MODEL_FILE_GPU} ${MODEL_FILE_CPU})
+else()
+	ADD_LIBRARY(trovato_2019 ${LIB_TYPE} ${COMMON_HEADERS} ${MODEL_FILE_CPU})
+endif(CUDA_FOUND)
+################################################################################
+
 
 #########################################################################################################################################################
 # MIXED MODELS SECTION

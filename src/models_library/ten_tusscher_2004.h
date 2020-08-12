@@ -6,6 +6,7 @@
 
 #define NEQ 17
 #define INITIAL_V (-86.2f)
+#define ENDO
 
 #ifdef __CUDACC__
 

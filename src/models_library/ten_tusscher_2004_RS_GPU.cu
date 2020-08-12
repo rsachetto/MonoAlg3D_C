@@ -16,10 +16,6 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
         log_to_stdout_and_file("Using ten Tusscher 2004 EPI GPU model\n");
     #endif
 
-    #ifdef MCELL
-        log_to_stdout_and_file("Using ten Tusscher 2004 MCELL GPU model\n");
-    #endif
-
     // execution configuration
     const int GRID  = (num_volumes + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
@@ -185,32 +181,30 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     real CAPACITANCE=0.185;
 
 //Parameters for currents
-real Gks = 0.245;
-real Gto = 0.073;
 //Parameters for IKr
     real Gkr=0.096;
 //Parameters for Iks
     real pKNa=0.03;
 #ifdef EPI
-    Gks=0.245;
+    real Gks=0.245;
 #endif
 #ifdef ENDO
-    Gks=0.245;
+    real Gks=0.245;
 #endif
 #ifdef MCELL
-    Gks=0.062;
+    real Gks=0.062;
 #endif
 //Parameters for Ik1
     real GK1=5.405;
 //Parameters for Ito
 #ifdef EPI
-    Gto=0.294;
+    real Gto=0.294;
 #endif
 #ifdef ENDO
-    Gto=0.073;
+    real Gto=0.073;
 #endif
 #ifdef MCELL
-    Gto=0.294;
+    real Gto=0.294;
 #endif
 //Parameters for INa
     real GNa=14.838;

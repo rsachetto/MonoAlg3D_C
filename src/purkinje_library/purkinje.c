@@ -28,14 +28,6 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh) {
     char *network_file = NULL;
     GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(network_file,config->config_data,"network_file");
 
-    // TODO: Implement this test
-    int success = check_purkinje_input();
-
-    if (!success)
-    {
-        return 0;
-    }
-
     log_to_stdout_and_file("Loading a custom Purkinje Network:> %s\n", name);
     log_to_stdout_and_file("Using the Purkinje library function:> \"initialize_purkinje_with_custom_mesh\"\n");
     log_to_stdout_and_file("Discretization for the Purkinje Network Mesh:> %g um\n",side_length);
@@ -47,6 +39,13 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh) {
     initialize_and_construct_grid_purkinje(the_grid);
 
     free (network_file);
+
+    // Before returning test if there is an error in Purkinje mesh
+    int success = check_purkinje_mesh_for_errors(the_grid->purkinje->network);
+    if (!success)
+    {
+        return 0;
+    }
 
     return 1;
 }
@@ -80,13 +79,8 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_coupling_with_custom_mesh) {
     bool retro_propagation = true;
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(retro_propagation, config->config_data, "retro_propagation");
 
-    // TODO: Implement this test
-    int success = check_purkinje_input();
-
-    if (!success)
-    {
-        return 0;
-    }
+    char *pmj_location_file = NULL;
+    GET_PARAMETER_VALUE_CHAR_OR_USE_DEFAULT(pmj_location_file, config->config_data, "pmj_location_file");
 
     log_to_stdout_and_file("Loading a custom Purkinje Network:> %s\n", name);
     log_to_stdout_and_file("Using the Purkinje library function:> \"initialize_purkinje_with_custom_mesh\"\n");
@@ -99,13 +93,20 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_coupling_with_custom_mesh) {
     log_to_stdout_and_file("Cellular model for the Purkinje :> %s\n",the_ode_solver->model_data.model_library_path);
     set_custom_purkinje_network(the_grid->purkinje, network_file, side_length);
 
-    set_purkinje_coupling_parameters(the_grid->purkinje->network,rpmj,pmj_scale,asymm_ratio,nmin_pmj,nmax_pmj,retro_propagation);
+    set_purkinje_coupling_parameters(the_grid->purkinje->network,rpmj,pmj_scale,asymm_ratio,nmin_pmj,nmax_pmj,retro_propagation,pmj_location_file);
 
     // Populate the 'purkinje_cells' linked-list with the nodes from the graph
     //        Some parameters from the 'cell_node' structure will not be used
     initialize_and_construct_grid_purkinje(the_grid);
 
     free (network_file);
+
+    // Before returning test if there is an error in Purkinje mesh
+    int success = check_purkinje_mesh_for_errors(the_grid->purkinje->network);
+    if (!success)
+    {
+        return 0;
+    }
 
     return 1;
 }

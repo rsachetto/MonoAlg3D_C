@@ -1,9 +1,3 @@
-    real Gks;
-    real Gto;
-    real S_INF;
-    real TAU_S;
-    real R_INF_new;
-    
     const real natp = 0.24;          // K dependence of ATP-sensitive K current
     const real nicholsarea = 0.00005; // Nichol's areas (cm^2)
     const real hatp = 2;             // Hill coefficient
@@ -64,6 +58,9 @@
     const real F=96485.3415;
     const real T=310.0;
     const real RTONF=(R*T)/F;
+
+    real Gto;
+    real Gks;
 
 //Parameters for currents
 //Parameters for IKr
@@ -163,6 +160,9 @@
     real Bxs;
     real Xs_INF;
     real TAU_Xs;
+    real R_INF_new;
+    real S_INF;
+    real TAU_S;
     real Af;
     real Bf;
     real Cf;

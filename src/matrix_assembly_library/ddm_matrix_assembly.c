@@ -14,6 +14,8 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../config_helpers/config_helpers.h"
 
+#ifdef ENABLE_DDM
+
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     real_cpu alpha;
@@ -84,8 +86,10 @@ struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx,
 
     struct element new_element;
     new_element.column = position;
+    #ifdef ENABLE_DDM
     new_element.direction = direction;
-    
+    #endif
+
     if(direction == 'n') { // Z direction front
         multiplier = ((dx * dy) / dz);
         new_element.value = ( multiplier * (-sigma_z - (kappa_z / dt)) );
@@ -1776,3 +1780,5 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
     exit(EXIT_SUCCESS);
 
 }
+
+#endif

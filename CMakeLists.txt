@@ -129,6 +129,7 @@ ADD_SUBDIRECTORY(src/save_mesh_library)
 ADD_SUBDIRECTORY(src/save_state_library)
 ADD_SUBDIRECTORY(src/restore_state_library)
 ADD_SUBDIRECTORY(src/update_monodomain_library)
+ADD_SUBDIRECTORY(src/modify_domain)
 
 #BUILDING VISUALIZER
 IF(COMPILE_GUI)

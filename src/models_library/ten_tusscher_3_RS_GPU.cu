@@ -7,7 +7,7 @@
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
-    char *cell_type = NULL;
+    char *cell_type;
     #ifdef ENDO
         cell_type = strdup("ENDO");
     #endif

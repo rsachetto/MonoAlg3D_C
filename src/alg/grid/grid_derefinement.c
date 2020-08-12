@@ -83,7 +83,6 @@ bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_boun
                              */
                             if (cell_needs_derefinement (grid_cell, derefinement_bound)) {
                                 auxiliar_grid_cell = grid_cell->next->next->next->next->next->next->next->next;
-
                                 derefine_cell_bunch (grid_cell, &(the_grid->free_sv_positions));
 
                                 the_grid->number_of_cells -= 7;

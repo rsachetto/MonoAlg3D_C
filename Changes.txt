@@ -1,2 +1,24 @@
 1) Merged Sachetto changes since 04/06/2020
+    - New build using shell-script
+    - GPU-CG
+    - ODE adaptative
+    - Save activation_time and APD on ".acm"
+ 
+2) Lucas improvements
+    - Organize the /example_configs folder in categories
+    - Organize the /scripts folder in categories
+    - Organize the /networks folder in categories
+    - Organize the /meshes folder in categories
+    - Add Fedora build options to the "build.sh"
+    - It is now possible to set the conductivity of each segment from a Purkinje network
+    - Revamped the Purkinje-Coupling code. The PMJ current equation now follows the idea from the CARPentry solver:
+        https://carpentry.medunigraz.at/carputils/examples/tutorials/tutorials.02_EP_tissue.19_Pkje.run.html
+    - Purkinje-Coupling simulations can now store LAT and APD maps in VTU/VTP.
+    - The active PMJs of a Purkinje network can now be given in VTK format. The default case considers all the PMJs as active.
+    - Add Trovato_2019 Purkinje cellular model.
+    - Update the DFS function for the Purkinje mesh construction, so that cycles are avoided.
+    - Add an unitary test for the Purkinje network, which tests if there is duplicate nodes on the mesh graph.
+    - New examples have been added
 
+3) Bugs
+    - When "compress=true" the meshes are not right.  

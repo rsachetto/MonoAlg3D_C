@@ -23,7 +23,9 @@
 
 
 struct element {
+#ifdef ENABLE_DDM
     char direction;     // NEW parameter !!!
+#endif
     real_cpu value;
     uint32_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
@@ -99,7 +101,9 @@ struct cell_node {
 
     struct point_3d sigma;
 
+#ifdef ENABLE_DDM
     struct point_3d kappa;
+#endif
 
 
 #if defined(_OPENMP)
@@ -132,7 +136,8 @@ struct transition_node {
 
 // ----------------------------------------------------
 struct terminal {
-    
+    bool active;
+
     struct node *purkinje_cell;
 
     struct cell_node **tissue_cells;

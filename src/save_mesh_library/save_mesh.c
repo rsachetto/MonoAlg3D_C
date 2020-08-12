@@ -654,6 +654,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
     }
     else {
         save_vtk_polydata_grid_as_vtp(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+        //save_vtk_polydata_grid_as_legacy_vtk(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
     }
 
     //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
@@ -1339,7 +1340,7 @@ void calculate_tissue_activation_time_and_apd (struct time_info *time_info, stru
     while(tissue_grid_cell != 0) {
 
         if( tissue_grid_cell->active || ( tissue_grid_cell->mesh_extra_info && ( FIBROTIC(tissue_grid_cell) || BORDER_ZONE(tissue_grid_cell) ) ) ) {
-
+            
             center_x = tissue_grid_cell->center.x;
             center_y = tissue_grid_cell->center.y;
             center_z = tissue_grid_cell->center.z;
@@ -1573,7 +1574,7 @@ void write_tissue_activation_time_for_each_pulse (struct config *config, struct 
 
     // Get the number of pulses using one cell of the grid
     int n_pulses = (int) hmget((*data)->tissue_num_activations, cell_coordinates);
-
+    
     // Write the activation time map for each pulse
     for (int cur_pulse = 0; cur_pulse < n_pulses; cur_pulse++) {
 
@@ -1630,6 +1631,7 @@ void set_tissue_vtk_values_with_activation_time_from_current_pulse (void **persi
 
             activation_times_array = (float *) hmget((*data)->tissue_activation_times, cell_coordinates);
 
+            // TODO: Check the case where: (activation_times_array == NULL)
             // Get the activation time from the current pulse for that particular cell
             float at = activation_times_array[cur_pulse];           
 
