@@ -143,3 +143,5 @@ meshes/ModVent_PAP_500um.alg
 example_configs/atrial_mesh_start_500um.ini
 example_configs/atrial_mesh_start_500um_27n.ini
 
+/meshes/scv.alg
+/src/3dparty/raylib/src/stbTAvvG
