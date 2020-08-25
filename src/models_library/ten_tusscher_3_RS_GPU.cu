@@ -3,7 +3,6 @@
 #include "../gpu_utils/gpu_utils.h"
 #include "ten_tusscher_3_RS.h"
 
-
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     char *cell_type;
