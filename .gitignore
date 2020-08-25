@@ -138,6 +138,7 @@ meshes/atrial_mesh.fibers
 meshes/atrial_mesh.vtu
 meshes/atrial_mesh_sub.alg
 meshes/atrial_mesh_sub.fibers
+meshes/ModVent_PAP_500um.alg
 
 example_configs/atrial_mesh_start_500um.ini
 example_configs/atrial_mesh_start_500um_27n.ini
