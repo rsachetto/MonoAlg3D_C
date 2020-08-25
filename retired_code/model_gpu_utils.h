@@ -1,7 +1,5 @@
-#ifndef MONOALG3D_GPU_UTILS_H
-#define MONOALG3D_GPU_UTILS_H
-
-#include "cuda_runtime.h"
+#ifndef MONOALG3D_MODEL_GPU_UTILS_H
+#define MONOALG3D_MODEL_GPU_UTILS_H
 
 /*! \brief Macros/inlines to assist CLion to parse Cuda files (*.cu, *.cuh) */
 #ifdef __JETBRAINS_IDE__
@@ -26,14 +24,4 @@ extern __cuda_fake_struct blockIdx;
 
 #define BLOCK_SIZE 32
 
-#define check_cuda_error(ans) do{cuda_assert((ans), #ans, __FILE__, __LINE__, "cuda");} while(0)
-#define check_cublas_error(ans) do{cuda_assert((ans), #ans, __FILE__, __LINE__, "cublas");} while(0)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-void cuda_assert(int code, char const *const func, const char *const file, int const line, const char *api);
-#ifdef __cplusplus
-}
-#endif
-#endif //MONOALG3D_GPU_UTILS_H
+#endif //MONOALG3D_MODEL_GPU_UTILS_H

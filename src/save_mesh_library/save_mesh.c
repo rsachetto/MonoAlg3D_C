@@ -158,7 +158,7 @@ SAVE_MESH(save_one_cell_state_variables) {
             cell_sv = (real *)malloc(sizeof(real) * ode_solver->model_data.number_of_ode_equations);
 
             // check_cuda_errors(cudaMemcpy2D(cell_sv, the_grid->num_active_cells*sizeof(real), ode_solver->sv, ode_solver->pitch, the_grid->num_active_cells*sizeof(real), ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
-            check_cuda_errors(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position,
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position,
                                            ode_solver->pitch, sizeof(real),
                                            ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 

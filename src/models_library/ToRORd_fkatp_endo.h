@@ -2,7 +2,7 @@
 #define MONOALG3D_MODEL_TORORD_FKATP_ENDO_H
 
 #include "model_common.h"
-#include "model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 
 #define NEQ 43
 #define INITIAL_V (-88.763800f)

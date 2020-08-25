@@ -2,7 +2,7 @@
 #define MONOALG3D_MODEL_COURTEMANCHE_RAMIREZ_NATTEL_1998_H
 
 #include "model_common.h"
-#include "model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 
 #define NEQ 21
 #define INITIAL_V (-81.180000f)

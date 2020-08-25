@@ -1,7 +1,7 @@
 #include "noble_1962.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 

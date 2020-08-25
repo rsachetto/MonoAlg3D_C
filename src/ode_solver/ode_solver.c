@@ -155,7 +155,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
         }
 
         if(solver->sv != NULL) {
-            check_cuda_errors(cudaFree(solver->sv));
+            check_cuda_error(cudaFree(solver->sv));
         }
 
         solver->pitch = soicg_fn_pt(solver, ode_extra_config);
@@ -283,7 +283,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
             for (int j = 1; j < 8; j++) {
                 index = refined_this_step[index_id + j];
                 sv_dst = &sv[index];
-                check_cuda_errors(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t )neq, cudaMemcpyDeviceToDevice));
+                check_cuda_error(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t )neq, cudaMemcpyDeviceToDevice));
             }
         }
         #endif

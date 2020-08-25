@@ -322,11 +322,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(gpu) {
         int device_count;
         int device = the_ode_solver->gpu_id;
-        check_cuda_errors(cudaGetDeviceCount(&device_count));
+        check_cuda_error(cudaGetDeviceCount(&device_count));
         struct cudaDeviceProp prop;
-        check_cuda_errors(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
+        check_cuda_error(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
         log_to_stdout_and_file("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
-        check_cuda_errors(cudaSetDevice(device));
+        check_cuda_error(cudaSetDevice(device));
     }
 #endif
 
@@ -913,7 +913,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
             vms = (real *)malloc(mem_size);
 
             if(the_grid->adaptive)
-                check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+                check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
             OMP(parallel for)
             for(uint32_t i = 0; i < n_active; i++) 
@@ -926,7 +926,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
                 }
             }
 
-            check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
+            check_cuda_error(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
             free(vms);
         #endif
         } 
@@ -965,7 +965,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
             vms_purkinje = (real *)malloc(mem_size_purkinje);
 
             if(the_grid->adaptive)
-                check_cuda_errors(cudaMemcpy(vms_purkinje, sv_purkinje, mem_size_purkinje, cudaMemcpyDeviceToHost));
+                check_cuda_error(cudaMemcpy(vms_purkinje, sv_purkinje, mem_size_purkinje, cudaMemcpyDeviceToHost));
 
             OMP(parallel for)
             for(uint32_t i = 0; i < n_active_purkinje; i++) 
@@ -978,7 +978,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
                 }
             }
 
-            check_cuda_errors(cudaMemcpy(sv_purkinje, vms_purkinje, mem_size_purkinje, cudaMemcpyHostToDevice));
+            check_cuda_error(cudaMemcpy(sv_purkinje, vms_purkinje, mem_size_purkinje, cudaMemcpyHostToDevice));
             free(vms_purkinje);
         #endif
         } 
@@ -1289,7 +1289,7 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
         vms = (real *)malloc(mem_size);
 
         if(the_grid->adaptive)
-            check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+            check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
         OMP(parallel for)
         for(uint32_t i = 0; i < n_active; i++)
@@ -1312,7 +1312,7 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
             ac[tissue_index]->b -= Ipmj;
         }
 
-        check_cuda_errors(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
         free(vms);
 #endif
     }
@@ -1362,7 +1362,7 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
 
         vms = (real *)malloc(mem_size);
 
-        check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+        check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
         uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
         for (uint32_t i = 0; i < num_of_purkinje_terminals; i++) {

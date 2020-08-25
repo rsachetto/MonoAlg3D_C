@@ -15,6 +15,7 @@
 struct fibrotic_mesh_info {
     bool fibrotic;
     bool border_zone;
+	int tissue_type;
     char scar_type;
 };
 
@@ -22,6 +23,7 @@ struct fibrotic_mesh_info {
 #define FIBROTIC(grid_cell) (FIBROTIC_INFO(grid_cell))->fibrotic
 #define BORDER_ZONE(grid_cell) (FIBROTIC_INFO(grid_cell))->border_zone
 #define SCAR_TYPE(grid_cell) (FIBROTIC_INFO(grid_cell))->scar_type
+#define TISSUE_TYPE(grid_cell) (FIBROTIC_INFO(grid_cell))->tissue_type
 
 #define INITIALIZE_FIBROTIC_INFO(grid_cell)                                                                            \
     do {                                                                                                               \
@@ -31,7 +33,9 @@ struct fibrotic_mesh_info {
         FIBROTIC ((grid_cell)) = false;                                                                                \
         BORDER_ZONE (grid_cell) = false;                                                                               \
         SCAR_TYPE ((grid_cell)) = 'n';                                                                                 \
+        TISSUE_TYPE ((grid_cell)) = '0';                                                                               \
 } while (0)
+
 
 struct conjugate_gradient_info {
     real_cpu r;  /* Element of the int_vector r = b - Ax associated to this cell. */

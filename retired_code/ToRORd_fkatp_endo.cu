@@ -1,7 +1,7 @@
 #include "ToRORd_fkatp_endo.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 
 #define DT *((real*)((char*)sv + pitch * 43) + thread_id)
 #define TIME_NEW *((real*)((char*)sv + pitch * 44) + thread_id)

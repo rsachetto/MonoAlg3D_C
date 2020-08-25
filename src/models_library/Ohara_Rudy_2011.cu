@@ -1,4 +1,4 @@
-#include "model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 #include <stddef.h>
 #include <stdint.h>
 

@@ -1,6 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
-#include "model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 
 #include "stewart_aslanidi_noble_2009.h"
 

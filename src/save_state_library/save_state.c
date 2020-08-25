@@ -11,7 +11,7 @@
 
 
 #ifdef COMPILE_CUDA
-#include "../models_library/model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 #endif
 
 SAVE_STATE(save_simulation_state) {
