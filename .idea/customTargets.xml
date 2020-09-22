@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CLionExternalBuildManager">
+    <target id="886d7940-bc3b-4df3-9e39-9d0a7ef03be5" name="Release" projectName="MonoAlg3D_C">
+      <configuration id="c2b067f9-40b8-45ca-8ad5-ba1f198ce00e" name="Release">
+        <build type="TOOL">
+          <tool actionId="Tool_External Tools_build_release" />
+        </build>
+        <clean type="TOOL">
+          <tool actionId="Tool_External Tools_clean_release" />
+        </clean>
+      </configuration>
+    </target>
+    <target id="f3af7866-29c4-483a-b8c5-a80763003d67" name="Debug" projectName="MonoAlg3D_C">
+      <configuration id="1c827160-e2c5-409a-bc16-3273872b4bec" name="Debug">
+        <build type="TOOL">
+          <tool actionId="Tool_External Tools_build_debug" />
+        </build>
+        <clean type="TOOL">
+          <tool actionId="Tool_External Tools_clean_debug" />
+        </clean>
+      </configuration>
+    </target>
+  </component>
+</project>

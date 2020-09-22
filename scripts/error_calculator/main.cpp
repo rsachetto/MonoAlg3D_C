@@ -72,39 +72,24 @@ int main (int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    vtkSmartPointer<vtkFloatArray> array_1 = vtkFloatArray::SafeDownCast(unstructured_grid_1->GetCellData()->GetArray(array_name.c_str()));
-    vtkSmartPointer<vtkFloatArray> array_2 = vtkFloatArray::SafeDownCast(unstructured_grid_2->GetCellData()->GetArray(array_name.c_str()));
+    vtkSmartPointer<vtkFloatArray> array_1 = 
+            vtkFloatArray::SafeDownCast(unstructured_grid_1->GetCellData()->GetArray(array_name.c_str()));
+    vtkSmartPointer<vtkFloatArray> array_2 = 
+            vtkFloatArray::SafeDownCast(unstructured_grid_2->GetCellData()->GetArray(array_name.c_str()));
 
     vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
 
     if(array_1 && array_2)
     {
-        // --------------------------------------------------------------------------------------------
-        // Calculate global RMS error
-        double sum = 0.0;
-	
         // Pass through each cell on the tissue for the current timestep
-        for(uint32_t i = 0; i < total_num_cells_1; i++)
+        for(int i = 0; i < total_num_cells_1; i++)
         {
             double value_1, value_2;
             value_1 = array_1->GetValue(i);
             value_2 = array_2->GetValue(i);
 
             values->InsertNextValue(fabs(value_1-value_2));
-
-            // RMS calculus
-            //double value = (value_1 - value_2) / (value_1);		// Relative error
-	        double value = fabs(value_1 - value_2);			// Absolute error
-            sum += powf(value,2);
-
         }
-        sum /= (double)total_num_cells_1;
-
-        // RMS calculus
-        double rms = sqrt(sum);
-	    //printf("Global RMS = %g\n",rms);
-        printf("%g\n",rms);
-        
     }
     else
     {

@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include "../monodomain/constants.h"
+#include "../common_types/common_types.h"
 
 struct node;
 struct edge;
@@ -21,6 +21,7 @@ struct node
     uint32_t id;
     uint32_t num_edges;
     real_cpu x, y, z;
+
 
     struct edge *list_edges;
     struct node *next;
@@ -41,9 +42,7 @@ struct graph
     uint32_t total_nodes;
     uint32_t total_edges;
 
-    real_cpu dx;                    // Control volume discretization
-    real_cpu h;                     // Mesh cell size
-
+    real_cpu dx;
     bool calc_retropropagation;
     real_cpu rpmj;
     real_cpu pmj_scale;

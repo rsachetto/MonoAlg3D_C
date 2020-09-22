@@ -9,9 +9,8 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
-#include "../monodomain/constants.h"
 #include "../utils/utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 #include "../config_helpers/config_helpers.h"
 
@@ -25,7 +24,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     real_cpu dt = the_solver->dt;
     int i;
 
-    #pragma omp parallel for private(alpha)
+    OMP(parallel for private(alpha))
     for(i = 0; i < active_cells; i++) {
 
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
@@ -63,8 +62,8 @@ void calculate_kappa_elements(struct monodomain_solver *the_solver, struct grid 
 
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
-    
-    #pragma omp parallel for
+
+    OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) 
 	{
         ac[i]->kappa.x = KAPPA(beta,cm,cell_length_x,ac[i]->discretization.x);
@@ -77,8 +76,7 @@ void calculate_kappa_elements(struct monodomain_solver *the_solver, struct grid 
 struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
                                  const real_cpu sigma_x, const real_cpu sigma_y, const real_cpu sigma_z,\
                                  const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
-                                 const real_cpu dt,\
-                                struct element *cell_elements) 
+                                 const real_cpu dt, struct element *cell_elements)
 {
 
     real_cpu multiplier;
@@ -330,7 +328,7 @@ void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct g
 
     int i;
 
-    #pragma omp parallel for private(alpha, dx, dy, dz)
+    OMP(parallel for private(alpha, dx, dy, dz))
     for(i = 0; i < num_active_cells; i++) 
     {
         dx = ac[i]->discretization.x;
@@ -378,7 +376,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	
@@ -409,7 +407,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
   
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -453,7 +451,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
 
     // Pass through all the cells of the grid and check if its center is inside the current
     // fibrotic region
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int j = 0; j < num_fibrotic_regions; j++) 
     {
 
@@ -473,8 +471,8 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
             {
                 real_cpu center_x = grid_cell->center.x;
                 real_cpu center_y = grid_cell->center.y;
-                real_cpu half_dx = grid_cell->discretization.x/2.0;
-                real_cpu half_dy = grid_cell->discretization.y/2.0;
+//                real_cpu half_dx = grid_cell->discretization.x/2.0;
+//                real_cpu half_dy = grid_cell->discretization.y/2.0;
 
                 struct point_3d p;
                 struct point_3d q;
@@ -506,30 +504,30 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     printf("[Y] Cell length = %.10lf || sigma_y = %.10lf || dy = %.10lf || kappa_y = %.10lf\n",\
             cell_length_y,ac[0]->sigma.y,ac[0]->discretization.y,ac[0]->kappa.y);
     printf("[Z] Cell length = %.10lf || sigma_z = %.10lf || dz = %.10lf || kappa_z = %.10lf\n",\
-            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z); 
+            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z);
 
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
 
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[BACK], the_solver->dt, BACK);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[FRONT], the_solver->dt, FRONT);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[TOP], the_solver->dt, TOP);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[DOWN], the_solver->dt, DOWN);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[RIGHT], the_solver->dt, RIGHT);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[LEFT], the_solver->dt,LEFT);
     }
 
 
@@ -544,8 +542,6 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
 ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix) 
 {
     static bool sigma_initialized = false;
-
-    struct cell_node *grid_cell;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
@@ -582,26 +578,21 @@ ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix)
             cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z);
 
     // Initialize the conductivities of each cell
-    if (!sigma_initialized)
-    {
-	    grid_cell = the_grid->first_cell;
-	    while(grid_cell != 0) 
-	    {
+    if (!sigma_initialized) {
+	    FOR_EACH_CELL(the_grid) {
 
-		    if(grid_cell->active) 
-		    {
-	    		grid_cell->sigma.x = sigma_x;
-	    		grid_cell->sigma.y = sigma_y;
-	    		grid_cell->sigma.z = sigma_z;
+		    if(cell->active) {
+	    		cell->sigma.x = sigma_x;
+	    		cell->sigma.y = sigma_y;
+	    		cell->sigma.z = sigma_z;
 		    }
-		    grid_cell = grid_cell->next;
     	}
 
 	    sigma_initialized = true;
     }
 
-    #pragma omp parallel for
-    for(int i = 0; i < num_active_cells; i++) 
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_active_cells; i++)
     {
 
         // Computes and designates the flux due to south cells.
@@ -669,7 +660,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
     //~ bool inside;
 
 	// Initialize the conductivities
-    #pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
     {
 		ac[i]->sigma.x = sigma_x;
@@ -748,8 +739,8 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
 	
 
 //General square slow sigma *aquela divisao por 3 pode mudar*...
-	
-	#pragma omp parallel for
+
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{
 			double x_prev = ac[i]->center.x;
@@ -764,7 +755,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
 	}	
 	
 //Vou recuparando os triangulos do square	
-	#pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{	
 
@@ -872,10 +863,10 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
 	}
 
 // Aqui termina a construcao dos triangulos	
-	
-    	
 
-    #pragma omp parallel for
+
+
+    OMP(parallel for)
     for (i = 0; i < num_active_cells; i++)
     {
 
@@ -905,8 +896,6 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-	struct cell_node *grid_cell;
-
 
     initialize_diagonal_elements(the_solver, the_grid);
 
@@ -941,7 +930,7 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config->config_data, "side_length");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");    
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");    
 
     //~ real scar_length = 0.0;
     //~ GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(scar_length, config->config_data, "scar_length");
@@ -953,7 +942,7 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 
     //~ bool inside;
 
-	#pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) {
 		ac[i]->sigma.x = sigma_x;
 		ac[i]->sigma.y = sigma_y;
@@ -1030,8 +1019,8 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 
 
 //General square slow sigma *aquela divisao por 3 pode mudar*...
-	
-	#pragma omp parallel for
+
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{
 			double x_prev = ac[i]->center.x;
@@ -1046,8 +1035,8 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 	}	
 	
 //Vou recuparando os triangulos do square	
-	
-	#pragma omp parallel for
+
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{	
 
@@ -1167,35 +1156,30 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
     // Write the new grid configuration on the rescaled_fibrosis file
 	FILE *fileW = fopen(new_fib_file, "w+");
 
-    grid_cell = the_grid->first_cell;
+    FOR_EACH_CELL(the_grid) {
 
-    while(grid_cell != 0) 
-    {
-
-        if(grid_cell->active) 
-        {
+        if(cell->active) {
             // We reescale the cell position using the 'rescale_factor'
-            double center_x = grid_cell->center.x ;
-            double center_y = grid_cell->center.y ;
-            double center_z = grid_cell->center.z ;
-            double dx = grid_cell->discretization.x;
-            double dy = grid_cell->discretization.y;
-            double dz = grid_cell->discretization.z;
-            double w_sigma_x = grid_cell->sigma.x;
-            double w_sigma_y = grid_cell->sigma.y;
-            double w_sigma_z = grid_cell->sigma.z;
+            double center_x = cell->center.x ;
+            double center_y = cell->center.y ;
+            double center_z = cell->center.z ;
+            double dx = cell->discretization.x;
+            double dy = cell->discretization.y;
+            double dz = cell->discretization.z;
+            double w_sigma_x = cell->sigma.x;
+            double w_sigma_y = cell->sigma.y;
+            double w_sigma_z = cell->sigma.z;
                 
             // Then, we write only the fibrotic regions to the output file
             fprintf(fileW,"%g,%g,%g,%g,%g,%g,%g,%g,%g\n",center_x,center_y,center_z,dx/2.0,dy/2.0,dz/2.0,w_sigma_x,w_sigma_y,w_sigma_z);
             
         }
-        grid_cell = grid_cell->next;
     }
 
 	fclose(fileW);  	
 		
     // We just leave the program after this ...
-    print_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 
 }
@@ -1210,7 +1194,7 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	
@@ -1232,16 +1216,14 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
 
     real cell_length_z = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");
-      
-    real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config->config_data, "sigma_factor");    
+
 
     // Calculate the kappa values on each cell of th grid
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
   
     if(!sigma_initialized) 
     {
-        #pragma omp parallel for
+        OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {
             ac[i]->sigma.x = sigma_x;
@@ -1363,10 +1345,10 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     printf("[Y] Cell length = %.10lf || sigma_y = %.10lf || dy = %.10lf || kappa_y = %.10lf\n",\
             cell_length_y,ac[0]->sigma.y,ac[0]->discretization.y,ac[0]->kappa.y);
     printf("[Z] Cell length = %.10lf || sigma_z = %.10lf || dz = %.10lf || kappa_z = %.10lf\n",\
-            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z); 
+            cell_length_z,ac[0]->sigma.z,ac[0]->discretization.z,ac[0]->kappa.z);
 
 
-    #pragma omp parallel for
+    OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
 
@@ -1400,13 +1382,6 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
 
 ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
 {
-
-    static bool sigma_initialized = false;
-    int num;
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
     struct cell_node *grid_cell;
 
     initialize_diagonal_elements(the_solver, the_grid);
@@ -1436,10 +1411,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned,seed, config->config_data, "seed");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
-
-    real rescale_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,rescale_factor, config->config_data, "rescale_factor");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
     
     real x_shift = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,x_shift, config->config_data, "x_shift");        
@@ -1512,7 +1484,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     fclose(fileW);  	
 		
     // We just leave the program after this ...
-    print_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }
 
@@ -1527,16 +1499,16 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
     int i;
 
     char *fib_file_1 = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file_1, config->config_data, "fibrosis_file_1");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_1, config->config_data, "fibrosis_file_1");
 
     char *fib_file_2 = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file_2, config->config_data, "fibrosis_file_2");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_2, config->config_data, "fibrosis_file_2");
 
     char *fib_file_3 = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(fib_file_3, config->config_data, "fibrosis_file_3");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_3, config->config_data, "fibrosis_file_3");
     
     char *new_fib_file = NULL;
-    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(new_fib_file, config->config_data, "new_fib_file");    
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "new_fib_file");    
 
     int fib_size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	    
@@ -1570,7 +1542,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
 
-	#pragma omp parallel for
+    OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{
 		ac[i]->sigma.x = sigma_x;
@@ -1663,7 +1635,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
     uint32_t num_fibrotic_regions = i;
 
     // Update the cells that are inside of the scar regions
-   #pragma omp parallel for
+    OMP(parallel for)
     for(int j = 0; j < num_fibrotic_regions; j++) 
     {
 
@@ -1683,8 +1655,8 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
             {
                 real_cpu center_x = grid_cell->center.x;
                 real_cpu center_y = grid_cell->center.y;
-                real_cpu half_dy = grid_cell->discretization.y/2.0;
-                real_cpu half_dx = grid_cell->discretization.x/2.0;
+//                real_cpu half_dy = grid_cell->discretization.y/2.0;
+//                real_cpu half_dx = grid_cell->discretization.x/2.0;
 
                 struct point_3d p;
                 struct point_3d q;
@@ -1710,26 +1682,26 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 
     // Start building the channel block
 	real X_left  = side_length/12.0;
-	real X_left_1  = X_left + side_length/12.0;
-	real X_right = 3000;
+//	real X_left_1  = X_left + side_length/12.0;
+//	real X_right = 3000;
 	real Y_down  = 0.0;
 	real Y_up 	= 1200;
-	
-	#pragma omp parallel for
+
+	OMP(parallel for)
 	for (i = 0; i < num_active_cells; i++) 
 	{	
 
-		double x = ac[i]->center.x;
-		double y = ac[i]->center.y;	
+//		double x = ac[i]->center.x;
+//		double y = ac[i]->center.y;
 		
     // Region 1 starts here ...
 
 		//Part 1 - (Channel construction)
 
 		int mid_scar_Y = (Y_down + 7500)/12.0;
-		int X_right_1 = X_left + cell_length_x;
+//		int X_right_1 = X_left + cell_length_x;
 		int Part1_x_right = X_left + 10.*(cell_length_x);
-		int Part2_x_left = Part1_x_right + cell_length_x;
+//		int Part2_x_left = Part1_x_right + cell_length_x;
 		
 		// Decrease the conductivity of every cell inside the region
 		create_sigma_low_block(ac[i],X_left,Part1_x_right,Y_down,Y_up,sigma_x,sigma_y,sigma_z,sigma_factor);
@@ -1757,7 +1729,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 		int X_right_3 = X_right_2;
 		int Y_up_3 = Part2_y_up + 5*cell_length_y;
 		int Y_down_3 = Part2_y_down - 5*cell_length_y;
-		real_cpu m_up = (Y_up_3-Part2_y_up)/(X_right_3-X_left_3);
+//		real_cpu m_up = (Y_up_3-Part2_y_up)/(X_right_3-X_left_3);
 
 
 		create_sigma_low_block(ac[i], X_left_3,X_right_3,Y_down_3,Y_up_3,sigma_x,sigma_y,sigma_z,1.0);		
@@ -1876,7 +1848,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 	fclose(fileW);  	
 		
     // We just leave the program after this ...
-    print_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 
 }

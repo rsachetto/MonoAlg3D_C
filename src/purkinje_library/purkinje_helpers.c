@@ -5,47 +5,36 @@
 #include "purkinje_helpers.h"
 
 #include "../libraries_common/common_data_structures.h"
-#include "../utils/file_utils.h"
+#include "../logger/logger.h"
 #include "../utils/utils.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
-#include <float.h>
 #include <math.h>
 #include <string.h>
-#include <time.h>
-
-#ifdef _MSC_VER
-#include <process.h>
-    #define getpid _getpid
-#else
-#include <unistd.h>
-#endif
-
-bool *dfs_visited;
 
 // Set a a custom Purkinje network from a file that stores its graph structure
-void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length, const real_cpu dx, const real_cpu rpmj, const real_cpu pmj_scale, const uint32_t root_index, const bool calc_retro_propagation)
+void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
 
-    struct graph *the_network = the_purkinje->the_network;
+    struct graph *the_network = the_purkinje->network;
 
-    set_purkinje_network_from_file(the_network,file_name,side_length,dx,rpmj,pmj_scale,root_index,calc_retro_propagation);
+    set_purkinje_network_from_file(the_network,file_name,side_length,rpmj,pmj_scale,calc_retro_propagation);
 
     calculate_number_of_terminals(the_network);
 
-    print_to_stdout_and_file("Number of Purkinje cells = %u\n",the_network->total_nodes);
-    print_to_stdout_and_file("Number of Purkinje terminals = %u\n",the_network->number_of_terminals);
+    log_to_stdout_and_file("Number of Purkinje cells = %u\n",the_network->total_nodes);
+    log_to_stdout_and_file("Number of Purkinje terminals = %u\n",the_network->number_of_terminals);
 
 }
 
-void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length, const real_cpu dx, const real_cpu rpmj, const real_cpu pmj_scale, const uint32_t root_index, const bool calc_retro_propagation)
+void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
     struct graph *skeleton_network = new_graph();
 
     //read_purkinje_network_from_file(file_name,&points,&branches,&N,&E);
     build_skeleton_purkinje(file_name,skeleton_network);
 
-    build_mesh_purkinje(the_purkinje_network,skeleton_network,side_length,dx,rpmj,pmj_scale,root_index,calc_retro_propagation);
+    build_mesh_purkinje(the_purkinje_network,skeleton_network,side_length,rpmj,pmj_scale,calc_retro_propagation);
     
     // Write the Purkinje to a VTK file for visualization purposes.
     write_purkinje_network_to_vtk(the_purkinje_network);
@@ -64,7 +53,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     FILE *file = fopen(filename,"r");
     if (!file)
     {
-        print_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
+        log_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
         exit (EXIT_FAILURE);
     }
 
@@ -120,7 +109,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     fclose(file);
 }
 
-void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length, const real_cpu dx, const real_cpu rpmj, const real_cpu pmj_scale, const uint32_t root_index, const bool calc_retro_propagation)
+void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length, const real_cpu rpmj, const real_cpu pmj_scale, const bool calc_retro_propagation)
 {
     assert(the_purkinje_network);
     assert(skeleton_network);
@@ -128,10 +117,8 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     // TODO: Maybe avoid this conversion by building a skeleton mesh directly in micrometers
     // The side_length of a Purkinje volume is given in micrometers, so we convert to centimeters
     // um -> cm
-    the_purkinje_network->dx = dx;
-    the_purkinje_network->h = side_length;
-
-    //the_purkinje_network->dx = side_length * 0.5;           // GAMBIARRA HARD !!!! Hermenegild
+    //the_purkinje_network->dx = side_length*UM_TO_CM;
+    the_purkinje_network->dx = side_length;
     the_purkinje_network->rpmj = rpmj;
     the_purkinje_network->pmj_scale = pmj_scale;
     the_purkinje_network->calc_retropropagation = calc_retro_propagation;
@@ -140,17 +127,15 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     // This map is needed to deal with bifurcations
     uint32_t *map_skeleton_to_mesh = (uint32_t*)calloc(n,sizeof(uint32_t));
 
-    // Construct the first node based on the root index
-    struct node *tmp = search_node(skeleton_network,root_index);
+    // Construct the first node
+    struct node *tmp = skeleton_network->list_nodes;
     real_cpu pos[3]; pos[0] = tmp->x; pos[1] = tmp->y; pos[2] = tmp->z;
     insert_node_graph(the_purkinje_network,pos);
     
     // Make a Depth-First-Search to build the mesh of the Purkinje network
-    dfs_visited = (uint8_t*)calloc(n,sizeof(uint8_t));
     depth_first_search(the_purkinje_network,tmp,0,map_skeleton_to_mesh);
-    free(dfs_visited);
 
-    //the_purkinje_network->dx = dx;
+    the_purkinje_network->dx = side_length;
 
     free(map_skeleton_to_mesh);
 
@@ -159,16 +144,12 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
 void depth_first_search (struct graph *the_purkinje_network, struct node *u, int level, uint32_t *map_skeleton_to_mesh)
 {
     // TODO: Include the diameter of the Purkinje branch here ...
-    dfs_visited[u->id] = 1;
 
     struct edge *v = u->list_edges;
     while (v != NULL)
     {
-        if (!dfs_visited[v->id])
-        {
-            grow_segment(the_purkinje_network,u,v,map_skeleton_to_mesh);
-            depth_first_search(the_purkinje_network,v->dest,level+1,map_skeleton_to_mesh);
-        }
+        grow_segment(the_purkinje_network,u,v,map_skeleton_to_mesh);
+        depth_first_search(the_purkinje_network,v->dest,level+1,map_skeleton_to_mesh);
         v = v->next;
     }
 
@@ -176,7 +157,7 @@ void depth_first_search (struct graph *the_purkinje_network, struct node *u, int
 
 void grow_segment (struct graph *the_purkinje_network, struct node *u, struct edge *v, uint32_t *map_skeleton_to_mesh)
 {
-    real_cpu h = the_purkinje_network->h;
+    real_cpu h = the_purkinje_network->dx;
     real_cpu d_ori[3], d[3];
     real_cpu segment_length = v->w;
     uint32_t n_points = segment_length / h;
@@ -193,7 +174,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     d[2] = u->z;
 
     // DEBUG
-    //print_to_stdout_and_file("Node %d will grow %d points\n",u->id,n_points);
+    log_to_stdout_and_file("Node %d will grow %d points\n",u->id,n_points);
 
     // Grow the number of points of size 'h' until reaches the size of the segment
     for (int k = 1; k <= n_points; k++)
@@ -229,7 +210,7 @@ void read_purkinje_network_from_file (const char *filename, struct point **point
     FILE *file = fopen(filename,"r");
     if (!file)
     {
-        print_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
+        log_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
         exit (EXIT_FAILURE);
     }
 
@@ -299,7 +280,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network)
     struct edge *e;
 
     char *filename = "meshes/purkinje_mesh.vtk";
-    print_to_stdout_and_file("Purkinje mesh file will be saved in :> %s\n",filename);
+    log_to_stdout_and_file("Purkinje mesh file will be saved in :> %s\n",filename);
 
     FILE *file = fopen(filename,"w+");
     fprintf(file,"# vtk DataFile Version 3.0\n");
@@ -336,7 +317,7 @@ void calculate_number_of_terminals (struct graph *the_purkinje_network)
     uint32_t number_of_terminals = 0;
 
     struct node *n;
-    struct edge *e;
+    //struct edge *e;
 
     n = the_purkinje_network->list_nodes;
     while (n != NULL)
@@ -358,26 +339,8 @@ bool is_terminal (const struct node *n)
         return false;
 }
 
-// Check if there are duplicates points inside the Purkinje network
-int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network)
+// TODO: Some test for the network will be implemented here ...
+int check_purkinje_input ()
 {
-    int no_duplicates = 1;
-
-    // Check duplicates
-    struct node *tmp = the_purkinje_network->list_nodes;
-    while (tmp != NULL)
-    {
-        struct node *tmp2 = the_purkinje_network->list_nodes;
-        while (tmp2 != NULL)
-        {
-            if (tmp->x == tmp2->x && tmp->y == tmp2->y && tmp->z == tmp2->z && tmp->id != tmp2->id)
-            {
-                printf("[purkinje] Duplicates are indexes: %u and %u --> (%g,%g,%g) x (%g,%g,%g)\n",tmp->id,tmp2->id,tmp->x,tmp->y,tmp->z,tmp2->x,tmp2->y,tmp2->z);
-                no_duplicates = 0;
-            }
-            tmp2 = tmp2->next;
-        }
-        tmp = tmp->next;
-    }
-    return no_duplicates;
+    return 1;
 }

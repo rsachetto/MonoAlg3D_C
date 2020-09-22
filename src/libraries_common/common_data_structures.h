@@ -6,11 +6,16 @@
 #define MONOALG3D_COMMON_DATA_STRUCTURES_H
 
 #include <stdbool.h>
+#include "../monodomain/constants.h"
+
+#define Pragma(x) _Pragma(#x)
+#define OMP(directive) Pragma(omp directive)
 
 // This is used when we are dealing with fibrotic meshes
 struct fibrotic_mesh_info {
     bool fibrotic;
     bool border_zone;
+	int tissue_type;
     char scar_type;
 };
 
@@ -18,16 +23,19 @@ struct fibrotic_mesh_info {
 #define FIBROTIC(grid_cell) (FIBROTIC_INFO(grid_cell))->fibrotic
 #define BORDER_ZONE(grid_cell) (FIBROTIC_INFO(grid_cell))->border_zone
 #define SCAR_TYPE(grid_cell) (FIBROTIC_INFO(grid_cell))->scar_type
+#define TISSUE_TYPE(grid_cell) (FIBROTIC_INFO(grid_cell))->tissue_type
 
 #define INITIALIZE_FIBROTIC_INFO(grid_cell)                                                                            \
     do {                                                                                                               \
-        size_t size = sizeof (struct fibrotic_mesh_info);                                                              \
-        (grid_cell)->mesh_extra_info = malloc (size);                                                                  \
-        (grid_cell)->mesh_extra_info_size = size;                                                                      \
+        size_t __size__ = sizeof (struct fibrotic_mesh_info);                                                          \
+        (grid_cell)->mesh_extra_info = malloc (__size__);                                                              \
+        (grid_cell)->mesh_extra_info_size = __size__;                                                                  \
         FIBROTIC ((grid_cell)) = false;                                                                                \
         BORDER_ZONE (grid_cell) = false;                                                                               \
         SCAR_TYPE ((grid_cell)) = 'n';                                                                                 \
+        TISSUE_TYPE ((grid_cell)) = '0';                                                                               \
 } while (0)
+
 
 struct conjugate_gradient_info {
     real_cpu r;  /* Element of the int_vector r = b - Ax associated to this cell. */
@@ -75,11 +83,11 @@ struct jacobi_info {
 #define JACOBI_INFO(grid_cell) (struct jacobi_info *)grid_cell->linear_system_solver_extra_info
 #define JACOBI_X_AUX(grid_cell) (JACOBI_INFO(grid_cell))->x_aux
 
-#define INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO(grid_cell, info_struct)                                                                 \
+#define INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO(grid_cell, info_struct)                                                   \
     do {                                                                                                               \
-        size_t size = sizeof (struct info_struct);                                                                     \
-        (grid_cell)->linear_system_solver_extra_info = malloc (size);                                                  \
-        (grid_cell)->linear_system_solver_extra_info_size = size;                                                      \
+        size_t __size__ = sizeof (struct info_struct);                                                                 \
+        (grid_cell)->linear_system_solver_extra_info = malloc (__size__);                                              \
+        (grid_cell)->linear_system_solver_extra_info_size = __size__;                                                  \
     } while (0)
 
 #define INITIALIZE_CONJUGATE_GRADIENT_INFO(grid_cell) INITIALIZE_LINEAR_SYSTEM_SOLVER_INFO (grid_cell, conjugate_gradient_info)

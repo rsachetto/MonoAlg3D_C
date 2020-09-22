@@ -1,26 +1,16 @@
-Sachetto
-- Rewrite the flags parsing using: https://github.com/kgabis/kgflags/blob/master/examples/full_api.c
-- Correct the domain version that sets the two scars and the fibrosis from file (maybe the error is on extra-data)
-- Compare the mesh with the mesh from the scientific reports paper
-- Use a sparse matrix format and take the matrix out of the alg mesh (http://people.sc.fsu.edu/~jburkardt/c_src/csparse/csparse.html)
-- Rewrite some library APIs (maybe we need only the config to be passed to the library function)
+#TODO
+Create a execution database in the test suite to track for performance regressions:
+http://www.corpit.ru/mjt/tinycdb.html
 
-Berg
-- Merge the last modifications from Sachetto to my code and generate two branches (ShellScript build & CMake build)
-	- Send a pull request to him
+Make a function to save a HDF5 database. With this we do not need to save the mesh every time steps, only the Vm values.
+This will work only for non-adaptive meshes.
 
-- Refactor the save map functions as a single one
+Report line number only for the debug build in the helpers functions
 
-- Implement coupling between Purkinje and tissue
-    - Fix the retropropagation code
-    - Solve the Purkinje linear system using the LINEAR_SYSTEM macro instead of another function
-    - Fix a bug when using adaptativity (benchmark_purkinje.ini)
-    - Add the option to configure the conductivity of the segments from the Purkinje network on the input ".vtk"
+#BUGS:
 
-- Add a conduction velocity calculator for Purkinje fibers
-- Implement the GMRES linear system solver (see Bernardo's book as reference ...)
-- Implement a Purkinje restore state function
+The logger symbols are only exported to an executable if an static library linked to a shared library uses then. For now this is ok. But I think it will
+be a pain in future releases.
 
-Pedro
-
-Elnaz
+#Generate computer HW Hash (very simple)
+inxi -CNM |grep -e Topology  -e Device-1 | sha256sum

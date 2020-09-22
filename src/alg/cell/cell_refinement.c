@@ -4,577 +4,533 @@
 
 #include "cell.h"
 #include "string.h"
-#include "../../single_file_libraries/stb_ds.h"
+#include "../../3dparty/stb_ds.h"
 
 #include <assert.h>
 
-void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_array *refined_this_step)  {
+#define SET_TRANSITION_NODE(t_node, direction)                                                                         \
+    do {                                                                                                               \
+        enum cell_type node_type = ((struct basic_cell_data *)t_node->single_connector)->type;                         \
+        if(node_type == CELL_NODE) {                                                                                   \
+            neighbour_cell_node = (struct cell_node *)(t_node->single_connector);                                      \
+            neighbour_cell_node->neighbours[direction] = t_node;                                                        \
+        } else if(node_type == TRANSITION_NODE) {                                                                      \
+            neighbour_transition_node = (struct transition_node *)(t_node->single_connector);                          \
+                                                                                                                       \
+            if(neighbour_transition_node->single_connector == right_front_top_sub_cell)                                \
+                neighbour_transition_node->single_connector = t_node;                                                  \
+                                                                                                                       \
+            else if(neighbour_transition_node->quadruple_connector1 == right_front_top_sub_cell)                       \
+                neighbour_transition_node->quadruple_connector1 = t_node;                                              \
+                                                                                                                       \
+            else if(neighbour_transition_node->quadruple_connector2 == right_front_top_sub_cell)                       \
+                neighbour_transition_node->quadruple_connector2 = t_node;                                              \
+                                                                                                                       \
+            else if(neighbour_transition_node->quadruple_connector3 == right_front_top_sub_cell)                       \
+                neighbour_transition_node->quadruple_connector3 = t_node;                                              \
+                                                                                                                       \
+            else if(neighbour_transition_node->quadruple_connector4 == right_front_top_sub_cell)                       \
+                neighbour_transition_node->quadruple_connector4 = t_node;                                              \
+        }                                                                                                              \
+    } while(0)
+
+void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_array *refined_this_step)  {
 
     assert(cell);
 
-    struct transition_node *east_transition_node,
-            *north_transition_node,
-            *west_transition_node,
-            *south_transition_node,
-            *front_transition_node,
-            *back_transition_node;
+    struct transition_node *top_transition_node;
+    struct transition_node *front_transition_node;
+    struct transition_node *down_transition_node;
+    struct transition_node *back_transition_node;
+    struct transition_node *right_transition_node;
+    struct transition_node *left_transition_node;
 
-    struct cell_node *front_northeast_sub_cell,
-            *front_northwest_sub_cell,
-            *front_southwest_sub_cell,
-            *front_southeast_sub_cell,
-            *back_northeast_sub_cell,
-            *back_northwest_sub_cell,
-            *back_southwest_sub_cell,
-            *back_southeast_sub_cell;
+//    struct transition_node *top_right_transition_node;
+//    struct transition_node *top_left_transition_node;
+//    struct transition_node *top_front_transition_node;
+//    struct transition_node *top_back_transition_node;
+//    struct transition_node *down_right_transition_node;
+//    struct transition_node *down_left_transition_node;
+//    struct transition_node *down_front_transition_node;
+//    struct transition_node *down_back_transition_node;
+//    struct transition_node *right_front_transition_node;
+//    struct transition_node *right_back_transition_node;
+//    struct transition_node *left_front_transition_node;
+//    struct transition_node *left_back_transition_node;
+//    struct transition_node *front_left_top_transition_node;
+//    struct transition_node *front_left_down_transition_node;
+//    struct transition_node *front_right_top_transition_node;
+//    struct transition_node *front_right_down_transition_node;
+//    struct transition_node *back_left_top_transition_node;
+//    struct transition_node *back_left_down_transition_node;
+//    struct transition_node *back_right_top_transition_node;
+//    struct transition_node *back_right_down_transition_node;
+
+    struct cell_node *right_front_top_sub_cell,
+            *right_front_down_sub_cell,
+            *right_back_top_sub_cell,
+            *right_back_down_sub_cell,
+            *left_front_top_sub_cell,
+            *left_front_down_sub_cell,
+            *left_back_top_sub_cell,
+            *left_back_down_sub_cell;
 
     uint8_t number_of_hilbert_shape;
 
-    real_cpu cell_center_x    = cell->center.x,
-            cell_center_y   = cell->center.y,
-            cell_center_z   = cell->center.z,
-            cell_half_side_x    = cell->discretization.x / 2.0f,
-            cell_half_side_y    = cell->discretization.y / 2.0f,
-            cell_half_side_z    = cell->discretization.z / 2.0f,
-            cell_quarter_side_x = cell->discretization.x / 4.0f,
-            cell_quarter_side_y = cell->discretization.y / 4.0f,
-            cell_quarter_side_z = cell->discretization.z / 4.0f;
+    real_cpu cell_center_x       = cell->center.x,
+             cell_center_y       = cell->center.y,
+             cell_center_z       = cell->center.z,
+             cell_half_side_x    = cell->discretization.x / 2.0f,
+             cell_half_side_y    = cell->discretization.y / 2.0f,
+             cell_half_side_z    = cell->discretization.z / 2.0f,
+             cell_quarter_side_x = cell->discretization.x / 4.0f,
+             cell_quarter_side_y = cell->discretization.y / 4.0f,
+             cell_quarter_side_z = cell->discretization.z / 4.0f;
 
     uint64_t old_bunch_number = cell->bunch_number;
 
-    // Creation of the front northeast cell. This cell, which is to be refined,
-    // becomes the frontNortheast cell of the new bunch.
-    front_northeast_sub_cell                     = cell;
-    front_northeast_sub_cell->cell_data.level    = cell->cell_data.level + (uint8_t )1;
-    front_northeast_sub_cell->discretization.x        = cell_half_side_x;
-    front_northeast_sub_cell->discretization.y        = cell_half_side_y;
-    front_northeast_sub_cell->discretization.z        = cell_half_side_z;
-    front_northeast_sub_cell->center.x = cell_center_x + cell_quarter_side_x;
-    front_northeast_sub_cell->center.y = cell_center_y + cell_quarter_side_y;
-    front_northeast_sub_cell->center.z = cell_center_z + cell_quarter_side_z;
+    // Creation of the front northeast cell.
+    // This cell, which is to be refined,
+    // becomes the front northeast cell of the new bunch.
+    right_front_top_sub_cell = cell;
+    right_front_top_sub_cell->cell_data.level  = cell->cell_data.level + (uint8_t )1;
+    right_front_top_sub_cell->discretization.x = cell_half_side_x;
+    right_front_top_sub_cell->discretization.y = cell_half_side_y;
+    right_front_top_sub_cell->discretization.z = cell_half_side_z;
 
-    real_cpu translated_center_x = cell->translated_center.x;
-    real_cpu translated_center_y = cell->translated_center.y;
-    real_cpu translated_center_z = cell->translated_center.z;
+    right_front_top_sub_cell->center.x = cell_center_x + cell_quarter_side_x;
+    right_front_top_sub_cell->center.y = cell_center_y + cell_quarter_side_y;
+    right_front_top_sub_cell->center.z = cell_center_z + cell_quarter_side_z;
 
-#ifdef COMPILE_OPENGL
-    front_northeast_sub_cell->translated_center.x = translated_center_x + cell_quarter_side_x;
-    front_northeast_sub_cell->translated_center.y = translated_center_y + cell_quarter_side_y;
-    front_northeast_sub_cell->translated_center.z = translated_center_z + cell_quarter_side_z;
-#endif
-
-    front_northeast_sub_cell->bunch_number = old_bunch_number * 10 + 1;
+    right_front_top_sub_cell->bunch_number = old_bunch_number * 10 + 1;
 
     if(refined_this_step && *refined_this_step) {
-        arrput(*refined_this_step, front_northeast_sub_cell->sv_position);
+        arrput(*refined_this_step, right_front_top_sub_cell->sv_position);
     }
 
-    // Creation of back Northeast node.
-    back_northeast_sub_cell = new_cell_node();
-    set_refined_cell_data(back_northeast_sub_cell,
-                          front_northeast_sub_cell,
+    left_front_top_sub_cell = new_cell_node();
+    set_refined_cell_data(left_front_top_sub_cell, right_front_top_sub_cell,
                           POINT3D(cell_half_side_x,
                           cell_half_side_y,
                           cell_half_side_z),
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),
-                          old_bunch_number * 10 + 2, free_sv_positions, refined_this_step);
+                          old_bunch_number * 10 + 2,
+                          free_sv_positions,
+                          refined_this_step);
 
 
-    // Creation of back Northwest node.
-    back_northwest_sub_cell = new_cell_node();
-    set_refined_cell_data(back_northwest_sub_cell,
-                          front_northeast_sub_cell,
+    left_front_down_sub_cell = new_cell_node();
+    set_refined_cell_data(left_front_down_sub_cell, right_front_top_sub_cell,
                           POINT3D(cell_half_side_x,
                           cell_half_side_y,
                           cell_half_side_z),
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),
                           old_bunch_number * 10 + 3, free_sv_positions, refined_this_step);
 
-    // Creation of front Northwest node.
-    front_northwest_sub_cell = new_cell_node();
-    set_refined_cell_data(front_northwest_sub_cell,
-                          front_northeast_sub_cell,
+    right_front_down_sub_cell = new_cell_node();
+    set_refined_cell_data(right_front_down_sub_cell, right_front_top_sub_cell,
                           POINT3D(cell_half_side_x,
                           cell_half_side_y,
                           cell_half_side_z),
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z + cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z + cell_quarter_side_z),                          
                           old_bunch_number * 10 + 4, free_sv_positions, refined_this_step);
 
-
-    // Creation of front Southwest node.
-    front_southwest_sub_cell = new_cell_node();
-    set_refined_cell_data(front_southwest_sub_cell,
-                          front_northeast_sub_cell,
+    right_back_down_sub_cell = new_cell_node();
+    set_refined_cell_data(right_back_down_sub_cell, right_front_top_sub_cell,
                           POINT3D(cell_half_side_x,
                           cell_half_side_y,
                           cell_half_side_z),
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),                          
                           old_bunch_number * 10 + 5, free_sv_positions, refined_this_step);
 
-
-    // Creation of back Southwest node.
-    back_southwest_sub_cell = new_cell_node();
-    set_refined_cell_data(back_southwest_sub_cell,
-                          front_northeast_sub_cell,
+    left_back_down_sub_cell = new_cell_node();
+    set_refined_cell_data(left_back_down_sub_cell, right_front_top_sub_cell,
                           POINT3D(cell_half_side_x,
                           cell_half_side_y,
                           cell_half_side_z),
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y - cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y - cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),                          
                           old_bunch_number * 10 + 6, free_sv_positions, refined_this_step);
 
-
-
-    // Creation of back Southeast node.
-    back_southeast_sub_cell = new_cell_node();
-    set_refined_cell_data(back_southeast_sub_cell,
-                          front_northeast_sub_cell,
+    left_back_top_sub_cell = new_cell_node();
+    set_refined_cell_data(left_back_top_sub_cell, right_front_top_sub_cell,
                           POINT3D(cell_half_side_x,
                           cell_half_side_y,
                           cell_half_side_z),
                           POINT3D(cell_center_x - cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x - cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),
                           old_bunch_number * 10 + 7, free_sv_positions, refined_this_step);
 
 
-    // Creation of front Southeast node.
-    front_southeast_sub_cell = new_cell_node();
-    set_refined_cell_data(front_southeast_sub_cell,
-                          front_northeast_sub_cell,
+    right_back_top_sub_cell = new_cell_node();
+    set_refined_cell_data(right_back_top_sub_cell, right_front_top_sub_cell,
                           POINT3D(cell_half_side_x,
                           cell_half_side_y,
                           cell_half_side_z),
                           POINT3D(cell_center_x + cell_quarter_side_x,
                           cell_center_y + cell_quarter_side_y,
                           cell_center_z - cell_quarter_side_z),
-                          POINT3D(translated_center_x + cell_quarter_side_x,
-                                  translated_center_y + cell_quarter_side_y,
-                                  translated_center_z - cell_quarter_side_z),                          
                           old_bunch_number * 10 + 8, free_sv_positions, refined_this_step);
 
-    // west transition node.
-    west_transition_node = new_transition_node();
-    set_refined_transition_node_data(west_transition_node, front_northeast_sub_cell, 'w');
 
-
-    // north transition node.
-    north_transition_node = new_transition_node();
-    set_refined_transition_node_data(north_transition_node, front_northeast_sub_cell, 'n');
-
-    // south transition node.
-    south_transition_node = new_transition_node();
-    set_refined_transition_node_data(south_transition_node, front_northeast_sub_cell, 's');
-
-    // east transition node.
-    east_transition_node = new_transition_node();
-    set_refined_transition_node_data(east_transition_node, front_northeast_sub_cell, 'e');
-
-
-    // front transition node.
     front_transition_node = new_transition_node();
-    set_refined_transition_node_data(front_transition_node, front_northeast_sub_cell, 'f');
+    set_refined_transition_node_data(front_transition_node, right_front_top_sub_cell, FRONT);
 
-    // back transition node.
     back_transition_node = new_transition_node();
-    set_refined_transition_node_data(back_transition_node, front_northeast_sub_cell, 'b');
+    set_refined_transition_node_data(back_transition_node, right_front_top_sub_cell, BACK);
+
+    top_transition_node = new_transition_node();
+    set_refined_transition_node_data(top_transition_node, right_front_top_sub_cell, TOP);
+
+    down_transition_node = new_transition_node();
+    set_refined_transition_node_data(down_transition_node, right_front_top_sub_cell, DOWN);
+
+    right_transition_node = new_transition_node();
+    set_refined_transition_node_data(right_transition_node, right_front_top_sub_cell, RIGHT);
+
+    left_transition_node = new_transition_node();
+    set_refined_transition_node_data(left_transition_node, right_front_top_sub_cell, LEFT);
+
+//    top_right_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(top_right_transition_node, right_front_top_sub_cell, TOP_RIGHT);
+//
+//    top_left_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(top_left_transition_node, right_front_top_sub_cell, TOP_LEFT);
+//
+//    top_front_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(top_front_transition_node, right_front_top_sub_cell, TOP_FRONT);
+//
+//    top_back_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(top_back_transition_node, right_front_top_sub_cell, TOP_BACK);
+//
+//    down_right_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(down_right_transition_node, right_front_top_sub_cell, DOWN_RIGHT);
+//
+//    down_left_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(down_left_transition_node, right_front_top_sub_cell, DOWN_LEFT);
+//
+//    down_front_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(down_front_transition_node, right_front_top_sub_cell, DOWN_FRONT);
+//
+//    down_back_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(down_back_transition_node, right_front_top_sub_cell, DOWN_BACK);
+//
+//    right_front_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(right_front_transition_node, right_front_top_sub_cell, RIGHT_FRONT);
+//
+//    right_back_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(right_back_transition_node, right_front_top_sub_cell, RIGHT_BACK);
+//
+//    left_front_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(left_front_transition_node, right_front_top_sub_cell, LEFT_FRONT);
+//
+//    left_back_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(left_back_transition_node, right_front_top_sub_cell, LEFT_BACK);
+//
+//    front_left_top_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(front_left_top_transition_node, right_front_top_sub_cell, FRONT_LEFT_TOP);
+//
+//    front_left_down_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(front_left_down_transition_node, right_front_top_sub_cell, FRONT_LEFT_DOWN);
+//
+//    front_right_top_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(front_right_top_transition_node, right_front_top_sub_cell, FRONT_RIGHT_TOP);
+//
+//    front_right_down_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(front_right_down_transition_node, right_front_top_sub_cell, FRONT_RIGHT_DOWN);
+//
+//    back_left_top_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(back_left_top_transition_node, right_front_top_sub_cell, BACK_LEFT_TOP);
+//
+//    back_left_down_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(back_left_down_transition_node, right_front_top_sub_cell, BACK_LEFT_DOWN);
+//
+//    back_right_top_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(back_right_top_transition_node, right_front_top_sub_cell, BACK_RIGHT_TOP);
+//
+//    back_right_down_transition_node  = new_transition_node();
+//    set_refined_transition_node_data(back_right_down_transition_node, right_front_top_sub_cell, BACK_RIGHT_DOWN);
 
     // Linking of new cell nodes and transition nodes.
-    front_northeast_sub_cell->north = north_transition_node;
-    front_northeast_sub_cell->south = front_southeast_sub_cell;
-    front_northeast_sub_cell->east  = east_transition_node;
-    front_northeast_sub_cell->west  = front_northwest_sub_cell;
-    front_northeast_sub_cell->front = front_transition_node;
-    front_northeast_sub_cell->back  = back_northeast_sub_cell;
+    right_front_top_sub_cell->neighbours[FRONT] = front_transition_node;
+    right_front_top_sub_cell->neighbours[BACK] = right_back_top_sub_cell;
+    right_front_top_sub_cell->neighbours[TOP] = top_transition_node;
+    right_front_top_sub_cell->neighbours[DOWN] = right_front_down_sub_cell;
+    right_front_top_sub_cell->neighbours[RIGHT] = right_transition_node;
+    right_front_top_sub_cell->neighbours[LEFT] = left_front_top_sub_cell;
 
-    back_northeast_sub_cell->north = north_transition_node;
-    back_northeast_sub_cell->south = back_southeast_sub_cell;
-    back_northeast_sub_cell->east  = east_transition_node;
-    back_northeast_sub_cell->west  = back_northwest_sub_cell;
-    back_northeast_sub_cell->front = front_northeast_sub_cell;
-    back_northeast_sub_cell->back  = back_transition_node;
+//    right_front_top_sub_cell->neighbours[TOP]_right = top_right_transition_node;
+//    right_front_top_sub_cell->neighbours[TOP]_left = top_left_transition_node;
+//    right_front_top_sub_cell->neighbours[TOP]_front = top_front_transition_node;
+//    right_front_top_sub_cell->neighbours[TOP]_back = top_back_transition_node;
+//    right_front_top_sub_cell->neighbours[DOWN]_right = right_transition_node;
+//    right_front_top_sub_cell->neighbours[DOWN]_left = left_front_down_sub_cell;
+//    right_front_top_sub_cell->neighbours[DOWN]_front = front_transition_node;
+//    right_front_top_sub_cell->neighbours[DOWN]_back = right_back_down_sub_cell;
+//    right_front_top_sub_cell->neighbours[RIGHT]_front = right_front_transition_node ;
+//    right_front_top_sub_cell->neighbours[RIGHT]_back = right_back_transition_node;
+//    right_front_top_sub_cell->neighbours[LEFT]_front = left_front_transition_node;
+//    right_front_top_sub_cell->neighbours[LEFT]_back = left_back_top_sub_cell;
+//    right_front_top_sub_cell->neighbours[FRONT]_left_top = front_left_top_transition_node;
+//    right_front_top_sub_cell->neighbours[FRONT]_left_down = front_left_down_transition_node;
+//    right_front_top_sub_cell->neighbours[FRONT]_right_top = front_right_top_transition_node;
+//    right_front_top_sub_cell->neighbours[FRONT]_right_down = front_right_down_transition_node;
+//    right_front_top_sub_cell->neighbours[BACK]_left_top = back_left_top_transition_node;
+//    right_front_top_sub_cell->neighbours[BACK]_left_down = left_back_down_sub_cell;
+//    right_front_top_sub_cell->neighbours[BACK]_right_top = back_right_top_transition_node;
+//    right_front_top_sub_cell->neighbours[BACK]_right_down = back_right_down_transition_node;
 
-    back_northwest_sub_cell->north = north_transition_node;
-    back_northwest_sub_cell->south = back_southwest_sub_cell;
-    back_northwest_sub_cell->east  = back_northeast_sub_cell;
-    back_northwest_sub_cell->west  = west_transition_node;
-    back_northwest_sub_cell->front = front_northwest_sub_cell;
-    back_northwest_sub_cell->back  = back_transition_node;
+    left_front_top_sub_cell->neighbours[FRONT] = front_transition_node;
+    left_front_top_sub_cell->neighbours[BACK] = left_back_top_sub_cell;
+    left_front_top_sub_cell->neighbours[TOP] = top_transition_node;
+    left_front_top_sub_cell->neighbours[DOWN] = left_front_down_sub_cell;
+    left_front_top_sub_cell->neighbours[RIGHT] = right_front_top_sub_cell;
+    left_front_top_sub_cell->neighbours[LEFT] = left_transition_node;
 
-    front_northwest_sub_cell->north = north_transition_node;
-    front_northwest_sub_cell->south = front_southwest_sub_cell;
-    front_northwest_sub_cell->east  = front_northeast_sub_cell;
-    front_northwest_sub_cell->west  = west_transition_node;
-    front_northwest_sub_cell->front = front_transition_node;
-    front_northwest_sub_cell->back  = back_northwest_sub_cell;
+//    left_front_top_sub_cell->neighbours[TOP]_right = top_right_transition_node;
+//    left_front_top_sub_cell->neighbours[TOP]_left = top_left_transition_node;
+//    left_front_top_sub_cell->neighbours[TOP]_front = top_front_transition_node;
+//    left_front_top_sub_cell->neighbours[TOP]_back = top_back_transition_node;
+//    left_front_top_sub_cell->neighbours[DOWN]_right = right_front_down_sub_cell;
+//    left_front_top_sub_cell->neighbours[DOWN]_left = down_left_transition_node;
+//    left_front_top_sub_cell->neighbours[DOWN]_front = front_transition_node;
+//    left_front_top_sub_cell->neighbours[DOWN]_back = left_back_down_sub_cell;
+//    left_front_top_sub_cell->neighbours[RIGHT]_front = right_front_transition_node;
+//    left_front_top_sub_cell->neighbours[RIGHT]_back = right_back_top_sub_cell;
+//    left_front_top_sub_cell->neighbours[LEFT]_front = left_front_transition_node;
+//    left_front_top_sub_cell->neighbours[LEFT]_back = left_back_transition_node;
+//    left_front_top_sub_cell->neighbours[FRONT]_left_top = front_left_top_transition_node;
+//    left_front_top_sub_cell->neighbours[FRONT]_left_down = front_left_down_transition_node;
+//    left_front_top_sub_cell->neighbours[FRONT]_right_top = front_right_top_transition_node;
+//    left_front_top_sub_cell->neighbours[FRONT]_right_down = front_right_down_transition_node;
+//    left_front_top_sub_cell->neighbours[BACK]_left_top = back_left_top_transition_node;
+//    left_front_top_sub_cell->neighbours[BACK]_left_down = back_left_down_transition_node;
+//    left_front_top_sub_cell->neighbours[BACK]_right_top = back_right_top_transition_node;
+//    left_front_top_sub_cell->neighbours[BACK]_right_down = right_back_down_sub_cell;
 
-    front_southwest_sub_cell->north = front_northwest_sub_cell;
-    front_southwest_sub_cell->south = south_transition_node;
-    front_southwest_sub_cell->east  = front_southeast_sub_cell;
-    front_southwest_sub_cell->west  = west_transition_node;
-    front_southwest_sub_cell->front = front_transition_node;
-    front_southwest_sub_cell->back  = back_southwest_sub_cell;
+    left_front_down_sub_cell->neighbours[FRONT] = front_transition_node;
+    left_front_down_sub_cell->neighbours[BACK] = left_back_down_sub_cell;
+    left_front_down_sub_cell->neighbours[TOP] = left_front_top_sub_cell;
+    left_front_down_sub_cell->neighbours[DOWN] = down_transition_node;
+    left_front_down_sub_cell->neighbours[RIGHT] = right_front_down_sub_cell;
+    left_front_down_sub_cell->neighbours[LEFT] = left_transition_node;
 
-    back_southwest_sub_cell->north = back_northwest_sub_cell;
-    back_southwest_sub_cell->south = south_transition_node;
-    back_southwest_sub_cell->east  = back_southeast_sub_cell;
-    back_southwest_sub_cell->west  = west_transition_node;
-    back_southwest_sub_cell->front = front_southwest_sub_cell;
-    back_southwest_sub_cell->back  = back_transition_node;
+//    left_front_down_sub_cell->neighbours[TOP]_right = right_front_top_sub_cell;
+//    left_front_down_sub_cell->neighbours[TOP]_left = left_transition_node;
+//    left_front_down_sub_cell->neighbours[TOP]_front = front_transition_node;
+//    left_front_down_sub_cell->neighbours[TOP]_back = left_back_top_sub_cell;
+//    left_front_down_sub_cell->neighbours[DOWN]_right = down_right_transition_node;
+//    left_front_down_sub_cell->neighbours[DOWN]_left = down_left_transition_node;
+//    left_front_down_sub_cell->neighbours[DOWN]_front = down_front_transition_node;
+//    left_front_down_sub_cell->neighbours[DOWN]_back = down_back_transition_node;
+//    left_front_down_sub_cell->neighbours[RIGHT]_front = right_front_transition_node;
+//    left_front_down_sub_cell->neighbours[RIGHT]_back = right_back_down_sub_cell;
+//    left_front_down_sub_cell->neighbours[LEFT]_front = left_front_transition_node;
+//    left_front_down_sub_cell->neighbours[LEFT]_back = left_back_transition_node;
+//    left_front_down_sub_cell->neighbours[FRONT]_left_top = front_left_top_transition_node;
+//    left_front_down_sub_cell->neighbours[FRONT]_left_down = front_left_down_transition_node;
+//    left_front_down_sub_cell->neighbours[FRONT]_right_top = front_right_top_transition_node;
+//    left_front_down_sub_cell->neighbours[FRONT]_right_down = front_right_down_transition_node;
+//    left_front_down_sub_cell->neighbours[BACK]_left_top = back_left_top_transition_node;
+//    left_front_down_sub_cell->neighbours[BACK]_left_down = back_left_down_transition_node;
+//    left_front_down_sub_cell->neighbours[BACK]_right_top = right_back_top_sub_cell;
+//    left_front_down_sub_cell->neighbours[BACK]_right_down = back_right_down_transition_node;
 
-    back_southeast_sub_cell->north = back_northeast_sub_cell;
-    back_southeast_sub_cell->south = south_transition_node;
-    back_southeast_sub_cell->east  = east_transition_node;
-    back_southeast_sub_cell->west  = back_southwest_sub_cell;
-    back_southeast_sub_cell->front = front_southeast_sub_cell;
-    back_southeast_sub_cell->back  = back_transition_node;
+    right_front_down_sub_cell->neighbours[FRONT] = front_transition_node;
+    right_front_down_sub_cell->neighbours[BACK] = right_back_down_sub_cell;
+    right_front_down_sub_cell->neighbours[TOP] = right_front_top_sub_cell;
+    right_front_down_sub_cell->neighbours[DOWN] = down_transition_node;
+    right_front_down_sub_cell->neighbours[RIGHT] = right_transition_node;
+    right_front_down_sub_cell->neighbours[LEFT] = left_front_down_sub_cell;
 
-    front_southeast_sub_cell->north = front_northeast_sub_cell;
-    front_southeast_sub_cell->south = south_transition_node;
-    front_southeast_sub_cell->east  = east_transition_node;
-    front_southeast_sub_cell->west  = front_southwest_sub_cell;
-    front_southeast_sub_cell->front = front_transition_node;
-    front_southeast_sub_cell->back  = back_southeast_sub_cell;
+//    right_front_down_sub_cell->neighbours[TOP]_right = right_transition_node;
+//    right_front_down_sub_cell->neighbours[TOP]_left = left_front_top_sub_cell;
+//    right_front_down_sub_cell->neighbours[TOP]_front = front_transition_node;
+//    right_front_down_sub_cell->neighbours[TOP]_back = right_back_top_sub_cell;
+//    right_front_down_sub_cell->neighbours[DOWN]_right = down_right_transition_node;
+//    right_front_down_sub_cell->neighbours[DOWN]_left = down_transition_node;
+//    right_front_down_sub_cell->neighbours[DOWN]_front = down_front_transition_node;
+//    right_front_down_sub_cell->neighbours[DOWN]_back = down_back_transition_node;
+//    right_front_down_sub_cell->neighbours[RIGHT]_front = right_front_transition_node;
+//    right_front_down_sub_cell->neighbours[RIGHT]_back = right_back_transition_node;
+//    right_front_down_sub_cell->neighbours[LEFT]_front = left_front_transition_node;
+//    right_front_down_sub_cell->neighbours[LEFT]_back = left_back_down_sub_cell;
+//    right_front_down_sub_cell->neighbours[FRONT]_left_top = front_left_top_transition_node;
+//    right_front_down_sub_cell->neighbours[FRONT]_left_down = front_left_down_transition_node;
+//    right_front_down_sub_cell->neighbours[FRONT]_right_top = front_right_top_transition_node;
+//    right_front_down_sub_cell->neighbours[FRONT]_right_down = front_right_down_transition_node;
+//    right_front_down_sub_cell->neighbours[BACK]_left_top = left_back_top_sub_cell;
+//    right_front_down_sub_cell->neighbours[BACK]_left_down = back_left_down_transition_node;
+//    right_front_down_sub_cell->neighbours[BACK]_right_top = back_right_top_transition_node;
+//    right_front_down_sub_cell->neighbours[BACK]_right_down = back_right_down_transition_node;
 
-    /* Connects the cell nodes with the transition nodes.  Quadruple  connectors
-    1, 2, 3 and 4 are connected to neighbor cells  in  the  way  depicted below.
+    right_back_down_sub_cell->neighbours[FRONT] = right_front_down_sub_cell;
+    right_back_down_sub_cell->neighbours[BACK] = back_transition_node;
+    right_back_down_sub_cell->neighbours[TOP] = right_back_top_sub_cell;
+    right_back_down_sub_cell->neighbours[DOWN] = down_transition_node;
+    right_back_down_sub_cell->neighbours[RIGHT] = right_transition_node;
+    right_back_down_sub_cell->neighbours[LEFT] = left_back_down_sub_cell;
 
-    This choice is made consistent with the one made at the function simplifyRef(),
-    so that when two transition nodes of  same  level  connected  through  their
-    single connectors are eliminated, the  subsequent  linking  of  corresponding
-    quadruple connectors is correctly done.
+//    right_back_down_sub_cell->neighbours[TOP]_right = right_transition_node;
+//    right_back_down_sub_cell->neighbours[TOP]_left = left_back_top_sub_cell;
+//    right_back_down_sub_cell->neighbours[TOP]_front = right_front_top_sub_cell;
+//    right_back_down_sub_cell->neighbours[TOP]_back = back_transition_node;
+//    right_back_down_sub_cell->neighbours[DOWN]_right = down_right_transition_node;
+//    right_back_down_sub_cell->neighbours[DOWN]_left = down_transition_node;
+//    right_back_down_sub_cell->neighbours[DOWN]_front = down_front_transition_node;
+//    right_back_down_sub_cell->neighbours[DOWN]_back = down_back_transition_node;
+//    right_back_down_sub_cell->neighbours[RIGHT]_front = right_front_transition_node;
+//    right_back_down_sub_cell->neighbours[RIGHT]_back = right_back_transition_node;
+//    right_back_down_sub_cell->neighbours[LEFT]_front = left_front_down_sub_cell;
+//    right_back_down_sub_cell->neighbours[LEFT]_back = left_back_transition_node;
+//    right_back_down_sub_cell->neighbours[FRONT]_left_top = left_front_top_sub_cell;
+//    right_back_down_sub_cell->neighbours[FRONT]_left_down = front_left_down_transition_node;
+//    right_back_down_sub_cell->neighbours[FRONT]_right_top = front_right_top_transition_node;
+//    right_back_down_sub_cell->neighbours[FRONT]_right_down = front_right_down_transition_node;
+//    right_back_down_sub_cell->neighbours[BACK]_left_top = back_left_top_transition_node;
+//    right_back_down_sub_cell->neighbours[BACK]_left_down = back_left_down_transition_node;
+//    right_back_down_sub_cell->neighbours[BACK]_right_top = back_right_top_transition_node;
+//    right_back_down_sub_cell->neighbours[BACK]_right_down = back_right_down_transition_node;
 
-                    front face           back face
+    left_back_down_sub_cell->neighbours[FRONT] = left_front_down_sub_cell;
+    left_back_down_sub_cell->neighbours[BACK] = back_transition_node;
+    left_back_down_sub_cell->neighbours[TOP] = left_back_top_sub_cell;
+    left_back_down_sub_cell->neighbours[DOWN] = down_transition_node;
+    left_back_down_sub_cell->neighbours[RIGHT] = right_back_down_sub_cell;
+    left_back_down_sub_cell->neighbours[LEFT] = left_transition_node;
 
-                       ______              4______3
-                     /|     /|            /|     /|
-                   4/_|___3/ |           /_|____/ |
-                   |  |___|__|          |  |___|__|
-                   | /    | /           | /1   | /2
-                   |/_____|/            |/_____|/
-                   1      2
-            ===========================================
-                    west face           east face
+//    left_back_down_sub_cell->neighbours[TOP]_right = right_back_top_sub_cell;
+//    left_back_down_sub_cell->neighbours[TOP]_left = left_transition_node;
+//    left_back_down_sub_cell->neighbours[TOP]_front = left_front_top_sub_cell;
+//    left_back_down_sub_cell->neighbours[TOP]_back = back_transition_node;
+//    left_back_down_sub_cell->neighbours[DOWN]_right = down_right_transition_node;
+//    left_back_down_sub_cell->neighbours[DOWN]_left = down_left_transition_node;
+//    left_back_down_sub_cell->neighbours[DOWN]_front = down_front_transition_node;
+//    left_back_down_sub_cell->neighbours[DOWN]_back = down_back_transition_node;
+//    left_back_down_sub_cell->neighbours[RIGHT]_front = right_front_down_sub_cell;
+//    left_back_down_sub_cell->neighbours[RIGHT]_back = right_back_transition_node;
+//    left_back_down_sub_cell->neighbours[LEFT]_front = left_front_transition_node;
+//    left_back_down_sub_cell->neighbours[LEFT]_back = left_back_transition_node;
+//    left_back_down_sub_cell->neighbours[FRONT]_left_top = front_left_top_transition_node;
+//    left_back_down_sub_cell->neighbours[FRONT]_left_down = front_left_down_transition_node;
+//    left_back_down_sub_cell->neighbours[FRONT]_right_top = right_front_top_sub_cell;
+//    left_back_down_sub_cell->neighbours[FRONT]_right_down = front_right_down_transition_node;
+//    left_back_down_sub_cell->neighbours[BACK]_left_top = back_left_top_transition_node;
+//    left_back_down_sub_cell->neighbours[BACK]_left_down = back_left_down_transition_node;
+//    left_back_down_sub_cell->neighbours[BACK]_right_top = back_right_top_transition_node;
+//    left_back_down_sub_cell->neighbours[BACK]_right_down = back_right_down_transition_node;
 
-                      3______               ______3
-                     /|     /|            /|     /|
-                   4/_|__ _/ |           /_|___4/ |
-                   |  |___|__|          |  |___|__|
-                   | /2   | /           | /    | /2
-                   |/_____|/            |/_____|/
-                   1                           1
-            ===========================================
-                    north face             south face
+    left_back_top_sub_cell->neighbours[FRONT] = left_front_top_sub_cell;
+    left_back_top_sub_cell->neighbours[BACK] = back_transition_node;
+    left_back_top_sub_cell->neighbours[TOP] = top_transition_node;
+    left_back_top_sub_cell->neighbours[DOWN] = left_back_down_sub_cell;
+    left_back_top_sub_cell->neighbours[RIGHT] = right_back_top_sub_cell;
+    left_back_top_sub_cell->neighbours[LEFT] = left_transition_node;
 
-                      4______3              ______
-                     /|     /|            /|     /|
-                   1/_|___2/ |           /_|____/ |
-                   |  |___|__|          |  |___|__|
-                   | /    | /           | /4   | /3
-                   |/_____|/            |/_____|/
-                                        1      2
-            ===========================================
-     */
+//    left_back_top_sub_cell->neighbours[TOP]_right = top_right_transition_node;
+//    left_back_top_sub_cell->neighbours[TOP]_left = top_left_transition_node;
+//    left_back_top_sub_cell->neighbours[TOP]_front = top_front_transition_node;
+//    left_back_top_sub_cell->neighbours[TOP]_back = top_back_transition_node;
+//    left_back_top_sub_cell->neighbours[DOWN]_right = right_back_down_sub_cell;
+//    left_back_top_sub_cell->neighbours[DOWN]_left = down_left_transition_node;
+//    left_back_top_sub_cell->neighbours[DOWN]_front = left_front_down_sub_cell;
+//    left_back_top_sub_cell->neighbours[DOWN]_back = back_transition_node;
+//    left_back_top_sub_cell->neighbours[RIGHT]_front = right_front_top_sub_cell;
+//    left_back_top_sub_cell->neighbours[RIGHT]_back = right_back_transition_node;
+//    left_back_top_sub_cell->neighbours[LEFT]_front = left_front_transition_node;
+//    left_back_top_sub_cell->neighbours[LEFT]_back = left_back_transition_node;
+//    left_back_top_sub_cell->neighbours[FRONT]_left_top = front_left_top_transition_node;
+//    left_back_top_sub_cell->neighbours[FRONT]_left_down = front_left_down_transition_node;
+//    left_back_top_sub_cell->neighbours[FRONT]_right_top = front_right_top_transition_node;
+//    left_back_top_sub_cell->neighbours[FRONT]_right_down = right_front_down_sub_cell;
+//    left_back_top_sub_cell->neighbours[BACK]_left_top = back_left_top_transition_node;
+//    left_back_top_sub_cell->neighbours[BACK]_left_down = back_left_down_transition_node;
+//    left_back_top_sub_cell->neighbours[BACK]_right_top = back_right_top_transition_node;
+//    left_back_top_sub_cell->neighbours[BACK]_right_down = back_right_down_transition_node;
 
-    // Front face.
-    front_transition_node->quadruple_connector1 = front_southwest_sub_cell;
-    front_transition_node->quadruple_connector2 = front_southeast_sub_cell;
-    front_transition_node->quadruple_connector3 = front_northeast_sub_cell;
-    front_transition_node->quadruple_connector4 = front_northwest_sub_cell;
+    right_back_top_sub_cell->neighbours[FRONT] = right_front_top_sub_cell;
+    right_back_top_sub_cell->neighbours[BACK] = back_transition_node;
+    right_back_top_sub_cell->neighbours[TOP] = top_transition_node;
+    right_back_top_sub_cell->neighbours[DOWN] = right_back_down_sub_cell;
+    right_back_top_sub_cell->neighbours[RIGHT] = right_transition_node;
+    right_back_top_sub_cell->neighbours[LEFT] = left_back_top_sub_cell;
 
-    // Back face.
-    back_transition_node->quadruple_connector1 = back_southwest_sub_cell;
-    back_transition_node->quadruple_connector2 = back_southeast_sub_cell;
-    back_transition_node->quadruple_connector3 = back_northeast_sub_cell;
-    back_transition_node->quadruple_connector4 = back_northwest_sub_cell;
+//    right_back_top_sub_cell->neighbours[TOP]_right = top_right_transition_node;
+//    right_back_top_sub_cell->neighbours[TOP]_left = top_left_transition_node;
+//    right_back_top_sub_cell->neighbours[TOP]_front = top_front_transition_node;
+//    right_back_top_sub_cell->neighbours[TOP]_back = top_back_transition_node;
+//    right_back_top_sub_cell->neighbours[DOWN]_right = right_transition_node;
+//    right_back_top_sub_cell->neighbours[DOWN]_left = left_back_down_sub_cell;
+//    right_back_top_sub_cell->neighbours[DOWN]_front = right_front_down_sub_cell;
+//    right_back_top_sub_cell->neighbours[DOWN]_back = back_transition_node;
+//    right_back_top_sub_cell->neighbours[RIGHT]_front = right_front_transition_node;
+//    right_back_top_sub_cell->neighbours[RIGHT]_back = right_back_transition_node;
+//    right_back_top_sub_cell->neighbours[LEFT]_front = left_front_top_sub_cell;
+//    right_back_top_sub_cell->neighbours[LEFT]_back = left_back_transition_node;
+//    right_back_top_sub_cell->neighbours[FRONT]_left_top = front_left_top_transition_node;
+//    right_back_top_sub_cell->neighbours[FRONT]_left_down = left_front_down_sub_cell;
+//    right_back_top_sub_cell->neighbours[FRONT]_right_top = front_right_top_transition_node;
+//    right_back_top_sub_cell->neighbours[FRONT]_right_down = front_right_down_transition_node;
+//    right_back_top_sub_cell->neighbours[BACK]_left_top = back_left_top_transition_node;
+//    right_back_top_sub_cell->neighbours[BACK]_left_down = back_left_down_transition_node;
+//    right_back_top_sub_cell->neighbours[BACK]_right_top = back_right_top_transition_node;
+//    right_back_top_sub_cell->neighbours[BACK]_right_down = back_right_down_transition_node;
 
-    // West face.
-    west_transition_node->quadruple_connector1 = front_southwest_sub_cell;
-    west_transition_node->quadruple_connector2 = back_southwest_sub_cell;
-    west_transition_node->quadruple_connector3 = back_northwest_sub_cell;
-    west_transition_node->quadruple_connector4 = front_northwest_sub_cell;
+    right_transition_node->quadruple_connector1 = right_back_down_sub_cell;
+    right_transition_node->quadruple_connector2 = right_back_top_sub_cell;
+    right_transition_node->quadruple_connector3 = right_front_top_sub_cell;
+    right_transition_node->quadruple_connector4 = right_front_down_sub_cell;
 
-    // East face.
-    east_transition_node->quadruple_connector1 = front_southeast_sub_cell;
-    east_transition_node->quadruple_connector2 = back_southeast_sub_cell;
-    east_transition_node->quadruple_connector3 = back_northeast_sub_cell;
-    east_transition_node->quadruple_connector4 = front_northeast_sub_cell;
+    left_transition_node->quadruple_connector1 = left_back_down_sub_cell;
+    left_transition_node->quadruple_connector2 = left_back_top_sub_cell;
+    left_transition_node->quadruple_connector3 = left_front_top_sub_cell;
+    left_transition_node->quadruple_connector4 = left_front_down_sub_cell;
 
-    // North face.
-    north_transition_node->quadruple_connector1 = front_northwest_sub_cell;
-    north_transition_node->quadruple_connector2 = front_northeast_sub_cell;
-    north_transition_node->quadruple_connector3 = back_northeast_sub_cell;
-    north_transition_node->quadruple_connector4 = back_northwest_sub_cell;
+    down_transition_node->quadruple_connector1 = right_back_down_sub_cell;
+    down_transition_node->quadruple_connector2 = left_back_down_sub_cell;
+    down_transition_node->quadruple_connector3 = left_front_down_sub_cell;
+    down_transition_node->quadruple_connector4 = right_front_down_sub_cell;
 
-    // South face.
-    south_transition_node->quadruple_connector1 = front_southwest_sub_cell;
-    south_transition_node->quadruple_connector2 = front_southeast_sub_cell;
-    south_transition_node->quadruple_connector3 = back_southeast_sub_cell;
-    south_transition_node->quadruple_connector4 = back_southwest_sub_cell;
+    top_transition_node->quadruple_connector1 = right_back_top_sub_cell;
+    top_transition_node->quadruple_connector2 = left_back_top_sub_cell;
+    top_transition_node->quadruple_connector3 = left_front_top_sub_cell;
+    top_transition_node->quadruple_connector4 = right_front_top_sub_cell;
 
+    front_transition_node->quadruple_connector1 = right_front_down_sub_cell;
+    front_transition_node->quadruple_connector2 = right_front_top_sub_cell;
+    front_transition_node->quadruple_connector3 = left_front_top_sub_cell;
+    front_transition_node->quadruple_connector4 = left_front_down_sub_cell;
 
+    back_transition_node->quadruple_connector1 = right_back_down_sub_cell;
+    back_transition_node->quadruple_connector2 = right_back_top_sub_cell;
+    back_transition_node->quadruple_connector3 = left_back_top_sub_cell;
+    back_transition_node->quadruple_connector4 = left_back_down_sub_cell;
 
-    // Linking bunch neighbor cells to the transition nodes just created.
+    // Linking bunch neighbour cells to the transition nodes just created.
     struct cell_node *neighbour_cell_node = NULL;
     struct transition_node *neighbour_transition_node = NULL;
 
-
-    /*==========================================================================
-                                WEST TRANSITION NODE
-
-      Points the west neighboring cell to the transition node.
-
-                                         t  t               B: Bunch
-                                         | /                n: neighboring cell
-                               n -- t -- B -- t             w: Transition node
-                                       / |
-                                      t  t
-
-     *=========================================================================*/
-    char node_type = ((struct basic_cell_data*)west_transition_node->single_connector)->type;
-    if( node_type == 'b' ) {
-        neighbour_cell_node = (struct cell_node*)(west_transition_node->single_connector);
-        neighbour_cell_node->east = west_transition_node;
-    }
-    else if( node_type == 'w' ) {
-        neighbour_transition_node = (struct transition_node*)(west_transition_node->single_connector);
-
-        if( neighbour_transition_node->single_connector == front_northeast_sub_cell )
-            neighbour_transition_node->single_connector = west_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector1 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector1 = west_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector2 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector2 = west_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector3 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector3 = west_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector4 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector4 = west_transition_node;
-    }
-
-    /*==========================================================================
-                             NORTH TRANSITION NODE
-
-      Points the north neighboring cell to the transition node.
-
-                                      n
-                                      |                  B: Bunch
-                                      t  t               n: neighboring cell
-                                      | /                t: Transition node
-                                 t -- B -- t
-                                    / |
-                                   t  t
-
-    ==========================================================================*/
-    node_type = ((struct basic_cell_data*)north_transition_node->single_connector)->type;
-    if( node_type == 'b' ) {
-        neighbour_cell_node = (struct cell_node*)(north_transition_node->single_connector);
-        neighbour_cell_node->south = north_transition_node;
-    }
-    else if( node_type == 'w' )	{
-        neighbour_transition_node = (struct transition_node*)(north_transition_node->single_connector);
-
-        if( neighbour_transition_node->single_connector == front_northeast_sub_cell )
-            neighbour_transition_node->single_connector = north_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector1 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector1 = north_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector2 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector2 = north_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector3 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector3 = north_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector4 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector4 = north_transition_node;
-    }
-
-    /*==========================================================================
-                                SOUTH TRANSITION NODE
-
-      Points the south neighboring cell to the transition node.
-
-                                      t  t               B: Bunch
-                                      | /                n: neighboring cell
-                                 t -- B -- t             w: Transition node
-                                    / |
-                                   t  t
-                                      |
-                                      n
-
-    ==========================================================================*/
-    node_type = ((struct basic_cell_data*)south_transition_node->single_connector)->type;
-    if( node_type == 'b' ) {
-        neighbour_cell_node = (struct cell_node*)(south_transition_node->single_connector);
-        neighbour_cell_node->north = south_transition_node;
-    }
-    else if( node_type == 'w' )	{
-        neighbour_transition_node = (struct transition_node*)(south_transition_node->single_connector);
-
-        if( neighbour_transition_node->single_connector == front_northeast_sub_cell )
-            neighbour_transition_node->single_connector = south_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector1 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector1 = south_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector2 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector2 = south_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector3 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector3 = south_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector4 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector4 = south_transition_node;
-    }
-
-    /*==========================================================================
-                              EAST TRANSITION NODE
-
-        Points the east neighboring cell to the transition node.
-
-                                     t  t               B: Bunch
-                                     | /                n: neighboring cell
-                                t -- B -- t -- n        w: Transition node
-                                   / |
-                                  t  t
-
-    ==========================================================================*/
-    node_type = ((struct basic_cell_data*)east_transition_node->single_connector)->type;
-    if( node_type == 'b' ) {
-        neighbour_cell_node = (struct cell_node*)(east_transition_node->single_connector);
-        neighbour_cell_node->west = east_transition_node;
-    }
-    else if( node_type == 'w' ) {
-        neighbour_transition_node = (struct transition_node*)(east_transition_node->single_connector);
-
-        if( neighbour_transition_node->single_connector == front_northeast_sub_cell )
-            neighbour_transition_node->single_connector = east_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector1 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector1 = east_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector2 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector2 = east_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector3 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector3 = east_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector4 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector4 = east_transition_node;
-    }
-
-    /*==========================================================================
-                                FRONT TRANSITION NODE
-
-      Points the east neighboring cell to the transition node.
-
-                                     t  t               B: Bunch
-                                     | /                n: neighboring cell
-                                t -- B -- t             t: TRANSITION node
-                                   / |
-                                  t  t
-                                 /
-                                n
-
-    ==========================================================================*/
-    node_type = ((struct basic_cell_data*)front_transition_node->single_connector)->type;
-    if( node_type == 'b' ) {
-        neighbour_cell_node = (struct cell_node*)(front_transition_node->single_connector);
-        neighbour_cell_node->back = front_transition_node;
-    }
-    else if( node_type == 'w' ) {
-        neighbour_transition_node = (struct transition_node*)(front_transition_node->single_connector);
-
-        if( neighbour_transition_node->single_connector == front_northeast_sub_cell )
-            neighbour_transition_node->single_connector = front_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector1 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector1 = front_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector2 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector2 = front_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector3 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector3 = front_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector4 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector4 = front_transition_node;
-    }
-
-    /*==========================================================================
-                              BACK TRANSITION NODE
-
-      Points the east neighboring cell to the transition node.
-
-                                          n             B: Bunch
-                                         /              n: neighboring cell
-                                     t  t               t: Transition Node node
-                                     | /
-                                t -- B -- t
-                                   / |
-                                  t  t
-
-    ==========================================================================*/
-    node_type = ((struct basic_cell_data*)back_transition_node->single_connector)->type;
-    if( node_type == 'b' ) {
-        neighbour_cell_node = (struct cell_node*)(back_transition_node->single_connector);
-        neighbour_cell_node->front = back_transition_node;
-    }
-    else if( node_type == 'w' ) {
-        neighbour_transition_node = (struct transition_node*)(back_transition_node->single_connector);
-
-        if( neighbour_transition_node->single_connector == front_northeast_sub_cell )
-            neighbour_transition_node->single_connector = back_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector1 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector1 = back_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector2 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector2 = back_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector3 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector3 = back_transition_node;
-
-        else if( neighbour_transition_node->quadruple_connector4 == front_northeast_sub_cell )
-            neighbour_transition_node->quadruple_connector4 = back_transition_node;
-    }
-
+    SET_TRANSITION_NODE(top_transition_node  , DOWN);
+    SET_TRANSITION_NODE(down_transition_node , TOP);
+    SET_TRANSITION_NODE(front_transition_node, BACK);
+    SET_TRANSITION_NODE(back_transition_node , FRONT);
+    SET_TRANSITION_NODE(right_transition_node, LEFT);
+    SET_TRANSITION_NODE(left_transition_node , RIGHT);
 
     /*==========================================================================
                 ORDERING OF CELL NODES THROUGH HILBERT'S CURVE
     ==========================================================================*/
-    number_of_hilbert_shape = front_northeast_sub_cell->hilbert_shape_number;
+    number_of_hilbert_shape = right_front_top_sub_cell->hilbert_shape_number;
 
     if( number_of_hilbert_shape == 0 )	{
         /* Shape 0
@@ -586,34 +542,34 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                           |/    e/
          */
 
-        front_northeast_sub_cell->hilbert_shape_number = 1;
-        back_northeast_sub_cell->hilbert_shape_number  = 2;
-        back_northwest_sub_cell->hilbert_shape_number  = 2;
-        front_northwest_sub_cell->hilbert_shape_number = 3;
-        front_southwest_sub_cell->hilbert_shape_number = 3;
-        back_southwest_sub_cell->hilbert_shape_number  = 4;
-        back_southeast_sub_cell->hilbert_shape_number  = 4;
-        front_southeast_sub_cell->hilbert_shape_number = 5;
+        right_front_top_sub_cell->hilbert_shape_number = 1;
+        left_front_top_sub_cell->hilbert_shape_number  = 2;
+        left_front_down_sub_cell->hilbert_shape_number  = 2;
+        right_front_down_sub_cell->hilbert_shape_number = 3;
+        right_back_down_sub_cell->hilbert_shape_number = 3;
+        left_back_down_sub_cell->hilbert_shape_number  = 4;
+        left_back_top_sub_cell->hilbert_shape_number  = 4;
+        right_back_top_sub_cell->hilbert_shape_number = 5;
 
-        front_southeast_sub_cell->next = front_northeast_sub_cell->next;
-        front_northeast_sub_cell->next = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = front_southeast_sub_cell;
+        right_back_top_sub_cell->next = right_front_top_sub_cell->next;
+        right_front_top_sub_cell->next = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = right_back_top_sub_cell;
 
-        front_southeast_sub_cell->previous = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = front_northeast_sub_cell;
+        right_back_top_sub_cell->previous = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = right_front_top_sub_cell;
 
-        if( front_southeast_sub_cell->next != 0 )
-            front_southeast_sub_cell->next->previous = front_southeast_sub_cell;
+        if(right_back_top_sub_cell->next != 0 )
+            right_back_top_sub_cell->next->previous = right_back_top_sub_cell;
 
     }
 
@@ -627,34 +583,34 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                              |______|
          */
 
-        front_northeast_sub_cell->hilbert_shape_number = 0;
-        front_southeast_sub_cell->hilbert_shape_number = 2;
-        front_southwest_sub_cell->hilbert_shape_number = 2;
-        front_northwest_sub_cell->hilbert_shape_number = 6;
-        back_northwest_sub_cell->hilbert_shape_number  = 6;
-        back_southwest_sub_cell->hilbert_shape_number  = 7;
-        back_southeast_sub_cell->hilbert_shape_number  = 7;
-        back_northeast_sub_cell->hilbert_shape_number  = 8;
+        right_front_top_sub_cell->hilbert_shape_number = 0;
+        right_back_top_sub_cell->hilbert_shape_number = 2;
+        right_back_down_sub_cell->hilbert_shape_number = 2;
+        right_front_down_sub_cell->hilbert_shape_number = 6;
+        left_front_down_sub_cell->hilbert_shape_number  = 6;
+        left_back_down_sub_cell->hilbert_shape_number  = 7;
+        left_back_top_sub_cell->hilbert_shape_number  = 7;
+        left_front_top_sub_cell->hilbert_shape_number  = 8;
 
-        back_northeast_sub_cell->next  = front_northeast_sub_cell->next;
-        front_northeast_sub_cell->next = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = back_northeast_sub_cell;
+        left_front_top_sub_cell->next  = right_front_top_sub_cell->next;
+        right_front_top_sub_cell->next = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = left_front_top_sub_cell;
 
-        back_northeast_sub_cell->previous  = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = front_northeast_sub_cell;
+        left_front_top_sub_cell->previous  = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = right_front_top_sub_cell;
 
-        if( back_northeast_sub_cell->next != 0 )
-            back_northeast_sub_cell->next->previous = back_northeast_sub_cell;
+        if(left_front_top_sub_cell->next != 0 )
+            left_front_top_sub_cell->next->previous = left_front_top_sub_cell;
 
     }
 
@@ -667,34 +623,34 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                               /______/
          */
 
-        front_northeast_sub_cell->hilbert_shape_number = 1;
-        back_northeast_sub_cell->hilbert_shape_number  = 0;
-        back_southeast_sub_cell->hilbert_shape_number  = 0;
-        front_southeast_sub_cell->hilbert_shape_number = 9;
-        front_southwest_sub_cell->hilbert_shape_number = 9;
-        back_southwest_sub_cell->hilbert_shape_number  = 10;
-        back_northwest_sub_cell->hilbert_shape_number  = 10;
-        front_northwest_sub_cell->hilbert_shape_number = 11;
+        right_front_top_sub_cell->hilbert_shape_number = 1;
+        left_front_top_sub_cell->hilbert_shape_number  = 0;
+        left_back_top_sub_cell->hilbert_shape_number  = 0;
+        right_back_top_sub_cell->hilbert_shape_number = 9;
+        right_back_down_sub_cell->hilbert_shape_number = 9;
+        left_back_down_sub_cell->hilbert_shape_number  = 10;
+        left_front_down_sub_cell->hilbert_shape_number  = 10;
+        right_front_down_sub_cell->hilbert_shape_number = 11;
 
-        front_northwest_sub_cell->next = front_northeast_sub_cell->next;
-        front_northeast_sub_cell->next = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = front_northwest_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell->next;
+        right_front_top_sub_cell->next = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = right_front_down_sub_cell;
 
-        front_northwest_sub_cell->previous = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = front_northeast_sub_cell;
+        right_front_down_sub_cell->previous = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = right_front_top_sub_cell;
 
-        if( front_northwest_sub_cell->next != 0 )
-            front_northwest_sub_cell->next->previous = front_northwest_sub_cell;
+        if(right_front_down_sub_cell->next != 0 )
+            right_front_down_sub_cell->next->previous = right_front_down_sub_cell;
 
     }
 
@@ -707,38 +663,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                               /______/
          */
 
-        back_northwest_sub_cell->hilbert_shape_number  = 11;
-        front_northwest_sub_cell->hilbert_shape_number = 7;
-        front_northeast_sub_cell->hilbert_shape_number = 7;
-        back_northeast_sub_cell->hilbert_shape_number  = 0;
-        back_southeast_sub_cell->hilbert_shape_number  = 0;
-        front_southeast_sub_cell->hilbert_shape_number = 9;
-        front_southwest_sub_cell->hilbert_shape_number = 9;
-        back_southwest_sub_cell->hilbert_shape_number  = 6;
+        left_front_down_sub_cell->hilbert_shape_number  = 11;
+        right_front_down_sub_cell->hilbert_shape_number = 7;
+        right_front_top_sub_cell->hilbert_shape_number = 7;
+        left_front_top_sub_cell->hilbert_shape_number  = 0;
+        left_back_top_sub_cell->hilbert_shape_number  = 0;
+        right_back_top_sub_cell->hilbert_shape_number = 9;
+        right_back_down_sub_cell->hilbert_shape_number = 9;
+        left_back_down_sub_cell->hilbert_shape_number  = 6;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = back_northwest_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = left_front_down_sub_cell;
 
-        back_southwest_sub_cell->next  = front_northeast_sub_cell->next;
-        back_northwest_sub_cell->next  = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = back_southwest_sub_cell;
+        left_back_down_sub_cell->next  = right_front_top_sub_cell->next;
+        left_front_down_sub_cell->next  = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = left_back_down_sub_cell;
 
-        back_northwest_sub_cell->previous  = front_northeast_sub_cell->previous;
-        back_southwest_sub_cell->previous  = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = back_northwest_sub_cell;
+        left_front_down_sub_cell->previous  = right_front_top_sub_cell->previous;
+        left_back_down_sub_cell->previous  = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = left_front_down_sub_cell;
 
-        if( back_southwest_sub_cell->next != 0 )
-            back_southwest_sub_cell->next->previous = back_southwest_sub_cell;
+        if(left_back_down_sub_cell->next != 0 )
+            left_back_down_sub_cell->next->previous = left_back_down_sub_cell;
 
     }
 
@@ -751,38 +707,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                               b/     e/
          */
 
-        front_southwest_sub_cell->hilbert_shape_number = 6;
-        back_southwest_sub_cell->hilbert_shape_number  = 10;
-        back_northwest_sub_cell->hilbert_shape_number  = 10;
-        front_northwest_sub_cell->hilbert_shape_number = 7;
-        front_northeast_sub_cell->hilbert_shape_number = 7;
-        back_northeast_sub_cell->hilbert_shape_number  = 0;
-        back_southeast_sub_cell->hilbert_shape_number  = 0;
-        front_southeast_sub_cell->hilbert_shape_number = 5;
+        right_back_down_sub_cell->hilbert_shape_number = 6;
+        left_back_down_sub_cell->hilbert_shape_number  = 10;
+        left_front_down_sub_cell->hilbert_shape_number  = 10;
+        right_front_down_sub_cell->hilbert_shape_number = 7;
+        right_front_top_sub_cell->hilbert_shape_number = 7;
+        left_front_top_sub_cell->hilbert_shape_number  = 0;
+        left_back_top_sub_cell->hilbert_shape_number  = 0;
+        right_back_top_sub_cell->hilbert_shape_number = 5;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = front_southwest_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = right_back_down_sub_cell;
 
-        front_southeast_sub_cell->next = front_northeast_sub_cell->next;
-        front_southwest_sub_cell->next = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = front_southeast_sub_cell;
+        right_back_top_sub_cell->next = right_front_top_sub_cell->next;
+        right_back_down_sub_cell->next = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = right_back_top_sub_cell;
 
-        front_southwest_sub_cell->previous = front_northeast_sub_cell->previous;
-        front_southeast_sub_cell->previous = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = front_southwest_sub_cell;
+        right_back_down_sub_cell->previous = right_front_top_sub_cell->previous;
+        right_back_top_sub_cell->previous = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = right_back_down_sub_cell;
 
-        if ( front_southeast_sub_cell->next != 0 )
-            front_southeast_sub_cell->next->previous = front_southeast_sub_cell;
+        if (right_back_top_sub_cell->next != 0 )
+            right_back_top_sub_cell->next->previous = right_back_top_sub_cell;
 
     }
 
@@ -796,38 +752,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                              |/     |e
          */
 
-        back_southeast_sub_cell->hilbert_shape_number  = 8;
-        back_northeast_sub_cell->hilbert_shape_number  = 9;
-        back_northwest_sub_cell->hilbert_shape_number  = 9;
-        back_southwest_sub_cell->hilbert_shape_number  = 11;
-        front_southwest_sub_cell->hilbert_shape_number = 11;
-        front_northwest_sub_cell->hilbert_shape_number = 4;
-        front_northeast_sub_cell->hilbert_shape_number = 4;
-        front_southeast_sub_cell->hilbert_shape_number = 0;
+        left_back_top_sub_cell->hilbert_shape_number  = 8;
+        left_front_top_sub_cell->hilbert_shape_number  = 9;
+        left_front_down_sub_cell->hilbert_shape_number  = 9;
+        left_back_down_sub_cell->hilbert_shape_number  = 11;
+        right_back_down_sub_cell->hilbert_shape_number = 11;
+        right_front_down_sub_cell->hilbert_shape_number = 4;
+        right_front_top_sub_cell->hilbert_shape_number = 4;
+        right_back_top_sub_cell->hilbert_shape_number = 0;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = back_southeast_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = left_back_top_sub_cell;
 
-        front_southeast_sub_cell->next = front_northeast_sub_cell->next;
-        back_southeast_sub_cell->next  = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = front_southeast_sub_cell;
+        right_back_top_sub_cell->next = right_front_top_sub_cell->next;
+        left_back_top_sub_cell->next  = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = right_back_top_sub_cell;
 
-        back_southeast_sub_cell->previous  = front_northeast_sub_cell->previous;
-        front_southeast_sub_cell->previous = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = back_southeast_sub_cell;
+        left_back_top_sub_cell->previous  = right_front_top_sub_cell->previous;
+        right_back_top_sub_cell->previous = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = left_back_top_sub_cell;
 
-        if( front_southeast_sub_cell->next != 0 )
-            front_southeast_sub_cell->next->previous = front_southeast_sub_cell;
+        if(right_back_top_sub_cell->next != 0 )
+            right_back_top_sub_cell->next->previous = right_back_top_sub_cell;
 
     }
 
@@ -841,38 +797,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                             b|      |/
          */
 
-        front_southwest_sub_cell->hilbert_shape_number = 10;
-        front_northwest_sub_cell->hilbert_shape_number = 4;
-        front_northeast_sub_cell->hilbert_shape_number = 4;
-        front_southeast_sub_cell->hilbert_shape_number = 1;
-        back_southeast_sub_cell->hilbert_shape_number  = 1;
-        back_northeast_sub_cell->hilbert_shape_number  = 9;
-        back_northwest_sub_cell->hilbert_shape_number  = 9;
-        back_southwest_sub_cell->hilbert_shape_number  = 3;
+        right_back_down_sub_cell->hilbert_shape_number = 10;
+        right_front_down_sub_cell->hilbert_shape_number = 4;
+        right_front_top_sub_cell->hilbert_shape_number = 4;
+        right_back_top_sub_cell->hilbert_shape_number = 1;
+        left_back_top_sub_cell->hilbert_shape_number  = 1;
+        left_front_top_sub_cell->hilbert_shape_number  = 9;
+        left_front_down_sub_cell->hilbert_shape_number  = 9;
+        left_back_down_sub_cell->hilbert_shape_number  = 3;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = front_southwest_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = right_back_down_sub_cell;
 
-        back_southwest_sub_cell->next  = front_northeast_sub_cell->next;
-        front_southwest_sub_cell->next = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = back_southwest_sub_cell;
+        left_back_down_sub_cell->next  = right_front_top_sub_cell->next;
+        right_back_down_sub_cell->next = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = left_back_down_sub_cell;
 
-        front_southwest_sub_cell->previous = front_northeast_sub_cell->previous;
-        back_southwest_sub_cell->previous  = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = front_southwest_sub_cell;
+        right_back_down_sub_cell->previous = right_front_top_sub_cell->previous;
+        left_back_down_sub_cell->previous  = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = right_back_down_sub_cell;
 
-        if( back_southwest_sub_cell->next != 0 )
-            back_southwest_sub_cell->next->previous = back_southwest_sub_cell;
+        if(left_back_down_sub_cell->next != 0 )
+            left_back_down_sub_cell->next->previous = left_back_down_sub_cell;
 
     }
 
@@ -885,38 +841,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                              |/     |/
          */
 
-        back_northwest_sub_cell->hilbert_shape_number  = 3;
-        back_southwest_sub_cell->hilbert_shape_number  = 11;
-        front_southwest_sub_cell->hilbert_shape_number = 11;
-        front_northwest_sub_cell->hilbert_shape_number = 4;
-        front_northeast_sub_cell->hilbert_shape_number = 4;
-        front_southeast_sub_cell->hilbert_shape_number = 1;
-        back_southeast_sub_cell->hilbert_shape_number  = 1;
-        back_northeast_sub_cell->hilbert_shape_number  = 8;
+        left_front_down_sub_cell->hilbert_shape_number  = 3;
+        left_back_down_sub_cell->hilbert_shape_number  = 11;
+        right_back_down_sub_cell->hilbert_shape_number = 11;
+        right_front_down_sub_cell->hilbert_shape_number = 4;
+        right_front_top_sub_cell->hilbert_shape_number = 4;
+        right_back_top_sub_cell->hilbert_shape_number = 1;
+        left_back_top_sub_cell->hilbert_shape_number  = 1;
+        left_front_top_sub_cell->hilbert_shape_number  = 8;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = back_northwest_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = left_front_down_sub_cell;
 
-        back_northeast_sub_cell->next  = front_northeast_sub_cell->next;
-        back_northwest_sub_cell->next  = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = back_northeast_sub_cell;
+        left_front_top_sub_cell->next  = right_front_top_sub_cell->next;
+        left_front_down_sub_cell->next  = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = left_front_top_sub_cell;
 
-        back_northwest_sub_cell->previous  = front_northeast_sub_cell->previous;
-        back_northeast_sub_cell->previous  = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = back_northwest_sub_cell;
+        left_front_down_sub_cell->previous  = right_front_top_sub_cell->previous;
+        left_front_top_sub_cell->previous  = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = left_front_down_sub_cell;
 
-        if( back_northeast_sub_cell->next != 0 )
-            back_northeast_sub_cell->next->previous = back_northeast_sub_cell;
+        if(left_front_top_sub_cell->next != 0 )
+            left_front_top_sub_cell->next->previous = left_front_top_sub_cell;
 
     }
 
@@ -929,38 +885,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                               /______/
          */
 
-        back_southeast_sub_cell->hilbert_shape_number  = 5;
-        front_southeast_sub_cell->hilbert_shape_number = 9;
-        front_southwest_sub_cell->hilbert_shape_number = 9;
-        back_southwest_sub_cell->hilbert_shape_number  = 10;
-        back_northwest_sub_cell->hilbert_shape_number  = 10;
-        front_northwest_sub_cell->hilbert_shape_number = 7;
-        front_northeast_sub_cell->hilbert_shape_number = 7;
-        back_northeast_sub_cell->hilbert_shape_number  = 1;
+        left_back_top_sub_cell->hilbert_shape_number  = 5;
+        right_back_top_sub_cell->hilbert_shape_number = 9;
+        right_back_down_sub_cell->hilbert_shape_number = 9;
+        left_back_down_sub_cell->hilbert_shape_number  = 10;
+        left_front_down_sub_cell->hilbert_shape_number  = 10;
+        right_front_down_sub_cell->hilbert_shape_number = 7;
+        right_front_top_sub_cell->hilbert_shape_number = 7;
+        left_front_top_sub_cell->hilbert_shape_number  = 1;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = back_southeast_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = left_back_top_sub_cell;
 
-        back_northeast_sub_cell->next  = front_northeast_sub_cell->next;
-        back_southeast_sub_cell->next  = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = back_northeast_sub_cell;
+        left_front_top_sub_cell->next  = right_front_top_sub_cell->next;
+        left_back_top_sub_cell->next  = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = left_front_top_sub_cell;
 
-        back_southeast_sub_cell->previous  = front_northeast_sub_cell->previous;
-        back_northeast_sub_cell->previous  = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = back_southeast_sub_cell;
+        left_back_top_sub_cell->previous  = right_front_top_sub_cell->previous;
+        left_front_top_sub_cell->previous  = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = left_back_top_sub_cell;
 
-        if( back_northeast_sub_cell->next != 0 )
-            back_northeast_sub_cell->next->previous = back_northeast_sub_cell;
+        if(left_front_top_sub_cell->next != 0 )
+            left_front_top_sub_cell->next->previous = left_front_top_sub_cell;
 
     }
 
@@ -974,38 +930,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                               |/     |/
          */
 
-        back_southeast_sub_cell->hilbert_shape_number  = 5;
-        front_southeast_sub_cell->hilbert_shape_number = 8;
-        front_northeast_sub_cell->hilbert_shape_number = 8;
-        back_northeast_sub_cell->hilbert_shape_number  = 2;
-        back_northwest_sub_cell->hilbert_shape_number  = 2;
-        front_northwest_sub_cell->hilbert_shape_number = 3;
-        front_southwest_sub_cell->hilbert_shape_number = 3;
-        back_southwest_sub_cell->hilbert_shape_number  = 6;
+        left_back_top_sub_cell->hilbert_shape_number  = 5;
+        right_back_top_sub_cell->hilbert_shape_number = 8;
+        right_front_top_sub_cell->hilbert_shape_number = 8;
+        left_front_top_sub_cell->hilbert_shape_number  = 2;
+        left_front_down_sub_cell->hilbert_shape_number  = 2;
+        right_front_down_sub_cell->hilbert_shape_number = 3;
+        right_back_down_sub_cell->hilbert_shape_number = 3;
+        left_back_down_sub_cell->hilbert_shape_number  = 6;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = back_southeast_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = left_back_top_sub_cell;
 
-        back_southwest_sub_cell->next  = front_northeast_sub_cell->next;
-        back_southeast_sub_cell->next  = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = front_northwest_sub_cell;
-        front_northwest_sub_cell->next = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = back_southwest_sub_cell;
+        left_back_down_sub_cell->next  = right_front_top_sub_cell->next;
+        left_back_top_sub_cell->next  = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = right_front_down_sub_cell;
+        right_front_down_sub_cell->next = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = left_back_down_sub_cell;
 
-        back_southeast_sub_cell->previous  = front_northeast_sub_cell->previous;
-        back_southwest_sub_cell->previous  = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = front_northwest_sub_cell;
-        front_northwest_sub_cell->previous = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = back_southeast_sub_cell;
+        left_back_top_sub_cell->previous  = right_front_top_sub_cell->previous;
+        left_back_down_sub_cell->previous  = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = right_front_down_sub_cell;
+        right_front_down_sub_cell->previous = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = left_back_top_sub_cell;
 
-        if( back_southwest_sub_cell->next != 0 )
-            back_southwest_sub_cell->next->previous = back_southwest_sub_cell;
+        if(left_back_down_sub_cell->next != 0 )
+            left_back_down_sub_cell->next->previous = left_back_down_sub_cell;
 
     }
 
@@ -1019,38 +975,38 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                                b/     |/
          */
 
-        front_southwest_sub_cell->hilbert_shape_number = 6;
-        back_southwest_sub_cell->hilbert_shape_number  = 4;
-        back_southeast_sub_cell->hilbert_shape_number  = 4;
-        front_southeast_sub_cell->hilbert_shape_number = 8;
-        front_northeast_sub_cell->hilbert_shape_number = 8;
-        back_northeast_sub_cell->hilbert_shape_number  = 2;
-        back_northwest_sub_cell->hilbert_shape_number  = 2;
-        front_northwest_sub_cell->hilbert_shape_number = 11;
+        right_back_down_sub_cell->hilbert_shape_number = 6;
+        left_back_down_sub_cell->hilbert_shape_number  = 4;
+        left_back_top_sub_cell->hilbert_shape_number  = 4;
+        right_back_top_sub_cell->hilbert_shape_number = 8;
+        right_front_top_sub_cell->hilbert_shape_number = 8;
+        left_front_top_sub_cell->hilbert_shape_number  = 2;
+        left_front_down_sub_cell->hilbert_shape_number  = 2;
+        right_front_down_sub_cell->hilbert_shape_number = 11;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = front_southwest_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = right_back_down_sub_cell;
 
-        front_northwest_sub_cell->next = front_northeast_sub_cell->next;
-        front_southwest_sub_cell->next = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_northwest_sub_cell;
-        back_northwest_sub_cell->next  = front_northwest_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell->next;
+        right_back_down_sub_cell->next = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_front_down_sub_cell;
+        left_front_down_sub_cell->next  = right_front_down_sub_cell;
 
-        front_southwest_sub_cell->previous = front_northeast_sub_cell->previous;
-        front_northwest_sub_cell->previous = back_northwest_sub_cell;
-        back_northwest_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = front_southwest_sub_cell;
+        right_back_down_sub_cell->previous = right_front_top_sub_cell->previous;
+        right_front_down_sub_cell->previous = left_front_down_sub_cell;
+        left_front_down_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = right_back_down_sub_cell;
 
-        if( front_northwest_sub_cell->next != 0 )
-            front_northwest_sub_cell->next->previous = front_northwest_sub_cell;
+        if(right_front_down_sub_cell->next != 0 )
+            right_front_down_sub_cell->next->previous = right_front_down_sub_cell;
 
     }
 
@@ -1064,49 +1020,71 @@ void refine_cell( struct cell_node *cell, ui32_array free_sv_positions, ui32_arr
                                    /______|
          */
 
-        back_northwest_sub_cell->hilbert_shape_number  = 7;
-        back_northeast_sub_cell->hilbert_shape_number  = 3;
-        back_southeast_sub_cell->hilbert_shape_number  = 3;
-        back_southwest_sub_cell->hilbert_shape_number  = 5;
-        front_southwest_sub_cell->hilbert_shape_number = 5;
-        front_southeast_sub_cell->hilbert_shape_number = 10;
-        front_northeast_sub_cell->hilbert_shape_number = 10;
-        front_northwest_sub_cell->hilbert_shape_number = 2;
+        left_front_down_sub_cell->hilbert_shape_number  = 7;
+        left_front_top_sub_cell->hilbert_shape_number  = 3;
+        left_back_top_sub_cell->hilbert_shape_number  = 3;
+        left_back_down_sub_cell->hilbert_shape_number  = 5;
+        right_back_down_sub_cell->hilbert_shape_number = 5;
+        right_back_top_sub_cell->hilbert_shape_number = 10;
+        right_front_top_sub_cell->hilbert_shape_number = 10;
+        right_front_down_sub_cell->hilbert_shape_number = 2;
 
-        if( front_northeast_sub_cell->previous != 0 )
-            front_northeast_sub_cell->previous->next = back_northwest_sub_cell;
+        if(right_front_top_sub_cell->previous != 0 )
+            right_front_top_sub_cell->previous->next = left_front_down_sub_cell;
 
-        front_northwest_sub_cell->next = front_northeast_sub_cell->next;
-        back_northwest_sub_cell->next  = back_northeast_sub_cell;
-        back_northeast_sub_cell->next  = back_southeast_sub_cell;
-        back_southeast_sub_cell->next  = back_southwest_sub_cell;
-        back_southwest_sub_cell->next  = front_southwest_sub_cell;
-        front_southwest_sub_cell->next = front_southeast_sub_cell;
-        front_southeast_sub_cell->next = front_northeast_sub_cell;
-        front_northeast_sub_cell->next = front_northwest_sub_cell;
+        right_front_down_sub_cell->next = right_front_top_sub_cell->next;
+        left_front_down_sub_cell->next  = left_front_top_sub_cell;
+        left_front_top_sub_cell->next  = left_back_top_sub_cell;
+        left_back_top_sub_cell->next  = left_back_down_sub_cell;
+        left_back_down_sub_cell->next  = right_back_down_sub_cell;
+        right_back_down_sub_cell->next = right_back_top_sub_cell;
+        right_back_top_sub_cell->next = right_front_top_sub_cell;
+        right_front_top_sub_cell->next = right_front_down_sub_cell;
 
-        back_northwest_sub_cell->previous  = front_northeast_sub_cell->previous;
-        front_northwest_sub_cell->previous = front_northeast_sub_cell;
-        front_northeast_sub_cell->previous = front_southeast_sub_cell;
-        front_southeast_sub_cell->previous = front_southwest_sub_cell;
-        front_southwest_sub_cell->previous = back_southwest_sub_cell;
-        back_southwest_sub_cell->previous  = back_southeast_sub_cell;
-        back_southeast_sub_cell->previous  = back_northeast_sub_cell;
-        back_northeast_sub_cell->previous  = back_northwest_sub_cell;
+        left_front_down_sub_cell->previous  = right_front_top_sub_cell->previous;
+        right_front_down_sub_cell->previous = right_front_top_sub_cell;
+        right_front_top_sub_cell->previous = right_back_top_sub_cell;
+        right_back_top_sub_cell->previous = right_back_down_sub_cell;
+        right_back_down_sub_cell->previous = left_back_down_sub_cell;
+        left_back_down_sub_cell->previous  = left_back_top_sub_cell;
+        left_back_top_sub_cell->previous  = left_front_top_sub_cell;
+        left_front_top_sub_cell->previous  = left_front_down_sub_cell;
 
-        if( front_northwest_sub_cell->next != 0 )
-            front_northwest_sub_cell->next->previous = front_northwest_sub_cell;
+        if(right_front_down_sub_cell->next != 0 )
+            right_front_down_sub_cell->next->previous = right_front_down_sub_cell;
 
     }
 
     // If necessary, simplifies the graph by eliminating adjacent transition nodes
     // of same level connected through their single connectors.
-    simplify_refinement( east_transition_node  );
-    simplify_refinement( north_transition_node );
-    simplify_refinement( west_transition_node  );
-    simplify_refinement( south_transition_node );
-    simplify_refinement( front_transition_node );
-    simplify_refinement( back_transition_node  );
+    simplify_refinement(top_transition_node);
+    simplify_refinement(front_transition_node);
+    simplify_refinement(down_transition_node);
+    simplify_refinement(back_transition_node);
+    simplify_refinement(right_transition_node);
+    simplify_refinement(left_transition_node);
+
+//    simplify_refinement(top_right_transition_node);
+//    simplify_refinement(top_left_transition_node);
+//    simplify_refinement(top_front_transition_node);
+//    simplify_refinement(top_back_transition_node);
+//    simplify_refinement(down_right_transition_node);
+//    simplify_refinement(down_left_transition_node);
+//    simplify_refinement(down_front_transition_node);
+//    simplify_refinement(down_back_transition_node);
+//    simplify_refinement(right_front_transition_node);
+//    simplify_refinement(right_back_transition_node);
+//    simplify_refinement(left_front_transition_node);
+//    simplify_refinement(left_back_transition_node);
+//    simplify_refinement(front_left_top_transition_node);
+//    simplify_refinement(front_left_down_transition_node);
+//    simplify_refinement(front_right_top_transition_node);
+//    simplify_refinement(front_right_down_transition_node);
+//    simplify_refinement(back_left_top_transition_node);
+//    simplify_refinement(back_left_down_transition_node);
+//    simplify_refinement(back_right_top_transition_node);
+//    simplify_refinement(back_right_down_transition_node);
+
 }
 
 
@@ -1128,72 +1106,112 @@ void simplify_refinement( struct transition_node *transition_node ) {
 
         // Both transition node and neighbor transition node must have the same
         // refinement level.
-        char node_type = transition_node->cell_data.type;
+        enum cell_type node_type = transition_node->cell_data.type;
         uint16_t node_level = transition_node->cell_data.level;
 
         uint16_t single_connector_level = ((struct basic_cell_data*)(transition_node->single_connector))->level;
 
-        if( ( node_type == TRANSITION_NODE_TYPE) && (node_level == single_connector_level) ) {
+        if( ( node_type == TRANSITION_NODE) && (node_level == single_connector_level) ) {
             struct transition_node *neighbour_node = (struct transition_node*) (transition_node->single_connector);
 
-            struct cell_node *cellNode[4];
-            cellNode[0] = (struct cell_node*)(transition_node->quadruple_connector1);
-            cellNode[1] = (struct cell_node*)(transition_node->quadruple_connector2);
-            cellNode[2] = (struct cell_node*)(transition_node->quadruple_connector3);
-            cellNode[3] = (struct cell_node*)(transition_node->quadruple_connector4);
+            struct cell_node *cell_node[4];
+            cell_node[0] = (struct cell_node*)(transition_node->quadruple_connector1);
+            cell_node[1] = (struct cell_node*)(transition_node->quadruple_connector2);
+            cell_node[2] = (struct cell_node*)(transition_node->quadruple_connector3);
+            cell_node[3] = (struct cell_node*)(transition_node->quadruple_connector4);
 
-            struct cell_node *neighborCell[4];
-            neighborCell[0] = neighbour_node->quadruple_connector1;
-            neighborCell[1] = neighbour_node->quadruple_connector2;
-            neighborCell[2] = neighbour_node->quadruple_connector3;
-            neighborCell[3] = neighbour_node->quadruple_connector4;
+            struct cell_node *neighbor_cell[4];
+            neighbor_cell[0] = neighbour_node->quadruple_connector1;
+            neighbor_cell[1] = neighbour_node->quadruple_connector2;
+            neighbor_cell[2] = neighbour_node->quadruple_connector3;
+            neighbor_cell[3] = neighbour_node->quadruple_connector4;
 
-            char direction = transition_node->direction;
-            char type;
+            enum transition_direction direction = transition_node->direction;
+            enum cell_type type;
 
             for( int i = 0; i < 4; i++ ) {
                 switch( direction ) {
-                    case 'n': { cellNode[i]->north = neighborCell[i]; break; }
-                    case 's': { cellNode[i]->south = neighborCell[i]; break; }
-                    case 'e': { cellNode[i]->east  = neighborCell[i]; break; }
-                    case 'w': { cellNode[i]->west  = neighborCell[i]; break; }
-                    case 'f': { cellNode[i]->front = neighborCell[i]; break; }
-                    case 'b': { cellNode[i]->back  = neighborCell[i]; break; }
+                    case FRONT:            { cell_node[i]->neighbours[FRONT]            = neighbor_cell[i]; break; }
+                    case BACK:             { cell_node[i]->neighbours[BACK]             = neighbor_cell[i]; break; }
+                    case TOP:              { cell_node[i]->neighbours[TOP]              = neighbor_cell[i]; break; }
+                    case DOWN:             { cell_node[i]->neighbours[DOWN]             = neighbor_cell[i]; break; }
+                    case RIGHT:            { cell_node[i]->neighbours[RIGHT]            = neighbor_cell[i]; break; }
+                    case LEFT:             { cell_node[i]->neighbours[LEFT]             = neighbor_cell[i]; break; }
+//                    case TOP_RIGHT:        { cell_node[i]->neighbours[TOP]_right        = neighbor_cell[i]; break; }
+//                    case TOP_LEFT:         { cell_node[i]->neighbours[TOP]_left         = neighbor_cell[i]; break; }
+//                    case TOP_FRONT:        { cell_node[i]->neighbours[TOP]_front        = neighbor_cell[i]; break; }
+//                    case TOP_BACK:         { cell_node[i]->neighbours[TOP]_back         = neighbor_cell[i]; break; }
+//                    case DOWN_RIGHT:       { cell_node[i]->neighbours[DOWN]_right       = neighbor_cell[i]; break; }
+//                    case DOWN_LEFT:        { cell_node[i]->neighbours[DOWN]_left        = neighbor_cell[i]; break; }
+//                    case DOWN_FRONT:       { cell_node[i]->neighbours[DOWN]_front       = neighbor_cell[i]; break; }
+//                    case DOWN_BACK:        { cell_node[i]->neighbours[DOWN]_back        = neighbor_cell[i]; break; }
+//                    case RIGHT_FRONT:      { cell_node[i]->neighbours[RIGHT]_front      = neighbor_cell[i]; break; }
+//                    case RIGHT_BACK:       { cell_node[i]->neighbours[RIGHT]_back       = neighbor_cell[i]; break; }
+//                    case LEFT_FRONT:       { cell_node[i]->neighbours[LEFT]_front       = neighbor_cell[i]; break; }
+//                    case LEFT_BACK:        { cell_node[i]->neighbours[LEFT]_back        = neighbor_cell[i]; break; }
+//                    case FRONT_LEFT_TOP:   { cell_node[i]->neighbours[FRONT]_left_top   = neighbor_cell[i]; break; }
+//                    case FRONT_LEFT_DOWN:  { cell_node[i]->neighbours[FRONT]_left_down  = neighbor_cell[i]; break; }
+//                    case FRONT_RIGHT_TOP:  { cell_node[i]->neighbours[FRONT]_right_top  = neighbor_cell[i]; break; }
+//                    case FRONT_RIGHT_DOWN: { cell_node[i]->neighbours[FRONT]_right_down = neighbor_cell[i]; break; }
+//                    case BACK_LEFT_TOP:    { cell_node[i]->neighbours[BACK]_left_top    = neighbor_cell[i]; break; }
+//                    case BACK_LEFT_DOWN:   { cell_node[i]->neighbours[BACK]_left_down   = neighbor_cell[i]; break; }
+//                    case BACK_RIGHT_TOP:   { cell_node[i]->neighbours[BACK]_right_top   = neighbor_cell[i]; break; }
+//                    case BACK_RIGHT_DOWN:  { cell_node[i]->neighbours[BACK]_right_down  = neighbor_cell[i]; break; }
                     default: break;
                 }
 
-                type = neighborCell[i]->cell_data.type;
+                type = neighbor_cell[i]->cell_data.type;
                 switch( type ) {
-                    case CELL_NODE_TYPE: {
-                        neighbour_cell_node = neighborCell[i];
+                    case CELL_NODE: {
+                        neighbour_cell_node = neighbor_cell[i];
                         switch( direction )	{
-                            case 'n': { neighbour_cell_node->south = cellNode[i]; break; }
-                            case 's': { neighbour_cell_node->north = cellNode[i]; break; }
-                            case 'e': { neighbour_cell_node->west  = cellNode[i]; break; }
-                            case 'w': { neighbour_cell_node->east  = cellNode[i]; break; }
-                            case 'f': { neighbour_cell_node->back  = cellNode[i]; break; }
-                            case 'b': { neighbour_cell_node->front = cellNode[i]; break; }
+                            case FRONT:            { neighbour_cell_node->neighbours[BACK]             = cell_node[i];  break; }
+                            case BACK:             { neighbour_cell_node->neighbours[FRONT]            = cell_node[i]; break; }
+                            case TOP:              { neighbour_cell_node->neighbours[DOWN]             = cell_node[i]; break; }
+                            case DOWN:             { neighbour_cell_node->neighbours[TOP]              = cell_node[i];  break; }
+                            case RIGHT:            { neighbour_cell_node->neighbours[LEFT]             = cell_node[i]; break; }
+                            case LEFT:             { neighbour_cell_node->neighbours[RIGHT]            = cell_node[i]; break; }
+//                            case TOP_RIGHT:        { neighbour_cell_node->neighbours[DOWN]_left        = cell_node[i]; break; }
+//                            case TOP_LEFT:         { neighbour_cell_node->neighbours[DOWN]_right       = cell_node[i]; break; }
+//                            case TOP_FRONT:        { neighbour_cell_node->neighbours[DOWN]_back        = cell_node[i]; break; }
+//                            case TOP_BACK:         { neighbour_cell_node->neighbours[DOWN]_front       = cell_node[i]; break; }
+//                            case DOWN_RIGHT:       { neighbour_cell_node->neighbours[TOP]_left         = cell_node[i]; break; }
+//                            case DOWN_LEFT:        { neighbour_cell_node->neighbours[TOP]_right        = cell_node[i]; break; }
+//                            case DOWN_FRONT:       { neighbour_cell_node->neighbours[TOP]_back         = cell_node[i]; break; }
+//                            case DOWN_BACK:        { neighbour_cell_node->neighbours[TOP]_front        = cell_node[i]; break; }
+//                            case RIGHT_FRONT:      { neighbour_cell_node->neighbours[LEFT]_back        = cell_node[i]; break; }
+//                            case RIGHT_BACK:       { neighbour_cell_node->neighbours[LEFT]_front       = cell_node[i]; break; }
+//                            case LEFT_FRONT:       { neighbour_cell_node->neighbours[RIGHT]_back       = cell_node[i]; break; }
+//                            case LEFT_BACK:        { neighbour_cell_node->neighbours[RIGHT]_front      = cell_node[i]; break; }
+//                            case FRONT_LEFT_TOP:   { neighbour_cell_node->neighbours[BACK]_right_down  = cell_node[i]; break; }
+//                            case FRONT_LEFT_DOWN:  { neighbour_cell_node->neighbours[BACK]_right_top   = cell_node[i]; break; }
+//                            case FRONT_RIGHT_TOP:  { neighbour_cell_node->neighbours[BACK]_left_down   = cell_node[i]; break; }
+//                            case FRONT_RIGHT_DOWN: { neighbour_cell_node->neighbours[BACK]_left_top    = cell_node[i]; break; }
+//                            case BACK_LEFT_TOP:    { neighbour_cell_node->neighbours[FRONT]_right_down = cell_node[i]; break; }
+//                            case BACK_LEFT_DOWN:   { neighbour_cell_node->neighbours[FRONT]_right_top  = cell_node[i]; break; }
+//                            case BACK_RIGHT_TOP:   { neighbour_cell_node->neighbours[FRONT]_left_down  = cell_node[i]; break; }
+//                            case BACK_RIGHT_DOWN:  { neighbour_cell_node->neighbours[FRONT]_left_top   = cell_node[i]; break; }
                             default: break;
                         }
                         break;
                     }
 
-                    case TRANSITION_NODE_TYPE: {
-                        neighbour_transition_node = (struct transition_node*)(neighborCell[i]);
+                    case TRANSITION_NODE: {
+                        neighbour_transition_node = (struct transition_node*)(neighbor_cell[i]);
                         if( neighbour_node == neighbour_transition_node->single_connector )
-                            neighbour_transition_node->single_connector = cellNode[i];
+                            neighbour_transition_node->single_connector = cell_node[i];
 
                         else if( neighbour_node == neighbour_transition_node->quadruple_connector1 )
-                            neighbour_transition_node->quadruple_connector1 = cellNode[i];
+                            neighbour_transition_node->quadruple_connector1 = cell_node[i];
 
                         else if( neighbour_node == neighbour_transition_node->quadruple_connector2 )
-                            neighbour_transition_node->quadruple_connector2 = cellNode[i];
+                            neighbour_transition_node->quadruple_connector2 = cell_node[i];
 
                         else if( neighbour_node == neighbour_transition_node->quadruple_connector3 )
-                            neighbour_transition_node->quadruple_connector3 = cellNode[i];
+                            neighbour_transition_node->quadruple_connector3 = cell_node[i];
 
                         else if( neighbour_node == neighbour_transition_node->quadruple_connector4 )
-                            neighbour_transition_node->quadruple_connector4 = cellNode[i];
+                            neighbour_transition_node->quadruple_connector4 = cell_node[i];
 
                         break;
                     }
@@ -1208,30 +1226,29 @@ void simplify_refinement( struct transition_node *transition_node ) {
 }
 
 void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_cell,
-                            struct point_3d discretization, struct point_3d center, struct point_3d translated_center,
+                            struct point_3d discretization, struct point_3d center,
                             uint64_t bunch_number, ui32_array free_sv_positions, ui32_array *refined_this_step) {
 
     the_cell->cell_data.level = other_cell->cell_data.level;
-    the_cell->active = other_cell->active;
+    the_cell-> active = other_cell-> active;
 
     if(other_cell->mesh_extra_info) {
         the_cell->mesh_extra_info_size = other_cell->mesh_extra_info_size;
-        the_cell->mesh_extra_info = malloc(other_cell->mesh_extra_info_size);
-        memcpy(the_cell->mesh_extra_info, other_cell->mesh_extra_info, other_cell->mesh_extra_info_size);
+        the_cell->mesh_extra_info = malloc(the_cell->mesh_extra_info_size);
+        memcpy(the_cell->mesh_extra_info, other_cell->mesh_extra_info, the_cell->mesh_extra_info_size);
     }
 
     if(other_cell->linear_system_solver_extra_info) {
         the_cell->linear_system_solver_extra_info_size = other_cell->linear_system_solver_extra_info_size;
-        the_cell->linear_system_solver_extra_info = malloc(other_cell->linear_system_solver_extra_info_size);
+        the_cell->linear_system_solver_extra_info = malloc(the_cell->linear_system_solver_extra_info_size);
         memcpy(the_cell->linear_system_solver_extra_info, other_cell->linear_system_solver_extra_info,
-               other_cell->linear_system_solver_extra_info_size);
+               the_cell->linear_system_solver_extra_info_size);
     }
 
     the_cell->v = other_cell->v;
     the_cell->sigma = other_cell->sigma;
     the_cell->discretization = discretization;
     the_cell->center = center;
-    the_cell->translated_center = translated_center;
 
     the_cell->bunch_number = bunch_number;
 
@@ -1245,22 +1262,14 @@ void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_
 
 }
 
-void set_refined_transition_node_data(struct transition_node *the_node, struct cell_node* other_node, char direction) {
+void set_refined_transition_node_data(struct transition_node *the_node, struct cell_node* other_node, enum transition_direction direction) {
 
-
-    the_node->direction          = direction;
-    the_node->cell_data.level    = other_node->cell_data.level;
-
-    switch(direction) {
-        case 'w': the_node->single_connector   = other_node->west; break;
-        case 'n': the_node->single_connector   = other_node->north; break;
-        case 's': the_node->single_connector   = other_node->south; break;
-        case 'e': the_node->single_connector   = other_node->east; break;
-        case 'f': the_node->single_connector   = other_node->front; break;
-        case 'b': the_node->single_connector   = other_node->back; break;
-        default:
-            fprintf(stderr, "set_refined_transition_node_data() invalid direction %c Exiting!", direction);
-            exit(10);
+    if(!VALID_SIMPLE_DIRECTION(direction)) {
+        fprintf(stderr, "set_refined_transition_node_data() invalid direction %d. Exiting!", direction);
+        exit(10);
     }
 
+    the_node->direction       = direction;
+    the_node->cell_data.level = other_node->cell_data.level;
+    the_node->single_connector = other_node->neighbours[direction];
 }

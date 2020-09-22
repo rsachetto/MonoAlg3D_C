@@ -7,8 +7,8 @@ X = rand(n, 1);
 
 B = A*X;
 
-save A.txt A
-save B.txt B
-save X.txt X
+save A4.txt A
+save B4.txt B
+save X4.txt X
 
 endfunction

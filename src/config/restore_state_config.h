@@ -7,18 +7,19 @@
 
 #include "config_common.h"
 #include "../monodomain/constants.h"
-#include "../monodomain/ode_solver.h"
 #include "../monodomain/monodomain_solver.h"
+#include "../ode_solver/ode_solver.h"
 #include "../alg/grid/grid.h"
 
 //Forward declaration
 struct monodomain_solver;
+struct ode_solver;
 
-#define RESTORE_STATE(name) EXPORT_FN bool name(char* input_dir,                                  \
+#define RESTORE_STATE(name)  bool name(struct time_info *time_info,                      \
                                                 struct config *config,                            \
                                                 struct grid *the_grid,                            \
                                                 struct monodomain_solver *the_monodomain_solver,  \
-                                                struct ode_solver *the_ode_solver)
+                                                struct ode_solver *the_ode_solver, char* input_dir)
 typedef RESTORE_STATE(restore_state_fn);
 
 

@@ -7,11 +7,11 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
-#include "../string/sds.h"
+#include "../3dparty/sds/sds.h"
 
 
 #ifdef COMPILE_CUDA
-#include "../models_library/model_gpu_utils.h"
+#include "../gpu_utils/gpu_utils.h"
 #endif
 
 SAVE_STATE(save_simulation_state) {
@@ -46,12 +46,12 @@ SAVE_STATE(save_simulation_state) {
             fwrite(&(grid_cell->center.y), sizeof(grid_cell->center.y), 1, output_file);
             fwrite(&(grid_cell->center.z), sizeof(grid_cell->center.z), 1, output_file);
             fwrite(&(grid_cell->v), sizeof(grid_cell->v), 1, output_file);
-            fwrite(&(grid_cell->north_flux), sizeof(grid_cell->north_flux), 1, output_file);
-            fwrite(&(grid_cell->south_flux), sizeof(grid_cell->south_flux), 1, output_file);
-            fwrite(&(grid_cell->east_flux), sizeof(grid_cell->east_flux), 1, output_file);
-            fwrite(&(grid_cell->west_flux), sizeof(grid_cell->west_flux), 1, output_file);
             fwrite(&(grid_cell->front_flux), sizeof(grid_cell->front_flux), 1, output_file);
             fwrite(&(grid_cell->back_flux), sizeof(grid_cell->back_flux), 1, output_file);
+            fwrite(&(grid_cell->top_flux), sizeof(grid_cell->top_flux), 1, output_file);
+            fwrite(&(grid_cell->down_flux), sizeof(grid_cell->down_flux), 1, output_file);
+            fwrite(&(grid_cell->right_flux), sizeof(grid_cell->right_flux), 1, output_file);
+            fwrite(&(grid_cell->left_flux), sizeof(grid_cell->left_flux), 1, output_file);
             fwrite(&(grid_cell->b), sizeof(grid_cell->b), 1, output_file);
             fwrite(&(grid_cell->can_change), sizeof(grid_cell->can_change), 1, output_file);
             fwrite(&(grid_cell->active), sizeof(grid_cell->active), 1, output_file);
@@ -79,6 +79,8 @@ SAVE_STATE(save_simulation_state) {
 
 
         fwrite(the_monodomain_solver, sizeof(struct monodomain_solver), 1, output_file);
+        fwrite(time_info, sizeof(struct time_info), 1, output_file);
+
         fclose(output_file);
 
     }

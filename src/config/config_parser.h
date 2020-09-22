@@ -34,6 +34,8 @@
 #define ASSEMBLY_MATRIX_OPT 2100
 #define LINEAR_SYSTEM_SOLVER_OPT 2200
 #define UPDATE_MONODOMAIN_SOLVER_OPT 2300
+#define MODIFY_DOMAIN_OPT 2400
+#define ODE_SOLVER_OPT 2500
 #define DRAW_OPT 3000
 #define SAVE_OPT 3100
 #define SAVE_STATE_OPT 3200
@@ -51,14 +53,26 @@ struct user_options {
     bool final_time_was_set;
     bool adaptive;	                /*-a option */
     bool adaptive_was_set;
+
     real_cpu ref_bound;				/*-r option*/
     bool ref_bound_was_set;
     real_cpu deref_bound;				/*-d option*/
     bool deref_bound_was_set;
     real_cpu dt_pde;					/*-z option*/
     bool dt_pde_was_set;
-    real_cpu dt_ode;				    /*-e option*/
+
+    real_cpu dt_ode;
     bool dt_ode_was_set;
+
+    bool ode_adaptive;
+    bool ode_adaptive_was_set;
+
+    real ode_reltol;
+    bool ode_reltol_was_set;
+
+    real ode_abstol;
+    bool ode_abstol_was_set;
+
     int num_threads;                /*-n option*/
     bool num_threads_was_set;
     bool gpu;                       /*-g option*/
@@ -71,34 +85,29 @@ struct user_options {
     bool gpu_id_was_set;
     bool abort_no_activity;         /*-b option*/
     bool abort_no_activity_was_set;
+
+    real_cpu only_abort_after_dt;
+    bool only_abort_after_dt_was_set;
+
     real_cpu vm_threshold;            /*-v option*/
     bool vm_threshold_was_set;
-    // NEW VARIABLES !
-    bool calc_activation_time;
-    bool calc_activation_time_was_set;
-    bool print_conductivity_map;
-    bool print_conductivity_map_was_set;
-    bool print_min_vm_map;
-    bool print_min_vm_map_was_set;
-    bool print_max_vm_map;
-    bool print_max_vm_map_was_set;
-    bool print_apd_map;
-    bool print_apd_map_was_set;
-    // NEW VARIABLES !
+
     real_cpu purkinje_dt_ode;
     bool purkinje_dt_ode_was_set;
+
     bool purkinje_gpu;
     bool purkinje_gpu_was_set;
+
     int purkinje_gpu_id;         
     bool purkinje_gpu_id_was_set;
+    
     char *purkinje_model_file_path;         
     bool purkinje_model_file_path_was_set;
-
 
     char *model_file_path;          /*-k option*/
     bool model_file_path_was_set;
 
-    bool draw;
+    bool show_gui;
 
     real_cpu beta;
     bool beta_was_set;
@@ -117,6 +126,8 @@ struct user_options {
 
     struct string_voidp_hash_entry *stim_configs;
     struct string_voidp_hash_entry *purkinje_stim_configs;
+    struct string_voidp_hash_entry *modify_domain_configs;
+    
     struct config *domain_config;
     struct config *purkinje_config;
     struct config *extra_data_config;
@@ -132,8 +143,6 @@ struct user_options {
 
     real_cpu max_v, min_v;
 
-    bool main_found;
-
 };
 
 struct batch_options {
@@ -146,37 +155,61 @@ struct batch_options {
 };
 
 struct visualization_options {
-    char *input_folder;
+    char *input;
     char *files_prefix;
-    char *pvd_file;
-    char *activation_map;
     bool save_activation_only;
     int start_file;
+    int step;
     real_cpu max_v, min_v, dt;
 };
 
+struct conversion_options {
+    char *input;
+    char *output;
+};
+
+struct fibers_conversion_options {
+    char *fibers_file;
+    char *ele_file;
+    char *nodes_file;
+    char *alg_file;
+    char *output_file;
+};
 
 void display_usage( char** argv );
 void display_batch_usage(char **argv);
+void display_conversion_usage(char **argv);
+void display_fibers_conversion_usage(char **argv);
 
 struct user_options * new_user_options();
 struct batch_options * new_batch_options();
 struct visualization_options * new_visualization_options();
+struct conversion_options * new_conversion_options();
+struct fibers_conversion_options * new_fibers_conversion_options();
 
 void parse_options(int argc, char**argv, struct user_options *user_args);
 void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
 void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
-
+void parse_conversion_options(int argc, char **argv, struct conversion_options *user_args);
+void parse_fibers_conversion_options(int argc, char **argv, struct fibers_conversion_options *user_args);
 void get_config_file(int argc, char**argv, struct user_options *user_args);
+
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
+int parse_preprocessor_config(void* user, const char* section, const char* name, const char* value);
+
 void options_to_ini_file(struct user_options *config, char *ini_file_path);
 
 void configure_grid_from_options(struct grid* grid, struct user_options *options);
+
 void free_user_options(struct user_options *s);
 void free_batch_options(struct batch_options * options);
 void free_visualization_options(struct visualization_options * options);
-void issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
+void free_conversion_options(struct conversion_options *options);
+void free_fibers_conversion_options(struct fibers_conversion_options *options);
+
+void maybe_issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
+
 
 #endif /* MONOALG3D_CONFIG_PARSER_H */

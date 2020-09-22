@@ -3,16 +3,16 @@
 //
 
 #include "pvd_utils.h"
-#include "../xml_parser/yxml.h"
+#include "../3dparty/xml_parser/yxml.h"
 #include "../utils/file_utils.h"
-#include "../single_file_libraries/stb_ds.h"
+#include "../3dparty/stb_ds.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 
 
-static int parse_pvd_xml(yxml_t *x, yxml_ret_t r, struct vtk_files* vtk_files) {
+static int parse_pvd_xml(yxml_t *x, yxml_ret_t r, struct simulation_files* simulation_files) {
 
     static char *current_file = NULL;
     static char *current_step = NULL;
@@ -29,12 +29,12 @@ static int parse_pvd_xml(yxml_t *x, yxml_ret_t r, struct vtk_files* vtk_files) {
         case YXML_ATTREND:
             if(strcmp(x->attr, "timestep") == 0) {
                 arrpush(current_step, '\0');
-                arrpush(vtk_files->timesteps, strtof(current_step, NULL));
+                arrpush(simulation_files->timesteps, strtof(current_step, NULL));
                 arrsetlen(current_step, 0);
             }
             else  if(strcmp(x->attr, "file") == 0) {
                 arrpush(current_file, '\0');
-                arrpush(vtk_files->files_list, strdup(current_file));
+                arrpush(simulation_files->files_list, strdup(current_file));
                 arrsetlen(current_file, 0);
             }
             break;
@@ -61,11 +61,11 @@ static int parse_pvd_xml(yxml_t *x, yxml_ret_t r, struct vtk_files* vtk_files) {
 }
 
 
-struct vtk_files* list_files_from_and_timesteps_from_pvd(const char *pvd_file) {
+struct simulation_files* list_files_from_and_timesteps_from_pvd(const char *pvd_file) {
 
-    struct vtk_files* vtk_files = (struct vtk_files*) calloc(1, sizeof(struct vtk_files));
+    struct simulation_files* simulation_files = (struct simulation_files*) calloc(1, sizeof(struct simulation_files));
 
-    if(vtk_files == NULL) {
+    if(simulation_files == NULL) {
         return NULL;
     }
 
@@ -86,12 +86,12 @@ struct vtk_files* list_files_from_and_timesteps_from_pvd(const char *pvd_file) {
 
     for (; *source; source++) {
         yxml_ret_t r = yxml_parse(x, *source);
-        parse_pvd_xml(x, r, vtk_files);
+        parse_pvd_xml(x, r, simulation_files);
     }
 
     free(x);
     munmap(tmp, size);
 
-    return vtk_files;
+    return simulation_files;
 
 }

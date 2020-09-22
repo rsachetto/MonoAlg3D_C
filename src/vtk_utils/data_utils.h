@@ -5,14 +5,10 @@
 #ifndef MONOALG3D_DATA_UTILS_H
 #define MONOALG3D_DATA_UTILS_H
 
-#include "../string/sds.h"
-
-#ifdef COMPILE_ZLIB
-#include <zlib.h>
-#endif
+#include "../3dparty/sds/sds.h"
+#include "../3dparty/miniz/miniz.h"
 
 #include "../common_types/common_types.h"
-
 
 int invert_bytes(int data);
 sds write_binary_point(sds output_string, struct point_3d *p);
