@@ -91,14 +91,6 @@ scripts/output
 scripts/animations/frames
 scripts/animations/video
 scripts/animations/*.mp4
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-scripts/animations/videos/*.mp4
-scripts/animations/videos/backup*
-=======
->>>>>>> aedb9fab964a0790f2b939b52af16e852aae9d83
->>>>>>> d3bde9be1057c0a1e9a2c8534d70bfa337adda9f
 scripts/apd_error/*.png
 batch_simulations/
 /src/main_graph_analyzer.c
@@ -133,15 +125,11 @@ src/models_library/private_models
 /tests_bin/TestSolver
 /tests_bin/TestSolvers
 /tests_bin/MeshProfiler
-<<<<<<< HEAD
 tests_bin/SolversProfiler
-=======
->>>>>>> d3bde9be1057c0a1e9a2c8534d70bfa337adda9f
 perf.data*
 .clangd/
 *.swp
 
-<<<<<<< HEAD
 meshes/VF_20120221_toBlanca-newCGAL1.vtu
 meshes/human_500_new.alg
 meshes/human_800_new.alg
@@ -157,12 +145,3 @@ example_configs/atrial_mesh_start_500um_27n.ini
 
 /meshes/scv.alg
 /src/3dparty/raylib/src/stbTAvvG
-=======
-tests_bin/SolversProfiler
-meshes/02_Mouse/*
-meshes/03_Human/*
-meshes/05_Lucas/*
-meshes/03_Human/*
-meshes/05_Lucas/*
-
->>>>>>> d3bde9be1057c0a1e9a2c8534d70bfa337adda9f
