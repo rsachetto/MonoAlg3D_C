@@ -829,6 +829,15 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
             the_terminals[i].tissue_cells = NULL;
         }
     }
+
+/*
+    for (uint32_t i = 0; i < number_of_terminals; i++)
+    {
+        printf("Purkinje cell = %d\n",the_terminals[i].purkinje_cell->id);
+        for (uint32_t j = 0; j < arrlen(the_terminals[i].tissue_cells); j++)
+            printf("\tTissue cell = %d\n",the_terminals[i].tissue_cells[j]->sv_position);
+    }
+*/
     return the_terminals;
 }
 

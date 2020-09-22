@@ -6,9 +6,9 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="20"
-END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="videos/plain_trovato_torord_coupling"
+FRAME_RATE="25"
+END_FRAME="250"
+OUTPUT_VIDEO_FILENAME="videos/elizabeth_biventricular_gold"
 RESOLUTION="1980x1024"
 
 # Execute the converting command using FFMPEG

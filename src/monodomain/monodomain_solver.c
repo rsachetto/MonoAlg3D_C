@@ -861,14 +861,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
 
     }
-
-    // ------------------------------------------------------------
-    // NEW FEATURE ! Save the activation map in a VTU-format file
     
-    //save_maps(save_mesh_config,the_grid);
-
-    // ------------------------------------------------------------
-
     long res_time = stop_stop_watch(&solver_time);
 
 	double conv_rate = 1000.0*1000.0*60.0;

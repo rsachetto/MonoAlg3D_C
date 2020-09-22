@@ -1085,6 +1085,59 @@ SAVE_MESH (save_purkinje_coupling_with_activation_times) {
 
 }
 
+INIT_SAVE_MESH(init_save_purkinje_with_activation_times) {
+
+    config->persistent_data = calloc(1, sizeof(struct save_coupling_with_activation_times_persistent_data));
+
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->purkinje_grid = NULL;
+
+    ((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+}
+
+END_SAVE_MESH(end_save_purkinje_with_activation_times) {
+
+    bool save_activation_time_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config->config_data, "save_activation_time");
+
+    bool save_apd_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
+
+    if (save_activation_time_map) {
+        log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
+        write_purkinje_activation_time_maps(config,the_grid);
+    }
+    
+    if (save_apd_map) {
+        log_to_stderr_and_file("[!] Saving APD map !!!!\n");
+        write_purkinje_apd_map(config,the_grid);
+    } 
+  
+    free(config->persistent_data);
+
+}
+
+SAVE_MESH (save_purkinje_with_activation_times) {
+
+    float time_threshold = 10.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data, "time_threshold");
+
+    GET_PARAMETER_VALUE_CHAR_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+    
+    float purkinje_activation_threshold = -30.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config->config_data, "activation_threshold_purkinje");
+
+    float purkinje_apd_threshold = -83.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config->config_data, "apd_threshold_purkinje");
+
+    calculate_purkinje_activation_time_and_apd(time_info,config,the_grid,time_threshold,purkinje_activation_threshold,purkinje_apd_threshold);
+
+}
+
 void write_activation_time_maps (struct config *config, struct grid *the_grid)
 {
 
