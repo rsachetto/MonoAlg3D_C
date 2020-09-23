@@ -93,6 +93,9 @@ if [ "$OS" == "Manjaro Linux" ]; then
 elif [ "$OS" == "Ubuntu" ]; then
     C_COMPILER=gcc-8
     CXX_COMPILER=g++-8
+elif [ "$OS" == "Fedora" ]; then
+    C_COMPILER=/usr/local/cuda/bin/gcc
+    CXX_COMPILER=/usr/local/cuda/bin/g++
 fi
 
 if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
