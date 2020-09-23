@@ -15,6 +15,9 @@ FIND_CUDA () {
 
 	    if [ "$OS" == "Manjaro Linux" ]; then
 	      CUDA_INCLUDE_PATH="/opt/cuda/include"
+		elif [ "$OS" == "Fedora" ]; then
+		  CUDA_INCLUDE_PATH="/usr/local/cuda/include"
+		  CUDA_LIBRARY_PATH="/usr/local/cuda/lib64"
 	    else
 	      CUDA_INCLUDE_PATH='/usr/include/'
 	    fi
@@ -96,6 +99,9 @@ FIND_MPI () {
 	if [ "$OS" == "Ubuntu" ]; then
 	  MPI_LIBRARY_PATH='/usr/lib/x86_64-linux-gnu/openmpi/lib'
 	  MPI_INCLUDE_PATH='/usr/lib/x86_64-linux-gnu/openmpi/include/'
+	elif [ "$OS" == "Fedora" ]; then
+	  MPI_LIBRARY_PATH='/usr/local/lib/'
+	  MPI_INCLUDE_PATH='/usr/local/include/'
 	fi
 }
 
