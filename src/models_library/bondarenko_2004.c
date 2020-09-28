@@ -22,13 +22,13 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         real *sv = &solver->sv[i * NEQ];
 
         sv[0] = -82.4202f;      // V millivolt
-        sv[1] = 0.115001f;      // Cai msvromolar
-        sv[2] = 0.115001f;      // Cass msvromolar
-        sv[3] = 1299.5f;        // CaJSR msvromolar
-        sv[4] = 1299.5f;        // CaNSR msvromolar
+        sv[1] = 0.115001f;      // Cai micromolar
+        sv[2] = 0.115001f;      // Cass micromolar
+        sv[3] = 1299.5f;        // CaJSR micromolar
+        sv[4] = 1299.5f;        // CaNSR micromolar
         sv[5] = 0.0f;           // P_RyR dimensionless
-        sv[6] = 11.2684f;       // LTRPN_Ca msvromolar
-        sv[7] = 125.29f;        // HTRPN_Ca msvromolar
+        sv[6] = 11.2684f;       // LTRPN_Ca micromolar
+        sv[7] = 125.29f;        // HTRPN_Ca micromolar
         sv[8] = 0.149102e-4f;   // P_O1 dimensionless
         sv[9] = 0.951726e-10f;  // P_O2 dimensionless
         sv[10] = 0.16774e-3f;   // P_C2 dimensionless
@@ -39,7 +39,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         sv[15] = 0.497923e-18f; // I1 dimensionless
         sv[16] = 0.345847e-13f; // I2 dimensionless
         sv[17] = 0.185106e-13f; // I3 dimensionless
-        sv[18] = 14237.1f;      // Nai msvromolar
+        sv[18] = 14237.1f;      // Nai micromolar
         sv[19] = 0.020752f;     // C_Na2 dimensionless
         sv[20] = 0.279132e-3f;  // C_Na1 dimensionless
         sv[21] = 0.713483e-6f;  // O_Na dimensionless
@@ -48,7 +48,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         sv[24] = 0.155787e-8f;  // I2_Na dimensionless
         sv[25] = 0.0113879f;    // sv_Na2 dimensionless
         sv[26] = 0.34278f;      // sv_Na3 dimensionless
-        sv[27] = 143720.0f;     // Ki msvromolar
+        sv[27] = 143720.0f;     // Ki micromolar
         sv[28] = 0.265563e-2f;  // ato_f dimensionless
         sv[29] = 0.999977f;     // ito_f dimensionless
         sv[30] = 0.417069e-3f;  // ato_s dimensionless
