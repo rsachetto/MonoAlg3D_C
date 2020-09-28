@@ -18,13 +18,13 @@ void print_purkinje_config_values (struct config* config) {
     }
 
     char *name = NULL;
-    real_cpu start_h = 0.0;
+    real_cpu dx = 0.0;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config->config_data, "name");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config->config_data, "start_discretization");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, dx, config->config_data, "dx");
 
     log_to_stdout_and_file("Purkinje configuration:\n");
     log_to_stdout_and_file("[purkinje] Purkinje network name: %s\n", name);
-    log_to_stdout_and_file("[purkinje] Purkinje network initial Space Discretization: %lf um\n", start_h);
+    log_to_stdout_and_file("[purkinje] Purkinje network initial Space Discretization: %lf um\n", dx);
 
     if (shlen(config->config_data) == 1)
     {

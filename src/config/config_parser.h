@@ -100,6 +100,9 @@ struct user_options {
 
     int purkinje_gpu_id;         
     bool purkinje_gpu_id_was_set;
+
+    bool purkinje_ode_adaptive;
+    bool purkinje_ode_adaptive_was_set;
     
     char *purkinje_model_file_path;         
     bool purkinje_model_file_path_was_set;

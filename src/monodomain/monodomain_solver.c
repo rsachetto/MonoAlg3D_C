@@ -333,8 +333,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     int success;
 
    struct ode_solver *the_purkinje_ode_solver = NULL;
-    if (purkinje_config) 
-    {
+    if (purkinje_config)  {
+
         // Allocate a new 'ode_solver' for the Purkinje
         the_purkinje_ode_solver = new_ode_solver();
 
@@ -346,11 +346,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         else                    // Purkinje + Tissue simulation
             configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver,configs);        
 
+        
+        init_ode_solver_with_cell_model(the_purkinje_ode_solver);
+
         success = ((set_spatial_purkinje_fn*) purkinje_config->main_function)(purkinje_config,the_grid,the_purkinje_ode_solver);
         if(!success) {
             log_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
         }
-
     }
 
     if (domain_config) {

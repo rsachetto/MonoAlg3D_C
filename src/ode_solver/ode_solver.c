@@ -335,6 +335,14 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
 void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_solver, struct user_options *options) {
 
     purkinje_solver->gpu_id = options->purkinje_gpu_id;
+    purkinje_solver->adaptive = options->purkinje_ode_adaptive;
+
+    if(purkinje_solver->adaptive) {
+        purkinje_solver->max_dt = (real)options->dt_pde;
+    }
+
+    purkinje_solver->abs_tol = options->ode_abstol;
+    purkinje_solver->rel_tol = options->ode_reltol;
     purkinje_solver->min_dt = (real)options->purkinje_dt_ode;
     purkinje_solver->gpu = options->purkinje_gpu;
 
@@ -349,7 +357,11 @@ void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_
 
     purkinje_solver->gpu_id = solver->gpu_id;
     purkinje_solver->min_dt = (real)solver->min_dt;
+    purkinje_solver->max_dt = (real)solver->max_dt;
     purkinje_solver->gpu = solver->gpu;
+    purkinje_solver->adaptive = solver->adaptive;
+    purkinje_solver->abs_tol = solver->abs_tol;
+    purkinje_solver->rel_tol = solver->rel_tol;
 
     if(solver->model_data.model_library_path) 
     {
