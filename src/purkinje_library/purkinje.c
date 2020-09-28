@@ -17,45 +17,24 @@
 #include <time.h>
 #include <unistd.h>
 
-SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh) 
-{
+SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)  {
+
     printf("On 'initialize_purkinje_with_custom_mesh'\n");
 
     char *name = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config->config_data, "name");
 
-    real_cpu side_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,side_length, config->config_data, "start_discretization");
+    real_cpu dx = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,dx, config->config_data, "dx");
     
     char *network_file = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(network_file,config->config_data,"network_file");
 
-    real_cpu rpmj = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,rpmj, config->config_data, "rpmj");
-
-    real_cpu pmj_scale = 0.1;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,pmj_scale, config->config_data, "pmj_scale");
-
-    bool calc_retro_propagation = true;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(bool,calc_retro_propagation, config->config_data, "retro_propagation");
-
-    init_ode_solver_with_cell_model(the_ode_solver);
-
-    // TODO: Implement this test
-    int success = check_purkinje_input();
-
-    if (!success)
-    {
-        return 0;
-    }
-
     log_to_stdout_and_file("Loading a custom Purkinje Network:> %s\n", name);
     log_to_stdout_and_file("Using the Purkinje library function:> \"initialize_purkinje_with_custom_mesh\"\n");
-    log_to_stdout_and_file("Discretization for the Purkinje Network Mesh:> %g um\n",side_length);
-    log_to_stdout_and_file("Purkinje-Muscle-Junction resistance:> %g um\n",rpmj);
-    log_to_stdout_and_file("Purkinje-Muscle-Junction scale:> %g\n",pmj_scale);
+    log_to_stdout_and_file("Discretization for the Purkinje Network Mesh:> %g um\n",dx);
     log_to_stdout_and_file("Celular model for the Purkinje :> %s\n",the_ode_solver->model_data.model_library_path);
-    set_custom_purkinje_network(the_grid->purkinje, network_file, side_length, rpmj, pmj_scale, calc_retro_propagation);
+    set_custom_purkinje_network(the_grid->purkinje, network_file, dx);
 
     // Populate the 'purkinje_cells' linked-list with the nodes from the graph
     //        Some parameters from the 'cell_node' structure will not be used
@@ -63,7 +42,12 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)
 
     free (network_file);
 
+    // Before returning test if there is an error in Purkinje mesh
+    int success = check_purkinje_mesh_for_errors(the_grid->purkinje->network);
+    if (!success)
+    {
+        return 0;
+    }
+
     return 1;
 }
-
-// TO DO: Build some benchmark Purkinje network for quick tests ...
