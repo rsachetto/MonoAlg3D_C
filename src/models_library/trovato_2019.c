@@ -1,7 +1,5 @@
-// TODO: Describe all the variable names
-
-#include <stdio.h>
-#include "stewart_aslanidi_noble_2009.h"
+#include "trovato_2019.h"
+#include <stdlib.h>
 
 real max_step;
 real min_step;
@@ -18,12 +16,9 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
         cell_model->number_of_ode_equations = NEQ;
 }
 
-SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
-{
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
-
-    log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
+    log_to_stdout_and_file("Using Trovato_2019 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
 	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
@@ -50,57 +45,59 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     }
 
     OMP(parallel for)
-    for(uint32_t i = 0; i < num_cells; i++) {
+    for(uint32_t i = 0; i < num_cells; i++) 
+    {
         real *sv = &solver->sv[i * NEQ];
-
-        // Initial conditions from the original paper
-        /*
-        sv[0] = -74.7890522727;
-        sv[1] = 136.9896086978;
-        sv[2] = 8.5447311020;
-        sv[3] = 0.0001720623;
-        sv[4] = 0.0184308075;
-        sv[5] = 0.4663168269;
-        sv[6] = 0.3657472179;
-        sv[7] = 0.0486609588;
-        sv[8] = 0.0145766758;
-        sv[9] = 0.2979720207;
-        sv[10] = 0.0692509548;
-        sv[11] = 0.0006146554;
-        sv[12] = 0.0001356656;
-        sv[13] = 0.5943228461;
-        sv[14] = 0.8265709174;
-        sv[15] = 0.9767040566;
-        sv[16] = 0.9717098312;
-        sv[17] = 0.0006830833;
-        sv[18] = 3.2830723338;
-        sv[19] = 0.8199969443;
-        */
-
-        // Steady-State for BCL=1000ms
-        sv[0] = -69.1370441635924;
-        sv[1] = 136.781894160227;
-        sv[2] = 8.80420286531673;
-        sv[3] = 0.000101878186157052;
-        sv[4] = 0.0457562667986602;
-        sv[5] = 0.00550281999719088;
-        sv[6] = 0.313213286437995;
-        sv[7] = 0.00953708522974789;
-        sv[8] = 0.0417391656294997;
-        sv[9] = 0.190678733735145;
-        sv[10] = 0.238219836154029;
-        sv[11] = 0.000446818714055411;
-        sv[12] = 0.000287906256206415;
-        sv[13] = 0.989328560287987;
-        sv[14] = 0.995474890442185;
-        sv[15] = 0.999955429598213;
-        sv[16] = 0.96386101799501;
-        sv[17] = 0.00103618091196912;
-        sv[18] = 3.10836886659417;
-        sv[19] = 0.991580051907845;
-
+        
+        // Steady-State BCL=1000ms
+        sv[0] = -86.6814002878592;
+        sv[1] = 0.00505983330678751;
+        sv[2] = 0.000101777993438818;
+        sv[3] = 8.23183964616932;
+        sv[4] = 8.23153516580562;
+        sv[5] = 8.23154325237268;
+        sv[6] = 143.767359809132;
+        sv[7] = 143.767768218104;
+        sv[8] = 143.767769906216;
+        sv[9] = 4.36004404734282e-5;
+        sv[10] = 0.000102004317781147;
+        sv[11] = 1.26350902016858;
+        sv[12] = 1.24811940209535;
+        sv[13] = 1.26516959198518;
+        sv[14] = 0.000108240945806962;
+        sv[15] = 1.25045800437317e-69;
+        sv[16] = 0.00632661703915808;
+        sv[17] = 0.788611739889677;
+        sv[18] = 0.788545979951331;
+        sv[19] = 0.790474358603666;
+        sv[20] = 0.579693514309867;
+        sv[21] = 0.790947058236417;
+        sv[22] = 0.000241925773627233;
+        sv[23] = 0.463574582508218;
+        sv[24] = 0.240216198686475;
+        sv[25] = 0.000272851144435704;
+        sv[26] = 0.649604795721571;
+        sv[27] = 0.989965695822495;
+        sv[28] = 6.97735089296892e-9;
+        sv[29] = 0.999999968230738;
+        sv[30] = 0.926692153319136;
+        sv[31] = 0.99999996819573;
+        sv[32] = 0.999999905741936;
+        sv[33] = 0.999978907334662;
+        sv[34] = 0.999999968365903;
+        sv[35] = 0.999999968278239;
+        sv[36] = 0.00547252500964926;
+        sv[37] = 0.000304250912559619;
+        sv[38] = 0.994214357917907;
+        sv[39] = 0.000331691184084272;
+        sv[40] = 0.568716473334161;
+        sv[41] = 0.191165248085394;
+        sv[42] = 0.000222677365291219;
+        sv[43] = 0.233119011214908;
+        sv[44] = 0.997084813729909;
+        sv[45] = 0.466236137183558;
     }
-
+       
 }
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
@@ -114,39 +111,41 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     uint32_t sv_id;
 
     OMP(parallel for private(sv_id))
-    for (uint32_t i = 0; i < num_cells_to_solve; i++) {
+    for (uint32_t i = 0; i < num_cells_to_solve; i++) 
+    {
 
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
         else
             sv_id = i;
 
-        if(adpt) {
+        if(adpt) 
+        {
             solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id);
         }
-        else {
-            for (int j = 0; j < num_steps; ++j) {
+        else 
+        {
+            for (int j = 0; j < num_steps; ++j) 
+            {
                 solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
             }
         }
     }
-
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current) {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
 
     real rY[NEQ], rDY[NEQ];
 
-    // Save old value of the state vector
     for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
 
-    // Solve Right-hand-side of the ODE's
     RHS_cpu(rY, rDY, stim_current, dt);
 
-    // Solve model using Forward Euler
-    for(int i = 0; i < NEQ; i++)
+    // Forward Euler
+    for (int i = 0; i < NEQ; i++)
         sv[i] = dt*rDY[i] + rY[i];
+
 }
 
 void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id) {
@@ -301,8 +300,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     for (uint32_t i = 0; i < NEQ; i++)
         STATES[i] = sv[i]; 
 
-    #include "stewart_aslanidi_noble_2009_common.inc"
+    #include "trovato_2019_common.inc"
 }
 
-// The automatic pacing from the Purkinje cells can be interrupted by blocking the INa current by 100% 
-// (ALGEBRAIC[54] = INa)
+

@@ -469,6 +469,21 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
     }
 
+    if (purkinje_config) {
+        the_purkinje_ode_solver->num_steps = 1;
+
+        if (!the_purkinje_ode_solver->adaptive) {
+            if(dt_pde >= dt_ode) {
+                the_purkinje_ode_solver->num_steps = (int)(dt_pde / dt_ode);
+                log_to_stdout_and_file("Solving Purkinje EDO %d times before solving PDE\n", the_purkinje_ode_solver->num_steps);
+            } else {
+                log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
+                                    dt_pde, dt_ode);
+                dt_pde = dt_ode;
+            }
+        }        
+    }
+
     fflush(stdout);
 
     init_stop_watch(&solver_time);
@@ -595,15 +610,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&purkinje_ode_time);
 
             // REACTION: Purkinje
-            //solve_purkinje_volumes_odes(the_purkinje_ode_solver, the_grid->purkinje->number_of_purkinje_cells, cur_time, ode_step, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
-            solve_purkinje_volumes_odes(the_purkinje_ode_solver, cur_time, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
-
+            solve_all_volumes_odes(the_purkinje_ode_solver,cur_time,purkinje_stimuli_configs,configs->purkinje_ode_extra_config);
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
             start_stop_watch(&purkinje_ode_time);
 
-            // Implicito
             // UPDATE: Purkinje
             ((update_monodomain_fn*)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells, the_purkinje_ode_solver, original_num_purkinje_cells);
 

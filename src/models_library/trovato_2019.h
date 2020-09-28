@@ -1,13 +1,11 @@
-#ifndef MONOALG3D_MODEL_ARPF_2009_H
-#define MONOALG3D_MODEL_ARPF_2009_H
+#ifndef MONOALG3D_MODEL_TROVATO_2019_H
+#define MONOALG3D_MODEL_TROVATO_2019_H
 
 #include "model_common.h"
 #include "../gpu_utils/gpu_utils.h"
 
-// MODEL INFO: Mathematical models of the electrical action potential of Purkinje fibre cells, 2009
-
-#define NEQ 20
-#define INITIAL_V (-69.1370441635924)
+#define NEQ 46
+#define INITIAL_V (-86.6814002878592)
 
 #ifdef __CUDACC__
 
@@ -22,10 +20,10 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 
 #endif
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current);
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt);
 inline void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int thread_id);
 
+void solve_model_ode_cpu(real dt, real *sv, real stim_current);
 
-#endif //MONOALG3D_FHN_MOD_H
+#endif //MONOALG3D_MODEL_TROVATO_2019_H
 
