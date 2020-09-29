@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "model_common.h"
+#include "../gpu_utils/gpu_utils.h"
 
 #define NEQ 4
 #define INITIAL_V (-75.5344986658f)

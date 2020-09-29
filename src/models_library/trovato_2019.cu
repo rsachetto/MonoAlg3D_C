@@ -1,7 +1,6 @@
+#include "trovato_2019.h"
 #include <stddef.h>
 #include <stdint.h>
-
-#include "stewart_aslanidi_noble_2009.h"
 
 __constant__  size_t pitch;
 __constant__  real abstol;
@@ -17,7 +16,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     uint8_t use_adpt_h = (uint8_t)solver->adaptive;
 
     check_cuda_error(cudaMemcpyToSymbol(use_adpt, &use_adpt_h, sizeof(uint8_t)));
-    log_to_stdout_and_file("Using Stewart-Aslanidi-Noble 2009 GPU model\n");
+    log_to_stdout_and_file("Using Trovato_2019 GPU model\n");
 
     uint32_t num_volumes = solver->original_num_cells;
 
@@ -93,44 +92,70 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
 
 }
 
-__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes) {
+__global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (threadID < num_volumes) {
 
-        *((real * )((char *) sv + pitch * 0) + threadID) = -69.1370441635924;
-        *((real * )((char *) sv + pitch * 1) + threadID) = 136.781894160227;
-        *((real * )((char *) sv + pitch * 2) + threadID) = 8.80420286531673;
-        *((real * )((char *) sv + pitch * 3) + threadID) = 0.000101878186157052;
-        *((real * )((char *) sv + pitch * 4) + threadID) = 0.0457562667986602;
-        *((real * )((char *) sv + pitch * 5) + threadID) = 0.00550281999719088;
-        *((real * )((char *) sv + pitch * 6) + threadID) = 0.313213286437995;
-        *((real * )((char *) sv + pitch * 7) + threadID) = 0.00953708522974789;
-        *((real * )((char *) sv + pitch * 8) + threadID) = 0.0417391656294997;
-        *((real * )((char *) sv + pitch * 9) + threadID) = 0.190678733735145;
-        *((real * )((char *) sv + pitch * 10) + threadID) = 0.238219836154029;
-        *((real * )((char *) sv + pitch * 11) + threadID) = 0.000446818714055411;
-        *((real * )((char *) sv + pitch * 12) + threadID) = 0.000287906256206415;
-        *((real * )((char *) sv + pitch * 13) + threadID) = 0.989328560287987;
-        *((real * )((char *) sv + pitch * 14) + threadID) = 0.995474890442185;
-        *((real * )((char *) sv + pitch * 15) + threadID) = 0.999955429598213;
-        *((real * )((char *) sv + pitch * 16) + threadID) = 0.96386101799501;
-        *((real * )((char *) sv + pitch * 17) + threadID) = 0.00103618091196912;
-        *((real * )((char *) sv + pitch * 18) + threadID) = 3.10836886659417;
-        *((real * )((char *) sv + pitch * 19) + threadID) = 0.991580051907845;
-
+        // Steady-State BCL=1000ms
+        *((real * )((char *) sv + pitch * 0) + threadID) = -86.6814002878592;
+        *((real * )((char *) sv + pitch * 1) + threadID) = 0.00505983330678751;
+        *((real * )((char *) sv + pitch * 2) + threadID) = 0.000101777993438818;
+        *((real * )((char *) sv + pitch * 3) + threadID) = 8.23183964616932;
+        *((real * )((char *) sv + pitch * 4) + threadID) = 8.23153516580562;
+        *((real * )((char *) sv + pitch * 5) + threadID) = 8.23154325237268;
+        *((real * )((char *) sv + pitch * 6) + threadID) = 143.767359809132;
+        *((real * )((char *) sv + pitch * 7) + threadID) = 143.767768218104;
+        *((real * )((char *) sv + pitch * 8) + threadID) = 143.767769906216;
+        *((real * )((char *) sv + pitch * 9) + threadID) = 4.36004404734282e-05;
+        *((real * )((char *) sv + pitch * 10) + threadID) = 0.000102004317781147;
+        *((real * )((char *) sv + pitch * 11) + threadID) = 1.26350902016858;
+        *((real * )((char *) sv + pitch * 12) + threadID) = 1.24811940209535;
+        *((real * )((char *) sv + pitch * 13) + threadID) = 1.26516959198518;
+        *((real * )((char *) sv + pitch * 14) + threadID) = 0.000108240945806962;
+        *((real * )((char *) sv + pitch * 15) + threadID) = 1.25045800437317e-69;
+        *((real * )((char *) sv + pitch * 16) + threadID) = 0.00632661703915808;
+        *((real * )((char *) sv + pitch * 17) + threadID) = 0.788611739889677;
+        *((real * )((char *) sv + pitch * 18) + threadID) = 0.788545979951331;
+        *((real * )((char *) sv + pitch * 19) + threadID) = 0.790474358603666;
+        *((real * )((char *) sv + pitch * 20) + threadID) = 0.579693514309867;
+        *((real * )((char *) sv + pitch * 21) + threadID) = 0.790947058236417;
+        *((real * )((char *) sv + pitch * 22) + threadID) = 0.000241925773627233;
+        *((real * )((char *) sv + pitch * 23) + threadID) = 0.463574582508218;
+        *((real * )((char *) sv + pitch * 24) + threadID) = 0.240216198686475;
+        *((real * )((char *) sv + pitch * 25) + threadID) = 0.000272851144435704;
+        *((real * )((char *) sv + pitch * 26) + threadID) = 0.649604795721571;
+        *((real * )((char *) sv + pitch * 27) + threadID) = 0.989965695822495;
+        *((real * )((char *) sv + pitch * 28) + threadID) = 6.97735089296892e-09;
+        *((real * )((char *) sv + pitch * 29) + threadID) = 0.999999968230738;
+        *((real * )((char *) sv + pitch * 30) + threadID) = 0.926692153319136;
+        *((real * )((char *) sv + pitch * 31) + threadID) = 0.99999996819573;
+        *((real * )((char *) sv + pitch * 32) + threadID) = 0.999999905741936;
+        *((real * )((char *) sv + pitch * 33) + threadID) = 0.999978907334662;
+        *((real * )((char *) sv + pitch * 34) + threadID) = 0.999999968365903;
+        *((real * )((char *) sv + pitch * 35) + threadID) = 0.999999968278239;
+        *((real * )((char *) sv + pitch * 36) + threadID) = 0.00547252500964926;
+        *((real * )((char *) sv + pitch * 37) + threadID) = 0.000304250912559619;
+        *((real * )((char *) sv + pitch * 38) + threadID) = 0.994214357917907;
+        *((real * )((char *) sv + pitch * 39) + threadID) = 0.000331691184084272;
+        *((real * )((char *) sv + pitch * 40) + threadID) = 0.568716473334161;
+        *((real * )((char *) sv + pitch * 41) + threadID) = 0.191165248085394;
+        *((real * )((char *) sv + pitch * 42) + threadID) = 0.000222677365291219;
+        *((real * )((char *) sv + pitch * 43) + threadID) = 0.233119011214908;
+        *((real * )((char *) sv + pitch * 44) + threadID) = 0.997084813729909;
+        *((real * )((char *) sv + pitch * 45) + threadID) = 0.466236137183558;
 
         if(use_adpt) {
-            *((real *)((char *)sv + pitch * 20) + threadID) = min_dt; // dt
-            *((real *)((char *)sv + pitch * 21) + threadID) = 0.0;    // time_new
-            *((real *)((char *)sv + pitch * 22) + threadID) = 0.0;    // previous dt
+            *((real *)((char *)sv + pitch * 46) + threadID) = min_dt; // dt
+            *((real *)((char *)sv + pitch * 47) + threadID) = 0.0;    // time_new
+            *((real *)((char *)sv + pitch * 48) + threadID) = 0.0;    // previous dt
         }
     }
 }
 
 // Solving the model for each cell in the tissue matrix ni x nj
 __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
-    uint32_t *cells_to_solve, uint32_t num_cells_to_solve, int num_steps)
+                            uint32_t *cells_to_solve, uint32_t num_cells_to_solve, int num_steps) 
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
@@ -163,9 +188,9 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
 inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id) 
 {
 
-    #define DT *((real *)((char *)sv + pitch * 20) + thread_id)
-    #define TIME_NEW *((real *)((char *)sv + pitch * 21) + thread_id)
-    #define PREVIOUS_DT *((real *)((char *)sv + pitch * 22) + thread_id)
+    #define DT *((real *)((char *)sv + pitch * 46) + thread_id)
+    #define TIME_NEW *((real *)((char *)sv + pitch * 47) + thread_id)
+    #define PREVIOUS_DT *((real *)((char *)sv + pitch * 48) + thread_id)
 
     real rDY[NEQ];
 
@@ -334,7 +359,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
-inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt) {
+inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int threadID_, real dt) {
 
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
@@ -344,14 +369,14 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     if (use_adpt)
     {
         for (uint32_t i = 0; i < NEQ; i++)
-            STATES[i] = sv_[i];
+            STATES[i] = sv[i];
     }
     else
     {
         for (uint32_t i = 0; i < NEQ; i++)
-            STATES[i] = *((real *)((char *)sv_ + pitch * i) + threadID_);
+            STATES[i] = *((real *)((char *)sv + pitch * i) + threadID_);
     }
 
-    #include "stewart_aslanidi_noble_2009_common.inc"
+    #include "trovato_2019_common.inc"
 }
 

@@ -464,6 +464,11 @@ SET_SPATIAL_STIM(stim_x_y_z_limits) {
     real stim_current = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
 
+    if (is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
     real stim_value;
 
     uint32_t i;
@@ -532,9 +537,6 @@ SET_SPATIAL_STIM(stim_if_inside_circle_than) {
 
 SET_SPATIAL_STIM(stim_if_id_less_than) {
 
-    uint32_t n_active = the_grid->num_active_cells;
-    // struct cell_node **ac = the_grid->active_cells;
-
     bool stim;
     real stim_value;
 
@@ -544,7 +546,15 @@ SET_SPATIAL_STIM(stim_if_id_less_than) {
     int id = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, id, config->config_data, "id_limit");
 
-    int i;
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    if (is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
+    uint32_t i;
 
     ALLOCATE_STIMS();
 
@@ -564,9 +574,6 @@ SET_SPATIAL_STIM(stim_if_id_less_than) {
 
 SET_SPATIAL_STIM(stim_if_id_greater_than) {
 
-    uint32_t n_active = the_grid->num_active_cells;
-    // struct cell_node **ac = the_grid->active_cells;
-
     bool stim;
     real stim_value;
 
@@ -576,7 +583,15 @@ SET_SPATIAL_STIM(stim_if_id_greater_than) {
     int id = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, id, config->config_data, "id_limit");
 
-    int i;
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    if (is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
+    uint32_t i;
 
     ALLOCATE_STIMS();
 

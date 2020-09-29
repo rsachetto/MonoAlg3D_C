@@ -27,8 +27,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     uint32_t i;
 
     OMP(parallel for private(alpha))
-    for(i = 0; i < active_cells; i++) 
-    {
+    for(i = 0; i < active_cells; i++) {
 
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
         ac[i]->v = purkinje_initial_v;
@@ -36,8 +35,8 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     }
 }
 
-void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) 
-{
+void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) {
+
     real_cpu alpha;
     real_cpu dx, dy, dz;
     uint32_t num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
@@ -50,8 +49,8 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 
     int i;
 
-    for (i = 0; i < num_active_cells; i++) 
-    {
+    for (i = 0; i < num_active_cells; i++) {
+
         dx = ac[i]->discretization.x;
         dy = ac[i]->discretization.y;
         dz = ac[i]->discretization.z;
@@ -78,8 +77,7 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 
 // For the Purkinje fibers we only need to solve the 1D Monodomain equation
 static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
-                                                        struct node *pk_node) 
-{
+                                                        struct node *pk_node) {
     
     struct edge *e;
     struct element **cell_elements;
@@ -89,8 +87,8 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
 
     int i;
 
-    for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next)
-    {
+    for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next) {
+
         cell_elements = &grid_cells[i]->elements;
         dx = grid_cells[i]->discretization.x;
         dy = grid_cells[i]->discretization.x;
@@ -120,8 +118,8 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     }
 }
 
-ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix) 
-{
+ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)  {
+
     static bool sigma_initialized = false;
 
     uint32_t num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
@@ -131,10 +129,10 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_purkinje");
 
-    if(!sigma_initialized) 
-    {
+    if(!sigma_initialized) {
+        
         OMP(parallel for)
         for (uint32_t i = 0; i < num_active_cells; i++) 
         {

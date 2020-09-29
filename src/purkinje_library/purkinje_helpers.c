@@ -30,13 +30,12 @@ void set_purkinje_network_from_file (struct graph *the_purkinje_network, const c
 
     struct graph *skeleton_network = new_graph();
 
-    //read_purkinje_network_from_file(file_name,&points,&branches,&N,&E);
     build_skeleton_purkinje(file_name,skeleton_network);
 
     build_mesh_purkinje(the_purkinje_network,skeleton_network,dx);
     
-    // Write the Purkinje to a VTK file for visualization purposes.
-    write_purkinje_network_to_vtk(the_purkinje_network);
+    // [DEBUG] Write the Purkinje to a VTK file for visualization purposes.
+    //write_purkinje_network_to_vtk(the_purkinje_network);
     //print_graph(the_purkinje_network);
 
     // Deallocate memory for the Skeleton mesh
