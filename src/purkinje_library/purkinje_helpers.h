@@ -22,8 +22,8 @@ struct branch
 
 void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char *file_name, const real_cpu side_length);
 void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu side_length);
-void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale, const real_cpu assym_ratio,\
-                                    const uint32_t nmin_pmj, const uint32_t nmax_pmj, const bool retro_propagation, const char pmj_filename[]);
+void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale, const real_cpu asymm_ratio,\
+                                    const uint32_t nmin_pmj, const uint32_t nmax_pmj, const bool has_retropropagation, const char pmj_filename[]);
 
 void build_skeleton_purkinje (const char *filename, struct graph *skeleton_network);
 void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu side_length);
@@ -34,10 +34,9 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
 void calc_unitary_vector (real_cpu d_ori[], struct node *u, struct node *v);
 void calculate_number_of_terminals (struct graph *the_purkinje_network);
 
-void read_purkinje_network_from_file (const char *filename, struct point **points, struct branch **branches, int *N, int *E);
-void write_purkinje_network_to_vtk (struct graph *the_purkinje_network);
+bool read_data_from_input_network (struct point_3d **the_points, struct line **the_lines, real **the_sigmas, const char filename[]);
 
-bool is_terminal (const struct node *n);
+void write_purkinje_network_to_vtk (struct graph *the_purkinje_network);
 
 int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network);
 

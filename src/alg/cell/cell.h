@@ -149,11 +149,11 @@ struct cell_node {
 };
 
 struct terminal {
-    uint32_t purkinje_index;
-    uint32_t endocardium_index;
+    bool active;
 
-    struct cell_node *endocardium_cell;
     struct node *purkinje_cell;
+
+    struct cell_node **tissue_cells;
 };
 // ----------------------------------------------------
 
