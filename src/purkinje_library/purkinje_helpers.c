@@ -8,6 +8,7 @@
 #include "../logger/logger.h"
 #include "../utils/utils.h"
 #include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
 
 #include <math.h>
 #include <string.h>
@@ -24,6 +25,26 @@ void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char
     log_to_stdout_and_file("Number of Purkinje cells = %u\n",the_network->total_nodes);
     log_to_stdout_and_file("Number of Purkinje terminals = %u\n",the_network->number_of_terminals);
 
+}
+
+void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale, const real_cpu asymm_ratio,\
+                                    const uint32_t nmin_pmj, const uint32_t nmax_pmj, const bool retro_propagation, const char pmj_filename[])
+{
+    the_purkinje_network->rpmj = rpmj;
+    the_purkinje_network->pmj_scale = pmj_scale;
+    the_purkinje_network->asymm_ratio = asymm_ratio;
+    the_purkinje_network->nmin_pmj = nmin_pmj;
+    the_purkinje_network->nmax_pmj = nmax_pmj;
+    the_purkinje_network->calc_retropropagation = retro_propagation;
+    if (pmj_filename)
+    {
+        the_purkinje_network->pmj_location_filename = strdup(pmj_filename);
+        the_purkinje_network->has_pmj_location = true;
+    }
+    else
+    {
+        the_purkinje_network->has_pmj_location = false;
+    }
 }
 
 void set_purkinje_network_from_file (struct graph *the_purkinje_network, const char *file_name, const real_cpu dx) {
@@ -47,63 +68,34 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
 {
     assert(skeleton_network);
 
-    FILE *file = fopen(filename,"r");
-    if (!file)
-    {
-        log_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
-        exit (EXIT_FAILURE);
-    }
+    struct point_3d *the_points = NULL;
+    struct line *the_lines = NULL;
+    real_cpu *the_sigmas = NULL;
+    bool has_point_data = read_data_from_input_network(&the_points,&the_lines,&the_sigmas,filename);
 
-    int N;
-    char str[100];
+    for (int i = 0; i < arrlen(the_points); i++)
+    {
+        double pos[3], value;
+        pos[0] = the_points[i].x;
+        pos[1] = the_points[i].y;
+        pos[2] = the_points[i].z;
 
-    while (fscanf(file,"%s",str) != EOF)
-        if (strcmp(str,"POINTS") == 0) break;
-    
-    if (!fscanf(file,"%d",&N))
-    {
-        fprintf(stderr,"Error reading file.\n");
-        exit(EXIT_FAILURE);
-    }
-    if (!fscanf(file,"%s",str))
-    {
-        fprintf(stderr,"Error reading file.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // Read points
-    for (int i = 0; i < N; i++)
-    {
-        real_cpu pos[3];
-        if (!fscanf(file,"%lf %lf %lf",&pos[0],&pos[1],&pos[2]))
-        {
-            fprintf(stderr,"Error reading file.\n");
-            exit(EXIT_FAILURE);
-        } 
         insert_node_graph(skeleton_network,pos);
     }
-
-    // Read edges
-    int trash, E;
-    while (fscanf(file,"%s",str) != EOF)
-        if (strcmp(str,"LINES") == 0) break;
-    if (!fscanf(file,"%d %d",&E,&trash))
+    for (int i = 0; i < arrlen(the_lines); i++)
     {
-        fprintf(stderr,"Error reading file.\n");
-        exit(EXIT_FAILURE);
-    }
-    for (int i = 0; i < E; i++)
-    {
-        int e[2];
-        if (!fscanf(file,"%d %d %d",&trash,&e[0],&e[1]))
-        {
-            fprintf(stderr,"Error reading file.\n");
-            exit(EXIT_FAILURE);
-        }
-        insert_edge_graph(skeleton_network,e[0],e[1]);
+        uint32_t id_1 = the_lines[i].source;
+        uint32_t id_2 = the_lines[i].destination;
+        
+        insert_edge_graph(skeleton_network,id_1,id_2);
     }
 
-    fclose(file);
+    if (the_points)
+        arrfree(the_points);
+    if (the_lines)
+        arrfree(the_lines);
+    if (the_sigmas)
+        arrfree(the_sigmas);
 }
 
 void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu dx) {
@@ -279,13 +271,6 @@ void calculate_number_of_terminals (struct graph *the_purkinje_network) {
     the_purkinje_network->number_of_terminals = number_of_terminals;
 }
 
-bool is_terminal (const struct node *n)
-{
-    if (n->num_edges == 1 && n->id != 0)
-        return true;
-    else
-        return false;
-}
 
 // Check if there are duplicates points inside the Purkinje network
 int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network) {
@@ -310,4 +295,86 @@ int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network) {
         tmp = tmp->next;
     }
     return no_duplicates;
+}
+
+bool read_data_from_input_network (struct point_3d **the_points, struct line **the_lines, real **the_sigmas, const char filename[])
+{
+    bool has_point_data = false;
+
+    FILE *file = fopen(filename,"r");
+    if (!file)
+    {
+        log_to_stdout_and_file("Error opening Purkinje mesh described in %s!!\n", filename);
+        exit (EXIT_FAILURE);
+    }
+
+    int N;
+    char str[100];
+
+    while (fscanf(file,"%s",str) != EOF)
+        if (strcmp(str,"POINTS") == 0) break;
+    
+    if (!fscanf(file,"%d %s",&N,str))
+    {
+        fprintf(stderr,"Error reading file.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read points
+    for (int i = 0; i < N; i++)
+    {
+        struct point_3d p;
+        if (!fscanf(file,"%lf %lf %lf",&p.x,&p.y,&p.z))
+        {
+            fprintf(stderr,"Error reading file.\n");
+            exit(EXIT_FAILURE);
+        }
+        arrput(*the_points,p);
+    }
+
+    // Read edges
+    int trash, E;
+    while (fscanf(file,"%s",str) != EOF)
+        if (strcmp(str,"LINES") == 0) break;
+    if (!fscanf(file,"%d %d",&E,&trash))
+    {
+        fprintf(stderr,"Error reading file.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    for (int i = 0; i < E; i++)
+    {
+        int e[2];
+        struct line l;
+        if (!fscanf(file,"%d %d %d",&trash,&e[0],&e[1]))
+        {
+            fprintf(stderr,"Error reading file.\n");
+            exit(EXIT_FAILURE);
+        }
+        l.source = e[0];
+        l.destination = e[1];
+        arrput(*the_lines,l);
+    }
+
+    // Read the POINT_DATA section, if it exist
+    if (fscanf(file,"%s",str) != EOF)
+    {
+        if (strcmp(str,"POINT_DATA") == 0)
+        {
+            while (fscanf(file,"%s",str) != EOF)
+            if (strcmp(str,"default") == 0) break;
+        
+            for (int i = 0; i < N; i++)
+            {
+                real_cpu sigma;
+                fscanf(file,"%lf",&sigma);
+                arrput(*the_sigmas,sigma);
+            }
+            has_point_data = true;
+        }
+    }
+
+    fclose(file);
+
+    return has_point_data;
 }

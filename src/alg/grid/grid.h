@@ -83,8 +83,11 @@ void construct_grid_purkinje (struct grid *the_grid);
 
 void construct_grid_from_file(struct grid *grid, FILE *matrix_a, FILE *vector_b);
 
-struct terminal* link_purkinje_to_endocardium (struct grid *the_grid);
+struct terminal* link_purkinje_to_tissue (struct grid *the_grid);
+struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid);
+struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_grid);
 void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals);
+void set_active_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals, const char filename[]);
 
 bool cell_is_visible(struct cell_node *grid_cell);
 

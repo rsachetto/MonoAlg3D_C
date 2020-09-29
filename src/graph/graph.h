@@ -22,7 +22,6 @@ struct node
     uint32_t num_edges;
     real_cpu x, y, z;
 
-
     struct edge *list_edges;
     struct node *next;
 };
@@ -43,10 +42,17 @@ struct graph
     uint32_t total_edges;
 
     real_cpu dx;
-    bool calc_retropropagation;
     real_cpu rpmj;
     real_cpu pmj_scale;
+    real_cpu asymm_ratio;
+    uint32_t nmin_pmj;
+    uint32_t nmax_pmj;
     uint32_t number_of_terminals;
+
+    char *pmj_location_filename;
+
+    bool has_pmj_location;
+    bool calc_retropropagation;
 };
 
 struct node* new_node (uint32_t id, const real_cpu pos[]);
@@ -64,5 +70,7 @@ void free_list_edges (struct node *n);
 
 real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,\
                   const real_cpu x2, const real_cpu y2, const real_cpu z2);
+
+bool is_terminal (const struct node *n);
 
 #endif //MONOALG3D_GRAPH_H
