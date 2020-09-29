@@ -333,9 +333,9 @@ COMPILE_OBJECT () {
 		if [[ "$COMPILER" == "$NVCC" ]]; then
 			local X_COMPILER_FLAGS=()
 			for xflag in $MY_C_FLAGS; do
-			if [ "$xflag" != "-std=gnu99" ]; then
-				X_COMPILER_FLAGS+=("\\\"${xflag}\\\",")
-			fi
+                if [ "$xflag" != "-std=gnu99" ] && [ "$xflag" != "-Werror=implicit-function-declaration" ]; then
+                    X_COMPILER_FLAGS+=("\\\"${xflag}\\\",")
+                fi
 			done
 
 			local S_X_COMPILER_FLAGS
@@ -344,6 +344,10 @@ COMPILE_OBJECT () {
 
 		else 
 			COMPILER_COMMAND="$COMPILER $MY_C_FLAGS -c $SRC_FILE -o $OBJ_FILE"
+				if [ -n "$WRITE_COMPILE_COMMANDS" ] ; then
+    	            ADD_COMPILE_COMMAND "$COMPILER_COMMAND" "$SRC_FILE"
+  	            fi
+
 		fi
 
   	    PRINT_INFO "COMPILING OBJECT $OBJ_FILE"
@@ -353,9 +357,7 @@ COMPILE_OBJECT () {
 
 	fi
 
-	if [ -n "$WRITE_COMPILE_COMMANDS" ] ; then
-    	ADD_COMPILE_COMMAND "$COMPILER_COMMAND" "$SRC_FILE"
-  	fi
+
 
 }
 

@@ -152,7 +152,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
         /* Perform analysis for ILU(0) */
         check_cuda_error(cusparseScsrilu02_analysis(cusparseHandle, N, nz, descr, d_val, d_row, d_col, infoILU, CUSPARSE_SOLVE_POLICY_USE_LEVEL, buffer));
 
-        /* Copy A data to ILU(0) vals as input*/
+        /* Copy A data to ILU(0) values as input*/
         check_cuda_error(cudaMemcpy(d_valsILU0, d_val, nz*sizeof(float), cudaMemcpyDeviceToDevice));
 
         /* generate the ILU(0) factors */
@@ -445,7 +445,6 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
 
         // matrix-vector multiplication
 		check_cublas_error(cusparseSpMV(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, matA, vecp, &zero, vecv, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, buffer));
-        //check_cuda_error( (cudaError_t)cusparseScsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, N, nz, &one, descr, d_val, d_row, d_col, d_p, &zero, d_v));
         check_cublas_error(cublasSdot(cublasHandle, N, d_rw, 1, d_v, 1, &temp));
         alpha = rho / temp;
         negalpha = -(alpha);
@@ -459,7 +458,6 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
 
         // matrix-vector multiplication
 		check_cublas_error(cusparseSpMV(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, matA, vecr, &zero, vect, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, buffer));
-        //check_cuda_error((cudaError_t)cusparseScsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, N, nz, &one, descr, d_val, d_row, d_col, d_r, &zero, d_t));
 
         check_cublas_error(cublasSdot(cublasHandle, N, d_t, 1, d_r, 1, &temp));
         check_cublas_error(cublasSdot(cublasHandle, N, d_t, 1, d_t, 1, &temp2));

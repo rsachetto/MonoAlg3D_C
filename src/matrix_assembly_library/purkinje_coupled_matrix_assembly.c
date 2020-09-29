@@ -451,32 +451,4 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     }
 
     fill_discretization_matrix_elements_purkinje(sigma_purkinje,ac_purkinje,num_purkinje_active_cells,pk_node);
-
-    // DEBUG
-    // Endocardium cells
-    /*
-    for (uint32_t i = 0; i < num_active_cells; i++)
-    {
-        struct element *cell_elements = ac[i]->elements;
-        size_t max_elements = arrlen(cell_elements);
-
-        printf("Line %u\n",i);
-        printf("\tColumn = %u -- Value = %g\n",cell_elements[0].column,cell_elements[0].value);
-        for (uint32_t j = 1; j < max_elements; j++)
-            printf("\tColumn = %u -- Value = %g\n",cell_elements[j].column,cell_elements[j].value);
-    }
-
-    // Purkinje cells
-    for (uint32_t i = 0; i < num_purkinje_active_cells; i++)
-    {
-        struct element *cell_elements = ac_purkinje[i]->elements;
-        size_t max_elements = arrlen(cell_elements);
-
-        printf("Line %u\n",i);
-        printf("\tColumn = %u -- Value = %g\n",cell_elements[0].column,cell_elements[0].value);
-        for (uint32_t j = 1; j < max_elements; j++)
-            printf("\tColumn = %u -- Value = %g\n",cell_elements[j].column,cell_elements[j].value);
-    }
-    */
-    
 }
