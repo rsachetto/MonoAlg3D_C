@@ -97,5 +97,52 @@ void sort_vector(real_cpu **a, int length) {
     }
 }
 
+int partition_by_distance (real_cpu *dist_array, uint32_t *indexes, int first, int last) {
+    
+    int  i = first;
+    int loc = last + 1;
+    real_cpu pivot = dist_array[first];
 
+    // increase i until greater than loc
+    while (i < loc) {
+        // increase i while decreasing loc
+        do {
+            ++i;
+        }
+        while ((dist_array[i] < pivot) && (i < last));
+
+        do {
+            --loc;
+        }
+        while (dist_array[loc] > pivot);
+
+        // swap a[i] and a[loc] for correct order relative to pivot
+        if (i < loc) {
+            SWAP(dist_array[i], dist_array[loc], real_cpu);
+            SWAP(indexes[i], indexes[loc], uint32_t);
+        }
+    }
+
+    // i greater than loc, switch first w/ loc to sort
+    SWAP(dist_array[first], dist_array[loc], real_cpu);
+    SWAP(indexes[first], indexes[loc], uint32_t);
+
+    return loc; // return current loc
+}
+
+void quicksort_by_distance(real_cpu *dist_array, uint32_t *indexes, int first, int last) {
+
+    int loc;
+
+    if (first < last) {
+        loc = partition_by_distance(dist_array, indexes, first, last);
+        quicksort_by_distance(dist_array, indexes, first, loc - 1);
+        quicksort_by_distance(dist_array, indexes, loc + 1, last);
+    }
+}
+
+void sort_vector_by_distance (real_cpu *dist_array, uint32_t *indexes, int length) {
+
+    quicksort_by_distance(dist_array, indexes, 0, length - 1);
+}
 

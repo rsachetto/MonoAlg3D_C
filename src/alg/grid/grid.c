@@ -10,6 +10,7 @@
 
 #include "../../3dparty/stb_ds.h"
 #include "../../utils/file_utils.h"
+#include "../../utils/sort.c"
 
 struct grid *new_grid() {
     struct grid *result = (struct grid *)malloc(sizeof(struct grid));
@@ -751,14 +752,30 @@ struct terminal *link_purkinje_to_tissue (struct grid *the_grid) {
     }
 }
 
+void free_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals) {
+
+    for (uint32_t i = 0; i < number_of_terminals; i++) {
+
+        if (the_terminals[i].purkinje_cell)
+            the_terminals[i].purkinje_cell = NULL;
+
+        if (the_terminals[i].tissue_cells) {
+            for (uint32_t j = 0; j < arrlen(the_terminals[i].tissue_cells); j++)
+                the_terminals[i].tissue_cells[j] = NULL;
+            arrfree(the_terminals[i].tissue_cells);
+        }
+    }
+    free(the_terminals);
+}
+
 struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
 
     struct graph *the_network = the_grid->purkinje->network;
 
     uint32_t number_of_terminals = the_network->number_of_terminals;
-    real_cpu pmj_scale = the_network->pmj_scale;
-    real_cpu nmin_pmj = the_network->nmin_pmj;
-    real_cpu nmax_pmj = the_network->nmax_pmj;
+    const real_cpu pmj_scale = the_network->pmj_scale;
+    const real_cpu nmin_pmj = the_network->nmin_pmj;
+    const real_cpu nmax_pmj = the_network->nmax_pmj;
 
     struct terminal *the_terminals = (struct terminal *)malloc(sizeof(struct terminal) * number_of_terminals);
 
@@ -778,21 +795,36 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
             // All the terminals are active
             the_terminals[j].active = true;
 
-            // Search for all the tissue cells that are within the sphere that has a radius equals to 'pmj_scale'
+            // TODO: This should be a do while loop ... until we achieve the minimum number of tissue cells inside the PMJ region
+            // Search for all the tissue cells that are within the sphere that has a radius less or equal to 'pmj_scale'
             uint32_t *tissue_cells_to_link = NULL;
-            for(uint32_t i = 0; i < n_active; i++) {
+            real_cpu *dist_array = NULL;
+            real_cpu scale = pmj_scale;
+            while (arrlen(tissue_cells_to_link) < nmin_pmj) {
+
+                for(uint32_t i = 0; i < n_active; i++) {
                 
-                real_cpu dist = calc_norm(n->x, n->y, n->z, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
-            
-                if(dist < pmj_scale) {
-                    arrput(tissue_cells_to_link,i);
+                    real_cpu dist = calc_norm(n->x, n->y, n->z,\
+                                            ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+
+                    if(dist < scale) {
+                        arrput(dist_array,dist);
+                        arrput(tissue_cells_to_link,i);
+                    }
+                }
+
+                // Increase the 'pmj_scale' by 10%
+                if (arrlen(tissue_cells_to_link) < nmin_pmj) {
+                    scale *= 1.1;
                 }
             }
 
-            // TODO: Check if we have the minimum number of tissue cells within the PMJ region
-            // Save the indexes of tissue cells
+            // QuickSort: Sort the distance array together with the indexes from the tissue cells to link
+            sort_vector_by_distance(dist_array,tissue_cells_to_link,arrlen(dist_array));         
+            
+            // Save the tissue cells indexes we are going to link
             the_terminals[j].tissue_cells = NULL;
-            for (uint32_t i = 0; i < arrlen(tissue_cells_to_link); i++)
+            for (uint32_t i = 0; i < nmax_pmj; i++)
             {
                 uint32_t index = tissue_cells_to_link[i];
 
@@ -805,6 +837,7 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
         }
         n = n->next;
     }
+    
     return the_terminals;
 }
 

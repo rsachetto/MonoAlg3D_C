@@ -1,5 +1,5 @@
 //
-// Created by sachetto on 13/10/17.
+// Created by bergolho on 29/09/20.
 //
 
 #include <stdbool.h>
@@ -15,7 +15,7 @@
 
 #include "../config_helpers/config_helpers.h"
 
-INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
+INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupling_fvm) {
 
     real_cpu alpha;
     
@@ -31,7 +31,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
-    int i;
+    uint32_t i;
 
     // Tissue section
     OMP(parallel for private(alpha))
@@ -45,8 +45,7 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_coupled_fvm) {
 
     // Purkinje section
     OMP(parallel for private(alpha))
-    for(i = 0; i < active_purkinje_cells; i++) 
-    {
+    for(i = 0; i < active_purkinje_cells; i++) {
 
         alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
         ac_purkinje[i]->v = purkinje_initial_v;
@@ -286,8 +285,8 @@ int randRange(int n) {
     return r % n;
 }
 
-void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) 
-{
+void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver, struct grid *the_grid) {
+
     real_cpu alpha;
     real_cpu dx, dy, dz;
 
@@ -300,10 +299,10 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
     real_cpu cm = the_solver->cm;
     real_cpu dt = the_solver->dt;
 
-    int i;
+    uint32_t i;
 
-    for (i = 0; i < num_active_cells; i++) 
-    {
+    for (i = 0; i < num_active_cells; i++) {
+
         dx = ac[i]->discretization.x;
         dy = ac[i]->discretization.y;
         dz = ac[i]->discretization.z;
@@ -316,9 +315,7 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
         element.value = alpha;
 
         if (ac[i]->elements != NULL) 
-        {
             arrfree(ac[i]->elements);
-        }
 
         ac[i]->elements = NULL;
         arrsetcap(ac[i]->elements,n->num_edges);
@@ -330,8 +327,7 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 
 // For the Purkinje fibers we only need to solve the 1D Monodomain equation
 static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
-                                                        struct node *pk_node) 
-{
+                                                        struct node *pk_node) {
     
     struct edge *e;
     struct element **cell_elements;
@@ -339,21 +335,21 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
 
     real_cpu sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
 
-    int i;
+    uint32_t i;
 
-    for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next)
-    {
+    for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next) {
+
         cell_elements = &grid_cells[i]->elements;
         dx = grid_cells[i]->discretization.x;
 
         e = pk_node->list_edges;
 
-        // Do the mapping of the edges from the graph to the sparse matrix data structure ...
-        while (e != NULL)
-        {
+        // Do the mapping of the edges from the graph to the sparse matrix data structure
+        while (e != NULL){
+
             struct element new_element;
 
-            // Neighbour elements ...
+            // Neighbour elements 
             new_element.column = e->id;
             new_element.value = -sigma_x1 * dx;
             new_element.cell = grid_cells[e->id];
@@ -368,10 +364,9 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
     }
 }
 
-ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
-{
+ASSEMBLY_MATRIX (purkinje_coupling_assembly_matrix) {
 
-    // Endocardium section
+// [TISSUE]
     static bool sigma_initialized = false;
 
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -379,7 +374,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
@@ -393,11 +388,10 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     real sigma_purkinje = sigma_x;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real,sigma_purkinje,config->config_data,"sigma_purkinje");
 
-    if(!sigma_initialized) 
-    {
+    if(!sigma_initialized) {
+
         OMP(parallel for)
-        for (i = 0; i < num_active_cells; i++) 
-        {
+        for (i = 0; i < num_active_cells; i++) {
             ac[i]->sigma.x = sigma_x;
             ac[i]->sigma.y = sigma_y;
             ac[i]->sigma.z = sigma_z;
@@ -407,8 +401,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
     }
 
     OMP(parallel for)
-    for(i = 0; i < num_active_cells; i++) 
-    {
+    for(i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
         fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[BACK], BACK);
@@ -429,7 +422,7 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
         fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[LEFT], LEFT);
     }
 
-    // Purkinje section
+// [PURKINJE]
     static bool sigma_purkinje_initialized = false;
 
     uint32_t num_purkinje_active_cells = the_grid->purkinje->num_active_purkinje_cells;
@@ -439,11 +432,12 @@ ASSEMBLY_MATRIX (purkinje_coupled_endocardium_assembly_matrix)
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
     
-    if(!sigma_purkinje_initialized) 
-    {
+    // TODO: Include POINT_DATA with the conductivity
+    if(!sigma_purkinje_initialized) {
+
         OMP(parallel for)
-        for (uint32_t i = 0; i < num_purkinje_active_cells; i++) 
-        {
+        for (uint32_t i = 0; i < num_purkinje_active_cells; i++) {
+
             ac_purkinje[i]->sigma.x = sigma_purkinje;
         }
 
