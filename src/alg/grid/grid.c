@@ -795,8 +795,8 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
             // All the terminals are active
             the_terminals[j].active = true;
 
-            // TODO: This should be a do while loop ... until we achieve the minimum number of tissue cells inside the PMJ region
-            // Search for all the tissue cells that are within the sphere that has a radius less or equal to 'pmj_scale'
+            // Search for all the tissue cells that are within the sphere that 
+            // has a radius less or equal to 'pmj_scale'
             uint32_t *tissue_cells_to_link = NULL;
             real_cpu *dist_array = NULL;
             real_cpu scale = pmj_scale;
@@ -822,9 +822,12 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
             // QuickSort: Sort the distance array together with the indexes from the tissue cells to link
             sort_vector_by_distance(dist_array,tissue_cells_to_link,arrlen(dist_array));         
             
-            // Save the tissue cells indexes we are going to link
+            // Save the tissue cells indexes we are going to link 
+            // until we achieve the maximum number of points inside the PMJ region or
+            // until the maximum size of the link array is reached
+            uint32_t size = (arrlen(tissue_cells_to_link) < nmax_pmj) ? arrlen(tissue_cells_to_link) : nmax_pmj;
             the_terminals[j].tissue_cells = NULL;
-            for (uint32_t i = 0; i < nmax_pmj; i++)
+            for (uint32_t i = 0; i < size; i++)
             {
                 uint32_t index = tissue_cells_to_link[i];
 
@@ -875,57 +878,66 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     char *pmj_location_filename = the_network->pmj_location_filename;
     set_active_terminals(the_terminals,number_of_terminals,pmj_location_filename);
 
-    // Map the tissue cells
-    for (uint32_t i = 0; i < number_of_terminals; i++) {
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
 
-        if (the_terminals[i].active) {
+    // Consider only the active terminals to do the coupling
+    for (uint32_t j = 0; j < number_of_terminals; j++) {
 
-            uint32_t n_active = the_grid->num_active_cells;
-            struct cell_node **ac = the_grid->active_cells;
-            struct node *n = the_terminals[i].purkinje_cell;
+        if (the_terminals[j].active) {
 
+            // Search for all the tissue cells that are within the sphere that 
+            // has a radius less or equal to 'pmj_scale'
             uint32_t *tissue_cells_to_link = NULL;
-            for(uint32_t j = 0; j < n_active; j++) {
-                real_cpu dist = calc_norm(n->x, n->y, n->z, ac[j]->center.x, ac[j]->center.y, ac[j]->center.z);
-            
-                if(dist < pmj_scale) 
-                {
-                    arrput(tissue_cells_to_link,j);
+            real_cpu *dist_array = NULL;
+            real_cpu scale = pmj_scale;
+            while (arrlen(tissue_cells_to_link) < nmin_pmj) {
+
+                for(uint32_t i = 0; i < n_active; i++) {
+                
+                    real_cpu dist = calc_norm(n->x, n->y, n->z,\
+                                            ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+
+                    if(dist < scale) {
+                        arrput(dist_array,dist);
+                        arrput(tissue_cells_to_link,i);
+                    }
+                }
+
+                // Increase the 'pmj_scale' by 10%
+                if (arrlen(tissue_cells_to_link) < nmin_pmj) {
+                    scale *= 1.1;
                 }
             }
 
-            // TODO: Check if we have the minimum number of tissue cells within the PMJ region
-            // Put all the cell that are inside the PMJ region in an array
-            // Sort this array by the distance
-            // Save the indexes of the first tissue cells NMIN_PMJ
-            the_terminals[i].tissue_cells = NULL;
-            for (uint32_t j = 0; j < arrlen(tissue_cells_to_link); j++)
-            {
-                uint32_t index = tissue_cells_to_link[j];
+            // QuickSort: Sort the distance array together with the indexes from the tissue cells to link
+            sort_vector_by_distance(dist_array,tissue_cells_to_link,arrlen(dist_array));         
+            
+            // Save the tissue cells indexes we are going to link 
+            // until we achieve the maximum number of points inside the PMJ region or
+            // until the maximum size of the link array is reached
+            uint32_t size = (arrlen(tissue_cells_to_link) < nmax_pmj) ? arrlen(tissue_cells_to_link) : nmax_pmj;
+            the_terminals[j].tissue_cells = NULL;
+            for (uint32_t i = 0; i < size; i++){
 
-                arrput(the_terminals[i].tissue_cells,ac[index]);
+                uint32_t index = tissue_cells_to_link[i];
+                arrput(the_terminals[j].tissue_cells,ac[index]);
             }
                 
             arrfree(tissue_cells_to_link);
-        }
-        else
-        {
-            the_terminals[i].tissue_cells = NULL;
-        }
-    }
 
-    for (uint32_t i = 0; i < number_of_terminals; i++)
-    {
-        printf("Purkinje cell = %d\n",the_terminals[i].purkinje_cell->id);
-        for (uint32_t j = 0; j < arrlen(the_terminals[i].tissue_cells); j++)
-            printf("\tTissue cell = %d\n",the_terminals[i].tissue_cells[j]->sv_position);
+            j++;
+        }
+        else {
+            the_terminals[j].tissue_cells = NULL;
+        }
     }
-    exit(1);
     return the_terminals;
 }
 
-// TODO: Revise this function ...
+// TODO: Revise this function ... Think about the adaptative scenario
 void update_link_purkinje_to_endocardium(struct grid *the_grid, struct terminal *the_terminals) {
+/*
     struct grid_purkinje *the_purkinje = the_grid->purkinje;
 
     struct graph *the_network = the_purkinje->network;
@@ -952,7 +964,6 @@ void update_link_purkinje_to_endocardium(struct grid *the_grid, struct terminal 
                 }
             }
 
-/*
             struct cell_node *endocardium_cell = ac[closest_index];
             uint32_t endocardium_index = ac[closest_index]->sv_position;
 
@@ -968,13 +979,12 @@ void update_link_purkinje_to_endocardium(struct grid *the_grid, struct terminal 
             ac_purkinje[purkinje_index]->center.y = the_terminals[j].endocardium_cell->center.y;
             ac_purkinje[purkinje_index]->center.z = the_terminals[j].endocardium_cell->center.z;
 
-*/
-
             j++;
         }
 
         n = n->next;
     }
+*/
 }
 
 void set_active_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals, const char filename[])

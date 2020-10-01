@@ -21,14 +21,10 @@ struct vtk_polydata_grid
 
 struct vtk_polydata_grid *new_vtk_polydata_grid ();
 
-void new_vtk_polydata_grid_from_purkinje_grid(struct vtk_polydata_grid **vtk_grid, struct grid_purkinje *the_purkinje, bool clip_with_plain,
-                                                                     float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values, const char scalar_name);
+void new_vtk_polydata_grid_from_purkinje_grid (struct vtk_polydata_grid **vtk_grid, struct grid_purkinje *the_purkinje, bool clip_with_plain,\
+                                                                     float *plain_coordinates, bool clip_with_bounds,\
+                                                                     float *bounds, bool read_only_values);
                                                                      
-void new_vtk_polydata_grid_from_purkinje_grid_coupled (struct vtk_polydata_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                                                     float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values, const char scalar_name);
-
 void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *filename, bool binary);
 void save_vtk_polydata_grid_as_vtp_compressed (struct vtk_polydata_grid *vtk_grid, char *filename, int compression_level);
 void save_vtk_polydata_grid_as_legacy_vtk(struct vtk_polydata_grid *vtk_grid, char *filename, bool binary);
