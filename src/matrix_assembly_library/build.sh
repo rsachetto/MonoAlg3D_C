@@ -8,4 +8,4 @@ fi
 
 COMPILE_SHARED_LIB "purkinje_matrix_assembly" "purkinje_matrix_assembly.c" "" "${LIB_STATIC_DEPS}"
 
-COMPILE_SHARED_LIB "purkinje_coupled_matrix_assembly" "purkinje_coupled_matrix_assembly.c" "" "${LIB_STATIC_DEPS}"
+COMPILE_SHARED_LIB "purkinje_coupling_matrix_assembly" "purkinje_coupling_matrix_assembly.c" "" "${LIB_STATIC_DEPS}"

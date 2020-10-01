@@ -414,14 +414,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         update_cells_to_solve(the_grid, the_ode_solver);
     }
 
-    // TODO: Remember to free this structure ... 
     struct terminal *the_terminals = NULL;
-    if (domain_config && purkinje_config) 
-    {
+    if (domain_config && purkinje_config) {
         the_terminals = link_purkinje_to_tissue(the_grid);
     }
  
-     // TODO: Include the Purkinje extra data here ...
     if(has_extra_data) {
         free(the_ode_solver->ode_extra_data);
         the_ode_solver->ode_extra_data =
@@ -870,6 +867,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         log_to_stdout_and_file("Purkinje ODE Total Time: %ld μs\n", purkinje_ode_total_time);
         log_to_stdout_and_file("Purkinje CG Total Time: %ld μs\n", purkinje_cg_total_time);
         log_to_stdout_and_file("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
+    }
+
+    if (purkinje_config && domain_config) {
+        free_terminals(the_terminals,the_grid->purkinje->network->number_of_terminals);
     }
 
 #ifdef COMPILE_GUI
