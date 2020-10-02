@@ -11,5 +11,6 @@
 
 void sort_vector(real_cpu **a, int length);
 int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, int first, int last);
+float calculate_mean (float *arr, unsigned long size);
 
 #endif //MONOALG3D_UTILS_H_H

@@ -70,3 +70,10 @@ int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, int first, int
 
     }
 }
+
+float calculate_mean (float *arr, unsigned long size) {
+    float result = 0.0;
+    for (unsigned long i = 0; i < size; i++)
+        result += arr[i];
+    return result/(float)size;
+}

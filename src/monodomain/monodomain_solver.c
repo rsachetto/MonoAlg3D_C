@@ -574,12 +574,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 gui_config.time = 0.0;
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-                CALL_END_SAVE_MESH(save_mesh_config);
+                CALL_END_SAVE_MESH(save_mesh_config, the_grid);
                 return RESTART_SIMULATION;
             }
             if (gui_config.exit)  {
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-                CALL_END_SAVE_MESH(save_mesh_config);
+                CALL_END_SAVE_MESH(save_mesh_config, the_grid);
                 return END_SIMULATION;
             }
         }
@@ -811,7 +811,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                         CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                         CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
 
-						CALL_END_SAVE_MESH(save_mesh_config);
+						CALL_END_SAVE_MESH(save_mesh_config, the_grid);
 						CALL_INIT_SAVE_MESH(save_mesh_config);
 
                         shput_dup_value(dconfig->config_data, "modification_applied", "true");
@@ -870,6 +870,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     if (purkinje_config && domain_config) {
+        print_pmj_delay(the_grid,save_mesh_config,the_terminals);
         free_terminals(the_terminals,the_grid->purkinje->network->number_of_terminals);
     }
 
@@ -887,7 +888,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-    CALL_END_SAVE_MESH(save_mesh_config);
+    CALL_END_SAVE_MESH(save_mesh_config, the_grid);
 
     return SIMULATION_FINISHED;
 
@@ -1440,4 +1441,12 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
 
         }
     }
+}
+
+void print_pmj_delay (struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
+    assert(the_grid);
+    assert(config);
+    assert(the_terminals);
+
+    log_to_stdout_and_file("Print PMJ delay!\n");
 }
