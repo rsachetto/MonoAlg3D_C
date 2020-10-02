@@ -16,7 +16,7 @@ typedef SAVE_MESH(save_mesh_fn);
 #define INIT_SAVE_MESH(name)  void name(struct config *config)
 typedef INIT_SAVE_MESH(init_save_mesh_fn);
 
-#define END_SAVE_MESH(name)  void name(struct config *config)
+#define END_SAVE_MESH(name)  void name(struct config *config, struct grid *the_grid)
 typedef END_SAVE_MESH(end_save_mesh_fn);
 
 #define CALL_INIT_SAVE_MESH(config)                                                                                    \
@@ -26,10 +26,10 @@ typedef END_SAVE_MESH(end_save_mesh_fn);
         }                                                                                                              \
     } while(0)
 
-#define CALL_END_SAVE_MESH(config)                                                                                     \
+#define CALL_END_SAVE_MESH(config,grid)                                                                                     \
     do {                                                                                                               \
         if(config && config->end_function) {                                                                           \
-            ((end_save_mesh_fn *)config->end_function)(config);                                                        \
+            ((end_save_mesh_fn *)config->end_function)(config,grid);                                                        \
         }                                                                                                              \
     } while(0)
 

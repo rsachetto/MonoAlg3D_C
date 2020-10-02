@@ -14,11 +14,14 @@
 #include "../vtk_utils/vtk_polydata_grid.h"
 #include "../libraries_common/common_data_structures.h"
 
+#include "save_mesh_helper.h"
+
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
 static char *file_prefix;
+static char *file_prefix_purkinje;
 static bool binary = false;
 static bool clip_with_plain = false;
 static bool clip_with_bounds = false;
@@ -31,53 +34,6 @@ char *output_dir;
 
 static bool initialized = false;
 
-void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);
-
-static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
-    return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
-}
-
-static inline void write_pvd_header(FILE *pvd_file) {
-    fprintf(pvd_file, "<VTKFile type=\"Collection\" version=\"0.1\" compressor=\"vtkZLibDataCompressor\">\n");
-    fprintf(pvd_file, "\t<Collection>\n");
-    fprintf(pvd_file, "\t</Collection>\n");
-    fprintf(pvd_file, "</VTKFile>");
-}
-
-void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_call) {
-
-    sds pvd_name = sdsnew(output_dir);
-    pvd_name = sdscat(pvd_name, "/simulation_result.pvd");
-
-    static FILE *pvd_file = NULL;
-    pvd_file = fopen(pvd_name, "r+");
-
-    if(!pvd_file) {
-        pvd_file = fopen(pvd_name, "w");
-        write_pvd_header(pvd_file);
-    }
-    else {
-        if(first_call) {
-            fclose(pvd_file);
-            pvd_file = fopen(pvd_name, "w");
-            write_pvd_header(pvd_file);
-        }
-    }
-
-    sdsfree(pvd_name);
-
-    fseek(pvd_file, -26, SEEK_END);
-
-    fprintf(pvd_file, "\n\t\t<DataSet timestep=\"%lf\" group=\"\" part=\"0\" file=\"%s\"/>\n", current_t, base_name);
-    fprintf(pvd_file, "\t</Collection>\n");
-    fprintf(pvd_file, "</VTKFile>");
-    fclose(pvd_file);
-}
-
-struct save_as_vtp_persistent_data {
-    struct vtk_polydata_grid *grid;
-    bool first_save_call;
-};
 
 INIT_SAVE_MESH(init_save_as_vtk_or_vtp) {
     config->persistent_data = malloc(sizeof(struct save_as_vtp_persistent_data));
@@ -210,14 +166,6 @@ SAVE_MESH(save_as_vtk_purkinje) {
 
 }
 
-static char *file_prefix_purkinje;
-
-struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data {
-    struct vtk_unstructured_grid *grid;
-    struct vtk_polydata_grid *grid_purkinje;
-    bool first_save_call;
-};
-
 INIT_SAVE_MESH(init_save_tissue_as_vtk_or_vtu_purkinje_as_vtp) {
     config->persistent_data = malloc(sizeof(struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data));
     ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
@@ -332,3 +280,128 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
 
 }
 
+INIT_SAVE_MESH(init_save_purkinje_with_activation_times) {
+
+    config->persistent_data = calloc(1, sizeof(struct save_coupling_with_activation_times_persistent_data));
+
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->purkinje_grid = NULL;
+
+    ((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+}
+
+END_SAVE_MESH(end_save_purkinje_with_activation_times) {
+
+    bool save_activation_time_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config->config_data, "save_activation_time");
+
+    bool save_apd_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
+
+    if (save_activation_time_map) {
+        log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
+        write_purkinje_activation_time_maps(config,the_grid,output_dir,\
+                                    file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+    }
+    
+    if (save_apd_map) {
+        log_to_stderr_and_file("[!] Saving APD map !!!!\n");
+        write_purkinje_apd_map(config,the_grid,output_dir,\
+                                    file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+    } 
+  
+    free(config->persistent_data);
+
+}
+
+SAVE_MESH (save_purkinje_with_activation_times) {
+
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+
+    float time_threshold = 10.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data, "time_threshold");
+    
+    float purkinje_activation_threshold = -30.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config->config_data, "activation_threshold_purkinje");
+
+    float purkinje_apd_threshold = -83.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config->config_data, "apd_threshold_purkinje");
+
+    calculate_purkinje_activation_time_and_apd(time_info,config,the_grid,time_threshold,purkinje_activation_threshold,purkinje_apd_threshold);
+
+}
+
+INIT_SAVE_MESH(init_save_purkinje_coupling_with_activation_times) {
+
+    config->persistent_data = calloc(1, sizeof(struct save_coupling_with_activation_times_persistent_data));
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->tissue_grid = NULL;
+
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->purkinje_grid = NULL;
+
+    ((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+}
+
+END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
+
+    bool save_activation_time_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config->config_data, "save_activation_time");
+
+    bool save_apd_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
+
+    if (save_activation_time_map) {
+        log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
+        write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
+        write_purkinje_activation_time_maps(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+    }
+    
+    if (save_apd_map) {
+        log_to_stderr_and_file("[!] Saving APD map !!!!\n");
+        write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
+        write_purkinje_apd_map(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+    } 
+  
+    free(config->persistent_data);
+
+}
+
+SAVE_MESH (save_purkinje_coupling_with_activation_times) {
+
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+
+    float time_threshold = 10.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data, "time_threshold");
+
+    float tissue_activation_threshold = -30.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_activation_threshold, config->config_data, "activation_threshold_tissue");
+
+    float tissue_apd_threshold = -83.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_apd_threshold, config->config_data, "apd_threshold_tissue");
+    
+    float purkinje_activation_threshold = -30.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config->config_data, "activation_threshold_purkinje");
+
+    float purkinje_apd_threshold = -83.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config->config_data, "apd_threshold_purkinje");
+
+// [TISSUE]
+    calculate_tissue_activation_time_and_apd(time_info,config,the_grid,time_threshold,tissue_activation_threshold,tissue_apd_threshold);
+
+// [PURKINJE]
+    calculate_purkinje_activation_time_and_apd(time_info,config,the_grid,time_threshold,purkinje_activation_threshold,purkinje_apd_threshold);
+
+}
