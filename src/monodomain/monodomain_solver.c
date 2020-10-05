@@ -29,6 +29,7 @@
 
 #include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
+#include "../save_mesh_library/save_mesh_helper.h"
 
 #include <unistd.h>
 
@@ -1443,10 +1444,87 @@ void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode
     }
 }
 
+// TODO: Maybe move this to a post-processing function ...
 void print_pmj_delay (struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
     assert(the_grid);
     assert(config);
     assert(the_terminals);
+    
+    log_to_stdout_and_file(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
 
-    log_to_stdout_and_file("Print PMJ delay!\n");
+    uint32_t num_terminals = the_grid->purkinje->network->number_of_terminals;
+
+    struct save_coupling_with_activation_times_persistent_data *persistent_data = (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
+    char *main_function_name = config->main_function_name;
+
+    if (strcmp(main_function_name,"save_purkinje_coupling_with_activation_times") == 0) {
+
+        // TODO: Extend this calculus to every pulse
+        uint32_t cur_pulse = 0;
+        real_cpu center_x, center_y, center_z;
+        struct cell_node **purkinje_cells = the_grid->purkinje->purkinje_cells;
+        
+        for (uint32_t i = 0; i < num_terminals; i++) {
+
+            // [PURKINJE] Get the informaion from the Purkinje cell
+            struct node *purkinje_cell = the_terminals[i].purkinje_cell;
+            uint32_t purkinje_index = purkinje_cell->id;
+
+            center_x = purkinje_cells[purkinje_index]->center.x;
+            center_y = purkinje_cells[purkinje_index]->center.y;
+            center_z = purkinje_cells[purkinje_index]->center.z;
+
+            struct point_3d cell_coordinates;
+            cell_coordinates.x = center_x;
+            cell_coordinates.y = center_y;
+            cell_coordinates.z = center_z;
+
+            int n_activations_purkinje = 0;
+            float *activation_times_array_purkinje = NULL;
+
+            n_activations_purkinje = (int) hmget(persistent_data->purkinje_num_activations, cell_coordinates);
+            activation_times_array_purkinje = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
+
+            real_cpu purkinje_lat = activation_times_array_purkinje[cur_pulse];
+
+            // [TISSUE] Get the informaion from the Tissue cells
+            struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
+            uint32_t number_tissue_cells = arrlen(tissue_cells); 
+
+            // Calculate the mean LAT of the tissue cells surrounding the Purkinje cell
+            real_cpu mean_tissue_lat = 0.0;
+            for (uint32_t j = 0; j < number_tissue_cells; j++) {
+                
+                cell_coordinates.x = tissue_cells[j]->center.x;
+                cell_coordinates.y = tissue_cells[j]->center.y;
+                cell_coordinates.z = tissue_cells[j]->center.z;
+
+                int n_activations_tissue = 0;
+                float *activation_times_array_tissue = NULL;
+
+                n_activations_tissue = (int) hmget(persistent_data->tissue_num_activations, cell_coordinates);
+                activation_times_array_tissue = (float *) hmget(persistent_data->tissue_activation_times, cell_coordinates);
+
+                // Check if the number of activations from the current tissue and Purkinje cell are equal
+                if (n_activations_purkinje != n_activations_tissue) {
+                    log_to_stderr_and_file_and_exit("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
+                }
+
+                mean_tissue_lat += activation_times_array_tissue[cur_pulse];
+            }
+            mean_tissue_lat /= (real_cpu)number_tissue_cells;
+
+            real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
+
+            log_to_stdout_and_file("[purkinje_coupling] Terminal %u (%g,%g,%g) -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms\n",i,purkinje_cells[purkinje_index]->center.x,purkinje_cells[purkinje_index]->center.y,purkinje_cells[purkinje_index]->center.z,purkinje_lat,mean_tissue_lat,pmj_delay);
+        }
+          
+    }
+    else {
+        // TODO: Highlight in yellow
+        log_to_stderr_and_file("[purkinje_coupling] ERROR! No 'persistant_data' was found!\n");
+        log_to_stderr_and_file("[purkinje_coupling] You must use the 'save_purkinje_coupling_with_activation_times' function to print the PMJ delay!\n");
+    }
+
+    log_to_stdout_and_file(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
 }
