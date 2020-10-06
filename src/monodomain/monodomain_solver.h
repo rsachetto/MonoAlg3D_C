@@ -61,6 +61,7 @@ void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, 
 void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 
 void print_pmj_delay (struct grid *the_grid, struct config *config, struct terminal *the_terminals);
+void print_purkinje_propagation_velocity (struct grid *the_grid, struct config *config, struct terminal *the_terminals);
 
 void debug_print_and_leave ();
 

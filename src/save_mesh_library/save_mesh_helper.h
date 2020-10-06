@@ -49,6 +49,16 @@ struct save_coupling_with_activation_times_persistent_data {
 
 };
 
+struct save_one_cell_state_variables_persistent_data {
+    FILE *file;
+    char *file_name;
+    real_cpu cell_center_x;
+    real_cpu cell_center_y;
+    real_cpu cell_center_z;
+    uint32_t cell_sv_position;
+
+};
+
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);
 sds create_base_name(char *f_prefix, int iteration_count, char *extension);
 
