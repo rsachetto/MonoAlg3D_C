@@ -11,7 +11,7 @@
 bool jacobi_initialized = false;
 bool bcg_initialized = false;
 static bool use_preconditioner = false;
-static int max_its = 50;
+static int max_its = 200;
 static real_cpu tol = 1e-16;
 
 #ifdef COMPILE_CUDA

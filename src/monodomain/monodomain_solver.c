@@ -1512,6 +1512,7 @@ void print_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
                 // Calculate the mean LAT of the tissue cells surrounding the Purkinje cell
                 real_cpu mean_tissue_lat = 0.0;
+                uint32_t cur_pulse = k;
                 for (uint32_t j = 0; j < number_tissue_cells; j++) {
                     
                     cell_coordinates.x = tissue_cells[j]->center.x;
@@ -1525,11 +1526,14 @@ void print_pmj_delay (struct grid *the_grid, struct config *config, struct termi
                     activation_times_array_tissue = (float *) hmget(persistent_data->tissue_activation_times, cell_coordinates);
 
                     // Check if the number of activations from the current tissue and Purkinje cell are equal
-                    if (n_activations_purkinje != n_activations_tissue) {
-                        log_to_stderr_and_file_and_exit("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
+                    if (n_activations_purkinje > n_activations_tissue) {
+                        log_to_stderr_and_file("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
+                        log_to_stderr_and_file("[purkinje_coupling] Probably there was a block on the anteretrograde direction!\n");
+                        log_to_stderr_and_file("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
+                        cur_pulse = 0;
                     }
 
-                    mean_tissue_lat += activation_times_array_tissue[k];
+                    mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                 }
                 mean_tissue_lat /= (real_cpu)number_tissue_cells;
 
@@ -1561,6 +1565,7 @@ void print_purkinje_propagation_velocity (struct grid *the_grid, struct config *
     char *main_function_name = config->main_function_name;
 
     if (strcmp(main_function_name,"save_purkinje_coupling_with_activation_times") == 0) {
+        
         uint32_t ref_id = 200;
         uint32_t prev_id = ref_id - 10;
         uint32_t next_id = ref_id + 10;
@@ -1571,6 +1576,14 @@ void print_purkinje_propagation_velocity (struct grid *the_grid, struct config *
         real_cpu center_x, center_y, center_z;
         struct cell_node **purkinje_cells = the_grid->purkinje->purkinje_cells;
         
+        center_x = purkinje_cells[ref_id]->center.x;
+        center_y = purkinje_cells[ref_id]->center.y;
+        center_z = purkinje_cells[ref_id]->center.z;
+
+        cell_coordinates.x = center_x;
+        cell_coordinates.y = center_y;
+        cell_coordinates.z = center_z;
+
         // Get the total number of pulses
         int n_pulses = 0;
         n_pulses = (int) hmget(persistent_data->purkinje_num_activations, cell_coordinates);
@@ -1604,6 +1617,13 @@ void print_purkinje_propagation_velocity (struct grid *the_grid, struct config *
         real_cpu t2 = next_activation_times_array[cur_pulse];
         real_cpu v = dist / (t2 - t1);
 
+        log_to_stdout_and_file("Number of pulses = %d\n",n_pulses);
+        log_to_stdout_and_file("Cell %u -- Delta_s = %g um -- Delta_t = %g ms -- v = %g um/mm\n",ref_id,dist,t2-t1,v);
+        
+        cur_pulse++;
+        t1 = prev_activation_times_array[cur_pulse];
+        t2 = next_activation_times_array[cur_pulse];
+        v = dist / (t2 - t1);
         log_to_stdout_and_file("Cell %u -- Delta_s = %g um -- Delta_t = %g ms -- v = %g um/mm\n",ref_id,dist,t2-t1,v);
 
         log_to_stdout_and_file(">>>>>>>>>> Propagation velocity <<<<<<<<<<\n");

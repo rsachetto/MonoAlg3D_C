@@ -17,7 +17,7 @@ def plot_all_state_vector(t, sv):
         plt.plot(t,sv[:,i],label="sv[%d]" % (i))
         plt.legend(loc=0,fontsize=14)
         #plt.show()
-        plt.savefig("traces/torord/sv_%d.svg" % (i))
+        plt.savefig("traces/rafa_sebastian_coupling_trovato/sv_%d.svg" % (i))
         plt.clf()
 
     for i in range(ncol):
@@ -25,8 +25,8 @@ def plot_all_state_vector(t, sv):
 
 def plot_state_vector(t, sv, col):
     plt.plot(t,sv[:,col],label="sv[%d]" % (col))
-    plt.legend(loc=0,fontsize=14)
-    plt.show()
+    #plt.legend(loc=0,fontsize=14)
+    #plt.show()
 
 def main():
 	
@@ -41,11 +41,14 @@ def main():
     input_file = sys.argv[1]
 
     t, sv = read_state_vector(input_file)
+    t2, sv2 = read_state_vector("../outputs/rafa_sebastian_trace/purkinje_trovato.txt")
 
-    plot_all_state_vector(t,sv)
+    #plot_all_state_vector(t,sv)
 
     # This will plot only the transmembrane potential
-    #plot_state_vector(t,sv,0)
+    plot_state_vector(t,sv,0)
+    #plot_state_vector(t2,sv2,0)
+    plt.show()
 
 if __name__ == "__main__":
 	main()
