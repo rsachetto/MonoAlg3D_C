@@ -363,6 +363,9 @@ END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
     bool save_apd_map = false;
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
 
+    bool save_purkinje_velocity = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config->config_data, "save_purkinje_velocity");
+
     if (save_activation_time_map) {
         log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
         write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
@@ -374,6 +377,11 @@ END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
         write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
         write_purkinje_apd_map(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     } 
+
+    if (save_purkinje_velocity) {
+        log_to_stderr_and_file("[!] Calculating Purkinje propagation velocity !!!!\n");
+        print_purkinje_propagation_velocity(config,the_grid);
+    }
   
     free(config->persistent_data);
 

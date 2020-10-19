@@ -872,7 +872,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if (purkinje_config && domain_config) {
         print_pmj_delay(the_grid,save_mesh_config,the_terminals);
-        print_purkinje_propagation_velocity(the_grid,save_mesh_config,the_terminals);
         free_terminals(the_terminals,the_grid->purkinje->network->number_of_terminals);
     }
 
@@ -1038,7 +1037,6 @@ void save_old_cell_positions(struct grid *the_grid) {
         OMP(parallel for)
         for(i = 0; i < n_purkinje_active; i++) 
         {
-            //log_to_stdout_and_file("Cell %u -- grid_position = %u\n",i,ac_purkinje[i]->grid_position);
             ac_purkinje[i]->sv_position = ac_purkinje[i]->grid_position;
         }
     }
@@ -1136,8 +1134,6 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
 
         STRING_HASH_PRINT_KEY_VALUE_LOG(options->purkinje_ode_extra_config);
     }
-
-    //log_to_stdout_and_file(LOG_LINE_SEPARATOR);
 
     log_to_stdout_and_file("[grid] Initial N. of Elements = "
                              "%" PRIu32 "\n",
@@ -1262,9 +1258,6 @@ void configure_monodomain_solver_from_options(struct monodomain_solver *the_mono
     the_monodomain_solver->derefinement_bound = options->deref_bound;
 
     the_monodomain_solver->abort_on_no_activity = options->abort_no_activity;
-
-    // the_monodomain_solver->calc_activation_time = options->calc_activation_time;
-    // the_monodomain_solver->print_conductivity = options->print_conductivity_map;
 
     the_monodomain_solver->dt = options->dt_pde;
 
@@ -1549,88 +1542,4 @@ void print_pmj_delay (struct grid *the_grid, struct config *config, struct termi
     }
 
     log_to_stdout_and_file(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
-}
-
-// TODO: Extend this to a general Purkinje network (Run Dijkstra to get the distances)
-//  This code only works in a cable Purkinje network
-void print_purkinje_propagation_velocity (struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
-    
-    assert(the_grid);
-    assert(config);
-    assert(the_terminals);
-
-    log_to_stdout_and_file(">>>>>>>>>> Propagation velocity <<<<<<<<<<\n");
-
-    struct save_coupling_with_activation_times_persistent_data *persistent_data = (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
-    char *main_function_name = config->main_function_name;
-
-    if (strcmp(main_function_name,"save_purkinje_coupling_with_activation_times") == 0) {
-        
-        uint32_t ref_id = 200;
-        uint32_t prev_id = ref_id - 10;
-        uint32_t next_id = ref_id + 10;
-        real_cpu dist = 100*20;
-        
-        struct node *ref_cell, *prev_cell, *next_cell;
-        struct point_3d cell_coordinates;
-        real_cpu center_x, center_y, center_z;
-        struct cell_node **purkinje_cells = the_grid->purkinje->purkinje_cells;
-        
-        center_x = purkinje_cells[ref_id]->center.x;
-        center_y = purkinje_cells[ref_id]->center.y;
-        center_z = purkinje_cells[ref_id]->center.z;
-
-        cell_coordinates.x = center_x;
-        cell_coordinates.y = center_y;
-        cell_coordinates.z = center_z;
-
-        // Get the total number of pulses
-        int n_pulses = 0;
-        n_pulses = (int) hmget(persistent_data->purkinje_num_activations, cell_coordinates);
-
-        // Get previous cell LAT
-        center_x = purkinje_cells[prev_id]->center.x;
-        center_y = purkinje_cells[prev_id]->center.y;
-        center_z = purkinje_cells[prev_id]->center.z;
-
-        cell_coordinates.x = center_x;
-        cell_coordinates.y = center_y;
-        cell_coordinates.z = center_z;
-
-        float *prev_activation_times_array = NULL;
-        prev_activation_times_array = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
-
-        // Get next cell LAT
-        center_x = purkinje_cells[next_id]->center.x;
-        center_y = purkinje_cells[next_id]->center.y;
-        center_z = purkinje_cells[next_id]->center.z;
-
-        cell_coordinates.x = center_x;
-        cell_coordinates.y = center_y;
-        cell_coordinates.z = center_z;
-
-        float *next_activation_times_array = NULL;
-        next_activation_times_array = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
-
-        uint32_t cur_pulse = 0;
-        real_cpu t1 = prev_activation_times_array[cur_pulse];
-        real_cpu t2 = next_activation_times_array[cur_pulse];
-        real_cpu v = dist / (t2 - t1);
-
-        log_to_stdout_and_file("Number of pulses = %d\n",n_pulses);
-        log_to_stdout_and_file("Cell %u -- Delta_s = %g um -- Delta_t = %g ms -- v = %g um/mm\n",ref_id,dist,t2-t1,v);
-        
-        cur_pulse++;
-        t1 = prev_activation_times_array[cur_pulse];
-        t2 = next_activation_times_array[cur_pulse];
-        v = dist / (t2 - t1);
-        log_to_stdout_and_file("Cell %u -- Delta_s = %g um -- Delta_t = %g ms -- v = %g um/mm\n",ref_id,dist,t2-t1,v);
-
-        log_to_stdout_and_file(">>>>>>>>>> Propagation velocity <<<<<<<<<<\n");
-    }
-    else {
-        log_to_stderr_and_file("[purkinje_coupling] ERROR! No 'persistant_data' was found!\n");
-        log_to_stderr_and_file("[purkinje_coupling] You must use the 'save_purkinje_coupling_with_activation_times' function to print the PMJ delay!\n");
-    }
-    
 }
