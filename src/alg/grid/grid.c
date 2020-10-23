@@ -10,7 +10,7 @@
 
 #include "../../3dparty/stb_ds.h"
 #include "../../utils/file_utils.h"
-#include "../../utils/sort.c"
+#include "../../utils/utils.h"
 
 struct grid *new_grid() {
     struct grid *result = (struct grid *)malloc(sizeof(struct grid));

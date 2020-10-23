@@ -10,6 +10,7 @@
 #include "../common_types/common_types.h"
 
 void sort_vector(real_cpu **a, int length);
+void sort_vector_by_distance (real_cpu *dist_array, uint32_t *indexes, int length);
 int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, int first, int last);
 float calculate_mean (float *arr, unsigned long size);
 

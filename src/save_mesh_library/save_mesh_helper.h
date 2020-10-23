@@ -49,6 +49,16 @@ struct save_coupling_with_activation_times_persistent_data {
 
 };
 
+struct save_one_cell_state_variables_persistent_data {
+    FILE *file;
+    char *file_name;
+    real_cpu cell_center_x;
+    real_cpu cell_center_y;
+    real_cpu cell_center_z;
+    uint32_t cell_sv_position;
+
+};
+
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);
 sds create_base_name(char *f_prefix, int iteration_count, char *extension);
 
@@ -66,6 +76,7 @@ void write_purkinje_apd_map (struct config *config, struct grid *the_grid, char 
                         bool save_pvd, bool compress, int compression_level);
 void set_purkinje_vtk_values_with_activation_time_from_current_pulse (void **persistent_data, struct grid *the_grid, const int cur_pulse);
 void set_purkinje_vtk_values_with_mean_apd (void **persistent_data, struct grid *the_grid);
+void print_purkinje_propagation_velocity (struct config *config, struct grid *the_grid);
 
 // [TISSUE]
 void calculate_tissue_activation_time_and_apd (struct time_info *time_info, struct config *config, struct grid *the_grid, const real_cpu time_threshold,\

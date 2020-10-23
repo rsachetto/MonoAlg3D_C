@@ -16,6 +16,9 @@
 #define FOR_EACH_CELL(grid) \
     for(struct cell_node *cell = grid->first_cell; cell != NULL; cell = cell->next)
 
+#define FOR_EACH_PURKINJE_CELL(grid) \
+    for(struct cell_node *cell = grid->purkinje->first_cell; cell != NULL; cell = cell->next)
+
 struct grid {
 
     struct cell_node *first_cell;     // First cell of grid.

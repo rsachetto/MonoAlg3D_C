@@ -363,6 +363,9 @@ END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
     bool save_apd_map = false;
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
 
+    bool save_purkinje_velocity = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config->config_data, "save_purkinje_velocity");
+
     if (save_activation_time_map) {
         log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
         write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
@@ -374,6 +377,11 @@ END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
         write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
         write_purkinje_apd_map(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     } 
+
+    if (save_purkinje_velocity) {
+        log_to_stderr_and_file("[!] Calculating Purkinje propagation velocity !!!!\n");
+        print_purkinje_propagation_velocity(config,the_grid);
+    }
   
     free(config->persistent_data);
 
@@ -403,5 +411,71 @@ SAVE_MESH (save_purkinje_coupling_with_activation_times) {
 
 // [PURKINJE]
     calculate_purkinje_activation_time_and_apd(time_info,config,the_grid,time_threshold,purkinje_activation_threshold,purkinje_apd_threshold);
+
+}
+
+INIT_SAVE_MESH(init_save_one_cell_state_variables) {
+    config->persistent_data = malloc(sizeof(struct save_one_cell_state_variables_persistent_data));
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR( ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, config->config_data, "file_name");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_x, config->config_data, "cell_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_y, config->config_data, "cell_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_z, config->config_data, "cell_center_z");
+
+    ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file = fopen(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, "w");
+    ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_sv_position = -1;
+}
+
+END_SAVE_MESH(end_save_one_cell_state_variables) {
+    free(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name);
+    fclose(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file);
+    free(config->persistent_data);
+}
+
+SAVE_MESH(save_one_cell_state_variables) {
+
+    struct save_one_cell_state_variables_persistent_data *params = ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data);
+
+    if(params->cell_sv_position == -1) {
+        if(!the_grid->adaptive) {
+            FOR_EACH_CELL(the_grid) {
+                if(cell->center.x == params->cell_center_x && cell->center.y == params->cell_center_y && cell->center.z == params->cell_center_z) {
+                    params->cell_sv_position = cell->sv_position;
+                    printf("%d\n", params->cell_sv_position);
+                    break;
+                }
+            }
+        }
+    }
+
+    if(ode_solver->gpu) {
+
+            int num_odes = ode_solver->model_data.number_of_ode_equations;
+            real *cell_sv;
+
+            cell_sv = (real *)malloc(sizeof(real) * num_odes);
+
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position,
+                                           ode_solver->pitch, sizeof(real),
+                                           ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+            fprintf(params->file, "%lf ", time_info->current_t);
+            for (int i = 0; i < num_odes; i++) {
+                fprintf(params->file,"%lf ",cell_sv[i]);
+            }
+            fprintf(params->file, "\n");
+
+            free(cell_sv);
+    }
+    else {
+
+        int num_odes = ode_solver->model_data.number_of_ode_equations;
+        real *cell_sv =  &ode_solver->sv[params->cell_sv_position * num_odes];
+
+        fprintf(params->file, "%lf ", time_info->current_t);
+        for (int i = 0; i < num_odes; i++) {
+            fprintf(params->file,"%lf ",cell_sv[i]);
+        }
+        fprintf(params->file, "\n");
+    }
 
 }
