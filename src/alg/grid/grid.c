@@ -878,13 +878,16 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     char *pmj_location_filename = the_network->pmj_location_filename;
     set_active_terminals(the_terminals,number_of_terminals,pmj_location_filename);
 
-    uint32_t n_active = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
     // Consider only the active terminals to do the coupling
     for (uint32_t j = 0; j < number_of_terminals; j++) {
 
         if (the_terminals[j].active) {
+
+            uint32_t n_active = the_grid->num_active_cells;
+            struct cell_node **ac = the_grid->active_cells;
+
+            // Get the Purkinje cell
+            n = the_terminals[j].purkinje_cell;
 
             // Search for all the tissue cells that are within the sphere that 
             // has a radius less or equal to 'pmj_scale'
@@ -904,10 +907,10 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
                     }
                 }
 
-                // Increase the 'pmj_scale' by 10%
-                if (arrlen(tissue_cells_to_link) < nmin_pmj) {
-                    scale *= 1.1;
-                }
+                // TODO: Increase the 'pmj_scale' by 10%
+                //if (arrlen(tissue_cells_to_link) < nmin_pmj) {
+                //    scale *= 1.1;
+                //}
             }
 
             // QuickSort: Sort the distance array together with the indexes from the tissue cells to link
@@ -925,13 +928,12 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
             }
                 
             arrfree(tissue_cells_to_link);
-
-            j++;
         }
         else {
             the_terminals[j].tissue_cells = NULL;
         }
     }
+
     return the_terminals;
 }
 
@@ -991,6 +993,11 @@ void set_active_terminals (struct terminal *the_terminals, const uint32_t number
 {
     // Read all the PMJ coordinates
     FILE *file = fopen(filename,"r");
+    if (!file)
+    {
+        printf("Error! Reading pmj_location_file!\n");
+        exit(1);
+    }
     struct node *pmjs = NULL;
 
     char str[200];

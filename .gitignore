@@ -90,8 +90,9 @@ tags
 scripts/output
 scripts/animations/frames
 scripts/animations/video
-scripts/animations/*.mp4
+scripts/animations/videos/*.mp4
 scripts/apd_error/*.png
+scripts/traces/*
 batch_simulations/
 /src/main_graph_analyzer.c
 tests_bin/simulation_result.pvd
@@ -139,9 +140,19 @@ meshes/atrial_mesh.vtu
 meshes/atrial_mesh_sub.alg
 meshes/atrial_mesh_sub.fibers
 meshes/ModVent_PAP_500um.alg
+meshes/elizabeth*
+
+networks/sebastian*
+networks/elizabeth*
+networks/elnaz*
+
+/src/models_library/elnaz_models
 
 example_configs/atrial_mesh_start_500um.ini
 example_configs/atrial_mesh_start_500um_27n.ini
+example_configs/rafa_sebastian*
+example_configs/elnaz*
+example_configs/elizabeth*
 
 /meshes/scv.alg
 /src/3dparty/raylib/src/stbTAvvG

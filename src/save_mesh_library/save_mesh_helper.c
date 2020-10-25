@@ -44,6 +44,8 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
 void calculate_purkinje_activation_time_and_apd (struct time_info *time_info, struct config *config, struct grid *the_grid, const real_cpu time_threshold,\
                                             const real_cpu purkinje_activation_threshold, const real_cpu purkinje_apd_threshold) {
 
+    printf("Purkinje activation threashold = %g\n",purkinje_activation_threshold);
+
     real_cpu current_t = time_info->current_t;
     real_cpu last_t = time_info->final_t;
     real_cpu dt = time_info->dt;
@@ -426,7 +428,6 @@ void calculate_tissue_activation_time_and_apd (struct time_info *time_info, stru
                     hmput(persistent_data->tissue_last_time_v, cell_coordinates, v);
                 } else {
                     if ((last_v < tissue_activation_threshold) && (v >= tissue_activation_threshold)) {
-
                         if (act_times_len == 0) {
                             n_activations++;
                             hmput(persistent_data->tissue_num_activations, cell_coordinates, n_activations);
@@ -665,7 +666,11 @@ void set_tissue_vtk_values_with_activation_time_from_current_pulse (void **persi
 
             // TODO: Check the case where: (activation_times_array == NULL)
             // Get the activation time from the current pulse for that particular cell
-            float at = activation_times_array[cur_pulse];           
+            float at;
+            if (activation_times_array == NULL)
+                at = -1;
+            else
+                at = activation_times_array[cur_pulse];           
 
             // Update the scalar value from the "vtk_unstructured_grid"
             (*data)->tissue_grid->values[i] = at;

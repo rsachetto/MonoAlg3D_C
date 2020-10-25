@@ -1366,44 +1366,47 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_using_file) {
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
-    shput_dup_value(config->config_data, "start_dx", "500.0");
-    shput_dup_value(config->config_data, "start_dy", "500.0");
-    shput_dup_value(config->config_data, "start_dz", "500.0");
+    //shput_dup_value(config->config_data, "start_dx", "500.0");
+    //shput_dup_value(config->config_data, "start_dy", "500.0");
+    //shput_dup_value(config->config_data, "start_dz", "500.0");
 
-    // LEAK on mesh_file if mesh_file is defined on ini file
+    //LEAK on mesh_file if mesh_file is defined on ini file
     char *mesh_file = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
     real_cpu x_domain_limit = 64000.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, x_domain_limit, config->config_data, "x_domain_limit");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,x_domain_limit, config->config_data, "x_domain_limit");
 
     real_cpu y_domain_limit = 64000.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, y_domain_limit, config->config_data, "y_domain_limit");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,y_domain_limit, config->config_data, "y_domain_limit");
 
     real_cpu z_domain_limit = 64000.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, z_domain_limit, config->config_data, "z_domain_limit");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu,z_domain_limit, config->config_data, "z_domain_limit");
+
+    uint32_t refinement_steps = 7;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(uint32_t, refinement_steps, config->config_data, "refinement_steps");
 
     uint32_t total_number_mesh_points = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, total_number_mesh_points, config->config_data, "total_number_mesh_points");
-
+    
     initialize_and_construct_grid(the_grid, POINT3D(x_domain_limit, y_domain_limit, z_domain_limit));
-    refine_grid(the_grid, 7);
+    refine_grid(the_grid, refinement_steps);
 
     log_to_stdout_and_file("Loading Custom Mesh\n");
 
     set_custom_mesh(the_grid, mesh_file, total_number_mesh_points, "%lf,%lf,%lf,%lf\n");
 
     log_to_stdout_and_file("Cleaning grid\n");
-    int i;
-    for(i = 0; i < 6; i++) {
+    uint32_t i;
+    for(i = 0; i < refinement_steps-1; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
     free(mesh_file);
 
     char *mh = shget(config->config_data, "maximum_discretization");
-    shput_dup_value(config->config_data, "maximum_dx", mh);
-    shput_dup_value(config->config_data, "maximum_dy", mh);
-    shput_dup_value(config->config_data, "maximum_dz", mh);
+    shput_dup_value(config->config_data,  "maximum_dx", mh);
+    shput_dup_value(config->config_data,  "maximum_dy", mh);
+    shput_dup_value(config->config_data,  "maximum_dz", mh);
 
     return 1;
 }
