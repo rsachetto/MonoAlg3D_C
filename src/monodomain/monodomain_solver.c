@@ -526,7 +526,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
 
     real_cpu solver_error = 0, purkinje_solver_error = 0;
-    uint32_t solver_iterations = 0, purkinje_solver_iterations = 0;;
+    uint32_t solver_iterations = 0, purkinje_solver_iterations = 0;
 
     if(num_stims > 0) {
         set_spatial_stim(&time_info, stimuli_configs, the_grid, false);
