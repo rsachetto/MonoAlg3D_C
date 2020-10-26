@@ -13,11 +13,7 @@ jobs:
     - uses: actions/checkout@v2    
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
-      shell: bash      
       run: ls .
 
     - name: Test
-      working-directory: ${{runner.workspace}}/build
-      shell: bash      
       run:  ./tests_bin/run_tests.sh
