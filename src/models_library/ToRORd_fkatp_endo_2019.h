@@ -4,12 +4,13 @@
 // TODO: Check steady-state condition
 
 #include "model_common.h"
-#include "../gpu_utils/gpu_utils.h"
 
 #define NEQ 43
 #define INITIAL_V (-88.763800)
 
 #ifdef __CUDACC__
+
+#include "../gpu_utils/gpu_utils.h"
 
 __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes);
 

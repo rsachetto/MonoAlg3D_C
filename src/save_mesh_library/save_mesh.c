@@ -149,12 +149,11 @@ SAVE_MESH(save_one_cell_state_variables) {
     }
 
     if(ode_solver->gpu) {
+#ifdef COMPILE_CUDA
             real *cell_sv;
 
-            // cell_sv = (real*)malloc(sizeof(real)*ode_solver->model_data.number_of_ode_equations*the_grid->num_active_cells);
             cell_sv = (real *)malloc(sizeof(real) * ode_solver->model_data.number_of_ode_equations);
 
-            // check_cuda_errors(cudaMemcpy2D(cell_sv, the_grid->num_active_cells*sizeof(real), ode_solver->sv, ode_solver->pitch, the_grid->num_active_cells*sizeof(real), ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
             check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position,
                                            ode_solver->pitch, sizeof(real),
                                            ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
@@ -190,7 +189,7 @@ SAVE_MESH(save_one_cell_state_variables) {
             fprintf(params->file, " %lf ", cell_sv[38]);
             fprintf(params->file, " %lf\n", cell_sv[42]);
             free(cell_sv);
-
+#endif
     }
     else {
 

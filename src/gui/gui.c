@@ -33,6 +33,223 @@ int info_box_lines;
 const int end_info_box_lines = 10;
 const int mesh_info_box_lines = 9;
 
+static struct gui_config gui_config;
+
+void gui_set_alg_grid(struct grid *the_grid) {
+    gui_config.grid_info.alg_grid = the_grid;
+}
+
+void gui_set_vtk_grid(struct vtk_unstructured_grid *the_grid) {
+    gui_config.grid_info.vtk_grid = the_grid;
+}
+
+struct vtk_unstructured_grid * gui_get_vtk_grid() {
+    return gui_config.grid_info.vtk_grid;
+}
+
+void gui_set_simulating(bool state) {
+    gui_config.simulating = state;
+}
+
+bool gui_get_paused() {
+    return gui_config.paused;
+}
+
+void gui_set_paused(bool paused) {
+    gui_config.paused = paused;
+}
+
+void gui_lock_sleep_lock() {
+    omp_set_lock(&gui_config.sleep_lock);
+}
+
+void gui_unlock_sleep_lock() {
+    omp_unset_lock(&gui_config.sleep_lock);
+}
+
+void gui_lock_draw_lock() {
+    omp_set_lock(&gui_config.draw_lock);
+}
+
+void gui_unlock_draw_lock() {
+    omp_unset_lock(&gui_config.draw_lock);
+}
+
+void gui_set_grid_loaded(bool loaded) {
+    gui_config.grid_info.loaded = loaded;
+}
+
+bool gui_get_restart() {
+    return gui_config.restart;
+}
+
+bool gui_get_exit() {
+    return gui_config.exit;
+}
+
+void gui_set_time(double time) {
+    gui_config.time = time;
+}
+
+char * gui_get_error_message() {
+    return gui_config.error_message;
+}
+
+void gui_free_error_message() {
+    free(gui_config.error_message);
+}
+
+void gui_set_error_message(char *msg) {
+    gui_config.error_message = strdup(msg);
+}
+
+real_cpu gui_get_dt() {
+    return gui_config.dt;
+}
+
+void gui_set_dt(real_cpu dt) {
+    gui_config.dt = dt;
+}
+
+int gui_get_step() {
+    return gui_config.step;
+}
+
+void gui_set_step(int s) {
+    gui_config.step = s;
+}
+
+real_cpu gui_get_final_time() {
+    return gui_config.final_time;
+}
+
+void gui_set_final_time(real_cpu time) {
+    gui_config.final_time = time;
+}
+
+char * gui_get_filename() {
+    return gui_config.grid_info.file_name;
+}
+
+void gui_set_filename(char *filename) {
+    gui_config.grid_info.file_name = filename;
+}
+
+char * gui_get_input() {
+    return gui_config.input;
+}
+
+void gui_set_input(char *input) {
+    gui_config.input = input;
+}
+
+int gui_get_advance_or_return() {
+    return gui_config.advance_or_return;
+}
+
+void gui_set_advance_or_return(int adv) {
+    gui_config.advance_or_return = adv;
+}
+
+void gui_end_simulation(long res_time, long ode_total_time, long cg_total_time, long total_mat_time, long total_ref_time, long total_deref_time, long total_write_time, long total_config_time, long total_cg_it) {
+    gui_config.solver_time = res_time;
+    gui_config.ode_total_time = ode_total_time;
+    gui_config.cg_total_time = cg_total_time;
+    gui_config.total_mat_time = total_mat_time;
+    gui_config.total_ref_time = total_ref_time;
+    gui_config.total_deref_time = total_deref_time;
+    gui_config.total_write_time = total_write_time;
+    gui_config.total_config_time = total_config_time;
+    gui_config.total_cg_it  = total_cg_it;
+    gui_config.simulating = false;
+}
+
+void read_and_render_activation_map(char *input_file, char *error) {
+
+    gui_config.grid_info.file_name = NULL;
+
+    omp_set_lock(&gui_config.draw_lock);
+    gui_config.grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file);
+    gui_config.grid_info.loaded = true;
+    gui_config.int_scale = true;
+
+    if(!gui_config.grid_info.vtk_grid) {
+        sprintf(error, "%s is not an activation map", input_file);
+        if(gui_config.error_message)
+            free(gui_config.error_message);
+        gui_config.error_message = strdup(error);
+        omp_unset_lock(&gui_config.draw_lock);
+        return;
+    }
+
+    gui_config.grid_info.file_name = input_file;
+    gui_config.min_v = gui_config.grid_info.vtk_grid->min_v;
+    gui_config.max_v = gui_config.grid_info.vtk_grid->max_v;
+
+    omp_unset_lock(&gui_config.draw_lock);
+}
+
+void init_gui_config_for_visualization(struct visualization_options *options, bool only_restart) {
+
+    omp_init_lock(&gui_config.draw_lock);
+    omp_init_lock(&gui_config.sleep_lock);
+
+    gui_config.grid_info.vtk_grid = NULL;
+
+    gui_config.simulating = true;
+    gui_config.exit = false;
+    gui_config.restart = false;
+
+    gui_config.paused = true;
+    gui_config.advance_or_return = 0;
+    gui_config.grid_info.loaded = false;
+    gui_config.input = NULL;
+
+    if(!only_restart) {
+        gui_config.max_v = options->max_v;
+        gui_config.min_v = options->min_v;
+
+        if(gui_config.min_v == 0) {
+            gui_config.min_v = 0.001f;
+        }
+
+        gui_config.dt = options->dt;
+        gui_config.draw_type = DRAW_FILE;
+        gui_config.grid_info.file_name = NULL;
+        gui_config.error_message = NULL;
+        gui_config.int_scale = false;
+    }
+}
+
+void init_gui_config_for_simulation(struct user_options *options) {
+
+    omp_init_lock(&gui_config.draw_lock);
+    omp_init_lock(&gui_config.sleep_lock);
+
+    gui_config.config_name = strdup(options->config_file);
+    gui_config.grid_info.alg_grid = NULL;
+    gui_config.max_v = options->max_v;
+    gui_config.min_v = options->min_v;
+
+    if(gui_config.min_v == 0) gui_config.min_v = 0.1f;
+
+    gui_config.simulating = false;
+    gui_config.time = 0.0;
+
+    gui_config.adaptive = options->adaptive;
+    gui_config.final_time = options->final_time;
+    gui_config.dt = options->dt_pde;
+
+    gui_config.exit = false;
+    gui_config.restart = false;
+
+    gui_config.draw_type = DRAW_SIMULATION;
+    gui_config.error_message = NULL;
+    gui_config.grid_info.loaded = false;
+    gui_config.int_scale = false;
+}
+
+
 void set_camera_params(Camera3D *camera) {
     camera->position = (Vector3){0.1f, 0.1f, 20.f}; // Camera position
     camera->target = (Vector3){0.f, 0.f, 0.f};

@@ -2,6 +2,10 @@
 // Created by sachetto on 03/10/17.
 //
 
+#ifdef COMPILE_GUI
+#include "../gui/gui.h"
+#endif
+
 #include "monodomain_solver.h"
 #include "../utils/file_utils.h"
 #include "../utils/stop_watch.h"
@@ -9,10 +13,6 @@
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
-#endif
-
-#ifdef COMPILE_GUI
-#include "../gui/gui.h"
 #endif
 
 #include "../3dparty/sds/sds.h"
@@ -311,11 +311,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #ifdef COMPILE_GUI
     bool show_gui = configs->show_gui;
     if (show_gui) {
-        gui_config.grid_info.alg_grid = the_grid;
-        gui_config.simulating = true;
-        gui_config.paused = !configs->start_visualization_unpaused;
+        gui_set_alg_grid(the_grid);
+        gui_set_simulating(true);
+        gui_set_paused(!configs->start_visualization_unpaused);
     } else {
-        gui_config.paused = false;
+        gui_set_paused(false);
     }
 #endif
 
@@ -526,7 +526,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool abort_on_no_activity = the_monodomain_solver->abort_on_no_activity;
 
     real_cpu solver_error = 0, purkinje_solver_error = 0;
-    uint32_t solver_iterations = 0, purkinje_solver_iterations = 0;;
+    uint32_t solver_iterations = 0, purkinje_solver_iterations = 0;
 
     if(num_stims > 0) {
         set_spatial_stim(&time_info, stimuli_configs, the_grid, false);
@@ -549,7 +549,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
 #ifdef COMPILE_GUI
-    gui_config.grid_info.loaded = true;
+    gui_set_grid_loaded(true);
+    //gui_config.grid_info.loaded = true;
 #endif
 
     real_cpu only_abort_after_dt = the_monodomain_solver->only_abort_after_dt;
@@ -570,15 +571,16 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         #ifdef COMPILE_GUI
         if(show_gui) {
-            omp_set_lock(&gui_config.sleep_lock);
-            if (gui_config.restart) {
-                gui_config.time = 0.0;
+            //omp_set_lock(&gui_config.sleep_lock);
+            gui_lock_sleep_lock();
+            if (gui_get_restart()) {
+                gui_set_time(0.0);
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
                 return RESTART_SIMULATION;
             }
-            if (gui_config.exit)  {
+            if (gui_get_exit())  {
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
                 return END_SIMULATION;
@@ -622,7 +624,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             #ifdef COMPILE_GUI
             if (show_gui) {
-                omp_set_lock(&gui_config.draw_lock);
+                //omp_set_lock(&gui_config.draw_lock);
+                gui_lock_draw_lock();
             }
             #endif
 
@@ -655,7 +658,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             #ifdef COMPILE_GUI
             if (show_gui) {
-                omp_set_lock(&gui_config.draw_lock);
+                //omp_set_lock(&gui_config.draw_lock);
+                gui_lock_draw_lock();
             }
             #endif
 
@@ -670,7 +674,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             if(isnan(solver_error)) {
                 log_to_stderr_and_file("\n [ERR] Solver stoped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
                 #ifdef COMPILE_GUI
-                    omp_unset_lock(&gui_config.draw_lock);
+                    //omp_unset_lock(&gui_config.draw_lock);
+                    gui_unlock_draw_lock();
                 #endif
                 return SIMULATION_FINISHED;
             }
@@ -825,8 +830,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         #ifdef COMPILE_GUI
         if (configs->show_gui) {
-            omp_unset_lock(&gui_config.draw_lock);
-            gui_config.time = cur_time;
+            //omp_unset_lock(&gui_config.draw_lock);
+            gui_unlock_draw_lock();
+            //gui_config.time = cur_time;
+            gui_set_time(cur_time);
         }
         #endif
         count++;
@@ -876,16 +883,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
 #ifdef COMPILE_GUI
-    gui_config.solver_time = res_time;
-    gui_config.ode_total_time = ode_total_time;
-    gui_config.cg_total_time = cg_total_time;
-    gui_config.total_mat_time = total_mat_time;
-    gui_config.total_ref_time = total_ref_time;
-    gui_config.total_deref_time = total_deref_time;
-    gui_config.total_write_time = total_write_time;
-    gui_config.total_config_time = total_config_time;
-    gui_config.total_cg_it  = total_cg_it;
-    gui_config.simulating = false;
+    gui_end_simulation(res_time, ode_total_time, cg_total_time, total_mat_time, total_ref_time, total_deref_time, total_write_time, total_config_time, total_cg_it);
 #endif
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);

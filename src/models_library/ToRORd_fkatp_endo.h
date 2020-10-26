@@ -1,13 +1,15 @@
 #ifndef MONOALG3D_MODEL_TORORD_FKATP_ENDO_H
 #define MONOALG3D_MODEL_TORORD_FKATP_ENDO_H
 
-#include "model_common.h"
-#include "../gpu_utils/gpu_utils.h"
 
 #define NEQ 43
 #define INITIAL_V (-88.763800f)
 
+#include "model_common.h"
+
 #ifdef __CUDACC__
+
+#include "../gpu_utils/gpu_utils.h"
 
 __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes);
 

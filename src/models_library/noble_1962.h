@@ -3,12 +3,13 @@
 
 #include <stdint.h>
 #include "model_common.h"
-#include "../gpu_utils/gpu_utils.h"
 
 #define NEQ 4
 #define INITIAL_V (-75.5344986658f)
 
 #ifdef __CUDACC__
+
+#include "../gpu_utils/gpu_utils.h"
 
 __constant__  size_t pitch;
 size_t pitch_h;
