@@ -1,0 +1,24 @@
+name: Build
+
+on: [push]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: -r
+
+jobs:
+  build:   
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2    
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash      
+      run: ./build.sh $BUILD_TYPE simulator
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      shell: bash      
+      run:  ./tests_bin/run_tests.sh
