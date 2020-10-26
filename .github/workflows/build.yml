@@ -15,6 +15,7 @@ jobs:
       run: |
         source ./scripts/actions/install_cuda_ubuntu.sh
         if [[ $? -eq 0 ]]; then
+          find "${CUDA_PATH}" -name libcuda.so.*
           # Set paths for subsequent steps, using ${CUDA_PATH}
           echo "Adding CUDA to CUDA_PATH, PATH and LD_LIBRARY_PATH"
           echo "CUDA_PATH=${CUDA_PATH}" >> $GITHUB_ENV
