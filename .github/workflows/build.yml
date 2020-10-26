@@ -15,7 +15,7 @@ jobs:
     - name: Build
       working-directory: ${{runner.workspace}}/build
       shell: bash      
-      run: ./build.sh $BUILD_TYPE simulator
+      run: ls .
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
