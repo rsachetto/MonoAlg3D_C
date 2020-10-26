@@ -1,7 +1,9 @@
 #ifndef MONOALG3D_GPU_UTILS_H
 #define MONOALG3D_GPU_UTILS_H
 
-#include "cuda_runtime.h"
+#include <cuda_runtime.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /*! \brief Macros/inlines to assist CLion to parse Cuda files (*.cu, *.cuh) */
 #ifdef __JETBRAINS_IDE__
@@ -19,10 +21,6 @@ extern __cuda_fake_struct blockDim;
 extern __cuda_fake_struct threadIdx;
 extern __cuda_fake_struct blockIdx;
 #endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include "cuda_runtime.h"
 
 #define BLOCK_SIZE 32
 
