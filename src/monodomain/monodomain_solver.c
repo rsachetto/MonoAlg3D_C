@@ -15,7 +15,6 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
-
 #include "../3dparty/sds/sds.h"
 #include <assert.h>
 #include <inttypes.h>
