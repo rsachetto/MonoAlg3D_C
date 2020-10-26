@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v2    
 
     - name: Build
-      run: ls .
+      run: ./build.sh -r simulator
 
     - name: Test
-      run:  ./tests_bin/run_tests.sh
+      run:  ./tests_bin/run_tests.sh mesh
