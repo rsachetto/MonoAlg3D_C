@@ -12,27 +12,19 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
 {
+    log_to_stdout_and_file("Using Mitchell-Shaeffer 2003 CPU model\n");
 
-    static bool first_call = true;
-
-    if(first_call) {
-#ifdef _WIN32
-        printf("Using Mitchell-Shaeffer 2003 CPU model\n");
-#else
-        log_to_stdout_and_file("Using Mitchell-Shaeffer 2003 CPU model\n");
-#endif
-
-        first_call = false;
-    }
-
-    uint32_t num_volumes = solver->original_num_cells;
+    uint32_t num_cells = solver->original_num_cells;
+	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     OMP(parallel for)
-    for(uint32_t i = 0; i < num_volumes; i++) {
+    for(uint32_t i = 0; i < num_cells; i++) {
         real *sv = &solver->sv[i * NEQ];
+
         sv[0] = 0.00000820413566106744f; // Vm millivolt
         sv[1] = 0.8789655121804799f;     // h dimensionless
     }
+
 }
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {

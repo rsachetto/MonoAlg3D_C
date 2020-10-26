@@ -66,7 +66,7 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_coupling_with_custom_mesh) {
     real_cpu pmj_scale = 1000.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, pmj_scale, config->config_data, "pmj_scale");
 
-    real_cpu asymm_ratio = 0.01;
+    real_cpu asymm_ratio = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, asymm_ratio, config->config_data, "asymm_ratio");
 
     uint32_t nmin_pmj = 10;
@@ -90,8 +90,8 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_coupling_with_custom_mesh) {
     log_to_stdout_and_file("Purkinje-Muscle-Junction resistance:> %g kohm\n",rpmj);
     log_to_stdout_and_file("Purkinje-Muscle-Junction scale:> %g\n",pmj_scale);
     log_to_stdout_and_file("Purkinje-Muscle-Junction asymmetry conduction ratio:> %g\n",asymm_ratio);
-    log_to_stdout_and_file("Minimum tissue nodes inside Purkinje-Muscle-Junction:> %g\n",nmin_pmj);
-    log_to_stdout_and_file("Maximum tissue nodes inside Purkinje-Muscle-Junction:> %g\n",nmax_pmj);
+    log_to_stdout_and_file("Minimum tissue nodes inside Purkinje-Muscle-Junction:> %u\n",nmin_pmj);
+    log_to_stdout_and_file("Maximum tissue nodes inside Purkinje-Muscle-Junction:> %u\n",nmax_pmj);
     log_to_stdout_and_file("Cellular model for the Purkinje :> %s\n",the_ode_solver->model_data.model_library_path);
     set_custom_purkinje_network(the_grid->purkinje, network_file, dx);
 
