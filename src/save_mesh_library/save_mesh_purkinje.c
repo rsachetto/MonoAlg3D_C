@@ -448,7 +448,7 @@ SAVE_MESH(save_one_cell_state_variables) {
     }
 
     if(ode_solver->gpu) {
-
+#ifdef COMPILE_CUDA
             int num_odes = ode_solver->model_data.number_of_ode_equations;
             real *cell_sv;
 
@@ -465,6 +465,7 @@ SAVE_MESH(save_one_cell_state_variables) {
             fprintf(params->file, "\n");
 
             free(cell_sv);
+#endif
     }
     else {
 

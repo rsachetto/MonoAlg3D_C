@@ -23,6 +23,8 @@ COMPILE_FIBER_CONVERTER=''
 COMPILE_SIMULATOR=''
 COMPILE_WITH_DDM=''
 COMPILE_POSTPROCESSOR=''
+DISABLE_CUDA=''
+
 
 GET_BUILD_OPTIONS "$@"
 
@@ -73,10 +75,14 @@ for i in "${BUILD_ARGS[@]}"; do
         COMPILE_MPI='y'
     fi
 
-     if [ "$i" == "converter" ]; then
+    if [ "$i" == "converter" ]; then
         COMPILE_CONVERTER='y'
     fi
     
+	 if [ "$i" == "disable_cuda" ]; then
+        DISABLE_CUDA='y'
+     fi
+
 done
 
 DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts -Wno-unused-result -Wno-switch -Werror=implicit-function-declaration"
@@ -99,8 +105,10 @@ elif [ "$OS" == "Fedora" ]; then
 fi
 
 if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
-    
-    FIND_CUDA
+
+	if [ -z "$DISABLE_CUDA" ]; then
+	   FIND_CUDA
+	fi
     
     echo -e "${INFO}C compiler:${NC} $C_COMPILER"
     echo -e "${INFO}C++ compiler:${NC} $CXX_COMPILER"

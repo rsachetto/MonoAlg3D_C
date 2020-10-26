@@ -2,12 +2,13 @@
 #define MONOALG3D_MODEL_COURTEMANCHE_RAMIREZ_NATTEL_1998_H
 
 #include "model_common.h"
-#include "../gpu_utils/gpu_utils.h"
 
 #define NEQ 21
 #define INITIAL_V (-81.180000f)
 
 #ifdef __CUDACC__
+
+#include "../gpu_utils/gpu_utils.h"
 
 __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes);
 

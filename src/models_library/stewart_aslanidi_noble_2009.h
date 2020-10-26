@@ -2,7 +2,6 @@
 #define MONOALG3D_MODEL_ARPF_2009_H
 
 #include "model_common.h"
-#include "../gpu_utils/gpu_utils.h"
 
 // MODEL INFO: Mathematical models of the electrical action potential of Purkinje fibre cells, 2009
 
@@ -10,6 +9,8 @@
 #define INITIAL_V (-69.1370441635924)
 
 #ifdef __CUDACC__
+
+#include "../gpu_utils/gpu_utils.h"
 
 __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes);
 

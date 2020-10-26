@@ -5,6 +5,7 @@
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../utils/file_utils.h"
+#include "../logger/logger.h"
 
 #include "../3dparty/stb_ds.h"
 

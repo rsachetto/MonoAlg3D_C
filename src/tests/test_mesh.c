@@ -106,7 +106,7 @@ int test_cuboid_mesh(char *start_dx, char *start_dy, char *start_dz, char *side_
 
         ((init_save_mesh_fn *)save_mesh_config->init_function)(save_mesh_config);
         ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL);
-        ((end_save_mesh_fn *)save_mesh_config->end_function)(save_mesh_config);
+        ((end_save_mesh_fn *)save_mesh_config->end_function)(save_mesh_config, grid);
 
         free_config_data(save_mesh_config);
         sdsfree(file_prefix);
