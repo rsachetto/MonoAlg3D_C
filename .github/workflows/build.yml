@@ -11,7 +11,7 @@ jobs:
 
     - name: Install criterion
       run: |
-        source ./scripts/actions/install_cuda_ubuntu.sh
+        source ./scripts/actions/install_criterion.sh
         if [[ $? -eq 0 ]]; then
           echo "Criterion installed"
         fi
