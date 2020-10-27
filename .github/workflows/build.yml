@@ -9,6 +9,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2    
 
+    - name: Build without cuda
+      run: ./build.sh -r simulator
+
+    - name: Test without cuda
+      run:  ./tests_bin/run_tests.sh
+
     - name: Install CUDA
       env:
         cuda: "11.0"
@@ -26,8 +32,5 @@ jobs:
         fi
       shell: bash
 
-    - name: Build
+    - name: Build with cuda
       run: ./build.sh -r simulator
-
-    - name: Test
-      run:  ./tests_bin/run_tests.sh mesh
