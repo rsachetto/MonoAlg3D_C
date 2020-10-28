@@ -9,6 +9,20 @@ jobs:
     steps:
     - uses: actions/checkout@v2    
 
+    - name: Install criterion
+      run: |
+        source ./scripts/actions/install_criterion.sh
+        if [[ $? -eq 0 ]]; then
+          echo "Criterion installed"
+        fi
+      shell: bash
+    
+    - name: Build without cuda
+      run: ./build.sh -r simulator
+
+    - name: Test without cuda
+      run:  ./tests_bin/run_tests.sh
+
     - name: Install CUDA
       env:
         cuda: "11.0"
@@ -26,8 +40,5 @@ jobs:
         fi
       shell: bash
 
-    - name: Build
+    - name: Build with cuda
       run: ./build.sh -r simulator
-
-    - name: Test
-      run:  ./tests_bin/run_tests.sh mesh

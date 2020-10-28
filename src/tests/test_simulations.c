@@ -105,8 +105,8 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
 
 int check_output_equals(const sds gold_output, const sds tested_output, float tol) {
 
-    string_array files_gold = list_files_from_dir(gold_output, "V_it_");
-    string_array files_tested_sim = list_files_from_dir(tested_output, "V_it_");
+    string_array files_gold = list_files_from_dir(gold_output, "V_it_", "txt", true);
+    string_array files_tested_sim = list_files_from_dir(tested_output, "V_it_", "txt", true);
 
     cr_assert(files_gold != NULL);
     cr_assert(files_tested_sim != NULL);

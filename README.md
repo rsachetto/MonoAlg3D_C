@@ -1,4 +1,5 @@
-# MonoAlg3D
+# MonoAlg3D ![badge](https://action-badges.now.sh/rsachetto/MonoAlg3D_C?action=build)
+
 The MonoAlg3D is a program for solving the 3D monodomain equation by applying the Finite Volume Method.
 
 # Pre-Requisites
