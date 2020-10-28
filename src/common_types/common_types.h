@@ -18,6 +18,9 @@ typedef double real;
 typedef float real;
 #endif
 
+#define MALLOC_ONE(type) (type *) malloc(sizeof(type))
+#define MALLOC_ARRAY(type, n) (type *) malloc(sizeof(type) * n)
+
 typedef double real_cpu;
 
 enum simulation_status {

@@ -1,4 +1,3 @@
-
 #include "utils/file_utils.h"
 
 #include "gui/gui.h"
@@ -14,9 +13,34 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char error[4096];
+static void read_and_render_activation_map(struct gui_config *gui_config, char *input_file, char *error) {
 
-static int read_and_render_files(struct visualization_options *options) {
+    gui_config->grid_info.file_name = NULL;
+
+    omp_set_lock(&gui_config->draw_lock);
+    gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file);
+    gui_config->grid_info.loaded = true;
+    gui_config->int_scale = true;
+
+    if(!gui_config->grid_info.vtk_grid) {
+        sprintf(error, "%s is not an activation map", input_file);
+        if(gui_config->error_message)
+            free(gui_config->error_message);
+        gui_config->error_message = strdup(error);
+        omp_unset_lock(&gui_config->draw_lock);
+        return;
+    }
+
+    gui_config->grid_info.file_name = input_file;
+    gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
+    gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
+
+    omp_unset_lock(&gui_config->draw_lock);
+}
+
+static int read_and_render_files(struct visualization_options *options, struct gui_config *gui_config) {
+
+    char error[4096];
 
     bool using_pvd = false;
     bool single_file = false;
@@ -33,10 +57,10 @@ static int read_and_render_files(struct visualization_options *options) {
 
     if(!input_info.exists) {
         sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk or acm)!");
-        if(gui_get_error_message())
-            gui_free_error_message();
+        if(gui_config->error_message)
+            free(gui_config->error_message);
 
-        gui_set_error_message(error);
+        gui_config->error_message = strdup(error);
         return SIMULATION_FINISHED;
     }
 
@@ -52,7 +76,7 @@ static int read_and_render_files(struct visualization_options *options) {
             using_pvd = true;
             simulation_files = list_files_from_and_timesteps_from_pvd(input);
         } else if(strcmp(input_info.file_extension, "acm") == 0) {
-            read_and_render_activation_map((char *)input, error);
+            read_and_render_activation_map(gui_config, (char *)input, error);
             return SIMULATION_FINISHED;
         } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0 ||
                   strcmp(input_info.file_extension, "txt") == 0 || strcmp(input_info.file_extension, "bin") == 0 ||
@@ -83,9 +107,9 @@ static int read_and_render_files(struct visualization_options *options) {
     if(!num_files) {
         sprintf(error, "No simulations file found in %s", full_path);
 
-        if(gui_get_error_message())
-            gui_free_error_message();
-        gui_set_error_message(error);
+        if(gui_config->error_message)
+            free(gui_config->error_message);
+        gui_config->error_message = strdup(error);
 
         sdsfree(full_path);
         free(simulation_files);
@@ -116,31 +140,31 @@ static int read_and_render_files(struct visualization_options *options) {
 
         final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
 
-        dt = gui_get_dt();
+        dt = gui_config->dt;
 
-        //gui_config.step = step;
-        gui_set_step(step);
+        gui_config->step = step;
+
         if(dt == 0.0) {
-            gui_set_final_time(final_step);
+            gui_config->final_time = final_step;
 
         } else {
-            gui_set_final_time(final_step * dt);
+            gui_config->final_time = final_step * dt;
         }
     } else {
-        gui_set_final_time(simulation_files->timesteps[num_files - 1]);
-        gui_set_dt(-1);
+        gui_config->final_time = simulation_files->timesteps[num_files - 1];
+        gui_config->dt = -1;
     }
 
     while(true) {
 
         if(!using_pvd) {
             if(dt == 0) {
-                gui_set_time(get_step_from_filename(simulation_files->files_list[current_file]));
+                gui_config->time = get_step_from_filename(simulation_files->files_list[current_file]);
             } else {
-                gui_set_time(get_step_from_filename(simulation_files->files_list[current_file]) * dt);
+                gui_config->time = get_step_from_filename(simulation_files->files_list[current_file]) * dt;
             }
         } else {
-            gui_set_time(simulation_files->timesteps[current_file]);
+            gui_config->time = simulation_files->timesteps[current_file];
         }
 
         sdsfree(full_path);
@@ -152,28 +176,28 @@ static int read_and_render_files(struct visualization_options *options) {
                 full_path = sdsnew(get_dir_from_path(input));
         }
 
-        gui_set_filename(NULL);
+        gui_config->grid_info.file_name = NULL;
 
         if(!single_file) {
             full_path = sdscat(full_path, "/");
             full_path = sdscat(full_path, simulation_files->files_list[current_file]);
         }
 
-        gui_lock_draw_lock();
+        omp_set_lock(&gui_config->draw_lock);
 
-        free_vtk_unstructured_grid(gui_get_vtk_grid());
-        gui_set_vtk_grid(new_vtk_unstructured_grid_from_file(full_path));
+        free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
+        gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path);
 
-        gui_set_grid_loaded(true);
+        gui_config->grid_info.loaded = true;
 
-        if(!gui_get_vtk_grid()) {
+        if(!gui_config->grid_info.vtk_grid) {
             sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
-            if(gui_get_error_message())
-                gui_free_error_message();
+            if(gui_config->error_message)
+                free(gui_config->error_message);
 
-            gui_set_error_message(error);
+            gui_config->error_message  = strdup(error);
 
-            gui_unlock_draw_lock();
+            omp_unset_lock(&gui_config->draw_lock);
 
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
@@ -182,14 +206,15 @@ static int read_and_render_files(struct visualization_options *options) {
             return SIMULATION_FINISHED;
         }
 
-        gui_set_filename(full_path);
-        gui_unlock_draw_lock();
+        gui_config->grid_info.file_name = full_path;
 
-        gui_unlock_sleep_lock();
+        omp_unset_lock(&gui_config->draw_lock);
 
-        if(gui_get_restart()) {
-           gui_set_time(0.0);
-            free_vtk_unstructured_grid(gui_get_vtk_grid());
+        omp_unset_lock(&gui_config->sleep_lock);
+
+        if(gui_config->restart) {
+           gui_config->time = 0.0;
+            free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
             free(simulation_files);
@@ -197,7 +222,7 @@ static int read_and_render_files(struct visualization_options *options) {
             return RESTART_SIMULATION;
         }
 
-        if(gui_get_exit()) {
+        if(gui_config->exit) {
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
             free(simulation_files);
@@ -206,9 +231,9 @@ static int read_and_render_files(struct visualization_options *options) {
         }
 
         // TODO: maybe change how we handle advance_return
-        if(gui_get_paused()) {
-            current_file += gui_get_advance_or_return();
-            gui_set_advance_or_return(0);
+        if(gui_config->paused) {
+            current_file += gui_config->advance_or_return;
+            gui_config->advance_or_return = 0;
             if(current_file < 0)
                 current_file++;
             else if(current_file >= num_files)
@@ -218,13 +243,47 @@ static int read_and_render_files(struct visualization_options *options) {
             current_file += v_step;
             if(current_file >= num_files) {
                 current_file -= v_step;
-                gui_set_paused(true);
+                gui_config->paused = true;
             }
         }
     }
 }
 
+static void init_gui_config_for_visualization(struct visualization_options *options, struct gui_config *gui_config, bool only_restart) {
+
+    gui_config->grid_info.vtk_grid = NULL;
+
+    gui_config->simulating = true;
+    gui_config->exit = false;
+    gui_config->restart = false;
+
+    gui_config->paused = true;
+    gui_config->advance_or_return = 0;
+    gui_config->grid_info.loaded = false;
+    gui_config->input = NULL;
+
+    if(!only_restart) {
+        omp_init_lock(&gui_config->draw_lock);
+        omp_init_lock(&gui_config->sleep_lock);
+        gui_config->max_v = options->max_v;
+        gui_config->min_v = options->min_v;
+
+        if(gui_config->min_v == 0) {
+            gui_config->min_v = 0.001f;
+        }
+
+        gui_config->dt = options->dt;
+        gui_config->draw_type = DRAW_FILE;
+        gui_config->grid_info.file_name = NULL;
+        gui_config->error_message = NULL;
+        gui_config->int_scale = false;
+    }
+}
+
+
 int main(int argc, char **argv) {
+
+    struct gui_config *gui_config = MALLOC_ONE(struct gui_config);
 
     struct visualization_options *options = new_visualization_options();
 
@@ -250,32 +309,31 @@ int main(int argc, char **argv) {
     } else {
         OMP(parallel sections num_threads(2)) {
             OMP(section) {
-                init_gui_config_for_visualization(options, false);
-                init_and_open_gui_window();
+                init_gui_config_for_visualization(options, gui_config, false);
+                init_and_open_gui_window(gui_config);
             }
 
             OMP(section) {
-                int result = read_and_render_files(options);
+                int result = read_and_render_files(options, gui_config);
 
                 while(result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
 
-                    if(gui_get_input()) {
-                        options->input = gui_get_input();
+                    if(gui_config->input) {
+                        options->input = gui_config->input;
                         result = RESTART_SIMULATION;
                     }
 
-                    if(gui_get_restart()) {
+                    if(gui_config->restart) {
                         result = RESTART_SIMULATION;
-                        gui_set_grid_loaded(false);
-                        //gui_config.grid_info.loaded = false;
+                        gui_config->grid_info.loaded = false;
                     }
 
                     if(result == RESTART_SIMULATION) {
-                        init_gui_config_for_visualization(options, false);
-                        result = read_and_render_files(options);
+                        init_gui_config_for_visualization(options, gui_config, true);
+                        result = read_and_render_files(options, gui_config);
                     }
 
-                    else if(result == END_SIMULATION || gui_get_exit()) {
+                    else if(result == END_SIMULATION || gui_config->exit) {
                         break;
                     }
                 }

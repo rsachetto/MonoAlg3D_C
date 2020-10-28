@@ -192,48 +192,7 @@ struct mesh_info {
     Vector3 min_size;
 };
 
-void init_and_open_gui_window();
-void gui_set_alg_grid(struct grid *the_grid);
-
-void gui_set_vtk_grid(struct vtk_unstructured_grid *the_grid);
-struct vtk_unstructured_grid * gui_get_vtk_grid();
-
-void gui_set_simulating(bool state);
-void gui_set_paused(bool paused);
-bool gui_get_paused();
-void gui_set_grid_loaded(bool loaded);
-void gui_lock_sleep_lock();
-void gui_unlock_sleep_lock();
-void gui_lock_draw_lock();
-void gui_unlock_draw_lock();
-char * gui_get_error_message();
-void gui_free_error_message();
-void gui_set_error_message(char *msg);
-real_cpu gui_get_dt();
-void gui_set_dt(real_cpu dt);
-
-int gui_get_step();
-void gui_set_step(int s);
-
-char * gui_get_filename();
-void gui_set_filename(char *filename);
-
-real_cpu gui_get_final_time();
-void gui_set_final_time(real_cpu time);
-
-int gui_get_advance_or_return();
-void gui_set_advance_or_return(int adv);
-
-char * gui_get_input();
-void gui_set_input(char *input);
-
-void gui_end_simulation(long res_time, long ode_total_time, long cg_total_time, long total_mat_time, long total_ref_time, long total_deref_time, long total_write_time, long total_config_time, long total_cg_it);
-void init_gui_config_for_simulation(struct user_options *options);
-void read_and_render_activation_map(char *input_file, char *error);
-void init_gui_config_for_visualization(struct visualization_options *options, bool only_restart);
-
-bool gui_get_restart();
-bool gui_get_exit();
-void gui_set_time(double time);
+void init_and_open_gui_window(struct gui_config *gui_config);
+void gui_end_simulation(struct gui_config *gui_config, long res_time, long ode_total_time, long cg_total_time, long total_mat_time, long total_ref_time, long total_deref_time, long total_write_time, long total_config_time, long total_cg_it);
 
 #endif //MONOALG3D_DRAW_H
