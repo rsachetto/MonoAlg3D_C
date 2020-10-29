@@ -92,7 +92,7 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
 
     set_no_stdout(true);
 
-    solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+    solve_monodomain(monodomain_solver, ode_solver, the_grid, options, NULL);
 
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);

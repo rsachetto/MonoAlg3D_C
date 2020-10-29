@@ -467,7 +467,7 @@ int main(int argc, char **argv) {
 #if defined(_OPENMP)
         omp_set_num_threads(nt);
 #endif
-        solve_monodomain(monodomain_solver, ode_solver, the_grid, options);
+        solve_monodomain(monodomain_solver, ode_solver, the_grid, options, NULL);
 
         //options_to_ini_file(options, buffer_ini);
         sdsfree(buffer_ini);
