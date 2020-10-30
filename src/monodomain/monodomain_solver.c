@@ -314,8 +314,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         gui_config->grid_info.alg_grid = the_grid;
         gui_config->simulating = true;
         gui_config->paused = !configs->start_visualization_unpaused;
-    } else {
-        gui_config->paused = false;
     }
 #endif
 
@@ -548,9 +546,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
+	if(show_gui) {
 #ifdef COMPILE_GUI
-    gui_config->grid_info.loaded = true;
+	    gui_config->grid_info.loaded = true;
 #endif
+	}
 
     real_cpu only_abort_after_dt = the_monodomain_solver->only_abort_after_dt;
 
@@ -671,7 +671,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             if(isnan(solver_error)) {
                 log_to_stderr_and_file("\n [ERR] Solver stoped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
                 #ifdef COMPILE_GUI
-                    omp_unset_lock(&gui_config->draw_lock);
+					if(show_gui) {
+	                    omp_unset_lock(&gui_config->draw_lock);
+					}
                 #endif
                 return SIMULATION_FINISHED;
             }
@@ -876,9 +878,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         free_terminals(the_terminals,the_grid->purkinje->network->number_of_terminals);
     }
 
+	if(show_gui) {
 #ifdef COMPILE_GUI
-    gui_end_simulation(gui_config, res_time, ode_total_time, cg_total_time, total_mat_time, total_ref_time, total_deref_time, total_write_time, total_config_time, total_cg_it);
+	   gui_end_simulation(gui_config, res_time, ode_total_time, cg_total_time, total_mat_time, total_ref_time, total_deref_time, total_write_time, total_config_time, total_cg_it);	
 #endif
+	}
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
     CALL_END_SAVE_MESH(save_mesh_config, the_grid);
