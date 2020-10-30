@@ -546,11 +546,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
-	if(show_gui) {
 #ifdef COMPILE_GUI
+	if(show_gui) {
 	    gui_config->grid_info.loaded = true;
-#endif
 	}
+#endif
 
     real_cpu only_abort_after_dt = the_monodomain_solver->only_abort_after_dt;
 
@@ -878,11 +878,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         free_terminals(the_terminals,the_grid->purkinje->network->number_of_terminals);
     }
 
-	if(show_gui) {
 #ifdef COMPILE_GUI
+	if(show_gui) {
 	   gui_end_simulation(gui_config, res_time, ode_total_time, cg_total_time, total_mat_time, total_ref_time, total_deref_time, total_write_time, total_config_time, total_cg_it);	
-#endif
 	}
+#endif
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
     CALL_END_SAVE_MESH(save_mesh_config, the_grid);
