@@ -141,6 +141,7 @@ meshes/atrial_mesh_sub.alg
 meshes/atrial_mesh_sub.fibers
 meshes/ModVent_PAP_500um.alg
 meshes/elizabeth*
+meshes/convertor.py
 
 networks/sebastian*
 networks/elizabeth*

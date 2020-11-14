@@ -44,8 +44,6 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
 void calculate_purkinje_activation_time_and_apd (struct time_info *time_info, struct config *config, struct grid *the_grid, const real_cpu time_threshold,\
                                             const real_cpu purkinje_activation_threshold, const real_cpu purkinje_apd_threshold) {
 
-    printf("Purkinje activation threashold = %g\n",purkinje_activation_threshold);
-
     real_cpu current_t = time_info->current_t;
     real_cpu last_t = time_info->final_t;
     real_cpu dt = time_info->dt;
