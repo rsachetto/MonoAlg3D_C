@@ -13,7 +13,7 @@
 #include "../../utils/utils.h"
 
 struct grid *new_grid() {
-    struct grid *result = (struct grid *)malloc(sizeof(struct grid));
+    struct grid *result = MALLOC_ONE_TYPE(struct grid);
     result->first_cell = NULL;
     result->active_cells = NULL;
     result->adaptive = false;
@@ -247,7 +247,7 @@ void order_grid_cells(struct grid *the_grid) {
 
     // Here we allocate the maximum number of cells we will need for the whole simulation
     if(the_grid->active_cells == NULL) {
-        the_grid->active_cells = (struct cell_node **)malloc(sizeof(struct cell_node *) * the_grid->number_of_cells);
+        the_grid->active_cells = MALLOC_ARRAY_OF_TYPE(struct cell_node *, the_grid->number_of_cells);
     }
 
     uint32_t counter = 0;
@@ -447,7 +447,7 @@ void print_grid_vector(struct grid *the_grid, FILE *output_file, char name) {
 real_cpu *grid_vector_to_array(struct grid *the_grid, char name, uint32_t *num_lines) {
 
     *num_lines = the_grid->num_active_cells;
-    real_cpu *vector = (real_cpu *)malloc(*num_lines * sizeof(real_cpu));
+    real_cpu *vector = MALLOC_ARRAY_OF_TYPE(real_cpu, *num_lines);
 
     FOR_EACH_CELL(the_grid) {
         if(cell->active) {
@@ -509,7 +509,7 @@ void construct_grid_purkinje(struct grid *the_grid) {
 
     // Create the Purkinje cells array
     struct cell_node **purkinje_cells;
-    purkinje_cells = (struct cell_node **)malloc(sizeof(struct cell_node *) * total_purkinje_nodes);
+    purkinje_cells = MALLOC_ARRAY_OF_TYPE(struct cell_node *, total_purkinje_nodes);
     for(int i = 0; i < total_purkinje_nodes; i++)
         purkinje_cells[i] = new_cell_node();
 
@@ -737,7 +737,6 @@ bool cell_is_visible(struct cell_node *grid_cell) {
     }
 }
 
-
 struct terminal *link_purkinje_to_tissue (struct grid *the_grid) {
 
     struct graph *the_network = the_grid->purkinje->network;
@@ -777,7 +776,7 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
     const real_cpu nmin_pmj = the_network->nmin_pmj;
     const real_cpu nmax_pmj = the_network->nmax_pmj;
 
-    struct terminal *the_terminals = (struct terminal *)malloc(sizeof(struct terminal) * number_of_terminals);
+    struct terminal *the_terminals = MALLOC_ARRAY_OF_TYPE(struct terminal, number_of_terminals);
 
     uint32_t j = 0;
     struct node *n = the_network->list_nodes;
@@ -853,7 +852,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     real_cpu nmin_pmj = the_network->nmin_pmj;
     real_cpu nmax_pmj = the_network->nmax_pmj;
 
-    struct terminal *the_terminals = (struct terminal *)malloc(sizeof(struct terminal) * number_of_terminals);
+    struct terminal *the_terminals = MALLOC_ARRAY_OF_TYPE(struct terminal,  number_of_terminals);
 
     // Set all the terminal Purkinje cells
     uint32_t j = 0;
@@ -879,7 +878,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     set_active_terminals(the_terminals,number_of_terminals,pmj_location_filename);
 
     // Consider only the active terminals to do the coupling
-    for (uint32_t j = 0; j < number_of_terminals; j++) {
+    for (j = 0; j < number_of_terminals; j++) {
 
         if (the_terminals[j].active) {
 

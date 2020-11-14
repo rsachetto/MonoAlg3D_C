@@ -87,7 +87,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
     configure_monodomain_solver_from_options(*monodomain_solver, *options);
     configure_grid_from_options(*the_grid, *options);
 
-};
+}
 
 void free_current_simulation_resources(struct user_options *options, struct monodomain_solver *monodomain_solver,  struct ode_solver *ode_solver, struct grid *the_grid) {
     clean_and_free_grid(the_grid);
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
 
        #ifdef COMPILE_GUI //If this is defined so OMP is also defined
 
-        struct gui_config *gui_config = MALLOC_ONE(struct gui_config);
+        struct gui_config *gui_config = MALLOC_ONE_TYPE(struct gui_config);
 
         omp_set_nested(true);
 

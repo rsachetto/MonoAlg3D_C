@@ -18,8 +18,9 @@ typedef double real;
 typedef float real;
 #endif
 
-#define MALLOC_ONE(type) (type *) malloc(sizeof(type))
-#define MALLOC_ARRAY(type, n) (type *) malloc(sizeof(type) * n)
+#define MALLOC_BYTES(type, bytes) (type *) malloc(bytes)
+#define MALLOC_ONE_TYPE(type) (type *) malloc(sizeof(type))
+#define MALLOC_ARRAY_OF_TYPE(type, n) (type *) malloc(sizeof(type) * n)
 
 typedef double real_cpu;
 

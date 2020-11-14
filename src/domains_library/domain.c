@@ -91,7 +91,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_spherical_mesh) {
     real_cpu diameter = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, diameter, config->config_data, "diameter");
 
-    float radius = diameter/2.0;
+    real_cpu radius = diameter/2.0;
 
     sds sx_char = sdscatprintf(sdsempty(), "%lf", diameter+1100);
     sds sy_char = sdscatprintf(sdsempty(), "%lf", diameter+1100);
@@ -102,15 +102,15 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_spherical_mesh) {
     shput_dup_value(config->config_data, "side_length_y", sy_char);
     shput_dup_value(config->config_data, "side_length_z", sz_char);
 
-    return initialize_grid_with_cuboid_mesh(config, the_grid);
+    int ret = initialize_grid_with_cuboid_mesh(config, the_grid);
 
     // Distance between the sphere center and a cell.
     double distance;
 
     // Coordinates of the sphere center
-    const float x_c = 1050.0;
-    const float y_c = 1050.0;
-    const float z_c = 1050.0;
+    const real_cpu x_c = 1050.0;
+    const real_cpu y_c = 1050.0;
+    const real_cpu z_c = 1050.0;
 
     double x, y, z;
     FOR_EACH_CELL(the_grid) {
@@ -123,7 +123,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_spherical_mesh) {
             (distance <= (radius * radius));
     }
 
-    return 1;
+    return ret;
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh) {
@@ -275,9 +275,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
         log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", mesh_file);
     }
 
-    double **mesh_points = (double **)malloc(sizeof(double *) * size);
+    real_cpu **mesh_points = MALLOC_ARRAY_OF_TYPE(real_cpu *,  size);
     for(int i = 0; i < size; i++) {
-        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 3);
+        mesh_points[i] = MALLOC_ARRAY_OF_TYPE(real_cpu, 3);
         if(mesh_points[i] == NULL) {
             log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
@@ -337,8 +337,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     fclose(file);
 
     // deallocate memory
-    for(int l = 0; l < size; l++) {
-        free(mesh_points[l]);
+    for(i = 0; i < size; i++) {
+        free(mesh_points[i]);
     }
 
     free(mesh_points);
@@ -350,11 +350,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
 
     log_to_stdout_and_file("Cleaning grid\n");
 
-    for(int i = 0; i < n_steps; i++) {
+    for(i = 0; i < n_steps; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
 
-    int remaining_refinements = (original_discretization / start_discretization) - 1;
+    int remaining_refinements = (int)((original_discretization / start_discretization) - 1);
     refine_grid(the_grid, remaining_refinements);
 
     return 1;
@@ -379,10 +379,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
     char *mesh_file;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
-    int n_steps = 0;
+    int n_steps = 7;
 
     initialize_and_construct_grid(the_grid, POINT3D(128000, 128000, 128000));
-    n_steps = 7;
+
 	log_to_stdout_and_file("Refining the mesh\n");
     refine_grid(the_grid, n_steps);
 
@@ -393,9 +393,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
         log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", mesh_file);
     }
 
-    double **mesh_points = (double **)malloc(sizeof(double *) * size);
+    real_cpu **mesh_points = MALLOC_ARRAY_OF_TYPE(real_cpu *, size);
+
     for(int i = 0; i < size; i++) {
-        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
+        mesh_points[i] = MALLOC_ARRAY_OF_TYPE(real_cpu, 4);
         if(mesh_points[i] == NULL) {
             log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
@@ -406,8 +407,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
     real_cpu miny = DBL_MAX;
     real_cpu minz = DBL_MAX;
    	
-    int *scar_or_border = (int *)malloc(sizeof(int) * size);
-    int *tissue_type = (int *)malloc(sizeof(int) * size);
+    int *scar_or_border = MALLOC_ARRAY_OF_TYPE(int, size);
+    int *tissue_type    = MALLOC_ARRAY_OF_TYPE(int, size);
 
     real_cpu dummy;
 
@@ -482,7 +483,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
 
     log_to_stdout_and_file("Cleaning grid\n");
 
-    for(int i = 0; i < n_steps; i++) {
+    for(i = 0; i < n_steps; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
 
@@ -776,9 +777,10 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     int num_volumes = 160000;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, num_volumes, config->config_data, "num_volumes");
 
-    double **mesh_points = (double **)malloc(sizeof(double *) * num_volumes);
+    double **mesh_points = MALLOC_ARRAY_OF_TYPE(double *, num_volumes);
+
     for(int i = 0; i < num_volumes; i++) {
-        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
+        mesh_points[i] = MALLOC_ARRAY_OF_TYPE(real_cpu, 4);
         if(mesh_points[i] == NULL) {
             log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
         }
@@ -789,9 +791,9 @@ SET_SPATIAL_DOMAIN(initialize_from_activation_map_file) {
     real_cpu maxz = 0.0;
     real_cpu miny = DBL_MAX;
     real_cpu minz = DBL_MAX;
-    int *fibrosis = (int *)malloc(sizeof(int) * num_volumes);
-    int *active = (int *)malloc(sizeof(int) * num_volumes);
-    int *bz = (int *)malloc(sizeof(int) * num_volumes);
+    int *fibrosis = MALLOC_ARRAY_OF_TYPE(int, num_volumes);
+    int *active   = MALLOC_ARRAY_OF_TYPE(int, num_volumes);
+    int *bz       = MALLOC_ARRAY_OF_TYPE(int, num_volumes);
 
     fibrosis[0] = -1;
 
@@ -972,7 +974,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
 
     float cube_side = 128000;
 
-    int tmp_size = cube_side / 2;
+    int tmp_size = (int)(cube_side / 2);
     int num_ref = 0;
     while(tmp_size > start_h) {
         tmp_size = tmp_size / 2;
@@ -994,9 +996,9 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
     int num_volumes = 514389;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, num_volumes, config->config_data, "num_volumes");
 
-    real_cpu **mesh_points = (real_cpu **)malloc(sizeof(real_cpu *) * num_volumes);
+    real_cpu **mesh_points = MALLOC_ARRAY_OF_TYPE(real_cpu *, num_volumes);
     for(int i = 0; i < num_volumes; i++) {
-        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
+        mesh_points[i] = MALLOC_ARRAY_OF_TYPE(real_cpu, 4);
 
         if(mesh_points[i] == NULL) {
             log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
@@ -1084,7 +1086,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
         }
     }
 
-	int num_refs = start_h/desired_h;
+	int num_refs = (int)(start_h/desired_h);
 	refine_grid(the_grid, num_refs);
 
     free(mesh_file);

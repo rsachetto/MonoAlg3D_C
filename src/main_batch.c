@@ -10,7 +10,6 @@
 #include "utils/file_utils.h"
 #include "3dparty/stb_ds.h"
 
-#include "config/stim_config.h"
 #include "config_helpers/config_helpers.h"
 #include "logger/logger.h"
 
@@ -49,7 +48,7 @@ static void configure_new_parameters(struct changed_parameters *changed, struct 
             } else if (strcmp("use_adaptivity", changed[n].name) == 0) {
                 options->adaptive = IS_TRUE(changed[n].value);
             } else if (strcmp("abort_on_no_activity", changed[n].name) == 0) {
-                options->adaptive = IS_TRUE(changed[n].value);
+                options->abort_no_activity = IS_TRUE(changed[n].value);
             } else {
                 fprintf(stderr, "Parameter %s in section %s cannot be changed\n", changed[n].name, changed[n].section);
             }
@@ -163,9 +162,26 @@ static struct changed_parameters parse_range_or_list_values(char *directive_rhs,
     return c;
 }
 
-static string_array get_combination(ui32_array counters, string_array *sets);
+static bool increment(ui32_array counters, string_array *sets) {
+    for (int i = arrlen(counters) - 1; i >= 0; i--) {
+        if (counters[i] < arrlen(sets[i]) - 1) {
+            counters[i]++;
+            return true;
+        } else {
+            counters[i] = 0;
+        }
+    }
+    return false;
+}
 
-static bool increment(ui32_array counters, string_array *sets);
+static string_array get_combination(const uint32_t *counters, string_array *sets) {
+
+    string_array o = NULL;
+    for (int i = 0; i < arrlen(counters); i++) {
+            arrput(o, strdup(sets[i][counters[i]]));
+    }
+    return o;
+}
 
 static string_array *get_combinations(string_array *sets) {
 
@@ -183,27 +199,6 @@ static string_array *get_combinations(string_array *sets) {
             arrfree(counters);
 
     return combinations;
-}
-
-static string_array get_combination(ui32_array counters, string_array *sets) {
-
-    string_array o = NULL;
-    for (int i = 0; i < arrlen(counters); i++) {
-        arrput(o, strdup(sets[i][counters[i]]));
-    }
-    return o;
-}
-
-static bool increment(ui32_array counters, string_array *sets) {
-    for (int i = arrlen(counters) - 1; i >= 0; i--) {
-        if (counters[i] < arrlen(sets[i]) - 1) {
-            counters[i]++;
-            return true;
-        } else {
-            counters[i] = 0;
-        }
-    }
-    return false;
 }
 
 struct simulation *generate_all_simulations(struct string_hash_entry *modify_directives, int num_sims) {

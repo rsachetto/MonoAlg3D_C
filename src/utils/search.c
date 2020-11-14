@@ -18,7 +18,7 @@ int binary_search(real_cpu **a, real_cpu num, int first, int last, int column) {
     return -1;
 }
 
-int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, int first, int last) {
+int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, size_t first, size_t last) {
     int xval = binary_search(a,x,first,last,0);
     if (xval == -1)
         return -1;
@@ -71,8 +71,8 @@ int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, int first, int
     }
 }
 
-float calculate_mean (float *arr, unsigned long size) {
-    float result = 0.0;
+float calculate_mean (const float *arr, unsigned long size) {
+    float result = 0.0f;
     for (unsigned long i = 0; i < size; i++)
         result += arr[i];
     return result/(float)size;

@@ -161,3 +161,10 @@ MODEL_FILE_GPU="ToRORd_fkatp_endo_2019.cu"
 COMMON_HEADERS="ToRORd_fkatp_endo_2019.h"
 
 COMPILE_MODEL_LIB "ToRORd_fkatp_endo_2019" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+
+############## Maleckar ##############################
+MODEL_FILE_CPU="Maleckar2008.c"
+MODEL_FILE_GPU="Maleckar2008.cu"
+COMMON_HEADERS="Maleckar2008.h"
+
+COMPILE_MODEL_LIB "Maleckar2008" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"

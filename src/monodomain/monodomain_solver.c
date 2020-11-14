@@ -307,7 +307,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool adaptive = the_grid->adaptive;
     real_cpu start_adpt_at = the_monodomain_solver->start_adapting_at;
 
-
 #ifdef COMPILE_GUI
     bool show_gui = configs->show_gui;
     if (show_gui) {
@@ -330,8 +329,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
     int success;
+    struct ode_solver *the_purkinje_ode_solver = NULL;
 
-   struct ode_solver *the_purkinje_ode_solver = NULL;
     if (purkinje_config)  {
 
         // Allocate a new 'ode_solver' for the Purkinje
@@ -380,8 +379,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     max_dx = max_dy = max_dz = 100.0;
 
     uint32_t original_num_cells = 0;
-    uint32_t original_num_purkinje_cells = 0; 
-
+    uint32_t original_num_purkinje_cells = 0;
 
     if (domain_config) {
 		//TODO: maybe add start_dx,dy, etc back to the grid. So it is easier to configure the domains....
