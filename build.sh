@@ -25,7 +25,6 @@ COMPILE_WITH_DDM=''
 COMPILE_POSTPROCESSOR=''
 DISABLE_CUDA=''
 
-
 GET_BUILD_OPTIONS "$@"
 
 if [ "$BUILD_TYPE" == "release" ]; then

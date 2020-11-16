@@ -60,7 +60,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-bin/
+bin/MonoAlg3*
 shared_libs/
 tmp*/
 tests_bin/TestSuite
