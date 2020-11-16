@@ -8,7 +8,6 @@
 #include "vtk_utils/pvd_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
 
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -283,7 +282,7 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
 
 int main(int argc, char **argv) {
 
-    struct gui_config *gui_config = MALLOC_ONE(struct gui_config);
+    struct gui_config *gui_config = MALLOC_ONE_TYPE(struct gui_config);
 
     struct visualization_options *options = new_visualization_options();
 

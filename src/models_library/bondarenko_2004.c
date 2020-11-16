@@ -14,7 +14,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
     uint32_t num_cells = solver->original_num_cells;
 
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+	solver->sv = MALLOC_ARRAY_OF_TYPE(real, NEQ*num_cells);
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_cells; i++) {

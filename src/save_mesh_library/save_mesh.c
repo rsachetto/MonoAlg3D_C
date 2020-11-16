@@ -141,7 +141,6 @@ SAVE_MESH(save_one_cell_state_variables) {
             FOR_EACH_CELL(the_grid) {
                 if(cell->center.x == params->cell_center_x && cell->center.y == params->cell_center_y && cell->center.z == params->cell_center_z) {
                     params->cell_sv_position = cell->sv_position;
-                    printf("%d\n", params->cell_sv_position);
                     break;
                 }
             }
@@ -152,7 +151,7 @@ SAVE_MESH(save_one_cell_state_variables) {
 #ifdef COMPILE_CUDA
             real *cell_sv;
 
-            cell_sv = (real *)malloc(sizeof(real) * ode_solver->model_data.number_of_ode_equations);
+            cell_sv = MALLOC_ARRAY_OF_TYPE(real, ode_solver->model_data.number_of_ode_equations);
 
             check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position,
                                            ode_solver->pitch, sizeof(real),

@@ -19,7 +19,8 @@
 #include <float.h>
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
-    struct vtk_unstructured_grid *grid = (struct vtk_unstructured_grid *)malloc(sizeof(struct vtk_unstructured_grid));
+
+    struct vtk_unstructured_grid *grid = MALLOC_ONE_TYPE(struct vtk_unstructured_grid);
 
     grid->cells = NULL;
     grid->values = NULL;
@@ -1855,7 +1856,8 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
     else if(xml) {
         //VTK XML file
         static char stack[8*1024];
-        yxml_t *x = (yxml_t *) malloc(sizeof(yxml_t));
+        yxml_t *x = MALLOC_ONE_TYPE(yxml_t);
+
         yxml_init(x, stack, sizeof(stack));
 
         size_t bytes_read = 0;

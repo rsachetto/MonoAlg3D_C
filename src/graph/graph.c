@@ -2,7 +2,7 @@
 
 struct graph* new_graph ()
 {
-    struct graph *result = (struct graph*)malloc(sizeof(struct graph));
+    struct graph *result = MALLOC_ONE_TYPE(struct graph);
     result->last_node = NULL;
     result->list_nodes = NULL;
     result->total_nodes = 0;
@@ -18,7 +18,6 @@ void free_list_edges (struct node *n)
 
     while (e1 != NULL)
     {
-        e1->next = NULL;
         free(e1);
         e1 = e2;
         if (e2 != NULL)
@@ -38,7 +37,6 @@ void free_list_nodes (struct graph *g)
         if (n1->list_edges)
             free_list_edges(n1);
         
-        n1->next = NULL;
         free(n1);
         n1 = n2;
         if (n2 != NULL)
@@ -110,7 +108,7 @@ void insert_node_graph (struct graph *g, const real_cpu pos[])
 
 struct node* new_node (uint32_t id, const real_cpu pos[])
 {
-    struct node *n = (struct node*)malloc(sizeof(struct node));
+    struct node *n = MALLOC_ONE_TYPE(struct node);
     n->id = id;
     n->x = pos[0];
     n->y = pos[1];
@@ -124,7 +122,7 @@ struct node* new_node (uint32_t id, const real_cpu pos[])
 
 struct edge* new_edge (uint32_t id, real_cpu w, struct node *dest)
 {
-    struct edge *e = (struct edge*)malloc(sizeof(struct edge));
+    struct edge *e = MALLOC_ONE_TYPE(struct edge);
 	e->id = id;
 	e->w = w;
 	e->dest = dest;

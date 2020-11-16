@@ -136,7 +136,7 @@ SAVE_STATE(save_simulation_state) {
 
         #ifdef COMPILE_CUDA
             real *sv_cpu;
-            sv_cpu = (real*) malloc(the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations * sizeof(real));
+            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations);
 
             check_cuda_error(cudaMemcpy2D(sv_cpu, the_ode_solver->original_num_cells * sizeof(real), the_ode_solver->sv, the_ode_solver->pitch,
                          the_ode_solver->original_num_cells * sizeof(real), (size_t)the_ode_solver->model_data.number_of_ode_equations,

@@ -99,10 +99,10 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
     real_cpu *x = read_octave_vector_file_to_array(X, &n_lines1);
     real_cpu *x_grid = grid_vector_to_array(grid, 'x', &n_lines2);
 
-    if(preconditioner)
-        printf("MSE using %s with preconditioner and %d threads: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
-    else
-        printf("MSE using %s without preconditioner and %d threads:: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
+    //if(preconditioner)
+    //    printf("MSE using %s with preconditioner and %d threads: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
+    //else
+    //    printf("MSE using %s without preconditioner and %d threads:: %e\n", method_name, nt, calc_mse(x, x_grid, n_lines1));
 
     cr_assert_eq (n_lines1, n_lines2);
 

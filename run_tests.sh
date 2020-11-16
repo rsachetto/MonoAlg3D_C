@@ -16,6 +16,7 @@ function RUN_TEST() {
     if [ "$lower_case_name" == "all" ]; then
         for t in ${VALID_TESTS}; do
             t_bin_name="$(tr '[:lower:]' '[:upper:]' <<< "${t:0:1}")${t:1}"
+            echo "RUNNING ./tests_bin/Test"${t_bin_name}""
             ./tests_bin/Test"${t_bin_name}"
         done
     else
@@ -41,5 +42,3 @@ fi
 INITIAL_PARAMS="$*"
 
 RUN_TEST "$TESTS"
-
-

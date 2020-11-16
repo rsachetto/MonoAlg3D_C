@@ -33,7 +33,7 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     size_t mem_size = initial_number_of_cells * sizeof(real);
 
     if(use_gpu) {
-        vms = (real *)malloc(mem_size);
+        vms = MALLOC_BYTES(real, mem_size);
         check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
     #endif
@@ -74,7 +74,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
 
     if(use_gpu)
     {
-        vms = (real *)malloc(mem_size);
+        vms = MALLOC_BYTES(real, mem_size);
         check_cuda_errors(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
 #endif

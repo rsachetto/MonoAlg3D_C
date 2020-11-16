@@ -42,7 +42,6 @@ src/libglfw.so
 src/libglfw.so.3
 src/libglfw.so.3.3
 src/libglfw.dylib
-src/libglfw.dylib
 src/libglfw.3.dylib
 src/libglfw.3.3.dylib
 src/libglfw3.a

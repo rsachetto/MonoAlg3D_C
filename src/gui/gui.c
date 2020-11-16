@@ -88,7 +88,7 @@ static struct gui_state *new_gui_state_with_font_sizes(int font_size_small, int 
     gui_state->selected_time = 0.0;
     gui_state->move_sub_window = false;
 
-    gui_state->ap_graph_config = (struct ap_graph_config *)malloc(sizeof(struct ap_graph_config));
+    gui_state->ap_graph_config = MALLOC_ONE_TYPE(struct ap_graph_config);
     gui_state->ap_graph_config->selected_ap_point = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
@@ -101,8 +101,8 @@ static struct gui_state *new_gui_state_with_font_sizes(int font_size_small, int 
 
     hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
 
-    gui_state->ap_graph_config->graph.height = (float)450;
-    gui_state->ap_graph_config->graph.width = (float)900;
+    gui_state->ap_graph_config->graph.height = 450.0f;
+    gui_state->ap_graph_config->graph.width = 900.0f;
 
     gui_state->ap_graph_config->graph.x = 100;
     gui_state->ap_graph_config->graph.y = (float)current_window_height - gui_state->ap_graph_config->graph.height - 70;
@@ -114,7 +114,7 @@ static struct gui_state *new_gui_state_with_font_sizes(int font_size_small, int 
 
     gui_state->show_coordinates = true;
 
-    gui_state->coordinates_cube_size = (Vector3){1.2, 1.2, 1.2};
+    gui_state->coordinates_cube_size = (Vector3){1.2f, 1.2f, 1.2f};
 
     gui_state->double_clicked = false;
 
@@ -1602,7 +1602,6 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
         handle_input(gui_config, mesh_info, gui_state);
         if(gui_config->grid_info.loaded) {
-
             omp_set_lock(&gui_config->draw_lock);
 
             if(draw_type == DRAW_FILE) {
