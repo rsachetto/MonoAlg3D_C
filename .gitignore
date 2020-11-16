@@ -88,6 +88,7 @@ cuboid_tt2004_gpu/
 *.ctags
 tags
 scripts/output
+scripts/animations/convert_png_to_mp4.sh
 scripts/animations/frames
 scripts/animations/video
 scripts/animations/videos/*.mp4
