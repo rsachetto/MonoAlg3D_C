@@ -157,3 +157,6 @@ example_configs/elizabeth*
 /meshes/scv.alg
 /src/3dparty/raylib/src/stbTAvvG
 .idea/inspectionProfiles/Project_Default.xml
+scripts/calc_apd_full_grid/aps/test
+scripts/calc_apd_full_grid/output/test
+
