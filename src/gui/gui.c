@@ -1602,6 +1602,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
         handle_input(gui_config, mesh_info, gui_state);
         if(gui_config->grid_info.loaded) {
+
             omp_set_lock(&gui_config->draw_lock);
 
             if(draw_type == DRAW_FILE) {
