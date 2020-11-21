@@ -145,6 +145,65 @@ struct node* search_node (struct graph *g, const uint32_t id)
     return NULL;
 }
 
+double* dijkstra (struct graph *g, const uint32_t src_id)
+{
+    // Initialize the shortest distance array
+    uint32_t num_nodes = g->total_nodes;
+    double *dist = (double*)malloc(sizeof(double)*num_nodes);
+    for (uint32_t i = 0; i < num_nodes; i++) dist[i] = __DBL_MAX__;
+    dist[src_id] = 0.0;
+
+    pqueue_t *pq;
+	node_t   *ns;
+	node_t   *n;
+
+    // Initialize the priority queue
+	ns = (struct node_t*)malloc(num_nodes * sizeof(node_t));
+	pq = pqueue_init(num_nodes, cmp_pri, get_pri, set_pri, get_pos, set_pos);
+	if (!(ns && pq))
+    {
+        fprintf(stderr,"[graph] ERROR! Could not allocate priority queue!\n");
+        exit(EXIT_FAILURE); 
+    }
+
+    // Enqueue the source node
+    ns[src_id].pri = 0.0; 
+    ns[src_id].val = src_id; 
+    pqueue_insert(pq, &ns[src_id]);
+
+    while ((n = (node_t*)pqueue_pop(pq)))
+    {
+        double d = n->pri;
+        uint32_t u = n->val;
+        if (d > dist[u]) 
+            continue;
+        
+        struct node *u_node = search_node(g,u);
+        struct edge *tmp = u_node->list_edges;
+        while (tmp != NULL)
+        {
+            uint32_t v = tmp->id;
+            double w = tmp->w;
+
+            if (dist[u] + w < dist[v])
+            {
+                dist[v] = dist[u] + w;
+
+                ns[v].pri = dist[v]; 
+                ns[v].val = v; 
+                pqueue_insert(pq, &ns[v]);
+            }
+
+            tmp = tmp->next;
+        }
+    }
+
+    pqueue_free(pq);
+	free(ns);
+
+    return dist;
+}
+
 void print_graph (struct graph *g)
 {
     struct node *n = g->list_nodes;

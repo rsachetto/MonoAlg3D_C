@@ -1515,7 +1515,7 @@ void print_pmj_delay (struct grid *the_grid, struct config *config, struct termi
                     // Check if the number of activations from the current tissue and Purkinje cell are equal
                     if (n_activations_purkinje > n_activations_tissue) {
                         log_to_stderr_and_file("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
-                        log_to_stderr_and_file("[purkinje_coupling] Probably there was a block on the anteretrograde direction!\n");
+                        log_to_stderr_and_file("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
                         log_to_stderr_and_file("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
                         cur_pulse = 0;
                     }

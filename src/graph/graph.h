@@ -11,7 +11,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+
 #include "../common_types/common_types.h"
+
+#include "pqueue.h"
 
 struct node;
 struct edge;
@@ -71,6 +74,54 @@ void free_list_edges (struct node *n);
 real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,\
                   const real_cpu x2, const real_cpu y2, const real_cpu z2);
 
+double* dijkstra (struct graph *g, const uint32_t src_id);
+
 bool is_terminal (const struct node *n);
+
+// --------------------------------------------------------------------------------
+// PQUEUE library
+typedef struct node_t
+{
+	pqueue_pri_t pri;
+	uint32_t    val;
+	size_t pos;
+} node_t;
+
+
+static int
+cmp_pri(pqueue_pri_t next, pqueue_pri_t curr)
+{
+	//return (next < curr);         // equivalent to std::less<int>()
+    return (next > curr);           // equivalent to std::greater<int>()
+}
+
+
+static pqueue_pri_t
+get_pri(void *a)
+{
+	return ((node_t *) a)->pri;
+}
+
+
+static void
+set_pri(void *a, pqueue_pri_t pri)
+{
+	((node_t *) a)->pri = pri;
+}
+
+
+static size_t
+get_pos(void *a)
+{
+	return ((node_t *) a)->pos;
+}
+
+
+static void
+set_pos(void *a, size_t pos)
+{
+	((node_t *) a)->pos = pos;
+}
+
 
 #endif //MONOALG3D_GRAPH_H

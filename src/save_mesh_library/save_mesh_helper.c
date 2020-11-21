@@ -717,73 +717,57 @@ void set_tissue_vtk_values_with_mean_apd (void **persistent_data, struct grid *t
     }    
 }
 
-// TODO: Extend this to a general Purkinje network (Run Dijkstra to get the distances)
-//  This code only works in a cable Purkinje network
+// TODO: Think about how we are going to calculate the propagation velocity in the retrograde direction
 void print_purkinje_propagation_velocity (struct config *config, struct grid *the_grid) {
     
     assert(config);
     assert(the_grid);
 
     struct save_coupling_with_activation_times_persistent_data *persistent_data = (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
-
-    uint32_t ref_id = 200;
-    uint32_t prev_id = ref_id - 10;
-    uint32_t next_id = ref_id + 10;
-    real_cpu dist = 100*20;
-    
-    struct node *ref_cell, *prev_cell, *next_cell;
-    struct point_3d cell_coordinates;
-    real_cpu center_x, center_y, center_z;
     struct cell_node **purkinje_cells = the_grid->purkinje->purkinje_cells;
-    
-    center_x = purkinje_cells[ref_id]->center.x;
-    center_y = purkinje_cells[ref_id]->center.y;
-    center_z = purkinje_cells[ref_id]->center.z;
 
-    cell_coordinates.x = center_x;
-    cell_coordinates.y = center_y;
-    cell_coordinates.z = center_z;
+    // Compute the shortest distance from the root to all other nodes
+    struct graph *the_network = the_grid->purkinje->network;
+    double *shortest_dist = dijkstra(the_network,0);
 
-    // Get the total number of pulses
-    int n_pulses = 0;
-    n_pulses = (int) hmget(persistent_data->purkinje_num_activations, cell_coordinates);
+    // Calculate the propagation velocity of each terminal in the Purkinje network
+    struct node *n = the_network->list_nodes;
+    while(n != NULL) 
+    {
+        if( is_terminal(n) ) 
+        {
+            struct point_3d cell_coordinates;
+            real_cpu center_x, center_y, center_z;
 
-    // Get previous cell LAT
-    center_x = purkinje_cells[prev_id]->center.x;
-    center_y = purkinje_cells[prev_id]->center.y;
-    center_z = purkinje_cells[prev_id]->center.z;
+            uint32_t id = n->id;
+            center_x = purkinje_cells[id]->center.x;
+            center_y = purkinje_cells[id]->center.y;
+            center_z = purkinje_cells[id]->center.z;
 
-    cell_coordinates.x = center_x;
-    cell_coordinates.y = center_y;
-    cell_coordinates.z = center_z;
+            cell_coordinates.x = center_x;
+            cell_coordinates.y = center_y;
+            cell_coordinates.z = center_z;
 
-    float *prev_activation_times_array = NULL;
-    prev_activation_times_array = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
+            // Get the total number of pulses
+            int n_pulses = 0;
+            n_pulses = (int) hmget(persistent_data->purkinje_num_activations, cell_coordinates);
 
-    // Get next cell LAT
-    center_x = purkinje_cells[next_id]->center.x;
-    center_y = purkinje_cells[next_id]->center.y;
-    center_z = purkinje_cells[next_id]->center.z;
+            // Get the terminal cell LAT 
+            float *activation_times_array = NULL;
+            activation_times_array = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
 
-    cell_coordinates.x = center_x;
-    cell_coordinates.y = center_y;
-    cell_coordinates.z = center_z;
+            for (uint32_t j = 0; j < n_pulses; j++)
+            {
+                real_cpu delta_t = activation_times_array[j];
+                real_cpu delta_s = shortest_dist[id];
+                real_cpu v = delta_s / delta_t;
 
-    float *next_activation_times_array = NULL;
-    next_activation_times_array = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
+                log_to_stdout_and_file("[Pulse %u] Purkinje cell %u || Delta_s = %g um || Delta_t = %g ms || v = %g um/mm\n",j+1,id,delta_s,delta_t,v);
+            }
+        }
+        n = n->next;
+    }
 
-    uint32_t cur_pulse = 0;
-    real_cpu t1 = prev_activation_times_array[cur_pulse];
-    real_cpu t2 = next_activation_times_array[cur_pulse];
-    real_cpu v = dist / (t2 - t1);
-
-    log_to_stdout_and_file("Number of pulses = %d\n",n_pulses);
-    log_to_stdout_and_file("Cell %u -- Delta_s = %g um -- Delta_t = %g ms -- v = %g um/mm\n",ref_id,dist,t2-t1,v);
-    
-    cur_pulse++;
-    t1 = prev_activation_times_array[cur_pulse];
-    t2 = next_activation_times_array[cur_pulse];
-    v = dist / (t2 - t1);
-    log_to_stdout_and_file("Cell %u -- Delta_s = %g um -- Delta_t = %g ms -- v = %g um/mm\n",ref_id,dist,t2-t1,v);
+    free(shortest_dist);
 
 }
