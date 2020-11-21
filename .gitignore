@@ -88,6 +88,7 @@ cuboid_tt2004_gpu/
 *.ctags
 tags
 scripts/output
+scripts/animations/convert_png_to_mp4.sh
 scripts/animations/frames
 scripts/animations/video
 scripts/animations/videos/*.mp4
@@ -141,6 +142,7 @@ meshes/atrial_mesh_sub.alg
 meshes/atrial_mesh_sub.fibers
 meshes/ModVent_PAP_500um.alg
 meshes/elizabeth*
+meshes/convertor.py
 
 networks/sebastian*
 networks/elizabeth*
