@@ -1826,7 +1826,7 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
     char *tmp = read_entire_file_with_mmap(file_name, &size);
 
-    if(!tmp) {
+    if(!(tmp && size)) {
         *vtk_grid = NULL;
         return;
     }

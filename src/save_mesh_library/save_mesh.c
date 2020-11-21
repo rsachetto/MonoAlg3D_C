@@ -636,7 +636,13 @@ SAVE_MESH(save_with_activation_times) {
             dy = grid_cell->discretization.y / 2.0;
             dz = grid_cell->discretization.z / 2.0;
 
-            fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell), BORDER_ZONE(grid_cell));
+            if(grid_cell->mesh_extra_info) {
+                fprintf(act_file, "%g,%g,%g,%g,%g,%g,%d,%d,%d ", center_x, center_y, center_z, dx, dy, dz, grid_cell->active, FIBROTIC(grid_cell),
+                        BORDER_ZONE(grid_cell));
+            }
+            else {
+                fprintf(act_file, "%g,%g,%g,%g,%g,%g ", center_x, center_y, center_z, dx, dy, dz);
+            }
 
             int n_activations = 0;
             float *apds_array = NULL;

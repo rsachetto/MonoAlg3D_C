@@ -156,6 +156,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     while(true) {
 
+        omp_set_lock(&gui_config->draw_lock);
+
         if(!using_pvd) {
             if(dt == 0) {
                 gui_config->time = get_step_from_filename(simulation_files->files_list[current_file]);
@@ -175,19 +177,15 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 full_path = sdsnew(get_dir_from_path(input));
         }
 
-        gui_config->grid_info.file_name = NULL;
-
         if(!single_file) {
             full_path = sdscat(full_path, "/");
             full_path = sdscat(full_path, simulation_files->files_list[current_file]);
         }
 
-        omp_set_lock(&gui_config->draw_lock);
 
         free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
         gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path);
 
-        gui_config->grid_info.loaded = true;
 
         if(!gui_config->grid_info.vtk_grid) {
             sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
@@ -195,21 +193,23 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 free(gui_config->error_message);
 
             gui_config->error_message  = strdup(error);
-
-            omp_unset_lock(&gui_config->draw_lock);
-
-            arrfree(simulation_files->files_list);
-            arrfree(simulation_files->timesteps);
-            free(simulation_files);
-            sdsfree(full_path);
-            return SIMULATION_FINISHED;
+            
+			//arrfree(simulation_files->files_list);
+            //arrfree(simulation_files->timesteps);
+            //free(simulation_files);
+            //sdsfree(full_path);
+			gui_config->grid_info.loaded = false;
+			gui_config->paused = true;
+            //return SIMULATION_FINISHED;
         }
-
-        gui_config->grid_info.file_name = full_path;
+		else {
+	        gui_config->grid_info.file_name = full_path;        
+			gui_config->grid_info.loaded = true;
+		}
 
         omp_unset_lock(&gui_config->draw_lock);
 
-        omp_unset_lock(&gui_config->sleep_lock);
+        omp_set_lock(&gui_config->sleep_lock);
 
         if(gui_config->restart) {
            gui_config->time = 0.0;

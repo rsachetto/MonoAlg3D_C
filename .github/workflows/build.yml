@@ -21,7 +21,7 @@ jobs:
       run: ./build.sh -r simulator
 
     - name: Test without cuda
-      run:  ./tests_bin/run_tests.sh
+      run:  ./run_tests.sh
 
     - name: Install CUDA
       env:
