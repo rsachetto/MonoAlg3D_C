@@ -186,7 +186,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 
     const real _beta_safety_ = 0.8;
 
-    const real __tiny_ = pow(abstol, 2.0f);
+    const real __tiny_ = powf(abstol, 2.0f);
 
     // dt = ((time_new + dt) > final_time) ? (final_time - time_new) : dt;
     if(time_new + dt > final_time) {
