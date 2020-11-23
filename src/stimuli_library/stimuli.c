@@ -11,59 +11,12 @@
 #include "../config_helpers/config_helpers.h"
 #include "../utils/utils.h"
 
-#define SET_STIM_VALUE(i, stim_value) ((real *)(config->persistent_data))[i] = stim_value
-
-#define ALLOCATE_STIMS()                                                                                                \
-	if(the_grid->adaptive) {                                                                                            \
-		if(config->persistent_data) {                                                                                   \
-			free(config->persistent_data);                                                                              \
-		}                                                                                                               \
-		config->persistent_data = (real *)malloc(n_active * sizeof(real));                                              \
-	}                                                                                                                   \
-	else {  																											\
-		if(!config->persistent_data) {                                                                                  \
-			config->persistent_data = (real *)malloc(n_active * sizeof(real));                                          \
-		}                                                                                                               \
-	}
-
-SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
-
-    uint32_t n_active = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    real stim_current = 0.0;
-
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
-
-    ALLOCATE_STIMS();
-
-    OMP(parallel for)
-    for(uint32_t i = 0; i < n_active; i++) {
-
-        real stim_value;
-        bool stim = true;
-
-//        stim &= ac[i]->center.y < 3500 + 1500.0;
-//        stim &= ac[i]->center.y > 3500 - 1500.0;
-
-        stim &= ac[i]->center.x < 1500.0;
-        stim &= ac[i]->center.y < 1500.0;
-        stim &= ac[i]->center.z < 1500.0;
-
-        if(stim) {
-            stim_value = stim_current;
-        } else {
-            stim_value = 0.0;
-        }
-
-        SET_STIM_VALUE(i, stim_value);
-    }
-}
-
 SET_SPATIAL_STIM(stim_if_x_less_than) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
+    
+	ALLOCATE_STIMS();
 
     if(is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
@@ -80,8 +33,6 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, x_limit, config->config_data, "x_limit");
 
     uint32_t i;
-
-    ALLOCATE_STIMS();
 
     OMP(parallel for private(stim, stim_value))
     for(i = 0; i < n_active; i++) {
@@ -137,6 +88,72 @@ SET_SPATIAL_STIM(stim_if_y_less_than) {
     }
 }
 
+SET_SPATIAL_STIM(stim_if_z_less_than) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    bool stim;
+    real stim_value;
+
+    real_cpu z_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, z_limit, config->config_data, "z_limit");
+
+    uint32_t i;
+
+    ALLOCATE_STIMS();
+
+    OMP(parallel for private(stim, stim_value))
+    for (i = 0; i < n_active; i++) {
+        stim = ac[i]->center.z < z_limit;
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+
+    }
+}
+
+SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    real_cpu x_limit = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, x_limit, config->config_data, "x_limit");
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    real stim_value;
+
+    uint32_t i;
+
+    ALLOCATE_STIMS();
+
+    OMP(parallel for private(stim_value))
+    for(i = 0; i < n_active; i++) {
+        bool stim = (ac[i]->center.x >= x_limit);
+
+        if(stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+    }
+}
+
+
+
 SET_SPATIAL_STIM(stim_if_y_greater_or_equal_than) {
 
     uint32_t n_active = the_grid->num_active_cells;
@@ -173,6 +190,74 @@ SET_SPATIAL_STIM(stim_if_y_greater_or_equal_than) {
 
         SET_STIM_VALUE(i, stim_value);
 
+    }
+}
+
+SET_SPATIAL_STIM(stim_if_z_greater_or_equal_than) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    ALLOCATE_STIMS();
+
+    if(is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    bool stim;
+    real stim_value;
+
+    real_cpu z_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, z_limit, config->config_data, "z_limit");
+
+    uint32_t i;
+    OMP(parallel for private(stim, stim_value))
+    for (i = 0; i < n_active; i++) {
+        stim = ac[i]->center.z >= z_limit;
+
+        if (stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+
+    }
+}
+
+SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+    
+	ALLOCATE_STIMS();
+
+    real stim_current = 0.0;
+
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+    OMP(parallel for)
+    for(uint32_t i = 0; i < n_active; i++) {
+
+        real stim_value;
+        bool stim = true;
+
+        stim &= ac[i]->center.x < 1500.0;
+        stim &= ac[i]->center.y < 1500.0;
+        stim &= ac[i]->center.z < 1500.0;
+
+        if(stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
     }
 }
 
@@ -294,37 +379,6 @@ SET_SPATIAL_STIM(stim_sphere) {
         SET_STIM_VALUE(i, stim_value);
     }
 
-}
-
-SET_SPATIAL_STIM(stim_if_x_greater_equal_than) {
-
-    uint32_t n_active = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    real_cpu x_limit = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, x_limit, config->config_data, "x_limit");
-
-    real stim_current = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
-
-    real stim_value;
-
-    uint32_t i;
-
-    ALLOCATE_STIMS();
-
-    OMP(parallel for private(stim_value))
-    for(i = 0; i < n_active; i++) {
-        bool stim = (ac[i]->center.x >= x_limit);
-
-        if(stim) {
-            stim_value = stim_current;
-        } else {
-            stim_value = 0.0;
-        }
-
-        SET_STIM_VALUE(i, stim_value);
-    }
 }
 
 SET_SPATIAL_STIM(stim_base_mouse) {
@@ -547,11 +601,9 @@ SET_SPATIAL_STIM(stim_if_id_less_than) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, id, config->config_data, "id_limit");
 
     uint32_t n_active = the_grid->num_active_cells;
-    //struct cell_node **ac = the_grid->active_cells;
 
     if (is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
-      //  ac = the_grid->purkinje->purkinje_cells;
     }
 
     uint32_t i;
@@ -584,11 +636,9 @@ SET_SPATIAL_STIM(stim_if_id_greater_than) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, id, config->config_data, "id_limit");
 
     uint32_t n_active = the_grid->num_active_cells;
-    //struct cell_node **ac = the_grid->active_cells;
 
     if (is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
-      //  ac = the_grid->purkinje->purkinje_cells;
     }
 
     uint32_t i;
@@ -669,35 +719,4 @@ SET_SPATIAL_STIM(stim_concave) {
 }
 
 
-SET_SPATIAL_STIM(stim_if_z_less_than) {
 
-    uint32_t n_active = the_grid->num_active_cells;
-    struct cell_node **ac = the_grid->active_cells;
-
-    real stim_current = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
-
-    bool stim;
-    real stim_value;
-
-    real_cpu z_limit = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, z_limit, config->config_data, "z_limit");
-
-    uint32_t i;
-
-    ALLOCATE_STIMS();
-
-    OMP(parallel for private(stim, stim_value))
-    for (i = 0; i < n_active; i++) {
-        stim = ac[i]->center.z < z_limit;
-
-        if (stim) {
-            stim_value = stim_current;
-        } else {
-            stim_value = 0.0;
-        }
-
-        SET_STIM_VALUE(i, stim_value);
-
-    }
-}

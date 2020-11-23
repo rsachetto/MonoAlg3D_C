@@ -17,6 +17,8 @@ void report_error_on_function(int line, const char *file, const char *error);
 char *get_string_parameter(struct string_hash_entry *config, const char *parameter);
 bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int n);
 
+#define STRINGS_EQUAL(str1, str2) (strcmp((str1), (str2)) == 0)
+
 #define IS_TRUE(str) (strcmp((str), "true") == 0 || strcmp((str), "yes") == 0 || strcmp((str), "1") == 0)
 #define IS_FALSE(str) (strcmp((str), "false") == 0 || strcmp((str), "no") == 0 || strcmp((str), "0") == 0)
 
