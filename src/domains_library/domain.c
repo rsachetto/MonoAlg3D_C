@@ -149,48 +149,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh) {
     return initialize_grid_with_cuboid_mesh(config, the_grid);
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_domino_mesh) {
-
-    real_cpu side_length = 3.0;
-
-    sds sx_char = sdscatprintf(sdsempty(), "%lf", side_length);
-    sds sy_char = sdscatprintf(sdsempty(), "%lf", side_length);
-    sds sz_char = sdscatprintf(sdsempty(), "%lf", side_length);
-
-    // TODO: check if we can put this direct in the grid
-    shput_dup_value(config->config_data, "side_length_x", sx_char);
-    shput_dup_value(config->config_data, "side_length_y", sy_char);
-    shput_dup_value(config->config_data, "side_length_z", sz_char);
-
-    // TODO: check if we can put this direct in the grid
-    shput_dup_value(config->config_data, "start_dx", "1.0");
-    shput_dup_value(config->config_data, "start_dy", "1.0");
-    shput_dup_value(config->config_data, "start_dz", "1.0");
-
-    initialize_grid_with_cuboid_mesh(config, the_grid);
-
-    //	FOR_EACH_CELL(the_grid) {
-    //
-    //        if(CENTER_EQUALS(cell->center, POINT3D(1.5, 1.5, 1.5)) || CENTER_EQUALS(cell->center, POINT3D(2.5, 1.5, 1.5))
-    //            || CENTER_EQUALS(cell->center, POINT3D(1.5, 2.5, 1.5)) || CENTER_EQUALS(cell->center, POINT3D(1.5, 1.5, 2.5))
-    //            || CENTER_EQUALS(cell->center, POINT3D(0.5, 1.5, 1.5))
-    //            || CENTER_EQUALS(cell->center, POINT3D(1.5, 0.5, 1.5)) || CENTER_EQUALS(cell->center, POINT3D(1.5, 1.5, 0.5)) ) {
-    //
-    //        }
-    //        else {
-    //            cell->active = false;
-    //        }
-    //
-    //	}
-
-    return 1;
-}
-
 SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
-    // TODO: check if this is start_dz
     real_cpu start_dx = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dz");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config->config_data, "start_dx");
 
     real_cpu start_dy = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dy, config->config_data, "start_dy");
@@ -207,7 +169,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
 
     int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, cable_length, start_dy, start_dz, &real_side_length_x, &real_side_length_y,
                                                 &real_side_length_z);
-
     if(!success) {
         return 0;
     }
