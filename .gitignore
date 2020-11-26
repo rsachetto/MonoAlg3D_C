@@ -161,4 +161,4 @@ example_configs/elizabeth*
 .idea/inspectionProfiles/Project_Default.xml
 scripts/calc_apd_full_grid/aps/test
 scripts/calc_apd_full_grid/output/test
-
+private_models/
