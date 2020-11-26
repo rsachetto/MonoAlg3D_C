@@ -1047,8 +1047,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
         }
     }
 
-	int num_refs = (int)(start_h/desired_h);
-	refine_grid(the_grid, num_refs);
+	int num_refs = (int)(start_h/desired_h) - 1;
+	
+	if(num_refs > 0)
+		refine_grid(the_grid, num_refs);
 
     free(mesh_file);
 
