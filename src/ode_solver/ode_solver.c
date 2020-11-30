@@ -37,7 +37,7 @@ struct ode_solver* new_ode_solver() {
     result->model_data.model_library_path = NULL;
 
     result->ode_extra_data = NULL;
-    result->ode_extra_data = 0;
+    result->extra_data_size = 0;
     
     return result;
 

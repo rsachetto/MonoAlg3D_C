@@ -119,8 +119,6 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
             RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt);
 
-            *((real*)((char*)sv) + sv_id) = dt*rDY[0] + *((real*)((char*)sv) + sv_id);
-
             for(int i = 0; i < NEQ; i++) {
                 *((real*)((char*)sv + pitch * i) + sv_id) = rDY[i];
             }

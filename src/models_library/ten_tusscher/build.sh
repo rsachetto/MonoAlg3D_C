@@ -36,3 +36,12 @@ COMMON_HEADERS="ten_tusscher_2004_epi.h"
 
 COMPILE_MODEL_LIB "ten_tusscher_2004_epi" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
 ############################################################################################
+
+############## TENTUSSCHER MIXED MYO EPI #####################################################
+MODEL_FILE_CPU="mixed_tentusscher_myo_epi_2004.c"
+MODEL_FILE_GPU="mixed_tentusscher_myo_epi_2004.cu"
+COMMON_HEADERS="mixed_tentusscher_myo_epi_2004.h"
+
+COMPILE_MODEL_LIB "mixed_tentusscher_myo_epi_2004" "$MODEL_FILE_CPU" "$MODEL_FILE_GPU" "$COMMON_HEADERS"
+############################################################################################
+
