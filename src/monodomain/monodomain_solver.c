@@ -214,7 +214,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int print_rate = 0;
     int output_print_rate = 1;
-    char *out_dir_name = NULL;
+    char *out_dir_name = strdup("./"); //Leaking
 
     bool save_to_file = (save_mesh_config != NULL);
     real_cpu start_saving_after_dt = 0.0;

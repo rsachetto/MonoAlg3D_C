@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include "../monodomain/constants.h"
+#include "../common_types/common_types.h"
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)

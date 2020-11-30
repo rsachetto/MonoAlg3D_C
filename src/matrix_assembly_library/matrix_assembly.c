@@ -1643,6 +1643,11 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 
 		if(fibers) {
 			int fiber_index = ac[i]->original_position_in_file;
+
+			if(fiber_index == -1) {
+				log_to_stderr_and_file_and_exit("fiber_index shound not be -1. But it is for cell in index %d - %lf, %lf, %lf\n", i, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+			}
+
 			if(sigma_t == sigma_n) {
 				calc_tensor2(D, fibers[fiber_index].f, sigma_l, sigma_t);
 			}
@@ -1678,12 +1683,6 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
     free(f);
     free(s);
     free(n);
-
-#ifdef DEBUG_INFO
-	FILE *m = fopen("m.txt", "w");
-	print_grid_matrix(the_grid, m);
-	fclose(m);
-#endif
 
 }
 

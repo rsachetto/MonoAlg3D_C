@@ -9,6 +9,22 @@
 #include "../monodomain/constants.h"
 #include "config_common.h"
 
+#define SET_STIM_VALUE(i, stim_value) ((real *)(config->persistent_data))[i] = stim_value
+
+#define ALLOCATE_STIMS()                                                                                                \
+	if(the_grid->adaptive) {                                                                                            \
+		if(config->persistent_data) {                                                                                   \
+			free(config->persistent_data);                                                                              \
+		}                                                                                                               \
+		config->persistent_data = (real *)malloc(n_active * sizeof(real));                                              \
+	}                                                                                                                   \
+	else {  																											\
+		if(!config->persistent_data) {                                                                                  \
+			config->persistent_data = (real *)malloc(n_active * sizeof(real));                                          \
+		}                                                                                                               \
+	}
+
+
 #define SET_SPATIAL_STIM(name)                                                                                         \
      void name(struct time_info *time_info, struct config *config, struct grid *the_grid, bool is_purkinje)
 typedef SET_SPATIAL_STIM(set_spatial_stim_fn);

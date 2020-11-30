@@ -94,7 +94,7 @@ void display_usage(char **argv) {
     printf("--vm_treshold | -v. V to abort. If abort_on_no_activity is set, this will be used as abort threshold. "
            "Default -86.0.\n");
     printf("--print_rate | -p [output-print-rate]. Output print rate (in number of iterations). Default: 1 \n");
-    printf("--max_cg_its | -m [max-its]. Maximum number of CG iterations. Default: number of volumes \n");
+    printf("--max_cg_its | -m [max-its]. Maximum number of CG iterations. Default: 200 \n");
     printf("--cg_tolerance | -t [tolerance]. Conjugate Gradiente tolerance. Default: 1e-16 \n");
     printf("--refinement_bound | -r [ref-bound]. ALG refinement bound (Vm variantion between time steps). Default: "
            "5.0 \n");
@@ -1749,6 +1749,7 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
 
     WRITE_INI_SECTION(ODE_SECTION);
     WRITE_NAME_VALUE("dt", config->dt_ode, "f");
+    WRITE_NAME_VALUE("adaptive", config->ode_adaptive, "d");
     WRITE_NAME_VALUE("use_gpu", config->gpu, "d");
     WRITE_NAME_VALUE("gpu_id", config->gpu_id, "d");
     WRITE_NAME_VALUE("library_file", config->model_file_path, "s");
