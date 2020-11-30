@@ -10,7 +10,7 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
 {
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    *extra_data_size = sizeof(uint32_t)*(num_active_cells + 1);
+    *extra_data_size = sizeof(uint32_t)*(num_active_cells);
 
     uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
 
@@ -26,8 +26,6 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
     for (i = 0; i < num_active_cells; i++)
     {
         real center_x = ac[i]->center.x;
-//        real center_y = ac[i]->center.y;
-//        real center_z = ac[i]->center.z;
 
         inside = (center_x <= x_limit);
 

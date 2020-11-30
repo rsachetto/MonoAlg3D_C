@@ -415,7 +415,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
 				grid_cell->active = true;
 				int old_index = (int)mesh_points[index][3];
 
-				INITIALIZE_FIBROTIC_INFO(grid_cell);
+				INITIALIZE_SCV_INFO(grid_cell);
 
 				FIBROTIC(grid_cell) = (scar_or_border[old_index] == 2);
 				BORDER_ZONE(grid_cell) = (scar_or_border[old_index] == 1);
@@ -437,7 +437,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
 
     free(mesh_points);
 
-    // TODO: we need to sum the cell discretization here...
     the_grid->mesh_side_length.x = maxx;
     the_grid->mesh_side_length.y = maxy;
     the_grid->mesh_side_length.z = maxz;
