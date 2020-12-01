@@ -7,7 +7,7 @@
 
 #define NUM_SCALES 7
 #define NUM_COLORS 257
-static double color_scales[NUM_SCALES][NUM_COLORS][3] = {
+static real_cpu color_scales[NUM_SCALES][NUM_COLORS][3] = {
         {
             //RAINBOW
             {0.2298057,0.298717966,0.753683153},

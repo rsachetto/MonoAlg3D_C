@@ -30,10 +30,10 @@ static int current_window_height = 0;
 static int current_window_width = 0;
 
 int info_box_lines;
-const int end_info_box_lines = 10;
-const int mesh_info_box_lines = 9;
 
-void gui_end_simulation(struct gui_config *gui_config, long res_time, long ode_total_time, long cg_total_time, long total_mat_time, long total_ref_time, long total_deref_time, long total_write_time, long total_config_time, long total_cg_it) {
+
+void gui_end_simulation(struct gui_config *gui_config, long res_time, long ode_total_time, long cg_total_time, long total_mat_time, 
+					    long total_ref_time, long total_deref_time, long total_write_time, long total_config_time, long total_cg_it) {
     gui_config->solver_time = res_time;
     gui_config->ode_total_time = ode_total_time;
     gui_config->cg_total_time = cg_total_time;
@@ -133,44 +133,37 @@ static inline float normalize(float r_min, float r_max, float t_min, float t_max
 
 static inline Color get_color(real_cpu value, int alpha, int current_scale) {
 
-    int idx1;                  // |-- Our desired color will be between these two indexes in "color".
-    int idx2;                  // |
-    real_cpu fractBetween = 0; // Fraction between "idx1" and "idx2" where our value is.
+    int idx1;                  
+    int idx2;                  
+    real_cpu fractBetween = 0; 
 
     if(value <= 0) {
         idx1 = idx2 = 0;
-    } // accounts for an input <=0
-    else if(value >= 1) {
+    } else if(value >= 1) {
         idx1 = idx2 = NUM_COLORS - 1;
-    } // accounts for an input >=0
-    else {
-        value = value * (NUM_COLORS - 1);      // Will multiply value by NUM_COLORS.
+    } else {
+        value = value * (NUM_COLORS - 1);
         idx1 = (int)floor(value);              // Our desired color will be after this index.
         idx2 = idx1 + 1;                       // ... and before this index (inclusive).
-        fractBetween = value - (real_cpu)idx1; // Distance between the two indexes (0-1).
+        fractBetween = value - (real_cpu)idx1;
     }
 
-    unsigned char red;
-    unsigned char green;
-    unsigned char blue;
+	real_cpu color_idx1_0 = color_scales[current_scale][idx1][0];
+	real_cpu color_idx1_1 = color_scales[current_scale][idx1][1];
+	real_cpu color_idx1_2 = color_scales[current_scale][idx1][2];
 
-    red =
-        (unsigned char)(((color_scales[current_scale][idx2][0] - color_scales[current_scale][idx1][0]) * fractBetween + color_scales[current_scale][idx1][0]) *
-                        255);
-    green =
-        (unsigned char)(((color_scales[current_scale][idx2][1] - color_scales[current_scale][idx1][1]) * fractBetween + color_scales[current_scale][idx1][1]) *
-                        255);
-    blue =
-        (unsigned char)(((color_scales[current_scale][idx2][2] - color_scales[current_scale][idx1][2]) * fractBetween + color_scales[current_scale][idx1][2]) *
-                        255);
+	real_cpu color_idx2_0 = color_scales[current_scale][idx2][0];
+	real_cpu color_idx2_1 = color_scales[current_scale][idx2][1];
+	real_cpu color_idx2_2 = color_scales[current_scale][idx2][2];
 
     Color result;
-    result.r = red;
-    result.g = green;
-    result.b = blue;
-    result.a = alpha;
 
-    return result;
+	result.r = (unsigned char)(((color_idx2_0 - color_idx1_0) * fractBetween + color_idx1_0) * 255);
+    result.g = (unsigned char)(((color_idx2_1 - color_idx1_1) * fractBetween + color_idx1_1) * 255);
+    result.b = (unsigned char)(((color_idx2_2 - color_idx1_2) * fractBetween + color_idx1_2) * 255);
+	result.a = alpha;
+
+	return result;
 }
 
 static Vector3 find_mesh_center(struct grid *grid_to_draw, struct mesh_info *mesh_info) {
@@ -1443,7 +1436,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     }
 }
 
-static int configure_info_boxes_sizes(struct gui_state *gui_state) {
+static int configure_info_boxes_sizes(struct gui_state *gui_state, int mesh_info_box_lines, int end_info_box_lines) {
     Vector2 txt_w_h;
     int text_offset;
     int box_w = 0;
@@ -1508,6 +1501,9 @@ void draw_coordinates(struct gui_state *gui_state) {
 }
 
 void init_and_open_gui_window(struct gui_config *gui_config) {
+
+	const int end_info_box_lines = 10;
+	const int mesh_info_box_lines = 9;
 
     omp_set_lock(&gui_config->sleep_lock);
 
@@ -1583,7 +1579,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
     bool end_info_box_strings_configured = false;
 
-    int text_offset = configure_info_boxes_sizes(gui_state);
+    int text_offset = configure_info_boxes_sizes(gui_state, mesh_info_box_lines, end_info_box_lines);
 
     while(!WindowShouldClose()) {
 
