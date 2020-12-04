@@ -230,7 +230,7 @@ void binary_grid_error(struct vtk_unstructured_grid **vtk_grid) {
     *vtk_grid = NULL;
 }
 
-void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values) {
+void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values, int v_index) {
 
     if(!read_only_values) {
         *vtk_grid = new_vtk_unstructured_grid();
@@ -267,6 +267,8 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
     struct point_hash_entry *hash =  NULL;
     char *line = NULL;
+	sds *line_data;	
+	int data_count;
 
     char* source_limit = source + source_size;
 
@@ -284,7 +286,27 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             arrput(line, '\0');
 
-            sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &v);
+            //sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &v);
+			
+			line_data = sdssplitlen(line, strlen(line), ",", 1, &data_count);
+
+			center.x = strtod(line_data[0], NULL);
+			center.y = strtod(line_data[1], NULL);
+			center.z = strtod(line_data[2], NULL);
+			half_face.x = strtod(line_data[3], NULL);
+			half_face.y = strtod(line_data[4], NULL);
+			half_face.z = strtod(line_data[5], NULL);
+
+
+			if(v_index < data_count) {
+				v = strtod(line_data[v_index], NULL);
+			}
+			else {
+				v = 0;
+				fprintf(stderr, "Value not found in index %d (max index is %d)! setting to 0!\n", v_index, data_count - 1); 
+			}
+
+			sdsfreesplitres(line_data, data_count);
 
             arrsetlen(line, 0);
         }
@@ -1817,7 +1839,7 @@ static void free_parser_state(struct parser_state *parser_state) {
 }
 
 //TODO: implement read only values for non-adaptive meshes
-void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *file_name) {
+static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *file_name, int v_index) {
 
     //TODO: this whole code is really convoluted. We can do better than this mess...
     size_t size;
@@ -1883,7 +1905,7 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
     }
     else {
         //Simple text or binary representation
-        new_vtk_unstructured_grid_from_string(vtk_grid, source, size, !plain_text, false);
+        new_vtk_unstructured_grid_from_string(vtk_grid, source, size, !plain_text, false, v_index);
     }
 
     if(legacy || xml ) {
@@ -2102,6 +2124,12 @@ void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char 
 
 struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *file_name) {
     struct vtk_unstructured_grid *vtk_grid = NULL;
-    set_vtk_grid_from_file(&vtk_grid, file_name);
+    set_vtk_grid_from_file(&vtk_grid, file_name, 6);
+    return vtk_grid;
+}
+
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_index(const char *file_name, uint32_t v_index) {
+    struct vtk_unstructured_grid *vtk_grid = NULL;
+    set_vtk_grid_from_file(&vtk_grid, file_name, v_index);
     return vtk_grid;
 }

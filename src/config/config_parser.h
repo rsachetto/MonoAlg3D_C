@@ -169,6 +169,7 @@ struct visualization_options {
 struct conversion_options {
     char *input;
     char *output;
+	uint32_t value_index;
 };
 
 struct fibers_conversion_options {

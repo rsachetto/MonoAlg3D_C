@@ -90,8 +90,8 @@ void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_gr
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 
 struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *vtu_file_name);
-void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values);
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_index(const char *file_name, uint32_t v_index);
+void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values, int v_index);
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
-void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *file_name);
 
 #endif // MONOALG3D_VTK_UNSTRUCTURED_GRID_H

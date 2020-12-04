@@ -527,3 +527,13 @@ ADD_SUBDIRECTORY() {
 	source build.sh
 	cd "$PREVIOUS_DIR" || exit
 }
+
+CHECK_CUSTOM_FILE() {
+	
+	CUSTOM_FILE=""
+
+	if [ -f "$1" ]; then
+		CUSTOM_FILE="$1"
+	fi
+
+}
