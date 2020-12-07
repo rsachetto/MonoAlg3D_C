@@ -1,7 +1,17 @@
 #!/bin/bash
 
-CUSTOM_STIM_FILE="src/stimuli_library/custom_stimuli_functions.c"
-CUSTOM_DOMAIN_FILE="src/domains_library/custom_domain_functions.c"
+STIM_LIB_PATH="src/stimuli_library/"
+CUSTOM_STIM_FILE=${STIM_LIB_PATH}"custom_stimuli_functions.c"
+DEFAULT_STIM_FILE=${STIM_LIB_PATH}"stimuli.c"
+
+DOMAIN_LIB_PATH="src/domains_library/"
+CUSTOM_DOMAIN_FILE=${DOMAIN_LIB_PATH}"custom_domain_functions.c"
+DEFAULT_DOMAIN_FILE=${DOMAIN_LIB_PATH}"domain.c"
+
+EXTRA_DATA_LIB_PATH="src/extra_data_library/"
+CUSTOM_EXTRA_DATA_FILE=${EXTRA_DATA_LIB_PATH}"custom_extra_data_functions.c"
+DEFAULT_EXTRA_DATA_FILE=${EXTRA_DATA_LIB_PATH}"extra_data.c"
+
 CUSTOM_FILE=""
 
 ECHOERR() { printf "%s\n" "$*" >&2; }
@@ -603,8 +613,6 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
-
-
 inline __device__ void RHS_gpu(real *sv, real *rDY, real stim_current, int thread_id, real dt) {
     //State variables
     
@@ -650,11 +658,11 @@ EOF
 
 ADD_TEMPLATE_FILES() {
 
-	ADD_HEADER $1 $2
-	ADD_C_FILE $1 $2
-	ADD_CU_FILE $1 $2
-	ADD_INC_FILE $1 $2
-	ADD_BUILD_FILE $1 $2 $3
+	ADD_HEADER     "$1" "$2"
+	ADD_C_FILE     "$1" "$2"
+	ADD_CU_FILE    "$1" "$2"
+	ADD_INC_FILE   "$1" "$2"
+	ADD_BUILD_FILE "$1" "$2" "$3"
 }
 
 CREATE_NEW_MODEL() {
@@ -670,13 +678,26 @@ CREATE_NEW_MODEL() {
 	ADD_TEMPLATE_FILES "$model_full_path" "$model_name" "$model_folder"
 }
 
+IF_FUNCTION_EXISTS_EXIT() {
+	local custom_file=$1	
+	local default_file=$2
+	local search_pattern=$3
+	local function_name=$4
 
+	result=$(grep [[:blank:]]*"${search_pattern}"[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* "${custom_file}")
+	result2=$(grep [[:blank:]]*"${search_pattern}"[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* "${default_file}")
 
-CREATE_NEW_DOMAIN() {
-	function_name=$1
-	
-	if [ ! -f "${CUSTOM_FILE}" ]; then
+	if [ ! -z "${result}" ] || [ ! -z "${result2}" ]; then
+		if [[ -z "${result}" ]]; then
+			ECHOERR "Function ${function_name} already exists in ${default_file}"
+		else
+			ECHOERR "Function ${function_name} already exists in ${custom_file}"
+		fi
+		exit 1
+	fi
+}
 
+WRITE_DOMAIN_FILE_HEADER() {
 cat << EOF > "${CUSTOM_FILE}"
 #include "domain_helpers.h"
 
@@ -693,30 +714,30 @@ cat << EOF > "${CUSTOM_FILE}"
 #include <float.h>
 #include <unistd.h>
 EOF
+}
 
-	fi
-
-		#TODO: check if this function alread exists in the main library file
-		result=`grep [[:blank:]]*SET_SPATIAL_DOMAIN[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* ${CUSTOM_FILE}`
-
-	    if [[ -z "${result}" ]]; then
-
+WRITE_DOMAIN_FUNCTION() {
 cat << EOF >> "${CUSTOM_FILE}"
 
 SET_SPATIAL_DOMAIN(${function_name}) {
 	return 1; //TODO: create a better example
 }
 EOF
-	else
-		ECHOERR "Function ${function_name} already exists in ${CUSTOM_FILE}"
-	fi
 }
 
-CREATE_NEW_STIM() {
+CREATE_NEW_DOMAIN() {
 	function_name=$1
-
+	
 	if [ ! -f "${CUSTOM_FILE}" ]; then
+		WRITE_DOMAIN_FILE_HEADER
+	fi
+	
+	IF_FUNCTION_EXISTS_EXIT "${CUSTOM_FILE}" "${DEFAULT_DOMAIN_FILE}" "SET_SPATIAL_DOMAIN" $function_name
 
+	WRITE_DOMAIN_FUNCTION
+}
+
+WRITE_STIM_FILE_HEADER() {
 cat << EOF > "${CUSTOM_FILE}"
 #include <stdbool.h>
 #include <stdint.h> 
@@ -727,13 +748,9 @@ cat << EOF > "${CUSTOM_FILE}"
 #include "../config_helpers/config_helpers.h"
 #include "../utils/utils.h"
 EOF
+}
 
-	fi
-
-		result=`grep [[:blank:]]*SET_SPATIAL_STIM[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* ${CUSTOM_FILE}`
-
-	    if [[ -z "${result}" ]]; then
-
+WRITE_STIM_FUNCTION() {
 cat << EOF >> "${CUSTOM_FILE}"
 
 SET_SPATIAL_STIM(${function_name}) {
@@ -770,9 +787,57 @@ SET_SPATIAL_STIM(${function_name}) {
 	}
 }
 EOF
-	else
-		ECHOERR "Function ${function_name} already exists in ${CUSTOM_FILE}"
+}
+
+CREATE_NEW_STIM() {
+	function_name=$1
+
+	if [ ! -f "${CUSTOM_FILE}" ]; then
+		WRITE_STIM_FILE_HEADER
 	fi
+	
+	IF_FUNCTION_EXISTS_EXIT "${CUSTOM_FILE}" "${DEFAULT_STIM_FILE}" "SET_SPATIAL_STIM" $function_name
+	WRITE_STIM_FUNCTION
+
+}
+
+WRITE_EXTRA_DATA_FILE_HEADER() {
+cat << EOF >> "${CUSTOM_FILE}"
+#include <unistd.h>
+
+#include "../config/extra_data_config.h"
+#include "../config_helpers/config_helpers.h"
+#include "../libraries_common/common_data_structures.h"
+#include "../utils/file_utils.h"
+EOF
+}
+
+WRITE_EXTRA_DATA_FUNCTION() {
+cat << EOF >> "${CUSTOM_FILE}"
+
+SET_EXTRA_DATA(${function_name}) {
+	
+	//TODO: set the extra data size in bytes
+	*extra_data_size = 0; 
+	
+	//TODO: extra data can be a pointer of any type (you have to  cast to void* before returning
+    void *extra_data = malloc(*extra_data_size);
+
+	return extra_data;
+}
+EOF
+}
+
+CREATE_NEW_EXTRA_DATA() {
+	function_name=$1
+
+	if [ ! -f "${CUSTOM_FILE}" ]; then
+		WRITE_EXTRA_DATA_FILE_HEADER
+	fi
+	
+	IF_FUNCTION_EXISTS_EXIT "${CUSTOM_FILE}" "${DEFAULT_EXTRA_DATA_FILE}" "SET_EXTRA_DATA" $function_name
+	WRITE_EXTRA_DATA_FUNCTION
+
 }
 
 COMMON_COMMAND_ERROR() {
@@ -804,7 +869,7 @@ MAIN() {
 
 			if [ $# -ne 2 ]
 			then
-				COMMON_COMMAND_ERROR $@
+				COMMON_COMMAND_ERROR "$@"
 			fi
 			CREATE_NEW_STIM "$2"
 			;;
@@ -812,12 +877,32 @@ MAIN() {
 			CUSTOM_FILE=${CUSTOM_DOMAIN_FILE}
 			if [ $# -ne 2 ]
 			then
-				COMMON_COMMAND_ERROR $@
+				COMMON_COMMAND_ERROR "$@"
 			fi
 			CREATE_NEW_DOMAIN "$2"
+			;;
+		extra_data) 
+			CUSTOM_FILE=${CUSTOM_EXTRA_DATA_FILE}
+			if [ $# -ne 2 ]
+			then
+				COMMON_COMMAND_ERROR "$@"
+			fi
+			CREATE_NEW_EXTRA_DATA "$2"
+			;;
+		*)
+			ECHOERR 
+			ECHOERR "Invalid command:" "$@"
+			ECHOERR 
+			ECHOERR "Available commands: "
+			ECHOERR 
+			ECHOERR "$0" "model model_folder model_name"
+			ECHOERR "$0" "stimulus function_name"
+			ECHOERR "$0" "domain function_name"
+			ECHOERR "$0" "extra_data function_name"
+			ECHOERR 
 			;;
 
 	esac
 }
 
-MAIN $@
+MAIN "$@"
