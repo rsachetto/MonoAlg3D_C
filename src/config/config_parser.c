@@ -16,9 +16,10 @@
 static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
-static const char *conversion_opt_string = "i:o:h?";
+static const char *conversion_opt_string = "i:o:v:h?";
 static const struct option long_conversion_options[] = {{"input", required_argument, NULL, 'i'},
-                                                        {"output", required_argument, NULL, 'o'}};
+                                                        {"output", required_argument, NULL, 'o'},
+                                                        {"value_index", required_argument, NULL, 'v'}};
 
 static const char *fiber_conversion_opt_string = "f:e:n:a:h?";
 static const struct option long_fiber_conversion_options[] = {{"fib", required_argument, NULL, 'f'},
@@ -225,6 +226,7 @@ struct conversion_options *new_conversion_options() {
     struct conversion_options *options = (struct conversion_options *)malloc(sizeof(struct conversion_options));
     options->input = NULL;
     options->output = NULL;
+	options->value_index = 6; //Value for the default position of V in your text format
     return options;
 };
 
@@ -971,6 +973,10 @@ void parse_conversion_options(int argc, char **argv, struct conversion_options *
         case 'o':
             user_args->output = strdup(optarg);
             break;
+		case 'v':
+            user_args->value_index = strtol(optarg, NULL, 10);
+            break;
+
         case 'h': /* fall-through is intentional */
         case '?':
             display_conversion_usage(argv);

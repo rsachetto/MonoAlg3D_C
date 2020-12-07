@@ -135,11 +135,7 @@ perf.data*
 meshes/VF_20120221_toBlanca-newCGAL1.vtu
 meshes/human_500_new.alg
 meshes/human_800_new.alg
-meshes/atrial_mesh.alg
-meshes/atrial_mesh.fibers
-meshes/atrial_mesh.vtu
-meshes/atrial_mesh_sub.alg
-meshes/atrial_mesh_sub.fibers
+meshes/atrial_mesh*
 meshes/ModVent_PAP_500um.alg
 meshes/elizabeth*
 meshes/convertor.py

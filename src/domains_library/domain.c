@@ -415,7 +415,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
 				grid_cell->active = true;
 				int old_index = (int)mesh_points[index][3];
 
-				INITIALIZE_FIBROTIC_INFO(grid_cell);
+				INITIALIZE_SCV_INFO(grid_cell);
 
 				FIBROTIC(grid_cell) = (scar_or_border[old_index] == 2);
 				BORDER_ZONE(grid_cell) = (scar_or_border[old_index] == 1);
@@ -437,7 +437,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
 
     free(mesh_points);
 
-    // TODO: we need to sum the cell discretization here...
     the_grid->mesh_side_length.x = maxx;
     the_grid->mesh_side_length.y = maxy;
     the_grid->mesh_side_length.z = maxz;
@@ -907,6 +906,160 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
     shput_dup_value(config->config_data, "start_dz", tmp);
 
     return 1;
+}
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh_with_tissue_type) {
+
+    char *mesh_file = NULL;
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+
+    real_cpu start_h = 500.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_h, config->config_data, "original_discretization");
+
+    real_cpu desired_h = 500.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, desired_h, config->config_data, "desired_discretization");
+
+    assert(the_grid);
+
+    // TODO: we should put this in the grid data again
+    //
+    // the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
+    //
+
+    // TODO: change this to the code above
+    char *tmp = shget(config->config_data, "desired_discretization");
+    shput_dup_value(config->config_data, "start_dx", tmp);
+    shput_dup_value(config->config_data, "start_dy", tmp);
+    shput_dup_value(config->config_data, "start_dz", tmp);
+
+    float cube_side = 128000;
+
+    int tmp_size = (int)(cube_side / 2);
+    int num_ref = 0;
+    while(tmp_size > start_h) {
+        tmp_size = tmp_size / 2;
+        num_ref++;
+    }
+
+    initialize_and_construct_grid(the_grid, POINT3D(cube_side, cube_side, cube_side));
+
+    refine_grid(the_grid, num_ref);
+
+    log_to_stdout_and_file("Loading Atrial Heart Mesh with discretization: %lf\n", the_grid->first_cell->discretization.x);
+
+    FILE *file = fopen(mesh_file, "r");
+
+    if(!file) {
+        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", mesh_file);
+    }
+
+    int num_volumes = 514389;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, num_volumes, config->config_data, "num_volumes");
+
+    real_cpu **mesh_points = MALLOC_ARRAY_OF_TYPE(real_cpu *, num_volumes);
+    for(int i = 0; i < num_volumes; i++) {
+        mesh_points[i] = MALLOC_ARRAY_OF_TYPE(real_cpu, 4);
+
+        if(mesh_points[i] == NULL) {
+            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+        }
+    }
+    real_cpu dummy;
+
+    real_cpu maxy = 0.0;
+    real_cpu maxz = 0.0;
+    real_cpu miny = DBL_MAX;
+    real_cpu minz = DBL_MAX;
+
+    int i = 0;
+
+	int *tissue_type = MALLOC_ARRAY_OF_TYPE(int, num_volumes);
+
+    while(i < num_volumes) {
+
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%d\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &dummy, &dummy, &tissue_type[i]);
+
+        if(mesh_points[i][1] > maxy)
+            maxy = mesh_points[i][1];
+        if(mesh_points[i][2] > maxz)
+            maxz = mesh_points[i][2];
+        if(mesh_points[i][1] < miny)
+            miny = mesh_points[i][1];
+        if(mesh_points[i][2] < minz)
+            minz = mesh_points[i][2];
+
+        mesh_points[i][4] = i; //This is the original volume position in the mesh file
+
+        i++;
+    }
+
+    sort_vector(mesh_points, num_volumes); // we need to sort because inside_mesh perform a binary search
+
+    real_cpu maxx = mesh_points[num_volumes - 1][0];
+    real_cpu minx = mesh_points[0][0];
+    int index;
+
+    int num_loaded = 0;
+
+    real_cpu x, y, z;
+
+    FOR_EACH_CELL(the_grid) {
+        x = cell->center.x;
+        y = cell->center.y;
+        z = cell->center.z;
+
+        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            cell->active = false;
+        } else {
+            index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
+
+            if(index != -1) {
+                cell->active = true;
+                cell->original_position_in_file = mesh_points[index][4];
+
+				INITIALIZE_SCV_INFO(cell);
+				TISSUE_TYPE(cell) = tissue_type[cell->original_position_in_file];
+
+                num_loaded++;
+
+            } else {
+                cell->active = false;
+            }
+        }
+    }
+
+    log_to_stdout_and_file("Read %d volumes from file: %s\n", num_loaded, mesh_file);
+
+    fclose(file);
+
+    // deallocate memory
+    for(int l = 0; l < num_volumes; l++) {
+        free(mesh_points[l]);
+    }
+
+    free(mesh_points);
+
+    if(num_loaded > 0) {
+        // TODO: we need to sum the cell discretization here...
+        the_grid->mesh_side_length.x = maxx;
+        the_grid->mesh_side_length.y = maxy;
+        the_grid->mesh_side_length.z = maxz;
+
+        log_to_stdout_and_file("Cleaning grid\n");
+
+        for(i = 0; i < num_ref; i++) {
+            derefine_grid_inactive_cells(the_grid);
+        }
+    }
+
+	int num_refs = (int)(start_h/desired_h) - 1;
+	
+	if(num_refs > 0)
+		refine_grid(the_grid, num_refs);
+
+    free(mesh_file);
+
+    return num_loaded;
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {

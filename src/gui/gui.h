@@ -23,6 +23,8 @@
 #define WIDER_TEXT "------------------------------------------------------"
 #define DOUBLE_CLICK_DELAY 0.8 //seconds
 
+#define NORMALIZE(r_min, r_max, t_min, t_max, m) (((m - r_min) / (r_max - r_min)) * (t_max - t_min) + t_min)
+
 struct action_potential {
     real_cpu v;
     real_cpu t;
@@ -37,7 +39,6 @@ struct vector3_voidp_hash_entry {
     Vector3 key;
     void *value;
 };
-
 
 struct ap_graph_config {
 
@@ -117,6 +118,9 @@ struct gui_config {
 
 struct gui_state {
 
+	int current_window_width;
+	int current_window_height;
+
     bool handle_keyboard_input;
     bool one_selected;
     bool show_ap;
@@ -193,6 +197,9 @@ struct mesh_info {
 };
 
 void init_and_open_gui_window(struct gui_config *gui_config);
-void gui_end_simulation(struct gui_config *gui_config, long res_time, long ode_total_time, long cg_total_time, long total_mat_time, long total_ref_time, long total_deref_time, long total_write_time, long total_config_time, long total_cg_it);
+
+void gui_end_simulation(struct gui_config *gui_config, long res_time, long ode_total_time, long cg_total_time, 
+						long total_mat_time, long total_ref_time, long total_deref_time, long total_write_time, 
+						long total_config_time, long total_cg_it);
 
 #endif //MONOALG3D_DRAW_H

@@ -361,3 +361,25 @@ SET_EXTRA_DATA(set_extra_data_for_benchmark) {
 
     return (void*)initial_conditions;
 }
+
+SET_EXTRA_DATA(set_extra_data_for_scv_mesh) {
+
+	uint32_t num_active_cells = the_grid->num_active_cells;
+
+	*extra_data_size = sizeof(uint32_t)*(num_active_cells);
+
+	uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
+
+	struct cell_node ** ac = the_grid->active_cells;
+
+	int i;
+
+	OMP(parallel for)
+	for (i = 0; i < num_active_cells; i++) {
+		mapping[i] = TISSUE_TYPE(ac[i]); //endo 0; mid  1; epi  2
+	}
+
+	return (void*)mapping;
+
+}
+
