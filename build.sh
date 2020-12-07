@@ -96,8 +96,13 @@ if [ "$OS" == "Manjaro Linux" ]; then
     C_COMPILER=/opt/cuda/bin/gcc
     CXX_COMPILER=/opt/cuda/bin/g++
 elif [ "$OS" == "Ubuntu" ]; then
-    C_COMPILER=gcc-8
-    CXX_COMPILER=g++-8
+	if [ "$VER" == "20.10" ]; then
+		C_COMPILER=gcc-9
+    	CXX_COMPILER=g++-9
+	else
+	    C_COMPILER=gcc-8
+    	CXX_COMPILER=g++-8
+	fi
 elif [ "$OS" == "Fedora" ]; then
     C_COMPILER=/usr/local/cuda/bin/gcc
     CXX_COMPILER=/usr/local/cuda/bin/g++

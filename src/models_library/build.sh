@@ -22,17 +22,8 @@ COMPILE_MODEL_LIB () {
 
 }
 
-ADD_SUBDIRECTORY "bondarenko"
-ADD_SUBDIRECTORY "courtemanche_ramirez_nattel_1998"
-ADD_SUBDIRECTORY "difrancesco"
-ADD_SUBDIRECTORY "fhn"
-ADD_SUBDIRECTORY "li_rudy"
-ADD_SUBDIRECTORY "luo_rudy"
-ADD_SUBDIRECTORY "maleckar"
-ADD_SUBDIRECTORY "mitchell_shaeffer"
-ADD_SUBDIRECTORY "noble"
-ADD_SUBDIRECTORY "Ohara_Rudy"
-ADD_SUBDIRECTORY "stewart_aslanidi_noble"
-ADD_SUBDIRECTORY "ten_tusscher"
-ADD_SUBDIRECTORY "ToROrd"
-ADD_SUBDIRECTORY "trovato"
+for d in */ ; do
+	if [ -f "${d}/build.sh" ]; then
+		ADD_SUBDIRECTORY "$d"
+	fi
+done

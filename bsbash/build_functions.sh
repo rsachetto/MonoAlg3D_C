@@ -99,26 +99,13 @@ fi
 }
 
 CLEAN_PROJECT () {
-	
+
   DIR_NAME="${DEFAULT_BUILD_DIR}${1}"
 
   if [ -d "${DIR_NAME}" ]; then
-    find "${DIR_NAME}" -name "*.o" -exec rm -rf {} \;
-    find "${DIR_NAME}" -name "*.a" -exec rm -rf {} \;
-    find "${DIR_NAME}" -name ".*last_compiled_time_bbash" -exec rm -rf {} \;
+	rm -fr ${DIR_NAME}
   fi
 
-}
-
-CLEAN_PROJECT_LIBS () {
-
-  DIR_NAME="${DEFAULT_BUILD_DIR}${1}"
-
-    for DIR in "${DIR_NAME}"/lib*; do
-        ECHO_AND_EXEC_COMMAND "find ${DIR} -name "*.o" -exec rm -rf {} \\";
-        ECHO_AND_EXEC_COMMAND "find ${DIR} -name "*.a" -exec rm -rf {} \\";
-        ECHO_AND_EXEC_COMMAND "find ${DIR} -name ".*last_compiled_time_bbash" -exec rm -rf {} \\";
-    done
 }
 
 PRINT_INFO () {
