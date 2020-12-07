@@ -1,5 +1,11 @@
 #!/bin/bash
 
+CUSTOM_STIM_FILE="src/stimuli_library/custom_stimuli_functions.c"
+CUSTOM_DOMAIN_FILE="src/domains_library/custom_domain_functions.c"
+CUSTOM_FILE=""
+
+ECHOERR() { printf "%s\n" "$*" >&2; }
+
 ADD_HEADER() {
 
 	model_full_path=$1
@@ -639,8 +645,6 @@ COMMON_HEADERS="${model_name}.h"
 COMPILE_MODEL_LIB "${model_name}" "\$MODEL_FILE_CPU" "\$MODEL_FILE_GPU" "\$COMMON_HEADERS"
 EOF
 
-printf "\nADD_SUBDIRECTORY \"${model_folder}\"\n" >> src/models_library/build.sh 
-
 }
 
 
@@ -652,8 +656,6 @@ ADD_TEMPLATE_FILES() {
 	ADD_INC_FILE $1 $2
 	ADD_BUILD_FILE $1 $2 $3
 }
-
-
 
 CREATE_NEW_MODEL() {
 
@@ -668,17 +670,154 @@ CREATE_NEW_MODEL() {
 	ADD_TEMPLATE_FILES "$model_full_path" "$model_name" "$model_folder"
 }
 
-case $1 in
-	model) 
-		if [ $# -ne 3 ]
-  		then
-			echo "[ERR] model command need 2 parameters (new model folder and new model name)"
-			echo
-			echo "Example usage: $0 ten_tuscher ten_tuscher_2009"
-			echo
-			echo "This command will create a template model file called ten_tuscher_2009 in the src/models_library/ten_tuscher folder."
-			exit
-		fi
-		CREATE_NEW_MODEL "$2" "$3"
-		;;
-esac
+
+
+CREATE_NEW_DOMAIN() {
+	function_name=$1
+	
+	if [ ! -f "${CUSTOM_FILE}" ]; then
+
+cat << EOF > "${CUSTOM_FILE}"
+#include "domain_helpers.h"
+
+#include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
+#include "../config/domain_config.h"
+#include "../config_helpers/config_helpers.h"
+#include "../libraries_common/common_data_structures.h"
+#include "../logger/logger.h"
+#include "../utils/utils.h"
+#include <assert.h>
+#include <time.h>
+
+#include <float.h>
+#include <unistd.h>
+EOF
+
+	fi
+
+		#TODO: check if this function alread exists in the main library file
+		result=`grep [[:blank:]]*SET_SPATIAL_DOMAIN[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* ${CUSTOM_FILE}`
+
+	    if [[ -z "${result}" ]]; then
+
+cat << EOF >> "${CUSTOM_FILE}"
+
+SET_SPATIAL_DOMAIN(${function_name}) {
+	return 1; //TODO: create a better example
+}
+EOF
+	else
+		ECHOERR "Function ${function_name} already exists in ${CUSTOM_FILE}"
+	fi
+}
+
+CREATE_NEW_STIM() {
+	function_name=$1
+
+	if [ ! -f "${CUSTOM_FILE}" ]; then
+
+cat << EOF > "${CUSTOM_FILE}"
+#include <stdbool.h>
+#include <stdint.h> 
+#include <stdlib.h> 
+
+#include "../alg/grid/grid.h" 
+#include "../config/stim_config.h"
+#include "../config_helpers/config_helpers.h"
+#include "../utils/utils.h"
+EOF
+
+	fi
+
+		result=`grep [[:blank:]]*SET_SPATIAL_STIM[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* ${CUSTOM_FILE}`
+
+	    if [[ -z "${result}" ]]; then
+
+cat << EOF >> "${CUSTOM_FILE}"
+
+SET_SPATIAL_STIM(${function_name}) {
+
+	uint32_t n_active = the_grid->num_active_cells;
+	struct cell_node **ac = the_grid->active_cells;
+	
+	ALLOCATE_STIMS();
+
+	real stim_current = 0.0;
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+
+	bool stim;
+	real stim_value;
+	
+	uint32_t i;
+
+	OMP(parallel for private(stim, stim_value))
+	for(i = 0; i < n_active; i++) {
+
+		//TODO: define if a stimulus will be applied according to condition
+		//Ex:
+		// stim = ac[i]->center.x < 100;
+		// will apply a stimulus in each cell that has the coordinate x
+		// of its center < 100
+
+		if(stim) {
+			stim_value = stim_current;
+		} else {
+			stim_value = 0.0;
+		}
+
+		SET_STIM_VALUE(i, stim_value);
+	}
+}
+EOF
+	else
+		ECHOERR "Function ${function_name} already exists in ${CUSTOM_FILE}"
+	fi
+}
+
+COMMON_COMMAND_ERROR() {
+
+	ECHOERR "$1 command need 1 parameter (new $1 function name)"
+	ECHOERR "Example usage:" 
+	ECHOERR "$0 my_custom_$1"
+	ECHOERR "This command will create or add a new $1 function in ${CUSTOM_FILE}"
+	exit
+}
+
+MAIN() {
+
+	case $1 in
+		model) 
+			if [ $# -ne 3 ]
+			then
+				ECHOERR "$1 command need 2 parameters (new model folder and new model name)"
+				ECHOERR "Example usage:" 
+				ECHOERR "$0 ten_tuscher ten_tuscher_2009" 
+				ECHOERR "This command will create a template model file called ten_tuscher_2009 in the src/models_library/ten_tuscher folder."
+				exit
+			fi
+			CREATE_NEW_MODEL "$2" "$3"
+			;;
+
+		stimulus) 
+			CUSTOM_FILE=${CUSTOM_STIM_FILE}
+
+			if [ $# -ne 2 ]
+			then
+				COMMON_COMMAND_ERROR $@
+			fi
+			CREATE_NEW_STIM "$2"
+			;;
+		domain) 
+			CUSTOM_FILE=${CUSTOM_DOMAIN_FILE}
+			if [ $# -ne 2 ]
+			then
+				COMMON_COMMAND_ERROR $@
+			fi
+			CREATE_NEW_DOMAIN "$2"
+			;;
+
+	esac
+}
+
+MAIN $@
