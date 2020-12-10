@@ -1,15 +1,17 @@
 #!/bin/bash
 
+CUSTOM_FILE_NAME="custom_functions.c"
+
 STIM_LIB_PATH="src/stimuli_library/"
-CUSTOM_STIM_FILE=${STIM_LIB_PATH}"custom_stimuli_functions.c"
+CUSTOM_STIM_FILE="${STIM_LIB_PATH}""${CUSTOM_FILE_NAME}"
 DEFAULT_STIM_FILE=${STIM_LIB_PATH}"stimuli.c"
 
 DOMAIN_LIB_PATH="src/domains_library/"
-CUSTOM_DOMAIN_FILE=${DOMAIN_LIB_PATH}"custom_domain_functions.c"
+CUSTOM_DOMAIN_FILE=${DOMAIN_LIB_PATH}"${CUSTOM_FILE_NAME}"
 DEFAULT_DOMAIN_FILE=${DOMAIN_LIB_PATH}"domain.c"
 
 EXTRA_DATA_LIB_PATH="src/extra_data_library/"
-CUSTOM_EXTRA_DATA_FILE=${EXTRA_DATA_LIB_PATH}"custom_extra_data_functions.c"
+CUSTOM_EXTRA_DATA_FILE=${EXTRA_DATA_LIB_PATH}"${CUSTOM_FILE_NAME}"
 DEFAULT_EXTRA_DATA_FILE=${EXTRA_DATA_LIB_PATH}"extra_data.c"
 
 CUSTOM_FILE=""

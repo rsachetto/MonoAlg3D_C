@@ -5,7 +5,7 @@ if [ -n "$CUDA_FOUND" ]; then
   SAVE_DYNAMIC_DEPS="cudart"
 fi
 
-CHECK_CUSTOM_FILE "custom_save_mesh_functions.c"
+CHECK_CUSTOM_FILE
 
 COMPILE_SHARED_LIB "default_save_mesh" "save_mesh.c ${CUSTOM_FILE}" "" "$SAVE_STATIC_DEPS" "$SAVE_DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH"
 

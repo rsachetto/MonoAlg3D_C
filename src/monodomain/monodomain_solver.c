@@ -79,6 +79,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     ///////MAIN CONFIGURATION BEGIN//////////////////
     init_ode_solver_with_cell_model(the_ode_solver);
+
     struct string_voidp_hash_entry *stimuli_configs = configs->stim_configs;
     struct string_voidp_hash_entry *modify_domain_configs = configs->modify_domain_configs;
     struct string_voidp_hash_entry *purkinje_stimuli_configs = configs->purkinje_stim_configs;
@@ -433,8 +434,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     // We need to call this function after because of the pitch.... maybe we have to change the way
     // we pass this parameters to the cell model....
-    if(restore_checkpoint) 
-    {
+    if(restore_checkpoint) {
         restore_success &= ((restore_state_fn*)restore_state_config->main_function)(&time_info, restore_state_config, NULL, NULL, the_ode_solver, out_dir_name);
     }
 
@@ -511,7 +511,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     total_mat_time = stop_stop_watch(&part_mat);
     start_stop_watch(&solver_time);
 
-    int save_state_rate = 0;
+    int save_state_rate = 1;
 
     if(save_checkpoint) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, save_state_rate, save_state_config->config_data, "save_rate");

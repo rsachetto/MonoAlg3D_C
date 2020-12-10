@@ -1,6 +1,6 @@
 LIB_STATIC_DEPS="utils alg config_helpers tinyexpr sds"
 
-CHECK_CUSTOM_FILE "custom_matrix_assembly_functions.c"
+CHECK_CUSTOM_FILE
 
 COMPILE_SHARED_LIB "default_matrix_assembly" "matrix_assembly.c ${CUSTOM_FILE}" "" "${LIB_STATIC_DEPS}"
 

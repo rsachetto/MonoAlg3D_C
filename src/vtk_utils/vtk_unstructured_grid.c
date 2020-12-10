@@ -286,8 +286,6 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             arrput(line, '\0');
 
-            //sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &v);
-			
 			line_data = sdssplitlen(line, strlen(line), ",", 1, &data_count);
 
 			center.x = strtod(line_data[0], NULL);

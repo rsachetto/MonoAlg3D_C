@@ -516,11 +516,12 @@ ADD_SUBDIRECTORY() {
 }
 
 CHECK_CUSTOM_FILE() {
-	
+
+	local DEFAULT_CUSTOM_FILE="custom_functions.c"
 	CUSTOM_FILE=""
 
-	if [ -f "$1" ]; then
-		CUSTOM_FILE="$1"
+	if [ -f "${DEFAULT_CUSTOM_FILE}" ]; then
+		CUSTOM_FILE="${DEFAULT_CUSTOM_FILE}"
 	fi
 
 }

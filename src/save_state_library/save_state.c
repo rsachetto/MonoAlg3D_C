@@ -29,32 +29,32 @@ SAVE_STATE(save_simulation_state) {
             return;
         }
 
-        fwrite(&(the_grid->cube_side_length.x), sizeof(the_grid->cube_side_length.x), 1, output_file);
-        fwrite(&(the_grid->cube_side_length.y), sizeof(the_grid->cube_side_length.y), 1, output_file);
-        fwrite(&(the_grid->cube_side_length.z), sizeof(the_grid->cube_side_length.z), 1, output_file);
-        fwrite(&(the_grid->mesh_side_length.x), sizeof(the_grid->mesh_side_length.x), 1, output_file);
-        fwrite(&(the_grid->mesh_side_length.y), sizeof(the_grid->mesh_side_length.y), 1, output_file);
-        fwrite(&(the_grid->mesh_side_length.z), sizeof(the_grid->mesh_side_length.z), 1, output_file);
-        fwrite(&(the_grid->number_of_cells), sizeof(the_grid->number_of_cells), 1, output_file);
+        fwrite(&(the_grid->cube_side_length), sizeof(the_grid->cube_side_length), 1, output_file);
+        fwrite(&(the_grid->mesh_side_length), sizeof(the_grid->mesh_side_length), 1, output_file);
+        fwrite(&(the_grid->number_of_cells),  sizeof(the_grid->number_of_cells),  1, output_file);
         fwrite(&(the_grid->num_active_cells), sizeof(the_grid->num_active_cells), 1, output_file);
 
         struct cell_node *grid_cell = the_grid->first_cell;
 
         while (grid_cell != 0) {
 
-            fwrite(&(grid_cell->center.x), sizeof(grid_cell->center.x), 1, output_file);
-            fwrite(&(grid_cell->center.y), sizeof(grid_cell->center.y), 1, output_file);
-            fwrite(&(grid_cell->center.z), sizeof(grid_cell->center.z), 1, output_file);
-            fwrite(&(grid_cell->v), sizeof(grid_cell->v), 1, output_file);
-            fwrite(&(grid_cell->front_flux), sizeof(grid_cell->front_flux), 1, output_file);
-            fwrite(&(grid_cell->back_flux), sizeof(grid_cell->back_flux), 1, output_file);
-            fwrite(&(grid_cell->top_flux), sizeof(grid_cell->top_flux), 1, output_file);
-            fwrite(&(grid_cell->down_flux), sizeof(grid_cell->down_flux), 1, output_file);
-            fwrite(&(grid_cell->right_flux), sizeof(grid_cell->right_flux), 1, output_file);
-            fwrite(&(grid_cell->left_flux), sizeof(grid_cell->left_flux), 1, output_file);
-            fwrite(&(grid_cell->b), sizeof(grid_cell->b), 1, output_file);
-            fwrite(&(grid_cell->can_change), sizeof(grid_cell->can_change), 1, output_file);
-            fwrite(&(grid_cell->active), sizeof(grid_cell->active), 1, output_file);
+			if(!grid_cell->mesh_extra_info) grid_cell->mesh_extra_info_size = 0;
+
+            fwrite(&(grid_cell->center),     		   sizeof(grid_cell->center),     				1, output_file);
+            fwrite(&(grid_cell->v),          		   sizeof(grid_cell->v),          				1, output_file);
+            fwrite(&(grid_cell->front_flux), 		   sizeof(grid_cell->front_flux), 				1, output_file);
+            fwrite(&(grid_cell->back_flux),  		   sizeof(grid_cell->back_flux),  				1, output_file);
+            fwrite(&(grid_cell->top_flux),   		   sizeof(grid_cell->top_flux),   				1, output_file);
+            fwrite(&(grid_cell->down_flux),  		   sizeof(grid_cell->down_flux),  				1, output_file);
+            fwrite(&(grid_cell->right_flux), 		   sizeof(grid_cell->right_flux), 				1, output_file);
+            fwrite(&(grid_cell->left_flux),  		   sizeof(grid_cell->left_flux),  				1, output_file);
+            fwrite(&(grid_cell->b),          		   sizeof(grid_cell->b),          				1, output_file);
+            fwrite(&(grid_cell->can_change), 		   sizeof(grid_cell->can_change), 				1, output_file);
+            fwrite(&(grid_cell->active),               sizeof(grid_cell->active),     				1, output_file);
+            fwrite(&(grid_cell->mesh_extra_info_size), sizeof(grid_cell->mesh_extra_info_size),     1, output_file);
+
+			if(grid_cell->mesh_extra_info_size)
+	            fwrite(grid_cell->mesh_extra_info,    grid_cell->mesh_extra_info_size,             1, output_file);
 
             grid_cell = grid_cell->next;
         }
@@ -99,58 +99,50 @@ SAVE_STATE(save_simulation_state) {
             return;
         }
 
+        fwrite(&(the_ode_solver->adaptive), sizeof(the_ode_solver->adaptive), 1, output_file);
         fwrite(&(the_ode_solver->max_dt), sizeof(the_ode_solver->max_dt), 1, output_file);
         fwrite(&(the_ode_solver->min_dt), sizeof(the_ode_solver->min_dt), 1, output_file);
         fwrite(&(the_ode_solver->rel_tol), sizeof(the_ode_solver->rel_tol), 1, output_file);
         fwrite(&(the_ode_solver->abs_tol), sizeof(the_ode_solver->abs_tol), 1, output_file);
 
-//        fwrite(&(the_ode_solver->previous_dt), sizeof(the_ode_solver->previous_dt), 1, output_file);
-//        fwrite(&(the_ode_solver->time_new), sizeof(the_ode_solver->time_new), 1, output_file);
+        bool read_cells_to_solve = false;
 
-
-        size_t num_cells_to_solve = 0;
+        fwrite(&(the_ode_solver->num_cells_to_solve), sizeof(the_ode_solver->num_cells_to_solve), 1, output_file);
 
         if(the_ode_solver->cells_to_solve) {
-            num_cells_to_solve = the_ode_solver->num_cells_to_solve;
-            fwrite(&num_cells_to_solve, sizeof(the_ode_solver->num_cells_to_solve), 1, output_file);
-            fwrite(the_ode_solver->cells_to_solve, sizeof(the_ode_solver->cells_to_solve[0]), num_cells_to_solve,
-                   output_file);
+            read_cells_to_solve = true;
+            fwrite(the_ode_solver->cells_to_solve, sizeof(the_ode_solver->cells_to_solve[0]), the_ode_solver->num_cells_to_solve, output_file);
         }
 
-        else {
-            fwrite(&num_cells_to_solve, sizeof(the_ode_solver->num_cells_to_solve), 1, output_file);
-        }
+        fwrite(&(read_cells_to_solve), sizeof(read_cells_to_solve), 1, output_file);
 
         fwrite(&(the_ode_solver->gpu), sizeof(the_ode_solver->gpu), 1, output_file);
         fwrite(&(the_ode_solver->gpu_id), sizeof(the_ode_solver->gpu_id), 1, output_file);
-
-//        fwrite(&(the_ode_solver->model_data), sizeof(the_ode_solver->model_data), 1, output_file);
-//        unsigned long data_size = strlen(the_ode_solver->model_data.model_library_path);
-//        fwrite(&(data_size), sizeof(data_size), 1, output_file);
-//        fwrite(the_ode_solver->model_data.model_library_path, data_size, 1, output_file);
-
-        fwrite(&(the_ode_solver->pitch), sizeof(the_ode_solver->pitch), 1, output_file);
+        
+		fwrite(&(the_ode_solver->pitch), sizeof(the_ode_solver->pitch), 1, output_file);
         fwrite(&(the_ode_solver->original_num_cells), sizeof(the_ode_solver->original_num_cells), 1, output_file);
         
+		size_t num_sv_entries = the_ode_solver->model_data.number_of_ode_equations;
+
         if(the_ode_solver->gpu) {
 
-        #ifdef COMPILE_CUDA
+            #ifdef COMPILE_CUDA
+            if(the_ode_solver->adaptive) {
+                num_sv_entries = num_sv_entries + 3;
+		    }
+
             real *sv_cpu;
-            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations);
+            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, the_ode_solver->original_num_cells * num_sv_entries);
 
             check_cuda_error(cudaMemcpy2D(sv_cpu, the_ode_solver->original_num_cells * sizeof(real), the_ode_solver->sv, the_ode_solver->pitch,
-                         the_ode_solver->original_num_cells * sizeof(real), (size_t)the_ode_solver->model_data.number_of_ode_equations,
-                         cudaMemcpyDeviceToHost));
+                         the_ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
 
-            fwrite(sv_cpu, sizeof(real), the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations,
-                    output_file);
-        #endif
+            fwrite(sv_cpu, sizeof(real), the_ode_solver->original_num_cells * num_sv_entries, output_file);
+            #endif
 
         }
         else {
-            fwrite(the_ode_solver->sv, sizeof(real), the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations,
-                   output_file);
-
+            fwrite(the_ode_solver->sv, sizeof(real), the_ode_solver->original_num_cells * num_sv_entries,  output_file);
         }
 
         fwrite(&(the_ode_solver->extra_data_size), sizeof(the_ode_solver->extra_data_size), 1, output_file);

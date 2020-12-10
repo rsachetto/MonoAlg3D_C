@@ -1,7 +1,10 @@
+SAVE_STATE_STATIC_DEPS="alg config_helpers utils sds tinyexpr"
+
 if [ -n "$CUDA_FOUND" ]; then
+	SAVE_STATE_STATIC_DEPS="$SAVE_STATE_STATIC_DEPS gpu_utils"
     EXTRA_CUDA_LIBS="cudart"
 fi
 
-CHECK_CUSTOM_FILE "custom_save_state_functions.c"
+CHECK_CUSTOM_FILE
 
-COMPILE_SHARED_LIB "default_save_state" "save_state.c ${CUSTOM_FILE}" "" "alg config_helpers utils sds tinyexpr" "$EXTRA_CUDA_LIBS" "$CUDA_LIBRARY_PATH"
+COMPILE_SHARED_LIB "default_save_state" "save_state.c ${CUSTOM_FILE}" "" "${SAVE_STATE_STATIC_DEPS}" "$EXTRA_CUDA_LIBS" "$CUDA_LIBRARY_PATH"

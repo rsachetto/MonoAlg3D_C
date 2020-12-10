@@ -43,7 +43,6 @@ struct parser_state {
     char *name_value;
     char *format;
     char *celldata_ascii;
-    char *celldata_int;
     char *points_ascii;
     char *cells_connectivity_ascii;
     char *encoding_type;
