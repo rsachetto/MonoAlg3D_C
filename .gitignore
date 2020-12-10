@@ -158,3 +158,4 @@ example_configs/elizabeth*
 scripts/calc_apd_full_grid/aps/test
 scripts/calc_apd_full_grid/output/test
 private_models/
+src/*/custom_functions.c
