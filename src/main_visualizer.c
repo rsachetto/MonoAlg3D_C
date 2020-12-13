@@ -1,3 +1,4 @@
+
 #include "utils/file_utils.h"
 
 #include "gui/gui.h"
@@ -55,7 +56,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     get_path_information(input, &input_info);
 
     if(!input_info.exists) {
-        sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk or acm)!");
+        sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
         if(gui_config->error_message)
             free(gui_config->error_message);
 
@@ -182,10 +183,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
             full_path = sdscat(full_path, simulation_files->files_list[current_file]);
         }
 
-
         free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
         gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path);
-
 
         if(!gui_config->grid_info.vtk_grid) {
             sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
@@ -193,14 +192,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 free(gui_config->error_message);
 
             gui_config->error_message  = strdup(error);
-            
-			//arrfree(simulation_files->files_list);
-            //arrfree(simulation_files->timesteps);
-            //free(simulation_files);
-            //sdsfree(full_path);
 			gui_config->grid_info.loaded = false;
 			gui_config->paused = true;
-            //return SIMULATION_FINISHED;
         }
 		else {
 	        gui_config->grid_info.file_name = full_path;        
@@ -288,12 +281,6 @@ int main(int argc, char **argv) {
 
     parse_visualization_options(argc, argv, options);
 
-    omp_set_num_threads(2);
-
-    if(!options->input) {
-        fprintf(stderr, "[ERR] You have to provide a pvd file, a input folder or an activation map!\n");
-    }
-
     if(options->save_activation_only) {
         struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file(options->input);
         if(!vtk_grid) {
@@ -331,7 +318,6 @@ int main(int argc, char **argv) {
                         init_gui_config_for_visualization(options, gui_config, true);
                         result = read_and_render_files(options, gui_config);
                     }
-
                     else if(result == END_SIMULATION || gui_config->exit) {
                         break;
                     }

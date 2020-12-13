@@ -869,15 +869,93 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
 
     log_to_stdout_and_file("Loading Mouse Heart Mesh\n");
 
-    set_custom_mesh(the_grid, mesh_file, 96195, "%lf,%lf,%lf,%lf\n");
+    struct cell_node *grid_cell = the_grid->first_cell;
+    FILE *file = fopen(mesh_file, "r");
 
-    int i;
+    if(!file) {
+        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", mesh_file);
+    }
+
+    int size = 96195;
+
+    double **mesh_points = (double **)malloc(sizeof(double *) * size);
+    for(int i = 0; i < size; i++) {
+        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 3);
+        if(mesh_points[i] == NULL) {
+            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+        }
+    }
+    real_cpu dummy; // we don't use this value here
+
+    real_cpu maxy = 0.0;
+    real_cpu maxz = 0.0;
+    real_cpu miny = DBL_MAX;
+    real_cpu minz = DBL_MAX;
+
+    int i = 0;
+    while(i < size) {
+
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &dummy, &dummy);
+
+        if(mesh_points[i][1] > maxy)
+            maxy = mesh_points[i][1];
+        if(mesh_points[i][2] > maxz)
+            maxz = mesh_points[i][2];
+        if(mesh_points[i][1] < miny)
+            miny = mesh_points[i][1];
+        if(mesh_points[i][2] < minz)
+            minz = mesh_points[i][2];
+
+        i++;
+    }
+
+    sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
+
+    real_cpu maxx = mesh_points[size - 1][0];
+    real_cpu minx = mesh_points[0][0];
+    int index;
+
+    real_cpu x, y, z;
+    while(grid_cell != 0) {
+        x = grid_cell->center.x;
+        y = grid_cell->center.y;
+        z = grid_cell->center.z;
+
+        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            grid_cell->active = false;
+        } else {
+            index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
+
+            if(index != -1) {
+                grid_cell->active = true;
+            } else {
+                grid_cell->active = false;
+            }
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fclose(file);
+
+    // deallocate memory
+    for(int l = 0; l < size; l++) {
+        free(mesh_points[l]);
+    }
+
+    free(mesh_points);
+
+    //TODO: we need to sum the cell discretization here...
+    the_grid->mesh_side_length.x = maxx;
+    the_grid->mesh_side_length.y = maxy;
+    the_grid->mesh_side_length.z = maxz;
+
+
     for(i = 0; i < 5; i++) {
         derefine_grid_inactive_cells(the_grid);
     }
 
     if(start_h == 100.0) {
-
+        //Do nothing
     } else if(start_h == 50.0) {
         log_to_stdout_and_file("Refining Mesh to 50um\n");
         refine_grid(the_grid, 1);

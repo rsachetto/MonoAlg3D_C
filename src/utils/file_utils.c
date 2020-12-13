@@ -66,7 +66,13 @@ char *get_dir_from_path(const char *path) {
     char *last_slash = NULL;
     char *parent = NULL;
     last_slash = strrchr(path, '/');
-    parent = strndup(path, last_slash - path + 1);
+	
+
+	if(last_slash == NULL)
+    	parent = strdup(".");
+	else
+    	parent = strndup(path, last_slash - path + 1);	
+
     return parent;
 }
 

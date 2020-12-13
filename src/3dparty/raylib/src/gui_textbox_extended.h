@@ -92,7 +92,9 @@ RAYGUIDEF bool GuiTextBoxEx(Rectangle bounds, char *text, int textSize, bool edi
 
 #if defined(GUI_TEXTBOX_EXTENDED_IMPLEMENTATION)
 
+#ifndef RAYGUI_H
 #include "raygui.h"
+#endif
 
 //----------------------------------------------------------------------------------
 // Defines and Macros
@@ -305,7 +307,7 @@ RAYGUIDEF void GuiTextBoxCopy(const char *text)
         end = GuiTextBoxGetByteIndex(text, 0, 0, end);
 
         // FIXME: `TextSubtext()` only lets use copy TEXTSPLIT_MAX_TEXT_LENGTH (1024) bytes
-        // maybe modify `SetClipboardText()` so we can use it only on part of a sds
+        // maybe modify `SetClipboardText()` so we can use it only on part of a string
         const char *clipText = TextSubtext(text, start, end - start);
 
         SetClipboardText(clipText);
@@ -377,7 +379,7 @@ RAYGUIDEF void GuiTextBoxCut(char* text)
         int endIdx = GuiTextBoxGetByteIndex(text, 0, 0, end);
 
         // FIXME: `TextSubtext()` only lets use copy TEXTSPLIT_MAX_TEXT_LENGTH (1024) bytes
-        // maybe modify `SetClipboardText()` so we can use it only on parts of a sds
+        // maybe modify `SetClipboardText()` so we can use it only on parts of a string
         const char *clipText = TextSubtext(text, startIdx, endIdx - startIdx);
         SetClipboardText(clipText);
 

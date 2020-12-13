@@ -19,21 +19,14 @@
 #include "../3dparty/sds/sds.h"
 
 struct mesh_data {
-    real_cpu cube_side_length_x;
-    real_cpu cube_side_length_y;
-    real_cpu cube_side_length_z;
-    real_cpu mesh_side_length_x;
-    real_cpu mesh_side_length_y;
-    real_cpu mesh_side_length_z;
+	struct point_3d cube_side_length;
+	struct point_3d mesh_side_length;
     uint32_t number_of_cells;
     uint32_t num_active_cells;
 } __attribute__((packed));
 
-
 struct cell_data {
-    real_cpu center_x;
-    real_cpu center_y;
-    real_cpu center_z;
+    struct point_3d center;
     real_cpu v;
     real_cpu z_front_flux;
     real_cpu z_back_flux;
@@ -44,8 +37,9 @@ struct cell_data {
     real_cpu b;
     bool can_change;
     bool active;
+ 	size_t mesh_extra_info_size;
+	void *mesh_extra_info;
 } __attribute__((packed));
-
 
 RESTORE_STATE (restore_simulation_state) {
 
@@ -72,26 +66,23 @@ RESTORE_STATE (restore_simulation_state) {
 
         fread (&mesh_data, sizeof (struct mesh_data), 1, input_file);
 
-        the_grid->cube_side_length.x = mesh_data.cube_side_length_x;
-        the_grid->cube_side_length.y = mesh_data.cube_side_length_y;
-        the_grid->cube_side_length.z = mesh_data.cube_side_length_z;
-
-        the_grid->mesh_side_length.x = mesh_data.mesh_side_length_x;
-        the_grid->mesh_side_length.y = mesh_data.mesh_side_length_y;
-        the_grid->mesh_side_length.z = mesh_data.mesh_side_length_z;
+        the_grid->cube_side_length = mesh_data.cube_side_length;
+        the_grid->mesh_side_length = mesh_data.mesh_side_length;
 
         // Read the mesh to a point hash
         for (uint32_t i = 0; i < mesh_data.number_of_cells; i++) {
-            struct cell_data *cell_data = (struct cell_data*) malloc(sizeof(struct cell_data));
-            // Read center_x, center_y, center_z
-            fread (cell_data, sizeof(struct cell_data), 1, input_file);
+            //struct cell_data *cell_data = (struct cell_data*) malloc(sizeof(struct cell_data));
+            struct cell_data *cell_data = MALLOC_ONE_TYPE(struct cell_data);
+            
+			// Read center_x, center_y, center_z
+            fread(cell_data, sizeof(struct cell_data) - sizeof(void*), 1, input_file); //we need to allocate the extra_mesh_info before reading it			
 
-            struct point_3d mesh_point;
-            mesh_point.x = cell_data->center_x;
-            mesh_point.y = cell_data->center_y;
-            mesh_point.z = cell_data->center_z;
+			if(cell_data->mesh_extra_info_size) {
+				cell_data->mesh_extra_info = MALLOC_BYTES(void, cell_data->mesh_extra_info_size);
+            	fread(cell_data->mesh_extra_info, cell_data->mesh_extra_info_size, 1, input_file);
+			}
 
-            hmput(mesh_hash, mesh_point, cell_data);
+            hmput(mesh_hash, cell_data->center, cell_data);
         }
 
         printf ("Restoring grid state...\n");
@@ -132,7 +123,6 @@ RESTORE_STATE (restore_simulation_state) {
                         grid_cell->left_flux = cell_data->x_left_flux;
                         grid_cell->b = cell_data->b;
                         grid_cell->can_change = cell_data->can_change;
-
                     }
 
                     grid_cell->visited = true;
@@ -202,53 +192,53 @@ RESTORE_STATE (restore_simulation_state) {
 
         sdsfree (tmp);
 
-        fread (&(the_ode_solver->max_dt), sizeof (the_ode_solver->max_dt), 1, input_file);
-        fread (&(the_ode_solver->min_dt), sizeof (the_ode_solver->min_dt), 1, input_file);
-        fread (&(the_ode_solver->rel_tol), sizeof (the_ode_solver->rel_tol), 1, input_file);
-        fread (&(the_ode_solver->abs_tol), sizeof (the_ode_solver->abs_tol), 1, input_file);
-
-//        fread (&(the_ode_solver->previous_dt), sizeof (the_ode_solver->previous_dt), 1, input_file);
-//        fread (&(the_ode_solver->time_new), sizeof (the_ode_solver->time_new), 1, input_file);
+        fread (&(the_ode_solver->adaptive), sizeof(the_ode_solver->adaptive), 1, input_file);
+        fread (&(the_ode_solver->max_dt),   sizeof(the_ode_solver->max_dt),   1, input_file);
+        fread (&(the_ode_solver->min_dt),   sizeof(the_ode_solver->min_dt),   1, input_file);
+        fread (&(the_ode_solver->rel_tol),  sizeof(the_ode_solver->rel_tol),  1, input_file);
+        fread (&(the_ode_solver->abs_tol),  sizeof(the_ode_solver->abs_tol),  1, input_file);
 
         fread (&(the_ode_solver->num_cells_to_solve), sizeof (the_ode_solver->num_cells_to_solve), 1, input_file);
+
+        bool read_cells_to_solve;
+        fread (&read_cells_to_solve, sizeof (read_cells_to_solve), 1, input_file);
 
         size_t num_cells_to_solve = the_ode_solver->num_cells_to_solve;
 
         the_ode_solver->cells_to_solve = NULL;
 
-        if(num_cells_to_solve) {
-            free(the_ode_solver->cells_to_solve);
-            the_ode_solver->cells_to_solve =
-                    malloc(sizeof(the_ode_solver->cells_to_solve[0]) * the_ode_solver->num_cells_to_solve);
-            fread(the_ode_solver->cells_to_solve, sizeof(the_ode_solver->cells_to_solve[0]), num_cells_to_solve,
-                  input_file);
+        if(read_cells_to_solve) {
+            the_ode_solver->cells_to_solve = malloc(sizeof(the_ode_solver->cells_to_solve[0]) * the_ode_solver->num_cells_to_solve);
+            fread(the_ode_solver->cells_to_solve, sizeof(the_ode_solver->cells_to_solve[0]), num_cells_to_solve, input_file);
         }
 
         fread (&(the_ode_solver->gpu), sizeof (the_ode_solver->gpu), 1, input_file);
         fread (&(the_ode_solver->gpu_id), sizeof (the_ode_solver->gpu_id), 1, input_file);
 
-//        fread (&(the_ode_solver->model_data), sizeof (the_ode_solver->model_data), 1, input_file);
-//        unsigned long data_size;
-//        fread (&(data_size), sizeof(data_size), 1, input_file);
-//        fread (the_ode_solver->model_data.model_library_path, data_size, 1, input_file);
         fread (&(the_ode_solver->pitch), sizeof (the_ode_solver->pitch), 1, input_file);
 
         fread (&(the_ode_solver->original_num_cells), sizeof (the_ode_solver->original_num_cells), 1, input_file);
-        if (the_ode_solver->gpu) {
-#ifdef COMPILE_CUDA
+
+		size_t num_sv_entries = the_ode_solver->model_data.number_of_ode_equations;
+
+
+		if (the_ode_solver->gpu) {
+
+            #ifdef COMPILE_CUDA
+            if(the_ode_solver->adaptive) {
+				num_sv_entries = num_sv_entries + 3;
+		    }
+
             real *sv_cpu;
-            sv_cpu = (real *)malloc (the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations *
-                                     sizeof (real));
-            fread (sv_cpu, sizeof (real),
-                   the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations, input_file);
+            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, the_ode_solver->original_num_cells * num_sv_entries);
+
+            fread (sv_cpu, sizeof (real), the_ode_solver->original_num_cells * num_sv_entries, input_file);
 
             check_cuda_error(cudaMemcpy2D (the_ode_solver->sv, the_ode_solver->pitch, sv_cpu, the_ode_solver->original_num_cells * sizeof (real),
-                          the_ode_solver->original_num_cells * sizeof (real),
-                          (size_t)the_ode_solver->model_data.number_of_ode_equations, cudaMemcpyHostToDevice));
-#endif
+                          the_ode_solver->original_num_cells * sizeof (real), num_sv_entries, cudaMemcpyHostToDevice));
+			#endif
         } else {
-            fread (the_ode_solver->sv, sizeof (real),
-                   the_ode_solver->original_num_cells * the_ode_solver->model_data.number_of_ode_equations, input_file);
+            fread (the_ode_solver->sv, sizeof (real), the_ode_solver->original_num_cells * num_sv_entries, input_file);
         }
 
         fread(&(the_ode_solver->extra_data_size), sizeof(the_ode_solver->extra_data_size), 1, input_file);

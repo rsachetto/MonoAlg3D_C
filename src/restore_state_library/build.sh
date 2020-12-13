@@ -1,5 +1,10 @@
+RESTORE_STATIC_DEPS="alg config_helpers utils sds tinyexpr"
+
 if [ -n "$CUDA_FOUND" ]; then
-    EXTRA_CUDA_LIBS="cudart"
+    RESTORE_STATIC_DEPS="$RESTORE_STATIC_DEPS gpu_utils"
+    EXTRA_CUDA_LIBS="c cuda cudart"
 fi
 
-COMPILE_SHARED_LIB "default_restore_state" "restore_state.c" "" "alg config_helpers utils sds tinyexpr" "$EXTRA_CUDA_LIBS" "$CUDA_LIBRARY_PATH"
+CHECK_CUSTOM_FILE
+
+COMPILE_SHARED_LIB "default_restore_state" "restore_state.c ${CUSTOM_FILE}" "" "${RESTORE_STATIC_DEPS}" "$EXTRA_CUDA_LIBS" "$CUDA_LIBRARY_PATH"

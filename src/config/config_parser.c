@@ -142,6 +142,7 @@ void display_conversion_usage(char **argv) {
     printf("Options:\n");
     printf("--input  | -i [input]. Input directory or file. Default NULL.\n");
     printf("--output | -o [output]. Output directory to save the converted files. Default NULL.\n");
+    printf("--value_index | -v [variable_index]. The column (counting from 0) of the value in the text file to be visualized. Default 6.\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
