@@ -1606,3 +1606,158 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
     return 1;
 }
+
+SET_SPATIAL_DOMAIN(initialize_grid_hcm_mesh) {
+
+    // TODO: we should put this in the grid data again
+    //
+    // the_grid -> start_discretization.x = SAME_POINT3D{start_discretization};
+    //
+
+   
+    real_cpu discretization = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, discretization, config->config_data, "discretization");
+
+    size_t size = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, size, config->config_data, "num_volumes");
+
+    char *mesh_file;
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
+
+   	// TODO: change this to the code above
+	if(discretization == 500) {
+	    char *tmp = "500";
+	    shput_dup_value(config->config_data, "start_dx", tmp);
+    	shput_dup_value(config->config_data, "start_dy", tmp);
+	    shput_dup_value(config->config_data, "start_dz", tmp);
+	}
+	else if(discretization == 400) {
+		char *tmp = "400";
+	    shput_dup_value(config->config_data, "start_dx", tmp);
+    	shput_dup_value(config->config_data, "start_dy", tmp);
+	    shput_dup_value(config->config_data, "start_dz", tmp);
+	}
+	else {
+		log_to_stderr_and_file_and_exit("Discretization of %lf not supported for this mesh\n", discretization);
+	}
+
+    int n_steps;
+
+	if(discretization == 500) {
+	    initialize_and_construct_grid(the_grid, POINT3D(128000, 128000, 128000));
+		n_steps = 7;	
+	}
+	else {
+	    initialize_and_construct_grid(the_grid, POINT3D(204800, 204800, 204800));
+		n_steps = 8;
+	}
+
+	log_to_stdout_and_file("Refining the mesh\n");
+    refine_grid(the_grid, n_steps);
+
+    struct cell_node *grid_cell = the_grid->first_cell;
+    FILE *file = fopen(mesh_file, "r");
+
+    if(!file) {
+        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", mesh_file);
+    }
+
+    real_cpu **mesh_points = MALLOC_ARRAY_OF_TYPE(real_cpu *, size);
+
+    for(int i = 0; i < size; i++) {
+        mesh_points[i] = MALLOC_ARRAY_OF_TYPE(real_cpu, 4);
+        if(mesh_points[i] == NULL) {
+            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
+        }
+    }
+
+    real_cpu maxy = 0.0;
+    real_cpu maxz = 0.0;
+    real_cpu miny = DBL_MAX;
+    real_cpu minz = DBL_MAX;
+   	
+    real_cpu *septum      = MALLOC_ARRAY_OF_TYPE(real_cpu, size);
+    real_cpu *tissue_type = MALLOC_ARRAY_OF_TYPE(real_cpu, size);
+
+	uint32_t *element_id  = MALLOC_ARRAY_OF_TYPE(uint32_t, size);
+	uint32_t *node_id     = MALLOC_ARRAY_OF_TYPE(uint32_t, size);
+
+    real_cpu dummy;
+
+	log_to_stdout_and_file("Setting mesh from file %s\n", mesh_file);
+    int i = 0;
+    while(i < size) {
+
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%d,%d\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &dummy, &dummy, &tissue_type[i], &septum[i], &element_id[i], &node_id[i]);
+
+        // this is needed because the array mesh_points is sorted after reading the mesh file.
+        mesh_points[i][3] = i;
+
+        if(mesh_points[i][1] > maxy)
+            maxy = mesh_points[i][1];
+        if(mesh_points[i][2] > maxz)
+            maxz = mesh_points[i][2];
+        if(mesh_points[i][1] < miny)
+            miny = mesh_points[i][1];
+        if(mesh_points[i][2] < minz)
+            minz = mesh_points[i][2];
+
+        i++;
+    }
+
+    sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
+
+    real_cpu maxx = mesh_points[size - 1][0];
+    real_cpu minx = mesh_points[0][0];
+    int index;
+
+    real_cpu x, y, z;
+    while(grid_cell != 0) {
+        x = grid_cell->center.x;
+        y = grid_cell->center.y;
+        z = grid_cell->center.z;
+
+        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            grid_cell->active = false;
+        } else {
+            index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
+
+			if(index != -1) {
+				grid_cell->active = true;
+				int old_index = (int)mesh_points[index][3];
+
+				INITIALIZE_HCM_INFO(grid_cell);
+
+				HCM_SEPTUM(grid_cell)      = (septum[old_index] == 2);
+				HCM_TISSUE_TYPE(grid_cell) = tissue_type[old_index];
+				HCM_ELEMENT_ID(grid_cell)  = element_id[old_index];
+				HCM_NODE_ID(grid_cell)     = node_id[old_index];
+
+			} else {
+                grid_cell->active = false;
+            }
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    fclose(file);
+
+    // deallocate memory
+    for(int l = 0; l < size; l++) {
+        free(mesh_points[l]);
+    }
+
+    free(mesh_points);
+
+    the_grid->mesh_side_length.x = maxx;
+    the_grid->mesh_side_length.y = maxy;
+    the_grid->mesh_side_length.z = maxz;
+
+    log_to_stdout_and_file("Cleaning grid\n");
+
+    for(i = 0; i < n_steps; i++) {
+        derefine_grid_inactive_cells(the_grid);
+    }
+
+    return 1;
+}

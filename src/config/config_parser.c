@@ -27,10 +27,11 @@ static const struct option long_fiber_conversion_options[] = {{"fib", required_a
                                                               {"nod", required_argument, NULL, 'n'},
                                                               {"alg", required_argument, NULL, 'a'}};
 
-static const char *visualization_opt_string = "x:m:d:p:v:a:cs:t:h?";
+static const char *visualization_opt_string = "x:m:i:d:p:v:a:cs:t:h?";
 static const struct option long_visualization_options[] = {{"visualization_max_v", required_argument, NULL, 'x'},
                                                            {"visualization_min_v", required_argument, NULL, 'm'},
                                                            {"dt", required_argument, NULL, 'd'},
+                                                           {"value_index", required_argument, NULL, 'i'},
                                                            {"show_activation_map", required_argument, NULL, 'a'},
                                                            {"convert_activation_map", no_argument, NULL, 'c'},
                                                            {"prefix", required_argument, NULL, 'p'},
@@ -159,6 +160,7 @@ void display_visualization_usage(char **argv) {
     printf("Options:\n");
     printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
     printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
+    printf("--value_index | -v [variable_index]. The column (counting from 0) of the value in the text file to be visualized. Default 6.\n");
     printf("--dt | -d, dt for the simulation. Default: 0\n");
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--pvd | -v, pvd file. Default: NULL\n");
@@ -214,6 +216,7 @@ struct visualization_options *new_visualization_options() {
     options->step = 1;
     options->start_file = 0;
     options->save_activation_only = false;
+	options->value_index = 6; //Value for the default position of V in your text format
     return options;
 }
 
@@ -1009,6 +1012,9 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
             break;
         case 'm':
             user_args->min_v = strtod(optarg, NULL);
+            break;
+		case 'i':
+            user_args->value_index = strtol(optarg, NULL, 10);
             break;
         case 'd':
             user_args->dt = strtod(optarg, NULL);
