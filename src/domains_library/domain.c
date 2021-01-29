@@ -1066,7 +1066,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh_with_tissue_type) {
         if(mesh_points[i][2] < minz)
             minz = mesh_points[i][2];
 
-        mesh_points[i][4] = i; //This is the original volume position in the mesh file
+        mesh_points[i][3] = i; //This is the original volume position in the mesh file
 
         i++;
     }
@@ -1093,7 +1093,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh_with_tissue_type) {
 
             if(index != -1) {
                 cell->active = true;
-                cell->original_position_in_file = mesh_points[index][4];
+                cell->original_position_in_file = mesh_points[index][3];
 
 				INITIALIZE_SCV_INFO(cell);
 				TISSUE_TYPE(cell) = tissue_type[cell->original_position_in_file];
@@ -1218,7 +1218,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
         if(mesh_points[i][2] < minz)
             minz = mesh_points[i][2];
 
-        mesh_points[i][4] = i; //This is the original volume position in the mesh file
+        mesh_points[i][3] = i; //This is the original volume position in the mesh file
 
         i++;
     }
@@ -1245,7 +1245,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_atrial_mesh) {
 
             if(index != -1) {
                 cell->active = true;
-                cell->original_position_in_file = mesh_points[index][4];
+                cell->original_position_in_file = mesh_points[index][3];
                 num_loaded++;
 
             } else {
@@ -1732,6 +1732,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_hcm_mesh) {
 				HCM_TISSUE_TYPE(grid_cell) = tissue_type[old_index];
 				HCM_ELEMENT_ID(grid_cell)  = element_id[old_index];
 				HCM_NODE_ID(grid_cell)     = node_id[old_index];
+				grid_cell->original_position_in_file = old_index;
 
 			} else {
                 grid_cell->active = false;
