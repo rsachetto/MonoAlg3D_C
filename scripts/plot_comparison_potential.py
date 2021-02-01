@@ -17,17 +17,24 @@ def read_transmembrane_potential(input_file, dt, print_rate):
 
 
 def plot_transmembrane_potential(t1, v1, t2, v2):
+    #plt.plot(t1[0:150], v1[0:150], label="Purkinje", c="green", linewidth=2.0)
+    #plt.plot(t2[0:150], v2[0:150], label="Tissue", c="red", linewidth=2.0)
+    #plt.plot(t1[2500:2650], v1[2500:2650], label="Purkinje", c="green", linewidth=2.0)
+    #plt.plot(t2[2500:2650], v2[2500:2650], label="Tissue", c="red", linewidth=2.0)
+    plt.plot(t1[0:2000], v1[0:2000], label="Trovato_2020", c="green", linewidth=2.0)
+    plt.plot(t2[0:2000], v2[0:2000], label="ToRORd_2019", c="red", linewidth=2.0)
+    #plt.plot(t1[2500:4500], v1[2500:4500], label="Purkinje", c="green", linewidth=2.0)
+    #plt.plot(t2[2500:4500], v2[2500:4500], label="Tissue", c="red", linewidth=2.0)
+    #plt.plot(t1, v1, label="Purkinje", c="green", linewidth=2.0)
+    #plt.plot(t2, v2, label="Tissue", c="red", linewidth=2.0, alpha=0.75)
 
-    plt.plot(t1, v1, label="Purkinje", c="green", linewidth=1.0)
-    plt.plot(t2, v2, label="Tissue", c="red", linewidth=1.0)
-
-    plt.grid()
+    #plt.grid()
     #plt.xlim([500,600])
     plt.xlabel("t (ms)",fontsize=15)
     plt.ylabel("V (mV)",fontsize=15)
-    plt.title("Action potential",fontsize=14)
+    plt.title("Action potential traces",fontsize=14)
     plt.legend(loc=0,fontsize=14)
-    plt.savefig("pmj_site_aps.pdf")
+    plt.savefig("trovato_torord_comparison.png")
     #plt.show()
 
 
