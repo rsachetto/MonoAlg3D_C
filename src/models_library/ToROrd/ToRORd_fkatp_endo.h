@@ -9,7 +9,7 @@
 
 #ifdef __CUDACC__
 
-#include "../gpu_utils/gpu_utils.h"
+#include "../../gpu_utils/gpu_utils.h"
 
 __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes);
 
