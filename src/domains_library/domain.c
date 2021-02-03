@@ -303,6 +303,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_human_mesh) {
     }
 
     free(mesh_points);
+	free(mesh_file);
 
     // TODO: we need to sum the cell discretization here...
     the_grid->mesh_side_length.x = maxx;
@@ -436,6 +437,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_scv_mesh) {
     }
 
     free(mesh_points);
+	free(mesh_file);
 
     the_grid->mesh_side_length.x = maxx;
     the_grid->mesh_side_length.y = maxy;
@@ -943,6 +945,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
     }
 
     free(mesh_points);
+	free(mesh_file);
 
     //TODO: we need to sum the cell discretization here...
     the_grid->mesh_side_length.x = maxx;
@@ -982,6 +985,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_mouse_mesh) {
     shput_dup_value(config->config_data, "start_dx", tmp);
     shput_dup_value(config->config_data, "start_dy", tmp);
     shput_dup_value(config->config_data, "start_dz", tmp);
+
 
     return 1;
 }
@@ -1517,6 +1521,8 @@ SET_SPATIAL_DOMAIN(set_perlin_square_mesh) {
         }
     }
 
+	free(mesh_file);
+
     return 1;
 }
 
@@ -1566,7 +1572,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     //shput_dup_value(config->config_data, "start_dy", "500.0");
     //shput_dup_value(config->config_data, "start_dz", "500.0");
 
-    //LEAK on mesh_file if mesh_file is defined on ini file
     char *mesh_file = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
@@ -1621,7 +1626,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_hcm_mesh) {
     size_t size = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(size_t, size, config->config_data, "num_volumes");
 
-    char *mesh_file;
+    char *mesh_file = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_file, config->config_data, "mesh_file");
 
    	// TODO: change this to the code above
@@ -1749,6 +1754,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_hcm_mesh) {
     }
 
     free(mesh_points);
+	free(mesh_file);
 
     the_grid->mesh_side_length.x = maxx;
     the_grid->mesh_side_length.y = maxy;

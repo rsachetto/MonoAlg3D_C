@@ -878,7 +878,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 #ifdef COMPILE_GUI
 	if(show_gui) {
-	   gui_end_simulation(gui_config, res_time, ode_total_time, cg_total_time, total_mat_time, total_ref_time, total_deref_time, total_write_time, total_config_time, total_cg_it);	
+		gui_config->solver_time = res_time;
+		gui_config->ode_total_time = ode_total_time;
+		gui_config->cg_total_time = cg_total_time;
+		gui_config->total_mat_time = total_mat_time;
+		gui_config->total_ref_time = total_ref_time;
+		gui_config->total_deref_time = total_deref_time;
+		gui_config->total_write_time = total_write_time;
+		gui_config->total_config_time = total_config_time;
+		gui_config->total_cg_it  = total_cg_it;
+		gui_config->simulating = false;
+
 	}
 #endif
 

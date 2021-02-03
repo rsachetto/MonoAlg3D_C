@@ -139,6 +139,10 @@ meshes/atrial_mesh*
 meshes/ModVent_PAP_500um.alg
 meshes/elizabeth*
 meshes/convertor.py
+meshes/HCM_mesh_400um.alg
+meshes/HCM_mesh_400um.alg.fibers
+meshes/HCM_mesh_500um.alg
+meshes/HCM_mesh_500um.alg.fibers
 
 networks/sebastian*
 networks/elizabeth*
@@ -159,3 +163,6 @@ scripts/calc_apd_full_grid/aps/test
 scripts/calc_apd_full_grid/output/test
 private_models/
 src/*/custom_functions.c
+
+.cache/
+.ccls-cache/

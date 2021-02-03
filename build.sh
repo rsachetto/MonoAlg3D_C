@@ -1,4 +1,17 @@
 #!/bin/bash
+
+PRINT_USAGE () { 
+	echo "Usage $0 [flags] [modules]" >&2;
+	echo "Valid modules: all, gui, simulator or batch (default is all)" >&2;
+	echo "Valid flags:" >&2;
+	echo "-f  - force recompilation" >&2;
+	echo "-l  - write build log on compile_commands.json" >&2;
+	echo "-q  - quiet compilation. Only errors and warnings will be outputed" >&2;
+	echo "-r  - build release version (Default)" >&2;
+	echo "-d  - build debug version" >&2;
+	exit 1
+}
+
 OPTIONS_FILE=./bsbash/build_functions.sh
 FUNCTIONS_FILE=./bsbash/find_functions.sh
 
@@ -156,18 +169,18 @@ if [ -n "$COMPILE_GUI" ]; then
     ADD_SUBDIRECTORY "src/3dparty/raylib/src"
     ADD_SUBDIRECTORY "src/3dparty/tinyfiledialogs"
     ADD_SUBDIRECTORY "src/gui"
-    OPT_DEPS="gui raylib tinyfiledialogs"
+    OPT_DEPS_GUI="gui raylib tinyfiledialogs"
 fi
 
 if [ -n "$CUDA_FOUND" ]; then
     ADD_SUBDIRECTORY "src/gpu_utils"
-    OPT_DEPS="${OPT_DEPS} gpu_utils"
+    OPT_DEPS_GPU=gpu_utils
 fi
 
 SRC_FILES="src/main_simulator.c"
 HDR_FILES=""
 
-STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS} config_helpers vtk_utils yxml alg graph utils sds miniz"
+STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS_GUI} ${OPT_DEPS_GPU} config_helpers vtk_utils yxml alg graph utils sds miniz"
 DYNAMIC_DEPS="dl m $CUDA_LIBRARIES"
 
 if [ -n "$COMPILE_GUI" ]; then

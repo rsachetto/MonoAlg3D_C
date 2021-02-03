@@ -26,21 +26,6 @@
 #include "../3dparty/raylib/src/rlgl.h"
 /////////
 
-void gui_end_simulation(struct gui_config *gui_config, long res_time, long ode_total_time, long cg_total_time, long total_mat_time, 
-					    long total_ref_time, long total_deref_time, long total_write_time, long total_config_time, long total_cg_it) {
-
-    gui_config->solver_time = res_time;
-    gui_config->ode_total_time = ode_total_time;
-    gui_config->cg_total_time = cg_total_time;
-    gui_config->total_mat_time = total_mat_time;
-    gui_config->total_ref_time = total_ref_time;
-    gui_config->total_deref_time = total_deref_time;
-    gui_config->total_write_time = total_write_time;
-    gui_config->total_config_time = total_config_time;
-    gui_config->total_cg_it  = total_cg_it;
-    gui_config->simulating = false;
-}
-
 static void set_camera_params(Camera3D *camera) {
     camera->position = (Vector3){0.1f, 0.1f, 20.f}; // Camera position
     camera->target = (Vector3){0.f, 0.f, 0.f};
