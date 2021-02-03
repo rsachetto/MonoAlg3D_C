@@ -34,7 +34,6 @@ COMPILE_MPI=''
 COMPILE_CONVERTER=''
 COMPILE_FIBER_CONVERTER=''
 COMPILE_SIMULATOR=''
-COMPILE_WITH_DDM=''
 COMPILE_POSTPROCESSOR=''
 DISABLE_CUDA=''
 
@@ -62,7 +61,6 @@ for i in "${BUILD_ARGS[@]}"; do
     fi
 
     if [ "$i" == "ddm" ]; then
-        COMPILE_WITH_DDM='y'
         C_FLAGS="$C_FLAGS -DENABLE_DDM"
     fi
 
