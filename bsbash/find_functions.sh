@@ -121,10 +121,3 @@ FIND_MPI () {
 	export MPI_INCLUDE_PATH
 
 }
-
-FIND_ZLIB () {
-	#TODO: implement
-	ZLIB_FOUND=''
-	ZLIB_LIBRARIES=''
-	ZLIB_INCLUDE_PATH=''
-}
