@@ -48,9 +48,6 @@ const float floatzero = 0.0;
 
 INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
-    printf("GPU linear system here 2!\n");
-    exit(1);
-
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
