@@ -15,16 +15,16 @@
                         uint32_t *number_of_iterations, real_cpu *error)
 typedef SOLVE_LINEAR_SYSTEM(linear_system_solver_fn);
 
-#define INIT_LINEAR_SYSTEM(name)  void name(struct config *config, struct grid *the_grid)
+#define INIT_LINEAR_SYSTEM(name)  void name(struct config *config, struct grid *the_grid, bool is_purkinje)
 typedef INIT_LINEAR_SYSTEM(init_linear_system_solver_fn);
 
 #define END_LINEAR_SYSTEM(name)  void name(struct config *config)
 typedef END_LINEAR_SYSTEM(end_linear_system_solver_fn);
 
-#define CALL_INIT_LINEAR_SYSTEM(config, grid)                                                                          \
+#define CALL_INIT_LINEAR_SYSTEM(config, grid, is_purkinje)                                                                          \
     do {                                                                                                               \
         if(config && config->init_function) {                                                                          \
-            ((init_linear_system_solver_fn *)config->init_function)(config, grid);                                     \
+            ((init_linear_system_solver_fn *)config->init_function)(config, grid, is_purkinje);                                     \
         }                                                                                                              \
     } while(0)
 

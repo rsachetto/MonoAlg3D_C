@@ -341,6 +341,7 @@ struct user_options *new_user_options() {
     user_args->save_state_config = NULL;
     user_args->restore_state_config = NULL;
     user_args->update_monodomain_config = NULL;
+    user_args->purkinje_linear_system_solver_config = NULL;
 
     user_args->show_gui = false;
     user_args->max_v = 40.0f;
@@ -1628,6 +1629,14 @@ int parse_config_file(void *user, const char *section, const char *name, const c
 
         set_common_data(pconfig->linear_system_solver_config, name, value);
 
+    } else if(MATCH_SECTION(LINEAR_SYSTEM_SOLVER_PURKINJE_SECTION)) {
+
+        if(pconfig->purkinje_linear_system_solver_config == NULL) {
+            pconfig->purkinje_linear_system_solver_config = alloc_and_init_config_data();
+        }
+
+        set_common_data(pconfig->purkinje_linear_system_solver_config, name, value);
+
     } else if(MATCH_SECTION(EXTRA_DATA_SECTION)) {
 
         if(pconfig->extra_data_config == NULL) {
@@ -1806,6 +1815,12 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
         fprintf(ini_file, "\n");
     }
 
+    if(config->purkinje_linear_system_solver_config) {
+        WRITE_INI_SECTION(LINEAR_SYSTEM_SOLVER_PURKINJE_SECTION);
+        write_ini_options(config->purkinje_linear_system_solver_config, ini_file);
+        fprintf(ini_file, "\n");
+    }
+
     if(config->extra_data_config) {
         WRITE_INI_SECTION(EXTRA_DATA_SECTION);
         write_ini_options(config->extra_data_config, ini_file);
@@ -1876,6 +1891,9 @@ void free_user_options(struct user_options *s) {
 
     if(s->linear_system_solver_config)
         free_config_data(s->linear_system_solver_config);
+
+    if(s->purkinje_linear_system_solver_config)
+        free_config_data(s->purkinje_linear_system_solver_config);
 
     if(s->restore_state_config)
         free_config_data(s->restore_state_config);

@@ -196,12 +196,12 @@ INIT_LINEAR_SYSTEM(init_conjugate_gradient) {
 
     if(gpu) {
 #ifdef COMPILE_CUDA
-        init_gpu_conjugate_gradient(config, the_grid);
+        init_gpu_conjugate_gradient(config, the_grid, is_purkinje);
 #else
-        init_cpu_conjugate_gradient(config, the_grid);
+        init_cpu_conjugate_gradient(config, the_grid, is_purkinje);
 #endif
     } else {
-        init_cpu_conjugate_gradient(config, the_grid);
+        init_cpu_conjugate_gradient(config, the_grid, is_purkinje);
     }
 }
 
