@@ -88,6 +88,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     struct config *purkinje_config = configs->purkinje_config;
     struct config *assembly_matrix_config = configs->assembly_matrix_config;
     struct config *linear_system_solver_config = configs->linear_system_solver_config;
+    struct config *purkinje_linear_system_solver_config = configs->purkinje_linear_system_solver_config;
     struct config *save_mesh_config = configs->save_mesh_config;
     struct config *save_state_config = configs->save_state_config;
     struct config *restore_state_config = configs->restore_state_config;
@@ -211,6 +212,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     } 
     else {
         log_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
+    }
+
+    if(purkinje_linear_system_solver_config) {
+        init_config_functions(purkinje_linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "purkinje_linear_system_solver");
     }
 
     int print_rate = 0;
@@ -541,8 +546,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     init_stop_watch(&iteration_time_watch);
 
-    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
+    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false);
     CALL_INIT_SAVE_MESH(save_mesh_config);
+    if (purkinje_linear_system_solver_config)
+        CALL_INIT_LINEAR_SYSTEM(purkinje_linear_system_solver_config, the_grid, true);
 
 #ifdef COMPILE_GUI
 	if(show_gui) {
@@ -575,11 +582,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
+                if (purkinje_linear_system_solver_config)
+                    CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
                 return RESTART_SIMULATION;
             }
             if (gui_config->exit)  {
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
+                if (purkinje_linear_system_solver_config)
+                    CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
                 return END_SIMULATION;
             }
         }
@@ -630,7 +641,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver, the_grid, the_terminals);
 
             // DIFUSION: Purkinje
-            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config, the_grid, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells, &purkinje_solver_iterations, &purkinje_solver_error);
+            if (purkinje_linear_system_solver_config) // Purkinje-coupled
+                ((linear_system_solver_fn *)purkinje_linear_system_solver_config->main_function)(&time_info, purkinje_linear_system_solver_config,the_grid,\
+                                                                                the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,\
+                                                                                &purkinje_solver_iterations, &purkinje_solver_error);
+            else // Only-Purkinje
+                ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config,the_grid,\
+                                                                                the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,\
+                                                                                &purkinje_solver_iterations, &purkinje_solver_error);
 
             purkinje_cg_partial = stop_stop_watch(&purkinje_cg_time);
 
@@ -757,7 +775,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 
 					CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-					CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
+					CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false);
 				}
 			}
         }
@@ -811,7 +829,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                         total_mat_time += stop_stop_watch(&part_mat);
 
                         CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
-                        CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid);
+                        CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false);
 
 						CALL_END_SAVE_MESH(save_mesh_config, the_grid);
 						CALL_INIT_SAVE_MESH(save_mesh_config);
@@ -894,6 +912,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
     CALL_END_SAVE_MESH(save_mesh_config, the_grid);
+    if (purkinje_linear_system_solver_config)
+        CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
 
     return SIMULATION_FINISHED;
 
@@ -1165,6 +1185,12 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
     if(options->linear_system_solver_config) 
     {
         print_linear_system_solver_config_values(options->linear_system_solver_config);
+        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    }
+
+    if(options->purkinje_linear_system_solver_config) 
+    {
+        print_linear_system_solver_config_values(options->purkinje_linear_system_solver_config);
         log_to_stdout_and_file(LOG_LINE_SEPARATOR);
     }
 

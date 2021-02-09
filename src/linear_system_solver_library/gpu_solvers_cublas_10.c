@@ -30,93 +30,106 @@ static cusparseMatDescr_t descrU = 0;
 
 INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
-    int_array I = NULL, J = NULL;
-    f32_array val = NULL;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data, "use_preconditioner");
+	int_array I = NULL, J = NULL;
+	f32_array val = NULL;
+	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
+	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
+	GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data, "use_preconditioner");
 
-    check_cuda_error((cudaError_t)cublasCreate(&cublasHandle));
+	check_cuda_error((cudaError_t)cublasCreate(&cublasHandle));
 
-    check_cuda_error((cudaError_t)cusparseCreate(&cusparseHandle));
+	check_cuda_error((cudaError_t)cusparseCreate(&cusparseHandle));
 
-    check_cuda_error((cudaError_t)cusparseCreateMatDescr(&descr));
+	check_cuda_error((cudaError_t)cusparseCreateMatDescr(&descr));
 
-    cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-    cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
+	cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
+	cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
 
-    grid_to_csr(the_grid, &val, &I, &J);
+	//grid_to_csr(the_grid, &val, &I, &J);
 
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **active_cells = the_grid->active_cells;
-
-    nz = arrlen(val);
-    N = num_active_cells;
-
-    check_cuda_error(cudaMalloc((void **)&d_col, nz * sizeof(int)));
-    check_cuda_error(cudaMalloc((void **)&d_row, (N + 1) * sizeof(int)));
-    check_cuda_error(cudaMalloc((void **)&d_val, nz * sizeof(float)));
-    check_cuda_error(cudaMalloc((void **)&d_x, N * sizeof(float)));
-    check_cuda_error(cudaMalloc((void **)&d_r, N * sizeof(float)));
-    check_cuda_error(cudaMalloc((void **)&d_p, N * sizeof(float)));
-    check_cuda_error(cudaMalloc((void **)&d_Ax, N * sizeof(float)));
-
-    cudaMemcpy(d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice);      // JA
-    cudaMemcpy(d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice); // IA
-    cudaMemcpy(d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice);  // A
-    float *rhs = (float *)malloc(sizeof(float) * num_active_cells);
-
-    OMP(parallel for)
-    for(uint32_t i = 0; i < num_active_cells; i++) {
-        rhs[i] = active_cells[i]->b;
+	uint32_t num_active_cells;
+    struct cell_node **active_cells = NULL;
+    if (is_purkinje) {
+        grid_to_csr(the_grid, &val, &I, &J, true);
+        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+        active_cells = the_grid->purkinje->purkinje_cells;
+    }
+    else {
+        grid_to_csr(the_grid, &val, &I, &J, false);
+        num_active_cells = the_grid->num_active_cells;
+        active_cells = the_grid->active_cells;
     }
 
-    check_cuda_error(cudaMemcpy(d_x, rhs, N * sizeof(float), cudaMemcpyHostToDevice)); // Result
+	uint32_t num_active_cells = the_grid->num_active_cells;
+	struct cell_node **active_cells = the_grid->active_cells;
 
-    if(use_preconditioner) {
-        nzILU0 = 2 * N - 1;
-        check_cuda_error(cudaMalloc((void **)&d_valsILU0, nz * sizeof(float)));
-        check_cuda_error(cudaMalloc((void **)&d_zm1, (N) * sizeof(float)));
-        check_cuda_error(cudaMalloc((void **)&d_zm2, (N) * sizeof(float)));
-        check_cuda_error(cudaMalloc((void **)&d_rm2, (N) * sizeof(float)));
-        check_cuda_error(cudaMalloc((void **)&d_y, N * sizeof(float)));
+	nz = arrlen(val);
+	N = num_active_cells;
 
-        cusparseStatus = cusparseCreateSolveAnalysisInfo(&infoA);
-        check_cuda_error((cudaError_t)cusparseStatus);
+	check_cuda_error(cudaMalloc((void **)&d_col, nz * sizeof(int)));
+	check_cuda_error(cudaMalloc((void **)&d_row, (N + 1) * sizeof(int)));
+	check_cuda_error(cudaMalloc((void **)&d_val, nz * sizeof(float)));
+	check_cuda_error(cudaMalloc((void **)&d_x, N * sizeof(float)));
+	check_cuda_error(cudaMalloc((void **)&d_r, N * sizeof(float)));
+	check_cuda_error(cudaMalloc((void **)&d_p, N * sizeof(float)));
+	check_cuda_error(cudaMalloc((void **)&d_Ax, N * sizeof(float)));
 
-        /* Perform the analysis for the Non-Transpose case */
-        cusparseStatus = cusparseScsrsv_analysis(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, nz, descr, d_val, d_row, d_col, infoA);
+	cudaMemcpy(d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice);      // JA
+	cudaMemcpy(d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice); // IA
+	cudaMemcpy(d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice);  // A
+	float *rhs = (float *)malloc(sizeof(float) * num_active_cells);
 
-        check_cuda_error((cudaError_t)cusparseStatus);
+	OMP(parallel for)
+		for(uint32_t i = 0; i < num_active_cells; i++) {
+			rhs[i] = active_cells[i]->b;
+		}
 
-        /* Copy A data to ILU0 vals as input*/
-        cudaMemcpy(d_valsILU0, d_val, nz * sizeof(float), cudaMemcpyDeviceToDevice);
+	check_cuda_error(cudaMemcpy(d_x, rhs, N * sizeof(float), cudaMemcpyHostToDevice)); // Result
 
-        /* generate the Incomplete LU factor H for the matrix A using cudsparseScsrilu0 */
-        cusparseStatus = cusparseScsrilu0(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, descr, d_valsILU0, d_row, d_col, infoA);
+	if(use_preconditioner) {
+		nzILU0 = 2 * N - 1;
+		check_cuda_error(cudaMalloc((void **)&d_valsILU0, nz * sizeof(float)));
+		check_cuda_error(cudaMalloc((void **)&d_zm1, (N) * sizeof(float)));
+		check_cuda_error(cudaMalloc((void **)&d_zm2, (N) * sizeof(float)));
+		check_cuda_error(cudaMalloc((void **)&d_rm2, (N) * sizeof(float)));
+		check_cuda_error(cudaMalloc((void **)&d_y, N * sizeof(float)));
 
-        check_cuda_error((cudaError_t)cusparseStatus);
+		cusparseStatus = cusparseCreateSolveAnalysisInfo(&infoA);
+		check_cuda_error((cudaError_t)cusparseStatus);
 
-        cusparseCreateSolveAnalysisInfo(&info_u);
+		/* Perform the analysis for the Non-Transpose case */
+		cusparseStatus = cusparseScsrsv_analysis(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, nz, descr, d_val, d_row, d_col, infoA);
 
-        cusparseStatus = cusparseCreateMatDescr(&descrL);
-        cusparseSetMatType(descrL, CUSPARSE_MATRIX_TYPE_GENERAL);
-        cusparseSetMatIndexBase(descrL, CUSPARSE_INDEX_BASE_ZERO);
-        cusparseSetMatFillMode(descrL, CUSPARSE_FILL_MODE_LOWER);
-        cusparseSetMatDiagType(descrL, CUSPARSE_DIAG_TYPE_UNIT);
+		check_cuda_error((cudaError_t)cusparseStatus);
 
-        cusparseStatus = cusparseCreateMatDescr(&descrU);
-        cusparseSetMatType(descrU, CUSPARSE_MATRIX_TYPE_GENERAL);
-        cusparseSetMatIndexBase(descrU, CUSPARSE_INDEX_BASE_ZERO);
-        cusparseSetMatFillMode(descrU, CUSPARSE_FILL_MODE_UPPER);
-        cusparseSetMatDiagType(descrU, CUSPARSE_DIAG_TYPE_NON_UNIT);
-        cusparseStatus = cusparseScsrsv_analysis(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, nz, descrU, d_val, d_row, d_col, info_u);
-    }
+		/* Copy A data to ILU0 vals as input*/
+		cudaMemcpy(d_valsILU0, d_val, nz * sizeof(float), cudaMemcpyDeviceToDevice);
 
-    free(rhs);
-    arrfree(I);
-    arrfree(J);
-    arrfree(val);
+		/* generate the Incomplete LU factor H for the matrix A using cudsparseScsrilu0 */
+		cusparseStatus = cusparseScsrilu0(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, descr, d_valsILU0, d_row, d_col, infoA);
+
+		check_cuda_error((cudaError_t)cusparseStatus);
+
+		cusparseCreateSolveAnalysisInfo(&info_u);
+
+		cusparseStatus = cusparseCreateMatDescr(&descrL);
+		cusparseSetMatType(descrL, CUSPARSE_MATRIX_TYPE_GENERAL);
+		cusparseSetMatIndexBase(descrL, CUSPARSE_INDEX_BASE_ZERO);
+		cusparseSetMatFillMode(descrL, CUSPARSE_FILL_MODE_LOWER);
+		cusparseSetMatDiagType(descrL, CUSPARSE_DIAG_TYPE_UNIT);
+
+		cusparseStatus = cusparseCreateMatDescr(&descrU);
+		cusparseSetMatType(descrU, CUSPARSE_MATRIX_TYPE_GENERAL);
+		cusparseSetMatIndexBase(descrU, CUSPARSE_INDEX_BASE_ZERO);
+		cusparseSetMatFillMode(descrU, CUSPARSE_FILL_MODE_UPPER);
+		cusparseSetMatDiagType(descrU, CUSPARSE_DIAG_TYPE_NON_UNIT);
+		cusparseStatus = cusparseScsrsv_analysis(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, nz, descrU, d_val, d_row, d_col, info_u);
+	}
+
+	free(rhs);
+	arrfree(I);
+	arrfree(J);
+	arrfree(val);
 }
 
 END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
@@ -283,7 +296,7 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
     cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
 
-    grid_to_csr(the_grid, &val, &I, &J);
+    grid_to_csr(the_grid, &val, &I, &J, false);
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **active_cells = the_grid->active_cells;

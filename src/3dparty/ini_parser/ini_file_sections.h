@@ -20,6 +20,7 @@
 #define MATRIX_ASSEMBLY_SECTION "assembly_matrix"
 #define UPDATE_MONODOMAIN_SECTION "update_monodomain"
 #define LINEAR_SYSTEM_SOLVER_SECTION "linear_system_solver"
+#define LINEAR_SYSTEM_SOLVER_PURKINJE_SECTION "purkinje_linear_system_solver"
 #define EXTRA_DATA_SECTION "extra_data"
 #define BATCH_SECTION "batch"
 #define MODIFICATION_SECTION "modify"

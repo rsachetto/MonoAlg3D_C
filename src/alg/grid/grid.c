@@ -6,10 +6,11 @@
 #include <float.h>
 #include <inttypes.h>
 
+#include "grid.h"
+
 #include "../../3dparty/stb_ds.h"
 #include "../../utils/file_utils.h"
 #include "../../utils/utils.h"
-#include "grid.h"
 
 struct grid *new_grid() {
     struct grid *result = MALLOC_ONE_TYPE(struct grid);
@@ -568,53 +569,96 @@ static void sort_elements(struct element *cell_elements, int tam) {
     }
 }
 
-void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA) {
+void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje) {
 
-    struct element element;
+	struct element element;
 
-    arrpush(*IA, 0);
+	arrpush(*IA, 0);
 
-    int i = 0;
-    int nnz = 0;
-    size_t max_el = 0;
-    int nnz_local;
+	int i = 0;
+	int nnz = 0;
+	size_t max_el = 0;
+	int nnz_local;
 
-    FOR_EACH_CELL(the_grid) {
+	if (is_purkinje) {
 
-        bool insert = cell->active;
+		FOR_EACH_PURKINJE_CELL(the_grid) {
 
-        if(arrlen(cell->elements) == 1 && cell->elements[0].value == 0.0)
-            insert = false;
+			bool insert = cell->active;
 
-        if(insert) {
+			if(arrlen(cell->elements) == 1 && cell->elements[0].value == 0.0)
+				insert = false;
 
-            if(i > 0) {
-                int tmp = (*IA)[i - 1];
-                arrpush(*IA, tmp + nnz_local);
-            }
+			if(insert) {
 
-            nnz_local = 0;
+				if(i > 0) {
+					int tmp = (*IA)[i - 1];
+					arrpush(*IA, tmp + nnz_local);
+				}
 
-            struct element *cell_elements = cell->elements;
-            max_el = arrlen(cell_elements);
+				nnz_local = 0;
 
-            sort_elements(cell_elements, max_el);
+				struct element *cell_elements = cell->elements;
+				max_el = arrlen(cell_elements);
 
-            for(int el = 0; el < max_el; el++) {
-                element = cell_elements[el];
-                if(element.value != 0) {
-                    arrpush(*A, element.value);
-                    arrpush(*JA, element.column);
-                    nnz++;
-                    nnz_local++;
-                }
-            }
+				sort_elements(cell_elements, max_el);
 
-            i++;
-        }
-    }
+				for(int el = 0; el < max_el; el++) {
+					element = cell_elements[el];
+					if(element.value != 0) {
+						arrpush(*A, element.value);
+						arrpush(*JA, element.column);
+						nnz++;
+						nnz_local++;
+					}
+				}
 
-    arrpush(*IA, nnz);
+				i++;
+			}
+		}
+
+		arrpush(*IA, nnz);
+	} 
+	else {
+
+		FOR_EACH_CELL(the_grid) {
+
+			bool insert = cell->active;
+
+			if(arrlen(cell->elements) == 1 && cell->elements[0].value == 0.0)
+				insert = false;
+
+			if(insert) {
+
+				if(i > 0) {
+					int tmp = (*IA)[i - 1];
+					arrpush(*IA, tmp + nnz_local);
+				}
+
+				nnz_local = 0;
+
+				struct element *cell_elements = cell->elements;
+				max_el = arrlen(cell_elements);
+
+				sort_elements(cell_elements, max_el);
+
+				for(int el = 0; el < max_el; el++) {
+					element = cell_elements[el];
+					if(element.value != 0) {
+						arrpush(*A, element.value);
+						arrpush(*JA, element.column);
+						nnz++;
+						nnz_local++;
+					}
+				}
+
+				i++;
+			}
+		}
+
+		arrpush(*IA, nnz);
+	}
+
 }
 
 void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vector_b) {

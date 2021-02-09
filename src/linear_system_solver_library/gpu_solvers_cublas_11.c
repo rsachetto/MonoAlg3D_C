@@ -57,10 +57,20 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     check_cublas_error(cublasCreate(&cublasHandle));
     check_cublas_error(cusparseCreate(&cusparseHandle));
 
-    grid_to_csr(the_grid, &val, &I, &J);
 
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    struct cell_node **active_cells = the_grid->active_cells;
+	uint32_t num_active_cells;
+    struct cell_node **active_cells = NULL;
+
+	if (is_purkinje) {
+        grid_to_csr(the_grid, &val, &I, &J, true);
+        num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+        active_cells = the_grid->purkinje->purkinje_cells;
+    }
+    else {
+        grid_to_csr(the_grid, &val, &I, &J, false);
+        num_active_cells = the_grid->num_active_cells;
+        active_cells = the_grid->active_cells;
+    }
 
     nz = arrlen(val);
     N = num_active_cells;
@@ -343,7 +353,7 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
     cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
 
-    grid_to_csr(the_grid, &val, &I, &J);
+    grid_to_csr(the_grid, &val, &I, &J, false);
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **active_cells = the_grid->active_cells;
