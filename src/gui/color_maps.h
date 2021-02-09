@@ -5,6 +5,8 @@
 #ifndef MONOALG3D_COLOR_MAPS_H
 #define MONOALG3D_COLOR_MAPS_H
 
+#include "../common_types/common_types.h"
+
 #define NUM_SCALES 7
 #define NUM_COLORS 257
 static real_cpu color_scales[NUM_SCALES][NUM_COLORS][3] = {

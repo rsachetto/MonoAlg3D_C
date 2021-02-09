@@ -449,7 +449,7 @@ ifeq ($(PLATFORM),PLATFORM_ANDROID)
 endif
 
 # Default target entry
-all: raylib
+all: $(RAYLIB_RELEASE_PATH)/libraylib.a
 
 # Generate standalone Android toolchain
 # NOTE: If the host system is Windows or Linux, generation is different
@@ -474,7 +474,7 @@ endif
 
 # Compile raylib library
 # NOTE: Release directory is created if not exist
-raylib: $(OBJS)
+$(RAYLIB_RELEASE_PATH)/libraylib.a: $(OBJS)
 ifeq ($(PLATFORM),PLATFORM_WEB)
     # Compile raylib for web.
 	$(CC) -O1 $(OBJS) -o $(RAYLIB_RELEASE_PATH)/libraylib.bc
