@@ -1,7 +1,8 @@
 #include <stdlib.h>
+
 #include "3dparty/ini_parser/ini.h"
-#include "config/postprocessor_config.h"
 #include "config/config_parser.h"
+#include "config/postprocessor_config.h"
 
 static void print_usage(char **argv) {
 	fprintf(stderr, "Usage: %s config_file.ini\n", argv[0]);

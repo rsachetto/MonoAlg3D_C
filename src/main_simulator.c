@@ -1,18 +1,17 @@
 #include <string.h>
 
-#include "alg/grid/grid.h"
 #include "3dparty/ini_parser/ini.h"
-#include "monodomain/monodomain_solver.h"
-#include "ode_solver/ode_solver.h"
 #include "3dparty/sds/sds.h"
-#include "utils/file_utils.h"
+#include "alg/grid/grid.h"
 #include "config_helpers/config_helpers.h"
 #include "logger/logger.h"
+#include "monodomain/monodomain_solver.h"
+#include "ode_solver/ode_solver.h"
+#include "utils/file_utils.h"
 
 #ifdef COMPILE_GUI
     #include "gui/gui.h"
 #endif
-
 
 void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver,  struct ode_solver **ode_solver, struct grid **the_grid ) {
 

@@ -1,17 +1,14 @@
-
-#include "utils/file_utils.h"
-
-#include "gui/gui.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "3dparty/sds/sds.h"
 #include "3dparty/stb_ds.h"
 #include "config/config_parser.h"
+#include "gui/gui.h"
+#include "utils/file_utils.h"
 #include "vtk_utils/pvd_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 static void read_and_render_activation_map(struct gui_config *gui_config, char *input_file, char *error) {
 

@@ -6,11 +6,10 @@
 #include <float.h>
 #include <inttypes.h>
 
-#include "grid.h"
-
 #include "../../3dparty/stb_ds.h"
 #include "../../utils/file_utils.h"
 #include "../../utils/utils.h"
+#include "grid.h"
 
 struct grid *new_grid() {
     struct grid *result = MALLOC_ONE_TYPE(struct grid);
