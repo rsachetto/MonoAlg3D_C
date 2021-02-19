@@ -20,9 +20,12 @@ static real_cpu tol = 1e-16;
 #include <cublas_v2.h>
 #include <cusparse_v2.h>
 
+
 #if CUBLAS_VER_MAJOR < 11
+#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_10.c" )
 #include "gpu_solvers_cublas_10.c"
 #else
+#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_11.c" )
 #include "gpu_solvers_cublas_11.c"
 #endif
 #endif //COMPILE_CUDA

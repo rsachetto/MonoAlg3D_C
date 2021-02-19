@@ -39,7 +39,6 @@ struct gpu_persistent_data {
     cusparseMatDescr_t descr;
     size_t bufferSize;
     void *buffer;
-
 };
 
 const float floatone = 1.0f;
@@ -184,7 +183,10 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 }
 
 END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
+
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
+
+    if(!persistent_data) return;
 
     check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->cusparseHandle));
     check_cuda_error((cudaError_t)cublasDestroy(persistent_data->cublasHandle));
@@ -229,8 +231,11 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
        ------------------------------------------
        Follows the description by Golub & Van Loan, "Matrix Computations 3rd ed.", Section 10.2.6
     */
-
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
+
+    if(!persistent_data) {
+        log_to_stderr_and_file_and_exit("[ERROR] The gpu_conjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file!\n");
+    }
 
     float dot;
 
@@ -432,6 +437,12 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
 
 SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
 
+    struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
+
+    if(!persistent_data) {
+        log_to_stderr_and_file_and_exit("[ERROR] The gpu_biconjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
+    }
+
     float rho, rhop, beta, alpha, negalpha, omega, negomega, temp, temp2;
     float nrmr, nrmr0;
     rho = 0.0f;
@@ -441,8 +452,6 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
 
     float *rhs; // Vector B
     rhs = (float *)malloc(sizeof(float) * num_active_cells);
-
-     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_active_cells; i++) {
@@ -525,6 +534,7 @@ END_LINEAR_SYSTEM(end_gpu_biconjugate_gradient) {
 
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
 
+    if(!persistent_data) return;
 
     check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->cusparseHandle));
     check_cuda_error((cudaError_t)cublasDestroy(persistent_data->cublasHandle));
