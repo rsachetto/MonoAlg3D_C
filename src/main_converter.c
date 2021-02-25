@@ -1,16 +1,16 @@
-#include "utils/file_utils.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
-#include "config/config_parser.h"
-#include "vtk_utils/vtk_unstructured_grid.h"
 
 #include "3dparty/sds/sds.h"
 #include "3dparty/stb_ds.h"
+#include "config/config_parser.h"
+#include "utils/file_utils.h"
+#include "vtk_utils/vtk_unstructured_grid.h"
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <sys/stat.h>
 
 static void convert_file(const char *input, const char *output, const char *file_name, uint32_t value_index) {
 

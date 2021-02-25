@@ -21,10 +21,10 @@ typedef INIT_LINEAR_SYSTEM(init_linear_system_solver_fn);
 #define END_LINEAR_SYSTEM(name)  void name(struct config *config)
 typedef END_LINEAR_SYSTEM(end_linear_system_solver_fn);
 
-#define CALL_INIT_LINEAR_SYSTEM(config, grid, is_purkinje)                                                                          \
+#define CALL_INIT_LINEAR_SYSTEM(config, grid, is_purkinje)                                                             \
     do {                                                                                                               \
         if(config && config->init_function) {                                                                          \
-            ((init_linear_system_solver_fn *)config->init_function)(config, grid, is_purkinje);                                     \
+            ((init_linear_system_solver_fn *)config->init_function)(config, grid, is_purkinje);                        \
         }                                                                                                              \
     } while(0)
 

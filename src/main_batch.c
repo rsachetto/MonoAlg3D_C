@@ -1,17 +1,16 @@
 #include <mpi.h>
 #include <string.h>
 
-#include "alg/grid/grid.h"
 #include "3dparty/ini_parser/ini.h"
 #include "3dparty/ini_parser/ini_file_sections.h"
-#include "monodomain/monodomain_solver.h"
-#include "ode_solver/ode_solver.h"
 #include "3dparty/sds/sds.h"
-#include "utils/file_utils.h"
 #include "3dparty/stb_ds.h"
-
+#include "alg/grid/grid.h"
 #include "config_helpers/config_helpers.h"
 #include "logger/logger.h"
+#include "monodomain/monodomain_solver.h"
+#include "ode_solver/ode_solver.h"
+#include "utils/file_utils.h"
 
 
 struct changed_parameters {

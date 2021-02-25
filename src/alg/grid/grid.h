@@ -59,7 +59,6 @@ void set_grid_flux(struct grid *the_grid);
 
 void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje);
 
-
 bool refine_grid_with_bound(struct grid* the_grid, real_cpu refinement_bound,  real_cpu min_dx, real_cpu min_dy, real_cpu min_dz);
 void refine_grid(struct grid* the_grid, int num_steps);
 void refine_grid_cell(struct grid *the_grid, struct cell_node* grid_cell);

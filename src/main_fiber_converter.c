@@ -1,14 +1,13 @@
-#include "utils/file_utils.h"
-
-#include "config/config_parser.h"
-
-#include "3dparty/sds/sds.h"
-#include "3dparty/stb_ds.h"
-#include "common_types/common_types.h"
 #include <ctype.h>
 #include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "3dparty/sds/sds.h"
+#include "3dparty/stb_ds.h"
+#include "common_types/common_types.h"
+#include "config/config_parser.h"
+#include "utils/file_utils.h"
 
 struct elem {
     struct point_3d n1;

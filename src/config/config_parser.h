@@ -140,7 +140,7 @@ struct user_options {
     struct config *save_state_config;
     struct config *restore_state_config;
     struct config *update_monodomain_config;
-    struct config *purkinje_linear_system_solver_config;
+	struct config *purkinje_linear_system_solver_config;
 
     struct string_hash_entry *ode_extra_config;
     struct string_hash_entry *purkinje_ode_extra_config;
