@@ -1219,7 +1219,7 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
             free(buf);
 
-            if(tmp) {
+            if(gui_config->input) {
                 reset(gui_config, mesh_info, gui_state, true);
             }
 
