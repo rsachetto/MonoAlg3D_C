@@ -121,6 +121,10 @@ struct gui_state {
 	int current_window_width;
 	int current_window_height;
 
+	float font_spacing_big;
+	float font_spacing_small;
+	float font_scaling;
+
     bool handle_keyboard_input;
     bool one_selected;
     bool show_ap;

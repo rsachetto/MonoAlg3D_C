@@ -29,7 +29,7 @@ const char *get_filename_ext(const char *filename);
 int cp_file(const char *to, const char *from);
 char *read_entire_file(const char *filename, size_t *size);
 char *read_entire_file_with_mmap(const char *filename, size_t *size);
-string_array list_files_from_dir(const char *dir, const char *prefix, const char *extension, bool sort);
+string_array list_files_from_dir(const char *dir, const char *prefix, const char *extension, string_array ignore_extensions, bool sort);
 string_array read_lines(const char *filename);
 bool dir_exists(const char *path);
 bool file_exists(const char *path);

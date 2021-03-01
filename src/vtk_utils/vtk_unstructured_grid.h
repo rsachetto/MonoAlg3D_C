@@ -53,9 +53,7 @@ struct parser_state {
     bool compressed;
     bool binary;
     bool ascii;
-
 };
-
 
 struct vtk_unstructured_grid {
     uint32_t num_points;
@@ -70,6 +68,7 @@ struct vtk_unstructured_grid {
     f32_array values;
     f32_array fibers;
     int64_array cells;
+    ui8_array cell_visibility;
     point3d_array points;
 
     float min_v;

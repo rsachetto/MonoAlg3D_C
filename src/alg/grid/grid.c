@@ -255,6 +255,7 @@ void order_grid_cells(struct grid *the_grid) {
         if(cell->active) {
             cell->grid_position = counter;
             the_grid->active_cells[counter] = cell;
+            cell->visible = cell_is_visible(cell);
             counter++;
         }
     }

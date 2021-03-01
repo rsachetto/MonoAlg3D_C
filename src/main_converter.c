@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
 	if(input_info.is_dir) {
 
 		create_dir(output);
-		string_array files_list = list_files_from_dir(input, NULL, NULL, true);
+		string_array files_list = list_files_from_dir(input, NULL, NULL, NULL, true);
 
 		int num_files = arrlen(files_list);
 

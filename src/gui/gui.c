@@ -46,16 +46,20 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     set_camera_params(&(gui_state->camera));
 
-    gui_state->font = GetFontDefault();
+	gui_state->font = LoadFont("res/Roboto.ttf");
 
-    gui_state->handle_keyboard_input = true;
-    gui_state->font_size_small = font_size_small;
+	gui_state->font_size_small = font_size_small;
     gui_state->font_size_big = font_size_big;
 
+	gui_state->font_spacing_big      = (float)gui_state->font_size_big / (float)gui_state->font.baseSize;
+    gui_state->font_spacing_small    = (float)gui_state->font_size_small / (float)gui_state->font.baseSize;
+
+    gui_state->handle_keyboard_input = true;
+    
     gui_state->show_ap = true;
     gui_state->show_scale = true;
 
-    gui_state->show_help_box = true;
+    gui_state->show_help_box = false;
     gui_state->help_box.x = 10;
     gui_state->help_box.y = 10;
 
@@ -92,7 +96,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->ap_graph_config->graph.x = 100;
     gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 70;
     gui_state->scale_bounds.x = (float)gui_state->current_window_width - 30.0f;
-    gui_state->scale_bounds.y = (float)gui_state->current_window_height / 1.5f;
+    gui_state->scale_bounds.y = (float)gui_state->current_window_height / 2.0f;
 
     gui_state->scale_bounds.width = 20;
     gui_state->scale_bounds.height = 0;
@@ -417,11 +421,16 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
     uint32_t n_active = grid_to_draw->num_cells;
 
     int num_points = grid_to_draw->points_per_cell;
-    int j = num_points;
+    int j = 0;
 
     struct voxel voxel;
 
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+
+        if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
+            j += 1;
+            continue;
+        }
 
         float mesh_center_x, mesh_center_y, mesh_center_z;
         float dx, dy, dz;
@@ -434,7 +443,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         mesh_center_y = (float) points[cells[i]].y + dy / 2.0f;
         mesh_center_z = (float) points[cells[i]].z + dz / 2.0f;
 
-        voxel.v = grid_to_draw->values[j - num_points];
+        voxel.v = grid_to_draw->values[j];
         j += 1;
 
         voxel.position_draw.x = (float)((mesh_center_x - mesh_offset.x) / scale);
@@ -464,30 +473,39 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
     uint32_t n_active = grid_to_draw->num_active_cells;
     struct cell_node **ac = grid_to_draw->active_cells;
 
+	float offsetx_over_scale = (float)(mesh_offset.x / scale);
+	float offsety_over_scale = (float)(mesh_offset.y / scale);
+	float offsetz_over_scale = (float)(mesh_offset.z / scale);
+
+	float min_v = gui_config->min_v;
+	float max_v = gui_config->max_v;
+	float time  = gui_config->time;
+
     if(ac) {
-        for(uint32_t i = 0; i < n_active; i++) {
+		for(uint32_t i = 0; i < n_active; i++) {
 
-            struct cell_node *grid_cell;
+			if(!ac[i]->visible) {
+				continue;
+			}
 
-            grid_cell = ac[i];
+			struct cell_node *grid_cell;
 
-            if(!cell_is_visible(grid_cell)) {
-                continue;
-            }
+			grid_cell = ac[i];
 
-            voxel.position_draw.x = (float)((grid_cell->center.x - mesh_offset.x) / scale);
-            voxel.position_draw.y = (float)((grid_cell->center.y - mesh_offset.y) / scale);
-            voxel.position_draw.z = (float)((grid_cell->center.z - mesh_offset.z) / scale);
+			voxel.position_draw.x = (float)(grid_cell->center.x/scale - offsetx_over_scale);
+			voxel.position_draw.y = (float)(grid_cell->center.y/scale - offsety_over_scale);
+			voxel.position_draw.z = (float)(grid_cell->center.z/scale - offsetz_over_scale);
 
-            voxel.size.x = (float)(grid_cell->discretization.x / scale);
-            voxel.size.y = (float)(grid_cell->discretization.y / scale);
-            voxel.size.z = (float)(grid_cell->discretization.z / scale);
+			voxel.size.x = (float)(grid_cell->discretization.x / scale);
+			voxel.size.y = (float)(grid_cell->discretization.y / scale);
+			voxel.size.z = (float)(grid_cell->discretization.z / scale);
 
-            voxel.position_mesh = (Vector3){grid_cell->center.x, grid_cell->center.y, grid_cell->center.z};
-            voxel.v = ac[i]->v;
-            voxel.matrix_position = ac[i]->grid_position;
-            draw_voxel(&voxel, gui_state, gui_config->min_v, gui_config->max_v, gui_config->time);
-        }
+			voxel.position_mesh = (Vector3){grid_cell->center.x, grid_cell->center.y, grid_cell->center.z};
+			voxel.v = grid_cell->v;
+			voxel.matrix_position = grid_cell->grid_position;
+
+			draw_voxel(&voxel, gui_state, min_v, max_v, time);
+		}
     }
 
     gui_state->one_selected = false;
@@ -509,8 +527,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     Font font = gui_state->font;
 
-    float spacing_big = (float)gui_state->font_size_big / (float)font.baseSize;
-    float spacing_small = (float)gui_state->font_size_small / (float)font.baseSize;
+    float spacing_big = gui_state->font_spacing_big;
+    float spacing_small = gui_state->font_spacing_small;
 
     DrawRectangleRec(gui_state->ap_graph_config->graph, WHITE);
 
@@ -551,9 +569,6 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                                           gui_state->ap_graph_config->graph.y + 5};
 
         DrawTextEx(font, tmp, text_position, gui_state->font_size_big, spacing_big, c);
-#ifdef DEBUG_INFO
-        printf("%s\n", tmp);
-#endif
 
         if(alpha == 0) {
             gui_state->ap_graph_config->draw_selected_ap_text = false;
@@ -774,12 +789,6 @@ static inline void drag_box(Vector2 mouse_pos, Rectangle *box) {
     move_rect((Vector2){new_x, new_y}, box);
 }
 
-static inline void drag_scale(Vector2 new_pos, Rectangle *box) {
-    float new_x = new_pos.x - box->width / 2;
-    float new_y = new_pos.y + box->height / 2;
-    move_rect((Vector2){new_x, new_y}, box);
-}
-
 static void check_window_bounds(Rectangle *box, float current_window_width, float current_window_height) {
 
     if(box->x + box->width > current_window_width)
@@ -796,8 +805,8 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
 
     static bool calc_bounds = true;
 
-    float spacing_small = (float)gui_state->font_size_small / (float)gui_state->font.baseSize;
-    float spacing_big = (float)gui_state->font_size_big / (float)gui_state->font.baseSize;
+    float spacing_small = gui_state->font_spacing_small;
+    float spacing_big = gui_state->font_spacing_big;
 
     int num_ticks;
     real_cpu tick_ofsset = 12;
@@ -819,7 +828,7 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
 
     char tmp[256];
 
-    real_cpu v = min_v;
+    real_cpu v = max_v;
     sprintf(tmp, "%.2lf", v);
     Vector2 max_w = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, spacing_small);
 
@@ -833,15 +842,19 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
         for(int t = 0; t <= num_ticks; t++) {
             gui_state->scale_bounds.height += scale_rec_height;
         }
+
+		gui_state->scale_bounds.y -= gui_state->scale_bounds.height;
+
         calc_bounds = false;
     }
+
 
     if(!int_scale) {
         width = MeasureTextEx(gui_state->font, "Vm", gui_state->font_size_big, spacing_big);
         float diff = (float) scale_width - width.x;
 
         p1.x = gui_state->scale_bounds.x + (diff / 2.0f);
-        p1.y = (float)gui_state->scale_bounds.y - (float)gui_state->scale_bounds.height + 20;
+        p1.y = (float)gui_state->scale_bounds.y - width.y;
         DrawTextEx(gui_state->font, "Vm", p1, gui_state->font_size_big, spacing_big, BLACK);
     }
 
@@ -864,12 +877,15 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
         color = get_color((v - min_v) / (max_v - min_v), gui_state->scale_alpha, gui_state->current_scale);
 
         DrawRectangle((int)gui_state->scale_bounds.x, (int)initial_y, scale_width, (int)scale_rec_height, color);
-        initial_y -= scale_rec_height;
-        v += tick_ofsset;
+        initial_y += scale_rec_height;
+        v -= tick_ofsset;
     }
+
+	//DrawRectangle((int)gui_state->scale_bounds.x, gui_state->scale_bounds.y - gui_state->scale_bounds.height + 30, gui_state->scale_bounds.width, gui_state->scale_bounds.height, BLACK);
+
 }
 
-static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, float font_size_for_line, Font font, float current_window_width, float current_window_height) {
+static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, float font_size_for_line, float font_spacing, Font font, float current_window_width, float current_window_height) {
 
     check_window_bounds(box, current_window_width, current_window_height);
 
@@ -881,7 +897,7 @@ static void draw_box(Rectangle *box, int text_offset, const char **lines, int nu
     DrawRectangleLinesEx(*box, 1, BLACK);
 
     for(int i = 0; i < num_lines; i++) {
-        DrawTextEx(font, lines[i], (Vector2){text_x, text_y}, font_size_for_line, 1, BLACK);
+        DrawTextEx(font, lines[i], (Vector2){text_x, text_y}, font_size_for_line, font_spacing, BLACK);
         text_y += (float) text_offset;
     }
 }
@@ -1082,174 +1098,180 @@ static void reset(struct gui_config *gui_config, struct mesh_info *mesh_info, st
 
 static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
-    if(gui_config->paused) {
+	if(gui_config->paused) {
 
-        if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-            // SAVE FILE AS VTK
-            if(IsKeyPressed(KEY_S)) {
-                char const *filter[1] = {"*.vtu"};
+		if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+			// SAVE FILE AS VTK
+			if(IsKeyPressed(KEY_S)) {
+				char const *filter[1] = {"*.vtu"};
 
-                const char *save_path = tinyfd_saveFileDialog("Save VTK file", gui_config->input, 1, filter, "vtu files");
+				const char *save_path = tinyfd_saveFileDialog("Save VTK file", gui_config->input, 1, filter, "vtu files");
 
-                if(save_path) {
-                    save_vtk_unstructured_grid_as_vtu_compressed(gui_config->grid_info.vtk_grid, save_path, 6);
-                    log_to_stdout_and_file("Saved vtk file as %s\n", save_path);
-                }
+				if(save_path) {
+					save_vtk_unstructured_grid_as_vtu_compressed(gui_config->grid_info.vtk_grid, save_path, 6);
+					log_to_stdout_and_file("Saved vtk file as %s\n", save_path);
+				}
 
-                return;
-            }
-        }
+				return;
+			}
+		}
 
-        if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
-            gui_config->advance_or_return = 1;
-            omp_unset_lock(&gui_config->sleep_lock);
-            nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
-            return;
-        }
+		if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
+			gui_config->advance_or_return = 1;
+			omp_unset_lock(&gui_config->sleep_lock);
+			nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
+			return;
+		}
 
-        if(gui_config->draw_type == DRAW_FILE) {
-            // Return one step only works on file visualization...
-            if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
-                gui_config->advance_or_return = -1;
-                nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
-                omp_unset_lock(&gui_config->sleep_lock);
-                return;
-            }
-        }
-    }
+		if(gui_config->draw_type == DRAW_FILE) {
+			// Return one step only works on file visualization...
+			if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
+				gui_config->advance_or_return = -1;
+				nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
+				omp_unset_lock(&gui_config->sleep_lock);
+				return;
+			}
+		}
+	}
 
-    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-        if(IsKeyPressed(KEY_F)) {
-            gui_state->show_selection_box = true;
-            gui_state->sub_window_pos.x = (float) GetScreenWidth()/2.0f - gui_state->box_width;
-            gui_state->sub_window_pos.y = (float) GetScreenHeight()/2.0f - gui_state->box_height;
-            return;
-        }
-    }
+	if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+		if(IsKeyPressed(KEY_F)) {
+			gui_state->show_selection_box = true;
+			gui_state->sub_window_pos.x = (float) GetScreenWidth()/2.0f - gui_state->box_width;
+			gui_state->sub_window_pos.y = (float) GetScreenHeight()/2.0f - gui_state->box_height;
+			return;
+		}
+	}
 
-    if(IsKeyPressed(KEY_Q)) {
-        gui_state->show_scale = !gui_state->show_scale;
-        return;
-    }
 
-    if(IsKeyDown(KEY_A)) {
-        if(gui_state->voxel_alpha - 1 >= 0) {
-            gui_state->voxel_alpha = gui_state->voxel_alpha - 1;
-        }
-        return;
-    }
+	if(IsKeyPressed(KEY_Q)) {
+		gui_state->show_scale = !gui_state->show_scale;
+		return;
+	}
 
-    if(IsKeyDown(KEY_Z)) {
-        if(gui_state->voxel_alpha + 1 <= 255) {
-            gui_state->voxel_alpha = gui_state->voxel_alpha + 1;
-        }
-        return;
-    }
+	if(IsKeyDown(KEY_A)) {
+		if(gui_state->voxel_alpha - 1 >= 0) {
+			gui_state->voxel_alpha = gui_state->voxel_alpha - 1;
+		}
+		return;
+	}
 
-    if(IsKeyPressed(KEY_G)) {
-        gui_state->draw_grid_only = !gui_state->draw_grid_only;
-        return;
-    }
+	if(IsKeyDown(KEY_Z)) {
+		if(gui_state->voxel_alpha + 1 <= 255) {
+			gui_state->voxel_alpha = gui_state->voxel_alpha + 1;
+		}
+		return;
+	}
 
-    if(IsKeyPressed(KEY_PERIOD)) {
-        gui_state->current_scale = (gui_state->current_scale + 1) % NUM_SCALES;
-        return;
-    }
+	if(IsKeyPressed(KEY_G)) {
+		gui_state->draw_grid_only = !gui_state->draw_grid_only;
+		return;
+	}
 
-    if(IsKeyPressed(KEY_COMMA)) {
-        if(gui_state->current_scale - 1 >= 0) {
-            gui_state->current_scale = (gui_state->current_scale - 1);
-        } else {
-            gui_state->current_scale = NUM_SCALES - 1;
-        }
-        return;
-    }
+	if(IsKeyPressed(KEY_PERIOD)) {
+		gui_state->current_scale = (gui_state->current_scale + 1) % NUM_SCALES;
+		return;
+	}
 
-    if(IsKeyPressed(KEY_L)) {
-        gui_state->draw_grid_lines = !gui_state->draw_grid_lines;
-        return;
-    }
+	if(IsKeyPressed(KEY_COMMA)) {
+		if(gui_state->current_scale - 1 >= 0) {
+			gui_state->current_scale = (gui_state->current_scale - 1);
+		} else {
+			gui_state->current_scale = NUM_SCALES - 1;
+		}
+		return;
+	}
 
-    if(IsKeyPressed(KEY_SPACE)) {
-        gui_config->paused = !gui_config->paused;
-        return;
-    }
+	if(IsKeyPressed(KEY_L)) {
+		gui_state->draw_grid_lines = !gui_state->draw_grid_lines;
+		return;
+	}
 
-    if(IsKeyPressed(KEY_R)) {
-        bool full_reset = false;
+	if(IsKeyPressed(KEY_SPACE)) {
+		gui_config->paused = !gui_config->paused;
+		return;
+	}
 
-        if(IsKeyDown(KEY_LEFT_ALT)) {
-            full_reset = true;
-        }
+	if(IsKeyPressed(KEY_R)) {
+		bool full_reset = false;
 
-        reset(gui_config, mesh_info, gui_state, full_reset);
-        return;
-    }
+		if(IsKeyDown(KEY_LEFT_ALT)) {
+			full_reset = true;
+		}
 
-    if(IsKeyPressed(KEY_X)) {
-        gui_state->show_ap = !gui_state->show_ap;
-        return;
-    }
+		reset(gui_config, mesh_info, gui_state, full_reset);
+		return;
+	}
 
-    if(IsKeyPressed(KEY_C)) {
-        gui_state->show_scale = gui_state->c_pressed;
-        gui_state->show_ap = gui_state->c_pressed;
-        gui_state->show_help_box = gui_state->c_pressed;
-        gui_state->show_end_info_box = gui_state->c_pressed;
-        gui_state->show_mesh_info_box = gui_state->c_pressed;
-        gui_state->c_pressed = !gui_state->c_pressed;
-        gui_state->show_coordinates = !gui_state->show_coordinates;
-        return;
-    }
+	if(IsKeyPressed(KEY_X)) {
+		gui_state->show_ap = !gui_state->show_ap;
+		return;
+	}
 
-    if(gui_config->draw_type == DRAW_FILE) {
+	if(IsKeyPressed(KEY_C)) {
+		gui_state->show_scale = gui_state->c_pressed;
+		gui_state->show_ap = gui_state->c_pressed;
+		//gui_state->show_help_box = gui_state->c_pressed;
+		gui_state->show_end_info_box = gui_state->c_pressed;
+		gui_state->show_mesh_info_box = gui_state->c_pressed;
+		gui_state->c_pressed = !gui_state->c_pressed;
+		gui_state->show_coordinates = !gui_state->show_coordinates;
+		return;
+	}
 
-        if(IsKeyPressed(KEY_O)) {
+	if(IsKeyPressed(KEY_H)) {
+		gui_state->show_help_box = !gui_state->show_help_box;
+		return;
+	}
 
-            gui_config->paused = true;
+	if(gui_config->draw_type == DRAW_FILE) {
 
-            char *buf = get_current_directory();
+		if(IsKeyPressed(KEY_O)) {
 
-            char const *tmp = tinyfd_selectFolderDialog("Select a directory", buf);
-            if(tmp) {
-                gui_config->input = strdup(tmp);
-            } else {
-                gui_config->input = NULL;
-            }
+			gui_config->paused = true;
 
-            free(buf);
+			char *buf = get_current_directory();
 
-            if(gui_config->input) {
-                reset(gui_config, mesh_info, gui_state, true);
-            }
+			char const *tmp = tinyfd_selectFolderDialog("Select a directory", buf);
+			if(tmp) {
+				gui_config->input = strdup(tmp);
+			} else {
+				gui_config->input = NULL;
+			}
 
-            return;
-        }
+			free(buf);
 
-        if(IsKeyPressed(KEY_F)) {
+			if(gui_config->input) {
+				reset(gui_config, mesh_info, gui_state, true);
+			}
 
-            gui_config->paused = true;
+			return;
+		}
 
-            char *buf = get_current_directory();
+		if(IsKeyPressed(KEY_F)) {
 
-            char const *filter[4] = {"*.pvd", "*.acm", "*.vtk", "*.vtu"};
+			gui_config->paused = true;
 
-            char const *tmp = tinyfd_openFileDialog("Select a simulation file", buf, 4, filter, "simulation result (pvd, vtk, vtu or acm)", 0);
+			char *buf = get_current_directory();
 
-            if(tmp) {
-                gui_config->input = strdup(tmp);
-            } else {
-                gui_config->input = NULL;
-            }
+			char const *filter[4] = {"*.pvd", "*.acm", "*.vtk", "*.vtu"};
 
-            free(buf);
+			char const *tmp = tinyfd_openFileDialog("Select a simulation file", buf, 4, filter, "simulation result (pvd, vtk, vtu or acm)", 0);
 
-            if(tmp) {
-                reset(gui_config, mesh_info, gui_state, true);
-            }
-            return;
-        }
-    }
+			if(tmp) {
+				gui_config->input = strdup(tmp);
+			} else {
+				gui_config->input = NULL;
+			}
+
+			free(buf);
+
+			if(tmp) {
+				reset(gui_config, mesh_info, gui_state, true);
+			}
+			return;
+		}
+	}
 }
 
 static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_info, struct gui_state *gui_state) {
@@ -1304,7 +1326,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->end_info_box)) {
             gui_state->move_end_info_box = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos,
-                                         (Rectangle){gui_state->scale_bounds.x, gui_state->scale_bounds.y - gui_state->scale_bounds.height,
+                                         (Rectangle){gui_state->scale_bounds.x, gui_state->scale_bounds.y,
                                                      gui_state->scale_bounds.width, gui_state->scale_bounds.height})) {
             gui_state->move_scale = true;
         }
@@ -1392,7 +1414,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
             gui_state->move_info_box = false;
     } else if(gui_state->move_scale) {
-        drag_scale(gui_state->mouse_pos, &gui_state->scale_bounds);
+        drag_box(gui_state->mouse_pos, &gui_state->scale_bounds);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
             gui_state->move_scale = false;
     } else if(gui_state->move_end_info_box) {
@@ -1499,8 +1521,11 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
 
     InitWindow(0, 0, window_title);
-    
-    struct gui_state *gui_state = new_gui_state_with_font_sizes(18, 24);
+   
+	const int font_size_small = 20;
+	const int font_size_big = 24;
+
+    struct gui_state *gui_state = new_gui_state_with_font_sizes(font_size_small, font_size_big);
 
     SetWindowSize(gui_state->current_window_width, gui_state->current_window_height);
 
@@ -1622,7 +1647,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
                 if(configured) {
                     draw_box(&gui_state->mesh_info_box, text_offset, (const char **)mesh_info_box_strings, mesh_info_box_lines, gui_state->font_size_small,
-                             gui_state->font, (float)gui_state->current_window_width, (float)gui_state->current_window_height);
+                             gui_state->font_spacing_small, gui_state->font, (float)gui_state->current_window_width, (float)gui_state->current_window_height);
 
                     for(int i = 0; i < mesh_info_box_lines; i++) {
                         free(mesh_info_box_strings[i]);
@@ -1641,7 +1666,8 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             }
 
             if(gui_state->show_help_box) {
-                draw_box(&gui_state->help_box, text_offset, info_box_strings, info_box_lines, gui_state->font_size_small, gui_state->font,
+                draw_box(&gui_state->help_box, text_offset, info_box_strings, info_box_lines, gui_state->font_size_small, gui_state->font_spacing_small,
+						gui_state->font,
                          (float) gui_state->current_window_width, (float) gui_state->current_window_height);
             }
 
@@ -1653,7 +1679,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                             end_info_box_strings_configured = true;
                         }
                         draw_box(&gui_state->end_info_box, text_offset, (const char **)end_info_box_strings, end_info_box_lines,
-                                 gui_state->font_size_small, gui_state->font, (float) gui_state->current_window_width, (float) gui_state->current_window_height);
+                                 gui_state->font_size_small, gui_state->font_spacing_small,  gui_state->font, (float) gui_state->current_window_width, (float) gui_state->current_window_height);
                     }
                 }
             }
@@ -1677,37 +1703,41 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                 c = WHITE;
             }
 
-            error_message_witdh = MeasureTextEx(gui_state->font, gui_config->error_message, 20, spacing);
+            error_message_witdh = MeasureTextEx(gui_state->font, gui_config->error_message, gui_state->font_size_big, spacing);
 
             int posx = GetScreenWidth() / 2 - (int)error_message_witdh.x / 2;
             int posy = GetScreenHeight() / 2 - 50;
 
-            int rec_width = (int)(error_message_witdh.x) + 40;
+            int rec_width = (int)(error_message_witdh.x) + 160;
 
-            DrawRectangle(posx, posy, rec_width, 20, c);
-            DrawRectangleLines(posx, posy, rec_width, 20, BLACK);
+            DrawRectangle(posx, posy, rec_width, 30, c);
+            DrawRectangleLines(posx, posy, rec_width, 30, BLACK);
             if(gui_config->error_message) // This should not happen... but it does....
-                DrawText(gui_config->error_message, posx + 20, posy, 20, BLACK);
+                DrawTextEx(gui_state->font, gui_config->error_message, (Vector2) {posx + 20, posy}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
         }
 
         // Draw FPS
         int fps = GetFPS();
-        DrawText(TextFormat("%2i FPS - Frame Time %lf", fps, GetFrameTime()), GetScreenWidth() - 340, GetScreenHeight() - 20, 20, BLACK);
+		DrawTextEx(gui_state->font, TextFormat("%2i FPS - Frame Time %lf", fps, GetFrameTime()), (Vector2){GetScreenWidth() - 340, GetScreenHeight() - 20},
+           gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+        
+		DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10, GetScreenHeight() - 20}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 	
 		if(gui_state->current_mouse_over_volume.position_draw.x != -1) {
 
+			Vector2 text_size = MeasureTextEx(gui_state->font, "Mouse is on Volume: 10000, 10000, 10000 with grid position 10000", gui_state->font_size_big, gui_state->font_spacing_big);
+			Vector2 info_pos = {(int)(GetScreenWidth() - text_size.x*0.8), GetScreenHeight() - 50};
+				
             if(gui_config->draw_type == DRAW_SIMULATION) {
-                DrawText(TextFormat("Mouse is on Volume: %lf, %lf, %lf with grid position %i", gui_state->current_mouse_over_volume.position_draw.x,
+                DrawTextEx(gui_state->font, TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i", gui_state->current_mouse_over_volume.position_draw.x,
                                     gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
                                     gui_state->current_mouse_over_volume.matrix_position + 1),
-                         (int)(GetScreenWidth() - MeasureText("Mouse is on Volume: 10000, 10000, 10000 with grid position 10000", 20) * 1.4),
-                         GetScreenHeight() - 50, 20, BLACK);
+                         info_pos, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
             }
             else {
-                DrawText(TextFormat("Mouse is on Volume: %lf, %lf, %lf", gui_state->current_mouse_over_volume.position_draw.x,
+                DrawTextEx(gui_state->font, TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
                                     gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z),
-                         (int)(GetScreenWidth() - MeasureText("Mouse is on Volume: 100080, 100080, 10008", 20) * 1.4),
-                         GetScreenHeight() - 50, 20, BLACK);
+								    info_pos, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
             }
 		}
 
