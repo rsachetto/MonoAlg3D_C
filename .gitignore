@@ -169,3 +169,4 @@ src/*/custom_functions.c
 
 .idea/modules.xml
 example_configs/atrial_mesh_start_500um_27n_LA_RA.ini
+sync.sh

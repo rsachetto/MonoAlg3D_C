@@ -3,7 +3,6 @@
 //
 
 #include <assert.h>
-#include <float.h>
 #include <inttypes.h>
 
 #include "grid.h"
@@ -758,22 +757,22 @@ void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vecto
 
 bool cell_is_visible(struct cell_node *grid_cell) {
 
-    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[FRONT]) ) {
+    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[FRONT])) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[BACK]) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[BACK])) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[TOP]) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[TOP])) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[DOWN]) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[DOWN])) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[RIGHT]) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[RIGHT])) {
         return true;
     }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[LEFT]) ) {
+    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[LEFT])) {
         return true;
     }
     else {

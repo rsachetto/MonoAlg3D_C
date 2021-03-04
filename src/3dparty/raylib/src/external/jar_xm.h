@@ -203,10 +203,10 @@ bool jar_xm_mute_instrument(jar_xm_context_t* ctx, uint16_t, bool);
 
 
 
-/** Get the module name as a NUL-terminated sds. */
+/** Get the module name as a NUL-terminated string. */
 const char* jar_xm_get_module_name(jar_xm_context_t* ctx);
 
-/** Get the tracker name as a NUL-terminated sds. */
+/** Get the tracker name as a NUL-terminated string. */
 const char* jar_xm_get_tracker_name(jar_xm_context_t* ctx);
 
 
@@ -696,7 +696,9 @@ int jar_xm_create_context_safe(jar_xm_context_t** ctxp, const char* moddata, siz
 }
 
 void jar_xm_free_context(jar_xm_context_t* ctx) {
-    JARXM_FREE(ctx->allocated_memory);
+    if (ctx != NULL) {
+        JARXM_FREE(ctx->allocated_memory);
+    }
 }
 
 void jar_xm_set_max_loop_count(jar_xm_context_t* ctx, uint8_t loopcnt) {

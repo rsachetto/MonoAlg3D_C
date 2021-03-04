@@ -296,14 +296,14 @@ GLFWAPI RROutput glfwGetX11Monitor(GLFWmonitor* monitor);
  */
 GLFWAPI Window glfwGetX11Window(GLFWwindow* window);
 
-/*! @brief Sets the current primary selection to the specified sds.
+/*! @brief Sets the current primary selection to the specified string.
  *
- *  @param[in] sds A UTF-8 encoded sds.
+ *  @param[in] string A UTF-8 encoded string.
  *
  *  @errors Possible errors include @ref GLFW_NOT_INITIALIZED and @ref
  *  GLFW_PLATFORM_ERROR.
  *
- *  @pointer_lifetime The specified sds is copied before this function
+ *  @pointer_lifetime The specified string is copied before this function
  *  returns.
  *
  *  @thread_safety This function must only be called from the main thread.
@@ -316,20 +316,20 @@ GLFWAPI Window glfwGetX11Window(GLFWwindow* window);
  *
  *  @ingroup native
  */
-GLFWAPI void glfwSetX11SelectionString(const char* sds);
+GLFWAPI void glfwSetX11SelectionString(const char* string);
 
-/*! @brief Returns the contents of the current primary selection as a sds.
+/*! @brief Returns the contents of the current primary selection as a string.
  *
  *  If the selection is empty or if its contents cannot be converted, `NULL`
  *  is returned and a @ref GLFW_FORMAT_UNAVAILABLE error is generated.
  *
- *  @return The contents of the selection as a UTF-8 encoded sds, or `NULL`
+ *  @return The contents of the selection as a UTF-8 encoded string, or `NULL`
  *  if an [error](@ref error_handling) occurred.
  *
  *  @errors Possible errors include @ref GLFW_NOT_INITIALIZED and @ref
  *  GLFW_PLATFORM_ERROR.
  *
- *  @pointer_lifetime The returned sds is allocated and freed by GLFW. You
+ *  @pointer_lifetime The returned string is allocated and freed by GLFW. You
  *  should not free it yourself. It is valid until the next call to @ref
  *  glfwGetX11SelectionString or @ref glfwSetX11SelectionString, or until the
  *  library is terminated.

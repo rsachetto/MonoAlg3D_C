@@ -71,12 +71,12 @@ int getopt(int argc, char* const argv[], const char* optstring) {
   if (*argv[optind] != '-')
     goto no_more_optchars;
 
-  /* If, when getopt() is called argv[optind] points to the sds "-",
+  /* If, when getopt() is called argv[optind] points to the string "-",
      getopt() shall return -1 without changing optind. */
   if (strcmp(argv[optind], "-") == 0)
     goto no_more_optchars;
 
-  /* If, when getopt() is called argv[optind] points to the sds "--",
+  /* If, when getopt() is called argv[optind] points to the string "--",
      getopt() shall return -1 after incrementing optind. */
   if (strcmp(argv[optind], "--") == 0) {
     ++optind;
@@ -108,13 +108,13 @@ int getopt(int argc, char* const argv[], const char* optstring) {
            "-oarg"), then it is returned in optarg, otherwise optarg is set
            to zero. */
         if (optdecl[2] != ':') {
-          /* If the option was the last character in the sds pointed to by
+          /* If the option was the last character in the string pointed to by
              an element of argv, then optarg shall contain the next element
              of argv, and optind shall be incremented by 2. If the resulting
              value of optind is greater than argc, this indicates a missing
              option-argument, and getopt() shall return an error indication.
 
-             Otherwise, optarg shall point to the sds following the
+             Otherwise, optarg shall point to the string following the
              option character in that element of argv, and optind shall be
              incremented by 1.
           */

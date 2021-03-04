@@ -7,4 +7,5 @@ fi
 make ${MAKE_FLAGS}
 
 CUR_DIR=$(pwd)
-COMPILED_STATIC_LIBS["raylib"]="$CUR_DIR/libraylib.a"
+PARENT_DIR="$(dirname "$CUR_DIR")"
+COMPILED_STATIC_LIBS["raylib"]="${PARENT_DIR}/libraylib.a"

@@ -380,12 +380,12 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         if (ctxconfig->client == GLFW_OPENGL_API)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "OpenGL version sds retrieval is broken");
+                            "OpenGL version string retrieval is broken");
         }
         else
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "OpenGL ES version sds retrieval is broken");
+                            "OpenGL ES version string retrieval is broken");
         }
 
         glfwMakeContextCurrent((GLFWwindow*) previous);
@@ -412,12 +412,12 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         if (window->context.client == GLFW_OPENGL_API)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "No version found in OpenGL version sds");
+                            "No version found in OpenGL version string");
         }
         else
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "No version found in OpenGL ES version sds");
+                            "No version found in OpenGL ES version string");
         }
 
         glfwMakeContextCurrent((GLFWwindow*) previous);
@@ -456,7 +456,7 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
 
     if (window->context.major >= 3)
     {
-        // OpenGL 3.0+ uses a different function for extension sds retrieval
+        // OpenGL 3.0+ uses a different function for extension string retrieval
         // We cache it here instead of in glfwExtensionSupported mostly to alert
         // users as early as possible that their build may be broken
 
@@ -577,7 +577,7 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
     return GLFW_TRUE;
 }
 
-// Searches an extension sds for the specified extension
+// Searches an extension string for the specified extension
 //
 GLFWbool _glfwStringInExtensionString(const char* string, const char* extensions)
 {
@@ -691,7 +691,7 @@ GLFWAPI int glfwExtensionSupported(const char* extension)
 
     if (*extension == '\0')
     {
-        _glfwInputError(GLFW_INVALID_VALUE, "Extension name cannot be an empty sds");
+        _glfwInputError(GLFW_INVALID_VALUE, "Extension name cannot be an empty string");
         return GLFW_FALSE;
     }
 
@@ -700,7 +700,7 @@ GLFWAPI int glfwExtensionSupported(const char* extension)
         int i;
         GLint count;
 
-        // Check if extension is in the modern OpenGL extensions sds list
+        // Check if extension is in the modern OpenGL extensions string list
 
         window->context.GetIntegerv(GL_NUM_EXTENSIONS, &count);
 
@@ -711,7 +711,7 @@ GLFWAPI int glfwExtensionSupported(const char* extension)
             if (!en)
             {
                 _glfwInputError(GLFW_PLATFORM_ERROR,
-                                "Extension sds retrieval is broken");
+                                "Extension string retrieval is broken");
                 return GLFW_FALSE;
             }
 
@@ -721,14 +721,14 @@ GLFWAPI int glfwExtensionSupported(const char* extension)
     }
     else
     {
-        // Check if extension is in the old style OpenGL extensions sds
+        // Check if extension is in the old style OpenGL extensions string
 
         const char* extensions = (const char*)
             window->context.GetString(GL_EXTENSIONS);
         if (!extensions)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "Extension sds retrieval is broken");
+                            "Extension string retrieval is broken");
             return GLFW_FALSE;
         }
 
@@ -736,7 +736,7 @@ GLFWAPI int glfwExtensionSupported(const char* extension)
             return GLFW_TRUE;
     }
 
-    // Check if extension is in the platform-specific sds
+    // Check if extension is in the platform-specific string
     return window->context.extensionSupported(extension);
 }
 

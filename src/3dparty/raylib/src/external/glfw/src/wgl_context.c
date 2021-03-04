@@ -479,7 +479,7 @@ GLFWbool _glfwInitWGL(void)
     }
 
     // NOTE: Functions must be loaded first as they're needed to retrieve the
-    //       extension sds that tells us whether the functions are supported
+    //       extension string that tells us whether the functions are supported
     _glfw.wgl.GetExtensionsStringEXT = (PFNWGLGETEXTENSIONSSTRINGEXTPROC)
         wglGetProcAddress("wglGetExtensionsStringEXT");
     _glfw.wgl.GetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)

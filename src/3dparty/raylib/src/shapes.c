@@ -14,7 +14,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2013-2020 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2013-2021 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -47,7 +47,12 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
-// Nop...
+
+// Error rate to calculate how many segments we need to draw a smooth circle,
+// taken from https://stackoverflow.com/a/2244088
+#ifndef SMOOTH_CIRCLE_ERROR_RATE
+    #define SMOOTH_CIRCLE_ERROR_RATE  0.5f
+#endif
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -111,64 +116,65 @@ void DrawLineV(Vector2 startPos, Vector2 endPos, Color color)
 // Draw a line defining thickness
 void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color)
 {
-    if (startPos.x > endPos.x)
+    Vector2 delta = {endPos.x-startPos.x, endPos.y-startPos.y};
+    float   length = sqrtf(delta.x*delta.x + delta.y*delta.y);
+
+    if (length > 0  &&  thick > 0) 
     {
-        Vector2 tempPos = startPos;
-        startPos = endPos;
-        endPos = tempPos;
+        float   scale = thick/(2*length);
+        Vector2 radius = {-scale*delta.y, scale*delta.x};
+        Vector2 strip[] = {{startPos.x-radius.x, startPos.y-radius.y}, {startPos.x+radius.x, startPos.y+radius.y}, 
+                           {endPos.x-radius.x, endPos.y-radius.y}, {endPos.x+radius.x, endPos.y+radius.y}};
+
+        DrawTriangleStrip(strip, 4, color);
     }
-
-    float dx = endPos.x - startPos.x;
-    float dy = endPos.y - startPos.y;
-
-    float d = sqrtf(dx*dx + dy*dy);
-    float angle = asinf(dy/d);
-
-    rlEnableTexture(GetShapesTexture().id);
-
-    rlPushMatrix();
-        rlTranslatef((float)startPos.x, (float)startPos.y, 0.0f);
-        rlRotatef(RAD2DEG*angle, 0.0f, 0.0f, 1.0f);
-        rlTranslatef(0, (thick > 1.0f)? -thick/2.0f : -1.0f, 0.0f);
-
-        rlBegin(RL_QUADS);
-            rlColor4ub(color.r, color.g, color.b, color.a);
-            rlNormal3f(0.0f, 0.0f, 1.0f);
-
-            rlTexCoord2f(GetShapesTextureRec().x/GetShapesTexture().width, GetShapesTextureRec().y/GetShapesTexture().height);
-            rlVertex2f(0.0f, 0.0f);
-
-            rlTexCoord2f(GetShapesTextureRec().x/GetShapesTexture().width, (GetShapesTextureRec().y + GetShapesTextureRec().height)/GetShapesTexture().height);
-            rlVertex2f(0.0f, thick);
-
-            rlTexCoord2f((GetShapesTextureRec().x + GetShapesTextureRec().width)/GetShapesTexture().width, (GetShapesTextureRec().y + GetShapesTextureRec().height)/GetShapesTexture().height);
-            rlVertex2f(d, thick);
-
-            rlTexCoord2f((GetShapesTextureRec().x + GetShapesTextureRec().width)/GetShapesTexture().width, GetShapesTextureRec().y/GetShapesTexture().height);
-            rlVertex2f(d, 0.0f);
-        rlEnd();
-    rlPopMatrix();
-
-    rlDisableTexture();
 }
 
 // Draw line using cubic-bezier curves in-out
 void DrawLineBezier(Vector2 startPos, Vector2 endPos, float thick, Color color)
 {
-    #define LINE_DIVISIONS         24   // Bezier line divisions
+#ifndef BEZIER_LINE_DIVISIONS
+    #define BEZIER_LINE_DIVISIONS         24   // Bezier line divisions
+#endif
 
     Vector2 previous = startPos;
     Vector2 current;
 
-    for (int i = 1; i <= LINE_DIVISIONS; i++)
+    for (int i = 1; i <= BEZIER_LINE_DIVISIONS; i++)
     {
         // Cubic easing in-out
         // NOTE: Easing is calculated only for y position value
-        current.y = EaseCubicInOut((float)i, startPos.y, endPos.y - startPos.y, (float)LINE_DIVISIONS);
-        current.x = previous.x + (endPos.x - startPos.x)/ (float)LINE_DIVISIONS;
+        current.y = EaseCubicInOut((float)i, startPos.y, endPos.y - startPos.y, (float)BEZIER_LINE_DIVISIONS);
+        current.x = previous.x + (endPos.x - startPos.x)/ (float)BEZIER_LINE_DIVISIONS;
 
         DrawLineEx(previous, current, thick, color);
 
+        previous = current;
+    }
+}
+
+// Draw line using quadratic bezier curves with a control point
+void DrawLineBezierQuad(Vector2 startPos, Vector2 endPos, Vector2 controlPos, float thick, Color color)
+{
+    const float step = 1.0f/BEZIER_LINE_DIVISIONS;
+    
+    Vector2 previous = startPos;
+    Vector2 current = { 0 };
+    float t = 0.0f;
+    
+    for (int i = 0; i <= BEZIER_LINE_DIVISIONS; i++)
+    {
+        t = step*i;
+        float a = powf(1 - t, 2);
+        float b = 2*(1 - t)*t;
+        float c = powf(t, 2);
+        
+        // NOTE: The easing functions aren't suitable here because they don't take a control point
+        current.y = a*startPos.y + b*controlPos.y + c*endPos.y;
+        current.x = a*startPos.x + b*controlPos.x + c*endPos.x;
+        
+        DrawLineEx(previous,current,thick,color);
+        
         previous = current;
     }
 }
@@ -214,18 +220,15 @@ void DrawCircleSector(Vector2 center, float radius, int startAngle, int endAngle
 
     if (segments < 4)
     {
-        // Calculate how many segments we need to draw a smooth circle, taken from https://stackoverflow.com/a/2244088
-        #define CIRCLE_ERROR_RATE  0.5f
-
-        // Calculate the maximum angle between segments based on the error rate.
-        float th = acosf(2*powf(1 - CIRCLE_ERROR_RATE/radius, 2) - 1);
-        segments = (endAngle - startAngle)*ceilf(2*PI/th)/360;
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        float th = acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/radius, 2) - 1);
+        segments = (int)((endAngle - startAngle)*ceilf(2*PI/th)/360);
 
         if (segments <= 0) segments = 4;
     }
 
     float stepLength = (float)(endAngle - startAngle)/(float)segments;
-    float angle = startAngle;
+    float angle = (float)startAngle;
 
 #if defined(SUPPORT_QUADS_DRAW_MODE)
     if (rlCheckBufferLimit(4*segments/2)) rlglDraw();
@@ -306,20 +309,15 @@ void DrawCircleSectorLines(Vector2 center, float radius, int startAngle, int end
 
     if (segments < 4)
     {
-        // Calculate how many segments we need to draw a smooth circle, taken from https://stackoverflow.com/a/2244088
-        #ifndef CIRCLE_ERROR_RATE
-        #define CIRCLE_ERROR_RATE  0.5f
-        #endif
-
-        // Calculate the maximum angle between segments based on the error rate.
-        float th = acosf(2*powf(1 - CIRCLE_ERROR_RATE/radius, 2) - 1);
-        segments = (endAngle - startAngle)*ceilf(2*PI/th)/360;
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        float th = acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/radius, 2) - 1);
+        segments = (int)((endAngle - startAngle)*ceilf(2*PI/th)/360);
 
         if (segments <= 0) segments = 4;
     }
 
     float stepLength = (float)(endAngle - startAngle)/(float)segments;
-    float angle = startAngle;
+    float angle = (float)startAngle;
 
     // Hide the cap lines when the circle is full
     bool showCapLines = true;
@@ -365,11 +363,11 @@ void DrawCircleGradient(int centerX, int centerY, float radius, Color color1, Co
         for (int i = 0; i < 360; i += 10)
         {
             rlColor4ub(color1.r, color1.g, color1.b, color1.a);
-            rlVertex2f(centerX, centerY);
+            rlVertex2f((float)centerX, (float)centerY);
             rlColor4ub(color2.r, color2.g, color2.b, color2.a);
-            rlVertex2f(centerX + sinf(DEG2RAD*i)*radius, centerY + cosf(DEG2RAD*i)*radius);
+            rlVertex2f((float)centerX + sinf(DEG2RAD*i)*radius, (float)centerY + cosf(DEG2RAD*i)*radius);
             rlColor4ub(color2.r, color2.g, color2.b, color2.a);
-            rlVertex2f(centerX + sinf(DEG2RAD*(i + 10))*radius, centerY + cosf(DEG2RAD*(i + 10))*radius);
+            rlVertex2f((float)centerX + sinf(DEG2RAD*(i + 10))*radius, (float)centerY + cosf(DEG2RAD*(i + 10))*radius);
         }
     rlEnd();
 }
@@ -407,9 +405,9 @@ void DrawEllipse(int centerX, int centerY, float radiusH, float radiusV, Color c
         for (int i = 0; i < 360; i += 10)
         {
             rlColor4ub(color.r, color.g, color.b, color.a);
-            rlVertex2f(centerX, centerY);
-            rlVertex2f(centerX + sinf(DEG2RAD*i)*radiusH, centerY + cosf(DEG2RAD*i)*radiusV);
-            rlVertex2f(centerX + sinf(DEG2RAD*(i + 10))*radiusH, centerY + cosf(DEG2RAD*(i + 10))*radiusV);
+            rlVertex2f((float)centerX, (float)centerY);
+            rlVertex2f((float)centerX + sinf(DEG2RAD*i)*radiusH, (float)centerY + cosf(DEG2RAD*i)*radiusV);
+            rlVertex2f((float)centerX + sinf(DEG2RAD*(i + 10))*radiusH, (float)centerY + cosf(DEG2RAD*(i + 10))*radiusV);
         }
     rlEnd();
 }
@@ -454,14 +452,9 @@ void DrawRing(Vector2 center, float innerRadius, float outerRadius, int startAng
 
     if (segments < 4)
     {
-        // Calculate how many segments we need to draw a smooth circle, taken from https://stackoverflow.com/a/2244088
-        #ifndef CIRCLE_ERROR_RATE
-            #define CIRCLE_ERROR_RATE  0.5f
-        #endif
-
-        // Calculate the maximum angle between segments based on the error rate.
-        float th = acosf(2*powf(1 - CIRCLE_ERROR_RATE/outerRadius, 2) - 1);
-        segments = (endAngle - startAngle)*ceilf(2*PI/th)/360;
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        float th = acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/outerRadius, 2) - 1);
+        segments = (int)((endAngle - startAngle)*ceilf(2*PI/th)/360);
 
         if (segments <= 0) segments = 4;
     }
@@ -474,7 +467,7 @@ void DrawRing(Vector2 center, float innerRadius, float outerRadius, int startAng
     }
 
     float stepLength = (float)(endAngle - startAngle)/(float)segments;
-    float angle = startAngle;
+    float angle = (float)startAngle;
 
 #if defined(SUPPORT_QUADS_DRAW_MODE)
     if (rlCheckBufferLimit(4*segments)) rlglDraw();
@@ -550,14 +543,9 @@ void DrawRingLines(Vector2 center, float innerRadius, float outerRadius, int sta
 
     if (segments < 4)
     {
-        // Calculate how many segments we need to draw a smooth circle, taken from https://stackoverflow.com/a/2244088
-        #ifndef CIRCLE_ERROR_RATE
-            #define CIRCLE_ERROR_RATE  0.5f
-        #endif
-
-        // Calculate the maximum angle between segments based on the error rate.
-        float th = acosf(2*powf(1 - CIRCLE_ERROR_RATE/outerRadius, 2) - 1);
-        segments = (endAngle - startAngle)*ceilf(2*PI/th)/360;
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        float th = acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/outerRadius, 2) - 1);
+        segments = (int)((endAngle - startAngle)*ceilf(2*PI/th)/360);
 
         if (segments <= 0) segments = 4;
     }
@@ -569,7 +557,7 @@ void DrawRingLines(Vector2 center, float innerRadius, float outerRadius, int sta
     }
 
     float stepLength = (float)(endAngle - startAngle)/(float)segments;
-    float angle = startAngle;
+    float angle = (float)startAngle;
 
     bool showCapLines = true;
     int limit = 4*(segments + 1);
@@ -629,6 +617,8 @@ void DrawRectangleRec(Rectangle rec, Color color)
 // Draw a color-filled rectangle with pro parameters
 void DrawRectanglePro(Rectangle rec, Vector2 origin, float rotation, Color color)
 {
+    if (rlCheckBufferLimit(4)) rlglDraw();
+
     rlEnableTexture(GetShapesTexture().id);
 
     rlPushMatrix();
@@ -764,13 +754,9 @@ void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color co
     // Calculate number of segments to use for the corners
     if (segments < 4)
     {
-        // Calculate how many segments we need to draw a smooth circle, taken from https://stackoverflow.com/a/2244088
-        #ifndef CIRCLE_ERROR_RATE
-        #define CIRCLE_ERROR_RATE  0.5f
-        #endif
-        // Calculate the maximum angle between segments based on the error rate.
-        float th = acosf(2*powf(1 - CIRCLE_ERROR_RATE/radius, 2) - 1);
-        segments = ceilf(2*PI/th)/4;
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        float th = acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/radius, 2) - 1);
+        segments = (int)(ceilf(2*PI/th)/4.0f);
         if (segments <= 0) segments = 4;
     }
 
@@ -988,13 +974,9 @@ void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, int
     // Calculate number of segments to use for the corners
     if (segments < 4)
     {
-        // Calculate how many segments we need to draw a smooth circle, taken from https://stackoverflow.com/a/2244088
-        #ifndef CIRCLE_ERROR_RATE
-        #define CIRCLE_ERROR_RATE  0.5f
-        #endif
-        // Calculate the maximum angle between segments based on the error rate.
-        float th = acosf(2*powf(1 - CIRCLE_ERROR_RATE/radius, 2) - 1);
-        segments = ceilf(2*PI/th)/2;
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        float th = acosf(2*powf(1 - SMOOTH_CIRCLE_ERROR_RATE/radius, 2) - 1);
+        segments = (int)(ceilf(2*PI/th)/2.0f);
         if (segments <= 0) segments = 4;
     }
 
@@ -1195,13 +1177,15 @@ void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, int
                     angle += stepLength;
                 }
             }
+
             // And now the remaining 4 lines
-            for(int i = 0; i < 8; i += 2)
+            for (int i = 0; i < 8; i += 2)
             {
                 rlColor4ub(color.r, color.g, color.b, color.a);
                 rlVertex2f(point[i].x, point[i].y);
                 rlVertex2f(point[i + 1].x, point[i + 1].y);
             }
+
         rlEnd();
     }
 }
@@ -1263,6 +1247,7 @@ void DrawTriangleLines(Vector2 v1, Vector2 v2, Vector2 v3, Color color)
 
 // Draw a triangle fan defined by points
 // NOTE: First vertex provided is the center, shared by all triangles
+// By default, following vertex should be provided in counter-clockwise order
 void DrawTriangleFan(Vector2 *points, int pointsCount, Color color)
 {
     if (pointsCount >= 3)
@@ -1298,7 +1283,7 @@ void DrawTriangleStrip(Vector2 *points, int pointsCount, Color color)
 {
     if (pointsCount >= 3)
     {
-        if (rlCheckBufferLimit(pointsCount)) rlglDraw();
+        if (rlCheckBufferLimit(3*(pointsCount - 2))) rlglDraw();
 
         rlBegin(RL_TRIANGLES);
             rlColor4ub(color.r, color.g, color.b, color.a);
@@ -1485,10 +1470,34 @@ bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec)
     return (cornerDistanceSq <= (radius*radius));
 }
 
+// Check the collision between two lines defined by two points each, returns collision point by reference
+bool CheckCollisionLines(Vector2 startPos1, Vector2 endPos1, Vector2 startPos2, Vector2 endPos2, Vector2 *collisionPoint)
+{
+    const float div = (endPos2.y - startPos2.y)*(endPos1.x - startPos1.x) - (endPos2.x - startPos2.x)*(endPos1.y - startPos1.y);
+
+    if (div == 0.0f) return false;      // WARNING: This check could not work due to float precision rounding issues...
+
+    const float xi = ((startPos2.x - endPos2.x)*(startPos1.x*endPos1.y - startPos1.y*endPos1.x) - (startPos1.x - endPos1.x)*(startPos2.x*endPos2.y - startPos2.y*endPos2.x))/div;
+    const float yi = ((startPos2.y - endPos2.y)*(startPos1.x*endPos1.y - startPos1.y*endPos1.x) - (startPos1.y - endPos1.y)*(startPos2.x*endPos2.y - startPos2.y*endPos2.x))/div;
+
+    if (xi < fminf(startPos1.x, endPos1.x) || xi > fmaxf(startPos1.x, endPos1.x)) return false;
+    if (xi < fminf(startPos2.x, endPos2.x) || xi > fmaxf(startPos2.x, endPos2.x)) return false;
+    if (yi < fminf(startPos1.y, endPos1.y) || yi > fmaxf(startPos1.y, endPos1.y)) return false;
+    if (yi < fminf(startPos2.y, endPos2.y) || yi > fmaxf(startPos2.y, endPos2.y)) return false;
+
+    if (collisionPoint != 0)
+    {
+        collisionPoint->x = xi;
+        collisionPoint->y = yi;
+    }
+
+    return true;
+}
+
 // Get collision rectangle for two rectangles collision
 Rectangle GetCollisionRec(Rectangle rec1, Rectangle rec2)
 {
-    Rectangle retRec = { 0, 0, 0, 0 };
+    Rectangle rec = { 0, 0, 0, 0 };
 
     if (CheckCollisionRecs(rec1, rec2))
     {
@@ -1499,57 +1508,57 @@ Rectangle GetCollisionRec(Rectangle rec1, Rectangle rec2)
         {
             if (rec1.y <= rec2.y)
             {
-                retRec.x = rec2.x;
-                retRec.y = rec2.y;
-                retRec.width = rec1.width - dxx;
-                retRec.height = rec1.height - dyy;
+                rec.x = rec2.x;
+                rec.y = rec2.y;
+                rec.width = rec1.width - dxx;
+                rec.height = rec1.height - dyy;
             }
             else
             {
-                retRec.x = rec2.x;
-                retRec.y = rec1.y;
-                retRec.width = rec1.width - dxx;
-                retRec.height = rec2.height - dyy;
+                rec.x = rec2.x;
+                rec.y = rec1.y;
+                rec.width = rec1.width - dxx;
+                rec.height = rec2.height - dyy;
             }
         }
         else
         {
             if (rec1.y <= rec2.y)
             {
-                retRec.x = rec1.x;
-                retRec.y = rec2.y;
-                retRec.width = rec2.width - dxx;
-                retRec.height = rec1.height - dyy;
+                rec.x = rec1.x;
+                rec.y = rec2.y;
+                rec.width = rec2.width - dxx;
+                rec.height = rec1.height - dyy;
             }
             else
             {
-                retRec.x = rec1.x;
-                retRec.y = rec1.y;
-                retRec.width = rec2.width - dxx;
-                retRec.height = rec2.height - dyy;
+                rec.x = rec1.x;
+                rec.y = rec1.y;
+                rec.width = rec2.width - dxx;
+                rec.height = rec2.height - dyy;
             }
         }
 
         if (rec1.width > rec2.width)
         {
-            if (retRec.width >= rec2.width) retRec.width = rec2.width;
+            if (rec.width >= rec2.width) rec.width = rec2.width;
         }
         else
         {
-            if (retRec.width >= rec1.width) retRec.width = rec1.width;
+            if (rec.width >= rec1.width) rec.width = rec1.width;
         }
 
         if (rec1.height > rec2.height)
         {
-            if (retRec.height >= rec2.height) retRec.height = rec2.height;
+            if (rec.height >= rec2.height) rec.height = rec2.height;
         }
         else
         {
-           if (retRec.height >= rec1.height) retRec.height = rec1.height;
+           if (rec.height >= rec1.height) rec.height = rec1.height;
         }
     }
 
-    return retRec;
+    return rec;
 }
 
 //----------------------------------------------------------------------------------
