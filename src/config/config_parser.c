@@ -27,7 +27,7 @@ static const struct option long_fiber_conversion_options[] = {{"fib", required_a
                                                               {"nod", required_argument, NULL, 'n'},
                                                               {"alg", required_argument, NULL, 'a'}};
 
-static const char *visualization_opt_string = "x:m:i:d:p:v:a:cs:t:h?";
+static const char *visualization_opt_string = "x:m:i:d:p:v:a:cs:t:u:h?";
 static const struct option long_visualization_options[] = {{"visualization_max_v", required_argument, NULL, 'x'},
                                                            {"visualization_min_v", required_argument, NULL, 'm'},
                                                            {"dt", required_argument, NULL, 'd'},
@@ -38,6 +38,7 @@ static const struct option long_visualization_options[] = {{"visualization_max_v
                                                            {"start_at", required_argument, NULL, 's'},
                                                            {"step", required_argument, NULL, 't'},
                                                            {"pvd", required_argument, NULL, 'v'},
+                                                           {"ui_scale", required_argument, NULL, 'u'},
                                                            {"help", no_argument, NULL, 'h'},
                                                            {NULL, no_argument, NULL, 0}};
 
@@ -166,6 +167,7 @@ void display_visualization_usage(char **argv) {
     printf("--pvd | -v, pvd file. Default: NULL\n");
     printf("--start_at | -s, Visualize starting at file number [n]. Default: 0\n");
     printf("--step | -t, Visualize each step [n]. Default: 1\n");
+    printf("--ui_scale | -u, Multiply the font sizes by the scale. Default: System defined\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
@@ -217,6 +219,7 @@ struct visualization_options *new_visualization_options() {
     options->start_file = 0;
     options->save_activation_only = false;
 	options->value_index = 6; //Value for the default position of V in your text format
+	options->ui_scale = 0.0;
     return options;
 }
 
@@ -1033,6 +1036,10 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
         case 't':
             user_args->step = (int)strtod(optarg, NULL);
             break;
+		case 'u':
+            user_args->ui_scale = fabsf((float)strtod(optarg, NULL));
+            break;
+
         case 'h': /* fall-through is intentional */
         case '?':
             display_visualization_usage(argv);

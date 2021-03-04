@@ -890,7 +890,7 @@ static void check_window_bounds(Rectangle *box, float current_window_width, floa
 
 static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_state, bool int_scale) {
 
-    static const int scale_width = 20;
+    float scale_width = 20*gui_state->ui_scale;
     check_window_bounds(&(gui_state->scale_bounds), (float) gui_state->current_window_width, (float) gui_state->current_window_width);
 
     float spacing_small = gui_state->font_spacing_small;
@@ -1640,13 +1640,16 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
     }
 
     InitWindow(0, 0, window_title);
-
-	Vector2 ui_scale = GetWindowScaleDPI();
-   
+	
+	if(gui_config->ui_scale == 0.0) {
+		Vector2 ui_scale = GetWindowScaleDPI();
+		gui_config->ui_scale = ui_scale.x;
+	
+	}
 	const int font_size_small = 16;
 	const int font_size_big = 20;
 
-    struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, ui_scale.x);
+    struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
 
     SetWindowSize(gui_state->current_window_width, gui_state->current_window_height);
 

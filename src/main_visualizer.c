@@ -271,6 +271,8 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
     gui_config->advance_or_return = 0;
     gui_config->grid_info.loaded = false;
 
+	gui_config->ui_scale = options->ui_scale;
+
     if(!only_restart) {
 	    gui_config->input = NULL;
         omp_init_lock(&gui_config->draw_lock);

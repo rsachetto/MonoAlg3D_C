@@ -114,6 +114,7 @@ struct gui_config {
 
     char *error_message;
     bool int_scale;
+	float ui_scale;
 };
 
 struct gui_state {
