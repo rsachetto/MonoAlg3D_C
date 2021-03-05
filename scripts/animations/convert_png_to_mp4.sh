@@ -7,8 +7,8 @@
 # Variables
 FILENAME="frames/frame"
 FRAME_RATE="25"
-END_FRAME="500"
-OUTPUT_VIDEO_FILENAME="videos/model_zero_purkinje_coupling_example"
+END_FRAME="297"
+OUTPUT_VIDEO_FILENAME="videos/elizabeth_biventricular_gold_x_min:length"
 RESOLUTION="1980x1024"
 
 # Execute the converting command using FFMPEG

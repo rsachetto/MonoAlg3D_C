@@ -17,7 +17,7 @@ def plot_all_state_vector(t, sv):
         plt.plot(t,sv[:,i],label="sv[%d]" % (i))
         plt.legend(loc=0,fontsize=14)
         #plt.show()
-        #plt.savefig("traces/rafa_sebastian_coupling_trovato/sv_%d.svg" % (i))
+        plt.savefig("traces/rafa_sebastian_coupling_trovato/sv_%d.svg" % (i))
         plt.clf()
 
     for i in range(ncol):
@@ -29,6 +29,7 @@ def plot_state_vector(t, sv, col):
     #plt.show()
 
 def main():
+	
     if len(sys.argv) != 2:
         print("-------------------------------------------------------------------------")
         print("Usage:> python %s <input_file>" % sys.argv[0])
@@ -38,8 +39,9 @@ def main():
         return 1
 
     input_file = sys.argv[1]
+
     t, sv = read_state_vector(input_file)
-    #t2, sv2 = read_state_vector("../outputs/model_purkinje_coupling_example_trace/tissue_torord.txt")
+    t2, sv2 = read_state_vector("../outputs/rafa_sebastian_trace/purkinje_trovato.txt")
 
     #plot_all_state_vector(t,sv)
 
