@@ -55,6 +55,7 @@ void init_cell_node(struct cell_node *cell_node) {
 
     cell_node->can_change = true;
     cell_node->visited = false;
+    cell_node->visible = true;
 
     cell_node->elements = NULL;
 

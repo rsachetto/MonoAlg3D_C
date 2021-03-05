@@ -274,7 +274,7 @@ static int cstring_cmp(const void *a, const void *b) {
 
 // TODO: maybe return the full path of the file?
 // We only return the file names here, not the full path!!
-string_array list_files_from_dir(const char *dir, const char *prefix, const char *extension, bool sort) {
+string_array list_files_from_dir(const char *dir, const char *prefix, const char *extension, string_array ignore_extensions, bool sort) {
 
     DIR *dp;
 
@@ -289,36 +289,49 @@ string_array list_files_from_dir(const char *dir, const char *prefix, const char
 
     while((dirp = readdir(dp)) != NULL) {
 
-        bool add_file = true;
-
-        if(dirp->d_type != DT_REG)
+        if(dirp->d_type != DT_REG) {
             continue;
+		}
 
         char *file_name = strdup(dirp->d_name);
+
+		if(ignore_extensions) {
+
+			int n = arrlen(ignore_extensions);
+			bool ignore = false;
+
+			for(int i = 0; i < n; i++) {
+				if(FILE_HAS_EXTENSION(get_filename_ext(file_name), ignore_extensions[i])) {
+					ignore = true;
+					break;
+				}
+			}
+
+			if(ignore) continue;
+		}
 
         if(extension) {
             const char *file_ext = get_filename_ext(file_name);
 
             if(!FILE_HAS_EXTENSION(file_ext, extension)) {
-                add_file = false;
+				continue;
             }
         }
 
         if(prefix) {
-
             if(strncmp(prefix, file_name, strlen(prefix)) != 0) {
-                add_file = false;
+				continue;
             }
         }
 
-        if(add_file) {
-            arrput(files, file_name);
-        }
+        arrput(files, file_name);
     }
 
-    if(sort) {
-        qsort(files, arrlen(files), sizeof(char *), cstring_cmp);
-    }
+	if(files) {
+		if(sort) {
+			qsort(files, arrlen(files), sizeof(char *), cstring_cmp);
+		}
+	}
 
     closedir(dp);
     return files;

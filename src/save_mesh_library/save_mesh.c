@@ -27,6 +27,7 @@ static bool compress = false;
 static bool save_f = false;
 static int compression_level = 3;
 char *output_dir;
+bool save_visible_mask = true;
 
 static bool initialized = false;
 
@@ -34,6 +35,13 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
 
 static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
+}
+
+static void save_visibility_mask(sds output_dir_with_file, ui8_array visible_cells) {
+		output_dir_with_file = sdscat(output_dir_with_file, ".vis");
+		FILE *vis = fopen(output_dir_with_file, "wb");
+		fwrite(visible_cells, sizeof(uint8_t), arrlen(visible_cells), vis);
+		fclose(vis);
 }
 
 SAVE_MESH(save_as_adjacency_list) {
@@ -247,6 +255,7 @@ SAVE_MESH(save_as_text_or_binary) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_inactive, config->config_data, "save_inactive_cells");
+		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config->config_data, "save_visible_mask");
         initialized = true;
 //    }
 
@@ -301,13 +310,13 @@ SAVE_MESH(save_as_text_or_binary) {
 
     FILE *output_file = fopen(tmp, "w");
 
-    sdsfree(base_name);
-    sdsfree(tmp);
-
-    struct cell_node *grid_cell = the_grid->first_cell;
+       struct cell_node *grid_cell = the_grid->first_cell;
 
     float center_x, center_y, center_z, dx, dy, dz;
     float v;
+
+	ui8_array cell_visibility = NULL;
+	arrsetcap(cell_visibility, the_grid->num_active_cells);
 
     while(grid_cell != 0) {
 
@@ -351,9 +360,18 @@ SAVE_MESH(save_as_text_or_binary) {
             } else {
                 fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
             }
+			arrput(cell_visibility, grid_cell->visible);
         }
         grid_cell = grid_cell->next;
     }
+
+	if(save_visible_mask) {
+		save_visibility_mask(tmp, cell_visibility);
+	}
+
+   	sdsfree(base_name);
+    sdsfree(tmp);
+
 
     fclose(output_file);
 }
@@ -385,6 +403,7 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_f, config->config_data, "save_f");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config->config_data, "save_visible_mask");
 
         ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = false;
 
@@ -420,9 +439,14 @@ SAVE_MESH(save_as_vtk) {
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+
+	new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
 
     save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary, save_f);
+
+	if(save_visible_mask) {
+		save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid)->cell_visibility);
+	}	
 
     if(the_grid->adaptive) {
         free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid);
@@ -483,6 +507,7 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
+		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config->config_data, "save_visible_mask");
 
         if(compress) binary = true;
 
@@ -536,14 +561,18 @@ SAVE_MESH(save_as_vtu) {
         save_vtk_unstructured_grid_as_vtu(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
     }
 
+	if(save_visible_mask) {
+		save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid)->cell_visibility);
+	}
+
+    sdsfree(output_dir_with_file);
+    sdsfree(base_name);
+
     //TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
     if(the_grid->adaptive) {
         free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid);
         ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid = NULL;
     }
-
-    sdsfree(output_dir_with_file);
-    sdsfree(base_name);
 
 }
 
@@ -649,7 +678,6 @@ SAVE_MESH(save_with_activation_times) {
             float *activation_times_array = NULL;
 
             if(grid_cell->active) {
-
                 float last_v = hmget(persistent_data->last_time_v, cell_coordinates);
 
                 n_activations = (int) hmget(persistent_data->num_activations, cell_coordinates);

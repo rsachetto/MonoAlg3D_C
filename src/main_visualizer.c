@@ -35,6 +35,24 @@ static void read_and_render_activation_map(struct gui_config *gui_config, char *
     omp_unset_lock(&gui_config->draw_lock);
 }
 
+static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_path) {
+
+	sds full_path_cp = sdsnew(full_path);
+
+    full_path_cp = sdscat(full_path_cp, ".vis");
+
+    FILE *vis_file = fopen(full_path_cp, "rw");
+
+    if(vis_file) {
+        int n_cells = vtk_grid->num_cells;
+		arrsetlen(vtk_grid->cell_visibility, n_cells);	
+		fread(vtk_grid->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
+        fclose(vis_file);
+    }
+
+}
+
+
 static int read_and_render_files(struct visualization_options *options, struct gui_config *gui_config) {
 
     char error[4096];
@@ -66,7 +84,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
         simulation_files->files_list = NULL;
         simulation_files->timesteps = NULL;
         if(input) {
-            simulation_files->files_list = list_files_from_dir(input, prefix, NULL, true);
+			string_array ignore_files = NULL;
+			arrput(ignore_files, strdup("vis"));
+            simulation_files->files_list = list_files_from_dir(input, prefix, NULL, ignore_files, true);
+			arrfree(ignore_files);
         }
     } else {
         if(strcmp(input_info.file_extension, "pvd") == 0) {
@@ -171,8 +192,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         if(!using_pvd) {
             full_path = sdsnew(input);
         } else {
-            if(using_pvd)
-                full_path = sdsnew(get_dir_from_path(input));
+            full_path = sdsnew(get_dir_from_path(input));
         }
 
         if(!single_file) {
@@ -193,7 +213,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
 			gui_config->paused = true;
         }
 		else {
-	        gui_config->grid_info.file_name = full_path;        
+            read_visible_cells(gui_config->grid_info.vtk_grid, full_path);
+            gui_config->grid_info.file_name = full_path;
 			gui_config->grid_info.loaded = true;
 		}
 
@@ -249,6 +270,8 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
     gui_config->paused = true;
     gui_config->advance_or_return = 0;
     gui_config->grid_info.loaded = false;
+
+	gui_config->ui_scale = options->ui_scale;
 
     if(!only_restart) {
 	    gui_config->input = NULL;

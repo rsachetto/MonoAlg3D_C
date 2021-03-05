@@ -143,6 +143,8 @@ static GLFWbool loadLibraries(void)
             GetProcAddress(_glfw.win32.dwmapi.instance, "DwmFlush");
         _glfw.win32.dwmapi.EnableBlurBehindWindow = (PFN_DwmEnableBlurBehindWindow)
             GetProcAddress(_glfw.win32.dwmapi.instance, "DwmEnableBlurBehindWindow");
+        _glfw.win32.dwmapi.GetColorizationColor = (PFN_DwmGetColorizationColor)
+            GetProcAddress(_glfw.win32.dwmapi.instance, "DwmGetColorizationColor");
     }
 
     _glfw.win32.shcore.instance = LoadLibraryA("shcore.dll");
@@ -384,7 +386,7 @@ static GLFWbool createHelperWindow(void)
 //////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
 
-// Returns a wide sds version of the specified UTF-8 sds
+// Returns a wide string version of the specified UTF-8 string
 //
 WCHAR* _glfwCreateWideStringFromUTF8Win32(const char* source)
 {
@@ -395,7 +397,7 @@ WCHAR* _glfwCreateWideStringFromUTF8Win32(const char* source)
     if (!count)
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
-                             "Win32: Failed to convert sds from UTF-8");
+                             "Win32: Failed to convert string from UTF-8");
         return NULL;
     }
 
@@ -404,7 +406,7 @@ WCHAR* _glfwCreateWideStringFromUTF8Win32(const char* source)
     if (!MultiByteToWideChar(CP_UTF8, 0, source, -1, target, count))
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
-                             "Win32: Failed to convert sds from UTF-8");
+                             "Win32: Failed to convert string from UTF-8");
         free(target);
         return NULL;
     }
@@ -412,7 +414,7 @@ WCHAR* _glfwCreateWideStringFromUTF8Win32(const char* source)
     return target;
 }
 
-// Returns a UTF-8 sds version of the specified wide sds
+// Returns a UTF-8 string version of the specified wide string
 //
 char* _glfwCreateUTF8FromWideStringWin32(const WCHAR* source)
 {
@@ -423,7 +425,7 @@ char* _glfwCreateUTF8FromWideStringWin32(const WCHAR* source)
     if (!size)
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
-                             "Win32: Failed to convert sds to UTF-8");
+                             "Win32: Failed to convert string to UTF-8");
         return NULL;
     }
 
@@ -432,7 +434,7 @@ char* _glfwCreateUTF8FromWideStringWin32(const WCHAR* source)
     if (!WideCharToMultiByte(CP_UTF8, 0, source, -1, target, size, NULL, NULL))
     {
         _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
-                             "Win32: Failed to convert sds to UTF-8");
+                             "Win32: Failed to convert string to UTF-8");
         free(target);
         return NULL;
     }
@@ -580,7 +582,6 @@ int _glfwPlatformInit(void)
         return GLFW_FALSE;
 
     _glfwInitTimerWin32();
-    _glfwInitJoysticksWin32();
 
     _glfwPollMonitorsWin32();
     return GLFW_TRUE;
@@ -606,8 +607,6 @@ void _glfwPlatformTerminate(void)
 
     _glfwTerminateWGL();
     _glfwTerminateEGL();
-
-    _glfwTerminateJoysticksWin32();
 
     freeLibraries();
 }

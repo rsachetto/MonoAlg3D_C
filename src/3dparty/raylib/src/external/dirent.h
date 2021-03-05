@@ -94,7 +94,7 @@ struct DIR {
     handle_type handle;         // -1 for failed rewind
     struct _finddata_t info;
     struct dirent result;       // d_name null iff first time
-    char *name;                 // null-terminated char sds
+    char *name;                 // null-terminated char string
 };
 
 DIR *opendir(const char *name)

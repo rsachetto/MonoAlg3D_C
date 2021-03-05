@@ -87,7 +87,7 @@ typedef struct {
 #define TINYOBJ_ERROR_INVALID_PARAMETER (-2)
 #define TINYOBJ_ERROR_FILE_OPERATION (-3)
 
-/* Parse wavefront .obj(.obj sds data is expanded to linear char array `buf')
+/* Parse wavefront .obj(.obj string data is expanded to linear char array `buf')
  * flags are combination of TINYOBJ_FLAG_***
  * Returns TINYOBJ_SUCCESS if things goes well.
  * Returns TINYOBJ_ERR_*** when there is an error.
@@ -268,8 +268,8 @@ static int parseInt(const char **token) {
 /*
  * Tries to parse a floating point number located at s.
  *
- * s_end should be a location in the sds where reading should absolutely
- * stop. For example at the end of the sds, to prevent buffer overflows.
+ * s_end should be a location in the string where reading should absolutely
+ * stop. For example at the end of the string, to prevent buffer overflows.
  *
  * Parses the following EBNF grammar:
  *   sign    = "+" | "-" ;
@@ -542,7 +542,7 @@ static void initMaterial(tinyobj_material_t *material) {
   material->ior = 1.f;
 }
 
-/* Implementation of sds to int hashtable */
+/* Implementation of string to int hashtable */
 
 #define HASH_TABLE_ERROR 1 
 #define HASH_TABLE_SUCCESS 0
@@ -748,7 +748,7 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
 
   fp = fopen(filename, "r");
   if (!fp) {
-    //fprintf(stderr, "TINYOBJ: Error reading file '%s': %s (%d)\n", filename, strerror(errno), errno);     // @raysan5: commented
+    fprintf(stderr, "TINYOBJ: Error reading file '%s': %s (%d)\n", filename, strerror(errno), errno);
     return TINYOBJ_ERROR_FILE_OPERATION;
   }
 
@@ -1321,7 +1321,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
     if (ret != TINYOBJ_SUCCESS) {
       /* warning. */
-      //fprintf(stderr, "TINYOBJ: Failed to parse material file '%s': %d\n", filename, ret);     // @raysan5: commented
+      fprintf(stderr, "TINYOBJ: Failed to parse material file '%s': %d\n", filename, ret);
     }
 
     TINYOBJ_FREE(filename);
@@ -1360,7 +1360,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
         /* @todo
            if (commands[t][i].material_name &&
            commands[t][i].material_name_len > 0) {
-           std::sds material_name(commands[t][i].material_name,
+           std::string material_name(commands[t][i].material_name,
            commands[t][i].material_name_len);
 
            if (material_map.find(material_name) != material_map.end()) {
@@ -1374,7 +1374,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
         if (commands[i].material_name &&
            commands[i].material_name_len >0) 
         {
-          /* Create a null terminated sds */
+          /* Create a null terminated string */
           char* material_name_null_term = (char*) TINYOBJ_MALLOC(commands[i].material_name_len + 1);
           memcpy((void*) material_name_null_term, (const void*) commands[i].material_name, commands[i].material_name_len);
           material_name_null_term[commands[i].material_name_len - 1] = 0;

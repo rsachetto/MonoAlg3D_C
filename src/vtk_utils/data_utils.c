@@ -131,17 +131,22 @@ void read_binary_point(void *source, struct point_3d *p) {
 }
 
 sds write_binary_point(sds output_string, struct point_3d *p) {
-    int a = *(int *)&(p->x);
+
+	float x = (float)p->x;
+	float y = (float)p->y;
+	float z = (float)p->z;
+
+    int a = *(int *)&(x);
     int swapped = invert_bytes(a);
 
     output_string = sdscatlen(output_string, &swapped, sizeof(int));
 
-    a = *(int *)&(p->y);
+    a = *(int *)&(y);
     swapped = invert_bytes(a);
 
     output_string = sdscatlen(output_string, &swapped, sizeof(int));
 
-    a = *(int *)&(p->z);
+    a = *(int *)&(z);
     swapped = invert_bytes(a);
 
     output_string = sdscatlen(output_string, &swapped, sizeof(int));

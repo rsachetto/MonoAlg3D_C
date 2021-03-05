@@ -166,6 +166,7 @@ struct visualization_options {
     int step;
 	uint32_t value_index;
     real_cpu max_v, min_v, dt;
+	float ui_scale;
 };
 
 struct conversion_options {

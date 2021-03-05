@@ -22,7 +22,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2015-2020 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2015-2021 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -110,12 +110,12 @@ extern "C" {            // Prevents name mangling of functions
 void SetCameraMode(Camera camera, int mode);                // Set camera mode (multiple camera modes available)
 void UpdateCamera(Camera *camera);                          // Update camera position for selected mode
 
-void SetCameraPanControl(int panKey);                       // Set camera pan key to combine with mouse movement (free camera)
-void SetCameraAltControl(int altKey);                       // Set camera alt key to combine with mouse movement (free camera)
+void SetCameraPanControl(int keyPan);                       // Set camera pan key to combine with mouse movement (free camera)
+void SetCameraAltControl(int keyAlt);                       // Set camera alt key to combine with mouse movement (free camera)
 void SetCameraSmoothZoomControl(int szoomKey);              // Set camera smooth zoom key to combine with mouse (free camera)
-void SetCameraMoveControls(int frontKey, int backKey,
-                           int rightKey, int leftKey,
-                           int upKey, int downKey);         // Set camera move controls (1st person and 3rd person cameras)
+void SetCameraMoveControls(int keyFront, int keyBack,
+                           int keyRight, int keyLeft,
+                           int keyUp, int keyDown);         // Set camera move controls (1st person and 3rd person cameras)
 #endif
 
 #ifdef __cplusplus
@@ -135,6 +135,9 @@ void SetCameraMoveControls(int frontKey, int backKey,
 
 #include <math.h>               // Required for: sinf(), cosf(), sqrtf()
 
+//----------------------------------------------------------------------------------
+// Defines and Macros
+//----------------------------------------------------------------------------------
 #ifndef PI
     #define PI 3.14159265358979323846
 #endif
@@ -145,9 +148,6 @@ void SetCameraMoveControls(int frontKey, int backKey,
     #define RAD2DEG (180.0f/PI)
 #endif
 
-//----------------------------------------------------------------------------------
-// Defines and Macros
-//----------------------------------------------------------------------------------
 // Camera mouse movement sensitivity
 #define CAMERA_MOUSE_MOVE_SENSITIVITY                   0.003f
 #define CAMERA_MOUSE_SCROLL_SENSITIVITY                 1.5f
@@ -170,7 +170,7 @@ void SetCameraMoveControls(int frontKey, int backKey,
 #define CAMERA_FIRST_PERSON_MIN_CLAMP                   89.0f
 #define CAMERA_FIRST_PERSON_MAX_CLAMP                  -89.0f
 
-#define CAMERA_FIRST_PERSON_STEP_TRIGONOMETRIC_DIVIDER  5.0f
+#define CAMERA_FIRST_PERSON_STEP_TRIGONOMETRIC_DIVIDER  8.0f
 #define CAMERA_FIRST_PERSON_STEP_DIVIDER                30.0f
 #define CAMERA_FIRST_PERSON_WAVING_DIVIDER              200.0f
 
@@ -197,30 +197,32 @@ typedef enum {
     MOVE_DOWN
 } CameraMove;
 
+// Camera global state context data [56 bytes]
 typedef struct {
-    int mode;                     // Current camera mode
-    float targetDistance;         // Camera distance from position to target
-    float playerEyesPosition;     // Default player eyes position from ground (in meters)
-    Vector2 angle;                // Camera angle in plane XZ
+    unsigned int mode;              // Current camera mode
+    float targetDistance;           // Camera distance from position to target
+    float playerEyesPosition;       // Player eyes position from ground (in meters)
+    Vector2 angle;                  // Camera angle in plane XZ
 
-    int moveControl[6];
-    int smoothZoomControl;        // raylib: KEY_LEFT_CONTROL
-    int altControl;               // raylib: KEY_LEFT_ALT
-    int panControl;               // raylib: MOUSE_MIDDLE_BUTTON
+    // Camera movement control keys
+    int moveControl[6];             // Move controls (CAMERA_FIRST_PERSON)
+    int smoothZoomControl;          // Smooth zoom control key
+    int altControl;                 // Alternative control key
+    int panControl;                 // Pan view control key
 } CameraData;
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static CameraData CAMERA = {
+static CameraData CAMERA = {        // Global CAMERA state context
     .mode = 0,
     .targetDistance = 0,
     .playerEyesPosition = 1.85f,
     .angle = { 0 },
     .moveControl = { 'W', 'S', 'D', 'A', 'E', 'Q' },
-    .smoothZoomControl = 341,
-    .altControl = 342,
-    .panControl = 2
+    .smoothZoomControl = 341,       // raylib: KEY_LEFT_CONTROL
+    .altControl = 342,              // raylib: KEY_LEFT_ALT
+    .panControl = 2                 // raylib: MOUSE_MIDDLE_BUTTON
 };
 
 //----------------------------------------------------------------------------------
@@ -228,14 +230,13 @@ static CameraData CAMERA = {
 //----------------------------------------------------------------------------------
 #if defined(CAMERA_STANDALONE)
 // NOTE: Camera controls depend on some raylib input functions
-// TODO: Set your own input functions (used in UpdateCamera())
 static void EnableCursor() {}       // Unlock cursor
 static void DisableCursor() {}      // Lock cursor
 
 static int IsKeyDown(int key) { return 0; }
 
 static int IsMouseButtonDown(int button) { return 0;}
-static int GetMouseWheelMove() { return 0; }
+static float GetMouseWheelMove() { return 0.0f; }
 static Vector2 GetMousePosition() { return (Vector2){ 0.0f, 0.0f }; }
 #endif
 
@@ -253,13 +254,13 @@ void SetCameraMode(Camera camera, int mode)
     float dy = v2.y - v1.y;
     float dz = v2.z - v1.z;
 
-    CAMERA.targetDistance = sqrtf(dx*dx + dy*dy + dz*dz);
+    CAMERA.targetDistance = sqrtf(dx*dx + dy*dy + dz*dz);   // Distance to target
 
     // Camera angle calculation
-    CAMERA.angle.x = atan2f(dx, dz);                   // Camera angle in plane XZ (0 aligned with Z, move positive CCW)
-    CAMERA.angle.y = atan2f(dy, sqrtf(dx*dx + dz*dz)); // Camera angle in plane XY (0 aligned with X, move positive CW)
+    CAMERA.angle.x = atan2f(dx, dz);                        // Camera angle in plane XZ (0 aligned with Z, move positive CCW)
+    CAMERA.angle.y = atan2f(dy, sqrtf(dx*dx + dz*dz));      // Camera angle in plane XY (0 aligned with X, move positive CW)
 
-    CAMERA.playerEyesPosition = camera.position.y;
+    CAMERA.playerEyesPosition = camera.position.y;          // Init player eyes position to camera Y position
 
     // Lock cursor for first person and third person cameras
     if ((mode == CAMERA_FIRST_PERSON) || (mode == CAMERA_THIRD_PERSON)) DisableCursor();
@@ -273,32 +274,30 @@ void SetCameraMode(Camera camera, int mode)
 //       System: EnableCursor(), DisableCursor()
 //       Mouse: IsMouseButtonDown(), GetMousePosition(), GetMouseWheelMove()
 //       Keys:  IsKeyDown()
-// TODO: Port to quaternion-based camera
+// TODO: Port to quaternion-based camera (?)
 void UpdateCamera(Camera *camera)
 {
     static int swingCounter = 0;    // Used for 1st person swinging movement
     static Vector2 previousMousePosition = { 0.0f, 0.0f };
 
-    // TODO: Compute CAMERA.targetDistance and CAMERA.angle here
+    // TODO: Compute CAMERA.targetDistance and CAMERA.angle here (?)
 
     // Mouse movement detection
     Vector2 mousePositionDelta = { 0.0f, 0.0f };
     Vector2 mousePosition = GetMousePosition();
-    int mouseWheelMove = GetMouseWheelMove();
+    float mouseWheelMove = GetMouseWheelMove();
 
     // Keys input detection
-    bool panKey = IsMouseButtonDown(CAMERA.panControl);
-    bool altKey = IsKeyDown(CAMERA.altControl);
+    // TODO: Input detection is raylib-dependant, it could be moved outside the module
+    bool keyPan = IsMouseButtonDown(CAMERA.panControl);
+    bool keyAlt = IsKeyDown(CAMERA.altControl);
     bool szoomKey = IsKeyDown(CAMERA.smoothZoomControl);
-
     bool direction[6] = { IsKeyDown(CAMERA.moveControl[MOVE_FRONT]),
                           IsKeyDown(CAMERA.moveControl[MOVE_BACK]),
                           IsKeyDown(CAMERA.moveControl[MOVE_RIGHT]),
                           IsKeyDown(CAMERA.moveControl[MOVE_LEFT]),
                           IsKeyDown(CAMERA.moveControl[MOVE_UP]),
                           IsKeyDown(CAMERA.moveControl[MOVE_DOWN]) };
-
-    // TODO: Consider touch inputs for camera
 
     if (CAMERA.mode != CAMERA_CUSTOM)
     {
@@ -309,19 +308,19 @@ void UpdateCamera(Camera *camera)
     }
 
     // Support for multiple automatic camera modes
+    // NOTE: In case of CAMERA_CUSTOM nothing happens here, user must update it manually
     switch (CAMERA.mode)
     {
-        case CAMERA_FREE:
+        case CAMERA_FREE:           // Camera free controls, using standard 3d-content-creation scheme
         {
             // Camera zoom
             if ((CAMERA.targetDistance < CAMERA_FREE_DISTANCE_MAX_CLAMP) && (mouseWheelMove < 0))
             {
                 CAMERA.targetDistance -= (mouseWheelMove*CAMERA_MOUSE_SCROLL_SENSITIVITY);
-
                 if (CAMERA.targetDistance > CAMERA_FREE_DISTANCE_MAX_CLAMP) CAMERA.targetDistance = CAMERA_FREE_DISTANCE_MAX_CLAMP;
             }
+
             // Camera looking down
-            // TODO: Review, weird comparisson of CAMERA.targetDistance == 120.0f?
             else if ((camera->position.y > camera->target.y) && (CAMERA.targetDistance == CAMERA_FREE_DISTANCE_MAX_CLAMP) && (mouseWheelMove < 0))
             {
                 camera->target.x += mouseWheelMove*(camera->target.x - camera->position.x)*CAMERA_MOUSE_SCROLL_SENSITIVITY/CAMERA.targetDistance;
@@ -342,7 +341,6 @@ void UpdateCamera(Camera *camera)
                 if (CAMERA.targetDistance < CAMERA_FREE_DISTANCE_MIN_CLAMP) CAMERA.targetDistance = CAMERA_FREE_DISTANCE_MIN_CLAMP;
             }
             // Camera looking up
-            // TODO: Review, weird comparisson of CAMERA.targetDistance == 120.0f?
             else if ((camera->position.y < camera->target.y) && (CAMERA.targetDistance == CAMERA_FREE_DISTANCE_MAX_CLAMP) && (mouseWheelMove < 0))
             {
                 camera->target.x += mouseWheelMove*(camera->target.x - camera->position.x)*CAMERA_MOUSE_SCROLL_SENSITIVITY/CAMERA.targetDistance;
@@ -364,9 +362,9 @@ void UpdateCamera(Camera *camera)
             }
 
             // Input keys checks
-            if (panKey)
+            if (keyPan)
             {
-                if (altKey)     // Alternative key behaviour
+                if (keyAlt)     // Alternative key behaviour
                 {
                     if (szoomKey)
                     {
@@ -397,8 +395,9 @@ void UpdateCamera(Camera *camera)
             camera->position.x = -sinf(CAMERA.angle.x)*CAMERA.targetDistance*cosf(CAMERA.angle.y) + camera->target.x;
             camera->position.y = -sinf(CAMERA.angle.y)*CAMERA.targetDistance + camera->target.y;
             camera->position.z = -cosf(CAMERA.angle.x)*CAMERA.targetDistance*cosf(CAMERA.angle.y) + camera->target.z;
+
         } break;
-        case CAMERA_ORBITAL:
+        case CAMERA_ORBITAL:        // Camera just orbits around target, only zoom allowed
         {
             CAMERA.angle.x += CAMERA_ORBITAL_SPEED;      // Camera orbit angle
             CAMERA.targetDistance -= (mouseWheelMove*CAMERA_MOUSE_SCROLL_SENSITIVITY);   // Camera zoom
@@ -412,7 +411,7 @@ void UpdateCamera(Camera *camera)
             camera->position.z = cosf(CAMERA.angle.x)*CAMERA.targetDistance*cosf(CAMERA.angle.y) + camera->target.z;
 
         } break;
-        case CAMERA_FIRST_PERSON:
+        case CAMERA_FIRST_PERSON:   // Camera moves as in a first-person game, controls are configurable
         {
             camera->position.x += (sinf(CAMERA.angle.x)*direction[MOVE_BACK] -
                                    sinf(CAMERA.angle.x)*direction[MOVE_FRONT] -
@@ -427,10 +426,6 @@ void UpdateCamera(Camera *camera)
                                    cosf(CAMERA.angle.x)*direction[MOVE_FRONT] +
                                    sinf(CAMERA.angle.x)*direction[MOVE_LEFT] -
                                    sinf(CAMERA.angle.x)*direction[MOVE_RIGHT])/PLAYER_MOVEMENT_SENSITIVITY;
-
-            bool isMoving = false;  // Required for swinging
-
-            for (int i = 0; i < 6; i++) if (direction[i]) { isMoving = true; break; }
 
             // Camera orientation calculation
             CAMERA.angle.x += (mousePositionDelta.x*-CAMERA_MOUSE_MOVE_SENSITIVITY);
@@ -449,7 +444,8 @@ void UpdateCamera(Camera *camera)
             camera->target.y = camera->position.y - transform.m13;
             camera->target.z = camera->position.z - transform.m14;
 
-            if (isMoving) swingCounter++;
+            // If movement detected (some key pressed), increase swinging
+            for (int i = 0; i < 6; i++) if (direction[i]) { swingCounter++; break; }
 
             // Camera position update
             // NOTE: On CAMERA_FIRST_PERSON player Y-movement is limited to player 'eyes position'
@@ -458,9 +454,8 @@ void UpdateCamera(Camera *camera)
             camera->up.x = sinf(swingCounter/(CAMERA_FIRST_PERSON_STEP_TRIGONOMETRIC_DIVIDER*2))/CAMERA_FIRST_PERSON_WAVING_DIVIDER;
             camera->up.z = -sinf(swingCounter/(CAMERA_FIRST_PERSON_STEP_TRIGONOMETRIC_DIVIDER*2))/CAMERA_FIRST_PERSON_WAVING_DIVIDER;
 
-
         } break;
-        case CAMERA_THIRD_PERSON:
+        case CAMERA_THIRD_PERSON:   // Camera moves as in a third-person game, following target at a distance, controls are configurable
         {
             camera->position.x += (sinf(CAMERA.angle.x)*direction[MOVE_BACK] -
                                    sinf(CAMERA.angle.x)*direction[MOVE_FRONT] -
@@ -492,33 +487,36 @@ void UpdateCamera(Camera *camera)
 
             // TODO: It seems camera->position is not correctly updated or some rounding issue makes the camera move straight to camera->target...
             camera->position.x = sinf(CAMERA.angle.x)*CAMERA.targetDistance*cosf(CAMERA.angle.y) + camera->target.x;
+
             if (CAMERA.angle.y <= 0.0f) camera->position.y = sinf(CAMERA.angle.y)*CAMERA.targetDistance*sinf(CAMERA.angle.y) + camera->target.y;
             else camera->position.y = -sinf(CAMERA.angle.y)*CAMERA.targetDistance*sinf(CAMERA.angle.y) + camera->target.y;
+
             camera->position.z = cosf(CAMERA.angle.x)*CAMERA.targetDistance*cosf(CAMERA.angle.y) + camera->target.z;
 
         } break;
+        case CAMERA_CUSTOM: break;
         default: break;
     }
 }
 
 // Set camera pan key to combine with mouse movement (free camera)
-void SetCameraPanControl(int panKey) { CAMERA.panControl = panKey; }
+void SetCameraPanControl(int keyPan) { CAMERA.panControl = keyPan; }
 
 // Set camera alt key to combine with mouse movement (free camera)
-void SetCameraAltControl(int altKey) { CAMERA.altControl = altKey; }
+void SetCameraAltControl(int keyAlt) { CAMERA.altControl = keyAlt; }
 
 // Set camera smooth zoom key to combine with mouse (free camera)
 void SetCameraSmoothZoomControl(int szoomKey) { CAMERA.smoothZoomControl = szoomKey; }
 
 // Set camera move controls (1st person and 3rd person cameras)
-void SetCameraMoveControls(int frontKey, int backKey, int rightKey, int leftKey, int upKey, int downKey)
+void SetCameraMoveControls(int keyFront, int keyBack, int keyRight, int keyLeft, int keyUp, int keyDown)
 {
-    CAMERA.moveControl[MOVE_FRONT] = frontKey;
-    CAMERA.moveControl[MOVE_BACK] = backKey;
-    CAMERA.moveControl[MOVE_RIGHT] = rightKey;
-    CAMERA.moveControl[MOVE_LEFT] = leftKey;
-    CAMERA.moveControl[MOVE_UP] = upKey;
-    CAMERA.moveControl[MOVE_DOWN] = downKey;
+    CAMERA.moveControl[MOVE_FRONT] = keyFront;
+    CAMERA.moveControl[MOVE_BACK] = keyBack;
+    CAMERA.moveControl[MOVE_RIGHT] = keyRight;
+    CAMERA.moveControl[MOVE_LEFT] = keyLeft;
+    CAMERA.moveControl[MOVE_UP] = keyUp;
+    CAMERA.moveControl[MOVE_DOWN] = keyDown;
 }
 
 #endif // CAMERA_IMPLEMENTATION

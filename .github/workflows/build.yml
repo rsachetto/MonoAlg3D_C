@@ -23,9 +23,9 @@ jobs:
     - name: Test without cuda
       run:  ./run_tests.sh
 
-    - name: Install CUDA 10
+    - name: Install CUDA 11
       env:
-        cuda: "10.0"
+        cuda: "11.0"
       run: |
         source ./scripts/actions/install_cuda_ubuntu.sh
         if [[ $? -eq 0 ]]; then

@@ -20,7 +20,7 @@
 #define MAX_HORIZONTAL_TICKS 20
 
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
-#define WIDER_TEXT "------------------------------------------------------"
+#define WIDER_TEXT " - Alt + R to restart simulation and the box positions"
 #define DOUBLE_CLICK_DELAY 0.8 //seconds
 
 #define NORMALIZE(r_min, r_max, t_min, t_max, m) (((m - r_min) / (r_max - r_min)) * (t_max - t_min) + t_min)
@@ -114,12 +114,19 @@ struct gui_config {
 
     char *error_message;
     bool int_scale;
+	float ui_scale;
 };
 
 struct gui_state {
 
 	int current_window_width;
 	int current_window_height;
+
+	float ui_scale;
+
+	float font_spacing_big;
+	float font_spacing_small;
+	float font_scaling;
 
     bool handle_keyboard_input;
     bool one_selected;
@@ -141,6 +148,7 @@ struct gui_state {
     Rectangle scale_bounds;
     bool show_scale;
     bool move_scale;
+	bool calc_scale_bounds;
 
     Rectangle end_info_box;
     bool show_end_info_box;
@@ -197,9 +205,5 @@ struct mesh_info {
 };
 
 void init_and_open_gui_window(struct gui_config *gui_config);
-
-void gui_end_simulation(struct gui_config *gui_config, long res_time, long ode_total_time, long cg_total_time, 
-						long total_mat_time, long total_ref_time, long total_deref_time, long total_write_time, 
-						long total_config_time, long total_cg_it);
 
 #endif //MONOALG3D_DRAW_H

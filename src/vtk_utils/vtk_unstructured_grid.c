@@ -22,10 +22,11 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
 
     struct vtk_unstructured_grid *grid = MALLOC_ONE_TYPE(struct vtk_unstructured_grid);
 
-    grid->cells = NULL;
-    grid->values = NULL;
-    grid->points = NULL;
-    grid->fibers = NULL;
+    grid->cells           = NULL;
+    grid->cell_visibility = NULL;
+    grid->values          = NULL;
+    grid->points          = NULL;
+    grid->fibers          = NULL;
 
     grid->num_cells = 0;
     grid->num_points = 0;
@@ -43,6 +44,7 @@ void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid) {
         arrfree(vtk_grid->cells);
         arrfree(vtk_grid->values);
         arrfree(vtk_grid->points);
+        arrfree(vtk_grid->cell_visibility);
         free(vtk_grid);
     }
 }
@@ -512,6 +514,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     if(!read_only_values) {
         *vtk_grid = new_vtk_unstructured_grid();
         arrsetcap((*vtk_grid)->values, num_active_cells);
+        arrsetcap((*vtk_grid)->cell_visibility, num_active_cells);
         arrsetcap((*vtk_grid)->cells,  num_active_cells);
         arrsetcap((*vtk_grid)->points, num_active_cells);
     }
@@ -525,6 +528,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         assert(*vtk_grid);
         arrfree((*vtk_grid)->values);
         (*vtk_grid)->values = NULL;
+        (*vtk_grid)->cell_visibility = NULL;
     }
 
     real_cpu min_x = 0.0;
@@ -607,6 +611,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         }
 
         arrput((*vtk_grid)->values, grid_cell[i]->v);
+        arrput((*vtk_grid)->cell_visibility, grid_cell[i]->visible);
 
         if(grid_cell[i]->v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = grid_cell[i]->v;
         if(grid_cell[i]->v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = grid_cell[i]->v;
@@ -1466,7 +1471,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
                     struct point_3d p;
                     read_binary_point(source, &p);
 
-                    for(int b = 0; b < 12; b++) {
+                    for(int b = 0; b < 3*sizeof(real_cpu); b++) {
                         arrput(state->points_ascii, *((char*)(&p) + b)); //here this array will be treated as binary data
                     }
 
@@ -1915,7 +1920,6 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
         arrsetcap((*vtk_grid)->values, (*vtk_grid)->num_cells);
         arrsetcap((*vtk_grid)->points, (*vtk_grid)->num_points);
         arrsetcap((*vtk_grid)->cells,  (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell);
-
 
         if (xml && (parser_state->compressed || parser_state->binary)) {
 

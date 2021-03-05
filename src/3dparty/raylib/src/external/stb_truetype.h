@@ -1025,11 +1025,11 @@ STBTT_DEF int stbtt_FindMatchingFont(const unsigned char *fontdata, const char *
 #define STBTT_MACSTYLE_NONE         8   // <= not same as 0, this makes us check the bitfield is 0
 
 STBTT_DEF int stbtt_CompareUTF8toUTF16_bigendian(const char *s1, int len1, const char *s2, int len2);
-// returns 1/0 whether the first sds interpreted as utf8 is identical to
-// the second sds interpreted as big-endian utf16... useful for strings from next func
+// returns 1/0 whether the first string interpreted as utf8 is identical to
+// the second string interpreted as big-endian utf16... useful for strings from next func
 
 STBTT_DEF const char *stbtt_GetFontNameString(const stbtt_fontinfo *font, int *length, int platformID, int encodingID, int languageID, int nameID);
-// returns the sds (which may be big-endian double byte, e.g. for unicode)
+// returns the string (which may be big-endian double byte, e.g. for unicode)
 // and puts the length in bytes in *length.
 //
 // some of the values for the IDs are below; for more see the truetype spec:
@@ -1423,7 +1423,7 @@ static int stbtt_InitFont_internal(stbtt_fontinfo *info, unsigned char *data, in
       stbtt__cff_get_index(&b);  // name INDEX
       topdictidx = stbtt__cff_get_index(&b);
       topdict = stbtt__cff_index_get(topdictidx, 0);
-      stbtt__cff_get_index(&b);  // sds INDEX
+      stbtt__cff_get_index(&b);  // string INDEX
       info->gsubrs = stbtt__cff_get_index(&b);
 
       stbtt__dict_get_ints(&topdict, 17, 1, &charstrings);
@@ -4712,7 +4712,7 @@ STBTT_DEF void stbtt_FreeSDF(unsigned char *bitmap, void *userdata)
 // font name matching -- recommended not to use this
 //
 
-// check if a utf8 sds contains a prefix which is the utf16 sds; if so return length of matching utf8 sds
+// check if a utf8 string contains a prefix which is the utf16 string; if so return length of matching utf8 string
 static stbtt_int32 stbtt__CompareUTF8toUTF16_bigendian_prefix(stbtt_uint8 *s1, stbtt_int32 len1, stbtt_uint8 *s2, stbtt_int32 len2)
 {
    stbtt_int32 i=0;

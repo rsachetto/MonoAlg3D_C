@@ -184,8 +184,8 @@ typedef int socklen_t;
 #define SOCKET_MAX_UDPADDRESSES     4      // Maximum bound UDP addresses
 
 // Network address related defines
-#define ADDRESS_IPV4_ADDRSTRLEN     22     // IPv4 sds length
-#define ADDRESS_IPV6_ADDRSTRLEN     65     // IPv6 sds length
+#define ADDRESS_IPV4_ADDRSTRLEN     22     // IPv4 string length
+#define ADDRESS_IPV6_ADDRSTRLEN     65     // IPv6 string length
 #define ADDRESS_TYPE_ANY            0      // AF_UNSPEC
 #define ADDRESS_TYPE_IPV4           2      // AF_INET
 #define ADDRESS_TYPE_IPV6           23     // AF_INET6
@@ -210,7 +210,7 @@ typedef int socklen_t;
 #if defined(_WIN32)
     #define ADDRESS_INFO_PASSIVE                (0x00000001)  // Socket address will be used in bind() call
     #define ADDRESS_INFO_CANONNAME              (0x00000002)  // Return canonical name in first ai_canonname
-    #define ADDRESS_INFO_NUMERICHOST            (0x00000004)  // Nodename must be a numeric address sds
+    #define ADDRESS_INFO_NUMERICHOST            (0x00000004)  // Nodename must be a numeric address string
     #define ADDRESS_INFO_NUMERICSERV            (0x00000008)  // Servicename must be a numeric port number
     #define ADDRESS_INFO_DNS_ONLY               (0x00000010)  // Restrict queries to unicast DNS only (no LLMNR, netbios, etc.)
     #define ADDRESS_INFO_ALL                    (0x00000100)  // Query both IP6 and IP4 with AI_V4MAPPED
@@ -231,10 +231,14 @@ typedef int socklen_t;
 //----------------------------------------------------------------------------------
 
 // Boolean type
+#ifdef _WIN32
+    #include <stdbool.h>
+#else
 #if defined(__STDC__) && __STDC_VERSION__ >= 199901L
     #include <stdbool.h>
 #elif !defined(__cplusplus) && !defined(bool)
     typedef enum { false, true } bool;
+#endif
 #endif
 
 typedef enum {
@@ -347,7 +351,7 @@ int GetAddressFamily(AddressInformation address);
 int GetAddressSocketType(AddressInformation address);
 int GetAddressProtocol(AddressInformation address);
 char *GetAddressCanonName(AddressInformation address);
-char *GetAddressHostAndPort(AddressInformation address, char *outhost, int *outport);
+char *GetAddressHostAndPort(AddressInformation address, char *outhost, unsigned short *outport);
 
 // Address Memory API
 AddressInformation LoadAddress(void);
@@ -365,7 +369,7 @@ Socket *SocketAccept(Socket *server, SocketConfig *config);
 int SocketSend(Socket *sock, const void *datap, int len);
 int SocketReceive(Socket *sock, void *data, int maxlen);
 SocketAddressStorage SocketGetPeerAddress(Socket *sock);
-char *GetSocketAddressHost(SocketAddressStorage storage);
+const char *GetSocketAddressHost(SocketAddressStorage storage);
 short GetSocketAddressPort(SocketAddressStorage storage);
 void SocketClose(Socket *sock);
 
@@ -540,7 +544,7 @@ static void PrintSocket(struct sockaddr_storage *addr, const int family, const i
     }
 }
 
-// Convert network ordered socket address to human readable sds (127.0.0.1)
+// Convert network ordered socket address to human readable string (127.0.0.1)
 static const char *SocketAddressToString(struct sockaddr_storage *sockaddr)
 {
     //static const char* ipv6[INET6_ADDRSTRLEN];
@@ -566,7 +570,7 @@ static const char *SocketAddressToString(struct sockaddr_storage *sockaddr)
     return NULL;
 }
 
-// Check if the null terminated sds ip is a valid IPv4 address
+// Check if the null terminated string ip is a valid IPv4 address
 static bool IsIPv4Address(const char *ip)
 {
     /*
@@ -577,7 +581,7 @@ static bool IsIPv4Address(const char *ip)
     return false;
 }
 
-// Check if the null terminated sds ip is a valid IPv6 address
+// Check if the null terminated string ip is a valid IPv6 address
 static bool IsIPv6Address(const char *ip)
 {
     /*
@@ -641,13 +645,13 @@ static int SocketGetLastError(void)
 #endif
 }
 
-// Returns a human-readable sds representing the last error message
+// Returns a human-readable string representing the last error message
 static char *SocketGetLastErrorString(void)
 {
     return SocketErrorCodeToString(SocketGetLastError());
 }
 
-// Returns a human-readable sds representing the error message (err)
+// Returns a human-readable string representing the error message (err)
 static char *SocketErrorCodeToString(int err)
 {
 #if defined(_WIN32)
@@ -1049,8 +1053,8 @@ void ResolveIP(const char *ip, const char *port, int flags, char *host, char *se
 //    const char* port = "80"
 //
 //  Parameters:
-//      const char* address - A pointer to a NULL-terminated ANSI sds that contains a host (node) name or a numeric host address sds.
-//      const char* service - A pointer to a NULL-terminated ANSI sds that contains either a service name or port number represented as a sds.
+//      const char* address - A pointer to a NULL-terminated ANSI string that contains a host (node) name or a numeric host address string.
+//      const char* service - A pointer to a NULL-terminated ANSI string that contains either a service name or port number represented as a string.
 //
 //    Returns:
 //        The total amount of addresses found, -1 on error
@@ -1340,7 +1344,7 @@ bool SocketConnect(SocketConfig *config, SocketResult *result)
             ip4addr.sin_family = AF_INET;
             unsigned long hport;
             hport = strtoul(config->port, NULL, 0);
-            ip4addr.sin_port = htons(hport);
+            ip4addr.sin_port = (unsigned short)(hport);
 
             // TODO: Changed the code to avoid the usage of inet_pton and inet_ntop replacing them with getnameinfo (that should have a better support on windows).
 
@@ -1376,7 +1380,7 @@ bool SocketConnect(SocketConfig *config, SocketResult *result)
                 ip6addr.sin6_family = AF_INET6;
                 unsigned long hport;
                 hport = strtoul(config->port, NULL, 0);
-                ip6addr.sin6_port = htons(hport);
+                ip6addr.sin6_port = htons((unsigned short)hport);
                 //inet_pton(AF_INET6, config->host, &ip6addr.sin6_addr);    // TODO.
                 int connect_result = connect(result->socket->channel, (struct sockaddr *)&ip6addr, sizeof(ip6addr));
 
@@ -1439,7 +1443,7 @@ SocketAddressStorage SocketGetPeerAddress(Socket *sock)
 }
 
 // Return the address-type appropriate host portion of a socket address
-char *GetSocketAddressHost(SocketAddressStorage storage)
+const char *GetSocketAddressHost(SocketAddressStorage storage)
 {
     assert(storage->address.ss_family == AF_INET || storage->address.ss_family == AF_INET6);
     return SocketAddressToString((struct sockaddr_storage *)storage);
@@ -2117,7 +2121,7 @@ char *GetAddressCanonName(AddressInformation address)
 }
 
 // Opaque datatype accessor addrinfo->ai_addr
-char *GetAddressHostAndPort(AddressInformation address, char *outhost, int *outport)
+char *GetAddressHostAndPort(AddressInformation address, char *outhost, unsigned short *outport)
 {
     //char *ip[INET6_ADDRSTRLEN];
     char *result = NULL;

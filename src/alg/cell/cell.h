@@ -117,6 +117,7 @@ struct cell_node {
     bool active;
     bool can_change;
     bool visited;
+    bool visible;
 
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient

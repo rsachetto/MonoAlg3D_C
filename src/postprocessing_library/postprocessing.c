@@ -55,7 +55,7 @@ POSTPROCESS(calculate_all_cells_activation_time) {
 
     create_dir(output_dir);
 
-    string_array files_list = list_files_from_dir(input_dir, NULL, input_type, true);
+    string_array files_list = list_files_from_dir(input_dir, NULL, input_type, NULL, true);
 
     int num_files = arrlen(files_list);
 

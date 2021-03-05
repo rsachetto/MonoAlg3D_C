@@ -87,7 +87,10 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     if(ode_solver->ode_extra_data) {
         fibs = ((real*)ode_solver->ode_extra_data) + num_extra_parameters; //pointer
     }
+
     else {
+		
+		//TODO: Think in a better way to handle this case
         ode_solver->ode_extra_data = malloc(extra_parameters_size);
         ((real*)ode_solver->ode_extra_data)[0] = atpi;
         ((real*)ode_solver->ode_extra_data)[1] = Ko;
@@ -97,7 +100,11 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         ((real*)ode_solver->ode_extra_data)[5] = GCaL_multiplicator;
         ((real*)ode_solver->ode_extra_data)[6] = INaCa_multiplicator;
 
-        fibs = (real*)calloc(num_cells_to_solve, sizeof(real));
+        fibs = (real*)malloc(fibs_size);
+
+		for(uint64_t i = 0; i < num_cells_to_solve; i++) {
+			fibs[i] = 1.0;
+		}
 
         dealocate = true;
     }
@@ -121,6 +128,8 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     if(dealocate) {
         free(fibs);
         free(ode_solver->ode_extra_data);
+		//TODO: Think in a better way to handle this case
+        ode_solver->ode_extra_data = NULL;
     }
 }
 
