@@ -82,9 +82,8 @@ static void set_camera_params(Camera3D *camera) {
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
 
     struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
-
-    gui_state->current_window_width = GetScreenWidth();
-    gui_state->current_window_height = GetScreenHeight();
+	
+	MaximizeWindow();
 
 	gui_state->ui_scale = ui_scale;
 
@@ -128,7 +127,11 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->ap_graph_config->selected_aps = NULL;
     gui_state->ap_graph_config->drag_ap_graph = false;
     gui_state->ap_graph_config->move_ap_graph = false;
-    gui_state->ap_graph_config->graph.height = 300.0f*ui_scale;
+
+    gui_state->current_window_width = GetScreenWidth();
+    gui_state->current_window_height = GetScreenHeight();
+	
+	gui_state->ap_graph_config->graph.height = 300.0f*ui_scale;
     gui_state->ap_graph_config->graph.width = 690.0f*ui_scale;
 
     gui_state->ap_graph_config->graph.x = 10;
@@ -891,7 +894,7 @@ static void check_window_bounds(Rectangle *box, float current_window_width, floa
 static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_state, bool int_scale) {
 
     float scale_width = 20*gui_state->ui_scale;
-    check_window_bounds(&(gui_state->scale_bounds), (float) gui_state->current_window_width, (float) gui_state->current_window_width);
+    check_window_bounds(&(gui_state->scale_bounds), (float) gui_state->current_window_width, (float) gui_state->current_window_height);
 
     float spacing_small = gui_state->font_spacing_small;
     float spacing_big = gui_state->font_spacing_big;
@@ -1142,6 +1145,34 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     return window_closed || btn_ok_clicked;
 }
 
+static inline void reset_ui(struct gui_state *gui_state) {
+
+	gui_state->help_box.x = 10;
+	gui_state->help_box.y = 10;
+
+	gui_state->ap_graph_config->graph.height = 300.0f*gui_state->ui_scale;
+	gui_state->ap_graph_config->graph.width = 690.0f*gui_state->ui_scale;
+
+	gui_state->ap_graph_config->graph.x = 10;
+	gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
+
+	gui_state->box_width = 220;
+	gui_state->box_height = 100;
+
+	gui_state->mesh_info_box.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.width - 10;
+	gui_state->mesh_info_box.y = 10.0f;
+
+	gui_state->end_info_box.x = gui_state->mesh_info_box.x - gui_state->mesh_info_box.width - 10;
+	gui_state->end_info_box.y = gui_state->mesh_info_box.y;
+
+	gui_state->scale_bounds.x = (float)gui_state->current_window_width - 30.0f*gui_state->ui_scale;
+	gui_state->scale_bounds.y = (float)gui_state->current_window_height / 1.5f;
+
+	gui_state->scale_bounds.width = 20;
+	gui_state->scale_bounds.height = 0;
+	gui_state->calc_scale_bounds = true;
+}
+
 static void reset(struct gui_config *gui_config, struct mesh_info *mesh_info, struct gui_state *gui_state, bool full_reset) {
 
     gui_state->voxel_alpha = 255;
@@ -1161,34 +1192,11 @@ static void reset(struct gui_config *gui_config, struct mesh_info *mesh_info, st
 		hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
 
 		set_camera_params(&(gui_state->camera));
-
-		gui_state->help_box.x = 10;
-		gui_state->help_box.y = 10;
-
+		
 		gui_state->voxel_alpha = 255;
 		gui_state->scale_alpha = 255;
-
-		gui_state->ap_graph_config->graph.height = 300.0f*gui_state->ui_scale;
-		gui_state->ap_graph_config->graph.width = 690.0f*gui_state->ui_scale;
-
-		gui_state->ap_graph_config->graph.x = 10;
-		gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
-
-		gui_state->box_width = 220;
-		gui_state->box_height = 100;
-
-		gui_state->mesh_info_box.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.width - 10;
-		gui_state->mesh_info_box.y = 10.0f;
-
-		gui_state->end_info_box.x = gui_state->mesh_info_box.x - gui_state->mesh_info_box.width - 10;
-		gui_state->end_info_box.y = gui_state->mesh_info_box.y;
-
-		gui_state->scale_bounds.x = (float)gui_state->current_window_width - 30.0f*gui_state->ui_scale;
-		gui_state->scale_bounds.y = (float)gui_state->current_window_height / 1.5f;
-
-		gui_state->scale_bounds.width = 20;
-		gui_state->scale_bounds.height = 0;
-		gui_state->calc_scale_bounds = true;
+	
+		reset_ui(gui_state);
 
 		gui_state->show_coordinates = true;
 	}
@@ -1216,6 +1224,10 @@ static void reset(struct gui_config *gui_config, struct mesh_info *mesh_info, st
 static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
 	if(gui_config->paused) {
+
+		if(IsKeyPressed(KEY_Z)) {
+			TakeScreenshot("/home/sachetto/teste.png");
+		}
 
 		if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
 			// SAVE FILE AS VTK
@@ -1620,6 +1632,8 @@ void draw_coordinates(struct gui_state *gui_state) {
 
 }
 
+
+
 void init_and_open_gui_window(struct gui_config *gui_config) {
 
 	const int end_info_box_lines = 10;
@@ -1650,9 +1664,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 	const int font_size_big = 20;
 
     struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
-
-    SetWindowSize(gui_state->current_window_width, gui_state->current_window_height);
-
+    
     free(window_title);
 
     SetTargetFPS(60);
@@ -1713,10 +1725,13 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        if(IsWindowResized()) {
-            gui_state->current_window_width = GetScreenWidth();
-            gui_state->current_window_height = GetScreenHeight();
-        }
+		if(IsWindowResized()) {
+			gui_state->current_window_width = GetScreenWidth();
+			gui_state->current_window_height = GetScreenHeight();
+
+			reset_ui(gui_state);
+			
+		}
 
         gui_state->handle_keyboard_input = !gui_state->show_selection_box;
 

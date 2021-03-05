@@ -133,7 +133,7 @@ struct gui_state {
     bool show_ap;
     bool c_pressed;
     bool draw_grid_lines;
-    bool draw_grid_only ;
+    bool draw_grid_only;
 
     Rectangle help_box;
     bool show_help_box;
