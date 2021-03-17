@@ -1161,13 +1161,13 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     srand((unsigned int)time(NULL));
 
@@ -1221,19 +1221,19 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix) {
     uint32_t i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real channel_width = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data, "channel_width");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config, "channel_width");
 
     real channel_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data, "channel_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config, "channel_length");
 
     bool inside;
 
@@ -1308,25 +1308,25 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real channel_width = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config->config_data, "channel_width");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_width, config, "channel_width");
 
     real channel_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config->config_data, "channel_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, channel_length, config, "channel_length");
 
     real source_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config->config_data, "source_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, source_factor, config, "source_factor");
 
     real sink_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sink_factor, config->config_data, "sink_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sink_factor, config, "sink_factor");
 
     bool inside_3, inside_4;
 
@@ -1406,13 +1406,13 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     if(!sigma_initialized) {
         OMP(parallel for)
@@ -1541,12 +1541,11 @@ static struct fiber_coords *read_fibers(char *fiber_file_path, bool normalize_ve
     struct fiber_coords *fibers = NULL;
     char *line = NULL;
     size_t len;
-    sds *points;
-    int split_count;
 
     while((getline(&line, &len, fibers_file)) != -1) {
 
-        points = sdssplit(line, " ", &split_count);
+    	int split_count;
+        sds *points = sdssplit(line, " ", &split_count);
         struct fiber_coords f_coords;
 
         f_coords.f[0] = strtod(points[0], NULL);
@@ -1570,6 +1569,7 @@ static struct fiber_coords *read_fibers(char *fiber_file_path, bool normalize_ve
         arrput(fibers, f_coords);
         sdsfreesplitres(points, split_count);
     }
+
     free(line);
 
     return fibers;
@@ -1594,26 +1594,30 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 	real_cpu sigma_n = 0.0;
 
 	char *fiber_file = NULL;
-	GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(fiber_file, config->config_data, "fibers_file");
+	GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(fiber_file, config, "fibers_file");
+
+	bool fibers_in_mesh = false;
+	GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibers_in_mesh, config, "fibers_in_mesh");
+
 
 	struct fiber_coords *fibers = NULL;
 
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_l, config->config_data, "sigma_l");
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_t, config->config_data, "sigma_t");
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_n, config->config_data, "sigma_n");
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_l, config, "sigma_l");
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_t, config, "sigma_t");
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sigma_n, config, "sigma_n");
 
     real_cpu *f = NULL;
     real_cpu *s = NULL;
     real_cpu *n = NULL;
 
 	if(fiber_file) {
-		log_to_stdout_and_file("Loading mesh fibers\n");
+		log_info("Loading mesh fibers\n");
 		fibers = read_fibers(fiber_file, false);
-	}
-    else {
-        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config->config_data, "f", 3);
-        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config->config_data, "s", 3);
-        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config->config_data, "n", 3);
+	}	
+	else if(!fibers_in_mesh) {
+        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config, "f", 3);
+        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(s, config, "s", 3);
+        GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(n, config, "n", 3);
 
         if(!f) {
             f = malloc(sizeof(real_cpu)*3);
@@ -1645,7 +1649,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 			int fiber_index = ac[i]->original_position_in_file;
 
 			if(fiber_index == -1) {
-				log_to_stderr_and_file_and_exit("fiber_index shound not be -1. But it is for cell in index %d - %lf, %lf, %lf\n", i, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+				log_error_and_exit("fiber_index should not be -1, but it is for cell in index %d - %lf, %lf, %lf\n", i, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
 			}
 
 			if(sigma_t == sigma_n) {
@@ -1655,6 +1659,15 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 				calc_tensor(D, fibers[fiber_index].f, fibers[fiber_index].s, fibers[fiber_index].n, sigma_l, sigma_t, sigma_n);
 			}
 			ac[i]->sigma.fibers = fibers[fiber_index];
+		}
+		else if(fibers_in_mesh) {
+			if(sigma_t == sigma_n) {
+				calc_tensor2(D, ac[i]->sigma.fibers.f, sigma_l, sigma_t);
+			}
+			else {
+				calc_tensor(D, ac[i]->sigma.fibers.f, ac[i]->sigma.fibers.s, ac[i]->sigma.fibers.n, sigma_l, sigma_t, sigma_n);
+			}
+
 		}
 		else {
 			if(sigma_t == sigma_n) {
@@ -1698,16 +1711,16 @@ ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config, "sigma_factor");
 
     if(!sigma_initialized) {
         OMP(parallel for)
@@ -1753,34 +1766,34 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config, "sigma_factor");
 
     real min_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config->config_data, "region_min_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config, "region_min_x");
 
     real max_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config->config_data, "region_max_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config, "region_max_x");
 
     real min_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config->config_data, "region_min_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config, "region_min_y");
 
     real max_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config->config_data, "region_max_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config, "region_max_y");
 
     real min_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config->config_data, "region_min_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config, "region_min_z");
 
     real max_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config->config_data, "region_max_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config, "region_max_z");
 
     bool inside;
 
@@ -1845,29 +1858,29 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix) {
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config, "phi");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config, "seed");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config, "sigma_factor");
 
-    log_to_stdout_and_file("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
+    log_info("Reducing conductivity from %.2lf %% of cells\n", phi * 100.0);
 
     // Initialize the seed for the fibrosis
     srand(seed);
 
-    log_to_stdout_and_file("Using %u as seed\n", seed);
+    log_info("Using %u as seed\n", seed);
 
     if(!sigma_initialized) {
 
@@ -1925,22 +1938,22 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file) {
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config, "fibrosis_file");
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config, "size");
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config->config_data, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config, "sigma_factor");
 
     if(!sigma_initialized) {
         OMP(parallel for)
@@ -2063,16 +2076,16 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file) {
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config, "fibrosis_file");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config, "rescaled_fibrosis_file");
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config->config_data, "size");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, fib_size, config, "size");
 
     real rescale_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config->config_data, "rescale_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config, "rescale_factor");
 
     FILE *file = fopen(fib_file, "r");
 
@@ -2129,7 +2142,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_with_input_file) {
     free(scar_mesh);
 
     // We just leave the program after this ...
-    log_to_stdout_and_file("[!] Finish writing new fibrotic region file '%s'!\n", new_fib_file);
+    log_info("[!] Finish writing new fibrotic region file '%s'!\n", new_fib_file);
     exit(EXIT_SUCCESS);
 }
 
@@ -2143,16 +2156,16 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed) {
     initialize_diagonal_elements(the_solver, the_grid);
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config->config_data, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config, "phi");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config->config_data, "seed");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config, "seed");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config, "rescaled_fibrosis_file");
 
     double rescale_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config->config_data, "rescale_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, rescale_factor, config, "rescale_factor");
 
     // Write the new fibrotic region file
     FILE *fileW = fopen(new_fib_file, "w+");
@@ -2181,6 +2194,6 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed) {
     fclose(fileW);
 
     // We just leave the program after this ...
-    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n", new_fib_file);
+    log_info("[!] Finish writing fibrotic region file '%s'!\n", new_fib_file);
     exit(EXIT_SUCCESS);
 }

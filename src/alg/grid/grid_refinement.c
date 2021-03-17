@@ -20,17 +20,17 @@ bool refine_grid_with_bound(struct grid *the_grid, real_cpu refinement_bound, re
                             real_cpu min_dz) {
 
     if(min_dx <= 0.0) {
-        log_to_stderr_and_file("refine_grid(): Parameter min_dx must be positive, passed %lf.", min_dx);
+        log_error("refine_grid(): Parameter min_dx must be positive, passed %lf.", min_dx);
         return false;
     }
 
     if(min_dy <= 0.0) {
-        log_to_stderr_and_file("refine_grid(): Parameter min_dy must be positive, passed %lf.", min_dy);
+        log_error("refine_grid(): Parameter min_dy must be positive, passed %lf.", min_dy);
         return false;
     }
 
     if(min_dz <= 0.0) {
-        log_to_stderr_and_file("refine_grid(): Parameter min_dz must be positive, passed %lf.", min_dz);
+        log_error("refine_grid(): Parameter min_dz must be positive, passed %lf.", min_dz);
         return false;
     }
 
@@ -71,7 +71,7 @@ bool refine_grid_with_bound(struct grid *the_grid, real_cpu refinement_bound, re
 void refine_grid(struct grid *the_grid, int num_steps) {
 
     if(the_grid == NULL) {
-        log_to_stderr_and_file("refine_grid(): Parameter the_grid can't be null. Exiting!");
+        log_error("refine_grid(): Parameter the_grid can't be null. Exiting!");
         exit(10);
     }
 
@@ -95,7 +95,7 @@ void refine_grid(struct grid *the_grid, int num_steps) {
 void refine_grid_cell(struct grid *the_grid, struct cell_node *grid_cell) {
 
     if(!grid_cell) {
-        log_to_stderr_and_file("refine_grid_cell: grid_cell is NULL.\n");
+        log_error("refine_grid_cell: grid_cell is NULL.\n");
         exit(10);
     }
 

@@ -605,9 +605,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         }
 
         if(read_fibers_f) {
-            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f[0]);
-            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f[1]);
-            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f[2]);
+            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f);
         }
 
         arrput((*vtk_grid)->values, grid_cell[i]->v);
@@ -1317,7 +1315,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         }
     }
 
-    if(save_f){
+    if(save_f) {
         sds tmp = sdscat(sdsempty(), "\nSCALARS fibers float 3\n");
         tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
@@ -1326,24 +1324,25 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         file_content = sdscatsds(file_content, tmp);
         sdsfree(tmp);
 
-        for(size_t i = 0; i < num_cells; i++) {
+        for(size_t i = 0, count = 0; i < num_cells; i++, count+=3) {
+            real_cpu *f = vtk_grid->fibers[i];
             if(binary) {
-                int aux = invert_bytes(*((int *)&(vtk_grid->fibers[i])));
+                int aux = invert_bytes(*((int *)&(f[0])));
                 file_content = sdscatlen(file_content, &aux, sizeof(int));
                 size_until_now += sizeof(int);
 
-                aux = invert_bytes(*((int *)&(vtk_grid->fibers[i+1])));
+                aux = invert_bytes(*((int *)&(f[1])));
                 file_content = sdscatlen(file_content, &aux, sizeof(int));
                 size_until_now += sizeof(int);
 
-                aux = invert_bytes(*((int *)&(vtk_grid->fibers[i+2])));
+                aux = invert_bytes(*((int *)&(f[2])));
                 file_content = sdscatlen(file_content, &aux, sizeof(int));
                 size_until_now += sizeof(int);
 
             } else {
-                file_content = sdscatprintf(file_content, "%lf ", vtk_grid->fibers[i]);
-                file_content = sdscatprintf(file_content, " %lf ", vtk_grid->fibers[i+1]);
-                file_content = sdscatprintf(file_content, " %lf\n", vtk_grid->fibers[i+2]);
+                file_content = sdscatprintf(file_content, "%lf ", f[0]);
+                file_content = sdscatprintf(file_content, " %lf ", f[1]);
+                file_content = sdscatprintf(file_content, " %lf\n", f[2]);
             }
         }
 

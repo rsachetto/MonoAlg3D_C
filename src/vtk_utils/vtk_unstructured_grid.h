@@ -66,9 +66,10 @@ struct vtk_unstructured_grid {
     uint8_t cell_type;
 
     f32_array values;
-    f32_array fibers;
+    real_cpu **fibers;
     int64_array cells;
     ui8_array cell_visibility;
+    //TODO: create a mask here, so we can draw only the faces that are not occluded
     point3d_array points;
 
     float min_v;

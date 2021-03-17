@@ -52,7 +52,7 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
     shput_dup_value(options->save_mesh_config->config_data, "output_dir", out_dir);
 
     char *out_dir_name = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config, "output_dir");
 
     // Create the output dir and the logfile
     if(out_dir_name) {
@@ -76,7 +76,7 @@ int run_simulation_with_config(struct user_options *options, char *out_dir) {
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
-        log_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        log_warn("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
         ode_solver->gpu = false;
     }
 #endif
@@ -188,7 +188,6 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
     shput_dup_value(options->save_mesh_config->config_data, "file_prefix", "V");
 
     shput_dup_value(options->domain_config->config_data, strdup("seed"), "150");
-
 
     free(options->linear_system_solver_config->main_function_name);
     free(options->linear_system_solver_config->init_function_name);

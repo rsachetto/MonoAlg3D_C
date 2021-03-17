@@ -6,7 +6,7 @@
 
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
-    log_to_stdout_and_file("Using Li & Rudy 2011 GPU model\n");
+    log_info("Using Li & Rudy 2011 GPU model\n");
 
     uint32_t num_volumes = solver->original_num_cells;
 

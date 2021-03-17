@@ -15,7 +15,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_to_stdout_and_file("Using DiFrancesco & Noble 1985 CPU model\n");
+    log_info("Using DiFrancesco & Noble 1985 CPU model\n");
 
     uint32_t num_volumes = solver->original_num_cells;
 	

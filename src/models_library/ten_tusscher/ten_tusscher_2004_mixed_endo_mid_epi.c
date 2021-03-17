@@ -58,7 +58,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         mapping = (uint32_t*)ode_solver->ode_extra_data;
     }
     else {
-        log_to_stderr_and_file_and_exit("You need to specify a mask function when using this mixed model!\n");
+        log_error_and_exit("You need to specify a mask function when using this mixed model!\n");
     }
 
 

@@ -89,9 +89,6 @@ void convert_fibers(struct fibers_conversion_options *options) {
     double y;
     double z;
 
-    free(line);
-    line = NULL;
-
     double max_x_new = 77.25;
     double max_x_old = 143.525;
     double min_x_old = 65.8178;

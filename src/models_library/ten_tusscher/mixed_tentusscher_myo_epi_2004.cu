@@ -9,7 +9,7 @@ size_t pitch_h;
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) 
 {
 
-    log_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium GPU model\n\n");
+    log_info("Using mixed version of TenTusscher 2004 myocardium + epicardium GPU model\n\n");
 
     uint32_t num_volumes = solver->original_num_cells;
 
@@ -82,7 +82,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu)
     }
     else 
     {
-        log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
+        log_error_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
     solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, mapping_device, num_cells_to_solve, num_steps);

@@ -5,9 +5,11 @@ http://www.corpit.ru/mjt/tinycdb.html
 Make a function to save a HDF5 database. With this we do not need to save the mesh every time steps, only the Vm values.
 This will work only for non-adaptive meshes.
 
-Report line number only for the debug build in the helpers functions
+Report line number only for the debug build in the helpers functions.
 
-#BUGS:
+Verify the possibility to not copy the SV from the GPU to the CPU when the ODE solver and the PDE solver are using the GPU.
+
+#KNOW ISSUES:
 
 The logger symbols are only exported to an executable if an static library linked to a shared library uses then. For now this is ok. But I think it will
 be a pain in future releases.

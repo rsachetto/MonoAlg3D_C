@@ -59,7 +59,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     assert(the_monodomain_solver);
     assert(the_ode_solver);
 
-    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_msg(LOG_LINE_SEPARATOR);
 
     long ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0,
          total_deref_time = 0, cg_partial, total_config_time = 0;
@@ -118,9 +118,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             struct config *sconfig = (struct config*) stimuli_configs[i].value;
 
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_start, sconfig->config_data, "start");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_duration, sconfig->config_data, "duration");
-            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, stim_period, sconfig->config_data, "period");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_start, sconfig, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_duration, sconfig, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, stim_period, sconfig, "period");
 
             s_end = stim_start + stim_duration;
 
@@ -149,9 +149,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             struct config *sconfig = (struct config*) purkinje_stimuli_configs[i].value;
 
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_start, sconfig->config_data, "start");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_duration, sconfig->config_data, "duration");
-            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, stim_period, sconfig->config_data, "period");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_start, sconfig, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, stim_duration, sconfig, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, stim_period, sconfig, "period");
 
             s_end = stim_start + stim_duration;
 
@@ -177,7 +177,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             struct config *dconfig = (struct config*) modify_domain_configs[i].value;
 
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, modify_at, dconfig->config_data, "modify_after_dt");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, modify_at, dconfig, "modify_after_dt");
 
             if(modify_at > modify_at_end) modify_at_end = modify_at;
         }
@@ -196,7 +196,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     } 
 
     if( !purkinje_config && !domain_config ) {
-        log_to_stderr_and_file_and_exit(
+        log_error_and_exit(
                 "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
@@ -204,14 +204,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         init_config_functions(assembly_matrix_config, "./shared_libs/libdefault_matrix_assembly.so", "assembly_matrix");
     } 
     else {
-        log_to_stderr_and_file_and_exit("No assembly matrix configuration provided! Exiting!\n");
+        log_error_and_exit("No assembly matrix configuration provided! Exiting!\n");
     }
 
     if(linear_system_solver_config) {
         init_config_functions(linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "linear_system_solver");
     } 
     else {
-        log_to_stderr_and_file_and_exit("No linear solver configuration provided! Exiting!\n");
+        log_error_and_exit("No linear solver configuration provided! Exiting!\n");
     }
 
     if(purkinje_linear_system_solver_config) {
@@ -228,9 +228,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(save_to_file) 
     {
         init_config_functions(save_mesh_config, "./shared_libs/libdefault_save_mesh.so", "save_result");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config->config_data, "print_rate");
-        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, save_mesh_config->config_data, "output_dir");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_saving_after_dt, save_mesh_config->config_data, "start_saving_after_dt");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config, "print_rate");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, save_mesh_config, "output_dir");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_saving_after_dt, save_mesh_config, "start_saving_after_dt");
         save_to_file &= (print_rate > 0) && (out_dir_name);
 
         if(print_rate > 0) output_print_rate = print_rate;
@@ -238,13 +238,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     } 
     else 
     {
-        log_to_stdout_and_file("No configuration provided to save the results! The results will not be saved!\n");
+        log_info("No configuration provided to save the results! The results will not be saved!\n");
     }
 
     bool save_checkpoint = (save_state_config != NULL);
 
     if(save_checkpoint && the_grid->adaptive) {
-        log_to_stdout_and_file("Saving checkpoint is not implemented for adaptive grids yet!\n");
+        log_info("Saving checkpoint is not implemented for adaptive grids yet!\n");
         save_checkpoint = false;
     }
 
@@ -254,14 +254,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     } 
     else 
     {
-        log_to_stdout_and_file(
-            "No configuration provided to make simulation checkpoints! Chekpoints will not be created!\n");
+        log_info("No configuration provided to make simulation checkpoints! Chekpoints will not be created!\n");
     }
 
     bool restore_checkpoint = (restore_state_config != NULL);
 
     if(restore_checkpoint && the_grid->adaptive) {
-        log_to_stdout_and_file("Restoring checkpoint is not implemented for adaptive grids yet!\n");
+        log_warn("Restoring checkpoint is not implemented for adaptive grids yet!\n");
         restore_checkpoint = false;
     }
 
@@ -275,7 +274,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         init_config_functions(extra_data_config, "./shared_libs/libdefault_extra_data.so", "extra_data");
     }
 
-    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_msg(LOG_LINE_SEPARATOR);
 
     bool restore_success = false;
 
@@ -290,7 +289,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         init_config_functions(update_monodomain_config, "./shared_libs/libdefault_update_monodomain.so", "update_monodomain");
     }
     else {
-        log_to_stderr_and_file_and_exit("No update monodomain configuration provided! Exiting!\n");
+        log_error_and_exit("No update monodomain configuration provided! Exiting!\n");
     }
 
     ///////MAIN CONFIGURATION END//////////////////
@@ -329,7 +328,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         check_cuda_error(cudaGetDeviceCount(&device_count));
         struct cudaDeviceProp prop;
         check_cuda_error(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
-        log_to_stdout_and_file("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
+        log_info("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
         check_cuda_error(cudaSetDevice(device));
     }
 #endif
@@ -355,7 +354,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         success = ((set_spatial_purkinje_fn*) purkinje_config->main_function)(purkinje_config,the_grid,the_purkinje_ode_solver);
         if(!success) {
-            log_to_stderr_and_file_and_exit("Error configuring the Purkinje domain!\n");
+            log_error_and_exit("Error configuring the Purkinje domain!\n");
         }
     }
 
@@ -363,14 +362,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         success = ((set_spatial_domain_fn *) domain_config->main_function)(domain_config, the_grid);
 
         if (!success) {
-            log_to_stderr_and_file_and_exit("Error configuring the tissue domain!\n");
+            log_error_and_exit("Error configuring the tissue domain!\n");
         }
     }
 
     if (!purkinje_config && !domain_config)
     {
-        log_to_stderr_and_file_and_exit(
-                "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
+        log_error_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
     if(restore_checkpoint) {
@@ -388,14 +386,32 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     uint32_t original_num_purkinje_cells = 0;
 
     if (domain_config) {
-		//TODO: maybe add start_dx,dy, etc back to the grid. So it is easier to configure the domains....
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dx, domain_config->config_data, "start_dx");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dy, domain_config->config_data, "start_dy");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, start_dz, domain_config->config_data, "start_dz");
 
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dx, domain_config->config_data, "maximum_dx");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dy, domain_config->config_data, "maximum_dy");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_dz, domain_config->config_data, "maximum_dz");
+        start_dx = the_grid->start_discretization.x;
+        start_dy = the_grid->start_discretization.y;
+        start_dz = the_grid->start_discretization.z;
+
+        max_dx = the_grid->max_discretization.x;
+        max_dy = the_grid->max_discretization.y;
+        max_dz = the_grid->max_discretization.z;
+
+        //This is used only to print information about the domain:
+        char tmp[1024];
+
+        if(!shget(domain_config->config_data, "start_dx")) {
+            sprintf(tmp, "%lf", start_dx);
+            shput_dup_value(domain_config->config_data, "start_dx", tmp);
+        }
+
+        if(!shget(domain_config->config_data, "start_dy")) {
+            sprintf(tmp, "%lf", start_dy);
+            shput_dup_value(domain_config->config_data, "start_dy", tmp);
+        }
+
+        if(!shget(domain_config->config_data, "start_dz")) {
+            sprintf(tmp, "%lf", start_dz);
+            shput_dup_value(domain_config->config_data, "start_dz", tmp);
+        }
 
         order_grid_cells(the_grid);
 
@@ -428,7 +444,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 ((set_extra_data_fn*)extra_data_config->main_function)(&time_info, extra_data_config, the_grid, &(the_ode_solver->extra_data_size));
     }
 
-    log_to_stdout_and_file("Setting ODE's initial conditions\n");
+    log_info("Setting ODE's initial conditions\n");
     
     if (domain_config) {
         set_ode_initial_conditions_for_all_volumes(the_ode_solver, configs->ode_extra_config);
@@ -459,9 +475,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(!the_ode_solver->adaptive) {
         if(dt_pde >= dt_ode) {
             the_ode_solver->num_steps = (int)(dt_pde / dt_ode);
-            log_to_stdout_and_file("Solving EDO %d times before solving PDE\n", the_ode_solver->num_steps);
+            log_info("Solving EDO %d times before solving PDE\n", the_ode_solver->num_steps);
         } else {
-            log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
+            log_info("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
                                    dt_pde, dt_ode);
             dt_pde = dt_ode;
         }
@@ -473,9 +489,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (!the_purkinje_ode_solver->adaptive) {
             if(dt_pde >= dt_ode) {
                 the_purkinje_ode_solver->num_steps = (int)(dt_pde / dt_ode);
-                log_to_stdout_and_file("Solving Purkinje EDO %d times before solving PDE\n", the_purkinje_ode_solver->num_steps);
+                log_info("Solving Purkinje EDO %d times before solving PDE\n", the_purkinje_ode_solver->num_steps);
             } else {
-                log_to_stdout_and_file("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
+                log_info("WARNING: EDO time step is greater than PDE time step. Adjusting EDP time step %lf to EDO time step %lf\n",
                                     dt_pde, dt_ode);
                 dt_pde = dt_ode;
             }
@@ -507,7 +523,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 assembly_matrix_config, the_monodomain_solver, the_grid, initial_v, purkinje_initial_v);
         }
         else {
-            log_to_stderr_and_file_and_exit("Function for the Monodomain initial conditions not provided (init_function on [assembly_matrix] section)!\n");
+            log_error_and_exit("Function for the Monodomain initial conditions not provided (init_function on [assembly_matrix] section)!\n");
         }
     }
 
@@ -519,7 +535,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     int save_state_rate = 1;
 
     if(save_checkpoint) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, save_state_rate, save_state_config->config_data, "save_rate");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, save_state_rate, save_state_config, "save_rate");
     }
 
     real_cpu vm_threshold = configs->vm_threshold;
@@ -539,7 +555,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     real_cpu cur_time = time_info.current_t;
 
-    log_to_stdout_and_file("Starting simulation\n");
+    log_info("Starting simulation\n");
 
     struct stop_watch iteration_time_watch;
     long iteration_time;
@@ -607,7 +623,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             if (abort_on_no_activity && cur_time > last_stimulus_time && cur_time > only_abort_after_dt) {
                 if (!activity) {
-                    log_to_stdout_and_file("No activity, aborting simulation\n");
+                    log_info("No activity, aborting simulation\n");
                     break;
                 }
             }
@@ -685,7 +701,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                                                                     the_grid, the_grid->num_active_cells,
                                                                                     the_grid->active_cells, &solver_iterations, &solver_error);
             if(isnan(solver_error)) {
-                log_to_stderr_and_file("\n [ERR] Solver stoped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
+                log_error("\n Solver stoped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
                 #ifdef COMPILE_GUI
 					if(show_gui) {
 	                    omp_unset_lock(&gui_config->draw_lock);
@@ -703,7 +719,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if (count % output_print_rate == 0)  {
             if (purkinje_config && domain_config) {
-                log_to_stdout_and_file("t = %.5lf, Iterations = "
+                log_info("t = %.5lf, Iterations = "
                                          "%" PRIu32 ", Error Norm = %e, Number of Tissue Cells:"
                                          "%" PRIu32 ", Tissue CG Iterations time: %ld us\n"
                                          "            , Iterations = "
@@ -715,14 +731,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                          the_grid->purkinje->num_active_purkinje_cells, purkinje_cg_partial);
             }
             else if (domain_config) {
-                log_to_stdout_and_file("t = %lf, Iterations = "
+                log_info("t = %lf, Iterations = "
                                      "%" PRIu32 ", Error Norm = %e, Number of Cells:"
                                      "%" PRIu32 ", CG Iterations time: %ld us",
                                      cur_time, solver_iterations, solver_error, the_grid->num_active_cells,
                                      cg_partial);
             }
             else {
-                log_to_stdout_and_file("t = %lf, Iterations = "
+                log_info("t = %lf, Iterations = "
                                          "%" PRIu32 ", Error Norm = %e, Number of Purkinje Cells:"
                                          "%" PRIu32 ", Purkinje CG Iterations time: %ld us",
                                          cur_time, purkinje_solver_iterations, purkinje_solver_error,
@@ -790,12 +806,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
                 //TODO: if only one modification can be applied this does not make sense.
                 //We will need a boolean for each modification
-                GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(modification_applied, dconfig->config_data, "modification_applied");
+                GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(modification_applied, dconfig, "modification_applied");
 
                 if(!modification_applied) {
 
                     real_cpu modify_at = 0.0;
-                    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, modify_at, dconfig->config_data, "modify_after_dt");
+                    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, modify_at, dconfig, "modify_after_dt");
 
                     if(cur_time >= modify_at) {
 
@@ -864,29 +880,29 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         iteration_time = stop_stop_watch(&iteration_time_watch);
 
         if ( (count - 1) % output_print_rate == 0) {
-            log_to_stdout_and_file(", Total Iteration time: %ld us\n", iteration_time);
+            log_msg(", Total Iteration time: %ld us\n", iteration_time);
         }
     }
 
     long res_time = stop_stop_watch(&solver_time);
 
 	double conv_rate = 1000.0*1000.0*60.0;
-    log_to_stdout_and_file("Resolution Time: %ld μs (%lf min)\n", res_time, res_time/conv_rate );
+    log_info("Resolution Time: %ld μs (%lf min)\n", res_time, res_time/conv_rate );
 
 
     if (domain_config) {
-        log_to_stdout_and_file("Total Write Time: %ld μs (%lf min)\n", total_write_time, total_write_time/conv_rate );
-        log_to_stdout_and_file("ODE Total Time: %ld μs (%lf min)\n", ode_total_time, ode_total_time/conv_rate );
-        log_to_stdout_and_file("CG Total Time: %ld μs (%lf min)\n", cg_total_time, cg_total_time/conv_rate );
-        log_to_stdout_and_file("Refine time: %ld μs (%lf min)\n", total_ref_time, total_ref_time/conv_rate);
-        log_to_stdout_and_file("Derefine time: %ld μs (%lf min)\n", total_deref_time, total_deref_time/conv_rate);
-        log_to_stdout_and_file("CG Total Iterations: %u\n", total_cg_it);
+        log_info("Total Write Time: %ld μs (%lf min)\n", total_write_time, total_write_time/conv_rate );
+        log_info("ODE Total Time: %ld μs (%lf min)\n", ode_total_time, ode_total_time/conv_rate );
+        log_info("CG Total Time: %ld μs (%lf min)\n", cg_total_time, cg_total_time/conv_rate );
+        log_info("Refine time: %ld μs (%lf min)\n", total_ref_time, total_ref_time/conv_rate);
+        log_info("Derefine time: %ld μs (%lf min)\n", total_deref_time, total_deref_time/conv_rate);
+        log_info("CG Total Iterations: %u\n", total_cg_it);
     }
 
     if (purkinje_config) {
-        log_to_stdout_and_file("Purkinje ODE Total Time: %ld μs\n", purkinje_ode_total_time);
-        log_to_stdout_and_file("Purkinje CG Total Time: %ld μs\n", purkinje_cg_total_time);
-        log_to_stdout_and_file("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
+        log_info("Purkinje ODE Total Time: %ld μs\n", purkinje_ode_total_time);
+        log_info("Purkinje CG Total Time: %ld μs\n", purkinje_cg_total_time);
+        log_info("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
     }
 
     if (purkinje_config && domain_config) {
@@ -1092,38 +1108,38 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
                         struct grid *the_grid, struct user_options *options) 
 {
 
-    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_msg(LOG_LINE_SEPARATOR);
 
-    log_to_stdout_and_file("System parameters: \n");
+    log_info("System parameters: \n");
     #if defined(_OPENMP)
-    log_to_stdout_and_file("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
+    log_info("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
     #endif
     
-    log_to_stdout_and_file("[monodomain_solver] Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
-    log_to_stdout_and_file("[monodomain_solver] PDE time step = %lf\n", the_monodomain_solver->dt);
-    log_to_stdout_and_file("[monodomain_solver] ODE min time step = %lf\n", the_ode_solver->min_dt);
-    log_to_stdout_and_file("[monodomain_solver] Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
+    log_info("[monodomain_solver] Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
+    log_info("[monodomain_solver] PDE time step = %lf\n", the_monodomain_solver->dt);
+    log_info("[monodomain_solver] ODE min time step = %lf\n", the_ode_solver->min_dt);
+    log_info("[monodomain_solver] Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
 
-    log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+    log_msg(LOG_LINE_SEPARATOR);
 
     if(the_ode_solver->gpu) 
-        log_to_stdout_and_file("[ode_solver] Using GPU to solve ODEs\n");
+        log_info("[ode_solver] Using GPU to solve ODEs\n");
 
-    log_to_stdout_and_file("[ode_solver] Using %s as model lib\n", the_ode_solver->model_data.model_library_path);
-    log_to_stdout_and_file("[ode_solver] Initial V: %lf\n", the_ode_solver->model_data.initial_v);
-    log_to_stdout_and_file("[ode_solver] Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
+    log_info("[ode_solver] Using %s as model lib\n", the_ode_solver->model_data.model_library_path);
+    log_info("[ode_solver] Initial V: %lf\n", the_ode_solver->model_data.initial_v);
+    log_info("[ode_solver] Number of ODEs in cell model: %d\n", the_ode_solver->model_data.number_of_ode_equations);
 
     if(options->ode_extra_config) 
     {
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
 
         if (shlen(options->ode_extra_config) == 1) 
         {
-            log_to_stdout_and_file("[ode_solver] Extra ODE Solver parameter:\n");
+            log_info("[ode_solver] Extra ODE Solver parameter:\n");
         } 
         else if (shlen(options->ode_extra_config) > 1) 
         {
-            log_to_stdout_and_file("[ode_solver] Extra ODE Solver parameters:\n");
+            log_info("[ode_solver] Extra ODE Solver parameters:\n");
         }
 
         STRING_HASH_PRINT_KEY_VALUE_LOG(options->ode_extra_config);
@@ -1131,73 +1147,67 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
 
     if (the_purkinje_ode_solver)
     {
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
 
         if(the_purkinje_ode_solver->gpu) 
-            log_to_stdout_and_file("[purkinje_ode_solver] Using GPU to solve ODEs\n");
-        log_to_stdout_and_file("[purkinje_ode_solver] Using %s as model lib\n", the_purkinje_ode_solver->model_data.model_library_path);
-        log_to_stdout_and_file("[purkinje_ode_solver] Initial V: %lf\n", the_purkinje_ode_solver->model_data.initial_v);
-        log_to_stdout_and_file("[purkinje_ode_solver] Number of ODEs in cell model: %d\n", the_purkinje_ode_solver->model_data.number_of_ode_equations);
+            log_info("[purkinje_ode_solver] Using GPU to solve ODEs\n");
+        log_info("[purkinje_ode_solver] Using %s as model lib\n", the_purkinje_ode_solver->model_data.model_library_path);
+        log_info("[purkinje_ode_solver] Initial V: %lf\n", the_purkinje_ode_solver->model_data.initial_v);
+        log_info("[purkinje_ode_solver] Number of ODEs in cell model: %d\n", the_purkinje_ode_solver->model_data.number_of_ode_equations);
     }
 
 
     if(options->purkinje_ode_extra_config) 
     {
 
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
 
 
         if (shlen(options->purkinje_ode_extra_config) == 1) 
         {
-            log_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameter:\n");
+            log_info("[purkinje_ode_solver] Extra ODE Solver parameter:\n");
         } 
         else if (shlen(options->purkinje_ode_extra_config) > 1) 
         {
-            log_to_stdout_and_file("[purkinje_ode_solver] Extra ODE Solver parameters:\n");
+            log_info("[purkinje_ode_solver] Extra ODE Solver parameters:\n");
         }
 
         STRING_HASH_PRINT_KEY_VALUE_LOG(options->purkinje_ode_extra_config);
     }
 
-    log_to_stdout_and_file("[grid] Initial N. of Elements = "
+    log_info("[grid] Initial N. of Elements = "
                              "%" PRIu32 "\n",
                              the_grid->num_active_cells);
 
     if(the_grid->adaptive)
     {
-        log_to_stdout_and_file("Using adaptativity\n");
-        log_to_stdout_and_file("[monodomain_solver] Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
-        log_to_stdout_and_file("[monodomain_solver] Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
-        log_to_stdout_and_file("[monodomain_solver] Refining each %d time steps\n", the_monodomain_solver->refine_each);
-        log_to_stdout_and_file("[monodomain_solver] Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
+        log_info("Using adaptativity\n");
+        log_info("[monodomain_solver] Refinement Bound = %lf\n", the_monodomain_solver->refinement_bound);
+        log_info("[monodomain_solver] Derefinement Bound = %lf\n", the_monodomain_solver->derefinement_bound);
+        log_info("[monodomain_solver] Refining each %d time steps\n", the_monodomain_solver->refine_each);
+        log_info("[monodomain_solver] Derefining each %d time steps\n", the_monodomain_solver->derefine_each);
 
-        char *max_dx, *max_dy, *max_dz;
+        log_info("[domain] Domain maximum Space Discretization: dx %lf um, dy %lf um, dz %lf um\n", the_grid->max_discretization.x, the_grid->max_discretization.y, the_grid->max_discretization.z);
 
-        max_dx = shget(options->domain_config->config_data, "maximum_dx");
-        max_dy = shget(options->domain_config->config_data, "maximum_dy");
-        max_dz = shget(options->domain_config->config_data, "maximum_dz");
-
-        log_to_stdout_and_file("[domain] Domain maximum Space Discretization: dx %s um, dy %s um, dz %s um\n", max_dx, max_dy, max_dz);
-
-        log_to_stdout_and_file("[monodomain_solver] The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
+        log_info("[monodomain_solver] The adaptivity will start in time: %lf ms\n", the_monodomain_solver->start_adapting_at);
     }
 
     if(options->linear_system_solver_config) 
     {
         print_linear_system_solver_config_values(options->linear_system_solver_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 
     if(options->purkinje_linear_system_solver_config) 
     {
         print_linear_system_solver_config_values(options->purkinje_linear_system_solver_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 
     if(options->save_mesh_config) 
     {
         print_save_mesh_config_values(options->save_mesh_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 
     if(options->stim_configs) 
@@ -1206,16 +1216,16 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
         size_t num_stims = shlen(options->stim_configs);
 
         if(num_stims == 1)
-            log_to_stdout_and_file("[stim] Stimulus configuration:\n");
+            log_info("[stim] Stimulus configuration:\n");
         else
-            log_to_stdout_and_file("[stim] Stimuli configuration:\n");
+            log_info("[stim] Stimuli configuration:\n");
 
         for(int i = 0; i < num_stims; i++) {
 
             struct string_voidp_hash_entry e = options->stim_configs[i];
-            log_to_stdout_and_file("Stimulus name: %s\n", e.key);
+            log_info("Stimulus name: %s\n", e.key);
             print_stim_config_values((struct config*) e.value);
-            log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+            log_msg(LOG_LINE_SEPARATOR);
 
         }
     }
@@ -1223,21 +1233,21 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
     if(options->purkinje_stim_configs) 
     {
 
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
 
         size_t num_stims = shlen(options->purkinje_stim_configs);
 
         if(num_stims == 1)
-            log_to_stdout_and_file("[purkinje_stim] Stimulus configuration:\n");
+            log_info("[purkinje_stim] Stimulus configuration:\n");
         else
-            log_to_stdout_and_file("[purkinje_stim] Stimuli configuration:\n");
+            log_info("[purkinje_stim] Stimuli configuration:\n");
 
         for(int i = 0; i < num_stims; i++) {
 
             struct string_voidp_hash_entry e = options->purkinje_stim_configs[i];
-            log_to_stdout_and_file("Stimulus name: %s\n", e.key);
+            log_info("Stimulus name: %s\n", e.key);
             print_stim_config_values((struct config*) e.value);
-            log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+            log_msg(LOG_LINE_SEPARATOR);
 
         }
     }
@@ -1245,31 +1255,31 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
     if (options->domain_config)
     {
         print_domain_config_values(options->domain_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 
     if (options->purkinje_config)
     {
         print_purkinje_config_values(options->purkinje_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 
     if(options->extra_data_config) 
     {
         print_extra_data_config_values(options->extra_data_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 
     if(options->update_monodomain_config) 
     {
         print_update_monodomain_config_values(options->update_monodomain_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 
     if(options->assembly_matrix_config) 
     {
         print_assembly_matrix_config_values(options->assembly_matrix_config);
-        log_to_stdout_and_file(LOG_LINE_SEPARATOR);
+        log_msg(LOG_LINE_SEPARATOR);
     }
 }
 
@@ -1474,7 +1484,7 @@ void print_pmj_delay (struct grid *the_grid, struct config *config, struct termi
     assert(config);
     assert(the_terminals);
     
-    log_to_stdout_and_file(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
+    log_info(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
 
     uint32_t num_terminals = the_grid->purkinje->network->number_of_terminals;
 
@@ -1550,9 +1560,9 @@ void print_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
                     // Check if the number of activations from the current tissue and Purkinje cell are equal
                     if (n_activations_purkinje > n_activations_tissue) {
-                        log_to_stderr_and_file("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
-                        log_to_stderr_and_file("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
-                        log_to_stderr_and_file("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
+                        log_error("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
+                        log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
+                        log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
                         cur_pulse = 0;
                     }
 
@@ -1562,14 +1572,14 @@ void print_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
                 real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
 
-                log_to_stdout_and_file("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms\n",i,purkinje_cells[purkinje_index]->center.x,purkinje_cells[purkinje_index]->center.y,purkinje_cells[purkinje_index]->center.z,k,purkinje_lat,mean_tissue_lat,pmj_delay);
+                log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms\n",i,purkinje_cells[purkinje_index]->center.x,purkinje_cells[purkinje_index]->center.y,purkinje_cells[purkinje_index]->center.z,k,purkinje_lat,mean_tissue_lat,pmj_delay);
             }
         }  
     }
     else {
-        log_to_stderr_and_file("[purkinje_coupling] ERROR! No 'persistant_data' was found!\n");
-        log_to_stderr_and_file("[purkinje_coupling] You must use the 'save_purkinje_coupling_with_activation_times' function to print the PMJ delay!\n");
+        log_error("[purkinje_coupling] ERROR! No 'persistant_data' was found!\n");
+        log_error("[purkinje_coupling] You must use the 'save_purkinje_coupling_with_activation_times' function to print the PMJ delay!\n");
     }
 
-    log_to_stdout_and_file(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
+    log_info(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
 }

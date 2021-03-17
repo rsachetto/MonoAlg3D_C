@@ -9,11 +9,11 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     uint32_t num_volumes = solver->original_num_cells;
 
     #ifdef ENDO
-        log_to_stdout_and_file("Using ten Tusscher 2004 ENDO GPU model\n");
+    log_info("Using ten Tusscher 2004 ENDO GPU model\n");
     #endif
 
     #ifdef EPI
-        log_to_stdout_and_file("Using ten Tusscher 2004 EPI GPU model\n");
+    log_info("Using ten Tusscher 2004 EPI GPU model\n");
     #endif
 
     // execution configuration

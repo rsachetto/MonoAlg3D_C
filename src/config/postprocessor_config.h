@@ -6,15 +6,16 @@
 #define POSTPROCESSOR_CONFIG_H
 
 #include "../common_types/common_types.h"
+#include "config_common.h"
 
 #define DEFAULT_POSTPROCESSOR_LIB "shared_libs/libdefault_postprocess.so"
 
-#define POSTPROCESS(name) int name(struct string_hash_entry *config)
+#define POSTPROCESS(name) int name(struct config *config)
 typedef POSTPROCESS(postprocess_fn);
 
 struct postprocess_function {
 	postprocess_fn *function;
-	struct string_hash_entry *function_params;
+	struct config *function_params;
 };
 
 typedef struct postprocess_function ** postprocess_list;

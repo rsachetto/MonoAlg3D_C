@@ -51,14 +51,14 @@ SAVE_MESH(save_as_vtp_purkinje) {
     int iteration_count = time_info->iteration;
 
     if(((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call) {
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config, "compress");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config, "compression_level");
 
         if(compress) binary = true;
 
@@ -71,21 +71,21 @@ SAVE_MESH(save_as_vtp_purkinje) {
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config, "max_z");
     }
 
 
@@ -119,36 +119,36 @@ SAVE_MESH(save_as_vtp_purkinje) {
 SAVE_MESH(save_as_vtk_purkinje) {
 
     char *output_dir;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
 
     if(!initialized){
 
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
         initialized = true;
     }
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config->config_data, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[1], config->config_data, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[2], config->config_data, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[4], config->config_data, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[5], config->config_data, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[0], config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[1], config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[2], config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[3], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[4], config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_coords[5], config, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[0], config->config_data, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[1], config->config_data, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[2], config->config_data, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[3], config->config_data, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config->config_data, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config->config_data, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[0], config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[1], config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[2], config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[3], config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[4], config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, bounds[5], config, "max_z");
     }
 
     sds output_dir_with_file = sdsnew(output_dir);
@@ -185,15 +185,15 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
     int iteration_count = time_info->iteration;
 
     if(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call) {
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix_purkinje, config->config_data, "file_prefix_purkinje");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix_purkinje, config, "file_prefix_purkinje");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config, "compress");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config, "compression_level");
 
         if(compress) binary = true;
 
@@ -206,21 +206,21 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config, "max_z");
     }
 
 
@@ -297,28 +297,28 @@ INIT_SAVE_MESH(init_save_purkinje_with_activation_times) {
 END_SAVE_MESH(end_save_purkinje_with_activation_times) {
 
     bool save_activation_time_map = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config->config_data, "save_activation_time");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config, "save_activation_time");
 
     bool save_apd_map = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config, "save_apd");
 
     bool save_purkinje_velocity = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config->config_data, "save_purkinje_velocity");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config, "save_purkinje_velocity");
 
     if (save_activation_time_map) {
-        log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
+        log_info("[!] Saving activation time maps !!!!\n");
         write_purkinje_activation_time_maps(config,the_grid,output_dir,\
                                     file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     }
     
     if (save_apd_map) {
-        log_to_stderr_and_file("[!] Saving APD map !!!!\n");
+        log_info("[!] Saving APD map !!!!\n");
         write_purkinje_apd_map(config,the_grid,output_dir,\
                                     file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     } 
 
     if (save_purkinje_velocity) {
-        log_to_stderr_and_file("[!] Calculating Purkinje propagation velocity !!!!\n");
+        log_info("[!] Calculating Purkinje propagation velocity !!!!\n");
         print_purkinje_propagation_velocity(config,the_grid);
     }
   
@@ -328,16 +328,16 @@ END_SAVE_MESH(end_save_purkinje_with_activation_times) {
 
 SAVE_MESH (save_purkinje_with_activation_times) {
 
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
 
     float time_threshold = 10.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data, "time_threshold");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config, "time_threshold");
     
     float purkinje_activation_threshold = -30.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config->config_data, "activation_threshold_purkinje");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config, "activation_threshold_purkinje");
 
     float purkinje_apd_threshold = -83.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config->config_data, "apd_threshold_purkinje");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config, "apd_threshold_purkinje");
 
     calculate_purkinje_activation_time_and_apd(time_info,config,the_grid,time_threshold,purkinje_activation_threshold,purkinje_apd_threshold);
 
@@ -366,28 +366,28 @@ INIT_SAVE_MESH(init_save_purkinje_coupling_with_activation_times) {
 END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
 
     bool save_activation_time_map = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config->config_data, "save_activation_time");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config, "save_activation_time");
 
     bool save_apd_map = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config->config_data, "save_apd");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config, "save_apd");
 
     bool save_purkinje_velocity = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config->config_data, "save_purkinje_velocity");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config, "save_purkinje_velocity");
 
     if (save_activation_time_map) {
-        log_to_stderr_and_file("[!] Saving activation time maps !!!!\n");
+        log_info("[!] Saving activation time maps !!!!\n");
         write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
         write_purkinje_activation_time_maps(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     }
     
     if (save_apd_map) {
-        log_to_stderr_and_file("[!] Saving APD map !!!!\n");
+        log_info("[!] Saving APD map !!!!\n");
         write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
         write_purkinje_apd_map(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     } 
 
     if (save_purkinje_velocity) {
-        log_to_stderr_and_file("[!] Calculating Purkinje propagation velocity !!!!\n");
+        log_info("[!] Calculating Purkinje propagation velocity !!!!\n");
         print_purkinje_propagation_velocity(config,the_grid);
     }
   
@@ -397,22 +397,22 @@ END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
 
 SAVE_MESH (save_purkinje_coupling_with_activation_times) {
 
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
 
     float time_threshold = 10.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data, "time_threshold");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config, "time_threshold");
 
     float tissue_activation_threshold = -30.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_activation_threshold, config->config_data, "activation_threshold_tissue");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_activation_threshold, config, "activation_threshold_tissue");
 
     float tissue_apd_threshold = -83.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_apd_threshold, config->config_data, "apd_threshold_tissue");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_apd_threshold, config, "apd_threshold_tissue");
     
     float purkinje_activation_threshold = -30.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config->config_data, "activation_threshold_purkinje");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config, "activation_threshold_purkinje");
 
     float purkinje_apd_threshold = -83.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config->config_data, "apd_threshold_purkinje");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config, "apd_threshold_purkinje");
 
 // [TISSUE]
     calculate_tissue_activation_time_and_apd(time_info,config,the_grid,time_threshold,tissue_activation_threshold,tissue_apd_threshold);
@@ -424,10 +424,10 @@ SAVE_MESH (save_purkinje_coupling_with_activation_times) {
 
 INIT_SAVE_MESH(init_save_one_cell_state_variables) {
     config->persistent_data = malloc(sizeof(struct save_one_cell_state_variables_persistent_data));
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR( ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, config->config_data, "file_name");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_x, config->config_data, "cell_center_x");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_y, config->config_data, "cell_center_y");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_z, config->config_data, "cell_center_z");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR( ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, config, "file_name");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_x, config, "cell_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_y, config, "cell_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_z, config, "cell_center_z");
 
     ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file = fopen(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, "w");
     ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_sv_position = -1;

@@ -52,7 +52,6 @@ static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_
 
 }
 
-
 static int read_and_render_files(struct visualization_options *options, struct gui_config *gui_config) {
 
     char error[4096];
@@ -140,35 +139,37 @@ static int read_and_render_files(struct visualization_options *options, struct g
         current_file = num_files - 1;
     }
 
-    int step;
-    int step1;
-    int step2 = 0;
-    int final_step;
     real_cpu dt = 0;
 
-    if(!using_pvd) {
-        step1 = get_step_from_filename(simulation_files->files_list[0]);
+	if(!using_pvd) {
 
-        if(num_files > 1) {
-            step2 = get_step_from_filename(simulation_files->files_list[1]);
-            step = step2 - step1;
-        } else {
-            step = step1;
-        }
+		int step;
+		int step1;
+		int final_step;
 
-        final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
+		step1 = get_step_from_filename(simulation_files->files_list[0]);
 
-        dt = gui_config->dt;
+		if(num_files > 1) {
+			int step2 = 0;
+			step2 = get_step_from_filename(simulation_files->files_list[1]);
+			step = step2 - step1;
+		} else {
+			step = step1;
+		}
 
-        gui_config->step = step;
+		final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
 
-        if(dt == 0.0) {
-            gui_config->final_time = final_step;
+		dt = gui_config->dt;
 
-        } else {
-            gui_config->final_time = final_step * dt;
-        }
-    } else {
+		gui_config->step = step;
+
+		if(dt == 0.0) {
+			gui_config->final_time = final_step;
+
+		} else {
+			gui_config->final_time = final_step * dt;
+		}
+	} else {
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
         gui_config->dt = -1;
     }

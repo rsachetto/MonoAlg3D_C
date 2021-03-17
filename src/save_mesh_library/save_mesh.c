@@ -11,7 +11,7 @@
 #include "../utils/utils.h"
 
 #include "../vtk_utils/vtk_unstructured_grid.h"
-#include "../libraries_common/common_data_structures.h"
+#include "../domains_library/mesh_info_data.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -31,16 +31,18 @@ bool save_visible_mask = true;
 
 static bool initialized = false;
 
-void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);
+void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_call);
 
 static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
     return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
 }
 
 static void save_visibility_mask(sds output_dir_with_file, ui8_array visible_cells) {
-		output_dir_with_file = sdscat(output_dir_with_file, ".vis");
-		FILE *vis = fopen(output_dir_with_file, "wb");
+        sds output_dir_with_new_file = sdsnew(output_dir_with_file);
+        output_dir_with_new_file = sdscat(output_dir_with_new_file, ".vis");
+		FILE *vis = fopen(output_dir_with_new_file, "wb");
 		fwrite(visible_cells, sizeof(uint8_t), arrlen(visible_cells), vis);
+        sdsfree(output_dir_with_new_file);
 		fclose(vis);
 }
 
@@ -49,8 +51,8 @@ SAVE_MESH(save_as_adjacency_list) {
     int iteration_count = time_info->iteration;
 
     if(!initialized) {
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
         initialized = true;
     }
 
@@ -130,10 +132,10 @@ struct save_one_cell_state_variables_persistent_data {
 
 INIT_SAVE_MESH(init_save_one_cell_state_variables) {
     config->persistent_data = malloc(sizeof(struct save_one_cell_state_variables_persistent_data));
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR( ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, config->config_data, "file_name");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_x, config->config_data, "cell_center_x");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_y, config->config_data, "cell_center_y");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_z, config->config_data, "cell_center_z");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR( ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, config, "file_name");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_x, config, "cell_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_y, config, "cell_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_z, config, "cell_center_z");
 
     ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file = fopen(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, "w");
     ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_sv_position = -1;
@@ -249,13 +251,13 @@ SAVE_MESH(save_as_text_or_binary) {
     int iteration_count = time_info->iteration;
 
 //    if(!initialized) {
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_inactive, config->config_data, "save_inactive_cells");
-		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config->config_data, "save_visible_mask");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_inactive, config, "save_inactive_cells");
+		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
         initialized = true;
 //    }
 
@@ -270,21 +272,21 @@ SAVE_MESH(save_as_text_or_binary) {
     float n[3] = {0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[0], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[1], config->config_data, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[2], config->config_data, "normal_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[0], config->config_data, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[1], config->config_data, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[2], config->config_data, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[0], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[1], config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[2], config, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[0], config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[1], config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[2], config, "origin_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_x, config->config_data, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_y, config->config_data, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_z, config->config_data, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_x, config->config_data, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_y, config->config_data, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_z, config->config_data, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_x, config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_y, config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_z, config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_x, config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_y, config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_z, config, "max_z");
     }
 
     real_cpu l = sqrtf(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
@@ -359,6 +361,10 @@ SAVE_MESH(save_as_text_or_binary) {
                 fwrite(&v, sizeof(v), 1, output_file);
             } else {
                 fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
+//                //TODO: remove
+//                fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g,%d,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v,
+//                        TISSUE_TYPE(grid_cell), FIBROTIC(grid_cell), BORDER_ZONE(grid_cell), grid_cell->sigma.fibers.f[0], grid_cell->sigma.fibers.f[1],grid_cell->sigma.fibers.f[2]);
+
             }
 			arrput(cell_visibility, grid_cell->visible);
         }
@@ -397,13 +403,13 @@ SAVE_MESH(save_as_vtk) {
     int iteration_count = time_info->iteration;
 
     if(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call) {
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_f, config->config_data, "save_f");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config->config_data, "save_visible_mask");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_f, config, "save_f");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
 
         ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = false;
 
@@ -412,21 +418,21 @@ SAVE_MESH(save_as_vtk) {
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config, "max_z");
     }
 
     sds output_dir_with_file = sdsnew(output_dir);
@@ -499,15 +505,15 @@ SAVE_MESH(save_as_vtu) {
     int iteration_count = time_info->iteration;
 
     if(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call) {
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config->config_data, "file_prefix");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config->config_data, "clip_with_plain");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config->config_data, "clip_with_bounds");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config->config_data, "binary");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config->config_data, "save_pvd");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config->config_data, "compress");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config->config_data, "compression_level");
-		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config->config_data, "save_visible_mask");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config, "save_pvd");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config, "compress");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config, "compression_level");
+		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
 
         if(compress) binary = true;
 
@@ -520,21 +526,21 @@ SAVE_MESH(save_as_vtu) {
     float bounds[6] = {0, 0, 0, 0, 0, 0};
 
     if(clip_with_plain) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config->config_data, "origin_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config->config_data, "origin_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config->config_data, "origin_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config->config_data, "normal_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config->config_data, "normal_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config->config_data, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[0], config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[1], config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[2], config, "origin_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[3], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[4], config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, plain_coords[5], config, "normal_z");
     }
 
     if(clip_with_bounds) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config->config_data, "min_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config->config_data, "min_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config->config_data, "min_z");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config->config_data, "max_x");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config->config_data, "max_y");
-        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config->config_data, "max_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[0], config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[1], config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[2], config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[3], config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[4], config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config, "max_z");
     }
 
 
@@ -605,7 +611,7 @@ END_SAVE_MESH(end_save_with_activation_times) {
 SAVE_MESH(save_with_activation_times) {
 
     int mesh_output_pr = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, mesh_output_pr, config->config_data, "mesh_print_rate");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, mesh_output_pr, config, "mesh_print_rate");
 
     int iteration_count = time_info->iteration;
 
@@ -615,15 +621,15 @@ SAVE_MESH(save_with_activation_times) {
     }
 
     float time_threshold = 10.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config->config_data, "time_threshold");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config, "time_threshold");
 
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
 
     float activation_threshold = -30.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, activation_threshold, config->config_data, "activation_threshold");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, activation_threshold, config, "activation_threshold");
 
     float apd_threshold = -83.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, apd_threshold, config->config_data, "apd_threshold");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, apd_threshold, config, "apd_threshold");
 
     real_cpu current_t = time_info->current_t;
     real_cpu last_t = time_info->final_t;

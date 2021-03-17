@@ -10,7 +10,6 @@ static void print_usage(char **argv) {
 
 int main(int argc, char **argv) {
 
-
 	if(argc != 2) {
 		print_usage(argv);
 		exit(EXIT_FAILURE);

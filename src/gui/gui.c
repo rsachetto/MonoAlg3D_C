@@ -28,7 +28,7 @@
 
 void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
 {
-    int length = TextLength(text);      // Total length in bytes of the text, scanned by codepoints in loop
+    unsigned int length = TextLength(text);      // Total length in bytes of the text, scanned by codepoints in loop
 
     int textOffsetY = 0;            // Offset between lines (on line break '\n')
     float textOffsetX = 0.0f;       // Offset X to next character to draw
@@ -63,8 +63,8 @@ void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, 
                 DrawTexturePro(font.texture, font.recs[index], rec, (Vector2){ 0, 0 }, -90.0f, tint);
             }
 
-            if (font.chars[index].advanceX == 0) textOffsetY += ((float)font.recs[index].width*scaleFactor + spacing);
-            else textOffsetY += ((float)font.chars[index].advanceX*scaleFactor + spacing);
+            if (font.chars[index].advanceX == 0) textOffsetY += (int)(font.recs[index].width*scaleFactor + spacing);
+            else textOffsetY += (int)((float)font.chars[index].advanceX*scaleFactor + spacing);
         }
 
         i += (codepointByteCount - 1);   // Move text bytes counter to next codepoint
@@ -176,7 +176,7 @@ static Color get_color(real_cpu value, int alpha, int current_scale) {
         idx1 = idx2 = NUM_COLORS - 1;
     } else {
         value = value * (NUM_COLORS - 1);
-        idx1 = (int)floor(value);              // Our desired color will be after this index.
+        idx1 = (int)floor(value);               // Our desired color will be after this index.
         idx2 = idx1 + 1;                       // ... and before this index (inclusive).
         fractBetween = value - (real_cpu)idx1;
     }
@@ -569,16 +569,14 @@ static inline double clamp(double x, double min, double max) {
 
 static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_config) {
 
-
-	if(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width > gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
+	if(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width > (float) gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
 		gui_state->ap_graph_config->graph.x = 10;
 	}
-	
 
-	if(gui_state->ap_graph_config->graph.y + gui_state->ap_graph_config->graph.height > gui_state->current_window_height) {
+	if(gui_state->ap_graph_config->graph.y + gui_state->ap_graph_config->graph.height > (float) gui_state->current_window_height) {
 		gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
 	}
-	
+
 	if(gui_state->ap_graph_config->graph.y < 0) {
 		gui_state->ap_graph_config->graph.y = 0;
 	}
@@ -592,16 +590,17 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 	float font_size_big = gui_state->font_size_big - 6;
 	float font_size_small = gui_state->font_size_small - 6;
 
-    float spacing_big = font_size_big / font.baseSize;;
-    float spacing_small = font_size_small / font.baseSize;;
+    float spacing_big = font_size_big / (float)font.baseSize;
+    float spacing_small = font_size_small / (float)font.baseSize;
 
     DrawRectangleRec(gui_state->ap_graph_config->graph, WHITE);
 
     gui_state->ap_graph_config->drag_graph_button_position =
-        (Rectangle){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width) - 7.5f,
-                    (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
-    gui_state->ap_graph_config->move_graph_button_position =
-        (Rectangle){(float)(gui_state->ap_graph_config->graph.x), (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+        (Rectangle){(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width) - 7.5f,
+                    (gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+
+    gui_state->ap_graph_config->move_graph_button_position = (Rectangle){(float)(gui_state->ap_graph_config->graph.x),
+                                                                         (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
 
     GuiButton(gui_state->ap_graph_config->drag_graph_button_position, " ");
     GuiButton(gui_state->ap_graph_config->move_graph_button_position, "+");
@@ -613,7 +612,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     sprintf(tmp, "%.2lf", gui_config->min_v);
     Vector2 text_width_y = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-    gui_state->ap_graph_config->min_x = (float)gui_state->ap_graph_config->graph.x + 2.6*text_width_y.x;
+    gui_state->ap_graph_config->min_x = gui_state->ap_graph_config->graph.x + 2.6f*text_width_y.x;
     gui_state->ap_graph_config->max_x = (float)gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width - text_width.x;
 
     gui_state->ap_graph_config->min_y = (float)gui_state->ap_graph_config->graph.y + (float)gui_state->ap_graph_config->graph.height - text_width.y;
@@ -621,12 +620,14 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     int n = hmlen(gui_state->ap_graph_config->selected_aps);
 
+    Vector2 text_position;
+
     if(gui_state->ap_graph_config->draw_selected_ap_text) {
 
         char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f and position %d )";
         double time_elapsed = GetTime() - gui_state->selected_time;
         unsigned char alpha = (unsigned char)clamp(255 - time_elapsed * 25, 0, 255);
-        
+
 		//Color c = colors[(n - 1) % num_colors];
 		Color c = BLACK;
         c.a = alpha;
@@ -636,8 +637,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         text_width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
 
-        Vector2 text_position = (Vector2){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2 - text_width.x / 1.5),
-                                          gui_state->ap_graph_config->graph.y - text_width.y*1.2};
+        text_position = (Vector2){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2 - text_width.x / 1.5),
+                                          gui_state->ap_graph_config->graph.y - text_width.y*1.2f};
 
         DrawTextEx(font, tmp, text_position, font_size_big, spacing_big, c);
 
@@ -646,7 +647,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
             gui_state->selected_time = 0.0;
         }
     }
-    
+
     Vector2 p1, p2;
 
     uint num_ticks;
@@ -676,9 +677,9 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
 	// Draw x label
 	text_width = MeasureTextEx(font, time_text, font_size_big, spacing_big);
-	gui_state->ap_graph_config->min_y -= text_width.y*1.5;
+	gui_state->ap_graph_config->min_y -= text_width.y*1.5f;
 
-	Vector2 text_position = (Vector2){gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
+	text_position = (Vector2){gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
 									  (float)gui_state->ap_graph_config->min_y + text_width.y};
 
 	DrawTextEx(font, time_text, text_position, font_size_big, spacing_big, BLACK);
@@ -713,7 +714,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         DrawLineV(p1, (Vector2){p1.x, gui_state->ap_graph_config->max_y}, LIGHTGRAY);
         time += tick_ofsset;
     }
-    
+
 	tick_ofsset = 10;
 	num_ticks = (uint)((gui_config->max_v - gui_config->min_v) / tick_ofsset);
 
@@ -731,7 +732,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         char *label;
         label = "Vm (mV)";
         text_width = MeasureTextEx(font, label, font_size_big, spacing_big);
-        Vector2 text_position = (Vector2){gui_state->ap_graph_config->graph.x + 15, gui_state->ap_graph_config->min_y - ((gui_state->ap_graph_config->min_y - gui_state->ap_graph_config->max_y) / 2.0f) + (text_width.x / 2.0f)};
+        text_position = (Vector2){gui_state->ap_graph_config->graph.x + 15, gui_state->ap_graph_config->min_y - ((gui_state->ap_graph_config->min_y - gui_state->ap_graph_config->max_y) / 2.0f) + (text_width.x / 2.0f)};
         DrawTextEx2(font, label, text_position, font_size_big, spacing_big, BLACK);
     }
 
@@ -854,8 +855,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         sprintf(tmp, tmp_point, fabsf(t2 - t1));
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-		int x = fminf(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->selected_point_for_apd2.x);
-		
+		float x = fminf(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->selected_point_for_apd2.x);
 
         DrawTextEx(font, tmp, (Vector2){x + text_width.x / 2.0f,
 			       gui_state->ap_graph_config->selected_point_for_apd1.y - text_width.y},
@@ -967,7 +967,7 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
         DrawLineV(p1, p2, BLACK);
         color = get_color((v - min_v) / (max_v - min_v), gui_state->scale_alpha, gui_state->current_scale);
 
-        DrawRectangle((int)gui_state->scale_bounds.x, (int)initial_y, scale_width, (int)scale_rec_height, color);
+        DrawRectangle((int)gui_state->scale_bounds.x, (int)initial_y, (int) scale_width, (int)scale_rec_height, color);
         initial_y += scale_rec_height;
         v -= tick_ofsset;
     }
@@ -1238,7 +1238,7 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 				if(save_path) {
 					save_vtk_unstructured_grid_as_vtu_compressed(gui_config->grid_info.vtk_grid, save_path, 6);
-					log_to_stdout_and_file("Saved vtk file as %s\n", save_path);
+					log_info("Saved vtk file as %s\n", save_path);
 				}
 
 				return;
@@ -1517,11 +1517,11 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
 
     else if(gui_state->ap_graph_config->move_ap_graph) {
 
-        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.x + gui_state->ap_graph_config->graph.width < gui_state->current_window_width) {
+        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.x + gui_state->ap_graph_config->graph.width < (float)gui_state->current_window_width) {
             gui_state->ap_graph_config->graph.x = gui_state->mouse_pos.x;
         }
 
-        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.y + gui_state->ap_graph_config->graph.height < gui_state->current_window_height) {
+        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.y + gui_state->ap_graph_config->graph.height < (float)gui_state->current_window_height) {
             gui_state->ap_graph_config->graph.y = gui_state->mouse_pos.y;
         }
 
@@ -1573,7 +1573,7 @@ static int configure_info_boxes_sizes(struct gui_state *gui_state, int info_box_
 
     txt_w_h = MeasureTextEx(gui_state->font, WIDER_TEXT, gui_state->font_size_small, gui_state->font_spacing_small);
     text_offset = (int)(1.5 * txt_w_h.y);
-    box_w = txt_w_h.x*1.08;
+    box_w = txt_w_h.x*1.08f;
 
     gui_state->help_box.width = box_w;
     gui_state->help_box.height = (float)(text_offset * info_box_lines) + margin;
@@ -1857,7 +1857,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             // This should not happen... but it does....
             if(gui_config->error_message) {
                 DrawTextEx(gui_state->font, gui_config->error_message, 
-						  (Vector2){(float)posx + (float)(rec_width - error_message_width.x)/2, (float) posy}, gui_state->font_size_big,
+						  (Vector2){(float)posx + ((float)rec_width - error_message_width.x)/2, (float) posy}, gui_state->font_size_big,
                           gui_state->font_spacing_big, BLACK);
             }
         }
@@ -1867,11 +1867,11 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 		const char *text = TextFormat("%2i FPS - Frame Time %lf", fps, GetFrameTime()); 
 		Vector2 text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
 
-		DrawTextEx(gui_state->font, text, (Vector2){(float)(GetScreenWidth() - text_size.x - 10.0), (float)(GetScreenHeight() - text_size.y)},
+		DrawTextEx(gui_state->font, text, (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y)},
 				   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
        
 		text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
-		DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, (float)(GetScreenHeight() - text_size.y)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+		DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 	
 		float upper_y = text_size.y;
 
@@ -1892,7 +1892,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 			}
 
 			text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
-			info_pos = (Vector2){(float)(GetScreenWidth() - text_size.x - 10), (float)(GetScreenHeight() - text_size.y - upper_y)};
+			info_pos = (Vector2){((float)gui_state->current_window_width - text_size.x - 10), ((float)gui_state->current_window_height- text_size.y - upper_y)};
 			DrawTextEx(gui_state->font, text,info_pos, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
 		}

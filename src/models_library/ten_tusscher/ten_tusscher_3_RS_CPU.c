@@ -15,7 +15,6 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-
 	char *cell_type;
 #ifdef ENDO
 	cell_type = strdup("ENDO");
@@ -29,7 +28,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 	cell_type = strdup("MCELL");
 #endif
 
-	log_to_stdout_and_file("Using ten Tusscher 3 %s CPU model\n", cell_type);
+    log_info("Using ten Tusscher 3 %s CPU model\n", cell_type);
 	free(cell_type);
 
 	uint32_t num_cells = solver->original_num_cells;

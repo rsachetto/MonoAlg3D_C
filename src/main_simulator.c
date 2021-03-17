@@ -45,14 +45,14 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
     if((*(options))->save_mesh_config) {
 
         char *out_dir_name = NULL;
-        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, (*(options))->save_mesh_config->config_data, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, (*(options))->save_mesh_config, "output_dir");
 
         if(out_dir_name) {
             sds buffer_log = sdsnew("");
             sds buffer_ini = sdsnew("");
 
             bool remove_older_simulation_dir = false;
-            GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(remove_older_simulation_dir, (*(options))->save_mesh_config->config_data, "remove_older_simulation");
+            GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(remove_older_simulation_dir, (*(options))->save_mesh_config, "remove_older_simulation");
 
             if (remove_older_simulation_dir) {
                 remove_directory(out_dir_name);
@@ -62,17 +62,17 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
             buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", out_dir_name);
             open_logfile(buffer_log);
 
-            log_to_stdout_and_file("Command line to reproduce this simulation:\n");
+            log_info("Command line to reproduce this simulation:\n");
+
             for (int i = 0; i < argc; i++) {
-                log_to_stdout_and_file("%s ", argv[i]);
+                log_msg("%s ", argv[i]);
             }
 
-            log_to_stdout_and_file("\n");
+            log_msg("\n");
 
             buffer_ini = sdscatfmt(buffer_ini, "%s/original_configuration.ini", out_dir_name);
 
-            log_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
-                                     buffer_ini);
+            log_info("For reproducibility purposes the configuration file was copied to file: %s\n", buffer_ini);
 
             //moved to monodomain solver
             //cp_file(buffer_ini, (*(options))->config_file);
@@ -140,14 +140,14 @@ int main(int argc, char **argv) {
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
-        log_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        log_warn("Cuda runtime not found in this system. Fall backing to CPU solver!!\n");
         ode_solver->gpu = false;
     }
 #endif
 
 #ifndef COMPILE_GUI
     if(options->show_gui) {
-        log_to_stdout_and_file("OpenGL not found. The output will not be draw!!\n");
+        log_warn("OpenGL not found. The output will not be draw!!\n");
         options->show_gui = false;
     }
 #endif

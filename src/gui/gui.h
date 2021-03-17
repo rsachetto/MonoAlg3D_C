@@ -126,7 +126,6 @@ struct gui_state {
 
 	float font_spacing_big;
 	float font_spacing_small;
-	float font_scaling;
 
     bool handle_keyboard_input;
     bool one_selected;
