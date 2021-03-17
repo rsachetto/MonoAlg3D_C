@@ -310,8 +310,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     real_cpu start_h = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config, "start_discretization");
 
-    real_cpu max_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_h, config, "maximum_discretization");
+    real_cpu max_h = start_h;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_h, config, "maximum_discretization");
 
     real_cpu x_domain_limit = 64000.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, x_domain_limit, config, "x_domain_limit");
