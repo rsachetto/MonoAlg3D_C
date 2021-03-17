@@ -13,6 +13,8 @@
 #include "../vtk_utils/vtk_unstructured_grid.h"
 #include "../domains_library/mesh_info_data.h"
 
+#include "save_mesh_helper.h"
+
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
 #endif
@@ -31,11 +33,6 @@ bool save_visible_mask = true;
 
 static bool initialized = false;
 
-void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_call);
-
-static sds create_base_name(char *f_prefix, int iteration_count, char *extension) {
-    return sdscatprintf(sdsempty(), "%s_it_%d.%s", f_prefix, iteration_count, extension);
-}
 
 static void save_visibility_mask(sds output_dir_with_file, ui8_array visible_cells) {
         sds output_dir_with_new_file = sdsnew(output_dir_with_file);
@@ -119,16 +116,6 @@ SAVE_MESH(save_as_adjacency_list) {
 
 
 }
-
-struct save_one_cell_state_variables_persistent_data {
-    FILE *file;
-    char *file_name;
-    real_cpu cell_center_x;
-    real_cpu cell_center_y;
-    real_cpu cell_center_z;
-    uint32_t cell_sv_position;
-
-};
 
 INIT_SAVE_MESH(init_save_one_cell_state_variables) {
     config->persistent_data = malloc(sizeof(struct save_one_cell_state_variables_persistent_data));
@@ -461,43 +448,6 @@ SAVE_MESH(save_as_vtk) {
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
-}
-
-static inline void write_pvd_header(FILE *pvd_file) {
-    fprintf(pvd_file, "<VTKFile type=\"Collection\" version=\"0.1\" compressor=\"vtkZLibDataCompressor\">\n");
-    fprintf(pvd_file, "\t<Collection>\n");
-    fprintf(pvd_file, "\t</Collection>\n");
-    fprintf(pvd_file, "</VTKFile>");
-}
-
-void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_call) {
-
-    sds pvd_name = sdsnew(output_dir);
-    pvd_name = sdscat(pvd_name, "/simulation_result.pvd");
-
-    static FILE *pvd_file = NULL;
-    pvd_file = fopen(pvd_name, "r+");
-
-    if(!pvd_file) {
-        pvd_file = fopen(pvd_name, "w");
-        write_pvd_header(pvd_file);
-    }
-    else {
-        if(first_call) {
-            fclose(pvd_file);
-            pvd_file = fopen(pvd_name, "w");
-            write_pvd_header(pvd_file);
-        }
-    }
-
-    sdsfree(pvd_name);
-
-    fseek(pvd_file, -26, SEEK_END);
-
-    fprintf(pvd_file, "\n\t\t<DataSet timestep=\"%lf\" group=\"\" part=\"0\" file=\"%s\"/>\n", current_t, base_name);
-    fprintf(pvd_file, "\t</Collection>\n");
-    fprintf(pvd_file, "</VTKFile>");
-    fclose(pvd_file);
 }
 
 SAVE_MESH(save_as_vtu) {

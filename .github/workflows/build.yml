@@ -52,6 +52,9 @@ jobs:
     - name: Build without cuda
       run: ./build.sh -r simulator
 
+    - name: Test without cuda
+      run:  ./run_tests.sh
+
     - name: Install CUDA 11
       env:
         cuda: "11.0"
