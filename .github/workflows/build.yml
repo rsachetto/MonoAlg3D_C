@@ -4,7 +4,11 @@ on: [push]
 
 jobs:
   build:   
-    runs-on: ubuntu-18.04
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-18.04]
 
     steps:
     - uses: actions/checkout@v2    
@@ -17,46 +21,6 @@ jobs:
         fi
       shell: bash
     
-    - name: Build without cuda
-      run: ./build.sh -r simulator
-
-    - name: Test without cuda
-      run:  ./run_tests.sh
-
-    - name: Install CUDA 11
-      env:
-        cuda: "11.0"
-      run: |
-        source ./scripts/actions/install_cuda_ubuntu.sh
-        if [[ $? -eq 0 ]]; then
-          find "${CUDA_PATH}" -name libcuda.so.*
-          # Set paths for subsequent steps, using ${CUDA_PATH}
-          echo "Adding CUDA to CUDA_PATH, PATH and LD_LIBRARY_PATH"
-          echo "CUDA_PATH=${CUDA_PATH}" >> $GITHUB_ENV
-          echo "${CUDA_PATH}/bin" >> $GITHUB_PATH
-          echo "LD_LIBRARY_PATH=${CUDA_PATH}/lib64:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
-          echo "LIBRARY_PATH=${CUDA_PATH}/lib64:${CUDA_PATH}/lib64/stubs:${LIBRARY_PATH}" >> $GITHUB_ENV
-          echo "CPATH=${CUDA_PATH}/targets/x86_64-linux/include:$CPATH" >> $GITHUB_ENV
-        fi
-      shell: bash
-
-    - name: Build with cuda
-      run: ./build.sh -r simulator
-
-  build_ubuntu_latest:   
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2    
-
-      - name: Install criterion
-        run: |
-          source ./scripts/actions/install_criterion.sh
-          if [[ $? -eq 0 ]]; then
-            echo "Criterion installed"
-          fi
-        shell: bash
-
     - name: Build without cuda
       run: ./build.sh -r simulator
 
