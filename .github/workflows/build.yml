@@ -49,6 +49,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2    
 
+      - name: Install criterion
+        run: |
+          source ./scripts/actions/install_criterion.sh
+          if [[ $? -eq 0 ]]; then
+            echo "Criterion installed"
+          fi
+        shell: bash
+
     - name: Build without cuda
       run: ./build.sh -r simulator
 
