@@ -16,7 +16,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node ** ac = the_grid->active_cells;
 
-    real *fibs = NULL;
+    struct extra_data_for_fibrosis *extra_data = NULL;
 
     real plain_center = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, plain_center, config, "plain_center");
@@ -27,14 +27,14 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
     real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config, "sphere_radius");
 
-    int num_par = 7;
-    fibs = set_common_schemia_data(config, num_active_cells, num_par, extra_data_size);
+    extra_data = set_common_schemia_data(config, num_active_cells);
+
 
     OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
 
         if(FIBROTIC(ac[i])) {
-            fibs[i+num_par] = 0.0;
+            extra_data->fibrosis[i] = 0.0;
         }
         else if(BORDER_ZONE(ac[i])) {
 
@@ -45,48 +45,52 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
             real distanceFromCenter = sqrtf((center_x - plain_center)*(center_x - plain_center) + (center_y - plain_center)*(center_y - plain_center));
             distanceFromCenter = (distanceFromCenter - sphere_radius)/border_zone_size;
-            fibs[i+num_par] = distanceFromCenter;
+            extra_data->fibrosis[i] = distanceFromCenter;
 
         }
         else {
-            fibs[i+num_par] = 1.0;
+            extra_data->fibrosis[i] = 1.0;
         }
 
     }
 
-    return (void*)fibs;
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_fibrosis));
+
+    return (void*)extra_data;
 }
 
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_plain) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
-    int num_par = 7;
 
-    real *fibs = NULL;
+    struct extra_data_for_fibrosis *extra_data = NULL;
 
-    fibs = set_common_schemia_data(config, num_active_cells, num_par, extra_data_size);
+    extra_data = set_common_schemia_data(config, num_active_cells);
 
-    for(uint32_t i = num_par; i < num_active_cells + num_par; i++) {
-        fibs[i] = 0.0;
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_active_cells; i++) {
+        extra_data->fibrosis[i] = 0.0;
     }
 
-    return (void*)fibs;
+   SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_fibrosis));
+
+    return (void*)extra_data;
 }
 
 SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
 
-    int num_par = 7;
-    real *fibs = NULL;
+    struct extra_data_for_fibrosis *extra_data = NULL;
 
-    fibs = set_common_schemia_data(config, num_active_cells, num_par, extra_data_size);
+    extra_data = set_common_schemia_data(config, num_active_cells);
 
-    for(uint32_t i = num_par; i < num_active_cells + num_par; i++) {
-        fibs[i] = 1.0;
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_active_cells; i++) {
+        extra_data->fibrosis[i] = 1.0;
     }
 
-    return (void*)fibs;
+    return (void*)extra_data;
 }
 
 SET_EXTRA_DATA(set_extra_data_for_benchmark) {

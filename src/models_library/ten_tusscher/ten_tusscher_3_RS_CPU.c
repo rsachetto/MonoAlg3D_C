@@ -66,31 +66,40 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     real dt = ode_solver->min_dt;
     uint32_t num_steps = ode_solver->num_steps;
 
-    // Default values for a healthy cell ///////////
-    real atpi = 6.8f;
-    real Ko = 5.4f;
-    real Ki = 138.3f;
-    real Vm_change = 0.0;
-    real GNa_multiplicator = 1.0f;
-    real GCa_multiplicator = 1.0f;
-    ////////////////////////////////////
+    int num_extra_parameters = 7;
+    real extra_par[num_extra_parameters];
+    real fibs_size = num_cells_to_solve*sizeof(real);
 
-    int num_extra_parameters = 6;
-    size_t extra_parameters_size = num_extra_parameters*sizeof(real);
+    struct extra_data_for_fibrosis* extra_data_from_solver = (struct extra_data_for_fibrosis*)ode_solver->ode_extra_data;
+    bool deallocate = false;
 
     if(ode_solver->ode_extra_data) {
-        fibrosis = ((real*)ode_solver->ode_extra_data) + num_extra_parameters; //pointer
+        fibrosis = extra_data_from_solver->fibrosis;
+        extra_par[0] = extra_data_from_solver->atpi;
+        extra_par[1] = extra_data_from_solver->Ko;
+        extra_par[2] = extra_data_from_solver->Ki;
+        extra_par[3] = extra_data_from_solver->Vm_modifier;
+        extra_par[4] = extra_data_from_solver->GNa_multiplicator;
+        extra_par[5] = extra_data_from_solver->GCaL_multiplicator;
+        extra_par[6] = extra_data_from_solver->INaCa_multiplicator;
     }
     else {
-        ode_solver->ode_extra_data = malloc(extra_parameters_size);
-        ((real*)ode_solver->ode_extra_data)[0] = atpi;
-        ((real*)ode_solver->ode_extra_data)[1] = Ko;
-        ((real*)ode_solver->ode_extra_data)[2] = Ki;
-        ((real*)ode_solver->ode_extra_data)[3] = Vm_change;
-        ((real*)ode_solver->ode_extra_data)[4] = GNa_multiplicator;
-        ((real*)ode_solver->ode_extra_data)[5] = GCa_multiplicator;
+        // Default values for a healthy cell ///////////
+        extra_par[0] = 6.8f;
+        extra_par[1] = 5.4f;
+        extra_par[2] = 138.3f;
+        extra_par[3] = 0.0;
+        extra_par[4] = 1.0f;
+        extra_par[5] = 1.0f;
+        extra_par[6] = 1.0f;
 
-        fibrosis = calloc(num_cells_to_solve, sizeof(real));
+        fibrosis = (real*) malloc(fibs_size);
+
+        for(uint64_t i = 0; i < num_cells_to_solve; i++) {
+            fibrosis[i] = 1.0;
+        }
+
+        deallocate = true;
     }
 
     int i;
@@ -103,12 +112,12 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], ode_solver->ode_extra_data);
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], extra_par);
 
         }
     }
 
-    if(ode_solver->ode_extra_data == NULL) free(fibrosis);
+    if(deallocate) free(fibrosis);
 }
 
 
@@ -139,7 +148,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
 }
 
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real *extra_parameters) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real const *extra_parameters) {
 
     //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
         

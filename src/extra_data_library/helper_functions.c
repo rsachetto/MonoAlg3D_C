@@ -7,11 +7,9 @@
 #include "../config_helpers/config_helpers.h"
 
 
-real* set_common_schemia_data(struct config *config, uint32_t num_cells, int num_par, size_t *extra_data_size) {
+struct extra_data_for_fibrosis* set_common_schemia_data(struct config *config, uint32_t num_cells) {
 
-    *extra_data_size = sizeof(real)*(num_cells + num_par);
-
-    real *extra_data = (real*)malloc(*extra_data_size);
+    struct extra_data_for_fibrosis *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_fibrosis);
 
     real atpi = 6.8;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, atpi, config, "atpi");
@@ -34,13 +32,14 @@ real* set_common_schemia_data(struct config *config, uint32_t num_cells, int num
     real Vm_modifier = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config, "Vm_modifier");
 
-    extra_data[0] = atpi;
-    extra_data[1] = Ko;
-    extra_data[2] = Ki;
-    extra_data[3] = Vm_modifier;
-    extra_data[4] = GNa_multiplicator;
-    extra_data[5] = GCaL_multiplicator;
-    extra_data[6] = INaCa_multiplicator;
+    extra_data->atpi = atpi;
+    extra_data->Ko = Ko;
+    extra_data->Ki = Ki;
+    extra_data->GNa_multiplicator = GNa_multiplicator;
+    extra_data->GCaL_multiplicator = GCaL_multiplicator;
+    extra_data->INaCa_multiplicator = INaCa_multiplicator;
+    extra_data->Vm_modifier = Vm_modifier;
+    extra_data->fibrosis = MALLOC_ARRAY_OF_TYPE(real, num_cells);
 
     return extra_data;
 }

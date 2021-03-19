@@ -439,9 +439,19 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
  
     if(has_extra_data) {
-        free(the_ode_solver->ode_extra_data);
         the_ode_solver->ode_extra_data =
                 ((set_extra_data_fn*)extra_data_config->main_function)(&time_info, extra_data_config, the_grid, &(the_ode_solver->extra_data_size));
+
+        if(the_ode_solver->ode_extra_data == NULL) {
+            log_warn("set_extra_data function was called but returned NULL!\n");
+        }
+        else {
+            if(the_ode_solver->extra_data_size == 0) {
+                log_warn("set_extra_data function but extra_data_size is 0!\n");
+                log_warn("Maybe you forgot to call the SET_EXTRA_DATA_SIZE(size) macro in your extra_data_function!\n");
+            }
+        }
+
     }
 
     log_info("Setting ODE's initial conditions\n");
@@ -826,7 +836,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                         }
 
                         if (has_extra_data) {
-                            free(the_ode_solver->ode_extra_data);
+                            CALL_FREE_EXTRA_DATA(extra_data_config, the_ode_solver->ode_extra_data);
                             the_ode_solver->ode_extra_data =
                                     ((set_extra_data_fn *) extra_data_config->main_function)(&time_info,
                                                                                              extra_data_config,

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "../model_common.h"
+#include "../../extra_data_library/helper_functions.h"
 
 #define NEQ 12
 #define INITIAL_V (-86.2f)
@@ -27,7 +28,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 
 #endif
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real *extra_parameters);
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real const *extra_parameters);
 void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real *extra_parameters);
 
 #endif // MONOALG3D_MODEL_TEN_TUSSCHER_3_COMMON_H

@@ -13,6 +13,19 @@
 #define SET_EXTRA_DATA(name) void *name (struct time_info *time_info, struct config *config, struct grid * the_grid, size_t *extra_data_size)
 typedef SET_EXTRA_DATA(set_extra_data_fn);
 
+#define FREE_EXTRA_DATA(name) void *name (void *extra_data)
+typedef FREE_EXTRA_DATA(free_extra_data_fn);
+
 void print_extra_data_config_values(struct config* s);
+
+#define CALL_FREE_EXTRA_DATA(config, extra_data)                                                                      \
+    do {                                                                                                              \
+        if(config->end_function) {                                                                                    \
+            ((free_extra_data_fn *)config->end_function)(extra_data);                                                 \
+        }                                                                                                             \
+        else {                                                                                                        \
+            free(extra_data);                                                                                         \
+        }                                                                                                             \
+    } while(0)
 
 #endif //MONOALG3D_EXTRA_DATA_CONFIG_H
