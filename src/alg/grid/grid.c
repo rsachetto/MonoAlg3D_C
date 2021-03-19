@@ -254,7 +254,7 @@ void order_grid_cells(struct grid *the_grid) {
         if(cell->active) {
             cell->grid_position = counter;
             the_grid->active_cells[counter] = cell;
-            cell->visible = cell_is_visible(cell);
+            cell->visible = get_visibility_mask(cell);
             counter++;
         }
     }
@@ -755,30 +755,6 @@ void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vecto
     free(vector);
 }
 
-bool cell_is_visible(struct cell_node *grid_cell) {
-
-    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[FRONT])) {
-        return true;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[BACK])) {
-        return true;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[TOP])) {
-        return true;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[DOWN])) {
-        return true;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[RIGHT])) {
-        return true;
-    }
-    else if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[LEFT])) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
 
 struct terminal *link_purkinje_to_tissue (struct grid *the_grid) {
 

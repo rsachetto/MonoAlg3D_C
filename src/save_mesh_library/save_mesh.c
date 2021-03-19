@@ -33,7 +33,6 @@ bool save_visible_mask = true;
 
 static bool initialized = false;
 
-
 static void save_visibility_mask(sds output_dir_with_file, ui8_array visible_cells) {
         sds output_dir_with_new_file = sdsnew(output_dir_with_file);
         output_dir_with_new_file = sdscat(output_dir_with_new_file, ".vis");

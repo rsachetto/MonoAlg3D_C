@@ -173,3 +173,4 @@ example_configs/scv_mesh_small.ini
 local_meshes/
 sync.sh
 sync_outputs.sh
+private_configs/

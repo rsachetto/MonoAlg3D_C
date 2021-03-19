@@ -62,6 +62,13 @@ enum transition_direction {
 #define STARTS_WITH_TOP(direction) (direction >= TOP_RIGHT && direction <= TOP_LEFT)
 #define STARTS_WITH_DOWN(direction) (direction >= DOWN_RIGHT && direction <= DOWN_LEFT)
 
+#define TOP_IS_VISIBLE    1
+#define RIGHT_IS_VISIBLE  2
+#define DOWN_IS_VISIBLE   4
+#define LEFT_IS_VISIBLE   8
+#define BACK_IS_VISIBLE  16
+#define FRONT_IS_VISIBLE 32
+
 struct element {
 #ifdef ENABLE_DDM
     enum transtransition_direction direction; // NEW parameter !!!
@@ -117,7 +124,7 @@ struct cell_node {
     bool active;
     bool can_change;
     bool visited;
-    bool visible;
+    uint8_t visible;
 
     //______________________________________________________________________________
     /* Variables used in solving the discretized system Ax = b through the conjugate gradient
@@ -220,5 +227,7 @@ enum transition_direction get_inverse_direction(enum transition_direction direct
 int find_neighbour_index(struct cell_node *grid_cell, struct cell_node *neighbour);
 
 int get_neighbour_value(struct cell_node *grid_cell, struct cell_node *neighbour, real_cpu *value);
+
+uint8_t get_visibility_mask(struct cell_node *grid_cell);
 
 #endif // MONOALG3D_CELL_H

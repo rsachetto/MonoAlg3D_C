@@ -26,6 +26,243 @@
 #include "../3dparty/raylib/src/rlgl.h"
 /////////
 
+static void DrawCubeWithVisibilityMask(Vector3 position, float width, float height, float length, Color color, uint8_t visibility_mask) {
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+
+    if (rlCheckBufferLimit(36)) rlglDraw();
+
+    rlPushMatrix();
+        // NOTE: Transformation is applied in inverse order (scale -> rotate -> translate)
+        rlTranslatef(position.x, position.y, position.z);
+        //rlRotatef(45, 0, 1, 0);
+        //rlScalef(1.0f, 1.0f, 1.0f);   // NOTE: Vertices are directly scaled on definition
+
+        rlBegin(RL_TRIANGLES);
+            rlColor4ub(color.r, color.g, color.b, color.a);
+
+            if(visibility_mask & FRONT_IS_VISIBLE) {
+                // Front face
+                rlVertex3f(x - width/2, y - height/2, z + length/2);  // Bottom Left
+                rlVertex3f(x + width/2, y - height/2, z + length/2);  // Bottom Right
+                rlVertex3f(x - width/2, y + height/2, z + length/2);  // Top Left
+
+                rlVertex3f(x + width/2, y + height/2, z + length/2);  // Top Right
+                rlVertex3f(x - width/2, y + height/2, z + length/2);  // Top Left
+                rlVertex3f(x + width/2, y - height/2, z + length/2);  // Bottom Right
+            }
+
+            if(visibility_mask & BACK_IS_VISIBLE) {
+                // Back face
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+
+                rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+            }
+
+            if(visibility_mask & TOP_IS_VISIBLE) {
+                // Top face
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+                rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Bottom Left
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Bottom Right
+
+                rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Bottom Right
+            }
+
+            if(visibility_mask & DOWN_IS_VISIBLE) {
+                // Bottom face
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left
+                rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Top Right
+                rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left
+            }
+
+            if(visibility_mask & RIGHT_IS_VISIBLE) {
+                // Right face
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Left
+
+                rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Left
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Left
+            }
+
+            if(visibility_mask & LEFT_IS_VISIBLE) {
+                // Left face
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Right
+
+                rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+                rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Right
+            }
+        rlEnd();
+    rlPopMatrix();
+}
+
+void DrawCubeWiresWithVisibilityMask(Vector3 position, float width, float height, float length, Color color, uint8_t visibility_mask) {
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+
+    if (rlCheckBufferLimit(36)) rlglDraw();
+
+    rlPushMatrix();
+    rlTranslatef(position.x, position.y, position.z);
+
+    rlBegin(RL_LINES);
+    rlColor4ub(color.r, color.g, color.b, color.a);
+
+    bool front_visible = visibility_mask & FRONT_IS_VISIBLE;
+    bool back_visible  = visibility_mask & BACK_IS_VISIBLE;
+    bool top_visible   = visibility_mask & TOP_IS_VISIBLE;
+    bool down_visible  = visibility_mask & DOWN_IS_VISIBLE;
+    bool left_visible  = visibility_mask & LEFT_IS_VISIBLE;
+    bool right_visible = visibility_mask & RIGHT_IS_VISIBLE;
+
+    if(front_visible) {
+        // Front Face -----------------------------------------------------
+        // Bottom Line
+        rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+        rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+
+        // Left Line
+        rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+        rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+
+        // Top Line
+        rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+        rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+
+        // Right Line
+        rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+        rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+    }
+
+    if(back_visible) {
+        // Back Face ------------------------------------------------------
+        // Bottom Line
+        rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+        rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+
+        // Left Line
+        rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+        rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+
+        // Top Line
+        rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+        rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+
+        // Right Line
+        rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+        rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+    }
+
+    if(top_visible) {
+
+        if(!front_visible) {
+            // Top Line
+            rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+            rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+        }
+
+        if(!back_visible) {
+            // Top Line
+            rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+            rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+        }
+
+        // Top Face -------------------------------------------------------
+        // Left Line
+        rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left Front
+        rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left Back
+
+        // Right Line
+        rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right Front
+        rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right Back
+    }
+    if(down_visible) {
+
+        if(!front_visible) {
+            // Bottom Line
+            rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+            rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+        }
+
+        if(!back_visible) {
+            // Bottom Line
+            rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+            rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+        }
+
+        // Bottom Face  ---------------------------------------------------
+        // Left Line
+        rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Top Left Front
+        rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left Back
+
+        // Right Line
+        rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Top Right Front
+        rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Top Right Back
+    }
+
+    if(right_visible || left_visible) {
+        if(!front_visible) {
+            // Left Line
+            rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+            rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+
+            // Right Line
+            rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+            rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+        }
+
+        if(!back_visible) {
+
+            // Left Line
+            rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+            rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+
+            // Right Line
+            rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+            rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+        }
+
+        if(!top_visible) {
+            // Left Line
+            rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left Front
+            rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left Back
+
+            // Right Line
+            rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right Front
+            rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right Back
+        }
+        if(!down_visible) {
+            // Bottom Face  ---------------------------------------------------
+            // Left Line
+            rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Top Left Front
+            rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left Back
+
+            // Right Line
+            rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Top Right Front
+            rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Top Right Back
+        }
+
+    }
+    rlEnd();
+    rlPopMatrix();
+}
+
 void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
 {
     unsigned int length = TextLength(text);      // Total length in bytes of the text, scanned by codepoints in loop
@@ -376,7 +613,7 @@ static Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, 
     return result;
 }
 
-static void draw_voxel(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
+static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
 
     Vector3 p_draw = voxel->position_draw;
     Vector3 p_mesh = voxel->position_mesh;
@@ -431,10 +668,12 @@ static void draw_voxel(struct voxel *voxel, struct gui_state *gui_state, real_cp
         DrawCubeWiresV(p_draw, cube_size, color);
     } else {
 
-        DrawCubeV(p_draw, cube_size, color);
+        //DrawCubeV(p_draw, cube_size, color);
+        DrawCubeWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, color, visibility_mask);
 
         if(gui_state->draw_grid_lines) {
-            DrawCubeWiresV(p_draw, cube_size, BLACK);
+            //DrawCubeWiresV(p_draw, cube_size, BLACK);
+            DrawCubeWiresWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, BLACK, visibility_mask);
         }
 
         if(gui_state->current_selected_volume.position_mesh.x == p_mesh.x && gui_state->current_selected_volume.position_mesh.y == p_mesh.y &&
@@ -473,11 +712,16 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
     struct voxel voxel;
 
+    uint8_t cell_visible = TOP_IS_VISIBLE | RIGHT_IS_VISIBLE | DOWN_IS_VISIBLE | LEFT_IS_VISIBLE | BACK_IS_VISIBLE | FRONT_IS_VISIBLE;
+
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
         if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
             j += 1;
             continue;
+        }
+        else if(grid_to_draw->cell_visibility) {
+            cell_visible = grid_to_draw->cell_visibility[j];
         }
 
         float mesh_center_x, mesh_center_y, mesh_center_z;
@@ -492,7 +736,6 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         mesh_center_z = (float) points[cells[i]].z + dz / 2.0f;
 
         voxel.v = grid_to_draw->values[j];
-        j += 1;
 
         voxel.position_draw.x = (float)((mesh_center_x - mesh_offset.x) / scale);
         voxel.position_draw.y = (float)((mesh_center_y - mesh_offset.y) / scale);
@@ -503,7 +746,10 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         voxel.size.z = (float)(dz / scale);
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
-        draw_voxel(&voxel, gui_state, gui_config->min_v, gui_config->max_v, gui_config->time);
+        draw_voxel(&voxel, cell_visible, gui_state, gui_config->min_v, gui_config->max_v, gui_config->time);
+
+        j += 1;
+
     }
 
     gui_state->one_selected = false;
@@ -552,7 +798,7 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 			voxel.v = grid_cell->v;
 			voxel.matrix_position = grid_cell->grid_position;
 
-			draw_voxel(&voxel, gui_state, min_v, max_v, time);
+			draw_voxel(&voxel, ac[i]->visible, gui_state, min_v, max_v, time);
 		}
     }
 
