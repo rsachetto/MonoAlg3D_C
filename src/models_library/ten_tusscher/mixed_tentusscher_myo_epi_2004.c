@@ -13,7 +13,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
 {
 
-	log_to_stdout_and_file("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
+    log_info("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
 
 	// Get the mapping array
 	uint32_t *mapping = NULL;
@@ -23,7 +23,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 	}
 	else 
 	{
-		log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
+		log_error_and_exit("You need to specify a mask function when using a mixed model!\n");
 	}
 
 	uint32_t num_cells = solver->original_num_cells;
@@ -91,7 +91,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu)
     }
     else 
     {
-        log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
+        log_error_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
 

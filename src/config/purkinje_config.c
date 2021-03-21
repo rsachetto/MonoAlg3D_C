@@ -13,25 +13,25 @@
 void print_purkinje_config_values (struct config* config) {
 
     if(config == NULL) {
-        log_to_stdout_and_file("[purkinje] No Purkinje configuration.\n");
+        log_info("[purkinje] No Purkinje configuration.\n");
         return;
     }
 
     char *name = NULL;
     real_cpu dx = 0.0;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config->config_data, "name");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, dx, config->config_data, "dx");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config, "name");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, dx, config, "dx");
 
-    log_to_stdout_and_file("Purkinje configuration:\n");
-    log_to_stdout_and_file("[purkinje] Purkinje network name: %s\n", name);
-    log_to_stdout_and_file("[purkinje] Purkinje network initial Space Discretization: %lf um\n", dx);
+    log_info("Purkinje configuration:\n");
+    log_info("[purkinje] Purkinje network name: %s\n", name);
+    log_info("[purkinje] Purkinje network initial Space Discretization: %lf um\n", dx);
 
     if (shlen(config->config_data) == 1)
     {
-        log_to_stdout_and_file("[purkinje] Purkinje extra parameter:\n");
+        log_info("[purkinje] Purkinje extra parameter:\n");
     }
     else if (shlen(config->config_data) > 1) {
-        log_to_stdout_and_file("[purkinje] Purkinje extra parameters:\n");
+        log_info("[purkinje] Purkinje extra parameters:\n");
     }
 
     STRING_HASH_PRINT_KEY_VALUE_LOG (config->config_data);

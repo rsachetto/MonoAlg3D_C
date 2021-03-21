@@ -208,9 +208,9 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time
 
         for (long k = 0; k < n; k++) {
             tmp = (struct config*) stim_configs[k].value;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp->config_data, "start");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp->config_data, "duration");
-            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp->config_data, "period");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp, "period");
 
             for (int j = 0; j < num_steps; ++j) {
                 if ((time >= stim_start) && (time <= stim_start + stim_dur)) {
@@ -400,9 +400,9 @@ void solve_purkinje_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur
         for (long k = 0; k < n; k++) 
         {
             tmp = (struct config*) stim_configs[k].value;
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp->config_data, "start");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp->config_data, "duration");
-            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp->config_data, "period");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp, "start");
+            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp, "duration");
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, stim_period, tmp, "period");
 
             for (int j = 0; j < num_steps; ++j) 
             {

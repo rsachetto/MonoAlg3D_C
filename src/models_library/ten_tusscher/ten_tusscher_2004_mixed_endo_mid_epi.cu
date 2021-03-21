@@ -12,11 +12,11 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     uint32_t num_volumes = solver->original_num_cells;
 
     #ifdef ENDO
-        log_to_stdout_and_file("Using ten Tusscher 2004 ENDO GPU model\n");
+        log_info("Using ten Tusscher 2004 ENDO GPU model\n");
     #endif
 
     #ifdef EPI
-        log_to_stdout_and_file("Using ten Tusscher 2004 EPI GPU model\n");
+        log_info("Using ten Tusscher 2004 EPI GPU model\n");
     #endif
 
     // execution configuration
@@ -74,7 +74,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     }
     else 
     {
-        log_to_stderr_and_file_and_exit("You need to specify a mask function when using a mixed model!\n");
+        log_error_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
     solve_gpu <<<GRID, BLOCK_SIZE>>>(dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, mapping_device);

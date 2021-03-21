@@ -530,11 +530,12 @@ void test_custom_mesh_connectors() {
     domain_config = alloc_and_init_config_data();
 
     shput_dup_value(domain_config->config_data, "maximum_discretization", "1000.0");
+    shput_dup_value(domain_config->config_data, "start_discretization", "1000.0");
     shput_dup_value(domain_config->config_data, "x_domain_limit", "128000.0");
     shput_dup_value(domain_config->config_data, "y_domain_limit", "128000.0");
     shput_dup_value(domain_config->config_data, "z_domain_limit", "128000.0");
-    shput_dup_value(domain_config->config_data, "total_number_mesh_points", "202358");
-    shput_dup_value(domain_config->config_data, "mesh_file", "meshes/joventino_mesh.alg");
+    shput_dup_value(domain_config->config_data, "number_of_points", "202358");
+    shput_dup_value(domain_config->config_data, "mesh_file", "meshes/one_ventricle.alg");
 
     domain_config->main_function_name = strdup("initialize_grid_with_custom_mesh");
     shput_dup_value(domain_config->config_data, "name", "Custom mesh");

@@ -28,7 +28,7 @@ struct grid {
 	uint32_t number_of_cells;  // Number of cells of grid.
 	uint32_t num_active_cells;
 
-	//dynamic arrays, need to point to NULL
+    //dynamic arrays, need to point to NULL
 	ui32_array free_sv_positions;
 	ui32_array refined_this_step;
 
@@ -40,6 +40,8 @@ struct grid {
 
 	struct point_3d start_discretization;
 	struct point_3d max_discretization;
+
+    bool cells_ordered;
 
 };
 
@@ -62,8 +64,6 @@ void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_p
 bool refine_grid_with_bound(struct grid* the_grid, real_cpu refinement_bound,  real_cpu min_dx, real_cpu min_dy, real_cpu min_dz);
 void refine_grid(struct grid* the_grid, int num_steps);
 void refine_grid_cell(struct grid *the_grid, struct cell_node* grid_cell);
-void refine_fibrotic_cells(struct grid *the_grid);
-void refine_border_zone_cells(struct grid *the_grid);
 
 bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_bound, real_cpu max_dx, real_cpu max_dy, real_cpu max_dz);
 void derefine_all_grid (struct grid* the_grid);

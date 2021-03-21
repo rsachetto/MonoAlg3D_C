@@ -17,7 +17,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_to_stdout_and_file("Using Maleckar2009 CPU model\n");
+    log_info("Using Maleckar2009 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
     solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
@@ -38,9 +38,9 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
         ode_previous_dt = (real*)calloc(num_cells, sizeof(real));
         ode_time_new    = (real*)calloc(num_cells, sizeof(real));
-        log_to_stdout_and_file("Using Adaptive Euler model to solve the ODEs\n");
+        log_info("Using Adaptive Euler model to solve the ODEs\n");
     } else {
-        log_to_stdout_and_file("Using Euler model to solve the ODEs\n");
+        log_info("Using Euler model to solve the ODEs\n");
     }
     OMP(parallel for)
 		for(uint32_t i = 0; i < num_cells; i++) {

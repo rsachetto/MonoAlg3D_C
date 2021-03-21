@@ -363,7 +363,7 @@ int main(int argc, char **argv) {
     }
 
     char *out_dir_name = "";
-    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config, "output_dir");
     char *initial_out_dir_name = strdup(out_dir_name);
 
     
@@ -411,7 +411,7 @@ int main(int argc, char **argv) {
         shput_dup_value(options->save_mesh_config->config_data, "output_dir", new_out_dir_name);
         sdsfree(new_out_dir_name);
 
-        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config->config_data, "output_dir");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config, "output_dir");
 
         printf("Rank %d, performing simulation %d and saving in %s\n", rank, simulation_number_start, out_dir_name);
 
@@ -425,17 +425,17 @@ int main(int argc, char **argv) {
         buffer_log = sdscatfmt(buffer_log, "%s/outputlog.txt", out_dir_name);
         open_logfile(buffer_log);
 
-        log_to_stdout_and_file("Command line to reproduce this simulation:\n");
+        log_info("Command line to reproduce this simulation:\n");
         for (int i = 0; i < argc; i++) {
-            log_to_stdout_and_file("%s ", argv[i]);
+            log_info("%s ", argv[i]);
         }
 
-        log_to_stdout_and_file("\n");
+        log_info("\n");
 
         buffer_ini =
                 sdscatfmt(buffer_ini, "%s/original_configuration.ini", out_dir_name);
 
-        log_to_stdout_and_file("For reproducibility purposes the configuration file was copied to file: %s\n",
+        log_info("For reproducibility purposes the configuration file was copied to file: %s\n",
                                  buffer_ini);
 
 
@@ -448,7 +448,7 @@ int main(int argc, char **argv) {
 
 #ifndef COMPILE_CUDA
         if(ode_solver->gpu) {
-            log_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+            log_warn("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
             ode_solver->gpu = false;
         }
 #endif

@@ -30,31 +30,31 @@ void init_config_functions(struct config *config, char *default_lib, char *confi
 
     config->handle = dlopen (config->library_file_path, RTLD_LAZY);
     if (!config->handle) {
-        log_to_stderr_and_file_and_exit("%s\n", dlerror());
+        log_error_and_exit("%s\n", dlerror());
     }
 
     if(main_function_name){
         config->main_function = dlsym(config->handle, main_function_name);
         char *error = dlerror();
         if (error != NULL)  {
-            log_to_stderr_and_file_and_exit("\n%s function not found in the provided in library %s. Error from dlsym %s\n", main_function_name, config->library_file_path, error);
+            log_error_and_exit("\n%s function not found in the provided in library %s. Error from dlsym %s\n", main_function_name, config->library_file_path, error);
         }
     }
     else {
-        log_to_stderr_and_file_and_exit("No function name for [%s] provided. Exiting!\n", config_type);
+        log_error_and_exit("No function name for [%s] provided. Exiting!\n", config_type);
     }
 
     if(init_function_name){
         config->init_function = dlsym(config->handle, init_function_name);
         if (dlerror() != NULL)  {
-            log_to_stderr_and_file_and_exit("\n%s function not found in the provided in library %s\n", init_function_name, config->library_file_path);
+            log_error_and_exit("\n%s function not found in the provided in library %s\n", init_function_name, config->library_file_path);
         }
     }
 
     if(end_function_name){
         config->end_function = dlsym(config->handle, end_function_name);
         if (dlerror() != NULL)  {
-            log_to_stderr_and_file_and_exit("\n%s function not found in the provided in library %s\n", end_function_name, config->library_file_path);
+            log_error_and_exit("\n%s function not found in the provided in library %s\n", end_function_name, config->library_file_path);
         }
     }
 }

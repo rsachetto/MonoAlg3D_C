@@ -3,17 +3,259 @@
 //
 
 #include "domain_helpers.h"
+#include "mesh_info_data.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../utils/utils.h"
 #include "../3dparty/sds/sds.h"
 #include "../config_helpers/config_helpers.h"
 #include "../logger/logger.h"
+#include "../utils/stop_watch.h"
 
 #include <float.h>
 #include <math.h>
 #include <time.h>
 
 #include <unistd.h>
+
+
+int set_cuboid_domain_mesh(struct grid * the_grid, real_cpu start_dx, real_cpu start_dy,real_cpu start_dz, real_cpu side_length_x, real_cpu side_length_y, real_cpu side_length_z) {
+
+    real_cpu real_side_length_x;
+    real_cpu real_side_length_y;
+    real_cpu real_side_length_z;
+
+    int success = calculate_cuboid_side_lengths(start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z, &real_side_length_x,
+                                                &real_side_length_y, &real_side_length_z);
+
+    if(!success) {
+        return 0;
+    }
+
+    log_info("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x, real_side_length_y, real_side_length_z);
+    log_info("Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x, side_length_y, side_length_z, start_dx,
+             start_dy, start_dz);
+
+
+    int num_steps = get_num_refinement_steps_to_discretization(real_side_length_z, start_dz);
+
+    initialize_and_construct_grid(the_grid, POINT3D(real_side_length_x, real_side_length_y, real_side_length_z));
+
+    if((real_side_length_z / 2.0f) > side_length_z) {
+        real_cpu aux = real_side_length_z / 2.0f;
+        int remaining_refinements = num_steps;
+
+        for(int i = 0; i < num_steps; i++) {
+            set_cuboid_domain(the_grid, real_side_length_x, real_side_length_y, aux);
+            refine_grid(the_grid, 1);
+            derefine_grid_inactive_cells(the_grid);
+            aux = aux / 2.0f;
+            remaining_refinements--;
+            if(aux <= side_length_z)
+                break;
+        }
+
+        refine_grid(the_grid, remaining_refinements);
+
+    } else {
+        refine_grid(the_grid, num_steps);
+    }
+
+    set_cuboid_domain(the_grid, side_length_x, side_length_y, side_length_z);
+
+    int i;
+    for(i = 0; i < num_steps; i++) {
+        derefine_grid_inactive_cells(the_grid);
+    }
+
+    the_grid->start_discretization.x = start_dx;
+    the_grid->start_discretization.y = start_dy;
+    the_grid->start_discretization.z = start_dz;
+
+    return 1;
+}
+
+int set_square_mesh(struct config *config, struct grid *the_grid) {
+
+    int num_layers = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int, num_layers, config, "num_layers");
+
+    real_cpu side_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length, config, "side_length");
+
+    real_cpu start_dx = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config, "start_dx");
+
+    real_cpu start_dy = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dy, config, "start_dy");
+
+    real_cpu start_dz = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config, "start_dz");
+
+    return set_cuboid_domain_mesh(the_grid, start_dx, start_dy, start_dz, side_length, side_length, start_dz * num_layers);
+}
+
+uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file, uint32_t num_volumes, double cube_side, double start_h, uint8_t num_extra_fields,
+                                   set_custom_data_for_mesh_fn set_custom_data_for_mesh) {
+
+    struct stop_watch sw = {0};
+    start_stop_watch(&sw);
+
+    FILE *file = fopen(mesh_file, "r");
+
+    if(!file) {
+        log_error_and_exit("Error opening mesh described in %s!!\n", mesh_file);
+    }
+
+    double tmp_size = cube_side / 2.0;
+    uint16_t num_ref = 0;
+
+    while(tmp_size > start_h) {
+        tmp_size = tmp_size / 2;
+        num_ref++;
+    }
+
+    initialize_and_construct_grid(the_grid, SAME_POINT3D(cube_side));
+
+    log_info("\n---- Start refining the initial cube ----\n");
+    refine_grid(the_grid, num_ref);
+    log_info("---- End refining the initial cube ---- \n");
+
+    struct custom_mesh_basic_data_hash_entry *custom_mesh_data_hash = NULL;
+    hmdefault(custom_mesh_data_hash, -1);
+
+    real_cpu maxx = 0.0;
+    real_cpu maxy = 0.0;
+    real_cpu maxz = 0.0;
+    real_cpu minx = DBL_MAX;
+    real_cpu miny = DBL_MAX;
+    real_cpu minz = DBL_MAX;
+
+    bool load_custom_data = (set_custom_data_for_mesh != NULL && num_extra_fields > 0);
+
+    real_cpu **custom_data = NULL;
+
+    if(load_custom_data) {
+        custom_data = MALLOC_ARRAY_OF_TYPE(real_cpu *, num_volumes);
+        if(custom_data == NULL) {
+            log_error_and_exit("Failed to allocate memory\n");
+        }
+        for(uint32_t i = 0; i < num_volumes; i++) {
+            custom_data[i] = MALLOC_ARRAY_OF_TYPE(real_cpu, num_extra_fields);
+
+            if(custom_data[i] == NULL) {
+                log_error_and_exit("Failed to allocate memory\n");
+            }
+        }
+    }
+
+    char *line = NULL;
+    size_t len;
+
+    log_info("Reading mesh file\n");
+    for(uint32_t i = 0; i < num_volumes; i++) {
+
+		sds *data;
+        int split_count;
+
+        getline(&line, &len, file);
+
+        char *tmp = line;
+        data = sdssplit(tmp, ",", &split_count);
+
+        if(split_count < 3) {
+            log_error_and_exit("Not enough data to load the mesh geometry in line %d of file %s! [available=%d, required=3]\n", i+1, mesh_file, split_count);
+        }
+
+        real_cpu cx = strtod(data[0], NULL);
+        real_cpu cy = strtod(data[1], NULL);
+        real_cpu cz = strtod(data[2], NULL);
+
+        if(load_custom_data) {
+            // indexes 3, 4 and 5 are not used in this function
+            for(int d = 0; d < num_extra_fields; d++) {
+                custom_data[i][d] = strtod(data[d + 6], NULL);
+            }
+        }
+
+        sdsfreesplitres(data, split_count);
+
+        if(cx > maxx)
+            maxx = cx;
+        if(cy > maxy)
+            maxy = cy;
+        if(cz > maxz)
+            maxz = cz;
+        if(cx < minx)
+            minx = cx;
+        if(cy < miny)
+            miny = cy;
+        if(cz < minz)
+            minz = cz;
+
+        hmput(custom_mesh_data_hash, POINT3D(cx,cy,cz), i);
+    }
+
+    free(line);
+
+    uint32_t num_loaded = 0;
+
+    log_info("Loading grid\n");
+
+    FOR_EACH_CELL(the_grid) {
+        real_cpu x = cell->center.x;
+        real_cpu y = cell->center.y;
+        real_cpu z = cell->center.z;
+
+        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+            cell->active = false;
+        } else {
+            //index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
+            struct point_3d p = POINT3D(x,y,z);
+            int index = hmget(custom_mesh_data_hash, p);
+
+            if(index != -1) {
+                cell->active = true;
+                cell->original_position_in_file = index;
+                if(load_custom_data) {
+                    set_custom_data_for_mesh(cell, custom_data[cell->original_position_in_file]);
+                }
+
+                num_loaded++;
+
+            } else {
+                cell->active = false;
+            }
+        }
+    }
+
+    hmfree(custom_mesh_data_hash);
+
+	if(custom_data) {
+		for(int i = 0; i < num_volumes; i++) {
+			free(custom_data[i]);
+		}
+		free(custom_data);
+	}
+
+    if(num_loaded > 0) {
+        // TODO: we need to sum the cell discretization here...
+        the_grid->mesh_side_length.x = maxx;
+        the_grid->mesh_side_length.y = maxy;
+        the_grid->mesh_side_length.z = maxz;
+
+        log_info("Cleaning grid\n");
+
+        for(uint16_t r = 0; r < num_ref; r++) {
+            derefine_grid_inactive_cells(the_grid);
+        }
+    }
+
+    fclose(file);
+
+    log_info("\nTime to load the mesh: %ld μs\n\n", stop_stop_watch(&sw));
+
+    return num_loaded;
+}
 
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
                                   real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
@@ -186,53 +428,6 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
 
 }
 
-void refine_fibrotic_cells(struct grid *the_grid) {
-
-    assert(the_grid);
-
-    struct cell_node *grid_cell, *auxiliar_grid_cell;
-
-    struct fibrotic_mesh_info *mesh_info;
-
-    grid_cell = the_grid->first_cell;
-    while(grid_cell != 0) {
-
-        mesh_info = FIBROTIC_INFO(grid_cell);
-
-        if(grid_cell->active && mesh_info->fibrotic) {
-            auxiliar_grid_cell = grid_cell;
-            grid_cell = grid_cell->next;
-            refine_cell(auxiliar_grid_cell, NULL, NULL);
-            the_grid->number_of_cells += 7;
-        } else {
-            grid_cell = grid_cell->next;
-        }
-    }
-}
-
-void refine_border_zone_cells(struct grid *the_grid) {
-
-    assert(the_grid);
-
-    struct cell_node *grid_cell, *auxiliar_grid_cell;
-
-    struct fibrotic_mesh_info *mesh_info;
-
-    grid_cell = the_grid->first_cell;
-    while(grid_cell != 0) {
-
-        mesh_info = FIBROTIC_INFO(grid_cell);
-
-        if(grid_cell->active && mesh_info->border_zone) {
-            auxiliar_grid_cell = grid_cell;
-            grid_cell = grid_cell->next;
-            refine_cell(auxiliar_grid_cell, NULL, NULL);
-            the_grid->number_of_cells += 7;
-        } else {
-            grid_cell = grid_cell->next;
-        }
-    }
-}
 
 /**
  * Sets the current domain as a domain described in the N-version benchmark
@@ -274,202 +469,202 @@ void set_cuboid_domain(struct grid *the_grid, real_cpu size_x, real_cpu size_y, 
 
 }
 
-void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, char *read_format) {
+//void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, char *read_format) {
+//
+//    assert(the_grid);
+//
+//    struct cell_node *grid_cell = the_grid->first_cell;
+//    FILE *file = fopen(file_name, "r");
+//
+//    if(!file) {
+//        log_error_and_exit("Error opening mesh described in %s!!\n", file_name);
+//    }
+//
+//    double **mesh_points = (double **)malloc(sizeof(double *) * size);
+//    for(int i = 0; i < size; i++) {
+//        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
+//        if(mesh_points[i] == NULL) {
+//            log_error_and_exit("Failed to allocate memory\n");
+//        }
+//    }
+//    real_cpu dummy; // we don't use this value here
+//
+//    real_cpu maxy = 0.0;
+//    real_cpu maxz = 0.0;
+//    real_cpu miny = DBL_MAX;
+//    real_cpu minz = DBL_MAX;
+//    int *fibrosis = (int *)malloc(sizeof(int) * size);
+//
+//    char *tag = (char *)malloc(size);
+//    for(int k = 0; k < size; k++) {
+//        tag[k] = 'n';
+//    }
+//
+//    fibrosis[0] = -1;
+//
+//    int i = 0;
+//    while(i < size) {
+//
+//        fscanf(file, read_format, &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &fibrosis[i], &tag[i]);
+//
+//        // we save the old index to reference fibrosis[i] and tags[i]. T
+//        // this is needed because the array mesh_points is sorted after reading the mesh file.
+//        mesh_points[i][3] = i;
+//
+//        if(mesh_points[i][1] > maxy)
+//            maxy = mesh_points[i][1];
+//        if(mesh_points[i][2] > maxz)
+//            maxz = mesh_points[i][2];
+//        if(mesh_points[i][1] < miny)
+//            miny = mesh_points[i][1];
+//        if(mesh_points[i][2] < minz)
+//            minz = mesh_points[i][2];
+//
+//        i++;
+//    }
+//
+//    sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
+//
+//    real_cpu maxx = mesh_points[size - 1][0];
+//    real_cpu minx = mesh_points[0][0];
+//    int index;
+//
+//    real_cpu x, y, z;
+//    while(grid_cell != 0) {
+//        x = grid_cell->center.x;
+//        y = grid_cell->center.y;
+//        z = grid_cell->center.z;
+//
+//        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+//            grid_cell->active = false;
+//        } else {
+//            index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
+//
+//            if(index != -1) {
+//                grid_cell->active = true;
+//                if(fibrosis[0] != -1) {
+//                    int old_index = (int)mesh_points[index][3];
+//
+//                    INITIALIZE_FIBROTIC_INFO(grid_cell);
+//
+//                    FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
+//                    BORDER_ZONE(grid_cell) = (fibrosis[old_index] == 2);
+//                    SCAR_TYPE(grid_cell) = tag[old_index];
+//                }
+//            } else {
+//                grid_cell->active = false;
+//            }
+//        }
+//        grid_cell = grid_cell->next;
+//    }
+//
+//    fclose(file);
+//
+//    // deallocate memory
+//    for(int l = 0; l < size; l++) {
+//        free(mesh_points[l]);
+//    }
+//
+//    free(mesh_points);
+//    free(tag);
+//    free(fibrosis);
+//
+//    //TODO: we need to sum the cell discretization here...
+//    the_grid->mesh_side_length.x = maxx;
+//    the_grid->mesh_side_length.y = maxy;
+//    the_grid->mesh_side_length.z = maxz;
+//
+//}
 
-    assert(the_grid);
-
-    struct cell_node *grid_cell = the_grid->first_cell;
-    FILE *file = fopen(file_name, "r");
-
-    if(!file) {
-        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
-    }
-
-    double **mesh_points = (double **)malloc(sizeof(double *) * size);
-    for(int i = 0; i < size; i++) {
-        mesh_points[i] = (real_cpu *)malloc(sizeof(real_cpu) * 4);
-        if(mesh_points[i] == NULL) {
-            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
-        }
-    }
-    real_cpu dummy; // we don't use this value here
-
-    real_cpu maxy = 0.0;
-    real_cpu maxz = 0.0;
-    real_cpu miny = DBL_MAX;
-    real_cpu minz = DBL_MAX;
-    int *fibrosis = (int *)malloc(sizeof(int) * size);
-
-    char *tag = (char *)malloc(size);
-    for(int k = 0; k < size; k++) {
-        tag[k] = 'n';
-    }
-
-    fibrosis[0] = -1;
-
-    int i = 0;
-    while(i < size) {
-
-        fscanf(file, read_format, &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy, &fibrosis[i], &tag[i]);
-
-        // we save the old index to reference fibrosis[i] and tags[i]. T
-        // this is needed because the array mesh_points is sorted after reading the mesh file.
-        mesh_points[i][3] = i;
-
-        if(mesh_points[i][1] > maxy)
-            maxy = mesh_points[i][1];
-        if(mesh_points[i][2] > maxz)
-            maxz = mesh_points[i][2];
-        if(mesh_points[i][1] < miny)
-            miny = mesh_points[i][1];
-        if(mesh_points[i][2] < minz)
-            minz = mesh_points[i][2];
-
-        i++;
-    }
-
-    sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
-
-    real_cpu maxx = mesh_points[size - 1][0];
-    real_cpu minx = mesh_points[0][0];
-    int index;
-
-    real_cpu x, y, z;
-    while(grid_cell != 0) {
-        x = grid_cell->center.x;
-        y = grid_cell->center.y;
-        z = grid_cell->center.z;
-
-        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
-            grid_cell->active = false;
-        } else {
-            index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
-
-            if(index != -1) {
-                grid_cell->active = true;
-                if(fibrosis[0] != -1) {
-                    int old_index = (int)mesh_points[index][3];
-
-                    INITIALIZE_FIBROTIC_INFO(grid_cell);
-
-                    FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
-                    BORDER_ZONE(grid_cell) = (fibrosis[old_index] == 2);
-                    SCAR_TYPE(grid_cell) = tag[old_index];
-                }
-            } else {
-                grid_cell->active = false;
-            }
-        }
-        grid_cell = grid_cell->next;
-    }
-
-    fclose(file);
-
-    // deallocate memory
-    for(int l = 0; l < size; l++) {
-        free(mesh_points[l]);
-    }
-
-    free(mesh_points);
-    free(tag);
-    free(fibrosis);
-
-    //TODO: we need to sum the cell discretization here...
-    the_grid->mesh_side_length.x = maxx;
-    the_grid->mesh_side_length.y = maxy;
-    the_grid->mesh_side_length.z = maxz;
-
-}
-
-void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, size_t size, real_cpu minx, real_cpu maxx,
-                                 real_cpu miny, real_cpu maxy, real_cpu minz, real_cpu maxz, bool read_fibrosis) {
-
-    struct cell_node *grid_cell = the_grid->first_cell;
-    FILE *file = fopen(file_name, "r");
-
-    if(!file) {
-        log_to_stderr_and_file_and_exit("Error opening mesh described in %s!!\n", file_name);
-    }
-
-    real_cpu **mesh_points = (real_cpu **)malloc(sizeof(real_cpu *) * size);
-    for(size_t i = 0; i < size; i++) {
-        mesh_points[i] = (real_cpu *)calloc(4, sizeof(real_cpu));
-        if(mesh_points[i] == NULL) {
-            log_to_stderr_and_file_and_exit("Failed to allocate memory\n");
-        }
-    }
-    real_cpu dummy; // we don't use this value here
-    int *fibrosis = (int *)malloc(sizeof(int) * size);
-
-    char *tag = (char *)malloc(size);
-    for(int k = 0; k < size; k++) {
-        tag[k] = 'n';
-    }
-
-    int i = 0;
-    while(i < size) {
-
-        int ret = fscanf(file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
-               &fibrosis[i], &tag[i]);
-
-        if(ret == 0) {
-            fclose(file);
-            log_to_stderr_and_file_and_exit("Error reading mesh described in %s. Check the size parameter!\n", file_name);
-        }
-
-        // we save the old index to reference fibrosis[i] and tags[i]. T
-        // this is needed because the array mesh_points is sorted after reading the mesh file.
-        mesh_points[i][3] = i;
-        i++;
-    }
-    sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
-    int index;
-
-    real_cpu x, y, z;
-    while(grid_cell != 0) {
-        x = grid_cell->center.x;
-        y = grid_cell->center.y;
-        z = grid_cell->center.z;
-
-        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
-            grid_cell->active = false;
-        } else {
-            index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
-
-            if(index != -1) {
-                grid_cell->active = true;
-                if(read_fibrosis) {
-                    int old_index = (int)mesh_points[index][3];
-
-                    INITIALIZE_FIBROTIC_INFO(grid_cell);
-
-                    FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
-                    BORDER_ZONE(grid_cell) = (fibrosis[old_index] == 2);
-                    SCAR_TYPE(grid_cell) = tag[old_index];
-                }
-            } else {
-                grid_cell->active = false;
-            }
-        }
-        grid_cell = grid_cell->next;
-    }
-
-    fclose(file);
-
-    // deallocate memory
-    for(size_t l = 0; l < size; l++) {
-        free(mesh_points[l]);
-    }
-
-
-    the_grid->mesh_side_length.x = maxx;
-    the_grid->mesh_side_length.y = maxy;
-    the_grid->mesh_side_length.z = maxz;
-
-    free(mesh_points);
-    free(tag);
-    free(fibrosis);
-}
+//void set_custom_mesh_with_bounds(struct grid *the_grid, const char *file_name, size_t size, real_cpu minx, real_cpu maxx,
+//                                 real_cpu miny, real_cpu maxy, real_cpu minz, real_cpu maxz, bool read_fibrosis) {
+//
+//    struct cell_node *grid_cell = the_grid->first_cell;
+//    FILE *file = fopen(file_name, "r");
+//
+//    if(!file) {
+//        log_error_and_exit("Error opening mesh described in %s!!\n", file_name);
+//    }
+//
+//    real_cpu **mesh_points = (real_cpu **)malloc(sizeof(real_cpu *) * size);
+//    for(size_t i = 0; i < size; i++) {
+//        mesh_points[i] = (real_cpu *)calloc(4, sizeof(real_cpu));
+//        if(mesh_points[i] == NULL) {
+//            log_error_and_exit("Failed to allocate memory\n");
+//        }
+//    }
+//    real_cpu dummy; // we don't use this value here
+//    int *fibrosis = (int *)malloc(sizeof(int) * size);
+//
+//    char *tag = (char *)malloc(size);
+//    for(int k = 0; k < size; k++) {
+//        tag[k] = 'n';
+//    }
+//
+//    int i = 0;
+//    while(i < size) {
+//
+//        int ret = fscanf(file, "%lf,%lf,%lf,%lf,%d,%c\n", &mesh_points[i][0], &mesh_points[i][1], &mesh_points[i][2], &dummy,
+//               &fibrosis[i], &tag[i]);
+//
+//        if(ret == 0) {
+//            fclose(file);
+//            log_error_and_exit("Error reading mesh described in %s. Check the size parameter!\n", file_name);
+//        }
+//
+//        // we save the old index to reference fibrosis[i] and tags[i]. T
+//        // this is needed because the array mesh_points is sorted after reading the mesh file.
+//        mesh_points[i][3] = i;
+//        i++;
+//    }
+//    sort_vector(mesh_points, size); // we need to sort because inside_mesh perform a binary search
+//    int index;
+//
+//    real_cpu x, y, z;
+//    while(grid_cell != 0) {
+//        x = grid_cell->center.x;
+//        y = grid_cell->center.y;
+//        z = grid_cell->center.z;
+//
+//        if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
+//            grid_cell->active = false;
+//        } else {
+//            index = inside_mesh(mesh_points, x, y, z, 0, size - 1);
+//
+//            if(index != -1) {
+//                grid_cell->active = true;
+//                if(read_fibrosis) {
+//                    int old_index = (int)mesh_points[index][3];
+//
+//                    INITIALIZE_FIBROTIC_INFO(grid_cell);
+//
+//                    FIBROTIC(grid_cell) = (fibrosis[old_index] == 1);
+//                    BORDER_ZONE(grid_cell) = (fibrosis[old_index] == 2);
+//                    SCAR_TYPE(grid_cell) = tag[old_index];
+//                }
+//            } else {
+//                grid_cell->active = false;
+//            }
+//        }
+//        grid_cell = grid_cell->next;
+//    }
+//
+//    fclose(file);
+//
+//    // deallocate memory
+//    for(size_t l = 0; l < size; l++) {
+//        free(mesh_points[l]);
+//    }
+//
+//
+//    the_grid->mesh_side_length.x = maxx;
+//    the_grid->mesh_side_length.y = maxy;
+//    the_grid->mesh_side_length.z = maxz;
+//
+//    free(mesh_points);
+//    free(tag);
+//    free(fibrosis);
+//}
 
 void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization) {
 
@@ -647,12 +842,11 @@ void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization
 
 void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) {
 
-    log_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0);
+    log_info("Making %.2lf %% of cells inactive\n", phi * 100.0);
 
-    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_info("Using %u as seed\n", fib_seed);
 
     struct cell_node *grid_cell;
-
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
@@ -672,7 +866,7 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
 
 void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) {
 
-    log_to_stdout_and_file("Making upper and down left corner inactive !\n");
+    log_info("Making upper and down left corner inactive !\n");
 
     bool inside;
 
@@ -718,14 +912,14 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
                                real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed) {
 
-    log_to_stdout_and_file("Making %.2lf %% of cells inactive\n", phi * 100.0f);
+    log_info("Making %.2lf %% of cells inactive\n", phi * 100.0f);
 
     if(fib_seed == 0)
         fib_seed = (unsigned)time(NULL) + getpid();
 
     srand(fib_seed);
 
-    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_info("Using %u as seed\n", fib_seed);
 
     real_cpu bz_radius_2 = pow(bz_radius, 2.0);
     real_cpu sphere_radius_2 = pow(sphere_radius, 2.0);
@@ -808,97 +1002,8 @@ void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_
 
 }
 
-void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, real_cpu big_scar_center_x,
-                             real_cpu big_scar_center_y, real_cpu big_scar_center_z, real_cpu small_scar_center_x,
-                             real_cpu small_scar_center_y, real_cpu small_scar_center_z) {
-
-    if(seed == 0)
-        seed = (unsigned)time(NULL) + getpid();
-
-    srand(seed);
-
-    log_to_stdout_and_file("Using %u as seed\n", seed);
-
-    real_cpu bz_size_big = 0;
-    real_cpu bz_size_small = 0;
-    real_cpu dist_big = 0;
-    real_cpu dist_small = 0;
-
-    log_to_stdout_and_file("Calculating fibrosis using phi: %lf\n", phi);
-    struct cell_node *grid_cell = grid->first_cell;
-
-    while(grid_cell != NULL) {
-
-        if(grid_cell->active) {
-            if(FIBROTIC(grid_cell)) {
-                grid_cell->can_change = false;
-                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi)
-                    grid_cell->active = false;
-            } else if(BORDER_ZONE(grid_cell)) {
-                real_cpu centerX = grid_cell->center.x;
-                real_cpu centerY = grid_cell->center.y;
-                real_cpu centerZ = grid_cell->center.z;
-                if(SCAR_TYPE(grid_cell) == 'b') {
-                    dist_big = sqrt((centerX - big_scar_center_x) * (centerX - big_scar_center_x) +
-                                    (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
-                                    (centerZ - big_scar_center_z) * (centerZ - big_scar_center_z));
-                    if(dist_big > bz_size_big) {
-                        bz_size_big = dist_big;
-                    }
-                } else if(SCAR_TYPE(grid_cell) == 's') {
-                    dist_small = sqrt((centerX - small_scar_center_x) * (centerX - small_scar_center_x) +
-                                      (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
-                                      (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
-                    if(dist_small > bz_size_small) {
-                        bz_size_small = dist_small;
-                    }
-                }
-            }
-        }
-        grid_cell = grid_cell->next;
-    }
-
-    grid_cell = grid->first_cell;
-    while(grid_cell != NULL) {
-
-        if(grid_cell->active) {
-            if(BORDER_ZONE(grid_cell)) {
-                real_cpu centerX = grid_cell->center.x;
-                real_cpu centerY = grid_cell->center.y;
-                real_cpu centerZ = grid_cell->center.z;
-                if(SCAR_TYPE(grid_cell) == 'b') {
-                    dist_big = sqrt((centerX - big_scar_center_x) * (centerX - big_scar_center_x) +
-                                    (centerY - big_scar_center_y) * (centerY - big_scar_center_y) +
-                                    (centerZ - big_scar_center_z) * (centerZ - big_scar_center_z));
-                    dist_big = dist_big / bz_size_big;
-                    real_cpu phi_local = phi - phi * dist_big;
-
-                    real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                    if(p < phi_local) {
-                        grid_cell->active = false;
-                    }
-                    grid_cell->can_change = false;
-                } else if(SCAR_TYPE(grid_cell) == 's') {
-                    dist_small = sqrt((centerX - small_scar_center_x) * (centerX - small_scar_center_x) +
-                                      (centerY - small_scar_center_y) * (centerY - small_scar_center_y) +
-                                      (centerZ - small_scar_center_z) * (centerZ - small_scar_center_z));
-                    dist_small = dist_small / bz_size_small;
-                    real_cpu phi_local = phi - phi * dist_small;
-
-                    real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                    if(p < phi_local) {
-                        grid_cell->active = false;
-                    }
-                    grid_cell->can_change = false;
-                }
-            }
-        }
-        grid_cell = grid_cell->next;
-    }
-}
-
-void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char *filename, int size) {
+//TODO: move
+void set_human_mesh_fibrosis_from_file(struct grid *grid, int type, const char *filename, int size) {
 
     FILE *file = fopen(filename, "r");
 
@@ -935,7 +1040,7 @@ void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char 
         real_cpu center_y = grid_cell->center.y;
         real_cpu center_z = grid_cell->center.z;
 
-        if((grid_cell->discretization.x == 100.0) && (SCAR_TYPE(grid_cell) == type)) {
+        if((grid_cell->discretization.x == 100.0) && (DHZB_MESH_TISSUE_TYPE(grid_cell) == type)) {
             int index = inside_mesh(scar_mesh, center_x, center_y, center_z, 0, size - 1);
             grid_cell->active = (index != -1);
         }
@@ -1032,7 +1137,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
                         const double min_z, const double max_z)
 {
 
-    log_to_stdout_and_file("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
+    log_info("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
 
     struct cell_node *grid_cell;
 
@@ -1041,7 +1146,7 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
 
     srand(fib_seed);
 
-    log_to_stdout_and_file("Using %u as seed\n", fib_seed);
+    log_info("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0)

@@ -1179,7 +1179,7 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
 	fclose(fileW);  	
 		
     // We just leave the program after this ...
-    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_info("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 
 }
@@ -1484,7 +1484,7 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     fclose(fileW);  	
 		
     // We just leave the program after this ...
-    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_info("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 }
 
@@ -1848,7 +1848,7 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
 	fclose(fileW);  	
 		
     // We just leave the program after this ...
-    log_to_stdout_and_file("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
+    log_info("[!] Finish writing fibrotic region file '%s'!\n",new_fib_file);
     exit(EXIT_SUCCESS);
 
 }

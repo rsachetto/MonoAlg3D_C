@@ -26,9 +26,246 @@
 #include "../3dparty/raylib/src/rlgl.h"
 /////////
 
+static void DrawCubeWithVisibilityMask(Vector3 position, float width, float height, float length, Color color, uint8_t visibility_mask) {
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+
+    if (rlCheckBufferLimit(36)) rlglDraw();
+
+    rlPushMatrix();
+        // NOTE: Transformation is applied in inverse order (scale -> rotate -> translate)
+        rlTranslatef(position.x, position.y, position.z);
+        //rlRotatef(45, 0, 1, 0);
+        //rlScalef(1.0f, 1.0f, 1.0f);   // NOTE: Vertices are directly scaled on definition
+
+        rlBegin(RL_TRIANGLES);
+            rlColor4ub(color.r, color.g, color.b, color.a);
+
+            if(visibility_mask & FRONT_IS_VISIBLE) {
+                // Front face
+                rlVertex3f(x - width/2, y - height/2, z + length/2);  // Bottom Left
+                rlVertex3f(x + width/2, y - height/2, z + length/2);  // Bottom Right
+                rlVertex3f(x - width/2, y + height/2, z + length/2);  // Top Left
+
+                rlVertex3f(x + width/2, y + height/2, z + length/2);  // Top Right
+                rlVertex3f(x - width/2, y + height/2, z + length/2);  // Top Left
+                rlVertex3f(x + width/2, y - height/2, z + length/2);  // Bottom Right
+            }
+
+            if(visibility_mask & BACK_IS_VISIBLE) {
+                // Back face
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+
+                rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+            }
+
+            if(visibility_mask & TOP_IS_VISIBLE) {
+                // Top face
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+                rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Bottom Left
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Bottom Right
+
+                rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Bottom Right
+            }
+
+            if(visibility_mask & DOWN_IS_VISIBLE) {
+                // Bottom face
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left
+                rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Top Right
+                rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left
+            }
+
+            if(visibility_mask & RIGHT_IS_VISIBLE) {
+                // Right face
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Left
+
+                rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Left
+                rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Left
+            }
+
+            if(visibility_mask & LEFT_IS_VISIBLE) {
+                // Left face
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Right
+                rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+                rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Right
+
+                rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+                rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+                rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Right
+            }
+        rlEnd();
+    rlPopMatrix();
+}
+
+void DrawCubeWiresWithVisibilityMask(Vector3 position, float width, float height, float length, Color color, uint8_t visibility_mask) {
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+
+    if (rlCheckBufferLimit(36)) rlglDraw();
+
+    rlPushMatrix();
+    rlTranslatef(position.x, position.y, position.z);
+
+    rlBegin(RL_LINES);
+    rlColor4ub(color.r, color.g, color.b, color.a);
+
+    bool front_visible = visibility_mask & FRONT_IS_VISIBLE;
+    bool back_visible  = visibility_mask & BACK_IS_VISIBLE;
+    bool top_visible   = visibility_mask & TOP_IS_VISIBLE;
+    bool down_visible  = visibility_mask & DOWN_IS_VISIBLE;
+    bool left_visible  = visibility_mask & LEFT_IS_VISIBLE;
+    bool right_visible = visibility_mask & RIGHT_IS_VISIBLE;
+
+    if(front_visible) {
+        // Front Face -----------------------------------------------------
+        // Bottom Line
+        rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+        rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+
+        // Left Line
+        rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+        rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+
+        // Top Line
+        rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+        rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+
+        // Right Line
+        rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+        rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+    }
+
+    if(back_visible) {
+        // Back Face ------------------------------------------------------
+        // Bottom Line
+        rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+        rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+
+        // Left Line
+        rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+        rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+
+        // Top Line
+        rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+        rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+
+        // Right Line
+        rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+        rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+    }
+
+    if(top_visible) {
+
+        if(!front_visible) {
+            // Top Line
+            rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+            rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+        }
+
+        if(!back_visible) {
+            // Top Line
+            rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+            rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+        }
+
+        // Top Face -------------------------------------------------------
+        // Left Line
+        rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left Front
+        rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left Back
+
+        // Right Line
+        rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right Front
+        rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right Back
+    }
+    if(down_visible) {
+
+        if(!front_visible) {
+            // Bottom Line
+            rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+            rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+        }
+
+        if(!back_visible) {
+            // Bottom Line
+            rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+            rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+        }
+
+        // Bottom Face  ---------------------------------------------------
+        // Left Line
+        rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Top Left Front
+        rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left Back
+
+        // Right Line
+        rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Top Right Front
+        rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Top Right Back
+    }
+
+    if(right_visible || left_visible) {
+        if(!front_visible) {
+            // Left Line
+            rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Bottom Right
+            rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right
+
+            // Right Line
+            rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left
+            rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Bottom Left
+        }
+
+        if(!back_visible) {
+
+            // Left Line
+            rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Bottom Right
+            rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right
+
+            // Right Line
+            rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left
+            rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Bottom Left
+        }
+
+        if(!top_visible) {
+            // Left Line
+            rlVertex3f(x - width / 2, y + height / 2, z + length / 2); // Top Left Front
+            rlVertex3f(x - width / 2, y + height / 2, z - length / 2); // Top Left Back
+
+            // Right Line
+            rlVertex3f(x + width / 2, y + height / 2, z + length / 2); // Top Right Front
+            rlVertex3f(x + width / 2, y + height / 2, z - length / 2); // Top Right Back
+        }
+        if(!down_visible) {
+            // Bottom Face  ---------------------------------------------------
+            // Left Line
+            rlVertex3f(x - width / 2, y - height / 2, z + length / 2); // Top Left Front
+            rlVertex3f(x - width / 2, y - height / 2, z - length / 2); // Top Left Back
+
+            // Right Line
+            rlVertex3f(x + width / 2, y - height / 2, z + length / 2); // Top Right Front
+            rlVertex3f(x + width / 2, y - height / 2, z - length / 2); // Top Right Back
+        }
+
+    }
+    rlEnd();
+    rlPopMatrix();
+}
+
 void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
 {
-    int length = TextLength(text);      // Total length in bytes of the text, scanned by codepoints in loop
+    unsigned int length = TextLength(text);      // Total length in bytes of the text, scanned by codepoints in loop
 
     int textOffsetY = 0;            // Offset between lines (on line break '\n')
     float textOffsetX = 0.0f;       // Offset X to next character to draw
@@ -63,8 +300,8 @@ void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, 
                 DrawTexturePro(font.texture, font.recs[index], rec, (Vector2){ 0, 0 }, -90.0f, tint);
             }
 
-            if (font.chars[index].advanceX == 0) textOffsetY += ((float)font.recs[index].width*scaleFactor + spacing);
-            else textOffsetY += ((float)font.chars[index].advanceX*scaleFactor + spacing);
+            if (font.chars[index].advanceX == 0) textOffsetY += (int)(font.recs[index].width*scaleFactor + spacing);
+            else textOffsetY += (int)((float)font.chars[index].advanceX*scaleFactor + spacing);
         }
 
         i += (codepointByteCount - 1);   // Move text bytes counter to next codepoint
@@ -82,9 +319,8 @@ static void set_camera_params(Camera3D *camera) {
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
 
     struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
-
-    gui_state->current_window_width = GetScreenWidth();
-    gui_state->current_window_height = GetScreenHeight();
+	
+	MaximizeWindow();
 
 	gui_state->ui_scale = ui_scale;
 
@@ -128,7 +364,11 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->ap_graph_config->selected_aps = NULL;
     gui_state->ap_graph_config->drag_ap_graph = false;
     gui_state->ap_graph_config->move_ap_graph = false;
-    gui_state->ap_graph_config->graph.height = 300.0f*ui_scale;
+
+    gui_state->current_window_width = GetScreenWidth();
+    gui_state->current_window_height = GetScreenHeight();
+	
+	gui_state->ap_graph_config->graph.height = 300.0f*ui_scale;
     gui_state->ap_graph_config->graph.width = 690.0f*ui_scale;
 
     gui_state->ap_graph_config->graph.x = 10;
@@ -173,7 +413,7 @@ static Color get_color(real_cpu value, int alpha, int current_scale) {
         idx1 = idx2 = NUM_COLORS - 1;
     } else {
         value = value * (NUM_COLORS - 1);
-        idx1 = (int)floor(value);              // Our desired color will be after this index.
+        idx1 = (int)floor(value);               // Our desired color will be after this index.
         idx2 = idx1 + 1;                       // ... and before this index (inclusive).
         fractBetween = value - (real_cpu)idx1;
     }
@@ -373,7 +613,7 @@ static Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, 
     return result;
 }
 
-static void draw_voxel(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
+static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
 
     Vector3 p_draw = voxel->position_draw;
     Vector3 p_mesh = voxel->position_mesh;
@@ -428,10 +668,12 @@ static void draw_voxel(struct voxel *voxel, struct gui_state *gui_state, real_cp
         DrawCubeWiresV(p_draw, cube_size, color);
     } else {
 
-        DrawCubeV(p_draw, cube_size, color);
+        //DrawCubeV(p_draw, cube_size, color);
+        DrawCubeWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, color, visibility_mask);
 
         if(gui_state->draw_grid_lines) {
-            DrawCubeWiresV(p_draw, cube_size, BLACK);
+            //DrawCubeWiresV(p_draw, cube_size, BLACK);
+            DrawCubeWiresWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, BLACK, visibility_mask);
         }
 
         if(gui_state->current_selected_volume.position_mesh.x == p_mesh.x && gui_state->current_selected_volume.position_mesh.y == p_mesh.y &&
@@ -470,11 +712,16 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
     struct voxel voxel;
 
+    uint8_t cell_visible = TOP_IS_VISIBLE | RIGHT_IS_VISIBLE | DOWN_IS_VISIBLE | LEFT_IS_VISIBLE | BACK_IS_VISIBLE | FRONT_IS_VISIBLE;
+
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
         if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
             j += 1;
             continue;
+        }
+        else if(grid_to_draw->cell_visibility) {
+            cell_visible = grid_to_draw->cell_visibility[j];
         }
 
         float mesh_center_x, mesh_center_y, mesh_center_z;
@@ -489,7 +736,6 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         mesh_center_z = (float) points[cells[i]].z + dz / 2.0f;
 
         voxel.v = grid_to_draw->values[j];
-        j += 1;
 
         voxel.position_draw.x = (float)((mesh_center_x - mesh_offset.x) / scale);
         voxel.position_draw.y = (float)((mesh_center_y - mesh_offset.y) / scale);
@@ -500,7 +746,10 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         voxel.size.z = (float)(dz / scale);
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
-        draw_voxel(&voxel, gui_state, gui_config->min_v, gui_config->max_v, gui_config->time);
+        draw_voxel(&voxel, cell_visible, gui_state, gui_config->min_v, gui_config->max_v, gui_config->time);
+
+        j += 1;
+
     }
 
     gui_state->one_selected = false;
@@ -549,7 +798,7 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 			voxel.v = grid_cell->v;
 			voxel.matrix_position = grid_cell->grid_position;
 
-			draw_voxel(&voxel, gui_state, min_v, max_v, time);
+			draw_voxel(&voxel, ac[i]->visible, gui_state, min_v, max_v, time);
 		}
     }
 
@@ -566,16 +815,14 @@ static inline double clamp(double x, double min, double max) {
 
 static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_config) {
 
-
-	if(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width > gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
+	if(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width > (float) gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
 		gui_state->ap_graph_config->graph.x = 10;
 	}
-	
 
-	if(gui_state->ap_graph_config->graph.y + gui_state->ap_graph_config->graph.height > gui_state->current_window_height) {
+	if(gui_state->ap_graph_config->graph.y + gui_state->ap_graph_config->graph.height > (float) gui_state->current_window_height) {
 		gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
 	}
-	
+
 	if(gui_state->ap_graph_config->graph.y < 0) {
 		gui_state->ap_graph_config->graph.y = 0;
 	}
@@ -589,16 +836,17 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 	float font_size_big = gui_state->font_size_big - 6;
 	float font_size_small = gui_state->font_size_small - 6;
 
-    float spacing_big = font_size_big / font.baseSize;;
-    float spacing_small = font_size_small / font.baseSize;;
+    float spacing_big = font_size_big / (float)font.baseSize;
+    float spacing_small = font_size_small / (float)font.baseSize;
 
     DrawRectangleRec(gui_state->ap_graph_config->graph, WHITE);
 
     gui_state->ap_graph_config->drag_graph_button_position =
-        (Rectangle){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width) - 7.5f,
-                    (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
-    gui_state->ap_graph_config->move_graph_button_position =
-        (Rectangle){(float)(gui_state->ap_graph_config->graph.x), (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+        (Rectangle){(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width) - 7.5f,
+                    (gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+
+    gui_state->ap_graph_config->move_graph_button_position = (Rectangle){(float)(gui_state->ap_graph_config->graph.x),
+                                                                         (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
 
     GuiButton(gui_state->ap_graph_config->drag_graph_button_position, " ");
     GuiButton(gui_state->ap_graph_config->move_graph_button_position, "+");
@@ -610,7 +858,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     sprintf(tmp, "%.2lf", gui_config->min_v);
     Vector2 text_width_y = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-    gui_state->ap_graph_config->min_x = (float)gui_state->ap_graph_config->graph.x + 2.6*text_width_y.x;
+    gui_state->ap_graph_config->min_x = gui_state->ap_graph_config->graph.x + 2.6f*text_width_y.x;
     gui_state->ap_graph_config->max_x = (float)gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width - text_width.x;
 
     gui_state->ap_graph_config->min_y = (float)gui_state->ap_graph_config->graph.y + (float)gui_state->ap_graph_config->graph.height - text_width.y;
@@ -618,12 +866,14 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     int n = hmlen(gui_state->ap_graph_config->selected_aps);
 
+    Vector2 text_position;
+
     if(gui_state->ap_graph_config->draw_selected_ap_text) {
 
         char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f and position %d )";
         double time_elapsed = GetTime() - gui_state->selected_time;
         unsigned char alpha = (unsigned char)clamp(255 - time_elapsed * 25, 0, 255);
-        
+
 		//Color c = colors[(n - 1) % num_colors];
 		Color c = BLACK;
         c.a = alpha;
@@ -633,8 +883,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         text_width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
 
-        Vector2 text_position = (Vector2){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2 - text_width.x / 1.5),
-                                          gui_state->ap_graph_config->graph.y - text_width.y*1.2};
+        text_position = (Vector2){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2 - text_width.x / 1.5),
+                                          gui_state->ap_graph_config->graph.y - text_width.y*1.2f};
 
         DrawTextEx(font, tmp, text_position, font_size_big, spacing_big, c);
 
@@ -643,7 +893,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
             gui_state->selected_time = 0.0;
         }
     }
-    
+
     Vector2 p1, p2;
 
     uint num_ticks;
@@ -673,9 +923,9 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
 	// Draw x label
 	text_width = MeasureTextEx(font, time_text, font_size_big, spacing_big);
-	gui_state->ap_graph_config->min_y -= text_width.y*1.5;
+	gui_state->ap_graph_config->min_y -= text_width.y*1.5f;
 
-	Vector2 text_position = (Vector2){gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
+	text_position = (Vector2){gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
 									  (float)gui_state->ap_graph_config->min_y + text_width.y};
 
 	DrawTextEx(font, time_text, text_position, font_size_big, spacing_big, BLACK);
@@ -710,7 +960,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         DrawLineV(p1, (Vector2){p1.x, gui_state->ap_graph_config->max_y}, LIGHTGRAY);
         time += tick_ofsset;
     }
-    
+
 	tick_ofsset = 10;
 	num_ticks = (uint)((gui_config->max_v - gui_config->min_v) / tick_ofsset);
 
@@ -728,7 +978,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         char *label;
         label = "Vm (mV)";
         text_width = MeasureTextEx(font, label, font_size_big, spacing_big);
-        Vector2 text_position = (Vector2){gui_state->ap_graph_config->graph.x + 15, gui_state->ap_graph_config->min_y - ((gui_state->ap_graph_config->min_y - gui_state->ap_graph_config->max_y) / 2.0f) + (text_width.x / 2.0f)};
+        text_position = (Vector2){gui_state->ap_graph_config->graph.x + 15, gui_state->ap_graph_config->min_y - ((gui_state->ap_graph_config->min_y - gui_state->ap_graph_config->max_y) / 2.0f) + (text_width.x / 2.0f)};
         DrawTextEx2(font, label, text_position, font_size_big, spacing_big, BLACK);
     }
 
@@ -851,8 +1101,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         sprintf(tmp, tmp_point, fabsf(t2 - t1));
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-		int x = fminf(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->selected_point_for_apd2.x);
-		
+		float x = fminf(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->selected_point_for_apd2.x);
 
         DrawTextEx(font, tmp, (Vector2){x + text_width.x / 2.0f,
 			       gui_state->ap_graph_config->selected_point_for_apd1.y - text_width.y},
@@ -891,7 +1140,7 @@ static void check_window_bounds(Rectangle *box, float current_window_width, floa
 static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_state, bool int_scale) {
 
     float scale_width = 20*gui_state->ui_scale;
-    check_window_bounds(&(gui_state->scale_bounds), (float) gui_state->current_window_width, (float) gui_state->current_window_width);
+    check_window_bounds(&(gui_state->scale_bounds), (float) gui_state->current_window_width, (float) gui_state->current_window_height);
 
     float spacing_small = gui_state->font_spacing_small;
     float spacing_big = gui_state->font_spacing_big;
@@ -964,7 +1213,7 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
         DrawLineV(p1, p2, BLACK);
         color = get_color((v - min_v) / (max_v - min_v), gui_state->scale_alpha, gui_state->current_scale);
 
-        DrawRectangle((int)gui_state->scale_bounds.x, (int)initial_y, scale_width, (int)scale_rec_height, color);
+        DrawRectangle((int)gui_state->scale_bounds.x, (int)initial_y, (int) scale_width, (int)scale_rec_height, color);
         initial_y += scale_rec_height;
         v -= tick_ofsset;
     }
@@ -1142,6 +1391,34 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     return window_closed || btn_ok_clicked;
 }
 
+static inline void reset_ui(struct gui_state *gui_state) {
+
+	gui_state->help_box.x = 10;
+	gui_state->help_box.y = 10;
+
+	gui_state->ap_graph_config->graph.height = 300.0f*gui_state->ui_scale;
+	gui_state->ap_graph_config->graph.width = 690.0f*gui_state->ui_scale;
+
+	gui_state->ap_graph_config->graph.x = 10;
+	gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
+
+	gui_state->box_width = 220;
+	gui_state->box_height = 100;
+
+	gui_state->mesh_info_box.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.width - 10;
+	gui_state->mesh_info_box.y = 10.0f;
+
+	gui_state->end_info_box.x = gui_state->mesh_info_box.x - gui_state->mesh_info_box.width - 10;
+	gui_state->end_info_box.y = gui_state->mesh_info_box.y;
+
+	gui_state->scale_bounds.x = (float)gui_state->current_window_width - 30.0f*gui_state->ui_scale;
+	gui_state->scale_bounds.y = (float)gui_state->current_window_height / 1.5f;
+
+	gui_state->scale_bounds.width = 20;
+	gui_state->scale_bounds.height = 0;
+	gui_state->calc_scale_bounds = true;
+}
+
 static void reset(struct gui_config *gui_config, struct mesh_info *mesh_info, struct gui_state *gui_state, bool full_reset) {
 
     gui_state->voxel_alpha = 255;
@@ -1161,34 +1438,11 @@ static void reset(struct gui_config *gui_config, struct mesh_info *mesh_info, st
 		hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
 
 		set_camera_params(&(gui_state->camera));
-
-		gui_state->help_box.x = 10;
-		gui_state->help_box.y = 10;
-
+		
 		gui_state->voxel_alpha = 255;
 		gui_state->scale_alpha = 255;
-
-		gui_state->ap_graph_config->graph.height = 300.0f*gui_state->ui_scale;
-		gui_state->ap_graph_config->graph.width = 690.0f*gui_state->ui_scale;
-
-		gui_state->ap_graph_config->graph.x = 10;
-		gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
-
-		gui_state->box_width = 220;
-		gui_state->box_height = 100;
-
-		gui_state->mesh_info_box.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.width - 10;
-		gui_state->mesh_info_box.y = 10.0f;
-
-		gui_state->end_info_box.x = gui_state->mesh_info_box.x - gui_state->mesh_info_box.width - 10;
-		gui_state->end_info_box.y = gui_state->mesh_info_box.y;
-
-		gui_state->scale_bounds.x = (float)gui_state->current_window_width - 30.0f*gui_state->ui_scale;
-		gui_state->scale_bounds.y = (float)gui_state->current_window_height / 1.5f;
-
-		gui_state->scale_bounds.width = 20;
-		gui_state->scale_bounds.height = 0;
-		gui_state->calc_scale_bounds = true;
+	
+		reset_ui(gui_state);
 
 		gui_state->show_coordinates = true;
 	}
@@ -1217,6 +1471,10 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 	if(gui_config->paused) {
 
+		if(IsKeyPressed(KEY_Z)) {
+			TakeScreenshot("/home/sachetto/teste.png");
+		}
+
 		if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
 			// SAVE FILE AS VTK
 			if(IsKeyPressed(KEY_S)) {
@@ -1226,7 +1484,7 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 				if(save_path) {
 					save_vtk_unstructured_grid_as_vtu_compressed(gui_config->grid_info.vtk_grid, save_path, 6);
-					log_to_stdout_and_file("Saved vtk file as %s\n", save_path);
+					log_info("Saved vtk file as %s\n", save_path);
 				}
 
 				return;
@@ -1505,11 +1763,11 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
 
     else if(gui_state->ap_graph_config->move_ap_graph) {
 
-        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.x + gui_state->ap_graph_config->graph.width < gui_state->current_window_width) {
+        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.x + gui_state->ap_graph_config->graph.width < (float)gui_state->current_window_width) {
             gui_state->ap_graph_config->graph.x = gui_state->mouse_pos.x;
         }
 
-        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.y + gui_state->ap_graph_config->graph.height < gui_state->current_window_height) {
+        if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.y + gui_state->ap_graph_config->graph.height < (float)gui_state->current_window_height) {
             gui_state->ap_graph_config->graph.y = gui_state->mouse_pos.y;
         }
 
@@ -1561,7 +1819,7 @@ static int configure_info_boxes_sizes(struct gui_state *gui_state, int info_box_
 
     txt_w_h = MeasureTextEx(gui_state->font, WIDER_TEXT, gui_state->font_size_small, gui_state->font_spacing_small);
     text_offset = (int)(1.5 * txt_w_h.y);
-    box_w = txt_w_h.x*1.08;
+    box_w = txt_w_h.x*1.08f;
 
     gui_state->help_box.width = box_w;
     gui_state->help_box.height = (float)(text_offset * info_box_lines) + margin;
@@ -1620,6 +1878,8 @@ void draw_coordinates(struct gui_state *gui_state) {
 
 }
 
+
+
 void init_and_open_gui_window(struct gui_config *gui_config) {
 
 	const int end_info_box_lines = 10;
@@ -1650,9 +1910,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 	const int font_size_big = 20;
 
     struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
-
-    SetWindowSize(gui_state->current_window_width, gui_state->current_window_height);
-
+    
     free(window_title);
 
     SetTargetFPS(60);
@@ -1713,10 +1971,13 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        if(IsWindowResized()) {
-            gui_state->current_window_width = GetScreenWidth();
-            gui_state->current_window_height = GetScreenHeight();
-        }
+		if(IsWindowResized()) {
+			gui_state->current_window_width = GetScreenWidth();
+			gui_state->current_window_height = GetScreenHeight();
+
+			reset_ui(gui_state);
+			
+		}
 
         gui_state->handle_keyboard_input = !gui_state->show_selection_box;
 
@@ -1842,7 +2103,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             // This should not happen... but it does....
             if(gui_config->error_message) {
                 DrawTextEx(gui_state->font, gui_config->error_message, 
-						  (Vector2){(float)posx + (float)(rec_width - error_message_width.x)/2, (float) posy}, gui_state->font_size_big,
+						  (Vector2){(float)posx + ((float)rec_width - error_message_width.x)/2, (float) posy}, gui_state->font_size_big,
                           gui_state->font_spacing_big, BLACK);
             }
         }
@@ -1852,11 +2113,11 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 		const char *text = TextFormat("%2i FPS - Frame Time %lf", fps, GetFrameTime()); 
 		Vector2 text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
 
-		DrawTextEx(gui_state->font, text, (Vector2){(float)(GetScreenWidth() - text_size.x - 10.0), (float)(GetScreenHeight() - text_size.y)},
+		DrawTextEx(gui_state->font, text, (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y)},
 				   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
        
 		text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
-		DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, (float)(GetScreenHeight() - text_size.y)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+		DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 	
 		float upper_y = text_size.y;
 
@@ -1877,7 +2138,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 			}
 
 			text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
-			info_pos = (Vector2){(float)(GetScreenWidth() - text_size.x - 10), (float)(GetScreenHeight() - text_size.y - upper_y)};
+			info_pos = (Vector2){((float)gui_state->current_window_width - text_size.x - 10), ((float)gui_state->current_window_height- text_size.y - upper_y)};
 			DrawTextEx(gui_state->font, text,info_pos, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
 		}

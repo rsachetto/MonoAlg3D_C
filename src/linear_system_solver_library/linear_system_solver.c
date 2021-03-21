@@ -31,9 +31,9 @@ static real_cpu tol = 1e-16;
 #endif //COMPILE_CUDA
 
 INIT_LINEAR_SYSTEM(init_cpu_conjugate_gradient) {
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data, "use_preconditioner");
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config, "use_preconditioner");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
 }
 
 END_LINEAR_SYSTEM(end_cpu_conjugate_gradient) {
@@ -179,13 +179,13 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
     bool gpu = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data, "use_gpu");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config, "use_gpu");
 
     if(gpu) {
 #ifdef COMPILE_CUDA
         gpu_conjugate_gradient(time_info, config, the_grid, num_active_cells, active_cells, number_of_iterations, error);
 #else
-        log_to_stdout_and_file("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
+        log_warn("Cuda runtime not found in this system. Fallbacking to CPU solver!!\n");
         cpu_conjugate_gradient(time_info, config, the_grid, num_active_cells, active_cells, number_of_iterations, error);
 #endif
     } else {
@@ -195,7 +195,7 @@ SOLVE_LINEAR_SYSTEM(conjugate_gradient) {
 
 INIT_LINEAR_SYSTEM(init_conjugate_gradient) {
     bool gpu = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data, "use_gpu");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config, "use_gpu");
 
     if(gpu) {
 #ifdef COMPILE_CUDA
@@ -211,7 +211,7 @@ INIT_LINEAR_SYSTEM(init_conjugate_gradient) {
 END_LINEAR_SYSTEM(end_conjugate_gradient) {
 
     bool gpu = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config->config_data, "use_gpu");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config, "use_gpu");
 
     if(gpu) {
 #ifdef COMPILE_CUDA
@@ -228,9 +228,9 @@ END_LINEAR_SYSTEM(end_conjugate_gradient) {
 SOLVE_LINEAR_SYSTEM(jacobi) {
 
     if(!jacobi_initialized) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
         max_its = 500;
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
         jacobi_initialized = true;
     }
 
@@ -301,16 +301,16 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
 SOLVE_LINEAR_SYSTEM(biconjugate_gradient) {
 
     if(!bcg_initialized) {
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
 
         char *preconditioner_char = NULL;
-        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(preconditioner_char, config->config_data, "use_preconditioner");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(preconditioner_char, config, "use_preconditioner");
         if(preconditioner_char != NULL) {
             use_preconditioner = ((strcmp(preconditioner_char, "yes") == 0) || (strcmp(preconditioner_char, "true") == 0));
         }
 
         max_its = 100;
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
         bcg_initialized = true;
     }
 

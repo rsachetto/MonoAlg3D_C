@@ -161,7 +161,7 @@ void display_visualization_usage(char **argv) {
     printf("Options:\n");
     printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
     printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
-    printf("--value_index | -v [variable_index]. The column (counting from 0) of the value in the text file to be visualized. Default 6.\n");
+    printf("--value_index | -i [variable_index]. The column (counting from 0) of the value in the text file to be visualized. Default 6.\n");
     printf("--dt | -d, dt for the simulation. Default: 0\n");
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");
     printf("--pvd | -v, pvd file. Default: NULL\n");
@@ -469,7 +469,7 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
 
     if(sc == NULL) {
         sc = alloc_and_init_config_data();
-        log_to_stdout_and_file("Creating new modify_domain named %s from command line options!\n", modify_domain_name);
+        log_info("Creating new modify_domain named %s from command line options!\n", modify_domain_name);
         shput(modify_domain_configs, modify_domain_name, sc);
     }
 
@@ -488,7 +488,7 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
 
             bool modify_at_was_set;
             real modify_at = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE(real, modify_at, sc->config_data, key, modify_at_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real, modify_at, sc, key, modify_at_was_set);
 
             if(modify_at_was_set) {
                 sprintf(old_value, "%lf", modify_at);
@@ -525,7 +525,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
         sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
 
         if(values_count != 2) {
-            log_to_stderr_and_file_and_exit("Invalid format for option %s. Exiting!\n", args);
+            log_error_and_exit("Invalid format for option %s. Exiting!\n", args);
         }
 
         if(strcmp(key_value[0], "name") == 0) {
@@ -538,14 +538,14 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
     }
 
     if(stim_name == NULL) {
-        log_to_stderr_and_file_and_exit("The stimulus name must be passed in the stimulus option! Exiting!\n");
+        log_error_and_exit("The stimulus name must be passed in the stimulus option! Exiting!\n");
     }
 
     struct config *sc = (struct config *)shget(stim_configs, stim_name);
 
     if(sc == NULL) {
         sc = alloc_and_init_config_data();
-        log_to_stdout_and_file("Creating new stimulus name %s from command line options!\n", stim_name);
+        log_info("Creating new stimulus name %s from command line options!\n", stim_name);
         shput(stim_configs, stim_name, sc);
     }
 
@@ -564,7 +564,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
 
             bool stim_start_was_set;
             real stim_start = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE(real, stim_start, sc->config_data, key, stim_start_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real, stim_start, sc, key, stim_start_was_set);
 
             if(stim_start_was_set) {
                 sprintf(old_value, "%lf", stim_start);
@@ -575,7 +575,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
 
             bool stim_duration_was_set;
             real stim_duration = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE(real, stim_duration, sc->config_data, key, stim_duration_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real, stim_duration, sc, key, stim_duration_was_set);
 
             if(stim_duration_was_set) {
                 sprintf(old_value, "%lf", stim_duration);
@@ -586,7 +586,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
 
             bool stim_current_was_set;
             real stim_current = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE(real, stim_current, sc->config_data, key, stim_current_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real, stim_current, sc, key, stim_current_was_set);
 
             if(stim_current_was_set) {
                 sprintf(old_value, "%lf", stim_current);
@@ -598,7 +598,7 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
 
             bool stim_period_was_set;
             real stim_period = 0.0;
-            GET_PARAMETER_NUMERIC_VALUE(real, stim_period, sc->config_data, key, stim_period_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real, stim_period, sc, key, stim_period_was_set);
 
             if(stim_period_was_set) {
                 sprintf(old_value, "%lf", stim_period);
@@ -701,7 +701,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
         if(strcmp(key, "name") == 0) {
             char *domain_name = NULL;
-            GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(domain_name, dc->config_data, "name");
+            GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(domain_name, dc, "name");
             if(domain_name) {
                 maybe_issue_overwrite_warning("name", "domain", domain_name, value, config_file);
             }
@@ -710,7 +710,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
             bool start_dx_was_set;
             real_cpu start_dx = 0;
-            GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dx, dc->config_data, key, start_dx_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dx, dc, key, start_dx_was_set);
 
             if(start_dx_was_set) {
                 sprintf(old_value, "%lf", start_dx);
@@ -722,7 +722,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
             bool max_dx_was_set;
             real_cpu max_dx = 0;
-            GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dx, dc->config_data, key, max_dx_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dx, dc, key, max_dx_was_set);
 
             if(max_dx_was_set) {
 
@@ -736,7 +736,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
             bool start_dy_was_set;
             real_cpu start_dy = 0;
-            GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dy, dc->config_data, key, start_dy_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dy, dc, key, start_dy_was_set);
 
             if(start_dy_was_set) {
                 sprintf(old_value, "%lf", start_dy);
@@ -747,7 +747,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
             bool max_dy_was_set;
             real_cpu max_dy = 0;
-            GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dy, dc->config_data, key, max_dy_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dy, dc, key, max_dy_was_set);
 
             if(max_dy_was_set) {
                 sprintf(old_value, "%lf", max_dy);
@@ -760,7 +760,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
             bool start_dz_was_set;
             real_cpu start_dz = 0;
-            GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dz, dc->config_data, key, start_dz_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dz, dc, key, start_dz_was_set);
 
             if(start_dz_was_set) {
                 sprintf(old_value, "%lf", start_dz);
@@ -772,7 +772,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
             bool max_dz_was_set;
             real_cpu max_dz = 0;
-            GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dz, dc->config_data, "maximum_dz", max_dz_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dz, dc, "maximum_dz", max_dz_was_set);
 
             if(max_dz_was_set) {
                 sprintf(old_value, "%lf", max_dz);
@@ -821,7 +821,7 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
 
             bool print_rate_was_set;
             int print_rate = 0;
-            GET_PARAMETER_NUMERIC_VALUE(int, print_rate, sm->config_data, key, print_rate_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(int, print_rate, sm, key, print_rate_was_set);
 
             if(print_rate_was_set) {
                 sprintf(old_value, "%d", print_rate);
@@ -832,7 +832,7 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
         } else if(strcmp(key, "output_dir") == 0) {
 
             char *out_dir_name = NULL;
-            GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, sm->config_data, key);
+            GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, sm, key);
 
             if(out_dir_name) {
                 maybe_issue_overwrite_warning(key, "save_mesh", out_dir_name, value, config_file);
@@ -843,7 +843,7 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
 
             bool remove_older_simulation_was_set;
             bool remove_older_simulation = false;
-            GET_PARAMETER_NUMERIC_VALUE(bool, remove_older_simulation, sm->config_data, key, remove_older_simulation_was_set);
+            GET_PARAMETER_NUMERIC_VALUE(bool, remove_older_simulation, sm, key, remove_older_simulation_was_set);
 
             if(remove_older_simulation_was_set) {
 
@@ -1275,7 +1275,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
 
         case DOMAIN_OPT:
             if(user_args->domain_config == NULL) {
-                log_to_stdout_and_file("Creating new domain config from command line!\n");
+                log_info("Creating new domain config from command line!\n");
                 user_args->domain_config = alloc_and_init_config_data();
             }
             set_domain_config(optarg, user_args->domain_config, user_args->config_file);
@@ -1285,61 +1285,61 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case SAVE_OPT:
             if(user_args->save_mesh_config == NULL) {
-                log_to_stdout_and_file("Creating new save config from command line!\n");
+                log_info("Creating new save config from command line!\n");
                 user_args->save_mesh_config = alloc_and_init_config_data();
             }
             set_save_mesh_config(optarg, user_args->save_mesh_config, user_args->config_file);
             break;
         case ASSEMBLY_MATRIX_OPT:
             if(user_args->assembly_matrix_config == NULL) {
-                log_to_stdout_and_file("Creating new assembly_matrix config from command line!\n");
+                log_info("Creating new assembly_matrix config from command line!\n");
                 user_args->assembly_matrix_config = alloc_and_init_config_data();
             }
             set_config(optarg, user_args->assembly_matrix_config, user_args->config_file, "assembly_matrix");
             break;
         case LINEAR_SYSTEM_SOLVER_OPT:
             if(user_args->linear_system_solver_config == NULL) {
-                log_to_stdout_and_file("Creating new linear_system_solver config from command line!\n");
+                log_info("Creating new linear_system_solver config from command line!\n");
                 user_args->linear_system_solver_config = alloc_and_init_config_data();
             }
             set_config(optarg, user_args->linear_system_solver_config, user_args->config_file, "linear_system_solver");
             break;
         case UPDATE_MONODOMAIN_SOLVER_OPT:
             if(user_args->update_monodomain_config == NULL) {
-                log_to_stdout_and_file("Creating new update_monodomain config from command line!\n");
+                log_info("Creating new update_monodomain config from command line!\n");
                 user_args->update_monodomain_config = alloc_and_init_config_data();
             }
             set_config(optarg, user_args->update_monodomain_config, user_args->config_file, "update_monodomain");
             break;
         case EXTRA_DATA_OPT:
             if(user_args->extra_data_config == NULL) {
-                log_to_stdout_and_file("Creating new extra data config from command line!\n");
+                log_info("Creating new extra data config from command line!\n");
                 user_args->extra_data_config = alloc_and_init_config_data();
             }
             set_config(optarg, user_args->extra_data_config, user_args->config_file, "extra_data");
             break;
         case STIM_OPT:
             if(user_args->stim_configs == NULL) {
-                log_to_stdout_and_file("Creating new stim config from command line!\n");
+                log_info("Creating new stim config from command line!\n");
             }
             set_stim_config(optarg, user_args->stim_configs, user_args->config_file);
             break;
         case MODIFY_DOMAIN_OPT:
             if(user_args->modify_domain_configs == NULL) {
-                log_to_stdout_and_file("Creating new modify_domain config from command line!\n");
+                log_info("Creating new modify_domain config from command line!\n");
             }
             set_modify_domain_config(optarg, user_args->modify_domain_configs, user_args->config_file);
             break;
         case SAVE_STATE_OPT:
             if(user_args->save_state_config == NULL) {
-                log_to_stdout_and_file("Creating new save state config from command line!\n");
+                log_info("Creating new save state config from command line!\n");
                 user_args->save_state_config = alloc_and_init_config_data();
             }
             set_config(optarg, user_args->save_state_config, user_args->config_file, "save_state");
             break;
         case RESTORE_STATE_OPT:
             if(user_args->restore_state_config == NULL) {
-                log_to_stdout_and_file("Creating new restore state config from command line!\n");
+                log_info("Creating new restore state config from command line!\n");
                 user_args->restore_state_config = alloc_and_init_config_data();
             }
             set_config(optarg, user_args->restore_state_config, user_args->config_file, "restore_state");
@@ -1421,7 +1421,7 @@ static void parse_expr_and_set_real_cpu_value(const char *filename, const char *
         *value = expr_parse_result;
         *was_set = true;
     } else {
-        log_to_stderr_and_file_and_exit("[ERR] Parse error at position %d in expression \"%s\"! (file: %s)\n", expr_parse_error, expr, filename);
+        log_error_and_exit("[ERR] Parse error at position %d in expression \"%s\"! (file: %s)\n", expr_parse_error, expr, filename);
     }
 }
 
@@ -1715,7 +1715,7 @@ int parse_preprocessor_config(void *user, const char *section, const char *name,
 		function = (*function_list)[function_counter];
 	}
 
-	shput(function->function_params, name, strdup(value));
+	shput(function->function_params->config_data, name, strdup(value));
 
 	return 1;
 }

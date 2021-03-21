@@ -1,5 +1,5 @@
 /*
- * StopWatch.cpp
+ * stop_watch.c
  *
  *  Created on: 29/07/2011
  *      Author: sachetto

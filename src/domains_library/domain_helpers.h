@@ -6,6 +6,15 @@
 #define MONOALG3D_DOMAIN_HELPERS_H
 
 #include "../alg/grid/grid.h"
+#include "../config/domain_config.h"
+
+struct custom_mesh_basic_data_hash_entry {
+    struct point_3d key;
+    int32_t value;
+};
+
+int set_cuboid_domain_mesh(struct grid * the_grid, real_cpu start_dx, real_cpu start_dy,real_cpu start_dz, real_cpu side_length_x, real_cpu side_length_y, real_cpu side_length_z);
+int set_square_mesh(struct config *config, struct grid *the_grid);
 
 void set_benchmark_domain (struct grid *the_grid);
 void set_cuboid_domain(struct grid *the_grid, real_cpu sizeX, real_cpu sizeY, real_cpu sizeZ);
@@ -28,11 +37,7 @@ void set_plain_sphere_fibrosis (struct grid *the_grid, real_cpu phi, real_cpu pl
 void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_radius);
 
 
-void set_human_mesh_fibrosis(struct grid *grid, real_cpu phi, unsigned seed, real_cpu big_scar_center_x,
-                     real_cpu big_scar_center_y, real_cpu big_scar_center_z, real_cpu small_scar_center_x,
-                     real_cpu small_scar_center_y, real_cpu small_scar_center_z);
-
-void set_human_mesh_fibrosis_from_file(struct grid *grid, char type, const char *filename, int size);
+void set_human_mesh_fibrosis_from_file(struct grid *grid, int type, const char *filename, int size);
 
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
                                    real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
@@ -49,5 +54,8 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
                         const double min_y, const double max_y,\
                         const double min_z, const double max_z);
 
+
+uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file, uint32_t num_volumes, double cube_side, double start_h, uint8_t num_extra_fields,
+                                   set_custom_data_for_mesh_fn set_custom_data_for_mesh);
 
 #endif // MONOALG3D_DOMAIN_HELPERS_H

@@ -54,6 +54,7 @@ for i in "${BUILD_ARGS[@]}"; do
     if [ "$i" == "clean" ]; then
         echo "Cleaning $BUILD_TYPE"
         CLEAN_PROJECT "$BUILD_TYPE"
+		rm -fr shared_libs/
         cd src/3dparty/raylib/src || exit 1;
         make clean
         cd - || exit 1;

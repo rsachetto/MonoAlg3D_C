@@ -36,9 +36,9 @@ struct gpu_persistent_data {
 
 	int_array I = NULL, J = NULL;
 	f32_array val = NULL;
-	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
-	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
-	GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config->config_data, "use_preconditioner");
+	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
+	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
+	GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config, "use_preconditioner");
 
 	check_cuda_error((cudaError_t)cublasCreate(&(persistent_data->cublasHandle)));
 
@@ -182,7 +182,7 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data*)config->persistent_data;
 
     if(!persistent_data) {
-        log_to_stderr_and_file_and_exit("[ERROR] The gpu_conjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
+        log_error_and_exit("[ERROR] The gpu_conjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
     }
 
     float dot;
@@ -312,8 +312,8 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
 
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config->config_data, "tolerance");
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config->config_data, "max_iterations");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
 
     struct gpu_persistent_data *persistent_data = CALLOC_ONE_TYPE(struct gpu_persistent_data);
 
@@ -379,7 +379,7 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data*) config->persistent_data;
 
     if(!persistent_data) {
-        log_to_stderr_and_file_and_exit("[ERROR] The gpu_biconjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
+        log_error_and_exit("[ERROR] The gpu_biconjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
     }
 
     float rho, rhop, beta, alpha, negalpha, omega, negomega, temp, temp2;

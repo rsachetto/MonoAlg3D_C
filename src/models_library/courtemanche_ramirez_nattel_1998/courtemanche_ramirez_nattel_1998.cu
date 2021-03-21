@@ -15,7 +15,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     uint8_t use_adpt_h = (uint8_t)solver->adaptive;
 
     check_cuda_error(cudaMemcpyToSymbol(use_adpt, &use_adpt_h, sizeof(uint8_t)));
-    log_to_stdout_and_file("Using courtemanche_ramirez_nattel_1998 GPU model\n");
+    log_info("Using courtemanche_ramirez_nattel_1998 GPU model\n");
 
     uint32_t num_volumes = solver->original_num_cells;
 
@@ -29,9 +29,9 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
         check_cuda_error(cudaMemcpyToSymbol(abstol, &abstol_h, sizeof(real)));        
 		check_cuda_error(cudaMemcpyToSymbol(max_dt, &max_dt_h, sizeof(real)));
         check_cuda_error(cudaMemcpyToSymbol(min_dt, &min_dt_h, sizeof(real)));
-        log_to_stdout_and_file("Using Adaptive Euler model to solve the ODEs\n");
+        log_info("Using Adaptive Euler model to solve the ODEs\n");
     } else {
-        log_to_stdout_and_file("Using Euler model to solve the ODEs\n");
+        log_info("Using Euler model to solve the ODEs\n");
     }
 
     // execution configuration

@@ -30,7 +30,6 @@
 #define ASCII            "ascii"
 #define LOOKUP_TABLE     "LOOKUP_TABLE"
 
-
 struct parser_state {
     char *number_of_points;
     char *number_of_cells;
@@ -66,8 +65,9 @@ struct vtk_unstructured_grid {
     uint8_t cell_type;
 
     f32_array values;
-    f32_array fibers;
+    real_cpu **fibers;
     int64_array cells;
+    //TODO: create a mask here, so we can draw only the faces that are not occluded
     ui8_array cell_visibility;
     point3d_array points;
 

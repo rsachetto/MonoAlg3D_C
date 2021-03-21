@@ -55,7 +55,7 @@ void init_cell_node(struct cell_node *cell_node) {
 
     cell_node->can_change = true;
     cell_node->visited = false;
-    cell_node->visible = true;
+    cell_node->visible = TOP_IS_VISIBLE | RIGHT_IS_VISIBLE | DOWN_IS_VISIBLE | LEFT_IS_VISIBLE | BACK_IS_VISIBLE | FRONT_IS_VISIBLE;
 
     cell_node->elements = NULL;
 
@@ -556,3 +556,33 @@ int get_neighbour_value(struct cell_node *grid_cell, struct cell_node *neighbour
     return -1;
 }
 
+uint8_t get_visibility_mask(struct cell_node *grid_cell) {
+
+    uint8_t visibility_mask = 0;
+
+    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[FRONT])) {
+        visibility_mask |= FRONT_IS_VISIBLE;
+    }
+
+    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[BACK])) {
+        visibility_mask |= BACK_IS_VISIBLE;
+    }
+
+    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[TOP])) {
+        visibility_mask |= TOP_IS_VISIBLE;
+    }
+
+    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[DOWN])) {
+        visibility_mask |= DOWN_IS_VISIBLE;
+    }
+
+    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[RIGHT])) {
+        visibility_mask |= RIGHT_IS_VISIBLE;
+    }
+
+    if(!cell_has_neighbour(grid_cell, grid_cell->neighbours[LEFT])) {
+        visibility_mask |= LEFT_IS_VISIBLE;
+    }
+
+    return visibility_mask;
+}
