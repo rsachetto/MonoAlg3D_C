@@ -899,6 +899,8 @@ tolerance=1e-16
 use_gpu=yes
 max_iterations=200
 main_function=conjugate_gradient
+init_function=init_conjugate_gradient
+end_function=end_conjugate_gradient
 
 [domain]
 name=$1 Mesh
