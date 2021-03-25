@@ -38,9 +38,7 @@ struct hcm_mesh_info {
 
 #define INITIALIZE_DHZB_MESH_INFO(grid_cell)                                                                           \
     do {                                                                                                               \
-        size_t __size__ = sizeof (struct dhzb_mesh_info);                                                              \
-        (grid_cell)->mesh_extra_info = malloc (__size__);                                                              \
-        (grid_cell)->mesh_extra_info_size = __size__;                                                                  \
+        ALLOCATE_MESH_INFO(grid_cell, dhzb_mesh_info);                                                                 \
         DHZB_MESH_TISSUE_TYPE ((grid_cell)) = HEALTH;                                                                  \
         DHZB_MESH_LOCATION (grid_cell) = HEALTH_AREA;                                                                  \
 } while (0)
