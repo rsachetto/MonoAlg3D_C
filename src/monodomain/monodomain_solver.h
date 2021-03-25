@@ -20,9 +20,6 @@ struct monodomain_solver {
 
     real_cpu beta, cm; // micrometers
 
-    //TODO: maybe use an extra data variable as we did on the alg cell
-    struct point_3d kappa;
-    
     int refine_each;
     int derefine_each;
     real_cpu refinement_bound;

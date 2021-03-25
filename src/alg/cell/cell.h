@@ -71,7 +71,7 @@ enum transition_direction {
 
 struct element {
 #ifdef ENABLE_DDM
-    enum transtransition_direction direction; // NEW parameter !!!
+    enum transition_direction direction;
 #endif
     real_cpu value;
     uint32_t column; // Column of the matrix to which this element belongs.

@@ -41,10 +41,6 @@ struct monodomain_solver *new_monodomain_solver() {
 
     result->beta = 0.14;
     result->cm = 1.0;
-
-    result->kappa.x = 0.0;
-    result->kappa.y = 0.0;
-    result->kappa.z = 0.0;
     result->only_abort_after_dt = 0;
     
     return result;
