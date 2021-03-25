@@ -115,9 +115,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
     log_info("Loading Rabbit Heart Mesh\n");
 
     int num_volumes = 470197;
-    real_cpu cube_side = 64000.0;
-
-    int num_loaded = set_custom_mesh_from_file(the_grid, mesh_file, num_volumes, cube_side, start_discretization, 0, NULL);
+    int num_loaded = set_custom_mesh_from_file(the_grid, mesh_file, num_volumes, start_discretization, 0, NULL);
 
     log_info("Read %d volumes from file: %s\n", num_loaded, mesh_file);
 
@@ -313,23 +311,12 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     real_cpu max_h = start_h;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_h, config, "maximum_discretization");
 
-    real_cpu x_domain_limit = 64000.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, x_domain_limit, config, "x_domain_limit");
-
-    real_cpu y_domain_limit = 64000.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, y_domain_limit, config, "y_domain_limit");
-
-    real_cpu z_domain_limit = 64000.0f;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, z_domain_limit, config, "z_domain_limit");
-
     uint32_t total_number_mesh_points = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, total_number_mesh_points, config, "number_of_points");
-
-    real_cpu cube_side = fmax(fmax(x_domain_limit, y_domain_limit), z_domain_limit);
 
     the_grid->start_discretization = SAME_POINT3D(start_h);
     the_grid->max_discretization = SAME_POINT3D(max_h);
 
-    return set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, cube_side, start_h, 0, NULL);
+    return set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
 
 }
