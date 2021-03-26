@@ -135,7 +135,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config, "start_discretization");
 
     real_cpu max_h = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_h, config, "maximum_discretization");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, max_h, config, "maximum_discretization");
 
     log_info("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h, start_h, start_h);
 
