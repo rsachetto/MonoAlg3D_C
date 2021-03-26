@@ -1018,59 +1018,6 @@ void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_
 
 }
 
-//TODO: move
-void set_human_mesh_fibrosis_from_file(struct grid *grid, int type, const char *filename, int size) {
-
-    FILE *file = fopen(filename, "r");
-
-    if(!file) {
-        printf("Error opening file %s!!\n", filename);
-        exit(0);
-    }
-
-    real_cpu **scar_mesh = (real_cpu **)malloc(sizeof(real_cpu *) * size);
-    for(int i = 0; i < size; i++) {
-        scar_mesh[i] = (real_cpu *)malloc(sizeof(real_cpu) * 3);
-        if(scar_mesh[i] == NULL) {
-            printf("Failed to allocate memory\n");
-            exit(0);
-        }
-    }
-    real_cpu dummy1, dummy2; // unused values
-
-    int i = 0;
-
-    while(!feof(file)) {
-        fscanf(file, "%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &dummy1, &dummy2);
-        i++;
-    }
-
-    fclose(file);
-
-    sort_vector(scar_mesh, size);
-
-    struct cell_node *grid_cell = grid->first_cell;
-    while(grid_cell != 0) {
-
-        real_cpu center_x = grid_cell->center.x;
-        real_cpu center_y = grid_cell->center.y;
-        real_cpu center_z = grid_cell->center.z;
-
-        if((grid_cell->discretization.x == 100.0) && (DHZB_MESH_TISSUE_TYPE(grid_cell) == type)) {
-            int index = inside_mesh(scar_mesh, center_x, center_y, center_z, 0, size - 1);
-            grid_cell->active = (index != -1);
-        }
-
-        grid_cell = grid_cell->next;
-    }
-
-    for(int k = 0; k < size; k++) {
-        free(scar_mesh[k]);
-    }
-
-    free(scar_mesh);
-}
-
 void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
 
     FILE *file = fopen(filename, "r");

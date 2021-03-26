@@ -36,8 +36,6 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
 
 void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_radius);
 
-void set_human_mesh_fibrosis_from_file(struct grid *grid, int type, const char *filename, int size);
-
 int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x, real_cpu side_length_y,
                                   real_cpu side_length_z, real_cpu *real_side_length_x, real_cpu *real_side_length_y, real_cpu *real_side_length_z);
 
