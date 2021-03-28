@@ -765,7 +765,7 @@ SET_SPATIAL_STIM(${function_name}) {
 	ALLOCATE_STIMS();
 
 	real stim_current = 0.0;
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config->config_data, "current");
+	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config, "current");
 
 	bool stim;
 	real stim_value;
@@ -899,6 +899,8 @@ tolerance=1e-16
 use_gpu=yes
 max_iterations=200
 main_function=conjugate_gradient
+init_function=init_conjugate_gradient
+end_function=end_conjugate_gradient
 
 [domain]
 name=$1 Mesh

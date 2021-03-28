@@ -25,6 +25,15 @@ typedef float real;
 #define CALLOC_ONE_TYPE(type) (type *) calloc(1, sizeof(type))
 #define CALLOC_ARRAY_OF_TYPE(type, n) (type *) calloc(n, sizeof(type))
 
+#define ALLOCATE_MESH_INFO(grid_cell, mesh_info_struct)                                                                \
+    do {                                                                                                               \
+        size_t __size__ = sizeof (struct mesh_info_struct);                                                            \
+        (grid_cell)->mesh_extra_info = malloc (__size__);                                                              \
+        (grid_cell)->mesh_extra_info_size = __size__;                                                                  \
+} while (0)
+
+#define MESH_INFO_DATA(grid_cell, mesh_info_struct, data_name) ((struct mesh_info_struct *)grid_cell->mesh_extra_info)->data_name
+
 typedef double real_cpu;
 
 enum simulation_status {

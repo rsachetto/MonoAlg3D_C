@@ -94,7 +94,7 @@ int set_square_mesh(struct config *config, struct grid *the_grid) {
     return set_cuboid_domain_mesh(the_grid, start_dx, start_dy, start_dz, side_length, side_length, start_dz * num_layers);
 }
 
-uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file, uint32_t num_volumes, double cube_side, double start_h, uint8_t num_extra_fields,
+uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file, uint32_t num_volumes, double start_h, uint8_t num_extra_fields,
                                    set_custom_data_for_mesh_fn set_custom_data_for_mesh) {
 
     struct stop_watch sw = {0};
@@ -105,21 +105,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
     if(!file) {
         log_error_and_exit("Error opening mesh described in %s!!\n", mesh_file);
     }
-
-    double tmp_size = cube_side / 2.0;
-    uint16_t num_ref = 0;
-
-    while(tmp_size > start_h) {
-        tmp_size = tmp_size / 2;
-        num_ref++;
-    }
-
-    initialize_and_construct_grid(the_grid, SAME_POINT3D(cube_side));
-
-    log_info("\n---- Start refining the initial cube ----\n");
-    refine_grid(the_grid, num_ref);
-    log_info("---- End refining the initial cube ---- \n");
-
+   
     struct custom_mesh_basic_data_hash_entry *custom_mesh_data_hash = NULL;
     hmdefault(custom_mesh_data_hash, -1);
 
@@ -151,55 +137,85 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
     char *line = NULL;
     size_t len;
 
-    log_info("Reading mesh file\n");
-    for(uint32_t i = 0; i < num_volumes; i++) {
+    log_info("Start - reading mesh file\n");
+
+	for(uint32_t i = 0; i < num_volumes; i++) {
 
 		sds *data;
-        int split_count;
+		int split_count;
 
-        getline(&line, &len, file);
+		getline(&line, &len, file);
 
-        char *tmp = line;
-        data = sdssplit(tmp, ",", &split_count);
+		char *tmp = line;
+		data = sdssplit(tmp, ",", &split_count);
 
-        if(split_count < 3) {
-            log_error_and_exit("Not enough data to load the mesh geometry in line %d of file %s! [available=%d, required=3]\n", i+1, mesh_file, split_count);
-        }
+		if(split_count < 3) {
+			log_error_and_exit("Not enough data to load the mesh geometry in line %d of file %s! [available=%d, required=3]\n", i+1, mesh_file, split_count);
+		}
 
-        real_cpu cx = strtod(data[0], NULL);
-        real_cpu cy = strtod(data[1], NULL);
-        real_cpu cz = strtod(data[2], NULL);
+		real_cpu cx = strtod(data[0], NULL);
+		real_cpu cy = strtod(data[1], NULL);
+		real_cpu cz = strtod(data[2], NULL);
 
-        if(load_custom_data) {
-            // indexes 3, 4 and 5 are not used in this function
-            for(int d = 0; d < num_extra_fields; d++) {
-                custom_data[i][d] = strtod(data[d + 6], NULL);
-            }
-        }
+		if(load_custom_data) {
+			// indexes 3, 4 and 5 are not used in this function
+			for(int d = 0; d < num_extra_fields; d++) {
+				custom_data[i][d] = strtod(data[d + 6], NULL);
+			}
+		}
 
-        sdsfreesplitres(data, split_count);
+		hmput(custom_mesh_data_hash, POINT3D(cx,cy,cz), i);
 
-        if(cx > maxx)
-            maxx = cx;
-        if(cy > maxy)
-            maxy = cy;
-        if(cz > maxz)
-            maxz = cz;
-        if(cx < minx)
-            minx = cx;
-        if(cy < miny)
-            miny = cy;
-        if(cz < minz)
-            minz = cz;
+		if(cx > maxx) {
+			maxx = cx;
+		}
+		else if(cx < minx) {
+			minx = cx;
+		}
 
-        hmput(custom_mesh_data_hash, POINT3D(cx,cy,cz), i);
+		if(cy > maxy) {
+			maxy = cy;
+		}
+		else if(cy < miny) {
+			miny = cy;
+		}
+
+		if(cz > maxz) {
+			maxz = cz;
+		}
+		else if(cz < minz) {
+			minz = cz;
+		}
+
+		sdsfreesplitres(data, split_count);
+	}
+
+    log_info("Finish - reading mesh file\n");
+
+	double cube_side = start_h;
+	double min_cube_side = fmax(maxx, fmax(maxy, maxz)) + start_h;
+
+	while(cube_side < min_cube_side) {
+		cube_side = cube_side*2;
+	}
+
+	double tmp_size = cube_side / 2.0;
+    uint16_t num_ref = 0;
+
+    while(tmp_size > start_h) {
+        tmp_size = tmp_size / 2;
+        num_ref++;
     }
 
-    free(line);
+    initialize_and_construct_grid(the_grid, SAME_POINT3D(cube_side));
+
+    log_info("\nStart - refining the initial cube\n");
+    refine_grid(the_grid, num_ref);
+    log_info("Finish - refining the initial cube\n\n");
 
     uint32_t num_loaded = 0;
 
-    log_info("Loading grid\n");
+    log_info("Loading grid with cube side of %lf", cube_side);
 
     FOR_EACH_CELL(the_grid) {
         real_cpu x = cell->center.x;
@@ -209,7 +225,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
         if(x > maxx || y > maxy || z > maxz || x < minx || y < miny || z < minz) {
             cell->active = false;
         } else {
-            //index = inside_mesh(mesh_points, x, y, z, 0, num_volumes - 1);
+
             struct point_3d p = POINT3D(x,y,z);
             int index = hmget(custom_mesh_data_hash, p);
 
@@ -228,6 +244,19 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
         }
     }
 
+    if(num_loaded > 0) {
+        the_grid->mesh_side_length.x = maxx + start_h;
+        the_grid->mesh_side_length.y = maxy + start_h;
+        the_grid->mesh_side_length.z = maxz + start_h;
+
+        log_info("Cleaning grid\n");
+
+        for(uint16_t r = 0; r < num_ref; r++) {
+            derefine_grid_inactive_cells(the_grid);
+        }
+    }
+
+	free(line);
     hmfree(custom_mesh_data_hash);
 
 	if(custom_data) {
@@ -236,19 +265,6 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
 		}
 		free(custom_data);
 	}
-
-    if(num_loaded > 0) {
-        // TODO: we need to sum the cell discretization here...
-        the_grid->mesh_side_length.x = maxx;
-        the_grid->mesh_side_length.y = maxy;
-        the_grid->mesh_side_length.z = maxz;
-
-        log_info("Cleaning grid\n");
-
-        for(uint16_t r = 0; r < num_ref; r++) {
-            derefine_grid_inactive_cells(the_grid);
-        }
-    }
 
     fclose(file);
 
@@ -1000,59 +1016,6 @@ void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_
     }
 
 
-}
-
-//TODO: move
-void set_human_mesh_fibrosis_from_file(struct grid *grid, int type, const char *filename, int size) {
-
-    FILE *file = fopen(filename, "r");
-
-    if(!file) {
-        printf("Error opening file %s!!\n", filename);
-        exit(0);
-    }
-
-    real_cpu **scar_mesh = (real_cpu **)malloc(sizeof(real_cpu *) * size);
-    for(int i = 0; i < size; i++) {
-        scar_mesh[i] = (real_cpu *)malloc(sizeof(real_cpu) * 3);
-        if(scar_mesh[i] == NULL) {
-            printf("Failed to allocate memory\n");
-            exit(0);
-        }
-    }
-    real_cpu dummy1, dummy2; // unused values
-
-    int i = 0;
-
-    while(!feof(file)) {
-        fscanf(file, "%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &dummy1, &dummy2);
-        i++;
-    }
-
-    fclose(file);
-
-    sort_vector(scar_mesh, size);
-
-    struct cell_node *grid_cell = grid->first_cell;
-    while(grid_cell != 0) {
-
-        real_cpu center_x = grid_cell->center.x;
-        real_cpu center_y = grid_cell->center.y;
-        real_cpu center_z = grid_cell->center.z;
-
-        if((grid_cell->discretization.x == 100.0) && (DHZB_MESH_TISSUE_TYPE(grid_cell) == type)) {
-            int index = inside_mesh(scar_mesh, center_x, center_y, center_z, 0, size - 1);
-            grid_cell->active = (index != -1);
-        }
-
-        grid_cell = grid_cell->next;
-    }
-
-    for(int k = 0; k < size; k++) {
-        free(scar_mesh[k]);
-    }
-
-    free(scar_mesh);
 }
 
 void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {

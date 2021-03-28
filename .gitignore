@@ -177,3 +177,4 @@ local_meshes/
 sync.sh
 sync_outputs.sh
 private_configs/
+/src/domains_library/custom_mesh_info_data.h
