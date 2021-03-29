@@ -10,10 +10,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-struct stop_watch* new_stop_watch() {
-	return (struct stop_watch*) malloc(sizeof(struct stop_watch));
-}
-
 void init_stop_watch(struct stop_watch *sw) {
 	sw->running = false;
 }

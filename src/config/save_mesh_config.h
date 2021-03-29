@@ -26,10 +26,10 @@ typedef END_SAVE_MESH(end_save_mesh_fn);
         }                                                                                                              \
     } while(0)
 
-#define CALL_END_SAVE_MESH(config,grid)                                                                                     \
+#define CALL_END_SAVE_MESH(config,grid)                                                                                \
     do {                                                                                                               \
         if(config && config->end_function) {                                                                           \
-            ((end_save_mesh_fn *)config->end_function)(config,grid);                                                        \
+            ((end_save_mesh_fn *)config->end_function)(config,grid);                                                   \
         }                                                                                                              \
     } while(0)
 

@@ -1,21 +1,16 @@
 ////
 //// Created by sachetto on 06/10/17.
 ////
+
 #include <criterion/criterion.h>
-#include <signal.h>
 
 #include "../alg/grid/grid.h"
 #include "../config/linear_system_solver_config.h"
-#include "../config/domain_config.h"
-#include "../config/save_mesh_config.h"
-#include "../config/config_parser.h"
 #include "../utils/file_utils.h"
 #include "../3dparty/ini_parser/ini.h"
 #include "../3dparty/sds/sds.h"
-#include "../logger/logger.h"
 
 #include "../3dparty/stb_ds.h"
-#include "../config_helpers/config_helpers.h"
 
 
 real_cpu calc_mse(const real_cpu *x, const real_cpu *xapp, int n) {

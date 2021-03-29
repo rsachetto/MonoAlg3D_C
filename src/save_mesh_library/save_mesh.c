@@ -300,8 +300,8 @@ SAVE_MESH(save_as_text_or_binary) {
 
        struct cell_node *grid_cell = the_grid->first_cell;
 
-    float center_x, center_y, center_z, dx, dy, dz;
-    float v;
+    real_cpu center_x, center_y, center_z, dx, dy, dz;
+    real_cpu v;
 
 	ui8_array cell_visibility = NULL;
 	arrsetcap(cell_visibility, the_grid->num_active_cells);
@@ -347,10 +347,6 @@ SAVE_MESH(save_as_text_or_binary) {
                 fwrite(&v, sizeof(v), 1, output_file);
             } else {
                 fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
-//                //TODO: remove
-//                fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g,%d,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v,
-//                        TISSUE_TYPE(grid_cell), FIBROTIC(grid_cell), BORDER_ZONE(grid_cell), grid_cell->sigma.fibers.f[0], grid_cell->sigma.fibers.f[1],grid_cell->sigma.fibers.f[2]);
-
             }
 			arrput(cell_visibility, grid_cell->visible);
         }
