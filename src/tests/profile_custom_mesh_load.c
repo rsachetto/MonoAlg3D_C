@@ -134,7 +134,6 @@ int main(int argc, char **argv) {
     hash_key.dsize = strlen(hash_key.dptr);
 
     for(int i = 0; i < nruns; i++) {
-        printf("Starting run %d of %lld\n", i+1, nruns);
         profile_custom_mesh_load("500", &times);
 
         average_times.config_time      += times.config_time;

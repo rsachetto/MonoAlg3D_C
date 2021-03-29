@@ -52,11 +52,16 @@ int main(int argc, char **argv) {
     options->linear_system_solver_config->init_function_name = strdup("init_conjugate_gradient");
     options->linear_system_solver_config->end_function_name = strdup("end_conjugate_gradient");
 
-    shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "true");
     shput_dup_value(options->linear_system_solver_config->config_data, "use_preconditioner", "false");
-    
-	//solve odes also in the GPU
-	options->gpu = true;   
+
+#ifdef COMPILE_CUDA
+    //solve odes also in the GPU
+    shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "true");
+	options->gpu = true;
+#else
+    shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "false");
+    options->gpu = false;
+#endif
 
     times.config_time = stop_stop_watch(&config_time);
     

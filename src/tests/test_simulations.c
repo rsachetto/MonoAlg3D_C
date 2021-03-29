@@ -2,18 +2,14 @@
 //// Created by sachetto on 06/10/17.
 ////
 #include <criterion/criterion.h>
-#include <signal.h>
-
 #include "../3dparty/sds/sds.h"
 #include "../config/domain_config.h"
 #include "../config/save_mesh_config.h"
-#include "../logger/logger.h"
 #include "../3dparty/stb_ds.h"
-#include "../config_helpers/config_helpers.h"
 #include "../utils/file_utils.h"
 #include "common.h"
 
-static int check_output_equals(const sds gold_output, const sds tested_output, float tol) {
+static int check_output_equals(sds gold_output, sds tested_output, float tol) {
 
     string_array files_gold = list_files_from_dir(gold_output, "V_it_", "txt", NULL, true);
     string_array files_tested_sim = list_files_from_dir(tested_output, "V_it_", "txt", NULL, true);

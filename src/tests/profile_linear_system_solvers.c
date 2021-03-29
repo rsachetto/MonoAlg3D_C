@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
     construct_grid_from_file(grid, A, B);
 
     for(int i = 0; i < nruns; i++) {
-        printf("Starting run %d of %lld\n", i+1, nruns);
+
         profile_solver(true, "cpu_conjugate_gradient", "init_cpu_conjugate_gradient", NULL, grid, 1, &times);
 
         average_times.init_time += times.init_time;
