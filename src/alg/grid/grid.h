@@ -20,7 +20,6 @@
     for(struct cell_node *cell = grid->purkinje->first_cell; cell != NULL; cell = cell->next)
 
 struct grid {
-
 	struct cell_node *first_cell;     // First cell of grid.
 	struct point_3d cube_side_length;
 	struct point_3d mesh_side_length;
@@ -40,9 +39,6 @@ struct grid {
 
 	struct point_3d start_discretization;
 	struct point_3d max_discretization;
-
-    bool cells_ordered;
-
 };
 
 struct grid* new_grid();

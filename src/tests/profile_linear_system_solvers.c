@@ -25,7 +25,7 @@ struct elapsed_times {
 
 } __attribute__((packed));
 
-void test_solver(bool preconditioner, char *method_name, char *init_name, char *end_name, struct grid *grid, int nt, struct elapsed_times *times) {
+void profile_solver(bool preconditioner, char *method_name, char *init_name, char *end_name, struct grid *grid, int nt, struct elapsed_times *times) {
 
 #if defined(_OPENMP)
     omp_set_num_threads(nt);
@@ -58,7 +58,7 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
     init_stop_watch(&etime);
 
     start_stop_watch(&etime);
-    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, grid);
+    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, grid, false);
     times->init_time = (double)stop_stop_watch(&etime);
 
     double error;
@@ -113,10 +113,9 @@ int main(int argc, char **argv) {
 
     construct_grid_from_file(grid, A, B);
 
-
     for(int i = 0; i < nruns; i++) {
-
-        test_solver(true, "cpu_conjugate_gradient", "init_cpu_conjugate_gradient", NULL, grid, 1, &times);
+        printf("Starting run %d of %lld\n", i+1, nruns);
+        profile_solver(true, "cpu_conjugate_gradient", "init_cpu_conjugate_gradient", NULL, grid, 1, &times);
 
         average_times.init_time += times.init_time;
         average_times.run_time  += times.run_time;
@@ -170,8 +169,7 @@ int main(int argc, char **argv) {
 
         double speedup = (double)best_run->total_time/(double)average_times.total_time;
 
-        //10% speedup
-        if(speedup > 1.1) {
+        if(speedup > 1.0) {
             printf("Current run is %lf x faster than best run. Replacing record.\n", speedup);
             gdbm_store(f, hash_key, data, GDBM_REPLACE);
         }

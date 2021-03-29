@@ -80,6 +80,7 @@ void free_cell_node(struct cell_node *cell_node) {
     arrfree(cell_node->elements);
     free(cell_node->linear_system_solver_extra_info);
     free(cell_node->mesh_extra_info);
+	free(cell_node->neighbours);
 
 #if defined(_OPENMP)
     omp_destroy_lock(&(cell_node->updating));

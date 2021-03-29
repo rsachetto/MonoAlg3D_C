@@ -1,7 +1,7 @@
 #!/bin/bash
 
 INITIAL_PARAMS=""
-VALID_TESTS="mesh solvers"
+VALID_TESTS="mesh custom_mesh solvers simulation"
 
 function PRINT_USAGE() {
     echo "Usage $0 [profiler]" >&2;
@@ -22,9 +22,9 @@ function RUN_PROFILER() {
         done
     else
         if [ -f "${test_bin_name}" ]; then
-            "${test_bin_name}" $hardware_key
+			"${test_bin_name}" "$hardware_key"
         else
-            PRINT_USAGE $INITIAL_PARAMS
+            PRINT_USAGE "$INITIAL_PARAMS"
         fi
     fi
 }

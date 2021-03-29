@@ -183,7 +183,6 @@ struct gui_state {
     Vector3 coordinates_cube_size;
 
     bool show_coordinates;
-    bool move_coordinates;
 
     Vector2 coordinates_label_x_position;
     Vector2 coordinates_label_y_position;

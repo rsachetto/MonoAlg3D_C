@@ -1678,14 +1678,14 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
             }
         }
 
-        if(CheckCollisionRayBox(gui_state->ray, (BoundingBox){(Vector3){gui_state->coordinates_cube.x - gui_state->coordinates_cube_size.x / 2.0f,
-                                                                        gui_state->coordinates_cube.y - gui_state->coordinates_cube_size.y / 2.0f,
-                                                                        gui_state->coordinates_cube.z - gui_state->coordinates_cube_size.z / 2.0f},
-                                                              (Vector3){gui_state->coordinates_cube.x + gui_state->coordinates_cube_size.x / 2.0f,
-                                                                        gui_state->coordinates_cube.y + gui_state->coordinates_cube_size.y / 2.0f,
-                                                                        gui_state->coordinates_cube.z + gui_state->coordinates_cube_size.z / 2.0f}})) {
-            gui_state->move_coordinates = true;
-        }
+//        if(CheckCollisionRayBox(gui_state->ray, (BoundingBox){(Vector3){gui_state->coordinates_cube.x - gui_state->coordinates_cube_size.x / 2.0f,
+//                                                                        gui_state->coordinates_cube.y - gui_state->coordinates_cube_size.y / 2.0f,
+//                                                                        gui_state->coordinates_cube.z - gui_state->coordinates_cube_size.z / 2.0f},
+//                                                              (Vector3){gui_state->coordinates_cube.x + gui_state->coordinates_cube_size.x / 2.0f,
+//                                                                        gui_state->coordinates_cube.y + gui_state->coordinates_cube_size.y / 2.0f,
+//                                                                        gui_state->coordinates_cube.z + gui_state->coordinates_cube_size.z / 2.0f}})) {
+//            gui_state->move_coordinates = true;
+//        }
 
         else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y, gui_state->box_width - 18,
                                                                          WINDOW_STATUSBAR_HEIGHT})) {

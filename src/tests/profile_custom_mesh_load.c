@@ -2,12 +2,12 @@
 // Created by sachetto on 07/04/2020.
 //
 
-#include "../3dparty/ini_parser/ini.h"
-#include "../3dparty/sds/sds.h"
-#include "../3dparty/stb_ds.h"
 #include "../alg/grid/grid.h"
 #include "../config/domain_config.h"
 #include "../config/save_mesh_config.h"
+#include "../3dparty/ini_parser/ini.h"
+#include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
 #include "../utils/stop_watch.h"
 
 #include <gdbm.h>
@@ -24,7 +24,8 @@ struct elapsed_times {
 
 } __attribute__((packed));
 
-int profile_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* side_length_x, char* side_length_y, char* side_length_z, struct elapsed_times *times) {
+//TODO: check for memory leaks with valgrind
+int profile_custom_mesh_load(char *discretization, struct elapsed_times *times) {
 
     set_no_stdout(true);
 
@@ -33,16 +34,15 @@ int profile_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* si
 
     domain_config = alloc_and_init_config_data();
 
-    shput_dup_value(domain_config->config_data, "start_dx", start_dx);
-    shput_dup_value(domain_config->config_data, "start_dy", start_dy);
-    shput_dup_value(domain_config->config_data, "start_dz", start_dz);
+    shput_dup_value(domain_config->config_data, "maximum_discretization", discretization);
+    shput_dup_value(domain_config->config_data, "mesh_file", "meshes/rabheart.alg");
 
-    domain_config->main_function_name = strdup("initialize_grid_with_cuboid_mesh");
-    shput_dup_value(domain_config->config_data, "name", "Test cuboid");
+    domain_config->main_function_name = strdup("initialize_grid_with_rabbit_mesh");
+    shput_dup_value(domain_config->config_data, "name", "Test custom mesh");
 
-    shput(domain_config->config_data, "side_length_x", strdup(side_length_x));
-    shput(domain_config->config_data, "side_length_y", strdup(side_length_y));
-    shput(domain_config->config_data, "side_length_z", strdup(side_length_z));
+    shput(domain_config->config_data, "side_length_x", strdup(discretization));
+    shput(domain_config->config_data, "side_length_y", strdup(discretization));
+    shput(domain_config->config_data, "side_length_z", strdup(discretization));
 
     struct stop_watch config_time;
     start_stop_watch(&config_time);
@@ -54,7 +54,7 @@ int profile_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* si
     int success = ((set_spatial_domain_fn*)domain_config->main_function)(domain_config, grid);
     times->create_grid_time = stop_stop_watch(&create_grid_time);
 
-    if(!success ) {
+    if(!success) {
         clean_and_free_grid(grid);
         free_config_data(domain_config);
         return 0;
@@ -73,8 +73,7 @@ int profile_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* si
     shput_dup_value(save_mesh_config->config_data, "output_dir", "/tmp");
     shput_dup_value(save_mesh_config->config_data, "print_rate", "1");
 
-    sds file_prefix = sdscatprintf(sdsempty(), "test_%s_%s_%s_%s_%s_%s", start_dx, start_dy, start_dz,
-                                   side_length_x, side_length_y, side_length_z);
+    sds file_prefix = sdscatprintf(sdsempty(), "test_custom_mesh_%s", discretization);
 
     init_config_functions(save_mesh_config, "shared_libs/libdefault_save_mesh.so", "save_result");
 
@@ -115,7 +114,7 @@ int profile_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* si
 
 int main(int argc, char **argv) {
 
-    const long long nruns = 15;
+    const long long nruns = 5;
 
     struct elapsed_times times;
     struct elapsed_times average_times = { 0 };
@@ -136,7 +135,7 @@ int main(int argc, char **argv) {
 
     for(int i = 0; i < nruns; i++) {
         printf("Starting run %d of %lld\n", i+1, nruns);
-        profile_cuboid_mesh("200", "200", "200", "10000", "10000", "10000", &times);
+        profile_custom_mesh_load("500", &times);
 
         average_times.config_time      += times.config_time;
         average_times.create_grid_time += times.create_grid_time;
@@ -162,7 +161,7 @@ int main(int argc, char **argv) {
 
     GDBM_FILE f;
 
-    f = gdbm_open( "./tests_bin/profile_mesh_times.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
+    f = gdbm_open( "./tests_bin/profile_custom_mesh_times.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
 
     datum content = gdbm_fetch (f, hash_key);
 
