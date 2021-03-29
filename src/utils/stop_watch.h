@@ -11,7 +11,6 @@ struct stop_watch {
 
 };
 
-struct stop_watch* new_stop_watch();
 void init_stop_watch(struct stop_watch *sw);
 void start_stop_watch(struct stop_watch *sw); /* start the stopwatch */
 long stop_stop_watch(struct stop_watch *sw); /* stop the stopwatch and get the value in usecs */

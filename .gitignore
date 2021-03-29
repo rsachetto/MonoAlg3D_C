@@ -64,11 +64,13 @@ bin/MonoAlg3*
 shared_libs/
 tmp*/
 tests_bin/TestSuite
+tests_bin/Test*
 tests_bin/.TestSuite*
 tests_bin/ToyTest
 tests_bin/circle_cg*
 tests_bin/gold_tmp*
 tests_bin/test_*
+tests_bin/*Profiler
 meshes/*.pts
 meshes/*.mesh
 meshes/human_800_tagged.alg
@@ -120,14 +122,6 @@ src/3dparty/raylib/src/external/glfw/src/glfw.rc.in
 src/models_library/private_models
 */.*last_compiled_time_bbash
 
-
-/tests_bin/TestLibs
-/tests_bin/TestMesh
-/tests_bin/TestSimulations
-/tests_bin/TestSolver
-/tests_bin/TestSolvers
-/tests_bin/MeshProfiler
-tests_bin/SolversProfiler
 perf.data*
 .clangd/
 *.swp

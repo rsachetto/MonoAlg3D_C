@@ -1,3 +1,3 @@
 sudo add-apt-repository ppa:snaipewastaken/ppa
 sudo apt-get update
-sudo apt-get install criterion-dev
+sudo apt-get install criterion-dev libgdbm-dev
