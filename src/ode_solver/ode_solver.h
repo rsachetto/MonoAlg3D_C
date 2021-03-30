@@ -95,9 +95,6 @@ struct ode_solver* new_ode_solver();
 void free_ode_solver(struct ode_solver *solver);
 void init_ode_solver_with_cell_model(struct ode_solver* solver);
 
-//void solve_all_volumes_odes(struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time, int num_steps,
-//                            struct string_voidp_hash_entry *stim_configs, struct string_hash_entry *ode_extra_config);
-
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time,
                             struct string_voidp_hash_entry *stim_configs,
                             struct string_hash_entry *ode_extra_config);
@@ -106,19 +103,5 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
 
 void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_solver, struct user_options *options);
 void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_solver, struct ode_solver *solver);
-
-
-// NEW FUNCTIONS
-void init_purkinje_ode_solver_with_cell_model (struct ode_solver* solver, const char *model_library_path);
-//void solve_purkinje_volumes_odes (struct ode_solver *the_ode_solver, uint32_t n_active, real_cpu cur_time,
-//                            int num_steps, struct string_voidp_hash_entry *stim_configs,
-//                            struct string_hash_entry *ode_extra_config);
-
-void solve_purkinje_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time,
-                            struct string_voidp_hash_entry *stim_configs,
-                            struct string_hash_entry *ode_extra_config);
-
-
-
 
 #endif //MONOALG3D_EDO_SOLVER_H
