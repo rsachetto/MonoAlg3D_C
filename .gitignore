@@ -137,10 +137,12 @@ meshes/HCM_mesh_400um.alg
 meshes/HCM_mesh_400um.alg.fibers
 meshes/HCM_mesh_500um.alg
 meshes/HCM_mesh_500um.alg.fibers
+meshes/dogheart_500um.alg
 
 networks/sebastian*
 networks/elizabeth*
 networks/elnaz*
+networks/model_zero*
 
 /src/models_library/elnaz_models
 
@@ -149,6 +151,7 @@ example_configs/atrial_mesh_start_500um_27n.ini
 example_configs/rafa_sebastian*
 example_configs/elnaz*
 example_configs/elizabeth*
+example_configs/model_zero*
 
 /meshes/scv.alg
 /src/3dparty/raylib/src/stbTAvvG
