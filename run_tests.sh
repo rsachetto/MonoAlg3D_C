@@ -17,11 +17,11 @@ function RUN_TEST() {
         for t in ${VALID_TESTS}; do
             t_bin_name="$(tr '[:lower:]' '[:upper:]' <<< "${t:0:1}")${t:1}"
             echo "RUNNING ./tests_bin/Test"${t_bin_name}""
-            ./tests_bin/Test"${t_bin_name}"
+            ./tests_bin/Test"${t_bin_name}" --jobs 1
         done
     else
         if [ -f "${test_bin_name}" ]; then
-            "${test_bin_name}"
+            "${test_bin_name}" --jobs 1 
         else
             PRINT_USAGE $INITIAL_PARAMS
         fi
