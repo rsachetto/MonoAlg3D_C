@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "3dparty/ini_parser/ini.h"
 #include "3dparty/sds/sds.h"
 #include "alg/grid/grid.h"
@@ -8,6 +6,7 @@
 #include "monodomain/monodomain_solver.h"
 #include "ode_solver/ode_solver.h"
 #include "utils/file_utils.h"
+#include <string.h>
 
 #ifdef COMPILE_GUI
     #include "gui/gui.h"
