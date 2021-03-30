@@ -115,6 +115,13 @@ FIND_MPI () {
 		MPI_INCLUDE_PATH=''
 	fi
 
+	if [ ! -d "$MPI_INCLUDE_PATH" ] || [ ! -d "$MPI_LIBRARY_PATH" ]; then
+		MPI_FOUND=''
+		MPI_INCLUDE_PATH=''
+		MPI_LIBRARY_PATH=''
+		MPI_LIBRARIES=''
+	fi
+
 	export MPI_FOUND
 	export MPI_LIBRARIES
 	export MPI_LIBRARY_PATH
