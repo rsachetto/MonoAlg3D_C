@@ -48,7 +48,6 @@ void construct_grid(struct grid *the_grid);
 void initialize_and_construct_grid(struct grid *the_grid, struct point_3d side_length);
 
 void print_grid(struct grid* the_grid, FILE *output_file);
-void print_grid_with_scar_info(struct grid *the_grid, FILE *output_file, bool binary);
 
 void clean_grid(struct grid *the_grid);
 void order_grid_cells (struct grid *the_grid);
@@ -87,7 +86,5 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
 void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals);
 void set_active_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals, const char filename[]);
 void free_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals);
-
-bool cell_is_visible(struct cell_node *grid_cell);
 
 #endif //MONOALG3D_GRID_H

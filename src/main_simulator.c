@@ -73,9 +73,6 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
 
             log_info("For reproducibility purposes the configuration file was copied to file: %s\n", buffer_ini);
 
-            //moved to monodomain solver
-            //cp_file(buffer_ini, (*(options))->config_file);
-
             sdsfree(buffer_log);
             sdsfree(buffer_ini);
         }

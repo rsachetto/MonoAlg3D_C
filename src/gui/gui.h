@@ -180,8 +180,6 @@ struct gui_state {
     struct ap_graph_config *ap_graph_config;
 
     Vector3 coordinates_cube;
-    Vector3 coordinates_cube_size;
-
     bool show_coordinates;
 
     Vector2 coordinates_label_x_position;

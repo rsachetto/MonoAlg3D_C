@@ -84,7 +84,6 @@ struct condutivity {
     (struct point_3d) {                                                                                                                                        \
         x, x, x                                                                                                                                                \
     }
-#define ZERO_POINT3D POINT3D(0, 0, 0)
 
 struct point_hash_entry {
     struct point_3d key;
