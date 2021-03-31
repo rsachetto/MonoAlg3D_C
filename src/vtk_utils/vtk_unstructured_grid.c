@@ -2025,7 +2025,6 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
 
             }
 
-
             if (parser_state->compressed) {
                 raw_data_after_blocks_offset = get_block_sizes_from_compressed_vtu_file(raw_data, header_size, &num_blocks, &block_size_uncompressed,
                                                                                         &last_block_size, &block_sizes_compressed);
@@ -2115,13 +2114,13 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
         }
         else if (parser_state->ascii) {
             char *tmp_data = parser_state->celldata_ascii;
-            char *pEnd;
+            char *p_end;
 
             while (*tmp_data != '-' && !isdigit(*tmp_data)) tmp_data++;
 
             for (int i = 0; i < (*vtk_grid)->num_cells; i++) {
-                arrput((*vtk_grid)->values, strtof(tmp_data, &pEnd));
-                tmp_data = pEnd;
+                arrput((*vtk_grid)->values, strtof(tmp_data, &p_end));
+                tmp_data = p_end;
             }
 
             tmp_data = parser_state->points_ascii;
@@ -2134,16 +2133,16 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
 
                     switch (j) {
                         case 0:
-                            p.x = strtof(tmp_data, &pEnd);
-                            tmp_data = pEnd;
+                            p.x = strtof(tmp_data, &p_end);
+                            tmp_data = p_end;
                             break;
                         case 1:
-                            p.y = strtof(tmp_data, &pEnd);
-                            tmp_data = pEnd;
+                            p.y = strtof(tmp_data, &p_end);
+                            tmp_data = p_end;
                             break;
                         case 2:
-                            p.z = strtof(tmp_data, &pEnd);
-                            tmp_data = pEnd;
+                            p.z = strtof(tmp_data, &p_end);
+                            tmp_data = p_end;
                             break;
                         default:
                             break;
@@ -2158,8 +2157,8 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
             while (!isdigit(*tmp_data)) tmp_data++;
 
             for (uint32_t i = 0; i < (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell; i++) {
-                arrput((*vtk_grid)->cells, strtol(tmp_data, &pEnd, 10));
-                tmp_data = pEnd;
+                arrput((*vtk_grid)->cells, strtol(tmp_data, &p_end, 10));
+                tmp_data = p_end;
             }
         }
 
