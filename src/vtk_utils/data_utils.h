@@ -5,8 +5,8 @@
 #ifndef MONOALG3D_DATA_UTILS_H
 #define MONOALG3D_DATA_UTILS_H
 
-#include "../3dparty/sds/sds.h"
 #include "../3dparty/miniz/miniz.h"
+#include "../3dparty/sds/sds.h"
 #include "../common_types/common_types.h"
 #include <stdbool.h>
 

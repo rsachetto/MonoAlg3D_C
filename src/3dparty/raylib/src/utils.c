@@ -46,7 +46,7 @@
 #endif
 
 #include <stdlib.h>                     // Required for: exit()
-#include <stdio.h>                      // Required for: vprintf()
+#include <stdio.h>                      // Required for: FILE, fopen(), fseek(), ftell(), fread(), fwrite(), fprintf(), vprintf(), fclose()
 #include <stdarg.h>                     // Required for: va_list, va_start(), va_end()
 #include <string.h>                     // Required for: strcpy(), strcat()
 
@@ -63,11 +63,23 @@
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
+static int logTypeLevel = LOG_INFO;                 // Minimum log type level
 
-// Log types messages
-static int logTypeLevel = LOG_INFO;                     // Minimum log type level
-static int logTypeExit = LOG_ERROR;                     // Log type that exits
-static TraceLogCallback logCallback = NULL;             // Log callback function pointer
+static TraceLogCallback traceLog = NULL;            // TraceLog callback function pointer
+static LoadFileDataCallback loadFileData = NULL;    // LoadFileData callback funtion pointer
+static SaveFileDataCallback saveFileData = NULL;    // SaveFileText callback funtion pointer
+static LoadFileTextCallback loadFileText = NULL;    // LoadFileText callback funtion pointer
+static SaveFileTextCallback saveFileText = NULL;    // SaveFileText callback funtion pointer
+
+//----------------------------------------------------------------------------------
+// Functions to set internal callbacks
+//----------------------------------------------------------------------------------
+void SetTraceLogCallback(TraceLogCallback callback) { traceLog = callback; }              // Set custom trace log
+void SetLoadFileDataCallback(LoadFileDataCallback callback) { loadFileData = callback; }  // Set custom file data loader
+void SetSaveFileDataCallback(SaveFileDataCallback callback) { saveFileData = callback; }  // Set custom file data saver
+void SetLoadFileTextCallback(LoadFileTextCallback callback) { loadFileText = callback; }  // Set custom file text loader
+void SetSaveFileTextCallback(SaveFileTextCallback callback) { saveFileText = callback; }  // Set custom file text saver
+
 
 #if defined(PLATFORM_ANDROID)
 static AAssetManager *assetManager = NULL;              // Android assets manager pointer
@@ -92,16 +104,7 @@ static int android_close(void *cookie);
 //----------------------------------------------------------------------------------
 
 // Set the current threshold (minimum) log level
-void SetTraceLogLevel(int logType)
-{
-    logTypeLevel = logType;
-}
-
-// Set a trace log callback to enable custom logging
-void SetTraceLogCallback(TraceLogCallback callback)
-{
-    logCallback = callback;
-}
+void SetTraceLogLevel(int logType) { logTypeLevel = logType; }
 
 // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
 void TraceLog(int logType, const char *text, ...)
@@ -113,9 +116,9 @@ void TraceLog(int logType, const char *text, ...)
     va_list args;
     va_start(args, text);
 
-    if (logCallback)
+    if (traceLog)
     {
-        logCallback(logType, text, args);
+        traceLog(logType, text, args);
         va_end(args);
         return;
     }
@@ -152,15 +155,24 @@ void TraceLog(int logType, const char *text, ...)
 
     va_end(args);
 
-    if (logType >= logTypeExit) exit(1); // If exit message, exit program
+    if (logType == LOG_ERROR) exit(1);  // If error, exit program
 
 #endif  // SUPPORT_TRACELOG
 }
 
 // Internal memory allocator
+// NOTE: Initializes to zero by default
 void *MemAlloc(int size)
 {
-    return RL_MALLOC(size);
+    void *ptr = RL_CALLOC(size, 1);
+    return ptr;
+}
+
+// Internal memory reallocator
+void *MemRealloc(void *ptr, int size)
+{
+    void *ret = RL_REALLOC(ptr, size);
+    return ret;
 }
 
 // Internal memory free
@@ -177,6 +189,12 @@ unsigned char *LoadFileData(const char *fileName, unsigned int *bytesRead)
 
     if (fileName != NULL)
     {
+        if (loadFileData) 
+        {
+            data = loadFileData(fileName, bytesRead);
+            return data;
+        }
+#if defined(SUPPORT_STANDARD_FILEIO)
         FILE *file = fopen(fileName, "rb");
 
         if (file != NULL)
@@ -203,6 +221,9 @@ unsigned char *LoadFileData(const char *fileName, unsigned int *bytesRead)
             fclose(file);
         }
         else TRACELOG(LOG_WARNING, "FILEIO: [%s] Failed to open file", fileName);
+#else
+    TRACELOG(LOG_WARNING, "FILEIO: Standard file io not supported, use custom file callback");
+#endif
     }
     else TRACELOG(LOG_WARNING, "FILEIO: File name provided is not valid");
 
@@ -222,6 +243,12 @@ bool SaveFileData(const char *fileName, void *data, unsigned int bytesToWrite)
 
     if (fileName != NULL)
     {
+        if (saveFileData) 
+        {
+            saveFileData(fileName, data, bytesToWrite);
+            return success;
+        }
+#if defined(SUPPORT_STANDARD_FILEIO)
         FILE *file = fopen(fileName, "wb");
 
         if (file != NULL)
@@ -236,6 +263,9 @@ bool SaveFileData(const char *fileName, void *data, unsigned int bytesToWrite)
             if (result == 0) success = true;
         }
         else TRACELOG(LOG_WARNING, "FILEIO: [%s] Failed to open file", fileName);
+#else
+    TRACELOG(LOG_WARNING, "FILEIO: Standard file io not supported, use custom file callback");
+#endif  
     }
     else TRACELOG(LOG_WARNING, "FILEIO: File name provided is not valid");
 
@@ -250,21 +280,27 @@ char *LoadFileText(const char *fileName)
 
     if (fileName != NULL)
     {
-        FILE *textFile = fopen(fileName, "rt");
+        if (loadFileText) 
+        {
+            text = loadFileText(fileName);
+            return text;
+        }
+#if defined(SUPPORT_STANDARD_FILEIO)
+        FILE *file = fopen(fileName, "rt");
 
-        if (textFile != NULL)
+        if (file != NULL)
         {
             // WARNING: When reading a file as 'text' file,
             // text mode causes carriage return-linefeed translation...
             // ...but using fseek() should return correct byte-offset
-            fseek(textFile, 0, SEEK_END);
-            unsigned int size = (unsigned int)ftell(textFile);
-            fseek(textFile, 0, SEEK_SET);
+            fseek(file, 0, SEEK_END);
+            unsigned int size = (unsigned int)ftell(file);
+            fseek(file, 0, SEEK_SET);
 
             if (size > 0)
             {
                 text = (char *)RL_MALLOC((size + 1)*sizeof(char));
-                unsigned int count = (unsigned int)fread(text, sizeof(char), size, textFile);
+                unsigned int count = (unsigned int)fread(text, sizeof(char), size, file);
 
                 // WARNING: \r\n is converted to \n on reading, so,
                 // read bytes count gets reduced by the number of lines
@@ -277,9 +313,12 @@ char *LoadFileText(const char *fileName)
             }
             else TRACELOG(LOG_WARNING, "FILEIO: [%s] Failed to read text file", fileName);
 
-            fclose(textFile);
+            fclose(file);
         }
         else TRACELOG(LOG_WARNING, "FILEIO: [%s] Failed to open text file", fileName);
+#else
+    TRACELOG(LOG_WARNING, "FILEIO: Standard file io not supported, use custom file callback");
+#endif
     }
     else TRACELOG(LOG_WARNING, "FILEIO: File name provided is not valid");
 
@@ -299,6 +338,12 @@ bool SaveFileText(const char *fileName, char *text)
 
     if (fileName != NULL)
     {
+        if (saveFileText) 
+        {
+            saveFileText(fileName, text);
+            return success;
+        }
+#if defined(SUPPORT_STANDARD_FILEIO)
         FILE *file = fopen(fileName, "wt");
 
         if (file != NULL)
@@ -312,6 +357,9 @@ bool SaveFileText(const char *fileName, char *text)
             if (result == 0) success = true;
         }
         else TRACELOG(LOG_WARNING, "FILEIO: [%s] Failed to open text file", fileName);
+#else
+    TRACELOG(LOG_WARNING, "FILEIO: Standard file io not supported, use custom file callback");
+#endif
     }
     else TRACELOG(LOG_WARNING, "FILEIO: File name provided is not valid");
 

@@ -1,13 +1,11 @@
 ////
 //// Created by sachetto on 06/10/17.
 ////
-#include <criterion/criterion.h>
 #include "../3dparty/sds/sds.h"
-#include "../config/domain_config.h"
-#include "../config/save_mesh_config.h"
 #include "../3dparty/stb_ds.h"
 #include "../utils/file_utils.h"
 #include "common.h"
+#include <criterion/criterion.h>
 
 static int check_output_equals(sds gold_output, sds tested_output, float tol) {
 

@@ -42,7 +42,7 @@ GET_BUILD_OPTIONS "$@"
 if [ "$BUILD_TYPE" == "release" ]; then
     C_FLAGS="$C_FLAGS -O3"
 elif [ "$BUILD_TYPE" == "debug" ]; then
-    C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
+    C_FLAGS="$C_FLAGS -g -DDEBUG_INFO -fprofile-arcs -ftest-coverage"
 else
   	PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
   	PRINT_ERROR "Valid BUILD_TYPE options are: release, debug (-r or -d options)"

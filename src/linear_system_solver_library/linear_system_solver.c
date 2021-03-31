@@ -1,13 +1,13 @@
 //
 // Created by sachetto on 04/10/17.
 //
+#include "../3dparty/stb_ds.h"
 #include "../config/linear_system_solver_config.h"
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../logger/logger.h"
 
-#include "../3dparty/stb_ds.h"
-
+//TODO: remove these global variables
 bool jacobi_initialized = false;
 bool bcg_initialized = false;
 static bool use_preconditioner = false;
@@ -15,19 +15,17 @@ static int max_its = 200;
 static real_cpu tol = 1e-16;
 
 #ifdef COMPILE_CUDA
+	#include "../gpu_utils/gpu_utils.h"
+	#include <cublas_v2.h>
+	#include <cusparse_v2.h>
 
-#include "../gpu_utils/gpu_utils.h"
-#include <cublas_v2.h>
-#include <cusparse_v2.h>
-
-
-#if CUBLAS_VER_MAJOR < 11
-#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_10.c" )
-#include "gpu_solvers_cublas_10.c"
-#else
-#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_11.c" )
-#include "gpu_solvers_cublas_11.c"
-#endif
+	#if CUBLAS_VER_MAJOR < 11
+		#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_10.c" )
+		#include "gpu_solvers_cublas_10.c"
+	#else
+		#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_11.c" )
+		#include "gpu_solvers_cublas_11.c"
+	#endif
 #endif //COMPILE_CUDA
 
 INIT_LINEAR_SYSTEM(init_cpu_conjugate_gradient) {
@@ -41,7 +39,7 @@ END_LINEAR_SYSTEM(end_cpu_conjugate_gradient) {
 
 SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
 
-    real_cpu rTr, r1Tr1, pTAp, alpha, beta, precision = tol, rTz, r1Tz1;
+    real_cpu rTr, pTAp, alpha, beta, precision = tol, rTz, r1Tz1;
 
     *error = 1.0;
     *number_of_iterations = 1;
@@ -92,6 +90,7 @@ SOLVE_LINEAR_SYSTEM(cpu_conjugate_gradient) {
     //__________________________________________________________________________
     // Conjugate gradient iterations.
     if(*error >= precision) {
+        real_cpu r1Tr1;
         while(*number_of_iterations < max_its) {
             //__________________________________________________________________
             // Computes Ap and pTAp. Uses Ax to store Ap.
@@ -234,7 +233,7 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
         jacobi_initialized = true;
     }
 
-    real_cpu sigma, precision = tol;
+    real_cpu precision = tol;
 
     *error = 1.0;
     *number_of_iterations = 1;
@@ -246,14 +245,16 @@ SOLVE_LINEAR_SYSTEM(jacobi) {
         // Jacobi iterations.
         while(*number_of_iterations < max_its) {
 
-            OMP(parallel for private (element,sigma))
+            OMP(parallel for private (element))
             for(uint32_t i = 0; i < num_active_cells; i++) {
+
+                real_cpu sigma = 0.0;
+
                 if(JACOBI_INFO(active_cells[i]) == NULL) {
                     INITIALIZE_JACOBI_INFO(active_cells[i]);
                 }
 
                 struct element *cell_elements = active_cells[i]->elements;
-                sigma = 0.0;
 
                 size_t max_el = arrlen(cell_elements);
 
@@ -314,7 +315,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient) {
         bcg_initialized = true;
     }
 
-    real_cpu rTr, r1Tr1, pTAp, alpha, beta, precision = tol, rTz, r1Tz1;
+    real_cpu rTr, pTAp, alpha, beta, precision = tol, rTz, r1Tz1;
 
     *error = 1.0;
     *number_of_iterations = 1;
@@ -389,6 +390,7 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient) {
     //__________________________________________________________________________
     // Biconjugate gradient iterations.
     if(*error >= precision) {
+        real_cpu r1Tr1;
         while(*number_of_iterations < max_its) {
             //__________________________________________________________________
             // Computes Ap, pA and pTAp. Uses Ax to store Ap and xA to store pA
