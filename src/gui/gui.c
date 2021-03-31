@@ -1865,8 +1865,6 @@ void draw_coordinates(struct gui_state *gui_state) {
 
 }
 
-
-
 void init_and_open_gui_window(struct gui_config *gui_config) {
 
 	const int end_info_box_lines = 10;
