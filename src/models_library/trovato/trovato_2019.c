@@ -297,60 +297,52 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     real calc_I_stim = stim_current;
 
     //State variables
-    real STATES[NEQ];
-    for (uint32_t i = 0; i < NEQ; i++)
-        STATES[i] = sv[i]; 
+    const real V = sv[0];
+    const real CaMKt = sv[1];
+    const real cass = sv[2];
+    const real nai = sv[3];
+    const real nasl = sv[4];
+    const real nass = sv[5];
+    const real ki = sv[6];
+    const real kss = sv[7];
+    const real ksl = sv[8];
+    const real cai = sv[9];
+    const real casl = sv[10];
+    const real cansr = sv[11];
+    const real cajsr = sv[12];
+    const real cacsr = sv[13];
+    const real Jrel1 = sv[14];
+    const real Jrel2 = sv[15];
+    const real m = sv[16];
+    const real hf = sv[17];
+    const real hs = sv[18];
+    const real j = sv[19];
+    const real hsp = sv[20];
+    const real jp = sv[21];
+    const real mL = sv[22];
+    const real hL = sv[23];
+    const real hLp = sv[24];
+    const real a = sv[25];
+    const real i1 = sv[26];
+    const real i2 = sv[27];
+    const real d = sv[28];
+    const real ff = sv[29];
+    const real fs = sv[30];
+    const real fcaf = sv[31];
+    const real fcas = sv[32];
+    const real jca = sv[33];
+    const real ffp = sv[34];
+    const real fcafp = sv[35];
+    const real nca = sv[36];
+    const real b = sv[37];
+    const real g = sv[38];
+    const real xrf = sv[39];
+    const real xrs = sv[40];
+    const real xs1 = sv[41];
+    const real xs2 = sv[42];
+    const real y = sv[43];
+    const real xk1 = sv[44];
+    const real u = sv[45]; 
 
     #include "trovato_2019_common.inc"
 }
-
-
-// Original CellML
-    /*
-        sv[0] = -86.6814002878592;
-        sv[1] = 0.00505983330678751;
-        sv[2] = 0.000101777993438818;
-        sv[3] = 8.23183964616932;
-        sv[4] = 8.23153516580562;
-        sv[5] = 8.23154325237268;
-        sv[6] = 143.767359809132;
-        sv[7] = 143.767768218104;
-        sv[8] = 143.767769906216;
-        sv[9] = 4.36004404734282e-5;
-        sv[10] = 0.000102004317781147;
-        sv[11] = 1.26350902016858;
-        sv[12] = 1.24811940209535;
-        sv[13] = 1.26516959198518;
-        sv[14] = 0.000108240945806962;
-        sv[15] = 1.25045800437317e-69;
-        sv[16] = 0.00632661703915808;
-        sv[17] = 0.788611739889677;
-        sv[18] = 0.788545979951331;
-        sv[19] = 0.790474358603666;
-        sv[20] = 0.579693514309867;
-        sv[21] = 0.790947058236417;
-        sv[22] = 0.000241925773627233;
-        sv[23] = 0.463574582508218;
-        sv[24] = 0.240216198686475;
-        sv[25] = 0.000272851144435704;
-        sv[26] = 0.649604795721571;
-        sv[27] = 0.989965695822495;
-        sv[28] = 6.97735089296892e-9;
-        sv[29] = 0.999999968230738;
-        sv[30] = 0.926692153319136;
-        sv[31] = 0.99999996819573;
-        sv[32] = 0.999999905741936;
-        sv[33] = 0.999978907334662;
-        sv[34] = 0.999999968365903;
-        sv[35] = 0.999999968278239;
-        sv[36] = 0.00547252500964926;
-        sv[37] = 0.000304250912559619;
-        sv[38] = 0.994214357917907;
-        sv[39] = 0.000331691184084272;
-        sv[40] = 0.568716473334161;
-        sv[41] = 0.191165248085394;
-        sv[42] = 0.000222677365291219;
-        sv[43] = 0.233119011214908;
-        sv[44] = 0.997084813729909;
-        sv[45] = 0.466236137183558;
-    */

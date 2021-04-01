@@ -371,68 +371,151 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     real calc_I_stim = stim_current;
 
     // State variables
-    real STATES[NEQ];
+    real V;
+    real CaMKt;
+    real cass;
+    real nai;
+    real nasl;
+    real nass;
+    real ki;
+    real kss;
+    real ksl;
+    real cai;
+    real casl;
+    real cansr;
+    real cajsr;
+    real cacsr;
+    real Jrel1;
+    real Jrel2;
+    real m;
+    real hf;
+    real hs;
+    real j;
+    real hsp;
+    real jp;
+    real mL;
+    real hL;
+    real hLp;
+    real a;
+    real i1;
+    real i2;
+    real d;
+    real ff;
+    real fs;
+    real fcaf;
+    real fcas;
+    real jca;
+    real ffp;
+    real fcafp;
+    real nca;
+    real b;
+    real g;
+    real xrf;
+    real xrs;
+    real xs1;
+    real xs2;
+    real y;
+    real xk1;
+    real u;   
+
     if (use_adpt)
     {
-        for (uint32_t i = 0; i < NEQ; i++)
-            STATES[i] = sv[i];
+        V = sv[0];
+        CaMKt = sv[1];
+        cass = sv[2];
+        nai = sv[3];
+        nasl = sv[4];
+        nass = sv[5];
+        ki = sv[6];
+        kss = sv[7];
+        ksl = sv[8];
+        cai = sv[9];
+        casl = sv[10];
+        cansr = sv[11];
+        cajsr = sv[12];
+        cacsr = sv[13];
+        Jrel1 = sv[14];
+        Jrel2 = sv[15];
+        m = sv[16];
+        hf = sv[17];
+        hs = sv[18];
+        j = sv[19];
+        hsp = sv[20];
+        jp = sv[21];
+        mL = sv[22];
+        hL = sv[23];
+        hLp = sv[24];
+        a = sv[25];
+        i1 = sv[26];
+        i2 = sv[27];
+        d = sv[28];
+        ff = sv[29];
+        fs = sv[30];
+        fcaf = sv[31];
+        fcas = sv[32];
+        jca = sv[33];
+        ffp = sv[34];
+        fcafp = sv[35];
+        nca = sv[36];
+        b = sv[37];
+        g = sv[38];
+        xrf = sv[39];
+        xrs = sv[40];
+        xs1 = sv[41];
+        xs2 = sv[42];
+        y = sv[43];
+        xk1 = sv[44];
+        u = sv[45];
     }
     else
     {
-        for (uint32_t i = 0; i < NEQ; i++)
-            STATES[i] = *((real *)((char *)sv + pitch * i) + threadID_);
+        V = *((real *)((char *)sv + pitch * 0) + threadID_);;
+        CaMKt = *((real *)((char *)sv + pitch * 1) + threadID_);;
+        cass = *((real *)((char *)sv + pitch * 2) + threadID_);;
+        nai = *((real *)((char *)sv + pitch * 3) + threadID_);;
+        nasl = *((real *)((char *)sv + pitch * 4) + threadID_);;
+        nass = *((real *)((char *)sv + pitch * 5) + threadID_);;
+        ki = *((real *)((char *)sv + pitch * 6) + threadID_);;
+        kss = *((real *)((char *)sv + pitch * 7) + threadID_);;
+        ksl = *((real *)((char *)sv + pitch * 8) + threadID_);;
+        cai = *((real *)((char *)sv + pitch * 9) + threadID_);;
+        casl = *((real *)((char *)sv + pitch * 10) + threadID_);;
+        cansr = *((real *)((char *)sv + pitch * 11) + threadID_);;
+        cajsr = *((real *)((char *)sv + pitch * 12) + threadID_);;
+        cacsr = *((real *)((char *)sv + pitch * 13) + threadID_);;
+        Jrel1 = *((real *)((char *)sv + pitch * 14) + threadID_);;
+        Jrel2 = *((real *)((char *)sv + pitch * 15) + threadID_);;
+        m = *((real *)((char *)sv + pitch * 16) + threadID_);;
+        hf = *((real *)((char *)sv + pitch * 17) + threadID_);;
+        hs = *((real *)((char *)sv + pitch * 18) + threadID_);;
+        j = *((real *)((char *)sv + pitch * 19) + threadID_);;
+        hsp = *((real *)((char *)sv + pitch * 20) + threadID_);;
+        jp = *((real *)((char *)sv + pitch * 21) + threadID_);;
+        mL = *((real *)((char *)sv + pitch * 22) + threadID_);;
+        hL = *((real *)((char *)sv + pitch * 23) + threadID_);;
+        hLp = *((real *)((char *)sv + pitch * 24) + threadID_);;
+        a = *((real *)((char *)sv + pitch * 25) + threadID_);;
+        i1 = *((real *)((char *)sv + pitch * 26) + threadID_);;
+        i2 = *((real *)((char *)sv + pitch * 27) + threadID_);;
+        d = *((real *)((char *)sv + pitch * 28) + threadID_);;
+        ff = *((real *)((char *)sv + pitch * 29) + threadID_);;
+        fs = *((real *)((char *)sv + pitch * 30) + threadID_);;
+        fcaf = *((real *)((char *)sv + pitch * 31) + threadID_);;
+        fcas = *((real *)((char *)sv + pitch * 32) + threadID_);;
+        jca = *((real *)((char *)sv + pitch * 33) + threadID_);;
+        ffp = *((real *)((char *)sv + pitch * 34) + threadID_);;
+        fcafp = *((real *)((char *)sv + pitch * 35) + threadID_);;
+        nca = *((real *)((char *)sv + pitch * 36) + threadID_);;
+        b = *((real *)((char *)sv + pitch * 37) + threadID_);;
+        g = *((real *)((char *)sv + pitch * 38) + threadID_);;
+        xrf = *((real *)((char *)sv + pitch * 39) + threadID_);;
+        xrs = *((real *)((char *)sv + pitch * 40) + threadID_);;
+        xs1 = *((real *)((char *)sv + pitch * 41) + threadID_);;
+        xs2 = *((real *)((char *)sv + pitch * 42) + threadID_);;
+        y = *((real *)((char *)sv + pitch * 43) + threadID_);;
+        xk1 = *((real *)((char *)sv + pitch * 44) + threadID_);;
+        u = *((real *)((char *)sv + pitch * 45) + threadID_);;
     }
 
     #include "trovato_2019_common.inc"
 }
-
-
-/*
-// Original CellML
-        *((real * )((char *) sv + pitch * 0) + threadID) = -86.6814002878592;
-        *((real * )((char *) sv + pitch * 1) + threadID) = 0.00505983330678751;
-        *((real * )((char *) sv + pitch * 2) + threadID) = 0.000101777993438818;
-        *((real * )((char *) sv + pitch * 3) + threadID) = 8.23183964616932;
-        *((real * )((char *) sv + pitch * 4) + threadID) = 8.23153516580562;
-        *((real * )((char *) sv + pitch * 5) + threadID) = 8.23154325237268;
-        *((real * )((char *) sv + pitch * 6) + threadID) = 143.767359809132;
-        *((real * )((char *) sv + pitch * 7) + threadID) = 143.767768218104;
-        *((real * )((char *) sv + pitch * 8) + threadID) = 143.767769906216;
-        *((real * )((char *) sv + pitch * 9) + threadID) = 4.36004404734282e-05;
-        *((real * )((char *) sv + pitch * 10) + threadID) = 0.000102004317781147;
-        *((real * )((char *) sv + pitch * 11) + threadID) = 1.26350902016858;
-        *((real * )((char *) sv + pitch * 12) + threadID) = 1.24811940209535;
-        *((real * )((char *) sv + pitch * 13) + threadID) = 1.26516959198518;
-        *((real * )((char *) sv + pitch * 14) + threadID) = 0.000108240945806962;
-        *((real * )((char *) sv + pitch * 15) + threadID) = 1.25045800437317e-69;
-        *((real * )((char *) sv + pitch * 16) + threadID) = 0.00632661703915808;
-        *((real * )((char *) sv + pitch * 17) + threadID) = 0.788611739889677;
-        *((real * )((char *) sv + pitch * 18) + threadID) = 0.788545979951331;
-        *((real * )((char *) sv + pitch * 19) + threadID) = 0.790474358603666;
-        *((real * )((char *) sv + pitch * 20) + threadID) = 0.579693514309867;
-        *((real * )((char *) sv + pitch * 21) + threadID) = 0.790947058236417;
-        *((real * )((char *) sv + pitch * 22) + threadID) = 0.000241925773627233;
-        *((real * )((char *) sv + pitch * 23) + threadID) = 0.463574582508218;
-        *((real * )((char *) sv + pitch * 24) + threadID) = 0.240216198686475;
-        *((real * )((char *) sv + pitch * 25) + threadID) = 0.000272851144435704;
-        *((real * )((char *) sv + pitch * 26) + threadID) = 0.649604795721571;
-        *((real * )((char *) sv + pitch * 27) + threadID) = 0.989965695822495;
-        *((real * )((char *) sv + pitch * 28) + threadID) = 6.97735089296892e-09;
-        *((real * )((char *) sv + pitch * 29) + threadID) = 0.999999968230738;
-        *((real * )((char *) sv + pitch * 30) + threadID) = 0.926692153319136;
-        *((real * )((char *) sv + pitch * 31) + threadID) = 0.99999996819573;
-        *((real * )((char *) sv + pitch * 32) + threadID) = 0.999999905741936;
-        *((real * )((char *) sv + pitch * 33) + threadID) = 0.999978907334662;
-        *((real * )((char *) sv + pitch * 34) + threadID) = 0.999999968365903;
-        *((real * )((char *) sv + pitch * 35) + threadID) = 0.999999968278239;
-        *((real * )((char *) sv + pitch * 36) + threadID) = 0.00547252500964926;
-        *((real * )((char *) sv + pitch * 37) + threadID) = 0.000304250912559619;
-        *((real * )((char *) sv + pitch * 38) + threadID) = 0.994214357917907;
-        *((real * )((char *) sv + pitch * 39) + threadID) = 0.000331691184084272;
-        *((real * )((char *) sv + pitch * 40) + threadID) = 0.568716473334161;
-        *((real * )((char *) sv + pitch * 41) + threadID) = 0.191165248085394;
-        *((real * )((char *) sv + pitch * 42) + threadID) = 0.000222677365291219;
-        *((real * )((char *) sv + pitch * 43) + threadID) = 0.233119011214908;
-        *((real * )((char *) sv + pitch * 44) + threadID) = 0.997084813729909;
-        *((real * )((char *) sv + pitch * 45) + threadID) = 0.466236137183558;
-*/
