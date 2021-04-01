@@ -447,12 +447,6 @@ int remove_directory(const char *path) {
     return r;
 }
 
-void fixpath(char *path) {
-    for(; *path; ++path)
-        if(*path == '\\')
-            *path = '/';
-}
-
 void create_dir(char *out_dir) {
 
     if(dir_exists(out_dir))

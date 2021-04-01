@@ -543,20 +543,6 @@ int find_neighbour_index(struct cell_node *grid_cell, struct cell_node *neighbou
     return el_index;
 }
 
-int get_neighbour_value(struct cell_node *grid_cell, struct cell_node *neighbour, real_cpu *value) {
-
-    size_t max_elements = arrlen(grid_cell->elements);
-
-    for(size_t i = 0; i < max_elements; i++) {
-        if(grid_cell->elements[i].column == neighbour->grid_position) {
-            *value = grid_cell->elements[i].value;
-            return 1;
-        }
-    }
-
-    return -1;
-}
-
 uint8_t get_visibility_mask(struct cell_node *grid_cell) {
 
     uint8_t visibility_mask = 0;

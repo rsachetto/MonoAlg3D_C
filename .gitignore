@@ -172,3 +172,8 @@ sync.sh
 sync_outputs.sh
 private_configs/
 /src/domains_library/custom_mesh_info_data.h
+retired_code/
+*.gcno
+*.gcda
+export_report.sh
+report.xml 

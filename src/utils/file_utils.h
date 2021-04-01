@@ -39,7 +39,6 @@ void get_path_information(const char *path, struct path_information *input_info)
 void free_path_information(struct path_information *input_info);
 
 char *get_filename_without_ext(const char *filename);
-void fixpath(char *path);
 void create_dir(char *out_dir);
 int remove_directory(const char *path);
 size_t base64_decode(unsigned char *out, const char *src, size_t len, size_t *bytes_read);

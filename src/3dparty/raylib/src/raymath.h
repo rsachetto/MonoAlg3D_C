@@ -136,7 +136,7 @@
 
 // NOTE: Helper types to be used instead of array return types for *ToFloat functions
 typedef struct float3_rl { float v[3]; } float3_rl;
-typedef struct float16 { float v[16]; } float16;
+typedef struct float16_rl { float v[16]; } float16_rl;
 
 #include <math.h>       // Required for: sinf(), cosf(), sqrtf(), tan(), fabs()
 
@@ -160,13 +160,13 @@ RMDEF float Lerp(float start, float end, float amount)
 // Normalize input value within input range
 RMDEF float Normalize(float value, float start, float end)
 {
-    return (value - start) / (end - start);
+    return (value - start)/(end - start);
 }
 
 // Remap input value within input range to output range
 RMDEF float Remap(float value, float inputStart, float inputEnd, float outputStart, float outputEnd)
 {
-    return (value - inputStart) / (inputEnd - inputStart) * (outputEnd - outputStart) + outputStart;
+    return (value - inputStart)/(inputEnd - inputStart)*(outputEnd - outputStart) + outputStart;
 }
 
 //----------------------------------------------------------------------------------
@@ -314,7 +314,7 @@ RMDEF Vector2 Vector2Reflect(Vector2 v, Vector2 normal)
 RMDEF Vector2 Vector2Rotate(Vector2 v, float degs)
 {
     float rads = degs*DEG2RAD;
-    Vector2 result = {v.x * cosf(rads) - v.y * sinf(rads) , v.x * sinf(rads) + v.y * cosf(rads) };
+    Vector2 result = {v.x*cosf(rads) - v.y*sinf(rads) , v.x*sinf(rads) + v.y*cosf(rads) };
     return result;
 }
 
@@ -856,14 +856,14 @@ RMDEF Matrix MatrixRotate(Vector3 axis, float angle)
 
     float x = axis.x, y = axis.y, z = axis.z;
 
-    float length = sqrtf(x*x + y*y + z*z);
+    float lengthSquared = x*x + y*y + z*z;
 
-    if ((length != 1.0f) && (length != 0.0f))
+    if ((lengthSquared != 1.0f) && (lengthSquared != 0.0f))
     {
-        length = 1.0f/length;
-        x *= length;
-        y *= length;
-        z *= length;
+        float inverseLength = 1.0f/sqrtf(lengthSquared);
+        x *= inverseLength;
+        y *= inverseLength;
+        z *= inverseLength;
     }
 
     float sinres = sinf(angle);
@@ -954,29 +954,52 @@ RMDEF Matrix MatrixRotateXYZ(Vector3 ang)
     float cosx = cosf(-ang.x);
     float sinx = sinf(-ang.x);
 
-    result.m0 = cosz * cosy;
-    result.m4 = (cosz * siny * sinx) - (sinz * cosx);
-    result.m8 = (cosz * siny * cosx) + (sinz * sinx);
+    result.m0 = cosz*cosy;
+    result.m4 = (cosz*siny*sinx) - (sinz*cosx);
+    result.m8 = (cosz*siny*cosx) + (sinz*sinx);
 
-    result.m1 = sinz * cosy;
-    result.m5 = (sinz * siny * sinx) + (cosz * cosx);
-    result.m9 = (sinz * siny * cosx) - (cosz * sinx);
+    result.m1 = sinz*cosy;
+    result.m5 = (sinz*siny*sinx) + (cosz*cosx);
+    result.m9 = (sinz*siny*cosx) - (cosz*sinx);
 
     result.m2 = -siny;
-    result.m6 = cosy * sinx;
-    result.m10= cosy * cosx;
+    result.m6 = cosy*sinx;
+    result.m10= cosy*cosx;
 
     return result;
 }
 
 // Returns zyx-rotation matrix (angles in radians)
-// TODO: This solution is suboptimal, it should be possible to create this matrix in one go
-// instead of using a 3 matrix multiplication
 RMDEF Matrix MatrixRotateZYX(Vector3 ang)
 {
-    Matrix result = MatrixRotateZ(ang.z);
-    result = MatrixMultiply(result, MatrixRotateY(ang.y));
-    result = MatrixMultiply(result, MatrixRotateX(ang.x));
+    Matrix result = { 0 };
+
+    float cz = cosf(ang.z);
+    float sz = sinf(ang.z);
+    float cy = cosf(ang.y);
+    float sy = sinf(ang.y);
+    float cx = cosf(ang.x);
+    float sx = sinf(ang.x);
+
+    result.m0 = cz*cy;
+    result.m1 = cz*sy*sx - cx*sz;
+    result.m2 = sz*sx + cz*cx*sy;
+    result.m3 = 0;
+
+    result.m4 = cy*sz;
+    result.m5 = cz*cx + sz*sy*sx;
+    result.m6 = cx*sz*sy - cz*sx;
+    result.m7 = 0;
+
+    result.m8 = -sy;
+    result.m9 = cy*sx;
+    result.m10 = cy*cx;
+    result.m11 = 0;
+
+    result.m12 = 0;
+    result.m13 = 0;
+    result.m14 = 0;
+    result.m15 = 1;
 
     return result;
 }
@@ -1096,9 +1119,9 @@ RMDEF Matrix MatrixLookAt(Vector3 eye, Vector3 target, Vector3 up)
 }
 
 // Returns float array of matrix data
-RMDEF float16 MatrixToFloatV(Matrix mat)
+RMDEF float16_rl MatrixToFloatV(Matrix mat)
 {
-    float16 buffer = { 0 };
+    float16_rl buffer = { 0 };
 
     buffer.v[0] = mat.m0;
     buffer.v[1] = mat.m1;
@@ -1227,10 +1250,10 @@ RMDEF Quaternion QuaternionScale(Quaternion q, float mul)
 
     float qax = q.x, qay = q.y, qaz = q.z, qaw = q.w;
 
-    result.x = qax * mul + qaw * mul + qay * mul - qaz * mul;
-    result.y = qay * mul + qaw * mul + qaz * mul - qax * mul;
-    result.z = qaz * mul + qaw * mul + qax * mul - qay * mul;
-    result.w = qaw * mul - qax * mul - qay * mul - qaz * mul;
+    result.x = qax*mul + qaw*mul + qay*mul - qaz*mul;
+    result.y = qay*mul + qaw*mul + qaz*mul - qax*mul;
+    result.z = qaz*mul + qaw*mul + qax*mul - qay*mul;
+    result.w = qaw*mul - qax*mul - qay*mul - qaz*mul;
 
     return result;
 }
@@ -1238,7 +1261,7 @@ RMDEF Quaternion QuaternionScale(Quaternion q, float mul)
 // Divide two quaternions
 RMDEF Quaternion QuaternionDivide(Quaternion q1, Quaternion q2)
 {
-    Quaternion result = {q1.x / q2.x, q1.y / q2.y, q1.z / q2.z, q1.w / q2.w};
+    Quaternion result = { q1.x/q2.x, q1.y/q2.y, q1.z/q2.z, q1.w/q2.w };
     return result;
 }
 
@@ -1271,11 +1294,11 @@ RMDEF Quaternion QuaternionSlerp(Quaternion q1, Quaternion q2, float amount)
 
     float cosHalfTheta =  q1.x*q2.x + q1.y*q2.y + q1.z*q2.z + q1.w*q2.w;
 
-    if (cosHalfTheta < 0) 
+    if (cosHalfTheta < 0)
     {
         q2.x = -q2.x; q2.y = -q2.y; q2.z = -q2.z; q2.w = -q2.w;
         cosHalfTheta = -cosHalfTheta;
-    }    
+    }
 
     if (fabs(cosHalfTheta) >= 1.0f) result = q1;
     else if (cosHalfTheta > 0.95f) result = QuaternionNlerp(q1, q2, amount);
@@ -1438,17 +1461,18 @@ RMDEF void QuaternionToAxisAngle(Quaternion q, Vector3 *outAxis, float *outAngle
     *outAngle = resAngle;
 }
 
-// Returns he quaternion equivalent to Euler angles
-RMDEF Quaternion QuaternionFromEuler(float roll, float pitch, float yaw)
+// Returns the quaternion equivalent to Euler angles
+// NOTE: Rotation order is ZYX
+RMDEF Quaternion QuaternionFromEuler(float pitch, float yaw, float roll)
 {
     Quaternion q = { 0 };
 
-    float x0 = cosf(roll*0.5f);
-    float x1 = sinf(roll*0.5f);
-    float y0 = cosf(pitch*0.5f);
-    float y1 = sinf(pitch*0.5f);
-    float z0 = cosf(yaw*0.5f);
-    float z1 = sinf(yaw*0.5f);
+    float x0 = cosf(pitch*0.5f);
+    float x1 = sinf(pitch*0.5f);
+    float y0 = cosf(yaw*0.5f);
+    float y1 = sinf(yaw*0.5f);
+    float z0 = cosf(roll*0.5f);
+    float z1 = sinf(roll*0.5f);
 
     q.x = x1*y0*z0 - x0*y1*z1;
     q.y = x0*y1*z0 + x1*y0*z1;

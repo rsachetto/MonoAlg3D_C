@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "3dparty/ini_parser/ini.h"
 #include "3dparty/sds/sds.h"
 #include "alg/grid/grid.h"
@@ -8,6 +6,7 @@
 #include "monodomain/monodomain_solver.h"
 #include "ode_solver/ode_solver.h"
 #include "utils/file_utils.h"
+#include <string.h>
 
 #ifdef COMPILE_GUI
     #include "gui/gui.h"
@@ -73,9 +72,6 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
             buffer_ini = sdscatfmt(buffer_ini, "%s/original_configuration.ini", out_dir_name);
 
             log_info("For reproducibility purposes the configuration file was copied to file: %s\n", buffer_ini);
-
-            //moved to monodomain solver
-            //cp_file(buffer_ini, (*(options))->config_file);
 
             sdsfree(buffer_log);
             sdsfree(buffer_ini);

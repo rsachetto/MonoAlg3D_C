@@ -226,8 +226,6 @@ enum transition_direction get_inverse_direction(enum transition_direction direct
 
 int find_neighbour_index(struct cell_node *grid_cell, struct cell_node *neighbour);
 
-int get_neighbour_value(struct cell_node *grid_cell, struct cell_node *neighbour, real_cpu *value);
-
 uint8_t get_visibility_mask(struct cell_node *grid_cell);
 
 #endif // MONOALG3D_CELL_H

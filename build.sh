@@ -42,7 +42,7 @@ GET_BUILD_OPTIONS "$@"
 if [ "$BUILD_TYPE" == "release" ]; then
     C_FLAGS="$C_FLAGS -O3"
 elif [ "$BUILD_TYPE" == "debug" ]; then
-    C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
+    C_FLAGS="$C_FLAGS -g -DDEBUG_INFO -fprofile-arcs -ftest-coverage"
 else
   	PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
   	PRINT_ERROR "Valid BUILD_TYPE options are: release, debug (-r or -d options)"
@@ -222,25 +222,25 @@ if [ -n "$COMPILE_MPI" ]; then
       if [ -n "$MPI_INCLUDE_PATH" ]; then
         INCLUDE_P="-I$MPI_INCLUDE_PATH"
       fi
-      COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH" "$INCLUDE_P"
+      COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH" "$INCLUDE_P"
   fi
 
 fi
 
 if [ -n "$COMPILE_GUI" ]; then
-    COMPILE_EXECUTABLE "MonoAlg3D_visualizer" "src/main_visualizer.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+    COMPILE_EXECUTABLE "MonoAlg3D_visualizer" "src/main_visualizer.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
 
 if [ -n "$COMPILE_CONVERTER" ]; then
-    COMPILE_EXECUTABLE "MonoAlg3D_converter" "src/main_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+    COMPILE_EXECUTABLE "MonoAlg3D_converter" "src/main_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
 
 if [ -n "$COMPILE_FIBER_CONVERTER" ]; then
-    COMPILE_EXECUTABLE "MonoAlg3D_fiber_converter" "src/main_fiber_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+    COMPILE_EXECUTABLE "MonoAlg3D_fiber_converter" "src/main_fiber_converter.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
 
 if [ -n "$COMPILE_POSTPROCESSOR" ]; then
-    COMPILE_EXECUTABLE "MonoAlg3D_postprocessor" "src/main_postprocessor.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+    COMPILE_EXECUTABLE "MonoAlg3D_postprocessor" "src/main_postprocessor.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 	ADD_SUBDIRECTORY "src/postprocessing_library/"
 fi
 

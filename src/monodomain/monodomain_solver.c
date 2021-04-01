@@ -6,34 +6,23 @@
 #include "../gui/gui.h"
 #endif
 
-#include "monodomain_solver.h"
-#include "../utils/file_utils.h"
-#include "../utils/stop_watch.h"
-#include "../libraries_common/common_data_structures.h"
-
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
 #include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
+#include "../config/modify_current_domain_config.h"
+#include "../config/stim_config.h"
+#include "../libraries_common/common_data_structures.h"
+#include "../save_mesh_library/save_mesh_helper.h"
+#include "../utils/file_utils.h"
+#include "../utils/stop_watch.h"
+#include "monodomain_solver.h"
 #include <assert.h>
 #include <inttypes.h>
-
-#include "../config/assembly_matrix_config.h"
-#include "../config/domain_config.h"
-#include "../config/purkinje_config.h"
-#include "../config/stim_config.h"
-#include "../config/linear_system_solver_config.h"
-#include "../config/modify_current_domain_config.h"
-
-
-#include "../3dparty/stb_ds.h"
-#include "../config_helpers/config_helpers.h"
-#include "../save_mesh_library/save_mesh_helper.h"
-
-#include <unistd.h>
-
 #include <stdio.h>
+#include <unistd.h>
 
 struct monodomain_solver *new_monodomain_solver() {
 
@@ -50,7 +39,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                       struct grid *the_grid, struct user_options *configs, struct gui_config *gui_config) {
 
     assert(configs);
-
     assert(the_grid);
     assert(the_monodomain_solver);
     assert(the_ode_solver);
@@ -181,6 +169,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     }
 
+    if( !purkinje_config && !domain_config ) {
+        log_error_and_exit(
+            "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
+    }
+
     // Configure the functions and set the Purkinje mesh domain
     if (purkinje_config) {
         init_config_functions(purkinje_config, "shared_libs/libdefault_purkinje.so", "purkinje");
@@ -189,11 +182,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     // Configure the functions and set the mesh domain
     if(domain_config) {
         init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
-    } 
-
-    if( !purkinje_config && !domain_config ) {
-        log_error_and_exit(
-                "Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
     if(assembly_matrix_config) {
@@ -221,8 +209,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool save_to_file = (save_mesh_config != NULL);
     real_cpu start_saving_after_dt = 0.0;
 
-    if(save_to_file) 
-    {
+    if(save_to_file) {
         init_config_functions(save_mesh_config, "./shared_libs/libdefault_save_mesh.so", "save_result");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, save_mesh_config, "print_rate");
         GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, save_mesh_config, "output_dir");
@@ -231,9 +218,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if(print_rate > 0) output_print_rate = print_rate;
 
-    } 
-    else 
-    {
+    } else {
         log_info("No configuration provided to save the results! The results will not be saved!\n");
     }
 
@@ -244,12 +229,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         save_checkpoint = false;
     }
 
-    if(save_checkpoint) 
-    {
+    if(save_checkpoint) {
         init_config_functions(save_state_config, "./shared_libs/libdefault_save_state.so", "save_state");
-    } 
-    else 
-    {
+    } else  {
         log_info("No configuration provided to make simulation checkpoints! Chekpoints will not be created!\n");
     }
 
@@ -260,13 +242,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         restore_checkpoint = false;
     }
 
-    if(restore_state_config) 
-    {
+    if(restore_state_config) {
         init_config_functions(restore_state_config, "./shared_libs/libdefault_restore_state.so", "restore_state");
     }
 
-    if(has_extra_data) 
-    {
+    if(has_extra_data)  {
         init_config_functions(extra_data_config, "./shared_libs/libdefault_extra_data.so", "extra_data");
     }
 
@@ -287,8 +267,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     else {
         log_error_and_exit("No update monodomain configuration provided! Exiting!\n");
     }
-
     ///////MAIN CONFIGURATION END//////////////////
+
     int refine_each = the_monodomain_solver->refine_each;
     int derefine_each = the_monodomain_solver->derefine_each;
 
@@ -299,8 +279,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     #ifdef COMPILE_CUDA
     bool gpu = the_ode_solver->gpu;
     #endif
-
-    int count = time_info.iteration;
 
     real_cpu refinement_bound = the_monodomain_solver->refinement_bound;
     real_cpu derefinement_bound = the_monodomain_solver->derefinement_bound;
@@ -339,12 +317,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         // Here we configure the Purkinje ode_solver using the [purkinje_ode_solver] parameters
         // If there is no [purkinje_ode_solver] section we configure the Purkinje ODE solver using the input from the [ode_solver] section
-        if (!domain_config)     // ONLY Purkinje simulation
-            configure_purkinje_ode_solver_from_ode_solver(the_purkinje_ode_solver,the_ode_solver);
-        // Otherwise, there is a [purkinje_ode_solver] section and we are doing a coupled simulation
-        else                    // Purkinje + Tissue simulation
-            configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver,configs);        
-
+        if (!domain_config) {
+            //Only Purkinje simulation
+            configure_purkinje_ode_solver_from_ode_solver(the_purkinje_ode_solver, the_ode_solver);
+        } else {
+            // Purkinje + Tissue simulation
+            configure_purkinje_ode_solver_from_options(the_purkinje_ode_solver, configs);
+        }
         
         init_ode_solver_with_cell_model(the_purkinje_ode_solver);
 
@@ -360,11 +339,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if (!success) {
             log_error_and_exit("Error configuring the tissue domain!\n");
         }
-    }
-
-    if (!purkinje_config && !domain_config)
-    {
-        log_error_and_exit("Error configuring the domain! No Purkinje or tissue configuration was provided!\n");
     }
 
     if(restore_checkpoint) {
@@ -416,6 +390,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         the_ode_solver->num_cells_to_solve = original_num_cells;
 
     }
+
     // Purkinje section
     if (purkinje_config) {
         original_num_purkinje_cells = the_grid->purkinje->number_of_purkinje_cells;
@@ -443,7 +418,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
         else {
             if(the_ode_solver->extra_data_size == 0) {
-                log_warn("set_extra_data function but extra_data_size is 0!\n");
+                log_warn("set_extra_data function was called but extra_data_size is 0!\n");
                 log_warn("Maybe you forgot to call the SET_EXTRA_DATA_SIZE(size) macro in your extra_data_function!\n");
             }
         }
@@ -570,8 +545,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false);
     CALL_INIT_SAVE_MESH(save_mesh_config);
-    if (purkinje_linear_system_solver_config)
+
+    if (purkinje_linear_system_solver_config) {
         CALL_INIT_LINEAR_SYSTEM(purkinje_linear_system_solver_config, the_grid, true);
+    }
 
 #ifdef COMPILE_GUI
 	if(show_gui) {
@@ -586,6 +563,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         options_to_ini_file(configs, buffer_ini);
         sdsfree(buffer_ini);
     }
+
+    int count = time_info.iteration;
 
     // Main simulation loop start
     while(cur_time <= finalT) {
@@ -604,15 +583,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
-                if (purkinje_linear_system_solver_config)
-                    CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
+                CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
+
                 return RESTART_SIMULATION;
             }
             if (gui_config->exit)  {
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
-                if (purkinje_linear_system_solver_config)
-                    CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
+                CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
+
                 return END_SIMULATION;
             }
         }
@@ -699,15 +678,16 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             #endif
 
             // COUPLING: Calculate the PMJ current from the Purkinje to the Tissue
-            if (purkinje_config)
-                compute_pmj_current_purkinje_to_tissue(the_ode_solver,the_grid,the_terminals);
+            if (purkinje_config) {
+                compute_pmj_current_purkinje_to_tissue(the_ode_solver, the_grid, the_terminals);
+            }
 
             // DIFUSION: Tissue
             ((linear_system_solver_fn *)linear_system_solver_config->main_function)(&time_info, linear_system_solver_config,
                                                                                     the_grid, the_grid->num_active_cells,
                                                                                     the_grid->active_cells, &solver_iterations, &solver_error);
             if(isnan(solver_error)) {
-                log_error("\n Solver stoped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
+                log_error("\nSimulation stopped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
                 #ifdef COMPILE_GUI
 					if(show_gui) {
 	                    omp_unset_lock(&gui_config->draw_lock);
@@ -792,10 +772,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 					total_mat_time += stop_stop_watch(&part_mat);
 
 					// MAPPING: Update the mapping between the Purkinje mesh and the refined/derefined grid
-					if (purkinje_config && domain_config)
-						update_link_purkinje_to_endocardium(the_grid,the_terminals);
+					if (purkinje_config && domain_config) {
+                        update_link_purkinje_to_endocardium(the_grid, the_terminals);
+                    }
 
-
+                    //Freeing resources and reconfiguring the linear system solver
 					CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
 					CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false);
 				}
@@ -882,7 +863,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             }
         }
 
-
         iteration_time = stop_stop_watch(&iteration_time_watch);
 
         if ( (count - 1) % output_print_rate == 0) {
@@ -894,7 +874,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 	double conv_rate = 1000.0*1000.0*60.0;
     log_info("Resolution Time: %ld μs (%lf min)\n", res_time, res_time/conv_rate );
-
 
     if (domain_config) {
         log_info("Total Write Time: %ld μs (%lf min)\n", total_write_time, total_write_time/conv_rate );
