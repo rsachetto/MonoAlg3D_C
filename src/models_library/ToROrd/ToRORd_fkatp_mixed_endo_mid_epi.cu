@@ -1,4 +1,4 @@
-#include "ToRORd_fkatp_endo_2019.h"
+#include "ToRORd_fkatp_mixed_endo_mid_epi.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -16,7 +16,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     uint8_t use_adpt_h = (uint8_t)solver->adaptive;
 
     check_cuda_error(cudaMemcpyToSymbol(use_adpt, &use_adpt_h, sizeof(uint8_t)));
-    log_info("Using New_ToRORd_fkatp_endo GPU model\n");
+    log_info("Using ToRORd_fkatp_mixed_endo_mid_epi GPU model\n");
 
     uint32_t num_volumes = solver->original_num_cells;
 
@@ -35,7 +35,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
         log_info("Using Euler model to solve the ODEs\n");
     }
 
-    // execution configuration
+    // Execution configuration
     const int GRID = (num_volumes + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
     size_t size = num_volumes * sizeof(real);
@@ -47,10 +47,48 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
-    kernel_set_model_initial_conditions<<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
+    // Get initial condition from extra_data
+    real *initial_conditions_endo = NULL;
+    real *initial_conditions_epi = NULL;
+    real *initial_conditions_mid = NULL;
+    real *mapping = NULL;
+    real *initial_conditions_endo_device = NULL;
+    real *initial_conditions_epi_device = NULL;
+    real *initial_conditions_mid_device = NULL;
+    real *mapping_device = NULL;
+
+    if(solver->ode_extra_data) 
+    {
+        initial_conditions_endo = (real *)solver->ode_extra_data;
+        initial_conditions_epi = (real *)solver->ode_extra_data+NEQ;
+        initial_conditions_mid = (real *)solver->ode_extra_data+NEQ+NEQ;
+        mapping = (real *)solver->ode_extra_data+NEQ+NEQ+NEQ;
+        check_cuda_error(cudaMalloc((void **)&initial_conditions_endo_device, sizeof(real)*NEQ));
+        check_cuda_error(cudaMemcpy(initial_conditions_endo_device, initial_conditions_endo, sizeof(real)*NEQ, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMalloc((void **)&initial_conditions_epi_device, sizeof(real)*NEQ));
+        check_cuda_error(cudaMemcpy(initial_conditions_epi_device, initial_conditions_epi, sizeof(real)*NEQ, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMalloc((void **)&initial_conditions_mid_device, sizeof(real)*NEQ));
+        check_cuda_error(cudaMemcpy(initial_conditions_mid_device, initial_conditions_mid, sizeof(real)*NEQ, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMalloc((void **)&mapping_device, sizeof(real)*num_volumes));
+        check_cuda_error(cudaMemcpy(mapping_device, mapping, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
+    }
+    else
+    {
+        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
+    }
+
+    kernel_set_model_initial_conditions<<<GRID, BLOCK_SIZE>>>(solver->sv,\
+                                                            initial_conditions_endo_device, initial_conditions_epi_device, initial_conditions_mid_device,\
+                                                            mapping_device, num_volumes);
 
     check_cuda_error(cudaPeekAtLastError());
     cudaDeviceSynchronize();
+
+    check_cuda_error(cudaFree(initial_conditions_endo_device));
+    check_cuda_error(cudaFree(initial_conditions_epi_device));
+    check_cuda_error(cudaFree(initial_conditions_mid_device));
+    check_cuda_error(cudaFree(mapping_device));
+
     return pitch_h;
 
 }
@@ -77,76 +115,51 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     uint32_t *cells_to_solve_device = NULL;
     if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **)&cells_to_solve_device, cells_to_solve_size));
-        check_cuda_error(
-            cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve,
-                                    num_steps);
+    // Get the mapping array
+    uint32_t num_volumes = ode_solver->original_num_cells;
+    real *mapping = NULL;
+    real *mapping_device = NULL;
+    if(ode_solver->ode_extra_data) 
+    {
+        mapping = (real *)ode_solver->ode_extra_data+NEQ+NEQ+NEQ;
+        check_cuda_error(cudaMalloc((void **)&mapping_device, sizeof(real)*num_volumes));
+        check_cuda_error(cudaMemcpy(mapping_device, mapping, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
+    }
+    else 
+    {
+        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
+    }
+
+    solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps, mapping_device);
 
     check_cuda_error(cudaPeekAtLastError());
 
     check_cuda_error(cudaFree(stims_currents_device));
-    if(cells_to_solve_device)
-        check_cuda_error(cudaFree(cells_to_solve_device));
+    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
+    if (mapping_device) check_cuda_error(cudaFree(mapping_device));
 
 }
 
-__global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes) {
+__global__ void kernel_set_model_initial_conditions(real *sv,\
+                                                real *initial_endo, real *initial_epi, real *initial_mid,\
+                                                real *mapping, int num_volumes) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (threadID < num_volumes) 
     {
-        real STATES[43];
-     
-        // Steady-state after 120 pulses (BCL=1000ms)
-        STATES[0] = -88.937;
-        STATES[1] = 0.012962;
-        STATES[2] = 6.4e-05;
-        STATES[3] = 12.3776;
-        STATES[4] = 12.378;
-        STATES[5] = 142.216;
-        STATES[6] = 142.216;
-        STATES[7] = 1.50816;
-        STATES[8] = 1.5005;
-        STATES[9] = 7.4e-05;
-        STATES[10] = 0.000778;
-        STATES[11] = 0.83199;
-        STATES[12] = 0.831671;
-        STATES[13] = 0.676283;
-        STATES[14] = 0.830905;
-        STATES[15] = 0.000158;
-        STATES[16] = 0.524232;
-        STATES[17] = 0.282866;
-        STATES[18] = 0.00094;
-        STATES[19] = 0.999621;
-        STATES[20] = 0.55304;
-        STATES[21] = 0.000479;
-        STATES[22] = 0.999621;
-        STATES[23] = 0.616382;
-        STATES[24] = 0;
-        STATES[25] = 1;
-        STATES[26] = 0.936177;
-        STATES[27] = 1;
-        STATES[28] = 0.999792;
-        STATES[29] = 0.999934;
-        STATES[30] = 1;
-        STATES[31] = 1;
-        STATES[32] = 0.000472;
-        STATES[33] = 0.000793;
-        STATES[34] = 0.000718;
-        STATES[35] = 0.00084;
-        STATES[36] = 0.997746;
-        STATES[37] = 2.5e-05;
-        STATES[38] = 0.000715;
-        STATES[39] = 0.256829;
-        STATES[40] = 0.000174;
-        STATES[41] = 0;
-        STATES[42] = 0;
-
         for (int i = 0; i < NEQ; i++)
-            *((real * )((char *) sv + pitch * i) + threadID) = STATES[i];
-
+        {
+            if (mapping[threadID] == 0.0)
+                *((real * )((char *) sv + pitch * i) + threadID) = initial_endo[i];
+            else if (mapping[threadID] == 1.0)
+                *((real * )((char *) sv + pitch * i) + threadID) = initial_epi[i];
+            else
+                *((real * )((char *) sv + pitch * i) + threadID) = initial_mid[i];
+        }
+            
         if(use_adpt) 
         {
             *((real *)((char *)sv + pitch * 43) + threadID) = min_dt; // dt
@@ -158,7 +171,7 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes) {
 
 // Solving the model for each cell in the tissue matrix ni x nj
 __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
-                            uint32_t *cells_to_solve, uint32_t num_cells_to_solve, int num_steps) 
+                            uint32_t *cells_to_solve, uint32_t num_cells_to_solve, int num_steps, real *mapping) 
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
@@ -175,7 +188,7 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
 
             for(int n = 0; n < num_steps; ++n) {
 
-                RHS_gpu(sv, rDY, stim_currents[threadID], sv_id, dt);
+                RHS_gpu(sv, rDY, stim_currents[threadID], mapping[threadID], sv_id, dt);
 
                 for(int i = 0; i < NEQ; i++) {
                     *((real *)((char *)sv + pitch * i) + sv_id) =
@@ -183,12 +196,12 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
                 }
             }
         } else {
-            solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], cur_time + max_dt, sv_id);
+            solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id);
         }
     }
 }
 
-inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id) 
+inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int thread_id) 
 {
 
     #define DT *((real *)((char *)sv + pitch * 43) + thread_id)
@@ -224,7 +237,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
 
-    RHS_gpu(sv_local, rDY, stim_curr, thread_id, dt);
+    RHS_gpu(sv_local, rDY, stim_curr, mapping, thread_id, dt);
     time_new += dt;
 
     //#pragma unroll
@@ -255,7 +268,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 
         time_new += dt;
 
-        RHS_gpu(sv_local, rDY, stim_curr, thread_id, dt);
+        RHS_gpu(sv_local, rDY, stim_curr, mapping, thread_id, dt);
         time_new -= dt; // step back
 
         real greatestError = 0.0, auxError = 0.0;
@@ -362,8 +375,11 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
-inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int threadID_, real dt) 
+inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real mapping, int threadID_, real dt) 
 {
+    // Get the celltype for the current cell
+    real celltype = mapping;
+    
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
 
@@ -380,52 +396,5 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
             STATES[i] = *((real *)((char *)sv + pitch * i) + threadID_);
     }
 
-    #include "ToRORd_fkatp_endo_2019_common.inc"
+    #include "ToRORd_fkatp_mixed_endo_mid_epi.common.c"
 }
-
-// Original CellML
-/*
-        STATES[0] = -88.7638;
-        STATES[1] = 0.0111;
-        STATES[2] = 7.0305e-5;
-        STATES[3] = 12.1025;
-        STATES[4] = 12.1029;
-        STATES[5] = 142.3002;
-        STATES[6] = 142.3002;
-        STATES[7] = 1.5211;
-        STATES[8] = 1.5214;
-        STATES[9] = 8.1583e-05;
-        STATES[10] = 8.0572e-4;
-        STATES[11] = 0.8286;
-        STATES[12] = 0.8284;
-        STATES[13] = 0.6707;
-        STATES[14] = 0.8281;
-        STATES[15] = 1.629e-4;
-        STATES[16] = 0.5255;
-        STATES[17] = 0.2872;
-        STATES[18] = 9.5098e-4;
-        STATES[19] = 0.9996;
-        STATES[20] = 0.5936;
-        STATES[21] = 4.8454e-4;
-        STATES[22] = 0.9996;
-        STATES[23] = 0.6538;
-        STATES[24] = 8.1084e-9;
-        STATES[25] = 1.0;
-        STATES[26] = 0.939;
-        STATES[27] = 1.0;
-        STATES[28] = 0.9999;
-        STATES[29] = 1.0;
-        STATES[30] = 1.0;
-        STATES[31] = 1.0;
-        STATES[32] = 6.6462e-4;
-        STATES[33] = 0.0012;
-        STATES[34] = 7.0344e-4;
-        STATES[35] = 8.5109e-4;
-        STATES[36] = 0.9981;
-        STATES[37] = 1.3289e-5;
-        STATES[38] = 3.7585e-4;
-        STATES[39] = 0.248;
-        STATES[40] = 1.7707e-4;
-        STATES[41] = 1.6129e-22;
-        STATES[42] = 1.2475e-20;
-    */

@@ -96,6 +96,8 @@ scripts/animations/video
 scripts/animations/videos/*.mp4
 scripts/apd_error/*.png
 scripts/traces/*
+scripts/plot_comparison_potential.py
+scripts/trace_plot.py
 batch_simulations/
 /src/main_graph_analyzer.c
 tests_bin/simulation_result.pvd

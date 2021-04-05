@@ -1,4 +1,4 @@
-#include "ToRORd_fkatp_endo_2019.h"
+#include "ToRORd_fkatp_mixed_endo_mid_epi.h"
 #include <stdlib.h>
 
 real max_step;
@@ -13,12 +13,12 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
     if(get_initial_v)
         cell_model->initial_v = INITIAL_V;
     if(get_neq)
-        cell_model->number_of_ode_equations = NEQ; //for count and m
+        cell_model->number_of_ode_equations = NEQ;
 }
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_info("Using New_ToRORd_fkatp_endo CPU model\n");
+    log_info("Using ToRORd_fkatp_mixed_endo_mid_epi CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
 	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
@@ -48,57 +48,36 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         log_info("Using Euler model to solve the ODEs\n");
     }
 
+    real *initial_endo = NULL;
+    real *initial_epi = NULL;
+    real *initial_mid = NULL;
+    real *mapping = NULL;
+    if(solver->ode_extra_data) 
+    {
+        initial_endo = (real *)solver->ode_extra_data;
+        initial_epi = (real *)solver->ode_extra_data+NEQ;
+        initial_mid = (real *)solver->ode_extra_data+NEQ+NEQ;
+        mapping = (real *)solver->ode_extra_data+NEQ+NEQ+NEQ;
+    }
+    else 
+    {
+        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
+    }
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_cells; i++) 
     {
-
         real *sv = &solver->sv[i * NEQ];
       
-        // Steady-state after 120 pulses (BCL=1000ms)
-        sv[0] = -88.937;
-        sv[1] = 0.012962;
-        sv[2] = 6.4e-05;
-        sv[3] = 12.3776;
-        sv[4] = 12.378;
-        sv[5] = 142.216;
-        sv[6] = 142.216;
-        sv[7] = 1.50816;
-        sv[8] = 1.5005;
-        sv[9] = 7.4e-05;
-        sv[10] = 0.000778;
-        sv[11] = 0.83199;
-        sv[12] = 0.831671;
-        sv[13] = 0.676283;
-        sv[14] = 0.830905;
-        sv[15] = 0.000158;
-        sv[16] = 0.524232;
-        sv[17] = 0.282866;
-        sv[18] = 0.00094;
-        sv[19] = 0.999621;
-        sv[20] = 0.55304;
-        sv[21] = 0.000479;
-        sv[22] = 0.999621;
-        sv[23] = 0.616382;
-        sv[24] = 0;
-        sv[25] = 1;
-        sv[26] = 0.936177;
-        sv[27] = 1;
-        sv[28] = 0.999792;
-        sv[29] = 0.999934;
-        sv[30] = 1;
-        sv[31] = 1;
-        sv[32] = 0.000472;
-        sv[33] = 0.000793;
-        sv[34] = 0.000718;
-        sv[35] = 0.00084;
-        sv[36] = 0.997746;
-        sv[37] = 2.5e-05;
-        sv[38] = 0.000715;
-        sv[39] = 0.256829;
-        sv[40] = 0.000174;
-        sv[41] = 0;
-        sv[42] = 0;
+        for (int j = 0; j < NEQ; j++) 
+        {
+            if (mapping[i] == ENDO)
+                sv[j] = initial_endo[j];
+            else if (mapping[i] == EPI)
+                sv[j] = initial_epi[j];
+            else
+                sv[j] = initial_mid[j];
+        }
     }
 }
 
@@ -112,7 +91,16 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     real dt = ode_solver->min_dt;
     uint32_t num_steps = ode_solver->num_steps;
 
-    #pragma omp parallel for private(sv_id)
+    // Get the mapping array
+    real *mapping = NULL;
+    if (ode_solver->ode_extra_data) {
+        mapping = (real *)ode_solver->ode_extra_data+NEQ+NEQ+NEQ;
+    }
+    else {
+        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
+    }
+
+    OMP(parallel for private(sv_id))
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
@@ -120,36 +108,33 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         else
             sv_id = i;
 
-        if(adpt) 
-        {
-            solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id);
+        if(adpt) {
+            solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], mapping[i], current_t + dt, sv_id);
         }
-        else 
-        {
-            for (int j = 0; j < num_steps; ++j) 
-            {
-                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
+        else {
+            for (int j = 0; j < num_steps; ++j) {
+                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], mapping[i]);
             }
-
         }
-
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real mapping)  {
+
+    assert(sv);
 
     real rY[NEQ], rDY[NEQ];
 
     for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
 
-    RHS_cpu(rY, rDY, stim_current, dt);
+    RHS_cpu(rY, rDY, stim_current, dt, mapping);
 
     for(int i = 0; i < NEQ; i++)
         sv[i] = dt*rDY[i] + rY[i];
 }
 
-void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int sv_id) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
@@ -175,7 +160,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
        *dt = final_time - *time_new;
     }
 
-    RHS_cpu(sv, rDY, stim_curr, *dt);
+    RHS_cpu(sv, rDY, stim_curr, *dt, mapping);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++){
@@ -206,7 +191,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
         }
 
         *time_new += *dt;
-        RHS_cpu(sv, rDY, stim_curr, *dt);
+        RHS_cpu(sv, rDY, stim_curr, *dt, mapping);
         *time_new -= *dt;//step back
 
         double greatestError = 0.0, auxError = 0.0;
@@ -291,62 +276,18 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
     free(_k2__);
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real mapping) {
+
+    // Get the celltype for the current cell
+    real celltype = mapping;
 
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
 
-    //State variables
+    // State variables
     real STATES[NEQ];
     for (uint32_t i = 0; i < NEQ; i++)
         STATES[i] = sv[i];
 
-    #include "ToRORd_fkatp_endo_2019_common.inc"
+    #include "ToRORd_fkatp_mixed_endo_mid_epi.common.c"
 }
-
-// Original CellML
-/*
-        sv[0] = -88.7638;
-        sv[1] = 0.0111;
-        sv[2] = 7.0305e-5;
-        sv[3] = 12.1025;
-        sv[4] = 12.1029;
-        sv[5] = 142.3002;
-        sv[6] = 142.3002;
-        sv[7] = 1.5211;
-        sv[8] = 1.5214;
-        sv[9] = 8.1583e-05;
-        sv[10] = 8.0572e-4;
-        sv[11] = 0.8286;
-        sv[12] = 0.8284;
-        sv[13] = 0.6707;
-        sv[14] = 0.8281;
-        sv[15] = 1.629e-4;
-        sv[16] = 0.5255;
-        sv[17] = 0.2872;
-        sv[18] = 9.5098e-4;
-        sv[19] = 0.9996;
-        sv[20] = 0.5936;
-        sv[21] = 4.8454e-4;
-        sv[22] = 0.9996;
-        sv[23] = 0.6538;
-        sv[24] = 8.1084e-9;
-        sv[25] = 1.0;
-        sv[26] = 0.939;
-        sv[27] = 1.0;
-        sv[28] = 0.9999;
-        sv[29] = 1.0;
-        sv[30] = 1.0;
-        sv[31] = 1.0;
-        sv[32] = 6.6462e-4;
-        sv[33] = 0.0012;
-        sv[34] = 7.0344e-4;
-        sv[35] = 8.5109e-4;
-        sv[36] = 0.9981;
-        sv[37] = 1.3289e-5;
-        sv[38] = 3.7585e-4;
-        sv[39] = 0.248;
-        sv[40] = 1.7707e-4;
-        sv[41] = 1.6129e-22;
-        sv[42] = 1.2475e-20;
-    */
