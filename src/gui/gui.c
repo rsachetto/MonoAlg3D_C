@@ -1336,6 +1336,8 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 			if(gui_config->input) {
 				reset(gui_config, mesh_info, gui_state, true);
+                free(gui_config->error_message);
+                gui_config->error_message = strdup("Loading Mesh...");
 			}
 
 			return;
@@ -1361,6 +1363,8 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 			if(tmp) {
 				reset(gui_config, mesh_info, gui_state, true);
+                free(gui_config->error_message);
+                gui_config->error_message = strdup("Loading Mesh...");
 			}
 			return;
 		}

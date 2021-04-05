@@ -266,6 +266,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
     struct point_hash_entry *hash =  NULL;
     char *line = NULL;
+
 	sds *line_data;	
 	int data_count;
 
@@ -280,27 +281,38 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
                 source++;
                 source_size--;
             }
-            source++;
-            source_size--;
+
+            //Handle files withot a \n in the end
+            if(source_size != 0) {
+                source++;
+                source_size--;
+            }
 
             arrput(line, '\0');
 
-			line_data = sdssplitlen(line, strlen(line), ",", 1, &data_count);
+			line_data = sdssplitlen(line, (int)strlen(line), ",", 1, &data_count);
 
 			center.x = strtod(line_data[0], NULL);
 			center.y = strtod(line_data[1], NULL);
-			center.z = strtod(line_data[2], NULL);
-			half_face.x = strtod(line_data[3], NULL);
-			half_face.y = strtod(line_data[4], NULL);
-			half_face.z = strtod(line_data[5], NULL);
+            center.z = strtod(line_data[2], NULL);
 
+            half_face.x = strtod(line_data[3], NULL);
+
+            if(data_count >= 6) {
+                half_face.y = strtod(line_data[4], NULL);
+                half_face.z = strtod(line_data[5], NULL);
+            }
+            else {
+                half_face.y = half_face.x;
+                half_face.z = half_face.x;
+            }
 
 			if(v_index < data_count) {
 				v = strtod(line_data[v_index], NULL);
 			}
 			else {
 				v = 0;
-				fprintf(stderr, "Value not found in index %d (max index is %d)! setting to 0!\n", v_index, data_count - 1); 
+				fprintf(stderr, "Value not found in index %d (max index is %d)! setting to 0!\n", v_index, data_count - 1);
 			}
 
 			sdsfreesplitres(line_data, data_count);

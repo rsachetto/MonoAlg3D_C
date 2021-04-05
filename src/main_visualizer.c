@@ -21,8 +21,9 @@ static void read_and_render_activation_map(struct gui_config *gui_config, char *
 
     if(!gui_config->grid_info.vtk_grid) {
         sprintf(error, "%s is not an activation map", input_file);
-        if(gui_config->error_message)
+        if(gui_config->error_message) {
             free(gui_config->error_message);
+        }
         gui_config->error_message = strdup(error);
         omp_unset_lock(&gui_config->draw_lock);
         return;
@@ -71,8 +72,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     if(!input_info.exists) {
         sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
-        if(gui_config->error_message)
+        if(gui_config->error_message) {
             free(gui_config->error_message);
+        }
 
         gui_config->error_message = strdup(error);
         return SIMULATION_FINISHED;
@@ -336,8 +338,10 @@ int main(int argc, char **argv) {
                     }
 
                     if(result == RESTART_SIMULATION) {
-                        init_gui_config_for_visualization(options, gui_config, true);
-                        result = read_and_render_files(options, gui_config);
+                        if(options->input) {
+                            init_gui_config_for_visualization(options, gui_config, true);
+                            result = read_and_render_files(options, gui_config);
+                        }
                     }
                     else if(result == END_SIMULATION || gui_config->exit) {
                         break;

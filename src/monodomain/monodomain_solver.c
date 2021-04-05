@@ -631,11 +631,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             start_stop_watch(&purkinje_cg_time);
 
-            #ifdef COMPILE_GUI
-            if (show_gui) {
-                omp_set_lock(&gui_config->draw_lock);
-            }
-            #endif
+            //TODO: show the purkinje fibers in the visualization tool
+//            #ifdef COMPILE_GUI
+//            if (show_gui) {
+//                omp_set_lock(&gui_config->draw_lock);
+//            }
+//            #endif
 
             // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
             if (domain_config)
