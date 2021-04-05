@@ -126,8 +126,8 @@ sudo apt-key adv --fetch-keys ${APT_KEY_URL}
 sudo add-apt-repository "deb ${REPO_URL} /"
 sudo apt-get update
 
-echo "Installing CUDA packages ${CUDA_PACKAGES}"
-sudo apt-get -y install ${CUDA_PACKAGES}
+echo "Installing CUDA packages ${CUDA_PACKAGES}" 
+sudo apt-get -y install ${CUDA_PACKAGES} g++-8
 
 if [[ $? -ne 0 ]]; then
     echo "CUDA Installation Error."
