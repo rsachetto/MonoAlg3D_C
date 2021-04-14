@@ -39,9 +39,7 @@ static void read_and_render_activation_map(struct gui_config *gui_config, char *
 static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_path) {
 
 	sds full_path_cp = sdsnew(full_path);
-
     full_path_cp = sdscat(full_path_cp, ".vis");
-
     FILE *vis_file = fopen(full_path_cp, "rw");
 
     if(vis_file) {
@@ -110,10 +108,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
     }
 
-    int num_files = 0;
-
-    if(simulation_files)
-        num_files = arrlen(simulation_files->files_list);
+    uint32_t num_files = arrlen(simulation_files->files_list);
 
     sds full_path;
 
@@ -208,8 +203,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!gui_config->grid_info.vtk_grid) {
             sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
-            if(gui_config->error_message)
+            
+            if(gui_config->error_message) {
                 free(gui_config->error_message);
+            }
 
             gui_config->error_message  = strdup(error);
 			gui_config->grid_info.loaded = false;
