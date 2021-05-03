@@ -176,15 +176,6 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 
         }
 
-		//if(threadID == num_cells_to_solve-1) {
-		//	printf("------------------------\n");
-		//	for(int i = 0; i < NEQ; i++) {
-          //      printf("%lf\n", *((real*)((char*)sv + pitch * i) + sv_id));
-        //	}
-		//	printf("------------------------\n");
-		//}
-
-
     }
 }
 
@@ -192,8 +183,6 @@ __global__ void solve_gpu(real dt, real *sv, real* stim_currents,
 inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int threadID_, real dt, real fibrosis, real *extra_parameters) {
 
     //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
-    //printf("%lf, %lf \n", extra_parameters[0], extra_parameters[1]);
-
     const real svolt = *((real*)((char*)sv_ + pitch * 0) + threadID_);
     const real sm   = *((real*)((char*)sv_ + pitch * 1) + threadID_);
     const real sh   = *((real*)((char*)sv_ + pitch * 2) + threadID_);

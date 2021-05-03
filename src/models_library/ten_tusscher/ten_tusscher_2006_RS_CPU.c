@@ -203,92 +203,92 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     const real g_bna = 0.00029;
 
     // Calculations
-    real EK  = ((R * T) / F) * logf(Ko / K_i);
-    real EKs = ((R * T) / F) * logf((Ko + (P_kna * Nao)) / (K_i + (P_kna * Na_i)));
-    real ENa = ((R * T) / F) * logf(Nao / Na_i);
-    real ECa = ((0.5f * R * T) / F) * logf(Cao / Ca_i);
+    real EK  = ((R * T) / F) * log(Ko / K_i);
+    real EKs = ((R * T) / F) * log((Ko + (P_kna * Nao)) / (K_i + (P_kna * Na_i)));
+    real ENa = ((R * T) / F) * log(Nao / Na_i);
+    real ECa = ((0.5f * R * T) / F) * log(Cao / Ca_i);
 
-    real beta_K1 = ((3.0f * expf(0.0002f * ((V - EK) + 100.0f))) + expf(0.1f * ((V - EK) - 10.0f))) / (1.0f + expf((-0.5f) * (V - EK)));
-    real alpha_K1 = 0.1f / (1.0f + expf(0.06f * ((V - EK) - 200.0f)));
+    real beta_K1 = ((3.0f * exp(0.0002f * ((V - EK) + 100.0f))) + exp(0.1f * ((V - EK) - 10.0f))) / (1.0f + exp((-0.5f) * (V - EK)));
+    real alpha_K1 = 0.1f / (1.0f + exp(0.06f * ((V - EK) - 200.0f)));
     real xK1_inf = alpha_K1 / (alpha_K1 + beta_K1);
 
     real IK1 = g_K1 * xK1_inf * (V - EK);
     real Ito = g_to * r * s * (V - EK);
-    real IKr = g_Kr * Xr1 * Xr2 * (V - EK) * sqrtf(Ko / 5.4f);
-    real IKs = g_Ks * powf(Xs, 2.0f) * (V - EKs);
-    real IpK = (g_pK * (V - EK)) / (1.0f + expf((25.0f - V) / 5.98f));
+    real IKr = g_Kr * Xr1 * Xr2 * (V - EK) * sqrt(Ko / 5.4f);
+    real IKs = g_Ks * pow(Xs, 2.0f) * (V - EKs);
+    real IpK = (g_pK * (V - EK)) / (1.0f + exp((25.0f - V) / 5.98f));
 
-    real ICaL = (V < 15.0f-1.0e-5f || V > 15.0f+1.0e-5f) ? ((((g_CaL * d * f * f2 * fCass * 4.0f * (V - 15.0f) * powf(F, 2.0f)) / (R * T)) * ((0.25f * Ca_ss * expf((2.0f * (V - 15.0f) * F) / (R * T))) - Cao)) / (expf((2.0f * (V - 15.0f) * F) / (R * T)) - 1.0f)) : g_CaL * d * f * f2 * fCass * 2.0f * F * (0.25f * Ca_ss  - Cao);
+    real ICaL = (V < 15.0f-1.0e-5f || V > 15.0f+1.0e-5f) ? ((((g_CaL * d * f * f2 * fCass * 4.0f * (V - 15.0f) * pow(F, 2.0f)) / (R * T)) * ((0.25f * Ca_ss * exp((2.0f * (V - 15.0f) * F) / (R * T))) - Cao)) / (exp((2.0f * (V - 15.0f) * F) / (R * T)) - 1.0f)) : g_CaL * d * f * f2 * fCass * 2.0f * F * (0.25f * Ca_ss  - Cao);
     real IbCa = g_bca * (V - ECa);
     real IpCa = (g_pCa * Ca_i) / (Ca_i + K_pCa);
 
-    real INaK = ((((P_NaK * Ko) / (Ko + K_mk)) * Na_i) / (Na_i + K_mNa)) / (1.0f + (0.1245f * expf(((-0.1f) * V * F) / (R * T))) + (0.0353f * expf(((-V) * F) / (R * T))));
-    real INa  = g_Na * powf(m, 3.0f) * h * j * (V - ENa);
+    real INaK = ((((P_NaK * Ko) / (Ko + K_mk)) * Na_i) / (Na_i + K_mNa)) / (1.0f + (0.1245f * exp(((-0.1f) * V * F) / (R * T))) + (0.0353f * exp(((-V) * F) / (R * T))));
+    real INa  = g_Na * pow(m, 3.0f) * h * j * (V - ENa);
     real IbNa = g_bna * (V - ENa);
-    real INaCa = (K_NaCa * ((expf((gamma * V * F) / (R * T)) * powf(Na_i, 3.0f) * Cao) - (expf(((gamma - 1.0f) * V * F) / (R * T)) * powf(Nao, 3) * Ca_i * alpha))) / ((powf(Km_Nai, 3.0f) + powf(Nao, 3.0f)) * (Km_Ca + Cao) * (1.0f + (K_sat * expf(((gamma - 1.0f) * V * F) / (R * T)))));
+    real INaCa = (K_NaCa * ((exp((gamma * V * F) / (R * T)) * pow(Na_i, 3.0f) * Cao) - (exp(((gamma - 1.0f) * V * F) / (R * T)) * pow(Nao, 3) * Ca_i * alpha))) / ((pow(Km_Nai, 3.0f) + pow(Nao, 3.0f)) * (Km_Ca + Cao) * (1.0f + (K_sat * exp(((gamma - 1.0f) * V * F) / (R * T)))));
 
     // Stimulus
     real var_membrane__i_Stim = stim_current;
 
-    real xr1_inf   = 1.0f / (1.0f + expf(((-26.0f) - V) / 7.0f));
-    real alpha_xr1 = 450.0f / (1.0f + expf(((-45.0f) - V) / 10.0f));
-    real beta_xr1  = 6.0f / (1.0f + expf((V + 30.0f) / 11.5f));
+    real xr1_inf   = 1.0f / (1.0f + exp(((-26.0f) - V) / 7.0f));
+    real alpha_xr1 = 450.0f / (1.0f + exp(((-45.0f) - V) / 10.0f));
+    real beta_xr1  = 6.0f / (1.0f + exp((V + 30.0f) / 11.5f));
     real tau_xr1   = 1.0f * alpha_xr1 * beta_xr1;
 
-    real xr2_inf   = 1.0f / (1.0f + expf((V + 88.0f) / 24.0f));
-    real alpha_xr2 = 3.0f / (1.0f + expf(((-60.0f) - V) / 20.0f));
-    real beta_xr2  = 1.12f / (1.0f + expf((V - 60.0f) / 20.0f));
+    real xr2_inf   = 1.0f / (1.0f + exp((V + 88.0f) / 24.0f));
+    real alpha_xr2 = 3.0f / (1.0f + exp(((-60.0f) - V) / 20.0f));
+    real beta_xr2  = 1.12f / (1.0f + exp((V - 60.0f) / 20.0f));
     real tau_xr2   = 1.0f * alpha_xr2 * beta_xr2;
 
-    real xs_inf   = 1.0f / (1.0f + expf(((-5.0f) - V) / 14.0f));
-    real alpha_xs = 1400.0f / sqrtf(1.0f + expf((5.0f - V) / 6.0f));
-    real beta_xs  = 1.0f / (1.0f + expf((V - 35.0f) / 15.0f));
+    real xs_inf   = 1.0f / (1.0f + exp(((-5.0f) - V) / 14.0f));
+    real alpha_xs = 1400.0f / sqrt(1.0f + exp((5.0f - V) / 6.0f));
+    real beta_xs  = 1.0f / (1.0f + exp((V - 35.0f) / 15.0f));
     real tau_xs   = (1.0f * alpha_xs * beta_xs) + 80.0f;
 
-    real m_inf   = 1.0f / powf(1.0f + expf(((-56.86f) - V) / 9.03f), 2.0f);
-    real alpha_m = 1.0f / (1.0f + expf(((-60.0f) - V) / 5.0f));
-    real beta_m  = (0.1f / (1.0f + expf((V + 35.0f) / 5.0f))) + (0.1f / (1.0f + expf((V - 50.0f) / 200.0f)));
+    real m_inf   = 1.0f / pow(1.0f + exp(((-56.86f) - V) / 9.03f), 2.0f);
+    real alpha_m = 1.0f / (1.0f + exp(((-60.0f) - V) / 5.0f));
+    real beta_m  = (0.1f / (1.0f + exp((V + 35.0f) / 5.0f))) + (0.1f / (1.0f + exp((V - 50.0f) / 200.0f)));
     real tau_m   = 1.0f * alpha_m * beta_m;
 
-    real h_inf   = 1.0f / powf(1.0f + expf((V + 71.55f) / 7.43f), 2.0f);
-    real alpha_h = (V < (-40.0f)) ? (0.057f * expf((-(V + 80.0f)) / 6.8f)) : 0.0f;
-    real beta_h  = (V < (-40.0f)) ? ((2.7f * expf(0.079f * V)) + (310000.0f * expf(0.3485f * V))) : (0.77f / (0.13f * (1.0f + expf((V + 10.66f) / (-11.1f)))));
+    real h_inf   = 1.0f / pow(1.0f + exp((V + 71.55f) / 7.43f), 2.0f);
+    real alpha_h = (V < (-40.0f)) ? (0.057f * exp((-(V + 80.0f)) / 6.8f)) : 0.0f;
+    real beta_h  = (V < (-40.0f)) ? ((2.7f * exp(0.079f * V)) + (310000.0f * exp(0.3485f * V))) : (0.77f / (0.13f * (1.0f + exp((V + 10.66f) / (-11.1f)))));
     real tau_h   = 1.0f / (alpha_h + beta_h);
 
-    real j_inf   = 1.0f / powf(1.0f + expf((V + 71.55f) / 7.43f), 2.0f);
-    real alpha_j = (V < (-40.0f)) ? ((((((-25428.0f) * expf(0.2444f * V)) - (6.948e-06f * expf((-0.04391f) * V))) * (V + 37.78f)) / 1.0f) / (1.0f + expf(0.311f * (V + 79.23f)))) : 0.0f;
-    real beta_j  = (V < (-40.0f)) ? ((0.02424f * expf((-0.01052f) * V)) / (1.0f + expf((-0.1378f) * (V + 40.14f)))) : ((0.6f * expf(0.057f * V)) / (1.0f + expf((-0.1f) * (V + 32.0f))));
+    real j_inf   = 1.0f / pow(1.0f + exp((V + 71.55f) / 7.43f), 2.0f);
+    real alpha_j = (V < (-40.0f)) ? ((((((-25428.0f) * exp(0.2444f * V)) - (6.948e-06f * exp((-0.04391f) * V))) * (V + 37.78f)) / 1.0f) / (1.0f + exp(0.311f * (V + 79.23f)))) : 0.0f;
+    real beta_j  = (V < (-40.0f)) ? ((0.02424f * exp((-0.01052f) * V)) / (1.0f + exp((-0.1378f) * (V + 40.14f)))) : ((0.6f * exp(0.057f * V)) / (1.0f + exp((-0.1f) * (V + 32.0f))));
     real tau_j   = 1.0f / (alpha_j + beta_j);
 
-    real d_inf = 1.0f / (1.0f + expf(((-8.0f) - V) / 7.5f));
-    real alpha_d = (1.4f / (1.0f + expf(((-35.0f) - V) / 13.0f))) + 0.25f;
-    real beta_d  = 1.4f / (1.0f + expf((V + 5.0f) / 5.0f));
-    real gamma_d = 1.0f / (1.0f + expf((50.0f - V) / 20.0f));
+    real d_inf = 1.0f / (1.0f + exp(((-8.0f) - V) / 7.5f));
+    real alpha_d = (1.4f / (1.0f + exp(((-35.0f) - V) / 13.0f))) + 0.25f;
+    real beta_d  = 1.4f / (1.0f + exp((V + 5.0f) / 5.0f));
+    real gamma_d = 1.0f / (1.0f + exp((50.0f - V) / 20.0f));
     real tau_d   = (1.0f * alpha_d * beta_d) + gamma_d;
 
-    real f_inf = 1.0f / (1.0f + expf((V + 20.0f) / 7.0f));
-    real tau_f = (1102.5f * expf((-powf(V + 27.0f, 2.0f)) / 225.0f)) + (200.0f / (1.0f + expf((13.0f - V) / 10.0f))) + (180.0f / (1.0f + expf((V + 30.0f) / 10.0f))) + 20.0f;
+    real f_inf = 1.0f / (1.0f + exp((V + 20.0f) / 7.0f));
+    real tau_f = (1102.5f * exp((-pow(V + 27.0f, 2.0f)) / 225.0f)) + (200.0f / (1.0f + exp((13.0f - V) / 10.0f))) + (180.0f / (1.0f + exp((V + 30.0f) / 10.0f))) + 20.0f;
 
-    real f2_inf = (0.67f / (1.0f + expf((V + 35.0f) / 7.0f))) + 0.33f;
-    real tau_f2 = (562.0f * expf((-powf(V + 27.0f, 2.0f)) / 240.0f)) + (31.0f / (1.0f + expf((25.0f - V) / 10.0f))) + (80.0f / (1.0f + expf((V + 30.0f) / 10.0f)));
+    real f2_inf = (0.67f / (1.0f + exp((V + 35.0f) / 7.0f))) + 0.33f;
+    real tau_f2 = (562.0f * exp((-pow(V + 27.0f, 2.0f)) / 240.0f)) + (31.0f / (1.0f + exp((25.0f - V) / 10.0f))) + (80.0f / (1.0f + exp((V + 30.0f) / 10.0f)));
 
-    real fCass_inf = (0.6f / (1.0f + powf(Ca_ss / 0.05f, 2.0f))) + 0.4f;
-    real tau_fCass = (80.0f / (1.0f + powf(Ca_ss / 0.05f, 2.0f))) + 2.0f;
+    real fCass_inf = (0.6f / (1.0f + pow(Ca_ss / 0.05f, 2.0f))) + 0.4f;
+    real tau_fCass = (80.0f / (1.0f + pow(Ca_ss / 0.05f, 2.0f))) + 2.0f;
 
-    real s_inf = 1.0f / (1.0f + expf((V + 20.0f) / 5.0f));
-    real tau_s = (85.0f * expf((-powf(V + 45.0f, 2.0f)) / 320.0f)) + (5.0f / (1.0f + expf((V - 20.0f) / 5.0f))) + 3.0f;
+    real s_inf = 1.0f / (1.0f + exp((V + 20.0f) / 5.0f));
+    real tau_s = (85.0f * exp((-pow(V + 45.0f, 2.0f)) / 320.0f)) + (5.0f / (1.0f + exp((V - 20.0f) / 5.0f))) + 3.0f;
 
-    real r_inf = 1.0f / (1.0f + expf((20.0f - V) / 6.0f));
-    real tau_r = (9.5f * expf((-powf(V + 40.0f, 2.0f)) / 1800.0f)) + 0.8f;
+    real r_inf = 1.0f / (1.0f + exp((20.0f - V) / 6.0f));
+    real tau_r = (9.5f * exp((-pow(V + 40.0f, 2.0f)) / 1800.0f)) + 0.8f;
 
-    real kcasr = max_sr - ((max_sr - min_sr) / (1.0f + powf(EC / Ca_SR, 2.0f)));
+    real kcasr = max_sr - ((max_sr - min_sr) / (1.0f + pow(EC / Ca_SR, 2.0f)));
     real k1 = k1_prime / kcasr;
     const real k3 = 0.06;
-    real var_calcium_dynamics__O = (k1 * powf(Ca_ss, 2.0f) * R_prime) / (k3 + (k1 * powf(Ca_ss, 2.0f)));
+    real var_calcium_dynamics__O = (k1 * pow(Ca_ss, 2.0f) * R_prime) / (k3 + (k1 * pow(Ca_ss, 2.0f)));
     real Irel = V_rel * var_calcium_dynamics__O * (Ca_SR - Ca_ss);
 
     const real var_calcium_dynamics__K_up = 0.00025;
-    real var_calcium_dynamics__i_up = Vmax_up / (1.0f + (powf(var_calcium_dynamics__K_up, 2.0f) / powf(Ca_i, 2.0f)));
+    real var_calcium_dynamics__i_up = Vmax_up / (1.0f + (pow(var_calcium_dynamics__K_up, 2.0f) / pow(Ca_i, 2.0f)));
     real var_calcium_dynamics__V_leak = 0.00036f;
     real var_calcium_dynamics__i_leak = var_calcium_dynamics__V_leak * (Ca_SR - Ca_i);
     const real var_calcium_dynamics__V_xfer = 0.0038f;
@@ -298,13 +298,13 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     const real var_calcium_dynamics__k4 = 0.005f;
     const real var_calcium_dynamics__Buf_c = 0.2f;
     const real var_calcium_dynamics__K_buf_c = 0.001f;
-    real Ca_i_bufc = 1.0f / (1.0f + ((var_calcium_dynamics__Buf_c * var_calcium_dynamics__K_buf_c) / powf(Ca_i + var_calcium_dynamics__K_buf_c, 2)));
+    real Ca_i_bufc = 1.0f / (1.0f + ((var_calcium_dynamics__Buf_c * var_calcium_dynamics__K_buf_c) / pow(Ca_i + var_calcium_dynamics__K_buf_c, 2)));
     const real var_calcium_dynamics__K_buf_sr = 0.3f;
     const real var_calcium_dynamics__Buf_sr = 10.0f;
-    real var_calcium_dynamics__Ca_sr_bufsr = 1.0f / (1.0f + ((var_calcium_dynamics__Buf_sr * var_calcium_dynamics__K_buf_sr) / powf(Ca_SR + var_calcium_dynamics__K_buf_sr, 2)));
+    real var_calcium_dynamics__Ca_sr_bufsr = 1.0f / (1.0f + ((var_calcium_dynamics__Buf_sr * var_calcium_dynamics__K_buf_sr) / pow(Ca_SR + var_calcium_dynamics__K_buf_sr, 2)));
     const real var_calcium_dynamics__Buf_ss = 0.4f;
     const real var_calcium_dynamics__K_buf_ss = 0.00025f;
-    real Ca_ss_bufss = 1.0f / (1.0f + ((var_calcium_dynamics__Buf_ss * var_calcium_dynamics__K_buf_ss) / powf(Ca_ss + var_calcium_dynamics__K_buf_ss, 2.0f)));
+    real Ca_ss_bufss = 1.0f / (1.0f + ((var_calcium_dynamics__Buf_ss * var_calcium_dynamics__K_buf_ss) / pow(Ca_ss + var_calcium_dynamics__K_buf_ss, 2.0f)));
     const real var_calcium_dynamics__V_sr = 0.001094f;
     const real var_calcium_dynamics__V_ss = 5.468e-05f;
     real var_calcium_dynamics__V_c = V_c;
@@ -334,18 +334,18 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
 
 
     // Rush Larsen
-    rDY_[ 1] = xr1_inf + (Xr1-xr1_inf)*expf(-dt/tau_xr1) ;
-    rDY_[ 2] = xr2_inf + (Xr2-xr2_inf)*expf(-dt/tau_xr2);
-    rDY_[ 3] = xs_inf + (Xs-xs_inf)*expf(-dt/tau_xs);
-    rDY_[ 4] = m_inf + (m-m_inf)*expf(-dt/tau_m);
-    rDY_[ 5] = h_inf + (h-h_inf)*expf(-dt/tau_h);
-    rDY_[ 6] = j_inf + (j-j_inf)*expf(-dt/tau_j);
-    rDY_[ 7] = d_inf + (d-d_inf)*expf(-dt/tau_d);
-    rDY_[ 8] = f_inf + (f-f_inf)*expf(-dt/tau_f);
-    rDY_[ 9] = f2_inf + (f2-f2_inf)*expf(-dt/tau_f2);
-    rDY_[10] = fCass_inf + (fCass-fCass_inf)*expf(-dt/tau_fCass);
-    rDY_[11] = s_inf + (s-s_inf)*expf(-dt/tau_s);
-    rDY_[12] = r_inf + (r-r_inf)*expf(-dt/tau_r);
+    rDY_[ 1] = xr1_inf + (Xr1-xr1_inf)*exp(-dt/tau_xr1) ;
+    rDY_[ 2] = xr2_inf + (Xr2-xr2_inf)*exp(-dt/tau_xr2);
+    rDY_[ 3] = xs_inf + (Xs-xs_inf)*exp(-dt/tau_xs);
+    rDY_[ 4] = m_inf + (m-m_inf)*exp(-dt/tau_m);
+    rDY_[ 5] = h_inf + (h-h_inf)*exp(-dt/tau_h);
+    rDY_[ 6] = j_inf + (j-j_inf)*exp(-dt/tau_j);
+    rDY_[ 7] = d_inf + (d-d_inf)*exp(-dt/tau_d);
+    rDY_[ 8] = f_inf + (f-f_inf)*exp(-dt/tau_f);
+    rDY_[ 9] = f2_inf + (f2-f2_inf)*exp(-dt/tau_f2);
+    rDY_[10] = fCass_inf + (fCass-fCass_inf)*exp(-dt/tau_fCass);
+    rDY_[11] = s_inf + (s-s_inf)*exp(-dt/tau_s);
+    rDY_[12] = r_inf + (r-r_inf)*exp(-dt/tau_r);
 
 
 }

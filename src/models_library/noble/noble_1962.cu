@@ -135,7 +135,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     real calc_I_stim = stim_current;
 
     // Algebraics
-    //real g_na =  powf(m_old_, 3.00000)*h_old_*g_na_max;
+    //real g_na =  pow(m_old_, 3.00000)*h_old_*g_na_max;
     //real alpha_m = ( 100.000*(- V_old_ - 48.0000))/(exp((- V_old_ - 48.0000)/15.0000) - 1.00000);
     //real alpha_h =  170.000*exp((- V_old_ - 90.0000)/20.0000);
     //real alpha_n = ( 0.100000*(- V_old_ - 50.0000))/(exp((- V_old_ - 50.0000)/10.0000) - 1.00000);
@@ -145,11 +145,11 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     //real beta_h = 1000.00/(1.00000+exp((- V_old_ - 42.0000)/10.0000));
     //real beta_n =  2.00000*exp((- V_old_ - 90.0000)/80.0000);
     //real g_K1 =  1200.00*exp((- V_old_ - 90.0000)/50.0000)+ 15.0000*exp((V_old_+90.0000)/60.0000);
-    //real g_K2 =  1200.00*powf(n_old_, 4.00000);
+    //real g_K2 =  1200.00*pow(n_old_, 4.00000);
     //real i_k =  (g_K1+g_K2)*(V_old_+100.000);
     //real i_leak =  g_L*(V_old_ - E_L);
 
-    real g_na =  powf(m_old_, 3.00000)*h_old_*g_na_max;
+    real g_na =  pow(m_old_, 3.00000)*h_old_*g_na_max;
     real alpha_h = ((1.7e-01*exp((((-V_old_)-9.0e+01)/2.0e+01))));
     real alpha_m = (((1.0e-01*((-V_old_)-4.8e+01))/(exp((((-V_old_)-4.8e+01)/1.5e+01))-1.0e+00)));
     real alpha_n = (((1.0e-04*((-V_old_)-5.0e+01))/(exp((((-V_old_)-5.0e+01)/1.0e+01))-1.0e+00)));
@@ -159,7 +159,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     double beta_h = ((1.0/(1.0e+00+exp((((-V_old_)-4.2e+01)/1.0e+01)))));
     double beta_n = ((2.0e-03*exp((((-V_old_)-9.0e+01)/8.0e+01))));
     real g_K1 = 1.2*exp((((-V_old_)-9.0e+01)/5.0e+01)) + (1.5e-02*exp(((V_old_+9.0e+01)/6.0e+01)));
-    real g_K2 = 1.2*powf(n_old_,4.0e+00);
+    real g_K2 = 1.2*pow(n_old_,4.0e+00);
     real i_k =  (g_K1+g_K2)*(V_old_+100.000);
     real i_leak =  g_L*(V_old_ - E_L);
 

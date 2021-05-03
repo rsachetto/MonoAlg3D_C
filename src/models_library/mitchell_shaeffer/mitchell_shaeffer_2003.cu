@@ -117,7 +117,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 
     // Algebraics
     real J_stim = stim_current;
-    real J_in = ( h*( powf(V, 2.00000)*(1.00000 - V)))/tau_in;
+    real J_in = ( h*( pow(V, 2.00000)*(1.00000 - V)))/tau_in;
     real J_out = - (V/tau_out);
 
     // Rates
