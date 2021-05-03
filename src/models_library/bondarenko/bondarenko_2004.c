@@ -2,6 +2,13 @@
 
 #include "bondarenko_2004.h"
 
+real max_step;
+real min_step;
+real abstol;
+real reltol;
+bool adpt;
+real *ode_dt, *ode_previous_dt, *ode_time_new;
+
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     if(get_initial_v)
@@ -15,6 +22,27 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     uint32_t num_cells = solver->original_num_cells;
 
 	solver->sv = MALLOC_ARRAY_OF_TYPE(real, NEQ*num_cells);
+
+	max_step = solver->max_dt;
+    min_step = solver->min_dt;
+    abstol   = solver->abs_tol;
+    reltol   = solver->rel_tol;
+    adpt     = solver->adaptive;
+
+    if(adpt) {
+        ode_dt = (real*)malloc(num_cells*sizeof(real));
+
+        OMP(parallel for)
+        for(int i = 0; i < num_cells; i++) {
+            ode_dt[i] = solver->min_dt;
+        }
+
+        ode_previous_dt = (real*)calloc(num_cells, sizeof(real));
+        ode_time_new    = (real*)calloc(num_cells, sizeof(real));
+        log_info("Using Adaptive Euler model to solve the ODEs\n");
+    } else {
+        log_info("Using Euler model to solve the ODEs\n");
+    }
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_cells; i++) {
@@ -69,44 +97,36 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
-    uint32_t sv_id, i;
+	uint32_t sv_id, i;
 
-    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
-    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
-    real *sv = ode_solver->sv;
-    real dt = ode_solver->min_dt;
-    uint32_t num_steps = ode_solver->num_steps;
+	size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+	uint32_t * cells_to_solve = ode_solver->cells_to_solve;
+	real *sv = ode_solver->sv;
+	real dt = ode_solver->min_dt;
+	uint32_t num_steps = ode_solver->num_steps;
 
-    OMP(parallel for private(sv_id))
-    for (i = 0; i < num_cells_to_solve; i++) {
+	OMP(parallel for private(sv_id))
+	for (i = 0; i < num_cells_to_solve; i++) {
 
-        if(cells_to_solve)
-            sv_id = cells_to_solve[i];
-        else
-            sv_id = i;
+		if(cells_to_solve)
+			sv_id = cells_to_solve[i];
+		else
+			sv_id = i;
 
-        for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
-        }
-    }
+		if(adpt) {
+			solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id);
+		}
+		else {
+			for (int j = 0; j < num_steps; ++j) {
+				solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
+			}
+		}
+	}
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current)  {
+#include "../default_solvers.c"
 
-
-    real rY[NEQ], rDY[NEQ];
-
-    for(int i = 0; i < NEQ; i++)
-        rY[i] = sv[i];
-
-    RHS_cpu(rY, rDY, stim_current);
-
-    for(int i = 0; i < NEQ; i++)
-        sv[i] = dt*rDY[i] + rY[i];
-}
-
-
-void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
 
     // State variables
     const real V_old_ = sv[0];	 // initial value = -82.4202 millivolt

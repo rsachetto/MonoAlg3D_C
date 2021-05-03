@@ -2,7 +2,7 @@ COMPILE_MODEL_LIB () {
     local LIB_NAME=$1
     local MODEL_FILE_CPU=$2
     local MODEL_FILE_GPU=$3
-    local COMMON_HEADERS="../model_common.h  $4"
+    local COMMON_HEADERS="../model_common.h ../default_solvers.c $4"
     local EXTRA_C_FLAGS=$5
     local EXTRA_STATIC_LIBS=$6
 
@@ -19,7 +19,6 @@ COMPILE_MODEL_LIB () {
     fi
     
     COMPILE_SHARED_LIB "$LIB_NAME" "$MODEL_SOURCES" "$COMMON_HEADERS" "$MODELS_STATIC_DEPS" "$MODELS_DYNAMIC_LIBS" "$MODELS_EXTRA_LIB_PATH" "$EXTRA_C_FLAGS" "$CUDA_FOUND"
-
 }
 
 for d in */ ; do

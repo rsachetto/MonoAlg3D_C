@@ -121,7 +121,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 			dt = final_time - time_new;
 		}
 
-		// it doesn't accept the solution
+		// it doesn't accept the solution or accept and risk a NaN
 		if(greatestError >= 1.0f && dt > min_dt) {
 			// restore the old values to do it again
 			for(int i = 0; i < NEQ; i++) {
