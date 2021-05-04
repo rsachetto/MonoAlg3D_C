@@ -268,8 +268,12 @@ struct user_options *new_user_options() {
     user_args->dt_pde = 0.02;
     user_args->dt_pde_was_set = false;
 
-    user_args->dt_ode = 0.01;
+    user_args->dt_ode = 0.0;
     user_args->dt_ode_was_set = false;
+
+	user_args->auto_dt_ode = false;
+    user_args->auto_dt_ode_was_set = false;
+
 
     user_args->ode_adaptive = false;
     user_args->ode_adaptive_was_set = false;
@@ -652,13 +656,24 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
             }
 
             user_args->dt_ode = dt_ode;
+
+        } else if(strcmp(key, "auto_dt") == 0) {
+            bool auto_dt_ode = IS_TRUE(value);
+           
+		   	if(auto_dt_ode != user_args->auto_dt_ode) {
+                sprintf(old_value, "%d", user_args->auto_dt_ode);
+                maybe_issue_overwrite_warning("auto_dt", "ode_solver", old_value, value, config_file);
+            }
+
+            user_args->auto_dt_ode = auto_dt_ode;
+
         } else if(strcmp(key, "use_gpu") == 0) {
 
             bool use_gpu = IS_TRUE(value);
 
             if(use_gpu != user_args->gpu) {
                 sprintf(old_value, "%d", user_args->gpu);
-                maybe_issue_overwrite_warning("use_gpu", "domain", old_value, value, config_file);
+                maybe_issue_overwrite_warning("use_gpu", "ode_solver", old_value, value, config_file);
             }
 
             user_args->gpu = use_gpu;
@@ -1495,18 +1510,13 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else if(MATCH_NAME("reltol")) {
             parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->ode_reltol, &pconfig->ode_reltol_was_set);
         } else if(MATCH_NAME("adaptive")) {
-            if(IS_TRUE(value)) {
-                pconfig->ode_adaptive = true;
-            } else {
-                pconfig->ode_adaptive = false;
-            }
+            pconfig->ode_adaptive = IS_TRUE(value);
             pconfig->ode_adaptive_was_set = true;
+		} else if(MATCH_NAME("auto_dt")) {
+            pconfig->auto_dt_ode = IS_TRUE(value);
+            pconfig->auto_dt_ode_was_set = true;
         } else if(MATCH_NAME("use_gpu")) {
-            if(IS_TRUE(value)) {
-                pconfig->gpu = true;
-            } else {
-                pconfig->gpu = false;
-            }
+            pconfig->gpu = IS_TRUE(value);
             pconfig->gpu_was_set = true;
         } else if(MATCH_NAME("gpu_id")) {
             parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->gpu_id, &pconfig->gpu_id_was_set);
@@ -1779,6 +1789,7 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     WRITE_INI_SECTION(ODE_SECTION);
     WRITE_NAME_VALUE("dt", config->dt_ode, "f");
     WRITE_NAME_VALUE("adaptive", config->ode_adaptive, "d");
+    WRITE_NAME_VALUE("auto_dt", config->auto_dt_ode, "d");
     WRITE_NAME_VALUE("use_gpu", config->gpu, "d");
     WRITE_NAME_VALUE("gpu_id", config->gpu_id, "d");
     WRITE_NAME_VALUE("library_file", config->model_file_path, "s");

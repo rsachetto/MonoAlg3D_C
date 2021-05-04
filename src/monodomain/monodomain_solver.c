@@ -1102,8 +1102,8 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver,
     #endif
     
     log_info("[monodomain_solver] Beta = %.10lf, Cm = %.10lf\n", the_monodomain_solver->beta, the_monodomain_solver->cm);
-    log_info("[monodomain_solver] PDE time step = %lf\n", the_monodomain_solver->dt);
-    log_info("[monodomain_solver] ODE min time step = %lf\n", the_ode_solver->min_dt);
+    log_info("[monodomain_solver] PDE time step = %.10lf\n", the_monodomain_solver->dt);
+    log_info("[monodomain_solver] ODE min time step = %.10lf\n", the_ode_solver->min_dt);
     log_info("[monodomain_solver] Simulation Final Time = %lf\n", the_monodomain_solver->final_time);
 
     log_msg(LOG_LINE_SEPARATOR);

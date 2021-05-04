@@ -8,6 +8,8 @@
 #include "utils/file_utils.h"
 #include <string.h>
 
+#include <stdlib.h>
+
 #ifdef COMPILE_GUI
     #include "gui/gui.h"
 #endif

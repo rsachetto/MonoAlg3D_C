@@ -2,94 +2,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-__constant__ size_t pitch;
-__constant__ real abstol;
-__constant__ real reltol;
-__constant__ real max_dt;
-__constant__ real min_dt;
-__constant__ uint8_t use_adpt;
-size_t pitch_h;
-
 #define sv(i) *((real *)((char *)sv + pitch * (i)) + thread_id)
 
-extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
-
-    uint8_t use_adpt_h = (uint8_t)solver->adaptive;
-
-    check_cuda_error(cudaMemcpyToSymbol(use_adpt, &use_adpt_h, sizeof(uint8_t)));
-    log_info("Using Maleckar2009 GPU model\n");
-
-    uint32_t num_volumes = solver->original_num_cells;
-
-    if(use_adpt_h) {
-        real reltol_h = solver->rel_tol;
-        real abstol_h = solver->abs_tol;
-        real max_dt_h = solver->max_dt;
-        real min_dt_h = solver->min_dt;
-
-        check_cuda_error(cudaMemcpyToSymbol(reltol, &reltol_h, sizeof(real)));
-        check_cuda_error(cudaMemcpyToSymbol(abstol, &abstol_h, sizeof(real)));
-        check_cuda_error(cudaMemcpyToSymbol(max_dt, &max_dt_h, sizeof(real)));
-        check_cuda_error(cudaMemcpyToSymbol(min_dt, &min_dt_h, sizeof(real)));
-        log_info("Using Adaptive Euler model to solve the ODEs\n");
-    } else {
-        log_info("Using Euler model to solve the ODEs\n");
-    }
-
-    // execution configuration
-    const int GRID = (num_volumes + BLOCK_SIZE - 1) / BLOCK_SIZE;
-
-    size_t size = num_volumes * sizeof(real);
-
-    if(use_adpt_h)
-        check_cuda_error(cudaMallocPitch((void **)&(solver->sv), &pitch_h, size, (size_t)NEQ + 3));
-    else
-        check_cuda_error(cudaMallocPitch((void **)&(solver->sv), &pitch_h, size, (size_t)NEQ));
-
-    check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
-
-    kernel_set_model_initial_conditions<<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
-
-    check_cuda_error(cudaPeekAtLastError());
-    cudaDeviceSynchronize();
-    return pitch_h;
-}
-
-extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
-
-    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
-    uint32_t *cells_to_solve = ode_solver->cells_to_solve;
-    real *sv = ode_solver->sv;
-    real dt = ode_solver->min_dt;
-    uint32_t num_steps = ode_solver->num_steps;
-
-    // execution configuration
-    const int GRID = ((int)num_cells_to_solve + BLOCK_SIZE - 1) / BLOCK_SIZE;
-
-    size_t stim_currents_size = sizeof(real) * num_cells_to_solve;
-    size_t cells_to_solve_size = sizeof(uint32_t) * num_cells_to_solve;
-
-    real *stims_currents_device;
-    check_cuda_error(cudaMalloc((void **)&stims_currents_device, stim_currents_size));
-    check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
-
-    // the array cells to solve is passed when we are using and adapative mesh
-    uint32_t *cells_to_solve_device = NULL;
-    if(cells_to_solve != NULL) {
-        check_cuda_error(cudaMalloc((void **)&cells_to_solve_device, cells_to_solve_size));
-        check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
-    }
-
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve, num_steps);
-
-    check_cuda_error(cudaPeekAtLastError());
-
-    check_cuda_error(cudaFree(stims_currents_device));
-    if(cells_to_solve_device)
-        check_cuda_error(cudaFree(cells_to_solve_device));
-}
-
-__global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes) {
+__global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt) {
 
 	int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -126,7 +41,7 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes) {
         sv(28) = 0.45453;
         sv(29) = 0.002665;
 
-        if(use_adpt) {
+        if(use_adpt_dt) {
             sv(NEQ) = min_dt; // dt
             sv(NEQ+1) = 0.0;    // time_new
             sv(NEQ+2) = 0.0;    // previous dt
@@ -134,10 +49,7 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes) {
     }
 }
 
-//Include the default solver used by all models.
-#include "../default_solvers.cu"
-
-inline __device__ void RHS_gpu(real *sv, real *rDY, real stim_current, int thread_id, real dt) {
+inline __device__ void RHS_gpu(real *sv, real *rDY, real stim_current, int thread_id, real dt, size_t pitch, bool use_adpt_dt) {
     // State variables
     real var_membrane__V;                                          // Units: millivolt; Initial value: -73.941851
     real var_sodium_current_m_gate__m;                             // Units: dimensionless; Initial value: 0.003325
@@ -169,7 +81,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY, real stim_current, int threa
     real var_Ca_handling_by_the_SR__F1;                            // Units: dimensionless; Initial value: 0.45453
     real var_Ca_handling_by_the_SR__F2;                            // Units: dimensionless; Initial value: 0.002665
 
-    if(use_adpt) {
+    if(use_adpt_dt) {
         var_membrane__V = sv[0];                                          // Units: millivolt; Initial value: -73.941851
         var_sodium_current_m_gate__m = sv[1];                             // Units: dimensionless; Initial value: 0.003325
         var_sodium_current_h1_gate__h1 = sv[2];                           // Units: dimensionless; Initial value: 0.875262
@@ -234,3 +146,6 @@ inline __device__ void RHS_gpu(real *sv, real *rDY, real stim_current, int threa
 
 	#include "Maleckar2009_common.inc.c"
 }
+
+//Include the default solver used by all models.
+#include "../default_solvers.cu"

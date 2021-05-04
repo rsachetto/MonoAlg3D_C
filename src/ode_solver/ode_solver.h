@@ -46,17 +46,13 @@ typedef SET_ODE_INITIAL_CONDITIONS_CPU (set_ode_initial_conditions_cpu_fn);
 #define SET_ODE_INITIAL_CONDITIONS_GPU(name)  size_t name (struct ode_solver *solver, struct string_hash_entry *ode_extra_config)
 typedef SET_ODE_INITIAL_CONDITIONS_GPU (set_ode_initial_conditions_gpu_fn);
 
-//void name (struct string_hash_entry *ode_extra_config, real current_t, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, uint32_t num_cells_to_solve,
- //              int num_steps, void *extra_data, size_t extra_data_bytes_size)
-
-
-
 struct ode_solver {
 
     void *handle;
 
     real max_dt;
     real min_dt;
+	bool auto_dt;
 
     bool adaptive;
     real rel_tol;
@@ -76,6 +72,8 @@ struct ode_solver {
     struct cell_model_data model_data;
 
     size_t pitch;
+
+	real *ode_dt, *ode_previous_dt, *ode_time_new;
 
     //User provided functions
     get_cell_model_data_fn *get_cell_model_data;

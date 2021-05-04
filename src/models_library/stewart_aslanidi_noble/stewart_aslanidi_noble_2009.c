@@ -3,22 +3,7 @@
 #include "stewart_aslanidi_noble_2009.h"
 #include <stdio.h>
 
-real max_step;
-real min_step;
-real abstol;
-real reltol;
-bool adpt;
-real *ode_dt, *ode_previous_dt, *ode_time_new;
-
-GET_CELL_MODEL_DATA(init_cell_model_data) {
-
-    if(get_initial_v)
-        cell_model->initial_v = INITIAL_V;
-    if(get_neq)
-        cell_model->number_of_ode_equations = NEQ;
-}
-
-SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 {
 
     log_info("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
@@ -26,22 +11,19 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     uint32_t num_cells = solver->original_num_cells;
 	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
-    max_step = solver->max_dt;
-    min_step = solver->min_dt;
-    abstol   = solver->abs_tol;
-    reltol   = solver->rel_tol;
-    adpt     = solver->adaptive;
+    bool adpt = solver->adaptive;
 
     if(adpt) {
-        ode_dt = (real*)malloc(num_cells*sizeof(real));
+        solver->ode_dt = (real*)malloc(num_cells*sizeof(real));
 
         OMP(parallel for)
         for(int i = 0; i < num_cells; i++) {
-            ode_dt[i] = solver->min_dt;
+            solver->ode_dt[i] = solver->min_dt;
         }
 
-        ode_previous_dt = (real*)calloc(num_cells, sizeof(real));
-        ode_time_new    = (real*)calloc(num_cells, sizeof(real));
+        solver->ode_previous_dt = (real*)calloc(num_cells, sizeof(real));
+        solver->ode_time_new    = (real*)calloc(num_cells, sizeof(real));
+
         log_info("Using Adaptive Euler model to solve the ODEs\n");
     } else {
         log_info("Using Euler model to solve the ODEs\n");
@@ -101,37 +83,6 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 
 }
 
-SOLVE_MODEL_ODES(solve_model_odes_cpu) {
-
-    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
-    uint32_t * cells_to_solve = ode_solver->cells_to_solve;
-    real *sv = ode_solver->sv;
-    real dt = ode_solver->min_dt;
-    uint32_t num_steps = ode_solver->num_steps;
-
-    uint32_t sv_id;
-
-    OMP(parallel for private(sv_id))
-    for (uint32_t i = 0; i < num_cells_to_solve; i++) {
-
-        if(cells_to_solve)
-            sv_id = cells_to_solve[i];
-        else
-            sv_id = i;
-
-        if(adpt) {
-            solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id);
-        }
-        else {
-            for (int j = 0; j < num_steps; ++j) {
-                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
-            }
-        }
-    }
-
-}
-
-#include "../default_solvers.c"
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
 
@@ -146,5 +97,4 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     #include "stewart_aslanidi_noble_2009_common.inc"
 }
 
-// The automatic pacing from the Purkinje cells can be interrupted by blocking the INa current by 100% 
-// (ALGEBRAIC[54] = INa)
+#include "../default_solvers.c"

@@ -38,6 +38,8 @@ struct ode_solver* new_ode_solver() {
 
     result->ode_extra_data = NULL;
     result->extra_data_size = 0;
+
+	result->auto_dt = false;
     
     return result;
 
@@ -313,15 +315,35 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
 void configure_ode_solver_from_options(struct ode_solver *solver, struct user_options *options) {
     solver->gpu_id = options->gpu_id;
     solver->adaptive = options->ode_adaptive;
+	solver->auto_dt = options->auto_dt_ode;
 
-    if(solver->adaptive) {
-        solver->max_dt = (real)options->dt_pde;
-    }
+	if(solver->adaptive) {
+		solver->max_dt = (real)options->dt_pde;
 
-    solver->abs_tol = options->ode_abstol;
-    solver->rel_tol = options->ode_reltol;
+		if(solver->auto_dt || (options->dt_ode == 0.0)) {
+			real min_dt = 0.0000000001;
 
-    solver->min_dt = (real)options->dt_ode;
+			//This is highly unlikely
+			if(min_dt > solver->max_dt) {
+				min_dt = min_dt/1.1;
+			}
+
+			solver->min_dt = min_dt;
+
+		}
+		else {
+			solver->min_dt = (real)options->dt_ode;
+		}
+		solver->abs_tol = options->ode_abstol;
+
+	}
+	else {
+		if(options->dt_ode == 0.0) {
+			solver->min_dt = 0.01;
+		} else {
+			solver->min_dt = (real)options->dt_ode;
+		}
+	}
 
     solver->gpu = options->gpu;
 
