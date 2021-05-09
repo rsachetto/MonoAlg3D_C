@@ -885,8 +885,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     if (purkinje_config) {
-        log_info("Purkinje ODE Total Time: %ld μs\n", purkinje_ode_total_time);
-        log_info("Purkinje CG Total Time: %ld μs\n", purkinje_cg_total_time);
+        log_info("Purkinje ODE Total Time: %ld μs (%lf min)\n", purkinje_ode_total_time, purkinje_ode_total_time/conv_rate);
+        log_info("Purkinje CG Total Time: %ld μs (%lf min)\n", purkinje_cg_total_time, purkinje_cg_total_time/conv_rate);
         log_info("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
     }
 

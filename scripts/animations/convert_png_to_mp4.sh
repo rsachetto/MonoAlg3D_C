@@ -6,9 +6,9 @@
 
 # Variables
 FILENAME="frames/frame"
-FRAME_RATE="25"
-END_FRAME="297"
-OUTPUT_VIDEO_FILENAME="videos/elizabeth_biventricular_gold_x_min:length"
+FRAME_RATE="10"
+END_FRAME="225"
+OUTPUT_VIDEO_FILENAME="videos/benchmark_shocker_comparison"
 RESOLUTION="1980x1024"
 
 # Execute the converting command using FFMPEG
