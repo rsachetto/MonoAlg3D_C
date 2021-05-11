@@ -160,6 +160,10 @@ example_configs/model_zero*
 .idea/inspectionProfiles/Project_Default.xml
 scripts/calc_apd_full_grid/aps/test
 scripts/calc_apd_full_grid/output/test
+scripts/tuneCV/build/*
+scripts/tuneCV/bin/*
+scripts/tuneCV/configs/*
+scripts/tuneCV/outputs/*
 private_models/
 src/*/custom_functions.c
 
@@ -170,6 +174,7 @@ src/*/custom_functions.c
 example_configs/atrial_mesh_start_500um_27n_LA_RA.ini
 example_configs/scv_mesh_small.ini
 local_meshes/
+local_networks/
 sync.sh
 sync_outputs.sh
 private_configs/
