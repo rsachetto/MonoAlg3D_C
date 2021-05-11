@@ -111,7 +111,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     check_cuda_error(cudaMalloc((void **)&stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
-    // the array cells to solve is passed when we are using and adapative mesh
+    // the array cells to solve is passed when we are using and adaptive mesh
     uint32_t *cells_to_solve_device = NULL;
     if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **)&cells_to_solve_device, cells_to_solve_size));
@@ -171,7 +171,7 @@ __global__ void kernel_set_model_initial_conditions(real *sv,\
 
 // Solving the model for each cell in the tissue matrix ni x nj
 __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
-                            uint32_t *cells_to_solve, uint32_t num_cells_to_solve, int num_steps, real *mapping) 
+                            uint32_t *cells_to_solve, uint32_t num_cells_to_solve, int num_steps, real *mapping)
 {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
@@ -201,7 +201,7 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
     }
 }
 
-inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int thread_id) 
+inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int thread_id)
 {
 
     #define DT *((real *)((char *)sv + pitch * 43) + thread_id)
@@ -225,7 +225,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 
     const real _beta_safety_ = 0.8;
 
-    const real __tiny_ = powf(abstol, 2.0f);
+    const real __tiny_ = pow(abstol, 2.0f);
 
     // dt = ((time_new + dt) > final_time) ? (final_time - time_new) : dt;
     if(time_new + dt > final_time) {

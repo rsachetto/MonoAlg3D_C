@@ -9,10 +9,10 @@
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-#define REAL_DOUBLE
+typedef double real_cpu;
 
-// Precision to be used for the calculations
-#ifdef REAL_DOUBLE
+// Precision to be used for the calculations on the GPU
+#ifdef CELL_MODEL_REAL_DOUBLE
 typedef double real;
 #else
 typedef float real;
@@ -33,8 +33,6 @@ typedef float real;
 } while (0)
 
 #define MESH_INFO_DATA(grid_cell, mesh_info_struct, data_name) ((struct mesh_info_struct *)grid_cell->mesh_extra_info)->data_name
-
-typedef double real_cpu;
 
 enum simulation_status {
     RESTART_SIMULATION,

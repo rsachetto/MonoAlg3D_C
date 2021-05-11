@@ -1,10 +1,10 @@
-#include "../../gpu_utils/gpu_utils.h"
-#include <stddef.h>
-#include <stdint.h>
-
 #include "ten_tusscher_2004.h"
 
+__constant__  size_t pitch;
+
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
+
+    size_t pitch_h;
 
     uint32_t num_volumes = solver->original_num_cells;
 
@@ -53,7 +53,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
 
-    //the array cells to solve is passed when we are using and adapative mesh
+    //the array cells to solve is passed when we are using and adaptive mesh
     uint32_t *cells_to_solve_device = NULL;
     if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));

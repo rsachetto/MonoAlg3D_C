@@ -6,6 +6,7 @@
 #include "monodomain/monodomain_solver.h"
 #include "ode_solver/ode_solver.h"
 #include "utils/file_utils.h"
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef COMPILE_GUI

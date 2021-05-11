@@ -4,7 +4,6 @@
 // Model 1 = TenTusscher 2004 myocardium
 // Model 2 = TenTusscher 2004 epicardium
 
-#include <stdint.h>
 #include "../model_common.h"
 
 #define NEQ 17

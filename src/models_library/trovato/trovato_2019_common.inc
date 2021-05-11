@@ -11,8 +11,6 @@
     real L = 0.0164;
     real rad = 0.00175;
     real greekpi = 3.14159265;
-    real amp = -40;
-    real duration = 1;
     real KmCaMK = 0.15;
     real aCaMK = 0.05;
     real bCaMK = 0.00068;
@@ -275,7 +273,6 @@
     real E4 = x4/(x1+x2+x3+x4);
     real JnakK =  2.00000*( E4*k7_ss -  E3*a1);
     real INaK =  Pnak*( zna*JnakNa+ zk*JnakK);
-    //Istim = (t<=duration ? amp : 0.00000);
     real Istim = calc_I_stim;
     real IfK =  GfK*y*y*(V - EK);
     real ENa =  (( R*T)/F)*log(nao/nasl);

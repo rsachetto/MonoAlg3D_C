@@ -21,8 +21,9 @@ static void read_and_render_activation_map(struct gui_config *gui_config, char *
 
     if(!gui_config->grid_info.vtk_grid) {
         sprintf(error, "%s is not an activation map", input_file);
-        if(gui_config->error_message)
+        if(gui_config->error_message) {
             free(gui_config->error_message);
+        }
         gui_config->error_message = strdup(error);
         omp_unset_lock(&gui_config->draw_lock);
         return;
@@ -38,9 +39,7 @@ static void read_and_render_activation_map(struct gui_config *gui_config, char *
 static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_path) {
 
 	sds full_path_cp = sdsnew(full_path);
-
     full_path_cp = sdscat(full_path_cp, ".vis");
-
     FILE *vis_file = fopen(full_path_cp, "rw");
 
     if(vis_file) {
@@ -71,8 +70,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     if(!input_info.exists) {
         sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
-        if(gui_config->error_message)
+        if(gui_config->error_message) {
             free(gui_config->error_message);
+        }
 
         gui_config->error_message = strdup(error);
         return SIMULATION_FINISHED;
@@ -108,10 +108,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
     }
 
-    int num_files = 0;
-
-    if(simulation_files)
-        num_files = arrlen(simulation_files->files_list);
+    uint32_t num_files = arrlen(simulation_files->files_list);
 
     sds full_path;
 
@@ -206,8 +203,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!gui_config->grid_info.vtk_grid) {
             sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
-            if(gui_config->error_message)
+            
+            if(gui_config->error_message) {
                 free(gui_config->error_message);
+            }
 
             gui_config->error_message  = strdup(error);
 			gui_config->grid_info.loaded = false;
@@ -336,8 +335,10 @@ int main(int argc, char **argv) {
                     }
 
                     if(result == RESTART_SIMULATION) {
-                        init_gui_config_for_visualization(options, gui_config, true);
-                        result = read_and_render_files(options, gui_config);
+                        if(options->input) {
+                            init_gui_config_for_visualization(options, gui_config, true);
+                            result = read_and_render_files(options, gui_config);
+                        }
                     }
                     else if(result == END_SIMULATION || gui_config->exit) {
                         break;

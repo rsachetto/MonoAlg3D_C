@@ -39,10 +39,14 @@ DISABLE_CUDA=''
 
 GET_BUILD_OPTIONS "$@"
 
+#Comment this to compile with single precision floats on the GPU
+C_FLAGS="-DCELL_MODEL_REAL_DOUBLE"
+
 if [ "$BUILD_TYPE" == "release" ]; then
     C_FLAGS="$C_FLAGS -O3"
 elif [ "$BUILD_TYPE" == "debug" ]; then
-    C_FLAGS="$C_FLAGS -g -DDEBUG_INFO -fprofile-arcs -ftest-coverage"
+    #C_FLAGS="$C_FLAGS -g -DDEBUG_INFO -fprofile-arcs -ftest-coverage"
+    C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
 else
   	PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
   	PRINT_ERROR "Valid BUILD_TYPE options are: release, debug (-r or -d options)"
@@ -102,23 +106,7 @@ LIBRARY_OUTPUT_DIRECTORY="$ROOT_DIR/shared_libs"
 
 C_FLAGS="$C_FLAGS $DEFAULT_C_FLAGS"
 
-GET_LINUX_VERSION
-        
-if [ "$OS" == "Manjaro Linux" ]; then
-    C_COMPILER=/opt/cuda/bin/gcc
-    CXX_COMPILER=/opt/cuda/bin/g++
-elif [ "$OS" == "Ubuntu" ]; then
-	if [ "$VER" == "20.10" ]; then
-		C_COMPILER=gcc-9
-    	CXX_COMPILER=g++-9
-	else
-	    C_COMPILER=gcc-8
-    	CXX_COMPILER=g++-8
-	fi
-elif [ "$OS" == "Fedora" ]; then
-    C_COMPILER=/usr/local/cuda/bin/gcc
-    CXX_COMPILER=/usr/local/cuda/bin/g++
-fi
+GET_LINUX_VERSION     
 
 if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
 
@@ -140,8 +128,26 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
     fi
 fi
 
-if [ -n "$COMPILE_GUI" ]; then
-    C_FLAGS="${C_FLAGS} -DCOMPILE_GUI"
+if [ -n "$CUDA_FOUND" ]; then
+	if [ "$OS" == "Manjaro Linux" ]; then
+		C_COMPILER=/opt/cuda/bin/gcc
+		CXX_COMPILER=/opt/cuda/bin/g++
+	elif [ "$OS" == "Ubuntu" ]; then
+		if [ "$VER" == "20.10" ]; then
+			C_COMPILER=gcc-9
+			CXX_COMPILER=g++-9
+		else
+			C_COMPILER=gcc-8
+			CXX_COMPILER=g++-8
+		fi
+	elif [ "$OS" == "Fedora" ]; then
+		C_COMPILER=/usr/local/cuda/bin/gcc
+		CXX_COMPILER=/usr/local/cuda/bin/g++
+	fi
+
+	if [ -n "$COMPILE_GUI" ]; then
+		C_FLAGS="${C_FLAGS} -DCOMPILE_GUI"
+	fi
 fi
 
 echo -e "${INFO}C FLAGS:${NC} $C_FLAGS"

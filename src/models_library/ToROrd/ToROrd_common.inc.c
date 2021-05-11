@@ -1,12 +1,12 @@
 #define IFNUMBER_1(name)if((celltype==1.000000000000000e+00f)) { (name) = (cmdnmax_b*1.300000000000000e+00f);    }  else{ (name) = cmdnmax_b;    }
-#define IFNUMBER_2(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = 0.000000000000000e+00f;    }  else{ (name) = (5.700000000000000e-02f*expf(((-(v_old_+8.000000000000000e+01f))/6.800000000000000e+00f)));    }
-#define IFNUMBER_3(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = (7.700000000000000e-01f/(1.300000000000000e-01f*(1.000000000000000e+00f+expf(((-(v_old_+1.066000000000000e+01f))/1.110000000000000e+01f)))));    }  else{ (name) = ((2.700000000000000e+00f*expf((7.900000000000000e-02f*v_old_)))+(3.100000e+05*expf((3.485000000000000e-01f*v_old_))));    }
-#define IFNUMBER_4(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = 0.000000000000000e+00f;    }  else{ (name) = (((((-2.542800e+04)*expf((2.444000000000000e-01f*v_old_)))-(6.948000e-06*expf(((-4.391000000000000e-02f)*v_old_))))*(v_old_+3.778000000000000e+01f))/(1.000000000000000e+00f+expf((3.110000000000000e-01f*(v_old_+7.923000000000000e+01f)))));    }
-#define IFNUMBER_5(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = ((6.000000000000000e-01f*expf((5.700000000000000e-02f*v_old_)))/(1.000000000000000e+00f+expf(((-1.000000000000000e-01f)*(v_old_+3.200000000000000e+01f)))));    }  else{ (name) = ((2.424000000000000e-02f*expf(((-1.052000000000000e-02f)*v_old_)))/(1.000000000000000e+00f+expf(((-1.378000000000000e-01f)*(v_old_+4.014000000000000e+01f)))));    }
+#define IFNUMBER_2(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = 0.000000000000000e+00f;    }  else{ (name) = (5.700000000000000e-02f*exp(((-(v_old_+8.000000000000000e+01f))/6.800000000000000e+00f)));    }
+#define IFNUMBER_3(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = (7.700000000000000e-01f/(1.300000000000000e-01f*(1.000000000000000e+00f+exp(((-(v_old_+1.066000000000000e+01f))/1.110000000000000e+01f)))));    }  else{ (name) = ((2.700000000000000e+00f*exp((7.900000000000000e-02f*v_old_)))+(3.100000e+05*exp((3.485000000000000e-01f*v_old_))));    }
+#define IFNUMBER_4(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = 0.000000000000000e+00f;    }  else{ (name) = (((((-2.542800e+04)*exp((2.444000000000000e-01f*v_old_)))-(6.948000e-06*exp(((-4.391000000000000e-02f)*v_old_))))*(v_old_+3.778000000000000e+01f))/(1.000000000000000e+00f+exp((3.110000000000000e-01f*(v_old_+7.923000000000000e+01f)))));    }
+#define IFNUMBER_5(name)if((v_old_>=(-4.000000000000000e+01f))) { (name) = ((6.000000000000000e-01f*exp((5.700000000000000e-02f*v_old_)))/(1.000000000000000e+00f+exp(((-1.000000000000000e-01f)*(v_old_+3.200000000000000e+01f)))));    }  else{ (name) = ((2.424000000000000e-02f*exp(((-1.052000000000000e-02f)*v_old_)))/(1.000000000000000e+00f+exp(((-1.378000000000000e-01f)*(v_old_+4.014000000000000e+01f)))));    }
 #define IFNUMBER_6(name)if((celltype==1.000000000000000e+00f)) { (name) = (GNaL_b*6.000000000000000e-01f);    }  else{ (name) = GNaL_b;    }
-#define IFNUMBER_7(name)if((celltype==1.000000000000000e+00f)) { (name) = (1.000000000000000e+00f-(9.500000000000000e-01f/(1.000000000000000e+00f+expf(((v_old_+EKshift+7.000000000000000e+01f)/5.000000000000000e+00f)))));    }  else{ (name) = 1.000000000000000e+00f;    }
+#define IFNUMBER_7(name)if((celltype==1.000000000000000e+00f)) { (name) = (1.000000000000000e+00f-(9.500000000000000e-01f/(1.000000000000000e+00f+exp(((v_old_+EKshift+7.000000000000000e+01f)/5.000000000000000e+00f)))));    }  else{ (name) = 1.000000000000000e+00f;    }
 #define IFNUMBER_8(name)if((celltype==1.000000000000000e+00f)) { (name) = (Gto_b*2.000000000000000e+00f);    }  else if((celltype==2.000000000000000e+00f)){ (name) = (Gto_b*2.000000000000000e+00f);    } else{ (name) = Gto_b;    }
-#define IFNUMBER_9(name)if((v_old_>=3.149780000000000e+01f)) { (name) = 1.000000000000000e+00f;    }  else{ (name) = (1.076300000000000e+00f*expf(((-1.007000000000000e+00f)*expf(((-8.290000000000000e-02f)*v_old_)))));    }
+#define IFNUMBER_9(name)if((v_old_>=3.149780000000000e+01f)) { (name) = 1.000000000000000e+00f;    }  else{ (name) = (1.076300000000000e+00f*exp(((-1.007000000000000e+00f)*exp(((-8.290000000000000e-02f)*v_old_)))));    }
 #define IFNUMBER_10(name)if((celltype==1.000000000000000e+00f)) { (name) = (PCa_b*1.200000000000000e+00f);    }  else if((celltype==2.000000000000000e+00f)){ (name) = (PCa_b*2.000000000000000e+00f);    } else{ (name) = PCa_b;    }
 #define IFNUMBER_11(name)if((celltype==1.000000000000000e+00f)) { (name) = (GKr_b*1.300000000000000e+00f);    }  else if((celltype==2.000000000000000e+00f)){ (name) = (GKr_b*8.000000000000000e-01f);    } else{ (name) = GKr_b;    }
 #define IFNUMBER_12(name)if((celltype==1.000000000000000e+00f)) { (name) = (GKs_b*1.400000000000000e+00f);    }  else{ (name) = GKs_b;    }
@@ -141,29 +141,29 @@ real calc_cmdnmax = 0.0f;
 IFNUMBER_1(calc_cmdnmax); // 14
 real calc_Bcass =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + ((BSRmax * KmBSR) / powf((KmBSR + cass_old_), 2.000000000000000e+00f)) +
-      ((BSLmax * KmBSL) / powf((KmBSL + cass_old_), 2.000000000000000e+00f)))); // 21
+     (1.000000000000000e+00f + ((BSRmax * KmBSR) / pow((KmBSR + cass_old_), 2.000000000000000e+00f)) +
+      ((BSLmax * KmBSL) / pow((KmBSL + cass_old_), 2.000000000000000e+00f)))); // 21
 real calc_Bcajsr =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + ((csqnmax * kmcsqn) / powf((kmcsqn + cajsr_old_), 2.000000000000000e+00f)))); // 24
-real calc_ENa = (((R * T) / (zna * F)) * logf((nao / nai_old_)));                                            // 26
-real calc_EK = (((R * T) / (zk * F)) * logf((ko / ki_old_)));                                                // 27
-real calc_EKs = (((R * T) / (zk * F)) * logf(((ko + (PKNa * nao)) / (ki_old_ + (PKNa * nai_old_)))));        // 28
-real calc_ECl = (((R * T) / (zcl * F)) * logf((clo / cli)));                                                 // 29
-real calc_akik = powf((ko / K_o_n), 2.400000000000000e-01f);                                                 // 30
+     (1.000000000000000e+00f + ((csqnmax * kmcsqn) / pow((kmcsqn + cajsr_old_), 2.000000000000000e+00f)))); // 24
+real calc_ENa = (((R * T) / (zna * F)) * log((nao / nai_old_)));                                            // 26
+real calc_EK = (((R * T) / (zk * F)) * log((ko / ki_old_)));                                                // 27
+real calc_EKs = (((R * T) / (zk * F)) * log(((ko + (PKNa * nao)) / (ki_old_ + (PKNa * nai_old_)))));        // 28
+real calc_ECl = (((R * T) / (zcl * F)) * log((clo / cli)));                                                 // 29
+real calc_akik = pow((ko / K_o_n), 2.400000000000000e-01f);                                                 // 30
 real calc_bkik =
-    (1.000000000000000e+00f / (1.000000000000000e+00f + powf((A_atp / K_atp), 2.000000000000000e+00f))); // 31
+    (1.000000000000000e+00f / (1.000000000000000e+00f + pow((A_atp / K_atp), 2.000000000000000e+00f))); // 31
 real calc_mss =
     (1.000000000000000e+00f /
-     powf((1.000000000000000e+00f + expf(((-(v_old_ + 5.686000000000000e+01f)) / 9.029999999999999e+00f))),
+     pow((1.000000000000000e+00f + exp(((-(v_old_ + 5.686000000000000e+01f)) / 9.029999999999999e+00f))),
           2.000000000000000e+00f)); // 33
 real calc_tm =
     ((1.292000000000000e-01f *
-      expf((-powf(((v_old_ + 4.579000000000000e+01f) / 1.554000000000000e+01f), 2.000000000000000e+00f)))) +
+      exp((-pow(((v_old_ + 4.579000000000000e+01f) / 1.554000000000000e+01f), 2.000000000000000e+00f)))) +
      (6.487000000000000e-02f *
-      expf((-powf(((v_old_ - 4.823000000000000e+00f) / 5.112000000000000e+01f), 2.000000000000000e+00f))))); // 34
+      exp((-pow(((v_old_ - 4.823000000000000e+00f) / 5.112000000000000e+01f), 2.000000000000000e+00f))))); // 34
 real calc_hss = (1.000000000000000e+00f /
-                 powf((1.000000000000000e+00f + expf(((v_old_ + 7.155000000000000e+01f) / 7.430000000000000e+00f))),
+                 pow((1.000000000000000e+00f + exp(((v_old_ + 7.155000000000000e+01f) / 7.430000000000000e+00f))),
                       2.000000000000000e+00f)); // 36
 real calc_ah = 0.0f;
 IFNUMBER_2(calc_ah); // 37
@@ -175,64 +175,64 @@ real calc_bj = 0.0f;
 IFNUMBER_5(calc_bj); // 42
 real calc_hssp =
     (1.000000000000000e+00f /
-     powf((1.000000000000000e+00f + expf(((v_old_ + 7.755000000000000e+01f) / 7.430000000000000e+00f))),
+     pow((1.000000000000000e+00f + exp(((v_old_ + 7.755000000000000e+01f) / 7.430000000000000e+00f))),
           2.000000000000000e+00f)); // 46
 real calc_mLss =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((-(v_old_ + 4.285000000000000e+01f)) / 5.264000000000000e+00f)))); // 52
+     (1.000000000000000e+00f + exp(((-(v_old_ + 4.285000000000000e+01f)) / 5.264000000000000e+00f)))); // 52
 real calc_tmL =
     ((1.292000000000000e-01f *
-      expf((-powf(((v_old_ + 4.579000000000000e+01f) / 1.554000000000000e+01f), 2.000000000000000e+00f)))) +
+      exp((-pow(((v_old_ + 4.579000000000000e+01f) / 1.554000000000000e+01f), 2.000000000000000e+00f)))) +
      (6.487000000000000e-02f *
-      expf((-powf(((v_old_ - 4.823000000000000e+00f) / 5.112000000000000e+01f), 2.000000000000000e+00f))))); // 53
+      exp((-pow(((v_old_ - 4.823000000000000e+00f) / 5.112000000000000e+01f), 2.000000000000000e+00f))))); // 53
 real calc_hLss =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((v_old_ + 8.761000000000000e+01f) / 7.488000000000000e+00f)))); // 55
+     (1.000000000000000e+00f + exp(((v_old_ + 8.761000000000000e+01f) / 7.488000000000000e+00f)))); // 55
 real calc_hLssp =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((v_old_ + 9.381000000000000e+01f) / 7.488000000000000e+00f)))); // 57
+     (1.000000000000000e+00f + exp(((v_old_ + 9.381000000000000e+01f) / 7.488000000000000e+00f)))); // 57
 real calc_thLp = (3.000000000000000e+00f * thL);                                                     // 58
 real calc_GNaL = 0.0f;
 IFNUMBER_6(calc_GNaL); // 60
 real calc_ass = (1.000000000000000e+00f /
                  (1.000000000000000e+00f +
-                  expf(((-((v_old_ + EKshift) - 1.434000000000000e+01f)) / 1.482000000000000e+01f)))); // 63
+                  exp(((-((v_old_ + EKshift) - 1.434000000000000e+01f)) / 1.482000000000000e+01f)))); // 63
 real calc_ta =
     (1.051500000000000e+00f /
      ((1.000000000000000e+00f /
-       (1.208900000000000e+00f * (1.000000000000000e+00f + expf(((-((v_old_ + EKshift) - 1.840990000000000e+01f)) /
+       (1.208900000000000e+00f * (1.000000000000000e+00f + exp(((-((v_old_ + EKshift) - 1.840990000000000e+01f)) /
                                                                  2.938140000000000e+01f))))) +
-      (3.500000000000000e+00f / (1.000000000000000e+00f + expf(((v_old_ + EKshift + 1.000000000000000e+02f) /
+      (3.500000000000000e+00f / (1.000000000000000e+00f + exp(((v_old_ + EKshift + 1.000000000000000e+02f) /
                                                                 2.938140000000000e+01f)))))); // 64
 real calc_iss =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((v_old_ + EKshift + 4.394000000000000e+01f) / 5.711000000000000e+00f)))); // 66
+     (1.000000000000000e+00f + exp(((v_old_ + EKshift + 4.394000000000000e+01f) / 5.711000000000000e+00f)))); // 66
 real calc_delta_epi = 0.0f;
 IFNUMBER_7(calc_delta_epi); // 67
 real calc_tiF_b =
     (4.562000000000000e+00f +
      (1.000000000000000e+00f /
-      ((3.933000000000000e-01f * expf(((-(v_old_ + EKshift + 1.000000000000000e+02f)) / 1.000000000000000e+02f))) +
+      ((3.933000000000000e-01f * exp(((-(v_old_ + EKshift + 1.000000000000000e+02f)) / 1.000000000000000e+02f))) +
        (8.004000000000000e-02f *
-        expf(((v_old_ + EKshift + 5.000000000000000e+01f) / 1.659000000000000e+01f)))))); // 68
+        exp(((v_old_ + EKshift + 5.000000000000000e+01f) / 1.659000000000000e+01f)))))); // 68
 real calc_tiS_b =
     (2.362000000000000e+01f +
      (1.000000000000000e+00f /
-      ((1.416000000000000e-03f * expf(((-(v_old_ + EKshift + 9.652000000000000e+01f)) / 5.905000000000000e+01f))) +
-       (1.780000e-08 * expf(((v_old_ + EKshift + 1.141000000000000e+02f) / 8.079000000000001e+00f)))))); // 69
+      ((1.416000000000000e-03f * exp(((-(v_old_ + EKshift + 9.652000000000000e+01f)) / 5.905000000000000e+01f))) +
+       (1.780000e-08 * exp(((v_old_ + EKshift + 1.141000000000000e+02f) / 8.079000000000001e+00f)))))); // 69
 real calc_AiF = (1.000000000000000e+00f /
                  (1.000000000000000e+00f +
-                  expf((((v_old_ + EKshift) - 2.136000000000000e+02f) / 1.512000000000000e+02f)))); // 72
+                  exp((((v_old_ + EKshift) - 2.136000000000000e+02f) / 1.512000000000000e+02f)))); // 72
 real calc_assp = (1.000000000000000e+00f /
                   (1.000000000000000e+00f +
-                   expf(((-((v_old_ + EKshift) - 2.434000000000000e+01f)) / 1.482000000000000e+01f)))); // 77
+                   exp(((-((v_old_ + EKshift) - 2.434000000000000e+01f)) / 1.482000000000000e+01f)))); // 77
 real calc_dti_develop =
     (1.354000000000000e+00f +
-     (1.000000e-04 / (expf((((v_old_ + EKshift) - 1.674000000000000e+02f) / 1.589000000000000e+01f)) +
-                      expf(((-((v_old_ + EKshift) - 1.223000000000000e+01f)) / 2.154000000000000e-01f))))); // 79
+     (1.000000e-04 / (exp((((v_old_ + EKshift) - 1.674000000000000e+02f) / 1.589000000000000e+01f)) +
+                      exp(((-((v_old_ + EKshift) - 1.223000000000000e+01f)) / 2.154000000000000e-01f))))); // 79
 real calc_dti_recover =
     (1.000000000000000e+00f -
-     (5.000000000000000e-01f / (1.000000000000000e+00f + expf(((v_old_ + EKshift + 7.000000000000000e+01f) /
+     (5.000000000000000e-01f / (1.000000000000000e+00f + exp(((v_old_ + EKshift + 7.000000000000000e+01f) /
                                                                2.000000000000000e+01f))))); // 80
 real calc_Gto = 0.0f;
 IFNUMBER_8(calc_Gto); // 86
@@ -240,44 +240,44 @@ real calc_dss = 0.0f;
 IFNUMBER_9(calc_dss); // 89
 real calc_td = (offset + 6.000000000000000e-01f +
                 (1.000000000000000e+00f /
-                 (expf(((-5.000000000000000e-02f) * (v_old_ + vShift + 6.000000000000000e+00f))) +
-                  expf((9.000000000000000e-02f * (v_old_ + vShift + 1.400000000000000e+01f)))))); // 90
+                 (exp(((-5.000000000000000e-02f) * (v_old_ + vShift + 6.000000000000000e+00f))) +
+                  exp((9.000000000000000e-02f * (v_old_ + vShift + 1.400000000000000e+01f)))))); // 90
 real calc_fss =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((v_old_ + 1.958000000000000e+01f) / 3.696000000000000e+00f)))); // 92
+     (1.000000000000000e+00f + exp(((v_old_ + 1.958000000000000e+01f) / 3.696000000000000e+00f)))); // 92
 real calc_tff =
     (7.000000000000000e+00f +
      (1.000000000000000e+00f /
-      ((4.500000000000000e-03f * expf(((-(v_old_ + 2.000000000000000e+01f)) / 1.000000000000000e+01f))) +
-       (4.500000000000000e-03f * expf(((v_old_ + 2.000000000000000e+01f) / 1.000000000000000e+01f)))))); // 93
+      ((4.500000000000000e-03f * exp(((-(v_old_ + 2.000000000000000e+01f)) / 1.000000000000000e+01f))) +
+       (4.500000000000000e-03f * exp(((v_old_ + 2.000000000000000e+01f) / 1.000000000000000e+01f)))))); // 93
 real calc_tfs =
     (1.000000000000000e+03f +
      (1.000000000000000e+00f /
-      ((3.500000000000000e-05f * expf(((-(v_old_ + 5.000000000000000e+00f)) / 4.000000000000000e+00f))) +
-       (3.500000000000000e-05f * expf(((v_old_ + 5.000000000000000e+00f) / 6.000000000000000e+00f)))))); // 94
+      ((3.500000000000000e-05f * exp(((-(v_old_ + 5.000000000000000e+00f)) / 4.000000000000000e+00f))) +
+       (3.500000000000000e-05f * exp(((v_old_ + 5.000000000000000e+00f) / 6.000000000000000e+00f)))))); // 94
 real calc_Afs = (1.000000000000000e+00f - Aff);                                                          // 95
 real calc_tfcaf =
     (7.000000000000000e+00f +
      (1.000000000000000e+00f /
-      ((4.000000000000000e-02f * expf(((-(v_old_ - 4.000000000000000e+00f)) / 7.000000000000000e+00f))) +
-       (4.000000000000000e-02f * expf(((v_old_ - 4.000000000000000e+00f) / 7.000000000000000e+00f)))))); // 100
+      ((4.000000000000000e-02f * exp(((-(v_old_ - 4.000000000000000e+00f)) / 7.000000000000000e+00f))) +
+       (4.000000000000000e-02f * exp(((v_old_ - 4.000000000000000e+00f) / 7.000000000000000e+00f)))))); // 100
 real calc_tfcas =
     (1.000000000000000e+02f +
-     (1.000000000000000e+00f / ((1.200000000000000e-04f * expf(((-v_old_) / 3.000000000000000e+00f))) +
-                                (1.200000000000000e-04f * expf((v_old_ / 7.000000000000000e+00f)))))); // 101
+     (1.000000000000000e+00f / ((1.200000000000000e-04f * exp(((-v_old_) / 3.000000000000000e+00f))) +
+                                (1.200000000000000e-04f * exp((v_old_ / 7.000000000000000e+00f)))))); // 101
 real calc_Afcaf =
     (3.000000000000000e-01f +
      (6.000000000000000e-01f /
-      (1.000000000000000e+00f + expf(((v_old_ - 1.000000000000000e+01f) / 1.000000000000000e+01f))))); // 102
+      (1.000000000000000e+00f + exp(((v_old_ - 1.000000000000000e+01f) / 1.000000000000000e+01f))))); // 102
 real calc_jcass =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((v_old_ + 1.808000000000000e+01f) / 2.791600000000000e+00f)))); // 107
+     (1.000000000000000e+00f + exp(((v_old_ + 1.808000000000000e+01f) / 2.791600000000000e+00f)))); // 107
 real calc_km2n = (jca_old_ * 1.000000000000000e+00f);                                                // 115
 real calc_Io =
     ((5.000000000000000e-01f * (nao + ko + clo + (4.000000000000000e+00f * cao))) / 1.000000000000000e+03f); // 118
 real calc_Iss = ((5.000000000000000e-01f * (nass_old_ + kss_old_ + cli + (4.000000000000000e+00f * cass_old_))) /
                  1.000000000000000e+03f);                                                // 119
-real calc_constA = (1.820000e+06 * powf((dielConstant * T), (-1.500000000000000e+00f))); // 120
+real calc_constA = (1.820000e+06 * pow((dielConstant * T), (-1.500000000000000e+00f))); // 120
 real calc_PCa = 0.0f;
 IFNUMBER_10(calc_PCa); // 130
 real calc_Ii = ((5.000000000000000e-01f * (nai_old_ + ki_old_ + cli + (4.000000000000000e+00f * cai_old_))) /
@@ -286,19 +286,19 @@ real calc_GKr = 0.0f;
 IFNUMBER_11(calc_GKr); // 168
 real calc_xs1ss =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((-(v_old_ + 1.160000000000000e+01f)) / 8.932000000000000e+00f)))); // 170
+     (1.000000000000000e+00f + exp(((-(v_old_ + 1.160000000000000e+01f)) / 8.932000000000000e+00f)))); // 170
 real calc_txs1 =
     (8.173000000000000e+02f +
      (1.000000000000000e+00f /
-      ((2.326000e-04 * expf(((v_old_ + 4.828000000000000e+01f) / 1.780000000000000e+01f))) +
-       (1.292000000000000e-03f * expf(((-(v_old_ + 2.100000000000000e+02f)) / 2.300000000000000e+02f)))))); // 171
+      ((2.326000e-04 * exp(((v_old_ + 4.828000000000000e+01f) / 1.780000000000000e+01f))) +
+       (1.292000000000000e-03f * exp(((-(v_old_ + 2.100000000000000e+02f)) / 2.300000000000000e+02f)))))); // 171
 real calc_txs2 =
     (1.000000000000000e+00f /
-     ((1.000000000000000e-02f * expf(((v_old_ - 5.000000000000000e+01f) / 2.000000000000000e+01f))) +
-      (1.930000000000000e-02f * expf(((-(v_old_ + 6.654000000000001e+01f)) / 3.100000000000000e+01f))))); // 174
+     ((1.000000000000000e-02f * exp(((v_old_ - 5.000000000000000e+01f) / 2.000000000000000e+01f))) +
+      (1.930000000000000e-02f * exp(((-(v_old_ + 6.654000000000001e+01f)) / 3.100000000000000e+01f))))); // 174
 real calc_KsCa = (1.000000000000000e+00f +
                   (6.000000000000000e-01f /
-                   (1.000000000000000e+00f + powf((3.800000e-05 / cai_old_), 1.400000000000000e+00f)))); // 176
+                   (1.000000000000000e+00f + pow((3.800000e-05 / cai_old_), 1.400000000000000e+00f)))); // 176
 real calc_GKs = 0.0f;
 IFNUMBER_12(calc_GKs); // 177
 real calc_GK1 = 0.0f;
@@ -310,7 +310,7 @@ real calc_h10_i =
 real calc_k2_i = kcaoff;                                                                          // 199
 real calc_k5_i = kcaoff;                                                                          // 206
 real calc_allo_i =
-    (1.000000000000000e+00f / (1.000000000000000e+00f + powf((KmCaAct / cai_old_), 2.000000000000000e+00f))); // 218
+    (1.000000000000000e+00f / (1.000000000000000e+00f + pow((KmCaAct / cai_old_), 2.000000000000000e+00f))); // 218
 real calc_Gncx = 0.0f;
 IFNUMBER_14(calc_Gncx); // 221
 real calc_h4_ss =
@@ -320,7 +320,7 @@ real calc_h10_ss =
 real calc_k2_ss = kcaoff;                                                                         // 236
 real calc_k5_ss = kcaoff;                                                                         // 243
 real calc_allo_ss = (1.000000000000000e+00f /
-                     (1.000000000000000e+00f + powf((KmCaAct / cass_old_), 2.000000000000000e+00f))); // 255
+                     (1.000000000000000e+00f + pow((KmCaAct / cass_old_), 2.000000000000000e+00f))); // 255
 real calc_P = (eP / (1.000000000000000e+00f + (H / Khp) + (nai_old_ / Knap) + (ki_old_ / Kxkur)));    // 261
 real calc_b1 = (k1m * MgADP);                                                                         // 263
 real calc_a2 = k2p;                                                                                   // 264
@@ -329,7 +329,7 @@ real calc_Pnak = 0.0f;
 IFNUMBER_15(calc_Pnak); // 280
 real calc_xkb =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + expf(((-(v_old_ - 1.089680000000000e+01f)) / 2.398710000000000e+01f)))); // 282
+     (1.000000000000000e+00f + exp(((-(v_old_ - 1.089680000000000e+01f)) / 2.398710000000000e+01f)))); // 282
 real calc_GKb = 0.0f;
 IFNUMBER_16(calc_GKb);                                                                         // 283
 real calc_IpCa = ((GpCa * cai_old_) / (KmCap + cai_old_));                                     // 287
@@ -351,8 +351,8 @@ real calc_vss = (2.000000000000000e-02f * calc_vcell);                          
 real calc_CaMKa = (calc_CaMKb + CaMKt_old_);                                        // 12
 real calc_Bcai =
     (1.000000000000000e+00f /
-     (1.000000000000000e+00f + ((calc_cmdnmax * kmcmdn) / powf((kmcmdn + cai_old_), 2.000000000000000e+00f)) +
-      ((trpnmax * kmtrpn) / powf((kmtrpn + cai_old_), 2.000000000000000e+00f)))); // 19
+     (1.000000000000000e+00f + ((calc_cmdnmax * kmcmdn) / pow((kmcmdn + cai_old_), 2.000000000000000e+00f)) +
+      ((trpnmax * kmtrpn) / pow((kmtrpn + cai_old_), 2.000000000000000e+00f)))); // 19
 real calc_I_katp = (fkatp * gkatp * calc_akik * calc_bkik * (v_old_ - calc_EK));  // 32
 real calc_th = (1.000000000000000e+00f / (calc_ah + calc_bh));                    // 39
 real calc_jss = calc_hss;                                                         // 43
@@ -368,59 +368,59 @@ real calc_fp = ((Aff * ffp_old_) + (calc_Afs * fs_old_));                       
 real calc_tfcafp = (2.500000000000000e+00f * calc_tfcaf);                         // 112
 real calc_anca_ss =
     (1.000000000000000e+00f /
-     ((k2n / calc_km2n) + powf((1.000000000000000e+00f + (Kmn / cass_old_)), 4.000000000000000e+00f))); // 116
-real calc_gamma_cass = expf(((-calc_constA) * 4.000000000000000e+00f *
-                             ((powf(calc_Iss, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Iss, 1.0 / 2.0))) -
+     ((k2n / calc_km2n) + pow((1.000000000000000e+00f + (Kmn / cass_old_)), 4.000000000000000e+00f))); // 116
+real calc_gamma_cass = exp(((-calc_constA) * 4.000000000000000e+00f *
+                             ((pow(calc_Iss, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Iss, 1.0 / 2.0))) -
                               (3.000000000000000e-01f * calc_Iss)))); // 121
-real calc_gamma_cao = expf(((-calc_constA) * 4.000000000000000e+00f *
-                            ((powf(calc_Io, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Io, 1.0 / 2.0))) -
+real calc_gamma_cao = exp(((-calc_constA) * 4.000000000000000e+00f *
+                            ((pow(calc_Io, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Io, 1.0 / 2.0))) -
                              (3.000000000000000e-01f * calc_Io)))); // 122
-real calc_gamma_nass = expf(((-calc_constA) * 1.000000000000000e+00f *
-                             ((powf(calc_Iss, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Iss, 1.0 / 2.0))) -
+real calc_gamma_nass = exp(((-calc_constA) * 1.000000000000000e+00f *
+                             ((pow(calc_Iss, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Iss, 1.0 / 2.0))) -
                               (3.000000000000000e-01f * calc_Iss)))); // 123
-real calc_gamma_nao = expf(((-calc_constA) * 1.000000000000000e+00f *
-                            ((powf(calc_Io, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Io, 1.0 / 2.0))) -
+real calc_gamma_nao = exp(((-calc_constA) * 1.000000000000000e+00f *
+                            ((pow(calc_Io, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Io, 1.0 / 2.0))) -
                              (3.000000000000000e-01f * calc_Io)))); // 124
-real calc_gamma_kss = expf(((-calc_constA) * 1.000000000000000e+00f *
-                            ((powf(calc_Iss, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Iss, 1.0 / 2.0))) -
+real calc_gamma_kss = exp(((-calc_constA) * 1.000000000000000e+00f *
+                            ((pow(calc_Iss, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Iss, 1.0 / 2.0))) -
                              (3.000000000000000e-01f * calc_Iss)))); // 125
-real calc_gamma_ko = expf(((-calc_constA) * 1.000000000000000e+00f *
-                           ((powf(calc_Io, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Io, 1.0 / 2.0))) -
+real calc_gamma_ko = exp(((-calc_constA) * 1.000000000000000e+00f *
+                           ((pow(calc_Io, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Io, 1.0 / 2.0))) -
                             (3.000000000000000e-01f * calc_Io)))); // 126
 real calc_PCap = (1.100000000000000e+00f * calc_PCa);              // 131
 real calc_PCaNa = (1.250000000000000e-03f * calc_PCa);             // 132
 real calc_PCaK = (3.574000e-04 * calc_PCa);                        // 133
-real calc_anca_i = (1.000000000000000e+00f / ((k2n / calc_km2n) + powf((1.000000000000000e+00f + (Kmn / cai_old_)),
+real calc_anca_i = (1.000000000000000e+00f / ((k2n / calc_km2n) + pow((1.000000000000000e+00f + (Kmn / cai_old_)),
                                                                        4.000000000000000e+00f))); // 140
-real calc_gamma_cai = expf(((-calc_constA) * 4.000000000000000e+00f *
-                            ((powf(calc_Ii, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Ii, 1.0 / 2.0))) -
+real calc_gamma_cai = exp(((-calc_constA) * 4.000000000000000e+00f *
+                            ((pow(calc_Ii, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Ii, 1.0 / 2.0))) -
                              (3.000000000000000e-01f * calc_Ii)))); // 143
-real calc_gamma_nai = expf(((-calc_constA) * 1.000000000000000e+00f *
-                            ((powf(calc_Ii, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Ii, 1.0 / 2.0))) -
+real calc_gamma_nai = exp(((-calc_constA) * 1.000000000000000e+00f *
+                            ((pow(calc_Ii, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Ii, 1.0 / 2.0))) -
                              (3.000000000000000e-01f * calc_Ii)))); // 144
-real calc_gamma_ki = expf(((-calc_constA) * 1.000000000000000e+00f *
-                           ((powf(calc_Ii, 1.0 / 2.0) / (1.000000000000000e+00f + powf(calc_Ii, 1.0 / 2.0))) -
+real calc_gamma_ki = exp(((-calc_constA) * 1.000000000000000e+00f *
+                           ((pow(calc_Ii, 1.0 / 2.0) / (1.000000000000000e+00f + pow(calc_Ii, 1.0 / 2.0))) -
                             (3.000000000000000e-01f * calc_Ii))));                                         // 145
-real calc_alpha = (1.161000000000000e-01f * expf((2.990000000000000e-01f * calc_vfrt)));                   // 155
-real calc_beta = (2.442000000000000e-01f * expf(((-1.604000000000000e+00f) * calc_vfrt)));                 // 156
-real calc_alpha_2 = (5.780000000000000e-02f * expf((9.710000000000000e-01f * calc_vfrt)));                 // 157
-real calc_beta_2 = (0.349000e-03 * expf(((-1.062000000000000e+00f) * calc_vfrt)));                         // 158
-real calc_alpha_i = (2.533000000000000e-01f * expf((5.953000000000001e-01f * calc_vfrt)));                 // 159
-real calc_beta_i = (6.525000000000000e-02f * expf(((-8.209000000000000e-01f) * calc_vfrt)));               // 160
-real calc_alpha_C2ToI = (0.520000e-04 * expf((1.525000000000000e+00f * calc_vfrt)));                       // 161
-real calc_IKr = (calc_GKr * powf((ko / 5.000000000000000e+00f), 1.0 / 2.0) * O_old_ * (v_old_ - calc_EK)); // 169
+real calc_alpha = (1.161000000000000e-01f * exp((2.990000000000000e-01f * calc_vfrt)));                   // 155
+real calc_beta = (2.442000000000000e-01f * exp(((-1.604000000000000e+00f) * calc_vfrt)));                 // 156
+real calc_alpha_2 = (5.780000000000000e-02f * exp((9.710000000000000e-01f * calc_vfrt)));                 // 157
+real calc_beta_2 = (0.349000e-03 * exp(((-1.062000000000000e+00f) * calc_vfrt)));                         // 158
+real calc_alpha_i = (2.533000000000000e-01f * exp((5.953000000000001e-01f * calc_vfrt)));                 // 159
+real calc_beta_i = (6.525000000000000e-02f * exp(((-8.209000000000000e-01f) * calc_vfrt)));               // 160
+real calc_alpha_C2ToI = (0.520000e-04 * exp((1.525000000000000e+00f * calc_vfrt)));                       // 161
+real calc_IKr = (calc_GKr * pow((ko / 5.000000000000000e+00f), 1.0 / 2.0) * O_old_ * (v_old_ - calc_EK)); // 169
 real calc_xs2ss = calc_xs1ss;                                                                              // 173
 real calc_IKs = (calc_GKs * calc_KsCa * xs1_old_ * xs2_old_ * (v_old_ - calc_EKs));                        // 178
 real calc_aK1 = (4.094000000000000e+00f /
                  (1.000000000000000e+00f +
-                  expf((1.217000000000000e-01f * ((v_old_ - calc_EK) - 4.993400000000000e+01f))))); // 179
+                  exp((1.217000000000000e-01f * ((v_old_ - calc_EK) - 4.993400000000000e+01f))))); // 179
 real calc_bK1 =
-    (((1.572000000000000e+01f * expf((6.740000000000000e-02f * ((v_old_ - calc_EK) - 3.257000000000000e+00f)))) +
-      expf((6.180000000000000e-02f * ((v_old_ - calc_EK) - 5.943099999999999e+02f)))) /
+    (((1.572000000000000e+01f * exp((6.740000000000000e-02f * ((v_old_ - calc_EK) - 3.257000000000000e+00f)))) +
+      exp((6.180000000000000e-02f * ((v_old_ - calc_EK) - 5.943099999999999e+02f)))) /
      (1.000000000000000e+00f +
-      expf(((-1.629000000000000e-01f) * ((v_old_ - calc_EK) + 1.420700000000000e+01f)))));                  // 180
-real calc_hca = expf((qca * calc_vfrt));                                                                    // 184
-real calc_hna = expf((qna * calc_vfrt));                                                                    // 185
+      exp(((-1.629000000000000e-01f) * ((v_old_ - calc_EK) + 1.420700000000000e+01f)))));                  // 180
+real calc_hca = exp((qca * calc_vfrt));                                                                    // 184
+real calc_hna = exp((qna * calc_vfrt));                                                                    // 185
 real calc_h5_i = ((nai_old_ * nai_old_) / (calc_h4_i * kna1 * kna2));                                       // 190
 real calc_h6_i = (1.000000000000000e+00f / calc_h4_i);                                                      // 191
 real calc_h11_i = ((nao * nao) / (calc_h10_i * kna1 * kna2));                                               // 196
@@ -429,12 +429,12 @@ real calc_h5_ss = ((nass_old_ * nass_old_) / (calc_h4_ss * kna1 * kna2));       
 real calc_h6_ss = (1.000000000000000e+00f / calc_h4_ss);                                                    // 228
 real calc_h11_ss = ((nao * nao) / (calc_h10_ss * kna1 * kna2));                                             // 233
 real calc_h12_ss = (1.000000000000000e+00f / calc_h10_ss);                                                  // 234
-real calc_Knai = (Knai0 * expf(((delta * calc_vfrt) / 3.000000000000000e+00f)));                            // 259
-real calc_Knao = (Knao0 * expf((((1.000000000000000e+00f - delta) * calc_vfrt) / 3.000000000000000e+00f))); // 260
+real calc_Knai = (Knai0 * exp(((delta * calc_vfrt) / 3.000000000000000e+00f)));                            // 259
+real calc_Knao = (Knao0 * exp((((1.000000000000000e+00f - delta) * calc_vfrt) / 3.000000000000000e+00f))); // 260
 real calc_b3 = ((k3m * calc_P * H) / (1.000000000000000e+00f + (MgATP / Kmgatp)));                          // 267
 real calc_IKb = (calc_GKb * calc_xkb * (v_old_ - calc_EK));                                                 // 284
-real calc_INab = ((PNab * calc_vffrt * ((nai_old_ * expf(calc_vfrt)) - nao)) /
-                  (expf(calc_vfrt) - 1.000000000000000e+00f)); // 285
+real calc_INab = ((PNab * calc_vffrt * ((nai_old_ * exp(calc_vfrt)) - nao)) /
+                  (exp(calc_vfrt) - 1.000000000000000e+00f)); // 285
 real calc_IClCa_junc =
     (((Fjunc * GClCa) / (1.000000000000000e+00f + (KdClCa / cass_old_))) * (v_old_ - calc_ECl)); // 288
 real calc_IClCa_sl =
@@ -460,31 +460,31 @@ real calc_fca = ((calc_Afcaf * fcaf_old_) + (calc_Afcas * fcas_old_));          
 real calc_fcap = ((calc_Afcaf * fcafp_old_) + (calc_Afcas * fcas_old_));                        // 114
 real calc_PhiCaL_ss =
     ((4.000000000000000e+00f * calc_vffrt *
-      ((calc_gamma_cass * cass_old_ * expf((2.000000000000000e+00f * calc_vfrt))) - (calc_gamma_cao * cao))) /
-     (expf((2.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 127
+      ((calc_gamma_cass * cass_old_ * exp((2.000000000000000e+00f * calc_vfrt))) - (calc_gamma_cao * cao))) /
+     (exp((2.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 127
 real calc_PhiCaNa_ss =
     ((1.000000000000000e+00f * calc_vffrt *
-      ((calc_gamma_nass * nass_old_ * expf((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_nao * nao))) /
-     (expf((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 128
+      ((calc_gamma_nass * nass_old_ * exp((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_nao * nao))) /
+     (exp((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 128
 real calc_PhiCaK_ss =
     ((1.000000000000000e+00f * calc_vffrt *
-      ((calc_gamma_kss * kss_old_ * expf((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_ko * ko))) /
-     (expf((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f));                    // 129
+      ((calc_gamma_kss * kss_old_ * exp((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_ko * ko))) /
+     (exp((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f));                    // 129
 real calc_PCaNap = (1.250000000000000e-03f * calc_PCap);                                        // 134
 real calc_PCaKp = (3.574000e-04 * calc_PCap);                                                   // 135
 real calc_fICaLp = (1.000000000000000e+00f / (1.000000000000000e+00f + (KmCaMK / calc_CaMKa))); // 136
 real calc_PhiCaL_i =
     ((4.000000000000000e+00f * calc_vffrt *
-      ((calc_gamma_cai * cai_old_ * expf((2.000000000000000e+00f * calc_vfrt))) - (calc_gamma_cao * cao))) /
-     (expf((2.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 146
+      ((calc_gamma_cai * cai_old_ * exp((2.000000000000000e+00f * calc_vfrt))) - (calc_gamma_cao * cao))) /
+     (exp((2.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 146
 real calc_PhiCaNa_i =
     ((1.000000000000000e+00f * calc_vffrt *
-      ((calc_gamma_nai * nai_old_ * expf((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_nao * nao))) /
-     (expf((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 147
+      ((calc_gamma_nai * nai_old_ * exp((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_nao * nao))) /
+     (exp((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 147
 real calc_PhiCaK_i =
     ((1.000000000000000e+00f * calc_vffrt *
-      ((calc_gamma_ki * ki_old_ * expf((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_ko * ko))) /
-     (expf((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f));                             // 148
+      ((calc_gamma_ki * ki_old_ * exp((1.000000000000000e+00f * calc_vfrt))) - (calc_gamma_ko * ko))) /
+     (exp((1.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f));                             // 148
 real calc_beta_ItoC2 = ((calc_beta_2 * calc_beta_i * calc_alpha_C2ToI) / (calc_alpha_2 * calc_alpha_i)); // 162
 real calc_K1ss = (calc_aK1 / (calc_aK1 + calc_bK1));                                                     // 181
 real calc_h1_i = (1.000000000000000e+00f + ((nai_old_ / kna3) * (1.000000000000000e+00f + calc_hna)));   // 186
@@ -497,33 +497,33 @@ real calc_h7_ss = (1.000000000000000e+00f +
                    ((nao / kna3) * (1.000000000000000e+00f + (1.000000000000000e+00f / calc_hna)))); // 229
 real calc_k1_ss = (calc_h12_ss * cao * kcaon);                                                       // 235
 real calc_k6_ss = (calc_h6_ss * cass_old_ * kcaon);                                                  // 244
-real calc_a1 = ((k1p * powf((nai_old_ / calc_Knai), 3.000000000000000e+00f)) /
-                ((powf((1.000000000000000e+00f + (nai_old_ / calc_Knai)), 3.000000000000000e+00f) +
-                  powf((1.000000000000000e+00f + (ki_old_ / Kki)), 2.000000000000000e+00f)) -
+real calc_a1 = ((k1p * pow((nai_old_ / calc_Knai), 3.000000000000000e+00f)) /
+                ((pow((1.000000000000000e+00f + (nai_old_ / calc_Knai)), 3.000000000000000e+00f) +
+                  pow((1.000000000000000e+00f + (ki_old_ / Kki)), 2.000000000000000e+00f)) -
                  1.000000000000000e+00f)); // 262
-real calc_b2 = ((k2m * powf((nao / calc_Knao), 3.000000000000000e+00f)) /
-                ((powf((1.000000000000000e+00f + (nao / calc_Knao)), 3.000000000000000e+00f) +
-                  powf((1.000000000000000e+00f + (ko / Kko)), 2.000000000000000e+00f)) -
+real calc_b2 = ((k2m * pow((nao / calc_Knao), 3.000000000000000e+00f)) /
+                ((pow((1.000000000000000e+00f + (nao / calc_Knao)), 3.000000000000000e+00f) +
+                  pow((1.000000000000000e+00f + (ko / Kko)), 2.000000000000000e+00f)) -
                  1.000000000000000e+00f)); // 265
-real calc_a3 = ((k3p * powf((ko / Kko), 2.000000000000000e+00f)) /
-                ((powf((1.000000000000000e+00f + (nao / calc_Knao)), 3.000000000000000e+00f) +
-                  powf((1.000000000000000e+00f + (ko / Kko)), 2.000000000000000e+00f)) -
+real calc_a3 = ((k3p * pow((ko / Kko), 2.000000000000000e+00f)) /
+                ((pow((1.000000000000000e+00f + (nao / calc_Knao)), 3.000000000000000e+00f) +
+                  pow((1.000000000000000e+00f + (ko / Kko)), 2.000000000000000e+00f)) -
                  1.000000000000000e+00f)); // 266
-real calc_b4 = ((k4m * powf((ki_old_ / Kki), 2.000000000000000e+00f)) /
-                ((powf((1.000000000000000e+00f + (nai_old_ / calc_Knai)), 3.000000000000000e+00f) +
-                  powf((1.000000000000000e+00f + (ki_old_ / Kki)), 2.000000000000000e+00f)) -
+real calc_b4 = ((k4m * pow((ki_old_ / Kki), 2.000000000000000e+00f)) /
+                ((pow((1.000000000000000e+00f + (nai_old_ / calc_Knai)), 3.000000000000000e+00f) +
+                  pow((1.000000000000000e+00f + (ki_old_ / Kki)), 2.000000000000000e+00f)) -
                  1.000000000000000e+00f)); // 269
 real calc_ICab =
     ((PCab * 4.000000000000000e+00f * calc_vffrt *
-      ((calc_gamma_cai * cai_old_ * expf((2.000000000000000e+00f * calc_vfrt))) - (calc_gamma_cao * cao))) /
-     (expf((2.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 286
+      ((calc_gamma_cai * cai_old_ * exp((2.000000000000000e+00f * calc_vfrt))) - (calc_gamma_cao * cao))) /
+     (exp((2.000000000000000e+00f * calc_vfrt)) - 1.000000000000000e+00f)); // 286
 real calc_IClCa = (calc_IClCa_junc + calc_IClCa_sl);                         // 290
 real calc_tau_relp = 0.0f;
 IFNUMBER_20(calc_tau_relp);                                                                     // 306
 real calc_fJrelp = (1.000000000000000e+00f / (1.000000000000000e+00f + (KmCaMK / calc_CaMKa))); // 308
 real calc_fJupp = (1.000000000000000e+00f / (1.000000000000000e+00f + (KmCaMK / calc_CaMKa)));  // 313
 real calc_INa =
-    (GNa * (v_old_ - calc_ENa) * powf(m_old_, 3.000000000000000e+00f) *
+    (GNa * (v_old_ - calc_ENa) * pow(m_old_, 3.000000000000000e+00f) *
      (((1.000000000000000e+00f - calc_fINap) * h_old_ * j_old_) + (calc_fINap * hp_old_ * jp_old_))); // 51
 real calc_INaL = (calc_GNaL * (v_old_ - calc_ENa) * mL_old_ *
                   (((1.000000000000000e+00f - calc_fINaLp) * hL_old_) + (calc_fINaLp * hLp_old_))); // 62
@@ -566,7 +566,7 @@ real calc_ICaK_i =
        ((calc_f * (1.000000000000000e+00f - nca_i_old_)) + (jca_old_ * calc_fca * nca_i_old_))) +
       (calc_fICaLp * calc_PCaKp * calc_PhiCaK_i * d_old_ *
        ((calc_fp * (1.000000000000000e+00f - nca_i_old_)) + (jca_old_ * calc_fcap * nca_i_old_)))));          // 151
-real calc_IK1 = (calc_GK1 * powf((ko / 5.000000000000000e+00f), 1.0 / 2.0) * calc_K1ss * (v_old_ - calc_EK)); // 183
+real calc_IK1 = (calc_GK1 * pow((ko / 5.000000000000000e+00f), 1.0 / 2.0) * calc_K1ss * (v_old_ - calc_EK)); // 183
 real calc_h2_i = ((nai_old_ * calc_hna) / (kna3 * calc_h1_i));                                                // 187
 real calc_h3_i = (1.000000000000000e+00f / calc_h1_i);                                                        // 188
 real calc_h8_i = (nao / (kna3 * calc_hna * calc_h7_i));                                                       // 193
@@ -607,9 +607,9 @@ real calc_E2 = (calc_x2 / (calc_x1 + calc_x2 + calc_x3 + calc_x4)); // 275
 real calc_E3 = (calc_x3 / (calc_x1 + calc_x2 + calc_x3 + calc_x4)); // 276
 real calc_E4 = (calc_x4 / (calc_x1 + calc_x2 + calc_x3 + calc_x4)); // 277
 real calc_Jrel_inf_b = ((((-calc_a_rel) * calc_ICaL_ss) / 1.000000000000000e+00f) /
-                        (1.000000000000000e+00f + powf((cajsr_half / cajsr_old_), 8.000000000000000e+00f))); // 296
+                        (1.000000000000000e+00f + pow((cajsr_half / cajsr_old_), 8.000000000000000e+00f))); // 296
 real calc_Jrel_infp_b = ((((-calc_a_relp) * calc_ICaL_ss) / 1.000000000000000e+00f) /
-                         (1.000000000000000e+00f + powf((cajsr_half / cajsr_old_), 8.000000000000000e+00f))); // 303
+                         (1.000000000000000e+00f + pow((cajsr_half / cajsr_old_), 8.000000000000000e+00f))); // 303
 real calc_k3_i = (calc_k3p_i + calc_k3pp_i);                                                                  // 202
 real calc_k4_i = (calc_k4p_i + calc_k4pp_i);                                                                  // 205
 real calc_k3_ss = (calc_k3p_ss + calc_k3pp_ss);                                                               // 239

@@ -46,7 +46,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
 
-    //the array cells to solve is passed when we are using and adapative mesh
+    //the array cells to solve is passed when we are using and adaptive mesh
     uint32_t *cells_to_solve_device = NULL;
     if(cells_to_solve != NULL) {
         check_cuda_error(cudaMalloc((void **) &cells_to_solve_device, cells_to_solve_size));
@@ -117,7 +117,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
 
     // Algebraics
     real J_stim = stim_current;
-    real J_in = ( h*( powf(V, 2.00000)*(1.00000 - V)))/tau_in;
+    real J_in = ( h*( pow(V, 2.00000)*(1.00000 - V)))/tau_in;
     real J_out = - (V/tau_out);
 
     // Rates

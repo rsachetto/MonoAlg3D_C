@@ -46,8 +46,6 @@
 #define CM 5000
 #define VISUALIZATION_PAUSED_OPT 5100
 
-
-
 struct user_options {
     real_cpu final_time;				/*-f option */
     bool final_time_was_set;
@@ -63,6 +61,10 @@ struct user_options {
 
     real_cpu dt_ode;
     bool dt_ode_was_set;
+
+	bool auto_dt_ode;
+    bool auto_dt_ode_was_set;
+
 
     bool ode_adaptive;
     bool ode_adaptive_was_set;

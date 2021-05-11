@@ -614,7 +614,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     Vector2 p1, p2;
 
-    uint num_ticks;
+    uint32_t num_ticks;
     real_cpu tick_ofsset = 10;
     num_ticks = (int)(gui_config->final_time / tick_ofsset);
 
@@ -652,7 +652,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     real_cpu time = 0.0;
 
     // Draw horizontal ticks (t)
-    for(uint t = 0; t <= num_ticks; t++) {
+    for(uint32_t t = 0; t <= num_ticks; t++) {
 
         p1.x = NORMALIZE(0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, time);
         p1.y = gui_state->ap_graph_config->min_y - 5;
@@ -680,7 +680,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     }
 
 	tick_ofsset = 10;
-	num_ticks = (uint)((gui_config->max_v - gui_config->min_v) / tick_ofsset);
+	num_ticks = (uint32_t)((gui_config->max_v - gui_config->min_v) / tick_ofsset);
 
     if(num_ticks < MIN_VERTICAL_TICKS) {
         num_ticks = MIN_VERTICAL_TICKS;
@@ -706,7 +706,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     Vector2 max_w = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
     // Draw vertical ticks (Vm)
-    for(uint t = 0; t <= num_ticks; t++) {
+    for(uint32_t t = 0; t <= num_ticks; t++) {
 
         p1.x = (float)gui_state->ap_graph_config->graph.x + 5.0f;
         p1.y = NORMALIZE(gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, v);
@@ -1070,11 +1070,15 @@ static inline bool configure_mesh_info_box_strings(struct gui_config * gui_confi
 
 static bool draw_selection_box(struct gui_state *gui_state) {
 
-    const float text_box_width = 60;
-    const float text_box_height = 25;
-    const float text_box_y_dist = 40;
-    const float label_box_y_dist = 30;
-    const float x_off = 10;
+    #define CENTER_X "Center X"
+    #define CENTER_Y "Center Y"
+    #define CENTER_Z "Center Z"
+
+    Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
+
+    float text_box_y_dist = text_box_size.y*2;
+    float label_box_y_dist = 30;
+    float x_off = 10;
 
     static char center_x_text[128] = {0};
     static char center_y_text[128] = {0};
@@ -1084,21 +1088,24 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     float pos_y = gui_state->sub_window_pos.y;
 
     float box_pos = pos_x + x_off;
+    gui_state->box_width = text_box_size.x * 3.5;
+    gui_state->box_height = (text_box_size.y + text_box_y_dist)*1.6;
 
     bool window_closed = GuiWindowBox((Rectangle){pos_x, pos_y, gui_state->box_width, gui_state->box_height}, "Enter the center of the cell");
 
-    DrawTextEx(gui_state->font, "Center X", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_x_text, SIZEOF(center_x_text) - 1, true);
+    DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+   
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_x_text, SIZEOF(center_x_text) - 1, true);
 
-    box_pos = pos_x + text_box_width + 2 * x_off;
-    DrawTextEx(gui_state->font, "Center Y", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_y_text, SIZEOF(center_y_text) - 1, true);
+    box_pos = pos_x + text_box_size.x + 2 * x_off;
+    DrawTextEx(gui_state->font, CENTER_Y, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_y_text, SIZEOF(center_y_text) - 1, true);
 
-    box_pos = pos_x + 2 * text_box_width + 3 * x_off;
-    DrawTextEx(gui_state->font, "Center Z", (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_width, text_box_height}, center_z_text, SIZEOF(center_z_text) - 1, true);
+    box_pos = pos_x + 2 * text_box_size.x  + 3 * x_off;
+    DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
 
-    bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_width + 2 * x_off, pos_y + 70, text_box_width, text_box_height}, "OK");
+    bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2, text_box_size.x, text_box_size.y}, "OK");
 
     if(btn_ok_clicked) {
         gui_state->current_selected_volume.position_mesh.x = strtof(center_x_text, NULL);
@@ -1187,14 +1194,9 @@ static void reset(struct gui_config *gui_config, struct mesh_info *mesh_info, st
 
 static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_info *mesh_info, struct gui_state *gui_state) {
 
-	if(gui_config->paused) {
+	if(gui_config->paused) {	
 
-		if(IsKeyPressed(KEY_Z)) {
-			TakeScreenshot("/home/sachetto/teste.png");
-		}
-
-		if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-			// SAVE FILE AS VTK
+		if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {			
 			if(IsKeyPressed(KEY_S)) {
 				char const *filter[1] = {"*.vtu"};
 
@@ -1212,7 +1214,6 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 		if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
 			gui_config->advance_or_return = 1;
 			omp_unset_lock(&gui_config->sleep_lock);
-			nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
 			return;
 		}
 
@@ -1220,7 +1221,6 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 			// Return one step only works on file visualization...
 			if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
 				gui_config->advance_or_return = -1;
-				nanosleep((const struct timespec[]){{0, 50000000L}}, NULL);
 				omp_unset_lock(&gui_config->sleep_lock);
 				return;
 			}
@@ -1303,8 +1303,7 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 	if(IsKeyPressed(KEY_C)) {
 		gui_state->show_scale = gui_state->c_pressed;
-		gui_state->show_ap = gui_state->c_pressed;
-		//gui_state->show_help_box = gui_state->c_pressed;
+		gui_state->show_ap = gui_state->c_pressed;		
 		gui_state->show_end_info_box = gui_state->c_pressed;
 		gui_state->show_mesh_info_box = gui_state->c_pressed;
 		gui_state->c_pressed = !gui_state->c_pressed;
@@ -1336,6 +1335,8 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 			if(gui_config->input) {
 				reset(gui_config, mesh_info, gui_state, true);
+                free(gui_config->error_message);
+                gui_config->error_message = strdup("Loading Mesh...");
 			}
 
 			return;
@@ -1361,6 +1362,8 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct mesh_inf
 
 			if(tmp) {
 				reset(gui_config, mesh_info, gui_state, true);
+                free(gui_config->error_message);
+                gui_config->error_message = strdup("Loading Mesh...");
 			}
 			return;
 		}
@@ -1377,7 +1380,6 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     gui_state->ray_mouse_over = GetMouseRay(GetMousePosition(), gui_state->camera);
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-
         gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
 
         if(!gui_state->show_selection_box) {
@@ -1394,10 +1396,12 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
                     gui_state->double_clicked = false;
                 }
             }
-        }else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y, gui_state->box_width - 18,
+        }
+        
+        if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y, gui_state->box_width - 18,
                                                                          WINDOW_STATUSBAR_HEIGHT})) {
             gui_state->move_sub_window = true;
-        } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->drag_graph_button_position)) {
+        } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->drag_graph_button_position)) {            
             gui_state->ap_graph_config->drag_ap_graph = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->move_graph_button_position)) {
             gui_state->ap_graph_config->move_ap_graph = true;
@@ -1440,8 +1444,10 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     if(gui_state->move_sub_window) {
         gui_state->sub_window_pos.x = (gui_state->mouse_pos.x) - (gui_state->box_width - 18.0f) / 2.0f;
         gui_state->sub_window_pos.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f;
-        if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+        
+        if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {        
             gui_state->move_sub_window = false;
+        }
     }
 
     else if(gui_state->ap_graph_config->drag_ap_graph) {
@@ -1464,8 +1470,9 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
         gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
 
-        if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+        if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
             gui_state->ap_graph_config->drag_ap_graph = false;
+        }
     }
 
     else if(gui_state->ap_graph_config->move_ap_graph) {
@@ -1518,15 +1525,9 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     }
 }
 
-static int configure_info_boxes_sizes(struct gui_state *gui_state, int info_box_lines, int mesh_info_box_lines, int end_info_box_lines) {
-    Vector2 txt_w_h;
-    int text_offset;
-    float box_w = 0;
-    float margin = 10.0f;
+static void configure_info_boxes_sizes(struct gui_state *gui_state, int info_box_lines, int mesh_info_box_lines, int end_info_box_lines, float box_w, int text_offset) {
 
-    txt_w_h = MeasureTextEx(gui_state->font, WIDER_TEXT, gui_state->font_size_small, gui_state->font_spacing_small);
-    text_offset = (int)(1.5 * txt_w_h.y);
-    box_w = txt_w_h.x*1.08f;
+    float margin = 10.0f;    
 
     gui_state->help_box.width = box_w;
     gui_state->help_box.height = (float)(text_offset * info_box_lines) + margin;
@@ -1544,7 +1545,6 @@ static int configure_info_boxes_sizes(struct gui_state *gui_state, int info_box_
 	gui_state->end_info_box.x = gui_state->mesh_info_box.x - gui_state->mesh_info_box.width - margin;
     gui_state->end_info_box.y = gui_state->mesh_info_box.y;
 
-    return text_offset;
 }
 
 void draw_coordinates(struct gui_state *gui_state) {
@@ -1649,6 +1649,8 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                                       " - C to show/hide everything except grid",
                                       " - F to open a simulation file",
                                       " - O to open a simulation directory",
+                                      " - F12 to take a screenshot",
+                                      " - CRTL + F12 to start/stop recording the screen",
                                       " - . or , to change color scales",
                                       " - Right arrow to advance one dt when paused",
                                       " - Hold up arrow to advance time when paused",
@@ -1657,16 +1659,27 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
     int info_box_lines = SIZEOF(info_box_strings);
 
+    float wider_text_w = 0;
+    float wider_text_h = 0;
+
+    for(int i = 0; i < info_box_lines; i++) {
+        Vector2 tmp = MeasureTextEx(gui_state->font, info_box_strings[i], gui_state->font_size_small, gui_state->font_spacing_small);
+        if(tmp.x > wider_text_w) {
+            wider_text_w = tmp.x;
+            wider_text_h = tmp.y;
+        }
+    }
+
+    int text_offset = (int)(1.5 * wider_text_h);
+    float box_w = wider_text_w*1.08f;
+
     end_info_box_strings = (char **)malloc(sizeof(char *) * end_info_box_lines);
     mesh_info_box_strings = (char **)malloc(sizeof(char *) * mesh_info_box_lines);
+    configure_info_boxes_sizes(gui_state, info_box_lines, mesh_info_box_lines, end_info_box_lines, box_w, text_offset);
 
     Vector2 error_message_width;
-
     struct mesh_info *mesh_info = new_mesh_info();
-
-    bool end_info_box_strings_configured = false;
-
-    int text_offset = configure_info_boxes_sizes(gui_state, info_box_lines, mesh_info_box_lines, end_info_box_lines);
+    bool end_info_box_strings_configured = false;   
 
     while(!WindowShouldClose()) {
 
@@ -1709,9 +1722,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                     mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
                 } else {
                     mesh_offset = find_mesh_center_vtk(gui_config->grid_info.vtk_grid, mesh_info);
-                }
-
-                // TODO: the scale needs to change according to the mesh size??
+                }                
                 scale = fmaxf(mesh_offset.x, fmaxf(mesh_offset.y, mesh_offset.z)) / 1.8f;
             }
 
@@ -1818,13 +1829,13 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 		const char *text = TextFormat("%2i FPS - Frame Time %lf", fps, GetFrameTime()); 
 		Vector2 text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
 
-		DrawTextEx(gui_state->font, text, (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y)},
+		DrawTextEx(gui_state->font, text, (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y - 30)},
 				   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
        
 		text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
-		DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+		DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 	
-		float upper_y = text_size.y;
+		float upper_y = text_size.y + 30;
 
 		if(gui_state->current_mouse_over_volume.position_draw.x != -1) {
 

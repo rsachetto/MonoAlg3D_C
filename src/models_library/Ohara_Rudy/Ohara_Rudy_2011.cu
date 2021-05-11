@@ -226,9 +226,9 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real const vss=0.02f*vcell;
 
 
-    real ENa=(R*T/F)*logf(nao/nai);
-    real EK=(R*T/F)*logf(ko/ki);
-    real EKs=(R*T/F)*logf((ko+0.01833f*nao)/(ki+0.01833f*nai));
+    real ENa=(R*T/F)*log(nao/nai);
+    real EK=(R*T/F)*log(ko/ki);
+    real EKs=(R*T/F)*log((ko+0.01833f*nao)/(ki+0.01833f*nai));
 
 
     real CaMKb=CaMKo*(1.0f-CaMKt)/(1.0f+KmCaM/cass);
@@ -236,39 +236,39 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real vffrt=v*F*F/(R*T);
     real vfrt=v*F/(R*T);
 
-    real mss=1.0f/(1.0f+expf((-(v+39.57f))/9.871f));
-    real tm=1.0f/(6.765f*expf((v+11.64f)/34.77f)+8.552f*expf(-(v+77.42f)/5.955f));
-    m=mss-(mss-m)*expf(-dt/tm);
-    real hss=1.0f/(1+expf((v+82.90f)/6.086f));
-    real thf=1.0f/(1.432e-5*expf(-(v+1.196f)/6.285f)+6.149f*expf((v+0.5096f)/20.27f));
-    real ths=1.0f/(0.009794f*expf(-(v+17.95f)/28.05f)+0.3343f*expf((v+5.730f)/56.66f));
+    real mss=1.0f/(1.0f+exp((-(v+39.57f))/9.871f));
+    real tm=1.0f/(6.765f*exp((v+11.64f)/34.77f)+8.552f*exp(-(v+77.42f)/5.955f));
+    m=mss-(mss-m)*exp(-dt/tm);
+    real hss=1.0f/(1+exp((v+82.90f)/6.086f));
+    real thf=1.0f/(1.432e-5*exp(-(v+1.196f)/6.285f)+6.149f*exp((v+0.5096f)/20.27f));
+    real ths=1.0f/(0.009794f*exp(-(v+17.95f)/28.05f)+0.3343f*exp((v+5.730f)/56.66f));
     real Ahf=0.99f;
     real Ahs=1.0f-Ahf;
-    hf=hss-(hss-hf)*expf(-dt/thf);
-    hs=hss-(hss-hs)*expf(-dt/ths);
+    hf=hss-(hss-hf)*exp(-dt/thf);
+    hs=hss-(hss-hs)*exp(-dt/ths);
     real h=Ahf*hf+Ahs*hs;
     real jss=hss;
-    real tj=2.038f+1.0f/(0.02136f*expf(-(v+100.6f)/8.281f)+0.3052f*expf((v+0.9941f)/38.45f));
-    j=jss-(jss-j)*expf(-dt/tj);
-    real hssp=1.0f/(1.0f+expf((v+89.1f)/6.086f));
+    real tj=2.038f+1.0f/(0.02136f*exp(-(v+100.6f)/8.281f)+0.3052f*exp((v+0.9941f)/38.45f));
+    j=jss-(jss-j)*exp(-dt/tj);
+    real hssp=1.0f/(1.0f+exp((v+89.1f)/6.086f));
     real thsp=3.0f*ths;
-    hsp=hssp-(hssp-hsp)*expf(-dt/thsp);
+    hsp=hssp-(hssp-hsp)*exp(-dt/thsp);
     real hp=Ahf*hf+Ahs*hsp;
     real tjp=1.46f*tj;
-    jp=jss-(jss-jp)*expf(-dt/tjp);
+    jp=jss-(jss-jp)*exp(-dt/tjp);
     real GNa=75.0f;
     real fINap=(1.0f/(1.0f+KmCaMK/CaMKa));
     real INa=GNa*(v-ENa)*m*m*m*((1.0f-fINap)*h*j+fINap*hp*jp);
 
-    real mLss=1.0/(1.0+expf((-(v+42.85f))/5.264f));
+    real mLss=1.0/(1.0+exp((-(v+42.85f))/5.264f));
     real tmL=tm;
-    mL=mLss-(mLss-mL)*expf(-dt/tmL);
-    real hLss=1.0f/(1.0f+expf((v+87.61f)/7.488f));
+    mL=mLss-(mLss-mL)*exp(-dt/tmL);
+    real hLss=1.0f/(1.0f+exp((v+87.61f)/7.488f));
     real thL=200.0f;
-    hL=hLss-(hLss-hL)*expf(-dt/thL);
-    real hLssp=1.0f/(1.0f+expf((v+93.81f)/7.488f));
+    hL=hLss-(hLss-hL)*exp(-dt/thL);
+    real hLssp=1.0f/(1.0f+exp((v+93.81f)/7.488f));
     real thLp=3.0f*thL;
-    hLp=hLssp-(hLssp-hLp)*expf(-dt/thLp);
+    hLp=hLssp-(hLssp-hLp)*exp(-dt/thLp);
     real GNaL=0.0075f;
     if (celltype_gpu==1)
     {
@@ -277,36 +277,36 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real fINaLp=(1.0f/(1.0f+KmCaMK/CaMKa));
     real INaL=GNaL*(v-ENa)*mL*((1.0f-fINaLp)*hL+fINaLp*hLp);
 
-    real ass=1.0f/(1.0f+expf((-(v-14.34f))/14.82f));
-    real ta=1.0515f/(1.0f/(1.2089f*(1.0f+expf(-(v-18.4099f)/29.3814f)))+3.5f/(1.0f+expf((v+100.0f)/29.3814f)));
-    a=ass-(ass-a)*expf(-dt/ta);
-    real iss=1.0f/(1.0f+expf((v+43.94f)/5.711f));
+    real ass=1.0f/(1.0f+exp((-(v-14.34f))/14.82f));
+    real ta=1.0515f/(1.0f/(1.2089f*(1.0f+exp(-(v-18.4099f)/29.3814f)))+3.5f/(1.0f+exp((v+100.0f)/29.3814f)));
+    a=ass-(ass-a)*exp(-dt/ta);
+    real iss=1.0f/(1.0f+exp((v+43.94f)/5.711f));
     real delta_epi;
     if (celltype_gpu==1)
     {
-        delta_epi=1.0f-(0.95f/(1.0f+expf((v+70.0f)/5.0f)));
+        delta_epi=1.0f-(0.95f/(1.0f+exp((v+70.0f)/5.0f)));
     }
     else
     {
         delta_epi=1.0f;
     }
-    real tiF=4.562f+1.0f/(0.3933f*expf((-(v+100.0f))/100.0f)+0.08004f*expf((v+50.0f)/16.59f));
-    real tiS=23.62f+1.0f/(0.001416f*expf((-(v+96.52f))/59.05f)+1.780e-8*expf((v+114.1f)/8.079f));
+    real tiF=4.562f+1.0f/(0.3933f*exp((-(v+100.0f))/100.0f)+0.08004f*exp((v+50.0f)/16.59f));
+    real tiS=23.62f+1.0f/(0.001416f*exp((-(v+96.52f))/59.05f)+1.780e-8*exp((v+114.1f)/8.079f));
     tiF*=delta_epi;
     tiS*=delta_epi;
-    real AiF=1.0f/(1.0f+expf((v-213.6f)/151.2f));
+    real AiF=1.0f/(1.0f+exp((v-213.6f)/151.2f));
     real AiS=1.0f-AiF;
-    iF=iss-(iss-iF)*expf(-dt/tiF);
-    iS=iss-(iss-iS)*expf(-dt/tiS);
+    iF=iss-(iss-iF)*exp(-dt/tiF);
+    iS=iss-(iss-iS)*exp(-dt/tiS);
     real i=AiF*iF+AiS*iS;
-    real assp=1.0f/(1.0f+expf((-(v-24.34f))/14.82f));
-    ap=assp-(assp-ap)*expf(-dt/ta);
-    real dti_develop=1.354f+1.0e-4/(expf((v-167.4f)/15.89f)+expf(-(v-12.23f)/0.2154f));
-    real dti_recover=1.0f-0.5/(1.0f+expf((v+70.0f)/20.0f));
+    real assp=1.0f/(1.0f+exp((-(v-24.34f))/14.82f));
+    ap=assp-(assp-ap)*exp(-dt/ta);
+    real dti_develop=1.354f+1.0e-4/(exp((v-167.4f)/15.89f)+exp(-(v-12.23f)/0.2154f));
+    real dti_recover=1.0f-0.5/(1.0f+exp((v+70.0f)/20.0f));
     real tiFp=dti_develop*dti_recover*tiF;
     real tiSp=dti_develop*dti_recover*tiS;
-    iFp=iss-(iss-iFp)*expf(-dt/tiFp);
-    iSp=iss-(iss-iSp)*expf(-dt/tiSp);
+    iFp=iss-(iss-iFp)*exp(-dt/tiFp);
+    iSp=iss-(iss-iSp)*exp(-dt/tiSp);
     real ip=AiF*iFp+AiS*iSp;
     real Gto=0.02f;
     if (celltype_gpu==1)
@@ -320,41 +320,41 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real fItop=(1.0f/(1.0f+KmCaMK/CaMKa));
     real Ito = Gto*(v-EK)*((1.0f-fItop)*a*i+fItop*ap*ip);
 
-    real dss=1.0f/(1.0f+expf((-(v+3.940f))/4.230f));
-    real td=0.6f+1.0f/(expf(-0.05f*(v+6.0f))+expf(0.09f*(v+14.0f)));
-    d=dss-(dss-d)*expf(-dt/td);
-    real fss=1.0f/(1.0f+expf((v+19.58)/3.696));
-    real tff=7.0f+1.0f/(0.0045f*expf(-(v+20.0f)/10.0f)+0.0045f*expf((v+20.0f)/10.0f));
-    real tfs=1000.0f+1.0f/(0.000035f*expf(-(v+5.0f)/4.0f)+0.000035f*expf((v+5.0f)/6.0));
+    real dss=1.0f/(1.0f+exp((-(v+3.940f))/4.230f));
+    real td=0.6f+1.0f/(exp(-0.05f*(v+6.0f))+exp(0.09f*(v+14.0f)));
+    d=dss-(dss-d)*exp(-dt/td);
+    real fss=1.0f/(1.0f+exp((v+19.58)/3.696));
+    real tff=7.0f+1.0f/(0.0045f*exp(-(v+20.0f)/10.0f)+0.0045f*exp((v+20.0f)/10.0f));
+    real tfs=1000.0f+1.0f/(0.000035f*exp(-(v+5.0f)/4.0f)+0.000035f*exp((v+5.0f)/6.0));
     real Aff=0.6f;
     real Afs=1.0f-Aff;
-    ff=fss-(fss-ff)*expf(-dt/tff);
-    fs=fss-(fss-fs)*expf(-dt/tfs);
+    ff=fss-(fss-ff)*exp(-dt/tff);
+    fs=fss-(fss-fs)*exp(-dt/tfs);
     real f=Aff*ff+Afs*fs;
     real fcass=fss;
-    real tfcaf=7.0f+1.0f/(0.04f*expf(-(v-4.0f)/7.0f)+0.04f*expf((v-4.0f)/7.0f));
-    real tfcas=100.0f+1.0f/(0.00012f*expf(-v/3.0f)+0.00012f*expf(v/7.0f));
-    real Afcaf=0.3f+0.6f/(1.0f+expf((v-10.0f)/10.0f));
+    real tfcaf=7.0f+1.0f/(0.04f*exp(-(v-4.0f)/7.0f)+0.04f*exp((v-4.0f)/7.0f));
+    real tfcas=100.0f+1.0f/(0.00012f*exp(-v/3.0f)+0.00012f*exp(v/7.0f));
+    real Afcaf=0.3f+0.6f/(1.0f+exp((v-10.0f)/10.0f));
     real Afcas=1.0f-Afcaf;
-    fcaf=fcass-(fcass-fcaf)*expf(-dt/tfcaf);
-    fcas=fcass-(fcass-fcas)*expf(-dt/tfcas);
+    fcaf=fcass-(fcass-fcaf)*exp(-dt/tfcaf);
+    fcas=fcass-(fcass-fcas)*exp(-dt/tfcas);
     real fca=Afcaf*fcaf+Afcas*fcas;
     real tjca=75.0f;
-    jca=fcass-(fcass-jca)*expf(-dt/tjca);
+    jca=fcass-(fcass-jca)*exp(-dt/tjca);
     real tffp=2.5f*tff;
-    ffp=fss-(fss-ffp)*expf(-dt/tffp);
+    ffp=fss-(fss-ffp)*exp(-dt/tffp);
     real fp=Aff*ffp+Afs*fs;
     real tfcafp=2.5f*tfcaf;
-    fcafp=fcass-(fcass-fcafp)*expf(-dt/tfcafp);
+    fcafp=fcass-(fcass-fcafp)*exp(-dt/tfcafp);
     real fcap=Afcaf*fcafp+Afcas*fcas;
     real Kmn=0.002f;
     real k2n=1000.0f;
     real km2n=jca*1.0f;
-    real anca=1.0f/(k2n/km2n+powf(1.0f+Kmn/cass,4.0f));
-    nca=anca*k2n/km2n-(anca*k2n/km2n-nca)*expf(-km2n*dt);
-    real PhiCaL=4.0f*vffrt*(cass*expf(2.0f*vfrt)-0.341f*cao)/(expf(2.0f*vfrt)-1.0f);
-    real PhiCaNa=1.0f*vffrt*(0.75f*nass*expf(1.0*vfrt)-0.75f*nao)/(expf(1.0f*vfrt)-1.0f);
-    real PhiCaK=1.0f*vffrt*(0.75f*kss*expf(1.0f*vfrt)-0.75f*ko)/(expf(1.0f*vfrt)-1.0f);
+    real anca=1.0f/(k2n/km2n+pow(1.0f+Kmn/cass,4.0f));
+    nca=anca*k2n/km2n-(anca*k2n/km2n-nca)*exp(-km2n*dt);
+    real PhiCaL=4.0f*vffrt*(cass*exp(2.0f*vfrt)-0.341f*cao)/(exp(2.0f*vfrt)-1.0f);
+    real PhiCaNa=1.0f*vffrt*(0.75f*nass*exp(1.0*vfrt)-0.75f*nao)/(exp(1.0f*vfrt)-1.0f);
+    real PhiCaK=1.0f*vffrt*(0.75f*kss*exp(1.0f*vfrt)-0.75f*ko)/(exp(1.0f*vfrt)-1.0f);
     real zca=2.0f;
     real PCa=0.0001f;
     if (celltype_gpu==1)
@@ -375,15 +375,15 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real ICaNa=(1.0f-fICaLp)*PCaNa*PhiCaNa*d*(f*(1.0-nca)+jca*fca*nca)+fICaLp*PCaNap*PhiCaNa*d*(fp*(1.0f-nca)+jca*fcap*nca);
     real ICaK=(1.0-fICaLp)*PCaK*PhiCaK*d*(f*(1.0-nca)+jca*fca*nca)+fICaLp*PCaKp*PhiCaK*d*(fp*(1.0f-nca)+jca*fcap*nca);
 
-    real xrss=1.0/(1.0+expf((-(v+8.337))/6.789));
-    real txrf=12.98+1.0/(0.3652*expf((v-31.66)/3.869)+4.123e-5*expf((-(v-47.78))/20.38));
-    real txrs=1.865+1.0/(0.06629*expf((v-34.70)/7.355)+1.128e-5*expf((-(v-29.74))/25.94));
-    real Axrf=1.0/(1.0+expf((v+54.81)/38.21));
+    real xrss=1.0/(1.0+exp((-(v+8.337))/6.789));
+    real txrf=12.98+1.0/(0.3652*exp((v-31.66)/3.869)+4.123e-5*exp((-(v-47.78))/20.38));
+    real txrs=1.865+1.0/(0.06629*exp((v-34.70)/7.355)+1.128e-5*exp((-(v-29.74))/25.94));
+    real Axrf=1.0/(1.0+exp((v+54.81)/38.21));
     real Axrs=1.0-Axrf;
-    xrf=xrss-(xrss-xrf)*expf(-dt/txrf);
-    xrs=xrss-(xrss-xrs)*expf(-dt/txrs);
+    xrf=xrss-(xrss-xrf)*exp(-dt/txrf);
+    xrs=xrss-(xrss-xrs)*exp(-dt/txrs);
     real xr=Axrf*xrf+Axrs*xrs;
-    real rkr=1.0/(1.0+expf((v+55.0)/75.0))*1.0/(1.0+expf((v-10.0)/30.0));
+    real rkr=1.0/(1.0+exp((v+55.0)/75.0))*1.0/(1.0+exp((v-10.0)/30.0));
     real GKr=0.046;
     if (celltype_gpu==1)
     {
@@ -393,15 +393,15 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     {
         GKr*=0.8;
     }
-    real IKr = GKr*sqrtf(ko/5.4)*xr*rkr*(v-EK);
+    real IKr = GKr*sqrt(ko/5.4)*xr*rkr*(v-EK);
 
-    real xs1ss=1.0/(1.0+expf((-(v+11.60))/8.932));
-    real txs1=817.3+1.0/(2.326e-4*expf((v+48.28)/17.80)+0.001292*expf((-(v+210.0))/230.0));
-    xs1=xs1ss-(xs1ss-xs1)*expf(-dt/txs1);
+    real xs1ss=1.0/(1.0+exp((-(v+11.60))/8.932));
+    real txs1=817.3+1.0/(2.326e-4*exp((v+48.28)/17.80)+0.001292*exp((-(v+210.0))/230.0));
+    xs1=xs1ss-(xs1ss-xs1)*exp(-dt/txs1);
     real xs2ss=xs1ss;
-    real txs2=1.0/(0.01*expf((v-50.0)/20.0)+0.0193*expf((-(v+66.54))/31.0));
-    xs2=xs2ss-(xs2ss-xs2)*expf(-dt/txs2);
-    real KsCa=1.0+0.6/(1.0+powf(3.8e-5/cai,1.4));
+    real txs2=1.0/(0.01*exp((v-50.0)/20.0)+0.0193*exp((-(v+66.54))/31.0));
+    xs2=xs2ss-(xs2ss-xs2)*exp(-dt/txs2);
+    real KsCa=1.0+0.6/(1.0+pow(3.8e-5/cai,1.4));
     real GKs=0.0034;
     if (celltype_gpu==1)
     {
@@ -409,10 +409,10 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     }
     real  IKs=GKs*KsCa*xs1*xs2*(v-EKs);
 
-    real xk1ss=1.0/(1.0+expf(-(v+2.5538*ko+144.59)/(1.5692*ko+3.8115)));
-    real txk1=122.2/(expf((-(v+127.2))/20.36)+expf((v+236.8)/69.33));
-    xk1=xk1ss-(xk1ss-xk1)*expf(-dt/txk1);
-    real rk1=1.0/(1.0+expf((v+105.8-2.6*ko)/9.493));
+    real xk1ss=1.0/(1.0+exp(-(v+2.5538*ko+144.59)/(1.5692*ko+3.8115)));
+    real txk1=122.2/(exp((-(v+127.2))/20.36)+exp((v+236.8)/69.33));
+    xk1=xk1ss-(xk1ss-xk1)*exp(-dt/txk1);
+    real rk1=1.0/(1.0+exp((v+105.8-2.6*ko)/9.493));
     real GK1=0.1908;
     if (celltype_gpu==1)
     {
@@ -422,7 +422,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     {
         GK1*=1.3;
     }
-    real  IK1=GK1*sqrtf(ko)*rk1*xk1*(v-EK);
+    real  IK1=GK1*sqrt(ko)*rk1*xk1*(v-EK);
 
     real kna1=15.0;
     real kna2=5.0;
@@ -435,8 +435,8 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real kcaoff=5.0e3;
     real qna=0.5224;
     real qca=0.1670;
-    real hca=expf((qca*v*F)/(R*T));
-    real hna=expf((qna*v*F)/(R*T));
+    real hca=exp((qca*v*F)/(R*T));
+    real hna=exp((qna*v*F)/(R*T));
     real h1=1+nai/kna3*(1+hna);
     real h2=(nai*hna)/(kna3*h1);
     real h3=1.0/h1;
@@ -470,7 +470,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real E3=x3/(x1+x2+x3+x4);
     real E4=x4/(x1+x2+x3+x4);
     real KmCaAct=150.0e-6;
-    real allo=1.0/(1.0+powf(KmCaAct/cai,2.0));
+    real allo=1.0/(1.0+pow(KmCaAct/cai,2.0));
     real zna=1.0;
     real JncxNa=3.0*(E4*k7-E1*k8)+E3*k4pp-E2*k3pp;
     real JncxCa=E2*k2-E1*k1;
@@ -519,7 +519,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     E3=x3/(x1+x2+x3+x4);
     E4=x4/(x1+x2+x3+x4);
     KmCaAct=150.0e-6;
-    allo=1.0/(1.0+powf(KmCaAct/cass,2.0));
+    allo=1.0/(1.0+pow(KmCaAct/cass,2.0));
     JncxNa=3.0*(E4*k7-E1*k8)+E3*k4pp-E2*k3pp;
     JncxCa=E2*k2-E1*k1;
     real INaCa_ss=0.2*Gncx*allo*(zna*JncxNa+zca*JncxCa);
@@ -537,8 +537,8 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real Knai0=9.073;
     real Knao0=27.78;
     real delta=-0.1550;
-    real Knai=Knai0*expf((delta*v*F)/(3.0*R*T));
-    real Knao=Knao0*expf(((1.0-delta)*v*F)/(3.0*R*T));
+    real Knai=Knai0*exp((delta*v*F)/(3.0*R*T));
+    real Knao=Knao0*exp(((1.0-delta)*v*F)/(3.0*R*T));
     real Kki=0.5;
     real Kko=0.3582;
     real MgADP=0.05;
@@ -550,14 +550,14 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real Knap=224.0;
     real Kxkur=292.0;
     real P=eP/(1.0+H/Khp+nai/Knap+ki/Kxkur);
-    real a1=(k1p*powf(nai/Knai,3.0))/(powf(1.0+nai/Knai,3.0)+powf(1.0+ki/Kki,2.0)-1.0);
+    real a1=(k1p*pow(nai/Knai,3.0))/(pow(1.0+nai/Knai,3.0)+pow(1.0+ki/Kki,2.0)-1.0);
     real b1=k1m*MgADP;
     real a2=k2p;
-    real b2=(k2m*powf(nao/Knao,3.0))/(powf(1.0+nao/Knao,3.0)+powf(1.0+ko/Kko,2.0)-1.0);
-    real a3=(k3p*powf(ko/Kko,2.0))/(powf(1.0+nao/Knao,3.0)+powf(1.0+ko/Kko,2.0)-1.0);
+    real b2=(k2m*pow(nao/Knao,3.0))/(pow(1.0+nao/Knao,3.0)+pow(1.0+ko/Kko,2.0)-1.0);
+    real a3=(k3p*pow(ko/Kko,2.0))/(pow(1.0+nao/Knao,3.0)+pow(1.0+ko/Kko,2.0)-1.0);
     real b3=(k3m*P*H)/(1.0+MgATP/Kmgatp);
     real a4=(k4p*MgATP/Kmgatp)/(1.0+MgATP/Kmgatp);
-    real b4=(k4m*powf(ki/Kki,2.0))/(powf(1.0+nai/Knai,3.0)+powf(1.0+ki/Kki,2.0)-1.0);
+    real b4=(k4m*pow(ki/Kki,2.0))/(pow(1.0+nai/Knai,3.0)+pow(1.0+ki/Kki,2.0)-1.0);
     x1=a4*a1*a2+b2*b4*b3+a2*b4*b3+b3*a1*a2;
     x2=b2*b1*b4+a1*a2*a3+a3*b1*b4+a2*a3*b4;
     x3=a2*a3*a4+b3*b2*b1+b2*b1*a4+a3*a4*b1;
@@ -580,7 +580,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     }
     real INaK=Pnak*(zna*JnakNa+zk*JnakK);
 
-    real xkb=1.0/(1.0+expf(-(v-14.48)/18.34));
+    real xkb=1.0/(1.0+exp(-(v-14.48)/18.34));
     real GKb=0.003;
     if (celltype_gpu==1)
     {
@@ -589,10 +589,10 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real IKb=GKb*xkb*(v-EK);
 
     real PNab=3.75e-10;
-    real INab=PNab*vffrt*(nai*expf(vfrt)-nao)/(expf(vfrt)-1.0);
+    real INab=PNab*vffrt*(nai*exp(vfrt)-nao)/(exp(vfrt)-1.0);
 
     real PCab=2.5e-8;
-    real ICab=PCab*4.0*vffrt*(cai*expf(2.0*vfrt)-0.341*cao)/(expf(2.0*vfrt)-1.0);
+    real ICab=PCab*4.0*vffrt*(cai*exp(2.0*vfrt)-0.341*cao)/(exp(2.0*vfrt)-1.0);
 
     real GpCa=0.0005;
     real IpCa=GpCa*cai/(0.0005+cai);
@@ -610,7 +610,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
 
     real bt=4.75;
     real a_rel=0.5*bt;
-    real Jrel_inf=a_rel*(-ICaL)/(1.0+powf(1.5/cajsr,8.0));
+    real Jrel_inf=a_rel*(-ICaL)/(1.0+pow(1.5/cajsr,8.0));
     if (celltype_gpu==2)
     {
         Jrel_inf*=1.7;
@@ -620,10 +620,10 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     {
         tau_rel=0.005;
     }
-    Jrelnp=Jrel_inf-(Jrel_inf-Jrelnp)*expf(-dt/tau_rel);
+    Jrelnp=Jrel_inf-(Jrel_inf-Jrelnp)*exp(-dt/tau_rel);
     real btp=1.25*bt;
     real a_relp=0.5*btp;
-    real Jrel_infp=a_relp*(-ICaL)/(1.0+powf(1.5/cajsr,8.0));
+    real Jrel_infp=a_relp*(-ICaL)/(1.0+pow(1.5/cajsr,8.0));
     if (celltype_gpu==2)
     {
         Jrel_infp*=1.7;
@@ -633,7 +633,7 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     {
         tau_relp=0.005;
     }
-    Jrelp=Jrel_infp-(Jrel_infp-Jrelp)*expf(-dt/tau_relp);
+    Jrelp=Jrel_infp-(Jrel_infp-Jrelp)*exp(-dt/tau_relp);
     real fJrelp=(1.0/(1.0+KmCaMK/CaMKa));
     real Jrel=(1.0-fJrelp)*Jrelnp+fJrelp*Jrelp;
 
@@ -659,20 +659,20 @@ inline __device__ void RHS_gpu (real *sv_, real *rDY_, real stim_current, int th
     real Bcai;
     if (celltype_gpu==1)
     {
-        Bcai=1.0/(1.0+1.3*cmdnmax*kmcmdn/powf(kmcmdn+cai,2.0)+trpnmax*kmtrpn/powf(kmtrpn+cai,2.0));
+        Bcai=1.0/(1.0+1.3*cmdnmax*kmcmdn/pow(kmcmdn+cai,2.0)+trpnmax*kmtrpn/pow(kmtrpn+cai,2.0));
     }
     else
     {
-        Bcai=1.0/(1.0+cmdnmax*kmcmdn/powf(kmcmdn+cai,2.0)+trpnmax*kmtrpn/powf(kmtrpn+cai,2.0));
+        Bcai=1.0/(1.0+cmdnmax*kmcmdn/pow(kmcmdn+cai,2.0)+trpnmax*kmtrpn/pow(kmtrpn+cai,2.0));
     }
     cai+=dt*(Bcai*(-(IpCa+ICab-2.0*INaCa_i)*Acap/(2.0*F*vmyo)-Jup*vnsr/vmyo+Jdiff*vss/vmyo));
 
-    real Bcass=1.0/(1.0+BSRmax*KmBSR/powf(KmBSR+cass,2.0)+BSLmax*KmBSL/powf(KmBSL+cass,2.0));
+    real Bcass=1.0/(1.0+BSRmax*KmBSR/pow(KmBSR+cass,2.0)+BSLmax*KmBSL/pow(KmBSL+cass,2.0));
     cass+=dt*(Bcass*(-(ICaL-2.0*INaCa_ss)*Acap/(2.0*F*vss)+Jrel*vjsr/vss-Jdiff));
 
     cansr+=dt*(Jup-Jtr*vjsr/vnsr);
 
-    real Bcajsr=1.0/(1.0+csqnmax*kmcsqn/powf(kmcsqn+cajsr,2.0));
+    real Bcajsr=1.0/(1.0+csqnmax*kmcsqn/pow(kmcsqn+cajsr,2.0));
     cajsr+=dt*(Bcajsr*(Jtr-Jrel));
 
 
