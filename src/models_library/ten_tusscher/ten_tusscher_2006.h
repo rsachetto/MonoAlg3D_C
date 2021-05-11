@@ -1,17 +1,14 @@
 #ifndef MONOALG3D_MODEL_TEN_TUSSCHER_2006_H
 #define MONOALG3D_MODEL_TEN_TUSSCHER_2006_H
 
-#include "../../common_types/common_types.h"
-#include "../../ode_solver/ode_solver.h"
-#include <stdint.h>
+#include "../model_common.h"
 
 #define NEQ 19
 #define INITIAL_V (-85.23f)
 
 #ifdef __CUDACC__
 
-__constant__  size_t pitch;
-size_t pitch_h;
+#include "../../gpu_utils/gpu_utils.h"
 
 __global__ void kernel_set_model_inital_conditions(real *sv, real *initial_conditions, int num_volumes);
 

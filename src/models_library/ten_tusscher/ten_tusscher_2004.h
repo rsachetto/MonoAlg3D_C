@@ -2,7 +2,6 @@
 #define MONOALG3D_MODEL_TEN_TUSSCHER_2004_H
 
 #include "../model_common.h"
-#include <stdint.h>
 
 #define NEQ 17
 #define INITIAL_V (-86.2f)
@@ -10,8 +9,7 @@
 
 #ifdef __CUDACC__
 
-__constant__  size_t pitch;
-size_t pitch_h;
+#include "../../gpu_utils/gpu_utils.h"
 
 __global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes);
 

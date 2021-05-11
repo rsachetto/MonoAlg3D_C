@@ -1,10 +1,13 @@
-#include "../../gpu_utils/gpu_utils.h"
 #include <stddef.h>
 #include <stdint.h>
 
 #include "ten_tusscher_2006.h"
 
+__constant__  size_t pitch;
+
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
+
+    size_t pitch_h;
 
     log_info("Using ten Tusscher 2006 GPU model\n");
     uint32_t num_volumes = solver->original_num_cells;
@@ -399,73 +402,3 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     rDY_[11] = s_inf + (s - s_inf) * exp(-dt / tau_s);
     rDY_[12] = r_inf + (r - r_inf) * exp(-dt / tau_r);
 }
-
-/*extern "C" void update_gpu_after_refinement(real *sv, uint32_t *cells, size_t number_of_cells, int neq) {
-
-*//*    // execution configuration
-    const int GRID  = ((int)number_of_cells + BLOCK_SIZE - 1)/BLOCK_SIZE;
-
-    size_t size = number_of_cells*sizeof(uint32_t);
-
-    uint32_t *cells_d;
-    check_cuda_error(cudaMalloc((void **) &cells_d, size));
-    check_cuda_error(cudaMemcpy(cells_d, cells, size, cudaMemcpyHostToDevice));
-
-    update_refinement<<<GRID, BLOCK_SIZE>>>(sv, cells_d, number_of_cells, neq);
-
-    check_cuda_error( cudaPeekAtLastError() );
-
-    check_cuda_error(cudaFree(cells_d));*//*
-
-    real *sv_src;
-    real *sv_dst;
-
-    for (size_t i = 0; i < number_of_cells/8; i++) {
-
-        size_t index_id = i * 8;
-
-        uint32_t index = cells[index_id];
-        sv_src = &sv[index];
-
-        for (int j = 1; j < 8; j++) {
-            index = cells[index_id + j];
-            sv_dst = &sv[index];
-            cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t )neq, cudaMemcpyDeviceToDevice);
-        }
-
-
-    }
-
-
-}*/
-
-/*
-__global__ void update_refinement(real *sv, uint32_t *cells, size_t number_of_cells, int neq) {
-
-    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
-    int index_dst;
-    int i = 0;
-    int index_id = threadID*8;
-    int index_src;
-
-    if(index_id < number_of_cells) {
-
-        index_src = cells[index_id];
-//        real *src = (real*)malloc(sizeof(real)*neq);
-//
-//        for(int k = 0; k < neq; k++) {
-//            src[i] = *((real*)((char*)sv + pitch * k) + index_dst);
-//        }
-
-        for(i = 1; i < 8; i++) {
-
-            index_dst = cells[index_id+i];
-
-            for(int k = 0; k < neq; k++) {
-                *((real*)((char*)sv + pitch * k) + index_dst) = *((real*)((char*)sv + pitch * k) + index_src);
-            }
-
-        }
-    }
-
-}*/

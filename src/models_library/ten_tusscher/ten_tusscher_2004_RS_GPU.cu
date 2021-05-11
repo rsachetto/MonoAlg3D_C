@@ -1,10 +1,10 @@
-#include "../../gpu_utils/gpu_utils.h"
-#include <stddef.h>
-#include <stdint.h>
-
 #include "ten_tusscher_2004.h"
 
+__constant__  size_t pitch;
+
 extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
+
+    size_t pitch_h;
 
     uint32_t num_volumes = solver->original_num_cells;
 
