@@ -12,7 +12,7 @@
 typedef double real_cpu;
 
 // Precision to be used for the calculations on the GPU
-#ifdef GPU_REAL_DOUBLE
+#ifdef CELL_MODEL_REAL_DOUBLE
 typedef double real;
 #else
 typedef float real;

@@ -40,7 +40,7 @@ DISABLE_CUDA=''
 GET_BUILD_OPTIONS "$@"
 
 #Comment this to compile with single precision floats on the GPU
-C_FLAGS="-DGPU_REAL_DOUBLE"
+C_FLAGS="-DCELL_MODEL_REAL_DOUBLE"
 
 if [ "$BUILD_TYPE" == "release" ]; then
     C_FLAGS="$C_FLAGS -O3"
