@@ -111,6 +111,14 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
         _k1__[i] = rDY[i];
     }
 
+    // Putting the counting variable again to avoid some NaN values 
+    const int max_count_limit = 2000000;
+    int count = 0;
+    int count_limit = (final_time - time_new) / min_dt;
+    int aux_count_limit = count_limit + max_count_limit;
+    if (aux_count_limit > 0)
+        count_limit = aux_count_limit;
+
 	while(1) {
 
 		for(int i = 0; i < NEQ; i++) {
@@ -147,49 +155,62 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 		previous_dt = dt;
 
 		/// adapt the time step
-		dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);
+        dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);
+        
+        if(time_new + dt > final_time)
+            dt = final_time - time_new;
+        
+        // it doesn't accept the solution
+        if(count < count_limit && (greatestError >= 1.0f)) {
+            // restore the old values to do it again
+            for(int i = 0; i < NEQ; i++)
+                sv_local[i] = edos_old_aux_[i];
+            count++;
+            // throw the results away and compute again
+        } else {
+            count = 0;
 
-		if(dt < min_dt) {
-			dt = min_dt;
-		}
-		else if(dt > max_dt) {
-			dt = max_dt;
-		}
+            if(dt < min_dt)
+                dt = min_dt;
 
-		if(time_new + dt > final_time) {
-			dt = final_time - time_new;
-		}
+            else if(dt > max_dt && max_dt != 0)
+                dt = max_dt;
 
-		// it doesn't accept the solution or accept and risk a NaN
-		if(greatestError >= 1.0f && dt > min_dt) {
-			// restore the old values to do it again
-			for(int i = 0; i < NEQ; i++) {
-				sv_local[i] = edos_old_aux_[i];
-			}
-		
-		} else {
-			for(int i = 0; i < NEQ; i++) {
-				_k_aux__[i] = _k2__[i];
-				_k2__[i] = _k1__[i];
-				_k1__[i] = _k_aux__[i];
-			}
+            if(time_new + dt > final_time)
+                dt = final_time - time_new;
 
-			for(int i = 0; i < NEQ; i++) {
-				sv_local[i] = edos_new_euler_[i];
-			}
+            // change vectors k1 e k2 , para que k2 seja aproveitado como k1 na proxima iteração
+            for(int i = 0; i < NEQ; i++) {
+                _k_aux__[i] = _k2__[i];
+                _k2__[i] = _k1__[i];
+                _k1__[i] = _k_aux__[i];
+            }
 
-			if(time_new + previous_dt >= final_time) {
-				if(final_time == time_new) {
-					break;
-				} else if(time_new < final_time) {
-					dt = previous_dt = final_time - time_new;
-					time_new += previous_dt;
-					break;
-				} 	
-			} else {
-				time_new += previous_dt;
-			}
-		}
+            // it steps the method ahead, with euler solution
+            for(int i = 0; i < NEQ; i++)
+                sv_local[i] = edos_new_euler_[i];
+        }
+        
+        // verifica se o incremento para a próxima iteração ultrapassa o tempo de salvar, q neste caso é o tempo final
+        if(time_new + previous_dt >= final_time) {
+            // se são iguais, ja foi calculada a iteração no ultimo passo de tempo e deve-se para o laço
+            // nao usar igualdade - usar esta conta, pode-se mudar a tolerância
+            // printf("//d: //lf\n", threadID, fabs(final_time - time_new));
+            if((fabs(final_time - time_new) < 1.0e-5)) {
+                break;
+            } else if(time_new < final_time) {
+                dt = previous_dt = final_time - time_new;
+                time_new += previous_dt;
+                break;
+            } else {
+                dt = previous_dt = min_dt;
+                time_new += (final_time - time_new);
+                printf("Nao era pra chegar aqui: %d: %lf\n", thread_id, final_time - time_new);
+                break;
+            }
+        } else {
+            time_new += previous_dt;
+        }
 	}
 
     for(int i = 0; i < NEQ; i++) {
