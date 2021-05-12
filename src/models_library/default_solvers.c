@@ -145,7 +145,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
         } else {
             // it accepts the solutions
             if(greatestError >= 1.0) {
-                //printf("Accepting solution with error > %lf \n", greatestError);
+                printf("Accepting solution with error > %lf \n", greatestError);
             }
 
             _k_aux__ = _k2__;
