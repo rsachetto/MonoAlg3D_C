@@ -543,7 +543,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     init_stop_watch(&iteration_time_watch);
 
-    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false);
+    CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false||!domain_config);
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
     if (purkinje_linear_system_solver_config) {

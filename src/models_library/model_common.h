@@ -24,9 +24,9 @@
 	#endif
 #else
 	#ifdef __CUDACC__
-		#pragma message "Using double precision for the GPU cellular model"
+		#pragma message "Using single precision for the GPU cellular model"
 	#else
-		#pragma message "Using double precision for the CPU cellular model"
+		#pragma message "Using single precision for the CPU cellular model"
 	#endif
 	#include "set_single_precision.h"
 #endif
