@@ -137,8 +137,8 @@ if [ -n "$CUDA_FOUND" ]; then
 			C_COMPILER=gcc-9
 			CXX_COMPILER=g++-9
 		else
-			C_COMPILER=gcc-8
-			CXX_COMPILER=g++-8
+			C_COMPILER=gcc
+			CXX_COMPILER=g++
 		fi
 	elif [ "$OS" == "Fedora" ]; then
 		C_COMPILER=/usr/local/cuda/bin/gcc

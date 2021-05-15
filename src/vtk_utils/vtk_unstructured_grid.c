@@ -893,7 +893,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
         size_until_now += (block_size + sizeof(uint64_t));
 
         // connectivity
-        block_size = num_cells * points_per_cell * sizeof(int64_t);
+        block_size = (uint64_t)num_cells * points_per_cell * sizeof(int64_t);
         file_content = sdscatlen(file_content, &block_size, sizeof(uint64_t));
         size_until_now += sizeof(uint64_t);
 
@@ -1069,7 +1069,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
             }
         }
 
-        data_size = vtk_grid->num_cells * vtk_grid->points_per_cell * sizeof(int64_t);
+        data_size = (size_t)vtk_grid->num_cells * vtk_grid->points_per_cell * sizeof(int64_t);
 
         data_to_compress = (unsigned char *)aux_data;
         unsigned char *compressed_data_for_connectivity;
@@ -2121,7 +2121,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
         else if (legacy && parser_state->binary) {
             memcpy((*vtk_grid)->points, parser_state->points_ascii, (*vtk_grid)->num_points * sizeof(struct point_3d));
             memcpy((*vtk_grid)->cells, parser_state->cells_connectivity_ascii,
-                   (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell * sizeof(uint64_t));
+                   (size_t)(*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell * sizeof(uint64_t));
             memcpy((*vtk_grid)->values, parser_state->celldata_ascii, (*vtk_grid)->num_cells * sizeof(float));
         }
         else if (parser_state->ascii) {
