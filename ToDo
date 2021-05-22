@@ -12,6 +12,23 @@ Report line number only for the debug build in the helpers functions.
 
 Verify the possibility to not copy the SV from the GPU to the CPU when the ODE solver and the PDE solver are using the GPU.
 
+Allow the writing of multiple AP traces from different cells (Purkinje and tissue). Follow Cristian suggestion to use a file with the following syntax:
+
+<x> <y> <z> <domain_id>
+<x> <y> <z> <domain_id>
+.
+.
+.
+<x> <y> <z> <domain_id>
+
+Make the "vm_threashold" calculus dynamic inside the code. The idea is to calculate the value using only an input percentage (e.g: APD_90, APD_80)
+
+Improve activation time calculus to use the maximum derivative (check Lucas's old function from 2018)
+
+Think a way to optimize the activation time calculus. Try to reduce the simulation time, especially when using the GPU
+
 #KNOW ISSUES:
 The logger symbols are only exported to an executable if an static library linked to a shared library uses then. For now this is ok. But I think it will be a pain in future releases.
 The GPU linear system solver is not working for purkinje-only simulations
+When the minimum number of PMJs is not reached the solver will be in an infinite loop
+
