@@ -1,110 +1,247 @@
-### GUIDE TO CONFIGURE THE MONOALG_3D ON A FEDORA 28 MACHINE
+## GUIDE TO CONFIGURE THE MONOALG_3D ON A FEDORA 33 MACHINE
 
-#### Step 1 - Update your packages
+----------------------------------------------------------
+
+This guide provides instructions to configure the MonoAlg3D solver in a fresh instalation of Fedora 33 with all its features working.
+
+## 1) Download and build a USB boot drive
+
+### Download the Fedora 33 ISO image:
+
+- https://getfedora.org/pt_BR/
+
+### Burn the ISO image in a USB device using the Rufus program (Windows) or any other program.
+
+### Install Fedora 33 in the target machine
+
+### Perform a system update:
 
 ```sh
 $ sudo dnf update
 ```
-#### Step 2 - Change graphic mode to GNOME - Xorg
 
-In order to properly install the NVIDIA drivers exit your current session and change the graphic mode to GNOME on Xorg (click on the gear symbol).
+### Change the graphic mode to "GNOME over Xorg"
 
-#### Step 3 - Install the NVIDIA drivers
+- Close your current session
+- Click on your user
+- Click on the gear symbol and select the "GNOME over Xorg"
+- Begin your session again
 
-##### Add the RPMFusion repositories
+### Reboot your system
+
+```sh
+$ reboot
+```
+
+### Install the GNOME-Tweak-Tools
+
+```sh
+$ sudo dnf install gnome-tweak-tool
+```
+
+### Open the Gnome-Tweak-Tool
+
+- Disable animations to save memory
+- Disable the suspend screen when notebook is closed
+
+## 2) Install RPMFusion
+
+### Add the packages to your system:
+
 ```sh
 $ sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
-```
-##### Install the NVIDIA proprietary drivers
-```sh
-$ sudo dnf install xorg-x11-drv-nvidia akmod-nvidia
-```
-**Reboot** your machine and check if the installation was successful by going in **Settings > Details**. Your graphics card name must appear as the default Graphic. 
-
-#### Step 4 - Install the CUDA libraries
-
-##### Install the OpenGL libraries
-```sh
-$ sudo dnf install freeglut-devel
-$ sudo dnf install libXt-devel libXmu-devel libXi-devel
+$ sudo dnf update
 ```
 
-##### Install the CUDA initial packages
+### Open the Gnome-Programs
+
+- Go to Program Repositories
+- Enable the RPMFusion repositories for NVIDIA
+- Update the repositories again
+
 ```sh
+$ sudo dnf update
+```
+
+- Reboot your system
+
+```sh
+$ reboot
+```
+
+## 3) Install the NVIDIA driver
+
+### Reboot your system
+
+- Enter your BIOS by pressing F12 (check your computer key)
+- Disable the Secure Boot
+- Save your changes and exit
+
+### Run the following commands
+
+```sh
+$ sudo dnf update
+$ sudo dnf install akmod-nvidia
 $ sudo dnf install xorg-x11-drv-nvidia-cuda
 ```
-You can check if everything is going well by running the command ```nvidia-smi```. It should print out some information about your graphic cards. 
 
-##### Download and install the CUDA Toolkit 9.1 for the Fedora 25
-```sh
-$ wget -nc https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda_9.1.85_387.26_linux
-```
-Go to your Download folder and move the file to a separate folder
-```sh
-$ mkdir CUDA-build
-$ cd Downloads; mv cuda_9.1.85_387.26_linux.run ../CUDA-build 
-$ cd CUDA-build
-```
-Build a temporary folder to store the files from the installation of the Toolkit
-```sh
-$ sudo mount -o bind /var/tmp /tmp
-```
-Change the permission of the ```runfile```
-```sh
-$ chmod +x cuda_9.1.85_387.26_linux.run
-```
-Install the Toolkit
-```sh
-$ sudo ./cuda_9.1.85_387.26_linux.run --tmpdir="/tmp" --override
-```
-When the installer ask you about for the installation of the CUDA driver, select **No**, since you already installed this package.
-##### Solve some compatibility problems
+### Wait around 5 to 8 minutes in order to the NVIDIA kernels get built
 
-###### Edit the ```host_config.h``` file:
-Open the file with ```sudo``` and change the line 113 to:
-```
-#if __GNUC__ > 10 
-```
-###### Edit the ```/usr/include/bits/floatn.h``` file:
-Make a backup of this file.
-```sh
-$ sudo cp /usr/include/bits/floatn.h /usr/include/bits/floatn-BACKUP.h
-```
-Then, add the following lines after the line 35:
-```sh
-#if CUDART_VERSION
-#undef __HAVE_FLOAT128
-#define __HAVE_FLOAT128 0
-#endif
-```
-###### Edit your ```.bash_profile``` file:
-Add the following lines:
-```sh
-PATH=$PATH:$HOME/.local/bin:$HOME/bin:/usr/local/cuda-9.1/bin
-LIBRARY_PATH=$LIBRARY_PATH:$HOME/lib
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-9.1/lib64:$HOME/lib
-CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:$HOME/NVIDIA_CUDA-9.1_Samples/common/inc:$HOME/include
- 
-export PATH
-export LIBRARY_PATH
-export LD_LIBRARY_PATH
-export CPLUS_INCLUDE_PATH
-```
-###### Install the GCC 5.3.0:
-To avoid some incompatibilities with the new version of GCC we need to use a previous version of GNU/GCC compiler. Go to this URL and download and install the RPM package:
+- Check if the kernels are ready
 
-**GNU/GCC compiler v5.3.0**
-https://drive.google.com/file/d/0B7S255p3kFXNbTBneHgwSzBodFE/view
-
-###### Make a symbolic link for the CUDA compiler:
 ```sh
-$ sudo ln -s /usr/bin/gcc53 /usr/local/cuda/bin/gcc
-$ sudo ln -s /usr/bin/g++53 /usr/local/cuda/bin/g++
+$ modinfo -F version nvidia
 ```
 
-----
-Change the current version of GCC to 5.3 by changing the following variables in bsbash/build_functions.sh (For manjaro no changes are needed. For Fedora you need the following changes.)
+- This should return the version of the driver such as 465.27
+
+### Reboot your system
+
 ```sh
-$ C_COMPILER=/usr/bin/gcc53
-$ CXX_COMPILER=/usr/bin/g++53
+$ reboot
+```
+
+### Check if the NVIDIA driver is correctly installed 
+
+- Go to Settings > About
+- Your NVIDIA Graphics Card should appear below the Processor field.
+
+## 4) Install CUDA libraries
+
+### Download the CUDA runfile for your operating system
+
+```sh
+$ cd ~; mkdir CUDA-Install; cd CUDA-Install
+$ wget -nc https://developer.download.nvidia.com/compute/cuda/11.3.0/local_installers/cuda_11.3.0_465.19.01_linux.run
+```
+
+### Install dependencies
+
+```sh
+$ sudo dnf install gcc-c++ mesa-libGLU-devel libX11-devel libXi-devel libXmu-devel
+$ sudo dnf install freeglut freeglut-devel
+```
+
+### Run the CUDA runfile
+
+```sh
+$ chmod +x cuda_11.3.0_465.19.01_linux.run
+$ sudo ./cuda_11.3.0_465.19.01_linux.run
+```
+
+### Configure the installation
+
+- Accept the terms
+- Disable the NVIDIA Driver installation
+- Enable the installation: CUDA Toolkit, CUDA Samples, CUDA Demo, CUDA Documentation
+- Install the package
+
+### Post installation steps
+
+#### Log as root user
+
+```sh
+$ su -
+```
+
+- If is the first time logging as root, you can set a password to the "root" user with:
+
+```sh
+$ sudo passwd root
+```
+
+#### Set the PATH and LD_LIBRARY_PATH by creating a shell configuration file for CUDA
+
+```sh
+cat << EOF > /etc/profile.d/cuda.sh
+pathmunge /usr/local/cuda/bin before
+
+if [ -z "${LD_LIBRARY_PATH}" ]; then
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64
+else
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+fi
+
+export PATH LD_LIBRARY_PATH
+EOF
+```
+
+#### Logout and login again and check the variables
+
+```sh
+$ echo $PATH
+$ echo $LD_LIBRARY_PATH
+```
+
+#### Test the CUDA library
+
+```sh
+$ cd /home/<username>/NVIDIA_CUDA-11.1_Samples/1_Utilities/deviceQuery
+$ make
+$ ./deviceQuery
+```
+
+## 5) Configure MonoAlg3D_C
+
+### Download remaining dependencies
+
+```sh
+$ sudo dnf install libXcursor-devel libXrandr-devel libXinerama-devel
+```
+
+#### If you stop here you already have a working MonoAlg3D binary executable in the /bin folder
+
+### [OPTIONAL] Install and configure MPI for batch simulations
+
+#### Download OpenMPI
+
+```sh
+$ cd ~; make OpenMPI-Install; cd OpenMPI-Install
+$ wget -nc https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.1.tar.gz
+```
+
+#### Build OpenMPI
+
+```sh
+$ gunzip -c openmpi-4.1.1.tar.gz | tar xf -
+$ cd openmpi-4.1.1
+$ ./configure --prefix=/usr/local
+$ sudo make all install
+```
+
+## 6) Install CMake
+
+```sh
+$ sudo dnf install cmake
+```
+
+## 7) Install the VTK library
+
+### Download version 9.0.1
+
+```sh
+$ wget -nc https://www.vtk.org/files/release/9.0/VTK-9.0.1.tar.gz
+```
+
+### Build the Makefile using CMake
+
+```sh
+$ cd; mkdir VTK-build; cd VTK-build
+$ ccmake ../VTK-9.0.1
+```
+
+#### Follow the instructions
+
+- Press 'c' to configure everything until the Generate option is available
+- Press 'g' to generate the Makefile
+- Build the VTK library using a prescribed ammount of CPUs (here I am using 8 cores)
+
+```sh
+$ sudo make -j8 install
+```
+
+## 8) Install Paraview
+
+```sh
+$ sudo dnf install paraview
 ```
