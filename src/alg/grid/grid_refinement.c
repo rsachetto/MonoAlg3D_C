@@ -89,6 +89,87 @@ void refine_grid(struct grid *the_grid, int num_steps) {
                 grid_cell = grid_cell->next;
             }
         }
+        log_info("Refined %d of %d (%ld cells)\n", i+1, num_steps, the_grid->number_of_cells);
+    }
+}
+
+void refine_grid_with_bounds(struct grid *the_grid, int num_steps, struct point_3d min_bounds, struct point_3d max_bounds) {
+
+    if(the_grid == NULL) {
+        log_error("refine_grid(): Parameter the_grid can't be null. Exiting!");
+        exit(10);
+    }
+
+    struct cell_node *grid_cell, *auxiliar_grid_cell;
+
+    real_cpu min_x = min_bounds.x;
+    real_cpu min_y = min_bounds.y;
+    real_cpu min_z = min_bounds.z;
+
+    real_cpu max_x = max_bounds.x;
+    real_cpu max_y = max_bounds.y;
+    real_cpu max_z = max_bounds.z;
+
+    for(int i = 0; i < num_steps; i++) {
+        grid_cell = the_grid->first_cell;
+        while(grid_cell != 0) {
+
+            real_cpu center_x = grid_cell->center.x,
+                     center_y = grid_cell->center.y,
+                     center_z = grid_cell->center.z;
+
+            bool refine = center_x >= min_x && center_y >= min_y && center_z >= min_z;
+            refine     &= center_x <= max_x && center_y <= max_y && center_z <= max_z;
+
+            if(!refine) {
+                refine = true;
+                real_cpu x_limit;
+                real_cpu y_limit;
+                real_cpu z_limit;
+
+                if(center_x < min_x) {
+                    x_limit = center_x + grid_cell->discretization.x / 2;
+                    refine &= min_x <= x_limit;
+                }
+
+                if (center_x > max_x) {
+                    x_limit = center_x - grid_cell->discretization.x / 2;
+                    refine &= max_x >= x_limit;
+                }
+
+               if(center_y < min_y) {
+                    y_limit = center_y + grid_cell->discretization.y / 2;
+                    refine &= min_y <= y_limit;
+                }
+
+                if (center_y > max_y) {
+                    y_limit = center_y - grid_cell->discretization.y / 2;
+                    refine &= max_y >= y_limit;
+                }
+
+
+               if(center_z < min_z) {
+                    z_limit = center_z + grid_cell->discretization.z / 2;
+                    refine &= min_z <= z_limit;
+                }
+
+                if (center_z > max_z) {
+                    z_limit = center_z - grid_cell->discretization.z / 2;
+                    refine &= max_z >= z_limit;
+                }
+
+            }
+
+            if(grid_cell->can_change && grid_cell->active && refine) {
+                auxiliar_grid_cell = grid_cell;
+                grid_cell = grid_cell->next;
+                refine_cell(auxiliar_grid_cell, NULL, NULL);
+                the_grid->number_of_cells += 7;
+            } else {
+                grid_cell = grid_cell->next;
+            }
+        }
+        log_info("Refined %d of %d (%ld cells)\n", i+1, num_steps, the_grid->number_of_cells);
     }
 }
 

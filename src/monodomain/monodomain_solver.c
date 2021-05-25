@@ -406,7 +406,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     struct terminal *the_terminals = NULL;
     if (domain_config && purkinje_config) {
+
+        log_info("Start - link_purkinje_to_tissue\n");
         the_terminals = link_purkinje_to_tissue(the_grid);
+        log_info("End - link_purkinje_to_tissue\n");
     }
  
     if(has_extra_data) {
@@ -536,12 +539,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     real_cpu cur_time = time_info.current_t;
 
-    log_info("Starting simulation\n");
-
     struct stop_watch iteration_time_watch;
     long iteration_time;
 
-    init_stop_watch(&iteration_time_watch);
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false||!domain_config);
     CALL_INIT_SAVE_MESH(save_mesh_config);
@@ -565,6 +565,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     int count = time_info.iteration;
+
+    init_stop_watch(&iteration_time_watch);
+
+    log_info("Starting simulation\n");
 
     // Main simulation loop start
     while(cur_time <= finalT) {

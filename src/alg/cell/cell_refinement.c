@@ -45,27 +45,6 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
     struct transition_node *right_transition_node;
     struct transition_node *left_transition_node;
 
-//    struct transition_node *top_right_transition_node;
-//    struct transition_node *top_left_transition_node;
-//    struct transition_node *top_front_transition_node;
-//    struct transition_node *top_back_transition_node;
-//    struct transition_node *down_right_transition_node;
-//    struct transition_node *down_left_transition_node;
-//    struct transition_node *down_front_transition_node;
-//    struct transition_node *down_back_transition_node;
-//    struct transition_node *right_front_transition_node;
-//    struct transition_node *right_back_transition_node;
-//    struct transition_node *left_front_transition_node;
-//    struct transition_node *left_back_transition_node;
-//    struct transition_node *front_left_top_transition_node;
-//    struct transition_node *front_left_down_transition_node;
-//    struct transition_node *front_right_top_transition_node;
-//    struct transition_node *front_right_down_transition_node;
-//    struct transition_node *back_left_top_transition_node;
-//    struct transition_node *back_left_down_transition_node;
-//    struct transition_node *back_right_top_transition_node;
-//    struct transition_node *back_right_down_transition_node;
-
     struct cell_node *right_front_top_sub_cell,
             *right_front_down_sub_cell,
             *right_back_top_sub_cell,

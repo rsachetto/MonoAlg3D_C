@@ -212,13 +212,16 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
 
     initialize_and_construct_grid(the_grid, SAME_POINT3D(cube_side));
 
-    log_info("\nStart - refining the initial cube\n");
-    refine_grid(the_grid, num_ref);
-    log_info("Finish - refining the initial cube\n\n");
-
     uint32_t num_loaded = 0;
 
-    log_info("Loading grid with cube side of %lf", cube_side);
+    struct point_3d min_bound = POINT3D(minx-start_h, miny-start_h, minz-start_h);
+    struct point_3d max_bound = POINT3D(maxx+start_h, maxy+start_h, maxz+start_h);
+
+    log_info("\nStart - refining the initial cube (refining %d times with a cube side of %lf)\n", num_ref, cube_side);
+    refine_grid_with_bounds(the_grid, num_ref, min_bound, max_bound);
+    log_info("Finish - refining the initial cube\n\n");
+
+    log_info("Loading grid with cube side of %lf\n", cube_side);
 
     FOR_EACH_CELL(the_grid) {
         real_cpu x = cell->center.x;
@@ -270,6 +273,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
 	}
 
     fclose(file);
+
 
     log_info("\nTime to load the mesh: %ld μs\n\n", stop_stop_watch(&sw));
 
