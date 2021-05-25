@@ -58,6 +58,7 @@ void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_p
 
 bool refine_grid_with_bound(struct grid* the_grid, real_cpu refinement_bound,  real_cpu min_dx, real_cpu min_dy, real_cpu min_dz);
 void refine_grid(struct grid* the_grid, int num_steps);
+void refine_grid_with_bounds(struct grid *the_grid, int num_steps, struct point_3d min_bounds, struct point_3d max_bounds);
 void refine_grid_cell(struct grid *the_grid, struct cell_node* grid_cell);
 
 bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_bound, real_cpu max_dx, real_cpu max_dy, real_cpu max_dz);
