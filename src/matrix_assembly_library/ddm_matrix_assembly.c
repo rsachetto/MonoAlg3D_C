@@ -1,18 +1,20 @@
 //
-// Created by bergolho on 25/07/19.
+// Created by bergolho on 02/06/21.
 //
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+#include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
+#include "../libraries_common/common_data_structures.h"
+#include "../utils/file_utils.h"
 #include "../utils/utils.h"
-#include "../3dparty/stb_ds.h"
-
-#include "../config_helpers/config_helpers.h"
 
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
@@ -33,11 +35,8 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     }
 }
 
-static struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
-                                 const real_cpu sigma_x, const real_cpu sigma_y, const real_cpu sigma_z,\
-                                 const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
-                                 const real_cpu dt,\
-                                struct element *cell_elements);
+static struct element fill_element_ddm (uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x, real_cpu sigma_y,
+                            real_cpu sigma_z, real_cpu kappa_x, real_cpu kappa_y, real_cpu kappa_z, real_cpu dt, struct element *cell_elements);
 
 void create_sigma_low_block(struct cell_node* ac,real_cpu x_left, real_cpu x_right, real_cpu y_down, real_cpu y_up,double b_sigma_x, double b_sigma_y, double b_sigma_z,double sigma_factor)
 {
@@ -66,6 +65,7 @@ void calculate_kappa_elements(struct monodomain_solver *the_solver, struct grid 
     OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) 
 	{
+        
         ac[i]->kappa.x = KAPPA(beta,cm,cell_length_x,ac[i]->discretization.x);
         ac[i]->kappa.y = KAPPA(beta,cm,cell_length_y,ac[i]->discretization.y);
         ac[i]->kappa.z = KAPPA(beta,cm,cell_length_z,ac[i]->discretization.z);
@@ -73,70 +73,47 @@ void calculate_kappa_elements(struct monodomain_solver *the_solver, struct grid 
 	
 }
 
-struct element fill_element_ddm (uint32_t position, char direction, real_cpu dx, real_cpu dy, real_cpu dz,\
-                                 const real_cpu sigma_x, const real_cpu sigma_y, const real_cpu sigma_z,\
-                                 const real_cpu kappa_x, const real_cpu kappa_y, const real_cpu kappa_z,\
-                                 const real_cpu dt, struct element *cell_elements)
+struct element fill_element_ddm (uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x, real_cpu sigma_y,
+                            real_cpu sigma_z, real_cpu kappa_x, real_cpu kappa_y, real_cpu kappa_z, real_cpu dt, struct element *cell_elements)
 {
-
     real_cpu multiplier;
 
     struct element new_element;
     new_element.column = position;
     new_element.direction = direction;
 
-    // Z direction
-    if(direction == 'n') 
-    { 
+    if(direction == FRONT) { // Z direction front
         multiplier = ((dx * dy) / dz);
         new_element.value = ( multiplier * (-sigma_z - (kappa_z / dt)) );
         cell_elements[0].value += ( multiplier * (sigma_z + (kappa_z / dt)) );
-    } 
-    // Z direction
-    else if(direction == 's') 
-    { 
+    } else if(direction == BACK) { // Z direction back
         multiplier = ((dx * dy) / dz);
         new_element.value = ( multiplier * (-sigma_z - (kappa_z / dt)) );
         cell_elements[0].value += ( multiplier * (sigma_z + (kappa_z / dt)) );
-    } 
-    // Y direction
-    else if(direction == 'e') 
-    { 
+    } else if(direction == TOP) { // Y direction top
         multiplier = ((dx * dz) / dy);
         new_element.value = ( multiplier * (-sigma_y - (kappa_y / dt)) );
         cell_elements[0].value += ( multiplier * (sigma_y + (kappa_y / dt)) );
-    } 
-    // Y direction
-    else if(direction == 'w') 
-    { 
+    } else if(direction == DOWN) { // Y direction down
         multiplier = ((dx * dz) / dy);
         new_element.value = ( multiplier * (-sigma_y - (kappa_y / dt)) );
         cell_elements[0].value += ( multiplier * (sigma_y + (kappa_y / dt)) );
-    }
-    // X direction 
-    else if(direction == 'f') 
-    { 
+    } else if(direction == RIGHT) { // X direction right
         multiplier = ((dy * dz) / dx);
         new_element.value = ( multiplier * (-sigma_x - (kappa_x / dt)) );
         cell_elements[0].value += ( multiplier * (sigma_x + (kappa_x / dt)) );
-    } 
-    // X direction
-    else if(direction == 'b') 
-    { 
+    } else if(direction == LEFT) { // X direction left
         multiplier = ((dy * dz) / dx);
         new_element.value = ( multiplier * (-sigma_x - (kappa_x / dt)) );
         cell_elements[0].value += ( multiplier * (sigma_x + (kappa_x / dt)) );
     }
-    
     return new_element;
 }
 
-static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell, void *neighbour_grid_cell, real_cpu dt ,char direction)                                                 
+static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell, void *neighbour_grid_cell, real_cpu dt, enum transition_direction direction)                                                 
 
 {
-	uint32_t position;
-    bool has_found;
-    real_cpu dx, dy, dz;
+	bool has_found;
 
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
@@ -144,58 +121,38 @@ static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
      * cell which is a cell node. */
     uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
-    char neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+    enum cell_type neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
-    if(neighbour_grid_cell_level > grid_cell->cell_data.level) 
-    {
-        if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) 
-        {
+    if(neighbour_grid_cell_level > grid_cell->cell_data.level) {
+        if(neighbour_grid_cell_type == TRANSITION_NODE) {
             has_found = false;
-            while(!has_found) 
-            {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) 
-                {
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
                     white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
-                    if(white_neighbor_cell->single_connector == NULL) 
-                    {
+                    if(white_neighbor_cell->single_connector == NULL) {
                         has_found = true;
-                    } 
-                    else 
-                    {
+                    } else {
                         neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
                         neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
                     }
-                } 
-                else 
-                {
+                } else {
                     break;
                 }
             }
         }
-    } 
-    else 
-    {
-        if(neighbour_grid_cell_level <= grid_cell->cell_data.level &&
-           (neighbour_grid_cell_type == TRANSITION_NODE_TYPE)) 
-           {
+    } else {
+        if(neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == TRANSITION_NODE)) {
             has_found = false;
-            while(!has_found) 
-            {
-                if(neighbour_grid_cell_type == TRANSITION_NODE_TYPE) 
-                {
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
                     white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
-                    if(white_neighbor_cell->single_connector == 0) 
-                    {
+                    if(white_neighbor_cell->single_connector == 0) {
                         has_found = true;
-                    } 
-                    else 
-                    {
+                    } else {
                         neighbour_grid_cell = white_neighbor_cell->single_connector;
                         neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
                     }
-                } 
-                else 
-                {
+                } else {
                     break;
                 }
             }
@@ -203,20 +160,20 @@ static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell
     }
 
     // We care only with the interior points
-    if(neighbour_grid_cell_type == CELL_NODE_TYPE) 
-    {
+    if(neighbour_grid_cell_type == CELL_NODE) {
 
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
-        if(black_neighbor_cell->active) 
-        {
+        if(black_neighbor_cell->active) {
+
+            uint32_t position;
+            real_cpu dx, dy, dz;
 
             real_cpu sigma_x1 = grid_cell->sigma.x;
             real_cpu sigma_x2 = black_neighbor_cell->sigma.x;
             real_cpu sigma_x = 0.0;
-            
-            if(sigma_x1 != 0.0 && sigma_x2 != 0.0) 
-            {
+
+            if(sigma_x1 != 0.0 && sigma_x2 != 0.0) {
                 sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
             }
 
@@ -224,8 +181,7 @@ static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell
             real_cpu sigma_y2 = black_neighbor_cell->sigma.y;
             real_cpu sigma_y = 0.0;
 
-            if(sigma_y1 != 0.0 && sigma_y2 != 0.0) 
-            {
+            if(sigma_y1 != 0.0 && sigma_y2 != 0.0) {
                 sigma_y = (2.0f * sigma_y1 * sigma_y2) / (sigma_y1 + sigma_y2);
             }
 
@@ -233,19 +189,15 @@ static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell
             real_cpu sigma_z2 = black_neighbor_cell->sigma.z;
             real_cpu sigma_z = 0.0;
 
-            if(sigma_z1 != 0.0 && sigma_z2 != 0.0) 
-            {
+            if(sigma_z1 != 0.0 && sigma_z2 != 0.0) {
                 sigma_z = (2.0f * sigma_z1 * sigma_z2) / (sigma_z1 + sigma_z2);
             }
-            
-            if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) 
-            {
+
+            if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
                 dx = black_neighbor_cell->discretization.x;
                 dy = black_neighbor_cell->discretization.y;
                 dz = black_neighbor_cell->discretization.z;
-            }
-            else 
-            {
+            } else {
                 dx = grid_cell->discretization.x;
                 dy = grid_cell->discretization.y;
                 dz = grid_cell->discretization.z;
@@ -259,24 +211,15 @@ static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell
             size_t max_elements = arrlen(cell_elements);
             bool insert = true;
 
-            for(size_t i = 1; i < max_elements; i++) 
-            {
-                if(cell_elements[i].column == position) 
-                {
+            for(size_t i = 1; i < max_elements; i++) {
+                if(cell_elements[i].column == position) {
                     insert = false;
                     break;
                 }
             }
 
-            if(insert) 
-            {
-
-                struct element new_element = fill_element_ddm(position, direction,\
-																dx, dy, dz,\
-                                                                sigma_x, sigma_y, sigma_z,\
-																grid_cell->kappa.x,grid_cell->kappa.y,grid_cell->kappa.z,\
-																dt, cell_elements);
-
+            if(insert) {
+                struct element new_element = fill_element_ddm(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, grid_cell->kappa.x, grid_cell->kappa.y, grid_cell->kappa.z, dt, cell_elements);
                 new_element.cell = black_neighbor_cell;
                 arrput(grid_cell->elements, new_element);
             }
@@ -289,24 +232,15 @@ static void fill_discretization_matrix_elements_ddm (struct cell_node *grid_cell
             max_elements = arrlen(cell_elements);
 
             insert = true;
-            for(size_t i = 1; i < max_elements; i++) 
-            {
-                if(cell_elements[i].column == position) 
-                {
+            for(size_t i = 1; i < max_elements; i++) {
+                if(cell_elements[i].column == position) {
                     insert = false;
                     break;
                 }
             }
 
-            if(insert) 
-            {
-
-                struct element new_element = fill_element_ddm(position, direction,\
-																dx, dy, dz,\
-                                                                sigma_x, sigma_y, sigma_z,\
-																grid_cell->kappa.x,grid_cell->kappa.y,grid_cell->kappa.z,\
-																dt, cell_elements);
-
+            if(insert) {
+                struct element new_element = fill_element_ddm(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, grid_cell->kappa.x, grid_cell->kappa.y, grid_cell->kappa.z, dt, cell_elements);
                 new_element.cell = grid_cell;
                 arrput(black_neighbor_cell->elements, new_element);
             }
@@ -376,31 +310,31 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config, "fibrosis_file");
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config, "size");	
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real cell_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config->config_data, "cell_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config, "cell_length_x");
 
     real cell_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config->config_data, "cell_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config, "cell_length_y");
 
     real cell_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config, "cell_length_z");
       
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config->config_data, "sigma_factor");    
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config, "sigma_factor");    
 
     // Calculate the kappa values on each cell of th grid
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
@@ -510,7 +444,6 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix)
     OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
-
         // Computes and designates the flux due to south cells.
         fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[BACK], the_solver->dt, BACK);
 
@@ -549,22 +482,22 @@ ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix)
     initialize_diagonal_elements(the_solver, the_grid);
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real cell_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config->config_data, "cell_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config, "cell_length_x");
 
     real cell_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config->config_data, "cell_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config, "cell_length_y");
 
     real cell_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config, "cell_length_z");
 
     // Calculate the kappa values on each cell of th grid
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
@@ -594,24 +527,23 @@ ASSEMBLY_MATRIX(homogenous_ddm_assembly_matrix)
     OMP(parallel for)
     for(uint32_t i = 0; i < num_active_cells; i++)
     {
-
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[BACK], the_solver->dt, BACK);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[FRONT], the_solver->dt, FRONT);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[TOP], the_solver->dt, TOP);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[DOWN], the_solver->dt, DOWN);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[RIGHT], the_solver->dt, RIGHT);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[LEFT], the_solver->dt,LEFT);
     }
     
 }
@@ -627,32 +559,31 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
     
     real cell_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config->config_data, "cell_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config, "cell_length_x");
 
     real cell_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config->config_data, "cell_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config, "cell_length_y");
 
     real cell_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");    
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config, "cell_length_z");    
     
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config->config_data, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config, "sigma_factor");
 
     real sigma_factor_2 = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor_2, config->config_data, "sigma_factor_2");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config, "sigma_factor_2");
 
     real side_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config->config_data, "side_length");
-
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config, "side_length");
     
     // Calculate the kappas for the DDM
     calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
@@ -869,24 +800,23 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny)
     OMP(parallel for)
     for (i = 0; i < num_active_cells; i++)
     {
-
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[BACK], the_solver->dt, BACK);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[FRONT], the_solver->dt, FRONT);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[TOP], the_solver->dt, TOP);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[DOWN], the_solver->dt, DOWN);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[RIGHT], the_solver->dt, RIGHT);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[LEFT], the_solver->dt,LEFT);
     }
 }
 
@@ -902,35 +832,34 @@ ASSEMBLY_MATRIX(write_sigma_low_region_triangle_ddm_tiny)
     int i;
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
     
     real cell_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config->config_data, "cell_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config, "cell_length_x");
 
     real cell_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config->config_data, "cell_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config, "cell_length_y");
 
     real cell_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");    
-    
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config, "cell_length_z");    
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config->config_data, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config, "sigma_factor");
 
     real sigma_factor_2 = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor_2, config->config_data, "sigma_factor_2");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config, "sigma_factor_2");
 
     real side_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config->config_data, "side_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config, "side_length");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");    
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config, "rescaled_fibrosis_file");    
 
     //~ real scar_length = 0.0;
     //~ GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(scar_length, config->config_data, "scar_length");
@@ -1194,28 +1123,28 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     initialize_diagonal_elements(the_solver, the_grid);
 
     char *fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config->config_data, "fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file, config, "fibrosis_file");
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config, "size");	
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config, "sigma_z");
 
     real cell_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config->config_data, "cell_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config, "cell_length_x");
 
     real cell_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config->config_data, "cell_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config, "cell_length_y");
 
     real cell_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config, "cell_length_z");
 
 
     // Calculate the kappa values on each cell of th grid
@@ -1351,24 +1280,23 @@ ASSEMBLY_MATRIX (heterogenous_fibrotic_sigma_with_factor_ddm_assembly_matrix_add
     OMP(parallel for)
     for(int i = 0; i < num_active_cells; i++) 
     {
-
         // Computes and designates the flux due to south cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->south, the_solver->dt,'s');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[BACK], the_solver->dt, BACK);
 
         // Computes and designates the flux due to north cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->north, the_solver->dt,'n');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[FRONT], the_solver->dt, FRONT);
 
         // Computes and designates the flux due to east cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->east, the_solver->dt,'e');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[TOP], the_solver->dt, TOP);
 
         // Computes and designates the flux due to west cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->west, the_solver->dt,'w');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[DOWN], the_solver->dt, DOWN);
 
         // Computes and designates the flux due to front cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->front, the_solver->dt,'f');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[RIGHT], the_solver->dt, RIGHT);
 
         // Computes and designates the flux due to back cells.
-        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->back, the_solver->dt,'b');
+        fill_discretization_matrix_elements_ddm(ac[i], ac[i]->neighbours[LEFT], the_solver->dt,LEFT);
     }
 
 
@@ -1387,37 +1315,37 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed)
     initialize_diagonal_elements(the_solver, the_grid);
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config, "sigma_z");
 
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config->config_data, "sigma_factor");    
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config, "sigma_factor");    
     
     real sigma_factor_2 = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor_2, config->config_data, "sigma_factor_2");        
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor_2, config, "sigma_factor_2");        
 
     real_cpu phi = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,phi, config->config_data, "phi");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,phi, config, "phi");
     
     real_cpu phi_2 = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,phi_2, config->config_data, "phi_2");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,phi_2, config, "phi_2");
 
     unsigned seed = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned,seed, config->config_data, "seed");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned,seed, config, "seed");
 
     char *new_fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "rescaled_fibrosis_file");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config, "rescaled_fibrosis_file");
     
     real x_shift = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,x_shift, config->config_data, "x_shift");        
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,x_shift, config, "x_shift");        
     
     real y_shift = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,y_shift, config->config_data, "y_shift");            
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,y_shift, config, "y_shift");            
 
     // Write the new fibrotic region file
 	FILE *fileW = fopen(new_fib_file, "w+");
@@ -1499,46 +1427,46 @@ ASSEMBLY_MATRIX(sigma_low_region_triangle_ddm_tiny_random_write)
     int i;
 
     char *fib_file_1 = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_1, config->config_data, "fibrosis_file_1");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_1, config, "fibrosis_file_1");
 
     char *fib_file_2 = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_2, config->config_data, "fibrosis_file_2");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_2, config, "fibrosis_file_2");
 
     char *fib_file_3 = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_3, config->config_data, "fibrosis_file_3");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(fib_file_3, config, "fibrosis_file_3");
     
     char *new_fib_file = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config->config_data, "new_fib_file");    
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(new_fib_file, config, "new_fib_file");    
 
     int fib_size = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config->config_data, "size");	    
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(int,fib_size, config, "size");	    
 
     real sigma_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config->config_data, "sigma_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config, "sigma_x");
 
     real sigma_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config->config_data, "sigma_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_y, config, "sigma_y");
 
     real sigma_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config->config_data, "sigma_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_z, config, "sigma_z");
     
     real cell_length_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config->config_data, "cell_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_x, config, "cell_length_x");
 
     real cell_length_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config->config_data, "cell_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_y, config, "cell_length_y");
 
     real cell_length_z = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config->config_data, "cell_length_z");    
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,cell_length_z, config, "cell_length_z");    
     
     real sigma_factor = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config->config_data, "sigma_factor");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor, config, "sigma_factor");
 
     real sigma_factor_2 = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor_2, config->config_data, "sigma_factor_2");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_factor_2, config, "sigma_factor_2");
 
     real side_length = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config->config_data, "side_length");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,side_length, config, "side_length");
 
 	calculate_kappa_elements(the_solver,the_grid,cell_length_x,cell_length_y,cell_length_z);
 

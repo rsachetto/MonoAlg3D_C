@@ -113,7 +113,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
         {
             int k = cell_elements[j].column;
 
-            if (cell_elements[j].direction == 'n') // North cell
+            if (cell_elements[j].direction == BACK) // North cell
             {
                 real_cpu multiplier = (dx * dy) / dz;
                 if(use_gpu)
@@ -129,7 +129,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 's') // South cell
+            else if (cell_elements[j].direction == FRONT) // South cell
             {
                 real_cpu multiplier = (dx * dy) / dz;
                 if(use_gpu)
@@ -145,7 +145,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'e') // East cell
+            else if (cell_elements[j].direction == TOP) // East cell
             {
                 real_cpu multiplier = (dx * dz) / dy;
                 if(use_gpu)
@@ -161,7 +161,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'w') // West cell
+            else if (cell_elements[j].direction == DOWN) // West cell
             {
                 real_cpu multiplier = (dx * dz) / dy;
                 if(use_gpu)
@@ -177,7 +177,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'f') // Forward cell
+            else if (cell_elements[j].direction == RIGHT) // Forward cell
             {
                 real_cpu multiplier = (dy * dz) / dx;
                 if(use_gpu)
@@ -193,7 +193,7 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'b') // Backward cell
+            else if (cell_elements[j].direction == LEFT) // Backward cell
             {
                 real_cpu multiplier = (dy * dz) / dx;
                 if(use_gpu)

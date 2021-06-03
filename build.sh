@@ -35,6 +35,7 @@ COMPILE_CONVERTER=''
 COMPILE_FIBER_CONVERTER=''
 COMPILE_SIMULATOR=''
 COMPILE_POSTPROCESSOR=''
+COMPILE_WITH_DDM=''
 DISABLE_CUDA=''
 
 GET_BUILD_OPTIONS "$@"
@@ -67,6 +68,13 @@ for i in "${BUILD_ARGS[@]}"; do
 
     if [ "$i" == "ddm" ]; then
         C_FLAGS="$C_FLAGS -DENABLE_DDM"
+        COMPILE_GUI='y'
+        COMPILE_MPI='y'
+        COMPILE_SIMULATOR='y'
+        COMPILE_CONVERTER='y'
+        COMPILE_FIBER_CONVERTER='y'
+		COMPILE_POSTPROCESSOR='y'
+        COMPILE_WITH_DDM='y'
     fi
 
     if [ "$i" == "all" ]; then
