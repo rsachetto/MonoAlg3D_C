@@ -202,4 +202,4 @@ struct mesh_info {
 
 void init_and_open_gui_window(struct gui_config *gui_config);
 
-#endif //MONOALG3D_DRAW_H
+#endif //MONOALG3D_GUI_H

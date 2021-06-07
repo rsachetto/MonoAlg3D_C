@@ -15,7 +15,6 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
-
 UPDATE_MONODOMAIN(update_monodomain_default) {
 
     real_cpu alpha;

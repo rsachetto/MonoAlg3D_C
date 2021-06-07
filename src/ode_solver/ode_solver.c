@@ -18,7 +18,6 @@
 #include "../config_helpers/config_helpers.h"
 #include "../3dparty/sds/sds.h"
 
-
 struct ode_solver* new_ode_solver() {
     struct ode_solver* result = (struct ode_solver *) malloc(sizeof(struct ode_solver));
     result->sv = NULL;
