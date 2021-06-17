@@ -1554,7 +1554,7 @@ void draw_coordinates(struct gui_state *gui_state) {
     static bool first_draw = true;
 
     if(first_draw) {
-        gui_state->coordinates_cube = (Vector3){-(line_size / 2.0f) + 0.5f, -5.0f + 0.5f, -1.5f};
+        gui_state->coordinates_cube = (Vector3){-(line_size / 2.0f) + 0.5f, -5.0f + 0.5f, -5.5f};
         first_draw = false;
     }
 
