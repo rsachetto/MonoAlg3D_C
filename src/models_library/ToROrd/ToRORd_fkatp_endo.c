@@ -6,7 +6,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     log_info("Using ToRORd_fkatp_endo CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     bool adpt = solver->adaptive;
 

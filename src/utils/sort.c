@@ -98,7 +98,7 @@ void sort_vector(real_cpu **a, int length) {
 }
 
 int partition_by_distance (real_cpu *dist_array, uint32_t *indexes, int first, int last) {
-    
+
     int  i = first;
     int loc = last + 1;
     real_cpu pivot = dist_array[first];

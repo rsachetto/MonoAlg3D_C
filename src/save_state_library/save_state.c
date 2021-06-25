@@ -38,23 +38,23 @@ SAVE_STATE(save_simulation_state) {
 
         while (grid_cell != 0) {
 
-			if(!grid_cell->mesh_extra_info) grid_cell->mesh_extra_info_size = 0;
+            if(!grid_cell->mesh_extra_info) grid_cell->mesh_extra_info_size = 0;
 
-            fwrite(&(grid_cell->center),     		   sizeof(grid_cell->center),     				1, output_file);
-            fwrite(&(grid_cell->v),          		   sizeof(grid_cell->v),          				1, output_file);
-            fwrite(&(grid_cell->front_flux), 		   sizeof(grid_cell->front_flux), 				1, output_file);
-            fwrite(&(grid_cell->back_flux),  		   sizeof(grid_cell->back_flux),  				1, output_file);
-            fwrite(&(grid_cell->top_flux),   		   sizeof(grid_cell->top_flux),   				1, output_file);
-            fwrite(&(grid_cell->down_flux),  		   sizeof(grid_cell->down_flux),  				1, output_file);
-            fwrite(&(grid_cell->right_flux), 		   sizeof(grid_cell->right_flux), 				1, output_file);
-            fwrite(&(grid_cell->left_flux),  		   sizeof(grid_cell->left_flux),  				1, output_file);
-            fwrite(&(grid_cell->b),          		   sizeof(grid_cell->b),          				1, output_file);
-            fwrite(&(grid_cell->can_change), 		   sizeof(grid_cell->can_change), 				1, output_file);
-            fwrite(&(grid_cell->active),               sizeof(grid_cell->active),     				1, output_file);
+            fwrite(&(grid_cell->center),               sizeof(grid_cell->center),                   1, output_file);
+            fwrite(&(grid_cell->v),                    sizeof(grid_cell->v),                        1, output_file);
+            fwrite(&(grid_cell->front_flux),           sizeof(grid_cell->front_flux),               1, output_file);
+            fwrite(&(grid_cell->back_flux),            sizeof(grid_cell->back_flux),                1, output_file);
+            fwrite(&(grid_cell->top_flux),             sizeof(grid_cell->top_flux),                 1, output_file);
+            fwrite(&(grid_cell->down_flux),            sizeof(grid_cell->down_flux),                1, output_file);
+            fwrite(&(grid_cell->right_flux),           sizeof(grid_cell->right_flux),               1, output_file);
+            fwrite(&(grid_cell->left_flux),            sizeof(grid_cell->left_flux),                1, output_file);
+            fwrite(&(grid_cell->b),                    sizeof(grid_cell->b),                        1, output_file);
+            fwrite(&(grid_cell->can_change),           sizeof(grid_cell->can_change),               1, output_file);
+            fwrite(&(grid_cell->active),               sizeof(grid_cell->active),                   1, output_file);
             fwrite(&(grid_cell->mesh_extra_info_size), sizeof(grid_cell->mesh_extra_info_size),     1, output_file);
 
-			if(grid_cell->mesh_extra_info_size)
-	            fwrite(grid_cell->mesh_extra_info,    grid_cell->mesh_extra_info_size,             1, output_file);
+            if(grid_cell->mesh_extra_info_size)
+                fwrite(grid_cell->mesh_extra_info,    grid_cell->mesh_extra_info_size,             1, output_file);
 
             grid_cell = grid_cell->next;
         }
@@ -118,18 +118,18 @@ SAVE_STATE(save_simulation_state) {
 
         fwrite(&(the_ode_solver->gpu), sizeof(the_ode_solver->gpu), 1, output_file);
         fwrite(&(the_ode_solver->gpu_id), sizeof(the_ode_solver->gpu_id), 1, output_file);
-        
-		fwrite(&(the_ode_solver->pitch), sizeof(the_ode_solver->pitch), 1, output_file);
+
+        fwrite(&(the_ode_solver->pitch), sizeof(the_ode_solver->pitch), 1, output_file);
         fwrite(&(the_ode_solver->original_num_cells), sizeof(the_ode_solver->original_num_cells), 1, output_file);
-        
-		size_t num_sv_entries = the_ode_solver->model_data.number_of_ode_equations;
+
+        size_t num_sv_entries = the_ode_solver->model_data.number_of_ode_equations;
 
         if(the_ode_solver->gpu) {
 
             #ifdef COMPILE_CUDA
             if(the_ode_solver->adaptive) {
                 num_sv_entries = num_sv_entries + 3;
-		    }
+            }
 
             real *sv_cpu;
             sv_cpu = MALLOC_ARRAY_OF_TYPE(real, the_ode_solver->original_num_cells * num_sv_entries);

@@ -26,7 +26,6 @@ static bool binary = false;
 static bool clip_with_plain = false;
 static bool clip_with_bounds = false;
 static bool save_pvd = true;
-static bool save_inactive = false;
 static bool compress = false;
 static bool save_f = false;
 static int compression_level = 3;
@@ -158,7 +157,7 @@ SAVE_MESH(save_as_vtk_purkinje) {
 
     bool read_only_data = ((struct save_as_vtp_persistent_data *) config->persistent_data)->grid != NULL;
     new_vtk_polydata_grid_from_purkinje_grid(&((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
-    
+
     save_vtk_polydata_grid_as_legacy_vtk(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
 
     sdsfree(output_dir_with_file);
@@ -310,18 +309,18 @@ END_SAVE_MESH(end_save_purkinje_with_activation_times) {
         write_purkinje_activation_time_maps(config,the_grid,output_dir,\
                                     file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     }
-    
+
     if (save_apd_map) {
         log_info("[!] Saving APD map !!!!\n");
         write_purkinje_apd_map(config,the_grid,output_dir,\
                                     file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
-    } 
+    }
 
     if (save_purkinje_velocity) {
         log_info("[!] Calculating Purkinje propagation velocity !!!!\n");
         print_purkinje_propagation_velocity(config,the_grid);
     }
-  
+
     free(config->persistent_data);
 
 }
@@ -332,7 +331,7 @@ SAVE_MESH (save_purkinje_with_activation_times) {
 
     float time_threshold = 10.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config, "time_threshold");
-    
+
     float purkinje_activation_threshold = -30.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config, "activation_threshold_purkinje");
 
@@ -379,18 +378,18 @@ END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
         write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
         write_purkinje_activation_time_maps(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
     }
-    
+
     if (save_apd_map) {
         log_info("[!] Saving APD map !!!!\n");
         write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
         write_purkinje_apd_map(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
-    } 
+    }
 
     if (save_purkinje_velocity) {
         log_info("[!] Calculating Purkinje propagation velocity !!!!\n");
         print_purkinje_propagation_velocity(config,the_grid);
     }
-  
+
     free(config->persistent_data);
 
 }
@@ -407,7 +406,7 @@ SAVE_MESH (save_purkinje_coupling_with_activation_times) {
 
     float tissue_apd_threshold = -83.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_apd_threshold, config, "apd_threshold_tissue");
-    
+
     float purkinje_activation_threshold = -30.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config, "activation_threshold_purkinje");
 

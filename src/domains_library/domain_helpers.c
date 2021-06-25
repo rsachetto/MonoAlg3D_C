@@ -105,7 +105,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
     if(!file) {
         log_error_and_exit("Error opening mesh described in %s!!\n", mesh_file);
     }
-   
+
     struct custom_mesh_basic_data_hash_entry *custom_mesh_data_hash = NULL;
     hmdefault(custom_mesh_data_hash, -1);
 
@@ -139,70 +139,70 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
 
     log_info("Start - reading mesh file\n");
 
-	for(uint32_t i = 0; i < num_volumes; i++) {
+    for(uint32_t i = 0; i < num_volumes; i++) {
 
-		sds *data;
-		int split_count;
+        sds *data;
+        int split_count;
 
-		getline(&line, &len, file);
+        getline(&line, &len, file);
 
-		char *tmp = line;
-		data = sdssplit(tmp, ",", &split_count);
+        char *tmp = line;
+        data = sdssplit(tmp, ",", &split_count);
 
-		if(split_count < 3) {
-			log_error_and_exit("Not enough data to load the mesh geometry in line %d of file %s! [available=%d, required=3]\n", i+1, mesh_file, split_count);
-		}
+        if(split_count < 3) {
+            log_error_and_exit("Not enough data to load the mesh geometry in line %d of file %s! [available=%d, required=3]\n", i+1, mesh_file, split_count);
+        }
 
-		real_cpu cx = strtod(data[0], NULL);
-		real_cpu cy = strtod(data[1], NULL);
-		real_cpu cz = strtod(data[2], NULL);
+        real_cpu cx = strtod(data[0], NULL);
+        real_cpu cy = strtod(data[1], NULL);
+        real_cpu cz = strtod(data[2], NULL);
 
-		if(load_custom_data) {
-			// indexes 3, 4 and 5 are not used in this function
-			for(int d = 0; d < num_extra_fields; d++) {
-				custom_data[i][d] = strtod(data[d + 6], NULL);
-			}
-		}
+        if(load_custom_data) {
+            // indexes 3, 4 and 5 are not used in this function
+            for(int d = 0; d < num_extra_fields; d++) {
+                custom_data[i][d] = strtod(data[d + 6], NULL);
+            }
+        }
 
-		hmput(custom_mesh_data_hash, POINT3D(cx,cy,cz), i);
+        hmput(custom_mesh_data_hash, POINT3D(cx,cy,cz), i);
 
-		if(cx > maxx) {
-			maxx = cx;
-		}
-		
-		if(cx < minx) {
-			minx = cx;
-		}
+        if(cx > maxx) {
+            maxx = cx;
+        }
 
-		if(cy > maxy) {
-			maxy = cy;
-		}
-		
-		if(cy < miny) {
-			miny = cy;
-		}
+        if(cx < minx) {
+            minx = cx;
+        }
 
-		if(cz > maxz) {
-			maxz = cz;
-		}
-		
-		if(cz < minz) {
-			minz = cz;
-		}
+        if(cy > maxy) {
+            maxy = cy;
+        }
 
-		sdsfreesplitres(data, split_count);
-	}
+        if(cy < miny) {
+            miny = cy;
+        }
+
+        if(cz > maxz) {
+            maxz = cz;
+        }
+
+        if(cz < minz) {
+            minz = cz;
+        }
+
+        sdsfreesplitres(data, split_count);
+    }
 
     log_info("Finish - reading mesh file\n");
 
-	double cube_side = start_h;
-	double min_cube_side = fmax(maxx, fmax(maxy, maxz)) + start_h;
+    double cube_side = start_h;
+    double min_cube_side = fmax(maxx, fmax(maxy, maxz)) + start_h;
 
-	while(cube_side < min_cube_side) {
-		cube_side = cube_side*2;
-	}
+    while(cube_side < min_cube_side) {
+        cube_side = cube_side*2;
+    }
 
-	double tmp_size = cube_side / 2.0;
+    double tmp_size = cube_side / 2.0;
     uint16_t num_ref = 0;
 
     while(tmp_size > start_h) {
@@ -262,15 +262,15 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
         }
     }
 
-	free(line);
+    free(line);
     hmfree(custom_mesh_data_hash);
 
-	if(custom_data) {
-		for(int i = 0; i < num_volumes; i++) {
-			free(custom_data[i]);
-		}
-		free(custom_data);
-	}
+    if(custom_data) {
+        for(int i = 0; i < num_volumes; i++) {
+            free(custom_data[i]);
+        }
+        free(custom_data);
+    }
 
     fclose(file);
 
@@ -460,10 +460,10 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
 void set_benchmark_domain(struct grid *the_grid) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
-	real_cpu sx, sy, sz;
-	sx = 20000;
-	sy = 7000;
-	sz = 3000;
+    real_cpu sx, sy, sz;
+    sx = 20000;
+    sy = 7000;
+    sz = 3000;
 
     while(grid_cell != 0) {
         grid_cell->active =

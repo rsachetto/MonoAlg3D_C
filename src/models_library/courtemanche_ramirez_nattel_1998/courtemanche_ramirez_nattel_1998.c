@@ -31,27 +31,27 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
         real *sv = &solver->sv[i * NEQ];
 
-        sv[0] = -8.118000e+01f; //V millivolt 
-        sv[1] = 2.908000e-03f; //m dimensionless 
-        sv[2] = 9.649000e-01f; //h dimensionless 
-        sv[3] = 9.775000e-01f; //j dimensionless 
-        sv[4] = 3.043000e-02f; //oa dimensionless 
-        sv[5] = 9.992000e-01f; //oi dimensionless 
-        sv[6] = 4.966000e-03f; //ua dimensionless 
-        sv[7] = 9.986000e-01f; //ui dimensionless 
-        sv[8] = 3.296000e-05f; //xr dimensionless 
-        sv[9] = 1.869000e-02f; //xs dimensionless 
-        sv[10] = 1.367000e-04f; //d dimensionless 
-        sv[11] = 9.996000e-01f; //f dimensionless 
-        sv[12] = 7.755000e-01f; //f_Ca dimensionless 
+        sv[0] = -8.118000e+01f; //V millivolt
+        sv[1] = 2.908000e-03f; //m dimensionless
+        sv[2] = 9.649000e-01f; //h dimensionless
+        sv[3] = 9.775000e-01f; //j dimensionless
+        sv[4] = 3.043000e-02f; //oa dimensionless
+        sv[5] = 9.992000e-01f; //oi dimensionless
+        sv[6] = 4.966000e-03f; //ua dimensionless
+        sv[7] = 9.986000e-01f; //ui dimensionless
+        sv[8] = 3.296000e-05f; //xr dimensionless
+        sv[9] = 1.869000e-02f; //xs dimensionless
+        sv[10] = 1.367000e-04f; //d dimensionless
+        sv[11] = 9.996000e-01f; //f dimensionless
+        sv[12] = 7.755000e-01f; //f_Ca dimensionless
         sv[13] = 0.0; //u dimensionless
-        sv[14] = 1.000000e+00f; //v dimensionless 
-        sv[15] = 9.992000e-01f; //w dimensionless 
-        sv[16] = 1.117000e+01f; //Na_i millimolar 
-        sv[17] = 1.390000e+02f; //K_i millimolar 
-        sv[18] = 1.013000e-04f; //Ca_i millimolar 
-        sv[19] = 1.488000e+00f; //Ca_up millimolar 
-        sv[20] = 1.488000e+00f; //Ca_rel millimolar 
+        sv[14] = 1.000000e+00f; //v dimensionless
+        sv[15] = 9.992000e-01f; //w dimensionless
+        sv[16] = 1.117000e+01f; //Na_i millimolar
+        sv[17] = 1.390000e+02f; //K_i millimolar
+        sv[18] = 1.013000e-04f; //Ca_i millimolar
+        sv[19] = 1.488000e+00f; //Ca_up millimolar
+        sv[20] = 1.488000e+00f; //Ca_rel millimolar
     }
 }
 

@@ -132,9 +132,9 @@ void read_binary_point(void *source, struct point_3d *p) {
 
 sds write_binary_point(sds output_string, struct point_3d *p) {
 
-	float x = (float)p->x;
-	float y = (float)p->y;
-	float z = (float)p->z;
+    float x = (float)p->x;
+    float y = (float)p->y;
+    float z = (float)p->z;
 
     int a = *(int *)&(x);
     int swapped = invert_bytes(a);

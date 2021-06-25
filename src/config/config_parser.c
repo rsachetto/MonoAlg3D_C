@@ -218,8 +218,8 @@ struct visualization_options *new_visualization_options() {
     options->step = 1;
     options->start_file = 0;
     options->save_activation_only = false;
-	options->value_index = 6; //Value for the default position of V in your text format
-	options->ui_scale = 0.0;
+    options->value_index = 6; //Value for the default position of V in your text format
+    options->ui_scale = 0.0;
     return options;
 }
 
@@ -233,7 +233,7 @@ struct conversion_options *new_conversion_options() {
     struct conversion_options *options = (struct conversion_options *)malloc(sizeof(struct conversion_options));
     options->input = NULL;
     options->output = NULL;
-	options->value_index = 6; //Value for the default position of V in your text format
+    options->value_index = 6; //Value for the default position of V in your text format
     return options;
 };
 
@@ -271,7 +271,7 @@ struct user_options *new_user_options() {
     user_args->dt_ode = 0.0;
     user_args->dt_ode_was_set = false;
 
-	user_args->auto_dt_ode = false;
+    user_args->auto_dt_ode = false;
     user_args->auto_dt_ode_was_set = false;
 
 
@@ -659,8 +659,8 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
 
         } else if(strcmp(key, "auto_dt") == 0) {
             bool auto_dt_ode = IS_TRUE(value);
-           
-		   	if(auto_dt_ode != user_args->auto_dt_ode) {
+
+            if(auto_dt_ode != user_args->auto_dt_ode) {
                 sprintf(old_value, "%d", user_args->auto_dt_ode);
                 maybe_issue_overwrite_warning("auto_dt", "ode_solver", old_value, value, config_file);
             }
@@ -996,7 +996,7 @@ void parse_conversion_options(int argc, char **argv, struct conversion_options *
         case 'o':
             user_args->output = strdup(optarg);
             break;
-		case 'v':
+        case 'v':
             user_args->value_index = strtol(optarg, NULL, 10);
             break;
 
@@ -1032,7 +1032,7 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
         case 'm':
             user_args->min_v = strtod(optarg, NULL);
             break;
-		case 'i':
+        case 'i':
             user_args->value_index = strtol(optarg, NULL, 10);
             break;
         case 'd':
@@ -1051,7 +1051,7 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
         case 't':
             user_args->step = (int)strtod(optarg, NULL);
             break;
-		case 'u':
+        case 'u':
             user_args->ui_scale = fabsf((float)strtod(optarg, NULL));
             break;
 
@@ -1512,7 +1512,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else if(MATCH_NAME("adaptive")) {
             pconfig->ode_adaptive = IS_TRUE(value);
             pconfig->ode_adaptive_was_set = true;
-		} else if(MATCH_NAME("auto_dt")) {
+        } else if(MATCH_NAME("auto_dt")) {
             pconfig->auto_dt_ode = IS_TRUE(value);
             pconfig->auto_dt_ode_was_set = true;
         } else if(MATCH_NAME("use_gpu")) {
@@ -1697,37 +1697,37 @@ int parse_config_file(void *user, const char *section, const char *name, const c
 
 int parse_preprocessor_config(void *user, const char *section, const char *name, const char *value) {
 
-	static int function_counter = 0;
-	static char *current_section = NULL;
-	static bool create_new_function = true;
+    static int function_counter = 0;
+    static char *current_section = NULL;
+    static bool create_new_function = true;
 
-	if(current_section == NULL) {
-		current_section = strdup(section);
-	}
-	else if(strcmp(section, current_section) != 0) {
-		free(current_section);
-		current_section = strdup(section);
-		function_counter++;
-		create_new_function = true;
-	}
+    if(current_section == NULL) {
+        current_section = strdup(section);
+    }
+    else if(strcmp(section, current_section) != 0) {
+        free(current_section);
+        current_section = strdup(section);
+        function_counter++;
+        create_new_function = true;
+    }
 
-	postprocess_list *function_list = (postprocess_list*) user;
+    postprocess_list *function_list = (postprocess_list*) user;
 
-	struct postprocess_function *function;
+    struct postprocess_function *function;
 
-	if(create_new_function) {
-		function = new_postprocess_function();
-		init_postprocess_function(function, section);
-		arrput(*function_list, function);
-		create_new_function = false;
-	}
-	else {
-		function = (*function_list)[function_counter];
-	}
+    if(create_new_function) {
+        function = new_postprocess_function();
+        init_postprocess_function(function, section);
+        arrput(*function_list, function);
+        create_new_function = false;
+    }
+    else {
+        function = (*function_list)[function_counter];
+    }
 
-	shput(function->function_params->config_data, name, strdup(value));
+    shput(function->function_params->config_data, name, strdup(value));
 
-	return 1;
+    return 1;
 }
 
 #define WRITE_INI_SECTION(SECTION) fprintf(ini_file, "[%s]\n", SECTION)

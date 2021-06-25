@@ -12,7 +12,7 @@
 struct elapsed_times {
     double config_time;
     double simulation_time;
-	double total_time;
+    double total_time;
 } __attribute__((packed));
 
 int main(int argc, char **argv) {
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     set_no_stdout(true);
 
-	struct stop_watch config_time;
+    struct stop_watch config_time;
     start_stop_watch(&config_time);
 
     char *out_dir_gpu_no_precond = "tests_bin/circle_cg_gpu_no_precond";
@@ -57,27 +57,27 @@ int main(int argc, char **argv) {
 #ifdef COMPILE_CUDA
     //solve odes also in the GPU
     shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "true");
-	options->gpu = true;
+    options->gpu = true;
 #else
     shput_dup_value(options->linear_system_solver_config->config_data, "use_gpu", "false");
     options->gpu = false;
 #endif
 
     times.config_time = stop_stop_watch(&config_time);
-    
-	struct stop_watch simulation_time;
+
+    struct stop_watch simulation_time;
     start_stop_watch(&simulation_time);
 
-	int success = 1;
-	success = run_simulation_with_config(options, out_dir_gpu_no_precond);
+    int success = 1;
+    success = run_simulation_with_config(options, out_dir_gpu_no_precond);
     times.simulation_time = stop_stop_watch(&simulation_time);
 
     free_user_options(options);
 
-	if(!success) {
-		fprintf(stderr, "Error running simulation!\n");
-		return EXIT_FAILURE;
-	}
+    if(!success) {
+        fprintf(stderr, "Error running simulation!\n");
+        return EXIT_FAILURE;
+    }
 
     sds hash_key_with_size = sdsnew(argv[1]);
     sds nruns_string = sdsfromlonglong(nruns);
@@ -115,9 +115,9 @@ int main(int argc, char **argv) {
     else {
         printf("BEST RUN\n");
         struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
-		printf("Config time: %lf μs\n",     best_run->config_time);
-	    printf("Simulation time: %lf μs\n", best_run->config_time);
-    	printf("Total time: %lf μs\n",      best_run->total_time);
+        printf("Config time: %lf μs\n",     best_run->config_time);
+        printf("Simulation time: %lf μs\n", best_run->config_time);
+        printf("Total time: %lf μs\n",      best_run->total_time);
         printf("---------------------------------------------------\n");
 
         double speedup = best_run->total_time/times.total_time;

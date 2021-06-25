@@ -12,7 +12,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
     uint32_t num_cells = solver->original_num_cells;
 
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_cells; i++) {
@@ -102,41 +102,41 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     const real E_b = -5.987000000000000e+01f;
 
     real calc_I_stim = stim_current;
-    real calc_E_Na = (((R*T)/F)*log((Nao/Nai)));	//2
-    real calc_alpha_m = ((3.200000000000000e-01f*(V_old_+4.713000000000000e+01f))/(1.000000000000000e+00f-exp(((-1.000000000000000e-01f)*(V_old_+4.713000000000000e+01f)))));	//4
-    real calc_beta_m = (8.000000000000000e-02f*exp(((-V_old_)/1.100000000000000e+01f)));	//5
+    real calc_E_Na = (((R*T)/F)*log((Nao/Nai)));    //2
+    real calc_alpha_m = ((3.200000000000000e-01f*(V_old_+4.713000000000000e+01f))/(1.000000000000000e+00f-exp(((-1.000000000000000e-01f)*(V_old_+4.713000000000000e+01f)))));   //4
+    real calc_beta_m = (8.000000000000000e-02f*exp(((-V_old_)/1.100000000000000e+01f)));    //5
     real calc_alpha_h = 0.0f;
-    IFNUMBER_1(calc_alpha_h);	//7
+    IFNUMBER_1(calc_alpha_h);   //7
     real calc_beta_h = 0.0f;
-    IFNUMBER_2(calc_beta_h);	//8
+    IFNUMBER_2(calc_beta_h);    //8
     real calc_alpha_j = 0.0f;
-    IFNUMBER_3(calc_alpha_j);	//10
+    IFNUMBER_3(calc_alpha_j);   //10
     real calc_beta_j = 0.0f;
-    IFNUMBER_4(calc_beta_j);	//11
-    real calc_E_si = (7.700000000000000e+00f-(1.302870000000000e+01f*log((Cai_old_/1.000000000000000e+00f))));	//13
-    real calc_alpha_d = ((9.500000000000000e-02f*exp(((-1.000000000000000e-02f)*(V_old_-5.000000000000000e+00f))))/(1.000000000000000e+00f+exp(((-7.199999999999999e-02f)*(V_old_-5.000000000000000e+00f)))));	//15
-    real calc_beta_d = ((7.000000000000001e-02f*exp(((-1.700000000000000e-02f)*(V_old_+4.400000000000000e+01f))))/(1.000000000000000e+00f+exp((5.000000000000000e-02f*(V_old_+4.400000000000000e+01f)))));	//16
-    real calc_alpha_f = ((1.200000000000000e-02f*exp(((-8.000000000000000e-03f)*(V_old_+2.800000000000000e+01f))))/(1.000000000000000e+00f+exp((1.500000000000000e-01f*(V_old_+2.800000000000000e+01f)))));	//18
-    real calc_beta_f = ((6.500000000000000e-03f*exp(((-2.000000000000000e-02f)*(V_old_+3.000000000000000e+01f))))/(1.000000000000000e+00f+exp(((-2.000000000000000e-01f)*(V_old_+3.000000000000000e+01f)))));	//19
-    real calc_g_K = (2.820000000000000e-01f*pow((Ko/5.400000000000000e+00f),0.5f));	//21
-    real calc_E_K = (((R*T)/F)*log(((Ko+(PR_NaK*Nao))/(Ki+(PR_NaK*Nai)))));	//22
-    real calc_alpha_X = ((5.000000000000000e-04f*exp((8.300000000000000e-02f*(V_old_+5.000000000000000e+01f))))/(1.000000000000000e+00f+exp((5.700000000000000e-02f*(V_old_+5.000000000000000e+01f)))));	//24
-    real calc_beta_X = ((1.300000000000000e-03f*exp(((-6.000000000000000e-02f)*(V_old_+2.000000000000000e+01f))))/(1.000000000000000e+00f+exp(((-4.000000000000000e-02f)*(V_old_+2.000000000000000e+01f)))));	//25
+    IFNUMBER_4(calc_beta_j);    //11
+    real calc_E_si = (7.700000000000000e+00f-(1.302870000000000e+01f*log((Cai_old_/1.000000000000000e+00f))));  //13
+    real calc_alpha_d = ((9.500000000000000e-02f*exp(((-1.000000000000000e-02f)*(V_old_-5.000000000000000e+00f))))/(1.000000000000000e+00f+exp(((-7.199999999999999e-02f)*(V_old_-5.000000000000000e+00f)))));  //15
+    real calc_beta_d = ((7.000000000000001e-02f*exp(((-1.700000000000000e-02f)*(V_old_+4.400000000000000e+01f))))/(1.000000000000000e+00f+exp((5.000000000000000e-02f*(V_old_+4.400000000000000e+01f)))));  //16
+    real calc_alpha_f = ((1.200000000000000e-02f*exp(((-8.000000000000000e-03f)*(V_old_+2.800000000000000e+01f))))/(1.000000000000000e+00f+exp((1.500000000000000e-01f*(V_old_+2.800000000000000e+01f))))); //18
+    real calc_beta_f = ((6.500000000000000e-03f*exp(((-2.000000000000000e-02f)*(V_old_+3.000000000000000e+01f))))/(1.000000000000000e+00f+exp(((-2.000000000000000e-01f)*(V_old_+3.000000000000000e+01f)))));   //19
+    real calc_g_K = (2.820000000000000e-01f*pow((Ko/5.400000000000000e+00f),0.5f)); //21
+    real calc_E_K = (((R*T)/F)*log(((Ko+(PR_NaK*Nao))/(Ki+(PR_NaK*Nai))))); //22
+    real calc_alpha_X = ((5.000000000000000e-04f*exp((8.300000000000000e-02f*(V_old_+5.000000000000000e+01f))))/(1.000000000000000e+00f+exp((5.700000000000000e-02f*(V_old_+5.000000000000000e+01f)))));    //24
+    real calc_beta_X = ((1.300000000000000e-03f*exp(((-6.000000000000000e-02f)*(V_old_+2.000000000000000e+01f))))/(1.000000000000000e+00f+exp(((-4.000000000000000e-02f)*(V_old_+2.000000000000000e+01f)))));   //25
     real calc_Xi = 0.0f;
-    IFNUMBER_5(calc_Xi);	//27
-    real calc_g_K1 = (6.047000000000000e-01f*pow((Ko/5.400000000000000e+00f),0.5f));	//28
-    real calc_E_K1 = (((R*T)/F)*log((Ko/Ki)));	//29
-    real calc_Kp = (1.000000000000000e+00f/(1.000000000000000e+00f+exp(((7.488000000000000e+00f-V_old_)/5.980000000000000e+00f))));	//35
-    real calc_i_b = (g_b*(V_old_-E_b));	//37
-    real calc_i_Na = (g_Na*pow(m_old_,3.000000000000000e+00f)*h_old_*j_old_*(V_old_-calc_E_Na));	//3
-    real calc_i_si = (9.000000000000000e-02f*d_old_*f_old_*(V_old_-calc_E_si));	//14
-    real calc_alpha_K1 = (1.020000000000000e+00f/(1.000000000000000e+00f+exp((2.385000000000000e-01f*((V_old_-calc_E_K1)-5.921500000000000e+01f)))));	//31
-    real calc_beta_K1 = (((4.912400000000000e-01f*exp((8.032000000000000e-02f*((V_old_+5.476000000000000e+00f)-calc_E_K1))))+(1.000000000000000e+00f*exp((6.175000000000000e-02f*(V_old_-(calc_E_K1+5.943099999999999e+02f))))))/(1.000000000000000e+00f+exp(((-5.143000000000000e-01f)*((V_old_-calc_E_K1)+4.753000000000000e+00f)))));	//32
-    real calc_E_Kp = calc_E_K1;	//34
-    real calc_i_K = (calc_g_K*X_old_*calc_Xi*(V_old_-calc_E_K));	//23
-    real calc_K1_infinity = (calc_alpha_K1/(calc_alpha_K1+calc_beta_K1));	//33
-    real calc_i_Kp = (g_Kp*calc_Kp*(V_old_-calc_E_Kp));	//36
-    real calc_i_K1 = (calc_g_K1*calc_K1_infinity*(V_old_-calc_E_K1));	//30
+    IFNUMBER_5(calc_Xi);    //27
+    real calc_g_K1 = (6.047000000000000e-01f*pow((Ko/5.400000000000000e+00f),0.5f));    //28
+    real calc_E_K1 = (((R*T)/F)*log((Ko/Ki)));  //29
+    real calc_Kp = (1.000000000000000e+00f/(1.000000000000000e+00f+exp(((7.488000000000000e+00f-V_old_)/5.980000000000000e+00f)))); //35
+    real calc_i_b = (g_b*(V_old_-E_b)); //37
+    real calc_i_Na = (g_Na*pow(m_old_,3.000000000000000e+00f)*h_old_*j_old_*(V_old_-calc_E_Na));    //3
+    real calc_i_si = (9.000000000000000e-02f*d_old_*f_old_*(V_old_-calc_E_si)); //14
+    real calc_alpha_K1 = (1.020000000000000e+00f/(1.000000000000000e+00f+exp((2.385000000000000e-01f*((V_old_-calc_E_K1)-5.921500000000000e+01f)))));   //31
+    real calc_beta_K1 = (((4.912400000000000e-01f*exp((8.032000000000000e-02f*((V_old_+5.476000000000000e+00f)-calc_E_K1))))+(1.000000000000000e+00f*exp((6.175000000000000e-02f*(V_old_-(calc_E_K1+5.943099999999999e+02f))))))/(1.000000000000000e+00f+exp(((-5.143000000000000e-01f)*((V_old_-calc_E_K1)+4.753000000000000e+00f)))));    //32
+    real calc_E_Kp = calc_E_K1; //34
+    real calc_i_K = (calc_g_K*X_old_*calc_Xi*(V_old_-calc_E_K));    //23
+    real calc_K1_infinity = (calc_alpha_K1/(calc_alpha_K1+calc_beta_K1));   //33
+    real calc_i_Kp = (g_Kp*calc_Kp*(V_old_-calc_E_Kp)); //36
+    real calc_i_K1 = (calc_g_K1*calc_K1_infinity*(V_old_-calc_E_K1));   //30
 
     rDY_[0] = (((-1.000000000000000e+00f)/C)*(calc_I_stim+calc_i_Na+calc_i_si+calc_i_K+calc_i_K1+calc_i_Kp+calc_i_b));
     rDY_[1] = ((calc_alpha_m*(1.000000000000000e+00f-m_old_))-(calc_beta_m*m_old_));

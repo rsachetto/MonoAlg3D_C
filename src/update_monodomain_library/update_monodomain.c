@@ -55,8 +55,7 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
 }
 
 #ifdef ENABLE_DDM
-UPDATE_MONODOMAIN(update_monodomain_ddm) 
-{
+UPDATE_MONODOMAIN(update_monodomain_ddm) {
 
     real_cpu alpha;
     bool use_gpu = the_ode_solver->gpu;
@@ -83,15 +82,13 @@ UPDATE_MONODOMAIN(update_monodomain_ddm)
     {
         // 1) Calculate alpha for the diagonal element
         alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
-        
-        if(use_gpu)
-        {
+
+        if(use_gpu) {
             #ifdef COMPILE_CUDA
             active_cells[i]->b = vms[active_cells[i]->sv_position] * alpha;
             #endif
         }
-        else
-        {
+        else {
             active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
         }
 

@@ -60,10 +60,10 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     check_cublas_error(cublasCreate(&(persistent_data->cublasHandle)));
     check_cublas_error(cusparseCreate(&(persistent_data->cusparseHandle)));
 
-	uint32_t num_active_cells;
+    uint32_t num_active_cells;
     struct cell_node **active_cells = NULL;
 
-	if (is_purkinje) {
+    if (is_purkinje) {
         grid_to_csr(the_grid, &val, &I, &J, true);
         num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
         active_cells = the_grid->purkinje->purkinje_cells;
@@ -417,7 +417,7 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
     float alpha = 1.0f;
     float beta = 0.0f;
 
- 	check_cuda_error(cusparseCreateCsr(&(persistent_data->matA), N, N, nz, persistent_data->d_row, persistent_data->d_col, persistent_data->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
+    check_cuda_error(cusparseCreateCsr(&(persistent_data->matA), N, N, nz, persistent_data->d_row, persistent_data->d_col, persistent_data->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecx), N, persistent_data->d_x, CUDA_R_32F));
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecp), N, persistent_data->d_p, CUDA_R_32F));
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecv), N, persistent_data->d_v, CUDA_R_32F));
@@ -463,9 +463,9 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
     check_cuda_error(cudaMemcpy(persistent_data->d_r, rhs, N * sizeof(float), cudaMemcpyHostToDevice)); // B
 
     // compute initial residual r0=b-Ax0 (using initial guess in x)
-	check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecx, &zero, persistent_data->vecAx, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, persistent_data->buffer));
+    check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecx, &zero, persistent_data->vecAx, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, persistent_data->buffer));
 
-	check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &mone, persistent_data->d_Ax, 1, persistent_data->d_r, 1));
+    check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &mone, persistent_data->d_Ax, 1, persistent_data->d_r, 1));
 
     // copy residual r into r^{\hat} and p
     check_cublas_error(cublasScopy(persistent_data->cublasHandle, N, persistent_data->d_r, 1, persistent_data->d_rw, 1));
@@ -486,7 +486,7 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
         }
 
         // matrix-vector multiplication
-		check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecp, &zero, persistent_data->vecv, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, persistent_data->buffer));
+        check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecp, &zero, persistent_data->vecv, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, persistent_data->buffer));
         check_cublas_error(cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_rw, 1, persistent_data->d_v, 1, &temp));
         alpha = rho / temp;
         negalpha = -(alpha);
@@ -499,7 +499,7 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
         }
 
         // matrix-vector multiplication
-		check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecr, &zero, persistent_data->vect, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, persistent_data->buffer));
+        check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecr, &zero, persistent_data->vect, CUDA_R_32F, CUSPARSE_MV_ALG_DEFAULT, persistent_data->buffer));
 
         check_cublas_error(cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_t, 1, persistent_data->d_r, 1, &temp));
         check_cublas_error(cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_t, 1, persistent_data->d_t, 1, &temp2));

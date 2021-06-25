@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 
 	char *config_file = argv[1];
 
-	postprocess_list pp_functions = NULL;	
+	postprocess_list pp_functions = NULL;
 
 	if(ini_parse(config_file, parse_preprocessor_config, (void*)&pp_functions) < 0) {
 		fprintf(stderr, "Error: Can't load the config file %s\n", config_file);

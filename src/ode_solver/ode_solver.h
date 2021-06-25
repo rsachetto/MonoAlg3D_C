@@ -52,7 +52,7 @@ struct ode_solver {
 
     real max_dt;
     real min_dt;
-	bool auto_dt;
+    bool auto_dt;
 
     bool adaptive;
     real rel_tol;
@@ -73,7 +73,7 @@ struct ode_solver {
 
     size_t pitch;
 
-	real *ode_dt, *ode_previous_dt, *ode_time_new;
+    real *ode_dt, *ode_previous_dt, *ode_time_new;
 
     //User provided functions
     get_cell_model_data_fn *get_cell_model_data;

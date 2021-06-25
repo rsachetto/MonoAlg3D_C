@@ -149,7 +149,7 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
         if (inside)
             mapping[i] = 0;
         else
-            mapping[i] = 1;        
+            mapping[i] = 1;
     }
 
     return (void*)mapping;
@@ -158,7 +158,7 @@ SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
 SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
 {
     uint32_t num_active_tissue_cells = the_grid->num_active_cells;
-    uint32_t num_active_purkinje_cells = the_grid->purkinje->num_active_purkinje_cells; 
+    uint32_t num_active_purkinje_cells = the_grid->purkinje->num_active_purkinje_cells;
     uint32_t num_active_cells = num_active_tissue_cells + num_active_purkinje_cells;
 
     *extra_data_size = sizeof(uint32_t)*(num_active_cells + 1);
@@ -170,13 +170,13 @@ SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
     // Purkinje section
     OMP(parallel for)
     for (i = 0; i < num_active_purkinje_cells; i++) {
-        mapping[i] = 0;   
+        mapping[i] = 0;
     }
 
     // Tissue section
     OMP(parallel for)
     for (i = num_active_purkinje_cells; i < num_active_cells; i++) {
-        mapping[i] = 1;        
+        mapping[i] = 1;
     }
 
     return (void*)mapping;
@@ -185,16 +185,16 @@ SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
 SET_EXTRA_DATA(set_extra_data_mixed_model_epi_mid_endo) {
 
     uint32_t num_eq = 43;   // ToRORd number of equations
-	uint32_t num_active_cells = the_grid->num_active_cells;
-	real side_length = the_grid->mesh_side_length.x;
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    real side_length = the_grid->mesh_side_length.x;
 
-	// The percentages were taken from the ToRORd paper (Transmural experiment)
-	real side_length_endo = side_length*0.45;
-	real side_length_mid = side_length_endo + side_length*0.25;
-	real side_length_epi = side_length_mid + side_length*0.3;
+    // The percentages were taken from the ToRORd paper (Transmural experiment)
+    real side_length_endo = side_length*0.45;
+    real side_length_mid = side_length_endo + side_length*0.25;
+    real side_length_epi = side_length_mid + side_length*0.3;
 
     // The extra data size is the initial state vector for each celltype plus the mapping of each cell
-	*extra_data_size = sizeof(real)*(num_active_cells) + sizeof(real)*num_eq*3;
+    *extra_data_size = sizeof(real)*(num_active_cells) + sizeof(real)*num_eq*3;
 
     real *extra_data = (real*)malloc(*extra_data_size);
 
@@ -338,27 +338,27 @@ SET_EXTRA_DATA(set_extra_data_mixed_model_epi_mid_endo) {
 
     offset = num_eq*3;
 
-	struct cell_node ** ac = the_grid->active_cells;
+    struct cell_node ** ac = the_grid->active_cells;
 
-	int i;
+    int i;
 
-	OMP(parallel for)
-	for (i = 0; i < num_active_cells; i++) {
+    OMP(parallel for)
+    for (i = 0; i < num_active_cells; i++) {
 
-		real center_x = ac[i]->center.x;
+        real center_x = ac[i]->center.x;
 
-		// ENDO
-		if (center_x < side_length_endo) 
-			extra_data[i+offset] = 0.0;
-		// MID
-		else if (center_x >= side_length_endo && center_x < side_length_mid)
-			extra_data[i+offset] = 2.0;
-		// EPI
-		else
-			extra_data[i+offset] = 1.0;
+        // ENDO
+        if (center_x < side_length_endo)
+            extra_data[i+offset] = 0.0;
+        // MID
+        else if (center_x >= side_length_endo && center_x < side_length_mid)
+            extra_data[i+offset] = 2.0;
+        // EPI
+        else
+            extra_data[i+offset] = 1.0;
 
-	}
+    }
 
-	return (void*)extra_data;
+    return (void*)extra_data;
 
 }

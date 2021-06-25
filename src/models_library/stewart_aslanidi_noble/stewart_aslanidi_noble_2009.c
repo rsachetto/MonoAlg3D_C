@@ -9,7 +9,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
     log_info("Using Stewart-Aslanidi-Noble 2009 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     bool adpt = solver->adaptive;
 
@@ -92,7 +92,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     //State variables
     real STATES[NEQ];
     for (uint32_t i = 0; i < NEQ; i++)
-        STATES[i] = sv[i]; 
+        STATES[i] = sv[i];
 
     #include "stewart_aslanidi_noble_2009_common.inc"
 }

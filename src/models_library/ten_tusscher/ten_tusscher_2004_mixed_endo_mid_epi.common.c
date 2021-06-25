@@ -23,31 +23,31 @@
     const real T =310.0f;
     real RTONF   =(R*T)/F;
 
-//Cellular capacitance         
+//Cellular capacitance
     real CAPACITANCE=0.185;
 
-	//Parameters for currents
-	//Parameters for IKr
+    //Parameters for currents
+    //Parameters for IKr
     real Gkr=0.096;
-	//Parameters for Iks
+    //Parameters for Iks
     real pKNa=0.03;
-	
-	//default is EPI
+
+    //default is EPI
     real Gks=0.245;
 
-	if (mapping == ENDO || mapping == MID)
-    	Gks=0.245;
+    if (mapping == ENDO || mapping == MID)
+        Gks=0.245;
 
-	//Parameters for Ik1
+    //Parameters for Ik1
     real GK1=5.405;
 
-	//Parameters for Ito
+    //Parameters for Ito
     real Gto=0.294;
 
-	if (mapping == ENDO || mapping == MID)
-    	Gto=0.073;
+    if (mapping == ENDO || mapping == MID)
+        Gto=0.073;
 
-	//Parameters for INa
+    //Parameters for INa
     real GNa=14.838;
 //Parameters for IbNa
     real GbNa=0.00029;
@@ -290,18 +290,18 @@
     Bxs=1./(1.+exp((svolt-60.)/20.));
     TAU_Xs=Axs*Bxs;
 
-	if(mapping == EPI) {
-		R_INF=1./(1.+exp((20-svolt)/6.));
-		S_INF=1./(1.+exp((svolt+20)/5.));
-		TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
-		TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
-	}
-	else if(mapping == ENDO || mapping == MID) {
-		R_INF=1./(1.+exp((20-svolt)/6.));
-		S_INF=1./(1.+exp((svolt+28)/5.));
-		TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
-		TAU_S=1000.*exp(-(svolt+67)*(svolt+67)/1000.)+8.;
-	}
+    if(mapping == EPI) {
+        R_INF=1./(1.+exp((20-svolt)/6.));
+        S_INF=1./(1.+exp((svolt+20)/5.));
+        TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
+        TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
+    }
+    else if(mapping == ENDO || mapping == MID) {
+        R_INF=1./(1.+exp((20-svolt)/6.));
+        S_INF=1./(1.+exp((svolt+28)/5.));
+        TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
+        TAU_S=1000.*exp(-(svolt+67)*(svolt+67)/1000.)+8.;
+    }
 
     D_INF=1./(1.+exp((-5-svolt)/7.5));
     Ad=1.4/(1.+exp((-35-svolt)/13))+0.25;

@@ -15,7 +15,7 @@ void print_stim_config_values(struct config* s) {
         log_info("No Stimulus configuration.\n");
         return;
     }
-    
+
     real stim_start = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, s, "start");
 

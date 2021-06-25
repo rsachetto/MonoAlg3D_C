@@ -26,7 +26,7 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)  {
 
     real_cpu dx = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,dx, config, "dx");
-    
+
     char *network_file = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(network_file,config,"network_file");
 
@@ -59,7 +59,7 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_coupling_with_custom_mesh) {
 
     real_cpu dx = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, dx, config, "dx");
-    
+
     real_cpu rpmj = 1000.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, rpmj, config, "rpmj");
 

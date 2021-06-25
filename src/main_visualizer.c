@@ -38,14 +38,14 @@ static void read_and_render_activation_map(struct gui_config *gui_config, char *
 
 static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_path) {
 
-	sds full_path_cp = sdsnew(full_path);
+    sds full_path_cp = sdsnew(full_path);
     full_path_cp = sdscat(full_path_cp, ".vis");
     FILE *vis_file = fopen(full_path_cp, "rw");
 
     if(vis_file) {
         int n_cells = vtk_grid->num_cells;
-		arrsetlen(vtk_grid->cell_visibility, n_cells);	
-		fread(vtk_grid->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
+        arrsetlen(vtk_grid->cell_visibility, n_cells);
+        fread(vtk_grid->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
         fclose(vis_file);
     }
 
@@ -83,10 +83,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
         simulation_files->files_list = NULL;
         simulation_files->timesteps = NULL;
         if(input) {
-			string_array ignore_files = NULL;
-			arrput(ignore_files, strdup("vis"));
+            string_array ignore_files = NULL;
+            arrput(ignore_files, strdup("vis"));
             simulation_files->files_list = list_files_from_dir(input, prefix, NULL, ignore_files, true);
-			arrfree(ignore_files);
+            arrfree(ignore_files);
         }
     } else {
         if(strcmp(input_info.file_extension, "pvd") == 0) {
@@ -138,35 +138,35 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     real_cpu dt = 0;
 
-	if(!using_pvd) {
+    if(!using_pvd) {
 
-		int step;
-		int step1;
-		int final_step;
+        int step;
+        int step1;
+        int final_step;
 
-		step1 = get_step_from_filename(simulation_files->files_list[0]);
+        step1 = get_step_from_filename(simulation_files->files_list[0]);
 
-		if(num_files > 1) {
-			int step2 = 0;
-			step2 = get_step_from_filename(simulation_files->files_list[1]);
-			step = step2 - step1;
-		} else {
-			step = step1;
-		}
+        if(num_files > 1) {
+            int step2 = 0;
+            step2 = get_step_from_filename(simulation_files->files_list[1]);
+            step = step2 - step1;
+        } else {
+            step = step1;
+        }
 
-		final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
+        final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
 
-		dt = gui_config->dt;
+        dt = gui_config->dt;
 
-		gui_config->step = step;
+        gui_config->step = step;
 
-		if(dt == 0.0) {
-			gui_config->final_time = final_step;
+        if(dt == 0.0) {
+            gui_config->final_time = final_step;
 
-		} else {
-			gui_config->final_time = final_step * dt;
-		}
-	} else {
+        } else {
+            gui_config->final_time = final_step * dt;
+        }
+    } else {
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
         gui_config->dt = -1;
     }
@@ -203,20 +203,20 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!gui_config->grid_info.vtk_grid) {
             sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
-            
+
             if(gui_config->error_message) {
                 free(gui_config->error_message);
             }
 
             gui_config->error_message  = strdup(error);
-			gui_config->grid_info.loaded = false;
-			gui_config->paused = true;
+            gui_config->grid_info.loaded = false;
+            gui_config->paused = true;
         }
-		else {
+        else {
             read_visible_cells(gui_config->grid_info.vtk_grid, full_path);
             gui_config->grid_info.file_name = full_path;
-			gui_config->grid_info.loaded = true;
-		}
+            gui_config->grid_info.loaded = true;
+        }
 
         omp_unset_lock(&gui_config->draw_lock);
 
@@ -271,10 +271,10 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
     gui_config->advance_or_return = 0;
     gui_config->grid_info.loaded = false;
 
-	gui_config->ui_scale = options->ui_scale;
+    gui_config->ui_scale = options->ui_scale;
 
     if(!only_restart) {
-	    gui_config->input = NULL;
+        gui_config->input = NULL;
         omp_init_lock(&gui_config->draw_lock);
         omp_init_lock(&gui_config->sleep_lock);
         gui_config->max_v = options->max_v;

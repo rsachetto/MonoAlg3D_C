@@ -94,71 +94,71 @@ static void convert_file(const char *input, const char *output, const char *file
 
 int main(int argc, char **argv) {
 
-	struct conversion_options *options = new_conversion_options();
+    struct conversion_options *options = new_conversion_options();
 
-	parse_conversion_options(argc, argv, options);
+    parse_conversion_options(argc, argv, options);
 
-	if(options->value_index < 0) {
-		fprintf(stderr, "Invalid index for the value to be saved (%d)! The value parameter should be >= 0\n", options->value_index);
-		return EXIT_FAILURE;
-	}
+    if(options->value_index < 0) {
+        fprintf(stderr, "Invalid index for the value to be saved (%d)! The value parameter should be >= 0\n", options->value_index);
+        return EXIT_FAILURE;
+    }
 
-	uint32_t value_index = options->value_index;
+    uint32_t value_index = options->value_index;
 
-	char *input = options->input;
-	char *output = options->output;
+    char *input = options->input;
+    char *output = options->output;
 
-	struct path_information input_info;
+    struct path_information input_info;
 
-	get_path_information(input, &input_info);
+    get_path_information(input, &input_info);
 
-	if(!input_info.exists) {
-		fprintf(stderr, "Invalid directory or file (%s)! The input parameter should be and valid simulation file, alg file or a directory containing simulations!\n", input);
-		return EXIT_FAILURE;
-	}
+    if(!input_info.exists) {
+        fprintf(stderr, "Invalid directory or file (%s)! The input parameter should be and valid simulation file, alg file or a directory containing simulations!\n", input);
+        return EXIT_FAILURE;
+    }
 
-	if(!output) {
+    if(!output) {
 
-		output = sdsempty();
+        output = sdsempty();
 
-		if(input_info.is_dir) {
-			if(ENDS_WITH_SLASH(input)) {
-				output = sdscatfmt(output, "%sconverted_files", input);
-			} else {
-				output = sdscatfmt(output, "%s/converted_files", input);
-			}
-		}
-		else {
-			if(ENDS_WITH_SLASH(input_info.dir_name)) {
-				output = sdscatfmt(output, "%sconverted_files", input_info.dir_name);
-			} else {
-				output = sdscatfmt(output, "%s/converted_files", input_info.dir_name);
-			}
-		}
-	}
+        if(input_info.is_dir) {
+            if(ENDS_WITH_SLASH(input)) {
+                output = sdscatfmt(output, "%sconverted_files", input);
+            } else {
+                output = sdscatfmt(output, "%s/converted_files", input);
+            }
+        }
+        else {
+            if(ENDS_WITH_SLASH(input_info.dir_name)) {
+                output = sdscatfmt(output, "%sconverted_files", input_info.dir_name);
+            } else {
+                output = sdscatfmt(output, "%s/converted_files", input_info.dir_name);
+            }
+        }
+    }
 
-	if(input_info.is_dir) {
+    if(input_info.is_dir) {
 
-		create_dir(output);
-		string_array files_list = list_files_from_dir(input, NULL, NULL, NULL, true);
+        create_dir(output);
+        string_array files_list = list_files_from_dir(input, NULL, NULL, NULL, true);
 
-		int num_files = arrlen(files_list);
+        int num_files = arrlen(files_list);
 
-		if(num_files == 0) {
-			fprintf(stderr, "Directory %s is empty\n", input);
-			exit(EXIT_FAILURE);
-		}
-		else {
-			for(int i = 0; i < num_files; i++) {
-				convert_file(input, output, files_list[i], value_index);
-			}
-		}
-	}
-	else {
-		create_dir(output);
-		convert_file(input, output, NULL, value_index);
-	}
+        if(num_files == 0) {
+            fprintf(stderr, "Directory %s is empty\n", input);
+            exit(EXIT_FAILURE);
+        }
+        else {
+            for(int i = 0; i < num_files; i++) {
+                convert_file(input, output, files_list[i], value_index);
+            }
+        }
+    }
+    else {
+        create_dir(output);
+        convert_file(input, output, NULL, value_index);
+    }
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 

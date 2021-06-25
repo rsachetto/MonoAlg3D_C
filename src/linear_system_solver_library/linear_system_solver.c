@@ -15,17 +15,17 @@ static int max_its = 200;
 static real_cpu tol = 1e-16;
 
 #ifdef COMPILE_CUDA
-	#include "../gpu_utils/gpu_utils.h"
-	#include <cublas_v2.h>
-	#include <cusparse_v2.h>
+    #include "../gpu_utils/gpu_utils.h"
+    #include <cublas_v2.h>
+    #include <cusparse_v2.h>
 
-	#if CUBLAS_VER_MAJOR < 11
-		#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_10.c" )
-		#include "gpu_solvers_cublas_10.c"
-	#else
-		#pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_11.c" )
-		#include "gpu_solvers_cublas_11.c"
-	#endif
+    #if CUBLAS_VER_MAJOR < 11
+        #pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_10.c" )
+        #include "gpu_solvers_cublas_10.c"
+    #else
+        #pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_11.c" )
+        #include "gpu_solvers_cublas_11.c"
+    #endif
 #endif //COMPILE_CUDA
 
 INIT_LINEAR_SYSTEM(init_cpu_conjugate_gradient) {

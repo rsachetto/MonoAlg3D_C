@@ -22,7 +22,7 @@ function RUN_PROFILER() {
         done
     else
         if [ -f "${test_bin_name}" ]; then
-			"${test_bin_name}" "$hardware_key"
+            "${test_bin_name}" "$hardware_key"
         else
             PRINT_USAGE "$INITIAL_PARAMS"
         fi
