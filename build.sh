@@ -67,6 +67,14 @@ for i in "${BUILD_ARGS[@]}"; do
 
     if [ "$i" == "ddm" ]; then
         C_FLAGS="$C_FLAGS -DENABLE_DDM"
+        COMPILE_WITH_DDM='y'
+        COMPILE_GUI='y'
+        COMPILE_MPI='y'
+        COMPILE_SIMULATOR='y'
+        COMPILE_CONVERTER='y'
+        COMPILE_FIBER_CONVERTER='y'
+        COMPILE_POSTPROCESSOR='y'
+
     fi
 
     if [ "$i" == "all" ]; then

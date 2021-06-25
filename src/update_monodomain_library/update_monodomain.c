@@ -15,6 +15,7 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
+
 UPDATE_MONODOMAIN(update_monodomain_default) {
 
     real_cpu alpha;
@@ -70,16 +71,14 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
     real *vms = NULL;
     size_t mem_size = initial_number_of_cells * sizeof(real);
 
-    if(use_gpu)
-    {
+    if(use_gpu) {
         vms = MALLOC_BYTES(real, mem_size);
         check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
     }
 #endif
 
     OMP(parallel for private(alpha))
-    for(uint32_t i = 0; i < num_active_cells; i++)
-    {
+    for(uint32_t i = 0; i < num_active_cells; i++) {
         // 1) Calculate alpha for the diagonal element
         alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
 
@@ -109,24 +108,19 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
         {
             int k = cell_elements[j].column;
 
-            if (cell_elements[j].direction == 'n') // North cell
-            {
+            if (cell_elements[j].direction == BACK) {
                 real_cpu multiplier = (dx * dy) / dz;
-                if(use_gpu)
-                {
+                if(use_gpu) {
 #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_z / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_z / dt_pde;
 #endif
-                }
-                else
-                {
+                } else {
                     active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 's') // South cell
-            {
+            else if (cell_elements[j].direction == FRONT) {
                 real_cpu multiplier = (dx * dy) / dz;
                 if(use_gpu)
                 {
@@ -141,66 +135,52 @@ UPDATE_MONODOMAIN(update_monodomain_ddm) {
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_z / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'e') // East cell
-            {
+            else if (cell_elements[j].direction == TOP) {
                 real_cpu multiplier = (dx * dz) / dy;
-                if(use_gpu)
-                {
+                if(use_gpu) {
 #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_y / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_y / dt_pde;
 #endif
-                }
-                else
-                {
+                } else {
                     active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'w') // West cell
-            {
+            else if (cell_elements[j].direction == DOWN) {
                 real_cpu multiplier = (dx * dz) / dy;
-                if(use_gpu)
-                {
+                if(use_gpu) {
                     #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_y / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_y / dt_pde;
                     #endif
                 }
-                else
-                {
+                else {
                     active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_y / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'f') // Forward cell
-            {
+            else if (cell_elements[j].direction == RIGHT) {
                 real_cpu multiplier = (dy * dz) / dx;
-                if(use_gpu)
-                {
+                if(use_gpu) {
                     #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_x / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_x / dt_pde;
                     #endif
                 }
-                else
-                {
+                else {
                     active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
                 }
             }
-            else if (cell_elements[j].direction == 'b') // Backward cell
-            {
+            else if (cell_elements[j].direction == LEFT) {
                 real_cpu multiplier = (dy * dz) / dx;
-                if(use_gpu)
-                {
+                if(use_gpu) {
                     #ifdef COMPILE_CUDA
                     active_cells[i]->b -= vms[active_cells[k]->sv_position] * multiplier * kappa_x / dt_pde;
                     active_cells[i]->b += vms[active_cells[i]->sv_position] * multiplier * kappa_x / dt_pde;
                     #endif
-                }
-                else
-                {
+                } else {
                     active_cells[i]->b -= sv[active_cells[k]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
                     active_cells[i]->b += sv[active_cells[i]->sv_position * n_equations_cell_model] * multiplier * kappa_x / dt_pde;
                 }
