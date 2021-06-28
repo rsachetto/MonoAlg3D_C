@@ -136,6 +136,10 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
     fi
 fi
 
+if [ -n "$COMPILE_GUI" ]; then
+        C_FLAGS="${C_FLAGS} -DCOMPILE_GUI"
+fi
+
 if [ -n "$CUDA_FOUND" ]; then
     if [ "$OS" == "Manjaro Linux" ]; then
         C_COMPILER=/opt/cuda/bin/gcc
@@ -153,9 +157,6 @@ if [ -n "$CUDA_FOUND" ]; then
         CXX_COMPILER=/usr/local/cuda/bin/g++
     fi
 
-    if [ -n "$COMPILE_GUI" ]; then
-        C_FLAGS="${C_FLAGS} -DCOMPILE_GUI"
-    fi
 fi
 
 echo -e "${INFO}C FLAGS:${NC} $C_FLAGS"
