@@ -48,7 +48,6 @@ static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_
         fread(vtk_grid->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
         fclose(vis_file);
     }
-
 }
 
 static int read_and_render_files(struct visualization_options *options, struct gui_config *gui_config) {
@@ -208,11 +207,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 free(gui_config->error_message);
             }
 
-            gui_config->error_message  = strdup(error);
+            gui_config->error_message = strdup(error);
             gui_config->grid_info.loaded = false;
             gui_config->paused = true;
-        }
-        else {
+        } else {
             read_visible_cells(gui_config->grid_info.vtk_grid, full_path);
             gui_config->grid_info.file_name = full_path;
             gui_config->grid_info.loaded = true;
@@ -223,7 +221,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         omp_set_lock(&gui_config->sleep_lock);
 
         if(gui_config->restart) {
-           gui_config->time = 0.0;
+            gui_config->time = 0.0;
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
@@ -292,7 +290,6 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
     }
 }
 
-
 int main(int argc, char **argv) {
 
     struct gui_config *gui_config = MALLOC_ONE_TYPE(struct gui_config);
@@ -339,8 +336,7 @@ int main(int argc, char **argv) {
                             init_gui_config_for_visualization(options, gui_config, true);
                             result = read_and_render_files(options, gui_config);
                         }
-                    }
-                    else if(result == END_SIMULATION || gui_config->exit) {
+                    } else if(result == END_SIMULATION || gui_config->exit) {
                         break;
                     }
                 }
