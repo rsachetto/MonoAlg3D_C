@@ -1164,7 +1164,6 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
 
         set_camera_params(&(gui_state->camera));
 
-        gui_state->voxel_alpha = 255;
         gui_state->scale_alpha = 255;
 
         reset_ui(gui_state);
