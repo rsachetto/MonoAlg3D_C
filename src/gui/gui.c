@@ -991,7 +991,7 @@ static inline void configure_end_info_box_strings(struct gui_config *gui_config,
     (*(info_string))[index] = strdup(tmp);
 }
 
-static inline bool configure_mesh_info_box_strings(struct gui_config * gui_config, char ***info_string, int draw_type, struct mesh_info *mesh_info) {
+static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, struct gui_config * gui_config, char ***info_string, int draw_type, struct mesh_info *mesh_info) {
 
     if(!gui_config->grid_info.alg_grid && !gui_config->grid_info.vtk_grid)
         return false;
@@ -1062,6 +1062,12 @@ static inline bool configure_mesh_info_box_strings(struct gui_config * gui_confi
             }
         }
     }
+
+    Vector2 wider_text = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, gui_state->font_spacing_small);
+
+    float box_w = wider_text.x*1.08f;
+
+    gui_state->mesh_info_box.width = box_w;
 
     (*(info_string))[index] = strdup(tmp);
 
@@ -1744,7 +1750,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             }
 
             if(gui_state->show_mesh_info_box) {
-                bool configured = configure_mesh_info_box_strings(gui_config, &mesh_info_box_strings, draw_type, mesh_info);
+                bool configured = configure_mesh_info_box_strings(gui_state, gui_config, &mesh_info_box_strings, draw_type, mesh_info);
 
                 if(configured) {
                     draw_box(&gui_state->mesh_info_box, text_offset, (const char **)mesh_info_box_strings, mesh_info_box_lines, gui_state->font_size_small,
