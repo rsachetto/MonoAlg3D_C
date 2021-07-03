@@ -70,6 +70,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     struct point_3d *the_points = NULL;
     struct line *the_lines = NULL;
     real_cpu *the_sigmas = NULL;
+    read_data_from_input_network(&the_points,&the_lines,&the_sigmas,filename);
 
     for (int i = 0; i < arrlen(the_points); i++) {
         double pos[3];
