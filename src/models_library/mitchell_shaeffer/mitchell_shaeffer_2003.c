@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "mitchell_shaeffer_2003.h"
 
-GET_CELL_MODEL_DATA(init_cell_model_data) 
+GET_CELL_MODEL_DATA(init_cell_model_data)
 {
 
     if(get_initial_v)
@@ -10,12 +10,12 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
         cell_model->number_of_ode_equations = NEQ;
 }
 
-SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 {
     log_info("Using Mitchell-Shaeffer 2003 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_cells; i++) {
@@ -45,7 +45,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         else
             sv_id = (uint32_t )i;
 
-        for (int j = 0; j < num_steps; ++j) 
+        for (int j = 0; j < num_steps; ++j)
         {
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
         }
@@ -53,7 +53,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current)  
+void solve_model_ode_cpu(real dt, real *sv, real stim_current)
 {
 
     real rY[NEQ], rDY[NEQ];
@@ -67,7 +67,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current)
         sv[i] = dt*rDY[i] + rY[i];
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current) 
+void RHS_cpu(const real *sv, real *rDY_, real stim_current)
 {
 
     //State variables

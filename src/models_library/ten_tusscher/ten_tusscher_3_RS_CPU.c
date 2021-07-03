@@ -15,44 +15,44 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-	char *cell_type;
+    char *cell_type;
 #ifdef ENDO
-	cell_type = strdup("ENDO");
+    cell_type = strdup("ENDO");
 #endif
 
 #ifdef EPI
-	cell_type = strdup("EPI");
+    cell_type = strdup("EPI");
 #endif
 
 #ifdef MCELL
-	cell_type = strdup("MCELL");
+    cell_type = strdup("MCELL");
 #endif
 
     log_info("Using ten Tusscher 3 %s CPU model\n", cell_type);
-	free(cell_type);
+    free(cell_type);
 
-	uint32_t num_cells = solver->original_num_cells;
+    uint32_t num_cells = solver->original_num_cells;
 
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
-	OMP(parallel for)
-		for(uint32_t i = 0; i < num_cells; i++) {
+    OMP(parallel for)
+        for(uint32_t i = 0; i < num_cells; i++) {
 
-			real *sv = &solver->sv[i * NEQ];
+            real *sv = &solver->sv[i * NEQ];
 
-			sv[0] = -86.2f;   // V;       millivolt
-			sv[1] = 0.0f; //M
-			sv[2] = 0.75; //H
-			sv[3] = 0.75; //J
-			sv[4] = 0.0f; //Xr1
-			sv[5] = 0.0f; //Xs
-			sv[6] = 1.0f; //S
-			sv[7] = 1.0f; //F
-			sv[8] = 1.0f; //F2
-			sv[9] = 0.0; //D_INF
-			sv[10] = 0.0; //R_INF
-			sv[11] = 0.0; //Xr2_INF
-		}
+            sv[0] = -86.2f;   // V;       millivolt
+            sv[1] = 0.0f; //M
+            sv[2] = 0.75; //H
+            sv[3] = 0.75; //J
+            sv[4] = 0.0f; //Xr1
+            sv[5] = 0.0f; //Xs
+            sv[6] = 1.0f; //S
+            sv[7] = 1.0f; //F
+            sv[8] = 1.0f; //F2
+            sv[9] = 0.0; //D_INF
+            sv[10] = 0.0; //R_INF
+            sv[11] = 0.0; //Xr2_INF
+        }
 }
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
@@ -151,7 +151,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real const *extra_parameters) {
 
     //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
-        
+
     //THIS IS THE STATE VECTOR THAT WE NEED TO SAVE IN THE STEADY STATE
     const real svolt    = sv[0];
     const real sm       = sv[1];

@@ -21,7 +21,7 @@ function RUN_TEST() {
         done
     else
         if [ -f "${test_bin_name}" ]; then
-            "${test_bin_name}" --jobs 1 
+            "${test_bin_name}" --jobs 1
         else
             PRINT_USAGE "$INITIAL_PARAMS"
         fi

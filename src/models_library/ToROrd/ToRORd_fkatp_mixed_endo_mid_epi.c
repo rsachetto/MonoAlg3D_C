@@ -21,7 +21,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     log_info("Using ToRORd_fkatp_mixed_endo_mid_epi CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     max_step = solver->max_dt;
     min_step = solver->min_dt;
@@ -29,12 +29,12 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     reltol   = solver->rel_tol;
     adpt     = solver->adaptive;
 
-    if(adpt) 
+    if(adpt)
     {
         ode_dt = (real*)malloc(num_cells*sizeof(real));
 
         OMP(parallel for)
-        for(int i = 0; i < num_cells; i++) 
+        for(int i = 0; i < num_cells; i++)
         {
             ode_dt[i] = solver->min_dt;
         }
@@ -42,8 +42,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         ode_previous_dt = (real*)calloc(num_cells, sizeof(real));
         ode_time_new    = (real*)calloc(num_cells, sizeof(real));
         log_info("Using Adaptive Euler model to solve the ODEs\n");
-    } 
-    else 
+    }
+    else
     {
         log_info("Using Euler model to solve the ODEs\n");
     }
@@ -52,24 +52,24 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     real *initial_epi = NULL;
     real *initial_mid = NULL;
     real *mapping = NULL;
-    if(solver->ode_extra_data) 
+    if(solver->ode_extra_data)
     {
         initial_endo = (real *)solver->ode_extra_data;
         initial_epi = (real *)solver->ode_extra_data+NEQ;
         initial_mid = (real *)solver->ode_extra_data+NEQ+NEQ;
         mapping = (real *)solver->ode_extra_data+NEQ+NEQ+NEQ;
     }
-    else 
+    else
     {
         log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
     }
 
     OMP(parallel for)
-    for(uint32_t i = 0; i < num_cells; i++) 
+    for(uint32_t i = 0; i < num_cells; i++)
     {
         real *sv = &solver->sv[i * NEQ];
-      
-        for (int j = 0; j < NEQ; j++) 
+
+        for (int j = 0; j < NEQ; j++)
         {
             if (mapping[i] == ENDO)
                 sv[j] = initial_endo[j];
@@ -245,8 +245,8 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real mapping, real f
             }
 
             _k_aux__ = _k2__;
-            _k2__	= _k1__;
-            _k1__	= _k_aux__;
+            _k2__   = _k1__;
+            _k1__   = _k_aux__;
 
             //it steps the method ahead, with euler solution
             for(int i = 0; i < numEDO; i++){

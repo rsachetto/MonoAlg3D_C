@@ -11,13 +11,13 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
     // Normal
-    //sv[0] = -75.5344986658f;    // V millivolt 
+    //sv[0] = -75.5344986658f;    // V millivolt
     //sv[1] = 0.060546727200f;    // m dimensionless
     //sv[2] = 0.725900135500f;    // h dimensionless
     //sv[3] = 0.470923970800f;    // n dimensionless
 
     uint32_t num_volumes = solver->original_num_cells;
-	solver->sv = (real*)malloc(NEQ*num_volumes*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_volumes*sizeof(real));
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_volumes; i++) {
@@ -28,7 +28,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         sv[2] = 0.851652;  // h dimensionless
         sv[3] = 0.58291;   // n dimensionless
     }
-       
+
 }
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
@@ -75,7 +75,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     const real V_old_ = sv[0];
     const real m_old_ = sv[1];
     const real h_old_ = sv[2];
-    const real n_old_ = sv[3]; 
+    const real n_old_ = sv[3];
 
     //Parameters
     //const real Cm = 12.00000000000000000e+00f;             // (microF)

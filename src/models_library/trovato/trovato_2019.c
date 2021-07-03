@@ -6,7 +6,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     log_info("Using Trovato_2019 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
     bool adpt = solver->adaptive;
 
     if(adpt) {
@@ -25,10 +25,10 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     }
 
     OMP(parallel for)
-    for(uint32_t i = 0; i < num_cells; i++) 
+    for(uint32_t i = 0; i < num_cells; i++)
     {
         real *sv = &solver->sv[i * NEQ];
-        
+
         // Steady-state 40 pulses (BCL=1000ms)
         sv[0] = -86.7099;
         sv[1] = 0.005431;
@@ -78,7 +78,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         sv[45] = 0.471259;
 
     }
-       
+
 }
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
@@ -132,7 +132,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     const real xs2 = sv[42];
     const real y = sv[43];
     const real xk1 = sv[44];
-    const real u = sv[45]; 
+    const real u = sv[45];
 
     #include "trovato_2019_common.inc"
 }

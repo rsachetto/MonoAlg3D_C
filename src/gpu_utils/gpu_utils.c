@@ -47,7 +47,7 @@ static const char * cudaGetErrorEnum(int code, const char *api) {
 		return "<unknown>";
 #else
 		return "<unknown>";
-#endif	
+#endif
 
 	}
 

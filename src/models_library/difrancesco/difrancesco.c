@@ -1,4 +1,4 @@
-// A Model of Cardiac Electrical Activity Incorporating Ionic Pumps and Concentration Changes 
+// A Model of Cardiac Electrical Activity Incorporating Ionic Pumps and Concentration Changes
 // Reference: https://models.physiomeproject.org/exposure/91d93b61d7da56b6baf1f0c4d88ecd77/difrancesco_noble_1985.cellml
 
 #include "difrancesco.h"
@@ -18,8 +18,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     log_info("Using DiFrancesco & Noble 1985 CPU model\n");
 
     uint32_t num_volumes = solver->original_num_cells;
-	
-	solver->sv = MALLOC_ARRAY_OF_TYPE(real, NEQ*num_volumes);
+
+    solver->sv = MALLOC_ARRAY_OF_TYPE(real, NEQ*num_volumes);
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_volumes; i++) {
@@ -61,7 +61,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     sv[13] = 2.09383;     // Ca_up millimolar
     sv[14] = 0.205441;     // Ca_rel millimolar
     sv[15] = 0.987422;     // p dimensionless
-    */               
+    */
 
     CONSTANTS[0] = 8314.472;
     CONSTANTS[1] = 310;
@@ -133,14 +133,14 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         else
             sv_id = i;
 
-        for (int j = 0; j < num_steps; ++j) 
+        for (int j = 0; j < num_steps; ++j)
         {
             solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
         }
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current)  
+void solve_model_ode_cpu(real dt, real *sv, real stim_current)
 {
 
     real rY[NEQ], rDY[NEQ];
@@ -159,7 +159,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
 
     CONSTANTS[4] = stim_current;
 
-    real STATES[16]; 
+    real STATES[16];
     STATES[0] = sv[0];
     STATES[1] = sv[1];
     STATES[2] = sv[2];
@@ -335,38 +335,38 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     const real V_cell =  3.14159*pow(radius, 2.00000)*length;
     const real Vi =  V_cell*(1.00000 - V_e_ratio);
     const real V_up =  Vi*0.0500000;
-    const real V_rel =  Vi*0.0200000;    
+    const real V_rel =  Vi*0.0200000;
 
     // Algebraics
     const real beta_f2 = ( cai_old_*alpha_f2)/K_mf2;
     const real alpha_x = ( 0.500000*exp( 0.0826000*(V_old_+50.0000)))/(1.00000+exp( 0.0570000*(V_old_+50.0000)));
     const real beta_x = ( 1.30000*exp( - 0.0600000*(V_old_+20.0000)))/(1.00000+exp( - 0.0400000*(V_old_+20.0000)));
-    
+
     const real alpha_s =  0.0330000*exp(- V_old_/17.0000);
     const real beta_s = 33.0000/(1.00000+exp(- (V_old_+10.0000)/8.00000));
-    
+
     const real alpha_h =  20.0000*exp( - 0.125000*(V_old_+75.0000));
     const real beta_h = 2000.00/( 320.000*exp( - 0.100000*(V_old_+75.0000))+1.00000);
-    
+
     const real alpha_p = ( 0.625000*(V_old_+34.0000))/(exp((V_old_+34.0000)/4.00000) - 1.00000);
     const real beta_p = 5.00000/(1.00000+exp(( - 1.00000*(V_old_+34.0000))/4.00000));
-    
+
     const real alpha_y =  0.0500000*exp( - 0.0670000*((V_old_+52.0000) - 10.0000));
     const real E0_y = (V_old_+52.0000) - 10.0000;
     const real beta_y = (fabs(E0_y)<delta_y ? 2.50000 : ( 1.00000*E0_y)/(1.00000 - exp( - 0.200000*E0_y)));
-    
+
     const real E0_m = V_old_+41.0000;
     const real alpha_m = (fabs(E0_m)<delta_m ? 2000.00 : ( 200.000*E0_m)/(1.00000 - exp( - 0.100000*E0_m)));
     const real beta_m =  8000.00*exp( - 0.0560000*(V_old_+66.0000));
-    
+
     const real E0_d = (V_old_+24.0000) - 5.00000;
     const real alpha_d = (fabs(E0_d)<delta_d ? 120.000 : ( 30.0000*E0_d)/(1.00000 - exp(( - 1.00000*E0_d)/4.00000)));
     const real beta_d = (fabs(E0_d)<delta_d ? 120.000 : ( 12.0000*E0_d)/(exp(E0_d/10.0000) - 1.00000));
-    
+
     const real E0_f = V_old_+34.0000;
     const real alpha_f = (fabs(E0_f)<delta_f ? 25.0000 : ( 6.25000*E0_f)/(exp(E0_f/4.00000) - 1.00000));
     const real beta_f = 50.0000/(1.00000+exp(( - 1.00000*(V_old_+34.0000))/4.00000));
-    
+
     const real E_Na =  RTONF*log(Nao/nai_old_);
     const real i_Na_b =  g_Nab*(V_old_ - E_Na);
     const real i_p = ( (( I_p*kc_old_)/(K_mK+kc_old_))*nai_old_)/(K_mNa+nai_old_);
@@ -375,10 +375,10 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     const real i_Na =  g_Na*pow(m_old_, 3.00000)*h_old_*(V_old_ - E_mh);
     const real i_fNa =  (( y_old_*kc_old_)/(kc_old_+Km_f))*g_f_Na*(V_old_ - E_Na);
     const real i_siNa =  (( 0.0100000*P_si*(V_old_ - 50.0000))/( RTONF*(1.00000 - exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))))*( nai_old_*exp(50.0000/RTONF) -  Nao*exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))*d_old_*f_old_*f2_old_;
-    
+
     const real i_up =  (( 2.00000*1.00000*Vi*F)/( 1.00000*tau_up*Ca_up_max))*cai_old_*(Ca_up_max - ca_up_old_);
     const real i_tr =  (( 2.00000*1.00000*V_rel*F)/( 1.00000*tau_rep))*p_old_*(ca_up_old_ - ca_rel_old_);
-    
+
     const real I_K = ( i_K_max*(ki_old_ -  kc_old_*exp(- V_old_/RTONF)))/140.000;
     const real i_K =  x_old_*I_K;
     const real E_K =  RTONF*log(kc_old_/ki_old_);
@@ -387,13 +387,13 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current) {
     const real i_fK =  (( y_old_*kc_old_)/(kc_old_+Km_f))*g_f_K*(V_old_ - E_K);
     const real i_siK =  (( 0.0100000*P_si*(V_old_ - 50.0000))/( RTONF*(1.00000 - exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))))*( ki_old_*exp(50.0000/RTONF) -  kc_old_*exp(( - 1.00000*(V_old_ - 50.0000))/RTONF))*d_old_*f_old_*f2_old_;
     const real i_mK = (i_K1+i_K+i_fK+i_siK+i_to) -  2.00000*i_p;
-    
+
     const real i_f = i_fNa+i_fK;
     const real E_Ca =  0.500000*RTONF*log(Cao/cai_old_);
     const real i_Ca_b =  g_Cab*(V_old_ - E_Ca);
     const real i_siCa =  (( 4.00000*P_si*(V_old_ - 50.0000))/( RTONF*(1.00000 - exp(( - 1.00000*(V_old_ - 50.0000)*2.00000)/RTONF))))*( cai_old_*exp(100.000/RTONF) -  Cao*exp(( - 2.00000*(V_old_ - 50.0000))/RTONF))*d_old_*f_old_*f2_old_;
     const real i_si = i_siCa+i_siK+i_siNa;
-    
+
     const real i_rel = ( (( 2.00000*1.00000*V_rel*F)/( 1.00000*tau_rel))*ca_rel_old_*pow(cai_old_, rCa))/(pow(cai_old_, rCa)+pow(K_mCa, rCa));
 
     // Rates of change

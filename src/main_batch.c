@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
     }
 
     simulation_number_start = rank * num_simulations;
-    
+
     if (num_simulations == 0) {
         MPI_Finalize();
         return EXIT_SUCCESS;
@@ -366,7 +366,7 @@ int main(int argc, char **argv) {
     GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config, "output_dir");
     char *initial_out_dir_name = strdup(out_dir_name);
 
-    
+
     set_no_stdout(options->quiet);
 
     output_folder = batch_options->output_folder;

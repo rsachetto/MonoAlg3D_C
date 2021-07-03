@@ -15,7 +15,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
     uint32_t num_cells = solver->original_num_cells;
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
     OMP(parallel for)
     for(uint32_t i = 0; i < num_cells; i++) {

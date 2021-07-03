@@ -20,25 +20,25 @@
     for(struct cell_node *cell = grid->purkinje->first_cell; cell != NULL; cell = cell->next)
 
 struct grid {
-	struct cell_node *first_cell;     // First cell of grid.
-	struct point_3d cube_side_length;
-	struct point_3d mesh_side_length;
+    struct cell_node *first_cell;     // First cell of grid.
+    struct point_3d cube_side_length;
+    struct point_3d mesh_side_length;
 
-	uint32_t number_of_cells;  // Number of cells of grid.
-	uint32_t num_active_cells;
+    uint32_t number_of_cells;  // Number of cells of grid.
+    uint32_t num_active_cells;
 
     //dynamic arrays, need to point to NULL
-	ui32_array free_sv_positions;
-	ui32_array refined_this_step;
+    ui32_array free_sv_positions;
+    ui32_array refined_this_step;
 
-	struct cell_node **active_cells;
-	bool adaptive;
+    struct cell_node **active_cells;
+    bool adaptive;
 
-	// Purkinje section
-	struct grid_purkinje *purkinje;
+    // Purkinje section
+    struct grid_purkinje *purkinje;
 
-	struct point_3d start_discretization;
-	struct point_3d max_discretization;
+    struct point_3d start_discretization;
+    struct point_3d max_discretization;
 };
 
 struct grid* new_grid();

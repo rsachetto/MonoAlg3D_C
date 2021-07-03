@@ -251,7 +251,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
     float  v;
 
     struct point_3d points[8];
-    
+
     struct point_3d point1;
     struct point_3d point2;
     struct point_3d point3;
@@ -267,8 +267,8 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
     struct point_hash_entry *hash =  NULL;
     char *line = NULL;
 
-	sds *line_data;	
-	int data_count;
+    sds *line_data;
+    int data_count;
 
     char* source_limit = source + source_size;
 
@@ -290,10 +290,10 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             arrput(line, '\0');
 
-			line_data = sdssplitlen(line, (int)strlen(line), ",", 1, &data_count);
+            line_data = sdssplitlen(line, (int)strlen(line), ",", 1, &data_count);
 
-			center.x = strtod(line_data[0], NULL);
-			center.y = strtod(line_data[1], NULL);
+            center.x = strtod(line_data[0], NULL);
+            center.y = strtod(line_data[1], NULL);
             center.z = strtod(line_data[2], NULL);
 
             half_face.x = strtod(line_data[3], NULL);
@@ -307,15 +307,15 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
                 half_face.z = half_face.x;
             }
 
-			if(v_index < data_count) {
-				v = strtod(line_data[v_index], NULL);
-			}
-			else {
-				v = 0;
-				fprintf(stderr, "Value not found in index %d (max index is %d)! setting to 0!\n", v_index, data_count - 1);
-			}
+            if(v_index < data_count) {
+                v = strtod(line_data[v_index], NULL);
+            }
+            else {
+                v = 0;
+                fprintf(stderr, "Value not found in index %d (max index is %d)! setting to 0!\n", v_index, data_count - 1);
+            }
 
-			sdsfreesplitres(line_data, data_count);
+            sdsfreesplitres(line_data, data_count);
 
             arrsetlen(line, 0);
         }
@@ -1526,7 +1526,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
                     int points_per_cell = invert_bytes(*(int*)source);
                     source += 4; source_size -= 4;
 
-                    for (int c = 0; c < points_per_cell; c++) {                 
+                    for (int c = 0; c < points_per_cell; c++) {
                         uint64_t cell_point = (uint64_t )invert_bytes(*(int*)source);
                         for(int b = 0; b < 8; b++) {
                             arrput(state->cells_connectivity_ascii, *((char*)(&cell_point) + b) ); //here this array will be treated as binary data

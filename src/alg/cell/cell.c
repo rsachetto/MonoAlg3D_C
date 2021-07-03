@@ -80,7 +80,7 @@ void free_cell_node(struct cell_node *cell_node) {
     arrfree(cell_node->elements);
     free(cell_node->linear_system_solver_extra_info);
     free(cell_node->mesh_extra_info);
-	free(cell_node->neighbours);
+    free(cell_node->neighbours);
 
 #if defined(_OPENMP)
     omp_destroy_lock(&(cell_node->updating));
@@ -179,9 +179,9 @@ void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretizati
 
 void set_cell_flux(struct cell_node *the_cell, enum transition_direction direction) {
 
-	void *neighbour_grid_cell;
-	struct transition_node *white_neighbor_cell;
-	struct cell_node *black_neighbor_cell;
+    void *neighbour_grid_cell;
+    struct transition_node *white_neighbor_cell;
+    struct cell_node *black_neighbor_cell;
 
     if(VALID_SIMPLE_DIRECTION(direction)) {
         neighbour_grid_cell = the_cell->neighbours[direction];
@@ -191,152 +191,152 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
         exit(10);
     }
 
-	real_cpu least_distance_x = the_cell->discretization.x/2.0;
-	real_cpu least_distance_y = the_cell->discretization.y/2.0;
-	real_cpu least_distance_z = the_cell->discretization.z/2.0;
+    real_cpu least_distance_x = the_cell->discretization.x/2.0;
+    real_cpu least_distance_y = the_cell->discretization.y/2.0;
+    real_cpu least_distance_z = the_cell->discretization.z/2.0;
 
-	real_cpu local_flux_x;
-	real_cpu local_flux_y;
-	real_cpu local_flux_z;
+    real_cpu local_flux_x;
+    real_cpu local_flux_y;
+    real_cpu local_flux_z;
 
-	bool has_found;
+    bool has_found;
 
-	/* When neighbour_grid_cell is a transition node, looks for the next neighbor
-	 * cell which is a cell node. */
-	uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
-	uint8_t neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+    /* When neighbour_grid_cell is a transition node, looks for the next neighbor
+     * cell which is a cell node. */
+    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
+    uint8_t neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
-	if(neighbour_grid_cell_level > the_cell->cell_data.level) {
-		if(neighbour_grid_cell_type == TRANSITION_NODE) {
-			has_found = false;
-			while(!has_found) {
-				if(neighbour_grid_cell_type == TRANSITION_NODE) {
-					white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
-					if(white_neighbor_cell->single_connector == NULL) {
-						has_found = true;
-					} else {
-						neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
-						neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-					}
-				} else {
-					break;
-				}
-			}
-		}
-	} else {
-		if(neighbour_grid_cell_level <= the_cell->cell_data.level && (neighbour_grid_cell_type == TRANSITION_NODE)) {
-			has_found = false;
-			while(!has_found) {
-				if(neighbour_grid_cell_type == TRANSITION_NODE) {
-					white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
-					if(white_neighbor_cell->single_connector == 0) {
-						has_found = true;
-					} else {
-						neighbour_grid_cell = white_neighbor_cell->single_connector;
-						neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-					}
-				} else {
-					break;
-				}
-			}
-		}
-	}
+    if(neighbour_grid_cell_level > the_cell->cell_data.level) {
+        if(neighbour_grid_cell_type == TRANSITION_NODE) {
+            has_found = false;
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
+                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
+                    if(white_neighbor_cell->single_connector == NULL) {
+                        has_found = true;
+                    } else {
+                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    } else {
+        if(neighbour_grid_cell_level <= the_cell->cell_data.level && (neighbour_grid_cell_type == TRANSITION_NODE)) {
+            has_found = false;
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
+                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
+                    if(white_neighbor_cell->single_connector == 0) {
+                        has_found = true;
+                    } else {
+                        neighbour_grid_cell = white_neighbor_cell->single_connector;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    }
 
-	if(neighbour_grid_cell_type == CELL_NODE) {
+    if(neighbour_grid_cell_type == CELL_NODE) {
 
-		black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+        black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
-		if(black_neighbor_cell->discretization.x/2.0 < least_distance_x)
-			least_distance_x = black_neighbor_cell->discretization.x / 2.0;
+        if(black_neighbor_cell->discretization.x/2.0 < least_distance_x)
+            least_distance_x = black_neighbor_cell->discretization.x / 2.0;
 
-		if(black_neighbor_cell->discretization.y/2.0 < least_distance_y)
-			least_distance_y = black_neighbor_cell->discretization.y / 2.0;
+        if(black_neighbor_cell->discretization.y/2.0 < least_distance_y)
+            least_distance_y = black_neighbor_cell->discretization.y / 2.0;
 
-		if(black_neighbor_cell->discretization.z/2.0 < least_distance_z)
-			least_distance_z = black_neighbor_cell->discretization.z / 2.0;
+        if(black_neighbor_cell->discretization.z/2.0 < least_distance_z)
+            least_distance_z = black_neighbor_cell->discretization.z / 2.0;
 
-		local_flux_x = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_x);
-		local_flux_y = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_y);
-		local_flux_z = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_z);
+        local_flux_x = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_x);
+        local_flux_y = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_y);
+        local_flux_z = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_z);
 
-		lock_cell_node(the_cell);
+        lock_cell_node(the_cell);
 
-		switch(direction) {
-			case BACK:
-				if(local_flux_y > the_cell->back_flux)
-					the_cell->back_flux += local_flux_y;
-				break;
+        switch(direction) {
+            case BACK:
+                if(local_flux_y > the_cell->back_flux)
+                    the_cell->back_flux += local_flux_y;
+                break;
 
-			case FRONT:
-				if(local_flux_y > the_cell->front_flux)
-					the_cell->front_flux += local_flux_y;
-				break;
+            case FRONT:
+                if(local_flux_y > the_cell->front_flux)
+                    the_cell->front_flux += local_flux_y;
+                break;
 
-			case TOP:
-				if(local_flux_x > the_cell->top_flux)
-					the_cell->top_flux += local_flux_x;
-				break;
+            case TOP:
+                if(local_flux_x > the_cell->top_flux)
+                    the_cell->top_flux += local_flux_x;
+                break;
 
-			case DOWN:
-				if(local_flux_x > the_cell->down_flux)
-					the_cell->down_flux += local_flux_x;
-				break;
+            case DOWN:
+                if(local_flux_x > the_cell->down_flux)
+                    the_cell->down_flux += local_flux_x;
+                break;
 
-			case RIGHT:
-				if(local_flux_z > the_cell->right_flux)
-					the_cell->right_flux += local_flux_z;
-				break;
+            case RIGHT:
+                if(local_flux_z > the_cell->right_flux)
+                    the_cell->right_flux += local_flux_z;
+                break;
 
-			case LEFT:
-				if(local_flux_z > the_cell->left_flux)
-					the_cell->left_flux += local_flux_z;
-				break;
+            case LEFT:
+                if(local_flux_z > the_cell->left_flux)
+                    the_cell->left_flux += local_flux_z;
+                break;
 
-			default:
-				break;
-		}
+            default:
+                break;
+        }
 
-		unlock_cell_node(the_cell);
+        unlock_cell_node(the_cell);
 
-		lock_cell_node(black_neighbor_cell);
+        lock_cell_node(black_neighbor_cell);
 
-		switch(direction) {
-			case BACK:
-				if(local_flux_y > black_neighbor_cell->front_flux)
-					black_neighbor_cell->front_flux += local_flux_y;
-				break;
+        switch(direction) {
+            case BACK:
+                if(local_flux_y > black_neighbor_cell->front_flux)
+                    black_neighbor_cell->front_flux += local_flux_y;
+                break;
 
-			case FRONT:
-				if(local_flux_y > black_neighbor_cell->back_flux)
-					black_neighbor_cell->back_flux += local_flux_y;
-				break;
+            case FRONT:
+                if(local_flux_y > black_neighbor_cell->back_flux)
+                    black_neighbor_cell->back_flux += local_flux_y;
+                break;
 
-			case TOP:
-				if(local_flux_x > black_neighbor_cell->down_flux)
-					black_neighbor_cell->down_flux += local_flux_x;
-				break;
+            case TOP:
+                if(local_flux_x > black_neighbor_cell->down_flux)
+                    black_neighbor_cell->down_flux += local_flux_x;
+                break;
 
-			case DOWN:
-				if(local_flux_x > black_neighbor_cell->top_flux)
-					black_neighbor_cell->top_flux += local_flux_x;
-				break;
+            case DOWN:
+                if(local_flux_x > black_neighbor_cell->top_flux)
+                    black_neighbor_cell->top_flux += local_flux_x;
+                break;
 
-			case RIGHT:
-				if(local_flux_z > black_neighbor_cell->left_flux)
-					black_neighbor_cell->left_flux += local_flux_z;
-				break;
+            case RIGHT:
+                if(local_flux_z > black_neighbor_cell->left_flux)
+                    black_neighbor_cell->left_flux += local_flux_z;
+                break;
 
-			case LEFT:
-				if(local_flux_z > black_neighbor_cell->right_flux)
-					black_neighbor_cell->right_flux += local_flux_z;
-				break;
+            case LEFT:
+                if(local_flux_z > black_neighbor_cell->right_flux)
+                    black_neighbor_cell->right_flux += local_flux_z;
+                break;
 
-			default:
-				break;
-		}
+            default:
+                break;
+        }
 
-		unlock_cell_node(black_neighbor_cell);
-	}
+        unlock_cell_node(black_neighbor_cell);
+    }
 }
 
 real_cpu get_cell_maximum_flux(struct cell_node *the_cell) {
@@ -362,56 +362,56 @@ real_cpu get_cell_maximum_flux(struct cell_node *the_cell) {
 
 struct cell_node *get_cell_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
 
-	struct cell_node *black_neighbor_cell;
+    struct cell_node *black_neighbor_cell;
 
-	uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
-	enum cell_type neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
+    enum cell_type neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
 
-	struct transition_node *white_neighbor_cell;
+    struct transition_node *white_neighbor_cell;
 
-	if(neighbour_grid_cell_type == TRANSITION_NODE) {
+    if(neighbour_grid_cell_type == TRANSITION_NODE) {
 
-		while(true) {
+        while(true) {
 
-			if(neighbour_grid_cell_type == TRANSITION_NODE) {
-				white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
-				if(white_neighbor_cell->single_connector == NULL) {
-					return NULL;
-				}
-				else {
+            if(neighbour_grid_cell_type == TRANSITION_NODE) {
+                white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
+                if(white_neighbor_cell->single_connector == NULL) {
+                    return NULL;
+                }
+                else {
 
-					if(neighbour_grid_cell_level > grid_cell->cell_data.level) {
-						neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
-					}
-					else {
-						neighbour_grid_cell = white_neighbor_cell->single_connector;
-					}
+                    if(neighbour_grid_cell_level > grid_cell->cell_data.level) {
+                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
+                    }
+                    else {
+                        neighbour_grid_cell = white_neighbor_cell->single_connector;
+                    }
 
-					neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
-				}
-			}
-			else {
+                    neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                }
+            }
+            else {
 
-				black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-				if(black_neighbor_cell->active) {
-					return black_neighbor_cell;
-				}
+                black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+                if(black_neighbor_cell->active) {
+                    return black_neighbor_cell;
+                }
 
-				else {
-					return NULL;
-				}
-			}
-		}
-	}
-	else {
-		black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
-		if(black_neighbor_cell->active) {
-			return black_neighbor_cell;
-		}
-		else {
-			return NULL;
-		}
-	}
+                else {
+                    return NULL;
+                }
+            }
+        }
+    }
+    else {
+        black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+        if(black_neighbor_cell->active) {
+            return black_neighbor_cell;
+        }
+        else {
+            return NULL;
+        }
+    }
 
 }
 

@@ -229,8 +229,8 @@ void write_purkinje_activation_time_for_each_pulse (struct config *config, struc
         ((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid = NULL;
 
         sdsfree(output_dir_with_file);
-        sdsfree(base_name);        
-    }    
+        sdsfree(base_name);
+    }
 
 }
 
@@ -262,13 +262,13 @@ void set_purkinje_vtk_values_with_activation_time_from_current_pulse (void **per
             activation_times_array = (float *) hmget((*data)->purkinje_activation_times, cell_coordinates);
 
             // Get the activation time from the current pulse for that particular cell
-            float at = activation_times_array[cur_pulse];           
+            float at = activation_times_array[cur_pulse];
 
             // Update the scalar value from the "vtk_unstructured_grid"
             (*data)->purkinje_grid->values[i] = at;
 
-        }      
-    }    
+        }
+    }
 }
 
 void write_purkinje_apd_map (struct config *config, struct grid *the_grid, char *output_dir,\
@@ -371,12 +371,12 @@ void set_purkinje_vtk_values_with_mean_apd (void **persistent_data, struct grid 
             // Calculate the mean APD values
             float mean_value = 0.0;
             mean_value = calculate_mean(apds_array,apd_len);
-            
+
             // Update the scalar value from the "vtk_unstructured_grid"
             (*data)->purkinje_grid->values[i] = mean_value;
 
-        }      
-    }    
+        }
+    }
 }
 
 void calculate_tissue_activation_time_and_apd (struct time_info *time_info, struct config *config, struct grid *the_grid, const real_cpu time_threshold,\
@@ -397,7 +397,7 @@ void calculate_tissue_activation_time_and_apd (struct time_info *time_info, stru
     while(tissue_grid_cell != 0) {
 
         if( tissue_grid_cell->active || ( tissue_grid_cell->mesh_extra_info && ( FIBROTIC(tissue_grid_cell) || BORDER_ZONE(tissue_grid_cell) ) ) ) {
-            
+
             center_x = tissue_grid_cell->center.x;
             center_y = tissue_grid_cell->center.y;
             center_z = tissue_grid_cell->center.z;
@@ -607,7 +607,7 @@ void write_tissue_activation_time_for_each_pulse (struct config *config, struct 
 
     // Get the number of pulses using one cell of the grid
     int n_pulses = (int) hmget((*data)->tissue_num_activations, cell_coordinates);
-    
+
     // Write the activation time map for each pulse
     for (int cur_pulse = 0; cur_pulse < n_pulses; cur_pulse++) {
 
@@ -632,8 +632,8 @@ void write_tissue_activation_time_for_each_pulse (struct config *config, struct 
         ((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid = NULL;
 
         sdsfree(output_dir_with_file);
-        sdsfree(base_name);        
-    }    
+        sdsfree(base_name);
+    }
 }
 
 void set_tissue_vtk_values_with_activation_time_from_current_pulse (void **persistent_data, struct grid *the_grid, const int cur_pulse) {
@@ -666,16 +666,18 @@ void set_tissue_vtk_values_with_activation_time_from_current_pulse (void **persi
             // TODO: Check the case where: (activation_times_array == NULL)
             // Get the activation time from the current pulse for that particular cell
             float at;
-            if (activation_times_array == NULL)
+            if (activation_times_array == NULL) {
                 at = -1;
-            else
-                at = activation_times_array[cur_pulse];           
+            }
+            else {
+                at = activation_times_array[cur_pulse];
+            }
 
             // Update the scalar value from the "vtk_unstructured_grid"
             (*data)->tissue_grid->values[i] = at;
 
-        }      
-    }    
+        }
+    }
 }
 
 void set_tissue_vtk_values_with_mean_apd (void **persistent_data, struct grid *the_grid) {
@@ -710,17 +712,17 @@ void set_tissue_vtk_values_with_mean_apd (void **persistent_data, struct grid *t
             // Calculate the mean APD values
             float mean_value = 0.0;
             mean_value = calculate_mean(apds_array,apd_len);
-            
+
             // Update the scalar value from the "vtk_unstructured_grid"
             (*data)->tissue_grid->values[i] = mean_value;
 
-        }      
-    }    
+        }
+    }
 }
 
 // TODO: Think about how we are going to calculate the propagation velocity in the retrograde direction
 void print_purkinje_propagation_velocity (struct config *config, struct grid *the_grid) {
-    
+
     assert(config);
     assert(the_grid);
 
@@ -733,10 +735,8 @@ void print_purkinje_propagation_velocity (struct config *config, struct grid *th
 
     // Calculate the propagation velocity of each terminal in the Purkinje network
     struct node *n = the_network->list_nodes;
-    while(n != NULL) 
-    {
-        if( is_terminal(n) ) 
-        {
+    while(n != NULL) {
+        if( is_terminal(n) ) {
             struct point_3d cell_coordinates;
             real_cpu center_x, center_y, center_z;
 
@@ -753,7 +753,7 @@ void print_purkinje_propagation_velocity (struct config *config, struct grid *th
             int n_pulses = 0;
             n_pulses = (int) hmget(persistent_data->purkinje_num_activations, cell_coordinates);
 
-            // Get the terminal cell LAT 
+            // Get the terminal cell LAT
             float *activation_times_array = NULL;
             activation_times_array = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
 

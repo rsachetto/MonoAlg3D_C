@@ -3,53 +3,53 @@
 //
 
 struct gpu_persistent_data {
-	int *d_col, *d_row;
-	float *d_val, *d_x;
+    int *d_col, *d_row;
+    float *d_val, *d_x;
 
-	float *d_r, *d_p, *d_Ax, *d_rw, *d_v, *d_t;
+    float *d_r, *d_p, *d_Ax, *d_rw, *d_v, *d_t;
     int N, nz;
 
-	/* Get handle to the CUBLAS context */
-	cublasHandle_t cublasHandle;
-	cublasStatus_t cublasStatus;
+    /* Get handle to the CUBLAS context */
+    cublasHandle_t cublasHandle;
+    cublasStatus_t cublasStatus;
 
-	/* Get handle to the CUSPARSE context */
-	cusparseHandle_t cusparseHandle;
-	cusparseStatus_t cusparseStatus;
+    /* Get handle to the CUSPARSE context */
+    cusparseHandle_t cusparseHandle;
+    cusparseStatus_t cusparseStatus;
 
-	cusparseMatDescr_t descr;
+    cusparseMatDescr_t descr;
 
-	int nzILU0;
-	float *d_valsILU0;
-	float *d_zm1, *d_zm2, *d_rm2;
-	float *d_y;
+    int nzILU0;
+    float *d_valsILU0;
+    float *d_zm1, *d_zm2, *d_rm2;
+    float *d_y;
 
-	cusparseSolveAnalysisInfo_t infoA;
-	cusparseSolveAnalysisInfo_t info_u;
-	cusparseMatDescr_t descrL;
-	cusparseMatDescr_t descrU;
+    cusparseSolveAnalysisInfo_t infoA;
+    cusparseSolveAnalysisInfo_t info_u;
+    cusparseMatDescr_t descrL;
+    cusparseMatDescr_t descrU;
 };
 
  INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
-	struct gpu_persistent_data *persistent_data = CALLOC_ONE_TYPE(struct gpu_persistent_data);
+    struct gpu_persistent_data *persistent_data = CALLOC_ONE_TYPE(struct gpu_persistent_data);
 
-	int_array I = NULL, J = NULL;
-	f32_array val = NULL;
-	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
-	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
-	GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config, "use_preconditioner");
+    int_array I = NULL, J = NULL;
+    f32_array val = NULL;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(use_preconditioner, config, "use_preconditioner");
 
-	check_cuda_error((cudaError_t)cublasCreate(&(persistent_data->cublasHandle)));
+    check_cuda_error((cudaError_t)cublasCreate(&(persistent_data->cublasHandle)));
 
-	check_cuda_error((cudaError_t)cusparseCreate(&(persistent_data->cusparseHandle)));
+    check_cuda_error((cudaError_t)cusparseCreate(&(persistent_data->cusparseHandle)));
 
-	check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(persistent_data->descr)));
+    check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(persistent_data->descr)));
 
-	cusparseSetMatType(persistent_data->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-	cusparseSetMatIndexBase(persistent_data->descr, CUSPARSE_INDEX_BASE_ZERO);
+    cusparseSetMatType(persistent_data->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(persistent_data->descr, CUSPARSE_INDEX_BASE_ZERO);
 
-	uint32_t num_active_cells;
+    uint32_t num_active_cells;
     struct cell_node **active_cells = NULL;
 
     if (is_purkinje) {
@@ -66,76 +66,76 @@ struct gpu_persistent_data {
     int N = 0, nz = 0;
 
     nz = arrlen(val);
-	N = num_active_cells;
+    N = num_active_cells;
 
     persistent_data->N = N;
     persistent_data->nz = nz;
 
-	check_cuda_error(cudaMalloc((void **)&(persistent_data->d_col), nz * sizeof(int)));
-	check_cuda_error(cudaMalloc((void **)&(persistent_data->d_row), (N + 1) * sizeof(int)));
-	check_cuda_error(cudaMalloc((void **)&(persistent_data->d_val), nz * sizeof(float)));
-	check_cuda_error(cudaMalloc((void **)&(persistent_data->d_x)  , N * sizeof(float)));
-	check_cuda_error(cudaMalloc((void **)&(persistent_data->d_r) , N * sizeof(float)));
-	check_cuda_error(cudaMalloc((void **)&(persistent_data->d_p) , N * sizeof(float)));
-	check_cuda_error(cudaMalloc((void **)&(persistent_data->d_Ax), N * sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&(persistent_data->d_col), nz * sizeof(int)));
+    check_cuda_error(cudaMalloc((void **)&(persistent_data->d_row), (N + 1) * sizeof(int)));
+    check_cuda_error(cudaMalloc((void **)&(persistent_data->d_val), nz * sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&(persistent_data->d_x)  , N * sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&(persistent_data->d_r) , N * sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&(persistent_data->d_p) , N * sizeof(float)));
+    check_cuda_error(cudaMalloc((void **)&(persistent_data->d_Ax), N * sizeof(float)));
 
-	cudaMemcpy(persistent_data->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice);      // JA
-	cudaMemcpy(persistent_data->d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice); // IA
-	cudaMemcpy(persistent_data->d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice);  // A
-	float *rhs = (float *)malloc(sizeof(float) * num_active_cells);
+    cudaMemcpy(persistent_data->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice);      // JA
+    cudaMemcpy(persistent_data->d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice); // IA
+    cudaMemcpy(persistent_data->d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice);  // A
+    float *rhs = (float *)malloc(sizeof(float) * num_active_cells);
 
-	OMP(parallel for)
+    OMP(parallel for)
     for(uint32_t i = 0; i < num_active_cells; i++) {
         rhs[i] = active_cells[i]->b;
     }
 
-	check_cuda_error(cudaMemcpy(persistent_data->d_x, rhs, N * sizeof(float), cudaMemcpyHostToDevice)); // Result
-	if(use_preconditioner) {
+    check_cuda_error(cudaMemcpy(persistent_data->d_x, rhs, N * sizeof(float), cudaMemcpyHostToDevice)); // Result
+    if(use_preconditioner) {
         persistent_data->nzILU0 = 2 * N - 1;
-		check_cuda_error(cudaMalloc((void **)&(persistent_data->d_valsILU0), nz * sizeof(float)));
-		check_cuda_error(cudaMalloc((void **)&(persistent_data->d_zm1), (N) * sizeof(float)));
-		check_cuda_error(cudaMalloc((void **)&(persistent_data->d_zm2), (N) * sizeof(float)));
-		check_cuda_error(cudaMalloc((void **)&(persistent_data->d_rm2), (N) * sizeof(float)));
-		check_cuda_error(cudaMalloc((void **)&(persistent_data->d_y), N * sizeof(float)));
+        check_cuda_error(cudaMalloc((void **)&(persistent_data->d_valsILU0), nz * sizeof(float)));
+        check_cuda_error(cudaMalloc((void **)&(persistent_data->d_zm1), (N) * sizeof(float)));
+        check_cuda_error(cudaMalloc((void **)&(persistent_data->d_zm2), (N) * sizeof(float)));
+        check_cuda_error(cudaMalloc((void **)&(persistent_data->d_rm2), (N) * sizeof(float)));
+        check_cuda_error(cudaMalloc((void **)&(persistent_data->d_y), N * sizeof(float)));
 
-		persistent_data->cusparseStatus = cusparseCreateSolveAnalysisInfo(&(persistent_data->infoA));
-		check_cuda_error((cudaError_t)(persistent_data->cusparseStatus));
+        persistent_data->cusparseStatus = cusparseCreateSolveAnalysisInfo(&(persistent_data->infoA));
+        check_cuda_error((cudaError_t)(persistent_data->cusparseStatus));
 
-		/* Perform the analysis for the Non-Transpose case */
-		persistent_data->cusparseStatus = cusparseScsrsv_analysis(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, nz, persistent_data->descr, persistent_data->d_val, persistent_data->d_row, persistent_data->d_col, persistent_data->infoA);
+        /* Perform the analysis for the Non-Transpose case */
+        persistent_data->cusparseStatus = cusparseScsrsv_analysis(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, nz, persistent_data->descr, persistent_data->d_val, persistent_data->d_row, persistent_data->d_col, persistent_data->infoA);
 
-		check_cuda_error((cudaError_t)(persistent_data->cusparseStatus));
+        check_cuda_error((cudaError_t)(persistent_data->cusparseStatus));
 
-		/* Copy A data to ILU0 vals as input*/
-		cudaMemcpy(persistent_data->d_valsILU0, persistent_data->d_val, persistent_data->nz * sizeof(float), cudaMemcpyDeviceToDevice);
+        /* Copy A data to ILU0 vals as input*/
+        cudaMemcpy(persistent_data->d_valsILU0, persistent_data->d_val, persistent_data->nz * sizeof(float), cudaMemcpyDeviceToDevice);
 
-		/* generate the Incomplete LU factor H for the matrix A using cudsparseScsrilu0 */
-		persistent_data->cusparseStatus = cusparseScsrilu0(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, persistent_data->N, persistent_data->descr, persistent_data->d_valsILU0, persistent_data->d_row, persistent_data->d_col, persistent_data->infoA);
+        /* generate the Incomplete LU factor H for the matrix A using cudsparseScsrilu0 */
+        persistent_data->cusparseStatus = cusparseScsrilu0(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, persistent_data->N, persistent_data->descr, persistent_data->d_valsILU0, persistent_data->d_row, persistent_data->d_col, persistent_data->infoA);
 
-		check_cuda_error((cudaError_t)(persistent_data->cusparseStatus));
+        check_cuda_error((cudaError_t)(persistent_data->cusparseStatus));
 
-		cusparseCreateSolveAnalysisInfo(&(persistent_data->info_u));
+        cusparseCreateSolveAnalysisInfo(&(persistent_data->info_u));
 
-		persistent_data->cusparseStatus = cusparseCreateMatDescr(&(persistent_data->descrL));
-		cusparseSetMatType(persistent_data->descrL, CUSPARSE_MATRIX_TYPE_GENERAL);
-		cusparseSetMatIndexBase(persistent_data->descrL, CUSPARSE_INDEX_BASE_ZERO);
-		cusparseSetMatFillMode(persistent_data->descrL, CUSPARSE_FILL_MODE_LOWER);
-		cusparseSetMatDiagType(persistent_data->descrL, CUSPARSE_DIAG_TYPE_UNIT);
+        persistent_data->cusparseStatus = cusparseCreateMatDescr(&(persistent_data->descrL));
+        cusparseSetMatType(persistent_data->descrL, CUSPARSE_MATRIX_TYPE_GENERAL);
+        cusparseSetMatIndexBase(persistent_data->descrL, CUSPARSE_INDEX_BASE_ZERO);
+        cusparseSetMatFillMode(persistent_data->descrL, CUSPARSE_FILL_MODE_LOWER);
+        cusparseSetMatDiagType(persistent_data->descrL, CUSPARSE_DIAG_TYPE_UNIT);
 
         persistent_data->cusparseStatus = cusparseCreateMatDescr(&(persistent_data->descrU));
-		cusparseSetMatType(persistent_data->descrU, CUSPARSE_MATRIX_TYPE_GENERAL);
-		cusparseSetMatIndexBase(persistent_data->descrU, CUSPARSE_INDEX_BASE_ZERO);
-		cusparseSetMatFillMode(persistent_data->descrU, CUSPARSE_FILL_MODE_UPPER);
-		cusparseSetMatDiagType(persistent_data->descrU, CUSPARSE_DIAG_TYPE_NON_UNIT);
+        cusparseSetMatType(persistent_data->descrU, CUSPARSE_MATRIX_TYPE_GENERAL);
+        cusparseSetMatIndexBase(persistent_data->descrU, CUSPARSE_INDEX_BASE_ZERO);
+        cusparseSetMatFillMode(persistent_data->descrU, CUSPARSE_FILL_MODE_UPPER);
+        cusparseSetMatDiagType(persistent_data->descrU, CUSPARSE_DIAG_TYPE_NON_UNIT);
         persistent_data->cusparseStatus = cusparseScsrsv_analysis(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, N, nz,persistent_data->descrU, persistent_data->d_val, persistent_data->d_row, persistent_data->d_col, persistent_data->info_u);
-	}
+    }
 
     config->persistent_data = persistent_data;
 
-	free(rhs);
-	arrfree(I);
-	arrfree(J);
-	arrfree(val);
+    free(rhs);
+    arrfree(I);
+    arrfree(J);
+    arrfree(val);
 }
 
 END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {

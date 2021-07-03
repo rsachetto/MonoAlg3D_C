@@ -62,8 +62,7 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
         element.cell = ac[i];
         element.value = alpha;
 
-        if (ac[i]->elements != NULL) 
-        {
+        if (ac[i]->elements != NULL) {
             arrfree(ac[i]->elements);
         }
 
@@ -72,13 +71,13 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
         arrput(ac[i]->elements, element);
 
         n = n->next;
-    }       
+    }
 }
 
 // For the Purkinje fibers we only need to solve the 1D Monodomain equation
 static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
                                                         struct node *pk_node) {
-    
+
     struct edge *e;
     struct element **cell_elements;
 
@@ -99,8 +98,8 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
         e = pk_node->list_edges;
 
         // Do the mapping of the edges from the graph to the sparse matrix data structure ...
-        while (e != NULL)
-        {
+        while (e != NULL) {
+
             struct element new_element;
 
             // Neighbour elements ...
@@ -113,7 +112,7 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
 
             arrput(grid_cells[i]->elements,new_element);
 
-            e = e->next;         
+            e = e->next;
         }
     }
 }
@@ -132,10 +131,8 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)  {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config, "sigma_purkinje");
 
     if(!sigma_initialized) {
-        
         OMP(parallel for)
-        for (uint32_t i = 0; i < num_active_cells; i++) 
-        {
+        for (uint32_t i = 0; i < num_active_cells; i++) {
             ac[i]->sigma.x = sigma_x;
         }
 

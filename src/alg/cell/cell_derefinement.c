@@ -101,7 +101,7 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
     }
 
     v_average /= 8.0;
-    
+
     sigma_x_average /= 8.0;
     sigma_y_average /= 8.0;
     sigma_z_average /= 8.0;

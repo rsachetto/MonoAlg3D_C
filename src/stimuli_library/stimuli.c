@@ -15,8 +15,8 @@ SET_SPATIAL_STIM(stim_if_x_less_than) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    
-	ALLOCATE_STIMS();
+
+    ALLOCATE_STIMS();
 
     if(is_purkinje) {
         n_active = the_grid->purkinje->num_active_purkinje_cells;
@@ -234,8 +234,8 @@ SET_SPATIAL_STIM(set_benchmark_spatial_stim) {
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
-    
-	ALLOCATE_STIMS();
+
+    ALLOCATE_STIMS();
 
     real stim_current = 0.0;
 
@@ -347,7 +347,7 @@ SET_SPATIAL_STIM(stim_sphere) {
 
     real sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sphere_radius, config, "radius");
-    
+
     real stim_current = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config, "current");
 

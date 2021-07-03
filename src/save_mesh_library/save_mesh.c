@@ -36,10 +36,10 @@ static bool initialized = false;
 static void save_visibility_mask(sds output_dir_with_file, ui8_array visible_cells) {
         sds output_dir_with_new_file = sdsnew(output_dir_with_file);
         output_dir_with_new_file = sdscat(output_dir_with_new_file, ".vis");
-		FILE *vis = fopen(output_dir_with_new_file, "wb");
-		fwrite(visible_cells, sizeof(uint8_t), arrlen(visible_cells), vis);
+        FILE *vis = fopen(output_dir_with_new_file, "wb");
+        fwrite(visible_cells, sizeof(uint8_t), arrlen(visible_cells), vis);
         sdsfree(output_dir_with_new_file);
-		fclose(vis);
+        fclose(vis);
 }
 
 SAVE_MESH(save_as_adjacency_list) {
@@ -243,7 +243,7 @@ SAVE_MESH(save_as_text_or_binary) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_inactive, config, "save_inactive_cells");
-		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
         initialized = true;
 //    }
 
@@ -303,8 +303,8 @@ SAVE_MESH(save_as_text_or_binary) {
     real_cpu center_x, center_y, center_z, dx, dy, dz;
     real_cpu v;
 
-	ui8_array cell_visibility = NULL;
-	arrsetcap(cell_visibility, the_grid->num_active_cells);
+    ui8_array cell_visibility = NULL;
+    arrsetcap(cell_visibility, the_grid->num_active_cells);
 
     while(grid_cell != 0) {
 
@@ -348,16 +348,16 @@ SAVE_MESH(save_as_text_or_binary) {
             } else {
                 fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
             }
-			arrput(cell_visibility, grid_cell->visible);
+            arrput(cell_visibility, grid_cell->visible);
         }
         grid_cell = grid_cell->next;
     }
 
-	if(save_visible_mask) {
-		save_visibility_mask(tmp, cell_visibility);
-	}
+    if(save_visible_mask) {
+        save_visibility_mask(tmp, cell_visibility);
+    }
 
-   	sdsfree(base_name);
+    sdsfree(base_name);
     sdsfree(tmp);
 
 
@@ -428,13 +428,13 @@ SAVE_MESH(save_as_vtk) {
 
     bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
 
-	new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
 
     save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary, save_f);
 
-	if(save_visible_mask) {
-		save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid)->cell_visibility);
-	}	
+    if(save_visible_mask) {
+        save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid)->cell_visibility);
+    }
 
     if(the_grid->adaptive) {
         free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid);
@@ -458,7 +458,7 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_pvd, config, "save_pvd");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config, "compression_level");
-		GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
 
         if(compress) binary = true;
 
@@ -512,9 +512,9 @@ SAVE_MESH(save_as_vtu) {
         save_vtk_unstructured_grid_as_vtu(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
     }
 
-	if(save_visible_mask) {
-		save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid)->cell_visibility);
-	}
+    if(save_visible_mask) {
+        save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid)->cell_visibility);
+    }
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "mixed_tentusscher_myo_epi_2004.h"
 
-GET_CELL_MODEL_DATA(init_cell_model_data) 
+GET_CELL_MODEL_DATA(init_cell_model_data)
 {
 
     if(get_initial_v)
@@ -10,104 +10,104 @@ GET_CELL_MODEL_DATA(init_cell_model_data)
         cell_model->number_of_ode_equations = NEQ;
 }
 
-SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) 
+SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu)
 {
 
     log_info("Using mixed version of TenTusscher 2004 myocardium + epicardium CPU model\n");
 
-	// Get the mapping array
-	uint32_t *mapping = NULL;
-	if(solver->ode_extra_data) 
-	{
-		mapping = (uint32_t*)solver->ode_extra_data;
-	}
-	else 
-	{
-		log_error_and_exit("You need to specify a mask function when using a mixed model!\n");
-	}
+    // Get the mapping array
+    uint32_t *mapping = NULL;
+    if(solver->ode_extra_data)
+    {
+        mapping = (uint32_t*)solver->ode_extra_data;
+    }
+    else
+    {
+        log_error_and_exit("You need to specify a mask function when using a mixed model!\n");
+    }
 
-	uint32_t num_cells = solver->original_num_cells;
+    uint32_t num_cells = solver->original_num_cells;
 
-	solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
+    solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
 
-	OMP(parallel for)
-	for(uint32_t i = 0; i < num_cells; i++) {
+    OMP(parallel for)
+    for(uint32_t i = 0; i < num_cells; i++) {
 
-		real *sv = &solver->sv[i * NEQ];
+        real *sv = &solver->sv[i * NEQ];
 
-		// Initial conditions for TenTusscher myocardium
-		if (mapping[i] == 0)
-		{
-			sv[0] =  INITIAL_V;     // V;       millivolt
-			sv[1] =  0.f;           //M
-			sv[2] =  0.75;          //H
-			sv[3] =  0.75f;         //J
-			sv[4] =  0.f;           //Xr1
-			sv[5] =  1.f;           //Xr2
-			sv[6] =  0.f;           //Xs
-			sv[7] =  1.f;           //S
-			sv[8] =  0.f;           //R
-			sv[9] =  0.f;           //D
-			sv[10] = 1.f;           //F
-			sv[11] = 1.f;           //FCa
-			sv[12] = 1.f;           //G
-			sv[13] = 0.0002;        //Cai
-			sv[14] = 0.2f;          //CaSR
-			sv[15] = 11.6f;         //Nai
-			sv[16] = 138.3f;        //Ki
-		}
-		// Initial conditions for TenTusscher epicardium
-		else
-		{
-			sv[0] =  INITIAL_V;     // V;       millivolt
-			sv[1] =  0.f;           //M
-			sv[2] =  0.75;          //H
-			sv[3] =  0.75f;         //J
-			sv[4] =  0.f;           //Xr1
-			sv[5] =  1.f;           //Xr2
-			sv[6] =  0.f;           //Xs
-			sv[7] =  1.f;           //S
-			sv[8] =  0.f;           //R
-			sv[9] =  0.f;           //D
-			sv[10] = 1.f;           //F
-			sv[11] = 1.f;           //FCa
-			sv[12] = 1.f;           //G
-			sv[13] = 0.0002;        //Cai
-			sv[14] = 0.2f;          //CaSR
-			sv[15] = 11.6f;         //Nai
-			sv[16] = 138.3f;        //Ki
-		}
-	}
+        // Initial conditions for TenTusscher myocardium
+        if (mapping[i] == 0)
+        {
+            sv[0] =  INITIAL_V;     // V;       millivolt
+            sv[1] =  0.f;           //M
+            sv[2] =  0.75;          //H
+            sv[3] =  0.75f;         //J
+            sv[4] =  0.f;           //Xr1
+            sv[5] =  1.f;           //Xr2
+            sv[6] =  0.f;           //Xs
+            sv[7] =  1.f;           //S
+            sv[8] =  0.f;           //R
+            sv[9] =  0.f;           //D
+            sv[10] = 1.f;           //F
+            sv[11] = 1.f;           //FCa
+            sv[12] = 1.f;           //G
+            sv[13] = 0.0002;        //Cai
+            sv[14] = 0.2f;          //CaSR
+            sv[15] = 11.6f;         //Nai
+            sv[16] = 138.3f;        //Ki
+        }
+        // Initial conditions for TenTusscher epicardium
+        else
+        {
+            sv[0] =  INITIAL_V;     // V;       millivolt
+            sv[1] =  0.f;           //M
+            sv[2] =  0.75;          //H
+            sv[3] =  0.75f;         //J
+            sv[4] =  0.f;           //Xr1
+            sv[5] =  1.f;           //Xr2
+            sv[6] =  0.f;           //Xs
+            sv[7] =  1.f;           //S
+            sv[8] =  0.f;           //R
+            sv[9] =  0.f;           //D
+            sv[10] = 1.f;           //F
+            sv[11] = 1.f;           //FCa
+            sv[12] = 1.f;           //G
+            sv[13] = 0.0002;        //Cai
+            sv[14] = 0.2f;          //CaSR
+            sv[15] = 11.6f;         //Nai
+            sv[16] = 138.3f;        //Ki
+        }
+    }
 }
 
-SOLVE_MODEL_ODES(solve_model_odes_cpu) 
+SOLVE_MODEL_ODES(solve_model_odes_cpu)
 {
 
     // Get the mapping array
     uint32_t *mapping = NULL;
-    if(ode_solver->ode_extra_data) 
+    if(ode_solver->ode_extra_data)
     {
         mapping = (uint32_t*)ode_solver->ode_extra_data;
     }
-    else 
+    else
     {
         log_error_and_exit("You need to specify a mask function when using a mixed model!\n");
     }
 
 
- 	size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
+    size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
     uint32_t * cells_to_solve = ode_solver->cells_to_solve;
     real *sv = ode_solver->sv;
-	uint32_t num_steps = ode_solver->num_steps;
-	real dt = ode_solver->min_dt;
+    uint32_t num_steps = ode_solver->num_steps;
+    real dt = ode_solver->min_dt;
 
 
     uint32_t sv_id;
 
-	int i;
+    int i;
 
     #pragma omp parallel for private(sv_id)
-    for (i = 0; i < num_cells_to_solve; i++) 
+    for (i = 0; i < num_cells_to_solve; i++)
     {
 
         if(cells_to_solve)
@@ -115,7 +115,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu)
         else
             sv_id = (uint32_t )i;
 
-        for (int j = 0; j < num_steps; ++j) 
+        for (int j = 0; j < num_steps; ++j)
         {
             if (mapping[i] == 0)
                 solve_model_ode_cpu_myo(dt, sv + (sv_id * NEQ), stim_currents[i]);
@@ -125,7 +125,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu)
     }
 }
 
-void solve_model_ode_cpu_myo (real dt, real *sv, real stim_current)  
+void solve_model_ode_cpu_myo (real dt, real *sv, real stim_current)
 {
 
     real rY[NEQ], rDY[NEQ];
@@ -137,10 +137,10 @@ void solve_model_ode_cpu_myo (real dt, real *sv, real stim_current)
 
     for(int i = 0; i < NEQ; i++)
         sv[i] = rDY[i];
-    
+
 }
 
-void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt) 
+void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
 {
 
     // State variables
@@ -187,7 +187,7 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     const real T =310.0f;
     real RTONF   =(R*T)/F;
 
-    //Cellular capacitance         
+    //Cellular capacitance
     real CAPACITANCE=0.185;
 
     //Parameters for currents
@@ -509,7 +509,7 @@ void RHS_cpu_myo(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;    
+    rDY_[16] = Ki;
 
 }
 
@@ -573,7 +573,7 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     const real T =310.0f;
     real RTONF   =(R*T)/F;
 
-    //Cellular capacitance         
+    //Cellular capacitance
     real CAPACITANCE=0.185;
 
     //Parameters for currents
@@ -893,5 +893,5 @@ void RHS_cpu_epi(const real *sv, real *rDY_, real stim_current, real dt)
     rDY_[13] = Cai;
     rDY_[14] = CaSR;
     rDY_[15] = Nai;
-    rDY_[16] = Ki;    
+    rDY_[16] = Ki;
 }

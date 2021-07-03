@@ -18,9 +18,9 @@ ECHOERR() { printf "%s\n" "$*" >&2; }
 
 ADD_HEADER() {
 
-	model_full_path=$1
-	model_name=$2		
-	include_guard="MONOALG3D_MODEL_${model_name^^}_H"
+    model_full_path=$1
+    model_name=$2
+    include_guard="MONOALG3D_MODEL_${model_name^^}_H"
 
 cat << EOF > "${model_full_path}/${model_name}.h"
 #ifndef ${include_guard}
@@ -39,8 +39,8 @@ EOF
 
 ADD_C_FILE() {
 
-	model_full_path=$1
-	model_name=$2		
+    model_full_path=$1
+    model_name=$2
 
 cat << EOF > "${model_full_path}/${model_name}.c"
 #include "${model_name}.h"
@@ -77,16 +77,16 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     for(uint32_t i = 0; i < num_cells; i++) {
 
         real *sv = &solver->sv[i * NEQ];
-		sv[0] = INITIAL_V;
+        sv[0] = INITIAL_V;
 
-		//TODO: implement the rest of the initial conditions
+        //TODO: implement the rest of the initial conditions
 
     }
 }
 
 void RHS_cpu(const real *sv, real *rDY, real stim_current, real dt) {
-	
-	//TODO: implement
+
+    //TODO: implement
     #include "${model_name}_common.inc.c"
 
 }
@@ -98,8 +98,8 @@ EOF
 
 ADD_CU_FILE() {
 
-	model_full_path=$1
-	model_name=$2		
+    model_full_path=$1
+    model_name=$2
 
 cat << EOF > "${model_full_path}/${model_name}.cu"
 #include "${model_name}.h"
@@ -113,24 +113,24 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
 
     if (thread_id < num_volumes) {
 
-		sv(0) = INITIAL_V;
-		//TODO: implement the rest of the initial conditions
+        sv(0) = INITIAL_V;
+        //TODO: implement the rest of the initial conditions
 
         if(use_adpt) {
-			sv(NEQ) = min_dt; // dt
-			sv(NEQ+1) = 0.0;    // time_new
-			sv(NEQ+2) = 0.0;    // previous dt
+            sv(NEQ) = min_dt; // dt
+            sv(NEQ+1) = 0.0;    // time_new
+            sv(NEQ+2) = 0.0;    // previous dt
         }
     }
 }
 
 inline __device__ void RHS_gpu(real *sv, real *rDY, real stim_current, int thread_id, real dt, size_t pitch, bool use_adpt) {
     //State variables
-    
+
     if(use_adpt) {
-		//TODO: implement
+        //TODO: implement
     } else {
-		//TODO: implement
+        //TODO: implement
     }
 
     #include "${model_name}_common.inc.c"
@@ -144,8 +144,8 @@ EOF
 
 ADD_INC_FILE() {
 
-	model_full_path=$1
-	model_name=$2		
+    model_full_path=$1
+    model_name=$2
 
 cat << EOF > "${model_full_path}/${model_name}_common.inc.c"
 //TODO: implement. This is where the math of the model needs to be written.
@@ -154,9 +154,9 @@ EOF
 
 ADD_BUILD_FILE() {
 
-	model_full_path=$1
-	model_name=$2		
-	model_folder=$3		
+    model_full_path=$1
+    model_name=$2
+    model_folder=$3
 
 cat << EOF > "${model_full_path}/build.sh"
 ############## ${model_name} ##############################
@@ -172,45 +172,45 @@ EOF
 
 ADD_TEMPLATE_FILES() {
 
-	ADD_HEADER     "$1" "$2"
-	ADD_C_FILE     "$1" "$2"
-	ADD_CU_FILE    "$1" "$2"
-	ADD_INC_FILE   "$1" "$2"
-	ADD_BUILD_FILE "$1" "$2" "$3"
+    ADD_HEADER     "$1" "$2"
+    ADD_C_FILE     "$1" "$2"
+    ADD_CU_FILE    "$1" "$2"
+    ADD_INC_FILE   "$1" "$2"
+    ADD_BUILD_FILE "$1" "$2" "$3"
 }
 
 CREATE_NEW_MODEL() {
 
-	model_folder=$1
+    model_folder=$1
 
-	model_name=$2
+    model_name=$2
 
-	model_full_path=src/models_library/${model_folder}/
+    model_full_path=src/models_library/${model_folder}/
 
-	mkdir -p "$model_full_path"
+    mkdir -p "$model_full_path"
 
-	ADD_TEMPLATE_FILES "$model_full_path" "$model_name" "$model_folder"
+    ADD_TEMPLATE_FILES "$model_full_path" "$model_name" "$model_folder"
 }
 
 FUNCTION_EXISTS() {
-	local custom_file=$1	
-	local default_file=$2
-	local search_pattern=$3
-	local function_name=$4
+    local custom_file=$1
+    local default_file=$2
+    local search_pattern=$3
+    local function_name=$4
 
-	result=$(grep [[:blank:]]*"${search_pattern}"[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* "${custom_file}")
-	result2=$(grep [[:blank:]]*"${search_pattern}"[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* "${default_file}")
+    result=$(grep [[:blank:]]*"${search_pattern}"[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* "${custom_file}")
+    result2=$(grep [[:blank:]]*"${search_pattern}"[[:blank:]]*\([[:blank:]]*${function_name}[[:blank:]]*\)[[:blank:]]* "${default_file}")
 
-	if [ -n "${result}" ] || [ -n "${result2}" ]; then
-		if [[ -z "${result}" ]]; then
-			ECHOERR "[WARN] Function ${function_name} already exists in ${default_file} skipping!"
-		else
-			ECHOERR "[WARN] Function ${function_name} already exists in ${custom_file} skipping!"
-		fi
-		echo "1"
-	fi
+    if [ -n "${result}" ] || [ -n "${result2}" ]; then
+        if [[ -z "${result}" ]]; then
+            ECHOERR "[WARN] Function ${function_name} already exists in ${default_file} skipping!"
+        else
+            ECHOERR "[WARN] Function ${function_name} already exists in ${custom_file} skipping!"
+        fi
+        echo "1"
+    fi
 
-	echo "0"
+    echo "0"
 }
 
 WRITE_DOMAIN_FILE_HEADER() {
@@ -236,32 +236,32 @@ WRITE_DOMAIN_FUNCTION() {
 cat << EOF >> "${CUSTOM_DOMAIN_FILE}"
 
 SET_SPATIAL_DOMAIN(${function_name}) {
-	return 1; //TODO: create a better example
+    return 1; //TODO: create a better example
 }
 EOF
 }
 
 CREATE_NEW_DOMAIN() {
-	function_name=$1
-	
-	if [ ! -f "${CUSTOM_DOMAIN_FILE}" ]; then
-		WRITE_DOMAIN_FILE_HEADER
-	fi
-	
-	res=$(FUNCTION_EXISTS "${CUSTOM_DOMAIN_FILE}" "${DEFAULT_DOMAIN_FILE}" "SET_SPATIAL_DOMAIN" "$function_name")
+    function_name=$1
 
-	if [ "$res" == "0" ]; then
-		WRITE_DOMAIN_FUNCTION
-	fi
+    if [ ! -f "${CUSTOM_DOMAIN_FILE}" ]; then
+        WRITE_DOMAIN_FILE_HEADER
+    fi
+
+    res=$(FUNCTION_EXISTS "${CUSTOM_DOMAIN_FILE}" "${DEFAULT_DOMAIN_FILE}" "SET_SPATIAL_DOMAIN" "$function_name")
+
+    if [ "$res" == "0" ]; then
+        WRITE_DOMAIN_FUNCTION
+    fi
 }
 
 WRITE_STIM_FILE_HEADER() {
 cat << EOF > "${CUSTOM_STIM_FILE}"
 #include <stdbool.h>
-#include <stdint.h> 
-#include <stdlib.h> 
+#include <stdint.h>
+#include <stdlib.h>
 
-#include "../alg/grid/grid.h" 
+#include "../alg/grid/grid.h"
 #include "../config/stim_config.h"
 #include "../config_helpers/config_helpers.h"
 #include "../utils/utils.h"
@@ -273,52 +273,52 @@ cat << EOF >> "${CUSTOM_STIM_FILE}"
 
 SET_SPATIAL_STIM(${function_name}) {
 
-	uint32_t n_active = the_grid->num_active_cells;
-	struct cell_node **ac = the_grid->active_cells;
-	
-	ALLOCATE_STIMS();
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
 
-	real stim_current = 0.0;
-	GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config, "current");
+    ALLOCATE_STIMS();
 
-	bool stim;
-	real stim_value;
-	
-	uint32_t i;
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config, "current");
 
-	OMP(parallel for private(stim, stim_value))
-	for(i = 0; i < n_active; i++) {
+    bool stim;
+    real stim_value;
 
-		//TODO: define if a stimulus will be applied according to condition
-		//Ex:
-		// stim = ac[i]->center.x < 100;
-		// will apply a stimulus in each cell that has the coordinate x
-		// of its center < 100
+    uint32_t i;
 
-		if(stim) {
-			stim_value = stim_current;
-		} else {
-			stim_value = 0.0;
-		}
+    OMP(parallel for private(stim, stim_value))
+    for(i = 0; i < n_active; i++) {
 
-		SET_STIM_VALUE(i, stim_value);
-	}
+        //TODO: define if a stimulus will be applied according to condition
+        //Ex:
+        // stim = ac[i]->center.x < 100;
+        // will apply a stimulus in each cell that has the coordinate x
+        // of its center < 100
+
+        if(stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+    }
 }
 EOF
 }
 
 CREATE_NEW_STIM() {
-	function_name=$1
+    function_name=$1
 
-	if [ ! -f "${CUSTOM_STIM_FILE}" ]; then
-		WRITE_STIM_FILE_HEADER
-	fi
-	
-	res=$(FUNCTION_EXISTS "${CUSTOM_STIM_FILE}" "${DEFAULT_STIM_FILE}" "SET_SPATIAL_STIM" "$function_name")
+    if [ ! -f "${CUSTOM_STIM_FILE}" ]; then
+        WRITE_STIM_FILE_HEADER
+    fi
 
-	if [ "$res" == "0" ]; then
-		WRITE_STIM_FUNCTION
-	fi
+    res=$(FUNCTION_EXISTS "${CUSTOM_STIM_FILE}" "${DEFAULT_STIM_FILE}" "SET_SPATIAL_STIM" "$function_name")
+
+    if [ "$res" == "0" ]; then
+        WRITE_STIM_FUNCTION
+    fi
 
 }
 
@@ -337,49 +337,49 @@ WRITE_EXTRA_DATA_FUNCTION() {
 cat << EOF >> "${CUSTOM_EXTRA_DATA_FILE}"
 
 SET_EXTRA_DATA(${function_name}) {
-	
-	//TODO: set the extra data size in bytes
-	*extra_data_size = 0; 
-	
-	//TODO: extra data can be a pointer of any type (you have to  cast to void* before returning
+
+    //TODO: set the extra data size in bytes
+    *extra_data_size = 0;
+
+    //TODO: extra data can be a pointer of any type (you have to  cast to void* before returning
     void *extra_data = malloc(*extra_data_size);
 
-	return extra_data;
+    return extra_data;
 }
 EOF
 }
 
 CREATE_NEW_EXTRA_DATA() {
-	function_name=$1
+    function_name=$1
 
-	if [ ! -f "${CUSTOM_EXTRA_DATA_FILE}" ]; then
-		WRITE_EXTRA_DATA_FILE_HEADER
-	fi
-	
-	res=$(FUNCTION_EXISTS "${CUSTOM_EXTRA_DATA_FILE}" "${DEFAULT_EXTRA_DATA_FILE}" "SET_EXTRA_DATA" "$function_name")
+    if [ ! -f "${CUSTOM_EXTRA_DATA_FILE}" ]; then
+        WRITE_EXTRA_DATA_FILE_HEADER
+    fi
 
-	if [ "$res" == "0" ]; then
-		WRITE_EXTRA_DATA_FUNCTION
-	fi
+    res=$(FUNCTION_EXISTS "${CUSTOM_EXTRA_DATA_FILE}" "${DEFAULT_EXTRA_DATA_FILE}" "SET_EXTRA_DATA" "$function_name")
+
+    if [ "$res" == "0" ]; then
+        WRITE_EXTRA_DATA_FUNCTION
+    fi
 
 }
 
 CREATE_NEW_CONFIG() {
 
-	local SIM_DIR=$1
-	local SIM_CONFIG_FILE="$SIM_DIR/$1_config.ini"
-	local SIM_OUTPUT_DIR="$SIM_DIR/output"
+    local SIM_DIR=$1
+    local SIM_CONFIG_FILE="$SIM_DIR/$1_config.ini"
+    local SIM_OUTPUT_DIR="$SIM_DIR/output"
 
-	local STIM_F_NAME="$2"
-	local DOMAIN_F_NAME="$3"
+    local STIM_F_NAME="$2"
+    local DOMAIN_F_NAME="$3"
     local EXTRA_DATA_F_NAME="$4"
 
-	if [ ! -d "$SIM_DIR" ]; then
-		mkdir "$SIM_DIR"
-	else
-		ECHOERR "Simulation directory $SIM_DIR alread exists. Delete it or choose a new simulation name!"
-		exit 1
-	fi
+    if [ ! -d "$SIM_DIR" ]; then
+        mkdir "$SIM_DIR"
+    else
+        ECHOERR "Simulation directory $SIM_DIR alread exists. Delete it or choose a new simulation name!"
+        exit 1
+    fi
 
 
 cat << EOF >> "${SIM_CONFIG_FILE}"
@@ -443,82 +443,82 @@ echo "The new configuration file was successfuly generated in $SIM_CONFIG_FILE."
 
 COMMON_COMMAND_ERROR() {
 
-	ECHOERR "$1 command need 1 parameter (new $1 function name)"
-	ECHOERR "Example usage:" 
-	ECHOERR "$0 my_custom_$1"
-	ECHOERR "This command will create or add a new $1 function in ${2}"
-	exit
+    ECHOERR "$1 command need 1 parameter (new $1 function name)"
+    ECHOERR "Example usage:"
+    ECHOERR "$0 my_custom_$1"
+    ECHOERR "This command will create or add a new $1 function in ${2}"
+    exit
 }
 
 MAIN() {
 
-	case $1 in
-		simulation)
-			if [ $# -ne 2 ]
-			then
-				ECHOERR "$1 command need 1 parameter (simulation name)"
-				exit
-			fi
+    case $1 in
+        simulation)
+            if [ $# -ne 2 ]
+            then
+                ECHOERR "$1 command need 1 parameter (simulation name)"
+                exit
+            fi
 
-			local STIM_F_NAME="$2_stim_function"
-			local DOMAIN_F_NAME="$2_domain_function"
-			local EXTRA_DATA_F_NAME="$2_extra_data_function"
+            local STIM_F_NAME="$2_stim_function"
+            local DOMAIN_F_NAME="$2_domain_function"
+            local EXTRA_DATA_F_NAME="$2_extra_data_function"
 
 
-			CREATE_NEW_CONFIG "$2" "$STIM_F_NAME" "$DOMAIN_F_NAME" "$EXTRA_DATA_F_NAME"
-			CREATE_NEW_STIM "$STIM_F_NAME"
-			CREATE_NEW_DOMAIN "$DOMAIN_F_NAME"
-			CREATE_NEW_EXTRA_DATA "$EXTRA_DATA_F_NAME"
-			;;
-		model) 
-			if [ $# -ne 3 ]
-			then
-				ECHOERR "$1 command need 2 parameters (new model folder and new model name)"
-				ECHOERR "Example usage:" 
-				ECHOERR "$0 ten_tuscher ten_tuscher_2009" 
-				ECHOERR "This command will create a template model file called ten_tuscher_2009 in the src/models_library/ten_tuscher folder."
-				exit
-			fi
-			CREATE_NEW_MODEL "$2" "$3"
-			;;
+            CREATE_NEW_CONFIG "$2" "$STIM_F_NAME" "$DOMAIN_F_NAME" "$EXTRA_DATA_F_NAME"
+            CREATE_NEW_STIM "$STIM_F_NAME"
+            CREATE_NEW_DOMAIN "$DOMAIN_F_NAME"
+            CREATE_NEW_EXTRA_DATA "$EXTRA_DATA_F_NAME"
+            ;;
+        model)
+            if [ $# -ne 3 ]
+            then
+                ECHOERR "$1 command need 2 parameters (new model folder and new model name)"
+                ECHOERR "Example usage:"
+                ECHOERR "$0 ten_tuscher ten_tuscher_2009"
+                ECHOERR "This command will create a template model file called ten_tuscher_2009 in the src/models_library/ten_tuscher folder."
+                exit
+            fi
+            CREATE_NEW_MODEL "$2" "$3"
+            ;;
 
-		stimulus) 
-			if [ $# -ne 2 ]
-			then
-				COMMON_COMMAND_ERROR "$1" "$CUSTOM_STIM_FILE"
-			fi
-			CREATE_NEW_STIM "$2"
-			;;
-		domain) 
-			if [ $# -ne 2 ]
-			then
-				COMMON_COMMAND_ERROR "$1" "$CUSTOM_DOMAIN_FILE"
-			fi
-			CREATE_NEW_DOMAIN "$2"
-			;;
-		extra_data) 
-			if [ $# -ne 2 ]
-			then
-				COMMON_COMMAND_ERROR "$1" "$CUSTOM_EXTRA_DATA_FILE"
+        stimulus)
+            if [ $# -ne 2 ]
+            then
+                COMMON_COMMAND_ERROR "$1" "$CUSTOM_STIM_FILE"
+            fi
+            CREATE_NEW_STIM "$2"
+            ;;
+        domain)
+            if [ $# -ne 2 ]
+            then
+                COMMON_COMMAND_ERROR "$1" "$CUSTOM_DOMAIN_FILE"
+            fi
+            CREATE_NEW_DOMAIN "$2"
+            ;;
+        extra_data)
+            if [ $# -ne 2 ]
+            then
+                COMMON_COMMAND_ERROR "$1" "$CUSTOM_EXTRA_DATA_FILE"
 
-			fi
-			CREATE_NEW_EXTRA_DATA "$2"
-			;;
-		*)
-			ECHOERR 
-			ECHOERR "Invalid command:" "$@"
-			ECHOERR 
-			ECHOERR "Available commands: "
-			ECHOERR 
-			ECHOERR "$0" "simulation simulation_name"
-			ECHOERR "$0" "model model_folder model_name"
-			ECHOERR "$0" "stimulus function_name"
-			ECHOERR "$0" "domain function_name"
-			ECHOERR "$0" "extra_data function_name"
-			ECHOERR 
-			;;
+            fi
+            CREATE_NEW_EXTRA_DATA "$2"
+            ;;
+        *)
+            ECHOERR
+            ECHOERR "Invalid command:" "$@"
+            ECHOERR
+            ECHOERR "Available commands: "
+            ECHOERR
+            ECHOERR "$0" "simulation simulation_name"
+            ECHOERR "$0" "model model_folder model_name"
+            ECHOERR "$0" "stimulus function_name"
+            ECHOERR "$0" "domain function_name"
+            ECHOERR "$0" "extra_data function_name"
+            ECHOERR
+            ;;
 
-	esac
+    esac
 }
 
 MAIN "$@"

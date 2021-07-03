@@ -36,7 +36,7 @@ void free_list_nodes (struct graph *g)
     {
         if (n1->list_edges)
             free_list_edges(n1);
-        
+
         free(n1);
         n1 = n2;
         if (n2 != NULL)
@@ -50,7 +50,7 @@ void free_graph (struct graph *g)
 
     if (g->list_nodes)
         free_list_nodes(g);
-    
+
     free(g);
 }
 
@@ -59,14 +59,14 @@ void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_
     assert(g);
 
     struct node *n1, *n2;
-	struct edge *edge;
-	real_cpu norm;
-	// Check if the edge is invalid
-	if (id_1 == id_2) return;
+    struct edge *edge;
+    real_cpu norm;
+    // Check if the edge is invalid
+    if (id_1 == id_2) return;
 
-	n1 = search_node(g,id_1);
-	n2 = search_node(g,id_2);
-	
+    n1 = search_node(g,id_1);
+    n2 = search_node(g,id_2);
+
     norm = calc_norm(n1->x,n1->y,n1->z,n2->x,n2->y,n2->z);
     edge = new_edge(id_2,norm,n2);
     // First edge
@@ -116,32 +116,32 @@ struct node* new_node (uint32_t id, const real_cpu pos[])
     n->num_edges = 0;
     n->next = NULL;
     n->list_edges = NULL;
-    
+
     return n;
 }
 
 struct edge* new_edge (uint32_t id, real_cpu w, struct node *dest)
 {
     struct edge *e = MALLOC_ONE_TYPE(struct edge);
-	e->id = id;
-	e->w = w;
-	e->dest = dest;
-	e->next = NULL;
+    e->id = id;
+    e->w = w;
+    e->dest = dest;
+    e->next = NULL;
 
-	return e;
+    return e;
 }
 
 struct node* search_node (struct graph *g, const uint32_t id)
 {
     struct node *tmp = g->list_nodes;
-	while (tmp != NULL)
-	{
-		if (tmp->id == id)
-			return tmp;
-		tmp = tmp->next;
-	}
+    while (tmp != NULL)
+    {
+        if (tmp->id == id)
+            return tmp;
+        tmp = tmp->next;
+    }
     fprintf(stderr,"[-] ERROR! Node %d was not found!\n",id);
-    
+
     return NULL;
 }
 
@@ -154,30 +154,30 @@ double* dijkstra (struct graph *g, const uint32_t src_id)
     dist[src_id] = 0.0;
 
     pqueue_t *pq;
-	node_t   *ns;
-	node_t   *n;
+    node_t   *ns;
+    node_t   *n;
 
     // Initialize the priority queue
-	ns = (struct node_t*)malloc(num_nodes * sizeof(node_t));
-	pq = pqueue_init(num_nodes, cmp_pri, get_pri, set_pri, get_pos, set_pos);
-	if (!(ns && pq))
+    ns = (struct node_t*)malloc(num_nodes * sizeof(node_t));
+    pq = pqueue_init(num_nodes, cmp_pri, get_pri, set_pri, get_pos, set_pos);
+    if (!(ns && pq))
     {
         fprintf(stderr,"[graph] ERROR! Could not allocate priority queue!\n");
-        exit(EXIT_FAILURE); 
+        exit(EXIT_FAILURE);
     }
 
     // Enqueue the source node
-    ns[src_id].pri = 0.0; 
-    ns[src_id].val = src_id; 
+    ns[src_id].pri = 0.0;
+    ns[src_id].val = src_id;
     pqueue_insert(pq, &ns[src_id]);
 
     while ((n = (node_t*)pqueue_pop(pq)))
     {
         double d = n->pri;
         uint32_t u = n->val;
-        if (d > dist[u]) 
+        if (d > dist[u])
             continue;
-        
+
         struct node *u_node = search_node(g,u);
         struct edge *tmp = u_node->list_edges;
         while (tmp != NULL)
@@ -189,8 +189,8 @@ double* dijkstra (struct graph *g, const uint32_t src_id)
             {
                 dist[v] = dist[u] + w;
 
-                ns[v].pri = dist[v]; 
-                ns[v].val = v; 
+                ns[v].pri = dist[v];
+                ns[v].val = v;
                 pqueue_insert(pq, &ns[v]);
             }
 
@@ -199,7 +199,7 @@ double* dijkstra (struct graph *g, const uint32_t src_id)
     }
 
     pqueue_free(pq);
-	free(ns);
+    free(ns);
 
     return dist;
 }
@@ -221,7 +221,7 @@ void print_graph (struct graph *g)
         fprintf(stdout,"\n");
 
         n = n->next;
-    } 
+    }
     printf("Nodes = %u\n",g->total_nodes);
     printf("Edges = %u\n",g->total_edges);
 

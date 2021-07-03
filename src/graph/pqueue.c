@@ -257,7 +257,7 @@ pqueue_print(pqueue_t *q,
              pqueue_print_entry_f print)
 {
     pqueue_t *dup;
-	void *e;
+    void *e;
 
     dup = pqueue_init(q->size,
                       q->cmppri, q->getpri, set_pri,
@@ -269,7 +269,7 @@ pqueue_print(pqueue_t *q,
     memcpy(dup->d, q->d, (q->size * sizeof(void *)));
 
     while ((e = pqueue_pop(dup)))
-		print(out, e);
+        print(out, e);
 
     pqueue_free(dup);
 }

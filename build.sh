@@ -1,15 +1,15 @@
 #!/bin/bash
 
-PRINT_USAGE () { 
-	echo "Usage $0 [flags] [modules]" >&2;
-	echo "Valid modules: all, gui, simulator or batch (default is all)" >&2;
-	echo "Valid flags:" >&2;
-	echo "-f  - force recompilation" >&2;
-	echo "-l  - write build log on compile_commands.json" >&2;
-	echo "-q  - quiet compilation. Only errors and warnings will be outputed" >&2;
-	echo "-r  - build release version (Default)" >&2;
-	echo "-d  - build debug version" >&2;
-	exit 1
+PRINT_USAGE () {
+    echo "Usage $0 [flags] [modules]" >&2;
+    echo "Valid modules: all, gui, simulator or batch (default is all)" >&2;
+    echo "Valid flags:" >&2;
+    echo "-f  - force recompilation" >&2;
+    echo "-l  - write build log on compile_commands.json" >&2;
+    echo "-q  - quiet compilation. Only errors and warnings will be outputed" >&2;
+    echo "-r  - build release version (Default)" >&2;
+    echo "-d  - build debug version" >&2;
+    exit 1
 }
 
 OPTIONS_FILE=./bsbash/build_functions.sh
@@ -24,8 +24,8 @@ else
 fi
 
 if [ -f "$FUNCTIONS_FILE" ]; then
-	# shellcheck disable=SC1090
-	source $FUNCTIONS_FILE
+    # shellcheck disable=SC1090
+    source $FUNCTIONS_FILE
 fi
 
 ###########User code#####################
@@ -49,9 +49,9 @@ elif [ "$BUILD_TYPE" == "debug" ]; then
     #C_FLAGS="$C_FLAGS -g -DDEBUG_INFO -fprofile-arcs -ftest-coverage"
     C_FLAGS="$C_FLAGS -g -DDEBUG_INFO"
 else
-  	PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
-  	PRINT_ERROR "Valid BUILD_TYPE options are: release, debug (-r or -d options)"
-  	exit 1
+    PRINT_ERROR "$BUILD_TYPE is not a valid BUILD_TYPE."
+    PRINT_ERROR "Valid BUILD_TYPE options are: release, debug (-r or -d options)"
+    exit 1
 fi
 
 for i in "${BUILD_ARGS[@]}"; do
@@ -59,22 +59,23 @@ for i in "${BUILD_ARGS[@]}"; do
     if [ "$i" == "clean" ]; then
         echo "Cleaning $BUILD_TYPE"
         CLEAN_PROJECT "$BUILD_TYPE"
-		rm -fr shared_libs/
+        rm -fr shared_libs/
         cd src/3dparty/raylib/src || exit 1;
         make clean
         cd - || exit 1;
-        exit 0    
+        exit 0
     fi
 
     if [ "$i" == "ddm" ]; then
         C_FLAGS="$C_FLAGS -DENABLE_DDM"
+        COMPILE_WITH_DDM='y'
         COMPILE_GUI='y'
         COMPILE_MPI='y'
         COMPILE_SIMULATOR='y'
         COMPILE_CONVERTER='y'
         COMPILE_FIBER_CONVERTER='y'
-		COMPILE_POSTPROCESSOR='y'
-        COMPILE_WITH_DDM='y'
+        COMPILE_POSTPROCESSOR='y'
+
     fi
 
     if [ "$i" == "all" ]; then
@@ -83,26 +84,26 @@ for i in "${BUILD_ARGS[@]}"; do
         COMPILE_SIMULATOR='y'
         COMPILE_CONVERTER='y'
         COMPILE_FIBER_CONVERTER='y'
-		COMPILE_POSTPROCESSOR='y'
+        COMPILE_POSTPROCESSOR='y'
     fi
-    
-    if [ "$i" == "simulator" ]; then        
+
+    if [ "$i" == "simulator" ]; then
         COMPILE_SIMULATOR='y'
     fi
-    
-    if [ "$i" == "gui" ]; then        
+
+    if [ "$i" == "gui" ]; then
         COMPILE_GUI='y'
     fi
-    
-    if [ "$i" == "batch" ]; then        
+
+    if [ "$i" == "batch" ]; then
         COMPILE_MPI='y'
     fi
 
     if [ "$i" == "converter" ]; then
         COMPILE_CONVERTER='y'
     fi
-    
-	 if [ "$i" == "disable_cuda" ]; then
+
+     if [ "$i" == "disable_cuda" ]; then
         DISABLE_CUDA='y'
      fi
 
@@ -114,14 +115,14 @@ LIBRARY_OUTPUT_DIRECTORY="$ROOT_DIR/shared_libs"
 
 C_FLAGS="$C_FLAGS $DEFAULT_C_FLAGS"
 
-GET_LINUX_VERSION     
+GET_LINUX_VERSION
 
 if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
 
-	if [ -z "$DISABLE_CUDA" ]; then
-	   FIND_CUDA
-	fi
-    
+    if [ -z "$DISABLE_CUDA" ]; then
+       FIND_CUDA
+    fi
+
     echo -e "${INFO}C compiler:${NC} $C_COMPILER"
     echo -e "${INFO}C++ compiler:${NC} $CXX_COMPILER"
 
@@ -129,33 +130,34 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
         echo -e "${INFO}CUDA compiler:${NC} $NVCC"
         echo -e "${INFO}CUDA libraries path:${NC} $CUDA_LIBRARY_PATH"
         echo -e "${INFO}CUDA include path:${NC} $CUDA_INCLUDE_PATH"
-       
-        
+
+
         C_FLAGS="${C_FLAGS} -DCOMPILE_CUDA -I${CUDA_INCLUDE_PATH}"
-        
+
     fi
 fi
 
-if [ -n "$CUDA_FOUND" ]; then
-	if [ "$OS" == "Manjaro Linux" ]; then
-		C_COMPILER=/opt/cuda/bin/gcc
-		CXX_COMPILER=/opt/cuda/bin/g++
-	elif [ "$OS" == "Ubuntu" ]; then
-		if [ "$VER" == "20.10" ]; then
-			C_COMPILER=gcc-9
-			CXX_COMPILER=g++-9
-		else
-			C_COMPILER=gcc
-			CXX_COMPILER=g++
-		fi
-	elif [ "$OS" == "Fedora" ]; then
-		C_COMPILER=/usr/local/cuda/bin/gcc
-		CXX_COMPILER=/usr/local/cuda/bin/g++
-	fi
+if [ -n "$COMPILE_GUI" ]; then
+        C_FLAGS="${C_FLAGS} -DCOMPILE_GUI"
+fi
 
-	if [ -n "$COMPILE_GUI" ]; then
-		C_FLAGS="${C_FLAGS} -DCOMPILE_GUI"
-	fi
+if [ -n "$CUDA_FOUND" ]; then
+    if [ "$OS" == "Manjaro Linux" ]; then
+        C_COMPILER=/opt/cuda/bin/gcc
+        CXX_COMPILER=/opt/cuda/bin/g++
+    elif [ "$OS" == "Ubuntu" ]; then
+        if [ "$VER" == "20.10" ]; then
+            C_COMPILER=gcc-9
+            CXX_COMPILER=g++-9
+        else
+            C_COMPILER=gcc
+            CXX_COMPILER=g++
+        fi
+    elif [ "$OS" == "Fedora" ]; then
+        C_COMPILER=/usr/local/cuda/bin/gcc
+        CXX_COMPILER=/usr/local/cuda/bin/g++
+    fi
+
 fi
 
 echo -e "${INFO}C FLAGS:${NC} $C_FLAGS"
@@ -255,7 +257,7 @@ fi
 
 if [ -n "$COMPILE_POSTPROCESSOR" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_postprocessor" "src/main_postprocessor.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
-	ADD_SUBDIRECTORY "src/postprocessing_library/"
+    ADD_SUBDIRECTORY "src/postprocessing_library/"
 fi
 
 

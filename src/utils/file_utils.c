@@ -66,12 +66,12 @@ char *get_dir_from_path(const char *path) {
     char *last_slash = NULL;
     char *parent = NULL;
     last_slash = strrchr(path, '/');
-	
 
-	if(last_slash == NULL)
-    	parent = strdup(".");
-	else
-    	parent = strndup(path, last_slash - path + 1);	
+
+    if(last_slash == NULL)
+        parent = strdup(".");
+    else
+        parent = strndup(path, last_slash - path + 1);
 
     return parent;
 }
@@ -291,47 +291,47 @@ string_array list_files_from_dir(const char *dir, const char *prefix, const char
 
         if(dirp->d_type != DT_REG) {
             continue;
-		}
+        }
 
         char *file_name = strdup(dirp->d_name);
 
-		if(ignore_extensions) {
+        if(ignore_extensions) {
 
-			int n = arrlen(ignore_extensions);
-			bool ignore = false;
+            int n = arrlen(ignore_extensions);
+            bool ignore = false;
 
-			for(int i = 0; i < n; i++) {
-				if(FILE_HAS_EXTENSION(get_filename_ext(file_name), ignore_extensions[i])) {
-					ignore = true;
-					break;
-				}
-			}
+            for(int i = 0; i < n; i++) {
+                if(FILE_HAS_EXTENSION(get_filename_ext(file_name), ignore_extensions[i])) {
+                    ignore = true;
+                    break;
+                }
+            }
 
-			if(ignore) continue;
-		}
+            if(ignore) continue;
+        }
 
         if(extension) {
             const char *file_ext = get_filename_ext(file_name);
 
             if(!FILE_HAS_EXTENSION(file_ext, extension)) {
-				continue;
+                continue;
             }
         }
 
         if(prefix) {
             if(strncmp(prefix, file_name, strlen(prefix)) != 0) {
-				continue;
+                continue;
             }
         }
 
         arrput(files, file_name);
     }
 
-	if(files) {
-		if(sort) {
-			qsort(files, arrlen(files), sizeof(char *), cstring_cmp);
-		}
-	}
+    if(files) {
+        if(sort) {
+            qsort(files, arrlen(files), sizeof(char *), cstring_cmp);
+        }
+    }
 
     closedir(dp);
     return files;

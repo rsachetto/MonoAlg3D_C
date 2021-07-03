@@ -19,8 +19,8 @@
 #include "../3dparty/sds/sds.h"
 
 struct mesh_data {
-	struct point_3d cube_side_length;
-	struct point_3d mesh_side_length;
+    struct point_3d cube_side_length;
+    struct point_3d mesh_side_length;
     uint32_t number_of_cells;
     uint32_t num_active_cells;
 } __attribute__((packed));
@@ -37,8 +37,8 @@ struct cell_data {
     real_cpu b;
     bool can_change;
     bool active;
- 	size_t mesh_extra_info_size;
-	void *mesh_extra_info;
+    size_t mesh_extra_info_size;
+    void *mesh_extra_info;
 } __attribute__((packed));
 
 RESTORE_STATE (restore_simulation_state) {
@@ -73,14 +73,14 @@ RESTORE_STATE (restore_simulation_state) {
         for (uint32_t i = 0; i < mesh_data.number_of_cells; i++) {
             //struct cell_data *cell_data = (struct cell_data*) malloc(sizeof(struct cell_data));
             struct cell_data *cell_data = MALLOC_ONE_TYPE(struct cell_data);
-            
-			// Read center_x, center_y, center_z
-            fread(cell_data, sizeof(struct cell_data) - sizeof(void*), 1, input_file); //we need to allocate the extra_mesh_info before reading it			
 
-			if(cell_data->mesh_extra_info_size) {
-				cell_data->mesh_extra_info = MALLOC_BYTES(void, cell_data->mesh_extra_info_size);
-            	fread(cell_data->mesh_extra_info, cell_data->mesh_extra_info_size, 1, input_file);
-			}
+            // Read center_x, center_y, center_z
+            fread(cell_data, sizeof(struct cell_data) - sizeof(void*), 1, input_file); //we need to allocate the extra_mesh_info before reading it
+
+            if(cell_data->mesh_extra_info_size) {
+                cell_data->mesh_extra_info = MALLOC_BYTES(void, cell_data->mesh_extra_info_size);
+                fread(cell_data->mesh_extra_info, cell_data->mesh_extra_info_size, 1, input_file);
+            }
 
             hmput(mesh_hash, cell_data->center, cell_data);
         }
@@ -219,15 +219,15 @@ RESTORE_STATE (restore_simulation_state) {
 
         fread (&(the_ode_solver->original_num_cells), sizeof (the_ode_solver->original_num_cells), 1, input_file);
 
-		size_t num_sv_entries = the_ode_solver->model_data.number_of_ode_equations;
+        size_t num_sv_entries = the_ode_solver->model_data.number_of_ode_equations;
 
 
-		if (the_ode_solver->gpu) {
+        if (the_ode_solver->gpu) {
 
             #ifdef COMPILE_CUDA
             if(the_ode_solver->adaptive) {
-				num_sv_entries = num_sv_entries + 3;
-		    }
+                num_sv_entries = num_sv_entries + 3;
+            }
 
             real *sv_cpu;
             sv_cpu = MALLOC_ARRAY_OF_TYPE(real, the_ode_solver->original_num_cells * num_sv_entries);
@@ -236,7 +236,7 @@ RESTORE_STATE (restore_simulation_state) {
 
             check_cuda_error(cudaMemcpy2D (the_ode_solver->sv, the_ode_solver->pitch, sv_cpu, the_ode_solver->original_num_cells * sizeof (real),
                           the_ode_solver->original_num_cells * sizeof (real), num_sv_entries, cudaMemcpyHostToDevice));
-			#endif
+            #endif
         } else {
             fread (the_ode_solver->sv, sizeof (real), the_ode_solver->original_num_cells * num_sv_entries, input_file);
         }

@@ -54,39 +54,35 @@ void set_purkinje_network_from_file (struct graph *the_purkinje_network, const c
     build_skeleton_purkinje(file_name,skeleton_network);
 
     build_mesh_purkinje(the_purkinje_network,skeleton_network,dx);
-    
+
     // [DEBUG] Write the Purkinje to a VTK file for visualization purposes.
     //write_purkinje_network_to_vtk(the_purkinje_network);
     //print_graph(the_purkinje_network);
 
     // Deallocate memory for the Skeleton mesh
     free_graph(skeleton_network);
-    
+
 }
 
-void build_skeleton_purkinje (const char *filename, struct graph *skeleton_network)
-{
+void build_skeleton_purkinje (const char *filename, struct graph *skeleton_network) {
     assert(skeleton_network);
 
     struct point_3d *the_points = NULL;
     struct line *the_lines = NULL;
     real_cpu *the_sigmas = NULL;
-    bool has_point_data = read_data_from_input_network(&the_points,&the_lines,&the_sigmas,filename);
+    read_data_from_input_network(&the_points,&the_lines,&the_sigmas,filename);
 
-    for (int i = 0; i < arrlen(the_points); i++)
-    {
-        double pos[3], value;
+    for (int i = 0; i < arrlen(the_points); i++) {
+        double pos[3];
         pos[0] = the_points[i].x;
         pos[1] = the_points[i].y;
         pos[2] = the_points[i].z;
 
         insert_node_graph(skeleton_network,pos);
     }
-    for (int i = 0; i < arrlen(the_lines); i++)
-    {
+    for (int i = 0; i < arrlen(the_lines); i++) {
         uint32_t id_1 = the_lines[i].source;
         uint32_t id_2 = the_lines[i].destination;
-        
         insert_edge_graph(skeleton_network,id_1,id_2);
     }
 
@@ -99,7 +95,7 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
 }
 
 void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skeleton_network, const real_cpu dx) {
-    
+
     assert(the_purkinje_network);
     assert(skeleton_network);
 
@@ -111,26 +107,26 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
 
     // Construct the first node
     struct node *tmp = skeleton_network->list_nodes;
-    real_cpu pos[3], sigma; 
-    pos[0] = tmp->x; 
-    pos[1] = tmp->y; 
+    real_cpu pos[3];
+    pos[0] = tmp->x;
+    pos[1] = tmp->y;
     pos[2] = tmp->z;
     insert_node_graph(the_purkinje_network,pos);
-    
+
     // Initialize the DFS mask for the visited nodes
     bool *dfs_visited = (bool*)malloc(sizeof(bool)*n);
     for (uint32_t i = 0; i < n; i++) dfs_visited[i] = false;
 
     // Make a Depth-First-Search to build the mesh of the Purkinje network
     depth_first_search(the_purkinje_network,tmp,0,map_skeleton_to_mesh,dfs_visited);
-    
+
     free(dfs_visited);
     free(map_skeleton_to_mesh);
 
 }
 
 void depth_first_search (struct graph *the_purkinje_network, struct node *u, int level, uint32_t *map_skeleton_to_mesh, bool *dfs_visited) {
-    
+
     dfs_visited[u->id] = true;
 
     struct edge *v = u->list_edges;
@@ -146,8 +142,7 @@ void depth_first_search (struct graph *the_purkinje_network, struct node *u, int
 
 }
 
-void grow_segment (struct graph *the_purkinje_network, struct node *u, struct edge *v, uint32_t *map_skeleton_to_mesh)
-{
+void grow_segment (struct graph *the_purkinje_network, struct node *u, struct edge *v, uint32_t *map_skeleton_to_mesh) {
     real_cpu dx = the_purkinje_network->dx;
     real_cpu d_ori[3], d[3];
     real_cpu segment_length = v->w;
@@ -179,7 +174,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
         insert_node_graph(the_purkinje_network,pos);
         insert_edge_graph(the_purkinje_network,id_source,the_purkinje_network->total_nodes-1);
         insert_edge_graph(the_purkinje_network,the_purkinje_network->total_nodes-1,id_source);
-        
+
         id_source = the_purkinje_network->total_nodes-1;
     }
     // Grow any remainder point with a size 'dx'
@@ -193,7 +188,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
         insert_node_graph(the_purkinje_network,pos);
         insert_edge_graph(the_purkinje_network,id_source,the_purkinje_network->total_nodes-1);
         insert_edge_graph(the_purkinje_network,the_purkinje_network->total_nodes-1,id_source);
-        
+
         id_source = the_purkinje_network->total_nodes-1;
     }
 
@@ -274,7 +269,7 @@ void calculate_number_of_terminals (struct graph *the_purkinje_network) {
 
 // Check if there are duplicates points inside the Purkinje network
 int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network) {
-    
+
     int no_duplicates = 1;
 
     // Check duplicates
@@ -311,18 +306,17 @@ bool read_data_from_input_network (struct point_3d **the_points, struct line **t
     int N;
     char str[100];
 
-    while (fscanf(file,"%s",str) != EOF)
+    while (fscanf(file,"%s",str) != EOF) {
         if (strcmp(str,"POINTS") == 0) break;
-    
-    if (!fscanf(file,"%d %s",&N,str))
-    {
+    }
+
+    if (!fscanf(file,"%d %s",&N,str)) {
         fprintf(stderr,"Error reading file.\n");
         exit(EXIT_FAILURE);
     }
 
     // Read points
-    for (int i = 0; i < N; i++)
-    {
+    for (int i = 0; i < N; i++) {
         struct point_3d p;
         if (!fscanf(file,"%lf %lf %lf",&p.x,&p.y,&p.z))
         {
@@ -334,42 +328,42 @@ bool read_data_from_input_network (struct point_3d **the_points, struct line **t
 
     // Read edges
     int trash, E;
-    while (fscanf(file,"%s",str) != EOF)
+    while (fscanf(file,"%s",str) != EOF) {
         if (strcmp(str,"LINES") == 0) break;
-    if (!fscanf(file,"%d %d",&E,&trash))
-    {
+    }
+
+    if (!fscanf(file,"%d %d",&E,&trash)) {
         fprintf(stderr,"Error reading file.\n");
         exit(EXIT_FAILURE);
     }
-    
-    for (int i = 0; i < E; i++)
-    {
+
+    for (int i = 0; i < E; i++) {
         int e[2];
         struct line l;
-        if (!fscanf(file,"%d %d %d",&trash,&e[0],&e[1]))
-        {
+        if (!fscanf(file,"%d %d %d",&trash,&e[0],&e[1])) {
             fprintf(stderr,"Error reading file.\n");
             exit(EXIT_FAILURE);
         }
+
         l.source = e[0];
         l.destination = e[1];
         arrput(*the_lines,l);
     }
 
     // Read the POINT_DATA section, if it exist
-    if (fscanf(file,"%s",str) != EOF)
-    {
-        if (strcmp(str,"POINT_DATA") == 0)
-        {
-            while (fscanf(file,"%s",str) != EOF)
-            if (strcmp(str,"default") == 0) break;
-        
-            for (int i = 0; i < N; i++)
-            {
+    if (fscanf(file,"%s",str) != EOF) {
+        if (strcmp(str,"POINT_DATA") == 0) {
+
+            while (fscanf(file,"%s",str) != EOF) {
+                if (strcmp(str,"default") == 0) break;
+            }
+
+            for (int i = 0; i < N; i++) {
                 real_cpu sigma;
                 fscanf(file,"%lf",&sigma);
                 arrput(*the_sigmas,sigma);
             }
+
             has_point_data = true;
         }
     }

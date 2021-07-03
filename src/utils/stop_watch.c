@@ -11,32 +11,32 @@
 #include <stdio.h>
 
 void init_stop_watch(struct stop_watch *sw) {
-	sw->running = false;
+    sw->running = false;
 }
 
 void start_stop_watch(struct stop_watch *sw) {
-	if (gettimeofday(&(sw->tv), NULL) < 0) {
-		perror("gettimeofday");
-		return;
-	}
-	sw->running = true;
+    if (gettimeofday(&(sw->tv), NULL) < 0) {
+        perror("gettimeofday");
+        return;
+    }
+    sw->running = true;
 }
 
 long stop_stop_watch(struct stop_watch *sw) {
 
     struct timeval tv_stop;
 
-	if (!sw->running) {
-		fprintf(stderr,"Stopwatch not running.");
-		return -1;
-	}
+    if (!sw->running) {
+        fprintf(stderr,"Stopwatch not running.");
+        return -1;
+    }
 
-	if (gettimeofday(&tv_stop, NULL) < 0) {
-		perror("gettimeofday");
-		return -1;
-	}
+    if (gettimeofday(&tv_stop, NULL) < 0) {
+        perror("gettimeofday");
+        return -1;
+    }
 
-	sw->running = false;
-	return ((tv_stop.tv_sec - sw->tv.tv_sec) * 1000000
-				+ tv_stop.tv_usec - sw->tv.tv_usec);
+    sw->running = false;
+    return ((tv_stop.tv_sec - sw->tv.tv_sec) * 1000000
+                + tv_stop.tv_usec - sw->tv.tv_usec);
 }

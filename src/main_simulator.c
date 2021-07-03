@@ -10,10 +10,11 @@
 #include <string.h>
 
 #ifdef COMPILE_GUI
-    #include "gui/gui.h"
+#include "gui/gui.h"
 #endif
 
-void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver,  struct ode_solver **ode_solver, struct grid **the_grid ) {
+void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver, struct ode_solver **ode_solver,
+                          struct grid **the_grid) {
 
     *options = new_user_options();
     *the_grid = new_grid();
@@ -29,8 +30,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
             fprintf(stderr, "Error: Can't load the config file %s\n", (*(options))->config_file);
             exit(EXIT_FAILURE);
         }
-    }
-    else {
+    } else {
         fprintf(stderr, "\nError: The config file is mandatory.\n\n");
         display_usage(argv);
         exit(EXIT_FAILURE);
@@ -38,8 +38,8 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
 
     // The command line options always overwrite the config file
     parse_options(argc, argv, *options);
-    //This variable is from file_utils.h
-    set_no_stdout( (*(options))->quiet);
+    // This variable is from file_utils.h
+    set_no_stdout((*(options))->quiet);
 
     // Create the output dir and the logfile
     if((*(options))->save_mesh_config) {
@@ -54,7 +54,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
             bool remove_older_simulation_dir = false;
             GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(remove_older_simulation_dir, (*(options))->save_mesh_config, "remove_older_simulation");
 
-            if (remove_older_simulation_dir) {
+            if(remove_older_simulation_dir) {
                 remove_directory(out_dir_name);
             }
 
@@ -64,7 +64,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
 
             log_info("Command line to reproduce this simulation:\n");
 
-            for (int i = 0; i < argc; i++) {
+            for(int i = 0; i < argc; i++) {
                 log_msg("%s ", argv[i]);
             }
 
@@ -82,10 +82,10 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
     configure_ode_solver_from_options(*ode_solver, *options);
     configure_monodomain_solver_from_options(*monodomain_solver, *options);
     configure_grid_from_options(*the_grid, *options);
-
 }
 
-void free_current_simulation_resources(struct user_options *options, struct monodomain_solver *monodomain_solver,  struct ode_solver *ode_solver, struct grid *the_grid) {
+void free_current_simulation_resources(struct user_options *options, struct monodomain_solver *monodomain_solver, struct ode_solver *ode_solver,
+                                       struct grid *the_grid) {
     clean_and_free_grid(the_grid);
     free_ode_solver(ode_solver);
     free(monodomain_solver);
@@ -106,7 +106,8 @@ static void init_gui_config_for_simulation(struct user_options *options, struct 
     gui_config->max_v = options->max_v;
     gui_config->min_v = options->min_v;
 
-    if(gui_config->min_v == 0) gui_config->min_v = 0.1f;
+    if(gui_config->min_v == 0)
+        gui_config->min_v = 0.1f;
 
     gui_config->simulating = false;
     gui_config->time = 0.0;
@@ -161,44 +162,42 @@ int main(int argc, char **argv) {
     // If COMPILE_GUI is not set this is always false. See above.
     if(options->show_gui) {
 
-       	#ifdef COMPILE_GUI //If this is defined so OMP is also defined
+#ifdef COMPILE_GUI // If this is defined so OMP is also defined
 
-			struct gui_config *gui_config = MALLOC_ONE_TYPE(struct gui_config);
+        struct gui_config *gui_config = MALLOC_ONE_TYPE(struct gui_config);
 
-			omp_set_nested(true);
+        omp_set_nested(true);
 
-			init_gui_config_for_simulation(options, gui_config, false);
+        init_gui_config_for_simulation(options, gui_config, false);
 
-			OMP(parallel sections num_threads(2))
-			{
-				OMP(section)
-				{
-					init_and_open_gui_window(gui_config);
-				}
+        OMP(parallel sections num_threads(2)) {
+            OMP(section) {
+                init_and_open_gui_window(gui_config);
+            }
 
-				OMP(section)
-				{
-					int result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options, gui_config);
+            OMP(section) {
+                int result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options, gui_config);
 
-					while (result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
-						if(result == RESTART_SIMULATION) {
-							free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
-							configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
-							init_gui_config_for_simulation(options, gui_config, true);
-							result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options, gui_config);
-						}
+                while(result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
+                    if(result == RESTART_SIMULATION) {
+                        free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+                        configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
+                        init_gui_config_for_simulation(options, gui_config, true);
+                        result = solve_monodomain(monodomain_solver, ode_solver, the_grid, options, gui_config);
+                    }
 
-						if(gui_config->restart) result = RESTART_SIMULATION;
+                    if(gui_config->restart)
+                        result = RESTART_SIMULATION;
 
-						if(gui_config->exit)  {
-							free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
-							break;
-						}
-					}
-				}
-			}
+                    if(gui_config->exit) {
+                        free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);
+                        break;
+                    }
+                }
+            }
+        }
 
-        #endif //COMPILE_GUI
+#endif // COMPILE_GUI
     } else {
         solve_monodomain(monodomain_solver, ode_solver, the_grid, options, NULL);
         free_current_simulation_resources(options, monodomain_solver, ode_solver, the_grid);

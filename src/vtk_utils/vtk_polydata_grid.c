@@ -26,8 +26,7 @@ struct vtk_polydata_grid *new_vtk_polydata_grid ()
 
 void free_vtk_polydata_grid(struct vtk_polydata_grid *vtk_grid) {
 
-    if(vtk_grid) 
-    {
+    if(vtk_grid) {
         arrfree(vtk_grid->lines);
         arrfree(vtk_grid->values);
         arrfree(vtk_grid->points);
@@ -36,18 +35,14 @@ void free_vtk_polydata_grid(struct vtk_polydata_grid *vtk_grid) {
 }
 
 
-sds create_common_vtp_header(bool compressed, int num_points, int num_lines) 
-{
+sds create_common_vtp_header(bool compressed, int num_points, int num_lines) {
 
     sds header = sdsempty();
 
-    if(compressed) 
-    {
+    if(compressed) {
         header = sdscat(header, "<VTKFile type=\"PolyData\" version=\"1.0\" byte_order=\"LittleEndian\" "
                                 "header_type=\"UInt64\" compressor=\"vtkZLibDataCompressor\">\n");
-    } 
-    else 
-    {
+    } else {
         header = sdscat(
             header,
             "<VTKFile type=\"PolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n");
@@ -417,8 +412,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
         // connectivity
         block_size = vtk_grid->num_lines * 2 * sizeof(uint64_t);
         file_content = sdscatlen(file_content, &block_size, sizeof(uint64_t));
-        for(int i = 0; i < num_lines; i++) 
-        {
+        for(int i = 0; i < num_lines; i++) {
             uint64_t source = (uint64_t)vtk_grid->lines[i].source;
             uint64_t destination = (uint64_t)vtk_grid->lines[i].destination;
             file_content = sdscatlen(file_content, &source, sizeof(uint64_t));
@@ -432,8 +426,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
         size_until_now += sizeof(int64_t);
 
         int64_t offset_local = 2;
-        for(int i = 0; i < vtk_grid->num_lines; i++) 
-        {
+        for(int i = 0; i < vtk_grid->num_lines; i++) {
             file_content = sdscatlen(file_content, &offset_local, sizeof(int64_t));
             offset_local += 2;
             size_until_now += sizeof(int64_t);
@@ -448,13 +441,10 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
     FILE *output_file = NULL;
 
-    if(binary) 
-    {
+    if(binary) {
         output_file = fopen(filename, "wb");
         fwrite(file_content, size_until_now, 1, output_file);
-    } 
-    else 
-    {
+    } else {
         output_file = fopen(filename, "w");
         fprintf(output_file, "%s", file_content);
     }
@@ -464,8 +454,7 @@ void save_vtk_polydata_grid_as_vtp (struct vtk_polydata_grid *vtk_grid, char *fi
 
 }
 
-void save_vtk_polydata_grid_as_vtp_compressed (struct vtk_polydata_grid *vtk_grid, char *filename, int compression_level)
-{
+void save_vtk_polydata_grid_as_vtp_compressed (struct vtk_polydata_grid *vtk_grid, char *filename, int compression_level) {
     printf("\tIn 'save_vtk_polydata_grid_as_vtp_compressed'\n");
 
     printf("\tLeaving 'save_vtk_polydata_grid_as_vtp_compressed'\n");
