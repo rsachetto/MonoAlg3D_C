@@ -421,6 +421,57 @@ SAVE_MESH (save_purkinje_coupling_with_activation_times) {
 
 }
 
+INIT_SAVE_MESH(init_save_tissue_with_activation_times) {
+
+    config->persistent_data = calloc(1, sizeof(struct save_coupling_with_activation_times_persistent_data));
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->tissue_grid = NULL;
+
+    ((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+}
+
+END_SAVE_MESH(end_save_tissue_with_activation_times) {
+
+    bool save_activation_time_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config, "save_activation_time");
+
+    bool save_apd_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config, "save_apd");
+
+    if (save_activation_time_map) {
+        log_info("[!] Saving activation time maps !!!!\n");
+        write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
+    }
+
+    if (save_apd_map) {
+        log_info("[!] Saving APD map !!!!\n");
+        write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
+    }
+
+    free(config->persistent_data);
+
+}
+
+SAVE_MESH (save_tissue_with_activation_times) {
+
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+
+    float time_threshold = 10.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config, "time_threshold");
+
+    float tissue_activation_threshold = -30.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_activation_threshold, config, "activation_threshold_tissue");
+
+    float tissue_apd_threshold = -83.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_apd_threshold, config, "apd_threshold_tissue");
+
+    calculate_tissue_activation_time_and_apd(time_info,config,the_grid,time_threshold,tissue_activation_threshold,tissue_apd_threshold);
+}
+
 INIT_SAVE_MESH(init_save_one_cell_state_variables) {
     config->persistent_data = malloc(sizeof(struct save_one_cell_state_variables_persistent_data));
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR( ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, config, "file_name");
