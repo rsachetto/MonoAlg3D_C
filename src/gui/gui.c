@@ -361,15 +361,18 @@ static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_
         }
     }
 
+    float csx = cube_size.x;
+    float csy = cube_size.y;
+    float csz = cube_size.z;
+
+    BoundingBox bb = (BoundingBox){(Vector3){p_draw.x - csx / 2, p_draw.y - csy / 2, p_draw.z - csz / 2},
+                                   (Vector3){p_draw.x + csx / 2, p_draw.y + csy / 2, p_draw.z + csz / 2}};
+
     if(gui_state->double_clicked) {
-        collision =
-            CheckCollisionRayBox(gui_state->ray, (BoundingBox){(Vector3){p_draw.x - cube_size.x / 2, p_draw.y - cube_size.y / 2, p_draw.z - cube_size.z / 2},
-                                                               (Vector3){p_draw.x + cube_size.x / 2, p_draw.y + cube_size.y / 2, p_draw.z + cube_size.z / 2}});
+        collision = CheckCollisionRayBox(gui_state->ray, bb);
     }
 
-    collision_mouse_over = CheckCollisionRayBox(gui_state->ray_mouse_over,
-                                                (BoundingBox){(Vector3){p_draw.x - cube_size.x / 2, p_draw.y - cube_size.y / 2, p_draw.z - cube_size.z / 2},
-                                                              (Vector3){p_draw.x + cube_size.x / 2, p_draw.y + cube_size.y / 2, p_draw.z + cube_size.z / 2}});
+    collision_mouse_over = CheckCollisionRayBox(gui_state->ray_mouse_over, bb);
 
     if(collision_mouse_over) {
         gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
@@ -388,14 +391,17 @@ static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_
         DrawCubeWiresV(p_draw, cube_size, color);
     } else {
 
-        DrawCubeWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, color, visibility_mask);
+        DrawCubeWithVisibilityMask(p_draw, csx, csy, csz, color, visibility_mask);
 
         if(gui_state->draw_grid_lines) {
-            DrawCubeWiresWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, BLACK, visibility_mask);
+            DrawCubeWiresWithVisibilityMask(p_draw, csx, csy, csz, BLACK, visibility_mask);
         }
 
-        if(gui_state->current_selected_volume.position_mesh.x == p_mesh.x && gui_state->current_selected_volume.position_mesh.y == p_mesh.y &&
-           gui_state->current_selected_volume.position_mesh.z == p_mesh.z) {
+        bool cube_selected = gui_state->current_selected_volume.position_mesh.x == p_mesh.x &&
+                             gui_state->current_selected_volume.position_mesh.y == p_mesh.y &&
+                             gui_state->current_selected_volume.position_mesh.z == p_mesh.z;
+
+        if(cube_selected) {
 
             DrawCubeV(p_draw, cube_size, BLACK);
 
@@ -1587,7 +1593,6 @@ void draw_coordinates(struct gui_state *gui_state) {
     DrawLine3D((Vector3){end_pos.x + arrow_offset, end_pos.y, end_pos.z - arrow_offset}, end_pos, DARKBLUE);
 
     gui_state->coordinates_label_z_position = GetWorldToScreen(end_pos, gui_state->camera);
-
 }
 
 void init_and_open_gui_window(struct gui_config *gui_config) {
