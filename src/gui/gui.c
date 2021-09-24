@@ -17,10 +17,7 @@
 #include "../3dparty/raylib/src/camera.h"
 
 #define RAYGUI_IMPLEMENTATION
-#include "../3dparty/raylib/src/raygui.h"
-
-#define GUI_TEXTBOX_EXTENDED_IMPLEMENTATION
-#include "../3dparty/raylib/src/gui_textbox_extended.h"
+#include "../3dparty/raylib/src/extras/raygui.h"
 
 #include "../3dparty/raylib/src/external/glad.h"
 #include "../3dparty/raylib/src/rlgl.h"
@@ -40,9 +37,10 @@ static void set_camera_params(Camera3D *camera) {
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
 
-    struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
-
     MaximizeWindow();
+
+    struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
+    gui_state->current_selected_volume_index = -1;
 
     gui_state->ui_scale = ui_scale;
 
@@ -333,19 +331,16 @@ static Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, 
     return result;
 }
 
-static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
+
+static void check_collisions(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t, int idx) {
 
     Vector3 p_draw = voxel->position_draw;
     Vector3 p_mesh = voxel->position_mesh;
 
     Vector3 cube_size = voxel->size;
 
-    real_cpu v = voxel->v;
-
-    bool collision = false;
-    bool collision_mouse_over = false;
-
-    Color color;
+    RayCollision collision;
+    RayCollision collision_mouse_over = {0};
 
     action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
 
@@ -369,57 +364,55 @@ static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_
                                    (Vector3){p_draw.x + csx / 2, p_draw.y + csy / 2, p_draw.z + csz / 2}};
 
     if(gui_state->double_clicked) {
-        collision = CheckCollisionRayBox(gui_state->ray, bb);
-    }
+        collision = GetRayCollisionBox(gui_state->ray, bb);
 
-    collision_mouse_over = CheckCollisionRayBox(gui_state->ray_mouse_over, bb);
+        if(collision.hit) {
+            if(gui_state->ray_hit_distance > collision.distance) {
+                gui_state->current_selected_volume = *voxel;
+                gui_state->current_selected_volume_index = idx;
+                gui_state->ap_graph_config->draw_selected_ap_text = true;
+                gui_state->ray_hit_distance = collision.distance;
+            }
 
-    if(collision_mouse_over) {
-        gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
-        gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
-    }
-
-    if(collision && !gui_state->one_selected) {
-        gui_state->current_selected_volume = *voxel;
-        gui_state->one_selected = true;
-        gui_state->ap_graph_config->draw_selected_ap_text = true;
-    }
-
-    color = get_color((v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
-
-    if(gui_state->draw_grid_only) {
-        DrawCubeWiresV(p_draw, cube_size, color);
-    } else {
-
-        DrawCubeWithVisibilityMask(p_draw, csx, csy, csz, color, visibility_mask);
-
-        if(gui_state->draw_grid_lines) {
-            DrawCubeWiresWithVisibilityMask(p_draw, csx, csy, csz, BLACK, visibility_mask);
+        }
+        else {
+            collision.hit = false;
         }
 
-        bool cube_selected = gui_state->current_selected_volume.position_mesh.x == p_mesh.x &&
-                             gui_state->current_selected_volume.position_mesh.y == p_mesh.y &&
-                             gui_state->current_selected_volume.position_mesh.z == p_mesh.z;
+    }
 
-        if(cube_selected) {
+    collision_mouse_over = GetRayCollisionBox(gui_state->ray_mouse_over, bb);
 
-            DrawCubeV(p_draw, cube_size, BLACK);
-
-            if(aps == NULL) {
-                arrsetcap(aps, 50);
-                struct action_potential ap;
-                ap.t = t;
-                ap.v = v;
-
-                arrput(aps, ap);
-                hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
-                gui_state->selected_time = GetTime();
-            }
+    if(collision_mouse_over.hit) {
+        if(gui_state->ray_mouse_over_hit_distance > collision_mouse_over.distance) {
+            gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
+            gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
+            gui_state->ray_mouse_over_hit_distance = collision_mouse_over.distance;
         }
     }
 }
 
-static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state) {
+static void add_selected_to_ap_graph(struct gui_config *gui_config, struct gui_state *gui_state) {
+
+    if(gui_state->current_selected_volume.position_draw.x != FLT_MAX && gui_state->current_selected_volume.position_draw.y != FLT_MAX && gui_state->current_selected_volume.position_draw.z != FLT_MAX) {
+        Vector3 p_draw = gui_state->current_selected_volume.position_draw;
+
+        action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
+        if(aps == NULL) {
+            arrsetcap(aps, 50);
+            struct action_potential ap;
+            ap.t = gui_config->time;
+            ap.v = gui_state->current_selected_volume.v;
+
+            arrput(aps, ap);
+            hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
+            gui_state->selected_time = GetTime();
+        }
+    }
+
+}
+
+static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
 
@@ -436,16 +429,24 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
     struct voxel voxel;
 
-    uint8_t cell_visible = TOP_IS_VISIBLE | RIGHT_IS_VISIBLE | DOWN_IS_VISIBLE | LEFT_IS_VISIBLE | BACK_IS_VISIBLE | FRONT_IS_VISIBLE;
+    gui_state->ray_hit_distance = FLT_MAX;
+    gui_state->ray_mouse_over_hit_distance = FLT_MAX;
+
+    Matrix *translations = RL_MALLOC(n_active*sizeof(Matrix)); // Locations of instances
+    Color *colors       = RL_MALLOC(n_active*sizeof(Color));
+
+    int count = 0;
+
+    float min_v = gui_config->min_v;
+    float max_v = gui_config->max_v;
+    float time  = gui_config->time;
+
 
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
         if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
             j += 1;
             continue;
-        }
-        else if(grid_to_draw->cell_visibility) {
-            cell_visible = grid_to_draw->cell_visibility[j];
         }
 
         float mesh_center_x, mesh_center_y, mesh_center_z;
@@ -470,16 +471,32 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         voxel.size.z = (float)(dz / scale);
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
-        draw_voxel(&voxel, cell_visible, gui_state, gui_config->min_v, gui_config->max_v, gui_config->time);
+        translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
+        translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), translations[count] );
+
+        colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+
+        check_collisions(&voxel, gui_state, min_v, max_v, time, count);
+
+        count++;
 
         j += 1;
 
     }
 
-    gui_state->one_selected = false;
-}
+    if(gui_state->current_selected_volume_index != -1) {
+        colors[gui_state->current_selected_volume_index] = BLACK;
+    }
 
-static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state) {
+    DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
+    free(translations);
+    free(colors);
+
+    add_selected_to_ap_graph(gui_config, gui_state);
+
+   }
+
+static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
@@ -499,7 +516,16 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
     float max_v = gui_config->max_v;
     float time  = gui_config->time;
 
+    gui_state->ray_hit_distance = FLT_MAX;
+    gui_state->ray_mouse_over_hit_distance = FLT_MAX;
+
+    Matrix *translations = RL_MALLOC(n_active*sizeof(Matrix)); // Locations of instances
+    Color *colors       = RL_MALLOC(n_active*sizeof(Color));
+
     if(ac) {
+
+        int count = 0;
+
         for(uint32_t i = 0; i < n_active; i++) {
 
             if(!ac[i]->visible) {
@@ -522,11 +548,29 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
             voxel.v = grid_cell->v;
             voxel.matrix_position = grid_cell->grid_position;
 
-            draw_voxel(&voxel, ac[i]->visible, gui_state, min_v, max_v, time);
+            translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
+            translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), translations[count] );
+
+            colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+
+            count++;
+
+            check_collisions(&voxel, gui_state, min_v, max_v, time, count);
         }
+
+        if(gui_state->current_selected_volume_index != -1) {
+            colors[gui_state->current_selected_volume_index] = BLACK;
+        }
+
+
+        DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
+        add_selected_to_ap_graph(gui_config, gui_state);
+
+        free(translations);
+        free(colors);
+
     }
 
-    gui_state->one_selected = false;
 }
 
 static inline double clamp(double x, double min, double max) {
@@ -703,7 +747,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         label = "Vm (mV)";
         text_width = MeasureTextEx(font, label, font_size_big, spacing_big);
         text_position = (Vector2){gui_state->ap_graph_config->graph.x + 15, gui_state->ap_graph_config->min_y - ((gui_state->ap_graph_config->min_y - gui_state->ap_graph_config->max_y) / 2.0f) + (text_width.x / 2.0f)};
-        DrawTextEx2(font, label, text_position, font_size_big, spacing_big, BLACK);
+        //DrawTextEx2(font, label, text_position, font_size_big, spacing_big, BLACK);
+        DrawTextPro(font, label, text_position, (Vector2){0,0}, -90, font_size_big, spacing_big, BLACK);
     }
 
 
@@ -1107,15 +1152,15 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
     DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
 
-    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_x_text, SIZEOF(center_x_text) - 1, true);
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_x_text, SIZEOF(center_x_text) - 1, true);
 
     box_pos = pos_x + text_box_size.x + 2 * x_off;
     DrawTextEx(gui_state->font, CENTER_Y, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_y_text, SIZEOF(center_y_text) - 1, true);
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_y_text, SIZEOF(center_y_text) - 1, true);
 
     box_pos = pos_x + 2 * text_box_size.x  + 3 * x_off;
     DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
+    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
 
     bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2, text_box_size.x, text_box_size.y}, "OK");
 
@@ -1165,6 +1210,8 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
     }
 
     if(full_reset) {
+
+        gui_state->current_selected_volume_index = -1;
 
         for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
             arrfree(gui_state->ap_graph_config->selected_aps[i].value);
@@ -1391,6 +1438,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     gui_state->ray_mouse_over = GetMouseRay(GetMousePosition(), gui_state->camera);
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+
         gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
 
         if(!gui_state->show_selection_box) {
@@ -1600,6 +1648,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
     const int end_info_box_lines = 10;
     const int mesh_info_box_lines = 9;
 
+
     omp_set_lock(&gui_config->sleep_lock);
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
@@ -1628,7 +1677,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
     free(window_title);
 
-    SetTargetFPS(60);
+    SetTargetFPS(30);
     Image icon = LoadImage("res/icon.png");
 
     if(icon.data) {
@@ -1691,8 +1740,26 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
     struct mesh_info *mesh_info = new_mesh_info();
     bool end_info_box_strings_configured = false;
 
+    Shader shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
+    // Get some shader locations
+    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+    shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "color");
+    Mesh cube = GenMeshCube(1.0f, 1.0f, 1.0f);
+
+    int grid_mask = 0;
+
     while(!WindowShouldClose()) {
 
+    if(gui_state->draw_grid_only) {
+        grid_mask = 2;
+    }
+    else if(gui_state->draw_grid_lines) {
+        grid_mask = 1;
+    }
+    else {
+        grid_mask = 0;
+    }
         UpdateCamera(&(gui_state->camera));
 
         // Draw
@@ -1737,9 +1804,9 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             }
 
             if(draw_type == DRAW_SIMULATION) {
-                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state);
+                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state, shader, cube, grid_mask);
             } else if(draw_type == DRAW_FILE) {
-                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state);
+                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, shader, cube, grid_mask);
             }
 
             if(gui_state->show_coordinates) {

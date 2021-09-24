@@ -8,6 +8,7 @@
 #include "../alg/grid/grid.h"
 #include "../alg/cell/cell.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
+#include "../3dparty/raylib/src/raylib.h"
 #include "../3dparty/raylib/src/raymath.h"
 #include "../config/config_parser.h"
 
@@ -21,7 +22,7 @@
 
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
 #define WIDER_TEXT " - Alt + R to restart simulation and the box positions"
-#define DOUBLE_CLICK_DELAY 0.8 //seconds
+#define DOUBLE_CLICK_DELAY 0.7 //seconds
 
 #define NORMALIZE(r_min, r_max, t_min, t_max, m) (((m - r_min) / (r_max - r_min)) * (t_max - t_min) + t_min)
 
@@ -154,13 +155,16 @@ struct gui_state {
     bool move_end_info_box;
 
     Ray ray;
+    float ray_hit_distance;
 	Ray ray_mouse_over;
+    float ray_mouse_over_hit_distance;
 
     int current_scale;
     int scale_alpha;
     int voxel_alpha;
 
     struct voxel current_selected_volume;
+    int current_selected_volume_index;
     struct voxel current_mouse_over_volume;
 
     //Font font;
