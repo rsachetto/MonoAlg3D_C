@@ -573,14 +573,6 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 
 }
 
-static inline double clamp(double x, double min, double max) {
-    if(x < min)
-        x = min;
-    else if(x > max)
-        x = max;
-    return x;
-}
-
 static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_config) {
 
     if(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width > (float) gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
@@ -638,16 +630,15 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     if(gui_state->ap_graph_config->draw_selected_ap_text) {
 
-        char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f and position %d )";
+        char *ap_text = "%d AP(s) selected (cell at %f, %f, %f)";
         double time_elapsed = GetTime() - gui_state->selected_time;
-        unsigned char alpha = (unsigned char)clamp(255 - time_elapsed * 25, 0, 255);
+        unsigned char alpha = (unsigned char)Clamp(255 - time_elapsed * 25, 0, 255);
 
-        //Color c = colors[(n - 1) % num_colors];
         Color c = BLACK;
         c.a = alpha;
 
         sprintf(tmp, ap_text, n, gui_state->current_selected_volume.position_mesh.x, gui_state->current_selected_volume.position_mesh.y,
-                gui_state->current_selected_volume.position_mesh.z, gui_state->current_selected_volume.matrix_position + 1);
+                gui_state->current_selected_volume.position_mesh.z);
 
         text_width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
 
