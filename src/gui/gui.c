@@ -831,7 +831,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                         if(aps[i + step].v < gui_config->min_v)
                             gui_config->min_v = aps[i + step].v;
 
-                        DrawLineV(p1, p2, line_color);
+                        //DrawLineV(p1, p2, line_color);
+                        DrawLineEx(p1, p2, 2.0, line_color);
                     }
                 }
             }
