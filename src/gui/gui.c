@@ -1677,7 +1677,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
     free(window_title);
 
-    SetTargetFPS(30);
+    SetTargetFPS(60);
     Image icon = LoadImage("res/icon.png");
 
     if(icon.data) {
