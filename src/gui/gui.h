@@ -35,7 +35,7 @@ enum draw_simulation_or_file {
 };
 
 struct vector3_voidp_hash_entry {
-    Vector3 key;
+    int key;
     void *value;
 };
 

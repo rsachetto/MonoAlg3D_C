@@ -40,7 +40,7 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
         colorsTransforms[i].v[0] = colors[i].r/255.0;
         colorsTransforms[i].v[1] = colors[i].g/255.0;
         colorsTransforms[i].v[2] = colors[i].b/255.0;
-        colorsTransforms[i].v[3] = colors[i].a;
+        colorsTransforms[i].v[3] = colors[i].a/255.0;
 
     }
 
