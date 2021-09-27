@@ -24,8 +24,6 @@
 #define WIDER_TEXT " - Alt + R to restart simulation and the box positions"
 #define DOUBLE_CLICK_DELAY 0.7 //seconds
 
-#define NORMALIZE(r_min, r_max, t_min, t_max, m) (((m - r_min) / (r_max - r_min)) * (t_max - t_min) + t_min)
-
 struct action_potential {
     real_cpu v;
     real_cpu t;

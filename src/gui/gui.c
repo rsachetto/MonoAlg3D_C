@@ -365,7 +365,6 @@ static void check_collisions(struct voxel *voxel, struct gui_state *gui_state, r
 
     if(gui_state->double_clicked) {
         collision = GetRayCollisionBox(gui_state->ray, bb);
-
         if(collision.hit) {
             if(gui_state->ray_hit_distance > collision.distance) {
                 gui_state->current_selected_volume = *voxel;
@@ -433,7 +432,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
     gui_state->ray_mouse_over_hit_distance = FLT_MAX;
 
     Matrix *translations = RL_MALLOC(n_active*sizeof(Matrix)); // Locations of instances
-    Color *colors       = RL_MALLOC(n_active*sizeof(Color));
+    Color *colors        = RL_MALLOC(n_active*sizeof(Color));
 
     int count = 0;
 
@@ -553,9 +552,10 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 
             colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 
+            check_collisions(&voxel, gui_state, min_v, max_v, time, count);
+
             count++;
 
-            check_collisions(&voxel, gui_state, min_v, max_v, time, count);
         }
 
         if(gui_state->current_selected_volume_index != -1) {
@@ -704,7 +704,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     // Draw horizontal ticks (t)
     for(uint32_t t = 0; t <= num_ticks; t++) {
 
-        p1.x = NORMALIZE(0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, time);
+        p1.x = Remap(time, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
         p1.y = gui_state->ap_graph_config->min_y - 5;
 
         p2.x = p1.x;
@@ -712,11 +712,12 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         if(!(t % 2)) {
 
+            float remaped_data  = Remap(p1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
             if(steps) {
-                sprintf(tmp, time_template, (int) NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time, p1.x));
+                sprintf(tmp, time_template, (int) remaped_data);
             }
             else {
-                sprintf(tmp, time_template, NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time, p1.x));
+                sprintf(tmp, time_template, remaped_data);
             }
 
             text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
@@ -760,9 +761,9 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     for(uint32_t t = 0; t <= num_ticks; t++) {
 
         p1.x = (float)gui_state->ap_graph_config->graph.x + 5.0f;
-        p1.y = NORMALIZE(gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, v);
+        p1.y = Remap(v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
 
-        sprintf(tmp, "%.2lf", NORMALIZE(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v, p1.y));
+        sprintf(tmp, "%.2lf", Remap(p1.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v));
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
         DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - text_width.x / 2) + 20, p1.y - text_width.y / 2.0f}, font_size_small, spacing_small,
@@ -818,12 +819,11 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                 if(aps[i].t <= gui_config->time) {
                     if(i + step < c) {
 
-                        p1.x = NORMALIZE(0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i].t);
-                        p1.y = NORMALIZE(gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, aps[i].v);
+                        p1.x = Remap(aps[i].t, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
+                        p1.y = Remap(aps[i].v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
 
-                        p2.x = NORMALIZE(0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i + step].t);
-                        p2.y = NORMALIZE(gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y,
-                                         aps[i + step].v);
+                        p2.x = Remap(aps[i + step].t, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
+                        p2.y = Remap(aps[i + step].v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
 
                         // TODO: create an option for this???
                         if(aps[i + step].v > gui_config->max_v)
@@ -861,10 +861,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         DrawCircleV(gui_state->ap_graph_config->selected_point_for_apd2, 4, RED);
         DrawLineV(gui_state->ap_graph_config->selected_point_for_apd1, gui_state->ap_graph_config->selected_point_for_apd2, RED);
 
-        float t1 = NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time,
-                             gui_state->ap_graph_config->selected_point_for_apd1.x);
-        float t2 = NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time,
-                             gui_state->ap_graph_config->selected_point_for_apd2.x);
+        float t1 = Remap(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
+        float t2 = Remap(gui_state->ap_graph_config->selected_point_for_apd2.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
 
         char *tmp_point = "dt = %.4lf";
         sprintf(tmp, tmp_point, fabsf(t2 - t1));
@@ -1572,8 +1570,8 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     }
 
     if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
-        float t = NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time, gui_state->mouse_pos.x);
-        float v = NORMALIZE(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v, gui_state->mouse_pos.y);
+        float t = Remap(gui_state->mouse_pos.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
+        float v = Remap(gui_state->mouse_pos.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v);
         if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
             gui_state->ap_graph_config->selected_ap_point.x = t;
             gui_state->ap_graph_config->selected_ap_point.y = v;
