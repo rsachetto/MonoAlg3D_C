@@ -15,6 +15,8 @@
 #include <sys/mman.h>
 #include <float.h>
 
+#define STRCMP(a, b, n) memcmp(a, b, n)
+
 struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
 
     struct vtk_unstructured_grid *grid = MALLOC_ONE_TYPE(struct vtk_unstructured_grid);
@@ -511,8 +513,8 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 }
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                             float *plain_coordinates, bool clip_with_bounds,
-                                             float *bounds, bool read_only_values, bool read_fibers_f) {
+        float *plain_coordinates, bool clip_with_bounds,
+        float *bounds, bool read_only_values, bool read_fibers_f) {
 
     if(grid == NULL) {
         return;
@@ -715,7 +717,7 @@ sds create_common_vtu_header(bool compressed, int num_points, int num_cells) {
 
     if(compressed) {
         header = sdscat(header, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\" "
-                                "header_type=\"UInt64\" compressor=\"vtkZLibDataCompressor\">\n");
+                "header_type=\"UInt64\" compressor=\"vtkZLibDataCompressor\">\n");
     } else {
         header = sdscat(
                 header,
@@ -774,14 +776,14 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     if(binary) {
         file_content = sdscatprintf(file_content,
-                                    "        <DataArray type=\"Float%s\" Name=\"Points\" "
-                                    "NumberOfComponents=\"3\" format=\"appended\" offset=\"%zu\">\n",
-                                    data_size, offset);
+                "        <DataArray type=\"Float%s\" Name=\"Points\" "
+                "NumberOfComponents=\"3\" format=\"appended\" offset=\"%zu\">\n",
+                data_size, offset);
 
     } else {
         file_content =
-                sdscatprintf(file_content,
-                       "        <DataArray type=\"Float%s\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n", data_size);
+            sdscatprintf(file_content,
+                    "        <DataArray type=\"Float%s\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n", data_size);
     }
 
     if(!binary) {
@@ -805,7 +807,7 @@ void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, c
 
     } else {
         file_content =
-                sdscat(file_content, "        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">\n");
+            sdscat(file_content, "        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">\n");
     }
 
     int points_per_cell = vtk_grid->points_per_cell;
@@ -966,24 +968,24 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
 
     if(sizeof(real_cpu) == 4) {
         points_array_header = sdsnew("        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" "
-                                         "format=\"appended\" offset=\"%zu\" />\n");
+                "format=\"appended\" offset=\"%zu\" />\n");
     }
     else {
         points_array_header = sdsnew("        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" "
-                                     "format=\"appended\" offset=\"%zu\" />\n");
+                "format=\"appended\" offset=\"%zu\" />\n");
     }
 
     sds points_array_header_end = sdsnew("      </Points>\n");
     points_array_header_end = sdscat(points_array_header_end, "      <Cells>\n");
 
     sds connectivity_array_header =
-            sdsnew("        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"appended\" offset=\"%zu\"/>\n");
+        sdsnew("        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"appended\" offset=\"%zu\"/>\n");
 
     sds offsets_array_header =
-            sdsnew("        <DataArray type=\"Int64\" Name=\"offsets\" format=\"appended\" offset=\"%zu\"/>\n");
+        sdsnew("        <DataArray type=\"Int64\" Name=\"offsets\" format=\"appended\" offset=\"%zu\"/>\n");
 
     sds types_array_header =
-            sdsnew("        <DataArray type=\"UInt8\" Name=\"types\" format=\"appended\" offset=\"%zu\"/>\n");
+        sdsnew("        <DataArray type=\"UInt8\" Name=\"types\" format=\"appended\" offset=\"%zu\"/>\n");
 
 
     sds data_end = sdsnew("      </Cells>\n");
@@ -1017,9 +1019,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         unsigned char *compressed_data_for_values;
 
         calculate_blocks_and_compress_data(data_size, &data_size_after_compression_for_values, data_to_compress,
-                                           &(compressed_data_for_values), &num_block_for_values,
-                                           &block_size_uncompressed_for_values, &block_sizes_compressed_for_values,
-                                           &last_block_size_for_values, compression_level);
+                &(compressed_data_for_values), &num_block_for_values,
+                &block_size_uncompressed_for_values, &block_sizes_compressed_for_values,
+                &last_block_size_for_values, compression_level);
 
         offset = 8 + 8 + 8 + (num_block_for_values * 8) + data_size_after_compression_for_values;
 
@@ -1044,9 +1046,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         unsigned char *compressed_data_for_points;
 
         calculate_blocks_and_compress_data(data_size, &data_size_after_compression_for_points, data_to_compress,
-                                           &(compressed_data_for_points), &num_block_for_points,
-                                           &block_size_uncompressed_for_points, &block_sizes_compressed_for_points,
-                                           &last_block_size_for_points, compression_level);
+                &(compressed_data_for_points), &num_block_for_points,
+                &block_size_uncompressed_for_points, &block_sizes_compressed_for_points,
+                &last_block_size_for_points, compression_level);
 
         offset += 8 + 8 + 8 + (num_block_for_points * 8) + data_size_after_compression_for_points;
 
@@ -1075,9 +1077,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         unsigned char *compressed_data_for_connectivity;
 
         calculate_blocks_and_compress_data(data_size, &data_size_after_compression_for_connectivity, data_to_compress,
-                                           &compressed_data_for_connectivity, &num_block_for_connectivity,
-                                           &block_size_uncompressed_for_connectivity,
-                                           &block_sizes_compressed_for_connectivity, &last_block_size_for_connectivity, compression_level);
+                &compressed_data_for_connectivity, &num_block_for_connectivity,
+                &block_size_uncompressed_for_connectivity,
+                &block_sizes_compressed_for_connectivity, &last_block_size_for_connectivity, compression_level);
 
         offset += 8 + 8 + 8 + (num_block_for_connectivity * 8) + data_size_after_compression_for_connectivity;
 
@@ -1108,9 +1110,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         unsigned char *compressed_data_for_offsets;
 
         calculate_blocks_and_compress_data(data_size, &data_size_after_compression_for_offsets, data_to_compress,
-                                           &compressed_data_for_offsets, &num_block_for_offsets,
-                                           &block_size_uncompressed_for_offsets, &block_sizes_compressed_for_offsets,
-                                           &last_block_size_for_offsets, compression_level);
+                &compressed_data_for_offsets, &num_block_for_offsets,
+                &block_size_uncompressed_for_offsets, &block_sizes_compressed_for_offsets,
+                &last_block_size_for_offsets, compression_level);
 
         offset += 8 + 8 + 8 + (num_block_for_offsets * 8) + data_size_after_compression_for_offsets;
 
@@ -1140,9 +1142,9 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
         unsigned char *compressed_data_for_types;
 
         calculate_blocks_and_compress_data(data_size, &data_size_after_compression_for_types, data_to_compress,
-                                           &compressed_data_for_types, &num_block_for_types,
-                                           &block_size_uncompressed_for_types, &block_sizes_compressed_for_types,
-                                           &last_block_size_for_types, compression_level);
+                &compressed_data_for_types, &num_block_for_types,
+                &block_size_uncompressed_for_types, &block_sizes_compressed_for_types,
+                &last_block_size_for_types, compression_level);
 
         sdsfree(aux_data);
 
@@ -1607,8 +1609,8 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
             else {
                 for (unsigned long c = 0; c < num_cells; c++) {
 
-                   int raw_value = invert_bytes(*(int*)source);
-                   float float_value = *(float*) (&raw_value);
+                    int raw_value = invert_bytes(*(int*)source);
+                    float float_value = *(float*) (&raw_value);
 
                     for(int b = 0; b < 4; b++) {
                         arrput(state->celldata_ascii, *((char*)(&float_value) + b) ); //here this array will be treated as binary data
@@ -1639,31 +1641,32 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
 static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
 
+
     switch(r) {
         case YXML_OK:
             break;
         case YXML_ELEMSTART:
-            if(strcmp(POINTS, x->elem) == 0) {
+            if(STRCMP(POINTS, x->elem, POINTS_LEN) == 0) {
                 state->in_points_array = true;
             }
-            else if(strcmp(DATAARRAY, x->elem) == 0) {
+            else if(STRCMP(DATAARRAY, x->elem, DATAARRAY_LEN) == 0) {
                 state->in_dataarray = true;
             }
             break;
         case YXML_ELEMEND:
 
-            if(strcmp(POINTS, x->elem) == 0) {
+            if(STRCMP(POINTS, x->elem, POINTS_LEN) == 0) {
                 state->in_points_array = false;
             }
 
-            if(strcmp(DATAARRAY, x->elem) == 0) {
+            else if(STRCMP(DATAARRAY, x->elem, DATAARRAY_LEN) == 0) {
                 state->in_dataarray = false;
             }
 
-            if(state->ascii) {
-                if (strcmp(SCALARS_NAME, state->name_value) == 0) {
+            else if(state->ascii) {
+                if (STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
                     arrput(state->celldata_ascii, '\0');
-                } else if (strcmp(POINTS, state->name_value) == 0) {
+                } else if (STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
                     arrput(state->points_ascii, '\0');
                 }
 
@@ -1674,7 +1677,7 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
 
             break;
         case YXML_ATTRSTART:
-            if (strcmp(COMPRESSOR, x->attr) == 0) {
+            if (STRCMP(COMPRESSOR, x->attr, COMPRESSOR_LEN) == 0) {
                 state->compressed = true;
             }
             break;
@@ -1682,34 +1685,36 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
             if(state->in_dataarray) {
 
                 if(state->in_points_array) {
-                    if (strcmp(TYPE, x->attr) == 0) {
+                    if (STRCMP(TYPE, x->attr, TYPE_LEN) == 0) {
                         arrput(state->point_data_type, '\0');
                     }
                 }
 
-                if (strcmp(FORMAT, x->attr) == 0) {
+                if (STRCMP(FORMAT, x->attr, FORMAT_LEN) == 0) {
                     arrput(state->format, '\0');
-                    if(strcmp(state->format, ASCII) == 0) state->ascii = true;
+                    if(STRCMP(state->format, ASCII, ASCII_LEN) == 0) {
+                        state->ascii = true;
+                    }
                 }
-                else if (strcmp(NAME, x->attr) == 0) {
+                else if (STRCMP(NAME, x->attr, NAME_LEN) == 0) {
                     arrput(state->name_value, '\0');
                 }
                 else if (arrlen(state->name_value)) {
-                    if (strcmp(OFFSET, x->attr) == 0) {
-                        if (strcmp(SCALARS_NAME, state->name_value) == 0) {
+                    if (STRCMP(OFFSET, x->attr, OFFSET_LEN) == 0) {
+                        if (STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
                             arrput(state->celldata_ofsset, '\0');
                             if(!state->compressed) state->binary = true;
                         }
-                        else if (strcmp(POINTS, state->name_value) == 0) {
+                        else if (STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
                             arrput(state->points_ofsset, '\0');
                         }
-                        else if (strcmp(CONNECTIVITY, state->name_value) == 0) {
+                        else if (STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
                             arrput(state->cells_connectivity_ofsset, '\0');
                         }
-                        else if (strcmp(OFFSETS, state->name_value) == 0) {
+                        else if (STRCMP(OFFSETS, state->name_value, OFFSETS_LEN) == 0) {
                             arrput(state->cells_offsets_ofsset, '\0');
                         }
-                        else if (strcmp(TYPES, state->name_value) == 0) {
+                        else if (STRCMP(TYPES, state->name_value, TYPES_LEN) == 0) {
                             arrput(state->cells_types_ofsset, '\0');
                         }
 
@@ -1719,17 +1724,17 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
                 }
             }
 
-            if(strcmp(NUMBER_OF_POINTS, x->attr) == 0) {
+            if(STRCMP(NUMBER_OF_POINTS, x->attr, NUMBER_OF_POINTS_LEN) == 0) {
                 arrput(state->number_of_points, '\0');
             }
-            else if(strcmp(NUMBER_OF_CELLS, x->attr) == 0) {
+            else if(STRCMP(NUMBER_OF_CELLS, x->attr, NUMBER_OF_CELLS_LEN) == 0) {
                 arrput(state->number_of_cells, '\0');
             }
-            else if (strcmp(ENCODING, x->attr) == 0) {
-                        arrput(state->encoding_type, '\0');
+            else if (STRCMP(ENCODING, x->attr, ENCODING_LEN) == 0) {
+                arrput(state->encoding_type, '\0');
             }
-            else if (strcmp(HEADER_TYPE, x->attr) == 0) {
-                        arrput(state->header_type, '\0');
+            else if (STRCMP(HEADER_TYPE, x->attr, HEADER_TYPE_LEN) == 0) {
+                arrput(state->header_type, '\0');
             }
             break;
         case YXML_PICONTENT:
@@ -1738,16 +1743,16 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
                 if(state->in_dataarray) {
 
                     if(x->data[0] == '\n') x->data[0] = ' ';
-                    if (strcmp(SCALARS_NAME, state->name_value) == 0) {
+                    if (STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
                         if (x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
                             arrput(state->celldata_ascii, x->data[0]);
                         }
-                    } else if (strcmp(POINTS, state->name_value) == 0) {
+                    } else if (STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
                         if (x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
                             arrput(state->points_ascii, x->data[0]);
                         }
                     }
-                    else if (strcmp(CONNECTIVITY, state->name_value) == 0) {
+                    else if (STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
                         if (x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
                             arrput(state->cells_connectivity_ascii, x->data[0]);
                         }
@@ -1755,13 +1760,13 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
                 }
             }
             else {
-                if (strcmp(APPENDEDDATA, x->elem) == 0) {
-                    if(strcmp(state->encoding_type, "raw") == 0) {
+                if (STRCMP(APPENDEDDATA, x->elem, APPENDEDDATA_LEN) == 0) {
+                    if(STRCMP(state->encoding_type, "raw", 3) == 0) {
                         //We dont have a valid XML code anymore. So we have to
                         //return here
                         return -1;
                     }
-                    else if (strcmp(state->encoding_type, "base64") == 0) {
+                    else if (STRCMP(state->encoding_type, "base64", 6) == 0) {
                         //base64 is a valid xml content.
                         arrput(state->base64_content, x->data[0]);
                     }
@@ -1772,38 +1777,38 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
             if(state->in_dataarray) {
 
                 if(state->in_points_array) {
-                    if (strcmp(TYPE, x->attr) == 0) {
+                    if (STRCMP(TYPE, x->attr, TYPE_LEN) == 0) {
                         arrput(state->point_data_type, x->data[0]);
                     }
                 }
 
-                if (strcmp(NAME, x->attr) == 0) {
+                if (STRCMP(NAME, x->attr, NAME_LEN) == 0) {
                     arrput(state->name_value, x->data[0]);
                 } else if(arrlen(state->name_value)) {
-                    if (strcmp(FORMAT, x->attr) == 0) {
+                    if (STRCMP(FORMAT, x->attr, FORMAT_LEN) == 0) {
                         arrput(state->format, x->data[0]);
                     }
-                    else if (strcmp(OFFSET, x->attr) == 0) {
-                        if (strcmp(SCALARS_NAME, state->name_value) == 0) {
+                    else if (STRCMP(OFFSET, x->attr, OFFSET_LEN) == 0) {
+                        if (STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
                             if (isdigit(x->data[0])) {
                                 arrput(state->celldata_ofsset, x->data[0]);
                             }
                         }
-                        else if (strcmp(POINTS, state->name_value) == 0) {
+                        else if (STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
                             if (isdigit(x->data[0])) {
                                 arrput(state->points_ofsset, x->data[0]);
                             }
                         }
-                        else if (strcmp(CONNECTIVITY, state->name_value) == 0) {
+                        else if (STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
                             if (isdigit(x->data[0])) {
                                 arrput(state->cells_connectivity_ofsset, x->data[0]);
                             }
                         }
-                        else if (strcmp(OFFSETS, state->name_value) == 0) {
+                        else if (STRCMP(OFFSETS, state->name_value, OFFSETS_LEN) == 0) {
                             if (isdigit(x->data[0])) {
                                 arrput(state->cells_offsets_ofsset, x->data[0]);
                             }                        }
-                        else if (strcmp(TYPES, state->name_value) == 0) {
+                        else if (STRCMP(TYPES, state->name_value, TYPES_LEN) == 0) {
                             if (isdigit(x->data[0])) {
                                 arrput(state->cells_types_ofsset, x->data[0]);
                             }
@@ -1812,20 +1817,20 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
                 }
             }
 
-            if(strcmp(NUMBER_OF_POINTS, x->attr) == 0) {
+            if(STRCMP(NUMBER_OF_POINTS, x->attr, NUMBER_OF_POINTS_LEN) == 0) {
                 if(isdigit(x->data[0])) {
                     arrput(state->number_of_points, x->data[0]);
                 }
             }
-            else if (strcmp(NUMBER_OF_CELLS, x->attr) == 0) {
+            else if (STRCMP(NUMBER_OF_CELLS, x->attr, NUMBER_OF_CELLS_LEN) == 0) {
                 if (isdigit(x->data[0])) {
                     arrput (state->number_of_cells, x->data[0]);
                 }
             }
-            else if (strcmp(ENCODING, x->attr) == 0) {
+            else if (STRCMP(ENCODING, x->attr, ENCODING_LEN) == 0) {
                 arrput (state->encoding_type, x->data[0]);
             }
-            else if (strcmp(HEADER_TYPE, x->attr) == 0) {
+            else if (STRCMP(HEADER_TYPE, x->attr, HEADER_TYPE_LEN) == 0) {
                 arrput (state->header_type, x->data[0]);
             }
             break;
@@ -1833,8 +1838,8 @@ static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
         case YXML_PIEND:
             break;
         default:
-           fprintf(stderr, "Error on xml %s \n", x->attr);
-          //  exit(0);
+            fprintf(stderr, "Error on xml %s \n", x->attr);
+            //  exit(0);
     }
 
     return 0;
@@ -2011,7 +2016,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
 
             if (parser_state->compressed) {
                 raw_data_after_blocks_offset = get_block_sizes_from_compressed_vtu_file(raw_data, header_size, &num_blocks, &block_size_uncompressed,
-                                                                                       &last_block_size, &block_sizes_compressed);
+                        &last_block_size, &block_sizes_compressed);
 
                 if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { //We read only the header.. need to read the data
                     b64_size -= bytes_read;
@@ -2020,7 +2025,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
 
 
                 get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->values, header_size, num_blocks, block_size_uncompressed,
-                                                        last_block_size, block_sizes_compressed);
+                        last_block_size, block_sizes_compressed);
             }
             else {
                 get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->values, header_size);
@@ -2039,7 +2044,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
 
             if (parser_state->compressed) {
                 raw_data_after_blocks_offset = get_block_sizes_from_compressed_vtu_file(raw_data, header_size, &num_blocks, &block_size_uncompressed,
-                                                                                        &last_block_size, &block_sizes_compressed);
+                        &last_block_size, &block_sizes_compressed);
 
                 if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { //We read only the header.. need to read the data
                     b64_size -= bytes_read;
@@ -2052,7 +2057,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
                     arrsetcap(f32_points, (*vtk_grid)->num_points);
 
                     get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, f32_points, header_size, num_blocks,
-                                                            block_size_uncompressed, last_block_size, block_sizes_compressed);
+                            block_size_uncompressed, last_block_size, block_sizes_compressed);
 
                     for(int i = 0; i < (*vtk_grid)->num_points; i++) {
                         (*vtk_grid)->points[i].x = f32_points[i].x;
@@ -2063,7 +2068,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
                 }
                 else {
                     get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->points, header_size, num_blocks,
-                                                            block_size_uncompressed, last_block_size, block_sizes_compressed);
+                            block_size_uncompressed, last_block_size, block_sizes_compressed);
                 }
             }
             else {
@@ -2098,17 +2103,17 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
             }
             if (parser_state->compressed) {
                 raw_data_after_blocks_offset = get_block_sizes_from_compressed_vtu_file(raw_data, header_size, &num_blocks, &block_size_uncompressed,
-                                                                                        &last_block_size, &block_sizes_compressed);
+                        &last_block_size, &block_sizes_compressed);
 
                 if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { //We read only the header.. need to read the data
                     b64_size -= bytes_read;
                     base64_decode((unsigned char *) raw_data + base64_outlen,
-                                  data_tmp + bytes_read, b64_size,
-                                  &bytes_read);
+                            data_tmp + bytes_read, b64_size,
+                            &bytes_read);
                 }
 
                 get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->cells, header_size, num_blocks, block_size_uncompressed,
-                                                        last_block_size, block_sizes_compressed);
+                        last_block_size, block_sizes_compressed);
             }
             else
                 get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->cells, header_size);
@@ -2121,7 +2126,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
         else if (legacy && parser_state->binary) {
             memcpy((*vtk_grid)->points, parser_state->points_ascii, (*vtk_grid)->num_points * sizeof(struct point_3d));
             memcpy((*vtk_grid)->cells, parser_state->cells_connectivity_ascii,
-                   (size_t)(*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell * sizeof(uint64_t));
+                    (size_t)(*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell * sizeof(uint64_t));
             memcpy((*vtk_grid)->values, parser_state->celldata_ascii, (*vtk_grid)->num_cells * sizeof(float));
         }
         else if (parser_state->ascii) {

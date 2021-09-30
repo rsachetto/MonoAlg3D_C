@@ -184,3 +184,4 @@ retired_code/
 *.gcda
 export_report.sh
 report.xml 
+/gmon.out

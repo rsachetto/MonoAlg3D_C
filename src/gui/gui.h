@@ -35,7 +35,7 @@ enum draw_simulation_or_file {
 };
 
 struct vector3_voidp_hash_entry {
-    int key;
+    Vector3 key;
     void *value;
 };
 
@@ -66,7 +66,13 @@ struct voxel {
 	Vector3 position_mesh;
 	Vector3 size;
 	real_cpu v;
+    uint32_t draw_index;
 	uint32_t matrix_position;
+};
+
+struct vector3_voxel_entry {
+    Vector3 key;
+    struct voxel value;
 };
 
 struct gui_config {
@@ -161,8 +167,9 @@ struct gui_state {
     int scale_alpha;
     int voxel_alpha;
 
+    struct vector3_voxel_entry *current_selected_volumes;
     struct voxel current_selected_volume;
-    int current_selected_volume_index;
+    //int current_selected_volume_index;
     struct voxel current_mouse_over_volume;
 
     //Font font;

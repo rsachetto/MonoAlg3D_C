@@ -146,12 +146,15 @@ static void yxml_setutf8(char *dest, unsigned ch) {
     *dest = 0;
 }
 
-
-static inline yxml_ret_t yxml_datacontent(yxml_t *x, unsigned ch) {
-    yxml_setchar(x->data, ch);
-    x->data[1] = 0;
-    return YXML_CONTENT;
+#define yxml_datacontent(x, ch)\
+{\
+	x->data[0] = ch;\
+    x->data[1] = 0;\
+    return YXML_CONTENT;\
 }
+//static inline yxml_ret_t yxml_datacontent(yxml_t *x, unsigned ch) {
+	//yxml_setchar(x->data, ch);
+//}
 
 
 static inline yxml_ret_t yxml_datapi1(yxml_t *x, unsigned ch) {
@@ -423,7 +426,7 @@ yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
                 return YXML_OK;
             }
             if(yxml_isChar(ch))
-                return yxml_datacontent(x, ch);
+                yxml_datacontent(x, ch);
             break;
         case YXMLS_cd1:
             if(ch == (unsigned char)']') {
@@ -437,7 +440,7 @@ yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
             break;
         case YXMLS_cd2:
             if(ch == (unsigned char)']')
-                return yxml_datacontent(x, ch);
+                yxml_datacontent(x, ch);
             if(ch == (unsigned char)'>') {
                 x->state = YXMLS_misc2;
                 return YXML_OK;
@@ -794,7 +797,7 @@ yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
                 return yxml_refstart(x, ch);
             }
             if(yxml_isChar(ch))
-                return yxml_datacontent(x, ch);
+                yxml_datacontent(x, ch);
             break;
         case YXMLS_misc2a:
             if(yxml_isRef(ch))

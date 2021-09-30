@@ -40,7 +40,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     MaximizeWindow();
 
     struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
-    gui_state->current_selected_volume_index = -1;
+    gui_state->current_selected_volumes = NULL;
 
     gui_state->ui_scale = ui_scale;
 
@@ -67,7 +67,6 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->show_mesh_info_box = true;
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    gui_state->current_selected_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
     gui_state->mouse_pos = (Vector2){0, 0};
     gui_state->current_scale = 0;
@@ -332,16 +331,15 @@ static Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, 
 }
 
 
-static void check_collisions(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t, int idx) {
+static bool check_collisions(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
 
     Vector3 p_draw = voxel->position_draw;
     Vector3 p_mesh = voxel->position_mesh;
 
     Vector3 cube_size = voxel->size;
 
-    RayCollision collision;
+    RayCollision collision = {0};
     RayCollision collision_mouse_over = {0};
-
 
     float csx = cube_size.x;
     float csy = cube_size.y;
@@ -352,10 +350,10 @@ static void check_collisions(struct voxel *voxel, struct gui_state *gui_state, r
 
     if(gui_state->double_clicked) {
         collision = GetRayCollisionBox(gui_state->ray, bb);
+
         if(collision.hit) {
             if(gui_state->ray_hit_distance > collision.distance) {
                 gui_state->current_selected_volume = *voxel;
-                gui_state->current_selected_volume_index = idx;
                 gui_state->ap_graph_config->draw_selected_ap_text = true;
                 gui_state->ray_hit_distance = collision.distance;
             }
@@ -364,7 +362,13 @@ static void check_collisions(struct voxel *voxel, struct gui_state *gui_state, r
         else {
             collision.hit = false;
         }
-
+    }
+    else {
+        action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
+        if(aps != NULL) {
+            //This is needed when we are using adaptive meshes
+            hmput(gui_state->current_selected_volumes, p_draw, *voxel);
+        }
     }
 
     collision_mouse_over = GetRayCollisionBox(gui_state->ray_mouse_over, bb);
@@ -376,31 +380,38 @@ static void check_collisions(struct voxel *voxel, struct gui_state *gui_state, r
             gui_state->ray_mouse_over_hit_distance = collision_mouse_over.distance;
         }
     }
+
+    return collision.hit;
 }
 
-static void add_selected_to_ap_graph(struct gui_config *gui_config, struct gui_state *gui_state) {
+static void add_selected_to_ap_graph(struct gui_config *gui_config, struct gui_state *gui_state)  {
 
-    if(gui_state->current_selected_volume_index != -1) {
+    Vector3 p_draw = gui_state->current_selected_volume.position_draw;
 
-        action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, gui_state->current_selected_volume_index);
+    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
 
-        if(aps == NULL) {
-            struct action_potential ap;
-            ap.t = gui_config->time;
-            ap.v = gui_state->current_selected_volume.v;
+    if(aps == NULL) {
+        struct action_potential ap;
+        ap.t = gui_config->time;
+        ap.v = gui_state->current_selected_volume.v;
 
-            arrput(aps, ap);
-            hmput(gui_state->ap_graph_config->selected_aps, gui_state->current_selected_volume_index, aps);
-            gui_state->selected_time = GetTime();
-        }
+        arrput(aps, ap);
+        hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
+        gui_state->selected_time = GetTime();
+    }
+    else {
+        hmdel(gui_state->ap_graph_config->selected_aps, p_draw);
+        hmdel(gui_state->current_selected_volumes, p_draw);
     }
 
 }
 
 //we only trace the arrays that were previously added to the ap graph
-static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t, int idx) {
+static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t) {
 
-    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, idx);
+    Vector3 p_draw = voxel->position_draw;
+
+    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
 
     struct action_potential ap1;
     ap1.t = t;
@@ -410,10 +421,26 @@ static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t, 
     if(aps != NULL) {
         if(aps_len == 0 || ap1.t > aps[aps_len - 1].t) {
             arrput(aps, ap1);
-            hmput(gui_state->ap_graph_config->selected_aps, idx, aps);
+            hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
         }
     }
 
+}
+
+static void update_selected(bool collision, struct gui_state *gui_state, struct gui_config *gui_config, Color *colors) {
+    if(collision) {
+        hmput(gui_state->current_selected_volumes, gui_state->current_selected_volume.position_draw, gui_state->current_selected_volume);
+        add_selected_to_ap_graph(gui_config, gui_state);
+    }
+
+    int n = hmlen(gui_state->current_selected_volumes);
+
+    for(int i = 0; i < n; i++) {
+        int idx = gui_state->current_selected_volumes[i].value.draw_index;
+        Color c = colors[idx];
+        c.a = 0;
+        colors[idx] = c;
+    }
 }
 
 static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
@@ -424,7 +451,10 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         return;
 
     int64_t *cells = grid_to_draw->cells;
+    if(!cells) return;
+
     point3d_array points = grid_to_draw->points;
+    if(!points) return;
 
     uint32_t n_active = grid_to_draw->num_cells;
 
@@ -444,6 +474,8 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
     float min_v = gui_config->min_v;
     float max_v = gui_config->max_v;
     float time  = gui_config->time;
+
+    bool collision = false;
 
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
@@ -479,8 +511,10 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
         colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 
-        check_collisions(&voxel, gui_state, min_v, max_v, time, count);
-        trace_ap(gui_state, &voxel, time, count);
+        voxel.draw_index = count;
+
+        collision |= check_collisions(&voxel, gui_state, min_v, max_v, time);
+        trace_ap(gui_state, &voxel, time);
 
         count++;
 
@@ -488,13 +522,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
     }
 
-    if(gui_state->current_selected_volume_index != -1) {
-        Color c = colors[gui_state->current_selected_volume_index];
-        c.a = 0;
-        colors[gui_state->current_selected_volume_index] = c;
-    }
-
-    add_selected_to_ap_graph(gui_config, gui_state);
+    update_selected(collision, gui_state, gui_config, colors);
 
     DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
     free(translations);
@@ -533,6 +561,8 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 
         int count = 0;
 
+        bool collision = false;
+
         for(uint32_t i = 0; i < n_active; i++) {
 
             if(!ac[i]->visible) {
@@ -560,20 +590,31 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 
             colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 
-            check_collisions(&voxel, gui_state, min_v, max_v, time, count);
-            trace_ap(gui_state, &voxel, time, count);
+            voxel.draw_index = count;
+            collision |= check_collisions(&voxel, gui_state, min_v, max_v, time);
+            trace_ap(gui_state, &voxel, time);
 
             count++;
 
         }
 
-        if(gui_state->current_selected_volume_index != -1) {
-            colors[gui_state->current_selected_volume_index] = BLACK;
-        }
+//        if(collision) {
+//            hmput(gui_state->current_selected_volumes, gui_state->current_selected_volume.position_draw, gui_state->current_selected_volume);
+//            add_selected_to_ap_graph(gui_config, gui_state);
+//        }
+//
+//        int n = hmlen(gui_state->current_selected_volumes);
+//
+//        for(int i = 0; i < n; i++) {
+//            int idx = gui_state->current_selected_volumes[i].value.draw_index;
+//            Color c = colors[idx];
+//            c.a = 0;
+//            colors[idx] = c;
+//
+//        }
 
-
+        update_selected(collision, gui_state, gui_config, colors);
         DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
-        add_selected_to_ap_graph(gui_config, gui_state);
 
         free(translations);
         free(colors);
@@ -1202,6 +1243,10 @@ static inline void reset_ui(struct gui_state *gui_state) {
 
 static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bool full_reset) {
 
+    if(!gui_config->paused) {
+        return;
+    }
+
     gui_state->voxel_alpha = 255;
 
     for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
@@ -1210,8 +1255,6 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
 
     if(full_reset) {
 
-        gui_state->current_selected_volume_index = -1;
-
         for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
             arrfree(gui_state->ap_graph_config->selected_aps[i].value);
         }
@@ -1219,6 +1262,9 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
         hmfree(gui_state->ap_graph_config->selected_aps);
         gui_state->ap_graph_config->selected_aps = NULL;
         hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
+
+        hmfree(gui_state->current_selected_volumes);
+        gui_state->current_selected_volumes = NULL;
 
         set_camera_params(&(gui_state->camera));
 
@@ -1284,14 +1330,16 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct gui_stat
         }
     }
 
-    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-        if(IsKeyPressed(KEY_F)) {
-            gui_state->show_selection_box = true;
-            gui_state->sub_window_pos.x = (float) GetScreenWidth()/2.0f - gui_state->box_width;
-            gui_state->sub_window_pos.y = (float) GetScreenHeight()/2.0f - gui_state->box_height;
-            return;
-        }
-    }
+    /*
+       if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+       if(IsKeyPressed(KEY_F)) {
+       gui_state->show_selection_box = true;
+       gui_state->sub_window_pos.x = (float) GetScreenWidth()/2.0f - gui_state->box_width;
+       gui_state->sub_window_pos.y = (float) GetScreenHeight()/2.0f - gui_state->box_height;
+       return;
+       }
+       }
+       */
 
 
     if(IsKeyPressed(KEY_Q)) {
@@ -1700,7 +1748,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
         " - Ctrl + F to search a cell based on it's center",
         " - G to only draw the grid lines",
         " - L to enable or disable the grid lines",
-        " - R to restart simulation",
+        " - R to restart simulation (only works when paused)",
         " - Alt + R to restart simulation and the box positions",
         " - X to show/hide AP visualization",
         " - Q to show/hide scale",
@@ -1759,6 +1807,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
         else {
             grid_mask = 0;
         }
+
         UpdateCamera(&(gui_state->camera));
 
         // Draw
@@ -1768,9 +1817,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
         if(IsWindowResized()) {
             gui_state->current_window_width = GetScreenWidth();
             gui_state->current_window_height = GetScreenHeight();
-
             reset_ui(gui_state);
-
         }
 
         gui_state->handle_keyboard_input = !gui_state->show_selection_box;
@@ -1808,6 +1855,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                 draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, shader, cube, grid_mask);
             }
 
+            gui_state->double_clicked = false;
             if(gui_state->show_coordinates) {
                 draw_coordinates(gui_state);
             }
