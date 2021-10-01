@@ -22,6 +22,9 @@
 #include "../3dparty/raylib/src/external/glad.h"
 #include "../3dparty/raylib/src/rlgl.h"
 /////////
+//
+#define GUI_TEXTBOX_EXTENDED_IMPLEMENTATION
+#include "../3dparty/raylib/src/extras/gui_textbox_extended.h"
 
 #include "raylib_ext.h"
 #undef RAYGUI_IMPLEMENTATION
@@ -68,6 +71,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
+    gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};
     gui_state->mouse_pos = (Vector2){0, 0};
     gui_state->current_scale = 0;
     gui_state->voxel_alpha = 255;
@@ -364,11 +368,18 @@ static bool check_collisions(struct voxel *voxel, struct gui_state *gui_state, r
         }
     }
     else {
-        action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
+        action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
         if(aps != NULL) {
             //This is needed when we are using adaptive meshes
-            hmput(gui_state->current_selected_volumes, p_draw, *voxel);
+            hmput(gui_state->current_selected_volumes, p_mesh, *voxel);
         }
+    }
+
+    if(gui_state->found_volume.position_mesh.x == p_mesh.x && gui_state->found_volume.position_mesh.y == p_mesh.y &&gui_state->found_volume.position_mesh.z == p_mesh.z) {
+        gui_state->current_selected_volume = *voxel;
+        //hmput(gui_state->current_selected_volumes, p_mesh, *voxel);
+        gui_state->found_volume.position_mesh = (Vector3){-1. -1, -1};
+        collision.hit = true;
     }
 
     collision_mouse_over = GetRayCollisionBox(gui_state->ray_mouse_over, bb);
@@ -384,11 +395,11 @@ static bool check_collisions(struct voxel *voxel, struct gui_state *gui_state, r
     return collision.hit;
 }
 
-static void add_selected_to_ap_graph(struct gui_config *gui_config, struct gui_state *gui_state)  {
+static void add_or_remove_selected_to_ap_graph(struct gui_config *gui_config, struct gui_state *gui_state)  {
 
-    Vector3 p_draw = gui_state->current_selected_volume.position_draw;
+    Vector3 p_mesh = gui_state->current_selected_volume.position_mesh;
 
-    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
+    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
 
     if(aps == NULL) {
         struct action_potential ap;
@@ -396,12 +407,14 @@ static void add_selected_to_ap_graph(struct gui_config *gui_config, struct gui_s
         ap.v = gui_state->current_selected_volume.v;
 
         arrput(aps, ap);
-        hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
+        hmput(gui_state->ap_graph_config->selected_aps, p_mesh, aps);
         gui_state->selected_time = GetTime();
+
+        hmput(gui_state->current_selected_volumes, gui_state->current_selected_volume.position_mesh, gui_state->current_selected_volume);
     }
     else {
-        hmdel(gui_state->ap_graph_config->selected_aps, p_draw);
-        hmdel(gui_state->current_selected_volumes, p_draw);
+        hmdel(gui_state->ap_graph_config->selected_aps, p_mesh);
+        hmdel(gui_state->current_selected_volumes, p_mesh);
     }
 
 }
@@ -409,9 +422,9 @@ static void add_selected_to_ap_graph(struct gui_config *gui_config, struct gui_s
 //we only trace the arrays that were previously added to the ap graph
 static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t) {
 
-    Vector3 p_draw = voxel->position_draw;
+    Vector3 p_mesh = voxel->position_mesh;
 
-    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
+    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
 
     struct action_potential ap1;
     ap1.t = t;
@@ -421,16 +434,16 @@ static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t) 
     if(aps != NULL) {
         if(aps_len == 0 || ap1.t > aps[aps_len - 1].t) {
             arrput(aps, ap1);
-            hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
+            hmput(gui_state->ap_graph_config->selected_aps, p_mesh, aps);
         }
     }
 
 }
 
 static void update_selected(bool collision, struct gui_state *gui_state, struct gui_config *gui_config, Color *colors) {
+
     if(collision) {
-        hmput(gui_state->current_selected_volumes, gui_state->current_selected_volume.position_draw, gui_state->current_selected_volume);
-        add_selected_to_ap_graph(gui_config, gui_state);
+        add_or_remove_selected_to_ap_graph(gui_config, gui_state);
     }
 
     int n = hmlen(gui_state->current_selected_volumes);
@@ -597,21 +610,6 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
             count++;
 
         }
-
-//        if(collision) {
-//            hmput(gui_state->current_selected_volumes, gui_state->current_selected_volume.position_draw, gui_state->current_selected_volume);
-//            add_selected_to_ap_graph(gui_config, gui_state);
-//        }
-//
-//        int n = hmlen(gui_state->current_selected_volumes);
-//
-//        for(int i = 0; i < n; i++) {
-//            int idx = gui_state->current_selected_volumes[i].value.draw_index;
-//            Color c = colors[idx];
-//            c.a = 0;
-//            colors[idx] = c;
-//
-//        }
 
         update_selected(collision, gui_state, gui_config, colors);
         DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
@@ -1173,7 +1171,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
     Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
 
-    float text_box_y_dist = text_box_size.y*2;
+    float text_box_y_dist = text_box_size.y*2.5;
     float label_box_y_dist = 30;
     float x_off = 10;
 
@@ -1190,24 +1188,24 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
     bool window_closed = GuiWindowBox((Rectangle){pos_x, pos_y, gui_state->box_width, gui_state->box_height}, "Enter the center of the cell");
 
-    DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
 
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_x_text, SIZEOF(center_x_text) - 1, true);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_x_text, SIZEOF(center_x_text) - 1, true);
 
     box_pos = pos_x + text_box_size.x + 2 * x_off;
-    DrawTextEx(gui_state->font, CENTER_Y, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_y_text, SIZEOF(center_y_text) - 1, true);
+    DrawTextEx(gui_state->font, CENTER_Y, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_y_text, SIZEOF(center_y_text) - 1, true);
 
     box_pos = pos_x + 2 * text_box_size.x  + 3 * x_off;
-    DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-    GuiTextBox((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
+    DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
 
     bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2, text_box_size.x, text_box_size.y}, "OK");
 
     if(btn_ok_clicked) {
-        gui_state->current_selected_volume.position_mesh.x = strtof(center_x_text, NULL);
-        gui_state->current_selected_volume.position_mesh.y = strtof(center_y_text, NULL);
-        gui_state->current_selected_volume.position_mesh.z = strtof(center_z_text, NULL);
+        gui_state->found_volume.position_mesh.x = strtof(center_x_text, NULL);
+        gui_state->found_volume.position_mesh.y = strtof(center_y_text, NULL);
+        gui_state->found_volume.position_mesh.z = strtof(center_z_text, NULL);
     }
 
     return window_closed || btn_ok_clicked;
@@ -1330,16 +1328,16 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct gui_stat
         }
     }
 
-    /*
-       if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-       if(IsKeyPressed(KEY_F)) {
-       gui_state->show_selection_box = true;
-       gui_state->sub_window_pos.x = (float) GetScreenWidth()/2.0f - gui_state->box_width;
-       gui_state->sub_window_pos.y = (float) GetScreenHeight()/2.0f - gui_state->box_height;
-       return;
-       }
-       }
-       */
+
+    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+        if(IsKeyPressed(KEY_F)) {
+            gui_state->show_selection_box = true;
+            gui_state->sub_window_pos.x = (float) GetScreenWidth()/2.0f - gui_state->box_width;
+            gui_state->sub_window_pos.y = (float) GetScreenHeight()/2.0f - gui_state->box_height;
+            return;
+        }
+    }
+
 
 
     if(IsKeyPressed(KEY_Q)) {

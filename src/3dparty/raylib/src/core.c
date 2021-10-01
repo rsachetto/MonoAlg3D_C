@@ -1927,7 +1927,7 @@ void EndDrawing(void)
     // Draw record indicator
     if (gifRecording)
     {
-        #define GIF_RECORD_FRAMERATE    10
+        #define GIF_RECORD_FRAMERATE    5
         gifFrameCounter++;
 
         // NOTE: We record one gif frame every 10 game frames

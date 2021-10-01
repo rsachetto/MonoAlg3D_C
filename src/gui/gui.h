@@ -169,6 +169,7 @@ struct gui_state {
 
     struct vector3_voxel_entry *current_selected_volumes;
     struct voxel current_selected_volume;
+    struct voxel found_volume;
     //int current_selected_volume_index;
     struct voxel current_mouse_over_volume;
 
