@@ -250,7 +250,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
     struct point_3d center;
     struct point_3d half_face;
 
-    float  v;
+    real_cpu v;
 
     struct point_3d points[8];
 
@@ -322,7 +322,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
         else {
 
             if(source < source_limit) {
-                center.x = *(float *)(source);
+                center.x = *(real_cpu *)(source);
                 source += sizeof(center.x);
                 source_size -= sizeof(center.x);
             }
@@ -333,7 +333,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
 
             if(source < source_limit) {
-                center.y = *(float *)(source);
+                center.y = *(real_cpu *)(source);
                 source += sizeof(center.y);
                 source_size -= sizeof(center.y);
             }
@@ -343,7 +343,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                center.z = *(float *)(source);
+                center.z = *(real_cpu *)(source);
                 source += sizeof(center.z);
                 source_size -= sizeof(center.z);
             }
@@ -353,7 +353,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                half_face.x = *(float *)(source);
+                half_face.x = *(real_cpu *)(source);
                 source += sizeof(half_face.x);
                 source_size -= sizeof(half_face.x);
             }
@@ -363,7 +363,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                half_face.y = *(float *)(source);
+                half_face.y = *(real_cpu *)(source);
                 source += sizeof(half_face.y);
                 source_size -= sizeof(half_face.y);
             }
@@ -373,7 +373,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                half_face.z = *(float *)(source);
+                half_face.z = *(real_cpu *)(source);
                 source += sizeof(half_face.z);
                 source_size -= sizeof(half_face.z);
             }
@@ -383,7 +383,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(source < source_limit) {
-                v = *(float *)(source);
+                v = *(real_cpu *)(source);
                 source += sizeof(v);
                 source_size -= sizeof(v);
             }

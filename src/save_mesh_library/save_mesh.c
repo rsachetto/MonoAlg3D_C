@@ -298,7 +298,7 @@ SAVE_MESH(save_as_text_or_binary) {
 
     FILE *output_file = fopen(tmp, "w");
 
-       struct cell_node *grid_cell = the_grid->first_cell;
+    struct cell_node *grid_cell = the_grid->first_cell;
 
     real_cpu center_x, center_y, center_z, dx, dy, dz;
     real_cpu v;
@@ -338,6 +338,7 @@ SAVE_MESH(save_as_text_or_binary) {
             dz = grid_cell->discretization.z/2.0;
 
             if(binary) {
+                //TODO: maybe the size of the data should be always fixed (double as instance)
                 fwrite(&center_x, sizeof(center_x), 1, output_file);
                 fwrite(&center_y, sizeof(center_y), 1, output_file);
                 fwrite(&center_z, sizeof(center_z), 1, output_file);
