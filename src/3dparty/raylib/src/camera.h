@@ -151,10 +151,10 @@ void SetCameraMoveControls(int keyFront, int keyBack,
 
 // Camera mouse movement sensitivity
 #define CAMERA_MOUSE_MOVE_SENSITIVITY                   0.003f
-#define CAMERA_MOUSE_SCROLL_SENSITIVITY                 1.5f
+#define CAMERA_MOUSE_SCROLL_SENSITIVITY                 0.5f
 
 // FREE_CAMERA
-#define CAMERA_FREE_MOUSE_SENSITIVITY                   0.01f
+#define CAMERA_FREE_MOUSE_SENSITIVITY                   0.005f
 #define CAMERA_FREE_DISTANCE_MIN_CLAMP                  0.3f
 #define CAMERA_FREE_DISTANCE_MAX_CLAMP                  120.0f
 #define CAMERA_FREE_MIN_CLAMP                           85.0f

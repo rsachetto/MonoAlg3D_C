@@ -335,7 +335,7 @@ static Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, 
 }
 
 
-static bool check_collisions(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
+static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
 
     Vector3 p_draw = voxel->position_draw;
     Vector3 p_mesh = voxel->position_mesh;
@@ -377,7 +377,6 @@ static bool check_collisions(struct voxel *voxel, struct gui_state *gui_state, r
 
     if(gui_state->found_volume.position_mesh.x == p_mesh.x && gui_state->found_volume.position_mesh.y == p_mesh.y &&gui_state->found_volume.position_mesh.z == p_mesh.z) {
         gui_state->current_selected_volume = *voxel;
-        //hmput(gui_state->current_selected_volumes, p_mesh, *voxel);
         gui_state->found_volume.position_mesh = (Vector3){-1. -1, -1};
         collision.hit = true;
     }
@@ -526,7 +525,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
         voxel.draw_index = count;
 
-        collision |= check_collisions(&voxel, gui_state, min_v, max_v, time);
+        collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
         trace_ap(gui_state, &voxel, time);
 
         count++;
@@ -604,7 +603,7 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
             colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 
             voxel.draw_index = count;
-            collision |= check_collisions(&voxel, gui_state, min_v, max_v, time);
+            collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
             trace_ap(gui_state, &voxel, time);
 
             count++;
@@ -635,8 +634,9 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         gui_state->ap_graph_config->graph.y = 0;
     }
 
-    static const Color colors[] = {DARKGRAY, GOLD,     ORANGE, PINK,   RED,        MAROON, GREEN,     LIME,  DARKGREEN,
-        BLUE,     DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN,  DARKBROWN, BLACK, MAGENTA};
+    static const Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN,
+                                   BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
+
     int num_colors = SIZEOF(colors);
 
     Font font = gui_state->font;
@@ -1251,6 +1251,25 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
         arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
     }
 
+    gui_state->ap_graph_config->draw_selected_ap_text = false;
+
+    if(gui_config->paused) {
+        omp_unset_lock(&gui_config->sleep_lock);
+        gui_config->paused = false;
+    }
+
+    gui_config->restart = true;
+    gui_config->grid_info.alg_grid = NULL;
+    gui_config->grid_info.vtk_grid = NULL;
+
+    gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    omp_unset_lock(&gui_config->sleep_lock);
+    gui_state->current_selected_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
+    gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
+    gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
+
     if(full_reset) {
 
         for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
@@ -1273,24 +1292,6 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
         gui_state->show_coordinates = true;
     }
 
-    gui_state->ap_graph_config->draw_selected_ap_text = false;
-
-    if(gui_config->paused) {
-        omp_unset_lock(&gui_config->sleep_lock);
-        gui_config->paused = false;
-    }
-
-    gui_config->restart = true;
-    gui_config->grid_info.alg_grid = NULL;
-    gui_config->grid_info.vtk_grid = NULL;
-
-    gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    omp_unset_lock(&gui_config->sleep_lock);
-    gui_state->current_selected_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
-    gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
-    gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
 }
 
 static void handle_keyboard_input(struct gui_config *gui_config, struct gui_state *gui_state) {
@@ -1337,8 +1338,6 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct gui_stat
             return;
         }
     }
-
-
 
     if(IsKeyPressed(KEY_Q)) {
         gui_state->show_scale = !gui_state->show_scale;
@@ -1693,7 +1692,6 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
     const int end_info_box_lines = 10;
     const int mesh_info_box_lines = 9;
 
-
     omp_set_lock(&gui_config->sleep_lock);
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
@@ -1860,6 +1858,9 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
             EndMode3D();
 
+            // We finished drawing everything that depends on the mesh being loaded
+            omp_unset_lock(&gui_config->draw_lock);
+
             if(gui_state->show_coordinates) {
                 DrawText("x", (int)gui_state->coordinates_label_x_position.x, (int)gui_state->coordinates_label_x_position.y, (int)gui_state->font_size_big, RED);
                 DrawText("y", (int)gui_state->coordinates_label_y_position.x, (int)gui_state->coordinates_label_y_position.y, (int)gui_state->font_size_big, GREEN);
@@ -1878,8 +1879,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                     }
                 }
             }
-            // We finished drawing everything that depends on the mesh being loaded
-            omp_unset_lock(&gui_config->draw_lock);
+
 
             if(gui_state->show_scale) {
                 draw_scale(gui_config->min_v, gui_config->max_v, gui_state, gui_config->int_scale);
