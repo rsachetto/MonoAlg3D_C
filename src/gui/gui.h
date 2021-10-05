@@ -25,8 +25,8 @@
 #define DOUBLE_CLICK_DELAY 0.7 //seconds
 
 struct action_potential {
-    real_cpu v;
-    real_cpu t;
+    float v;
+    float t;
 };
 
 enum draw_simulation_or_file {
@@ -65,9 +65,9 @@ struct voxel {
 	Vector3 position_draw;
 	Vector3 position_mesh;
 	Vector3 size;
-	real_cpu v;
     uint32_t draw_index;
 	uint32_t matrix_position;
+    float v;
 };
 
 struct vector3_voxel_entry {
@@ -77,16 +77,16 @@ struct vector3_voxel_entry {
 
 struct gui_config {
 
-    real_cpu max_v;
-    real_cpu min_v;
+    float max_v;
+    float min_v;
     bool simulating;
     bool paused;
     bool exit;
     bool adaptive;
     bool restart;
-    real_cpu time;
-    real_cpu final_time;
-    real_cpu dt;
+    float time;
+    float final_time;
+    float dt;
     int step;
 
     char *config_name;

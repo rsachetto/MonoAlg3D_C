@@ -3,7 +3,6 @@
 //
 #include <float.h>
 #include <string.h>
-#include <time.h>
 
 #include "../3dparty/stb_ds.h"
 #include "../3dparty/tinyfiledialogs/tinyfiledialogs.h"
@@ -54,8 +53,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->font_size_small = font_size_small*ui_scale;
     gui_state->font_size_big = font_size_big*ui_scale;
 
-    gui_state->font_spacing_big      = (float)gui_state->font_size_big / (float)gui_state->font.baseSize;
-    gui_state->font_spacing_small    = (float)gui_state->font_size_small / (float)gui_state->font.baseSize;
+    gui_state->font_spacing_big   = gui_state->font_size_big / (float)gui_state->font.baseSize;
+    gui_state->font_spacing_small = gui_state->font_size_small / (float)gui_state->font.baseSize;
 
     gui_state->handle_keyboard_input = true;
 
@@ -191,27 +190,27 @@ static Vector3 find_mesh_center(struct grid *grid_to_draw, struct mesh_info *mes
         for(uint32_t i = 0; i < n_active; i++) {
             grid_cell = ac[i];
             if(grid_cell->center.x > mesh_max_x) {
-                mesh_max_x = grid_cell->center.x;
-                mesh_max_dx = grid_cell->discretization.x;
+                mesh_max_x = (float) grid_cell->center.x;
+                mesh_max_dx = (float) grid_cell->discretization.x;
             } else if(grid_cell->center.x < mesh_min_x) {
-                mesh_min_x = grid_cell->center.x;
-                mesh_min_dx = grid_cell->discretization.x;
+                mesh_min_x = (float) grid_cell->center.x;
+                mesh_min_dx = (float) grid_cell->discretization.x;
             }
 
             if(grid_cell->center.y > mesh_max_y) {
-                mesh_max_y = grid_cell->center.y;
-                mesh_max_dy = grid_cell->discretization.y;
+                mesh_max_y = (float) grid_cell->center.y;
+                mesh_max_dy = (float) grid_cell->discretization.y;
             } else if(grid_cell->center.y < mesh_min_y) {
-                mesh_min_y = grid_cell->center.y;
-                mesh_min_dy = grid_cell->discretization.y;
+                mesh_min_y = (float)  grid_cell->center.y;
+                mesh_min_dy = (float) grid_cell->discretization.y;
             }
 
             if(grid_cell->center.z > mesh_max_z) {
-                mesh_max_z = grid_cell->center.z;
-                mesh_max_dz = grid_cell->discretization.z;
+                mesh_max_z = (float) grid_cell->center.z;
+                mesh_max_dz = (float) grid_cell->discretization.z;
             } else if(grid_cell->center.z < mesh_min_z) {
-                mesh_min_z = grid_cell->center.z;
-                mesh_min_dz = grid_cell->discretization.z;
+                mesh_min_z = (float) grid_cell->center.z;
+                mesh_min_dz = (float) grid_cell->discretization.z;
             }
         }
     }
@@ -377,7 +376,7 @@ static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_st
 
     if(gui_state->found_volume.position_mesh.x == p_mesh.x && gui_state->found_volume.position_mesh.y == p_mesh.y &&gui_state->found_volume.position_mesh.z == p_mesh.z) {
         gui_state->current_selected_volume = *voxel;
-        gui_state->found_volume.position_mesh = (Vector3){-1. -1, -1};
+        gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};
         collision.hit = true;
     }
 
@@ -448,14 +447,14 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
     int n = hmlen(gui_state->current_selected_volumes);
 
     for(int i = 0; i < n; i++) {
-        int idx = gui_state->current_selected_volumes[i].value.draw_index;
+        uint32_t idx = gui_state->current_selected_volumes[i].value.draw_index;
         Color c = colors[idx];
         c.a = 0;
         colors[idx] = c;
     }
 }
 
-static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
+static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, Shader shader, Mesh cube, int grid_mask) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
 
@@ -470,7 +469,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
     uint32_t n_active = grid_to_draw->num_cells;
 
-    int num_points = grid_to_draw->points_per_cell;
+    uint32_t num_points = grid_to_draw->points_per_cell;
     int j = 0;
 
     struct voxel voxel;
@@ -509,13 +508,13 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
         voxel.v = grid_to_draw->values[j];
 
-        voxel.position_draw.x = (float)((mesh_center_x - mesh_offset.x) / scale);
-        voxel.position_draw.y = (float)((mesh_center_y - mesh_offset.y) / scale);
-        voxel.position_draw.z = (float)((mesh_center_z - mesh_offset.z) / scale);
+        voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
+        voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
+        voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
 
-        voxel.size.x = (float)(dx / scale);
-        voxel.size.y = (float)(dy / scale);
-        voxel.size.z = (float)(dz / scale);
+        voxel.size.x = dx / scale;
+        voxel.size.y = dy / scale;
+        voxel.size.z = dz / scale;
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
         translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
@@ -543,7 +542,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
 }
 
-static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
+static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, Shader shader, Mesh cube, int grid_mask) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
@@ -555,9 +554,9 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
     uint32_t n_active = grid_to_draw->num_active_cells;
     struct cell_node **ac = grid_to_draw->active_cells;
 
-    float offsetx_over_scale = (float)(mesh_offset.x / scale);
-    float offsety_over_scale = (float)(mesh_offset.y / scale);
-    float offsetz_over_scale = (float)(mesh_offset.z / scale);
+    float offsetx_over_scale = mesh_offset.x / scale;
+    float offsety_over_scale = mesh_offset.y / scale;
+    float offsetz_over_scale = mesh_offset.z / scale;
 
     float min_v = gui_config->min_v;
     float max_v = gui_config->max_v;
@@ -567,7 +566,7 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
     gui_state->ray_mouse_over_hit_distance = FLT_MAX;
 
     Matrix *translations = RL_MALLOC(n_active*sizeof(Matrix)); // Locations of instances
-    Color *colors       = RL_MALLOC(n_active*sizeof(Color));
+    Color *colors        = RL_MALLOC(n_active*sizeof(Color));
 
     if(ac) {
 
@@ -584,17 +583,17 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
             struct cell_node *grid_cell;
 
             grid_cell = ac[i];
+            
+            voxel.position_draw.x = (float) grid_cell->center.x/scale - offsetx_over_scale;
+            voxel.position_draw.y = (float) grid_cell->center.y/scale - offsety_over_scale;
+            voxel.position_draw.z = (float) grid_cell->center.z/scale - offsetz_over_scale;
 
-            voxel.position_draw.x = (float)(grid_cell->center.x/scale - offsetx_over_scale);
-            voxel.position_draw.y = (float)(grid_cell->center.y/scale - offsety_over_scale);
-            voxel.position_draw.z = (float)(grid_cell->center.z/scale - offsetz_over_scale);
+            voxel.size.x = (float) grid_cell->discretization.x / scale;
+            voxel.size.y = (float) grid_cell->discretization.y / scale;
+            voxel.size.z = (float) grid_cell->discretization.z / scale;
 
-            voxel.size.x = (float)(grid_cell->discretization.x / scale);
-            voxel.size.y = (float)(grid_cell->discretization.y / scale);
-            voxel.size.z = (float)(grid_cell->discretization.z / scale);
-
-            voxel.position_mesh = (Vector3){grid_cell->center.x, grid_cell->center.y, grid_cell->center.z};
-            voxel.v = grid_cell->v;
+            voxel.position_mesh = (Vector3){(float) grid_cell->center.x, (float) grid_cell->center.y, (float) grid_cell->center.z};
+            voxel.v = (float) grid_cell->v;
             voxel.matrix_position = grid_cell->grid_position;
 
             translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
@@ -627,7 +626,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     }
 
     if(gui_state->ap_graph_config->graph.y + gui_state->ap_graph_config->graph.height > (float) gui_state->current_window_height) {
-        gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
+        gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90.0f;
     }
 
     if(gui_state->ap_graph_config->graph.y < 0) {
@@ -653,8 +652,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         (Rectangle){(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width) - 7.5f,
             (gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
 
-    gui_state->ap_graph_config->move_graph_button_position = (Rectangle){(float)(gui_state->ap_graph_config->graph.x),
-        (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+    gui_state->ap_graph_config->move_graph_button_position = (Rectangle){(gui_state->ap_graph_config->graph.x), gui_state->ap_graph_config->graph.y - 7.5f, 15.0f, 15.0f};
 
     GuiButton(gui_state->ap_graph_config->drag_graph_button_position, " ");
     GuiButton(gui_state->ap_graph_config->move_graph_button_position, "+");
@@ -667,10 +665,10 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     Vector2 text_width_y = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
     gui_state->ap_graph_config->min_x = gui_state->ap_graph_config->graph.x + 2.6f*text_width_y.x;
-    gui_state->ap_graph_config->max_x = (float)gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width - text_width.x;
+    gui_state->ap_graph_config->max_x = gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width - text_width.x;
 
-    gui_state->ap_graph_config->min_y = (float)gui_state->ap_graph_config->graph.y + (float)gui_state->ap_graph_config->graph.height - text_width.y;
-    gui_state->ap_graph_config->max_y = (float)gui_state->ap_graph_config->graph.y + 20.0f; // This is actually the smallest allowed y
+    gui_state->ap_graph_config->min_y = gui_state->ap_graph_config->graph.y + gui_state->ap_graph_config->graph.height - text_width.y;
+    gui_state->ap_graph_config->max_y = gui_state->ap_graph_config->graph.y + 20.0f; // This is actually the smallest allowed y
 
     int n = hmlen(gui_state->ap_graph_config->selected_aps);
 
@@ -680,7 +678,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         char *ap_text = "%d AP(s) selected (cell at %f, %f, %f)";
         double time_elapsed = GetTime() - gui_state->selected_time;
-        unsigned char alpha = (unsigned char)Clamp(255 - time_elapsed * 25, 0, 255);
+        unsigned char alpha = (unsigned char) Clamp(255.0f - (float) time_elapsed * 25.0f, 0, 255);
 
         Color c = BLACK;
         c.a = alpha;
@@ -690,8 +688,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         text_width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
 
-        text_position = (Vector2){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2 - text_width.x / 1.5),
-            gui_state->ap_graph_config->graph.y - text_width.y*1.2f};
+        text_position = (Vector2){gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 1.5f,
+                                  gui_state->ap_graph_config->graph.y - text_width.y*1.2f};
 
         DrawTextEx(font, tmp, text_position, font_size_big, spacing_big, c);
 
@@ -704,15 +702,15 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     Vector2 p1, p2;
 
     uint32_t num_ticks;
-    real_cpu tick_ofsset = 10;
+    float tick_ofsset = 10;
     num_ticks = (int)(gui_config->final_time / tick_ofsset);
 
     if(num_ticks < MIN_HORIZONTAL_TICKS) {
         num_ticks = MIN_HORIZONTAL_TICKS;
-        tick_ofsset = gui_config->final_time / num_ticks;
+        tick_ofsset = gui_config->final_time / (float) num_ticks;
     } else if(num_ticks > MAX_HORIZONTAL_TICKS) {
         num_ticks = MAX_HORIZONTAL_TICKS;
-        tick_ofsset = gui_config->final_time / num_ticks;
+        tick_ofsset = gui_config->final_time / (float) num_ticks;
     }
 
     char *time_text;
@@ -732,13 +730,12 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     text_width = MeasureTextEx(font, time_text, font_size_big, spacing_big);
     gui_state->ap_graph_config->min_y -= text_width.y*1.5f;
 
-    text_position = (Vector2){gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
-        (float)gui_state->ap_graph_config->min_y + text_width.y};
+    text_position = (Vector2){gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
+                              gui_state->ap_graph_config->min_y + text_width.y};
 
     DrawTextEx(font, time_text, text_position, font_size_big, spacing_big, BLACK);
 
-
-    real_cpu time = 0.0;
+    float time = 0.0f;
 
     // Draw horizontal ticks (t)
     for(uint32_t t = 0; t <= num_ticks; t++) {
@@ -751,7 +748,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         if(!(t % 2)) {
 
-            float remaped_data  = Remap(p1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
+            float remaped_data = Remap(p1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
             if(steps) {
                 sprintf(tmp, time_template, (int) remaped_data);
             }
@@ -774,10 +771,10 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     if(num_ticks < MIN_VERTICAL_TICKS) {
         num_ticks = MIN_VERTICAL_TICKS;
-        tick_ofsset = (gui_config->max_v - gui_config->min_v) / num_ticks;
+        tick_ofsset = (gui_config->max_v - gui_config->min_v) / (float) num_ticks;
     } else if(num_ticks > MAX_VERTICAL_TICKS) {
         num_ticks = MAX_VERTICAL_TICKS;
-        tick_ofsset = (gui_config->max_v - gui_config->min_v) / num_ticks;
+        tick_ofsset = (gui_config->max_v - gui_config->min_v) / (float) num_ticks;
     }
 
 
@@ -792,7 +789,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     }
 
 
-    real_cpu v = gui_config->min_v;
+    float v = (float) gui_config->min_v;
     sprintf(tmp, "%.2lf", v);
     Vector2 max_w = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
@@ -805,8 +802,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         sprintf(tmp, "%.2lf", Remap(p1.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v));
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - text_width.x / 2) + 20, p1.y - text_width.y / 2.0f}, font_size_small, spacing_small,
-                RED);
+        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - text_width.x / 2) + 20, p1.y - text_width.y / 2.0f}, font_size_small, spacing_small, RED);
 
         p1.x = gui_state->ap_graph_config->min_x - 5.0f;
         p2.x = p1.x + 10.0f;
@@ -871,7 +867,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                             gui_config->min_v = aps[i + step].v;
 
                         //DrawLineV(p1, p2, line_color);
-                        DrawLineEx(p1, p2, 2.0, line_color);
+                        DrawLineEx(p1, p2, 2.0f, line_color);
                     }
                 }
             }
@@ -944,7 +940,7 @@ static void check_window_bounds(Rectangle *box, float current_window_width, floa
         move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
 }
 
-static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_state, bool int_scale) {
+static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bool int_scale) {
 
     float scale_width = 20*gui_state->ui_scale;
     check_window_bounds(&(gui_state->scale_bounds), (float) gui_state->current_window_width, (float) gui_state->current_window_height);
@@ -952,27 +948,27 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
     float spacing_small = gui_state->font_spacing_small;
     float spacing_big = gui_state->font_spacing_big;
 
-    int num_ticks;
-    real_cpu tick_ofsset = 12;
+    uint32_t num_ticks;
+    float tick_ofsset = 12.0f;
 
     if(!int_scale) {
-        num_ticks = (int)((max_v - min_v) / tick_ofsset);
+        num_ticks = (uint32_t)((max_v - min_v) / tick_ofsset);
 
         if(num_ticks < 5) {
             num_ticks = 5;
-            tick_ofsset = (max_v - min_v) / num_ticks;
+            tick_ofsset = (max_v - min_v) / (float)num_ticks;
         }
     } else {
         num_ticks = 0;
-        for(int i = min_v; i < max_v; i++) {
+        for(uint32_t i = (uint32_t) min_v; i < (uint32_t) max_v; i++) {
             num_ticks++;
         }
-        tick_ofsset = (max_v - min_v) / num_ticks;
+        tick_ofsset = (max_v - min_v) / (float)num_ticks;
     }
 
     char tmp[256];
 
-    real_cpu v = max_v;
+    float v = max_v;
     sprintf(tmp, "%.2lf", v);
     Vector2 max_w = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, spacing_small);
 
@@ -1171,7 +1167,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
     Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
 
-    float text_box_y_dist = text_box_size.y*2.5;
+    float text_box_y_dist = text_box_size.y*2.5f;
     float label_box_y_dist = 30;
     float x_off = 10;
 
@@ -1183,8 +1179,8 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     float pos_y = gui_state->sub_window_pos.y;
 
     float box_pos = pos_x + x_off;
-    gui_state->box_width = text_box_size.x * 3.5;
-    gui_state->box_height = (text_box_size.y + text_box_y_dist)*1.6;
+    gui_state->box_width = text_box_size.x * 3.5f;
+    gui_state->box_height = (text_box_size.y + text_box_y_dist)*1.6f;
 
     bool window_closed = GuiWindowBox((Rectangle){pos_x, pos_y, gui_state->box_width, gui_state->box_height}, "Enter the center of the cell");
 
@@ -1200,7 +1196,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
     GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
 
-    bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2, text_box_size.x, text_box_size.y}, "OK");
+    bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2f, text_box_size.x, text_box_size.y}, "OK");
 
     if(btn_ok_clicked) {
         gui_state->found_volume.position_mesh.x = strtof(center_x_text, NULL);
