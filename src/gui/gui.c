@@ -17,14 +17,14 @@
 #include "../3dparty/raylib/src/camera.h"
 
 #define RAYGUI_IMPLEMENTATION
-#include "../3dparty/raylib/src/raygui.h"
-
-#define GUI_TEXTBOX_EXTENDED_IMPLEMENTATION
-#include "../3dparty/raylib/src/gui_textbox_extended.h"
+#include "../3dparty/raylib/src/extras/raygui.h"
 
 #include "../3dparty/raylib/src/external/glad.h"
 #include "../3dparty/raylib/src/rlgl.h"
 /////////
+//
+#define GUI_TEXTBOX_EXTENDED_IMPLEMENTATION
+#include "../3dparty/raylib/src/extras/gui_textbox_extended.h"
 
 #include "raylib_ext.h"
 #undef RAYGUI_IMPLEMENTATION
@@ -40,9 +40,10 @@ static void set_camera_params(Camera3D *camera) {
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
 
-    struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
-
     MaximizeWindow();
+
+    struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
+    gui_state->current_selected_volumes = NULL;
 
     gui_state->ui_scale = ui_scale;
 
@@ -69,8 +70,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->show_mesh_info_box = true;
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    gui_state->current_selected_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
+    gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};
     gui_state->mouse_pos = (Vector2){0, 0};
     gui_state->current_scale = 0;
     gui_state->voxel_alpha = 255;
@@ -333,21 +334,96 @@ static Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, 
     return result;
 }
 
-static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
+
+static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
 
     Vector3 p_draw = voxel->position_draw;
     Vector3 p_mesh = voxel->position_mesh;
 
     Vector3 cube_size = voxel->size;
 
-    real_cpu v = voxel->v;
+    RayCollision collision = {0};
+    RayCollision collision_mouse_over = {0};
 
-    bool collision = false;
-    bool collision_mouse_over = false;
+    float csx = cube_size.x;
+    float csy = cube_size.y;
+    float csz = cube_size.z;
 
-    Color color;
+    BoundingBox bb = (BoundingBox){(Vector3){p_draw.x - csx / 2, p_draw.y - csy / 2, p_draw.z - csz / 2},
+        (Vector3){p_draw.x + csx / 2, p_draw.y + csy / 2, p_draw.z + csz / 2}};
 
-    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_draw);
+    if(gui_state->double_clicked) {
+        collision = GetRayCollisionBox(gui_state->ray, bb);
+
+        if(collision.hit) {
+            if(gui_state->ray_hit_distance > collision.distance) {
+                gui_state->current_selected_volume = *voxel;
+                gui_state->ap_graph_config->draw_selected_ap_text = true;
+                gui_state->ray_hit_distance = collision.distance;
+            }
+
+        }
+        else {
+            collision.hit = false;
+        }
+    }
+    else {
+        action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
+        if(aps != NULL) {
+            //This is needed when we are using adaptive meshes
+            hmput(gui_state->current_selected_volumes, p_mesh, *voxel);
+        }
+    }
+
+    if(gui_state->found_volume.position_mesh.x == p_mesh.x && gui_state->found_volume.position_mesh.y == p_mesh.y &&gui_state->found_volume.position_mesh.z == p_mesh.z) {
+        gui_state->current_selected_volume = *voxel;
+        gui_state->found_volume.position_mesh = (Vector3){-1. -1, -1};
+        collision.hit = true;
+    }
+
+    collision_mouse_over = GetRayCollisionBox(gui_state->ray_mouse_over, bb);
+
+    if(collision_mouse_over.hit) {
+        if(gui_state->ray_mouse_over_hit_distance > collision_mouse_over.distance) {
+            gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
+            gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
+            gui_state->ray_mouse_over_hit_distance = collision_mouse_over.distance;
+        }
+    }
+
+    return collision.hit;
+}
+
+static void add_or_remove_selected_to_ap_graph(struct gui_config *gui_config, struct gui_state *gui_state)  {
+
+    Vector3 p_mesh = gui_state->current_selected_volume.position_mesh;
+
+    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
+
+    if(aps == NULL) {
+        struct action_potential ap;
+        ap.t = gui_config->time;
+        ap.v = gui_state->current_selected_volume.v;
+
+        arrput(aps, ap);
+        hmput(gui_state->ap_graph_config->selected_aps, p_mesh, aps);
+        gui_state->selected_time = GetTime();
+
+        hmput(gui_state->current_selected_volumes, gui_state->current_selected_volume.position_mesh, gui_state->current_selected_volume);
+    }
+    else {
+        hmdel(gui_state->ap_graph_config->selected_aps, p_mesh);
+        hmdel(gui_state->current_selected_volumes, p_mesh);
+    }
+
+}
+
+//we only trace the arrays that were previously added to the ap graph
+static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t) {
+
+    Vector3 p_mesh = voxel->position_mesh;
+
+    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
 
     struct action_potential ap1;
     ap1.t = t;
@@ -355,65 +431,31 @@ static void draw_voxel(struct voxel *voxel, uint8_t visibility_mask, struct gui_
     size_t aps_len = arrlen(aps);
 
     if(aps != NULL) {
-        if(ap1.t > aps[aps_len - 1].t) {
+        if(aps_len == 0 || ap1.t > aps[aps_len - 1].t) {
             arrput(aps, ap1);
-            hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
+            hmput(gui_state->ap_graph_config->selected_aps, p_mesh, aps);
         }
     }
 
-    if(gui_state->double_clicked) {
-        collision =
-            CheckCollisionRayBox(gui_state->ray, (BoundingBox){(Vector3){p_draw.x - cube_size.x / 2, p_draw.y - cube_size.y / 2, p_draw.z - cube_size.z / 2},
-                                                               (Vector3){p_draw.x + cube_size.x / 2, p_draw.y + cube_size.y / 2, p_draw.z + cube_size.z / 2}});
+}
+
+static void update_selected(bool collision, struct gui_state *gui_state, struct gui_config *gui_config, Color *colors) {
+
+    if(collision) {
+        add_or_remove_selected_to_ap_graph(gui_config, gui_state);
     }
 
-    collision_mouse_over = CheckCollisionRayBox(gui_state->ray_mouse_over,
-                                                (BoundingBox){(Vector3){p_draw.x - cube_size.x / 2, p_draw.y - cube_size.y / 2, p_draw.z - cube_size.z / 2},
-                                                              (Vector3){p_draw.x + cube_size.x / 2, p_draw.y + cube_size.y / 2, p_draw.z + cube_size.z / 2}});
+    int n = hmlen(gui_state->current_selected_volumes);
 
-    if(collision_mouse_over) {
-        gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
-        gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
-    }
-
-    if(collision && !gui_state->one_selected) {
-        gui_state->current_selected_volume = *voxel;
-        gui_state->one_selected = true;
-        gui_state->ap_graph_config->draw_selected_ap_text = true;
-    }
-
-    color = get_color((v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
-
-    if(gui_state->draw_grid_only) {
-        DrawCubeWiresV(p_draw, cube_size, color);
-    } else {
-
-        DrawCubeWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, color, visibility_mask);
-
-        if(gui_state->draw_grid_lines) {
-            DrawCubeWiresWithVisibilityMask(p_draw, cube_size.x, cube_size.y, cube_size.z, BLACK, visibility_mask);
-        }
-
-        if(gui_state->current_selected_volume.position_mesh.x == p_mesh.x && gui_state->current_selected_volume.position_mesh.y == p_mesh.y &&
-           gui_state->current_selected_volume.position_mesh.z == p_mesh.z) {
-
-            DrawCubeV(p_draw, cube_size, BLACK);
-
-            if(aps == NULL) {
-                arrsetcap(aps, 50);
-                struct action_potential ap;
-                ap.t = t;
-                ap.v = v;
-
-                arrput(aps, ap);
-                hmput(gui_state->ap_graph_config->selected_aps, p_draw, aps);
-                gui_state->selected_time = GetTime();
-            }
-        }
+    for(int i = 0; i < n; i++) {
+        int idx = gui_state->current_selected_volumes[i].value.draw_index;
+        Color c = colors[idx];
+        c.a = 0;
+        colors[idx] = c;
     }
 }
 
-static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state) {
+static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
 
@@ -421,7 +463,10 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         return;
 
     int64_t *cells = grid_to_draw->cells;
+    if(!cells) return;
+
     point3d_array points = grid_to_draw->points;
+    if(!points) return;
 
     uint32_t n_active = grid_to_draw->num_cells;
 
@@ -430,16 +475,25 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
     struct voxel voxel;
 
-    uint8_t cell_visible = TOP_IS_VISIBLE | RIGHT_IS_VISIBLE | DOWN_IS_VISIBLE | LEFT_IS_VISIBLE | BACK_IS_VISIBLE | FRONT_IS_VISIBLE;
+    gui_state->ray_hit_distance = FLT_MAX;
+    gui_state->ray_mouse_over_hit_distance = FLT_MAX;
+
+    Matrix *translations = RL_MALLOC(n_active*sizeof(Matrix)); // Locations of instances
+    Color *colors        = RL_MALLOC(n_active*sizeof(Color));
+
+    int count = 0;
+
+    float min_v = gui_config->min_v;
+    float max_v = gui_config->max_v;
+    float time  = gui_config->time;
+
+    bool collision = false;
 
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
         if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
             j += 1;
             continue;
-        }
-        else if(grid_to_draw->cell_visibility) {
-            cell_visible = grid_to_draw->cell_visibility[j];
         }
 
         float mesh_center_x, mesh_center_y, mesh_center_z;
@@ -464,16 +518,32 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
         voxel.size.z = (float)(dz / scale);
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
-        draw_voxel(&voxel, cell_visible, gui_state, gui_config->min_v, gui_config->max_v, gui_config->time);
+        translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
+        translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), translations[count] );
+
+        colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+
+        voxel.draw_index = count;
+
+        collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
+        trace_ap(gui_state, &voxel, time);
+
+        count++;
 
         j += 1;
 
     }
 
-    gui_state->one_selected = false;
+    update_selected(collision, gui_state, gui_config, colors);
+
+    DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
+    free(translations);
+    free(colors);
+
+
 }
 
-static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state) {
+static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
@@ -493,7 +563,18 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
     float max_v = gui_config->max_v;
     float time  = gui_config->time;
 
+    gui_state->ray_hit_distance = FLT_MAX;
+    gui_state->ray_mouse_over_hit_distance = FLT_MAX;
+
+    Matrix *translations = RL_MALLOC(n_active*sizeof(Matrix)); // Locations of instances
+    Color *colors       = RL_MALLOC(n_active*sizeof(Color));
+
     if(ac) {
+
+        int count = 0;
+
+        bool collision = false;
+
         for(uint32_t i = 0; i < n_active; i++) {
 
             if(!ac[i]->visible) {
@@ -516,19 +597,27 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
             voxel.v = grid_cell->v;
             voxel.matrix_position = grid_cell->grid_position;
 
-            draw_voxel(&voxel, ac[i]->visible, gui_state, min_v, max_v, time);
+            translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
+            translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), translations[count] );
+
+            colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+
+            voxel.draw_index = count;
+            collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
+            trace_ap(gui_state, &voxel, time);
+
+            count++;
+
         }
+
+        update_selected(collision, gui_state, gui_config, colors);
+        DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
+
+        free(translations);
+        free(colors);
+
     }
 
-    gui_state->one_selected = false;
-}
-
-static inline double clamp(double x, double min, double max) {
-    if(x < min)
-        x = min;
-    else if(x > max)
-        x = max;
-    return x;
 }
 
 static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_config) {
@@ -545,8 +634,9 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         gui_state->ap_graph_config->graph.y = 0;
     }
 
-    static const Color colors[] = {DARKGRAY, GOLD,     ORANGE, PINK,   RED,        MAROON, GREEN,     LIME,  DARKGREEN,
-                                   BLUE,     DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN,  DARKBROWN, BLACK, MAGENTA};
+    static const Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN,
+                                   BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
+
     int num_colors = SIZEOF(colors);
 
     Font font = gui_state->font;
@@ -561,10 +651,10 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     gui_state->ap_graph_config->drag_graph_button_position =
         (Rectangle){(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width) - 7.5f,
-                    (gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+            (gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
 
     gui_state->ap_graph_config->move_graph_button_position = (Rectangle){(float)(gui_state->ap_graph_config->graph.x),
-                                                                         (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+        (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
 
     GuiButton(gui_state->ap_graph_config->drag_graph_button_position, " ");
     GuiButton(gui_state->ap_graph_config->move_graph_button_position, "+");
@@ -588,21 +678,20 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     if(gui_state->ap_graph_config->draw_selected_ap_text) {
 
-        char *ap_text = "%d AP(s) selected ( cell at %f, %f, %f and position %d )";
+        char *ap_text = "%d AP(s) selected (cell at %f, %f, %f)";
         double time_elapsed = GetTime() - gui_state->selected_time;
-        unsigned char alpha = (unsigned char)clamp(255 - time_elapsed * 25, 0, 255);
+        unsigned char alpha = (unsigned char)Clamp(255 - time_elapsed * 25, 0, 255);
 
-        //Color c = colors[(n - 1) % num_colors];
         Color c = BLACK;
         c.a = alpha;
 
         sprintf(tmp, ap_text, n, gui_state->current_selected_volume.position_mesh.x, gui_state->current_selected_volume.position_mesh.y,
-                gui_state->current_selected_volume.position_mesh.z, gui_state->current_selected_volume.matrix_position + 1);
+                gui_state->current_selected_volume.position_mesh.z);
 
         text_width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
 
         text_position = (Vector2){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2 - text_width.x / 1.5),
-                                          gui_state->ap_graph_config->graph.y - text_width.y*1.2f};
+            gui_state->ap_graph_config->graph.y - text_width.y*1.2f};
 
         DrawTextEx(font, tmp, text_position, font_size_big, spacing_big, c);
 
@@ -644,7 +733,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     gui_state->ap_graph_config->min_y -= text_width.y*1.5f;
 
     text_position = (Vector2){gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
-                                      (float)gui_state->ap_graph_config->min_y + text_width.y};
+        (float)gui_state->ap_graph_config->min_y + text_width.y};
 
     DrawTextEx(font, time_text, text_position, font_size_big, spacing_big, BLACK);
 
@@ -654,7 +743,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     // Draw horizontal ticks (t)
     for(uint32_t t = 0; t <= num_ticks; t++) {
 
-        p1.x = NORMALIZE(0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, time);
+        p1.x = Remap(time, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
         p1.y = gui_state->ap_graph_config->min_y - 5;
 
         p2.x = p1.x;
@@ -662,11 +751,12 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         if(!(t % 2)) {
 
+            float remaped_data  = Remap(p1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
             if(steps) {
-                sprintf(tmp, time_template, (int) NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time, p1.x));
+                sprintf(tmp, time_template, (int) remaped_data);
             }
             else {
-                sprintf(tmp, time_template, NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time, p1.x));
+                sprintf(tmp, time_template, remaped_data);
             }
 
             text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
@@ -697,7 +787,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         label = "Vm (mV)";
         text_width = MeasureTextEx(font, label, font_size_big, spacing_big);
         text_position = (Vector2){gui_state->ap_graph_config->graph.x + 15, gui_state->ap_graph_config->min_y - ((gui_state->ap_graph_config->min_y - gui_state->ap_graph_config->max_y) / 2.0f) + (text_width.x / 2.0f)};
-        DrawTextEx2(font, label, text_position, font_size_big, spacing_big, BLACK);
+        //DrawTextEx2(font, label, text_position, font_size_big, spacing_big, BLACK);
+        DrawTextPro(font, label, text_position, (Vector2){0,0}, -90, font_size_big, spacing_big, BLACK);
     }
 
 
@@ -709,13 +800,13 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     for(uint32_t t = 0; t <= num_ticks; t++) {
 
         p1.x = (float)gui_state->ap_graph_config->graph.x + 5.0f;
-        p1.y = NORMALIZE(gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, v);
+        p1.y = Remap(v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
 
-        sprintf(tmp, "%.2lf", NORMALIZE(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v, p1.y));
+        sprintf(tmp, "%.2lf", Remap(p1.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v));
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
         DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - text_width.x / 2) + 20, p1.y - text_width.y / 2.0f}, font_size_small, spacing_small,
-                   RED);
+                RED);
 
         p1.x = gui_state->ap_graph_config->min_x - 5.0f;
         p2.x = p1.x + 10.0f;
@@ -767,12 +858,11 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                 if(aps[i].t <= gui_config->time) {
                     if(i + step < c) {
 
-                        p1.x = NORMALIZE(0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i].t);
-                        p1.y = NORMALIZE(gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, aps[i].v);
+                        p1.x = Remap(aps[i].t, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
+                        p1.y = Remap(aps[i].v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
 
-                        p2.x = NORMALIZE(0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, aps[i + step].t);
-                        p2.y = NORMALIZE(gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y,
-                                         aps[i + step].v);
+                        p2.x = Remap(aps[i + step].t, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
+                        p2.y = Remap(aps[i + step].v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
 
                         // TODO: create an option for this???
                         if(aps[i + step].v > gui_config->max_v)
@@ -780,7 +870,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                         if(aps[i + step].v < gui_config->min_v)
                             gui_config->min_v = aps[i + step].v;
 
-                        DrawLineV(p1, p2, line_color);
+                        //DrawLineV(p1, p2, line_color);
+                        DrawLineEx(p1, p2, 2.0, line_color);
                     }
                 }
             }
@@ -789,17 +880,17 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     // Draw AP coordinates over mouse cursor
     if(!gui_state->ap_graph_config->drag_ap_graph && gui_state->ap_graph_config->selected_ap_point.x != FLT_MAX &&
-       gui_state->ap_graph_config->selected_ap_point.y != FLT_MAX
-       && gui_state->mouse_pos.x < gui_state->ap_graph_config->max_x
-       && gui_state->mouse_pos.x > gui_state->ap_graph_config->min_x
-       && gui_state->mouse_pos.y < gui_state->ap_graph_config->min_y
-       && gui_state->mouse_pos.y > gui_state->ap_graph_config->max_y) {
+            gui_state->ap_graph_config->selected_ap_point.y != FLT_MAX
+            && gui_state->mouse_pos.x < gui_state->ap_graph_config->max_x
+            && gui_state->mouse_pos.x > gui_state->ap_graph_config->min_x
+            && gui_state->mouse_pos.y < gui_state->ap_graph_config->min_y
+            && gui_state->mouse_pos.y > gui_state->ap_graph_config->max_y) {
 
         char *tmp_point = "%.2lf, %.2lf";
         sprintf(tmp, tmp_point, gui_state->ap_graph_config->selected_ap_point.x, gui_state->ap_graph_config->selected_ap_point.y);
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
         DrawTextEx(font, tmp, (Vector2){gui_state->mouse_pos.x - text_width.x / 2, gui_state->mouse_pos.y - text_width.y}, font_size_small, spacing_small,
-                   BLACK);
+                BLACK);
     }
 
     if(gui_state->ap_graph_config->selected_point_for_apd1.x != FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y != FLT_MAX) {
@@ -810,10 +901,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         DrawCircleV(gui_state->ap_graph_config->selected_point_for_apd2, 4, RED);
         DrawLineV(gui_state->ap_graph_config->selected_point_for_apd1, gui_state->ap_graph_config->selected_point_for_apd2, RED);
 
-        float t1 = NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time,
-                             gui_state->ap_graph_config->selected_point_for_apd1.x);
-        float t2 = NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time,
-                             gui_state->ap_graph_config->selected_point_for_apd2.x);
+        float t1 = Remap(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
+        float t2 = Remap(gui_state->ap_graph_config->selected_point_for_apd2.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
 
         char *tmp_point = "dt = %.4lf";
         sprintf(tmp, tmp_point, fabsf(t2 - t1));
@@ -822,8 +911,8 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         float x = fminf(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->selected_point_for_apd2.x);
 
         DrawTextEx(font, tmp, (Vector2){x + text_width.x / 2.0f,
-                   gui_state->ap_graph_config->selected_point_for_apd1.y - text_width.y},
-                   font_size_small, spacing_small, BLACK);
+                gui_state->ap_graph_config->selected_point_for_apd1.y - text_width.y},
+                font_size_small, spacing_small, BLACK);
     }
 }
 
@@ -1076,13 +1165,13 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
 static bool draw_selection_box(struct gui_state *gui_state) {
 
-    #define CENTER_X "Center X"
-    #define CENTER_Y "Center Y"
-    #define CENTER_Z "Center Z"
+#define CENTER_X "Center X"
+#define CENTER_Y "Center Y"
+#define CENTER_Z "Center Z"
 
     Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
 
-    float text_box_y_dist = text_box_size.y*2;
+    float text_box_y_dist = text_box_size.y*2.5;
     float label_box_y_dist = 30;
     float x_off = 10;
 
@@ -1099,24 +1188,24 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
     bool window_closed = GuiWindowBox((Rectangle){pos_x, pos_y, gui_state->box_width, gui_state->box_height}, "Enter the center of the cell");
 
-    DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
 
     GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_x_text, SIZEOF(center_x_text) - 1, true);
 
     box_pos = pos_x + text_box_size.x + 2 * x_off;
-    DrawTextEx(gui_state->font, CENTER_Y, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    DrawTextEx(gui_state->font, CENTER_Y, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
     GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_y_text, SIZEOF(center_y_text) - 1, true);
 
     box_pos = pos_x + 2 * text_box_size.x  + 3 * x_off;
-    DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos + 5, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
     GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
 
     bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2, text_box_size.x, text_box_size.y}, "OK");
 
     if(btn_ok_clicked) {
-        gui_state->current_selected_volume.position_mesh.x = strtof(center_x_text, NULL);
-        gui_state->current_selected_volume.position_mesh.y = strtof(center_y_text, NULL);
-        gui_state->current_selected_volume.position_mesh.z = strtof(center_z_text, NULL);
+        gui_state->found_volume.position_mesh.x = strtof(center_x_text, NULL);
+        gui_state->found_volume.position_mesh.y = strtof(center_y_text, NULL);
+        gui_state->found_volume.position_mesh.z = strtof(center_z_text, NULL);
     }
 
     return window_closed || btn_ok_clicked;
@@ -1152,29 +1241,14 @@ static inline void reset_ui(struct gui_state *gui_state) {
 
 static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bool full_reset) {
 
+    if(!gui_config->paused) {
+        return;
+    }
+
     gui_state->voxel_alpha = 255;
 
     for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
         arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
-    }
-
-    if(full_reset) {
-
-        for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
-            arrfree(gui_state->ap_graph_config->selected_aps[i].value);
-        }
-
-        hmfree(gui_state->ap_graph_config->selected_aps);
-        gui_state->ap_graph_config->selected_aps = NULL;
-        hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
-
-        set_camera_params(&(gui_state->camera));
-
-        gui_state->scale_alpha = 255;
-
-        reset_ui(gui_state);
-
-        gui_state->show_coordinates = true;
     }
 
     gui_state->ap_graph_config->draw_selected_ap_text = false;
@@ -1195,6 +1269,29 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
     gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
     gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
+
+    if(full_reset) {
+
+        for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+            arrfree(gui_state->ap_graph_config->selected_aps[i].value);
+        }
+
+        hmfree(gui_state->ap_graph_config->selected_aps);
+        gui_state->ap_graph_config->selected_aps = NULL;
+        hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
+
+        hmfree(gui_state->current_selected_volumes);
+        gui_state->current_selected_volumes = NULL;
+
+        set_camera_params(&(gui_state->camera));
+
+        gui_state->scale_alpha = 255;
+
+        reset_ui(gui_state);
+
+        gui_state->show_coordinates = true;
+    }
+
 }
 
 static void handle_keyboard_input(struct gui_config *gui_config, struct gui_state *gui_state) {
@@ -1232,6 +1329,7 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct gui_stat
         }
     }
 
+
     if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
         if(IsKeyPressed(KEY_F)) {
             gui_state->show_selection_box = true;
@@ -1241,14 +1339,13 @@ static void handle_keyboard_input(struct gui_config *gui_config, struct gui_stat
         }
     }
 
-
     if(IsKeyPressed(KEY_Q)) {
         gui_state->show_scale = !gui_state->show_scale;
         return;
     }
 
     if(IsKeyDown(KEY_A)) {
-        if(gui_state->voxel_alpha - 1 >= 0) {
+        if(gui_state->voxel_alpha - 1 >= 1) {
             gui_state->voxel_alpha = gui_state->voxel_alpha - 1;
         }
         return;
@@ -1385,6 +1482,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     gui_state->ray_mouse_over = GetMouseRay(GetMousePosition(), gui_state->camera);
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+
         gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
 
         if(!gui_state->show_selection_box) {
@@ -1404,7 +1502,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         }
 
         if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y, gui_state->box_width - 18,
-                                                                         WINDOW_STATUSBAR_HEIGHT})) {
+                    WINDOW_STATUSBAR_HEIGHT})) {
             gui_state->move_sub_window = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->drag_graph_button_position)) {
             gui_state->ap_graph_config->drag_ap_graph = true;
@@ -1417,8 +1515,8 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->end_info_box)) {
             gui_state->move_end_info_box = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos,
-                                         (Rectangle){gui_state->scale_bounds.x, gui_state->scale_bounds.y,
-                                                     gui_state->scale_bounds.width, gui_state->scale_bounds.height})) {
+                    (Rectangle){gui_state->scale_bounds.x, gui_state->scale_bounds.y,
+                    gui_state->scale_bounds.width, gui_state->scale_bounds.height})) {
             gui_state->move_scale = true;
         }
 
@@ -1518,8 +1616,8 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
     }
 
     if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
-        float t = NORMALIZE(gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time, gui_state->mouse_pos.x);
-        float v = NORMALIZE(gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v, gui_state->mouse_pos.y);
+        float t = Remap(gui_state->mouse_pos.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
+        float v = Remap(gui_state->mouse_pos.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v);
         if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
             gui_state->ap_graph_config->selected_ap_point.x = t;
             gui_state->ap_graph_config->selected_ap_point.y = v;
@@ -1587,7 +1685,6 @@ void draw_coordinates(struct gui_state *gui_state) {
     DrawLine3D((Vector3){end_pos.x + arrow_offset, end_pos.y, end_pos.z - arrow_offset}, end_pos, DARKBLUE);
 
     gui_state->coordinates_label_z_position = GetWorldToScreen(end_pos, gui_state->camera);
-
 }
 
 void init_and_open_gui_window(struct gui_config *gui_config) {
@@ -1640,27 +1737,27 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
     char **mesh_info_box_strings = NULL;
 
     const char *info_box_strings[] = {"Default controls:",
-                                      " - Mouse Wheel to Zoom in-out",
-                                      " - Mouse Wheel Pressed to Pan",
-                                      " - Alt + Mouse Wheel Pressed to Rotate",
-                                      " - Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
-                                      " - Ctrl + F to search a cell based on it's center",
-                                      " - G to only draw the grid lines",
-                                      " - L to enable or disable the grid lines",
-                                      " - R to restart simulation",
-                                      " - Alt + R to restart simulation and the box positions",
-                                      " - X to show/hide AP visualization",
-                                      " - Q to show/hide scale",
-                                      " - C to show/hide everything except grid",
-                                      " - F to open a simulation file",
-                                      " - O to open a simulation directory",
-                                      " - F12 to take a screenshot",
-                                      " - CRTL + F12 to start/stop recording the screen",
-                                      " - . or , to change color scales",
-                                      " - Right arrow to advance one dt when paused",
-                                      " - Hold up arrow to advance time when paused",
-                                      " - Double click on a volume to show the AP",
-                                      " - Space to start or pause simulation"};
+        " - Mouse Wheel to Zoom in-out",
+        " - Mouse Wheel Pressed to Pan",
+        " - Alt + Mouse Wheel Pressed to Rotate",
+        " - Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
+        " - Ctrl + F to search a cell based on it's center",
+        " - G to only draw the grid lines",
+        " - L to enable or disable the grid lines",
+        " - R to restart simulation (only works when paused)",
+        " - Alt + R to restart simulation and the box positions",
+        " - X to show/hide AP visualization",
+        " - Q to show/hide scale",
+        " - C to show/hide everything except grid",
+        " - F to open a simulation file",
+        " - O to open a simulation directory",
+        " - F12 to take a screenshot",
+        " - CRTL + F12 to start/stop recording the screen",
+        " - . or , to change color scales",
+        " - Right arrow to advance one dt when paused",
+        " - Hold up arrow to advance time when paused",
+        " - Double click on a volume to show the AP",
+        " - Space to start or pause simulation"};
 
     int info_box_lines = SIZEOF(info_box_strings);
 
@@ -1686,7 +1783,26 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
     struct mesh_info *mesh_info = new_mesh_info();
     bool end_info_box_strings_configured = false;
 
+    Shader shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
+    // Get some shader locations
+    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+    shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "color");
+    Mesh cube = GenMeshCube(1.0f, 1.0f, 1.0f);
+
+    int grid_mask = 0;
+
     while(!WindowShouldClose()) {
+
+        if(gui_state->draw_grid_only) {
+            grid_mask = 2;
+        }
+        else if(gui_state->draw_grid_lines) {
+            grid_mask = 1;
+        }
+        else {
+            grid_mask = 0;
+        }
 
         UpdateCamera(&(gui_state->camera));
 
@@ -1697,9 +1813,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
         if(IsWindowResized()) {
             gui_state->current_window_width = GetScreenWidth();
             gui_state->current_window_height = GetScreenHeight();
-
             reset_ui(gui_state);
-
         }
 
         gui_state->handle_keyboard_input = !gui_state->show_selection_box;
@@ -1732,16 +1846,20 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             }
 
             if(draw_type == DRAW_SIMULATION) {
-                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state);
+                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state, shader, cube, grid_mask);
             } else if(draw_type == DRAW_FILE) {
-                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state);
+                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, shader, cube, grid_mask);
             }
 
+            gui_state->double_clicked = false;
             if(gui_state->show_coordinates) {
                 draw_coordinates(gui_state);
             }
 
             EndMode3D();
+
+            // We finished drawing everything that depends on the mesh being loaded
+            omp_unset_lock(&gui_config->draw_lock);
 
             if(gui_state->show_coordinates) {
                 DrawText("x", (int)gui_state->coordinates_label_x_position.x, (int)gui_state->coordinates_label_x_position.y, (int)gui_state->font_size_big, RED);
@@ -1754,15 +1872,14 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
                 if(configured) {
                     draw_box(&gui_state->mesh_info_box, text_offset, (const char **)mesh_info_box_strings, mesh_info_box_lines, gui_state->font_size_small,
-                             gui_state->font_spacing_small, gui_state->font, (float)gui_state->current_window_width, (float)gui_state->current_window_height);
+                            gui_state->font_spacing_small, gui_state->font, (float)gui_state->current_window_width, (float)gui_state->current_window_height);
 
                     for(int i = 0; i < mesh_info_box_lines; i++) {
                         free(mesh_info_box_strings[i]);
                     }
                 }
             }
-            // We finished drawing everything that depends on the mesh being loaded
-            omp_unset_lock(&gui_config->draw_lock);
+
 
             if(gui_state->show_scale) {
                 draw_scale(gui_config->min_v, gui_config->max_v, gui_state, gui_config->int_scale);
@@ -1775,7 +1892,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             if(gui_state->show_help_box) {
                 draw_box(&gui_state->help_box, text_offset, info_box_strings, info_box_lines, gui_state->font_size_small, gui_state->font_spacing_small,
                         gui_state->font,
-                         (float) gui_state->current_window_width, (float) gui_state->current_window_height);
+                        (float) gui_state->current_window_width, (float) gui_state->current_window_height);
             }
 
             if(!gui_config->simulating) {
@@ -1786,7 +1903,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                             end_info_box_strings_configured = true;
                         }
                         draw_box(&gui_state->end_info_box, text_offset, (const char **)end_info_box_strings, end_info_box_lines,
-                                 gui_state->font_size_small, gui_state->font_spacing_small,  gui_state->font, (float) gui_state->current_window_width, (float) gui_state->current_window_height);
+                                gui_state->font_size_small, gui_state->font_spacing_small,  gui_state->font, (float) gui_state->current_window_width, (float) gui_state->current_window_height);
                     }
                 }
             }
@@ -1824,8 +1941,8 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
             // This should not happen... but it does....
             if(gui_config->error_message) {
                 DrawTextEx(gui_state->font, gui_config->error_message,
-                          (Vector2){(float)posx + ((float)rec_width - error_message_width.x)/2, (float) posy}, gui_state->font_size_big,
-                          gui_state->font_spacing_big, BLACK);
+                        (Vector2){(float)posx + ((float)rec_width - error_message_width.x)/2, (float) posy}, gui_state->font_size_big,
+                        gui_state->font_spacing_big, BLACK);
             }
         }
 
@@ -1835,7 +1952,7 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
         Vector2 text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
 
         DrawTextEx(gui_state->font, text, (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y - 30)},
-                   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+                gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
         text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
         DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);

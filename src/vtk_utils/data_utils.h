@@ -11,28 +11,72 @@
 #include <stdbool.h>
 
 
-#define NUMBER_OF_POINTS "NumberOfPoints"
-#define NUMBER_OF_CELLS  "NumberOfCells"
+#define NUMBER_OF_POINTS     "NumberOfPoints"
+#define NUMBER_OF_POINTS_LEN 14
+
+#define NUMBER_OF_CELLS      "NumberOfCells"
+#define NUMBER_OF_CELLS_LEN  13
+
 #define POINTS           "Points"
+#define POINTS_LEN        6
+
 #define CELLS            "Cells"
+#define CELLS_LEN         5
+
 #define CELL_TYPES       "Cell_Types"
+#define CELL_TYPES_LEN   10
+
 #define CELL_DATA        "Cell_Data"
+#define CELL_DATA_LEN    9
+
 #define DATAARRAY        "DataArray"
+#define DATAARRAY_LEN    9
+
 #define SCALARS          "SCALARS"
+#define SCALARS_LEN       7
+
 #define OFFSET           "offset"
+#define OFFSET_LEN       6
+
 #define NAME             "Name"
+#define NAME_LEN         4
+
 #define SCALARS_NAME     "Scalars_"
+#define SCALARS_NAME_LEN 8
+
 #define OFFSETS          "offsets"
-#define CONNECTIVITY     "connectivity"
+#define OFFSETS_LEN      7
+
+#define CONNECTIVITY      "connectivity"
+#define CONNECTIVITY_LEN  12
+
 #define TYPES            "types"
+#define TYPES_LEN        5
+
 #define TYPE             "type"
+#define TYPE_LEN         4
+
 #define APPENDEDDATA     "AppendedData"
+#define APPENDEDDATA_LEN 12
+
 #define ENCODING         "encoding"
+#define ENCODING_LEN     8
+
+
 #define HEADER_TYPE      "header_type"
+#define HEADER_TYPE_LEN  11
+
 #define COMPRESSOR       "compressor"
+#define COMPRESSOR_LEN   10
+
 #define FORMAT           "format"
+#define FORMAT_LEN       6
+
 #define ASCII            "ascii"
+#define ASCII_LEN        5
+
 #define LOOKUP_TABLE     "LOOKUP_TABLE"
+#define LOOKUP_TABLE_LEN 12
 
 struct f32points {
     float x;

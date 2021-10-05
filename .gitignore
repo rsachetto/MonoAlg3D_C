@@ -65,6 +65,11 @@ tests_bin/circle_cg*
 tests_bin/gold_tmp*
 tests_bin/test_*
 tests_bin/*Profiler
+tests_bin/purkinje_ode_cpu/
+tests_bin/purkinje_ode_gpu/
+tests_bin/sim_mesh_cg_cpu_ode_gpu
+tests_bin/sim_mesh_cg_gpu_ode_gpu
+
 meshes/*.pts
 meshes/*.mesh
 meshes/human_800_tagged.alg
@@ -170,6 +175,7 @@ example_configs/scv_mesh_small.ini
 local_meshes/
 local_networks/
 sync.sh
+sync_local.sh
 sync_outputs.sh
 private_configs/
 /src/domains_library/custom_mesh_info_data.h
@@ -178,3 +184,4 @@ retired_code/
 *.gcda
 export_report.sh
 report.xml 
+/gmon.out

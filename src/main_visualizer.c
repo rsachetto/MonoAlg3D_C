@@ -198,6 +198,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
 
         free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
+
         gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);
 
         if(!gui_config->grid_info.vtk_grid) {
@@ -218,6 +219,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         omp_unset_lock(&gui_config->draw_lock);
 
+        //here we wait until the mesh was rendered
         omp_set_lock(&gui_config->sleep_lock);
 
         if(gui_config->restart) {
@@ -238,7 +240,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
             return END_SIMULATION;
         }
 
-        // TODO: maybe change how we handle advance_return
         if(gui_config->paused) {
             current_file += gui_config->advance_or_return;
             gui_config->advance_or_return = 0;

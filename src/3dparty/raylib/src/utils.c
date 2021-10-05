@@ -56,9 +56,6 @@
 #ifndef MAX_TRACELOG_MSG_LENGTH
     #define MAX_TRACELOG_MSG_LENGTH     128     // Max length of one trace-log message
 #endif
-#ifndef MAX_UWP_MESSAGES
-    #define MAX_UWP_MESSAGES            512     // Max UWP messages to process
-#endif
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
@@ -124,7 +121,7 @@ void TraceLog(int logType, const char *text, ...)
     }
 
 #if defined(PLATFORM_ANDROID)
-    switch(logType)
+    switch (logType)
     {
         case LOG_TRACE: __android_log_vprint(ANDROID_LOG_VERBOSE, "raylib", text, args); break;
         case LOG_DEBUG: __android_log_vprint(ANDROID_LOG_DEBUG, "raylib", text, args); break;
@@ -155,7 +152,7 @@ void TraceLog(int logType, const char *text, ...)
 
     va_end(args);
 
-    if (logType == LOG_ERROR) exit(1);  // If error, exit program
+    if (logType == LOG_FATAL) exit(EXIT_FAILURE);  // If fatal logging, exit program
 
 #endif  // SUPPORT_TRACELOG
 }
@@ -189,7 +186,7 @@ unsigned char *LoadFileData(const char *fileName, unsigned int *bytesRead)
 
     if (fileName != NULL)
     {
-        if (loadFileData) 
+        if (loadFileData)
         {
             data = loadFileData(fileName, bytesRead);
             return data;
@@ -243,10 +240,9 @@ bool SaveFileData(const char *fileName, void *data, unsigned int bytesToWrite)
 
     if (fileName != NULL)
     {
-        if (saveFileData) 
+        if (saveFileData)
         {
-            saveFileData(fileName, data, bytesToWrite);
-            return success;
+            return saveFileData(fileName, data, bytesToWrite);
         }
 #if defined(SUPPORT_STANDARD_FILEIO)
         FILE *file = fopen(fileName, "wb");
@@ -265,7 +261,7 @@ bool SaveFileData(const char *fileName, void *data, unsigned int bytesToWrite)
         else TRACELOG(LOG_WARNING, "FILEIO: [%s] Failed to open file", fileName);
 #else
     TRACELOG(LOG_WARNING, "FILEIO: Standard file io not supported, use custom file callback");
-#endif  
+#endif
     }
     else TRACELOG(LOG_WARNING, "FILEIO: File name provided is not valid");
 
@@ -280,7 +276,7 @@ char *LoadFileText(const char *fileName)
 
     if (fileName != NULL)
     {
-        if (loadFileText) 
+        if (loadFileText)
         {
             text = loadFileText(fileName);
             return text;
@@ -326,7 +322,7 @@ char *LoadFileText(const char *fileName)
 }
 
 // Unload file text data allocated by LoadFileText()
-void UnloadFileText(unsigned char *text)
+void UnloadFileText(char *text)
 {
     RL_FREE(text);
 }
@@ -338,10 +334,9 @@ bool SaveFileText(const char *fileName, char *text)
 
     if (fileName != NULL)
     {
-        if (saveFileText) 
+        if (saveFileText)
         {
-            saveFileText(fileName, text);
-            return success;
+            return saveFileText(fileName, text);
         }
 #if defined(SUPPORT_STANDARD_FILEIO)
         FILE *file = fopen(fileName, "wt");
@@ -374,11 +369,11 @@ void InitAssetManager(AAssetManager *manager, const char *dataPath)
     internalDataPath = dataPath;
 }
 
-// Replacement for fopen
+// Replacement for fopen()
 // Ref: https://developer.android.com/ndk/reference/group/asset
 FILE *android_fopen(const char *fileName, const char *mode)
 {
-    if (mode[0] == 'w')     // TODO: Test!
+    if (mode[0] == 'w')
     {
         // TODO: fopen() is mapped to android_fopen() that only grants read access
         // to assets directory through AAssetManager but we want to also be able to
@@ -395,7 +390,7 @@ FILE *android_fopen(const char *fileName, const char *mode)
 
         if (asset != NULL)
         {
-            // Return pointer to file in the assets
+            // Get pointer to file in the assets
             return funopen(asset, android_read, android_write, android_seek, android_close);
         }
         else

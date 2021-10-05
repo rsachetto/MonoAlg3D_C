@@ -1,7 +1,7 @@
 #!/bin/bash
 
 INITIAL_PARAMS=""
-VALID_TESTS="mesh custom_mesh solvers simulation"
+VALID_TESTS="mesh custom_mesh solvers simulation vtu txt"
 
 function PRINT_USAGE() {
     echo "Usage $0 [profiler]" >&2;

@@ -128,8 +128,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         real_cpu stim_duration = 0.0;
         real_cpu stim_period = 0;
 
-        for(unsigned long i = 0; i < num_purkinje_stims; i++)
-        {
+        for(unsigned long i = 0; i < num_purkinje_stims; i++) {
 
             struct config *sconfig = (struct config*) purkinje_stimuli_configs[i].value;
 
@@ -141,8 +140,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             has_any_periodic_stim |= (bool)(stim_period > 0.0);
 
-            if(s_end > last_stimulus_time)
-            {
+            if(s_end > last_stimulus_time) {
                 last_stimulus_time = s_end;
             }
         }
@@ -165,7 +163,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             if(modify_at > modify_at_end) modify_at_end = modify_at;
         }
-
 
     }
 
