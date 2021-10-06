@@ -14,7 +14,7 @@ bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_boun
 
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
-    long int bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
+    uint64_t bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
              bunch_number8;
 
     bool active1, active2, active3, active4, active5, active6, active7, active8;
@@ -110,7 +110,7 @@ void derefine_all_grid (struct grid *the_grid) {
 
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
-    long int bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
+    uint64_t bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
             bunch_number8;
 
     bool has_been_derefined;
@@ -168,8 +168,8 @@ void derefine_all_grid (struct grid *the_grid) {
 bool derefine_grid_cell (struct grid *the_grid, struct cell_node *grid_cell) {
 
 
-    long int bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
-            bunch_number8;
+    uint64_t bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6, bunch_number7,
+             bunch_number8;
 
 
     if (grid_cell->cell_data.level > 1) {
@@ -224,8 +224,8 @@ void derefine_grid_inactive_cells (struct grid *the_grid) {
 
     struct cell_node *grid_cell, *auxiliar_grid_cell;
 
-    unsigned long long int bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6,
-            bunch_number7, bunch_number8;
+    uint64_t bunch_number1, bunch_number2, bunch_number3, bunch_number4, bunch_number5, bunch_number6,
+             bunch_number7, bunch_number8;
 
     bool active1, active2, active3, active4, active5, active6, active7, active8;
 

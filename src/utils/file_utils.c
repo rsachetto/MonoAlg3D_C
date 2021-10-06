@@ -44,15 +44,16 @@ FILE *open_file_or_exit(char *filename, char *mode) {
 }
 
 char *get_current_directory() {
-    long size;
-    char *buf = NULL;
-    size = pathconf(".", _PC_PATH_MAX);
 
-    if((buf = (char *)malloc((size_t)size)) != NULL)
-        buf = getcwd(buf, (size_t)size);
+    char *buf = NULL;
+    size_t size = pathconf(".", _PC_PATH_MAX);
+
+    if((buf = (char *)malloc(size)) != NULL)
+        buf = getcwd(buf, size);
 
     buf = strcat(buf, "/");
     return buf;
+
 }
 
 const char *get_filename_ext(const char *filename) {
@@ -194,7 +195,7 @@ char *read_entire_file(const char *filename, size_t *size) {
 
     FILE *infile;
     char *buffer;
-    long numbytes;
+    size_t numbytes;
 
     if(!filename)
         return NULL;
@@ -671,7 +672,7 @@ bool check_simulation_completed(char *simulation_dir) {
     return false;
 }
 
-real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, long *nnz) {
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, uint64_t *num_lines, uint64_t *nnz) {
     const char *sep = " ";
     char *line_a = NULL;
     size_t len;
@@ -695,12 +696,12 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, lon
 
     real_cpu **matrix = (real_cpu **)malloc(*num_lines * sizeof(real_cpu *));
 
-    for(long i = 0; i < *num_lines; i++) {
+    for(uint64_t i = 0; i < *num_lines; i++) {
         matrix[i] = (real_cpu *)calloc(*num_lines, sizeof(real_cpu));
     }
 
-    long item_count = 0;
-    long m_line, m_column;
+    uint64_t item_count = 0;
+    uint64_t m_line, m_column;
     real_cpu m_value;
 
     while(item_count < *nnz) {
@@ -725,7 +726,7 @@ real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, lon
     return matrix;
 }
 
-real_cpu *read_octave_vector_file_to_array(FILE *vec_file, long *num_lines) {
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, uint64_t *num_lines) {
 
     ssize_t read;
     size_t len;
