@@ -23,8 +23,7 @@ void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *bas
     if(!pvd_file) {
         pvd_file = fopen(pvd_name, "w");
         write_pvd_header(pvd_file);
-    }
-    else {
+    } else {
         if(first_call) {
             fclose(pvd_file);
             pvd_file = fopen(pvd_name, "w");
@@ -214,14 +213,15 @@ void write_purkinje_activation_time_for_each_pulse (struct config *config, struc
         output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, cur_pulse);
 
         bool read_only_data = ((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid != NULL;
-        new_vtk_polydata_grid_from_purkinje_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+        new_vtk_polydata_grid_from_purkinje_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid,
+                                                 the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
 
         set_purkinje_vtk_values_with_activation_time_from_current_pulse(&config->persistent_data,the_grid,cur_pulse);
 
         if(compress) {
-            save_vtk_polydata_grid_as_vtp_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid, output_dir_with_file, compression_level);
-        }
-        else {
+            save_vtk_polydata_grid_as_vtp_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid,
+                                                      output_dir_with_file, compression_level);
+        } else {
             save_vtk_polydata_grid_as_vtp(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid, output_dir_with_file, binary);
         }
 
@@ -321,14 +321,15 @@ void write_purkinje_apd_map (struct config *config, struct grid *the_grid, char 
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     bool read_only_data = ((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid != NULL;
-    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid,
+                                             the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
 
     set_purkinje_vtk_values_with_mean_apd(&config->persistent_data,the_grid);
 
     if(compress) {
-        save_vtk_polydata_grid_as_vtp_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid, output_dir_with_file, compression_level);
-    }
-    else {
+        save_vtk_polydata_grid_as_vtp_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid,
+                                                 output_dir_with_file, compression_level);
+    } else {
         save_vtk_polydata_grid_as_vtp(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->purkinje_grid, output_dir_with_file, binary);
     }
 
@@ -339,8 +340,7 @@ void write_purkinje_apd_map (struct config *config, struct grid *the_grid, char 
     sdsfree(base_name);
 }
 
-void set_purkinje_vtk_values_with_mean_apd (void **persistent_data, struct grid *the_grid)
-{
+void set_purkinje_vtk_values_with_mean_apd (void **persistent_data, struct grid *the_grid) {
     struct save_coupling_with_activation_times_persistent_data **data = (struct save_coupling_with_activation_times_persistent_data **)persistent_data;
 
     struct cell_node **purkinje_grid_cell = the_grid->purkinje->purkinje_cells;
@@ -349,7 +349,7 @@ void set_purkinje_vtk_values_with_mean_apd (void **persistent_data, struct grid 
     real_cpu center_x, center_y, center_z;
 
     // We need to pass through the cells in the same order as we did when the VTU grid was created
-    for(int i = 0; i < num_active_cells; i++) {
+    for(uint32_t i = 0; i < num_active_cells; i++) {
 
         center_x = purkinje_grid_cell[i]->center.x;
         center_y = purkinje_grid_cell[i]->center.y;
@@ -366,7 +366,7 @@ void set_purkinje_vtk_values_with_mean_apd (void **persistent_data, struct grid 
 
             apds_array = (float *) hmget((*data)->purkinje_apds, cell_coordinates);
 
-            unsigned long apd_len = arrlen(apds_array);
+            uint64_t apd_len = arrlen(apds_array);
 
             // Calculate the mean APD values
             float mean_value = 0.0;
@@ -522,14 +522,15 @@ void write_tissue_apd_map (struct config *config, struct grid *the_grid, char *o
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     bool read_only_data = ((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+    new_vtk_unstructured_grid_from_alg_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid,
+                                            the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
 
     set_tissue_vtk_values_with_mean_apd(&config->persistent_data,the_grid);
 
     if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid, output_dir_with_file, compression_level);
-    }
-    else {
+        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid,
+                                                     output_dir_with_file, compression_level);
+    } else {
         save_vtk_unstructured_grid_as_vtu(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid, output_dir_with_file, binary);
     }
 
@@ -617,14 +618,15 @@ void write_tissue_activation_time_for_each_pulse (struct config *config, struct 
         output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, cur_pulse);
 
         bool read_only_data = ((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid != NULL;
-        new_vtk_unstructured_grid_from_alg_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+        new_vtk_unstructured_grid_from_alg_grid(&((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid,
+                                                the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
 
         set_tissue_vtk_values_with_activation_time_from_current_pulse(&config->persistent_data,the_grid,cur_pulse);
 
         if(compress) {
-            save_vtk_unstructured_grid_as_vtu_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid, output_dir_with_file, compression_level);
-        }
-        else {
+            save_vtk_unstructured_grid_as_vtu_compressed(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid,
+                                                         output_dir_with_file, compression_level);
+        } else {
             save_vtk_unstructured_grid_as_vtu(((struct save_coupling_with_activation_times_persistent_data *) config->persistent_data)->tissue_grid, output_dir_with_file, binary);
         }
 
@@ -668,8 +670,7 @@ void set_tissue_vtk_values_with_activation_time_from_current_pulse (void **persi
             float at;
             if (activation_times_array == NULL) {
                 at = -1;
-            }
-            else {
+            } else {
                 at = activation_times_array[cur_pulse];
             }
 
@@ -707,7 +708,7 @@ void set_tissue_vtk_values_with_mean_apd (void **persistent_data, struct grid *t
 
             apds_array = (float *) hmget((*data)->tissue_apds, cell_coordinates);
 
-            unsigned long apd_len = arrlen(apds_array);
+            uint64_t apd_len = arrlen(apds_array);
 
             // Calculate the mean APD values
             float mean_value = 0.0;
@@ -757,8 +758,7 @@ void print_purkinje_propagation_velocity (struct config *config, struct grid *th
             float *activation_times_array = NULL;
             activation_times_array = (float *) hmget(persistent_data->purkinje_activation_times, cell_coordinates);
 
-            for (uint32_t j = 0; j < n_pulses; j++)
-            {
+            for (uint32_t j = 0; j < n_pulses; j++) {
                 real_cpu delta_t = activation_times_array[j];
                 real_cpu delta_s = shortest_dist[id];
                 real_cpu v = delta_s / delta_t;

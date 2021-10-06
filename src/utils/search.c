@@ -71,9 +71,9 @@ int inside_mesh(real_cpu **a, real_cpu x, real_cpu y, real_cpu z, size_t first, 
     }
 }
 
-float calculate_mean (const float *arr, unsigned long size) {
+float calculate_mean (const float *arr, uint64_t size) {
     float result = 0.0f;
-    for (unsigned long i = 0; i < size; i++)
+    for (uint64_t i = 0; i < size; i++)
         result += arr[i];
     return result/(float)size;
 }
