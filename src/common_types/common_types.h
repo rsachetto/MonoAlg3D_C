@@ -121,7 +121,7 @@ struct simulation_files {
 
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                                                                         \
     do {                                                                                                                                                       \
-        for(long i = 0; i < shlen(d); i++) {                                                                                                                   \
+        for(uint64_t i = 0; i < shlen(d); i++) {                                                                                                               \
             struct string_hash_entry e = d[i];                                                                                                                 \
             printf("%s = %s\n", e.key, e.value);                                                                                                               \
         }                                                                                                                                                      \
@@ -129,15 +129,15 @@ struct simulation_files {
 
 #define STRING_HASH_PRINT_KEY_VALUE_LOG(d)                                                                                                                     \
     do {                                                                                                                                                       \
-        for(long i = 0; i < shlen(d); i++) {                                                                                                                   \
+        for(uint64_t i = 0; i < shlen(d); i++) {                                                                                                               \
             struct string_hash_entry e = d[i];                                                                                                                 \
-            log_info("%s = %s\n", e.key, e.value);                                                                                               \
+            log_info("%s = %s\n", e.key, e.value);                                                                                                             \
         }                                                                                                                                                      \
     } while(0)
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                                                                 \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(uint64_t i = 0; i < hmlen(d); i++) {                                                                                                               \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             fn(e.value);                                                                                                                                       \
         }                                                                                                                                                      \
@@ -145,7 +145,7 @@ struct simulation_files {
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(d, fn)                                                                                         \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(uint64_t i = 0; i < hmlen(d); i++) {                                                                                                               \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             fn(e.value, e.key);                                                                                                                                \
         }                                                                                                                                                      \
@@ -153,7 +153,7 @@ struct simulation_files {
 
 #define STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                                                                 \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(uint64_t i = 0; i < hmlen(d); i++) {                                                                                                               \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             init_config_functions(e.value, "./shared_libs/libdefault_stimuli.so", e.key);                                                                      \
         }                                                                                                                                                      \
@@ -161,7 +161,7 @@ struct simulation_files {
 
 #define MODIFY_DOMAIN_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                                                        \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(uint64_t i = 0; i < hmlen(d); i++) {                                                                                                               \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             init_config_functions(e.value, "./shared_libs/libdefault_modify_domain.so", e.key);                                                                \
         }                                                                                                                                                      \
