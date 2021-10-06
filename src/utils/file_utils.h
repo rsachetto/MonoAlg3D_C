@@ -46,8 +46,8 @@ char *get_dir_from_path(const char *path);
 char *get_file_from_path(const char *path);
 bool check_simulation_completed(char *simulation_dir);
 
-real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, long *num_lines, long *nnz);
-real_cpu *read_octave_vector_file_to_array(FILE *vec_file, long *num_lines);
+real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, uint64_t *num_lines, uint64_t *nnz);
+real_cpu *read_octave_vector_file_to_array(FILE *vec_file, uint64_t *num_lines);
 FILE *open_file_or_exit(char *filename, char *mode);
 
 #endif // MONOALG3D_FILE_UTILS_H
