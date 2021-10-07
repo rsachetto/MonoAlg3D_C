@@ -22,6 +22,6 @@ struct monodomain_solver;
 
 typedef SAVE_STATE(save_state_fn);
 
-void print_save_state_config_values(struct config *s);
+#define print_save_state_config_values(s)  LOG_COMMON_CONFIG("[save_state]", s)
 
 #endif // MONOALG3D_SAVE_CONFIG_H

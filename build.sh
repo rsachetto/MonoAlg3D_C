@@ -28,6 +28,9 @@ if [ -f "$FUNCTIONS_FILE" ]; then
     source $FUNCTIONS_FILE
 fi
 
+
+CHECK_COLOR_SUPPORT
+
 ###########User code#####################
 COMPILE_GUI=''
 COMPILE_MPI=''

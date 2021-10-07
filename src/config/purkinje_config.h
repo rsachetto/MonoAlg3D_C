@@ -15,6 +15,6 @@ struct ode_solver;
 #define SET_SPATIAL_PURKINJE(name)  int name(struct config *config, struct grid *the_grid, struct ode_solver *the_ode_solver)
 typedef SET_SPATIAL_PURKINJE(set_spatial_purkinje_fn);
 
-void print_purkinje_config_values(struct config* s);
+#define print_purkinje_config_values(s) LOG_COMMON_CONFIG("[purkinje]", s)
 
 #endif //MONOALG3D_PURKINJE_CONFIG_H

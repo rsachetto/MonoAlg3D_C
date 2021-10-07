@@ -22,8 +22,6 @@ struct ode_solver;
                                                 struct ode_solver *the_ode_solver, char* input_dir)
 typedef RESTORE_STATE(restore_state_fn);
 
-
-void print_restore_state_config_values(struct config* s);
-
+#define print_restore_state_config_values(s) STRING_HASH_PRINT_KEY_VALUE_LOG("[restore_state]",  s)
 
 #endif //MONOALG3D_SAVE_CONFIG_H

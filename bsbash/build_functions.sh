@@ -27,6 +27,20 @@ COMPILE_COMMANDS_FILE="${ROOT_DIR}/compile_commands.json"
 declare -A COMPILED_STATIC_LIBS
 declare -A COMPILED_SHARED_LIBS
 
+CHECK_COLOR_SUPPORT() {
+    #check if the terminal supports colored output
+    command -v tput >/dev/null 2>&1 && {
+        COLOR=`tput colors`
+
+        if [ $COLOR -eq -1 ]; then
+            WARN=''
+            INFO=''
+            ERROR=''
+            NC=''
+        fi
+    }
+}
+
 GET_LINUX_VERSION() {
 	if [ -f /etc/os-release ]; then
 		# freedesktop.org and systemd

@@ -412,12 +412,10 @@ void set_common_data(struct config *config, const char *key, const char *value) 
     if(IS_IN_MAIN_FUNCTION(key)) {
         config->main_function_name = strdup(value);
         config->main_function_name_was_set = true;
-    }
-    if(IS_IN_INIT_FUNCTION(key)) {
+    } else if(IS_IN_INIT_FUNCTION(key)) {
         config->init_function_name = strdup(value);
         config->init_function_name_was_set = true;
-    }
-    if(IS_IN_END_FUNCTION(key)) {
+    } else if(IS_IN_END_FUNCTION(key)) {
         config->end_function_name = strdup(value);
         config->end_function_name_was_set = true;
     } else if(IS_IN_LIBRARY_FILE(key)) {

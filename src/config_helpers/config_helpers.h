@@ -88,6 +88,14 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
         }                                                                                                                                                      \
     } while(0)
 
+#define CHECK_PARAMETER_EXIST_OR_REPORT_ERROR(config, parameter)                                                                                               \
+    do {                                                                                                                                                       \
+        char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
+        if(!__config_char) {                                                                                                                                   \
+            report_parameter_error_on_function(__LINE__, __FILE__, parameter);                                                                                 \
+        }                                                                                                                                                      \
+    } while(0)
+
 #define GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(value, config, parameter, n)                                                                                 \
     do {                                                                                                                                                       \
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \

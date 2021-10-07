@@ -127,11 +127,11 @@ struct simulation_files {
         }                                                                                                                                                      \
     } while(0)
 
-#define STRING_HASH_PRINT_KEY_VALUE_LOG(d)                                                                                                                     \
+#define STRING_HASH_PRINT_KEY_VALUE_LOG(tag, d)                                                                                                                \
     do {                                                                                                                                                       \
         for(uint64_t i = 0; i < shlen(d); i++) {                                                                                                               \
             struct string_hash_entry e = d[i];                                                                                                                 \
-            log_info("%s = %s\n", e.key, e.value);                                                                                                             \
+            log_info("%s %s = %s\n", tag, e.key, e.value);                                                                                                     \
         }                                                                                                                                                      \
     } while(0)
 
