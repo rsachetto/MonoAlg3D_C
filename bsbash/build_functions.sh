@@ -28,8 +28,18 @@ declare -A COMPILED_STATIC_LIBS
 declare -A COMPILED_SHARED_LIBS
 
 CHECK_COLOR_SUPPORT() {
+
+    if [ -z "$TERM" ] || [ "$TERM" == "dumb" ]; then
+        WARN=''
+        INFO=''
+        ERROR=''
+        NC=''
+        return
+    fi
+
     #check if the terminal supports colored output
     command -v tput >/dev/null 2>&1 && {
+
         COLOR=`tput colors`
 
         if [ $COLOR -eq -1 ]; then
