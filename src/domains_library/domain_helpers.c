@@ -490,122 +490,154 @@ void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization
     real_cpu Cx, Cy, Cz;
 
     if(initialDiscretization == 100.0) {
-        P1x = 6950;
-        P1y = 50;
+        P1x = 50;
+        P1y = 6950;
         P1z = 50;
-        P2x = 6950;
-        P2y = 19950;
+
+        P2x = 19950;
+        P2y = 6950;
         P2z = 50;
-        P3x = 6950;
-        P3y = 50;
+
+        P3x = 50;
+        P3y = 6950;
         P3z = 2950;
-        P4x = 6950;
-        P4y = 19950;
+
+        P4x = 19950;
+        P4y = 6950;
         P4z = 2950;
+
         P5x = 50;
         P5y = 50;
         P5z = 50;
-        P6x = 50;
-        P6y = 19950;
+
+        P6x = 19950;
+        P6y = 50;
         P6z = 50;
+
         P7x = 50;
         P7y = 50;
         P7z = 2950;
-        P8x = 50;
-        P8y = 19950;
+
+        P8x = 19950;
+        P8y = 50;
         P8z = 2950;
-        Cx = 3450;
-        Cy = 9950;
+
+        Cx = 9950;
+        Cy = 3450;
         Cz = 1450;
     }
 
     else if(initialDiscretization == 200.0) {
-        P1x = 6900;
-        P1y = 100;
+        P1x = 100;
+        P1y = 6900;
         P1z = 100;
-        P2x = 6900;
-        P2y = 19900;
+
+        P2x= 19900;
+        P2y = 6900;
         P2z = 100;
-        P3x = 6900;
-        P3y = 100;
+
+        P3x = 100;
+        P3y = 6900;
         P3z = 2900;
-        P4x = 6900;
-        P4y = 19900;
+
+        P4x = 19900;
+        P4y = 6900;
         P4z = 2900;
+
         P5x = 100;
         P5y = 100;
         P5z = 100;
-        P6x = 100;
-        P6y = 19900;
+
+        P6x = 19900;
+        P6y = 100;
         P6z = 100;
+
         P7x = 100;
         P7y = 100;
         P7z = 2900;
-        P8x = 100;
-        P8y = 19900;
+
+        P8x = 19900;
+        P8y = 100;
         P8z = 2900;
-        Cx = 3500;
-        Cy = 9900;
+
+        Cx = 9900;
+        Cy = 3500;
         Cz = 1500;
     }
 
     else if(initialDiscretization == 125.0) {
-        P1x = 6937.5;
-        P1y = 62.5;
+        P1x = 62.5;
+        P1y = 6937.5;
         P1z = 62.5;
-        P2x = 6937.5;
-        P2y = 19937.5;
+
+        P2x = 19937.5;
+        P2y = 6937.5;
         P2z = 62.5;
-        P3x = 6937.5;
-        P3y = 62.5;
+
+        P3x = 62.5;
+        P3y = 6937.5;
         P3z = 2937.5;
-        P4x = 6937.5;
-        P4y = 19937.5;
+
+        P4x = 19937.5;
+        P4y = 6937.5;
         P4z = 2937.5;
+
         P5x = 62.5;
         P5y = 62.5;
         P5z = 62.5;
-        P6x = 62.5;
-        P6y = 19937.5;
+
+        P6x = 19937.5;
+        P6y = 62.5;
         P6z = 62.5;
-        P7x = 3937.5;
-        P7y = 19937.5;
+
+        P7x = 19937.5;
+        P7y = 3937.5;
         P7z = 62.5;
-        P8x = 62.5;
-        P8y = 19937.5;
+
+        P8x = 19937.5;
+        P8y = 62.5;
         P8z = 2937.5;
-        Cx = 3437.5;
-        Cy = 9937.5;
+
+        Cx = 9937.5;
+        Cy = 3437.5;
         Cz = 1562.5;
     }
 
     else if(initialDiscretization == 250.0) {
-        P1x = 6875;
-        P1y = 125;
+        P1x = 125;
+        P1y = 6875;
         P1z = 125;
-        P2x = 6875;
-        P2y = 19875;
+
+        P2x = 19875;
+        P2y = 6875;
         P2z = 125;
-        P3x = 6875;
-        P3y = 125;
+
+        P3x = 125;
+        P3y = 6875;
         P3z = 2875;
-        P4x = 6875;
-        P4y = 19875;
+
+        P4x = 19875;
+        P4y = 6875;
         P4z = 2875;
+
         P5x = 125;
         P5y = 125;
         P5z = 125;
-        P6x = 125;
-        P6y = 19875;
+
+        P6x = 19875;
+        P6y = 125;
         P6z = 125;
+
         P7x = 125;
         P7y = 125;
         P7z = 2875;
-        P8x = 125;
-        P8y = 19875;
+
+        P8x = 19875;
+        P8y = 125;
         P8z = 2875;
-        Cx = 3375;
-        Cy = 9875;
+
+        Cx = 9875;
+        Cy = 3375;
         Cz = 1125;
     }
 
@@ -649,6 +681,10 @@ void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization
     cannotChange |= ((c->center.x == Cx) && (c->center.y == Cy) && (c->center.z == Cz));
 
     c->can_change = !cannotChange;
+
+    if(cannotChange) {
+        printf("Cannot change %lf, %lf, %lf\n", c->center.x, c->center.y, c->center.z);
+    }
 }
 
 void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) {

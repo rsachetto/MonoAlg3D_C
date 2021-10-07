@@ -160,7 +160,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     }
 
     if(the_grid->adaptive) {
-
         FOR_EACH_CELL(the_grid) {
             if(cell->active) {
                 set_cell_not_changeable(cell, start_h);
