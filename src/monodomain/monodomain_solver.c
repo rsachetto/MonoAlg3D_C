@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#define MAX_TMP 1024
+
 struct monodomain_solver *new_monodomain_solver() {
 
     struct monodomain_solver *result = (struct monodomain_solver *)malloc(sizeof(struct monodomain_solver));
@@ -177,7 +179,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
     }
 
-    if(assembly_matrix_config) {
+    if(assembly_matrix_config != NULL) {
         init_config_functions(assembly_matrix_config, "./shared_libs/libdefault_matrix_assembly.so", "assembly_matrix");
     } else {
         log_error_and_exit("No assembly matrix configuration provided! Exiting!\n");
@@ -357,8 +359,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         max_dy = the_grid->max_discretization.y;
         max_dz = the_grid->max_discretization.z;
 
-// This is used only to print information about the domain:
-#define MAX_TMP 1024
+        // This is used only to print information about the domain:
         char tmp[MAX_TMP];
 
         // TODO: change how this is handled
