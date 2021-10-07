@@ -30,5 +30,4 @@ void print_update_monodomain_config_values(struct config* s) {
         log_info("[update_monodomain] Update Monodomain end function: %s\n", s->end_function_name);
 
     LOG_CONFIG_INFO("[update_monodomain] Update Monodomain parameter", s->config_data);
-
 }
