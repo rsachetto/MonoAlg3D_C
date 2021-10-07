@@ -3,13 +3,13 @@
 //
 
 #include "domain_helpers.h"
-#include "mesh_info_data.h"
-#include "../libraries_common/common_data_structures.h"
-#include "../utils/utils.h"
 #include "../3dparty/sds/sds.h"
 #include "../config_helpers/config_helpers.h"
+#include "../libraries_common/common_data_structures.h"
 #include "../logger/logger.h"
 #include "../utils/stop_watch.h"
+#include "../utils/utils.h"
+#include "mesh_info_data.h"
 
 #include <float.h>
 #include <math.h>
@@ -17,8 +17,8 @@
 
 #include <unistd.h>
 
-
-int set_cuboid_domain_mesh(struct grid * the_grid, real_cpu start_dx, real_cpu start_dy,real_cpu start_dz, real_cpu side_length_x, real_cpu side_length_y, real_cpu side_length_z) {
+int set_cuboid_domain_mesh(struct grid *the_grid, real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x, real_cpu side_length_y,
+                           real_cpu side_length_z) {
 
     real_cpu real_side_length_x;
     real_cpu real_side_length_y;
@@ -34,7 +34,6 @@ int set_cuboid_domain_mesh(struct grid * the_grid, real_cpu start_dx, real_cpu s
     log_info("Initial mesh side length: %lf µm x %lf µm x %lf µm\n", real_side_length_x, real_side_length_y, real_side_length_z);
     log_info("Loading cuboid mesh with %lf µm x %lf µm x %lf µm using dx %lf µm, dy %lf µm, dz %lf µm\n", side_length_x, side_length_y, side_length_z, start_dx,
              start_dy, start_dz);
-
 
     int num_steps = get_num_refinement_steps_to_discretization(real_side_length_z, start_dz);
 
@@ -150,7 +149,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
         data = sdssplit(tmp, ",", &split_count);
 
         if(split_count < 3) {
-            log_error_and_exit("Not enough data to load the mesh geometry in line %d of file %s! [available=%d, required=3]\n", i+1, mesh_file, split_count);
+            log_error_and_exit("Not enough data to load the mesh geometry in line %d of file %s! [available=%d, required=3]\n", i + 1, mesh_file, split_count);
         }
 
         real_cpu cx = strtod(data[0], NULL);
@@ -164,7 +163,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
             }
         }
 
-        hmput(custom_mesh_data_hash, POINT3D(cx,cy,cz), i);
+        hmput(custom_mesh_data_hash, POINT3D(cx, cy, cz), i);
 
         if(cx > maxx) {
             maxx = cx;
@@ -199,7 +198,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
     double min_cube_side = fmax(maxx, fmax(maxy, maxz)) + start_h;
 
     while(cube_side < min_cube_side) {
-        cube_side = cube_side*2;
+        cube_side = cube_side * 2;
     }
 
     double tmp_size = cube_side / 2.0;
@@ -214,8 +213,8 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
 
     uint32_t num_loaded = 0;
 
-    struct point_3d min_bound = POINT3D(minx-start_h, miny-start_h, minz-start_h);
-    struct point_3d max_bound = POINT3D(maxx+start_h, maxy+start_h, maxz+start_h);
+    struct point_3d min_bound = POINT3D(minx - start_h, miny - start_h, minz - start_h);
+    struct point_3d max_bound = POINT3D(maxx + start_h, maxy + start_h, maxz + start_h);
 
     log_info("\nStart - refining the initial cube (refining %d times with a cube side of %lf)\n", num_ref, cube_side);
     refine_grid_with_bounds(the_grid, num_ref, min_bound, max_bound);
@@ -232,7 +231,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
             cell->active = false;
         } else {
 
-            struct point_3d p = POINT3D(x,y,z);
+            struct point_3d p = POINT3D(x, y, z);
             int index = hmget(custom_mesh_data_hash, p);
 
             if(index != -1) {
@@ -266,7 +265,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
     hmfree(custom_mesh_data_hash);
 
     if(custom_data) {
-        for(int i = 0; i < num_volumes; i++) {
+        for(uint32_t i = 0; i < num_volumes; i++) {
             free(custom_data[i]);
         }
         free(custom_data);
@@ -274,15 +273,13 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
 
     fclose(file);
 
-
     log_info("\nTime to load the mesh: %ld μs\n\n", stop_stop_watch(&sw));
 
     return num_loaded;
 }
 
-int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x,
-                                  real_cpu side_length_y, real_cpu side_length_z, real_cpu *real_side_length_x,
-                                  real_cpu *real_side_length_y, real_cpu *real_side_length_z) {
+int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu start_dz, real_cpu side_length_x, real_cpu side_length_y,
+                                  real_cpu side_length_z, real_cpu *real_side_length_x, real_cpu *real_side_length_y, real_cpu *real_side_length_z) {
 
     *real_side_length_x = start_dx * 2.0;
     *real_side_length_y = start_dy * 2.0;
@@ -292,54 +289,53 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
     real_cpu ny = side_length_y / start_dy;
     real_cpu nz = side_length_z / start_dz;
 
-    real_cpu proportion_dxdy = fmax(start_dx, start_dy)/fmin(start_dx, start_dy);
-    real_cpu proportion_dxdz = fmax(start_dx, start_dz)/fmin(start_dx, start_dz);
-    real_cpu proportion_dydz = fmax(start_dz, start_dy)/fmin(start_dz, start_dy);
+    real_cpu proportion_dxdy = fmax(start_dx, start_dy) / fmin(start_dx, start_dy);
+    real_cpu proportion_dxdz = fmax(start_dx, start_dz) / fmin(start_dx, start_dz);
+    real_cpu proportion_dydz = fmax(start_dz, start_dy) / fmin(start_dz, start_dy);
 
     bool error = false;
 
     if(start_dx > start_dy) {
-        if (side_length_x < side_length_y) {
+        if(side_length_x < side_length_y) {
             REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dx > start_dy, you need side_length_x > side_length_y");
             error = true;
         }
     }
 
     if(start_dx > start_dz) {
-        if (side_length_x < side_length_z) {
+        if(side_length_x < side_length_z) {
             REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dx > start_dz, you need side_length_x > side_length_z");
             error = true;
         }
     }
 
     if(start_dy > start_dx) {
-        if (side_length_y < side_length_x) {
+        if(side_length_y < side_length_x) {
             REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dy > start_dx, you need side_length_y > side_length_x");
-            error = true;                }
+            error = true;
+        }
     }
 
     if(start_dy > start_dz) {
-        if (side_length_y < side_length_z) {
+        if(side_length_y < side_length_z) {
             REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dy > start_dz, you need side_length_y > side_length_z");
             error = true;
         }
     }
 
-
     if(start_dz > start_dx) {
-        if (side_length_z < side_length_x) {
+        if(side_length_z < side_length_x) {
             REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dz > start_dx, you need side_length_z > side_length_x");
             error = true;
         }
     }
 
     if(start_dz > start_dy) {
-        if (side_length_z < side_length_y) {
+        if(side_length_z < side_length_y) {
             REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dz > start_dy, you need side_length_z > side_length_y");
             error = true;
         }
     }
-
 
     if(ceil(proportion_dxdy) != proportion_dxdy || ceil(proportion_dxdz) != proportion_dxdz || ceil(proportion_dydz) != proportion_dydz) {
         REPORT_ERROR_ON_FUNCTION("Incorrect configuration. start_dx, start_dy and start_dz need to be multiples");
@@ -359,8 +355,7 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
         error = true;
     }
     if(ceil(nz) != nz) {
-        sds error_str =
-                sdscatprintf(sdsempty(), "start_dz: %lf is not multiple of side_length_z: %lf", start_dz, side_length_z);
+        sds error_str = sdscatprintf(sdsempty(), "start_dz: %lf is not multiple of side_length_z: %lf", start_dz, side_length_z);
         REPORT_ERROR_ON_FUNCTION(error_str);
         sdsfree(error_str);
         error = true;
@@ -388,8 +383,7 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
         proportion_h = (int)(start_dx / start_dy);
         if(*real_side_length_y >= *real_side_length_x || (*real_side_length_x / proportion_h) < *real_side_length_y) {
             *real_side_length_x = *real_side_length_y * proportion_h;
-        }
-        else {
+        } else {
             *real_side_length_y = *real_side_length_x / proportion_h;
             *real_side_length_z = *real_side_length_z / proportion_h;
         }
@@ -399,8 +393,7 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
         if(*real_side_length_x >= *real_side_length_y) {
             *real_side_length_y = *real_side_length_x * proportion_h;
             *real_side_length_z = *real_side_length_z * proportion_h;
-        }
-        else {
+        } else {
             *real_side_length_x = *real_side_length_y / proportion_h;
         }
     }
@@ -410,8 +403,7 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
         if(*real_side_length_z >= *real_side_length_y || *real_side_length_y / proportion_h < *real_side_length_z) {
             *real_side_length_y = *real_side_length_z * proportion_h;
             *real_side_length_x = *real_side_length_x * proportion_h;
-        }
-        else {
+        } else {
             *real_side_length_z = *real_side_length_y / proportion_h;
         }
 
@@ -419,8 +411,7 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
         proportion_h = (int)(start_dz / start_dy);
         if(*real_side_length_y > *real_side_length_z || *real_side_length_z / proportion_h < *real_side_length_y) {
             *real_side_length_z = *real_side_length_y * proportion_h;
-        }
-        else {
+        } else {
             *real_side_length_y = *real_side_length_z / proportion_h;
             *real_side_length_x = *real_side_length_x / proportion_h;
         }
@@ -448,9 +439,7 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
     }
 
     return 1;
-
 }
-
 
 /**
  * Sets the current domain as a domain described in the N-version benchmark
@@ -466,30 +455,26 @@ void set_benchmark_domain(struct grid *the_grid) {
     sz = 3000;
 
     while(grid_cell != 0) {
-        grid_cell->active =
-                (grid_cell->center.x < sx) && (grid_cell->center.y < sy) && (grid_cell->center.z < sz);
+        grid_cell->active = (grid_cell->center.x < sx) && (grid_cell->center.y < sy) && (grid_cell->center.z < sz);
         grid_cell = grid_cell->next;
     }
 
     the_grid->mesh_side_length.x = sx;
     the_grid->mesh_side_length.y = sy;
     the_grid->mesh_side_length.z = sz;
-
 }
 
 void set_cuboid_domain(struct grid *the_grid, real_cpu size_x, real_cpu size_y, real_cpu size_z) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
     while(grid_cell != 0) {
-        grid_cell->active =
-                (grid_cell->center.y < size_y) && (grid_cell->center.x < size_x) && (grid_cell->center.z < size_z);
+        grid_cell->active = (grid_cell->center.y < size_y) && (grid_cell->center.x < size_x) && (grid_cell->center.z < size_z);
         grid_cell = grid_cell->next;
     }
 
     the_grid->mesh_side_length.x = size_x;
     the_grid->mesh_side_length.y = size_y;
     the_grid->mesh_side_length.z = size_z;
-
 }
 
 void set_cell_not_changeable(struct cell_node *c, real_cpu initialDiscretization) {
@@ -690,7 +675,7 @@ void set_plain_fibrosis(struct grid *the_grid, real_cpu phi, unsigned fib_seed) 
     }
 }
 
-void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) {
+void set_plain_source_sink_fibrosis(struct grid *the_grid, real_cpu channel_width, real_cpu channel_length) {
 
     log_info("Making upper and down left corner inactive !\n");
 
@@ -698,33 +683,28 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
 
     //   real_cpu side_length_x = the_grid->mesh_side_length.x;
     real_cpu side_length_y = the_grid->mesh_side_length.y;
-//    real_cpu side_length_z = the_grid->mesh_side_length.z;
+    //    real_cpu side_length_z = the_grid->mesh_side_length.z;
 
     real_cpu region_height = (side_length_y - channel_width) / 2.0;
 
     struct cell_node *grid_cell;
     grid_cell = the_grid->first_cell;
 
-    while(grid_cell != 0)
-    {
+    while(grid_cell != 0) {
 
-        if(grid_cell->active)
-        {
+        if(grid_cell->active) {
 
             real_cpu x = grid_cell->center.x;
             real_cpu y = grid_cell->center.y;
-//            real_cpu z = grid_cell->center.z;
+            //            real_cpu z = grid_cell->center.z;
 
             // Check region 1
-            inside = (x >= 0.0) && (x <= channel_length) &&\
-                    (y >= 0.0) && (y <= region_height);
+            inside = (x >= 0.0) && (x <= channel_length) && (y >= 0.0) && (y <= region_height);
 
             // Check region 2
-            inside |= (x >= 0.0) && (x <= channel_length) &&\
-                    (y >= region_height + channel_width) && (y <= side_length_y);
+            inside |= (x >= 0.0) && (x <= channel_length) && (y >= region_height + channel_width) && (y <= side_length_y);
 
-            if(inside)
-            {
+            if(inside) {
                 grid_cell->active = false;
             }
 
@@ -735,8 +715,8 @@ void set_plain_source_sink_fibrosis (struct grid *the_grid, real_cpu channel_wid
     }
 }
 
-void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius,
-                               real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed) {
+void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_size, real_cpu bz_radius,
+                               unsigned fib_seed) {
 
     log_info("Making %.2lf %% of cells inactive\n", phi * 100.0f);
 
@@ -783,9 +763,8 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
                     grid_cell->active = false;
                 grid_cell->can_change = false;
             } else if(BORDER_ZONE(grid_cell)) {
-                real_cpu distance_from_center =
-                        sqrt((grid_cell->center.x - plain_center) * (grid_cell->center.x - plain_center) +
-                             (grid_cell->center.y - plain_center) * (grid_cell->center.y - plain_center));
+                real_cpu distance_from_center = sqrt((grid_cell->center.x - plain_center) * (grid_cell->center.x - plain_center) +
+                                                     (grid_cell->center.y - plain_center) * (grid_cell->center.y - plain_center));
                 distance_from_center = (distance_from_center - sphere_radius) / bz_size;
                 real_cpu phi_local = phi - phi * distance_from_center;
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
@@ -824,8 +803,6 @@ void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_
         }
         grid_cell = grid_cell->next;
     }
-
-
 }
 
 void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
@@ -848,7 +825,8 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
     }
 
     for(int i = 0; i < size; i++) {
-        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &scar_mesh[i][3], &scar_mesh[i][4], &scar_mesh[i][5], &scar_mesh[i][6]);
+        fscanf(file, "%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", &scar_mesh[i][0], &scar_mesh[i][1], &scar_mesh[i][2], &scar_mesh[i][3], &scar_mesh[i][4],
+               &scar_mesh[i][5], &scar_mesh[i][6]);
     }
 
     fclose(file);
@@ -864,17 +842,17 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
         real_cpu b_h_dx = scar_mesh[j][3];
         real_cpu b_h_dy = scar_mesh[j][4];
 
-        bool active = (bool) (scar_mesh[j][6]);
+        bool active = (bool)(scar_mesh[j][6]);
 
         int c = 0;
-        while (grid_cell != 0) {
+        while(grid_cell != 0) {
 
             if(grid_cell->active) {
 
                 real_cpu center_x = grid_cell->center.x;
                 real_cpu center_y = grid_cell->center.y;
 
-                real_cpu half_dy = grid_cell->discretization.y/2.0;
+                real_cpu half_dy = grid_cell->discretization.y / 2.0;
 
                 if(FIBROTIC_INFO(grid_cell) == NULL) {
                     INITIALIZE_FIBROTIC_INFO(grid_cell);
@@ -886,12 +864,13 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
                 p.x = b_center_x + b_h_dx;
                 p.y = b_center_y - b_h_dy;
 
-                if (center_x == b_center_x && center_y + half_dy <= p.x && center_y - half_dy >= p.y)  {
+                if(center_x == b_center_x && center_y + half_dy <= p.x && center_y - half_dy >= p.y) {
                     grid_cell->active = active;
                     c++;
                 }
             }
-            if(c == 4) break;
+            if(c == 4)
+                break;
 
             grid_cell = grid_cell->next;
         }
@@ -904,11 +883,8 @@ void set_fibrosis_from_file(struct grid *grid, const char *filename, int size) {
     free(scar_mesh);
 }
 
-void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed,\
-                        const double min_x, const double max_x,\
-                        const double min_y, const double max_y,\
-                        const double min_z, const double max_z)
-{
+void set_plain_fibrosis_inside_region(struct grid *the_grid, real_cpu phi, unsigned fib_seed, const double min_x, const double max_x, const double min_y,
+                                      const double max_y, const double min_z, const double max_z) {
 
     log_info("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
 
@@ -922,21 +898,15 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
     log_info("Using %u as seed\n", fib_seed);
 
     grid_cell = the_grid->first_cell;
-    while(grid_cell != 0)
-    {
+    while(grid_cell != 0) {
         real center_x = grid_cell->center.x;
         real center_y = grid_cell->center.y;
         real center_z = grid_cell->center.z;
 
-        if (center_x >= min_x && center_x <= max_x &&\
-            center_y >= min_y && center_y <= max_y &&\
-            center_z >= min_z && center_z <= max_z)
-        {
-            if(grid_cell->active)
-            {
+        if(center_x >= min_x && center_x <= max_x && center_y >= min_y && center_y <= max_y && center_z >= min_z && center_z <= max_z) {
+            if(grid_cell->active) {
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi)
-                {
+                if(p < phi) {
                     grid_cell->active = false;
                 }
 
@@ -947,5 +917,4 @@ void set_plain_fibrosis_inside_region (struct grid *the_grid, real_cpu phi, unsi
 
         grid_cell = grid_cell->next;
     }
-
 }
