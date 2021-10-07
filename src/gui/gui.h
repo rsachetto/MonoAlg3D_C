@@ -100,7 +100,6 @@ struct gui_config {
     uint64_t total_ref_time;
     uint64_t total_deref_time;
     uint64_t total_write_time;
-    uint64_t total_config_time;
     uint64_t total_cg_it;
 
     int advance_or_return;

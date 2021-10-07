@@ -45,8 +45,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     log_msg(LOG_LINE_SEPARATOR);
 
-    uint64_t ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0, total_deref_time = 0, cg_partial,
-             total_config_time = 0;
+    uint64_t ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0, total_deref_time = 0, cg_partial;
 
     uint64_t purkinje_ode_total_time = 0, purkinje_cg_total_time = 0, purkinje_cg_partial = 0;
 
@@ -442,8 +441,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(purkinje_config) {
         purkinje_initial_v = the_purkinje_ode_solver->model_data.initial_v;
     }
-
-    total_config_time = stop_stop_watch(&config_time);
 
     print_solver_info(the_monodomain_solver, the_ode_solver, the_purkinje_ode_solver, the_grid, configs);
 
@@ -889,7 +886,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         gui_config->total_ref_time = total_ref_time;
         gui_config->total_deref_time = total_deref_time;
         gui_config->total_write_time = total_write_time;
-        gui_config->total_config_time = total_config_time;
         gui_config->total_cg_it = total_cg_it;
         gui_config->simulating = false;
     }

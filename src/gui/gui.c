@@ -1076,9 +1076,6 @@ static inline void configure_end_info_box_strings(struct gui_config *gui_config,
     snprintf(tmp, TMP_SIZE, "Write time: %ld s", gui_config->total_write_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    snprintf(tmp, TMP_SIZE, "Initial configuration time: %ld s", gui_config->total_config_time / 1000 / 1000);
-    (*(info_string))[index++] = strdup(tmp);
-
     snprintf(tmp, TMP_SIZE, "CG Total Iterations: %ld", gui_config->total_cg_it);
     (*(info_string))[index++] = strdup(tmp);
 
