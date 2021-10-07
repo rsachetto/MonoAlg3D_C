@@ -32,13 +32,7 @@ void print_save_mesh_config_values(struct config* s) {
         log_info("[save_mesh] Saving simulation results to: %s\n", out_dir_name);
     }
 
-    if (shlen(s->config_data) == 1) {
-        log_info("[save_mesh] Save mesh extra parameter:\n");
-    } else if (shlen(s->config_data) > 1) {
-        log_info("[save_mesh] Save mesh extra parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data);
+    LOG_CONFIG_INFO("[save_mesh] Save mesh extra parameter", s->config_data);    
 
     free(out_dir_name);
 }

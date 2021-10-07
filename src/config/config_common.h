@@ -38,4 +38,13 @@ struct config *alloc_and_init_config_data();
 void free_config_data(struct config *cm);
 void init_config_functions(struct config *config, char *default_lib, char *config_type);
 
+#define LOG_CONFIG_INFO(msg, config_data)                                                                                                                      \
+    size_t len = shlen(config_data);                                                                                                                           \
+    if(len == 1) {                                                                                                                                             \
+        log_info(msg ":\n");                                                                                                                                   \
+    } else if(len > 1) {                                                                                                                                       \
+        log_info(msg ":\n");                                                                                                                                   \
+    }                                                                                                                                                          \
+    STRING_HASH_PRINT_KEY_VALUE_LOG(config_data);
+
 #endif //MONOALG3D_CONFIG_COMMON_H

@@ -25,11 +25,5 @@ void print_extra_data_config_values(struct config* s) {
         log_info("[extra_data] Extra data end function: %s\n", s->end_function_name);
     }
 
-    if(shlen(s->config_data) == 1) {
-        log_info("[extra_data] Extra data parameter:\n");
-    } else if(shlen(s->config_data) > 1) {
-        log_info("[extra_data] Extra data parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data);
+    LOG_CONFIG_INFO("[extra_data] Extra data parameter", s->config_data);    
 }

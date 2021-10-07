@@ -29,12 +29,6 @@ void print_update_monodomain_config_values(struct config* s) {
     if(s->end_function_name)
         log_info("[update_monodomain] Update Monodomain end function: %s\n", s->end_function_name);
 
-    if (shlen(s->config_data) == 1) {
-        log_info("[update_monodomain] Update Monodomain parameter:\n");
-    } else if (shlen(s->config_data) > 1) {
-        log_info("[update_monodomain] Update Monodomain parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data);
+    LOG_CONFIG_INFO("[update_monodomain] Update Monodomain parameter", s->config_data);
 
 }

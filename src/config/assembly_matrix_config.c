@@ -16,12 +16,5 @@ void print_assembly_matrix_config_values(struct config* s) {
 
     log_info("[assembly_matrix] Assembly Matrix library: %s\n", s->library_file_path);
 
-    if(shlen(s->config_data) == 1) {
-        log_info("[assembly_matrix] Assembly Matrix parameter:\n");
-    } else if(shlen(s->config_data) > 1) {
-        log_info("[assembly_matrix] Assembly Matrix parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG(s->config_data);
-
+    LOG_CONFIG_INFO("[assembly_matrix] Assembly Matrix parameter", s->config_data);
 }

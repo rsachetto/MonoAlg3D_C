@@ -26,15 +26,7 @@ void print_purkinje_config_values (struct config* config) {
     log_info("[purkinje] Purkinje network name: %s\n", name);
     log_info("[purkinje] Purkinje network initial Space Discretization: %lf um\n", dx);
 
-    if (shlen(config->config_data) == 1)
-    {
-        log_info("[purkinje] Purkinje extra parameter:\n");
-    }
-    else if (shlen(config->config_data) > 1) {
-        log_info("[purkinje] Purkinje extra parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG (config->config_data);
+    LOG_CONFIG_INFO("[purkinje] Purkinje extra parameter", config->config_data);
 
     free(name);
 }

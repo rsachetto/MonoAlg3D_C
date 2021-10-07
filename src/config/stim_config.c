@@ -39,15 +39,6 @@ void print_stim_config_values(struct config* s) {
 
     struct string_hash_entry *tmp = s->config_data;
 
-    if(shlen(tmp) == 1)
-    {
-        log_info("[stim] Stimulus extra parameter:\n");
-    }
-    else if(shlen(tmp)  > 1)
-    {
-        log_info("[stim] Stimulus extra parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG(tmp);
+    LOG_CONFIG_INFO("[stim] Stimulus extra parameter", tmp);
 
 }

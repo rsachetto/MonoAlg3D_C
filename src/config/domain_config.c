@@ -34,14 +34,5 @@ void print_domain_config_values(struct config* config) {
         log_info("[domain] Domain initial Space Discretization: dx %lf um, dy %lf um, dz %lf um\n", start_dx, start_dy, start_dz);
     }
 
-    if(shlen(config->config_data) == 1)
-    {
-        log_info("[domain] Domain extra parameter:\n");
-    }
-    else if(shlen(config->config_data) > 1)
-    {
-        log_info("[domain] Domain extra parameters:\n");
-    }
-
-    STRING_HASH_PRINT_KEY_VALUE_LOG(config->config_data);
+    LOG_CONFIG_INFO("[domain] Domain extra parameter", config->config_data);
 }
