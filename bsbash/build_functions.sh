@@ -40,9 +40,9 @@ CHECK_COLOR_SUPPORT() {
     #check if the terminal supports colored output
     command -v tput >/dev/null 2>&1 && {
 
-        COLOR=`tput colors`
+        COLOR=$(tput colors)
 
-        if [ $COLOR -eq -1 ]; then
+        if [ "$COLOR" -eq -1 ]; then
             WARN=''
             INFO=''
             ERROR=''
