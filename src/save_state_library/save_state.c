@@ -16,7 +16,7 @@
 
 SAVE_STATE(save_simulation_state) {
     //Here we save the domain state
-    if(the_grid){
+    if(the_grid) {
         sds tmp = sdsnew(output_dir);
         tmp = sdscat(tmp, "/grid_checkpoint.dat");
 
@@ -151,5 +151,62 @@ SAVE_STATE(save_simulation_state) {
         fclose(output_file);
 
     }
+
+}
+
+static void save_point_array_hash(struct point_voidp_hash_entry *p, FILE *output_file) {
+
+        size_t n = hmlen(p);
+        fwrite(&n, sizeof(n), 1, output_file);
+
+        for(size_t i = 0; i < n; i++) {
+            struct point_3d key = p[i].key;
+            float  *value       = p[i].value;
+
+            fwrite(&key, sizeof(key), 1, output_file);
+
+            size_t n2 = arrlen(value);
+            fwrite(&n2, sizeof(n2), 1, output_file);
+
+            for(size_t j = 0; j < n2; j++) {
+                fwrite(&value[j], sizeof(value[j]), 1, output_file);
+            }
+
+        }
+}
+
+static void save_point_float_hash(struct point_hash_entry *p, FILE *output_file) {
+
+        size_t n = hmlen(p);
+        fwrite(&n, sizeof(n), 1, output_file);
+
+        for(size_t i = 0; i < n; i++) {
+            struct point_3d key = p[i].key;
+            float         value = p[i].value;
+            fwrite(&key, sizeof(key), 1, output_file);
+            fwrite(&value, sizeof(value), 1, output_file);
+        }
+}
+
+SAVE_STATE(save_simulation_state_with_activation_times) {
+
+    if(save_mesh_config->persistent_data) {
+        sds tmp = sdsnew(output_dir);
+        tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
+
+        FILE *output_file = fopen(tmp, "wb");
+
+         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->last_time_v, output_file);
+         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->num_activations, output_file);
+         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, output_file);
+
+         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->activation_times, output_file);
+         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->apds, output_file);
+
+         fclose(output_file);
+
+    }
+
+    save_simulation_state(time_info, config, save_mesh_config, the_grid, the_monodomain_solver, the_ode_solver, output_dir);
 
 }

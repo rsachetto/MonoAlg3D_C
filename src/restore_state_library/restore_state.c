@@ -224,7 +224,7 @@ RESTORE_STATE (restore_simulation_state) {
 
         if (the_ode_solver->gpu) {
 
-            #ifdef COMPILE_CUDA
+#ifdef COMPILE_CUDA
             if(the_ode_solver->adaptive) {
                 num_sv_entries = num_sv_entries + 3;
             }
@@ -235,8 +235,8 @@ RESTORE_STATE (restore_simulation_state) {
             fread (sv_cpu, sizeof (real), the_ode_solver->original_num_cells * num_sv_entries, input_file);
 
             check_cuda_error(cudaMemcpy2D (the_ode_solver->sv, the_ode_solver->pitch, sv_cpu, the_ode_solver->original_num_cells * sizeof (real),
-                          the_ode_solver->original_num_cells * sizeof (real), num_sv_entries, cudaMemcpyHostToDevice));
-            #endif
+                        the_ode_solver->original_num_cells * sizeof (real), num_sv_entries, cudaMemcpyHostToDevice));
+#endif
         } else {
             fread (the_ode_solver->sv, sizeof (real), the_ode_solver->original_num_cells * num_sv_entries, input_file);
         }
@@ -248,4 +248,70 @@ RESTORE_STATE (restore_simulation_state) {
     }
 
     return true;
+}
+
+static void restore_point_array_hash(struct point_voidp_hash_entry **p, FILE *input_file) {
+
+    size_t n;
+    fread(&n, sizeof(n), 1, input_file);
+
+    for(size_t i = 0; i < n; i++) {
+        struct point_3d key;
+
+        fread(&key, sizeof(key), 1, input_file);
+
+        size_t n2;
+        fread(&n2, sizeof(n2), 1, input_file);
+
+        float  *value = NULL;
+        arrsetcap(value, n2);
+
+        for(size_t j = 0; j < n2; j++) {
+            fread(&value[j], sizeof(value[j]), 1, input_file);
+        }
+
+        arrsetlen(value,n2);
+        hmput(*p, key, value);
+
+    }
+}
+
+static void restore_point_float_hash(struct point_hash_entry **p, FILE *input_file) {
+
+    size_t n;
+    fread(&n, sizeof(n), 1, input_file);
+
+    for(size_t i = 0; i < n; i++) {
+        struct point_3d key;
+        float value;
+        fread(&key, sizeof(key), 1, input_file);
+        fread(&value, sizeof(value), 1, input_file);
+        hmput(*p, key, value);
+    }
+}
+
+RESTORE_STATE(restore_simulation_state_with_activation_times) {
+
+    restore_simulation_state(time_info, config, save_mesh_config, the_grid, the_monodomain_solver, the_ode_solver, input_dir);
+
+    if(save_mesh_config->persistent_data == NULL) {
+        save_mesh_config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
+
+        sds tmp = sdsnew (input_dir);
+        tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
+
+        FILE *input_file = fopen (tmp, "rb");
+        ((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->first_save_call = false;
+        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->last_time_v, input_file);
+        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->num_activations, input_file);
+        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, input_file);
+
+        restore_point_array_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->activation_times, input_file);
+        restore_point_array_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->apds, input_file);
+
+        fclose(input_file);
+    }
+
+    return true;
+
 }

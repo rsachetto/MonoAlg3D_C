@@ -253,8 +253,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(restore_checkpoint) {
         // Here we only restore the monodomain_solver_state...
         restore_success =
-            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, NULL, the_monodomain_solver, NULL, out_dir_name);
+            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, the_monodomain_solver, NULL, out_dir_name);
     }
+
+    //HACK: we have to restore the last_t time info as the restore state function changes it to a wrong value
+    time_info.final_t = finalT;
 
     if(update_monodomain_config) {
         init_config_functions(update_monodomain_config, "./shared_libs/libdefault_update_monodomain.so", "update_monodomain");
@@ -337,7 +340,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(restore_checkpoint) {
         // TODO: Create a Purkinje restore function in the 'restore_library' and put here ...
-        restore_success &= ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, the_grid, NULL, NULL, out_dir_name);
+        restore_success &= ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, the_grid, NULL, NULL, out_dir_name);
     }
 
     real_cpu start_dx, start_dy, start_dz;
@@ -433,7 +436,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     // we pass this parameters to the cell model....
     if(restore_checkpoint) {
         restore_success &=
-            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, NULL, NULL, the_ode_solver, out_dir_name);
+            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, NULL, the_ode_solver, out_dir_name);
     }
 
     real_cpu initial_v, purkinje_initial_v = 0;
@@ -504,7 +507,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     total_mat_time = stop_stop_watch(&part_mat);
     start_stop_watch(&solver_time);
 
-    int save_state_rate = 1;
+    int save_state_rate = 0;
 
     if(save_checkpoint) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, save_state_rate, save_state_config, "save_rate");
@@ -837,12 +840,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         cur_time += dt_pde;
 
         if(save_checkpoint) {
-            if(count != 0 && (count % save_state_rate == 0)) {
+            if(save_state_rate && count != 0 && (count % save_state_rate == 0)) {
                 time_info.iteration = count;
                 time_info.current_t = cur_time;
                 printf("Saving state with time = %lf, and count = %d\n", time_info.current_t, time_info.iteration);
-                ((save_state_fn *)save_state_config->main_function)(&time_info, save_state_config, the_grid, the_monodomain_solver, the_ode_solver,
-                                                                    out_dir_name);
+                ((save_state_fn *)save_state_config->main_function)(&time_info, save_state_config, save_mesh_config, the_grid, the_monodomain_solver,
+                                                                    the_ode_solver, out_dir_name);
             }
         }
 
@@ -851,6 +854,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if((count - 1) % output_print_rate == 0) {
             log_msg(", Total Iteration time: %ld us\n", iteration_time);
         }
+    }
+
+    //if no save_rate is passed we only save at the end of the simulation;
+    if(save_checkpoint && save_state_rate == 0) {
+        time_info.iteration = count;
+        time_info.current_t = cur_time;
+        printf("Saving state with time = %lf, and count = %d\n", time_info.current_t, time_info.iteration);
+        ((save_state_fn *)save_state_config->main_function)(&time_info, save_state_config, save_mesh_config, the_grid, the_monodomain_solver,
+            the_ode_solver, out_dir_name);
     }
 
     uint64_t res_time = stop_stop_watch(&solver_time);

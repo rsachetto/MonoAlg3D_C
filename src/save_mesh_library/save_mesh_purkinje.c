@@ -10,9 +10,9 @@
 #include "../config/save_mesh_config.h"
 #include "../utils/utils.h"
 
-#include "../vtk_utils/vtk_unstructured_grid.h"
-#include "../vtk_utils/vtk_polydata_grid.h"
 #include "../libraries_common/common_data_structures.h"
+#include "../vtk_utils/vtk_polydata_grid.h"
+#include "../vtk_utils/vtk_unstructured_grid.h"
 
 #include "save_mesh_helper.h"
 
@@ -33,15 +33,14 @@ char *output_dir;
 
 static bool initialized = false;
 
-
 INIT_SAVE_MESH(init_save_as_vtk_or_vtp) {
     config->persistent_data = malloc(sizeof(struct save_as_vtp_persistent_data));
-    ((struct save_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
-    ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call = true;
+    ((struct save_as_vtp_persistent_data *)config->persistent_data)->grid = NULL;
+    ((struct save_as_vtp_persistent_data *)config->persistent_data)->first_save_call = true;
 }
 
 END_SAVE_MESH(end_save_as_vtk_or_vtp) {
-    free_vtk_polydata_grid(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid);
+    free_vtk_polydata_grid(((struct save_as_vtp_persistent_data *)config->persistent_data)->grid);
     free(config->persistent_data);
 }
 
@@ -49,7 +48,7 @@ SAVE_MESH(save_as_vtp_purkinje) {
 
     int iteration_count = time_info->iteration;
 
-    if(((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call) {
+    if(((struct save_as_vtp_persistent_data *)config->persistent_data)->first_save_call) {
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
@@ -59,10 +58,11 @@ SAVE_MESH(save_as_vtp_purkinje) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config, "compression_level");
 
-        if(compress) binary = true;
+        if(compress)
+            binary = true;
 
         if(!save_pvd) {
-            ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+            ((struct save_as_vtp_persistent_data *)config->persistent_data)->first_save_call = false;
         }
     }
 
@@ -87,7 +87,6 @@ SAVE_MESH(save_as_vtp_purkinje) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config, "max_z");
     }
 
-
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtp");
@@ -97,18 +96,19 @@ SAVE_MESH(save_as_vtp_purkinje) {
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) {
-        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call);
-        ((struct save_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_as_vtp_persistent_data *)config->persistent_data)->first_save_call);
+        ((struct save_as_vtp_persistent_data *)config->persistent_data)->first_save_call = false;
     }
 
-    bool read_only_data = ((struct save_as_vtp_persistent_data *) config->persistent_data)->grid != NULL;
-    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    bool read_only_data = ((struct save_as_vtp_persistent_data *)config->persistent_data)->grid != NULL;
+    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_as_vtp_persistent_data *)config->persistent_data)->grid, the_grid->purkinje, clip_with_plain,
+                                             plain_coords, clip_with_bounds, bounds, read_only_data);
 
     if(compress) {
-        save_vtk_polydata_grid_as_vtp_compressed(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
-    }
-    else {
-        save_vtk_polydata_grid_as_vtp(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+        save_vtk_polydata_grid_as_vtp_compressed(((struct save_as_vtp_persistent_data *)config->persistent_data)->grid, output_dir_with_file,
+                                                 compression_level);
+    } else {
+        save_vtk_polydata_grid_as_vtp(((struct save_as_vtp_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary);
     }
 
     sdsfree(output_dir_with_file);
@@ -120,7 +120,7 @@ SAVE_MESH(save_as_vtk_purkinje) {
     char *output_dir;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
 
-    if(!initialized){
+    if(!initialized) {
 
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
@@ -155,35 +155,35 @@ SAVE_MESH(save_as_vtk_purkinje) {
     sds base_name = create_base_name(file_prefix, time_info->iteration, "vtk");
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, time_info->current_t);
 
-    bool read_only_data = ((struct save_as_vtp_persistent_data *) config->persistent_data)->grid != NULL;
-    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    bool read_only_data = ((struct save_as_vtp_persistent_data *)config->persistent_data)->grid != NULL;
+    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_as_vtp_persistent_data *)config->persistent_data)->grid, the_grid->purkinje, clip_with_plain,
+                                             plain_coords, clip_with_bounds, bounds, read_only_data);
 
-    save_vtk_polydata_grid_as_legacy_vtk(((struct save_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+    save_vtk_polydata_grid_as_legacy_vtk(((struct save_as_vtp_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary);
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
-
 }
 
 INIT_SAVE_MESH(init_save_tissue_as_vtk_or_vtu_purkinje_as_vtp) {
     config->persistent_data = malloc(sizeof(struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data));
-    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
-    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje = NULL;
-    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = true;
+    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid = NULL;
+    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid_purkinje = NULL;
+    ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->first_save_call = true;
 }
 
 END_SAVE_MESH(end_save_tissue_as_vtk_or_vtu_purkinje_as_vtp) {
-    free_vtk_polydata_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje);
-    free_vtk_unstructured_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid);
+    free_vtk_polydata_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid_purkinje);
+    free_vtk_unstructured_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid);
     free(config->persistent_data);
 }
 
 SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
 
-// [TISSUE]
+    // [TISSUE]
     int iteration_count = time_info->iteration;
 
-    if(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call) {
+    if(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->first_save_call) {
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix_purkinje, config, "file_prefix_purkinje");
@@ -194,10 +194,11 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config, "compression_level");
 
-        if(compress) binary = true;
+        if(compress)
+            binary = true;
 
         if(!save_pvd) {
-            ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+            ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->first_save_call = false;
         }
     }
 
@@ -222,7 +223,6 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
         GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, bounds[5], config, "max_z");
     }
 
-
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
     sds base_name = create_base_name(file_prefix, iteration_count, "vtu");
@@ -232,26 +232,29 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) {
-        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call);
-        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+        add_file_to_pvd(current_t, output_dir, base_name,
+                        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->first_save_call);
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->first_save_call = false;
     }
 
-    bool read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+    bool read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid != NULL;
+    new_vtk_unstructured_grid_from_alg_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid, the_grid,
+                                            clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
 
     if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);
-    }
-    else {
-        save_vtk_unstructured_grid_as_vtu(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary);
+        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid,
+                                                     output_dir_with_file, compression_level);
+    } else {
+        save_vtk_unstructured_grid_as_vtu(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid, output_dir_with_file,
+                                          binary);
     }
 
     if(the_grid->adaptive) {
-        free_vtk_unstructured_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid);
-        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid = NULL;
+        free_vtk_unstructured_grid(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid);
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid = NULL;
     }
 
-// [PURKINJE]
+    // [PURKINJE]
 
     output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
@@ -260,37 +263,39 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) {
-        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call);
-        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->first_save_call = false;
+        add_file_to_pvd(current_t, output_dir, base_name,
+                        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->first_save_call);
+        ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->first_save_call = false;
     }
 
-    read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje != NULL;
-    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje, the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
+    read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid_purkinje != NULL;
+    new_vtk_polydata_grid_from_purkinje_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid_purkinje,
+                                             the_grid->purkinje, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data);
 
     if(compress) {
-        save_vtk_polydata_grid_as_vtp_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje, output_dir_with_file, compression_level);
-    }
-    else {
-        save_vtk_polydata_grid_as_vtp(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *) config->persistent_data)->grid_purkinje, output_dir_with_file, binary);
+        save_vtk_polydata_grid_as_vtp_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid_purkinje,
+                                                 output_dir_with_file, compression_level);
+    } else {
+        save_vtk_polydata_grid_as_vtp(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid_purkinje,
+                                      output_dir_with_file, binary);
     }
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
-
 }
 
 INIT_SAVE_MESH(init_save_purkinje_with_activation_times) {
 
     config->persistent_data = calloc(1, sizeof(struct save_coupling_with_activation_times_persistent_data));
 
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_cell_was_active, 0.0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_last_time_v, -100.0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_num_activations, 0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_activation_times, NULL);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_apds, NULL);
-    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->purkinje_grid = NULL;
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_grid = NULL;
 
-    ((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+    ((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->first_save_call = true;
 }
 
 END_SAVE_MESH(end_save_purkinje_with_activation_times) {
@@ -304,28 +309,26 @@ END_SAVE_MESH(end_save_purkinje_with_activation_times) {
     bool save_purkinje_velocity = false;
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config, "save_purkinje_velocity");
 
-    if (save_activation_time_map) {
+    if(save_activation_time_map) {
         log_info("[!] Saving activation time maps !!!!\n");
-        write_purkinje_activation_time_maps(config,the_grid,output_dir,\
-                                    file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+        write_purkinje_activation_time_maps(config, the_grid, output_dir, file_prefix_purkinje, clip_with_plain, clip_with_bounds, binary, compress,
+                                            compression_level);
     }
 
-    if (save_apd_map) {
+    if(save_apd_map) {
         log_info("[!] Saving APD map !!!!\n");
-        write_purkinje_apd_map(config,the_grid,output_dir,\
-                                    file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+        write_purkinje_apd_map(config, the_grid, output_dir, file_prefix_purkinje, clip_with_plain, clip_with_bounds, binary, compress, compression_level);
     }
 
-    if (save_purkinje_velocity) {
+    if(save_purkinje_velocity) {
         log_info("[!] Calculating Purkinje propagation velocity !!!!\n");
-        print_purkinje_propagation_velocity(config,the_grid);
+        print_purkinje_propagation_velocity(config, the_grid);
     }
 
     free(config->persistent_data);
-
 }
 
-SAVE_MESH (save_purkinje_with_activation_times) {
+SAVE_MESH(save_purkinje_with_activation_times) {
 
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
 
@@ -338,28 +341,27 @@ SAVE_MESH (save_purkinje_with_activation_times) {
     float purkinje_apd_threshold = -83.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config, "apd_threshold_purkinje");
 
-    calculate_purkinje_activation_time_and_apd(time_info,config,the_grid,time_threshold,purkinje_activation_threshold,purkinje_apd_threshold);
-
+    calculate_purkinje_activation_time_and_apd(time_info, config, the_grid, time_threshold, purkinje_activation_threshold, purkinje_apd_threshold);
 }
 
 INIT_SAVE_MESH(init_save_purkinje_coupling_with_activation_times) {
 
     config->persistent_data = calloc(1, sizeof(struct save_coupling_with_activation_times_persistent_data));
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_cell_was_active, 0.0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_last_time_v, -100.0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_num_activations, 0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_activation_times, NULL);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->tissue_apds, NULL);
-    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->tissue_grid = NULL;
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_grid = NULL;
 
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_cell_was_active, 0.0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_last_time_v, -100.0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_num_activations, 0);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_activation_times, NULL);
-    hmdefault(((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->purkinje_apds, NULL);
-    ((struct save_coupling_with_activation_times_persistent_data*) config->persistent_data)->purkinje_grid = NULL;
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_cell_was_active, 0.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_last_time_v, -100.0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_num_activations, 0);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_activation_times, NULL);
+    hmdefault(((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_apds, NULL);
+    ((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->purkinje_grid = NULL;
 
-    ((struct save_coupling_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+    ((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->first_save_call = true;
 }
 
 END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
@@ -373,28 +375,31 @@ END_SAVE_MESH(end_save_purkinje_coupling_with_activation_times) {
     bool save_purkinje_velocity = false;
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config, "save_purkinje_velocity");
 
-    if (save_activation_time_map) {
+    if(save_activation_time_map) {
         log_info("[!] Saving activation time maps !!!!\n");
-        write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
-        write_purkinje_activation_time_maps(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+        write_tissue_activation_time_maps(config, the_grid, output_dir, file_prefix, clip_with_plain, clip_with_bounds, binary, compress,
+                                          compression_level, save_f);
+        write_purkinje_activation_time_maps(config, the_grid, output_dir, file_prefix_purkinje, clip_with_plain, clip_with_bounds, binary,  compress,
+                                            compression_level);
     }
 
-    if (save_apd_map) {
+    if(save_apd_map) {
         log_info("[!] Saving APD map !!!!\n");
-        write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
-        write_purkinje_apd_map(config,the_grid,output_dir,file_prefix_purkinje,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level);
+        write_tissue_apd_map(config, the_grid, output_dir, file_prefix, clip_with_plain, clip_with_bounds, binary, compress, compression_level,
+                             save_f);
+        write_purkinje_apd_map(config, the_grid, output_dir, file_prefix_purkinje, clip_with_plain, clip_with_bounds, binary, compress,
+                               compression_level);
     }
 
-    if (save_purkinje_velocity) {
+    if(save_purkinje_velocity) {
         log_info("[!] Calculating Purkinje propagation velocity !!!!\n");
-        print_purkinje_propagation_velocity(config,the_grid);
+        print_purkinje_propagation_velocity(config, the_grid);
     }
 
     free(config->persistent_data);
-
 }
 
-SAVE_MESH (save_purkinje_coupling_with_activation_times) {
+SAVE_MESH(save_purkinje_coupling_with_activation_times) {
 
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
 
@@ -413,34 +418,38 @@ SAVE_MESH (save_purkinje_coupling_with_activation_times) {
     float purkinje_apd_threshold = -83.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config, "apd_threshold_purkinje");
 
-// [TISSUE]
-    calculate_tissue_activation_time_and_apd(time_info,config,the_grid,time_threshold,tissue_activation_threshold,tissue_apd_threshold);
+    // [TISSUE]
+    calculate_tissue_activation_time_and_apd(time_info, config, the_grid, time_threshold, tissue_activation_threshold, tissue_apd_threshold);
 
-// [PURKINJE]
-    calculate_purkinje_activation_time_and_apd(time_info,config,the_grid,time_threshold,purkinje_activation_threshold,purkinje_apd_threshold);
-
+    // [PURKINJE]
+    calculate_purkinje_activation_time_and_apd(time_info, config, the_grid, time_threshold, purkinje_activation_threshold, purkinje_apd_threshold);
 }
 
 INIT_SAVE_MESH(init_save_one_cell_state_variables) {
     config->persistent_data = malloc(sizeof(struct save_one_cell_state_variables_persistent_data));
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR( ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, config, "file_name");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_x, config, "cell_center_x");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_y, config, "cell_center_y");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_center_z, config, "cell_center_z");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file_name, config,
+                                               "file_name");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->cell_center_x,
+                                                config, "cell_center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->cell_center_y,
+                                                config, "cell_center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->cell_center_z,
+                                                config, "cell_center_z");
 
-    ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file = fopen(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name, "w");
-    ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->cell_sv_position = -1;
+    ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file =
+        fopen(((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file_name, "w");
+    ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_position = -1;
 }
 
 END_SAVE_MESH(end_save_one_cell_state_variables) {
-    free(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file_name);
-    fclose(((struct save_one_cell_state_variables_persistent_data *) config->persistent_data)->file);
+    free(((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file_name);
+    fclose(((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file);
     free(config->persistent_data);
 }
 
 SAVE_MESH(save_one_cell_state_variables) {
 
-    struct save_one_cell_state_variables_persistent_data *params = ((struct save_one_cell_state_variables_persistent_data *) config->persistent_data);
+    struct save_one_cell_state_variables_persistent_data *params = ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data);
 
     if(params->cell_sv_position == -1) {
         if(!the_grid->adaptive) {
@@ -456,34 +465,31 @@ SAVE_MESH(save_one_cell_state_variables) {
 
     if(ode_solver->gpu) {
 #ifdef COMPILE_CUDA
-            int num_odes = ode_solver->model_data.number_of_ode_equations;
-            real *cell_sv;
-
-            cell_sv = (real *)malloc(sizeof(real) * num_odes);
-
-            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position,
-                                           ode_solver->pitch, sizeof(real),
-                                           ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
-
-            fprintf(params->file, "%lf ", time_info->current_t);
-            for (int i = 0; i < num_odes; i++) {
-                fprintf(params->file,"%lf ",cell_sv[i]);
-            }
-            fprintf(params->file, "\n");
-
-            free(cell_sv);
-#endif
-    }
-    else {
-
         int num_odes = ode_solver->model_data.number_of_ode_equations;
-        real *cell_sv =  &ode_solver->sv[params->cell_sv_position * num_odes];
+        real *cell_sv;
+
+        cell_sv = (real *)malloc(sizeof(real) * num_odes);
+
+        check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
+                                      ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
         fprintf(params->file, "%lf ", time_info->current_t);
-        for (int i = 0; i < num_odes; i++) {
-            fprintf(params->file,"%lf ",cell_sv[i]);
+        for(int i = 0; i < num_odes; i++) {
+            fprintf(params->file, "%lf ", cell_sv[i]);
+        }
+        fprintf(params->file, "\n");
+
+        free(cell_sv);
+#endif
+    } else {
+
+        int num_odes = ode_solver->model_data.number_of_ode_equations;
+        real *cell_sv = &ode_solver->sv[params->cell_sv_position * num_odes];
+
+        fprintf(params->file, "%lf ", time_info->current_t);
+        for(int i = 0; i < num_odes; i++) {
+            fprintf(params->file, "%lf ", cell_sv[i]);
         }
         fprintf(params->file, "\n");
     }
-
 }
