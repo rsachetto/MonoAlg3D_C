@@ -528,25 +528,17 @@ SAVE_MESH(save_as_vtu) {
 
 }
 
-struct save_with_activation_times_persistent_data {
-    struct point_hash_entry *last_time_v;
-    struct point_hash_entry *num_activations;
-    struct point_hash_entry *cell_was_active;
-    struct point_voidp_hash_entry *activation_times;
-    struct point_voidp_hash_entry *apds;
-    bool first_save_call;
-
-};
-
 INIT_SAVE_MESH(init_save_with_activation_times) {
 
-    config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->num_activations, 0);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
-    hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
-    ((struct save_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+    if(config->persistent_data == NULL) {
+        config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
+        hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->cell_was_active, 0.0);
+        hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->last_time_v, -100.0);
+        hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->num_activations, 0);
+        hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->activation_times, NULL);
+        hmdefault(((struct save_with_activation_times_persistent_data*)config->persistent_data)->apds, NULL);
+        ((struct save_with_activation_times_persistent_data*)config->persistent_data)->first_save_call = true;
+    }
 
 }
 
@@ -646,7 +638,7 @@ SAVE_MESH(save_with_activation_times) {
                         if (act_times_len == 0) {
                             n_activations++;
                             hmput(persistent_data->num_activations, cell_coordinates, n_activations);
-                                    arrput(activation_times_array, current_t);
+                            arrput(activation_times_array, current_t);
                             float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
                             hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
                             hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
@@ -655,7 +647,7 @@ SAVE_MESH(save_with_activation_times) {
                             if (current_t - last_act_time > time_threshold) {
                                 n_activations++;
                                 hmput(persistent_data->num_activations, cell_coordinates, n_activations);
-                                        arrput(activation_times_array, current_t);
+                                arrput(activation_times_array, current_t);
                                 float tmp = hmget(persistent_data->cell_was_active, cell_coordinates);
                                 hmput(persistent_data->cell_was_active, cell_coordinates, tmp + 1);
                                 hmput(persistent_data->activation_times, cell_coordinates, activation_times_array);
@@ -666,7 +658,8 @@ SAVE_MESH(save_with_activation_times) {
                     //CHECK APD
                     bool was_active = (hmget(persistent_data->cell_was_active, cell_coordinates) != 0.0);
                     if (was_active) {
-                        if (v <= apd_threshold || (hmget(persistent_data->cell_was_active, cell_coordinates) == 2.0) || (last_t-current_t) <= dt) {
+                        if (v <= apd_threshold || (hmget(persistent_data->cell_was_active, cell_coordinates) == 2.0)) {
+
 
                             int tmp = (int)hmget(persistent_data->cell_was_active, cell_coordinates);
                             int act_time_array_len = arrlen(activation_times_array);
@@ -674,7 +667,7 @@ SAVE_MESH(save_with_activation_times) {
                             // we need to get the activation before this one
                             real_cpu last_act_time = activation_times_array[act_time_array_len  - tmp];
                             real_cpu apd = current_t - last_act_time;
-                                    arrput(apds_array, apd);
+                            arrput(apds_array, apd);
                             hmput(persistent_data->apds, cell_coordinates, apds_array);
                             hmput(persistent_data->cell_was_active, cell_coordinates, tmp - 1);
                         }

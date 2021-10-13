@@ -435,8 +435,7 @@ void simplify_derefinement(struct transition_node *transition_node) {
 
         if(VALID_SIMPLE_DIRECTION(direction)) {
             derefined_cell->neighbours[direction] =  neighbor_transition_node->single_connector;
-        }
-        else {
+        } else {
             fprintf(stderr, "simplify_derefinement(). Invalid cell direction %d! Exiting...\n", direction);
             exit(10);
         }
@@ -449,33 +448,22 @@ void simplify_derefinement(struct transition_node *transition_node) {
 
             if (white_neighbor_cell->single_connector == neighbor_transition_node) {
                 white_neighbor_cell->single_connector = derefined_cell;
-            }
-
-            else if (white_neighbor_cell->quadruple_connector1 == neighbor_transition_node) {
+            } else if (white_neighbor_cell->quadruple_connector1 == neighbor_transition_node) {
                 white_neighbor_cell->quadruple_connector1 = derefined_cell;
-            }
-
-            else if (white_neighbor_cell->quadruple_connector2 == neighbor_transition_node) {
+            } else if (white_neighbor_cell->quadruple_connector2 == neighbor_transition_node) {
                 white_neighbor_cell->quadruple_connector2 = derefined_cell;
-                }
-
-            else if (white_neighbor_cell->quadruple_connector3 == neighbor_transition_node) {
+            } else if (white_neighbor_cell->quadruple_connector3 == neighbor_transition_node) {
                 white_neighbor_cell->quadruple_connector3 = derefined_cell;
-            }
-
-            else if (white_neighbor_cell->quadruple_connector4 == neighbor_transition_node) {
+            } else if (white_neighbor_cell->quadruple_connector4 == neighbor_transition_node) {
                 white_neighbor_cell->quadruple_connector4 = derefined_cell;
             }
         }
 
         free(neighbor_transition_node);
         free(transition_node);
-    }
-
-
-    /* Connects outside to the transition node, if this was not deleted. That is,
-     * the quadruple connectors point to different cells. */
-    else {
+    } else {
+        /* Connects outside to the transition node, if this was not deleted. That is,
+        * the quadruple connectors point to different cells. */
         quadruple_connector[0] = transition_node->quadruple_connector1;
         quadruple_connector[1] = transition_node->quadruple_connector2;
         quadruple_connector[2] = transition_node->quadruple_connector3;

@@ -33,6 +33,6 @@ typedef END_SAVE_MESH(end_save_mesh_fn);
         }                                                                                                              \
     } while(0)
 
-void print_save_mesh_config_values(struct config *s);
+#define print_save_mesh_config_values(s) LOG_COMMON_CONFIG("[save_mesh]", s)
 
 #endif // MONOALG3D_SAVE_MESH_CONFIG_H

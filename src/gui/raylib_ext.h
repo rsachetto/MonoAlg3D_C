@@ -15,8 +15,4 @@ typedef struct float4 {
 
 void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color* colors, Matrix *transforms, int grid_mask, int instances);
 
-void DrawCubeWithVisibilityMask(Vector3 position, float width, float height, float length, Color color, uint8_t visibility_mask);
-void DrawCubeWiresWithVisibilityMask(Vector3 position, float width, float height, float length, Color color, uint8_t visibility_mask);
-void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);
-
 #endif // MONOALG3D_C_RAYLIB_EXT_H

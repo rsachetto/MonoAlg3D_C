@@ -1,16 +1,17 @@
 //
 // Created by sachetto on 11/11/17.
 //
+
 #include <float.h>
 #include <string.h>
-#include <time.h>
+
+#include "gui.h"
 
 #include "../3dparty/stb_ds.h"
 #include "../3dparty/tinyfiledialogs/tinyfiledialogs.h"
 #include "../logger/logger.h"
 #include "../utils/file_utils.h"
 #include "color_maps.h"
-#include "gui.h"
 
 // RAYLIB//////
 #include "../3dparty/raylib/ricons.h"
@@ -30,12 +31,12 @@
 #undef RAYGUI_IMPLEMENTATION
 
 static void set_camera_params(Camera3D *camera) {
-    camera->position = (Vector3){0.1f, 0.1f, 20.f}; // Camera position
+    camera->position = (Vector3){0.1f, 0.1f, 20.f};
     camera->target = (Vector3){0.f, 0.f, 0.f};
-    camera->up = (Vector3){0.0f, 1.0f, 0.0f}; // Camera up vector (rotation towards target)
-    camera->fovy = 45.0f;                     // Camera field-of-view Y
-    camera->projection = CAMERA_PERSPECTIVE;        // Camera mode type
-    SetCameraMode(*camera, CAMERA_FREE);      // Set a free camera mode
+    camera->up = (Vector3){0.0f, 1.0f, 0.0f};
+    camera->fovy = 45.0f;
+    camera->projection = CAMERA_PERSPECTIVE;
+    SetCameraMode(*camera, CAMERA_FREE);
 }
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
@@ -54,8 +55,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->font_size_small = font_size_small*ui_scale;
     gui_state->font_size_big = font_size_big*ui_scale;
 
-    gui_state->font_spacing_big      = (float)gui_state->font_size_big / (float)gui_state->font.baseSize;
-    gui_state->font_spacing_small    = (float)gui_state->font_size_small / (float)gui_state->font.baseSize;
+    gui_state->font_spacing_big   = gui_state->font_size_big / (float)gui_state->font.baseSize;
+    gui_state->font_spacing_small = gui_state->font_size_small / (float)gui_state->font.baseSize;
 
     gui_state->handle_keyboard_input = true;
 
@@ -191,27 +192,27 @@ static Vector3 find_mesh_center(struct grid *grid_to_draw, struct mesh_info *mes
         for(uint32_t i = 0; i < n_active; i++) {
             grid_cell = ac[i];
             if(grid_cell->center.x > mesh_max_x) {
-                mesh_max_x = grid_cell->center.x;
-                mesh_max_dx = grid_cell->discretization.x;
+                mesh_max_x = (float) grid_cell->center.x;
+                mesh_max_dx = (float) grid_cell->discretization.x;
             } else if(grid_cell->center.x < mesh_min_x) {
-                mesh_min_x = grid_cell->center.x;
-                mesh_min_dx = grid_cell->discretization.x;
+                mesh_min_x = (float) grid_cell->center.x;
+                mesh_min_dx = (float) grid_cell->discretization.x;
             }
 
             if(grid_cell->center.y > mesh_max_y) {
-                mesh_max_y = grid_cell->center.y;
-                mesh_max_dy = grid_cell->discretization.y;
+                mesh_max_y = (float) grid_cell->center.y;
+                mesh_max_dy = (float) grid_cell->discretization.y;
             } else if(grid_cell->center.y < mesh_min_y) {
-                mesh_min_y = grid_cell->center.y;
-                mesh_min_dy = grid_cell->discretization.y;
+                mesh_min_y = (float)  grid_cell->center.y;
+                mesh_min_dy = (float) grid_cell->discretization.y;
             }
 
             if(grid_cell->center.z > mesh_max_z) {
-                mesh_max_z = grid_cell->center.z;
-                mesh_max_dz = grid_cell->discretization.z;
+                mesh_max_z = (float) grid_cell->center.z;
+                mesh_max_dz = (float) grid_cell->discretization.z;
             } else if(grid_cell->center.z < mesh_min_z) {
-                mesh_min_z = grid_cell->center.z;
-                mesh_min_dz = grid_cell->discretization.z;
+                mesh_min_z = (float) grid_cell->center.z;
+                mesh_min_dz = (float) grid_cell->discretization.z;
             }
         }
     }
@@ -334,7 +335,6 @@ static Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, 
     return result;
 }
 
-
 static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_state, real_cpu min_v, real_cpu max_v, real_cpu t) {
 
     Vector3 p_draw = voxel->position_draw;
@@ -362,22 +362,20 @@ static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_st
                 gui_state->ray_hit_distance = collision.distance;
             }
 
-        }
-        else {
+        } else {
             collision.hit = false;
         }
-    }
-    else {
+    } else {
         action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
         if(aps != NULL) {
-            //This is needed when we are using adaptive meshes
+            // This is needed when we are using adaptive meshes
             hmput(gui_state->current_selected_volumes, p_mesh, *voxel);
         }
     }
 
     if(gui_state->found_volume.position_mesh.x == p_mesh.x && gui_state->found_volume.position_mesh.y == p_mesh.y &&gui_state->found_volume.position_mesh.z == p_mesh.z) {
         gui_state->current_selected_volume = *voxel;
-        gui_state->found_volume.position_mesh = (Vector3){-1. -1, -1};
+        gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};
         collision.hit = true;
     }
 
@@ -410,10 +408,9 @@ static void add_or_remove_selected_to_ap_graph(struct gui_config *gui_config, st
         gui_state->selected_time = GetTime();
 
         hmput(gui_state->current_selected_volumes, gui_state->current_selected_volume.position_mesh, gui_state->current_selected_volume);
-    }
-    else {
-        hmdel(gui_state->ap_graph_config->selected_aps, p_mesh);
-        hmdel(gui_state->current_selected_volumes, p_mesh);
+    } else {
+        (void) hmdel(gui_state->ap_graph_config->selected_aps, p_mesh);
+        (void) hmdel(gui_state->current_selected_volumes, p_mesh);
     }
 
 }
@@ -448,14 +445,14 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
     int n = hmlen(gui_state->current_selected_volumes);
 
     for(int i = 0; i < n; i++) {
-        int idx = gui_state->current_selected_volumes[i].value.draw_index;
+        uint32_t idx = gui_state->current_selected_volumes[i].value.draw_index;
         Color c = colors[idx];
         c.a = 0;
         colors[idx] = c;
     }
 }
 
-static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
+static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, Shader shader, Mesh cube, int grid_mask) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
 
@@ -470,7 +467,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
     uint32_t n_active = grid_to_draw->num_cells;
 
-    int num_points = grid_to_draw->points_per_cell;
+    uint32_t num_points = grid_to_draw->points_per_cell;
     int j = 0;
 
     struct voxel voxel;
@@ -509,13 +506,13 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
         voxel.v = grid_to_draw->values[j];
 
-        voxel.position_draw.x = (float)((mesh_center_x - mesh_offset.x) / scale);
-        voxel.position_draw.y = (float)((mesh_center_y - mesh_offset.y) / scale);
-        voxel.position_draw.z = (float)((mesh_center_z - mesh_offset.z) / scale);
+        voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
+        voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
+        voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
 
-        voxel.size.x = (float)(dx / scale);
-        voxel.size.y = (float)(dy / scale);
-        voxel.size.z = (float)(dz / scale);
+        voxel.size.x = dx / scale;
+        voxel.size.y = dy / scale;
+        voxel.size.z = dz / scale;
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
         translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
@@ -543,7 +540,7 @@ static void draw_vtk_unstructured_grid(struct gui_config *gui_config, Vector3 me
 
 }
 
-static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, real_cpu scale, struct gui_state *gui_state, Shader shader, Mesh cube, float grid_mask) {
+static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, Shader shader, Mesh cube, int grid_mask) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
@@ -555,9 +552,9 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
     uint32_t n_active = grid_to_draw->num_active_cells;
     struct cell_node **ac = grid_to_draw->active_cells;
 
-    float offsetx_over_scale = (float)(mesh_offset.x / scale);
-    float offsety_over_scale = (float)(mesh_offset.y / scale);
-    float offsetz_over_scale = (float)(mesh_offset.z / scale);
+    float offsetx_over_scale = mesh_offset.x / scale;
+    float offsety_over_scale = mesh_offset.y / scale;
+    float offsetz_over_scale = mesh_offset.z / scale;
 
     float min_v = gui_config->min_v;
     float max_v = gui_config->max_v;
@@ -567,7 +564,7 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
     gui_state->ray_mouse_over_hit_distance = FLT_MAX;
 
     Matrix *translations = RL_MALLOC(n_active*sizeof(Matrix)); // Locations of instances
-    Color *colors       = RL_MALLOC(n_active*sizeof(Color));
+    Color *colors        = RL_MALLOC(n_active*sizeof(Color));
 
     if(ac) {
 
@@ -585,16 +582,16 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 
             grid_cell = ac[i];
 
-            voxel.position_draw.x = (float)(grid_cell->center.x/scale - offsetx_over_scale);
-            voxel.position_draw.y = (float)(grid_cell->center.y/scale - offsety_over_scale);
-            voxel.position_draw.z = (float)(grid_cell->center.z/scale - offsetz_over_scale);
+            voxel.position_draw.x = (float) grid_cell->center.x/scale - offsetx_over_scale;
+            voxel.position_draw.y = (float) grid_cell->center.y/scale - offsety_over_scale;
+            voxel.position_draw.z = (float) grid_cell->center.z/scale - offsetz_over_scale;
 
-            voxel.size.x = (float)(grid_cell->discretization.x / scale);
-            voxel.size.y = (float)(grid_cell->discretization.y / scale);
-            voxel.size.z = (float)(grid_cell->discretization.z / scale);
+            voxel.size.x = (float) grid_cell->discretization.x / scale;
+            voxel.size.y = (float) grid_cell->discretization.y / scale;
+            voxel.size.z = (float) grid_cell->discretization.z / scale;
 
-            voxel.position_mesh = (Vector3){grid_cell->center.x, grid_cell->center.y, grid_cell->center.z};
-            voxel.v = grid_cell->v;
+            voxel.position_mesh = (Vector3){(float) grid_cell->center.x, (float) grid_cell->center.y, (float) grid_cell->center.z};
+            voxel.v = (float) grid_cell->v;
             voxel.matrix_position = grid_cell->grid_position;
 
             translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
@@ -622,17 +619,23 @@ static void draw_alg_mesh(struct gui_config *gui_config, Vector3 mesh_offset, re
 
 static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_config) {
 
-    if(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width > (float) gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
+    const float graph_w = gui_state->ap_graph_config->graph.width;
+    const float graph_h = gui_state->ap_graph_config->graph.height;
+
+    if(gui_state->ap_graph_config->graph.x + graph_w > (float) gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
         gui_state->ap_graph_config->graph.x = 10;
     }
 
-    if(gui_state->ap_graph_config->graph.y + gui_state->ap_graph_config->graph.height > (float) gui_state->current_window_height) {
-        gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
+    if(gui_state->ap_graph_config->graph.y + graph_h > (float) gui_state->current_window_height) {
+        gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - graph_h - 90.0f;
     }
 
     if(gui_state->ap_graph_config->graph.y < 0) {
         gui_state->ap_graph_config->graph.y = 0;
     }
+
+    const float graph_y = gui_state->ap_graph_config->graph.y;
+    const float graph_x = gui_state->ap_graph_config->graph.x;
 
     static const Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, DARKGREEN,
                                    BLUE, DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN, BLACK, MAGENTA};
@@ -650,27 +653,26 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     DrawRectangleRec(gui_state->ap_graph_config->graph, WHITE);
 
     gui_state->ap_graph_config->drag_graph_button_position =
-        (Rectangle){(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width) - 7.5f,
-            (gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+        (Rectangle){(graph_x + graph_w) - 7.5f, graph_y - 7.5f, 15.0f, 15.0f};
 
-    gui_state->ap_graph_config->move_graph_button_position = (Rectangle){(float)(gui_state->ap_graph_config->graph.x),
-        (float)(gui_state->ap_graph_config->graph.y) - 7.5f, 15.0f, 15.0f};
+    gui_state->ap_graph_config->move_graph_button_position = (Rectangle){(graph_x), graph_y - 7.5f, 15.0f, 15.0f};
 
     GuiButton(gui_state->ap_graph_config->drag_graph_button_position, " ");
     GuiButton(gui_state->ap_graph_config->move_graph_button_position, "+");
 
-    char tmp[1024];
-    sprintf(tmp, "%.2lf", gui_config->final_time);
+    char tmp[TMP_SIZE];
+
+    snprintf(tmp, TMP_SIZE, "%.2lf", gui_config->final_time);
     Vector2 text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-    sprintf(tmp, "%.2lf", gui_config->min_v);
+    snprintf(tmp, TMP_SIZE, "%.2lf", gui_config->min_v);
     Vector2 text_width_y = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-    gui_state->ap_graph_config->min_x = gui_state->ap_graph_config->graph.x + 2.6f*text_width_y.x;
-    gui_state->ap_graph_config->max_x = (float)gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width - text_width.x;
+    gui_state->ap_graph_config->min_x = graph_x + 2.6f*text_width_y.x;
+    gui_state->ap_graph_config->max_x = graph_x + graph_w - text_width.x;
 
-    gui_state->ap_graph_config->min_y = (float)gui_state->ap_graph_config->graph.y + (float)gui_state->ap_graph_config->graph.height - text_width.y;
-    gui_state->ap_graph_config->max_y = (float)gui_state->ap_graph_config->graph.y + 20.0f; // This is actually the smallest allowed y
+    gui_state->ap_graph_config->min_y = graph_y + graph_h - text_width.y;
+    gui_state->ap_graph_config->max_y = graph_y + 20.0f; // This is actually the smallest allowed y
 
     int n = hmlen(gui_state->ap_graph_config->selected_aps);
 
@@ -680,18 +682,18 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
         char *ap_text = "%d AP(s) selected (cell at %f, %f, %f)";
         double time_elapsed = GetTime() - gui_state->selected_time;
-        unsigned char alpha = (unsigned char)Clamp(255 - time_elapsed * 25, 0, 255);
+        unsigned char alpha = (unsigned char) Clamp(255.0f - (float) time_elapsed * 25.0f, 0, 255);
 
         Color c = BLACK;
         c.a = alpha;
 
-        sprintf(tmp, ap_text, n, gui_state->current_selected_volume.position_mesh.x, gui_state->current_selected_volume.position_mesh.y,
+        snprintf(tmp, TMP_SIZE, ap_text, n, gui_state->current_selected_volume.position_mesh.x, gui_state->current_selected_volume.position_mesh.y,
                 gui_state->current_selected_volume.position_mesh.z);
 
         text_width = MeasureTextEx(font, ap_text, font_size_big, spacing_big);
 
-        text_position = (Vector2){(float)(gui_state->ap_graph_config->graph.x + gui_state->ap_graph_config->graph.width / 2 - text_width.x / 1.5),
-            gui_state->ap_graph_config->graph.y - text_width.y*1.2f};
+        text_position = (Vector2){graph_x + graph_w / 2.0f - text_width.x / 1.5f,
+                                  graph_y - text_width.y*1.2f};
 
         DrawTextEx(font, tmp, text_position, font_size_big, spacing_big, c);
 
@@ -704,15 +706,15 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     Vector2 p1, p2;
 
     uint32_t num_ticks;
-    real_cpu tick_ofsset = 10;
+    float tick_ofsset = 10;
     num_ticks = (int)(gui_config->final_time / tick_ofsset);
 
     if(num_ticks < MIN_HORIZONTAL_TICKS) {
         num_ticks = MIN_HORIZONTAL_TICKS;
-        tick_ofsset = gui_config->final_time / num_ticks;
+        tick_ofsset = gui_config->final_time / (float) num_ticks;
     } else if(num_ticks > MAX_HORIZONTAL_TICKS) {
         num_ticks = MAX_HORIZONTAL_TICKS;
-        tick_ofsset = gui_config->final_time / num_ticks;
+        tick_ofsset = gui_config->final_time / (float) num_ticks;
     }
 
     char *time_text;
@@ -730,33 +732,38 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     // Draw x label
     text_width = MeasureTextEx(font, time_text, font_size_big, spacing_big);
+
     gui_state->ap_graph_config->min_y -= text_width.y*1.5f;
 
-    text_position = (Vector2){gui_state->ap_graph_config->graph.x + (float)gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f,
-        (float)gui_state->ap_graph_config->min_y + text_width.y};
+    float min_x = gui_state->ap_graph_config->min_x;
+    float min_y = gui_state->ap_graph_config->min_y;
+
+    float max_x = gui_state->ap_graph_config->max_x;
+    float max_y = gui_state->ap_graph_config->max_y;
+
+    text_position = (Vector2){graph_x + gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f, min_y + text_width.y};
 
     DrawTextEx(font, time_text, text_position, font_size_big, spacing_big, BLACK);
 
-
-    real_cpu time = 0.0;
+    float time = 0.0f;
 
     // Draw horizontal ticks (t)
     for(uint32_t t = 0; t <= num_ticks; t++) {
 
-        p1.x = Remap(time, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
-        p1.y = gui_state->ap_graph_config->min_y - 5;
+        p1.x = Remap(time, 0.0f, gui_config->final_time, min_x, max_x);
+        p1.y = min_y - 5;
 
         p2.x = p1.x;
-        p2.y = gui_state->ap_graph_config->min_y + 5;
+        p2.y = min_y + 5;
 
         if(!(t % 2)) {
 
-            float remaped_data  = Remap(p1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
+            float remaped_data = Remap(p1.x, min_x, max_x, 0.0f, gui_config->final_time);
+
             if(steps) {
-                sprintf(tmp, time_template, (int) remaped_data);
-            }
-            else {
-                sprintf(tmp, time_template, remaped_data);
+                snprintf(tmp, TMP_SIZE, time_template, (int) remaped_data);
+            } else {
+                snprintf(tmp, TMP_SIZE, time_template, remaped_data);
             }
 
             text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
@@ -774,41 +781,41 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
 
     if(num_ticks < MIN_VERTICAL_TICKS) {
         num_ticks = MIN_VERTICAL_TICKS;
-        tick_ofsset = (gui_config->max_v - gui_config->min_v) / num_ticks;
+        tick_ofsset = (gui_config->max_v - gui_config->min_v) / (float) num_ticks;
     } else if(num_ticks > MAX_VERTICAL_TICKS) {
         num_ticks = MAX_VERTICAL_TICKS;
-        tick_ofsset = (gui_config->max_v - gui_config->min_v) / num_ticks;
+        tick_ofsset = (gui_config->max_v - gui_config->min_v) / (float) num_ticks;
     }
-
 
     // Draw y label
     {
         char *label;
         label = "Vm (mV)";
         text_width = MeasureTextEx(font, label, font_size_big, spacing_big);
-        text_position = (Vector2){gui_state->ap_graph_config->graph.x + 15, gui_state->ap_graph_config->min_y - ((gui_state->ap_graph_config->min_y - gui_state->ap_graph_config->max_y) / 2.0f) + (text_width.x / 2.0f)};
-        //DrawTextEx2(font, label, text_position, font_size_big, spacing_big, BLACK);
+
+        text_position.x =  gui_state->ap_graph_config->graph.x + 15;
+        text_position.y =  min_y - ((min_y - max_y) / 2.0f) + (text_width.x / 2.0f);
+
         DrawTextPro(font, label, text_position, (Vector2){0,0}, -90, font_size_big, spacing_big, BLACK);
     }
 
 
-    real_cpu v = gui_config->min_v;
-    sprintf(tmp, "%.2lf", v);
+    float v = (float) gui_config->min_v;
+    snprintf(tmp, TMP_SIZE, "%.2lf", v);
     Vector2 max_w = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
     // Draw vertical ticks (Vm)
     for(uint32_t t = 0; t <= num_ticks; t++) {
 
         p1.x = (float)gui_state->ap_graph_config->graph.x + 5.0f;
-        p1.y = Remap(v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
+        p1.y = Remap(v, gui_config->min_v, gui_config->max_v, min_y, gui_state->ap_graph_config->max_y);
 
-        sprintf(tmp, "%.2lf", Remap(p1.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v));
+        snprintf(tmp, TMP_SIZE, "%.2lf", Remap(p1.y, min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v));
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
-        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - text_width.x / 2) + 20, p1.y - text_width.y / 2.0f}, font_size_small, spacing_small,
-                RED);
+        DrawTextEx(font, tmp, (Vector2){p1.x + (max_w.x - text_width.x / 2) + 20, p1.y - text_width.y / 2.0f}, font_size_small, spacing_small, RED);
 
-        p1.x = gui_state->ap_graph_config->min_x - 5.0f;
+        p1.x = min_x - 5.0f;
         p2.x = p1.x + 10.0f;
         p2.y = p1.y;
 
@@ -821,23 +828,22 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         v += tick_ofsset;
     }
 
-
     // Draw vertical line
     {
-        p1.x = gui_state->ap_graph_config->min_x;
-        p1.y = gui_state->ap_graph_config->min_y + 5;
+        p1.x = min_x;
+        p1.y = min_y + 5;
 
         p2.x = p1.x;
-        p2.y = gui_state->ap_graph_config->max_y;
+        p2.y = max_y;
         DrawLineV(p1, p2, RED);
     }
 
     // Draw horizontal line
     {
-        p1.x = gui_state->ap_graph_config->min_x;
-        p1.y = gui_state->ap_graph_config->min_y;
+        p1.x = min_x;
+        p1.y = min_y;
 
-        p2.x = gui_state->ap_graph_config->max_x;
+        p2.x = max_x;
         p2.y = p1.y;
         DrawLineV(p1, p2, RED);
     }
@@ -858,11 +864,11 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                 if(aps[i].t <= gui_config->time) {
                     if(i + step < c) {
 
-                        p1.x = Remap(aps[i].t, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
-                        p1.y = Remap(aps[i].v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
+                        p1.x = Remap(aps[i].t, 0.0f, gui_config->final_time, min_x, max_x);
+                        p1.y = Remap(aps[i].v, gui_config->min_v, gui_config->max_v, min_y, max_y);
 
-                        p2.x = Remap(aps[i + step].t, 0.0f, gui_config->final_time, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x);
-                        p2.y = Remap(aps[i + step].v, gui_config->min_v, gui_config->max_v, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y);
+                        p2.x = Remap(aps[i + step].t, 0.0f, gui_config->final_time, min_x, max_x);
+                        p2.y = Remap(aps[i + step].v, gui_config->min_v, gui_config->max_v, min_y, max_y);
 
                         // TODO: create an option for this???
                         if(aps[i + step].v > gui_config->max_v)
@@ -871,7 +877,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
                             gui_config->min_v = aps[i + step].v;
 
                         //DrawLineV(p1, p2, line_color);
-                        DrawLineEx(p1, p2, 2.0, line_color);
+                        DrawLineEx(p1, p2, 2.0f, line_color);
                     }
                 }
             }
@@ -881,13 +887,13 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
     // Draw AP coordinates over mouse cursor
     if(!gui_state->ap_graph_config->drag_ap_graph && gui_state->ap_graph_config->selected_ap_point.x != FLT_MAX &&
             gui_state->ap_graph_config->selected_ap_point.y != FLT_MAX
-            && gui_state->mouse_pos.x < gui_state->ap_graph_config->max_x
-            && gui_state->mouse_pos.x > gui_state->ap_graph_config->min_x
-            && gui_state->mouse_pos.y < gui_state->ap_graph_config->min_y
-            && gui_state->mouse_pos.y > gui_state->ap_graph_config->max_y) {
+            && gui_state->mouse_pos.x < max_x
+            && gui_state->mouse_pos.x > min_x
+            && gui_state->mouse_pos.y < min_y
+            && gui_state->mouse_pos.y > max_y) {
 
         char *tmp_point = "%.2lf, %.2lf";
-        sprintf(tmp, tmp_point, gui_state->ap_graph_config->selected_ap_point.x, gui_state->ap_graph_config->selected_ap_point.y);
+        snprintf(tmp, TMP_SIZE, tmp_point, gui_state->ap_graph_config->selected_ap_point.x, gui_state->ap_graph_config->selected_ap_point.y);
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
         DrawTextEx(font, tmp, (Vector2){gui_state->mouse_pos.x - text_width.x / 2, gui_state->mouse_pos.y - text_width.y}, font_size_small, spacing_small,
                 BLACK);
@@ -901,11 +907,11 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_config *gui_co
         DrawCircleV(gui_state->ap_graph_config->selected_point_for_apd2, 4, RED);
         DrawLineV(gui_state->ap_graph_config->selected_point_for_apd1, gui_state->ap_graph_config->selected_point_for_apd2, RED);
 
-        float t1 = Remap(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
-        float t2 = Remap(gui_state->ap_graph_config->selected_point_for_apd2.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
+        float t1 = Remap(gui_state->ap_graph_config->selected_point_for_apd1.x, min_x, max_x, 0.0f, gui_config->final_time);
+        float t2 = Remap(gui_state->ap_graph_config->selected_point_for_apd2.x, min_x, max_x, 0.0f, gui_config->final_time);
 
         char *tmp_point = "dt = %.4lf";
-        sprintf(tmp, tmp_point, fabsf(t2 - t1));
+        snprintf(tmp, TMP_SIZE, tmp_point, fabsf(t2 - t1));
         text_width = MeasureTextEx(font, tmp, font_size_small, spacing_small);
 
         float x = fminf(gui_state->ap_graph_config->selected_point_for_apd1.x, gui_state->ap_graph_config->selected_point_for_apd2.x);
@@ -944,7 +950,7 @@ static void check_window_bounds(Rectangle *box, float current_window_width, floa
         move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
 }
 
-static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_state, bool int_scale) {
+static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bool int_scale) {
 
     float scale_width = 20*gui_state->ui_scale;
     check_window_bounds(&(gui_state->scale_bounds), (float) gui_state->current_window_width, (float) gui_state->current_window_height);
@@ -952,28 +958,28 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
     float spacing_small = gui_state->font_spacing_small;
     float spacing_big = gui_state->font_spacing_big;
 
-    int num_ticks;
-    real_cpu tick_ofsset = 12;
+    uint32_t num_ticks;
+    float tick_ofsset = 12.0f;
 
     if(!int_scale) {
-        num_ticks = (int)((max_v - min_v) / tick_ofsset);
+        num_ticks = (uint32_t)((max_v - min_v) / tick_ofsset);
 
         if(num_ticks < 5) {
             num_ticks = 5;
-            tick_ofsset = (max_v - min_v) / num_ticks;
+            tick_ofsset = (max_v - min_v) / (float)num_ticks;
         }
     } else {
         num_ticks = 0;
-        for(int i = min_v; i < max_v; i++) {
+        for(uint32_t i = (uint32_t) min_v; i < (uint32_t) max_v; i++) {
             num_ticks++;
         }
-        tick_ofsset = (max_v - min_v) / num_ticks;
+        tick_ofsset = (max_v - min_v) / (float)num_ticks;
     }
 
-    char tmp[256];
+    char tmp[TMP_SIZE];
 
-    real_cpu v = max_v;
-    sprintf(tmp, "%.2lf", v);
+    float v = max_v;
+    snprintf(tmp, TMP_SIZE, "%.2lf", v);
     Vector2 max_w = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, spacing_small);
 
     Vector2 p1, p2, width;
@@ -992,7 +998,6 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
         gui_state->calc_scale_bounds = false;
     }
 
-
     if(!int_scale) {
         width = MeasureTextEx(gui_state->font, "Vm", gui_state->font_size_big, spacing_big);
         float diff = (float) scale_width - width.x;
@@ -1008,7 +1013,7 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
         p1.x = gui_state->scale_bounds.x - 50.0f*gui_state->ui_scale;
         p1.y = initial_y + (float)scale_rec_height / 2.0f;
 
-        sprintf(tmp, "%.2lf", v);
+        snprintf(tmp, TMP_SIZE, "%.2lf", v);
         width = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, spacing_small);
 
         DrawTextEx(gui_state->font, tmp, (Vector2){p1.x + (max_w.x - width.x), p1.y - width.y / 2.0f}, gui_state->font_size_small, spacing_small, BLACK);
@@ -1026,7 +1031,8 @@ static void draw_scale(real_cpu min_v, real_cpu max_v, struct gui_state *gui_sta
     }
 }
 
-static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, float font_size_for_line, float font_spacing, Font font, float current_window_width, float current_window_height) {
+static void draw_box(Rectangle *box, int text_offset, const char **lines, int num_lines, float font_size_for_line,
+                     float font_spacing, Font font, float current_window_width, float current_window_height) {
 
     check_window_bounds(box, current_window_width, current_window_height);
 
@@ -1045,38 +1051,35 @@ static void draw_box(Rectangle *box, int text_offset, const char **lines, int nu
 
 static inline void configure_end_info_box_strings(struct gui_config *gui_config, char ***info_string) {
 
-    char tmp[128];
+    char tmp[TMP_SIZE];
 
     int index = 0;
 
-    sprintf(tmp, "Resolution Time: %ld s", gui_config->solver_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "Resolution Time: %ld s", gui_config->solver_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "ODE Total Time: %ld s", gui_config->ode_total_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "ODE Total Time: %ld s", gui_config->ode_total_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "CG Total Time: %ld s", gui_config->cg_total_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "CG Total Time: %ld s", gui_config->cg_total_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "Mat time: %ld s", gui_config->total_mat_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "Mat time: %ld s", gui_config->total_mat_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "Refine time: %ld s", gui_config->total_ref_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "Refine time: %ld s", gui_config->total_ref_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "Unrefine time: %ld s", gui_config->total_deref_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "Unrefine time: %ld s", gui_config->total_deref_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "Write time: %ld s", gui_config->total_write_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "Write time: %ld s", gui_config->total_write_time / 1000 / 1000);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "Initial configuration time: %ld s", gui_config->total_config_time / 1000 / 1000);
+    snprintf(tmp, TMP_SIZE, "CG Total Iterations: %ld", gui_config->total_cg_it);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, "CG Total Iterations: %ld", gui_config->total_cg_it);
-    (*(info_string))[index++] = strdup(tmp);
-
-    sprintf(tmp, "Final Time: %.3lf ms", gui_config->time);
+    snprintf(tmp, TMP_SIZE, "Final Time: %.3lf ms", gui_config->time);
     (*(info_string))[index] = strdup(tmp);
 }
 
@@ -1085,7 +1088,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
     if(!gui_config->grid_info.alg_grid && !gui_config->grid_info.vtk_grid)
         return false;
 
-    char tmp[128];
+    char tmp[TMP_SIZE];
 
     int index = 0;
 
@@ -1099,55 +1102,55 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     (*(info_string))[index++] = strdup("Mesh information:");
 
-    sprintf(tmp, " - Num. of Volumes: %u", n_active);
+    snprintf(tmp, TMP_SIZE,  " - Num. of Volumes: %u", n_active);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, " - Max X: %f", mesh_info->max_size.x);
+    snprintf(tmp, TMP_SIZE,  " - Max X: %f", mesh_info->max_size.x);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, " - Max Y: %f", mesh_info->max_size.y);
+    snprintf(tmp, TMP_SIZE,  " - Max Y: %f", mesh_info->max_size.y);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, " - Max Z: %f", mesh_info->max_size.z);
+    snprintf(tmp, TMP_SIZE,  " - Max Z: %f", mesh_info->max_size.z);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, " - Min X: %f", mesh_info->min_size.x);
+    snprintf(tmp, TMP_SIZE,  " - Min X: %f", mesh_info->min_size.x);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, " - Min Y: %f", mesh_info->min_size.y);
+    snprintf(tmp, TMP_SIZE,  " - Min Y: %f", mesh_info->min_size.y);
     (*(info_string))[index++] = strdup(tmp);
 
-    sprintf(tmp, " - Min Z: %f", mesh_info->min_size.z);
+    snprintf(tmp, TMP_SIZE,  " - Min Z: %f", mesh_info->min_size.z);
     (*(info_string))[index++] = strdup(tmp);
 
     if(draw_type == DRAW_SIMULATION) {
         if(gui_config->paused) {
-            sprintf(tmp, "Simulation paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+            snprintf(tmp, TMP_SIZE,  "Simulation paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         } else if(gui_config->simulating) {
-            sprintf(tmp, "Simulation running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+            snprintf(tmp, TMP_SIZE,  "Simulation running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
 
         } else {
-            sprintf(tmp, "Simulation finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+            snprintf(tmp, TMP_SIZE,  "Simulation finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         }
     } else {
         if(gui_config->paused) {
             if(gui_config->dt == 0) {
-                sprintf(tmp, "Visualization paused: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
+                snprintf(tmp, TMP_SIZE,  "Visualization paused: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
             } else {
-                sprintf(tmp, "Visualization paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+                snprintf(tmp, TMP_SIZE,  "Visualization paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
             }
         } else if(gui_config->simulating) {
             if(gui_config->dt == 0) {
-                sprintf(tmp, "Visualization running: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
+                snprintf(tmp, TMP_SIZE,  "Visualization running: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
             } else {
-                sprintf(tmp, "Visualization running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+                snprintf(tmp, TMP_SIZE,  "Visualization running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
             }
 
         } else {
             if(gui_config->dt == 0) {
-                sprintf(tmp, "Visualization finished: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
+                snprintf(tmp, TMP_SIZE,  "Visualization finished: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
             } else {
-                sprintf(tmp, "Visualization finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+                snprintf(tmp, TMP_SIZE,  "Visualization finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
             }
         }
     }
@@ -1171,7 +1174,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
     Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
 
-    float text_box_y_dist = text_box_size.y*2.5;
+    float text_box_y_dist = text_box_size.y*2.5f;
     float label_box_y_dist = 30;
     float x_off = 10;
 
@@ -1183,8 +1186,8 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     float pos_y = gui_state->sub_window_pos.y;
 
     float box_pos = pos_x + x_off;
-    gui_state->box_width = text_box_size.x * 3.5;
-    gui_state->box_height = (text_box_size.y + text_box_y_dist)*1.6;
+    gui_state->box_width = text_box_size.x * 3.5f;
+    gui_state->box_height = (text_box_size.y + text_box_y_dist)*1.6f;
 
     bool window_closed = GuiWindowBox((Rectangle){pos_x, pos_y, gui_state->box_width, gui_state->box_height}, "Enter the center of the cell");
 
@@ -1200,7 +1203,7 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
     GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
 
-    bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2, text_box_size.x, text_box_size.y}, "OK");
+    bool btn_ok_clicked = GuiButton((Rectangle){pos_x + text_box_size.x  + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist)*1.2f, text_box_size.x, text_box_size.y}, "OK");
 
     if(btn_ok_clicked) {
         gui_state->found_volume.position_mesh.x = strtof(center_x_text, NULL);
@@ -1247,7 +1250,7 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
 
     gui_state->voxel_alpha = 255;
 
-    for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+    for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
         arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
     }
 
@@ -1272,7 +1275,7 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
 
     if(full_reset) {
 
-        for(long i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+        for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
             arrfree(gui_state->ap_graph_config->selected_aps[i].value);
         }
 
@@ -1291,7 +1294,6 @@ static void reset(struct gui_config *gui_config, struct gui_state *gui_state, bo
 
         gui_state->show_coordinates = true;
     }
-
 }
 
 static void handle_keyboard_input(struct gui_config *gui_config, struct gui_state *gui_state) {
@@ -1520,9 +1522,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
             gui_state->move_scale = true;
         }
 
-    }
-
-    else if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+    } else if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
         if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
             if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
                 if(gui_state->ap_graph_config->selected_point_for_apd1.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y == FLT_MAX) {
@@ -1551,9 +1551,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
             gui_state->move_sub_window = false;
         }
-    }
-
-    else if(gui_state->ap_graph_config->drag_ap_graph) {
+    } else if(gui_state->ap_graph_config->drag_ap_graph) {
 
         float new_heigth = gui_state->ap_graph_config->graph.height + (gui_state->ap_graph_config->graph.y - gui_state->mouse_pos.y);
 
@@ -1576,9 +1574,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
             gui_state->ap_graph_config->drag_ap_graph = false;
         }
-    }
-
-    else if(gui_state->ap_graph_config->move_ap_graph) {
+    } else if(gui_state->ap_graph_config->move_ap_graph) {
 
         if(gui_state->mouse_pos.y > 10 && gui_state->mouse_pos.x + gui_state->ap_graph_config->graph.width < (float)gui_state->current_window_width) {
             gui_state->ap_graph_config->graph.x = gui_state->mouse_pos.x;
@@ -1595,9 +1591,7 @@ static void handle_input(struct gui_config * gui_config, struct mesh_info *mesh_
         gui_state->ap_graph_config->selected_point_for_apd1.y = FLT_MAX;
         gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
         gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
-    }
-
-    else if(gui_state->move_help_box) {
+    } else if(gui_state->move_help_box) {
         drag_box(gui_state->mouse_pos, &gui_state->help_box);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
             gui_state->move_help_box = false;
@@ -1689,7 +1683,7 @@ void draw_coordinates(struct gui_state *gui_state) {
 
 void init_and_open_gui_window(struct gui_config *gui_config) {
 
-    const int end_info_box_lines = 10;
+    const int end_info_box_lines  = 9;
     const int mesh_info_box_lines = 9;
 
     omp_set_lock(&gui_config->sleep_lock);
@@ -1700,8 +1694,9 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
     int draw_type = gui_config->draw_type;
 
     if(draw_type == DRAW_SIMULATION) {
-        window_title = (char *)malloc(strlen(gui_config->config_name) + strlen("Simulation visualization - ") + 2);
-        sprintf(window_title, "Simulation visualization - %s", gui_config->config_name);
+        size_t max = strlen(gui_config->config_name) + strlen("Simulation visualization - ") + 2;
+        window_title = (char *)malloc(max);
+        snprintf(window_title, max + 1, "Simulation visualization - %s", gui_config->config_name);
     } else {
         window_title = strdup("Opening mesh...");
     }
@@ -1796,11 +1791,9 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
         if(gui_state->draw_grid_only) {
             grid_mask = 2;
-        }
-        else if(gui_state->draw_grid_lines) {
+        } else if(gui_state->draw_grid_lines) {
             grid_mask = 1;
-        }
-        else {
+        } else {
             grid_mask = 0;
         }
 
@@ -1825,8 +1818,9 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
 
             if(draw_type == DRAW_FILE) {
                 if(gui_config->grid_info.file_name) {
-                    window_title = (char *)malloc(strlen(gui_config->grid_info.file_name) + strlen("Visualizing file - ") + 2);
-                    sprintf(window_title, "Visualizing file - %s", gui_config->grid_info.file_name);
+                    size_t max = strlen(gui_config->grid_info.file_name) + strlen("Visualizing file - ") + 2;
+                    window_title = (char *)malloc(max);
+                    snprintf(window_title, max+1, "Visualizing file - %s", gui_config->grid_info.file_name);
                     SetWindowTitle(window_title);
                     free(window_title);
                 }
@@ -1903,7 +1897,8 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                             end_info_box_strings_configured = true;
                         }
                         draw_box(&gui_state->end_info_box, text_offset, (const char **)end_info_box_strings, end_info_box_lines,
-                                gui_state->font_size_small, gui_state->font_spacing_small,  gui_state->font, (float) gui_state->current_window_width, (float) gui_state->current_window_height);
+                                  gui_state->font_size_small, gui_state->font_spacing_small,  gui_state->font,
+                                  (float) gui_state->current_window_width, (float) gui_state->current_window_height);
                     }
                 }
             }
@@ -1955,7 +1950,10 @@ void init_and_open_gui_window(struct gui_config *gui_config) {
                 gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
         text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
-        DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+
+        DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
+                   gui_state->font_size_big, gui_state->font_spacing_big,
+                   BLACK);
 
         float upper_y = text_size.y + 30;
 

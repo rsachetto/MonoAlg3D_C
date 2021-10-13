@@ -50,8 +50,7 @@ void free_ode_solver(struct ode_solver *solver) {
 #ifdef COMPILE_CUDA
             cudaFree(solver->sv);
 #endif
-        }
-        else {
+        } else {
             free(solver->sv);
         }
 
@@ -198,7 +197,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time
     struct config *tmp = NULL;
 
     uint32_t i;
-    ptrdiff_t n = hmlen(stim_configs);
+    size_t n = hmlen(stim_configs);
 
     uint32_t num_steps = the_ode_solver->num_steps;
 
@@ -207,7 +206,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time
         real  stim_dur = 0.0;
         real  stim_period = 0.0;
 
-        for (long k = 0; k < n; k++) {
+        for (size_t k = 0; k < n; k++) {
             tmp = (struct config*) stim_configs[k].value;
             GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp, "start");
             GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp, "duration");
@@ -239,16 +238,10 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time
     if(the_ode_solver->gpu) {
         #ifdef COMPILE_CUDA
         solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
-       // solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data,
-       //               extra_data_size);
-
-      solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims) ;
-
+        solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims);
         #endif
-    }
-    else {
+    } else {
         solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
-        //solve_odes_pt(ode_extra_config, cur_time, dt, sv, merged_stims, the_ode_solver->cells_to_solve, n_active, num_steps, extra_data);
         solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims);
     }
 
@@ -288,8 +281,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
             }
         }
         #endif
-    }
-    else {
+    } else {
 
         OMP(parallel for private(sv_src, sv_dst))
         for (i = 0; i < num_refined_cells; i++) {
@@ -329,14 +321,12 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
 
             solver->min_dt = min_dt;
 
-        }
-        else {
+        } else {
             solver->min_dt = (real)options->dt_ode;
         }
         solver->abs_tol = options->ode_abstol;
 
-    }
-    else {
+    } else {
         if(options->dt_ode == 0.0) {
             solver->min_dt = 0.01;
         } else {
@@ -367,8 +357,7 @@ void configure_purkinje_ode_solver_from_options (struct ode_solver *purkinje_sol
     purkinje_solver->min_dt = (real)options->purkinje_dt_ode;
     purkinje_solver->gpu = options->purkinje_gpu;
 
-    if(options->purkinje_model_file_path)
-    {
+    if(options->purkinje_model_file_path) {
         free(purkinje_solver->model_data.model_library_path);
         purkinje_solver->model_data.model_library_path = strdup(options->purkinje_model_file_path);
     }
@@ -384,8 +373,7 @@ void configure_purkinje_ode_solver_from_ode_solver (struct ode_solver *purkinje_
     purkinje_solver->abs_tol = solver->abs_tol;
     purkinje_solver->rel_tol = solver->rel_tol;
 
-    if(solver->model_data.model_library_path)
-    {
+    if(solver->model_data.model_library_path) {
         purkinje_solver->model_data.model_library_path = strdup(solver->model_data.model_library_path);
     }
 }

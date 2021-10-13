@@ -1,7 +1,6 @@
 #include "graph.h"
 
-struct graph* new_graph ()
-{
+struct graph* new_graph () {
     struct graph *result = MALLOC_ONE_TYPE(struct graph);
     result->last_node = NULL;
     result->list_nodes = NULL;
@@ -11,13 +10,11 @@ struct graph* new_graph ()
     return result;
 }
 
-void free_list_edges (struct node *n)
-{
+void free_list_edges (struct node *n) {
     struct edge *e1 = n->list_edges;
     struct edge *e2 = n->list_edges->next;
 
-    while (e1 != NULL)
-    {
+    while (e1 != NULL) {
         free(e1);
         e1 = e2;
         if (e2 != NULL)
@@ -27,15 +24,14 @@ void free_list_edges (struct node *n)
     n->list_edges = NULL;
 }
 
-void free_list_nodes (struct graph *g)
-{
+void free_list_nodes (struct graph *g) {
     struct node *n1 = g->list_nodes;
     struct node *n2 = g->list_nodes->next;
 
-    while (n1 != NULL)
-    {
-        if (n1->list_edges)
+    while (n1 != NULL) {
+        if (n1->list_edges) {
             free_list_edges(n1);
+        }
 
         free(n1);
         n1 = n2;
@@ -44,18 +40,17 @@ void free_list_nodes (struct graph *g)
     }
 }
 
-void free_graph (struct graph *g)
-{
+void free_graph (struct graph *g) {
     assert(g);
 
-    if (g->list_nodes)
+    if (g->list_nodes) {
         free_list_nodes(g);
+    }
 
     free(g);
 }
 
-void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_2)
-{
+void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_2) {
     assert(g);
 
     struct node *n1, *n2;
@@ -70,11 +65,9 @@ void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_
     norm = calc_norm(n1->x,n1->y,n1->z,n2->x,n2->y,n2->z);
     edge = new_edge(id_2,norm,n2);
     // First edge
-    if (!n1->list_edges)
+    if (!n1->list_edges) {
         n1->list_edges = edge;
-    // Iterate over the list and insert to the last edge
-    else
-    {
+    } else { // Iterate over the list and insert to the last edge
         struct edge *e = n1->list_edges;
         while (e->next != NULL)
             e = e->next;
@@ -86,28 +79,22 @@ void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_
     g->total_edges++;
 }
 
-void insert_node_graph (struct graph *g, const real_cpu pos[])
-{
+void insert_node_graph (struct graph *g, const real_cpu pos[]) {
     assert(g);
 
     struct node *tmp = g->list_nodes;
     struct node *node = new_node(g->total_nodes++,pos);
     // First node of the list
-    if (!tmp)
-    {
+    if (!tmp) {
         g->list_nodes = node;
         g->last_node = node;
-    }
-    // Insert after the last node and update this pointer
-    else
-    {
+    } else { // Insert after the last node and update this pointer
         g->last_node->next = node;
         g->last_node = g->last_node->next;
     }
 }
 
-struct node* new_node (uint32_t id, const real_cpu pos[])
-{
+struct node* new_node (uint32_t id, const real_cpu pos[]) {
     struct node *n = MALLOC_ONE_TYPE(struct node);
     n->id = id;
     n->x = pos[0];
@@ -120,8 +107,7 @@ struct node* new_node (uint32_t id, const real_cpu pos[])
     return n;
 }
 
-struct edge* new_edge (uint32_t id, real_cpu w, struct node *dest)
-{
+struct edge* new_edge (uint32_t id, real_cpu w, struct node *dest) {
     struct edge *e = MALLOC_ONE_TYPE(struct edge);
     e->id = id;
     e->w = w;
@@ -131,22 +117,23 @@ struct edge* new_edge (uint32_t id, real_cpu w, struct node *dest)
     return e;
 }
 
-struct node* search_node (struct graph *g, const uint32_t id)
-{
+struct node* search_node (struct graph *g, const uint32_t id) {
     struct node *tmp = g->list_nodes;
-    while (tmp != NULL)
-    {
-        if (tmp->id == id)
+
+    while (tmp != NULL) {
+        if (tmp->id == id) {
             return tmp;
+        }
         tmp = tmp->next;
     }
+
     fprintf(stderr,"[-] ERROR! Node %d was not found!\n",id);
 
     return NULL;
 }
 
-double* dijkstra (struct graph *g, const uint32_t src_id)
-{
+double* dijkstra (struct graph *g, const uint32_t src_id) {
+
     // Initialize the shortest distance array
     uint32_t num_nodes = g->total_nodes;
     double *dist = (double*)malloc(sizeof(double)*num_nodes);
@@ -160,8 +147,7 @@ double* dijkstra (struct graph *g, const uint32_t src_id)
     // Initialize the priority queue
     ns = (struct node_t*)malloc(num_nodes * sizeof(node_t));
     pq = pqueue_init(num_nodes, cmp_pri, get_pri, set_pri, get_pos, set_pos);
-    if (!(ns && pq))
-    {
+    if (!(ns && pq)) {
         fprintf(stderr,"[graph] ERROR! Could not allocate priority queue!\n");
         exit(EXIT_FAILURE);
     }
@@ -171,22 +157,23 @@ double* dijkstra (struct graph *g, const uint32_t src_id)
     ns[src_id].val = src_id;
     pqueue_insert(pq, &ns[src_id]);
 
-    while ((n = (node_t*)pqueue_pop(pq)))
-    {
+    while ((n = (node_t*)pqueue_pop(pq))) {
+
         double d = n->pri;
         uint32_t u = n->val;
-        if (d > dist[u])
+
+        if (d > dist[u]) {
             continue;
+        }
 
         struct node *u_node = search_node(g,u);
         struct edge *tmp = u_node->list_edges;
-        while (tmp != NULL)
-        {
+
+        while (tmp != NULL) {
             uint32_t v = tmp->id;
             double w = tmp->w;
 
-            if (dist[u] + w < dist[v])
-            {
+            if (dist[u] + w < dist[v]) {
                 dist[v] = dist[u] + w;
 
                 ns[v].pri = dist[v];
@@ -204,17 +191,15 @@ double* dijkstra (struct graph *g, const uint32_t src_id)
     return dist;
 }
 
-void print_graph (struct graph *g)
-{
+void print_graph (struct graph *g) {
+
     struct node *n = g->list_nodes;
 
-    while (n != NULL)
-    {
+    while (n != NULL) {
         struct edge *e = n->list_edges;
         fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) ||",n->id,n->x,n->y,n->z);
 
-        while (e != NULL)
-        {
+        while (e != NULL) {
             fprintf(stdout," --> || %d %.3lf (%.3lf,%.3lf,%.3lf) ||",e->id,e->w,e->dest->x,e->dest->y,e->dest->z);
             e = e->next;
         }
@@ -228,13 +213,11 @@ void print_graph (struct graph *g)
 
 }
 
-real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,\
-                  const real_cpu x2, const real_cpu y2, const real_cpu z2)
-{
+real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,
+                    const real_cpu x2, const real_cpu y2, const real_cpu z2) {
     return sqrt(pow(x2-x1,2) + pow(y2-y1,2) + pow(z2-z1,2));
 }
 
-bool is_terminal (const struct node *n)
-{
+bool is_terminal (const struct node *n) {
     return (n->num_edges == 1 && n->id != 0) ? true : false;
 }

@@ -2,6 +2,7 @@
 #define MONOALG3D_COMMON_TYPES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)
@@ -18,19 +19,19 @@ typedef double real;
 typedef float real;
 #endif
 
-#define MALLOC_BYTES(type, bytes) (type *) malloc(bytes)
-#define MALLOC_ONE_TYPE(type) (type *) malloc(sizeof(type))
-#define MALLOC_ARRAY_OF_TYPE(type, n) (type *) malloc(sizeof(type) * n)
+#define MALLOC_BYTES(type, bytes) (type *)malloc(bytes)
+#define MALLOC_ONE_TYPE(type) (type *)malloc(sizeof(type))
+#define MALLOC_ARRAY_OF_TYPE(type, n) (type *)malloc(sizeof(type) * n)
 
-#define CALLOC_ONE_TYPE(type) (type *) calloc(1, sizeof(type))
-#define CALLOC_ARRAY_OF_TYPE(type, n) (type *) calloc(n, sizeof(type))
+#define CALLOC_ONE_TYPE(type) (type *)calloc(1, sizeof(type))
+#define CALLOC_ARRAY_OF_TYPE(type, n) (type *)calloc(n, sizeof(type))
 
-#define ALLOCATE_MESH_INFO(grid_cell, mesh_info_struct)                                                                \
-    do {                                                                                                               \
-        size_t __size__ = sizeof (struct mesh_info_struct);                                                            \
-        (grid_cell)->mesh_extra_info = malloc (__size__);                                                              \
-        (grid_cell)->mesh_extra_info_size = __size__;                                                                  \
-} while (0)
+#define ALLOCATE_MESH_INFO(grid_cell, mesh_info_struct)                                                                                                        \
+    do {                                                                                                                                                       \
+        size_t __size__ = sizeof(struct mesh_info_struct);                                                                                                     \
+        (grid_cell)->mesh_extra_info = malloc(__size__);                                                                                                       \
+        (grid_cell)->mesh_extra_info_size = __size__;                                                                                                          \
+    } while(0)
 
 #define MESH_INFO_DATA(grid_cell, mesh_info_struct, data_name) ((struct mesh_info_struct *)grid_cell->mesh_extra_info)->data_name
 
@@ -119,25 +120,37 @@ struct simulation_files {
     f32_array timesteps;
 };
 
+struct save_with_activation_times_persistent_data {
+    struct point_hash_entry *last_time_v;
+    struct point_hash_entry *num_activations;
+    struct point_hash_entry *cell_was_active;
+    struct point_voidp_hash_entry *activation_times;
+    struct point_voidp_hash_entry *apds;
+    bool first_save_call;
+
+};
+
+
+
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                                                                         \
     do {                                                                                                                                                       \
-        for(long i = 0; i < shlen(d); i++) {                                                                                                                   \
+        for(int64_t i = 0; i < shlen(d); i++) {                                                                                                                \
             struct string_hash_entry e = d[i];                                                                                                                 \
             printf("%s = %s\n", e.key, e.value);                                                                                                               \
         }                                                                                                                                                      \
     } while(0)
 
-#define STRING_HASH_PRINT_KEY_VALUE_LOG(d)                                                                                                                     \
+#define STRING_HASH_PRINT_KEY_VALUE_LOG(tag, d)                                                                                                                \
     do {                                                                                                                                                       \
-        for(long i = 0; i < shlen(d); i++) {                                                                                                                   \
+        for(int64_t i = 0; i < shlen(d); i++) {                                                                                                                \
             struct string_hash_entry e = d[i];                                                                                                                 \
-            log_info("%s = %s\n", e.key, e.value);                                                                                               \
+            log_info("%s %s = %s\n", tag, e.key, e.value);                                                                                                     \
         }                                                                                                                                                      \
     } while(0)
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                                                                 \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             fn(e.value);                                                                                                                                       \
         }                                                                                                                                                      \
@@ -145,7 +158,7 @@ struct simulation_files {
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(d, fn)                                                                                         \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             fn(e.value, e.key);                                                                                                                                \
         }                                                                                                                                                      \
@@ -153,7 +166,7 @@ struct simulation_files {
 
 #define STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                                                                 \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             init_config_functions(e.value, "./shared_libs/libdefault_stimuli.so", e.key);                                                                      \
         }                                                                                                                                                      \
@@ -161,10 +174,10 @@ struct simulation_files {
 
 #define MODIFY_DOMAIN_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                                                        \
     do {                                                                                                                                                       \
-        for(long i = 0; i < hmlen(d); i++) {                                                                                                                   \
+        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
             struct string_voidp_hash_entry e = d[i];                                                                                                           \
             init_config_functions(e.value, "./shared_libs/libdefault_modify_domain.so", e.key);                                                                \
         }                                                                                                                                                      \
     } while(0)
 
-#endif
+#endif // MONOALG3D_COMMON_TYPES_H

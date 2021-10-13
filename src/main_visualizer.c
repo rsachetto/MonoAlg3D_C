@@ -10,6 +10,8 @@
 #include "vtk_utils/pvd_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
 
+#define MAX_ERROR_SIZE 4096
+
 static void read_and_render_activation_map(struct gui_config *gui_config, char *input_file, char *error) {
 
     gui_config->grid_info.file_name = NULL;
@@ -20,7 +22,7 @@ static void read_and_render_activation_map(struct gui_config *gui_config, char *
     gui_config->int_scale = true;
 
     if(!gui_config->grid_info.vtk_grid) {
-        sprintf(error, "%s is not an activation map", input_file);
+        snprintf(error, MAX_ERROR_SIZE, "%s is not an activation map", input_file);
         if(gui_config->error_message) {
             free(gui_config->error_message);
         }
@@ -52,7 +54,7 @@ static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_
 
 static int read_and_render_files(struct visualization_options *options, struct gui_config *gui_config) {
 
-    char error[4096];
+    char error[MAX_ERROR_SIZE];
 
     bool using_pvd = false;
     bool single_file = false;
@@ -68,7 +70,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     get_path_information(input, &input_info);
 
     if(!input_info.exists) {
-        sprintf(error, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
+        snprintf(error, MAX_ERROR_SIZE, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
         if(gui_config->error_message) {
             free(gui_config->error_message);
         }
@@ -118,7 +120,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 
     if(!num_files) {
-        sprintf(error, "No simulations file found in %s", full_path);
+        snprintf(error, MAX_ERROR_SIZE, "No simulations file found in %s", full_path);
 
         if(gui_config->error_message)
             free(gui_config->error_message);
@@ -202,7 +204,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);
 
         if(!gui_config->grid_info.vtk_grid) {
-            sprintf(error, "Decoder not available for file %s", simulation_files->files_list[current_file]);
+            snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[current_file]);
 
             if(gui_config->error_message) {
                 free(gui_config->error_message);

@@ -20,6 +20,6 @@ typedef ASSEMBLY_MATRIX(assembly_matrix_fn);
 
 typedef INIT_ASSEMBLY_MATRIX(set_pde_initial_condition_fn);
 
-void print_assembly_matrix_config_values(struct config* s);
+#define print_assembly_matrix_config_values(s) LOG_COMMON_CONFIG("[assembly_matrix]", s)
 
 #endif //MONOALG3D_ASSEMBLY_CONFIG_H

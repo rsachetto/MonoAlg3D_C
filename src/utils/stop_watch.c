@@ -22,7 +22,7 @@ void start_stop_watch(struct stop_watch *sw) {
     sw->running = true;
 }
 
-long stop_stop_watch(struct stop_watch *sw) {
+u_int64_t stop_stop_watch(struct stop_watch *sw) {
 
     struct timeval tv_stop;
 

@@ -160,7 +160,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     }
 
     if(the_grid->adaptive) {
-
         FOR_EACH_CELL(the_grid) {
             if(cell->active) {
                 set_cell_not_changeable(cell, start_h);
@@ -207,6 +206,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_fibrotic_mesh_from_file) {
     set_square_mesh(config, the_grid);
     set_fibrosis_from_file(the_grid, fib_file, fib_size);
 
+    free(fib_file);
     return 1;
 }
 
@@ -317,6 +317,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     the_grid->start_discretization = SAME_POINT3D(start_h);
     the_grid->max_discretization = SAME_POINT3D(max_h);
 
-    return set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
+    int ret = set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
+
+    free(mesh_file);
+
+    return ret;
 
 }

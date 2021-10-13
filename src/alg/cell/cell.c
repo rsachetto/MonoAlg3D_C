@@ -164,8 +164,7 @@ void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretizati
 
     if(neighbours) {
         memcpy(the_cell->neighbours, neighbours, sizeof(void *) * NUM_NEIGHBOURS);
-    }
-    else {
+    } else {
         the_cell->neighbours = NULL;
     }
 
@@ -185,8 +184,7 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
 
     if(VALID_SIMPLE_DIRECTION(direction)) {
         neighbour_grid_cell = the_cell->neighbours[direction];
-    }
-    else {
+    } else {
         fprintf(stderr, "set_cell_flux(). Invalid cell direction %c! Exiting...\n", direction);
         exit(10);
     }
@@ -377,38 +375,31 @@ struct cell_node *get_cell_neighbour(struct cell_node *grid_cell, void *neighbou
                 white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
                 if(white_neighbor_cell->single_connector == NULL) {
                     return NULL;
-                }
-                else {
+                } else {
 
                     if(neighbour_grid_cell_level > grid_cell->cell_data.level) {
                         neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
-                    }
-                    else {
+                    } else {
                         neighbour_grid_cell = white_neighbor_cell->single_connector;
                     }
 
                     neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
                 }
-            }
-            else {
+            } else {
 
                 black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
                 if(black_neighbor_cell->active) {
                     return black_neighbor_cell;
-                }
-
-                else {
+                } else {
                     return NULL;
                 }
             }
         }
-    }
-    else {
+    } else {
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
         if(black_neighbor_cell->active) {
             return black_neighbor_cell;
-        }
-        else {
+        } else {
             return NULL;
         }
     }
@@ -421,8 +412,7 @@ bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) 
 
     if(black_neighbor_cell) {
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 
@@ -436,22 +426,23 @@ struct cell_node * get_cell_neighbour_with_same_refinement_level(struct cell_nod
         cell_data = (struct basic_cell_data *)grid_cell->neighbours[direction];
         if(cell_data->type == TRANSITION_NODE) {
             return NULL;
-        }
-        else {
+        } else {
             return (struct cell_node *)cell_data;
         }
-    }
-    else if(VALID_DIAGONAL_POINT_DIRECTION(direction)) {
+    } else if(VALID_DIAGONAL_POINT_DIRECTION(direction)) {
 
         if(STARTS_WITH_FRONT(direction)) {
             cell_data = (struct basic_cell_data *)grid_cell->neighbours[FRONT];
         }
+
         if(STARTS_WITH_BACK(direction)) {
             cell_data = (struct basic_cell_data *)grid_cell->neighbours[BACK];
         }
+
         if(STARTS_WITH_TOP(direction) ) {
             cell_data = (struct basic_cell_data *)grid_cell->neighbours[TOP];
         }
+
         if(STARTS_WITH_DOWN(direction)) {
             cell_data = (struct basic_cell_data *)grid_cell->neighbours[DOWN];
         }
@@ -516,13 +507,11 @@ struct cell_node * get_cell_neighbour_with_same_refinement_level(struct cell_nod
 
         if(!cell_data || cell_data->type == TRANSITION_NODE) {
             return NULL;
-        }
-        else {
+        } else {
             return (struct cell_node *)cell_data;
         }
 
-    }
-    else {
+    } else {
         fprintf(stderr, "get_cell_neighbour_with_same_refinement_level() invalid direction %d. Exiting!", direction);
         exit(10);
     }

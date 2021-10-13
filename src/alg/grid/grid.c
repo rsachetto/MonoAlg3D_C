@@ -283,10 +283,8 @@ void clean_grid(struct grid *the_grid) {
                 grid_cell = next;
             }
         }
-    }
-    // Delete the tissue cells
-    else {
-
+    } else {
+        // Delete the tissue cells
         // In order to release the memory allocated for the grid, the grid is
         // derefined to level 1. Thus, the grid shape is known and each node can
         // be easily reached.
@@ -584,8 +582,7 @@ void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_p
 
     if(is_purkinje) {
         cell = the_grid->purkinje->first_cell;
-    }
-    else {
+    } else {
         cell = the_grid->first_cell;
     }
 
@@ -632,9 +629,9 @@ void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_p
 void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vector_b) {
 
     uint32_t n_cells;
-    long num_lines_m = 0;
-    long num_lines_v = 0;
-    long nnz = 0;
+    uint64_t num_lines_m = 0;
+    uint64_t num_lines_v = 0;
+    uint64_t nnz = 0;
 
     real_cpu **matrix = read_octave_mat_file_to_array(matrix_a, &num_lines_m, &nnz);
     real_cpu *vector = NULL;
@@ -670,7 +667,7 @@ void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vecto
 
     real_cpu m_value;
 
-    for(long i = 0; i < num_lines_m; i++) {
+    for(uint64_t i = 0; i < num_lines_m; i++) {
 
         cell_position = cell->grid_position;
         m_value = matrix[cell_position][cell_position];
@@ -682,7 +679,7 @@ void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vecto
         arrsetcap(cell->elements, 7);
         arrput(cell->elements, el);
 
-        for(long j = 0; j < num_lines_m; j++) {
+        for(uint64_t j = 0; j < num_lines_m; j++) {
             if(cell_position != j) {
                 m_value = matrix[cell_position][j];
 
@@ -708,14 +705,14 @@ void construct_grid_from_file(struct grid *the_grid, FILE *matrix_a, FILE *vecto
 
     if(vector) {
         cell = the_grid->first_cell;
-        for(long i = 0; i < num_lines_v; i++) {
+        for(uint64_t i = 0; i < num_lines_v; i++) {
             cell->b = vector[cell->grid_position];
             cell->v = 1.0;
             cell = cell->next;
         }
     }
 
-    for(long i = 0; i < num_lines_m; i++) {
+    for(uint64_t i = 0; i < num_lines_m; i++) {
         free(matrix[i]);
     }
 
@@ -728,12 +725,9 @@ struct terminal *link_purkinje_to_tissue (struct grid *the_grid) {
 
     struct graph *the_network = the_grid->purkinje->network;
 
-    if (the_network->has_pmj_location)
-    {
+    if (the_network->has_pmj_location) {
         return link_purkinje_to_tissue_using_pmj_locations(the_grid);
-    }
-    else
-    {
+    } else {
         return link_purkinje_to_tissue_default(the_grid);
     }
 }
@@ -813,8 +807,7 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
             // until the maximum size of the link array is reached
             uint32_t size = (arrlen(tissue_cells_to_link) < nmax_pmj) ? arrlen(tissue_cells_to_link) : nmax_pmj;
             the_terminals[j].tissue_cells = NULL;
-            for (uint32_t i = 0; i < size; i++)
-            {
+            for (uint32_t i = 0; i < size; i++) {
                 uint32_t index = tissue_cells_to_link[i];
 
                 arrput(the_terminals[j].tissue_cells,ac[index]);
@@ -844,10 +837,8 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     // Set all the terminal Purkinje cells
     uint32_t j = 0;
     struct node *n = the_network->list_nodes;
-    while(n != NULL)
-    {
-        if( is_terminal(n) )
-        {
+    while(n != NULL) {
+        if( is_terminal(n) ) {
             // Save the current Purkinje terminal cell
             struct node *purkinje_cell = n;
             the_terminals[j].purkinje_cell = purkinje_cell;
@@ -907,15 +898,14 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
             // until the maximum size of the link array is reached
             uint32_t size = (arrlen(tissue_cells_to_link) < nmax_pmj) ? arrlen(tissue_cells_to_link) : nmax_pmj;
             the_terminals[j].tissue_cells = NULL;
-            for (uint32_t i = 0; i < size; i++){
+            for (uint32_t i = 0; i < size; i++) {
 
                 uint32_t index = tissue_cells_to_link[i];
                 arrput(the_terminals[j].tissue_cells,ac[index]);
             }
 
             arrfree(tissue_cells_to_link);
-        }
-        else {
+        } else {
             the_terminals[j].tissue_cells = NULL;
         }
     }
@@ -975,26 +965,22 @@ void update_link_purkinje_to_endocardium(struct grid *the_grid, struct terminal 
 */
 }
 
-void set_active_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals, const char filename[])
-{
+void set_active_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals, const char filename[]) {
     // Read all the PMJ coordinates
     FILE *file = fopen(filename,"r");
-    if (!file)
-    {
+    if (!file) {
         printf("Error! Reading pmj_location_file!\n");
         exit(1);
     }
     struct node *pmjs = NULL;
 
     char str[200];
-    while (fscanf(file,"%s",str) != EOF)
-    {
+    while (fscanf(file,"%s",str) != EOF) {
         if (strcmp(str,"POINTS") == 0) break;
     }
     uint32_t num_pmjs;
     fscanf(file,"%u %s",&num_pmjs,str);
-    for (uint32_t i = 0; i < num_pmjs; i++)
-    {
+    for (uint32_t i = 0; i < num_pmjs; i++) {
         double pos[3];
         fscanf(file,"%lf %lf %lf",&pos[0],&pos[1],&pos[2]);
 
@@ -1008,16 +994,13 @@ void set_active_terminals (struct terminal *the_terminals, const uint32_t number
     fclose(file);
 
     // Activate only the closest terminal to each PMJ location
-    for (uint32_t i = 0; i < num_pmjs; i++)
-    {
+    for (uint32_t i = 0; i < num_pmjs; i++) {
         uint32_t min_index = 0;
         double min_dist = __DBL_MAX__;
-        for (uint32_t j = 0; j < number_of_terminals; j++)
-        {
+        for (uint32_t j = 0; j < number_of_terminals; j++) {
             struct node *tmp = the_terminals[j].purkinje_cell;
             double dist = calc_norm(tmp->x,tmp->y,tmp->z,pmjs[i].x,pmjs[i].y,pmjs[i].z);
-            if (dist < min_dist)
-            {
+            if (dist < min_dist) {
                 min_dist = dist;
                 min_index = j;
             }

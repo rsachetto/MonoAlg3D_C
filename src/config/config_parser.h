@@ -46,23 +46,28 @@
 #define CM 5000
 #define VISUALIZATION_PAUSED_OPT 5100
 
+#define IS_IN_MAIN_FUNCTION(key) memcmp((key), "main_function", 13) == 0
+#define IS_IN_INIT_FUNCTION(key) memcmp((key), "init_function", 13) == 0
+#define IS_IN_END_FUNCTION(key)  memcmp((key), "end_function" , 12) == 0
+#define IS_IN_LIBRARY_FILE(key)  memcmp((key), "library_file" , 12) == 0
+
 struct user_options {
-    real_cpu final_time;				/*-f option */
+    real_cpu final_time;                /*-f option */
     bool final_time_was_set;
-    bool adaptive;	                /*-a option */
+    bool adaptive;                      /*-a option */
     bool adaptive_was_set;
 
-    real_cpu ref_bound;				/*-r option*/
+    real_cpu ref_bound;                 /*-r option*/
     bool ref_bound_was_set;
-    real_cpu deref_bound;				/*-d option*/
+    real_cpu deref_bound;               /*-d option*/
     bool deref_bound_was_set;
-    real_cpu dt_pde;					/*-z option*/
+    real_cpu dt_pde;                    /*-z option*/
     bool dt_pde_was_set;
 
     real_cpu dt_ode;
     bool dt_ode_was_set;
 
-	bool auto_dt_ode;
+    bool auto_dt_ode;
     bool auto_dt_ode_was_set;
 
 
@@ -100,13 +105,13 @@ struct user_options {
     bool purkinje_gpu;
     bool purkinje_gpu_was_set;
 
-    int purkinje_gpu_id;         
+    int purkinje_gpu_id;
     bool purkinje_gpu_id_was_set;
 
     bool purkinje_ode_adaptive;
     bool purkinje_ode_adaptive_was_set;
-    
-    char *purkinje_model_file_path;         
+
+    char *purkinje_model_file_path;
     bool purkinje_model_file_path_was_set;
 
     char *model_file_path;          /*-k option*/
@@ -132,7 +137,7 @@ struct user_options {
     struct string_voidp_hash_entry *stim_configs;
     struct string_voidp_hash_entry *purkinje_stim_configs;
     struct string_voidp_hash_entry *modify_domain_configs;
-    
+
     struct config *domain_config;
     struct config *purkinje_config;
     struct config *extra_data_config;
@@ -142,7 +147,7 @@ struct user_options {
     struct config *save_state_config;
     struct config *restore_state_config;
     struct config *update_monodomain_config;
-	struct config *purkinje_linear_system_solver_config;
+    struct config *purkinje_linear_system_solver_config;
 
     struct string_hash_entry *ode_extra_config;
     struct string_hash_entry *purkinje_ode_extra_config;
@@ -166,15 +171,15 @@ struct visualization_options {
     bool save_activation_only;
     int start_file;
     int step;
-	uint32_t value_index;
+    uint32_t value_index;
     real_cpu max_v, min_v, dt;
-	float ui_scale;
+    float ui_scale;
 };
 
 struct conversion_options {
     char *input;
     char *output;
-	uint32_t value_index;
+    uint32_t value_index;
 };
 
 struct fibers_conversion_options {

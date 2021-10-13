@@ -35,6 +35,8 @@ typedef END_LINEAR_SYSTEM(end_linear_system_solver_fn);
         }                                                                                                              \
     } while(0)
 
-void print_linear_system_solver_config_values(struct config *s);
+
+#define print_linear_system_solver_config_values(s) LOG_COMMON_CONFIG("[linear_system_solver]", s)
+#define print_purkinje_linear_system_solver_config_values(s) LOG_COMMON_CONFIG("[purkinje_linear_system_solver]", s)
 
 #endif // MONOALG3D_ASSEMBLY_CONFIG_H

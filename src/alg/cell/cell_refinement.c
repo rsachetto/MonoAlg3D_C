@@ -13,7 +13,7 @@
         enum cell_type node_type = ((struct basic_cell_data *)t_node->single_connector)->type;                         \
         if(node_type == CELL_NODE) {                                                                                   \
             neighbour_cell_node = (struct cell_node *)(t_node->single_connector);                                      \
-            neighbour_cell_node->neighbours[direction] = t_node;                                                        \
+            neighbour_cell_node->neighbours[direction] = t_node;                                                       \
         } else if(node_type == TRANSITION_NODE) {                                                                      \
             neighbour_transition_node = (struct transition_node *)(t_node->single_connector);                          \
                                                                                                                        \
@@ -511,7 +511,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
     ==========================================================================*/
     number_of_hilbert_shape = right_front_top_sub_cell->hilbert_shape_number;
 
-    if( number_of_hilbert_shape == 0 )	{
+    if(number_of_hilbert_shape == 0) {
         /* Shape 0
                             _______
                            /      /      b: begin
@@ -550,9 +550,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(right_back_top_sub_cell->next != 0 )
             right_back_top_sub_cell->next->previous = right_back_top_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 1 ) {
+    } else if(number_of_hilbert_shape == 1) {
         /* Shape 1
                                        e
                                /|      |      b: begin
@@ -591,9 +589,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(left_front_top_sub_cell->next != 0 )
             left_front_top_sub_cell->next->previous = left_front_top_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 2 ) {
+    } else if(number_of_hilbert_shape == 2) {
         /* Shape 2
                                /|     /|      b: begin
                              e/ |   b/ |      e: end
@@ -631,9 +627,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(right_front_down_sub_cell->next != 0 )
             right_front_down_sub_cell->next->previous = right_front_down_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 3 ) {
+    } else if(number_of_hilbert_shape == 3) {
         /* Shape 3
                                /b     /|      b: begin
                               /______/ |      e: end
@@ -675,9 +669,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(left_back_down_sub_cell->next != 0 )
             left_back_down_sub_cell->next->previous = left_back_down_sub_cell;
 
-    }
-
-    else if ( number_of_hilbert_shape == 4 ) {
+    } else if ( number_of_hilbert_shape == 4 ) {
         /* Shape 4
                                 /|     /|      b: begin
                                /_|____/ |      e: end
@@ -719,9 +711,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if (right_back_top_sub_cell->next != 0 )
             right_back_top_sub_cell->next->previous = right_back_top_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 5 ) {
+    } else if( number_of_hilbert_shape == 5 ) {
         /* Shape 5
                                  ______
                                 |      |      b: begin
@@ -764,9 +754,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(right_back_top_sub_cell->next != 0 )
             right_back_top_sub_cell->next->previous = right_back_top_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 6 ) {
+    } else if( number_of_hilbert_shape == 6 ) {
         /* Shape 6
                                  ______
                                 |      |      b: begin
@@ -809,9 +797,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(left_back_down_sub_cell->next != 0 )
             left_back_down_sub_cell->next->previous = left_back_down_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 7 ) {
+    } else if( number_of_hilbert_shape == 7 ) {
         /* Shape 7
                                 |b     |e     b: begin
                               __|___   |      e: end
@@ -853,9 +839,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(left_front_top_sub_cell->next != 0 )
             left_front_top_sub_cell->next->previous = left_front_top_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 8 ) {
+    } else if( number_of_hilbert_shape == 8 ) {
         /* Shape 8
                                /|     /e      b: begin
                               /_|____/        e: end
@@ -897,9 +881,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(left_front_top_sub_cell->next != 0 )
             left_front_top_sub_cell->next->previous = left_front_top_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 9 ) {
+    } else if( number_of_hilbert_shape == 9 ) {
         /* Shape 9
                                 _______
                                /      /      b: begin
@@ -942,9 +924,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(left_back_down_sub_cell->next != 0 )
             left_back_down_sub_cell->next->previous = left_back_down_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 10 ) {
+    } else if( number_of_hilbert_shape == 10 ) {
         /* Shape 10
                                  _______
                                 /      /      b: begin
@@ -987,9 +967,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
         if(right_front_down_sub_cell->next != 0 )
             right_front_down_sub_cell->next->previous = right_front_down_sub_cell;
 
-    }
-
-    else if( number_of_hilbert_shape == 11 ) {
+    } else if( number_of_hilbert_shape == 11 ) {
         /* Shape 11
                                      b______
                                             |      b: begin
@@ -1042,30 +1020,7 @@ void refine_cell(struct cell_node *cell, ui32_array free_sv_positions, ui32_arra
     simplify_refinement(back_transition_node);
     simplify_refinement(right_transition_node);
     simplify_refinement(left_transition_node);
-
-//    simplify_refinement(top_right_transition_node);
-//    simplify_refinement(top_left_transition_node);
-//    simplify_refinement(top_front_transition_node);
-//    simplify_refinement(top_back_transition_node);
-//    simplify_refinement(down_right_transition_node);
-//    simplify_refinement(down_left_transition_node);
-//    simplify_refinement(down_front_transition_node);
-//    simplify_refinement(down_back_transition_node);
-//    simplify_refinement(right_front_transition_node);
-//    simplify_refinement(right_back_transition_node);
-//    simplify_refinement(left_front_transition_node);
-//    simplify_refinement(left_back_transition_node);
-//    simplify_refinement(front_left_top_transition_node);
-//    simplify_refinement(front_left_down_transition_node);
-//    simplify_refinement(front_right_top_transition_node);
-//    simplify_refinement(front_right_down_transition_node);
-//    simplify_refinement(back_left_top_transition_node);
-//    simplify_refinement(back_left_down_transition_node);
-//    simplify_refinement(back_right_top_transition_node);
-//    simplify_refinement(back_right_down_transition_node);
-
 }
-
 
 /**
  * Simplifies data structure eliminating adjacent transition nodes of same level.
@@ -1116,26 +1071,6 @@ void simplify_refinement( struct transition_node *transition_node ) {
                     case DOWN:             { cell_node[i]->neighbours[DOWN]             = neighbor_cell[i]; break; }
                     case RIGHT:            { cell_node[i]->neighbours[RIGHT]            = neighbor_cell[i]; break; }
                     case LEFT:             { cell_node[i]->neighbours[LEFT]             = neighbor_cell[i]; break; }
-//                    case TOP_RIGHT:        { cell_node[i]->neighbours[TOP]_right        = neighbor_cell[i]; break; }
-//                    case TOP_LEFT:         { cell_node[i]->neighbours[TOP]_left         = neighbor_cell[i]; break; }
-//                    case TOP_FRONT:        { cell_node[i]->neighbours[TOP]_front        = neighbor_cell[i]; break; }
-//                    case TOP_BACK:         { cell_node[i]->neighbours[TOP]_back         = neighbor_cell[i]; break; }
-//                    case DOWN_RIGHT:       { cell_node[i]->neighbours[DOWN]_right       = neighbor_cell[i]; break; }
-//                    case DOWN_LEFT:        { cell_node[i]->neighbours[DOWN]_left        = neighbor_cell[i]; break; }
-//                    case DOWN_FRONT:       { cell_node[i]->neighbours[DOWN]_front       = neighbor_cell[i]; break; }
-//                    case DOWN_BACK:        { cell_node[i]->neighbours[DOWN]_back        = neighbor_cell[i]; break; }
-//                    case RIGHT_FRONT:      { cell_node[i]->neighbours[RIGHT]_front      = neighbor_cell[i]; break; }
-//                    case RIGHT_BACK:       { cell_node[i]->neighbours[RIGHT]_back       = neighbor_cell[i]; break; }
-//                    case LEFT_FRONT:       { cell_node[i]->neighbours[LEFT]_front       = neighbor_cell[i]; break; }
-//                    case LEFT_BACK:        { cell_node[i]->neighbours[LEFT]_back        = neighbor_cell[i]; break; }
-//                    case FRONT_LEFT_TOP:   { cell_node[i]->neighbours[FRONT]_left_top   = neighbor_cell[i]; break; }
-//                    case FRONT_LEFT_DOWN:  { cell_node[i]->neighbours[FRONT]_left_down  = neighbor_cell[i]; break; }
-//                    case FRONT_RIGHT_TOP:  { cell_node[i]->neighbours[FRONT]_right_top  = neighbor_cell[i]; break; }
-//                    case FRONT_RIGHT_DOWN: { cell_node[i]->neighbours[FRONT]_right_down = neighbor_cell[i]; break; }
-//                    case BACK_LEFT_TOP:    { cell_node[i]->neighbours[BACK]_left_top    = neighbor_cell[i]; break; }
-//                    case BACK_LEFT_DOWN:   { cell_node[i]->neighbours[BACK]_left_down   = neighbor_cell[i]; break; }
-//                    case BACK_RIGHT_TOP:   { cell_node[i]->neighbours[BACK]_right_top   = neighbor_cell[i]; break; }
-//                    case BACK_RIGHT_DOWN:  { cell_node[i]->neighbours[BACK]_right_down  = neighbor_cell[i]; break; }
                     default: break;
                 }
 
@@ -1143,33 +1078,13 @@ void simplify_refinement( struct transition_node *transition_node ) {
                 switch( type ) {
                     case CELL_NODE: {
                         neighbour_cell_node = neighbor_cell[i];
-                        switch( direction )	{
+                        switch(direction) {
                             case FRONT:            { neighbour_cell_node->neighbours[BACK]             = cell_node[i];  break; }
                             case BACK:             { neighbour_cell_node->neighbours[FRONT]            = cell_node[i]; break; }
                             case TOP:              { neighbour_cell_node->neighbours[DOWN]             = cell_node[i]; break; }
                             case DOWN:             { neighbour_cell_node->neighbours[TOP]              = cell_node[i];  break; }
                             case RIGHT:            { neighbour_cell_node->neighbours[LEFT]             = cell_node[i]; break; }
                             case LEFT:             { neighbour_cell_node->neighbours[RIGHT]            = cell_node[i]; break; }
-//                            case TOP_RIGHT:        { neighbour_cell_node->neighbours[DOWN]_left        = cell_node[i]; break; }
-//                            case TOP_LEFT:         { neighbour_cell_node->neighbours[DOWN]_right       = cell_node[i]; break; }
-//                            case TOP_FRONT:        { neighbour_cell_node->neighbours[DOWN]_back        = cell_node[i]; break; }
-//                            case TOP_BACK:         { neighbour_cell_node->neighbours[DOWN]_front       = cell_node[i]; break; }
-//                            case DOWN_RIGHT:       { neighbour_cell_node->neighbours[TOP]_left         = cell_node[i]; break; }
-//                            case DOWN_LEFT:        { neighbour_cell_node->neighbours[TOP]_right        = cell_node[i]; break; }
-//                            case DOWN_FRONT:       { neighbour_cell_node->neighbours[TOP]_back         = cell_node[i]; break; }
-//                            case DOWN_BACK:        { neighbour_cell_node->neighbours[TOP]_front        = cell_node[i]; break; }
-//                            case RIGHT_FRONT:      { neighbour_cell_node->neighbours[LEFT]_back        = cell_node[i]; break; }
-//                            case RIGHT_BACK:       { neighbour_cell_node->neighbours[LEFT]_front       = cell_node[i]; break; }
-//                            case LEFT_FRONT:       { neighbour_cell_node->neighbours[RIGHT]_back       = cell_node[i]; break; }
-//                            case LEFT_BACK:        { neighbour_cell_node->neighbours[RIGHT]_front      = cell_node[i]; break; }
-//                            case FRONT_LEFT_TOP:   { neighbour_cell_node->neighbours[BACK]_right_down  = cell_node[i]; break; }
-//                            case FRONT_LEFT_DOWN:  { neighbour_cell_node->neighbours[BACK]_right_top   = cell_node[i]; break; }
-//                            case FRONT_RIGHT_TOP:  { neighbour_cell_node->neighbours[BACK]_left_down   = cell_node[i]; break; }
-//                            case FRONT_RIGHT_DOWN: { neighbour_cell_node->neighbours[BACK]_left_top    = cell_node[i]; break; }
-//                            case BACK_LEFT_TOP:    { neighbour_cell_node->neighbours[FRONT]_right_down = cell_node[i]; break; }
-//                            case BACK_LEFT_DOWN:   { neighbour_cell_node->neighbours[FRONT]_right_top  = cell_node[i]; break; }
-//                            case BACK_RIGHT_TOP:   { neighbour_cell_node->neighbours[FRONT]_left_down  = cell_node[i]; break; }
-//                            case BACK_RIGHT_DOWN:  { neighbour_cell_node->neighbours[FRONT]_left_top   = cell_node[i]; break; }
                             default: break;
                         }
                         break;

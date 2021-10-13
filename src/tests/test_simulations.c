@@ -142,9 +142,16 @@ Test(run_circle_simulation, gc_gpu_vs_cg_no_cpu) {
     struct user_options *options = load_options_from_file("example_configs/plain_mesh_with_fibrosis_and_border_zone_inside_circle_example_2cm.ini");
     options->final_time = 10.0;
 
-    free(options->save_mesh_config->main_function_name);
 
+    free(options->save_mesh_config->main_function_name);
     options->save_mesh_config->main_function_name = strdup("save_as_text_or_binary");
+
+    free(options->save_mesh_config->init_function_name);
+    free(options->save_mesh_config->end_function_name);
+
+    options->save_mesh_config->init_function_name = NULL;
+    options->save_mesh_config->end_function_name = NULL;
+
     shput_dup_value(options->save_mesh_config->config_data, "print_rate", "50");
     shput_dup_value(options->save_mesh_config->config_data, "file_prefix", "V");
 
@@ -239,4 +246,3 @@ Test(run_gold_simulation, purkinje_simulation) {
     free_user_options(options);
 }
 #endif
-

@@ -12,6 +12,6 @@
 #define MODIFY_DOMAIN(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid)
 typedef MODIFY_DOMAIN(modify_current_domain_fn);
 
-void print_modify_domain_config_values(struct config *s);
+#define print_modify_domain_config_values(s) LOG_COMMON_CONFIG("[modify_domain]", s)
 
 #endif // MONOALG3D_MODIFY_DOMAIN_CONFIG_H

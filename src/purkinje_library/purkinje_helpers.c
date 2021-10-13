@@ -27,22 +27,19 @@ void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char
 
 }
 
-void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale, const real_cpu asymm_ratio,\
-                                    const uint32_t nmin_pmj, const uint32_t nmax_pmj, const bool retro_propagation, const char pmj_filename[])
-{
+void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const real_cpu rpmj, const real_cpu pmj_scale, const real_cpu asymm_ratio,
+                                    const uint32_t nmin_pmj, const uint32_t nmax_pmj, const bool retro_propagation, const char pmj_filename[]) {
     the_purkinje_network->rpmj = rpmj;
     the_purkinje_network->pmj_scale = pmj_scale;
     the_purkinje_network->asymm_ratio = asymm_ratio;
     the_purkinje_network->nmin_pmj = nmin_pmj;
     the_purkinje_network->nmax_pmj = nmax_pmj;
     the_purkinje_network->calc_retropropagation = retro_propagation;
-    if (pmj_filename)
-    {
+
+    if (pmj_filename) {
         the_purkinje_network->pmj_location_filename = strdup(pmj_filename);
         the_purkinje_network->has_pmj_location = true;
-    }
-    else
-    {
+    } else {
         the_purkinje_network->has_pmj_location = false;
     }
 }
@@ -130,10 +127,8 @@ void depth_first_search (struct graph *the_purkinje_network, struct node *u, int
     dfs_visited[u->id] = true;
 
     struct edge *v = u->list_edges;
-    while (v != NULL)
-    {
-        if (dfs_visited[v->id] == false)
-        {
+    while (v != NULL) {
+        if (dfs_visited[v->id] == false) {
             grow_segment(the_purkinje_network,u,v,map_skeleton_to_mesh);
             depth_first_search(the_purkinje_network,v->dest,level+1,map_skeleton_to_mesh,dfs_visited);
         }
@@ -223,19 +218,16 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network) {
     fprintf(file,"POINTS %d float\n",the_purkinje_network->total_nodes);
 
     n = the_purkinje_network->list_nodes;
-    while (n != NULL)
-    {
+    while (n != NULL) {
         fprintf(file,"%.8lf %.8lf %.8lf\n",n->x,n->y,n->z);
         n = n->next;
     }
 
     n = the_purkinje_network->list_nodes;
     fprintf(file,"LINES %d %d\n",the_purkinje_network->total_edges,the_purkinje_network->total_edges*3);
-    while (n != NULL)
-    {
+    while (n != NULL) {
         e = n->list_edges;
-        while (e != NULL)
-        {
+        while (e != NULL) {
             fprintf(file,"2 %d %d\n",n->id,e->id);
             e = e->next;
         }
@@ -255,10 +247,10 @@ void calculate_number_of_terminals (struct graph *the_purkinje_network) {
     //struct edge *e;
 
     n = the_purkinje_network->list_nodes;
-    while (n != NULL)
-    {
-        if (is_terminal(n))
+    while (n != NULL) {
+        if (is_terminal(n)) {
             number_of_terminals++;
+        }
 
         n = n->next;
     }
@@ -274,13 +266,10 @@ int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network) {
 
     // Check duplicates
     struct node *tmp = the_purkinje_network->list_nodes;
-    while (tmp != NULL)
-    {
+    while (tmp != NULL) {
         struct node *tmp2 = the_purkinje_network->list_nodes;
-        while (tmp2 != NULL)
-        {
-            if (tmp->x == tmp2->x && tmp->y == tmp2->y && tmp->z == tmp2->z && tmp->id != tmp2->id)
-            {
+        while (tmp2 != NULL) {
+            if (tmp->x == tmp2->x && tmp->y == tmp2->y && tmp->z == tmp2->z && tmp->id != tmp2->id) {
                 printf("[purkinje] Duplicates are indexes: %u and %u --> (%g,%g,%g) x (%g,%g,%g)\n",tmp->id,tmp2->id,tmp->x,tmp->y,tmp->z,tmp2->x,tmp2->y,tmp2->z);
                 printf("\t|| %u has %u edges || %u has %u edges ||\n",tmp->id,tmp->num_edges,tmp2->id,tmp2->num_edges);
                 no_duplicates = 0;
@@ -292,13 +281,11 @@ int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network) {
     return no_duplicates;
 }
 
-bool read_data_from_input_network (struct point_3d **the_points, struct line **the_lines, real **the_sigmas, const char filename[])
-{
+bool read_data_from_input_network (struct point_3d **the_points, struct line **the_lines, real **the_sigmas, const char filename[]) {
     bool has_point_data = false;
 
     FILE *file = fopen(filename,"r");
-    if (!file)
-    {
+    if (!file) {
         log_info("Error opening Purkinje mesh described in %s!!\n", filename);
         exit (EXIT_FAILURE);
     }
@@ -318,8 +305,7 @@ bool read_data_from_input_network (struct point_3d **the_points, struct line **t
     // Read points
     for (int i = 0; i < N; i++) {
         struct point_3d p;
-        if (!fscanf(file,"%lf %lf %lf",&p.x,&p.y,&p.z))
-        {
+        if (!fscanf(file,"%lf %lf %lf",&p.x,&p.y,&p.z)) {
             fprintf(stderr,"Error reading file.\n");
             exit(EXIT_FAILURE);
         }

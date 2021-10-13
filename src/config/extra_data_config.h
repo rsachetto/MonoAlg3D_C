@@ -16,7 +16,7 @@ typedef SET_EXTRA_DATA(set_extra_data_fn);
 #define FREE_EXTRA_DATA(name) void *name (void *extra_data)
 typedef FREE_EXTRA_DATA(free_extra_data_fn);
 
-void print_extra_data_config_values(struct config* s);
+#define print_extra_data_config_values(s) LOG_COMMON_CONFIG("[extra_data]", s)
 
 #define CALL_FREE_EXTRA_DATA(config, extra_data)                                                                      \
     do {                                                                                                              \

@@ -5,14 +5,14 @@
 #ifndef MONOALG3D_GUI_H
 #define MONOALG3D_GUI_H
 
+#include <omp.h>
+
 #include "../alg/grid/grid.h"
 #include "../alg/cell/cell.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
 #include "../3dparty/raylib/src/raylib.h"
 #include "../3dparty/raylib/src/raymath.h"
 #include "../config/config_parser.h"
-
-#include <omp.h>
 
 #define MIN_VERTICAL_TICKS 4
 #define MAX_VERTICAL_TICKS 20
@@ -22,11 +22,13 @@
 
 #define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
 #define WIDER_TEXT " - Alt + R to restart simulation and the box positions"
-#define DOUBLE_CLICK_DELAY 0.7 //seconds
+#define DOUBLE_CLICK_DELAY 0.7  //seconds
+
+#define TMP_SIZE 128
 
 struct action_potential {
-    real_cpu v;
-    real_cpu t;
+    float v;
+    float t;
 };
 
 enum draw_simulation_or_file {
@@ -62,12 +64,12 @@ struct ap_graph_config {
 typedef struct action_potential * action_potential_array;
 
 struct voxel {
-	Vector3 position_draw;
-	Vector3 position_mesh;
-	Vector3 size;
-	real_cpu v;
+    Vector3 position_draw;
+    Vector3 position_mesh;
+    Vector3 size;
     uint32_t draw_index;
-	uint32_t matrix_position;
+    uint32_t matrix_position;
+    float v;
 };
 
 struct vector3_voxel_entry {
@@ -76,35 +78,34 @@ struct vector3_voxel_entry {
 };
 
 struct gui_config {
-
-    real_cpu max_v;
-    real_cpu min_v;
+    float max_v;
+    float min_v;
     bool simulating;
     bool paused;
     bool exit;
     bool adaptive;
     bool restart;
-    real_cpu time;
-    real_cpu final_time;
-    real_cpu dt;
+    float time;
+    float final_time;
+    float dt;
     int step;
 
     char *config_name;
     char *input;
 
-    long solver_time;
-    long ode_total_time;
-    long cg_total_time;
-    long total_mat_time;
-    long total_ref_time;
-    long total_deref_time;
-    long total_write_time;
-    long total_config_time;
-    long total_cg_it;
+    uint64_t solver_time;
+    uint64_t ode_total_time;
+    uint64_t cg_total_time;
+    uint64_t total_mat_time;
+    uint64_t total_ref_time;
+    uint64_t total_deref_time;
+    uint64_t total_write_time;
+    uint64_t total_cg_it;
 
     int advance_or_return;
     int draw_type;
-    //If we are compiling this file, openmp is available.
+
+    // If we are compiling this file, openmp is available.
     omp_lock_t draw_lock;
     omp_lock_t sleep_lock;
 
@@ -119,18 +120,18 @@ struct gui_config {
 
     char *error_message;
     bool int_scale;
-	float ui_scale;
+    float ui_scale;
 };
 
 struct gui_state {
 
-	int current_window_width;
-	int current_window_height;
+    int current_window_width;
+    int current_window_height;
 
-	float ui_scale;
+    float ui_scale;
 
-	float font_spacing_big;
-	float font_spacing_small;
+    float font_spacing_big;
+    float font_spacing_small;
 
     bool handle_keyboard_input;
     bool one_selected;
@@ -152,7 +153,7 @@ struct gui_state {
     Rectangle scale_bounds;
     bool show_scale;
     bool move_scale;
-	bool calc_scale_bounds;
+    bool calc_scale_bounds;
 
     Rectangle end_info_box;
     bool show_end_info_box;
@@ -160,7 +161,7 @@ struct gui_state {
 
     Ray ray;
     float ray_hit_distance;
-	Ray ray_mouse_over;
+    Ray ray_mouse_over;
     float ray_mouse_over_hit_distance;
 
     int current_scale;
@@ -170,10 +171,8 @@ struct gui_state {
     struct vector3_voxel_entry *current_selected_volumes;
     struct voxel current_selected_volume;
     struct voxel found_volume;
-    //int current_selected_volume_index;
     struct voxel current_mouse_over_volume;
 
-    //Font font;
     float font_size_small;
     float font_size_big;
 
@@ -201,7 +200,6 @@ struct gui_state {
     Camera3D camera;
 
     bool double_clicked;
-
 };
 
 struct mesh_info {
@@ -212,4 +210,4 @@ struct mesh_info {
 
 void init_and_open_gui_window(struct gui_config *gui_config);
 
-#endif //MONOALG3D_GUI_H
+#endif // MONOALG3D_GUI_H

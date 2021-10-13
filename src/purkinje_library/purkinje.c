@@ -44,8 +44,8 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)  {
 
     // Before returning test if there is an error in Purkinje mesh
     int success = check_purkinje_mesh_for_errors(the_grid->purkinje->network);
-    if (!success)
-    {
+
+    if (!success) {
         return 0;
     }
 
@@ -105,8 +105,8 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_coupling_with_custom_mesh) {
 
     // Before returning test if there is an error in Purkinje mesh
     int success = check_purkinje_mesh_for_errors(the_grid->purkinje->network);
-    if (!success)
-    {
+
+    if (!success) {
         return 0;
     }
 
