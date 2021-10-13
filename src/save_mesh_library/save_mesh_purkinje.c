@@ -448,12 +448,12 @@ END_SAVE_MESH(end_save_tissue_with_activation_times) {
 
     if (save_activation_time_map) {
         log_info("[!] Saving activation time maps !!!!\n");
-        write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
+        write_tissue_activation_time_maps(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,compress,compression_level,save_f);
     }
 
     if (save_apd_map) {
         log_info("[!] Saving APD map !!!!\n");
-        write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,save_pvd,compress,compression_level,save_f);
+        write_tissue_apd_map(config,the_grid,output_dir,file_prefix,clip_with_plain,clip_with_bounds,binary,compress,compression_level,save_f);
     }
 
     free(config->persistent_data);
