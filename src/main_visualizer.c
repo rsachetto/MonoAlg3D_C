@@ -12,7 +12,7 @@
 
 #define MAX_ERROR_SIZE 4096
 
-static void read_and_render_activation_map(struct gui_config *gui_config, char *input_file, char *error) {
+static void read_and_render_activation_map(struct gui_shared_info *gui_config, char *input_file, char *error) {
 
     gui_config->grid_info.file_name = NULL;
 
@@ -45,14 +45,14 @@ static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_
     FILE *vis_file = fopen(full_path_cp, "rw");
 
     if(vis_file) {
-        int n_cells = vtk_grid->num_cells;
+        uint32_t n_cells = vtk_grid->num_cells;
         arrsetlen(vtk_grid->cell_visibility, n_cells);
         fread(vtk_grid->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
         fclose(vis_file);
     }
 }
 
-static int read_and_render_files(struct visualization_options *options, struct gui_config *gui_config) {
+static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
 
     char error[MAX_ERROR_SIZE];
 
@@ -62,7 +62,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     const char *input = options->input;
     const char *prefix = options->files_prefix;
-    int current_file = options->start_file;
+    uint32_t current_file = options->start_file;
     int v_step = options->step;
 
     struct path_information input_info;
@@ -137,7 +137,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         current_file = num_files - 1;
     }
 
-    real_cpu dt = 0;
+    float dt = 0;
 
     if(!using_pvd) {
 
@@ -162,10 +162,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
         gui_config->step = step;
 
         if(dt == 0.0) {
-            gui_config->final_time = final_step;
+            gui_config->final_time = (float) final_step;
 
         } else {
-            gui_config->final_time = final_step * dt;
+            gui_config->final_time = (float) final_step * dt;
         }
     } else {
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
@@ -178,9 +178,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!using_pvd) {
             if(dt == 0) {
-                gui_config->time = get_step_from_filename(simulation_files->files_list[current_file]);
+                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[current_file]);
             } else {
-                gui_config->time = get_step_from_filename(simulation_files->files_list[current_file]) * dt;
+                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[current_file]) * dt;
             }
         } else {
             gui_config->time = simulation_files->timesteps[current_file];
@@ -225,7 +225,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         omp_set_lock(&gui_config->sleep_lock);
 
         if(gui_config->restart) {
-            gui_config->time = 0.0;
+            gui_config->time = 0.0f;
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
@@ -260,7 +260,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 }
 
-static void init_gui_config_for_visualization(struct visualization_options *options, struct gui_config *gui_config, bool only_restart) {
+static void init_gui_config_for_visualization(struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
     gui_config->grid_info.vtk_grid = NULL;
 
@@ -295,7 +295,7 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
 
 int main(int argc, char **argv) {
 
-    struct gui_config *gui_config = MALLOC_ONE_TYPE(struct gui_config);
+    struct gui_shared_info *gui_config = MALLOC_ONE_TYPE(struct gui_shared_info);
 
     struct visualization_options *options = new_visualization_options();
 

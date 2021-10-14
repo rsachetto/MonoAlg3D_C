@@ -38,7 +38,7 @@ struct monodomain_solver *new_monodomain_solver() {
 }
 
 int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver, struct grid *the_grid, struct user_options *configs,
-                     struct gui_config *gui_config) {
+                     struct gui_shared_info *gui_config) {
 
     assert(configs);
     assert(the_grid);
@@ -573,7 +573,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             omp_set_lock(&gui_config->sleep_lock);
             if(gui_config->restart) {
 
-                gui_config->time = 0.0;
+                gui_config->time = 0.0f;
 
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
@@ -833,7 +833,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #ifdef COMPILE_GUI
         if(configs->show_gui) {
             omp_unset_lock(&gui_config->draw_lock);
-            gui_config->time = cur_time;
+            gui_config->time = (float) cur_time;
         }
 #endif
         count++;

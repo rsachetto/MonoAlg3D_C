@@ -26,6 +26,8 @@
 
 #define TMP_SIZE 128
 
+#define V3_SAME(v) (Vector3){v, v, v}
+
 struct action_potential {
     float v;
     float t;
@@ -75,7 +77,8 @@ struct vector3_voxel_entry {
     struct voxel value;
 };
 
-struct gui_config {
+//This strcuct is shared with the main thread
+struct gui_shared_info {
     float max_v;
     float min_v;
     bool simulating;
@@ -121,7 +124,7 @@ struct gui_config {
     float ui_scale;
 };
 
-struct gui_box {
+struct gui_text_window {
     Rectangle rect;
     bool show;
     bool move;
@@ -141,15 +144,14 @@ struct gui_state {
     float font_spacing_small;
 
     bool handle_keyboard_input;
-    bool one_selected;
     bool show_ap;
     bool c_pressed;
     bool draw_grid_lines;
     bool draw_grid_only;
 
-    struct gui_box help_box;
-    struct gui_box mesh_info_box;
-    struct gui_box end_info_box;
+    struct gui_text_window help_box;
+    struct gui_text_window mesh_info_box;
+    struct gui_text_window end_info_box;
 
     bool show_selection_box;
 
@@ -157,7 +159,6 @@ struct gui_state {
     bool show_scale;
     bool move_scale;
     bool calc_scale_bounds;
-
 
     Ray ray;
     float ray_hit_distance;
@@ -177,10 +178,8 @@ struct gui_state {
     float font_size_big;
 
     double mouse_timer;
-    double selected_time;
 
     Vector2 mouse_pos;
-    Vector2 pan_offset;
     Vector2 sub_window_pos;
     bool move_sub_window;
 
@@ -209,6 +208,6 @@ struct mesh_info {
     Vector3 min_size;
 };
 
-void init_and_open_gui_window(struct gui_config *gui_config);
+void init_and_open_gui_window(struct gui_shared_info *gui_config);
 
 #endif // MONOALG3D_GUI_H

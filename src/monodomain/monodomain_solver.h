@@ -11,7 +11,7 @@
 //Forward declarations
 struct user_options;
 struct ode_solver;
-struct gui_config;
+struct gui_shared_info;
 
 struct monodomain_solver {
 
@@ -38,7 +38,7 @@ struct monodomain_solver {
 struct monodomain_solver *new_monodomain_solver ();
 
 int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode_solver *the_ode_solver,
-                      struct grid *the_grid, struct user_options *configs, struct gui_config *gui_config);
+                      struct grid *the_grid, struct user_options *configs, struct gui_shared_info *gui_config);
 
 void save_old_cell_positions (struct grid *the_grid);
 void update_cells_to_solve (struct grid *the_grid, struct ode_solver *solver);
