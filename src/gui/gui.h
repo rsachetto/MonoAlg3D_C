@@ -53,11 +53,9 @@ struct ap_graph_config {
     Vector2 selected_point_for_apd1;
     Vector2 selected_point_for_apd2;
     struct vector3_voidp_hash_entry *selected_aps;
-    Rectangle drag_graph_button_position;
-    Rectangle move_graph_button_position;
+    Rectangle drag_graph_button;
     bool drag_ap_graph;
     bool move_ap_graph;
-    bool draw_selected_ap_text;
 
 };
 
@@ -123,6 +121,15 @@ struct gui_config {
     float ui_scale;
 };
 
+struct gui_box {
+    Rectangle rect;
+    bool show;
+    bool move;
+    char **lines;
+    char *title;
+    int num_lines;
+};
+
 struct gui_state {
 
     int current_window_width;
@@ -140,13 +147,9 @@ struct gui_state {
     bool draw_grid_lines;
     bool draw_grid_only;
 
-    Rectangle help_box;
-    bool show_help_box;
-    bool move_help_box;
-
-    Rectangle mesh_info_box;
-    bool show_mesh_info_box;
-    bool move_info_box;
+    struct gui_box help_box;
+    struct gui_box mesh_info_box;
+    struct gui_box end_info_box;
 
     bool show_selection_box;
 
@@ -155,9 +158,6 @@ struct gui_state {
     bool move_scale;
     bool calc_scale_bounds;
 
-    Rectangle end_info_box;
-    bool show_end_info_box;
-    bool move_end_info_box;
 
     Ray ray;
     float ray_hit_distance;
@@ -180,6 +180,7 @@ struct gui_state {
     double selected_time;
 
     Vector2 mouse_pos;
+    Vector2 pan_offset;
     Vector2 sub_window_pos;
     bool move_sub_window;
 
