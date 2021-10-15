@@ -70,6 +70,8 @@ struct gui_shared_info {
     bool restart;
     float time;
     float final_time;
+    int current_file_index;
+    int final_file_index;
     float dt;
     int step;
 
@@ -85,7 +87,6 @@ struct gui_shared_info {
     uint64_t total_write_time;
     uint64_t total_cg_it;
 
-    int advance_or_return;
     int draw_type;
 
     // If we are compiling this file, openmp is available.
@@ -152,7 +153,6 @@ struct gui_state {
     float font_spacing_small;
 
     bool handle_keyboard_input;
-    bool show_ap;
     bool c_pressed;
     bool draw_grid_lines;
     bool draw_grid_only;
@@ -164,8 +164,6 @@ struct gui_state {
     struct window_commom controls_window;
 
     struct gui_scale scale;
-
-    bool show_selection_box;
 
     Ray ray;
     float ray_hit_distance;

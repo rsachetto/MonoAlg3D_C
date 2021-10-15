@@ -62,7 +62,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     const char *input = options->input;
     const char *prefix = options->files_prefix;
-    uint32_t current_file = options->start_file;
+    gui_config->current_file_index = options->start_file;
     int v_step = options->step;
 
     struct path_information input_info;
@@ -132,9 +132,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
         return SIMULATION_FINISHED;
     }
 
-    if(current_file > num_files) {
-        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", current_file, num_files, num_files);
-        current_file = num_files - 1;
+    if(gui_config->current_file_index > num_files) {
+        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", gui_config->current_file_index, num_files, num_files);
+        gui_config->current_file_index = num_files - 1;
     }
 
     float dt = 0;
@@ -161,6 +161,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         gui_config->step = step;
 
+        gui_config->final_file_index = final_step / step;
+            
         if(dt == 0.0) {
             gui_config->final_time = (float) final_step;
 
@@ -178,12 +180,12 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!using_pvd) {
             if(dt == 0) {
-                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[current_file]);
+                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[gui_config->current_file_index]);
             } else {
-                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[current_file]) * dt;
+                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[gui_config->current_file_index]) * dt;
             }
         } else {
-            gui_config->time = simulation_files->timesteps[current_file];
+            gui_config->time = simulation_files->timesteps[gui_config->current_file_index];
         }
 
         sdsfree(full_path);
@@ -196,7 +198,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!single_file) {
             full_path = sdscat(full_path, "/");
-            full_path = sdscat(full_path, simulation_files->files_list[current_file]);
+            full_path = sdscat(full_path, simulation_files->files_list[gui_config->current_file_index]);
         }
 
         free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
@@ -204,7 +206,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);
 
         if(!gui_config->grid_info.vtk_grid) {
-            snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[current_file]);
+            snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[gui_config->current_file_index]);
 
             if(gui_config->error_message) {
                 free(gui_config->error_message);
@@ -242,18 +244,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
             return END_SIMULATION;
         }
 
-        if(gui_config->paused) {
-            current_file += gui_config->advance_or_return;
-            gui_config->advance_or_return = 0;
-            if(current_file < 0)
-                current_file++;
-            else if(current_file >= num_files)
-                current_file--;
-
-        } else {
-            current_file += v_step;
-            if(current_file >= num_files) {
-                current_file -= v_step;
+        if(!gui_config->paused) {
+            gui_config->current_file_index += v_step;
+            if(gui_config->current_file_index >= num_files) {
+                gui_config->current_file_index -= v_step;
                 gui_config->paused = true;
             }
         }
@@ -269,7 +263,6 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
     gui_config->restart = false;
 
     gui_config->paused = true;
-    gui_config->advance_or_return = 0;
     gui_config->grid_info.loaded = false;
 
     gui_config->ui_scale = options->ui_scale;

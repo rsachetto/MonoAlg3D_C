@@ -59,7 +59,6 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->handle_keyboard_input = true;
 
-    gui_state->show_ap = true;
     gui_state->scale.window.show = true;
 
     gui_state->help_box.window.show = false;
@@ -84,6 +83,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->ap_graph_config->selected_aps = NULL;
     gui_state->ap_graph_config->graph.drag = false;
     gui_state->ap_graph_config->graph.move = false;
+    gui_state->ap_graph_config->graph.show = true;
 
     gui_state->current_window_width = GetScreenWidth();
     gui_state->current_window_height = GetScreenHeight();
@@ -106,9 +106,9 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->scale.window.bounds.height = 0;
     gui_state->scale.calc_bounds = true;
 
-    gui_state->controls_window.show = false;
+    gui_state->controls_window.show = true;
 
-    gui_state->controls_window.bounds.width = 5.0*32.0 + 5*4;
+    gui_state->controls_window.bounds.width = 5.0 * 32.0 + 6 * 4 + 96;
     gui_state->controls_window.bounds.height = 38.0f + WINDOW_STATUSBAR_HEIGHT;
 
     gui_state->show_coordinates = true;
@@ -580,7 +580,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     Rectangle graph_window = gui_state->ap_graph_config->graph.bounds;
     graph_window.y -= WINDOW_STATUSBAR_HEIGHT;
     graph_window.height += WINDOW_STATUSBAR_HEIGHT;
-    gui_state->show_ap = !GuiWindowBox(graph_window, TextFormat("Selected APs (%i)", n));
+    gui_state->ap_graph_config->graph.show = !GuiWindowBox(graph_window, TextFormat("Selected APs (%i)", n));
 
     gui_state->ap_graph_config->drag_graph_button = (Rectangle){(graph_x + graph_w) - 16.0f, graph_y + graph_h - 16.0f, 16.0f, 16.0f};
 
@@ -888,7 +888,7 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
         gui_state->scale.calc_bounds = false;
     }
 
-    Vector2 scale_bounds = (Vector2) {(float) gui_state->scale.window.bounds.x, (float)gui_state->scale.window.bounds.y};
+    Vector2 scale_bounds = (Vector2){(float)gui_state->scale.window.bounds.x, (float)gui_state->scale.window.bounds.y};
 
     if(!int_scale) {
         width = MeasureTextEx(gui_state->font, "Vm", gui_state->font_size_big, spacing_big);
@@ -923,6 +923,19 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     }
 }
 
+#define CHECK_FILE_INDEX(gui_config)                                                                                                                           \
+    if(gui_config->current_file_index < 0)                                                                                                                     \
+        gui_config->current_file_index++;                                                                                                                      \
+    else if(gui_config->current_file_index > gui_config->final_file_index)                                                                                     \
+        gui_config->current_file_index--;
+
+#define DISABLE_IF_NOT_PAUSED                                                                                                                                  \
+    if(!gui_config->paused || gui_config->draw_type != DRAW_FILE) {                                                                                            \
+        GuiDisable();                                                                                                                                          \
+    }
+
+#define ENABLE GuiEnable()
+bool spinner_edit = false;
 static void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gui_config) {
 
     check_window_bounds(&gui_state->controls_window.bounds, gui_state->current_window_width, gui_state->current_window_height);
@@ -933,25 +946,90 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     button_pos.x = gui_state->controls_window.bounds.x + 2.0;
     button_pos.y = gui_state->controls_window.bounds.y + WINDOW_STATUSBAR_HEIGHT + 3.0;
 
-    GuiButton(button_pos, "#71#");
+    bool update_main = false;
+
+    DISABLE_IF_NOT_PAUSED;
+
+    if(GuiButton(button_pos, "#129#")) {
+        gui_config->current_file_index = 0;
+        update_main = true;
+    }
+
+    // return button
+    {
+        button_pos.x += button_pos.width + 4.0;
+
+        if(GuiButton(button_pos, "#114#")) {
+            if(gui_config->paused) {
+                gui_config->current_file_index -= 1;
+                update_main = true;
+            }
+        }
+    }
+
+    ENABLE;
+
+    // Play or pause button
+    {
+        button_pos.x += button_pos.width + 4.0;
+
+        if(gui_config->paused) {
+            gui_config->paused = !GuiButton(button_pos, "#131#");
+        } else {
+            gui_config->paused = GuiButton(button_pos, "#132#");
+        }
+    }
+
+    DISABLE_IF_NOT_PAUSED;
+    // advance button
+    {
+        button_pos.x += button_pos.width + 4.0;
+
+        if(GuiButton(button_pos, "#115#")) {
+            if(gui_config->paused) {
+                gui_config->current_file_index += 1;
+                update_main = true;
+            }
+        }
+    }
 
     button_pos.x += button_pos.width + 4.0;
-    GuiButton(button_pos, "#71#");
+    if(GuiButton(button_pos, "#134#")) {
+        update_main = true;
+        gui_config->current_file_index = gui_config->final_file_index;
+    }
 
     button_pos.x += button_pos.width + 4.0;
-    GuiButton(button_pos, "#71#");
+    button_pos.width = 96;
 
-    button_pos.x += button_pos.width + 4.0;
-    GuiButton(button_pos, "#71#");
+    int old_index = gui_config->current_file_index;
 
-    button_pos.x += button_pos.width + 4.0;
-    GuiButton(button_pos, "#71#");
+    if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, spinner_edit)) {
+        spinner_edit = !spinner_edit;
+    }
 
+    if(old_index != gui_config->current_file_index) {
+        update_main = true;
+    }
+    gui_state->handle_keyboard_input = !spinner_edit;
 
+    ENABLE;
+
+    if(update_main && gui_config->draw_type == DRAW_FILE) {
+
+        CHECK_FILE_INDEX(gui_config);
+
+        if(gui_config->current_file_index == 0) {
+            for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+                arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
+            }
+        }
+
+        omp_unset_lock(&gui_config->sleep_lock);
+    }
 }
 
 static void draw_box(struct gui_text_window *box, struct gui_state *gui_state, float text_offset) {
-
 
     check_window_bounds(&box->window.bounds, (float)gui_state->current_window_width, (float)gui_state->current_window_height);
 
@@ -1084,7 +1162,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
     return true;
 }
 
-static bool draw_selection_box(struct gui_state *gui_state) {
+static bool draw_search_window(struct gui_state *gui_state) {
 
 #define CENTER_X "Center X"
 #define CENTER_Y "Center Y"
@@ -1160,9 +1238,8 @@ static inline void reset_ui(struct gui_state *gui_state) {
     gui_state->scale.window.bounds.height = 0;
     gui_state->scale.calc_bounds = true;
 
-    gui_state->controls_window.bounds.x = (float)gui_state->current_window_width/2.0;
+    gui_state->controls_window.bounds.x = (float)gui_state->current_window_width / 2.0;
     gui_state->controls_window.bounds.y = 10;
-
 }
 
 static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool full_reset) {
@@ -1237,7 +1314,8 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         }
 
         if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
-            gui_config->advance_or_return = 1;
+            gui_config->current_file_index++;
+            CHECK_FILE_INDEX(gui_config);
             omp_unset_lock(&gui_config->sleep_lock);
             return;
         }
@@ -1245,7 +1323,8 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         if(gui_config->draw_type == DRAW_FILE) {
             // Return one step only works on file visualization...
             if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
-                gui_config->advance_or_return = -1;
+                gui_config->current_file_index--;
+                CHECK_FILE_INDEX(gui_config);
                 omp_unset_lock(&gui_config->sleep_lock);
                 return;
             }
@@ -1254,7 +1333,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
     if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
         if(IsKeyPressed(KEY_F)) {
-            gui_state->show_selection_box = true;
+            gui_state->search_window.show = true;
             gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
             gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
             return;
@@ -1321,15 +1400,17 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(IsKeyPressed(KEY_X)) {
-        gui_state->show_ap = !gui_state->show_ap;
+        gui_state->ap_graph_config->graph.show = !gui_state->ap_graph_config->graph.show;
         return;
     }
 
     if(IsKeyPressed(KEY_C)) {
         gui_state->scale.window.show = gui_state->c_pressed;
-        gui_state->show_ap = gui_state->c_pressed;
+        gui_state->ap_graph_config->graph.show = gui_state->c_pressed;
         gui_state->end_info_box.window.show = gui_state->c_pressed;
         gui_state->mesh_info_box.window.show = gui_state->c_pressed;
+        gui_state->controls_window.show = gui_state->c_pressed;
+
         gui_state->c_pressed = !gui_state->c_pressed;
         gui_state->show_coordinates = !gui_state->show_coordinates;
         return;
@@ -1407,7 +1488,7 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
 
         gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
 
-        if(!gui_state->show_selection_box) {
+        if(!gui_state->search_window.show) {
             if(gui_state->mouse_timer == -1) {
                 gui_state->double_clicked = false;
                 gui_state->mouse_timer = GetTime();
@@ -1423,14 +1504,14 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
             }
         }
 
-        if(CheckCollisionPointRec(gui_state->mouse_pos,
-                                  (Rectangle){gui_state->search_window.bounds.x, gui_state->search_window.bounds.y, gui_state->search_window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
+        if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->search_window.bounds.x, gui_state->search_window.bounds.y,
+                                                                    gui_state->search_window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
             gui_state->search_window.move = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->drag_graph_button)) {
             gui_state->ap_graph_config->graph.drag = true;
-        } else if(CheckCollisionPointRec(gui_state->mouse_pos,
-                                         (Rectangle){gui_state->ap_graph_config->graph.bounds.x, gui_state->ap_graph_config->graph.bounds.y - WINDOW_STATUSBAR_HEIGHT,
-                                                     gui_state->ap_graph_config->graph.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
+        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->ap_graph_config->graph.bounds.x,
+                                                                           gui_state->ap_graph_config->graph.bounds.y - WINDOW_STATUSBAR_HEIGHT,
+                                                                           gui_state->ap_graph_config->graph.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
             gui_state->ap_graph_config->graph.move = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->help_box.window.bounds.x, gui_state->help_box.window.bounds.y,
                                                                            gui_state->help_box.window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
@@ -1441,13 +1522,13 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->end_info_box.window.bounds.x, gui_state->end_info_box.window.bounds.y,
                                                                            gui_state->end_info_box.window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
             gui_state->end_info_box.window.move = true;
-        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->scale.window.bounds.x, gui_state->scale.window.bounds.y, gui_state->scale.window.bounds.width,
-                                                                           gui_state->scale.window.bounds.height})) {
+        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->scale.window.bounds.x, gui_state->scale.window.bounds.y,
+                                                                           gui_state->scale.window.bounds.width, gui_state->scale.window.bounds.height})) {
             gui_state->scale.window.move = true;
         }
 
     } else if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-        if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
+        if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->ap_graph_config->graph.show) {
             if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph.bounds)) {
                 if(gui_state->ap_graph_config->selected_point_for_apd1.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y == FLT_MAX) {
                     gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
@@ -1509,9 +1590,9 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
         gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
         gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
     } else if(gui_state->help_box.window.move) {
-        move_rect(
-            (Vector2){(gui_state->mouse_pos.x) - (gui_state->help_box.window.bounds.width - 18.0f) / 2.0f, (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f},
-            &gui_state->help_box.window.bounds);
+        move_rect((Vector2){(gui_state->mouse_pos.x) - (gui_state->help_box.window.bounds.width - 18.0f) / 2.0f,
+                            (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f},
+                  &gui_state->help_box.window.bounds);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
             gui_state->help_box.window.move = false;
     } else if(gui_state->mesh_info_box.window.move) {
@@ -1533,7 +1614,7 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
             gui_state->end_info_box.window.move = false;
     }
 
-    if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
+    if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->ap_graph_config->graph.show) {
         float t = Remap(gui_state->mouse_pos.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
         float v = Remap(gui_state->mouse_pos.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v);
         if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph.bounds)) {
@@ -1629,16 +1710,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     }
 
     InitWindow(0, 0, window_title);
-
-    if(gui_config->ui_scale == 0.0) {
-        Vector2 ui_scale = GetWindowScaleDPI();
-        gui_config->ui_scale = ui_scale.x;
-    }
-    const int font_size_small = 16;
-    const int font_size_big = 20;
-
-    struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
-
     free(window_title);
 
     SetTargetFPS(60);
@@ -1649,6 +1720,15 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     }
 
     UnloadImage(icon);
+
+    if(gui_config->ui_scale == 0.0) {
+        Vector2 ui_scale = GetWindowScaleDPI();
+        gui_config->ui_scale = ui_scale.x;
+    }
+    const int font_size_small = 16;
+    const int font_size_big = 20;
+
+    struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
 
     float scale = 1.0f;
 
@@ -1735,7 +1815,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             reset_ui(gui_state);
         }
 
-        gui_state->handle_keyboard_input = !gui_state->show_selection_box;
+        // gui_state->handle_keyboard_input = !gui_state->show_selection_box;
 
         handle_input(gui_config, mesh_info, gui_state);
         if(gui_config->grid_info.loaded) {
@@ -1810,7 +1890,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 draw_scale(gui_config->min_v, gui_config->max_v, gui_state, gui_config->int_scale);
             }
 
-            if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
+            if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->ap_graph_config->graph.show) {
                 draw_ap_graph(gui_state, gui_config);
             }
 
@@ -1834,8 +1914,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 omp_unset_lock(&gui_config->sleep_lock);
             }
 
-            if(gui_state->show_selection_box) {
-                gui_state->show_selection_box = !draw_selection_box(gui_state);
+            if(gui_state->search_window.show) {
+                bool update = !draw_search_window(gui_state);
+                gui_state->search_window.show = update;
+                gui_state->handle_keyboard_input = !update;
             }
 
         } else {
