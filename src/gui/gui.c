@@ -27,7 +27,7 @@
 #undef RAYGUI_IMPLEMENTATION
 
 static void set_camera_params(Camera3D *camera, bool set_mode) {
-    camera->position = (Vector3){0.1f, 0.1f, 8.0f};
+    camera->position = (Vector3){0.1f, 0.1f, 12.0f};
     camera->target = (Vector3){0.f, 0.f, 0.f};
     camera->up = (Vector3){0.0f, 1.0f, 0.0f};
     camera->fovy = 45.0f;
@@ -60,12 +60,12 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->handle_keyboard_input = true;
 
     gui_state->show_ap = true;
-    gui_state->show_scale = true;
+    gui_state->scale.window.show = true;
 
-    gui_state->help_box.show = false;
+    gui_state->help_box.window.show = false;
 
-    gui_state->end_info_box.show = true;
-    gui_state->mesh_info_box.show = true;
+    gui_state->end_info_box.window.show = true;
+    gui_state->mesh_info_box.window.show = true;
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
@@ -75,39 +75,43 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->voxel_alpha = 255;
     gui_state->scale_alpha = 255;
     gui_state->mouse_timer = -1;
-    gui_state->move_sub_window = false;
+    gui_state->search_window.move = false;
 
     gui_state->ap_graph_config = MALLOC_ONE_TYPE(struct ap_graph_config);
     gui_state->ap_graph_config->selected_ap_point = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
     gui_state->ap_graph_config->selected_aps = NULL;
-    gui_state->ap_graph_config->drag_ap_graph = false;
-    gui_state->ap_graph_config->move_ap_graph = false;
+    gui_state->ap_graph_config->graph.drag = false;
+    gui_state->ap_graph_config->graph.move = false;
 
     gui_state->current_window_width = GetScreenWidth();
     gui_state->current_window_height = GetScreenHeight();
 
-    gui_state->ap_graph_config->graph.height = 300.0f * ui_scale;
-    gui_state->ap_graph_config->graph.width = 690.0f * ui_scale;
+    gui_state->ap_graph_config->graph.bounds.height = 300.0f * ui_scale;
+    gui_state->ap_graph_config->graph.bounds.width = 690.0f * ui_scale;
 
-    gui_state->ap_graph_config->graph.x = 10;
-    gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
+    gui_state->ap_graph_config->graph.bounds.x = 10;
+    gui_state->ap_graph_config->graph.bounds.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.bounds.height - 90;
 
     hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
 
-    gui_state->box_width = 220;
-    gui_state->box_height = 100;
+    gui_state->search_window.bounds.width = 220;
+    gui_state->search_window.bounds.height = 100;
 
-    gui_state->scale_bounds.x = (float)gui_state->current_window_width - 30.0f * ui_scale;
-    gui_state->scale_bounds.y = (float)gui_state->current_window_height / 1.5f;
+    gui_state->scale.window.bounds.x = (float)gui_state->current_window_width - 30.0f * ui_scale;
+    gui_state->scale.window.bounds.y = (float)gui_state->current_window_height / 1.5f;
 
-    gui_state->scale_bounds.width = 20;
-    gui_state->scale_bounds.height = 0;
-    gui_state->calc_scale_bounds = true;
+    gui_state->scale.window.bounds.width = 20;
+    gui_state->scale.window.bounds.height = 0;
+    gui_state->scale.calc_bounds = true;
+
+    gui_state->controls_window.show = false;
+
+    gui_state->controls_window.bounds.width = 5.0*32.0 + 5*4;
+    gui_state->controls_window.bounds.height = 38.0f + WINDOW_STATUSBAR_HEIGHT;
 
     gui_state->show_coordinates = true;
-
     gui_state->double_clicked = false;
 
     return gui_state;
@@ -159,6 +163,11 @@ static Color get_color(real_cpu value, int alpha, int current_scale) {
     if(mesh_max.coord != mesh_min.coord)                                                                                                                       \
         result.coord = (mesh_max.coord - mesh_min.coord) / 2.0f;
 
+#define SET_MESH_MIN_MAX(vec1, vec2, vec3)                                                                                                                     \
+    mesh_info->vec1.x = vec2.x + vec3.x / 2.0f;                                                                                                                \
+    mesh_info->vec1.y = vec2.y + vec3.y / 2.0f;                                                                                                                \
+    mesh_info->vec1.z = vec2.z + vec3.z / 2.0f;
+
 static inline Vector3 get_max_min(Vector3 mesh_max, Vector3 mesh_min, Vector3 mesh_max_d, Vector3 mesh_min_d, struct mesh_info *mesh_info) {
 
     Vector3 result = V3_SAME(0.0f);
@@ -169,13 +178,8 @@ static inline Vector3 get_max_min(Vector3 mesh_max, Vector3 mesh_min, Vector3 me
 
     mesh_info->center_calculated = true;
 
-    mesh_info->max_size.x = mesh_max.x + mesh_max_d.x / 2.0f;
-    mesh_info->max_size.y = mesh_max.y + mesh_max_d.y / 2.0f;
-    mesh_info->max_size.z = mesh_max.z + mesh_max_d.z / 2.0f;
-
-    mesh_info->min_size.x = mesh_min.x - mesh_min_d.x / 2.0f;
-    mesh_info->min_size.y = mesh_min.y - mesh_min_d.y / 2.0f;
-    mesh_info->min_size.z = mesh_min.z - mesh_min_d.z / 2.0f;
+    SET_MESH_MIN_MAX(max_size, mesh_max, mesh_max_d);
+    SET_MESH_MIN_MAX(min_size, mesh_min, mesh_min_d);
 
     return result;
 }
@@ -542,23 +546,23 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
 
     int n = hmlen(gui_state->ap_graph_config->selected_aps);
 
-    const float graph_w = gui_state->ap_graph_config->graph.width;
-    const float graph_h = gui_state->ap_graph_config->graph.height;
+    const float graph_w = gui_state->ap_graph_config->graph.bounds.width;
+    const float graph_h = gui_state->ap_graph_config->graph.bounds.height;
 
-    if(gui_state->ap_graph_config->graph.x + graph_w > (float)gui_state->current_window_width || gui_state->ap_graph_config->graph.x < 0) {
-        gui_state->ap_graph_config->graph.x = 10;
+    if(gui_state->ap_graph_config->graph.bounds.x + graph_w > (float)gui_state->current_window_width || gui_state->ap_graph_config->graph.bounds.x < 0) {
+        gui_state->ap_graph_config->graph.bounds.x = 10;
     }
 
-    if(gui_state->ap_graph_config->graph.y + graph_h > (float)gui_state->current_window_height) {
-        gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - graph_h - 90.0f;
+    if(gui_state->ap_graph_config->graph.bounds.y + graph_h > (float)gui_state->current_window_height) {
+        gui_state->ap_graph_config->graph.bounds.y = (float)gui_state->current_window_height - graph_h - 90.0f;
     }
 
-    if(gui_state->ap_graph_config->graph.y < 0) {
-        gui_state->ap_graph_config->graph.y = 0;
+    if(gui_state->ap_graph_config->graph.bounds.y < 0) {
+        gui_state->ap_graph_config->graph.bounds.y = 0;
     }
 
-    const float graph_y = gui_state->ap_graph_config->graph.y;
-    const float graph_x = gui_state->ap_graph_config->graph.x;
+    const float graph_x = gui_state->ap_graph_config->graph.bounds.x;
+    const float graph_y = gui_state->ap_graph_config->graph.bounds.y;
 
     static const Color colors[] = {DARKGRAY, GOLD,     ORANGE, PINK,   RED,        MAROON, GREEN,     LIME,  DARKGREEN,
                                    BLUE,     DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN,  DARKBROWN, BLACK, MAGENTA};
@@ -573,7 +577,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     float spacing_big = font_size_big / (float)font.baseSize;
     float spacing_small = font_size_small / (float)font.baseSize;
 
-    Rectangle graph_window = gui_state->ap_graph_config->graph;
+    Rectangle graph_window = gui_state->ap_graph_config->graph.bounds;
     graph_window.y -= WINDOW_STATUSBAR_HEIGHT;
     graph_window.height += WINDOW_STATUSBAR_HEIGHT;
     gui_state->show_ap = !GuiWindowBox(graph_window, TextFormat("Selected APs (%i)", n));
@@ -634,7 +638,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     float max_x = gui_state->ap_graph_config->max_x;
     float max_y = gui_state->ap_graph_config->max_y;
 
-    Vector2 text_position = (Vector2){graph_x + gui_state->ap_graph_config->graph.width / 2.0f - text_width.x / 2.0f, min_y + text_width.y};
+    Vector2 text_position = (Vector2){graph_x + gui_state->ap_graph_config->graph.bounds.width / 2.0f - text_width.x / 2.0f, min_y + text_width.y};
 
     DrawTextEx(font, time_text, text_position, font_size_big, spacing_big, BLACK);
 
@@ -686,7 +690,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
         label = "Vm (mV)";
         text_width = MeasureTextEx(font, label, font_size_big, spacing_big);
 
-        text_position.x = gui_state->ap_graph_config->graph.x + 15;
+        text_position.x = gui_state->ap_graph_config->graph.bounds.x + 15;
         text_position.y = min_y - ((min_y - max_y) / 2.0f) + (text_width.x / 2.0f);
 
         DrawTextPro(font, label, text_position, (Vector2){0, 0}, -90, font_size_big, spacing_big, BLACK);
@@ -699,7 +703,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     // Draw vertical ticks (Vm)
     for(uint32_t t = 0; t <= num_ticks; t++) {
 
-        p1.x = (float)gui_state->ap_graph_config->graph.x + 5.0f;
+        p1.x = (float)graph_x + 5.0f;
         p1.y = Remap(v, gui_config->min_v, gui_config->max_v, min_y, gui_state->ap_graph_config->max_y);
 
         snprintf(tmp, TMP_SIZE, "%.2lf", Remap(p1.y, min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v));
@@ -775,7 +779,7 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     }
 
     // Draw AP coordinates over mouse cursor
-    if(!gui_state->ap_graph_config->drag_ap_graph && gui_state->ap_graph_config->selected_ap_point.x != FLT_MAX &&
+    if(!gui_state->ap_graph_config->graph.drag && gui_state->ap_graph_config->selected_ap_point.x != FLT_MAX &&
        gui_state->ap_graph_config->selected_ap_point.y != FLT_MAX && gui_state->mouse_pos.x < max_x && gui_state->mouse_pos.x > min_x &&
        gui_state->mouse_pos.y < min_y && gui_state->mouse_pos.y > max_y) {
 
@@ -839,7 +843,7 @@ static void check_window_bounds(Rectangle *box, float current_window_width, floa
 static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bool int_scale) {
 
     float scale_width = 20 * gui_state->ui_scale;
-    check_window_bounds(&(gui_state->scale_bounds), (float)gui_state->current_window_width, (float)gui_state->current_window_height);
+    check_window_bounds(&(gui_state->scale.window.bounds), (float)gui_state->current_window_width, (float)gui_state->current_window_height);
 
     float spacing_small = gui_state->font_spacing_small;
     float spacing_big = gui_state->font_spacing_big;
@@ -873,30 +877,32 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     float scale_rec_height = 30.0f * gui_state->ui_scale;
     Color color;
 
-    if(gui_state->calc_scale_bounds) {
-        gui_state->scale_bounds.height += max_w.y;
+    if(gui_state->scale.calc_bounds) {
+        gui_state->scale.window.bounds.height += max_w.y;
         for(int t = 0; t <= num_ticks; t++) {
-            gui_state->scale_bounds.height += scale_rec_height;
+            gui_state->scale.window.bounds.height += scale_rec_height;
         }
 
-        gui_state->scale_bounds.y -= gui_state->scale_bounds.height;
+        gui_state->scale.window.bounds.y -= gui_state->scale.window.bounds.height;
 
-        gui_state->calc_scale_bounds = false;
+        gui_state->scale.calc_bounds = false;
     }
+
+    Vector2 scale_bounds = (Vector2) {(float) gui_state->scale.window.bounds.x, (float)gui_state->scale.window.bounds.y};
 
     if(!int_scale) {
         width = MeasureTextEx(gui_state->font, "Vm", gui_state->font_size_big, spacing_big);
         float diff = (float)scale_width - width.x;
 
-        p1.x = gui_state->scale_bounds.x + (diff / 2.0f);
-        p1.y = (float)gui_state->scale_bounds.y - width.y;
+        p1.x = scale_bounds.x + (diff / 2.0f);
+        p1.y = scale_bounds.y - width.y;
         DrawTextEx(gui_state->font, "Vm", p1, gui_state->font_size_big, spacing_big, BLACK);
     }
 
-    float initial_y = gui_state->scale_bounds.y;
+    float initial_y = scale_bounds.y;
 
     for(uint32_t t = 0; t <= num_ticks; t++) {
-        p1.x = gui_state->scale_bounds.x - 50.0f * gui_state->ui_scale;
+        p1.x = scale_bounds.x - 50.0f * gui_state->ui_scale;
         p1.y = initial_y + (float)scale_rec_height / 2.0f;
 
         snprintf(tmp, TMP_SIZE, "%.2lf", v);
@@ -911,27 +917,54 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
         DrawLineV(p1, p2, BLACK);
         color = get_color((v - min_v) / (max_v - min_v), gui_state->scale_alpha, gui_state->current_scale);
 
-        DrawRectangle((int)gui_state->scale_bounds.x, (int)initial_y, (int)scale_width, (int)scale_rec_height, color);
+        DrawRectangle((int)scale_bounds.x, (int)initial_y, (int)scale_width, (int)scale_rec_height, color);
         initial_y += scale_rec_height;
         v -= tick_ofsset;
     }
 }
 
-static void draw_box(struct gui_text_window *box, float font_size_for_line, float font_spacing, Font font, float current_window_width,
-                     float current_window_height, float text_offset) {
+static void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gui_config) {
 
-    check_window_bounds(&box->rect, current_window_width, current_window_height);
+    check_window_bounds(&gui_state->controls_window.bounds, gui_state->current_window_width, gui_state->current_window_height);
+    gui_state->controls_window.show = !GuiWindowBox(gui_state->controls_window.bounds, "Controls");
 
-    float text_x = box->rect.x + 20;
-    float text_y = box->rect.y + 10 + WINDOW_STATUSBAR_HEIGHT;
+    Rectangle button_pos = (Rectangle){0, 0, 32, 32};
 
-    box->show = !GuiWindowBox(box->rect, box->title);
+    button_pos.x = gui_state->controls_window.bounds.x + 2.0;
+    button_pos.y = gui_state->controls_window.bounds.y + WINDOW_STATUSBAR_HEIGHT + 3.0;
+
+    GuiButton(button_pos, "#71#");
+
+    button_pos.x += button_pos.width + 4.0;
+    GuiButton(button_pos, "#71#");
+
+    button_pos.x += button_pos.width + 4.0;
+    GuiButton(button_pos, "#71#");
+
+    button_pos.x += button_pos.width + 4.0;
+    GuiButton(button_pos, "#71#");
+
+    button_pos.x += button_pos.width + 4.0;
+    GuiButton(button_pos, "#71#");
+
+
+}
+
+static void draw_box(struct gui_text_window *box, struct gui_state *gui_state, float text_offset) {
+
+
+    check_window_bounds(&box->window.bounds, (float)gui_state->current_window_width, (float)gui_state->current_window_height);
+
+    float text_x = box->window.bounds.x + 20;
+    float text_y = box->window.bounds.y + 10 + WINDOW_STATUSBAR_HEIGHT;
+
+    box->window.show = !GuiWindowBox(box->window.bounds, box->title);
 
     int num_lines = box->num_lines;
 
     for(int i = 0; i < num_lines; i++) {
-        DrawTextEx(font, box->lines[i], (Vector2){text_x, text_y}, font_size_for_line, font_spacing, BLACK);
-        text_y += (float)text_offset;
+        DrawTextEx(gui_state->font, box->lines[i], (Vector2){text_x, text_y}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+        text_y += text_offset;
     }
 }
 
@@ -1044,7 +1077,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     float box_w = wider_text.x * 1.08f;
 
-    gui_state->mesh_info_box.rect.width = box_w;
+    gui_state->mesh_info_box.window.bounds.width = box_w;
 
     (*(info_string))[index] = strdup(tmp);
 
@@ -1067,14 +1100,14 @@ static bool draw_selection_box(struct gui_state *gui_state) {
     static char center_y_text[128] = {0};
     static char center_z_text[128] = {0};
 
-    float pos_x = gui_state->sub_window_pos.x;
-    float pos_y = gui_state->sub_window_pos.y;
+    float pos_x = gui_state->search_window.bounds.x;
+    float pos_y = gui_state->search_window.bounds.y;
 
     float box_pos = pos_x + x_off;
-    gui_state->box_width = text_box_size.x * 3.5f;
-    gui_state->box_height = (text_box_size.y + text_box_y_dist) * 1.6f;
+    gui_state->search_window.bounds.width = text_box_size.x * 3.5f;
+    gui_state->search_window.bounds.height = (text_box_size.y + text_box_y_dist) * 1.6f;
 
-    bool window_closed = GuiWindowBox((Rectangle){pos_x, pos_y, gui_state->box_width, gui_state->box_height}, "Enter the center of the cell");
+    bool window_closed = GuiWindowBox(gui_state->search_window.bounds, "Enter the center of the cell");
 
     DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
 
@@ -1102,30 +1135,34 @@ static bool draw_selection_box(struct gui_state *gui_state) {
 
 static inline void reset_ui(struct gui_state *gui_state) {
 
-    gui_state->help_box.rect.x = 10;
-    gui_state->help_box.rect.y = 10;
+    gui_state->help_box.window.bounds.x = 10;
+    gui_state->help_box.window.bounds.y = 10;
 
-    gui_state->ap_graph_config->graph.height = 300.0f * gui_state->ui_scale;
-    gui_state->ap_graph_config->graph.width = 690.0f * gui_state->ui_scale;
+    gui_state->ap_graph_config->graph.bounds.height = 300.0f * gui_state->ui_scale;
+    gui_state->ap_graph_config->graph.bounds.width = 690.0f * gui_state->ui_scale;
 
-    gui_state->ap_graph_config->graph.x = 10;
-    gui_state->ap_graph_config->graph.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.height - 90;
+    gui_state->ap_graph_config->graph.bounds.x = 10;
+    gui_state->ap_graph_config->graph.bounds.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.bounds.height - 90;
 
-    gui_state->box_width = 220;
-    gui_state->box_height = 100;
+    gui_state->search_window.bounds.width = 220;
+    gui_state->search_window.bounds.height = 100;
 
-    gui_state->mesh_info_box.rect.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.rect.width - 10;
-    gui_state->mesh_info_box.rect.y = 10.0f;
+    gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.window.bounds.width - 10;
+    gui_state->mesh_info_box.window.bounds.y = 10.0f;
 
-    gui_state->end_info_box.rect.x = gui_state->mesh_info_box.rect.x - gui_state->mesh_info_box.rect.width - 10;
-    gui_state->end_info_box.rect.y = gui_state->mesh_info_box.rect.y;
+    gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - 10;
+    gui_state->end_info_box.window.bounds.y = gui_state->mesh_info_box.window.bounds.y;
 
-    gui_state->scale_bounds.x = (float)gui_state->current_window_width - 30.0f * gui_state->ui_scale;
-    gui_state->scale_bounds.y = (float)gui_state->current_window_height / 1.5f;
+    gui_state->scale.window.bounds.x = (float)gui_state->current_window_width - 30.0f * gui_state->ui_scale;
+    gui_state->scale.window.bounds.y = (float)gui_state->current_window_height / 1.5f;
 
-    gui_state->scale_bounds.width = 20;
-    gui_state->scale_bounds.height = 0;
-    gui_state->calc_scale_bounds = true;
+    gui_state->scale.window.bounds.width = 20;
+    gui_state->scale.window.bounds.height = 0;
+    gui_state->scale.calc_bounds = true;
+
+    gui_state->controls_window.bounds.x = (float)gui_state->current_window_width/2.0;
+    gui_state->controls_window.bounds.y = 10;
+
 }
 
 static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool full_reset) {
@@ -1218,14 +1255,14 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
         if(IsKeyPressed(KEY_F)) {
             gui_state->show_selection_box = true;
-            gui_state->sub_window_pos.x = (float)GetScreenWidth() / 2.0f - gui_state->box_width;
-            gui_state->sub_window_pos.y = (float)GetScreenHeight() / 2.0f - gui_state->box_height;
+            gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
+            gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
             return;
         }
     }
 
     if(IsKeyPressed(KEY_Q)) {
-        gui_state->show_scale = !gui_state->show_scale;
+        gui_state->scale.window.show = !gui_state->scale.window.show;
         return;
     }
 
@@ -1289,17 +1326,17 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(IsKeyPressed(KEY_C)) {
-        gui_state->show_scale = gui_state->c_pressed;
+        gui_state->scale.window.show = gui_state->c_pressed;
         gui_state->show_ap = gui_state->c_pressed;
-        gui_state->end_info_box.show = gui_state->c_pressed;
-        gui_state->mesh_info_box.show = gui_state->c_pressed;
+        gui_state->end_info_box.window.show = gui_state->c_pressed;
+        gui_state->mesh_info_box.window.show = gui_state->c_pressed;
         gui_state->c_pressed = !gui_state->c_pressed;
         gui_state->show_coordinates = !gui_state->show_coordinates;
         return;
     }
 
     if(IsKeyPressed(KEY_H)) {
-        gui_state->help_box.show = !gui_state->help_box.show;
+        gui_state->help_box.window.show = !gui_state->help_box.window.show;
         return;
     }
 
@@ -1387,31 +1424,31 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
         }
 
         if(CheckCollisionPointRec(gui_state->mouse_pos,
-                                  (Rectangle){gui_state->sub_window_pos.x, gui_state->sub_window_pos.y, gui_state->box_width - 18, WINDOW_STATUSBAR_HEIGHT})) {
-            gui_state->move_sub_window = true;
+                                  (Rectangle){gui_state->search_window.bounds.x, gui_state->search_window.bounds.y, gui_state->search_window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
+            gui_state->search_window.move = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->drag_graph_button)) {
-            gui_state->ap_graph_config->drag_ap_graph = true;
+            gui_state->ap_graph_config->graph.drag = true;
         } else if(CheckCollisionPointRec(gui_state->mouse_pos,
-                                         (Rectangle){gui_state->ap_graph_config->graph.x, gui_state->ap_graph_config->graph.y - WINDOW_STATUSBAR_HEIGHT,
-                                                     gui_state->ap_graph_config->graph.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
-            gui_state->ap_graph_config->move_ap_graph = true;
-        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->help_box.rect.x, gui_state->help_box.rect.y,
-                                                                           gui_state->help_box.rect.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
-            gui_state->help_box.move = true;
-        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->mesh_info_box.rect.x, gui_state->mesh_info_box.rect.y,
-                                                                           gui_state->mesh_info_box.rect.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
-            gui_state->mesh_info_box.move = true;
-        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->end_info_box.rect.x, gui_state->end_info_box.rect.y,
-                                                                           gui_state->end_info_box.rect.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
-            gui_state->end_info_box.move = true;
-        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->scale_bounds.x, gui_state->scale_bounds.y, gui_state->scale_bounds.width,
-                                                                           gui_state->scale_bounds.height})) {
-            gui_state->move_scale = true;
+                                         (Rectangle){gui_state->ap_graph_config->graph.bounds.x, gui_state->ap_graph_config->graph.bounds.y - WINDOW_STATUSBAR_HEIGHT,
+                                                     gui_state->ap_graph_config->graph.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
+            gui_state->ap_graph_config->graph.move = true;
+        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->help_box.window.bounds.x, gui_state->help_box.window.bounds.y,
+                                                                           gui_state->help_box.window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
+            gui_state->help_box.window.move = true;
+        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->mesh_info_box.window.bounds.x, gui_state->mesh_info_box.window.bounds.y,
+                                                                           gui_state->mesh_info_box.window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
+            gui_state->mesh_info_box.window.move = true;
+        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->end_info_box.window.bounds.x, gui_state->end_info_box.window.bounds.y,
+                                                                           gui_state->end_info_box.window.bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})) {
+            gui_state->end_info_box.window.move = true;
+        } else if(CheckCollisionPointRec(gui_state->mouse_pos, (Rectangle){gui_state->scale.window.bounds.x, gui_state->scale.window.bounds.y, gui_state->scale.window.bounds.width,
+                                                                           gui_state->scale.window.bounds.height})) {
+            gui_state->scale.window.move = true;
         }
 
     } else if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
         if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
-            if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
+            if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph.bounds)) {
                 if(gui_state->ap_graph_config->selected_point_for_apd1.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y == FLT_MAX) {
                     gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
                     gui_state->ap_graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
@@ -1431,25 +1468,25 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
         }
     }
 
-    if(gui_state->move_sub_window) {
-        gui_state->sub_window_pos.x = (gui_state->mouse_pos.x) - (gui_state->box_width - 18.0f) / 2.0f;
-        gui_state->sub_window_pos.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f;
+    if(gui_state->search_window.move) {
+        gui_state->search_window.bounds.x = (gui_state->mouse_pos.x) - (gui_state->search_window.bounds.width - 18.0f) / 2.0f;
+        gui_state->search_window.bounds.y = (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f;
 
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-            gui_state->move_sub_window = false;
+            gui_state->search_window.move = false;
         }
-    } else if(gui_state->ap_graph_config->drag_ap_graph) {
+    } else if(gui_state->ap_graph_config->graph.drag) {
 
-        float new_heigth = gui_state->mouse_pos.y - gui_state->ap_graph_config->graph.y;
+        float new_heigth = gui_state->mouse_pos.y - gui_state->ap_graph_config->graph.bounds.y;
 
         if(new_heigth > 100) {
-            gui_state->ap_graph_config->graph.height = new_heigth;
+            gui_state->ap_graph_config->graph.bounds.height = new_heigth;
         }
 
-        float new_width = gui_state->mouse_pos.x - gui_state->ap_graph_config->graph.x;
+        float new_width = gui_state->mouse_pos.x - gui_state->ap_graph_config->graph.bounds.x;
 
         if(new_width > 200) {
-            gui_state->ap_graph_config->graph.width = new_width;
+            gui_state->ap_graph_config->graph.bounds.width = new_width;
         }
 
         gui_state->ap_graph_config->selected_point_for_apd1.x = FLT_MAX;
@@ -1458,48 +1495,48 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
         gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
 
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-            gui_state->ap_graph_config->drag_ap_graph = false;
+            gui_state->ap_graph_config->graph.drag = false;
         }
-    } else if(gui_state->ap_graph_config->move_ap_graph) {
-        move_rect((Vector2){(gui_state->mouse_pos.x) - (gui_state->ap_graph_config->graph.width - 18.0f) / 2.0f,
+    } else if(gui_state->ap_graph_config->graph.move) {
+        move_rect((Vector2){(gui_state->mouse_pos.x) - (gui_state->ap_graph_config->graph.bounds.width - 18.0f) / 2.0f,
                             (gui_state->mouse_pos.y) + WINDOW_STATUSBAR_HEIGHT / 2.0f},
-                  &gui_state->ap_graph_config->graph);
+                  &gui_state->ap_graph_config->graph.bounds);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            gui_state->ap_graph_config->move_ap_graph = false;
+            gui_state->ap_graph_config->graph.move = false;
 
         gui_state->ap_graph_config->selected_point_for_apd1.x = FLT_MAX;
         gui_state->ap_graph_config->selected_point_for_apd1.y = FLT_MAX;
         gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
         gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
-    } else if(gui_state->help_box.move) {
+    } else if(gui_state->help_box.window.move) {
         move_rect(
-            (Vector2){(gui_state->mouse_pos.x) - (gui_state->help_box.rect.width - 18.0f) / 2.0f, (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f},
-            &gui_state->help_box.rect);
+            (Vector2){(gui_state->mouse_pos.x) - (gui_state->help_box.window.bounds.width - 18.0f) / 2.0f, (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f},
+            &gui_state->help_box.window.bounds);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            gui_state->help_box.move = false;
-    } else if(gui_state->mesh_info_box.move) {
-        move_rect((Vector2){(gui_state->mouse_pos.x) - (gui_state->mesh_info_box.rect.width - 18.0f) / 2.0f,
+            gui_state->help_box.window.move = false;
+    } else if(gui_state->mesh_info_box.window.move) {
+        move_rect((Vector2){(gui_state->mouse_pos.x) - (gui_state->mesh_info_box.window.bounds.width - 18.0f) / 2.0f,
                             (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f},
-                  &gui_state->mesh_info_box.rect);
+                  &gui_state->mesh_info_box.window.bounds);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            gui_state->mesh_info_box.move = false;
+            gui_state->mesh_info_box.window.move = false;
 
-    } else if(gui_state->move_scale) {
-        drag_box(gui_state->mouse_pos, &gui_state->scale_bounds);
+    } else if(gui_state->scale.window.move) {
+        drag_box(gui_state->mouse_pos, &gui_state->scale.window.bounds);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            gui_state->move_scale = false;
-    } else if(gui_state->end_info_box.move) {
-        move_rect((Vector2){(gui_state->mouse_pos.x) - (gui_state->end_info_box.rect.width - 18.0f) / 2.0f,
+            gui_state->scale.window.move = false;
+    } else if(gui_state->end_info_box.window.move) {
+        move_rect((Vector2){(gui_state->mouse_pos.x) - (gui_state->end_info_box.window.bounds.width - 18.0f) / 2.0f,
                             (gui_state->mouse_pos.y) - WINDOW_STATUSBAR_HEIGHT / 2.0f},
-                  &gui_state->end_info_box.rect);
+                  &gui_state->end_info_box.window.bounds);
         if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-            gui_state->end_info_box.move = false;
+            gui_state->end_info_box.window.move = false;
     }
 
     if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->show_ap) {
         float t = Remap(gui_state->mouse_pos.x, gui_state->ap_graph_config->min_x, gui_state->ap_graph_config->max_x, 0.0f, gui_config->final_time);
         float v = Remap(gui_state->mouse_pos.y, gui_state->ap_graph_config->min_y, gui_state->ap_graph_config->max_y, gui_config->min_v, gui_config->max_v);
-        if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph)) {
+        if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph.bounds)) {
             gui_state->ap_graph_config->selected_ap_point.x = t;
             gui_state->ap_graph_config->selected_ap_point.y = v;
         } else {
@@ -1514,24 +1551,24 @@ static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box
 
     float margin = 25.0f;
 
-    gui_state->help_box.rect.width = box_w;
-    gui_state->help_box.rect.height = (text_offset * (float)help_box_lines) + margin;
+    gui_state->help_box.window.bounds.width = box_w;
+    gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin;
     gui_state->help_box.num_lines = help_box_lines;
 
     box_w = box_w - 100;
-    gui_state->mesh_info_box.rect.width = box_w;
-    gui_state->mesh_info_box.rect.height = (text_offset * (float)mesh_info_box_lines) + margin;
+    gui_state->mesh_info_box.window.bounds.width = box_w;
+    gui_state->mesh_info_box.window.bounds.height = (text_offset * (float)mesh_info_box_lines) + margin;
     gui_state->mesh_info_box.num_lines = mesh_info_box_lines;
 
-    gui_state->mesh_info_box.rect.x = (float)gui_state->current_window_width - box_w - margin;
-    gui_state->mesh_info_box.rect.y = 10.0f;
+    gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - box_w - margin;
+    gui_state->mesh_info_box.window.bounds.y = 10.0f;
 
-    gui_state->end_info_box.rect.width = box_w;
-    gui_state->end_info_box.rect.height = (text_offset * (float)end_info_box_lines) + margin;
+    gui_state->end_info_box.window.bounds.width = box_w;
+    gui_state->end_info_box.window.bounds.height = (text_offset * (float)end_info_box_lines) + margin;
     gui_state->end_info_box.num_lines = end_info_box_lines;
 
-    gui_state->end_info_box.rect.x = gui_state->mesh_info_box.rect.x - gui_state->mesh_info_box.rect.width - margin;
-    gui_state->end_info_box.rect.y = gui_state->mesh_info_box.rect.y;
+    gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - margin;
+    gui_state->end_info_box.window.bounds.y = gui_state->mesh_info_box.window.bounds.y;
 }
 
 static void draw_coordinates(struct gui_state *gui_state) {
@@ -1744,6 +1781,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             // We finished drawing everything that depends on the mesh being loaded
             omp_unset_lock(&gui_config->draw_lock);
 
+            if(gui_state->controls_window.show) {
+                draw_control_window(gui_state, gui_config);
+            }
+
             if(gui_state->show_coordinates) {
                 DrawText("x", (int)gui_state->coordinates_label_x_position.x, (int)gui_state->coordinates_label_x_position.y, (int)gui_state->font_size_big,
                          RED);
@@ -1753,12 +1794,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                          DARKBLUE);
             }
 
-            if(gui_state->mesh_info_box.show) {
+            if(gui_state->mesh_info_box.window.show) {
                 bool configured = configure_mesh_info_box_strings(gui_state, gui_config, &gui_state->mesh_info_box.lines, draw_type, mesh_info);
 
                 if(configured) {
-                    draw_box(&gui_state->mesh_info_box, gui_state->font_size_small, gui_state->font_spacing_small, gui_state->font,
-                             (float)gui_state->current_window_width, (float)gui_state->current_window_height, text_offset);
+                    draw_box(&gui_state->mesh_info_box, gui_state, text_offset);
 
                     for(int i = 0; i < mesh_info_box_lines; i++) {
                         free(gui_state->mesh_info_box.lines[i]);
@@ -1766,7 +1806,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 }
             }
 
-            if(gui_state->show_scale) {
+            if(gui_state->scale.window.show) {
                 draw_scale(gui_config->min_v, gui_config->max_v, gui_state, gui_config->int_scale);
             }
 
@@ -1774,21 +1814,18 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 draw_ap_graph(gui_state, gui_config);
             }
 
-            if(gui_state->help_box.show) {
-                draw_box(&gui_state->help_box, gui_state->font_size_small, gui_state->font_spacing_small, gui_state->font,
-                         (float)gui_state->current_window_width, (float)gui_state->current_window_height, text_offset);
+            if(gui_state->help_box.window.show) {
+                draw_box(&gui_state->help_box, gui_state, text_offset);
             }
 
             if(!gui_config->simulating) {
                 if(draw_type == DRAW_SIMULATION) {
-                    if(gui_state->end_info_box.show) {
+                    if(gui_state->end_info_box.window.show) {
                         if(!end_info_box_strings_configured) {
                             configure_end_info_box_strings(gui_config, &gui_state->end_info_box.lines);
                             end_info_box_strings_configured = true;
                         }
-
-                        draw_box(&gui_state->end_info_box, gui_state->font_size_small, gui_state->font_spacing_small, gui_state->font,
-                                 (float)gui_state->current_window_width, (float)gui_state->current_window_height, text_offset);
+                        draw_box(&gui_state->end_info_box, gui_state, text_offset);
                     }
                 }
             }

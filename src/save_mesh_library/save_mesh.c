@@ -30,6 +30,7 @@ static bool save_f = false;
 static int compression_level = 3;
 char *output_dir;
 bool save_visible_mask = true;
+bool save_scar_cells = false;
 
 static bool initialized = false;
 
@@ -393,6 +394,7 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_f, config, "save_f");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_scar_cells, config, "save_scar_cells");
 
         ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->first_save_call = false;
 
@@ -429,7 +431,7 @@ SAVE_MESH(save_as_vtk) {
 
     bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
 
-    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells);
 
     save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, binary, save_f);
 
@@ -460,6 +462,7 @@ SAVE_MESH(save_as_vtu) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(compress, config, "compress");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, compression_level, config, "compression_level");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_scar_cells, config, "save_scar_cells");
 
         if(compress) binary = true;
 
@@ -504,7 +507,7 @@ SAVE_MESH(save_as_vtu) {
     }
 
     bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+    new_vtk_unstructured_grid_from_alg_grid(&((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells);
 
     if(compress) {
         save_vtk_unstructured_grid_as_vtu_compressed(((struct save_as_vtk_or_vtu_persistent_data *) config->persistent_data)->grid, output_dir_with_file, compression_level);

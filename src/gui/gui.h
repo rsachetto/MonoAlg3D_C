@@ -43,24 +43,6 @@ struct vector3_voidp_hash_entry {
     void *value;
 };
 
-struct ap_graph_config {
-
-    Rectangle graph;
-    float max_x;
-    float min_y;
-    float max_y;
-    float min_x;
-
-    Vector2 selected_ap_point;
-    Vector2 selected_point_for_apd1;
-    Vector2 selected_point_for_apd2;
-    struct vector3_voidp_hash_entry *selected_aps;
-    Rectangle drag_graph_button;
-    bool drag_ap_graph;
-    bool move_ap_graph;
-
-};
-
 typedef struct action_potential * action_potential_array;
 
 struct voxel {
@@ -124,13 +106,39 @@ struct gui_shared_info {
     float ui_scale;
 };
 
-struct gui_text_window {
-    Rectangle rect;
+struct window_commom {
+    Rectangle bounds;
     bool show;
     bool move;
+    bool drag;
+};
+
+struct gui_text_window {
+    struct window_commom window;
     char **lines;
     char *title;
     int num_lines;
+};
+
+struct gui_scale {
+    struct window_commom window;
+    bool calc_bounds;
+};
+
+struct ap_graph_config {
+
+    struct window_commom graph;
+    float max_x;
+    float min_y;
+    float max_y;
+    float min_x;
+
+    Vector2 selected_ap_point;
+    Vector2 selected_point_for_apd1;
+    Vector2 selected_point_for_apd2;
+    struct vector3_voidp_hash_entry *selected_aps;
+    Rectangle drag_graph_button;
+
 };
 
 struct gui_state {
@@ -152,13 +160,12 @@ struct gui_state {
     struct gui_text_window help_box;
     struct gui_text_window mesh_info_box;
     struct gui_text_window end_info_box;
+    struct window_commom search_window;
+    struct window_commom controls_window;
+
+    struct gui_scale scale;
 
     bool show_selection_box;
-
-    Rectangle scale_bounds;
-    bool show_scale;
-    bool move_scale;
-    bool calc_scale_bounds;
 
     Ray ray;
     float ray_hit_distance;
@@ -180,11 +187,6 @@ struct gui_state {
     double mouse_timer;
 
     Vector2 mouse_pos;
-    Vector2 sub_window_pos;
-    bool move_sub_window;
-
-    float box_width;
-    float box_height;
 
     struct ap_graph_config *ap_graph_config;
 
