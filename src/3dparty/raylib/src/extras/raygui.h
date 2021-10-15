@@ -2125,7 +2125,6 @@ bool GuiValueBox(Rectangle bounds, const char *text, int *value, int minValue, i
         if (editMode)
         {
             state = GUI_STATE_PRESSED;
-
             int keyCount = (int)strlen(textValue);
 
             // Only allow keys in range [48..57]
