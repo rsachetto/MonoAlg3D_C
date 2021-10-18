@@ -75,7 +75,7 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 }
 
 // For the Purkinje fibers we only need to solve the 1D Monodomain equation
-static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
+static void fill_discretization_matrix_elements_purkinje (bool has_point_data, real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
                                                         struct node *pk_node) {
 
     struct edge *e;
@@ -102,6 +102,15 @@ static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, stru
 
             struct element new_element;
 
+            // Calculate the conductivity between the two neighboring cells
+            if (has_point_data) {
+                real_cpu sigma_x1 = pk_node->sigma;
+                real_cpu sigma_x2 = e->dest->sigma;
+                
+                if(sigma_x1 != 0.0 && sigma_x2 != 0.0) 
+                    sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
+            }
+
             // Neighbour elements ...
             new_element.column = e->id;
             new_element.value = (-sigma_x * multiplier);
@@ -124,6 +133,7 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)  {
     uint32_t num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
     struct cell_node **ac = the_grid->purkinje->purkinje_cells;
     struct node *pk_node = the_grid->purkinje->network->list_nodes;
+    bool has_point_data = the_grid->purkinje->network->has_point_data;
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
@@ -131,14 +141,26 @@ ASSEMBLY_MATRIX(purkinje_fibers_assembly_matrix)  {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real,sigma_x, config, "sigma_purkinje");
 
     if(!sigma_initialized) {
-        OMP(parallel for)
-        for (uint32_t i = 0; i < num_active_cells; i++) {
-            ac[i]->sigma.x = sigma_x;
-        }
+        // Check if the Purkinje network file has the POINT_DATA section
+        if (has_point_data) {
+            struct node *tmp = the_grid->purkinje->network->list_nodes;
+            uint32_t i = 0;
+            while (tmp != NULL)
+            {
+                // Copy the prescribed conductivity from the Purkinje network file into the ALG cell structure
+                ac[i]->sigma.x = tmp->sigma;
 
+                tmp = tmp->next; i++;
+            }
+        } 
+        // Otherwise, initilize the conductivity of all cells homogenously with the value from the configuration file
+        else {
+            OMP(parallel for)
+            for (uint32_t i = 0; i < num_active_cells; i++) {
+                ac[i]->sigma.x = sigma_x;
+            }
+        }
         sigma_initialized = true;
     }
-
-    fill_discretization_matrix_elements_purkinje(sigma_x,ac,num_active_cells,pk_node);
-
+    fill_discretization_matrix_elements_purkinje(has_point_data,sigma_x,ac,num_active_cells,pk_node);
 }

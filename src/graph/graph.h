@@ -22,6 +22,7 @@ struct edge;
 struct node {
     uint32_t id;
     uint32_t num_edges;
+    real_cpu sigma;
     real_cpu x, y, z;
 
     struct edge *list_edges;
@@ -52,14 +53,15 @@ struct graph {
     char *pmj_location_filename;
 
     bool has_pmj_location;
+    bool has_point_data;
     bool calc_retropropagation;
 };
 
-struct node* new_node (uint32_t id, const real_cpu pos[]);
+struct node* new_node (uint32_t id, const real_cpu pos[], const real_cpu sigma);
 struct edge* new_edge (uint32_t id, real_cpu w, struct node *dest);
 struct graph* new_graph ();
 
-void insert_node_graph (struct graph *g, const real_cpu pos[]);
+void insert_node_graph (struct graph *g, const real_cpu pos[], const real_cpu sigma);
 void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_2);
 struct node* search_node (struct graph *g, const uint32_t id);
 
