@@ -110,7 +110,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->controls_window.show = true;
 
-    gui_state->controls_window.bounds.width = 5.0 * 32.0 + 6 * 4 + 96;
+#define NUM_BUTTONS 6
+    gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
     gui_state->controls_window.bounds.height = 38.0f + WINDOW_STATUSBAR_HEIGHT;
 
     gui_state->show_coordinates = true;
@@ -123,6 +124,89 @@ static struct mesh_info *new_mesh_info() {
     struct mesh_info *mesh_info = (struct mesh_info *)malloc(sizeof(struct mesh_info));
     mesh_info->center_calculated = false;
     return mesh_info;
+}
+
+static inline void reset_ui(struct gui_state *gui_state) {
+
+    gui_state->help_box.window.bounds.x = 10;
+    gui_state->help_box.window.bounds.y = 10;
+
+    gui_state->ap_graph_config->graph.bounds.height = 300.0f * gui_state->ui_scale;
+    gui_state->ap_graph_config->graph.bounds.width = 690.0f * gui_state->ui_scale;
+
+    gui_state->ap_graph_config->graph.bounds.x = 10;
+    gui_state->ap_graph_config->graph.bounds.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.bounds.height - 90;
+
+    gui_state->search_window.bounds.width = 220;
+    gui_state->search_window.bounds.height = 100;
+
+    gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.window.bounds.width - 10;
+    gui_state->mesh_info_box.window.bounds.y = 10.0f;
+
+    gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - 10;
+    gui_state->end_info_box.window.bounds.y = gui_state->mesh_info_box.window.bounds.y;
+
+    gui_state->scale.window.bounds.x = (float)gui_state->current_window_width - 30.0f * gui_state->ui_scale;
+    gui_state->scale.window.bounds.y = (float)gui_state->current_window_height / 1.5f;
+
+    gui_state->scale.window.bounds.width = 20;
+    gui_state->scale.window.bounds.height = 0;
+    gui_state->scale.calc_bounds = true;
+
+    gui_state->controls_window.bounds.x = (float)gui_state->current_window_width / 2.0 - gui_state->controls_window.bounds.width;
+    gui_state->controls_window.bounds.y = 10;
+}
+
+static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool full_reset) {
+
+    if(!gui_config->paused) {
+        return;
+    }
+
+    gui_state->voxel_alpha = 255;
+
+    for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+        arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
+    }
+
+    if(gui_config->paused) {
+        omp_unset_lock(&gui_config->sleep_lock);
+        gui_config->paused = false;
+    }
+
+    gui_config->restart = true;
+    gui_config->grid_info.alg_grid = NULL;
+    gui_config->grid_info.vtk_grid = NULL;
+
+    gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    omp_unset_lock(&gui_config->sleep_lock);
+    gui_state->current_selected_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
+    gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
+    gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
+
+    if(full_reset) {
+
+        for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+            arrfree(gui_state->ap_graph_config->selected_aps[i].value);
+        }
+
+        hmfree(gui_state->ap_graph_config->selected_aps);
+        gui_state->ap_graph_config->selected_aps = NULL;
+        hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
+
+        hmfree(gui_state->current_selected_volumes);
+        gui_state->current_selected_volumes = NULL;
+
+        set_camera_params(&(gui_state->camera), false);
+
+        gui_state->scale_alpha = 255;
+
+        reset_ui(gui_state);
+
+        gui_state->show_coordinates = true;
+    }
 }
 
 static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *gui_config) {
@@ -483,8 +567,21 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     else if(gui_config->current_file_index > gui_config->final_file_index)                                                                                     \
         gui_config->current_file_index--;
 
+#define NOT_PAUSED !gui_config->paused
+#define NOT_IN_DRAW gui_config->draw_type != DRAW_FILE
+
+#define DISABLE_IF_NOT_IN_DRAW                                                                                                                                 \
+    if(NOT_IN_DRAW) {                                                                                                                                          \
+        GuiDisable();                                                                                                                                          \
+    }
+
 #define DISABLE_IF_NOT_PAUSED                                                                                                                                  \
-    if(!gui_config->paused || gui_config->draw_type != DRAW_FILE) {                                                                                            \
+    if(NOT_PAUSED) {                                                                                                                                           \
+        GuiDisable();                                                                                                                                          \
+    }
+
+#define DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW                                                                                                                   \
+    if(NOT_PAUSED || NOT_IN_DRAW) {                                                                                                                            \
         GuiDisable();                                                                                                                                          \
     }
 
@@ -502,6 +599,14 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     bool update_main = false;
 
     DISABLE_IF_NOT_PAUSED;
+    if(GuiButton(button_pos, "#76#")) {
+        reset(gui_config, gui_state, false);
+    }
+    ENABLE;
+
+    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
+
+    button_pos.x += button_pos.width + 4.0;
 
     if(GuiButton(button_pos, "#129#")) {
         gui_config->current_file_index = 0;
@@ -533,7 +638,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         }
     }
 
-    DISABLE_IF_NOT_PAUSED;
+    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
     // advance button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -760,89 +865,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
     (*(info_string))[index] = strdup(tmp);
 
     return true;
-}
-
-static inline void reset_ui(struct gui_state *gui_state) {
-
-    gui_state->help_box.window.bounds.x = 10;
-    gui_state->help_box.window.bounds.y = 10;
-
-    gui_state->ap_graph_config->graph.bounds.height = 300.0f * gui_state->ui_scale;
-    gui_state->ap_graph_config->graph.bounds.width = 690.0f * gui_state->ui_scale;
-
-    gui_state->ap_graph_config->graph.bounds.x = 10;
-    gui_state->ap_graph_config->graph.bounds.y = (float)gui_state->current_window_height - gui_state->ap_graph_config->graph.bounds.height - 90;
-
-    gui_state->search_window.bounds.width = 220;
-    gui_state->search_window.bounds.height = 100;
-
-    gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - gui_state->mesh_info_box.window.bounds.width - 10;
-    gui_state->mesh_info_box.window.bounds.y = 10.0f;
-
-    gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - 10;
-    gui_state->end_info_box.window.bounds.y = gui_state->mesh_info_box.window.bounds.y;
-
-    gui_state->scale.window.bounds.x = (float)gui_state->current_window_width - 30.0f * gui_state->ui_scale;
-    gui_state->scale.window.bounds.y = (float)gui_state->current_window_height / 1.5f;
-
-    gui_state->scale.window.bounds.width = 20;
-    gui_state->scale.window.bounds.height = 0;
-    gui_state->scale.calc_bounds = true;
-
-    gui_state->controls_window.bounds.x = (float)gui_state->current_window_width / 2.0 - gui_state->controls_window.bounds.width;
-    gui_state->controls_window.bounds.y = 10;
-}
-
-static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool full_reset) {
-
-    if(!gui_config->paused) {
-        return;
-    }
-
-    gui_state->voxel_alpha = 255;
-
-    for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
-        arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
-    }
-
-    if(gui_config->paused) {
-        omp_unset_lock(&gui_config->sleep_lock);
-        gui_config->paused = false;
-    }
-
-    gui_config->restart = true;
-    gui_config->grid_info.alg_grid = NULL;
-    gui_config->grid_info.vtk_grid = NULL;
-
-    gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    omp_unset_lock(&gui_config->sleep_lock);
-    gui_state->current_selected_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
-    gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
-    gui_state->ap_graph_config->selected_point_for_apd2 = (Vector2){FLT_MAX, FLT_MAX};
-
-    if(full_reset) {
-
-        for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
-            arrfree(gui_state->ap_graph_config->selected_aps[i].value);
-        }
-
-        hmfree(gui_state->ap_graph_config->selected_aps);
-        gui_state->ap_graph_config->selected_aps = NULL;
-        hmdefault(gui_state->ap_graph_config->selected_aps, NULL);
-
-        hmfree(gui_state->current_selected_volumes);
-        gui_state->current_selected_volumes = NULL;
-
-        set_camera_params(&(gui_state->camera), false);
-
-        gui_state->scale_alpha = 255;
-
-        reset_ui(gui_state);
-
-        gui_state->show_coordinates = true;
-    }
 }
 
 static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
@@ -1253,8 +1275,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     struct mesh_info *mesh_info = new_mesh_info();
     bool end_info_box_strings_configured = false;
 
-
-
     int grid_mask = 0;
 
     while(!WindowShouldClose()) {
@@ -1276,8 +1296,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             gui_state->current_window_height = GetScreenHeight();
             reset_ui(gui_state);
         }
-
-        // gui_state->handle_keyboard_input = !gui_state->show_selection_box;
 
         handle_input(gui_config, mesh_info, gui_state);
         if(gui_config->grid_info.loaded) {

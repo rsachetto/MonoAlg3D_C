@@ -1,2 +1,2 @@
 set makeprg=./build.sh
-set guioptions+=!
+"set guioptions+=!
