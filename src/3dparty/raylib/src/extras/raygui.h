@@ -447,8 +447,8 @@ RAYGUIDEF int GuiToggleGroup(Rectangle bounds, const char *text, int active);   
 RAYGUIDEF bool GuiCheckBox(Rectangle bounds, const char *text, bool checked);                           // Check Box control, returns true when active
 RAYGUIDEF int GuiComboBox(Rectangle bounds, const char *text, int active);                              // Combo Box control, returns selected item index
 RAYGUIDEF bool GuiDropdownBox(Rectangle bounds, const char *text, int *active, bool editMode);          // Dropdown Box control, returns selected item
-RAYGUIDEF bool GuiSpinner(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode);     // Spinner control, returns selected value
-RAYGUIDEF bool GuiValueBox(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode);    // Value Box control, updates input text with numbers
+RAYGUIDEF bool GuiSpinner(Rectangle bounds, const char *text, float *value, float minValue, float maxValue, bool int_val, bool editMode);     // Spinner control, returns selected value
+RAYGUIDEF bool GuiValueBox(Rectangle bounds, const char *text, float *value, float minValue, float maxValue, bool int_val, bool editMode);    // Value Box control, updates input text with numbers
 RAYGUIDEF bool GuiTextBox(Rectangle bounds, char *text, int textSize, bool editMode);                   // Text Box control, updates input text
 RAYGUIDEF bool GuiTextBoxMulti(Rectangle bounds, char *text, int textSize, bool editMode);              // Text Box control with multiple lines
 RAYGUIDEF float GuiSlider(Rectangle bounds, const char *textLeft, const char *textRight, float value, float minValue, float maxValue);       // Slider control, returns selected value
@@ -2016,12 +2016,12 @@ bool GuiTextBox(Rectangle bounds, char *text, int textSize, bool editMode)
 }
 
 // Spinner control, returns selected value
-bool GuiSpinner(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode)
+bool GuiSpinner(Rectangle bounds, const char *text, float *value, float minValue, float maxValue, bool int_val, bool editMode)
 {
     GuiControlState state = guiState;
 
     bool pressed = false;
-    int tempValue = *value;
+    float tempValue = *value;
 
     Rectangle spinner = { bounds.x + GuiGetStyle(SPINNER, SPIN_BUTTON_WIDTH) + GuiGetStyle(SPINNER, SPIN_BUTTON_PADDING), bounds.y,
                           bounds.width - 2*(GuiGetStyle(SPINNER, SPIN_BUTTON_WIDTH) + GuiGetStyle(SPINNER, SPIN_BUTTON_PADDING)), bounds.height };
@@ -2062,7 +2062,7 @@ bool GuiSpinner(Rectangle bounds, const char *text, int *value, int minValue, in
     // Draw control
     //--------------------------------------------------------------------
     // TODO: Set Spinner properties for ValueBox
-    pressed = GuiValueBox(spinner, NULL, &tempValue, minValue, maxValue, editMode);
+    pressed = GuiValueBox(spinner, NULL, &tempValue, minValue, maxValue, int_val, editMode);
 
     // Draw value selector custom buttons
     // NOTE: BORDER_WIDTH and TEXT_ALIGNMENT forced values
@@ -2092,7 +2092,7 @@ bool GuiSpinner(Rectangle bounds, const char *text, int *value, int minValue, in
 
 // Value Box control, updates input text with numbers
 // NOTE: Requires static variables: frameCounter
-bool GuiValueBox(Rectangle bounds, const char *text, int *value, int minValue, int maxValue, bool editMode)
+bool GuiValueBox(Rectangle bounds, const char *text, float *value, float minValue, float maxValue, bool int_val, bool editMode)
 {
     #if !defined(VALUEBOX_MAX_CHARS)
         #define VALUEBOX_MAX_CHARS  32
@@ -2102,7 +2102,12 @@ bool GuiValueBox(Rectangle bounds, const char *text, int *value, int minValue, i
     bool pressed = false;
 
     char textValue[VALUEBOX_MAX_CHARS + 1] = "\0";
-    sprintf(textValue, "%i", *value);
+    if(!int_val) {
+        sprintf(textValue, "%.3f", *value);
+    }
+    else {
+        sprintf(textValue, "%.0f", *value);
+    }
 
     Rectangle textBounds = { 0 };
     if (text != NULL)

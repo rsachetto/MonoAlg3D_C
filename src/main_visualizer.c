@@ -133,7 +133,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 
     if(gui_config->current_file_index > num_files) {
-        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", gui_config->current_file_index, num_files, num_files);
+        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", (int)gui_config->current_file_index, num_files, num_files);
         gui_config->current_file_index = num_files - 1;
     }
 
@@ -180,12 +180,12 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!using_pvd) {
             if(dt == 0) {
-                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[gui_config->current_file_index]);
+                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
             } else {
-                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[gui_config->current_file_index]) * dt;
+                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
             }
         } else {
-            gui_config->time = simulation_files->timesteps[gui_config->current_file_index];
+            gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
         }
 
         sdsfree(full_path);
@@ -198,7 +198,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!single_file) {
             full_path = sdscat(full_path, "/");
-            full_path = sdscat(full_path, simulation_files->files_list[gui_config->current_file_index]);
+            full_path = sdscat(full_path, simulation_files->files_list[(int)gui_config->current_file_index]);
         }
 
         free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
@@ -206,7 +206,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);
 
         if(!gui_config->grid_info.vtk_grid) {
-            snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[gui_config->current_file_index]);
+            snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[(int)gui_config->current_file_index]);
 
             if(gui_config->error_message) {
                 free(gui_config->error_message);

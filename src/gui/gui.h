@@ -70,7 +70,7 @@ struct gui_shared_info {
     bool restart;
     float time;
     float final_time;
-    int current_file_index;
+    float current_file_index;
     int final_file_index;
     float dt;
     int step;

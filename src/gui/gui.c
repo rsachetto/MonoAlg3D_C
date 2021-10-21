@@ -169,11 +169,6 @@ static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_stat
         arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
     }
 
-    if(gui_config->paused) {
-        omp_unset_lock(&gui_config->sleep_lock);
-        gui_config->paused = false;
-    }
-
     gui_config->restart = true;
     gui_config->grid_info.alg_grid = NULL;
     gui_config->grid_info.vtk_grid = NULL;
@@ -662,7 +657,10 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     int old_index = gui_config->current_file_index;
 
-    if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, spinner_edit)) {
+    if(NOT_IN_DRAW) {
+        GuiSpinner(button_pos, NULL, &gui_config->time, 0, gui_config->final_time, false, spinner_edit);
+    }
+    else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, true, spinner_edit)) {
         spinner_edit = !spinner_edit;
     }
 
