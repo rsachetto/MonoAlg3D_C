@@ -327,7 +327,7 @@ struct terminal* filter_terminals_by_LAT (struct terminal *the_terminals, const 
     return the_pmjs; 
 }
 
-void write_terminals_to_vtk(struct terminal *the_pmjs, const uint32_t total_num_pmjs, const double percentage)
+void write_terminals_to_vtk(struct terminal *the_pmjs, const uint32_t total_num_pmjs, const uint32_t num_root_nodes, const double percentage)
 {
     const uint32_t num_pmjs = total_num_pmjs*percentage;  // Number of PMJs to be taken
     std::vector<bool> pmjs_taken(total_num_pmjs);
@@ -341,17 +341,18 @@ void write_terminals_to_vtk(struct terminal *the_pmjs, const uint32_t total_num_
             counter--;
         }
     }
-
     FILE *file = fopen("outputs/pmj_cloud.vtk","w+");
     fprintf(file,"# vtk DataFile Version 3.0\n");
     fprintf(file,"vtk output\n");
     fprintf(file,"ASCII\n");
     fprintf(file,"DATASET POLYDATA\n");
-    fprintf(file,"POINTS %u double\n",num_pmjs);
+    fprintf(file,"POINTS %u double\n",num_pmjs+num_root_nodes); // The last PMJs are the root nodes
     for (uint32_t i = 0; i < pmjs_taken.size(); i++)
         if (pmjs_taken[i]) fprintf(file,"%g %g %g\n",the_pmjs[i].x,the_pmjs[i].y,the_pmjs[i].z);
-    fprintf(file,"VERTICES %u %u\n",num_pmjs,num_pmjs*2);
-    for (uint32_t i = 0; i < num_pmjs; i++)
+    for (uint32_t i = total_num_pmjs; i < total_num_pmjs+num_root_nodes; i++)
+        fprintf(file,"%g %g %g\n",the_pmjs[i].x,the_pmjs[i].y,the_pmjs[i].z);
+    fprintf(file,"VERTICES %u %u\n",num_pmjs+num_root_nodes,(num_pmjs+num_root_nodes)*2);
+    for (uint32_t i = 0; i < num_pmjs+num_root_nodes; i++)
         fprintf(file,"1 %u\n",i);
     fclose(file);
 }

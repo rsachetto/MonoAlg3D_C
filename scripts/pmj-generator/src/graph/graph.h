@@ -82,7 +82,7 @@ bool is_terminal (struct node *the_node);
 void print_terminals (struct terminal *the_terminals, const uint32_t num_terminals);
 
 struct terminal* filter_terminals_by_LAT (struct terminal *the_terminals, const uint32_t num_terminals, const double ref_lat, uint32_t &num_pmjs);
-void write_terminals_to_vtk(struct terminal *the_pmjs, const uint32_t num_pmjs, const double percentage);
+void write_terminals_to_vtk(struct terminal *the_pmjs, const uint32_t total_num_pmjs, const uint32_t num_root_nodes, const double percentage);
 
 struct terminal* read_root_nodes (const char filename[], uint32_t &num_root_nodes);
 

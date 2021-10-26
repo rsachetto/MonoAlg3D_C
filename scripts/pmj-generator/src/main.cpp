@@ -140,7 +140,7 @@ int main (int argc, char *argv[])
         the_pmjs[i].z = the_terminals[id].z;
         the_pmjs[i].value = the_terminals[id].value;
     }
-    // Add the original root nodes as well
+    // Add the original root nodes in the back of the array
     for (uint32_t i = total_num_pmjs, j = 0; i < total_num_pmjs+num_root_nodes; i++, j++)
     {
         the_pmjs[i].id = i;
@@ -152,7 +152,7 @@ int main (int argc, char *argv[])
 
     // Define a percentage of the candidate points to be selected
     const double percentage = 0.25;
-    write_terminals_to_vtk(the_pmjs,total_num_pmjs+num_root_nodes,percentage);
+    write_terminals_to_vtk(the_pmjs,total_num_pmjs,num_root_nodes,percentage);
 
     free_purkinje_network(the_purkinje_network);
     free_graph(the_graph);
