@@ -79,7 +79,11 @@ void build_graph_from_purkinje_network (struct graph *the_graph, struct purkinje
 struct terminal* calculate_terminals (struct graph *the_graph, uint32_t &num_terminals);
 uint32_t count_number_of_terminals (struct graph *the_graph);
 bool is_terminal (struct node *the_node);
+void print_terminals (struct terminal *the_terminals, const uint32_t num_terminals);
 
-void write_configuration_file (struct terminal *the_terminals, const uint32_t num_terminals);
+struct terminal* filter_terminals_by_LAT (struct terminal *the_terminals, const uint32_t num_terminals, const double ref_lat, uint32_t &num_pmjs);
+void write_terminals_to_vtk(struct terminal *the_pmjs, const uint32_t num_pmjs, const double percentage);
+
+struct terminal* read_root_nodes (const char filename[], uint32_t &num_root_nodes);
 
 #endif //MONOALG3D_GRAPH_H

@@ -1,9 +1,4 @@
-// =========================================================================================================
 // Author: Lucas Berg
-// =========================================================================================================
-// Program that reads a Purkinje network in VTP format convert it to a graph data structure and extract its
-// terminals.
-// =========================================================================================================
 
 #include <iostream>
 #include <string>
@@ -53,6 +48,15 @@ int main (int argc, char *argv[])
     struct terminal *the_terminals;
     the_terminals = calculate_terminals(the_graph,num_terminals);
     //print_terminals(the_terminals,num_terminals);
+
+    // Generate additional PMJs that have a LAT greater than a reference one
+    uint32_t num_pmjs;
+    const double ref_lat = 60.0;
+    struct terminal *the_pmjs = filter_terminals_by_LAT(the_terminals,num_terminals,ref_lat,num_pmjs);
+    //print_terminals(the_pmjs,num_pmjs);
+
+    const double percentage = 0.25;
+    write_terminals_to_vtk(the_pmjs,num_pmjs,percentage);
 
     return 0;
 }
