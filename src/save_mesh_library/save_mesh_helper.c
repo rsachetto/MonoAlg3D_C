@@ -510,7 +510,7 @@ void write_tissue_apd_map(struct config *config, struct grid *the_grid, char *ou
 
     bool read_only_data = ((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_grid != NULL;
     new_vtk_unstructured_grid_from_alg_grid(&((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_grid, the_grid,
-                                            clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+                                            clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f, false);
 
     set_tissue_vtk_values_with_mean_apd(&config->persistent_data, the_grid);
 
@@ -602,7 +602,7 @@ void write_tissue_activation_time_for_each_pulse(struct config *config, struct g
 
         bool read_only_data = ((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_grid != NULL;
         new_vtk_unstructured_grid_from_alg_grid(&((struct save_coupling_with_activation_times_persistent_data *)config->persistent_data)->tissue_grid, the_grid,
-                                                clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+                                                clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f, false);
 
         set_tissue_vtk_values_with_activation_time_from_current_pulse(&config->persistent_data, the_grid, cur_pulse);
 

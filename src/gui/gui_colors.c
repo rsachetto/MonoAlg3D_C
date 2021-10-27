@@ -1,15 +1,7 @@
-//
-// Created by sachetto on 04/07/19.
-//
+#include "gui_colors.h"
+#include <math.h>
 
-#ifndef MONOALG3D_COLOR_MAPS_H
-#define MONOALG3D_COLOR_MAPS_H
-
-#include "../common_types/common_types.h"
-
-#define NUM_SCALES 7
-#define NUM_COLORS 257
-static real_cpu color_scales[NUM_SCALES][NUM_COLORS][3] = {
+static float color_scales[NUM_SCALES][NUM_COLORS][3] = {
         {
             //RAINBOW
             {0.2298057,0.298717966,0.753683153},
@@ -1814,8 +1806,39 @@ static real_cpu color_scales[NUM_SCALES][NUM_COLORS][3] = {
         {0.98357, 0.9945, 0.40014},
         {0.9918, 0.99724, 0.40012},
         {1, 0.99999, 0.40009}}
-
-
 };
 
-#endif //MONOALG3D_COLOR_MAPS_H
+Color get_color(float value, int alpha, int current_scale) {
+
+    int idx1;
+    int idx2;
+    float fract_between = 0;
+
+    if(value <= 0) {
+        idx1 = idx2 = 0;
+    } else if(value >= 1) {
+        idx1 = idx2 = NUM_COLORS - 1;
+    } else {
+        value = value * (NUM_COLORS - 1);
+        idx1 = (int)floor(value); // Our desired color will be after this index.
+        idx2 = idx1 + 1;          // ... and before this index (inclusive).
+        fract_between = value - (float)idx1;
+    }
+
+    float color_idx1_0 = color_scales[current_scale][idx1][0];
+    float color_idx1_1 = color_scales[current_scale][idx1][1];
+    float color_idx1_2 = color_scales[current_scale][idx1][2];
+
+    float color_idx2_0 = color_scales[current_scale][idx2][0];
+    float color_idx2_1 = color_scales[current_scale][idx2][1];
+    float color_idx2_2 = color_scales[current_scale][idx2][2];
+
+    Color result;
+
+    result.r = (unsigned char)(((color_idx2_0 - color_idx1_0) * fract_between + color_idx1_0) * 255);
+    result.g = (unsigned char)(((color_idx2_1 - color_idx1_1) * fract_between + color_idx1_1) * 255);
+    result.b = (unsigned char)(((color_idx2_2 - color_idx1_2) * fract_between + color_idx1_2) * 255);
+    result.a = alpha;
+
+    return result;
+}

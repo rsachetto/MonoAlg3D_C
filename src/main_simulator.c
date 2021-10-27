@@ -94,7 +94,7 @@ void free_current_simulation_resources(struct user_options *options, struct mono
 }
 
 #ifdef COMPILE_GUI
-static void init_gui_config_for_simulation(struct user_options *options, struct gui_config *gui_config, bool only_restart) {
+static void init_gui_config_for_simulation(struct user_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
     if(!only_restart) {
         omp_init_lock(&gui_config->draw_lock);
@@ -106,11 +106,11 @@ static void init_gui_config_for_simulation(struct user_options *options, struct 
     gui_config->max_v = options->max_v;
     gui_config->min_v = options->min_v;
 
-    if(gui_config->min_v == 0)
+    if(gui_config->min_v == 0.0f)
         gui_config->min_v = 0.1f;
 
     gui_config->simulating = false;
-    gui_config->time = 0.0;
+    gui_config->time = 0.0f;
 
     gui_config->adaptive = options->adaptive;
     gui_config->final_time = options->final_time;
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 
 #ifdef COMPILE_GUI // If this is defined so OMP is also defined
 
-        struct gui_config *gui_config = MALLOC_ONE_TYPE(struct gui_config);
+        struct gui_shared_info *gui_config = MALLOC_ONE_TYPE(struct gui_shared_info);
 
         omp_set_nested(true);
 

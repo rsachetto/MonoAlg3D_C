@@ -1,7 +1,4 @@
 #TODO
-Create a execution database in the test suite to track for performance regressions:
-http://www.corpit.ru/mjt/tinycdb.html
-
 #Generate computer HW Hash (very simple)
 inxi -CNM |grep -e Topology  -e Device-1 | sha256sum
 

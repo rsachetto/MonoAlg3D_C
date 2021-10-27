@@ -172,7 +172,7 @@ struct visualization_options {
     int start_file;
     int step;
     uint32_t value_index;
-    real_cpu max_v, min_v, dt;
+    float max_v, min_v, dt;
     float ui_scale;
 };
 

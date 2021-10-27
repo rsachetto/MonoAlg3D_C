@@ -19,7 +19,6 @@
 ../src/config/modify_current_domain_config.h
 ../src/config/linear_system_solver_config.h
 ../src/config/stim_config.h
-../src/gui/color_maps.h
 ../src/gui/gui.h
 ../src/monodomain/constants.h
 ../src/monodomain/monodomain_solver.h

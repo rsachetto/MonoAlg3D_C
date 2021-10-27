@@ -8,7 +8,7 @@
 #include "../3dparty/stb_ds.h"
 #include "../utils/file_utils.h"
 #include "../3dparty/xml_parser/yxml.h"
-
+#include "../domains_library/mesh_info_data.h"
 #include <math.h>
 #include <stdint.h>
 #include <ctype.h>
@@ -440,7 +440,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
         float *plain_coordinates, bool clip_with_bounds,
-        float *bounds, bool read_only_values, bool read_fibers_f) {
+        float *bounds, bool read_only_values, bool read_fibers_f, bool save_fibrotic) {
 
     if(grid == NULL) {
         return;
@@ -516,11 +516,23 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     struct point_3d half_face;
     struct point_3d center;
 
-    struct cell_node ** grid_cell = grid->active_cells;
+    real_cpu v;
 
-    for(int i = 0; i < num_active_cells; i++) {
 
-        center = grid_cell[i]->center;
+    FOR_EACH_CELL(grid) {
+
+        if(!cell->active) {
+            if(!save_fibrotic) {
+                continue;
+            }
+            else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
+                continue;
+            }
+
+        }
+        
+        center = cell->center;
+        v = cell->v;
 
         if(clip_with_plain) {
             side = A * center.x + B * center.y + C * center.z + D;
@@ -539,22 +551,22 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         }
 
         if(read_fibers_f) {
-            arrput((*vtk_grid)->fibers, grid_cell[i]->sigma.fibers.f);
+            arrput((*vtk_grid)->fibers, cell->sigma.fibers.f);
         }
 
-        arrput((*vtk_grid)->values, grid_cell[i]->v);
-        arrput((*vtk_grid)->cell_visibility, grid_cell[i]->visible);
+        arrput((*vtk_grid)->values, cell->v);
+        arrput((*vtk_grid)->cell_visibility, cell->visible);
 
-        if(grid_cell[i]->v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = grid_cell[i]->v;
-        if(grid_cell[i]->v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = grid_cell[i]->v;
+        if(v > (*vtk_grid)->max_v) (*vtk_grid)->max_v = v;
+        if(v < (*vtk_grid)->min_v) (*vtk_grid)->min_v = v;
 
         if(read_only_values) {
             continue;
         }
 
-        half_face.x = grid_cell[i]->discretization.x / 2.0f;
-        half_face.y = grid_cell[i]->discretization.y / 2.0f;
-        half_face.z = grid_cell[i]->discretization.z / 2.0f;
+        half_face.x = cell->discretization.x / 2.0f;
+        half_face.y = cell->discretization.y / 2.0f;
+        half_face.z = cell->discretization.z / 2.0f;
 
         set_point_data(center, half_face, vtk_grid, &hash, &id);
 

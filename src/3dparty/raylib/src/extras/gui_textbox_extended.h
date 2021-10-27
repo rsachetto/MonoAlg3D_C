@@ -233,7 +233,7 @@ static void DrawTextRecEx(Font font, const char *text, Rectangle rec, float font
 
         textOffsetX += glyphWidth;
     }
-} 
+}
 
 static void DrawTextBoxedSelectable(Font font, const char *text, Rectangle rec, float fontSize, float spacing, bool wordWrap, Color tint, int selectStart, int selectLength, Color selectTint, Color selectBackTint) {
     DrawTextRecEx(font, text, rec, fontSize, spacing, wordWrap, tint, selectStart, selectLength, selectTint, selectBackTint);
@@ -263,7 +263,7 @@ static GuiTextBoxState guiTextBoxState = {      // Keeps state of the active tex
     .cursor = -1,
     .start = 0,
     .index = 0,
-    .select = -1 
+    .select = -1
 };
 
 //----------------------------------------------------------------------------------
@@ -911,7 +911,7 @@ RAYGUIDEF bool GuiTextBoxEx(Rectangle bounds, char *text, int textSize, bool edi
                 else selStart = selStart - guiTextBoxState.start;
             }
             else state = GUI_STATE_FOCUSED;
-            
+
             if (IsKeyPressed(KEY_ENTER) || (!CheckCollisionPointRec(mousePoint, bounds) && IsMouseButtonPressed(0))) pressed = true;
         }
         else
@@ -938,7 +938,7 @@ RAYGUIDEF bool GuiTextBoxEx(Rectangle bounds, char *text, int textSize, bool edi
                 guiTextBoxState.cursor = cursor;
                 guiTextBoxState.start = start;
             }
-            
+
             if (CheckCollisionPointRec(mousePoint, bounds))
             {
                 state = GUI_STATE_FOCUSED;
@@ -946,10 +946,10 @@ RAYGUIDEF bool GuiTextBoxEx(Rectangle bounds, char *text, int textSize, bool edi
             }
 
         }
-        
+
         if (pressed) framesCounter = 0;
     }
-    
+
     // Draw control
     //--------------------------------------------------------------------
     DrawRectangleLinesEx(bounds, GuiGetStyle(TEXTBOX, BORDER_WIDTH), Fade(GetColor(GuiGetStyle(TEXTBOX, BORDER + (state*3))), guiAlpha));
@@ -971,7 +971,7 @@ RAYGUIDEF bool GuiTextBoxEx(Rectangle bounds, char *text, int textSize, bool edi
 
     // Finally draw the text and selection
     DrawTextRecEx(guiFont, &text[textStartIndex], textRec, GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING), false, Fade(GetColor(GuiGetStyle(TEXTBOX, TEXT + (state*3))), guiAlpha), selStart, selLength, GetColor(GuiGetStyle(TEXTBOX, COLOR_SELECTED_FG)), GetColor(GuiGetStyle(TEXTBOX, COLOR_SELECTED_BG)));
-    
+
     return pressed;
 }
 
