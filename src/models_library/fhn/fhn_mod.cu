@@ -18,11 +18,23 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     check_cuda_error(cudaMallocPitch((void **) &(solver->sv), &pitch_h, size, (size_t )NEQ));
     check_cuda_error(cudaMemcpyToSymbol(pitch, &pitch_h, sizeof(size_t)));
 
+    real *initial_conditions = NULL;
+    real *initial_conditions_device = NULL;
 
-    kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
+    if(solver->ode_extra_data) {
+        initial_conditions = (real *)solver->ode_extra_data;
+        check_cuda_error(cudaMemcpy2D (solver->sv, pitch_h, initial_conditions, size, size, (size_t) NEQ, cudaMemcpyHostToDevice));
+
+    }
+    else {
+        kernel_set_model_inital_conditions <<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes);
+    }
 
     check_cuda_error( cudaPeekAtLastError() );
     cudaDeviceSynchronize();
+
+    check_cuda_error(cudaFree(initial_conditions_device));
+
     return pitch_h;
 
 }
@@ -112,7 +124,7 @@ inline __device__ void RHS_gpu(real *sv_, real *rDY_, real stim_current, int thr
     const real a = 0.2f;
     const real b = 0.5f;
     const real k = 36.0;
-    const real epsilon  =  0.000150;
+    const real epsilon  =  0.00040;
 
 
 
