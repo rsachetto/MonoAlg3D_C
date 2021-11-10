@@ -4,7 +4,6 @@ CHECK_CUSTOM_FILE
 
 if [ -n "$CUDA_FOUND" ]; then
   LIB_STATIC_DEPS="$LIB_STATIC_DEPS gpu_utils"
-  LIB_DYNAMIC_DEPS="cudart"
 fi
 
 

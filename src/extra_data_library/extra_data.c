@@ -452,11 +452,9 @@ SET_EXTRA_DATA(set_extra_data_for_spiral_fhn) {
 
     double value;
 
-    struct cell_node *cell = the_grid->first_cell;
-
-    real_cpu dx = 100;
-    real_cpu dy = 100;
-    real_cpu dz = 100;
+    real_cpu dx = the_grid->start_discretization.x;
+    real_cpu dy = the_grid->start_discretization.y;
+    real_cpu dz = the_grid->start_discretization.z;
 
     int nx = 18000/dx;
     int ny = 18000/dy;
