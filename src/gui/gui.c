@@ -13,7 +13,7 @@
 #include "../3dparty/tinyfiledialogs/tinyfiledialogs.h"
 #include "../utils/file_utils.h"
 
-#include "../3dparty/raylib/src/camera.h"
+#include "../3dparty/raylib/src/rcamera.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_RICONS

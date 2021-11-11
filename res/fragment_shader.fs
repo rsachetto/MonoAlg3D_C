@@ -5,7 +5,7 @@ in vec4 fragColor;
 flat in int drawGrid;
 out vec4 finalColor;
 
-const float offset = 1.0 / 10.0;
+const float offset = 1.0 / 20.0;
 const float one_minus_offset = 1.0 - offset;
 
 void main() {
