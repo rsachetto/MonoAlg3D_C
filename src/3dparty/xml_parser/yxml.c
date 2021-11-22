@@ -114,36 +114,10 @@ typedef enum {
 #define INTFROM5CHARS(a, b, c, d, e) ((((uint64_t)(a))<<32) | (((uint64_t)(b))<<24) | (((uint64_t)(c))<<16) | (((uint64_t)(d))<<8) | (uint64_t)(e))
 
 
-/* Set the given char value to ch (0<=ch<=255).
- * This can't be done with simple assignment because char may be signed, and
- * unsigned-to-signed overflow is implementation defined in C. This function
- * /looks/ inefficient, but gcc compiles it down to a single movb instruction
- * on x86, even with -O0. */
-static inline void yxml_setchar(char *dest, unsigned ch) {
-    unsigned char _ch = ch;
-    memcpy(dest, &_ch, 1);
-}
-
-
-/* Similar to yxml_setchar(), but will convert ch (any valid unicode point) to
- * UTF-8 and appends a '\0'. dest must have room for at least 5 bytes. */
-static void yxml_setutf8(char *dest, unsigned ch) {
-    if(ch <= 0x007F)
-        yxml_setchar(dest++, ch);
-    else if(ch <= 0x07FF) {
-        yxml_setchar(dest++, 0xC0 | (ch>>6));
-        yxml_setchar(dest++, 0x80 | (ch & 0x3F));
-    } else if(ch <= 0xFFFF) {
-        yxml_setchar(dest++, 0xE0 | (ch>>12));
-        yxml_setchar(dest++, 0x80 | ((ch>>6) & 0x3F));
-        yxml_setchar(dest++, 0x80 | (ch & 0x3F));
-    } else {
-        yxml_setchar(dest++, 0xF0 | (ch>>18));
-        yxml_setchar(dest++, 0x80 | ((ch>>12) & 0x3F));
-        yxml_setchar(dest++, 0x80 | ((ch>>6) & 0x3F));
-        yxml_setchar(dest++, 0x80 | (ch & 0x3F));
-    }
-    *dest = 0;
+#define yxml_setchar(dest, ch) \
+{\
+	unsigned char _ch = (ch); \
+    memcpy(dest, &_ch, 1);\
 }
 
 #define yxml_datacontent(x, ch)\
@@ -152,10 +126,6 @@ static void yxml_setutf8(char *dest, unsigned ch) {
     x->data[1] = 0;\
     return YXML_CONTENT;\
 }
-//static inline yxml_ret_t yxml_datacontent(yxml_t *x, unsigned ch) {
-	//yxml_setchar(x->data, ch);
-//}
-
 
 static inline yxml_ret_t yxml_datapi1(yxml_t *x, unsigned ch) {
     yxml_setchar(x->data, ch);
@@ -226,10 +196,15 @@ static void yxml_popstack(yxml_t *x) {
 }
 
 
+/*
 static inline yxml_ret_t yxml_elemstart  (yxml_t *x, unsigned ch) { return yxml_pushstack(x, &x->elem, ch); }
 static inline yxml_ret_t yxml_elemname   (yxml_t *x, unsigned ch) { return yxml_pushstackc(x, ch); }
 static inline yxml_ret_t yxml_elemnameend(yxml_t *x, unsigned ch) { return YXML_ELEMSTART; }
+*/
 
+#define yxml_elemstart(x, ch) yxml_pushstack(x, &x->elem, ch)
+#define yxml_elemname(x, ch) yxml_pushstackc(x, ch)
+#define yxml_elemnameend(x, ch) YXML_ELEMSTART
 
 /* Also used in yxml_elemcloseend(), since this function just removes the last
  * element from the stack and returns ELEMEND. */
@@ -262,14 +237,16 @@ static inline yxml_ret_t yxml_elemcloseend(yxml_t *x, unsigned ch) {
 }
 
 
-static inline yxml_ret_t yxml_attrstart  (yxml_t *x, unsigned ch) { return yxml_pushstack(x, &x->attr, ch); }
-static inline yxml_ret_t yxml_attrname   (yxml_t *x, unsigned ch) { return yxml_pushstackc(x, ch); }
-static inline yxml_ret_t yxml_attrnameend(yxml_t *x, unsigned ch) { return YXML_ATTRSTART; }
+#define yxml_attrstart(x, ch) yxml_pushstack((x), &(x)->attr, (ch))
+#define yxml_attrname(x, ch) yxml_pushstackc(x, ch)
+#define yxml_attrnameend(x, ch) YXML_ATTRSTART
+
 static inline yxml_ret_t yxml_attrvalend (yxml_t *x, unsigned ch) { yxml_popstack(x); return YXML_ATTREND; }
 
+#define yxml_pistart(x, ch) yxml_pushstack(x, &x->pi, ch)
+#define yxml_piname(x, ch) yxml_pushstackc(x, ch)
 
-static inline yxml_ret_t yxml_pistart  (yxml_t *x, unsigned ch) { return yxml_pushstack(x, &x->pi, ch); }
-static inline yxml_ret_t yxml_piname   (yxml_t *x, unsigned ch) { return yxml_pushstackc(x, ch); }
+
 static inline yxml_ret_t yxml_piabort  (yxml_t *x, unsigned ch) { yxml_popstack(x); return YXML_OK; }
 static inline yxml_ret_t yxml_pinameend(yxml_t *x, unsigned ch) {
     return (x->pi[0]|32) == 'x' && (x->pi[1]|32) == 'm' && (x->pi[2]|32) == 'l' && !x->pi[3] ? YXML_ESYN : YXML_PISTART;
@@ -292,44 +269,8 @@ static yxml_ret_t yxml_ref(yxml_t *x, unsigned ch) {
     return YXML_OK;
 }
 
-
-static yxml_ret_t yxml_refend(yxml_t *x, yxml_ret_t ret) {
-    unsigned char *r = (unsigned char *)x->data;
-    unsigned ch = 0;
-    if(*r == '#') {
-        if(r[1] == 'x')
-            for(r += 2; yxml_isHex((unsigned)*r); r++)
-                ch = (ch<<4) + (*r <= '9' ? *r-'0' : (*r|32)-'a' + 10);
-        else
-            for(r++; yxml_isNum((unsigned)*r); r++)
-                ch = (ch*10) + (*r-'0');
-        if(*r)
-            ch = 0;
-    } else {
-        uint64_t i = INTFROM5CHARS(r[0], r[1], r[2], r[3], r[4]);
-        ch =
-                i == INTFROM5CHARS('l','t', 0,  0, 0) ? '<' :
-                i == INTFROM5CHARS('g','t', 0,  0, 0) ? '>' :
-                i == INTFROM5CHARS('a','m','p', 0, 0) ? '&' :
-                i == INTFROM5CHARS('a','p','o','s',0) ? '\'':
-                i == INTFROM5CHARS('q','u','o','t',0) ? '"' : 0;
-    }
-
-    /* Codepoints not allowed in the XML 1.1 definition of a Char */
-    if(!ch || ch > 0x10FFFF || ch == 0xFFFE || ch == 0xFFFF || (ch-0xDFFF) < 0x7FF)
-        return YXML_EREF;
-    yxml_setutf8(x->data, ch);
-    return ret;
-}
-
-
-static inline yxml_ret_t yxml_refcontent(yxml_t *x, unsigned ch) { return yxml_refend(x, YXML_CONTENT); }
-static inline yxml_ret_t yxml_refattrval(yxml_t *x, unsigned ch) { return yxml_refend(x, YXML_ATTRVAL); }
-
-
 void yxml_init(yxml_t *x, void *stack, size_t stacksize) {
     memset(x, 0, sizeof(*x));
-    x->line = 1;
     x->stack = stack;
     x->stacksize = stacksize;
     *x->stack = 0;
@@ -341,26 +282,7 @@ void yxml_init(yxml_t *x, void *stack, size_t stacksize) {
 yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
     /* Ensure that characters are in the range of 0..255 rather than -126..125.
      * All character comparisons are done with positive integers. */
-    unsigned ch = (unsigned)(_ch+256) & 0xff;
-    if(!ch)
-        return YXML_ESYN;
-    x->total++;
-
-    /* End-of-Line normalization, "\rX", "\r\n" and "\n" are recognized and
-     * normalized to a single '\n' as per XML 1.0 section 2.11. XML 1.1 adds
-     * some non-ASCII character sequences to this list, but we can only handle
-     * ASCII here without making assumptions about the input encoding. */
-    if(x->ignore == ch) {
-        x->ignore = 0;
-        return YXML_OK;
-    }
-    x->ignore = (ch == 0xd) * 0xa;
-    if(ch == 0xa || ch == 0xd) {
-        ch = 0xa;
-        x->line++;
-        x->byte = 0;
-    }
-    x->byte++;
+    unsigned ch = (unsigned)(_ch);
 
     switch((yxml_state_t)x->state) {
         case YXMLS_string:
@@ -412,7 +334,7 @@ yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
                 return yxml_attrvalend(x, ch);
             }
             break;
-        case YXMLS_attr4:
+        /*case YXMLS_attr4:
             if(yxml_isRef(ch))
                 return yxml_ref(x, ch);
             if(ch == (unsigned char)'\x3b') {
@@ -420,6 +342,7 @@ yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
                 return yxml_refattrval(x, ch);
             }
             break;
+			*/
         case YXMLS_cd0:
             if(ch == (unsigned char)']') {
                 x->state = YXMLS_cd1;
@@ -799,6 +722,7 @@ yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
             if(yxml_isChar(ch))
                 yxml_datacontent(x, ch);
             break;
+			/*
         case YXMLS_misc2a:
             if(yxml_isRef(ch))
                 return yxml_ref(x, ch);
@@ -807,6 +731,7 @@ yxml_ret_t yxml_parse(yxml_t *x, int _ch) {
                 return yxml_refcontent(x, ch);
             }
             break;
+			*/
         case YXMLS_misc3:
             if(yxml_isSP(ch))
                 return YXML_OK;

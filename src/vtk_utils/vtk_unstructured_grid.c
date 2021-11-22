@@ -1769,6 +1769,22 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
 
     if(legacy || xml ) {
         parser_state =  calloc(1, sizeof(struct parser_state));
+        arrsetcap(parser_state->number_of_points, 64);
+        arrsetcap(parser_state->number_of_cells, 64);
+        arrsetcap(parser_state->celldata_ofsset, 64);
+        arrsetcap(parser_state->points_ofsset, 64);
+        arrsetcap(parser_state->cells_connectivity_ofsset, 64);
+        arrsetcap(parser_state->cells_offsets_ofsset, 64);
+        arrsetcap(parser_state->cells_types_ofsset, 64);
+        arrsetcap(parser_state->name_value, 64);
+        arrsetcap(parser_state->cells_connectivity_ascii, 64);
+        arrsetcap(parser_state->points_ascii, 64);
+        arrsetcap(parser_state->celldata_ascii, 64);
+        arrsetcap(parser_state->encoding_type, 64);
+        arrsetcap(parser_state->header_type, 64);
+        arrsetcap(parser_state->format, 64);
+        arrsetcap(parser_state->base64_content, 64);
+        arrsetcap(parser_state->point_data_type, 64);
     }
 
     if(activation_info) {
