@@ -1830,7 +1830,6 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
         (*vtk_grid)->num_cells  = (uint32_t) strtoul(parser_state->number_of_cells,  NULL, 10);
 
         arrsetcap((*vtk_grid)->values, (*vtk_grid)->num_cells);
-        arrsetcap((*vtk_grid)->cell_visibility, (*vtk_grid)->num_cells);
         arrsetcap((*vtk_grid)->points, (*vtk_grid)->num_points);
         arrsetcap((*vtk_grid)->cells,  (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell);
 
