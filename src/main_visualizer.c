@@ -205,6 +205,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);
 
+        if(single_file) {
+            gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
+            gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
+        }
+
         if(!gui_config->grid_info.vtk_grid) {
             snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[(int)gui_config->current_file_index]);
 

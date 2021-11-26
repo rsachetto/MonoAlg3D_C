@@ -265,6 +265,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
     int data_count;
 
     char* source_limit = source + source_size;
+    int read_count;
 
     while(source_size) {
 
@@ -292,10 +293,12 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             center.z = strtod(end+1, &end);
 
             half_face.x = strtod(end+1, &end);
+            read_count = 4;
 
             if(data_count >= 6) {
                 half_face.y = strtod(end+1, &end);
                 half_face.z = strtod(end+1, &end);
+                read_count += 2;
             }
             else {
                 half_face.y = half_face.x;
@@ -303,7 +306,11 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(v_index < data_count) {
-                v = strtod(end+1, NULL);
+                v = strtod(end+1, &end);
+                int tmp = v_index - read_count;
+                for(int i = 0; i < tmp; i++) {
+                    v = strtod(end+1, &end);
+                }
             }
             else {
                 v = 0;
