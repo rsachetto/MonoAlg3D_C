@@ -24,6 +24,7 @@ void set_custom_purkinje_network (struct grid_purkinje *the_purkinje, const char
 
     log_info("Number of Purkinje cells = %u\n",the_network->total_nodes);
     log_info("Number of Purkinje terminals = %u\n",the_network->number_of_terminals);
+    log_info("Has POINT_DATA section = %d\n",the_network->has_point_data);
 
 }
 
@@ -67,15 +68,16 @@ void build_skeleton_purkinje (const char *filename, struct graph *skeleton_netwo
     struct point_3d *the_points = NULL;
     struct line *the_lines = NULL;
     real_cpu *the_sigmas = NULL;
-    read_data_from_input_network(&the_points,&the_lines,&the_sigmas,filename);
+    bool has_point_data = read_data_from_input_network(&the_points,&the_lines,&the_sigmas,filename);
 
+    skeleton_network->has_point_data = has_point_data;
     for (int i = 0; i < arrlen(the_points); i++) {
-        double pos[3];
+        double pos[3], sigma;
         pos[0] = the_points[i].x;
         pos[1] = the_points[i].y;
         pos[2] = the_points[i].z;
-
-        insert_node_graph(skeleton_network,pos);
+        sigma = (has_point_data) ? the_sigmas[i] : -1;
+        insert_node_graph(skeleton_network,pos,sigma);
     }
     for (int i = 0; i < arrlen(the_lines); i++) {
         uint32_t id_1 = the_lines[i].source;
@@ -97,6 +99,8 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     assert(skeleton_network);
 
     the_purkinje_network->dx = dx;
+    the_purkinje_network->has_point_data = skeleton_network->has_point_data;
+    the_purkinje_network->has_pmj_location = skeleton_network->has_pmj_location;
 
     uint32_t n = skeleton_network->total_nodes;
     // This map is needed to deal with bifurcations
@@ -104,11 +108,12 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
 
     // Construct the first node
     struct node *tmp = skeleton_network->list_nodes;
-    real_cpu pos[3];
+    real_cpu pos[3], sigma;
     pos[0] = tmp->x;
     pos[1] = tmp->y;
     pos[2] = tmp->z;
-    insert_node_graph(the_purkinje_network,pos);
+    sigma = tmp->sigma;
+    insert_node_graph(the_purkinje_network,pos,sigma);
 
     // Initialize the DFS mask for the visited nodes
     bool *dfs_visited = (bool*)malloc(sizeof(bool)*n);
@@ -155,10 +160,19 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     d[1] = u->y;
     d[2] = u->z;
 
+    // Calculate the mean conductivity between the source and destination node
+    real_cpu sigma_x1 = u->sigma;
+    real_cpu sigma_x2 = v->dest->sigma;
+    real_cpu sigma_x = 0.0;
+
+    if(sigma_x1 != 0.0 && sigma_x2 != 0.0) {
+        sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
+    }
+
     // DEBUG
     //log_info("Node %d will grow %d points\n",u->id,n_points);
 
-    // Grow the number of points of size 'h' until reaches the size of the segment
+    // Grow the number of points of size 'dx' until reaches the size of the segment
     for (int k = 1; k <= n_points; k++) {
 
         real_cpu pos[3];
@@ -166,7 +180,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
         pos[1] = d[1] + d_ori[1]*dx*k;
         pos[2] = d[2] + d_ori[2]*dx*k;
 
-        insert_node_graph(the_purkinje_network,pos);
+        insert_node_graph(the_purkinje_network,pos,sigma_x);
         insert_edge_graph(the_purkinje_network,id_source,the_purkinje_network->total_nodes-1);
         insert_edge_graph(the_purkinje_network,the_purkinje_network->total_nodes-1,id_source);
 
@@ -180,7 +194,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
         pos[1] = d[1] + d_ori[1]*dx*n_points + d_ori[1]*remainder_points;
         pos[2] = d[2] + d_ori[2]*dx*n_points + d_ori[2]*remainder_points;
 
-        insert_node_graph(the_purkinje_network,pos);
+        insert_node_graph(the_purkinje_network,pos,sigma_x);
         insert_edge_graph(the_purkinje_network,id_source,the_purkinje_network->total_nodes-1);
         insert_edge_graph(the_purkinje_network,the_purkinje_network->total_nodes-1,id_source);
 
@@ -209,7 +223,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network) {
     struct node *n;
     struct edge *e;
 
-    char *filename = "meshes/purkinje_mesh.vtk";
+    char *filename = "outputs/purkinje_mesh.vtk";
     log_info("Purkinje mesh file will be saved in :> %s\n",filename);
 
     FILE *file = fopen(filename,"w+");
@@ -219,7 +233,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network) {
 
     n = the_purkinje_network->list_nodes;
     while (n != NULL) {
-        fprintf(file,"%.8lf %.8lf %.8lf\n",n->x,n->y,n->z);
+        fprintf(file,"%g %g %g\n",n->x,n->y,n->z);
         n = n->next;
     }
 
@@ -232,6 +246,17 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network) {
             e = e->next;
         }
         n = n->next;
+    }
+
+    if (the_purkinje_network->has_point_data) {
+        fprintf(file,"POINT_DATA %u\n",the_purkinje_network->total_nodes);
+        fprintf(file,"SCALARS sigma float\n");
+        fprintf(file,"LOOKUP_TABLE default\n");
+        n = the_purkinje_network->list_nodes;
+        while (n != NULL) {
+            fprintf(file,"%g\n",n->sigma);
+            n = n->next;
+        }
     }
 
     fclose(file);

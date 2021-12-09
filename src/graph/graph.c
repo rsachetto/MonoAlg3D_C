@@ -6,6 +6,7 @@ struct graph* new_graph () {
     result->list_nodes = NULL;
     result->total_nodes = 0;
     result->total_edges = 0;
+    result->has_point_data = false;
 
     return result;
 }
@@ -79,11 +80,11 @@ void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_
     g->total_edges++;
 }
 
-void insert_node_graph (struct graph *g, const real_cpu pos[]) {
+void insert_node_graph (struct graph *g, const real_cpu pos[], const real_cpu sigma) {
     assert(g);
 
     struct node *tmp = g->list_nodes;
-    struct node *node = new_node(g->total_nodes++,pos);
+    struct node *node = new_node(g->total_nodes++,pos,sigma);
     // First node of the list
     if (!tmp) {
         g->list_nodes = node;
@@ -94,12 +95,13 @@ void insert_node_graph (struct graph *g, const real_cpu pos[]) {
     }
 }
 
-struct node* new_node (uint32_t id, const real_cpu pos[]) {
+struct node* new_node (uint32_t id, const real_cpu pos[], const real_cpu sigma) {
     struct node *n = MALLOC_ONE_TYPE(struct node);
     n->id = id;
     n->x = pos[0];
     n->y = pos[1];
     n->z = pos[2];
+    n->sigma = sigma;
     n->num_edges = 0;
     n->next = NULL;
     n->list_edges = NULL;
@@ -197,7 +199,12 @@ void print_graph (struct graph *g) {
 
     while (n != NULL) {
         struct edge *e = n->list_edges;
-        fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) ||",n->id,n->x,n->y,n->z);
+        if (g->has_point_data) {
+            fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) [%g] ||",n->id,n->x,n->y,n->z,n->sigma);
+        } else {
+            fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) ||",n->id,n->x,n->y,n->z);
+        }
+        
 
         while (e != NULL) {
             fprintf(stdout," --> || %d %.3lf (%.3lf,%.3lf,%.3lf) ||",e->id,e->w,e->dest->x,e->dest->y,e->dest->z);
@@ -209,8 +216,7 @@ void print_graph (struct graph *g) {
     }
     printf("Nodes = %u\n",g->total_nodes);
     printf("Edges = %u\n",g->total_edges);
-
-
+    printf("Has point data = %d\n",g->has_point_data);
 }
 
 real_cpu calc_norm (const real_cpu x1, const real_cpu y1, const real_cpu z1,

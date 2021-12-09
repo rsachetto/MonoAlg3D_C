@@ -97,36 +97,49 @@ void initialize_diagonal_elements_purkinje (struct monodomain_solver *the_solver
 }
 
 // For the Purkinje fibers we only need to solve the 1D Monodomain equation
-static void fill_discretization_matrix_elements_purkinje (real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
+static void fill_discretization_matrix_elements_purkinje (bool has_point_data, real_cpu sigma_x, struct cell_node **grid_cells, uint32_t num_active_cells,
                                                         struct node *pk_node) {
 
     struct edge *e;
     struct element **cell_elements;
-    real_cpu dx;
 
-    real_cpu sigma_x1 = (2.0f * sigma_x * sigma_x) / (sigma_x + sigma_x);
+    real_cpu dx, dy, dz;
+    real_cpu multiplier;
 
-    uint32_t i;
+    int i;
 
     for (i = 0; i < num_active_cells; i++, pk_node = pk_node->next) {
 
         cell_elements = &grid_cells[i]->elements;
         dx = grid_cells[i]->discretization.x;
+        dy = grid_cells[i]->discretization.x;
+        dz = grid_cells[i]->discretization.x;
+
+        multiplier = ((dy * dz) / dx);
 
         e = pk_node->list_edges;
 
-        // Do the mapping of the edges from the graph to the sparse matrix data structure
-        while (e != NULL){
+        // Do the mapping of the edges from the graph to the sparse matrix data structure ...
+        while (e != NULL) {
 
             struct element new_element;
 
-            // Neighbour elements
+            // Calculate the conductivity between the two neighboring cells
+            if (has_point_data) {
+                real_cpu sigma_x1 = pk_node->sigma;
+                real_cpu sigma_x2 = e->dest->sigma;
+                
+                if(sigma_x1 != 0.0 && sigma_x2 != 0.0) 
+                    sigma_x = (2.0f * sigma_x1 * sigma_x2) / (sigma_x1 + sigma_x2);
+            }
+
+            // Neighbour elements ...
             new_element.column = e->id;
-            new_element.value = -sigma_x1 * dx;
+            new_element.value = (-sigma_x * multiplier);
             new_element.cell = grid_cells[e->id];
 
             // Diagonal element ...
-            cell_elements[0]->value += (sigma_x1 * dx);
+            cell_elements[0]->value += (sigma_x * multiplier);
 
             arrput(grid_cells[i]->elements,new_element);
 
@@ -198,24 +211,34 @@ ASSEMBLY_MATRIX (purkinje_coupling_assembly_matrix) {
 
     uint32_t num_purkinje_active_cells = the_grid->purkinje->num_active_purkinje_cells;
     struct cell_node **ac_purkinje = the_grid->purkinje->purkinje_cells;
-
     struct node *pk_node = the_grid->purkinje->network->list_nodes;
+    bool has_point_data = the_grid->purkinje->network->has_point_data;
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
-    // TODO: Include POINT_DATA with the conductivity
     if(!sigma_purkinje_initialized) {
+        // Check if the Purkinje network file has the POINT_DATA section
+        if (has_point_data) {
+            struct node *tmp = the_grid->purkinje->network->list_nodes;
+            uint32_t i = 0;
+            while (tmp != NULL)
+            {
+                // Copy the prescribed conductivity from the Purkinje network file into the ALG Purkinje cell structure
+                ac_purkinje[i]->sigma.x = tmp->sigma;
 
-        OMP(parallel for)
-        for (uint32_t i = 0; i < num_purkinje_active_cells; i++) {
-
-            ac_purkinje[i]->sigma.x = sigma_purkinje;
+                tmp = tmp->next; i++;
+            }
+        } 
+        // Otherwise, initilize the conductivity of all cells homogenously with the value from the configuration file
+        else {
+            OMP(parallel for)
+            for (uint32_t i = 0; i < num_active_cells; i++) {
+                ac[i]->sigma.x = sigma_purkinje;
+            }
         }
-
         sigma_purkinje_initialized = true;
     }
-
-    fill_discretization_matrix_elements_purkinje(sigma_purkinje,ac_purkinje,num_purkinje_active_cells,pk_node);
+    fill_discretization_matrix_elements_purkinje(has_point_data,sigma_purkinje,ac_purkinje,num_purkinje_active_cells,pk_node);
 }
 
 ASSEMBLY_MATRIX (purkinje_coupling_with_anisotropic_sigma_assembly_matrix) {
@@ -348,22 +371,32 @@ ASSEMBLY_MATRIX (purkinje_coupling_with_anisotropic_sigma_assembly_matrix) {
 
     uint32_t num_purkinje_active_cells = the_grid->purkinje->num_active_purkinje_cells;
     struct cell_node **ac_purkinje = the_grid->purkinje->purkinje_cells;
-
     struct node *pk_node = the_grid->purkinje->network->list_nodes;
+    bool has_point_data = the_grid->purkinje->network->has_point_data;
 
     initialize_diagonal_elements_purkinje(the_solver, the_grid);
 
-    // TODO: Include POINT_DATA with the conductivity
     if(!sigma_purkinje_initialized) {
+        // Check if the Purkinje network file has the POINT_DATA section
+        if (has_point_data) {
+            struct node *tmp = the_grid->purkinje->network->list_nodes;
+            uint32_t i = 0;
+            while (tmp != NULL)
+            {
+                // Copy the prescribed conductivity from the Purkinje network file into the ALG Purkinje cell structure
+                ac_purkinje[i]->sigma.x = tmp->sigma;
 
-        OMP(parallel for)
-        for (uint32_t i = 0; i < num_purkinje_active_cells; i++) {
-
-            ac_purkinje[i]->sigma.x = sigma_purkinje;
+                tmp = tmp->next; i++;
+            }
+        } 
+        // Otherwise, initilize the conductivity of all cells homogenously with the value from the configuration file
+        else {
+            OMP(parallel for)
+            for (uint32_t i = 0; i < num_active_cells; i++) {
+                ac[i]->sigma.x = sigma_purkinje;
+            }
         }
-
         sigma_purkinje_initialized = true;
     }
-
-    fill_discretization_matrix_elements_purkinje(sigma_purkinje,ac_purkinje,num_purkinje_active_cells,pk_node);
+    fill_discretization_matrix_elements_purkinje(has_point_data,sigma_purkinje,ac_purkinje,num_purkinje_active_cells,pk_node);
 }
