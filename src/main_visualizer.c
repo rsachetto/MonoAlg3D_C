@@ -70,7 +70,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
     get_path_information(input, &input_info);
 
     if(!input_info.exists) {
-        snprintf(error, MAX_ERROR_SIZE, "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
+        snprintf(error, MAX_ERROR_SIZE,
+                 "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
         if(gui_config->error_message) {
             free(gui_config->error_message);
         }
@@ -133,7 +134,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 
     if(gui_config->current_file_index > num_files) {
-        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", (int)gui_config->current_file_index, num_files, num_files);
+        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", (int)gui_config->current_file_index,
+                num_files, num_files);
         gui_config->current_file_index = num_files - 1;
     }
 
@@ -162,12 +164,12 @@ static int read_and_render_files(struct visualization_options *options, struct g
         gui_config->step = step;
 
         gui_config->final_file_index = final_step / step;
-            
+
         if(dt == 0.0) {
-            gui_config->final_time = (float) final_step;
+            gui_config->final_time = (float)final_step;
 
         } else {
-            gui_config->final_time = (float) final_step * dt;
+            gui_config->final_time = (float)final_step * dt;
         }
     } else {
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
@@ -180,9 +182,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(!using_pvd) {
             if(dt == 0) {
-                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
+                gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
             } else {
-                gui_config->time = (float) get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
+                gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
             }
         } else {
             gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
@@ -228,7 +230,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         omp_unset_lock(&gui_config->draw_lock);
 
-        //here we wait until the mesh was rendered
+        // here we wait until the mesh was rendered
         omp_set_lock(&gui_config->sleep_lock);
 
         if(gui_config->restart) {
