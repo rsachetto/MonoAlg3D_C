@@ -81,15 +81,25 @@ int main (int argc, char *argv[])
 
     if(array_1 && array_2)
     {
+        double sum_num = 0.0;
+        double sum_den = 0.0;
         // Pass through each cell on the tissue for the current timestep
         for(int i = 0; i < total_num_cells_1; i++)
         {
-            double value_1, value_2;
+            double value_1, value_2, error;
             value_1 = array_1->GetValue(i);
             value_2 = array_2->GetValue(i);
+            error = fabs(value_1-value_2);
+            values->InsertNextValue(error);
 
-            values->InsertNextValue(fabs(value_1-value_2));
+            sum_num += pow(error,2);
+            sum_den += pow(value_1,2);
         }
+        double l2_norm = sqrt(sum_den);
+        double rmse = sqrt(sum_num/(double)total_num_cells_1);
+        double rrmse = sqrt(sum_num/sum_den);
+        printf("RMSE = %g ms\n",rmse);
+        printf("RRMSE = %g %%\n",rrmse*100.0);
     }
     else
     {

@@ -26,7 +26,7 @@
 
 using namespace std;
 
-const double TOLERANCE = 1.0e-02;
+const double TOLERANCE = 1.0e-03;
 
 double calculate_conduction_velocity_from_simulation ()
 {
@@ -74,7 +74,7 @@ void write_configuration_file (const double sigma)
     fprintf(file,"[main]\n");
     fprintf(file,"num_threads=4\n");
     fprintf(file,"dt_pde=0.02\n");
-    fprintf(file,"simulation_time=500.0\n");
+    fprintf(file,"simulation_time=150.0\n");
     fprintf(file,"abort_on_no_activity=false\n");
     fprintf(file,"use_adaptivity=false\n");
     fprintf(file,"quiet=true\n");
@@ -109,34 +109,37 @@ void write_configuration_file (const double sigma)
     fprintf(file,"[linear_system_solver]\n");
     fprintf(file,"tolerance=1e-16\n");
     fprintf(file,"use_preconditioner=yes\n");
-    fprintf(file,"max_iterations=200\n");
+    fprintf(file,"max_iterations=500\n");
     fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libdefault_linear_system_solver.so\n");
     fprintf(file,"main_function=conjugate_gradient\n");
     fprintf(file,"\n");
     
     fprintf(file,"[purkinje]\n");
     fprintf(file,"name=Simple Purkinje\n");
-    fprintf(file,"dx=100.0\n");
+    //fprintf(file,"dx=100.0\n");
+    fprintf(file,"dx=400.0\n");
     fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libdefault_purkinje.so\n");
     fprintf(file,"main_function=initialize_purkinje_with_custom_mesh\n");
-    fprintf(file,"network_file=/home/berg/Github/MonoAlg3D_C/networks/simple_cable_2cm.vtk\n");
+    //fprintf(file,"network_file=/home/berg/Github/MonoAlg3D_C/networks/simple_cable_10cm.vtk\n");
+    fprintf(file,"network_file=/home/berg/Github/MonoAlg3D_C/networks/simple_cable_40cm.vtk\n");
     fprintf(file,"\n");
     
     fprintf(file,"[ode_solver]\n");
-    fprintf(file,"adaptive=true\n");
-    fprintf(file,"dt=0.0001\n");
+    //fprintf(file,"adaptive=true\n");
+    fprintf(file,"dt=0.02\n");
     fprintf(file,"use_gpu=no\n");
     fprintf(file,"gpu_id=0\n");
     //fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libtrovato_2019.so\n");
-    fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libToRORd_fkatp_endo.so\n");
+    //fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libToRORd_fkatp_endo.so\n");
+    fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libten_tusscher_3_endo.so\n");
     fprintf(file,"\n");
     
     fprintf(file,"[purkinje_stim_his]\n");
     fprintf(file,"start = 0.0\n");
-    fprintf(file,"duration = 2.0\n");
+    fprintf(file,"duration = 5.0\n");
     //fprintf(file,"current = -40.0\n");
     fprintf(file,"current = -53.0\n");
-    fprintf(file,"id_limit = 10\n");
+    fprintf(file,"id_limit = 25\n");
     fprintf(file,"main_function=stim_if_id_less_than\n");
     fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libdefault_stimuli.so\n");
     fprintf(file,"\n");

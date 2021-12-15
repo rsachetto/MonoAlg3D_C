@@ -855,61 +855,86 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     char *pmj_location_filename = the_network->pmj_location_filename;
     set_active_terminals(the_terminals,number_of_terminals,pmj_location_filename);
 
-    // Consider only the active terminals to do the coupling
-    for (j = 0; j < number_of_terminals; j++) {
+    // Calculate the distance between each tissue cell to the Purkinje terminal and store them in a table
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+    real_cpu *dist_array = MALLOC_ARRAY_OF_TYPE(real_cpu, number_of_terminals*n_active);
+    uint32_t *tissue_ids = MALLOC_ARRAY_OF_TYPE(uint32_t, n_active);
+    bool *tissue_taken = MALLOC_ARRAY_OF_TYPE(bool, n_active);
 
-        if (the_terminals[j].active) {
-
-            uint32_t n_active = the_grid->num_active_cells;
-            struct cell_node **ac = the_grid->active_cells;
-
-            // Get the Purkinje cell
+    // Grid cells loop
+    for (uint32_t i = 0; i < n_active; i++) {
+        
+        // Purkinje terminals loop
+        for (j = 0; j < number_of_terminals; j++) {
             n = the_terminals[j].purkinje_cell;
+            real_cpu dist = calc_norm(n->x, n->y, n->z, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
 
-            // Search for all the tissue cells that are within the sphere that
-            // has a radius less or equal to 'pmj_scale'
-            uint32_t *tissue_cells_to_link = NULL;
-            real_cpu *dist_array = NULL;
-            real_cpu scale = pmj_scale;
-            while (arrlen(tissue_cells_to_link) < nmin_pmj) {
-
-                for(uint32_t i = 0; i < n_active; i++) {
-
-                    real_cpu dist = calc_norm(n->x, n->y, n->z,\
-                                            ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
-
-                    if(dist < scale) {
-                        arrput(dist_array,dist);
-                        arrput(tissue_cells_to_link,i);
-                    }
-                }
-
-                // TODO: Increase the 'pmj_scale' by 10%
-                //if (arrlen(tissue_cells_to_link) < nmin_pmj) {
-                //    scale *= 1.1;
-                //}
-            }
-
-            // QuickSort: Sort the distance array together with the indexes from the tissue cells to link
-            sort_vector_by_distance(dist_array,tissue_cells_to_link,arrlen(dist_array));
-
-            // Save the tissue cells indexes we are going to link
-            // until we achieve the maximum number of points inside the PMJ region or
-            // until the maximum size of the link array is reached
-            uint32_t size = (arrlen(tissue_cells_to_link) < nmax_pmj) ? arrlen(tissue_cells_to_link) : nmax_pmj;
-            the_terminals[j].tissue_cells = NULL;
-            for (uint32_t i = 0; i < size; i++) {
-
-                uint32_t index = tissue_cells_to_link[i];
-                arrput(the_terminals[j].tissue_cells,ac[index]);
-            }
-
-            arrfree(tissue_cells_to_link);
-        } else {
-            the_terminals[j].tissue_cells = NULL;
+            dist_array[j*n_active+i] = dist;
         }
+        // Set the current tissue cell as not taken
+        tissue_taken[i] = false;
+
+        // Reset the tissue cell index array
+        tissue_ids[i] = i;
     }
 
+    for (uint32_t i = 0; i < number_of_terminals; i++) {
+
+        if (the_terminals[i].active) {
+            
+            real_cpu *tissue_dist = &dist_array[i*n_active];
+            sort_vector_by_distance(tissue_dist,tissue_ids,n_active);
+            
+            // Fill the 'tissue_cells_to_link' array until we achieve the 'nmin_pmjs'
+            uint32_t *tissue_cells_to_link = NULL;
+            j = 0;
+            while (arrlen(tissue_cells_to_link) < nmin_pmj) {
+                uint32_t id = tissue_ids[j];
+                if (!tissue_taken[id]) {
+                    arrput(tissue_cells_to_link,tissue_ids[j]);
+                    tissue_taken[id] = true;
+                }
+                j++;
+            }
+
+            // Set the reference to the tissue cells
+            the_terminals[i].tissue_cells = NULL;
+            for (j = 0; j < nmin_pmj; j++) {
+
+                uint32_t index = tissue_cells_to_link[j];
+                arrput(the_terminals[i].tissue_cells,ac[index]);
+            }
+
+            // Reset the tissue cell index array
+            for (j = 0; j < n_active; j++)
+                tissue_ids[j] = j;
+            arrfree(tissue_cells_to_link);
+        } 
+        else {
+            the_terminals[i].tissue_cells = NULL;
+        }
+    }
+    
+    free(tissue_taken);
+    free(tissue_ids);
+    free(dist_array);
+
+    /*
+    for (j = 0; j < number_of_terminals; j++) {
+        
+        if (the_terminals[j].active) {
+            
+            uint32_t num_tissue_cells = arrlen(the_terminals[j].tissue_cells);
+            printf("Terminal %u is linked to %u tissue cells\n",j,num_tissue_cells);
+            for (uint32_t i = 0; i < 10; i++) {
+                printf("\tTissue cell %u = (%g,%g,%g)\n",the_terminals[j].tissue_cells[i]->sv_position,\
+                                                    the_terminals[j].tissue_cells[i]->center.x,the_terminals[j].tissue_cells[i]->center.y,the_terminals[j].tissue_cells[i]->center.z);
+            }
+        }
+    }
+    */
+   
     return the_terminals;
 }
 
