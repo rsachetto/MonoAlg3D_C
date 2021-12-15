@@ -495,7 +495,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(!restore_checkpoint || !restore_success) {
         if(assembly_matrix_config->init_function) {
-            ((set_pde_initial_condition_fn *)assembly_matrix_config->init_function)(assembly_matrix_config, the_monodomain_solver, the_grid, initial_v,
+            ((set_pde_initial_condition_fn *)assembly_matrix_config->init_function)(assembly_matrix_config, the_monodomain_solver, the_ode_solver, the_grid, initial_v,
                                                                                     purkinje_initial_v);
         } else {
             log_error_and_exit("Function for the Monodomain initial conditions not provided (init_function on [assembly_matrix] section)!\n");

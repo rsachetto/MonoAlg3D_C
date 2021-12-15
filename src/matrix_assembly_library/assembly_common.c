@@ -37,8 +37,8 @@ static void initialize_diagonal_elements(struct monodomain_solver *the_solver, s
     }
 }
 
-static struct element fill_element(uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x, real_cpu sigma_y,
-                            real_cpu sigma_z, struct element *cell_elements) {
+static struct element fill_element(uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x,
+                                   real_cpu sigma_y, real_cpu sigma_z, struct element *cell_elements) {
 
     real_cpu multiplier;
 
@@ -431,8 +431,6 @@ static inline real_cpu DIVIDE(real_cpu num, real_cpu denom) {
         }                                                                                                                                                      \
     } while(0)
 
-
-
 static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *neighbours[26]) {
 
     struct element *elements = grid_cell->elements;
@@ -441,18 +439,9 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
     real_cpu dy = grid_cell->discretization.y;
     real_cpu dz = grid_cell->discretization.z;
 
-    real_cpu dx_squared = dx * dx;
-    real_cpu dy_squared = dy * dy;
-    real_cpu dz_squared = dz * dz;
-
-    real_cpu dx_dy = dx_squared / dy;
-    real_cpu dx_dz = dx_squared / dz;
-
-    real_cpu dy_dx = dy_squared / dx;
-    real_cpu dy_dz = dy_squared / dz;
-
-    real_cpu dz_dx = dz_squared / dx;
-    real_cpu dz_dy = dz_squared / dy;
+    real_cpu dy_times_dz_over_dx = (dy * dz) / dx;
+    real_cpu dx_times_dz_over_dy = (dx * dz) / dy;
+    real_cpu dx_times_dy_over_dz = (dx * dy) / dz;
 
     real_cpu sigma_x_r = 0.0;
     real_cpu sigma_xy_jx_r = 0.0;
@@ -493,16 +482,17 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
     int count_sigma_z_b = 0;
 
     calc_sigmas(grid_cell, neighbours, RIGHT, &sigma_x_r, &sigma_xy_jx_r, &sigma_xz_jx_r, &count_sigma_x_r, &count_sigma_xy_jx_r, &count_sigma_xz_jx_r);
-    calc_sigmas(grid_cell, neighbours, LEFT,  &sigma_x_l, &sigma_xy_jx_l, &sigma_xz_jx_l, &count_sigma_x_l, &count_sigma_xy_jx_l, &count_sigma_xz_jx_l);
+    calc_sigmas(grid_cell, neighbours, LEFT, &sigma_x_l, &sigma_xy_jx_l, &sigma_xz_jx_l, &count_sigma_x_l, &count_sigma_xy_jx_l, &count_sigma_xz_jx_l);
 
-    calc_sigmas(grid_cell, neighbours, TOP,  &sigma_y_t, &sigma_xy_jy_t, &sigma_yz_jy_t, &count_sigma_y_t, &count_sigma_xy_jy_t, &count_sigma_yz_jy_t);
+    calc_sigmas(grid_cell, neighbours, TOP, &sigma_y_t, &sigma_xy_jy_t, &sigma_yz_jy_t, &count_sigma_y_t, &count_sigma_xy_jy_t, &count_sigma_yz_jy_t);
     calc_sigmas(grid_cell, neighbours, DOWN, &sigma_y_d, &sigma_xy_jy_d, &sigma_yz_jy_d, &count_sigma_y_d, &count_sigma_xy_jy_d, &count_sigma_yz_jy_d);
 
     calc_sigmas(grid_cell, neighbours, FRONT, &sigma_z_f, &sigma_xz_jz_f, &sigma_yz_jz_f, &count_sigma_z_f, &count_sigma_xz_jz_f, &count_sigma_yz_jz_f);
-    calc_sigmas(grid_cell, neighbours, BACK,  &sigma_z_b, &sigma_xz_jz_b, &sigma_yz_jz_b, &count_sigma_z_b, &count_sigma_xz_jz_b, &count_sigma_yz_jz_b);
+    calc_sigmas(grid_cell, neighbours, BACK, &sigma_z_b, &sigma_xz_jz_b, &sigma_yz_jz_b, &count_sigma_z_b, &count_sigma_xz_jz_b, &count_sigma_yz_jz_b);
 
-    //MAIN DIAGONAL
-    elements[0].value += dx*sigma_x_r + dx*sigma_x_l + dy*sigma_y_t + dy*sigma_y_d + dz*sigma_z_f + dz*sigma_z_b;
+    // MAIN DIAGONAL
+    elements[0].value += dy_times_dz_over_dx * sigma_x_r + dy_times_dz_over_dx * sigma_x_l + dx_times_dz_over_dy * sigma_y_t + dx_times_dz_over_dy * sigma_y_d +
+                         dx_times_dy_over_dz * sigma_z_f + dx_times_dy_over_dz * sigma_z_b;
 
     real_cpu s1, s2, s3;
 
@@ -516,62 +506,50 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 
             switch(direction) {
             case FRONT:
-                new_element.value += - sigma_z_f*dz;
+                new_element.value += -sigma_z_f * dx_times_dy_over_dz;
 
                 if(neighbours[BACK]) {
-                    new_element.value += - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
-                                         + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz
-                                         - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
-                                         + DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz;
+                    new_element.value += -DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx + DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx -
+                                         DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy + DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy;
                 }
 
                 break;
             case BACK:
-                new_element.value += - sigma_z_b*dz;
+                new_element.value += -sigma_z_b * dx_times_dy_over_dz;
 
                 if(neighbours[FRONT]) {
-                    new_element.value +=   DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
-                                         - DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz
-                                         + DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
-                                         - DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz;
+                    new_element.value += DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx - DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx +
+                                         DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy - DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy;
                 }
                 break;
 
             case TOP:
-                new_element.value += - sigma_y_t*dy;
+                new_element.value += -sigma_y_t * dx_times_dz_over_dy;
 
                 if(neighbours[DOWN]) {
-                    new_element.value += - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy
-                                         + DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy
-                                         - DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
-                                         + DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy;
+                    new_element.value += -DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx + DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx -
+                                         DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz + DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz;
                 }
                 break;
             case DOWN:
-                new_element.value += - sigma_y_d*dy;
+                new_element.value += -sigma_y_d * dx_times_dz_over_dy;
                 if(neighbours[TOP]) {
-                    new_element.value +=  DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy
-                                        - DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy
-                                        + DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
-                                        - DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy;
+                    new_element.value += DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx - DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx +
+                                         DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz - DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz;
                 }
                 break;
             case RIGHT:
-                new_element.value += - sigma_x_r*dx;
+                new_element.value += -sigma_x_r * dy_times_dz_over_dx;
                 if(neighbours[LEFT]) {
-                    new_element.value += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
-                                         + DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
-                                         - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx
-                                         + DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
+                    new_element.value += -DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy + DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy -
+                                         DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz + DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz;
                 }
                 break;
             case LEFT:
-                new_element.value += - sigma_x_l*dx;
+                new_element.value += -sigma_x_l * dy_times_dz_over_dx;
                 if(neighbours[RIGHT]) {
-                    new_element.value += DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
-                                       - DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
-                                       + DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx
-                                       - DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
+                    new_element.value += DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy - DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy +
+                                         DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz - DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz;
                 }
                 break;
 
@@ -581,20 +559,17 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
                 s2 = 0.0;
 
                 if(neighbours[FRONT_DOWN]) {
-                    s1 += - DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
-                          + DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy
-                          - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy;
+                    s1 += -DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz + DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz -
+                          DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN], -s1);
                 }
 
                 if(neighbours[BACK_TOP]) {
-                    s2 += - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
-                          - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
-                          + DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz;
+                    s2 += -DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx - DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy +
+                          DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP], -s2);
-
                 }
 
                 new_element.value += s1 + s2;
@@ -606,14 +581,12 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
                 s1 = 0.0;
 
                 if(neighbours[BACK_DOWN]) {
-                    s1  += DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz
-                         - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
-                         + DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz;
+                    s1 += DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx - DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy +
+                          DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN], -s1);
                 }
-
 
                 break;
 
@@ -623,36 +596,33 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 
                 if(neighbours[BACK_DOWN]) {
 
-                    s1 +=   DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy
-                          - DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
-                          + DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy;
+                    s1 += DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx - DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz +
+                          DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz;
 
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP] ,  s1);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN], -s1);
-
                 }
 
                 break;
-            case BACK_DOWN: break; //alread handled by the above cases
+            case BACK_DOWN:
+                break; // alread handled by the above cases
 
             case FRONT_RIGHT:
                 s1 = 0.0;
                 s2 = 0.0;
 
                 if(neighbours[BACK_RIGHT]) {
-                    s1 += - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
-                          - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
-                          + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz;
+                    s1 += -DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy - DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx +
+                          DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx;
 
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_RIGHT] ,  -s1);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_RIGHT], -s1);
                 }
 
                 if(neighbours[FRONT_LEFT]) {
-                    s2 += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
-                          - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx
-                          + DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
+                    s2 += -DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy - DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz +
+                          DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz;
 
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_LEFT] ,  -s2);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_LEFT], -s2);
                 }
 
                 new_element.value += s1 + s2;
@@ -664,50 +634,44 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 
                 if(neighbours[BACK_LEFT]) {
 
-                    s1 += - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz
-                          + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz
-                          + DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz;
+                    s1 += -DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx + DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx +
+                          DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy;
 
-
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_LEFT] ,  s1);
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_LEFT] ,  -s1);
-
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_LEFT], s1);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_LEFT], -s1);
                 }
                 break;
             case BACK_RIGHT:
                 s1 = 0.0;
                 if(neighbours[BACK_LEFT]) {
-                    s1 +=   DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
-                          - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx
-                          + DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
+                    s1 += DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy - DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz +
+                          DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz;
 
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_RIGHT] ,  s1);
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_LEFT] ,  -s1);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_RIGHT], s1);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_LEFT], -s1);
                 }
 
                 break;
 
-            case BACK_LEFT: break;  //alread handled by the above cases
+            case BACK_LEFT:
+                break; // alread handled by the above cases
 
             case TOP_RIGHT:
 
                 s1 = 0;
                 s2 = 0;
                 if(neighbours[DOWN_RIGHT]) {
-                    s1 += - DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
-                          - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy
-                          + DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy;
+                    s1 += -DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz - DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx +
+                          DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_RIGHT], -s1);
                 }
 
                 if(neighbours[TOP_LEFT]) {
-                    s2 += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
-                          + DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
-                          - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx;
+                    s2 += -DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy + DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy -
+                          DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[TOP_LEFT], -s2);
-
                 }
 
                 new_element.value += s1 + s2;
@@ -717,157 +681,137 @@ static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *n
 
                 s1 = 0;
                 if(neighbours[DOWN_LEFT]) {
-                    s1 += - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy
-                          + DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy
-                          + DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy;
+                    s1 += -DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx + DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx +
+                          DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz;
 
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[TOP_LEFT] ,  s1);
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_LEFT] ,  -s1);
-
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[TOP_LEFT], s1);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_LEFT], -s1);
                 }
                 break;
             case DOWN_RIGHT:
                 s1 = 0;
                 if(neighbours[DOWN_LEFT]) {
-                    s1 += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
-                          + DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx
-                          + DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx;
+                    s1 += -DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy + DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy +
+                          DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz;
 
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_RIGHT] ,  s1);
-                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_LEFT] ,  -s1);
-
-
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_RIGHT], s1);
+                    UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[DOWN_LEFT], -s1);
                 }
                 break;
-            case DOWN_LEFT:  break;  //alread handled by the above cases
+            case DOWN_LEFT:
+                break; // alread handled by the above cases
 
-           case FRONT_TOP_RIGHT:
+            case FRONT_TOP_RIGHT:
                 s1 = 0;
                 s2 = 0;
                 s3 = 0;
                 if(neighbours[FRONT_DOWN_RIGHT]) {
-                    s1 += - DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
-                          - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy;
+                    s1 += -DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz - DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_RIGHT], -s1);
                 }
                 if(neighbours[BACK_TOP_RIGHT]) {
-                    s2 += - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
-                          - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz;
+                    s2 += -DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy - DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP_RIGHT], -s2);
                 }
                 if(neighbours[FRONT_TOP_LEFT]) {
-                    s3 += - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx
-                          - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx;
+                    s3 += -DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy - DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_TOP_LEFT], -s3);
                 }
                 new_element.value += s1 + s2 + s3;
                 break;
 
-           case FRONT_TOP_LEFT:
+            case FRONT_TOP_LEFT:
 
                 s1 = 0;
                 s2 = 0;
 
                 if(neighbours[FRONT_DOWN_LEFT]) {
-                    s1 +=   DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy
-                          - DIVIDE(sigma_yz_jz_f,count_sigma_yz_jz_f) * dz_dy;
+                    s1 += DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz - DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_TOP_LEFT], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_LEFT], -s1);
                 }
 
                 if(neighbours[BACK_TOP_LEFT]) {
-                    s2 +=  DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz
-                         - DIVIDE(sigma_yz_jy_t,count_sigma_yz_jy_t) * dy_dz;
+                    s2 += DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy - DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_TOP_LEFT], s2);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP_LEFT], -s2);
                 }
 
                 break;
-           case FRONT_DOWN_RIGHT:
+            case FRONT_DOWN_RIGHT:
 
                 s1 = 0;
                 s2 = 0;
 
                 if(neighbours[BACK_DOWN_RIGHT]) {
-                    s1 += - DIVIDE(sigma_xz_jx_r,count_sigma_xz_jx_r) * dx_dz
-                          + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz;
+                    s1 += -DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy + DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_RIGHT], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN_RIGHT], -s1);
                 }
 
                 if(neighbours[FRONT_DOWN_LEFT]) {
-                    s2 +=  DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx
-                         - DIVIDE(sigma_xz_jz_f,count_sigma_xz_jz_f) * dz_dx;
+                    s2 += DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz - DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_RIGHT], s2);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_LEFT], -s2);
                 }
 
                 break;
-           case FRONT_DOWN_LEFT:
+            case FRONT_DOWN_LEFT:
                 s1 = 0;
                 if(neighbours[BACK_DOWN_LEFT]) {
-                    s1 +=   DIVIDE(sigma_xz_jx_l,count_sigma_xz_jx_l) * dx_dz
-                          + DIVIDE(sigma_yz_jy_d,count_sigma_yz_jy_d) * dy_dz;
+                    s1 += DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy + DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[FRONT_DOWN_LEFT], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN_LEFT], -s1);
-
                 }
                 break;
-           case BACK_TOP_RIGHT:
+            case BACK_TOP_RIGHT:
                 s1 = 0;
                 s2 = 0;
 
                 if(neighbours[BACK_DOWN_RIGHT]) {
-                    s1 += - DIVIDE(sigma_xy_jx_r,count_sigma_xy_jx_r) * dx_dy
-                          + DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy;
+                    s1 += -DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz + DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP_RIGHT], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN_RIGHT], -s1);
-
                 }
 
                 if(neighbours[BACK_TOP_LEFT]) {
-                    s2 += - DIVIDE(sigma_xy_jy_t,count_sigma_xy_jy_t) * dy_dx
-                          + DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx;
+                    s2 += -DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz + DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP_RIGHT], s2);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP_LEFT], -s2);
-
                 }
                 break;
-           case BACK_TOP_LEFT:
+            case BACK_TOP_LEFT:
                 s1 = 0;
                 if(neighbours[BACK_DOWN_LEFT]) {
-                    s1 +=   DIVIDE(sigma_xy_jx_l,count_sigma_xy_jx_l) * dx_dy
-                          + DIVIDE(sigma_yz_jz_b,count_sigma_yz_jz_b) * dz_dy;
+                    s1 += DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz + DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_TOP_LEFT], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN_LEFT], -s1);
-
                 }
 
                 break;
             case BACK_DOWN_RIGHT:
                 s1 = 0;
                 if(neighbours[BACK_DOWN_LEFT]) {
-                    s1 +=  DIVIDE(sigma_xy_jy_d,count_sigma_xy_jy_d) * dy_dx
-                         + DIVIDE(sigma_xz_jz_b,count_sigma_xz_jz_b) * dz_dx;
+                    s1 += DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz + DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy;
 
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN_RIGHT], s1);
                     UPDATE_OR_ADD_ELEMENT(grid_cell, neighbours[BACK_DOWN_LEFT], -s1);
-
                 }
-               break;
+                break;
 
-            case BACK_DOWN_LEFT: break;
+            case BACK_DOWN_LEFT:
+                break;
 
             default:
                 break;
@@ -942,7 +886,6 @@ static void debug_cell(struct cell_node *grid_cell, struct cell_node *neighbours
         printf("BACK_DOWN_LEFT %d\n", neighbours[BACK_DOWN_LEFT]->grid_position + 1);
 }
 
-
 static void fill_discretization_matrix_elements_aniso(struct cell_node *grid_cell) {
 
     struct cell_node *neighbours[26];
@@ -960,7 +903,6 @@ static void fill_discretization_matrix_elements_aniso(struct cell_node *grid_cel
     }
 
     fill_elements_aniso(grid_cell, neighbours);
-
 }
 
 static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, enum transition_direction direction) {

@@ -265,6 +265,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
     int data_count;
 
     char* source_limit = source + source_size;
+    int read_count;
 
     while(source_size) {
 
@@ -292,10 +293,12 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             center.z = strtod(end+1, &end);
 
             half_face.x = strtod(end+1, &end);
+            read_count = 4;
 
             if(data_count >= 6) {
                 half_face.y = strtod(end+1, &end);
                 half_face.z = strtod(end+1, &end);
+                read_count += 2;
             }
             else {
                 half_face.y = half_face.x;
@@ -303,7 +306,11 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             }
 
             if(v_index < data_count) {
-                v = strtod(end+1, NULL);
+                v = strtod(end+1, &end);
+                int tmp = v_index - read_count;
+                for(int i = 0; i < tmp; i++) {
+                    v = strtod(end+1, &end);
+                }
             }
             else {
                 v = 0;
@@ -1769,6 +1776,22 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
 
     if(legacy || xml ) {
         parser_state =  calloc(1, sizeof(struct parser_state));
+        arrsetcap(parser_state->number_of_points, 64);
+        arrsetcap(parser_state->number_of_cells, 64);
+        arrsetcap(parser_state->celldata_ofsset, 64);
+        arrsetcap(parser_state->points_ofsset, 64);
+        arrsetcap(parser_state->cells_connectivity_ofsset, 64);
+        arrsetcap(parser_state->cells_offsets_ofsset, 64);
+        arrsetcap(parser_state->cells_types_ofsset, 64);
+        arrsetcap(parser_state->name_value, 64);
+        arrsetcap(parser_state->cells_connectivity_ascii, 64);
+        arrsetcap(parser_state->points_ascii, 64);
+        arrsetcap(parser_state->celldata_ascii, 64);
+        arrsetcap(parser_state->encoding_type, 64);
+        arrsetcap(parser_state->header_type, 64);
+        arrsetcap(parser_state->format, 64);
+        arrsetcap(parser_state->base64_content, 64);
+        arrsetcap(parser_state->point_data_type, 64);
     }
 
     if(activation_info) {

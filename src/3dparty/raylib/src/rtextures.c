@@ -1,6 +1,6 @@
 /**********************************************************************************************
 *
-*   raylib.textures - Basic functions to load and draw Textures (2d)
+*   rtextures - Basic functions to load and draw textures
 *
 *   CONFIGURATION:
 *
@@ -141,11 +141,6 @@
     #include "external/stb_image_resize.h"  // Required for: stbir_resize_uint8() [ImageResize()]
 #endif
 
-#if defined(SUPPORT_IMAGE_GENERATION)
-    #define STB_PERLIN_IMPLEMENTATION
-    #include "external/stb_perlin.h"        // Required for: stb_perlin_fbm_noise3
-#endif
-
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
@@ -269,8 +264,8 @@ Image LoadImageAnim(const char *fileName, int *frames)
         if (fileData != NULL)
         {
             int comp = 0;
-            int **delays = NULL;
-            image.data = stbi_load_gif_from_memory(fileData, dataSize, delays, &image.width, &image.height, &frameCount, &comp, 4);
+            int *delays = NULL;
+            image.data = stbi_load_gif_from_memory(fileData, dataSize, &delays, &image.width, &image.height, &frameCount, &comp, 4);
 
             image.mipmaps = 1;
             image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
@@ -284,7 +279,7 @@ Image LoadImageAnim(const char *fileName, int *frames)
 #endif
     else image = LoadImage(fileName);
 
-    // TODO: Support APNG animated images?
+    // TODO: Support APNG animated images
 
     *frames = frameCount;
     return image;
@@ -722,42 +717,6 @@ Image GenImageWhiteNoise(int width, int height, float factor)
     return image;
 }
 
-// Generate image: perlin noise
-Image GenImagePerlinNoise(int width, int height, int offsetX, int offsetY, float scale)
-{
-    Color *pixels = (Color *)RL_MALLOC(width*height*sizeof(Color));
-
-    for (int y = 0; y < height; y++)
-    {
-        for (int x = 0; x < width; x++)
-        {
-            float nx = (float)(x + offsetX)*scale/(float)width;
-            float ny = (float)(y + offsetY)*scale/(float)height;
-
-            // Typical values to start playing with:
-            //   lacunarity = ~2.0   -- spacing between successive octaves (use exactly 2.0 for wrapping output)
-            //   gain       =  0.5   -- relative weighting applied to each successive octave
-            //   octaves    =  6     -- number of "octaves" of noise3() to sum
-
-            // NOTE: We need to translate the data from [-1..1] to [0..1]
-            float p = (stb_perlin_fbm_noise3(nx, ny, 1.0f, 2.0f, 0.5f, 6) + 1.0f)/2.0f;
-
-            int intensity = (int)(p*255.0f);
-            pixels[y*width + x] = (Color){intensity, intensity, intensity, 255};
-        }
-    }
-
-    Image image = {
-        .data = pixels,
-        .width = width,
-        .height = height,
-        .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
-        .mipmaps = 1
-    };
-
-    return image;
-}
-
 // Generate image: cellular algorithm. Bigger tileSize means bigger cells
 Image GenImageCellular(int width, int height, int tileSize)
 {
@@ -870,8 +829,6 @@ Image ImageFromImage(Image image, Rectangle rec)
     Image result = { 0 };
 
     int bytesPerPixel = GetPixelDataSize(1, 1, image.format);
-
-    // TODO: Check rec is valid?
 
     result.width = (int)rec.width;
     result.height = (int)rec.height;
@@ -1524,7 +1481,7 @@ void ImageResizeCanvas(Image *image, int newWidth, int newHeight, int offsetX, i
         int bytesPerPixel = GetPixelDataSize(1, 1, image->format);
         unsigned char *resizedData = (unsigned char *)RL_CALLOC(newWidth*newHeight*bytesPerPixel, 1);
 
-        // TODO: Fill resizedData with fill color (must be formatted to image->format)
+        // TODO: Fill resized canvas with fill color (must be formatted to image->format)
 
         int dstOffsetSize = ((int)dstPos.y*newWidth + (int)dstPos.x)*bytesPerPixel;
 
@@ -2292,6 +2249,109 @@ Rectangle GetImageAlphaBorder(Image image, float threshold)
     return crop;
 }
 
+// Get image pixel color at (x, y) position
+Color GetImageColor(Image image, int x, int y)
+{
+    Color color = { 0 };
+
+    if ((x >=0) && (x < image.width) && (y >= 0) && (y < image.height))
+    {
+        switch (image.format)
+        {
+            case PIXELFORMAT_UNCOMPRESSED_GRAYSCALE:
+            {
+                color.r = ((unsigned char *)image.data)[y*image.width + x];
+                color.g = ((unsigned char *)image.data)[y*image.width + x];
+                color.b = ((unsigned char *)image.data)[y*image.width + x];
+                color.a = 255;
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA:
+            {
+                color.r = ((unsigned char *)image.data)[(y*image.width + x)*2];
+                color.g = ((unsigned char *)image.data)[(y*image.width + x)*2];
+                color.b = ((unsigned char *)image.data)[(y*image.width + x)*2];
+                color.a = ((unsigned char *)image.data)[(y*image.width + x)*2 + 1];
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R5G5B5A1:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[y*image.width + x];
+
+                color.r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
+                color.g = (unsigned char)((float)((pixel & 0b0000011111000000) >> 6)*(255/31));
+                color.b = (unsigned char)((float)((pixel & 0b0000000000111110) >> 1)*(255/31));
+                color.a = (unsigned char)((pixel & 0b0000000000000001)*255);
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R5G6B5:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[y*image.width + x];
+
+                color.r = (unsigned char)((float)((pixel & 0b1111100000000000) >> 11)*(255/31));
+                color.g = (unsigned char)((float)((pixel & 0b0000011111100000) >> 5)*(255/63));
+                color.b = (unsigned char)((float)(pixel & 0b0000000000011111)*(255/31));
+                color.a = 255;
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R4G4B4A4:
+            {
+                unsigned short pixel = ((unsigned short *)image.data)[y*image.width + x];
+
+                color.r = (unsigned char)((float)((pixel & 0b1111000000000000) >> 12)*(255/15));
+                color.g = (unsigned char)((float)((pixel & 0b0000111100000000) >> 8)*(255/15));
+                color.b = (unsigned char)((float)((pixel & 0b0000000011110000) >> 4)*(255/15));
+                color.a = (unsigned char)((float)(pixel & 0b0000000000001111)*(255/15));
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R8G8B8A8:
+            {
+                color.r = ((unsigned char *)image.data)[(y*image.width + x)*4];
+                color.g = ((unsigned char *)image.data)[(y*image.width + x)*4 + 1];
+                color.b = ((unsigned char *)image.data)[(y*image.width + x)*4 + 2];
+                color.a = ((unsigned char *)image.data)[(y*image.width + x)*4 + 3];
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R8G8B8:
+            {
+                color.r = (unsigned char)((unsigned char *)image.data)[(y*image.width + x)*3];
+                color.g = (unsigned char)((unsigned char *)image.data)[(y*image.width + x)*3 + 1];
+                color.b = (unsigned char)((unsigned char *)image.data)[(y*image.width + x)*3 + 2];
+                color.a = 255;
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R32:
+            {
+                color.r = (unsigned char)(((float *)image.data)[y*image.width + x]*255.0f);
+                color.g = 0;
+                color.b = 0;
+                color.a = 255;
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R32G32B32:
+            {
+                color.r = (unsigned char)(((float *)image.data)[(y*image.width + x)*3]*255.0f);
+                color.g = (unsigned char)(((float *)image.data)[(y*image.width + x)*3 + 1]*255.0f);
+                color.b = (unsigned char)(((float *)image.data)[(y*image.width + x)*3 + 2]*255.0f);
+                color.a = 255;
+
+            } break;
+            case PIXELFORMAT_UNCOMPRESSED_R32G32B32A32:
+            {
+                color.r = (unsigned char)(((float *)image.data)[(y*image.width + x)*4]*255.0f);
+                color.g = (unsigned char)(((float *)image.data)[(y*image.width + x)*4]*255.0f);
+                color.b = (unsigned char)(((float *)image.data)[(y*image.width + x)*4]*255.0f);
+                color.a = (unsigned char)(((float *)image.data)[(y*image.width + x)*4]*255.0f);
+
+            } break;
+            default: TRACELOG(LOG_WARNING, "Compressed image format does not support color reading"); break;
+        }
+    }
+    else TRACELOG(LOG_WARNING, "Requested image pixel (%i, %i) out of bounds", x, y);
+
+    return color;
+}
+
 //------------------------------------------------------------------------------------
 // Image drawing functions
 //------------------------------------------------------------------------------------
@@ -2833,7 +2893,7 @@ TextureCubemap LoadTextureCubemap(Image image, int layout)
             faces = GenImageColor(size, size*6, MAGENTA);
             ImageFormat(&faces, image.format);
 
-            // TODO: Image formating does not work with compressed textures!
+            // NOTE: Image formating does not work with compressed textures
         }
 
         for (int i = 0; i < 6; i++) ImageDraw(&faces, image, faceRecs[i], (Rectangle){ 0, (float)size*i, (float)size, (float)size }, WHITE);
@@ -3726,45 +3786,69 @@ Color GetColor(unsigned int hexValue)
 // Get color from a pixel from certain format
 Color GetPixelColor(void *srcPtr, int format)
 {
-    Color col = { 0 };
+    Color color = { 0 };
 
     switch (format)
     {
-        case PIXELFORMAT_UNCOMPRESSED_GRAYSCALE: col = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], 255 }; break;
-        case PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA: col = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[1] }; break;
+        case PIXELFORMAT_UNCOMPRESSED_GRAYSCALE: color = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], 255 }; break;
+        case PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA: color = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[1] }; break;
         case PIXELFORMAT_UNCOMPRESSED_R5G6B5:
         {
-            col.r = (unsigned char)((((unsigned short *)srcPtr)[0] >> 11)*255/31);
-            col.g = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 5) & 0b0000000000111111)*255/63);
-            col.b = (unsigned char)((((unsigned short *)srcPtr)[0] & 0b0000000000011111)*255/31);
-            col.a = 255;
+            color.r = (unsigned char)((((unsigned short *)srcPtr)[0] >> 11)*255/31);
+            color.g = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 5) & 0b0000000000111111)*255/63);
+            color.b = (unsigned char)((((unsigned short *)srcPtr)[0] & 0b0000000000011111)*255/31);
+            color.a = 255;
 
         } break;
         case PIXELFORMAT_UNCOMPRESSED_R5G5B5A1:
         {
-            col.r = (unsigned char)((((unsigned short *)srcPtr)[0] >> 11)*255/31);
-            col.g = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 6) & 0b0000000000011111)*255/31);
-            col.b = (unsigned char)((((unsigned short *)srcPtr)[0] & 0b0000000000011111)*255/31);
-            col.a = (((unsigned short *)srcPtr)[0] & 0b0000000000000001)? 255 : 0;
+            color.r = (unsigned char)((((unsigned short *)srcPtr)[0] >> 11)*255/31);
+            color.g = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 6) & 0b0000000000011111)*255/31);
+            color.b = (unsigned char)((((unsigned short *)srcPtr)[0] & 0b0000000000011111)*255/31);
+            color.a = (((unsigned short *)srcPtr)[0] & 0b0000000000000001)? 255 : 0;
 
         } break;
         case PIXELFORMAT_UNCOMPRESSED_R4G4B4A4:
         {
-            col.r = (unsigned char)((((unsigned short *)srcPtr)[0] >> 12)*255/15);
-            col.g = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 8) & 0b0000000000001111)*255/15);
-            col.b = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 4) & 0b0000000000001111)*255/15);
-            col.a = (unsigned char)((((unsigned short *)srcPtr)[0] & 0b0000000000001111)*255/15);
+            color.r = (unsigned char)((((unsigned short *)srcPtr)[0] >> 12)*255/15);
+            color.g = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 8) & 0b0000000000001111)*255/15);
+            color.b = (unsigned char)(((((unsigned short *)srcPtr)[0] >> 4) & 0b0000000000001111)*255/15);
+            color.a = (unsigned char)((((unsigned short *)srcPtr)[0] & 0b0000000000001111)*255/15);
 
         } break;
-        case PIXELFORMAT_UNCOMPRESSED_R8G8B8A8: col = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[1], ((unsigned char *)srcPtr)[2], ((unsigned char *)srcPtr)[3] }; break;
-        case PIXELFORMAT_UNCOMPRESSED_R8G8B8: col = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[1], ((unsigned char *)srcPtr)[2], 255 }; break;
-        // TODO: case PIXELFORMAT_UNCOMPRESSED_R32: break;
-        // TODO: case PIXELFORMAT_UNCOMPRESSED_R32G32B32: break;
-        // TODO: case PIXELFORMAT_UNCOMPRESSED_R32G32B32A32: break;
+        case PIXELFORMAT_UNCOMPRESSED_R8G8B8A8: color = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[1], ((unsigned char *)srcPtr)[2], ((unsigned char *)srcPtr)[3] }; break;
+        case PIXELFORMAT_UNCOMPRESSED_R8G8B8: color = (Color){ ((unsigned char *)srcPtr)[0], ((unsigned char *)srcPtr)[1], ((unsigned char *)srcPtr)[2], 255 }; break;
+        case PIXELFORMAT_UNCOMPRESSED_R32:
+        {
+            // NOTE: Pixel normalized float value is converted to [0..255]
+            color.r = (unsigned char)(((float *)srcPtr)[0]*255.0f);
+            color.g = (unsigned char)(((float *)srcPtr)[0]*255.0f);
+            color.b = (unsigned char)(((float *)srcPtr)[0]*255.0f);
+            color.a = 255;
+
+        } break;
+        case PIXELFORMAT_UNCOMPRESSED_R32G32B32:
+        {
+            // NOTE: Pixel normalized float value is converted to [0..255]
+            color.r = (unsigned char)(((float *)srcPtr)[0]*255.0f);
+            color.g = (unsigned char)(((float *)srcPtr)[1]*255.0f);
+            color.b = (unsigned char)(((float *)srcPtr)[2]*255.0f);
+            color.a = 255;
+
+        } break;
+        case PIXELFORMAT_UNCOMPRESSED_R32G32B32A32:
+        {
+            // NOTE: Pixel normalized float value is converted to [0..255]
+            color.r = (unsigned char)(((float *)srcPtr)[0]*255.0f);
+            color.g = (unsigned char)(((float *)srcPtr)[1]*255.0f);
+            color.b = (unsigned char)(((float *)srcPtr)[2]*255.0f);
+            color.a = (unsigned char)(((float *)srcPtr)[3]*255.0f);
+
+        } break;
         default: break;
     }
 
-    return col;
+    return color;
 }
 
 // Set pixel color formatted into destination pointer

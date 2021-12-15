@@ -2,6 +2,11 @@ LIB_STATIC_DEPS="utils alg config_helpers tinyexpr sds"
 
 CHECK_CUSTOM_FILE
 
+if [ -n "$CUDA_FOUND" ]; then
+  LIB_STATIC_DEPS="$LIB_STATIC_DEPS gpu_utils"
+fi
+
+
 COMPILE_SHARED_LIB "default_matrix_assembly" "matrix_assembly.c ${CUSTOM_FILE}" "" "${LIB_STATIC_DEPS}"
 
 if [ -n "$COMPILE_WITH_DDM" ]; then
