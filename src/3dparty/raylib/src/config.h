@@ -28,9 +28,9 @@
 //------------------------------------------------------------------------------------
 // Module: core - Configuration Flags
 //------------------------------------------------------------------------------------
-// Camera module is included (camera.h) and multiple predefined cameras are available: free, 1st/3rd person, orbital
+// Camera module is included (rcamera.h) and multiple predefined cameras are available: free, 1st/3rd person, orbital
 #define SUPPORT_CAMERA_SYSTEM       1
-// Gestures module is included (gestures.h) to support gestures detection: tap, hold, swipe, drag
+// Gestures module is included (rgestures.h) to support gestures detection: tap, hold, swipe, drag
 #define SUPPORT_GESTURES_SYSTEM     1
 // Mouse gestures are directly mapped like touches and processed by gestures system
 #define SUPPORT_MOUSE_GESTURES      1
@@ -84,8 +84,12 @@
 //------------------------------------------------------------------------------------
 // Module: rlgl - Configuration values
 //------------------------------------------------------------------------------------
+
+// Enable OpenGL Debug Context (only available on OpenGL 4.3)
+//#define RLGL_ENABLE_OPENGL_DEBUG_CONTEXT       1
+
 // Show OpenGL extensions and capabilities detailed logs on init
-//#define SUPPORT_GL_DETAILS_INFO        1
+//#define RLGL_SHOW_GL_DETAILS_INFO              1
 
 //#define RL_DEFAULT_BATCH_BUFFER_ELEMENTS    4096    // Default internal render batch elements limits
 #define RL_DEFAULT_BATCH_BUFFERS               1      // Default number of batch buffers (multi-buffering)

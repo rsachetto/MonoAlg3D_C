@@ -18,6 +18,11 @@
 
 #include "assembly_common.c"
 
+#ifdef COMPILE_CUDA
+#include "../gpu_utils/gpu_utils.h"
+#endif
+
+
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
     real_cpu alpha;
@@ -35,6 +40,51 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
         ac[i]->v = initial_v;
         ac[i]->b = initial_v * alpha;
     }
+}
+
+
+INIT_ASSEMBLY_MATRIX(set_initial_conditions_from_odes) {
+
+    real_cpu alpha;
+
+    real_cpu beta = the_solver->beta;
+    real_cpu cm = the_solver->cm;
+    real_cpu dt = the_solver->dt;
+
+    struct cell_node **active_volumes = the_grid->active_cells;
+    uint32_t active_cells = the_grid->num_active_cells;
+
+    int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
+    real *sv = the_ode_solver->sv;
+
+    #ifdef COMPILE_CUDA
+    real *vms = NULL;
+    size_t mem_size = the_ode_solver->original_num_cells * sizeof(real);
+
+    if(the_ode_solver->gpu) {
+        vms = MALLOC_BYTES(real, mem_size);
+        check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+    }
+    #endif
+
+    OMP(parallel for private(alpha))
+    for(uint32_t i = 0; i < active_cells; i++) {
+        alpha = ALPHA(beta, cm, dt, active_volumes[i]->discretization.x, active_volumes[i]->discretization.y, active_volumes[i]->discretization.z);
+
+        if(the_ode_solver->gpu) {
+            #ifdef COMPILE_CUDA
+            active_volumes[i]->v = vms[active_volumes[i]->sv_position];
+            active_volumes[i]->b = vms[active_volumes[i]->sv_position] * alpha;
+            #endif
+        } else {
+            active_volumes[i]->v = sv[active_volumes[i]->sv_position * n_equations_cell_model];
+            active_volumes[i]->b = sv[active_volumes[i]->sv_position * n_equations_cell_model] * alpha;
+        }
+    }
+    #ifdef COMPILE_CUDA
+    free(vms);
+    #endif
+
 }
 
 ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {

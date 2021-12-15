@@ -362,3 +362,252 @@ SET_EXTRA_DATA(set_extra_data_mixed_model_epi_mid_endo) {
     return (void*)extra_data;
 
 }
+
+struct uv {
+    real_cpu u;
+    real_cpu v;
+};
+
+struct original_volumes_hash_entry {
+    struct point_3d key;
+    struct uv value;
+};
+
+struct cells_hash_entry {
+    struct point_3d key;
+    struct cell_node *value;
+};
+
+
+struct point_3d find_next_point(struct original_volumes_hash_entry *original_volumes, int l, struct point_3d p, struct point_3d *n, int np) {
+
+    double dist;
+    double min_dist = 100000.0;
+    int min_idx = -1;
+
+    int continue_loop = false;
+    struct point_3d aux;
+
+    for(int i = 0; i < l; i++) {
+
+       aux = original_volumes[i].key;
+       double ax = aux.x;
+       double ay = aux.y;
+
+        for(int j = 0; j < np; j++) {
+            if(ax == n[j].x && ay == n[j].y) {
+                continue_loop = true;
+                break;
+            }
+        }
+
+        if(continue_loop) {
+            continue_loop = false;
+            continue;
+        }
+
+        double a = ax - p.x;
+        double b = ay - p.y;
+
+        dist = a*a + b*b;
+
+        if(dist < min_dist) {
+            min_dist = dist;
+            min_idx = i;
+        }
+    }
+
+    if(min_idx > -1) {
+        return original_volumes[min_idx].key;
+    }
+    else {
+        return POINT3D(0,0,0);
+    }
+
+}
+
+SET_EXTRA_DATA(set_extra_data_for_spiral_fhn) {
+
+
+    size_t num_sv_entries = 2;
+    uint32_t num_active_cells = the_grid->num_active_cells;
+
+
+    *extra_data_size = num_active_cells * num_sv_entries;
+
+    real *sv_cpu;
+    sv_cpu = CALLOC_ARRAY_OF_TYPE(real, *extra_data_size);
+
+    char *file_u;
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_u, config, "file_u");
+
+    char *file_v;
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_v, config, "file_v");
+
+    bool interpolate = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(interpolate, config, "interpolate");
+
+    FILE *file_U = fopen(file_u, "r");
+    FILE *file_V = fopen(file_v, "r");
+
+    double value;
+
+    real_cpu dx = the_grid->start_discretization.x;
+    real_cpu dy = the_grid->start_discretization.y;
+    real_cpu dz = the_grid->start_discretization.z;
+
+    int nx = 18000/dx;
+    int ny = 18000/dy;
+
+    real_cpu half_dx = dx/2.0;
+    real_cpu half_dy = dy/2.0;
+    real_cpu half_dz = dz/2.0;
+
+    real_cpu center_x = 0;
+    real_cpu center_y = 50;
+    real_cpu center_z = 50;
+
+
+    struct cells_hash_entry *volumes = NULL;
+
+    FOR_EACH_CELL(the_grid) {
+        if(cell->active)
+            hmput(volumes, cell->center, cell);
+    }
+
+    if(interpolate) {
+
+        printf("-----Interpolate-----\n");
+
+        struct original_volumes_hash_entry *original_volumes = NULL;
+
+        for(int y = 0; y < 180; y++) {
+
+            center_x = 50;
+
+            for(int x = 0; x < 180; x++) {
+
+                struct point_3d center = POINT3D(center_x, center_y, center_z);
+                struct uv og;
+
+                fscanf(file_U,"%le",&value);
+                og.u = value;
+                fscanf(file_V,"%le",&value);
+                og.v = value;
+
+                hmput(original_volumes, center, og);
+
+                center_x += 100;
+            }
+            center_y += 100;
+        }
+
+        center_y = half_dy;
+        center_z = half_dz;
+
+        int l = 180*180;
+
+        for(int y = 0; y < ny; y++) {
+            center_x = half_dx;
+
+            for(int x = 0; x < nx; x++) {
+
+                struct point_3d *not_include = NULL;
+
+                struct point_3d p1  = find_next_point(original_volumes, l, POINT3D(center_x, center_y, 50), not_include, 0);
+                arrput(not_include, p1);
+
+                struct point_3d p2  = find_next_point(original_volumes, l, POINT3D(center_x, center_y, 50), not_include, 1);
+                arrput(not_include, p2);
+
+                struct point_3d p3  = find_next_point(original_volumes, l, POINT3D(center_x, center_y, 50), not_include, 2);
+                arrput(not_include, p3);
+
+                struct point_3d p4  = find_next_point(original_volumes, l, POINT3D(center_x, center_y, 50), not_include, 3);
+                arrfree(not_include);
+
+                int idx_b = hmgeti(original_volumes, p1);
+                int idx_f = hmgeti(original_volumes, p2);
+                int idx_u = hmgeti(original_volumes, p3);
+                int idx_d = hmgeti(original_volumes, p4);
+
+                real_cpu u_b = 0;
+                real_cpu u_f = 0;
+                real_cpu u_u = 0;
+                real_cpu u_d = 0;
+
+                real_cpu v_b = 0;
+                real_cpu v_f = 0;
+                real_cpu v_u = 0;
+                real_cpu v_d = 0;
+
+
+                //printf("%lf, %lf, %lf\n", center_x, center_y, center_z);
+                //printf("%lf, %lf, %lf, %d\n", p1.x, p1.y, p1.z, idx_b);
+                //printf("%lf, %lf, %lf, %d\n", p2.x, p2.y, p2.z, idx_f);
+
+                //printf("%lf, %lf, %lf, %d\n", p3.x, p3.y, p3.z, idx_u);
+                //printf("%lf, %lf, %lf, %d\n", p4.x, p4.y, p4.z, idx_d);
+
+
+                if(idx_b != -1) {
+                    u_b = original_volumes[idx_b].value.u;
+                    v_b = original_volumes[idx_b].value.v;
+                }
+
+                if(idx_f != -1) {
+                    u_f = original_volumes[idx_f].value.u;
+                    v_f = original_volumes[idx_f].value.v;
+                }
+
+
+                if(idx_u != -1) {
+                    u_u = original_volumes[idx_u].value.u;
+                    v_u = original_volumes[idx_u].value.v;
+                }
+
+                if(idx_d != -1) {
+                    u_d = original_volumes[idx_d].value.u;
+                    v_d = original_volumes[idx_d].value.v;
+                }
+
+                real_cpu u = (u_b + u_f + u_u + u_d)/4.0;
+                real_cpu v = (v_b + v_f + v_u + v_d)/4.0;
+
+
+                struct point_3d center = POINT3D(center_x, center_y, center_z);
+                struct cell_node *c = hmget(volumes, center);
+
+                sv_cpu[c->sv_position] = u;
+
+                sv_cpu[num_active_cells + c->sv_position] = v;
+
+                center_x += dx;
+            }
+            center_y += dy;
+        }
+
+    } else {
+        for(int y = 0; y < ny; y++) {
+
+            center_x = half_dx;
+
+            for(int x = 0; x < nx; x++) {
+
+                struct point_3d center = POINT3D(center_x, center_y, center_z);
+                struct cell_node *c = hmget(volumes, center);
+
+                fscanf(file_U,"%le",&value);
+                sv_cpu[c->sv_position] = value;
+
+                fscanf(file_V,"%le",&value);
+                sv_cpu[num_active_cells + c->sv_position] = value;
+
+                center_x += dx;
+            }
+
+            center_y += dy;
+        }
+    }
+    return sv_cpu;
+}

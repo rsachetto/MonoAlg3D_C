@@ -104,14 +104,6 @@ typedef struct {
      * the next YXML_PIEND. */
     char *pi;
 
-    /* Line number, byte offset within that line, and total bytes read. These
-     * values refer to the position _after_ the last byte given to
-     * yxml_parse(). These are useful for debugging and error reporting. */
-    uint64_t byte;
-    uint64_t total;
-    uint32_t line;
-
-
     /* PRIVATE */
     int state;
     unsigned char *stack; /* Stack of element names + attribute/PI name, separated by \0. Also starts with a \0. */

@@ -228,7 +228,7 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
     static Shader shader;                                                                                                                                      \
     static Mesh cube;                                                                                                                                          \
                                                                                                                                                                \
-    bool first_call = true;                                                                                                                                    \
+    static bool first_call = true;                                                                                                                             \
     if(first_call) {                                                                                                                                           \
         shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");                                                                       \
         shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");                                                                                 \
@@ -277,9 +277,11 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
 
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
-        if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
-            j += 1;
-            continue;
+        if(grid_mask != 2) {
+            if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
+                j += 1;
+                continue;
+            }
         }
 
         float mesh_center_x, mesh_center_y, mesh_center_z;
@@ -362,8 +364,10 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, floa
 
         for(uint32_t i = 0; i < n_active; i++) {
 
-            if(!ac[i]->visible) {
-                continue;
+            if(grid_mask != 2) {
+                if(!ac[i]->visible) {
+                    continue;
+                }
             }
 
             struct cell_node *grid_cell;
