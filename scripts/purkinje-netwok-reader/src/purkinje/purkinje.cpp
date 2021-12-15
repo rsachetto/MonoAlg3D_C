@@ -94,4 +94,3 @@ void print_purkinje_network (struct purkinje_network *pk)
     std::cout << "There are " << pk->num_lines << std::endl;
 
 }
-

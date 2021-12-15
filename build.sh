@@ -58,58 +58,54 @@ else
 fi
 
 for i in "${BUILD_ARGS[@]}"; do
-
-    if [ "$i" == "clean" ]; then
-        echo "Cleaning $BUILD_TYPE"
-        CLEAN_PROJECT "$BUILD_TYPE"
-        rm -fr shared_libs/
-        cd src/3dparty/raylib/src || exit 1;
-        make clean
-        cd - || exit 1;
-        exit 0
-    fi
-
-    if [ "$i" == "ddm" ]; then
-        C_FLAGS="$C_FLAGS -DENABLE_DDM"
-        COMPILE_WITH_DDM='y'
-        COMPILE_GUI='y'
-        COMPILE_MPI='y'
-        COMPILE_SIMULATOR='y'
-        COMPILE_CONVERTER='y'
-        COMPILE_FIBER_CONVERTER='y'
-        COMPILE_POSTPROCESSOR='y'
-
-    fi
-
-    if [ "$i" == "all" ]; then
-        COMPILE_GUI='y'
-        COMPILE_MPI='y'
-        COMPILE_SIMULATOR='y'
-        COMPILE_CONVERTER='y'
-        COMPILE_FIBER_CONVERTER='y'
-        COMPILE_POSTPROCESSOR='y'
-    fi
-
-    if [ "$i" == "simulator" ]; then
-        COMPILE_SIMULATOR='y'
-    fi
-
-    if [ "$i" == "gui" ]; then
-        COMPILE_GUI='y'
-    fi
-
-    if [ "$i" == "batch" ]; then
-        COMPILE_MPI='y'
-    fi
-
-    if [ "$i" == "converter" ]; then
-        COMPILE_CONVERTER='y'
-    fi
-
-     if [ "$i" == "disable_cuda" ]; then
-        DISABLE_CUDA='y'
-     fi
-
+    case $i in
+        clean)
+            echo "Cleaning $BUILD_TYPE"
+            CLEAN_PROJECT "$BUILD_TYPE"
+            rm -fr shared_libs/
+            cd src/3dparty/raylib/src || exit 1;
+            make clean
+            cd - || exit 1;
+            exit 0
+            ;;
+        ddm)
+            C_FLAGS="$C_FLAGS -DENABLE_DDM"
+            COMPILE_WITH_DDM='y'
+            COMPILE_GUI='y'
+            COMPILE_MPI='y'
+            COMPILE_SIMULATOR='y'
+            COMPILE_CONVERTER='y'
+            COMPILE_FIBER_CONVERTER='y'
+            COMPILE_POSTPROCESSOR='y'
+            ;;
+        all)
+            COMPILE_GUI='y'
+            COMPILE_MPI='y'
+            COMPILE_SIMULATOR='y'
+            COMPILE_CONVERTER='y'
+            COMPILE_FIBER_CONVERTER='y'
+            COMPILE_POSTPROCESSOR='y'
+            ;;
+        simulator)
+            COMPILE_SIMULATOR='y'
+            ;;
+        gui)
+            COMPILE_GUI='y'
+            ;;
+        batch)
+            COMPILE_MPI='y'
+            ;;
+        converter)
+            COMPILE_CONVERTER='y'
+            ;;
+        disable_cuda)
+            DISABLE_CUDA='y'
+            ;;
+        *)
+            echo "Invalid option $i. Aborting!"
+            exit 1
+            ;;
+    esac
 done
 
 DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts -Wno-unused-result -Wno-switch -Werror=implicit-function-declaration"

@@ -239,7 +239,7 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
 
     bool read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid != NULL;
     new_vtk_unstructured_grid_from_alg_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid, the_grid,
-                                            clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f);
+                                            clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f, false);
 
     if(compress) {
         save_vtk_unstructured_grid_as_vtu_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid,

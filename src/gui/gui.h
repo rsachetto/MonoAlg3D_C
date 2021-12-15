@@ -26,6 +26,8 @@
 
 #define TMP_SIZE 128
 
+#define V3_SAME(v) (Vector3){v, v, v}
+
 struct action_potential {
     float v;
     float t;
@@ -39,26 +41,6 @@ enum draw_simulation_or_file {
 struct vector3_voidp_hash_entry {
     Vector3 key;
     void *value;
-};
-
-struct ap_graph_config {
-
-    Rectangle graph;
-    float max_x;
-    float min_y;
-    float max_y;
-    float min_x;
-
-    Vector2 selected_ap_point;
-    Vector2 selected_point_for_apd1;
-    Vector2 selected_point_for_apd2;
-    struct vector3_voidp_hash_entry *selected_aps;
-    Rectangle drag_graph_button_position;
-    Rectangle move_graph_button_position;
-    bool drag_ap_graph;
-    bool move_ap_graph;
-    bool draw_selected_ap_text;
-
 };
 
 typedef struct action_potential * action_potential_array;
@@ -77,7 +59,8 @@ struct vector3_voxel_entry {
     struct voxel value;
 };
 
-struct gui_config {
+//This strcuct is shared with the main thread
+struct gui_shared_info {
     float max_v;
     float min_v;
     bool simulating;
@@ -87,6 +70,8 @@ struct gui_config {
     bool restart;
     float time;
     float final_time;
+    float current_file_index;
+    int final_file_index;
     float dt;
     int step;
 
@@ -102,7 +87,6 @@ struct gui_config {
     uint64_t total_write_time;
     uint64_t total_cg_it;
 
-    int advance_or_return;
     int draw_type;
 
     // If we are compiling this file, openmp is available.
@@ -123,6 +107,41 @@ struct gui_config {
     float ui_scale;
 };
 
+struct window_commom {
+    Rectangle bounds;
+    bool show;
+    bool move;
+    bool drag;
+};
+
+struct gui_text_window {
+    struct window_commom window;
+    char **lines;
+    char *title;
+    int num_lines;
+};
+
+struct gui_scale {
+    struct window_commom window;
+    bool calc_bounds;
+};
+
+struct ap_graph_config {
+
+    struct window_commom graph;
+    float max_x;
+    float min_y;
+    float max_y;
+    float min_x;
+
+    Vector2 selected_ap_point;
+    Vector2 selected_point_for_apd1;
+    Vector2 selected_point_for_apd2;
+    struct vector3_voidp_hash_entry *selected_aps;
+    Rectangle drag_graph_button;
+
+};
+
 struct gui_state {
 
     int current_window_width;
@@ -134,30 +153,17 @@ struct gui_state {
     float font_spacing_small;
 
     bool handle_keyboard_input;
-    bool one_selected;
-    bool show_ap;
     bool c_pressed;
     bool draw_grid_lines;
     bool draw_grid_only;
 
-    Rectangle help_box;
-    bool show_help_box;
-    bool move_help_box;
+    struct gui_text_window help_box;
+    struct gui_text_window mesh_info_box;
+    struct gui_text_window end_info_box;
+    struct window_commom search_window;
+    struct window_commom controls_window;
 
-    Rectangle mesh_info_box;
-    bool show_mesh_info_box;
-    bool move_info_box;
-
-    bool show_selection_box;
-
-    Rectangle scale_bounds;
-    bool show_scale;
-    bool move_scale;
-    bool calc_scale_bounds;
-
-    Rectangle end_info_box;
-    bool show_end_info_box;
-    bool move_end_info_box;
+    struct gui_scale scale;
 
     Ray ray;
     float ray_hit_distance;
@@ -177,14 +183,8 @@ struct gui_state {
     float font_size_big;
 
     double mouse_timer;
-    double selected_time;
 
     Vector2 mouse_pos;
-    Vector2 sub_window_pos;
-    bool move_sub_window;
-
-    float box_width;
-    float box_height;
 
     struct ap_graph_config *ap_graph_config;
 
@@ -208,6 +208,6 @@ struct mesh_info {
     Vector3 min_size;
 };
 
-void init_and_open_gui_window(struct gui_config *gui_config);
+void init_and_open_gui_window(struct gui_shared_info *gui_config);
 
 #endif // MONOALG3D_GUI_H

@@ -213,13 +213,13 @@ struct visualization_options *new_visualization_options() {
     options->input = NULL;
     options->max_v = 40.0f;
     options->min_v = -86.0f;
-    options->dt = 0.0;
+    options->dt = 0.0f;
     options->files_prefix = strdup("V_it");
     options->step = 1;
     options->start_file = 0;
     options->save_activation_only = false;
     options->value_index = 6; //Value for the default position of V in your text format
-    options->ui_scale = 0.0;
+    options->ui_scale = 0.0f;
     return options;
 }
 
@@ -1017,16 +1017,16 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
     while(opt != -1) {
         switch(opt) {
         case 'x':
-            user_args->max_v = strtod(optarg, NULL);
+            user_args->max_v = (float) strtod(optarg, NULL);
             break;
         case 'm':
-            user_args->min_v = strtod(optarg, NULL);
+            user_args->min_v = (float)  strtod(optarg, NULL);
             break;
         case 'i':
             user_args->value_index = strtol(optarg, NULL, 10);
             break;
         case 'd':
-            user_args->dt = strtod(optarg, NULL);
+            user_args->dt = (float)  strtod(optarg, NULL);
             break;
         case 'p':
             free(user_args->files_prefix);
@@ -1036,10 +1036,10 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
             user_args->save_activation_only = true;
             break;
         case 's':
-            user_args->start_file = (int)strtod(optarg, NULL);
+            user_args->start_file = (int) strtol(optarg, NULL, 10);
             break;
         case 't':
-            user_args->step = (int)strtod(optarg, NULL);
+            user_args->step = (int)strtol(optarg, NULL, 10);
             break;
         case 'u':
             user_args->ui_scale = fabsf((float)strtod(optarg, NULL));

@@ -5,8 +5,8 @@
 #ifndef MONOALG3D_CONFIG_COMMON_H
 #define MONOALG3D_CONFIG_COMMON_H
 
-#include <stdbool.h>
 #include "../common_types/common_types.h"
+#include <stdbool.h>
 
 struct config {
     void *handle;
@@ -39,21 +39,22 @@ void free_config_data(struct config *cm);
 void init_config_functions(struct config *config, char *default_lib, char *config_type);
 
 #define LOG_COMMON_CONFIG(tag, s)                                                                                                                              \
-    if(s == NULL) {                                                                                                                                            \
-        log_info(tag " no configuration.\n");                                                                                                                  \
-        return;                                                                                                                                                \
-    }                                                                                                                                                          \
-    log_info(tag " configuration:\n");                                                                                                                         \
-    log_info(tag " library = %s\n", s->library_file_path);                                                                                                     \
-    log_info(tag " main function = %s\n", s->main_function_name);                                                                                              \
+    do {                                                                                                                                                       \
+        if((s) == NULL) {                                                                                                                                      \
+            log_info(tag " no configuration.\n");                                                                                                              \
+            return;                                                                                                                                            \
+        }                                                                                                                                                      \
+        log_info(tag " configuration:\n");                                                                                                                     \
+        log_info(tag " library = %s\n", (s)->library_file_path);                                                                                               \
+        log_info(tag " main function = %s\n", (s)->main_function_name);                                                                                        \
                                                                                                                                                                \
-    if(s->init_function_name) {                                                                                                                                \
-        log_info(tag " init function = %s\n", s->init_function_name);                                                                                          \
-    }                                                                                                                                                          \
+        if((s)->init_function_name) {                                                                                                                          \
+            log_info(tag " init function = %s\n", (s)->init_function_name);                                                                                    \
+        }                                                                                                                                                      \
                                                                                                                                                                \
-    if(s->end_function_name) {                                                                                                                                 \
-        log_info(tag " end function = %s\n", s->end_function_name);                                                                                            \
-    }                                                                                                                                                          \
-    STRING_HASH_PRINT_KEY_VALUE_LOG(tag, s->config_data);
-
-#endif //MONOALG3D_CONFIG_COMMON_H
+        if((s)->end_function_name) {                                                                                                                           \
+            log_info(tag " end function = %s\n", (s)->end_function_name);                                                                                      \
+        }                                                                                                                                                      \
+        STRING_HASH_PRINT_KEY_VALUE_LOG(tag, (s)->config_data);                                                                                                \
+    } while(0)
+#endif // MONOALG3D_CONFIG_COMMON_H

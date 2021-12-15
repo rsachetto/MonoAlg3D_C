@@ -297,103 +297,85 @@ bool is_terminal (struct node *the_node)
         return false;
 }
 
-void write_configuration_file (struct terminal *the_terminals, const uint32_t num_terminals)
+void print_terminals (struct terminal *the_terminals, const uint32_t num_terminals)
 {
-    char *filename = "outputs/lucas_cheat_purkinje_coupled.ini";
-    FILE *file = fopen(filename,"w+");
-
-    fprintf(file,"[main]\n");
-    fprintf(file,"num_threads = %u\n",NUM_THREADS);
-    fprintf(file,"dt_pde = %g\n",DT_PDE);
-    fprintf(file,"simulation_time = %g\n",SIMULATION_TIME);
-    if (ABORT_ON_NO_ACTIVITY)
-        fprintf(file,"abort_on_no_activity = true\n");
-    else
-        fprintf(file,"abort_on_no_activity = false\n");
-    if (USE_ADAPTIVITY)
-        fprintf(file,"use_adaptivity = true\n");
-    else
-        fprintf(file,"use_adaptivity = false\n");
-    fprintf(file,"\n");
-    
-    fprintf(file,"[save_result]\n");
-    fprintf(file,"print_rate = %u\n",PRINT_RATE);
-    fprintf(file,"output_dir = %s\n",OUTPUT_DIR);
-    fprintf(file,"main_function = %s\n",SAVE_MESH_FUNCTION);
-    if (SAVE_PVD)
-        fprintf(file,"save_pvd = true\n");
-    else
-        fprintf(file,"save_pvd = false\n");
-    fprintf(file,"file_prefix = %s\n",FILE_PREFIX);
-    fprintf(file,"\n");
-
-    fprintf(file,"[update_monodomain]\n");
-    fprintf(file,"main_function = %s\n",UPDATE_MONODOMAIN_FUNCTION);
-    fprintf(file,"\n");
-
-    fprintf(file,"[assembly_matrix]\n");
-    fprintf(file,"init_function=set_initial_conditions_fvm\n");
-    fprintf(file,"sigma_x = %g\n",SIGMA_X);
-    fprintf(file,"sigma_y = %g\n",SIGMA_Y);
-    fprintf(file,"sigma_z = %g\n",SIGMA_Z);
-    fprintf(file,"library_file = %s\n",ASSEMBLY_MATRIX_LIBRARY);
-    fprintf(file,"main_function = %s\n",ASSEMBLY_MATRIX_FUNCTION);
-    fprintf(file,"\n");
-
-    fprintf(file,"[linear_system_solver]\n");
-    fprintf(file,"tolerance = %g\n",TOLERANCE);
-    if (USE_PRECONDITIONER)
-        fprintf(file,"use_preconditioner = true\n");
-    else
-        fprintf(file,"use_preconditioner = false\n");
-    fprintf(file,"max_iterations = %u\n",MAX_ITERATIONS);
-    fprintf(file,"library_file = %s\n",LINEAR_SYSTEM_LIBRARY);
-    fprintf(file,"main_function = %s\n",LINEAR_SYSTEM_FUNCTION);
-    fprintf(file,"\n");
-
-    fprintf(file,"[alg]\n");
-    fprintf(file,"refinement_bound = %g\n",REFINEMENT_BOUND);
-    fprintf(file,"derefinement_bound = %g\n",DEREFINEMENT_BOUND);
-    fprintf(file,"refine_each = %u\n",REFINE_EACH);
-    fprintf(file,"derefine_each = %u\n",DEREFINE_EACH);
-    fprintf(file,"\n");
-
-    fprintf(file,"[domain]\n");
-    fprintf(file,"name = %s\n",DOMAIN_NAME);
-    fprintf(file,"num_layers = %u\n",NUM_LAYER);
-    fprintf(file,"start_dx = %g\n",START_DX);
-    fprintf(file,"start_dy = %g\n",START_DY);
-    fprintf(file,"start_dz = %g\n",START_DZ);
-    fprintf(file,"side_length = %g\n",SIDE_LENGTH);
-    fprintf(file,"main_function = %s\n",DOMAIN_FUNCTION);
-    fprintf(file,"\n");
-
-    fprintf(file,"[ode_solver]\n");
-    fprintf(file,"dt_ode = %g\n",DT_ODE);
-    if (USE_GPU)
-        fprintf(file,"use_gpu = true\n");
-    else
-        fprintf(file,"use_gpu = false\n");
-    fprintf(file,"gpu_id = %u\n",GPU_ID);
-    fprintf(file,"library_file = %s\n",ODE_LIBRARY);
-    fprintf(file,"\n");
-
     for (uint32_t i = 0; i < num_terminals; i++)
+        printf("Terminal %u = (%g,%g,%g) || value = %g\n",i,the_terminals[i].x,the_terminals[i].y,the_terminals[i].z,the_terminals[i].value);
+}
+
+struct terminal* filter_terminals_by_LAT (struct terminal *the_terminals, const uint32_t num_terminals, const double ref_lat, uint32_t &num_pmjs)
+{
+    // Get the total number of candidates to PMJ terminal
+    num_pmjs = 0;
+    for (uint32_t i = 0; i < num_terminals; i++)
+        if (the_terminals[i].value >= ref_lat) num_pmjs++;
+
+    // Fill the PMJ array with the candidate terminals
+    struct terminal *the_pmjs = (struct terminal*)malloc(sizeof(struct terminal)*num_pmjs);
+    for (uint32_t i = 0, j = 0; i < num_terminals; i++)
     {
-        fprintf(file,"[stim_s%u]\n",i+1);
-        fprintf(file,"start = %g\n",the_terminals[i].value);
-        fprintf(file,"duration = %g\n",STIM_DURATION);
-        fprintf(file,"current = %g\n",STIM_CURRENT);
-        fprintf(file,"period = %g\n",STIM_PERIOD);
-        fprintf(file,"center_x = %g\n",the_terminals[i].x);
-        fprintf(file,"center_y = %g\n",the_terminals[i].y);
-        fprintf(file,"center_z = %g\n",the_terminals[i].z);
-        fprintf(file,"radius = %g\n",PMJ_RADIUS);
-        fprintf(file,"main_function = %s\n",STIM_FUNCTION);
-        fprintf(file,"\n");
+        if (the_terminals[i].value >= ref_lat)
+        {
+            the_pmjs[j].id = j;
+            the_pmjs[j].x = the_terminals[i].x;
+            the_pmjs[j].y = the_terminals[i].y;
+            the_pmjs[j].z = the_terminals[i].z;
+            the_pmjs[j].value = the_terminals[i].value;
+            j++;
+        }
     }
+    return the_pmjs; 
+}
 
+void write_terminals_to_vtk(struct terminal *the_pmjs, const uint32_t total_num_pmjs, const uint32_t num_root_nodes, const double percentage)
+{
+    const uint32_t num_pmjs = total_num_pmjs*percentage;  // Number of PMJs to be taken
+    std::vector<bool> pmjs_taken(total_num_pmjs);
+    uint32_t counter = num_pmjs;
+    while (counter > 0)
+    {
+        uint32_t id = rand() % total_num_pmjs;
+        if (!pmjs_taken[id])
+        {
+            pmjs_taken[id] = true;
+            counter--;
+        }
+    }
+    FILE *file = fopen("outputs/pmj_cloud.vtk","w+");
+    fprintf(file,"# vtk DataFile Version 3.0\n");
+    fprintf(file,"vtk output\n");
+    fprintf(file,"ASCII\n");
+    fprintf(file,"DATASET POLYDATA\n");
+    fprintf(file,"POINTS %u double\n",num_pmjs+num_root_nodes); // The last PMJs are the root nodes
+    for (uint32_t i = 0; i < pmjs_taken.size(); i++)
+        if (pmjs_taken[i]) fprintf(file,"%g %g %g\n",the_pmjs[i].x,the_pmjs[i].y,the_pmjs[i].z);
+    for (uint32_t i = total_num_pmjs; i < total_num_pmjs+num_root_nodes; i++)
+        fprintf(file,"%g %g %g\n",the_pmjs[i].x,the_pmjs[i].y,the_pmjs[i].z);
+    fprintf(file,"VERTICES %u %u\n",num_pmjs+num_root_nodes,(num_pmjs+num_root_nodes)*2);
+    for (uint32_t i = 0; i < num_pmjs+num_root_nodes; i++)
+        fprintf(file,"1 %u\n",i);
     fclose(file);
+}
 
-    printf("[!] Configuration file saved at :> %s\n",filename);
+struct terminal* read_root_nodes (const char filename[], uint32_t &num_root_nodes)
+{
+    FILE *file = fopen(filename,"r");
+    if (!file)
+    {
+        fprintf(stderr,"[-] Cannot open file '%s'\n",filename);
+        exit(EXIT_FAILURE);
+    }
+    fscanf(file,"%u",&num_root_nodes);
+    struct terminal *root_nodes = (struct terminal*)malloc(sizeof(struct terminal)*num_root_nodes);
+    for (uint32_t i = 0; i < num_root_nodes; i++)
+    {
+        double pos[3];
+        fscanf(file,"%lf %lf %lf",&pos[0],&pos[1],&pos[2]);
+        root_nodes[i].id = i;
+        root_nodes[i].x = pos[0];
+        root_nodes[i].y = pos[1];
+        root_nodes[i].z = pos[2];
+    }
+    fclose(file);
+    return root_nodes;
 }

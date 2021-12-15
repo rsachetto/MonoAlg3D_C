@@ -1,14 +1,11 @@
 #ifndef MONOALG3D_COMMON_TYPES_H
 #define MONOALG3D_COMMON_TYPES_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)
-
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
 
 typedef double real_cpu;
 
@@ -21,7 +18,7 @@ typedef float real;
 
 #define MALLOC_BYTES(type, bytes) (type *)malloc(bytes)
 #define MALLOC_ONE_TYPE(type) (type *)malloc(sizeof(type))
-#define MALLOC_ARRAY_OF_TYPE(type, n) (type *)malloc(sizeof(type) * n)
+#define MALLOC_ARRAY_OF_TYPE(type, n) (type *)malloc(sizeof(type) * (n))
 
 #define CALLOC_ONE_TYPE(type) (type *)calloc(1, sizeof(type))
 #define CALLOC_ARRAY_OF_TYPE(type, n) (type *)calloc(n, sizeof(type))
@@ -33,7 +30,7 @@ typedef float real;
         (grid_cell)->mesh_extra_info_size = __size__;                                                                                                          \
     } while(0)
 
-#define MESH_INFO_DATA(grid_cell, mesh_info_struct, data_name) ((struct mesh_info_struct *)grid_cell->mesh_extra_info)->data_name
+#define MESH_INFO_DATA(grid_cell, mesh_info_struct, data_name) ((struct mesh_info_struct *)(grid_cell)->mesh_extra_info)->data_name
 
 enum simulation_status {
     RESTART_SIMULATION,
@@ -74,7 +71,7 @@ struct condutivity {
     struct fiber_coords fibers;
 };
 
-#define TRANSLATE(point, vx, vy, vz) POINT3D(point.x + vx, point.y + vy, point.z + vz)
+#define TRANSLATE(point, vx, vy, vz) POINT3D((point).x + (vx), (point).y + (vy), (point).z + (vz))
 #define POINT3D(x, y, z)                                                                                                                                       \
     (struct point_3d) {                                                                                                                                        \
         x, y, z                                                                                                                                                \
@@ -127,55 +124,52 @@ struct save_with_activation_times_persistent_data {
     struct point_voidp_hash_entry *activation_times;
     struct point_voidp_hash_entry *apds;
     bool first_save_call;
-
 };
-
-
 
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                                                                         \
     do {                                                                                                                                                       \
-        for(int64_t i = 0; i < shlen(d); i++) {                                                                                                                \
-            struct string_hash_entry e = d[i];                                                                                                                 \
+        for(int64_t i__ = 0; i__ < shlen(d); i__++) {                                                                                                          \
+            struct string_hash_entry e = (d[i__];                                                                                                              \
             printf("%s = %s\n", e.key, e.value);                                                                                                               \
         }                                                                                                                                                      \
     } while(0)
 
 #define STRING_HASH_PRINT_KEY_VALUE_LOG(tag, d)                                                                                                                \
     do {                                                                                                                                                       \
-        for(int64_t i = 0; i < shlen(d); i++) {                                                                                                                \
-            struct string_hash_entry e = d[i];                                                                                                                 \
+        for(int64_t i__ = 0; i__ < shlen(d); i__++) {                                                                                                          \
+            struct string_hash_entry e = (d)[i__];                                                                                                             \
             log_info("%s %s = %s\n", tag, e.key, e.value);                                                                                                     \
         }                                                                                                                                                      \
     } while(0)
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                                                                 \
     do {                                                                                                                                                       \
-        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
-            struct string_voidp_hash_entry e = d[i];                                                                                                           \
+        for(int64_t i__ = 0; i__ < hmlen(d); i__++) {                                                                                                          \
+            struct string_voidp_hash_entry e = (d)[i__];                                                                                                       \
             fn(e.value);                                                                                                                                       \
         }                                                                                                                                                      \
     } while(0)
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE_AND_KEY(d, fn)                                                                                         \
     do {                                                                                                                                                       \
-        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
-            struct string_voidp_hash_entry e = d[i];                                                                                                           \
+        for(int64_t i__ = 0; i__ < hmlen(d); i__++) {                                                                                                          \
+            struct string_voidp_hash_entry e = (d)[i__];                                                                                                       \
             fn(e.value, e.key);                                                                                                                                \
         }                                                                                                                                                      \
     } while(0)
 
 #define STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                                                                 \
     do {                                                                                                                                                       \
-        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
-            struct string_voidp_hash_entry e = d[i];                                                                                                           \
+        for(int64_t i__ = 0; i__ < hmlen(d); i__++) {                                                                                                          \
+            struct string_voidp_hash_entry e = (d)[i__];                                                                                                       \
             init_config_functions(e.value, "./shared_libs/libdefault_stimuli.so", e.key);                                                                      \
         }                                                                                                                                                      \
     } while(0)
 
 #define MODIFY_DOMAIN_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                                                        \
     do {                                                                                                                                                       \
-        for(int64_t i = 0; i < hmlen(d); i++) {                                                                                                                \
-            struct string_voidp_hash_entry e = d[i];                                                                                                           \
+        for(int64_t i__ = 0; i__ < hmlen(d); i__++) {                                                                                                          \
+            struct string_voidp_hash_entry e = (d)[i__];                                                                                                       \
             init_config_functions(e.value, "./shared_libs/libdefault_modify_domain.so", e.key);                                                                \
         }                                                                                                                                                      \
     } while(0)

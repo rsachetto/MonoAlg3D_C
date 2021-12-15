@@ -33,7 +33,8 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid();
 
 void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values, bool read_fibers_f);
+                                                                     float *bounds, bool read_only_values, bool read_fibers_f,
+                                                                     bool save_fibrotic);
 
 void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
 void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *vtk_grid, const char *filename, int compression_level);
