@@ -8,7 +8,7 @@
 PROGRAM_PATH="/home/berg/Github/MonoAlg3D_C/scripts/tunePMJ"
 CONFIG_FILE_PATH="/home/berg/Github/MonoAlg3D_C/scripts/tunePMJ/configs"
 OUTPUT_FILE_PATH="/home/berg/Github/MonoAlg3D_C/scripts/tunePMJ/outputs/purkinje_cuboid"
-RPMJS=( 2.1 2.2 2.3 2.4 2.5 )
+RPMJS=( 2.1 2.2 )
 
 rm pmj_delay.txt
 rm rpmj.txt
