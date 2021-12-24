@@ -9,7 +9,7 @@
 #define ENDO 0
 #define MID  1
 #define EPI  2
-
+#define FASTENDO 3
 
 #ifdef __CUDACC__
 

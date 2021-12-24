@@ -130,6 +130,9 @@ void write_configuration_file (const double rpmj)
     fprintf(file,"sigma_x=0.0001334\n");
     fprintf(file,"sigma_y=0.0001334\n");
     fprintf(file,"sigma_z=0.0001334\n");
+    //fprintf(file,"sigma_x=0.00015\n");
+    //fprintf(file,"sigma_y=0.000085\n");
+    //fprintf(file,"sigma_z=0.000075\n");
     fprintf(file,"sigma_purkinje=0.002567\n");
     fprintf(file,"library_file=/home/berg/Github/MonoAlg3D_C/shared_libs/libpurkinje_coupling_matrix_assembly.so\n");
     fprintf(file,"main_function=purkinje_coupling_assembly_matrix\n");

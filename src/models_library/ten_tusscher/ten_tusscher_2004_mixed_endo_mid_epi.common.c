@@ -35,7 +35,7 @@
     //default is EPI
     real Gks=0.245;
 
-    if (mapping == ENDO || mapping == MID)
+    if (mapping == ENDO || mapping == MID || mapping == FASTENDO)
         Gks=0.245;
 
     //Parameters for Ik1
@@ -44,7 +44,7 @@
     //Parameters for Ito
     real Gto=0.294;
 
-    if (mapping == ENDO || mapping == MID)
+    if (mapping == ENDO || mapping == MID || mapping == FASTENDO)
         Gto=0.073;
 
     //Parameters for INa
@@ -296,7 +296,7 @@
         TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
         TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
     }
-    else if(mapping == ENDO || mapping == MID) {
+    else if(mapping == ENDO || mapping == MID || mapping == FASTENDO) {
         R_INF=1./(1.+exp((20-svolt)/6.));
         S_INF=1./(1.+exp((svolt+28)/5.));
         TAU_R=9.5*exp(-(svolt+40.)*(svolt+40.)/1800.)+0.8;
