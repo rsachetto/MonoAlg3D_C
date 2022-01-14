@@ -920,20 +920,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     free(tissue_ids);
     free(dist_array);
 
-    /*
-    for (j = 0; j < number_of_terminals; j++) {
-        
-        if (the_terminals[j].active) {
-            
-            uint32_t num_tissue_cells = arrlen(the_terminals[j].tissue_cells);
-            printf("Terminal %u is linked to %u tissue cells\n",j,num_tissue_cells);
-            for (uint32_t i = 0; i < 10; i++) {
-                printf("\tTissue cell %u = (%g,%g,%g)\n",the_terminals[j].tissue_cells[i]->sv_position,\
-                                                    the_terminals[j].tissue_cells[i]->center.x,the_terminals[j].tissue_cells[i]->center.y,the_terminals[j].tissue_cells[i]->center.z);
-            }
-        }
-    }
-    */
+    print_terminals(the_terminals,number_of_terminals);
    
     return the_terminals;
 }
@@ -1034,4 +1021,20 @@ void set_active_terminals (struct terminal *the_terminals, const uint32_t number
     }
 
     arrfree(pmjs);
+}
+
+void print_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals)
+{
+    for (uint32_t j = 0; j < number_of_terminals; j++) {
+        
+        if (the_terminals[j].active) {
+            
+            uint32_t num_tissue_cells = arrlen(the_terminals[j].tissue_cells);
+            printf("Terminal %u is linked to %u tissue cells\n",j,num_tissue_cells);
+            for (uint32_t i = 0; i < num_tissue_cells; i++) {
+                printf("\tTissue cell %u = (%g,%g,%g)\n",the_terminals[j].tissue_cells[i]->sv_position,\
+                                                    the_terminals[j].tissue_cells[i]->center.x,the_terminals[j].tissue_cells[i]->center.y,the_terminals[j].tissue_cells[i]->center.z);
+            }
+        }
+    }
 }

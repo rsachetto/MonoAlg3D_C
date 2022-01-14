@@ -10,8 +10,8 @@
 #define INITIAL_V (-88.763800)
 
 #define ENDO 0.0
-#define EPI  1.0
-#define MID  2.0
+#define MID  1.0
+#define EPI  2.0
 
 #ifdef __CUDACC__
 

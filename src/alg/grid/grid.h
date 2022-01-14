@@ -86,6 +86,7 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid);
 struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_grid);
 void update_link_purkinje_to_endocardium (struct grid *the_grid, struct terminal *the_terminals);
 void set_active_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals, const char filename[]);
+void print_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals);
 void free_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals);
 
 #endif //MONOALG3D_GRID_H

@@ -1422,7 +1422,7 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
 
             for(uint32_t i = 0; i < num_terminals; i++) {
 
-                bool is_active = the_terminals[i].active;
+                bool is_terminal_active = the_terminals[i].active;
 
                 // [PURKINJE] Get the informaion from the Purkinje cell
                 purkinje_cell = the_terminals[i].purkinje_cell;
@@ -1451,7 +1451,6 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                 // Calculate the mean LAT of the tissue cells surrounding the Purkinje cell
                 real_cpu mean_tissue_lat = 0.0;
                 uint32_t cur_pulse = k;
-                bool is_tissue_activated = true;
                 for(uint32_t j = 0; j < number_tissue_cells; j++) {
 
                     cell_coordinates.x = tissue_cells[j]->center.x;
@@ -1464,38 +1463,26 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                     n_activations_tissue = (int)hmget(persistent_data->tissue_num_activations, cell_coordinates);
                     activation_times_array_tissue = (float *)hmget(persistent_data->tissue_activation_times, cell_coordinates);
 
-                    // Check if tissue was activated by the Purkinje
-                    if (n_activations_tissue == 0) {
-                        //log_error("[purkinje_coupling] ERROR! Tissue cells were not activated!\n");
-                        is_tissue_activated = false;
-                        break;
-                    }
-
                     // Check if the number of activations from the current tissue and Purkinje cell are equal
                     if(n_activations_purkinje > n_activations_tissue) {
                         log_error("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
                         log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
                         log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
                         cur_pulse = 0;
+                        return;
                     }
 
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                 }
 
-                if (is_tissue_activated) {
+                if (is_terminal_active) {
                     mean_tissue_lat /= (real_cpu)number_tissue_cells;
 
                     real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
 
                     log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms [Active = %d]\n", i,
                             purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,
-                            purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_active);
-                }
-                else {
-                    log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = -1 ms -- PMJ delay = inf ms\n", i,
-                            purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,
-                            purkinje_lat);
-                    exit(1);
+                            purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
                 }
             }
         }
