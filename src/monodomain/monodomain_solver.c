@@ -1422,6 +1422,8 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
 
             for(uint32_t i = 0; i < num_terminals; i++) {
 
+                bool is_terminal_active = the_terminals[i].active;
+
                 // [PURKINJE] Get the informaion from the Purkinje cell
                 purkinje_cell = the_terminals[i].purkinje_cell;
                 purkinje_index = purkinje_cell->id;
@@ -1467,17 +1469,21 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                         log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
                         log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
                         cur_pulse = 0;
+                        return;
                     }
 
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                 }
-                mean_tissue_lat /= (real_cpu)number_tissue_cells;
 
-                real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
+                if (is_terminal_active) {
+                    mean_tissue_lat /= (real_cpu)number_tissue_cells;
 
-                log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms\n", i,
-                         purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,
-                         purkinje_lat, mean_tissue_lat, pmj_delay);
+                    real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
+
+                    log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms [Active = %d]\n", i,
+                            purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,
+                            purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
+                }
             }
         }
     } else {
