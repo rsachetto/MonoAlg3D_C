@@ -174,6 +174,7 @@ ADD_SUBDIRECTORY "src/3dparty/xml_parser"
 ADD_SUBDIRECTORY "src/3dparty/tinyexpr"
 ADD_SUBDIRECTORY "src/3dparty/miniz"
 ADD_SUBDIRECTORY "src/vtk_utils"
+ADD_SUBDIRECTORY "src/ensight_utils"
 
 
 #DINAMIC DEPS
@@ -194,7 +195,7 @@ fi
 SRC_FILES="src/main_simulator.c"
 HDR_FILES=""
 
-STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS_GUI} ${OPT_DEPS_GPU} config_helpers vtk_utils yxml alg graph utils sds miniz"
+STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS_GUI} ${OPT_DEPS_GPU} config_helpers ensight_utils vtk_utils yxml alg graph utils sds miniz"
 DYNAMIC_DEPS="dl m $CUDA_LIBRARIES"
 
 if [ -n "$COMPILE_GUI" ]; then

@@ -11,6 +11,7 @@
 #include "../utils/utils.h"
 
 #include "../vtk_utils/vtk_unstructured_grid.h"
+#include "../ensight_utils/ensight_grid.h"
 #include "../domains_library/mesh_info_data.h"
 
 #include "save_mesh_helper.h"
@@ -699,6 +700,81 @@ SAVE_MESH(save_with_activation_times) {
     }
 
     fclose(act_file);
+
+
+}
+
+SAVE_MESH(save_as_ensight) {
+
+    static bool ensight_geometry_saved = false;
+    static uint64_t num_files;
+
+    if(!ensight_geometry_saved) {
+
+
+        int print_rate = 1;
+
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
+
+        num_files = (time_info->final_t / time_info->dt) / print_rate;
+
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
+
+        struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false, false);
+        save_ensight_grid_as_ensight5_geometry(ensight_grid, output_dir_with_file, false, false);
+
+        free_ensight_grid(ensight_grid);
+
+
+        sdsfree(output_dir_with_file);
+
+        output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/simulation_result.case");
+
+        save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate);
+
+        sdsfree(output_dir_with_file);
+
+        ensight_geometry_saved = true;
+
+    }
+
+    static int count = 0;
+
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+
+    int n_digits = (num_files==0) ? 1 : log10(num_files) + 1;
+    sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", n_digits);
+
+    char tmp[8192];
+    sprintf(tmp, base_name, count);
+
+    output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
+
+    FILE *result_file = fopen(output_dir_with_file, "w");
+
+    fprintf(result_file, "Per element Vm for simulation\n");
+    fprintf(result_file, "part 1\n");
+    fprintf(result_file, "hexa8\n");
+
+    for(int i = 0 ; i < the_grid->num_active_cells; i++) {
+        fprintf(result_file, "%12.5e", the_grid->active_cells[i]->v);
+        if ((i + 1) % 6 == 0) {
+            fprintf(result_file, "\n");
+        }
+        else {
+           // fprintf(result_file, " ");
+        }
+    }
+
+    fclose(result_file);
+
+    sdsfree(base_name);
+
+    count++;
 
 
 }
