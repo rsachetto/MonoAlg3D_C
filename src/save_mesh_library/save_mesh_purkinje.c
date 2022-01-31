@@ -504,7 +504,7 @@ SAVE_MESH(save_one_cell_state_variables) {
 
     if(params->cell_sv_position == -1) {
         if(!the_grid->adaptive) {
-            FOR_EACH_CELL(the_grid) {
+            FOR_EACH_PURKINJE_CELL(the_grid) {
                 if(cell->center.x == params->cell_center_x && cell->center.y == params->cell_center_y && cell->center.z == params->cell_center_z) {
                     params->cell_sv_position = cell->sv_position;
                     printf("%d\n", params->cell_sv_position);

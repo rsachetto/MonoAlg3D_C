@@ -18,8 +18,10 @@ def read_transmembrane_potential(input_file, dt, print_rate):
 
 def plot_transmembrane_potential(t1, v1, t2, v2):
 
-    plt.plot(t1, v1, label="Purkinje", c="green", linewidth=1.0)
-    plt.plot(t2, v2, label="Tissue", c="red", linewidth=1.0)
+    #plt.plot(t1, v1, label="Purkinje", c="green", linewidth=2.0)
+    #plt.plot(t2, v2, label="Tissue", c="red", linewidth=2.0)
+    plt.plot(t1[2000:], v1[2000:], label="Purkinje", c="green", linewidth=2.0)
+    plt.plot(t2[2000:], v2[2000:], label="Tissue", c="red", linewidth=2.0)
 
     plt.grid()
     #plt.xlim([500,600])
