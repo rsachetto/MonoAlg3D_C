@@ -766,7 +766,7 @@ SAVE_MESH(save_as_ensight) {
             fprintf(result_file, "\n");
         }
         else {
-           // fprintf(result_file, " ");
+            //fprintf(result_file, " ");
         }
     }
 
