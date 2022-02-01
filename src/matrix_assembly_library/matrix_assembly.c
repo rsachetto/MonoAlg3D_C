@@ -388,6 +388,10 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
 
 ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 
+    if(the_grid->adaptive) {
+        log_error_and_exit("anisotropic_sigma_assembly_matrix function does not support mesh adaptivity yet!. Aborting!\n");
+    }
+
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
@@ -409,7 +413,6 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 
     bool fibers_in_mesh = false;
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibers_in_mesh, config, "fibers_in_mesh");
-
 
     struct fiber_coords *fibers = NULL;
 
@@ -1010,6 +1013,8 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed) {
 }
 
 ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
+
+    log_error_and_exit("anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer function does not support mesh adaptivity yet!. Aborting!\n");
 
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;

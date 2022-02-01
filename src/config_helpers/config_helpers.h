@@ -33,6 +33,7 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
     do {                                                                                                                                                       \
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
         if(__config_char) {                                                                                                                                    \
+            free((value));                                                                                                                                     \
             (value) = strdup(__config_char);                                                                                                                   \
         }                                                                                                                                                      \
     } while(0)

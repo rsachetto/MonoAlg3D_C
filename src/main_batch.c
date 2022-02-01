@@ -362,7 +362,7 @@ int main(int argc, char **argv) {
         shput_dup_value(options->save_mesh_config->config_data, "output_dir", "batch_run");
     }
 
-    char *out_dir_name = "";
+    char *out_dir_name = strdup("./");
     GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, options->save_mesh_config, "output_dir");
     char *initial_out_dir_name = strdup(out_dir_name);
 

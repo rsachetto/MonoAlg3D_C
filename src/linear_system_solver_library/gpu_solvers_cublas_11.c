@@ -46,6 +46,10 @@ const float floatzero = 0.0f;
 
 INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
+    if(the_grid->adaptive) {
+        log_error_and_exit("The gpu conjugate gradient does not support mesh adaptivity. Aborting!\n");
+    }
+
     struct gpu_persistent_data *persistent_data = CALLOC_ONE_TYPE(struct gpu_persistent_data);
 
     size_t tmp;

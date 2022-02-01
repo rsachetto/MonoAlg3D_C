@@ -45,9 +45,22 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
     if((*(options))->save_mesh_config) {
 
         char *out_dir_name = NULL;
+        bool add_timestamp = false;
         GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_dir_name, (*(options))->save_mesh_config, "output_dir");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(add_timestamp, (*(options))->save_mesh_config, "add_timestamp");
 
         if(out_dir_name) {
+
+            if(add_timestamp) {
+                char *tmp = get_timestamped_dir_name(out_dir_name);
+                if(tmp) {
+                    free(out_dir_name);
+                    out_dir_name = strdup(tmp);
+                    free(tmp);
+                    ADD_STRING_PARAMETER_TO_CONFIG("output_dir", out_dir_name, (*(options))->save_mesh_config); //LEAK??
+                }
+            }
+
             sds buffer_log = sdsnew("");
             sds buffer_ini = sdsnew("");
 

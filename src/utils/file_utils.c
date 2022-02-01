@@ -3,7 +3,7 @@
 //
 
 #include "file_utils.h"
-
+#include <time.h>
 #define STB_DS_IMPLEMENTATION
 #include "../3dparty/stb_ds.h"
 
@@ -17,6 +17,23 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+char* get_timestamped_dir_name(char* dir_name) {
+
+    char* rc = NULL;
+    char timestamp[32];
+
+    time_t rawtime = time(0);
+    struct tm *now = localtime(&rawtime);
+
+    if(rawtime != -1) {
+        strftime(timestamp, 32, "%d_%m_%y_%H_%M_%S", now);
+        rc = malloc(strlen(dir_name) + strlen(timestamp) + 2);
+        sprintf(rc, "%s_%s", dir_name, timestamp);
+    }
+
+    return rc;
+}
 
 int get_step_from_filename(char *filename) {
     char *ia = filename;
