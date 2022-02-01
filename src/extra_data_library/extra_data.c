@@ -182,7 +182,7 @@ SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
     return (void*)mapping;
 }
 
-SET_EXTRA_DATA(set_extra_data_mixed_model_epi_mid_endo) {
+SET_EXTRA_DATA(set_extra_data_mixed_torord_epi_mid_endo) {
 
     uint32_t num_eq = 43;   // ToRORd number of equations
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -352,10 +352,10 @@ SET_EXTRA_DATA(set_extra_data_mixed_model_epi_mid_endo) {
             extra_data[i+offset] = 0.0;
         // MID
         else if (center_x >= side_length_endo && center_x < side_length_mid)
-            extra_data[i+offset] = 2.0;
+            extra_data[i+offset] = 1.0;
         // EPI
         else
-            extra_data[i+offset] = 1.0;
+            extra_data[i+offset] = 2.0;
 
     }
 
