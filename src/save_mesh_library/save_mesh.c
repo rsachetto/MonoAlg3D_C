@@ -706,11 +706,14 @@ SAVE_MESH(save_with_activation_times) {
 
 SAVE_MESH(save_as_ensight) {
 
+    if(the_grid->adaptive) {
+        log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
+    }
+
     static bool ensight_geometry_saved = false;
     static uint64_t num_files;
 
     if(!ensight_geometry_saved) {
-
 
         int print_rate = 1;
 
@@ -728,7 +731,6 @@ SAVE_MESH(save_as_ensight) {
 
         free_ensight_grid(ensight_grid);
 
-
         sdsfree(output_dir_with_file);
 
         output_dir_with_file = sdsnew(output_dir);
@@ -739,7 +741,6 @@ SAVE_MESH(save_as_ensight) {
         sdsfree(output_dir_with_file);
 
         ensight_geometry_saved = true;
-
     }
 
     static int count = 0;
