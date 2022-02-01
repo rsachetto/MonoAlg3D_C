@@ -50,5 +50,6 @@ void save_ensight_grid_as_ensight5_geometry(struct ensight_grid *grid, char *fil
 void save_ensight_grid_as_alg_file(struct ensight_grid *grid, char *filename, bool binary);
 void free_ensight_grid(struct ensight_grid *ensight_grid);
 void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_rate);
+void save_en6_result_file(char *filename, struct grid *the_grid, bool binary);
 
 #endif //MONOALG3D_ENSIGHT_GRID_H

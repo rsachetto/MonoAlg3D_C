@@ -716,6 +716,7 @@ SAVE_MESH(save_as_ensight) {
 
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
 
         num_files = (time_info->final_t / time_info->dt) / print_rate;
 
@@ -723,7 +724,7 @@ SAVE_MESH(save_as_ensight) {
         output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
 
         struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false, false);
-        save_ensight_grid_as_ensight5_geometry(ensight_grid, output_dir_with_file, false, false);
+        save_ensight_grid_as_ensight5_geometry(ensight_grid, output_dir_with_file, binary, false);
 
         free_ensight_grid(ensight_grid);
 
@@ -754,23 +755,7 @@ SAVE_MESH(save_as_ensight) {
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
 
-    FILE *result_file = fopen(output_dir_with_file, "w");
-
-    fprintf(result_file, "Per element Vm for simulation\n");
-    fprintf(result_file, "part 1\n");
-    fprintf(result_file, "hexa8\n");
-
-    for(int i = 0 ; i < the_grid->num_active_cells; i++) {
-        fprintf(result_file, "%12.5e", the_grid->active_cells[i]->v);
-        if ((i + 1) % 6 == 0) {
-            fprintf(result_file, "\n");
-        }
-        else {
-            //fprintf(result_file, " ");
-        }
-    }
-
-    fclose(result_file);
+    save_en6_result_file(output_dir_with_file, the_grid, binary);
 
     sdsfree(base_name);
 

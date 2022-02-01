@@ -15,6 +15,13 @@
 #include <sys/mman.h>
 #include <float.h>
 
+static void write_binary_string(char *str, FILE *f) {
+    char buffer[81];
+    strncpy(buffer, str, 80);
+    fwrite(buffer, sizeof(char), 80, f);
+}
+
+
 void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_rate) {
 
     FILE *case_file = fopen(filename, "w");
@@ -58,6 +65,41 @@ void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_r
     fprintf(case_file, "\n");
 
     fclose(case_file);
+}
+
+void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
+
+    FILE *result_file;
+
+    if(binary) {
+
+        result_file = fopen(filename, "wb");
+        write_binary_string("Per element Vm for simulation", result_file);
+        write_binary_string("part 1", result_file);
+        write_binary_string("hexa8", result_file);
+
+        for(int i = 0 ; i < the_grid->num_active_cells; i++) {
+            float v = (float) the_grid->active_cells[i]->v;
+            fwrite(&v, sizeof(float), 1, result_file);
+        }
+
+    }
+    else {
+        result_file = fopen(filename, "w");
+        fprintf(result_file, "Per element Vm for simulation\n");
+        fprintf(result_file, "part 1\n");
+        fprintf(result_file, "hexa8\n");
+
+        for(int i = 0 ; i < the_grid->num_active_cells; i++) {
+            fprintf(result_file, "%12.5e", the_grid->active_cells[i]->v);
+            if ((i + 1) % 6 == 0) {
+                fprintf(result_file, "\n");
+            }
+        }
+    }
+
+    fclose(result_file);
+
 }
 
 struct ensight_grid * new_ensight_grid(uint32_t num_parts) {
@@ -346,56 +388,92 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
     return ensight_grid;
 }
 
+
+
 void save_ensight_grid_as_ensight5_geometry(struct ensight_grid *grid, char *filename, bool binary, bool save_purkinje) {
 
-    uint32_t num_cells = grid->parts[0].num_cells;
-    uint32_t num_points = grid->num_points;
-
-    sds file_content = sdsnew("Grid\nGrid geometry\n");
-    file_content = sdscat(file_content, "node id given\n");
-    file_content = sdscat(file_content, "element id given\n");
-    file_content = sdscat(file_content, "coordinates\n");
-
-    file_content = sdscatprintf(file_content, "    %8d\n", num_points);
-
-    if(!binary) {
-        for(int i = 0; i < num_points; i++) {
-            struct point_3d p = grid->points[i];
-            file_content = sdscatprintf(file_content, "    %8d %12.5e %12.5e %12.5e\n", i, p.x, p.y, p.z);
-        }
-    }
-
-    file_content = sdscat(file_content, "part 1\nGrid\n");
-    file_content = sdscatprintf(file_content, "hexa8\n");
-    file_content = sdscatprintf(file_content, "%8d\n", num_cells);
-
-    int points_per_cell = 8;
-    //int cell_type = vtk_grid->cell_type;
-
-    if(!binary) {
-        for(int i = 0; i < num_cells; i++) {
-            file_content = sdscatprintf(file_content, "%8d    ", i);
-            for(int j = 0; j < points_per_cell; j++) {
-                file_content = sdscatprintf(file_content, "%ld ", grid->parts[0].cells[points_per_cell * i + j]);
-            }
-
-            file_content = sdscat(file_content, "\n");
-        }
-    }
-
-    file_content = sdscat(file_content, "\n");
+    int num_cells = grid->parts[0].num_cells;
+    int num_points = grid->num_points;
 
     FILE *output_file = NULL;
+    int points_per_cell = 8;
 
     if(binary) {
-        //output_file = fopen(filename, "wb");
-        //fwrite(file_content, size_until_now, 1, output_file);
-    } else {
-        output_file = fopen(filename, "w");
-        fprintf(output_file, "%s", file_content);
+        output_file = fopen(filename, "wb");
+
+         write_binary_string("C Binary", output_file);
+         write_binary_string("Grid", output_file);
+         write_binary_string("Grid geometry", output_file);
+         write_binary_string("node id given", output_file);
+         write_binary_string("element id assign", output_file);
+         write_binary_string("coordinates", output_file);
+        
+        fwrite(&num_points, sizeof(int), 1, output_file);
+
+        for(int i = 0; i < num_points; i++) {
+            fwrite(&i, sizeof(int), 1, output_file);
+        }
+
+
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->points[i];
+
+            float tmp = (float)p.x;
+            fwrite(&tmp, sizeof(float), 1, output_file);
+
+            tmp = (float)p.y;
+            fwrite(&tmp, sizeof(float), 1, output_file);
+
+            tmp = (float)p.z;
+            fwrite(&tmp, sizeof(float), 1, output_file);
+        }
+
+        write_binary_string("part1", output_file);
+        write_binary_string("Grid", output_file);
+        write_binary_string("hexa8", output_file);
+
+        fwrite(&num_cells, sizeof(int), 1, output_file);
+
+        int *elem_coords = NULL;
+        arrsetlen(elem_coords, num_cells*points_per_cell);
+
+        for(int i = 0; i < num_cells; i++) {
+            for(int j = 0; j < points_per_cell; j++) {
+                int id = (int)grid->parts[0].cells[points_per_cell * i + j];
+                fwrite(&id, sizeof(int), 1, output_file);
+            }
+        }
     }
 
-    sdsfree(file_content);
+    else {
+        output_file = fopen(filename, "w");
+        fprintf(output_file, "Grid\nGrid geometry\n");
+
+        fprintf(output_file, "node id given\n");
+        fprintf(output_file, "element id assign\n");
+        fprintf(output_file, "coordinates\n");
+
+        fprintf(output_file, "    %8d\n", num_points);
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->points[i];
+            fprintf(output_file, "    %8d%12.5e%12.5e%12.5e\n", i, p.x, p.y, p.z);
+        }
+
+        fprintf(output_file, "part 1\nGrid\n");
+        fprintf(output_file, "hexa8\n");
+
+        fprintf(output_file, "%8d\n", num_cells);
+
+        for(int i = 0; i < num_cells; i++) {
+            for(int j = 0; j < points_per_cell; j++) {
+                fprintf(output_file, "%8d", (int)grid->parts[0].cells[points_per_cell * i + j]);
+            }
+
+            fprintf(output_file, "\n");
+        }
+
+    }
+
     fclose(output_file);
 
 }
