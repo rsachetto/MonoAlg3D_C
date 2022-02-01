@@ -197,7 +197,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     int print_rate = 0;
     int output_print_rate = 1;
-    char *out_dir_name = strdup("./"); // Leaking
+    char *out_dir_name = strdup("./");
 
     bool save_to_file = (save_mesh_config != NULL);
     real_cpu start_saving_after_dt = 0.0;
@@ -214,6 +214,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     } else {
         log_info("No configuration provided to save the results! The results will not be saved!\n");
+        free(out_dir_name);
     }
 
     bool save_checkpoint = (save_state_config != NULL);

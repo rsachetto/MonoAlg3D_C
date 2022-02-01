@@ -49,5 +49,6 @@ bool check_simulation_completed(char *simulation_dir);
 real_cpu **read_octave_mat_file_to_array(FILE *matrix_file, uint64_t *num_lines, uint64_t *nnz);
 real_cpu *read_octave_vector_file_to_array(FILE *vec_file, uint64_t *num_lines);
 FILE *open_file_or_exit(char *filename, char *mode);
+char* get_timestamped_dir_name(char* dir_name);
 
 #endif // MONOALG3D_FILE_UTILS_H
