@@ -27,10 +27,10 @@ void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_r
     FILE *case_file = fopen(filename, "w");
 
     fprintf(case_file, "FORMAT\n");
-    fprintf(case_file, "type:   ensight\n\n");
+    fprintf(case_file, "type:\tensight gold\n\n");
 
     fprintf(case_file, "GEOMETRY\n");
-    fprintf(case_file, "model:  %s\n\n", "geometry.geo");
+    fprintf(case_file, "model:\t%s\n\n", "geometry.geo");
 
     int n_digits = (num_files==0) ? 1 : log10(num_files) + 1;
 
@@ -41,7 +41,7 @@ void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_r
     }
 
     fprintf(case_file, "VARIABLE\n");
-    fprintf(case_file, "scalar per element:     1    Vm  %s\n\n", base_file_name);
+    fprintf(case_file, "scalar per element:\t1\tVm\t%s\n\n", base_file_name);
 
     sdsfree(base_file_name);
 
@@ -49,21 +49,20 @@ void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_r
     fprintf(case_file, "time set: 1 Vm\n");
     fprintf(case_file, "number of steps: %zu\n", num_files);
 
-    fprintf(case_file, "filename numbers: ");
-    for(int i = 0; i < num_files; i++) {
-        fprintf(case_file, "%d ", i);
-    }
+    fprintf(case_file, "filename start number: \t0\n");
+    fprintf(case_file, "filename increment: \t1");
 
     fprintf(case_file, "\n");
-
 
     fprintf(case_file, "time values: ");
     for(int i = 0; i < num_files; i++) {
         fprintf(case_file, "%lf ", i*dt*print_rate);
+        if((i+1) % 6 == 0) {
+            fprintf(case_file, "\n");
+        }
     }
 
     fprintf(case_file, "\n");
-
     fclose(case_file);
 }
 
@@ -75,7 +74,11 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
 
         result_file = fopen(filename, "wb");
         write_binary_string("Per element Vm for simulation", result_file);
-        write_binary_string("part 1", result_file);
+        write_binary_string("part", result_file);
+
+        int part_number = 1;
+        fwrite(&part_number, sizeof(int), 1, result_file);
+
         write_binary_string("hexa8", result_file);
 
         for(int i = 0 ; i < the_grid->num_active_cells; i++) {
@@ -87,14 +90,12 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
     else {
         result_file = fopen(filename, "w");
         fprintf(result_file, "Per element Vm for simulation\n");
-        fprintf(result_file, "part 1\n");
+        fprintf(result_file, "part\n");
+        fprintf(result_file, "%10d\n", 1);
         fprintf(result_file, "hexa8\n");
 
         for(int i = 0 ; i < the_grid->num_active_cells; i++) {
-            fprintf(result_file, "%12.5e", the_grid->active_cells[i]->v);
-            if ((i + 1) % 6 == 0) {
-                fprintf(result_file, "\n");
-            }
+            fprintf(result_file, "%12.5e\n", the_grid->active_cells[i]->v);
         }
     }
 
@@ -262,7 +263,7 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
 
     struct ensight_grid *ensight_grid;
 
-    if(save_purkinje) {
+    if(save_purkinje && grid->purkinje) {
         uint32_t number_of_purkinje_cells = grid->purkinje->num_active_purkinje_cells;
         ensight_grid = new_ensight_grid(2);
         arrsetcap(ensight_grid->points, num_active_cells + number_of_purkinje_cells);
@@ -388,12 +389,10 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
     return ensight_grid;
 }
 
+void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *filename, bool binary, bool save_purkinje) {
 
-
-void save_ensight_grid_as_ensight5_geometry(struct ensight_grid *grid, char *filename, bool binary, bool save_purkinje) {
-
-    int num_cells = grid->parts[0].num_cells;
-    int num_points = grid->num_points;
+    int num_cells = (int)grid->parts[0].num_cells;
+    int num_points = (int)grid->num_points;
 
     FILE *output_file = NULL;
     int points_per_cell = 8;
@@ -404,42 +403,41 @@ void save_ensight_grid_as_ensight5_geometry(struct ensight_grid *grid, char *fil
          write_binary_string("C Binary", output_file);
          write_binary_string("Grid", output_file);
          write_binary_string("Grid geometry", output_file);
-         write_binary_string("node id given", output_file);
-         write_binary_string("element id assign", output_file);
-         write_binary_string("coordinates", output_file);
-        
+         write_binary_string("node id off", output_file);
+         write_binary_string("element id off", output_file);
+        write_binary_string("part", output_file);
+
+        int part_n = 1;
+        fwrite(&part_n, sizeof(int), 1, output_file);
+
+        write_binary_string("Grid", output_file);
+        write_binary_string("coordinates", output_file);
         fwrite(&num_points, sizeof(int), 1, output_file);
 
         for(int i = 0; i < num_points; i++) {
-            fwrite(&i, sizeof(int), 1, output_file);
+            struct point_3d p = grid->points[i];
+            float tmp = (float)p.x;
+            fwrite(&tmp, sizeof(float), 1, output_file);
         }
-
 
         for(int i = 0; i < num_points; i++) {
             struct point_3d p = grid->points[i];
-
-            float tmp = (float)p.x;
-            fwrite(&tmp, sizeof(float), 1, output_file);
-
-            tmp = (float)p.y;
-            fwrite(&tmp, sizeof(float), 1, output_file);
-
-            tmp = (float)p.z;
+            float tmp = (float)p.y;
             fwrite(&tmp, sizeof(float), 1, output_file);
         }
 
-        write_binary_string("part1", output_file);
-        write_binary_string("Grid", output_file);
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->points[i];
+            float tmp = (float)p.z;
+            fwrite(&tmp, sizeof(float), 1, output_file);
+        }
+
         write_binary_string("hexa8", output_file);
-
         fwrite(&num_cells, sizeof(int), 1, output_file);
-
-        int *elem_coords = NULL;
-        arrsetlen(elem_coords, num_cells*points_per_cell);
 
         for(int i = 0; i < num_cells; i++) {
             for(int j = 0; j < points_per_cell; j++) {
-                int id = (int)grid->parts[0].cells[points_per_cell * i + j];
+                int id = (int)grid->parts[0].cells[points_per_cell * i + j] + 1;
                 fwrite(&id, sizeof(int), 1, output_file);
             }
         }
@@ -447,26 +445,43 @@ void save_ensight_grid_as_ensight5_geometry(struct ensight_grid *grid, char *fil
 
     else {
         output_file = fopen(filename, "w");
-        fprintf(output_file, "Grid\nGrid geometry\n");
 
-        fprintf(output_file, "node id given\n");
-        fprintf(output_file, "element id assign\n");
+        fprintf(output_file, "Grid\n");
+        fprintf(output_file, "Grid geometry\n");
+        fprintf(output_file, "node id off\n");
+        fprintf(output_file, "element id off\n");
+        fprintf(output_file, "part\n");
+        fprintf(output_file, "%10d\n", 1);
+        fprintf(output_file, "Grid\n");
+
         fprintf(output_file, "coordinates\n");
+        fprintf(output_file, "%10d\n", num_points);
 
-        fprintf(output_file, "    %8d\n", num_points);
+        //X
         for(int i = 0; i < num_points; i++) {
             struct point_3d p = grid->points[i];
-            fprintf(output_file, "    %8d%12.5e%12.5e%12.5e\n", i, p.x, p.y, p.z);
+            fprintf(output_file, "%12.5e\n", p.x);
         }
 
-        fprintf(output_file, "part 1\nGrid\n");
+        //Y
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->points[i];
+            fprintf(output_file, "%12.5e\n", p.y);
+        }
+
+        //Z
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->points[i];
+            fprintf(output_file, "%12.5e\n", p.z);
+        }
+
         fprintf(output_file, "hexa8\n");
 
-        fprintf(output_file, "%8d\n", num_cells);
+        fprintf(output_file, "%10d\n", num_cells);
 
         for(int i = 0; i < num_cells; i++) {
             for(int j = 0; j < points_per_cell; j++) {
-                fprintf(output_file, "%8d", (int)grid->parts[0].cells[points_per_cell * i + j]);
+                fprintf(output_file, "%10d", (int)grid->parts[0].cells[points_per_cell * i + j] + 1);
             }
 
             fprintf(output_file, "\n");

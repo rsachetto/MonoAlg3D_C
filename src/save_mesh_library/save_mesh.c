@@ -727,7 +727,7 @@ SAVE_MESH(save_as_ensight) {
         output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
 
         struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false, false);
-        save_ensight_grid_as_ensight5_geometry(ensight_grid, output_dir_with_file, binary, false);
+        save_ensight_grid_as_ensight6_geometry(ensight_grid, output_dir_with_file, binary, false);
 
         free_ensight_grid(ensight_grid);
 
