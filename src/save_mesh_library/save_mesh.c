@@ -700,8 +700,6 @@ SAVE_MESH(save_with_activation_times) {
     }
 
     fclose(act_file);
-
-
 }
 
 SAVE_MESH(save_as_ensight) {
@@ -713,6 +711,7 @@ SAVE_MESH(save_as_ensight) {
     static bool ensight_geometry_saved = false;
     static uint64_t num_files;
 
+
     if(!ensight_geometry_saved) {
 
         int print_rate = 1;
@@ -721,7 +720,7 @@ SAVE_MESH(save_as_ensight) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
 
-        num_files = (time_info->final_t / time_info->dt) / print_rate;
+        num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
 
         sds output_dir_with_file = sdsnew(output_dir);
         output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
@@ -761,7 +760,6 @@ SAVE_MESH(save_as_ensight) {
     sdsfree(base_name);
 
     count++;
-
 
 }
 
