@@ -704,13 +704,16 @@ SAVE_MESH(save_with_activation_times) {
 
 SAVE_MESH(save_as_ensight) {
 
-    if(the_grid->adaptive) {
+    if(the_grid == NULL && the_grid->purkinje == NULL) {
+        log_error_and_exit("Error in save_as_ensight. No grid and no purkinje grid defined\n");
+    }
+
+    if(the_grid != NULL && the_grid->adaptive) {
         log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
     }
 
     static bool ensight_geometry_saved = false;
     static uint64_t num_files;
-
 
     if(!ensight_geometry_saved) {
 
@@ -725,8 +728,8 @@ SAVE_MESH(save_as_ensight) {
         sds output_dir_with_file = sdsnew(output_dir);
         output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
 
-        struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false, false);
-        save_ensight_grid_as_ensight6_geometry(ensight_grid, output_dir_with_file, binary, false);
+        struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false);
+        save_ensight_grid_as_ensight6_geometry(ensight_grid, output_dir_with_file, binary);
 
         free_ensight_grid(ensight_grid);
 

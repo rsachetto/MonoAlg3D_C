@@ -73,47 +73,83 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
     if(binary) {
 
         result_file = fopen(filename, "wb");
-        write_binary_string("Per element Vm for simulation", result_file);
-        write_binary_string("part", result_file);
+        write_binary_string("Per element Vm", result_file);
 
         int part_number = 1;
-        fwrite(&part_number, sizeof(int), 1, result_file);
 
-        write_binary_string("hexa8", result_file);
+        if(the_grid->num_active_cells > 0) {
+            write_binary_string("part", result_file);
+            fwrite(&part_number, sizeof(int), 1, result_file);
+            write_binary_string("hexa8", result_file);
 
-        for(int i = 0 ; i < the_grid->num_active_cells; i++) {
-            float v = (float) the_grid->active_cells[i]->v;
-            fwrite(&v, sizeof(float), 1, result_file);
+            for(int i = 0 ; i < the_grid->num_active_cells; i++) {
+                float v = (float) the_grid->active_cells[i]->v;
+                fwrite(&v, sizeof(float), 1, result_file);
+            }
+            part_number++;
+        }
+
+        if(the_grid->purkinje) {
+            write_binary_string("part", result_file);
+            fwrite(&part_number, sizeof(int), 1, result_file);
+            write_binary_string("bar2", result_file);
+
+            for(int i = 0 ; i < the_grid->purkinje->number_of_purkinje_cells - 1 ; i++) {
+                float v = (float) the_grid->purkinje->purkinje_cells[i]->v;
+                fwrite(&v, sizeof(float), 1, result_file);
+            }
+
         }
 
     }
     else {
-        result_file = fopen(filename, "w");
-        fprintf(result_file, "Per element Vm for simulation\n");
-        fprintf(result_file, "part\n");
-        fprintf(result_file, "%10d\n", 1);
-        fprintf(result_file, "hexa8\n");
 
-        for(int i = 0 ; i < the_grid->num_active_cells; i++) {
-            fprintf(result_file, "%12.5e\n", the_grid->active_cells[i]->v);
+        int part_number = 1;
+        result_file = fopen(filename, "w");
+        fprintf(result_file, "Per element Vm\n");
+
+        if(the_grid->num_active_cells > 0) {
+
+            fprintf(result_file, "part\n");
+            fprintf(result_file, "%10d\n", part_number);
+            fprintf(result_file, "hexa8\n");
+
+            for(int i = 0 ; i < the_grid->num_active_cells; i++) {
+                fprintf(result_file, "%12.5e\n", the_grid->active_cells[i]->v);
+            }
+
+            part_number++;
+
         }
+
+        if(the_grid->purkinje) {
+
+            fprintf(result_file, "part\n");
+            fprintf(result_file, "%10d\n", part_number);
+            fprintf(result_file, "bar2\n");
+
+            for(int i = 0 ; i < the_grid->purkinje->number_of_purkinje_cells - 1 ; i++) {
+                fprintf(result_file, "%12.5e\n", the_grid->purkinje->purkinje_cells[i]->v);
+            }
+
+        }
+
     }
 
     fclose(result_file);
-
 }
 
 struct ensight_grid * new_ensight_grid(uint32_t num_parts) {
 
     struct ensight_grid *grid = MALLOC_ONE_TYPE(struct ensight_grid);
     grid->parts = NULL;
-    grid->points = NULL;
     grid->num_parts = num_parts;
 
     arrsetlen(grid->parts, num_parts);
 
     for(int i = 0; i < grid->num_parts; i++) {
         grid->parts[i].cells = NULL;
+        grid->parts[i].points = NULL;
         grid->parts[i].cell_visibility = NULL;
     }
 
@@ -128,6 +164,7 @@ void free_ensight_grid(struct ensight_grid *grid) {
     if(grid) {
         for(int i = 0; i < grid->num_parts; i++) {
             arrfree(grid->parts[i].cells);
+            arrfree(grid->parts[i].points);
         }
         free(grid);
     }
@@ -196,49 +233,49 @@ static inline void set_point_data(struct point_3d center, struct point_3d half_f
     int point8_idx = hmgeti(*hash, point8);
 
     if(point1_idx == -1) {
-        arrput((*grid)->points, point1);
+        arrput((*grid)->parts[part_number].points, point1);
         hmput(*hash, point1, *id);
         *id += 1;
     }
 
     if(point2_idx == -1) {
-        arrput((*grid)->points, point2);
+        arrput((*grid)->parts[part_number].points, point2);
         hmput(*hash, point2, *id);
         *id += 1;
     }
 
     if(point3_idx == -1) {
         hmput(*hash, point3, *id);
-        arrput((*grid)->points, point3);
+        arrput((*grid)->parts[part_number].points, point3);
         *id += 1;
     }
 
     if(point4_idx == -1) {
         hmput(*hash, point4, *id);
-        arrput((*grid)->points, point4);
+        arrput((*grid)->parts[part_number].points, point4);
         *id += 1;
     }
 
     if(point5_idx == -1) {
-        arrput((*grid)->points, point5);
+        arrput((*grid)->parts[part_number].points, point5);
         hmput(*hash, point5, *id);
         *id += 1;
     }
 
     if(point6_idx == -1) {
-        arrput((*grid)->points, point6);
+        arrput((*grid)->parts[part_number].points, point6);
         hmput(*hash, point6, *id);
         *id += 1;
     }
 
     if(point7_idx == -1) {
-        arrput((*grid)->points, point7);
+        arrput((*grid)->parts[part_number].points, point7);
         hmput(*hash, point7, *id);
         *id += 1;
     }
 
     if(point8_idx == -1) {
-        arrput((*grid)->points, point8);
+        arrput((*grid)->parts[part_number].points, point8);
         hmput(*hash, point8, *id);
         *id += 1;
     }
@@ -257,188 +294,283 @@ static inline void set_point_data(struct point_3d center, struct point_3d half_f
 struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
                                                                      float *bounds, bool read_fibers_f,
-                                                                     bool save_fibrotic, bool save_purkinje) {
-
-    uint32_t num_active_cells = grid->num_active_cells;
+                                                                     bool save_fibrotic) {
 
     struct ensight_grid *ensight_grid;
 
-    if(save_purkinje && grid->purkinje) {
+    if(grid->num_active_cells > 0 && grid->purkinje) {
+
+        uint32_t num_active_cells = grid->num_active_cells;
         uint32_t number_of_purkinje_cells = grid->purkinje->num_active_purkinje_cells;
         ensight_grid = new_ensight_grid(2);
-        arrsetcap(ensight_grid->points, num_active_cells + number_of_purkinje_cells);
+
+        arrsetcap(ensight_grid->parts[0].points, num_active_cells * 8);
+        arrsetcap(ensight_grid->parts[0].cell_visibility, num_active_cells);
+        arrsetcap(ensight_grid->parts[0].cells,  num_active_cells);
+
+        arrsetcap(ensight_grid->parts[1].points, number_of_purkinje_cells * 2);
         arrsetcap(ensight_grid->parts[1].cells,  number_of_purkinje_cells);
 
-        ensight_grid->parts[1].max_v = FLT_MIN;
-        ensight_grid->parts[1].min_v = FLT_MAX;
+        ensight_grid->max_v = FLT_MIN;
+        ensight_grid->min_v = FLT_MAX;
 
-    }
-    else {
+    } else {
         ensight_grid = new_ensight_grid(1);
-        arrsetcap(ensight_grid->points, num_active_cells);
+
+        if(grid->num_active_cells > 0) {
+            uint32_t num_active_cells = grid->num_active_cells;
+            arrsetcap(ensight_grid->parts[0].points, num_active_cells * 8);
+            arrsetcap(ensight_grid->parts[0].cell_visibility, num_active_cells);
+            arrsetcap(ensight_grid->parts[0].cells,  num_active_cells);
+        } else {
+            uint32_t number_of_purkinje_cells = grid->purkinje->num_active_purkinje_cells;
+            arrsetcap(ensight_grid->parts[0].points, number_of_purkinje_cells * 2);
+            arrsetcap(ensight_grid->parts[0].cells,  number_of_purkinje_cells);
+        }
+
     }
 
-    arrsetcap(ensight_grid->parts[0].cell_visibility, num_active_cells);
-    arrsetcap(ensight_grid->parts[0].cells,  num_active_cells);
-
-    ensight_grid->parts[0].max_v = FLT_MIN;
-    ensight_grid->parts[0].min_v = FLT_MAX;
-
-    real_cpu min_x = 0.0;
-    real_cpu min_y = 0.0;
-    real_cpu min_z = 0.0;
-    real_cpu max_x = 0.0;
-    real_cpu max_y = 0.0;
-    real_cpu max_z = 0.0;
-
-    real_cpu p0[3] = {0, 0, 0};
-    real_cpu n[3] = {0, 0, 0};
-
-    if(!plain_coordinates) {
-        clip_with_plain = false;
-    } else {
-        p0[0] = plain_coordinates[0];
-        p0[1] = plain_coordinates[1];
-        p0[2] = plain_coordinates[2];
-
-        n[0] = plain_coordinates[3];
-        n[0] = plain_coordinates[4];
-        n[0] = plain_coordinates[5];
-    }
-
-    if(!bounds) {
-        clip_with_bounds = false;
-    } else {
-        min_x = bounds[0];
-        min_y = bounds[1];
-        min_z = bounds[2];
-        max_x = bounds[3];
-        max_y = bounds[4];
-        max_z = bounds[5];
-    }
-
-    uint32_t id = 0;
-    uint32_t num_cells = 0;
-
-    float l = sqrtf(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
-    float A = n[0] / l;
-    float B = n[1] / l;
-    float C = n[2] / l;
-    float D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
-
-    real_cpu side;
+    ensight_grid->max_v = FLT_MIN;
+    ensight_grid->min_v = FLT_MAX;
     struct point_hash_entry *hash =  NULL;
 
-    struct point_3d half_face;
-    struct point_3d center;
+    if(grid->num_active_cells > 0) {
+        real_cpu min_x = 0.0;
+        real_cpu min_y = 0.0;
+        real_cpu min_z = 0.0;
+        real_cpu max_x = 0.0;
+        real_cpu max_y = 0.0;
+        real_cpu max_z = 0.0;
 
-    real_cpu v;
+        real_cpu p0[3] = {0, 0, 0};
+        real_cpu n[3] = {0, 0, 0};
 
-    //TODO: read purkinje grid
+        if(!plain_coordinates) {
+            clip_with_plain = false;
+        } else {
+            p0[0] = plain_coordinates[0];
+            p0[1] = plain_coordinates[1];
+            p0[2] = plain_coordinates[2];
 
-    FOR_EACH_CELL(grid) {
-
-        if(!cell->active) {
-            if(!save_fibrotic) {
-                continue;
-            }
-            else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
-                continue;
-            }
-
+            n[0] = plain_coordinates[3];
+            n[0] = plain_coordinates[4];
+            n[0] = plain_coordinates[5];
         }
 
-        center = cell->center;
-        v = cell->v;
-
-        if(clip_with_plain) {
-            side = A * center.x + B * center.y + C * center.z + D;
-            if(side < 0) {
-                continue;
-            }
+        if(!bounds) {
+            clip_with_bounds = false;
+        } else {
+            min_x = bounds[0];
+            min_y = bounds[1];
+            min_z = bounds[2];
+            max_x = bounds[3];
+            max_y = bounds[4];
+            max_z = bounds[5];
         }
 
-        if(clip_with_bounds) {
-            bool ignore_cell = center.x < min_x || center.x > max_x || center.y < min_y || center.y > max_y ||
-                center.z < min_z || center.z > max_z;
+        uint32_t id = 0;
+        uint32_t num_cells = 0;
 
-            if(ignore_cell) {
-                continue;
+        float l = sqrtf(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+        float A = n[0] / l;
+        float B = n[1] / l;
+        float C = n[2] / l;
+        float D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
+
+        real_cpu side;
+
+        struct point_3d half_face;
+        struct point_3d center;
+
+        real_cpu v;
+
+        FOR_EACH_CELL(grid) {
+
+            if(!cell->active) {
+                if(!save_fibrotic) {
+                    continue;
+                }
+                else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
+                    continue;
+                }
+
             }
+
+            center = cell->center;
+            v = cell->v;
+
+            if(clip_with_plain) {
+                side = A * center.x + B * center.y + C * center.z + D;
+                if(side < 0) {
+                    continue;
+                }
+            }
+
+            if(clip_with_bounds) {
+                bool ignore_cell = center.x < min_x || center.x > max_x || center.y < min_y || center.y > max_y ||
+                    center.z < min_z || center.z > max_z;
+
+                if(ignore_cell) {
+                    continue;
+                }
+            }
+
+            arrput(ensight_grid->parts[0].cell_visibility, cell->visible);
+
+            if(v > ensight_grid->max_v) ensight_grid->max_v = v;
+            if(v < ensight_grid->min_v) ensight_grid->min_v = v;
+
+
+            half_face.x = cell->discretization.x / 2.0f;
+            half_face.y = cell->discretization.y / 2.0f;
+            half_face.z = cell->discretization.z / 2.0f;
+
+            set_point_data(center, half_face, &ensight_grid, &hash, &id, 0);
+
+            num_cells++;
         }
 
-        arrput(ensight_grid->parts[0].cell_visibility, cell->visible);
+        ensight_grid->parts[0].num_cells = num_cells;
+        ensight_grid->parts[0].num_points = id;
+        ensight_grid->parts[0].part_description = "Mesh";
+        ensight_grid->parts[0].cell_type = "hexa8";
+        ensight_grid->parts[0].points_per_cell = 8;
 
-        if(v > ensight_grid->parts[0].max_v) ensight_grid->parts[0].max_v = v;
-        if(v < ensight_grid->parts[0].min_v) ensight_grid->parts[0].min_v = v;
 
-
-        half_face.x = cell->discretization.x / 2.0f;
-        half_face.y = cell->discretization.y / 2.0f;
-        half_face.z = cell->discretization.z / 2.0f;
-
-        set_point_data(center, half_face, &ensight_grid, &hash, &id, 0);
-
-        num_cells++;
+        hmfree(hash);
+        hash = NULL;
     }
 
-    ensight_grid->parts[0].num_cells = num_cells;
-    ensight_grid->num_points = id;
+    if(grid->purkinje) {
 
-    hmfree(hash);
+        int part_n = 0;
+
+        if(grid->num_active_cells > 0) {
+            part_n = 1;
+        }
+
+        hmdefault(hash, -1);
+        struct cell_node *grid_cell = grid->purkinje->first_cell;
+        struct node *u = grid->purkinje->network->list_nodes;
+        struct point_3d aux;
+        int id = 0;
+        int num_cells = 0;
+
+
+        struct point_hash_entry *lines =  NULL;
+
+        while (grid_cell != NULL) {
+
+            if (grid_cell->active) {
+
+                float center_x = grid_cell->center.x;
+                float center_y = grid_cell->center.y;
+                float center_z = grid_cell->center.z;
+
+                // Insert the point to the array of points
+                aux.x = center_x;
+                aux.y = center_y;
+                aux.z = center_z;
+
+                // Search for duplicates
+                if(hmget(hash, aux) == -1) {
+                    arrput(ensight_grid->parts[part_n].points, aux);
+                    hmput(hash, aux, id);
+                    id++;
+                }
+
+                // Insert the edge to the array of lines
+                struct edge *v = u->list_edges;
+                while (v != NULL) {
+
+                    struct point_3d p = POINT3D(u->id, v->id, 0);
+
+                    if(hmgeti(lines, p) == -1) {
+                        arrput(ensight_grid->parts[part_n].cells, u->id);
+                        arrput(ensight_grid->parts[part_n].cells, v->id);
+                        num_cells++;
+                        struct point_3d p1 = POINT3D(u->id, v->id, 0);
+                        struct point_3d p2 = POINT3D(v->id, u->id, 0);
+
+                        hmput(lines, p1, 1);
+                        hmput(lines, p2, 1);
+
+                    }
+                    v = v->next;
+                }
+
+            }
+            grid_cell = grid_cell->next;
+            u = u->next;
+        }
+
+        ensight_grid->parts[part_n].part_description = "Purkinje";
+        ensight_grid->parts[part_n].cell_type = "bar2";
+        ensight_grid->parts[part_n].points_per_cell = 2;
+        ensight_grid->parts[part_n].num_points = id;
+        ensight_grid->parts[part_n].num_cells = num_cells;
+
+    }
+
     return ensight_grid;
 }
 
-void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *filename, bool binary, bool save_purkinje) {
-
-    int num_cells = (int)grid->parts[0].num_cells;
-    int num_points = (int)grid->num_points;
+void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *filename, bool binary) {
 
     FILE *output_file = NULL;
-    int points_per_cell = 8;
 
     if(binary) {
         output_file = fopen(filename, "wb");
 
-         write_binary_string("C Binary", output_file);
-         write_binary_string("Grid", output_file);
-         write_binary_string("Grid geometry", output_file);
-         write_binary_string("node id off", output_file);
-         write_binary_string("element id off", output_file);
-        write_binary_string("part", output_file);
 
-        int part_n = 1;
-        fwrite(&part_n, sizeof(int), 1, output_file);
-
+        write_binary_string("C Binary", output_file);
         write_binary_string("Grid", output_file);
-        write_binary_string("coordinates", output_file);
-        fwrite(&num_points, sizeof(int), 1, output_file);
+        write_binary_string("Grid geometry", output_file);
+        write_binary_string("node id off", output_file);
+        write_binary_string("element id off", output_file);
 
-        for(int i = 0; i < num_points; i++) {
-            struct point_3d p = grid->points[i];
-            float tmp = (float)p.x;
-            fwrite(&tmp, sizeof(float), 1, output_file);
-        }
+        for(int part = 0; part < grid->num_parts; part++) {
 
-        for(int i = 0; i < num_points; i++) {
-            struct point_3d p = grid->points[i];
-            float tmp = (float)p.y;
-            fwrite(&tmp, sizeof(float), 1, output_file);
-        }
+            int num_cells = (int)grid->parts[part].num_cells;
+            int num_points = (int)grid->parts[part].num_points;
+            int points_per_cell = grid->parts[part].points_per_cell;
 
-        for(int i = 0; i < num_points; i++) {
-            struct point_3d p = grid->points[i];
-            float tmp = (float)p.z;
-            fwrite(&tmp, sizeof(float), 1, output_file);
-        }
 
-        write_binary_string("hexa8", output_file);
-        fwrite(&num_cells, sizeof(int), 1, output_file);
+            write_binary_string("part", output_file);
 
-        for(int i = 0; i < num_cells; i++) {
-            for(int j = 0; j < points_per_cell; j++) {
-                int id = (int)grid->parts[0].cells[points_per_cell * i + j] + 1;
-                fwrite(&id, sizeof(int), 1, output_file);
+            int part_n = part+1;
+            fwrite(&part_n, sizeof(int), 1, output_file);
+
+            write_binary_string(grid->parts[part].part_description, output_file);
+            write_binary_string("coordinates", output_file);
+            fwrite(&num_points, sizeof(int), 1, output_file);
+
+            for(int i = 0; i < num_points; i++) {
+                struct point_3d p = grid->parts[part].points[i];
+                float tmp = (float)p.x;
+                fwrite(&tmp, sizeof(float), 1, output_file);
+            }
+
+            for(int i = 0; i < num_points; i++) {
+                struct point_3d p = grid->parts[part].points[i];
+                float tmp = (float)p.y;
+                fwrite(&tmp, sizeof(float), 1, output_file);
+            }
+
+            for(int i = 0; i < num_points; i++) {
+                struct point_3d p = grid->parts[part].points[i];
+                float tmp = (float)p.z;
+                fwrite(&tmp, sizeof(float), 1, output_file);
+            }
+
+            write_binary_string(grid->parts[part].cell_type, output_file);
+            fwrite(&num_cells, sizeof(int), 1, output_file);
+
+            for(int i = 0; i < num_cells; i++) {
+                for(int j = 0; j < points_per_cell; j++) {
+                    int id = (int)grid->parts[part].cells[points_per_cell * i + j] + 1;
+                    fwrite(&id, sizeof(int), 1, output_file);
+                }
             }
         }
     }
@@ -450,43 +582,50 @@ void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *fil
         fprintf(output_file, "Grid geometry\n");
         fprintf(output_file, "node id off\n");
         fprintf(output_file, "element id off\n");
-        fprintf(output_file, "part\n");
-        fprintf(output_file, "%10d\n", 1);
-        fprintf(output_file, "Grid\n");
 
-        fprintf(output_file, "coordinates\n");
-        fprintf(output_file, "%10d\n", num_points);
+        for(int part = 0; part < grid->num_parts; part++) {
+            int num_cells = (int)grid->parts[part].num_cells;
+            int num_points = (int)grid->parts[part].num_points;
+            int points_per_cell = grid->parts[part].points_per_cell;
 
-        //X
-        for(int i = 0; i < num_points; i++) {
-            struct point_3d p = grid->points[i];
-            fprintf(output_file, "%12.5e\n", p.x);
-        }
+            fprintf(output_file, "part\n");
+            fprintf(output_file, "%10d\n", part + 1);
+            fprintf(output_file, "%s\n", grid->parts[part].part_description);
 
-        //Y
-        for(int i = 0; i < num_points; i++) {
-            struct point_3d p = grid->points[i];
-            fprintf(output_file, "%12.5e\n", p.y);
-        }
+            fprintf(output_file, "coordinates\n");
+            fprintf(output_file, "%10d\n", num_points);
 
-        //Z
-        for(int i = 0; i < num_points; i++) {
-            struct point_3d p = grid->points[i];
-            fprintf(output_file, "%12.5e\n", p.z);
-        }
-
-        fprintf(output_file, "hexa8\n");
-
-        fprintf(output_file, "%10d\n", num_cells);
-
-        for(int i = 0; i < num_cells; i++) {
-            for(int j = 0; j < points_per_cell; j++) {
-                fprintf(output_file, "%10d", (int)grid->parts[0].cells[points_per_cell * i + j] + 1);
+            //X
+            for(int i = 0; i < num_points; i++) {
+                struct point_3d p = grid->parts[part].points[i];
+                fprintf(output_file, "%12.5e\n", p.x);
             }
 
-            fprintf(output_file, "\n");
-        }
+            //Y
+            for(int i = 0; i < num_points; i++) {
+                struct point_3d p = grid->parts[part].points[i];
+                fprintf(output_file, "%12.5e\n", p.y);
+            }
 
+            //Z
+            for(int i = 0; i < num_points; i++) {
+                struct point_3d p = grid->parts[part].points[i];
+                fprintf(output_file, "%12.5e\n", p.z);
+            }
+
+            fprintf(output_file, "%s\n", grid->parts[part].cell_type);
+
+            fprintf(output_file, "%10d\n", num_cells);
+
+            for(int i = 0; i < num_cells; i++) {
+                for(int j = 0; j < points_per_cell; j++) {
+                    fprintf(output_file, "%10d", (int)grid->parts[part].cells[points_per_cell * i + j] + 1);
+                }
+
+                fprintf(output_file, "\n");
+            }
+
+        }
     }
 
     fclose(output_file);
