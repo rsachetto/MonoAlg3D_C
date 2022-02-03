@@ -15,12 +15,40 @@
 #include <sys/mman.h>
 #include <float.h>
 
-static void write_binary_string(char *str, FILE *f) {
-    char buffer[81];
-    strncpy(buffer, str, 80);
-    fwrite(buffer, sizeof(char), 80, f);
+static inline void new_line(FILE *f, bool binary) {
+    if(!binary) {
+        fprintf(f, "\n");
+    }
 }
 
+static void write_string(char *str, FILE *f, bool binary) {
+
+    char buffer[81];
+    strncpy(buffer, str, 80);
+
+    if(binary) {
+        fwrite(buffer, sizeof(char), 80, f);
+    } else {
+        buffer[79] = 0; //ensight files cannot have lines longer than 79 chars
+        fprintf(f, "%s", buffer);
+    }
+}
+
+static inline void write_int(int i, FILE *f, bool binary) {
+    if(binary) {
+        fwrite(&i, sizeof(int), 1, f);
+    } else {
+        fprintf(f, "%10d", i);
+    }
+}
+
+static inline void write_float(float n, FILE *f, bool binary) {
+    if(binary) {
+        fwrite(&n, sizeof(float), 1, f);
+    } else {
+        fprintf(f, "%12.5e", n);
+    }
+}
 
 void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_rate) {
 
@@ -71,69 +99,52 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
     FILE *result_file;
 
     if(binary) {
-
         result_file = fopen(filename, "wb");
-        write_binary_string("Per element Vm", result_file);
-
-        int part_number = 1;
-
-        if(the_grid->num_active_cells > 0) {
-            write_binary_string("part", result_file);
-            fwrite(&part_number, sizeof(int), 1, result_file);
-            write_binary_string("hexa8", result_file);
-
-            for(int i = 0 ; i < the_grid->num_active_cells; i++) {
-                float v = (float) the_grid->active_cells[i]->v;
-                fwrite(&v, sizeof(float), 1, result_file);
-            }
-            part_number++;
-        }
-
-        if(the_grid->purkinje) {
-            write_binary_string("part", result_file);
-            fwrite(&part_number, sizeof(int), 1, result_file);
-            write_binary_string("bar2", result_file);
-
-            for(int i = 0 ; i < the_grid->purkinje->number_of_purkinje_cells - 1 ; i++) {
-                float v = (float) the_grid->purkinje->purkinje_cells[i]->v;
-                fwrite(&v, sizeof(float), 1, result_file);
-            }
-
-        }
-
     }
     else {
-
-        int part_number = 1;
         result_file = fopen(filename, "w");
-        fprintf(result_file, "Per element Vm\n");
+    }
 
-        if(the_grid->num_active_cells > 0) {
 
-            fprintf(result_file, "part\n");
-            fprintf(result_file, "%10d\n", part_number);
-            fprintf(result_file, "hexa8\n");
+    write_string("Per element Vm", result_file, binary);
+    new_line(result_file, binary);
 
-            for(int i = 0 ; i < the_grid->num_active_cells; i++) {
-                fprintf(result_file, "%12.5e\n", the_grid->active_cells[i]->v);
-            }
+    int part_number = 1;
 
-            part_number++;
+    if(the_grid->num_active_cells > 0) {
+        write_string("part", result_file, binary);
+        new_line(result_file, binary);
 
-        }
+        write_int(part_number, result_file, binary);
+        new_line(result_file, binary);
 
-        if(the_grid->purkinje) {
+        write_string("hexa8", result_file, binary);
+        new_line(result_file, binary);
 
-            fprintf(result_file, "part\n");
-            fprintf(result_file, "%10d\n", part_number);
-            fprintf(result_file, "bar2\n");
-
-            for(int i = 0 ; i < the_grid->purkinje->number_of_purkinje_cells - 1 ; i++) {
-                fprintf(result_file, "%12.5e\n", the_grid->purkinje->purkinje_cells[i]->v);
-            }
+        for(int i = 0 ; i < the_grid->num_active_cells; i++) {
+            float v = (float) the_grid->active_cells[i]->v;
+            write_float(v, result_file, binary);
+            new_line(result_file, binary);
 
         }
+        part_number++;
+    }
 
+    if(the_grid->purkinje) {
+        write_string("part", result_file, binary);
+        new_line(result_file, binary);
+
+        write_int(part_number, result_file, binary);
+        new_line(result_file, binary);
+
+        write_string("bar2", result_file, binary);
+        new_line(result_file, binary);
+
+        for(int i = 0 ; i < the_grid->purkinje->number_of_purkinje_cells - 1 ; i++) {
+            float v = (float) the_grid->purkinje->purkinje_cells[i]->v;
+            write_float(v, result_file, binary);
+            new_line(result_file, binary);
+        }
     }
 
     fclose(result_file);
@@ -165,6 +176,7 @@ void free_ensight_grid(struct ensight_grid *grid) {
         for(int i = 0; i < grid->num_parts; i++) {
             arrfree(grid->parts[i].cells);
             arrfree(grid->parts[i].points);
+            arrfree(grid->parts[i].cell_visibility);
         }
         free(grid);
     }
@@ -521,110 +533,79 @@ void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *fil
 
     if(binary) {
         output_file = fopen(filename, "wb");
-
-
-        write_binary_string("C Binary", output_file);
-        write_binary_string("Grid", output_file);
-        write_binary_string("Grid geometry", output_file);
-        write_binary_string("node id off", output_file);
-        write_binary_string("element id off", output_file);
-
-        for(int part = 0; part < grid->num_parts; part++) {
-
-            int num_cells = (int)grid->parts[part].num_cells;
-            int num_points = (int)grid->parts[part].num_points;
-            int points_per_cell = grid->parts[part].points_per_cell;
-
-
-            write_binary_string("part", output_file);
-
-            int part_n = part+1;
-            fwrite(&part_n, sizeof(int), 1, output_file);
-
-            write_binary_string(grid->parts[part].part_description, output_file);
-            write_binary_string("coordinates", output_file);
-            fwrite(&num_points, sizeof(int), 1, output_file);
-
-            for(int i = 0; i < num_points; i++) {
-                struct point_3d p = grid->parts[part].points[i];
-                float tmp = (float)p.x;
-                fwrite(&tmp, sizeof(float), 1, output_file);
-            }
-
-            for(int i = 0; i < num_points; i++) {
-                struct point_3d p = grid->parts[part].points[i];
-                float tmp = (float)p.y;
-                fwrite(&tmp, sizeof(float), 1, output_file);
-            }
-
-            for(int i = 0; i < num_points; i++) {
-                struct point_3d p = grid->parts[part].points[i];
-                float tmp = (float)p.z;
-                fwrite(&tmp, sizeof(float), 1, output_file);
-            }
-
-            write_binary_string(grid->parts[part].cell_type, output_file);
-            fwrite(&num_cells, sizeof(int), 1, output_file);
-
-            for(int i = 0; i < num_cells; i++) {
-                for(int j = 0; j < points_per_cell; j++) {
-                    int id = (int)grid->parts[part].cells[points_per_cell * i + j] + 1;
-                    fwrite(&id, sizeof(int), 1, output_file);
-                }
-            }
-        }
+        write_string("C Binary", output_file, binary);
     }
-
     else {
         output_file = fopen(filename, "w");
+    }
 
-        fprintf(output_file, "Grid\n");
-        fprintf(output_file, "Grid geometry\n");
-        fprintf(output_file, "node id off\n");
-        fprintf(output_file, "element id off\n");
+    write_string("Grid", output_file, binary);
+    new_line(output_file, binary);
 
-        for(int part = 0; part < grid->num_parts; part++) {
-            int num_cells = (int)grid->parts[part].num_cells;
-            int num_points = (int)grid->parts[part].num_points;
-            int points_per_cell = grid->parts[part].points_per_cell;
+    write_string("Grid geometry", output_file, binary);
+    new_line(output_file, binary);
 
-            fprintf(output_file, "part\n");
-            fprintf(output_file, "%10d\n", part + 1);
-            fprintf(output_file, "%s\n", grid->parts[part].part_description);
+    write_string("node id off", output_file, binary);
+    new_line(output_file, binary);
 
-            fprintf(output_file, "coordinates\n");
-            fprintf(output_file, "%10d\n", num_points);
+    write_string("element id off", output_file, binary);
+    new_line(output_file, binary);
 
-            //X
-            for(int i = 0; i < num_points; i++) {
-                struct point_3d p = grid->parts[part].points[i];
-                fprintf(output_file, "%12.5e\n", p.x);
+    for(int part = 0; part < grid->num_parts; part++) {
+
+        int num_cells = (int)grid->parts[part].num_cells;
+        int num_points = (int)grid->parts[part].num_points;
+        int points_per_cell = grid->parts[part].points_per_cell;
+
+        write_string("part", output_file, binary);
+        new_line(output_file, binary);
+
+        int part_n = part+1;
+        write_int(part_n, output_file, binary);
+        new_line(output_file, binary);
+
+        write_string(grid->parts[part].part_description, output_file, binary);
+        new_line(output_file, binary);
+
+        write_string("coordinates", output_file, binary);
+        new_line(output_file, binary);
+
+        write_int(num_points, output_file, binary);
+        new_line(output_file, binary);
+
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->parts[part].points[i];
+            float tmp = (float)p.x;
+            write_float(tmp, output_file, binary);
+            new_line(output_file, binary);
+        }
+
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->parts[part].points[i];
+            float tmp = (float)p.y;
+            write_float(tmp, output_file, binary);
+            new_line(output_file, binary);
+        }
+
+        for(int i = 0; i < num_points; i++) {
+            struct point_3d p = grid->parts[part].points[i];
+            float tmp = (float)p.z;
+            write_float(tmp, output_file, binary);
+            new_line(output_file, binary);
+        }
+
+        write_string(grid->parts[part].cell_type, output_file, binary);
+        new_line(output_file, binary);
+
+        write_int(num_cells, output_file, binary);
+        new_line(output_file, binary);
+
+        for(int i = 0; i < num_cells; i++) {
+            for(int j = 0; j < points_per_cell; j++) {
+                int id = (int)grid->parts[part].cells[points_per_cell * i + j] + 1;
+                write_int(id, output_file, binary);
             }
-
-            //Y
-            for(int i = 0; i < num_points; i++) {
-                struct point_3d p = grid->parts[part].points[i];
-                fprintf(output_file, "%12.5e\n", p.y);
-            }
-
-            //Z
-            for(int i = 0; i < num_points; i++) {
-                struct point_3d p = grid->parts[part].points[i];
-                fprintf(output_file, "%12.5e\n", p.z);
-            }
-
-            fprintf(output_file, "%s\n", grid->parts[part].cell_type);
-
-            fprintf(output_file, "%10d\n", num_cells);
-
-            for(int i = 0; i < num_cells; i++) {
-                for(int j = 0; j < points_per_cell; j++) {
-                    fprintf(output_file, "%10d", (int)grid->parts[part].cells[points_per_cell * i + j] + 1);
-                }
-
-                fprintf(output_file, "\n");
-            }
-
+            new_line(output_file, binary);
         }
     }
 
