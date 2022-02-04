@@ -28,8 +28,14 @@ char* get_timestamped_dir_name(char* dir_name) {
 
     if(rawtime != -1) {
         strftime(timestamp, 32, "%d_%m_%y_%H_%M_%S", now);
-        rc = malloc(strlen(dir_name) + strlen(timestamp) + 2);
-        sprintf(rc, "%s_%s", dir_name, timestamp);
+        size_t dir_name_size = strlen(dir_name);
+        rc = malloc(dir_name_size + strlen(timestamp) + 2);
+        if(dir_name[dir_name_size-1] == '/') {
+            sprintf(rc, "%.*s_%s", (int)dir_name_size-1, dir_name, timestamp);
+        }
+        else {
+            sprintf(rc, "%s_%s", dir_name, timestamp);
+        }
     }
 
     return rc;

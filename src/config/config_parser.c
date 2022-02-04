@@ -1871,6 +1871,10 @@ void configure_grid_from_options(struct grid *grid, struct user_options *options
     assert(options);
 
     grid->adaptive = options->adaptive;
+
+    if(options->purkinje_config) {
+        grid->purkinje = new_grid_purkinje();
+    }
 }
 
 void free_user_options(struct user_options *s) {

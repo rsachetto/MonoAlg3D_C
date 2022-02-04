@@ -562,7 +562,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     log_info("Starting simulation\n");
 
     // Main simulation loop start
-    while(cur_time <= finalT) {
+    while(cur_time-finalT <= dt_pde) {
 
         start_stop_watch(&iteration_time_watch);
 
@@ -1033,7 +1033,7 @@ void save_old_cell_positions(struct grid *the_grid) {
     // Purkinje section
     struct grid_purkinje *the_purkinje = the_grid->purkinje;
 
-    if(the_purkinje->first_cell) {
+    if(the_purkinje && the_purkinje->first_cell) {
         uint32_t n_purkinje_active = the_purkinje->num_active_purkinje_cells;
         struct cell_node **ac_purkinje = the_purkinje->purkinje_cells;
         OMP(parallel for)
