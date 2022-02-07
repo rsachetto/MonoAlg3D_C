@@ -14,7 +14,7 @@ static void convert_file(const char *input, const char *output, const char *file
 
     sds full_input_path;
 
-    struct vtk_unstructured_grid *vtk_grid = NULL;
+    static struct vtk_unstructured_grid *vtk_grid = NULL;
     sds full_output_path;
 
     full_input_path = sdsnew(input);
@@ -31,9 +31,16 @@ static void convert_file(const char *input, const char *output, const char *file
 
     get_path_information(full_input_path, &file_info);
 
-    if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg")) {
+    static int count = 0;
 
-        vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_input_path, value_index);
+    if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg") || FILE_HAS_EXTENSION(file_info.file_extension, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+
+        if(vtk_grid == NULL) {
+            vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_input_path, value_index);
+            if(FILE_HAS_EXTENSION(file_info.file_extension, "geo")) {
+                return;
+            }
+        }
 
         if(!vtk_grid) {
             fprintf(stderr, "%s is not a valid simulation file. Skipping!!\n", full_input_path);
@@ -45,13 +52,29 @@ static void convert_file(const char *input, const char *output, const char *file
                 full_output_path = sdscat(full_output_path, "/");
             }
 
-            full_output_path = sdscat(full_output_path, file_info.filename_without_extension);
-            full_output_path = sdscat(full_output_path, ".vtu");
+
+            if(FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+                set_vtk_grid_values_from_ensight_file(vtk_grid, full_input_path);
+            }
+
+            if(FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+                full_output_path = sdscatfmt(full_output_path, "V_it_%i.vtu", count);
+                count++;
+            }
+            else {
+                full_output_path = sdscat(full_output_path, file_info.filename_without_extension);
+                full_output_path = sdscat(full_output_path, ".vtu");
+            }
 
             printf("Converting %s to %s\n", full_input_path, full_output_path);
 
             save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, full_output_path, 6);
-            free_vtk_unstructured_grid(vtk_grid);
+
+            if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg")) {
+                free_vtk_unstructured_grid(vtk_grid);
+                vtk_grid = NULL;
+            }
+
             sdsfree(full_output_path);
 
             free_path_information(&file_info);
@@ -118,10 +141,45 @@ int main(int argc, char **argv) {
         output = sdsempty();
 
         if(input_info.is_dir) {
+
             if(ENDS_WITH_SLASH(input)) {
                 output = sdscatfmt(output, "%sconverted_files", input);
             } else {
                 output = sdscatfmt(output, "%s/converted_files", input);
+            }
+
+            create_dir(output);
+            string_array geo_file = list_files_from_dir(input, NULL, "geo", NULL, true);
+            string_array files_list = NULL;
+            if(arrlen(geo_file) > 0) {
+
+                convert_file(input, output, geo_file[0], value_index);
+                files_list = list_files_from_dir(input, "Vm.", NULL, NULL, true);
+                int num_files = arrlen(files_list);
+
+                if(num_files == 0) {
+                    fprintf(stderr, "Directory %s is empty\n", input);
+                    exit(EXIT_FAILURE);
+                } else {
+                    for(int i = 0; i < num_files; i++) {
+                        convert_file(input, output, files_list[i], value_index);
+                    }
+                }
+
+            }
+            else {
+
+                files_list = list_files_from_dir(input, NULL, NULL, NULL, true);
+                int num_files = arrlen(files_list);
+
+                if(num_files == 0) {
+                    fprintf(stderr, "Directory %s is empty\n", input);
+                    exit(EXIT_FAILURE);
+                } else {
+                    for(int i = 0; i < num_files; i++) {
+                        convert_file(input, output, files_list[i], value_index);
+                    }
+                }
             }
         } else {
             if(ENDS_WITH_SLASH(input_info.dir_name)) {
@@ -129,27 +187,11 @@ int main(int argc, char **argv) {
             } else {
                 output = sdscatfmt(output, "%s/converted_files", input_info.dir_name);
             }
+
+            create_dir(output);
+            convert_file(input, output, NULL, value_index);
+
         }
-    }
-
-    if(input_info.is_dir) {
-
-        create_dir(output);
-        string_array files_list = list_files_from_dir(input, NULL, NULL, NULL, true);
-
-        int num_files = arrlen(files_list);
-
-        if(num_files == 0) {
-            fprintf(stderr, "Directory %s is empty\n", input);
-            exit(EXIT_FAILURE);
-        } else {
-            for(int i = 0; i < num_files; i++) {
-                convert_file(input, output, files_list[i], value_index);
-            }
-        }
-    } else {
-        create_dir(output);
-        convert_file(input, output, NULL, value_index);
     }
 
     return EXIT_SUCCESS;
