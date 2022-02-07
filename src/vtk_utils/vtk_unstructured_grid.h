@@ -8,6 +8,16 @@
 #include "../alg/grid/grid.h"
 #include "../common_types/common_types.h"
 
+enum file_type_enum {
+    VTK_LEGACY,
+    VTU_XML,
+    ALG_PLAIN_TEXT,
+    ALG_BINARY,
+    ENSIGHT_BINARY,
+    ENSIGHT_ASCII,
+    ACTIVATION
+};
+
 struct vtk_unstructured_grid {
     uint32_t num_points;
     uint32_t num_cells;
@@ -46,5 +56,6 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *v
 struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_index(const char *file_name, uint32_t v_index);
 void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values, int v_index);
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
+void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *grid, const char *file_name);
 
 #endif // MONOALG3D_VTK_UNSTRUCTURED_GRID_H

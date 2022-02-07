@@ -295,7 +295,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         mesh_center_y = (float)points[cells[i]].y + dy / 2.0f;
         mesh_center_z = (float)points[cells[i]].z + dz / 2.0f;
 
-        voxel.v = grid_to_draw->values[j];
+        if(grid_to_draw->values) {
+            voxel.v = grid_to_draw->values[j];
+        }
+        else {
+            voxel.v = 0.0;
+        }
 
         voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
         voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;

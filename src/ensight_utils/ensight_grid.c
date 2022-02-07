@@ -100,11 +100,9 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
 
     if(binary) {
         result_file = fopen(filename, "wb");
-    }
-    else {
+    } else {
         result_file = fopen(filename, "w");
     }
-
 
     write_string("Per element Vm", result_file, binary);
     new_line(result_file, binary);
