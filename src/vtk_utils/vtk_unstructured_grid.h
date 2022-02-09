@@ -37,6 +37,10 @@ struct vtk_unstructured_grid {
 
     float min_v;
     float max_v;
+
+    //TODO: I don't know if this is the best place to put this information
+    struct vtk_unstructured_grid *purkinje;
+
 };
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid();

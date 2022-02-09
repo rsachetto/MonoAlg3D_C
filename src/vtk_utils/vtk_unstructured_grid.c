@@ -27,6 +27,7 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
     grid->values          = NULL;
     grid->points          = NULL;
     grid->fibers          = NULL;
+    grid->purkinje        = NULL;
 
     grid->num_cells = 0;
     grid->num_points = 0;
@@ -2156,6 +2157,52 @@ static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_
     arrsetlen((*vtk_grid)->cells, num_cells*points_per_cell);
 
     add_to_cells((*vtk_grid)->cells, &source, num_cells*points_per_cell, binary);
+    skip_line(&source, binary);
+
+    //TODO: for now we are only handling files with only mesh or mesh and Purkinje. We can improve and handle meshes with only purkinje
+    if(*source) {
+
+        (*vtk_grid)->purkinje = new_vtk_unstructured_grid();
+        (*vtk_grid)->purkinje->points_per_cell = 2; //TODO: add a constructor for this?
+
+        //TODO: create a function to avoid code duplication with the above code
+        //This mesh has a purkinje system
+        skip_line(&source, binary); //part
+        (void)read_int(&source, binary); //part #
+        skip_line(&source, binary); //Purkinje
+        skip_line(&source, binary); //coordinates
+
+        int num_points = read_int(&source, binary);
+
+        (*vtk_grid)->purkinje->num_points = num_points;
+
+        arrsetlen((*vtk_grid)->purkinje->points, num_points);
+
+        //TODO: this can be faster for binary meshes
+        for(int i = 0; i < num_points; i++) {
+            (*vtk_grid)->purkinje->points[i].x = read_float(&source, binary);
+        }
+
+        for(int i = 0; i < num_points; i++) {
+            (*vtk_grid)->purkinje->points[i].y = read_float(&source, binary);
+        }
+
+        for(int i = 0; i < num_points; i++) {
+            (*vtk_grid)->purkinje->points[i].z = read_float(&source, binary);
+        }
+
+        skip_line(&source, binary); //hexa8
+
+        int points_per_cell = 2;
+        int num_cells = read_int(&source, binary);
+
+        (*vtk_grid)->purkinje->num_cells = num_cells;
+
+        arrsetlen((*vtk_grid)->purkinje->cells, num_cells*points_per_cell);
+
+        add_to_cells((*vtk_grid)->purkinje->cells, &source, num_cells*points_per_cell, binary);
+
+    }
 }
 
 //TODO: implement read only values for non-adaptive meshes
@@ -2247,10 +2294,28 @@ void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_gri
     skip_line(&source, binary); //Per element Vm
     skip_line(&source, binary); //Part
     (void)read_int(&source, binary); //part #
-    skip_line(&source, binary); //hexa 8
+    skip_line(&source, binary); //hexa8
 
     for(int i = 0; i < num_cells; i++) {
         vtk_grid->values[i] = read_float(&source, binary);
+    }
+
+    if((vtk_grid->purkinje != NULL) && (*source)) {
+
+        //Purkinje :)
+        int num_cells = vtk_grid->purkinje->num_cells;
+
+        arrfree(vtk_grid->purkinje->values);
+        arrsetlen(vtk_grid->purkinje->values, num_cells);
+
+        skip_line(&source, binary); //Part
+        (void)read_int(&source, binary); //part #
+        skip_line(&source, binary); //bar2
+
+
+        for(int i = 0; i < num_cells; i++) {
+            vtk_grid->purkinje->values[i] = read_float(&source, binary);
+        }
     }
 
     munmap(tmp, size);

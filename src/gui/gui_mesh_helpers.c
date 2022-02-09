@@ -333,6 +333,64 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
     free(colors);
 }
 
+void draw_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
+
+
+    if(gui_config->grid_info.vtk_grid == NULL || gui_config->grid_info.vtk_grid->purkinje == NULL) return;
+
+    struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid->purkinje;
+
+    int64_t *cells = grid_to_draw->cells;
+    if(!cells)
+        return;
+
+    point3d_array points = grid_to_draw->points;
+    if(!points)
+        return;
+
+    uint32_t n_active = grid_to_draw->num_cells;
+
+    uint32_t num_points = grid_to_draw->points_per_cell;
+
+    float min_v = gui_config->min_v;
+    float max_v = gui_config->max_v;
+
+    int j = 0;
+
+
+    for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+
+        /*
+        if(grid_mask != 2) {
+            if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
+                j += 1;
+                continue;
+            }
+        }
+        */
+        Vector3 start_pos;
+        start_pos.x = (points[cells[i]].x - mesh_offset.x)/scale;
+        start_pos.y = (points[cells[i]].y - mesh_offset.y)/scale;
+        start_pos.z = (points[cells[i]].z - mesh_offset.z)/scale;
+
+        Vector3 end_pos;
+        end_pos.x = (points[cells[i+1]].x - mesh_offset.x)/scale;
+        end_pos.y = (points[cells[i+1]].y - mesh_offset.y)/scale;
+        end_pos.z = (points[cells[i+1]].z - mesh_offset.z)/scale;
+
+        float v = 0.0;
+
+        if(grid_to_draw->values) {
+            v = grid_to_draw->values[j];
+        }
+
+        j++;
+
+        Color c = get_color((v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+        DrawLine3D(start_pos, end_pos, c);
+    }
+}
+
 void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
