@@ -1325,9 +1325,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(draw_type == DRAW_SIMULATION) {
                 draw_alg_mesh(gui_config, mesh_offset, scale, gui_state, grid_mask);
+                draw_alg_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
             } else if(draw_type == DRAW_FILE) {
                 draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, grid_mask);
-                draw_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
+                draw_vtk_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
             }
 
             gui_state->double_clicked = false;

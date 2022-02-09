@@ -2109,59 +2109,10 @@ static inline int read_float(char **source, bool binary) {
 
 }
 
-static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_grid **vtk_grid, enum file_type_enum file_type, char *source, size_t size) {
-
+static void read_purkinje(struct vtk_unstructured_grid **vtk_grid, enum file_type_enum file_type, char *source, bool skip_points) {
     bool binary = (file_type == ENSIGHT_BINARY);
 
-    if(binary) {
-        skip_line(&source, true);
-    }
-
-    skip_line(&source, binary); //Grid
-    skip_line(&source, binary); //Grid geometry
-    skip_line(&source, binary); //node id off
-    skip_line(&source, binary); //element if off
-    skip_line(&source, binary); //part
-    (void)read_int(&source, binary); //part #
-    skip_line(&source, binary); //Mesh
-    skip_line(&source, binary); //coordinates
-
-    int num_points = read_int(&source, binary);
-
-    *vtk_grid = new_vtk_unstructured_grid();
-
-    (*vtk_grid)->num_points = num_points;
-
-    arrsetlen((*vtk_grid)->points, num_points);
-
-    //TODO: this can be faster for binary meshes
-    for(int i = 0; i < num_points; i++) {
-        (*vtk_grid)->points[i].x = read_float(&source, binary);
-    }
-
-    for(int i = 0; i < num_points; i++) {
-        (*vtk_grid)->points[i].y = read_float(&source, binary);
-    }
-
-    for(int i = 0; i < num_points; i++) {
-        (*vtk_grid)->points[i].z = read_float(&source, binary);
-    }
-
-    skip_line(&source, binary); //hexa8
-
-    int points_per_cell = 8;
-    int num_cells = read_int(&source, binary);
-
-    (*vtk_grid)->num_cells = num_cells;
-
-    arrsetlen((*vtk_grid)->cells, num_cells*points_per_cell);
-
-    add_to_cells((*vtk_grid)->cells, &source, num_cells*points_per_cell, binary);
-    skip_line(&source, binary);
-
-    //TODO: for now we are only handling files with only mesh or mesh and Purkinje. We can improve and handle meshes with only purkinje
-    if(*source) {
-
+    if(!skip_points)  {
         (*vtk_grid)->purkinje = new_vtk_unstructured_grid();
         (*vtk_grid)->purkinje->points_per_cell = 2; //TODO: add a constructor for this?
 
@@ -2191,17 +2142,87 @@ static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_
             (*vtk_grid)->purkinje->points[i].z = read_float(&source, binary);
         }
 
+        skip_line(&source, binary); //bar2
+    }
+
+    int points_per_cell = 2;
+    int num_cells = read_int(&source, binary);
+
+    (*vtk_grid)->purkinje->num_cells = num_cells;
+
+    arrsetlen((*vtk_grid)->purkinje->cells, num_cells*points_per_cell);
+
+    add_to_cells((*vtk_grid)->purkinje->cells, &source, num_cells*points_per_cell, binary);
+
+}
+
+static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_grid **vtk_grid, enum file_type_enum file_type, char *source) {
+
+    bool binary = (file_type == ENSIGHT_BINARY);
+
+    if(binary) {
+        skip_line(&source, true);
+    }
+
+    skip_line(&source, binary); //Grid
+    skip_line(&source, binary); //Grid geometry
+    skip_line(&source, binary); //node id off
+    skip_line(&source, binary); //element if off
+    skip_line(&source, binary); //part
+    (void)read_int(&source, binary); //part #
+    skip_line(&source, binary); //Mesh or Purkinje
+    skip_line(&source, binary); //coordinates
+
+    int num_points = read_int(&source, binary);
+    point3d_array points = NULL;
+    arrsetlen(points, num_points);
+
+    //TODO: this can be faster for binary meshes
+    for(int i = 0; i < num_points; i++) {
+        points[i].x = read_float(&source, binary);
+    }
+
+    for(int i = 0; i < num_points; i++) {
+        points[i].y = read_float(&source, binary);
+    }
+
+    for(int i = 0; i < num_points; i++) {
+        points[i].z = read_float(&source, binary);
+    }
+
+    *vtk_grid = new_vtk_unstructured_grid();
+
+    if(STRCMP(source, "hexa8", 5) == 0) {
         skip_line(&source, binary); //hexa8
 
-        int points_per_cell = 2;
+        (*vtk_grid)->num_points = num_points;
+        (*vtk_grid)->points = points;
+
+        int points_per_cell = 8;
         int num_cells = read_int(&source, binary);
 
-        (*vtk_grid)->purkinje->num_cells = num_cells;
+        (*vtk_grid)->num_cells = num_cells;
 
-        arrsetlen((*vtk_grid)->purkinje->cells, num_cells*points_per_cell);
+        arrsetlen((*vtk_grid)->cells, num_cells*points_per_cell);
 
-        add_to_cells((*vtk_grid)->purkinje->cells, &source, num_cells*points_per_cell, binary);
+        add_to_cells((*vtk_grid)->cells, &source, num_cells*points_per_cell, binary);
+        skip_line(&source, binary);
 
+        if(*source) {
+            read_purkinje(vtk_grid, file_type, source, false);
+        }
+    }
+    else {
+
+        skip_line(&source, binary); //bar2
+
+        (*vtk_grid)->purkinje = new_vtk_unstructured_grid();
+        (*vtk_grid)->purkinje->points_per_cell = 2; //TODO: add a constructor for this?
+
+        (*vtk_grid)->purkinje->num_points = num_points;
+        (*vtk_grid)->purkinje->points = points;
+
+        read_purkinje(vtk_grid, file_type, source, true);
     }
 }
 
@@ -2245,7 +2266,7 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
     } else if(file_type == ACTIVATION) {
         new_vtk_unstructured_grid_from_string_with_activation_info(vtk_grid, &source[2], size-2);
     } else if(file_type == ENSIGHT_ASCII || file_type == ENSIGHT_BINARY) {
-        new_vtk_unstructured_grid_from_ensigth_file(vtk_grid, file_type, source, size);
+        new_vtk_unstructured_grid_from_ensigth_file(vtk_grid, file_type, source);
     } else {
         //Simple text or binary representation
         bool read_only_values = (file_type != ALG_PLAIN_TEXT);
@@ -2283,10 +2304,7 @@ void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_gri
         return;
     }
 
-    int num_cells = vtk_grid->num_cells;
-
-    arrfree(vtk_grid->values);
-    arrsetlen(vtk_grid->values, num_cells);
+    int num_grid_cells = vtk_grid->num_cells;
 
     //TODO: improve this
     bool binary = tmp[14] != '\n';
@@ -2294,26 +2312,32 @@ void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_gri
     skip_line(&source, binary); //Per element Vm
     skip_line(&source, binary); //Part
     (void)read_int(&source, binary); //part #
-    skip_line(&source, binary); //hexa8
+    skip_line(&source, binary); //hexa8 or bar2
 
-    for(int i = 0; i < num_cells; i++) {
-        vtk_grid->values[i] = read_float(&source, binary);
+    if(num_grid_cells > 0) {
+        arrfree(vtk_grid->values);
+        arrsetlen(vtk_grid->values, num_grid_cells);
+
+        for(int i = 0; i < num_grid_cells; i++) {
+            vtk_grid->values[i] = read_float(&source, binary);
+        }
     }
 
     if((vtk_grid->purkinje != NULL) && (*source)) {
 
         //Purkinje :)
-        int num_cells = vtk_grid->purkinje->num_cells;
+        int num_purkinje_cells = vtk_grid->purkinje->num_cells;
 
         arrfree(vtk_grid->purkinje->values);
-        arrsetlen(vtk_grid->purkinje->values, num_cells);
+        arrsetlen(vtk_grid->purkinje->values, num_purkinje_cells);
 
-        skip_line(&source, binary); //Part
-        (void)read_int(&source, binary); //part #
-        skip_line(&source, binary); //bar2
+        if(num_grid_cells > 0) {
+            skip_line(&source, binary); //Part
+            (void)read_int(&source, binary); //part #
+            skip_line(&source, binary); //bar2
+        }
 
-
-        for(int i = 0; i < num_cells; i++) {
+        for(int i = 0; i < num_purkinje_cells; i++) {
             vtk_grid->purkinje->values[i] = read_float(&source, binary);
         }
     }
