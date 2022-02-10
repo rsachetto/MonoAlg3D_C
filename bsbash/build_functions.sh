@@ -87,6 +87,8 @@ GET_LINUX_VERSION() {
 	export VER
 }
 
+BUILD_TYPE_FILE=".build_type"
+
 GET_BUILD_OPTIONS () {
 
 	OPTIND=1
@@ -112,6 +114,21 @@ GET_BUILD_OPTIONS () {
 		BUILD_ARGS+=('all')
 	fi
 
+    NEW=$BUILD_TYPE
+
+    if [ ! -f "$BUILD_TYPE_FILE" ]; then
+        LAST=$BUILD_TYPE
+    else
+        LAST=$(grep new .build_type | awk -F "=" '{print $2}')
+    fi
+
+    echo "last=$LAST" >  $BUILD_TYPE_FILE
+    echo "new=$NEW"  >>  $BUILD_TYPE_FILE
+
+    if [ "$NEW" != "$LAST" ]; then
+       rm -f $COMPILE_COMMANDS_FILE
+    fi
+
 }
 
 CLEAN_PROJECT () {
@@ -126,7 +143,7 @@ CLEAN_PROJECT () {
 
 PRINT_INFO () {
 	if [ -z "$QUIET" ]; then
-		printf "[INFO] ${INFO}%s${NC}\n" "$1"	
+		printf "[INFO] ${INFO}%s${NC}\n" "$1"
 	fi
 }
 
