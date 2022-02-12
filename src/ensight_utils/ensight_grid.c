@@ -100,11 +100,9 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
 
     if(binary) {
         result_file = fopen(filename, "wb");
-    }
-    else {
+    } else {
         result_file = fopen(filename, "w");
     }
-
 
     write_string("Per element Vm", result_file, binary);
     new_line(result_file, binary);
@@ -658,7 +656,6 @@ void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_gr
 }
 
 */
-
 
 struct ensight_grid * new_ensight_grid_from_file(const char *file_name) {
 //    struct vtk_unstructured_grid *vtk_grid = NULL;

@@ -65,6 +65,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
     gui_config->current_file_index = options->start_file;
     int v_step = options->step;
 
+    bool maybe_ensight = false;
+
     struct path_information input_info;
 
     get_path_information(input, &input_info);
@@ -88,6 +90,13 @@ static int read_and_render_files(struct visualization_options *options, struct g
             string_array ignore_files = NULL;
             arrput(ignore_files, strdup("vis"));
             simulation_files->files_list = list_files_from_dir(input, prefix, NULL, ignore_files, true);
+
+            if(arrlen(simulation_files->files_list) == 0) {
+                //Maybe is an ensight folder, lets try again
+                simulation_files->files_list = list_files_from_dir(input, "Vm", NULL, ignore_files, true);
+                maybe_ensight = true;
+            }
+
             arrfree(ignore_files);
         }
     } else {
@@ -110,6 +119,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
     }
 
+    free_path_information(&input_info);
+
     uint32_t num_files = arrlen(simulation_files->files_list);
 
     sds full_path;
@@ -129,8 +140,30 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         sdsfree(full_path);
         free(simulation_files);
-
         return SIMULATION_FINISHED;
+    }
+
+    sds geometry_file = NULL;
+
+    if(maybe_ensight) {
+        geometry_file = sdscatfmt(sdsempty(), "%s/geometry.geo", input);
+
+        get_path_information(geometry_file,  &input_info);
+
+        if(!input_info.exists) {
+            snprintf(error, MAX_ERROR_SIZE, "Geometry file %s not found", geometry_file);
+
+            if(gui_config->error_message)
+                free(gui_config->error_message);
+            gui_config->error_message = strdup(error);
+
+            sdsfree(full_path);
+            free(simulation_files);
+            free_path_information(&input_info);
+
+            return SIMULATION_FINISHED;
+        }
+
     }
 
     if(gui_config->current_file_index > num_files) {
@@ -140,47 +173,67 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 
     float dt = 0;
+    if(maybe_ensight) {
+        //TODO: make this better
+        gui_config->dt = 0;
+        gui_config->step = 1;
+        gui_config->final_file_index = num_files - 1;
+        gui_config->final_time = gui_config->final_file_index;
+        gui_config->time = -1;
 
-    if(!using_pvd) {
+    } else if(!using_pvd) {
 
-        int step;
-        int step1;
-        int final_step;
-
-        step1 = get_step_from_filename(simulation_files->files_list[0]);
-
-        if(num_files > 1) {
-            int step2 = 0;
-            step2 = get_step_from_filename(simulation_files->files_list[1]);
-            step = step2 - step1;
-        } else {
-            step = step1;
+        if(single_file) {
+            gui_config->dt = -1;
+            gui_config->step = 1;
+            gui_config->final_file_index = num_files - 1;
+            gui_config->final_time = gui_config->final_file_index;
+            gui_config->time = -1;
         }
+        else {
+            int step;
+            int step1;
+            int final_step;
 
-        final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
+            step1 = get_step_from_filename(simulation_files->files_list[0]);
 
-        dt = gui_config->dt;
+            if(num_files > 1) {
+                int step2 = 0;
+                step2 = get_step_from_filename(simulation_files->files_list[1]);
+                step = step2 - step1;
+            } else {
+                step = step1;
+            }
 
-        gui_config->step = step;
+            final_step = get_step_from_filename(simulation_files->files_list[num_files - 1]);
 
-        gui_config->final_file_index = final_step / step;
+            dt = gui_config->dt;
 
-        if(dt == 0.0) {
-            gui_config->final_time = (float)final_step;
+            gui_config->step = step;
 
-        } else {
-            gui_config->final_time = (float)final_step * dt;
+            gui_config->final_file_index = final_step / step;
+
+            if(dt == 0.0) {
+                gui_config->final_time = (float)final_step;
+
+            } else {
+                gui_config->final_time = (float)final_step * dt;
+            }
         }
     } else {
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
         gui_config->dt = -1;
     }
 
+    bool ensigth_grid_loaded = false;
+
     while(true) {
 
         omp_set_lock(&gui_config->draw_lock);
 
-        if(!using_pvd) {
+        if(maybe_ensight) {
+            gui_config->time = (int)gui_config->current_file_index;
+        } else if(!using_pvd) {
             if(dt == 0) {
                 gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
             } else {
@@ -203,9 +256,16 @@ static int read_and_render_files(struct visualization_options *options, struct g
             full_path = sdscat(full_path, simulation_files->files_list[(int)gui_config->current_file_index]);
         }
 
-        free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
-
-        gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);
+        if(maybe_ensight) {
+            if(!ensigth_grid_loaded) {
+                gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(geometry_file, options->value_index);
+                ensigth_grid_loaded = true;
+            }
+            set_vtk_grid_values_from_ensight_file(gui_config->grid_info.vtk_grid, full_path);
+        } else {
+            free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
+            gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);
+        }
 
         if(single_file) {
             gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;

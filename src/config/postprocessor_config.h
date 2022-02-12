@@ -14,8 +14,8 @@
 typedef POSTPROCESS(postprocess_fn);
 
 struct postprocess_function {
-	postprocess_fn *function;
-	struct config *function_params;
+    postprocess_fn *function;
+    struct config *function_params;
 };
 
 typedef struct postprocess_function ** postprocess_list;

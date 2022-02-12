@@ -20,6 +20,7 @@ LIBRARY_OUTPUT_DIRECTORY=$ROOT_DIR
 
 GLOBAL_FORCE_COMPILATION=""
 QUIET=''
+WRITE_COMPILE_COMMANDS='y'
 
 DEFAULT_BUILD_DIR="build_"
 COMPILE_COMMANDS_FILE="${ROOT_DIR}/compile_commands.json"
@@ -86,6 +87,8 @@ GET_LINUX_VERSION() {
 	export VER
 }
 
+BUILD_TYPE_FILE=".build_type"
+
 GET_BUILD_OPTIONS () {
 
 	OPTIND=1
@@ -111,6 +114,21 @@ GET_BUILD_OPTIONS () {
 		BUILD_ARGS+=('all')
 	fi
 
+    NEW=$BUILD_TYPE
+
+    if [ ! -f "$BUILD_TYPE_FILE" ]; then
+        LAST=$BUILD_TYPE
+    else
+        LAST=$(grep new .build_type | awk -F "=" '{print $2}')
+    fi
+
+    echo "last=$LAST" >  $BUILD_TYPE_FILE
+    echo "new=$NEW"  >>  $BUILD_TYPE_FILE
+
+    if [ "$NEW" != "$LAST" ]; then
+       rm -f $COMPILE_COMMANDS_FILE
+    fi
+
 }
 
 CLEAN_PROJECT () {
@@ -125,7 +143,7 @@ CLEAN_PROJECT () {
 
 PRINT_INFO () {
 	if [ -z "$QUIET" ]; then
-		printf "[INFO] ${INFO}%s${NC}\n" "$1"	
+		printf "[INFO] ${INFO}%s${NC}\n" "$1"
 	fi
 }
 
@@ -155,17 +173,9 @@ RECOMPILE_OR_NOT () {
 }
 
 CREATE_COMPILE_COMMANDS_FILE() {
-	if [ -z "$COMPILE_COMMANDS_CREATED" ]; then
-
-		if [ -f "$WRITE_COMPILE_COMMANDS" ]; then
-			rm "$COMPILE_COMMANDS_FILE"
-		fi
-
-		echo "[" > "$COMPILE_COMMANDS_FILE"
-		echo "]" >> "$COMPILE_COMMANDS_FILE"
-		INSERT_TO_LINE=2
-		COMPILE_COMMANDS_CREATED='y'
-	fi
+    echo "[" > "$COMPILE_COMMANDS_FILE"
+    echo "]" >> "$COMPILE_COMMANDS_FILE"
+    INSERT_TO_LINE=2
 }
 
 ADD_COMPILE_COMMAND() {
@@ -181,22 +191,31 @@ ADD_COMPILE_COMMAND() {
 	local DIR
 	DIR=$(dirname "$FILE_FULL_PATH")
 
-	CREATE_COMPILE_COMMANDS_FILE
+    if [ ! -f "$COMPILE_COMMANDS_FILE" ]; then
+	    CREATE_COMPILE_COMMANDS_FILE
+	else
+	    INSERT_TO_LINE=$(wc -l < "$COMPILE_COMMANDS_FILE")
+	fi
 
-	sed -i "${INSERT_TO_LINE}i{" "$COMPILE_COMMANDS_FILE"
-	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+    COMMAND_EXISTS=$(grep -c "$COMMAND" "$COMPILE_COMMANDS_FILE") || true #avoid exiting the script
 
-	sed -i "${INSERT_TO_LINE}i\"directory\": \"$DIR\", " "$COMPILE_COMMANDS_FILE"
-	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+    if [ "$COMMAND_EXISTS" == "0" ]; then
+        sed -i "${INSERT_TO_LINE}i{" "$COMPILE_COMMANDS_FILE"
+        INSERT_TO_LINE=$((INSERT_TO_LINE+1))
 
-	sed -i "${INSERT_TO_LINE}i\"command\": \"$ESCAPED_COMMAND\", " "$COMPILE_COMMANDS_FILE"
-	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+        sed -i "${INSERT_TO_LINE}i\"directory\": \"$DIR\", " "$COMPILE_COMMANDS_FILE"
+        INSERT_TO_LINE=$((INSERT_TO_LINE+1))
 
-	sed -i "${INSERT_TO_LINE}i\"file\": \"$FILE\" " "$COMPILE_COMMANDS_FILE"
-	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+        sed -i "${INSERT_TO_LINE}i\"command\": \"$ESCAPED_COMMAND\", " "$COMPILE_COMMANDS_FILE"
+        INSERT_TO_LINE=$((INSERT_TO_LINE+1))
 
-	sed -i "${INSERT_TO_LINE}i    }," "$COMPILE_COMMANDS_FILE"
-	INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+        sed -i "${INSERT_TO_LINE}i\"file\": \"$FILE\" " "$COMPILE_COMMANDS_FILE"
+        INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+
+        sed -i "${INSERT_TO_LINE}i    }," "$COMPILE_COMMANDS_FILE"
+        INSERT_TO_LINE=$((INSERT_TO_LINE+1))
+	fi
+
 }
 
 ECHO_AND_EXEC_COMMAND() {

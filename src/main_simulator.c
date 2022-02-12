@@ -163,6 +163,11 @@ int main(int argc, char **argv) {
     }
 #endif
 
+#ifdef DEBUG_INFO
+    log_warn("Running the debug version. If you do not need debug information, build with ./build -r ou make release to improve the performace!\n");
+#endif
+
+
     int np = monodomain_solver->num_threads;
 
     if(np == 0)

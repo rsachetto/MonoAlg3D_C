@@ -38,6 +38,20 @@ static inline Vector3 get_max_min(Vector3 mesh_max, Vector3 mesh_min, Vector3 me
         mesh_min_d.coord = d.coord;                                                                                                                            \
     }
 
+#define ITERATE_OVER_CELLS()                                                                                                                                   \
+    for(uint32_t i = 0; i < n_active; i++) {                                                                                                                   \
+        grid_cell = ac[i];                                                                                                                                     \
+        d.x = grid_cell->discretization.x;                                                                                                                     \
+        d.y = grid_cell->discretization.y;                                                                                                                     \
+        d.z = grid_cell->discretization.z;                                                                                                                     \
+        mesh_center.x = grid_cell->center.x;                                                                                                                   \
+        mesh_center.y = grid_cell->center.y;                                                                                                                   \
+        mesh_center.z = grid_cell->center.z;                                                                                                                   \
+        SET_MAX_MIN(x);                                                                                                                                        \
+        SET_MAX_MIN(y);                                                                                                                                        \
+        SET_MAX_MIN(z);                                                                                                                                        \
+    }
+
 Vector3 find_mesh_center(struct grid *grid_to_draw, struct mesh_info *mesh_info) {
 
     uint32_t n_active = grid_to_draw->num_active_cells;
@@ -50,30 +64,31 @@ Vector3 find_mesh_center(struct grid *grid_to_draw, struct mesh_info *mesh_info)
     Vector3 mesh_max_d = V3_SAME(FLT_MIN);
     Vector3 mesh_min_d = V3_SAME(FLT_MAX);
 
+    Vector3 d;
+    Vector3 mesh_center;
+
     if(ac) {
-
-        Vector3 d;
-        Vector3 mesh_center;
-
-        for(uint32_t i = 0; i < n_active; i++) {
-            grid_cell = ac[i];
-
-            d.x = grid_cell->discretization.x;
-            d.y = grid_cell->discretization.y;
-            d.z = grid_cell->discretization.z;
-
-            mesh_center.x = grid_cell->center.x;
-            mesh_center.y = grid_cell->center.y;
-            mesh_center.z = grid_cell->center.z;
-
-            SET_MAX_MIN(x);
-            SET_MAX_MIN(y);
-            SET_MAX_MIN(z);
+       ITERATE_OVER_CELLS()
+    }
+    else {
+        if(grid_to_draw->purkinje) {
+            n_active = grid_to_draw->purkinje->number_of_purkinje_cells;
+            ac = grid_to_draw->purkinje->purkinje_cells;
+            ITERATE_OVER_CELLS ()
         }
+
     }
 
     return get_max_min(mesh_max, mesh_min, mesh_max_d, mesh_min_d, mesh_info);
 }
+
+#define SET_CENTER()                                                                                                                                           \
+    mesh_center.x = (float)points[cells[i]].x + d.x / 2.0f;                                                                                                    \
+    mesh_center.y = (float)points[cells[i]].y + d.y / 2.0f;                                                                                                    \
+    mesh_center.z = (float)points[cells[i]].z + d.z / 2.0f;                                                                                                    \
+    SET_MAX_MIN(x);                                                                                                                                            \
+    SET_MAX_MIN(y);                                                                                                                                            \
+    SET_MAX_MIN(z);
 
 Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct mesh_info *mesh_info) {
     uint32_t n_active = grid_to_draw->num_cells;
@@ -92,19 +107,27 @@ Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct 
     Vector3 d;
     Vector3 mesh_center;
 
-    for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+    if(cells) {
+        for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+            d.x = (float)fabs((points[cells[i]].x - points[cells[i + 1]].x));
+            d.y = (float)fabs((points[cells[i]].y - points[cells[i + 3]].y));
+            d.z = (float)fabs((points[cells[i]].z - points[cells[i + 4]].z));
+            SET_CENTER();
+        }
+    }
+    else if(grid_to_draw->purkinje) {
 
-        d.x = (float)fabs((points[cells[i]].x - points[cells[i + 1]].x));
-        d.y = (float)fabs((points[cells[i]].y - points[cells[i + 3]].y));
-        d.z = (float)fabs((points[cells[i]].z - points[cells[i + 4]].z));
+        n_active = grid_to_draw->purkinje->num_cells;
+        cells = grid_to_draw->purkinje->cells;
+        points = grid_to_draw->purkinje->points;
+        num_points = grid_to_draw->purkinje->points_per_cell;
 
-        mesh_center.x = (float)points[cells[i]].x + d.x / 2.0f;
-        mesh_center.y = (float)points[cells[i]].y + d.y / 2.0f;
-        mesh_center.z = (float)points[cells[i]].z + d.z / 2.0f;
-
-        SET_MAX_MIN(x);
-        SET_MAX_MIN(y);
-        SET_MAX_MIN(z);
+        for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+            d.x = (float)fabs((points[cells[i]].x - points[cells[i + 1]].x));
+            d.y = (float)fabs((points[cells[i]].y - points[cells[i + 1]].y));
+            d.z = (float)fabs((points[cells[i]].z - points[cells[i + 1]].z));
+            SET_CENTER();
+        }
     }
 
     return get_max_min(mesh_max, mesh_min, mesh_max_d, mesh_min_d, mesh_info);
@@ -295,7 +318,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         mesh_center_y = (float)points[cells[i]].y + dy / 2.0f;
         mesh_center_z = (float)points[cells[i]].z + dz / 2.0f;
 
-        voxel.v = grid_to_draw->values[j];
+        if(grid_to_draw->values) {
+            voxel.v = grid_to_draw->values[j];
+        }
+        else {
+            voxel.v = 0.0;
+        }
 
         voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
         voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
@@ -328,7 +356,58 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
     free(colors);
 }
 
+void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
+
+
+    if(gui_config->grid_info.vtk_grid == NULL || gui_config->grid_info.vtk_grid->purkinje == NULL) return;
+
+    struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid->purkinje;
+
+    int64_t *cells = grid_to_draw->cells;
+    if(!cells)
+        return;
+
+    point3d_array points = grid_to_draw->points;
+    if(!points)
+        return;
+
+    uint32_t n_active = grid_to_draw->num_cells;
+
+    uint32_t num_points = grid_to_draw->points_per_cell;
+
+    float min_v = gui_config->min_v;
+    float max_v = gui_config->max_v;
+
+    int j = 0;
+
+
+    for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+
+        Vector3 start_pos;
+        start_pos.x = (points[cells[i]].x - mesh_offset.x)/scale;
+        start_pos.y = (points[cells[i]].y - mesh_offset.y)/scale;
+        start_pos.z = (points[cells[i]].z - mesh_offset.z)/scale;
+
+        Vector3 end_pos;
+        end_pos.x = (points[cells[i+1]].x - mesh_offset.x)/scale;
+        end_pos.y = (points[cells[i+1]].y - mesh_offset.y)/scale;
+        end_pos.z = (points[cells[i+1]].z - mesh_offset.z)/scale;
+
+        float v = 0.0;
+
+        if(grid_to_draw->values) {
+            v = grid_to_draw->values[j];
+        }
+
+        j++;
+
+        Color c = get_color((v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+        DrawLine3D(start_pos, end_pos, c);
+    }
+}
+
 void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
+
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
@@ -404,4 +483,37 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, floa
         free(translations);
         free(colors);
     }
+}
+
+void draw_alg_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
+
+    if(gui_config->grid_info.alg_grid == NULL || gui_config->grid_info.alg_grid->purkinje == NULL) return;
+
+    struct grid_purkinje* grid_to_draw = gui_config->grid_info.alg_grid->purkinje;
+
+    uint32_t n_active = grid_to_draw->num_active_purkinje_cells;
+    struct cell_node **ac = grid_to_draw->purkinje_cells;
+
+    if(ac == NULL) return;
+
+    float min_v = gui_config->min_v;
+    float max_v = gui_config->max_v;
+
+
+    for(uint32_t i = 0; i < n_active-1; i++) {
+
+        Vector3 start_pos;
+        start_pos.x = (ac[i]->center.x - mesh_offset.x)/scale;
+        start_pos.y = (ac[i]->center.y - mesh_offset.y)/scale;
+        start_pos.z = (ac[i]->center.z - mesh_offset.z)/scale;
+
+        Vector3 end_pos;
+        end_pos.x = (ac[i+1]->center.x - mesh_offset.x)/scale;
+        end_pos.y = (ac[i+1]->center.y - mesh_offset.y)/scale;
+        end_pos.z = (ac[i+1]->center.z - mesh_offset.z)/scale;
+
+        Color c = get_color((ac[i]->v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+        DrawLine3D(start_pos, end_pos, c);
+    }
+
 }

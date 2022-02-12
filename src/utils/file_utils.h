@@ -14,7 +14,8 @@
 
 #include "../common_types/common_types.h"
 
-#define FILE_HAS_EXTENSION(file_ext__, ext__) (strcmp(file_ext__, ext__) == 0)
+#define FILE_HAS_EXTENSION(file_ext__, ext__) (strcmp((file_ext__), (ext__)) == 0)
+#define FILE_HAS_EXTENSION_PREFIX(file_ext__, ext__) (strncmp((file_ext__), (ext__), strlen((ext__))) == 0)
 #define ENDS_WITH_SLASH(path__) (path__[strlen(path__) - 1] == '/')
 
 struct path_information {
