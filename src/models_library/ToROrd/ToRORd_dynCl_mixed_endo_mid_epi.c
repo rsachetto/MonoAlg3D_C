@@ -1,4 +1,4 @@
-#include "ToRORd_fkatp_mixed_endo_mid_epi.h"
+#include "ToRORd_dynCl_mixed_endo_mid_epi.h"
 #include <stdlib.h>
 
 real max_step;
@@ -18,7 +18,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_info("Using ToRORd_fkatp_mixed_endo_mid_epi CPU model\n");
+    log_info("Using ToRORd_dynCl_mixed_endo_mid_epi CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
     solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
@@ -35,9 +35,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
         OMP(parallel for)
         for(int i = 0; i < num_cells; i++)
-        {
             ode_dt[i] = solver->min_dt;
-        }
 
         ode_previous_dt = (real*)calloc(num_cells, sizeof(real));
         ode_time_new    = (real*)calloc(num_cells, sizeof(real));
@@ -135,13 +133,13 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real mapping)  {
         sv[i] = dt*rDY[i] + rY[i];
 
     // Explicit Euler + RushLarsen
-    //for(int i = 0; i < 10; i++)
+    //for(int i = 0; i < 12; i++)
     //    sv[i] = dt*rDY[i] + rY[i];
-    //for(int i = 10; i < 32; i++)
+    //for(int i = 12; i < 34; i++)
     //    sv[i] = rDY[i];
-    //for(int i = 32; i < 39; i++)
+    //for(int i = 34; i < 41; i++)
     //    sv[i] = dt*rDY[i] + rY[i];
-    //for(int i = 39; i < NEQ; i++)
+    //for(int i = 41; i < NEQ; i++)
     //    sv[i] = rDY[i];
 }
 
@@ -306,39 +304,41 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real mappin
     real cansr = sv[7];
     real cajsr = sv[8];
     real cai = sv[9];
-    real m = sv[10];
-    real h = sv[11];
-    real j = sv[12];
-    real hp = sv[13];
-    real jp = sv[14];
-    real mL = sv[15];
-    real hL = sv[16];
-    real hLp = sv[17];
-    real a = sv[18];
-    real iF = sv[19];
-    real iS = sv[20];
-    real ap = sv[21];
-    real iFp = sv[22];
-    real iSp = sv[23];
-    real d = sv[24];
-    real ff = sv[25];
-    real fs = sv[26];
-    real fcaf = sv[27];
-    real fcas = sv[28];
-    real jca = sv[29];
-    real ffp = sv[30];
-    real fcafp = sv[31];
-    real nca_ss = sv[32];
-    real nca_i = sv[33];
-    real C1 = sv[34];
-    real C2 = sv[35];
-    real C3 = sv[36];
-    real I = sv[37];
-    real O = sv[38];
-    real xs1 = sv[39];
-    real xs2 = sv[40];
-    real Jrel_np = sv[41];
-    real Jrel_p = sv[42];
-
-    #include "ToRORd_fkatp_mixed_endo_mid_epi.common.c"
+    real cli = sv[10];
+    real clss = sv[11];
+    real m = sv[12];
+    real h = sv[13];
+    real j = sv[14];
+    real hp = sv[15];
+    real jp = sv[16];
+    real mL = sv[17];
+    real hL = sv[18];
+    real hLp = sv[19];
+    real a = sv[20];
+    real iF = sv[21];
+    real iS = sv[22];
+    real ap = sv[23];
+    real iFp = sv[24];
+    real iSp = sv[25];
+    real d = sv[26];
+    real ff = sv[27];
+    real fs = sv[28];
+    real fcaf = sv[29];
+    real fcas = sv[30];
+    real jca = sv[31];
+    real ffp = sv[32];
+    real fcafp = sv[33];
+    real nca_ss = sv[34];
+    real nca_i = sv[35];
+    real C1 = sv[36];
+    real C2 = sv[37];
+    real C3 = sv[38];
+    real I = sv[39];
+    real O = sv[40];
+    real xs1 = sv[41];
+    real xs2 = sv[42];
+    real Jrel_np = sv[43];
+    real Jrel_p = sv[44];
+    
+    #include "ToRORd_dynCl_mixed_endo_mid_epi.common.c"
 }

@@ -1,4 +1,4 @@
-#include "ToRORd_fkatp_mixed_endo_mid_epi.h"
+#include "ToRORd_dynCl_mixed_endo_mid_epi.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -16,7 +16,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     uint8_t use_adpt_h = (uint8_t)solver->adaptive;
 
     check_cuda_error(cudaMemcpyToSymbol(use_adpt, &use_adpt_h, sizeof(uint8_t)));
-    log_info("Using ToRORd_fkatp_mixed_endo_mid_epi GPU model\n");
+    log_info("Using ToRORd_dynCl_mixed_endo_mid_epi GPU model\n");
 
     uint32_t num_volumes = solver->original_num_cells;
 
@@ -162,9 +162,9 @@ __global__ void kernel_set_model_initial_conditions(real *sv,\
             
         if(use_adpt) 
         {
-            *((real *)((char *)sv + pitch * 43) + threadID) = min_dt; // dt
-            *((real *)((char *)sv + pitch * 44) + threadID) = 0.0;    // time_new
-            *((real *)((char *)sv + pitch * 45) + threadID) = 0.0;    // previous dt
+            *((real *)((char *)sv + pitch * (NEQ)) + threadID) = min_dt; // dt
+            *((real *)((char *)sv + pitch * (NEQ+1)) + threadID) = 0.0;    // time_new
+            *((real *)((char *)sv + pitch * (NEQ+2)) + threadID) = 0.0;    // previous dt
         }
     }
 }
@@ -196,13 +196,13 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
                 }
 
                 // Explicit Euler + RushLarsen
-                //for(int i = 0; i < 10; i++)
+                //for(int i = 0; i < 12; i++)
                 //    sv[i] = *((real *)((char *)sv + pitch * i) + sv_id) = dt * rDY[i] + *((real *)((char *)sv + pitch * i) + sv_id);
-                //for(int i = 10; i < 32; i++)
+                //for(int i = 12; i < 34; i++)
                 //    sv[i] = rDY[i];
-                //for(int i = 32; i < 39; i++)
+                //for(int i = 34; i < 41; i++)
                 //    sv[i] = *((real *)((char *)sv + pitch * i) + sv_id) = dt * rDY[i] + *((real *)((char *)sv + pitch * i) + sv_id);
-                //for(int i = 39; i < NEQ; i++)
+                //for(int i = 41; i < NEQ; i++)
                 //    sv[i] = rDY[i];
             }
         } else {
@@ -214,9 +214,9 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real* stim_currents,
 inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int thread_id)
 {
 
-    #define DT *((real *)((char *)sv + pitch * 43) + thread_id)
-    #define TIME_NEW *((real *)((char *)sv + pitch * 44) + thread_id)
-    #define PREVIOUS_DT *((real *)((char *)sv + pitch * 45) + thread_id)
+    #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
+    #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
+    #define PREVIOUS_DT *((real *)((char *)sv + pitch * (NEQ+2)) + thread_id)
 
     real rDY[NEQ];
 
@@ -404,6 +404,8 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
     real cansr;
     real cajsr;
     real cai;
+    real cli;
+    real clss;
     real m;
     real h;
     real j;
@@ -449,39 +451,41 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
         cansr = sv[7];
         cajsr = sv[8];
         cai = sv[9];
-        m = sv[10];
-        h = sv[11];
-        j = sv[12];
-        hp = sv[13];
-        jp = sv[14];
-        mL = sv[15];
-        hL = sv[16];
-        hLp = sv[17];
-        a = sv[18];
-        iF = sv[19];
-        iS = sv[20];
-        ap = sv[21];
-        iFp = sv[22];
-        iSp = sv[23];
-        d = sv[24];
-        ff = sv[25];
-        fs = sv[26];
-        fcaf = sv[27];
-        fcas = sv[28];
-        jca = sv[29];
-        ffp = sv[30];
-        fcafp = sv[31];
-        nca_ss = sv[32];
-        nca_i = sv[33];
-        C1 = sv[34];
-        C2 = sv[35];
-        C3 = sv[36];
-        I = sv[37];
-        O = sv[38];
-        xs1 = sv[39];
-        xs2 = sv[40];
-        Jrel_np = sv[41];
-        Jrel_p = sv[42];
+        cli = sv[10];
+        clss = sv[11];
+        m = sv[12];
+        h = sv[13];
+        j = sv[14];
+        hp = sv[15];
+        jp = sv[16];
+        mL = sv[17];
+        hL = sv[18];
+        hLp = sv[19];
+        a = sv[20];
+        iF = sv[21];
+        iS = sv[22];
+        ap = sv[23];
+        iFp = sv[24];
+        iSp = sv[25];
+        d = sv[26];
+        ff = sv[27];
+        fs = sv[28];
+        fcaf = sv[29];
+        fcas = sv[30];
+        jca = sv[31];
+        ffp = sv[32];
+        fcafp = sv[33];
+        nca_ss = sv[34];
+        nca_i = sv[35];
+        C1 = sv[36];
+        C2 = sv[37];
+        C3 = sv[38];
+        I = sv[39];
+        O = sv[40];
+        xs1 = sv[41];
+        xs2 = sv[42];
+        Jrel_np = sv[43];
+        Jrel_p = sv[44];
     }
     else
     {
@@ -495,40 +499,42 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
         cansr = *((real *)((char *)sv + pitch * 7) + threadID_);
         cajsr = *((real *)((char *)sv + pitch * 8) + threadID_);
         cai = *((real *)((char *)sv + pitch * 9) + threadID_);
-        m = *((real *)((char *)sv + pitch * 10) + threadID_);
-        h = *((real *)((char *)sv + pitch * 11) + threadID_);
-        j = *((real *)((char *)sv + pitch * 12) + threadID_);
-        hp = *((real *)((char *)sv + pitch * 13) + threadID_);
-        jp = *((real *)((char *)sv + pitch * 14) + threadID_);
-        mL = *((real *)((char *)sv + pitch * 15) + threadID_);
-        hL = *((real *)((char *)sv + pitch * 16) + threadID_);
-        hLp = *((real *)((char *)sv + pitch * 17) + threadID_);
-        a = *((real *)((char *)sv + pitch * 18) + threadID_);
-        iF = *((real *)((char *)sv + pitch * 19) + threadID_);
-        iS = *((real *)((char *)sv + pitch * 20) + threadID_);
-        ap = *((real *)((char *)sv + pitch * 21) + threadID_);
-        iFp = *((real *)((char *)sv + pitch * 22) + threadID_);
-        iSp = *((real *)((char *)sv + pitch * 23) + threadID_);
-        d = *((real *)((char *)sv + pitch * 24) + threadID_);
-        ff = *((real *)((char *)sv + pitch * 25) + threadID_);
-        fs = *((real *)((char *)sv + pitch * 26) + threadID_);
-        fcaf = *((real *)((char *)sv + pitch * 27) + threadID_);
-        fcas = *((real *)((char *)sv + pitch * 28) + threadID_);
-        jca = *((real *)((char *)sv + pitch * 29) + threadID_);
-        ffp = *((real *)((char *)sv + pitch * 30) + threadID_);
-        fcafp = *((real *)((char *)sv + pitch * 31) + threadID_);
-        nca_ss = *((real *)((char *)sv + pitch * 32) + threadID_);
-        nca_i = *((real *)((char *)sv + pitch * 33) + threadID_);
-        C1 = *((real *)((char *)sv + pitch * 34) + threadID_);
-        C2 = *((real *)((char *)sv + pitch * 35) + threadID_);
-        C3 = *((real *)((char *)sv + pitch * 36) + threadID_);
-        I = *((real *)((char *)sv + pitch * 37) + threadID_);
-        O = *((real *)((char *)sv + pitch * 38) + threadID_);
-        xs1 = *((real *)((char *)sv + pitch * 39) + threadID_);
-        xs2 = *((real *)((char *)sv + pitch * 40) + threadID_);
-        Jrel_np = *((real *)((char *)sv + pitch * 41) + threadID_);
-        Jrel_p = *((real *)((char *)sv + pitch * 42) + threadID_);
+        cli = *((real *)((char *)sv + pitch * 10) + threadID_);
+        clss = *((real *)((char *)sv + pitch * 11) + threadID_);
+        m = *((real *)((char *)sv + pitch * 12) + threadID_);
+        h = *((real *)((char *)sv + pitch * 13) + threadID_);
+        j = *((real *)((char *)sv + pitch * 14) + threadID_);
+        hp = *((real *)((char *)sv + pitch * 15) + threadID_);
+        jp = *((real *)((char *)sv + pitch * 16) + threadID_);
+        mL = *((real *)((char *)sv + pitch * 17) + threadID_);
+        hL = *((real *)((char *)sv + pitch * 18) + threadID_);
+        hLp = *((real *)((char *)sv + pitch * 19) + threadID_);
+        a = *((real *)((char *)sv + pitch * 20) + threadID_);
+        iF = *((real *)((char *)sv + pitch * 21) + threadID_);
+        iS = *((real *)((char *)sv + pitch * 22) + threadID_);
+        ap = *((real *)((char *)sv + pitch * 23) + threadID_);
+        iFp = *((real *)((char *)sv + pitch * 24) + threadID_);
+        iSp = *((real *)((char *)sv + pitch * 25) + threadID_);
+        d = *((real *)((char *)sv + pitch * 26) + threadID_);
+        ff = *((real *)((char *)sv + pitch * 27) + threadID_);
+        fs = *((real *)((char *)sv + pitch * 28) + threadID_);
+        fcaf = *((real *)((char *)sv + pitch * 29) + threadID_);
+        fcas = *((real *)((char *)sv + pitch * 30) + threadID_);
+        jca = *((real *)((char *)sv + pitch * 31) + threadID_);
+        ffp = *((real *)((char *)sv + pitch * 32) + threadID_);
+        fcafp = *((real *)((char *)sv + pitch * 33) + threadID_);
+        nca_ss = *((real *)((char *)sv + pitch * 34) + threadID_);
+        nca_i = *((real *)((char *)sv + pitch * 35) + threadID_);
+        C1 = *((real *)((char *)sv + pitch * 36) + threadID_);
+        C2 = *((real *)((char *)sv + pitch * 37) + threadID_);
+        C3 = *((real *)((char *)sv + pitch * 38) + threadID_);
+        I = *((real *)((char *)sv + pitch * 39) + threadID_);
+        O = *((real *)((char *)sv + pitch * 40) + threadID_);
+        xs1 = *((real *)((char *)sv + pitch * 41) + threadID_);
+        xs2 = *((real *)((char *)sv + pitch * 42) + threadID_);
+        Jrel_np = *((real *)((char *)sv + pitch * 43) + threadID_);
+        Jrel_p = *((real *)((char *)sv + pitch * 44) + threadID_);
     }
 
-    #include "ToRORd_fkatp_mixed_endo_mid_epi.common.c"
+    #include "ToRORd_dynCl_mixed_endo_mid_epi.common.c"
 }
