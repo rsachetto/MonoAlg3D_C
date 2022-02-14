@@ -1472,7 +1472,7 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                         cur_pulse = 0;
                         return;
                     }
-
+                    log_info("Tissue cell %u --> LAT = %g\n",j,activation_times_array_tissue[cur_pulse]);
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                 }
 

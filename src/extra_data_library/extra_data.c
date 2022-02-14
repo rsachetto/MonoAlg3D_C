@@ -182,7 +182,8 @@ SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
     return (void*)mapping;
 }
 
-SET_EXTRA_DATA(set_extra_data_mixed_model_epi_mid_endo) {
+// Initial condition - 'libToRORd_fkatp_mixed_endo_mid_epi.so' + transmurality (cable and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_fkatp_epi_mid_endo) {
 
     uint32_t num_eq = 43;   // ToRORd number of equations
     uint32_t num_active_cells = the_grid->num_active_cells;
@@ -352,10 +353,198 @@ SET_EXTRA_DATA(set_extra_data_mixed_model_epi_mid_endo) {
             extra_data[i+offset] = 0.0;
         // MID
         else if (center_x >= side_length_endo && center_x < side_length_mid)
-            extra_data[i+offset] = 2.0;
+            extra_data[i+offset] = 1.0;
         // EPI
         else
+            extra_data[i+offset] = 2.0;
+
+    }
+
+    return (void*)extra_data;
+
+}
+
+// Initial condition - 'libToRORd_dynCl_mixed_endo_mid_epi.so' + transmurality (cable and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_dyncl_epi_mid_endo) {
+
+    uint32_t num_eq = 45;   // ToRORd_dynCl number of equations
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    real side_length = the_grid->mesh_side_length.x;
+
+    // The percentages were taken from the ToRORd paper (Transmural experiment)
+    real side_length_endo = side_length*0.45;
+    real side_length_mid = side_length_endo + side_length*0.25;
+    real side_length_epi = side_length_mid + side_length*0.3;
+
+    // The extra data size is the initial state vector for each celltype plus the mapping of each cell
+    *extra_data_size = sizeof(real)*(num_active_cells) + sizeof(real)*num_eq*3;
+
+    real *extra_data = (real*)malloc(*extra_data_size);
+
+    // Set the initial conditions (celltype=ENDO)
+    int offset = 0;
+    extra_data[0] = -8.974808e+01;
+    extra_data[1] = 1.095026e-02;
+    extra_data[2] = 6.497341e-05;
+    extra_data[3] = 1.239736e+01;
+    extra_data[4] = 1.239770e+01;
+    extra_data[5] = 1.477115e+02;
+    extra_data[6] = 1.477114e+02;
+    extra_data[7] = 1.528001e+00;
+    extra_data[8] = 1.525693e+00;
+    extra_data[9] = 7.453481e-05;
+    extra_data[10] = 2.920698e+01;
+    extra_data[11] = 2.920696e+01;
+    extra_data[12] = 6.517154e-04;
+    extra_data[13] = 8.473267e-01;
+    extra_data[14] = 8.471657e-01;
+    extra_data[15] = 7.018454e-01;
+    extra_data[16] = 8.469014e-01;
+    extra_data[17] = 1.351203e-04;
+    extra_data[18] = 5.566017e-01;
+    extra_data[19] = 3.115491e-01;
+    extra_data[20] = 8.899259e-04;
+    extra_data[21] = 9.996716e-01;
+    extra_data[22] = 5.988908e-01;
+    extra_data[23] = 4.534165e-04;
+    extra_data[24] = 9.996716e-01;
+    extra_data[25] = 6.620692e-01;
+    extra_data[26] = 1.588841e-31;
+    extra_data[27] = 1.000000e+00;
+    extra_data[28] = 9.401791e-01;
+    extra_data[29] = 1.000000e+00;
+    extra_data[30] = 9.999014e-01;
+    extra_data[31] = 9.999846e-01;
+    extra_data[32] = 1.000000e+00;
+    extra_data[33] = 1.000000e+00;
+    extra_data[34] = 4.899378e-04;
+    extra_data[35] = 8.326009e-04;
+    extra_data[36] = 9.982511e-01;
+    extra_data[37] = 7.936020e-04;
+    extra_data[38] = 6.532143e-04;
+    extra_data[39] = 9.804083e-06;
+    extra_data[40] = 2.922449e-04;
+    extra_data[41] = 2.439590e-01;
+    extra_data[42] = 1.586167e-04;
+    extra_data[43] = 1.808248e-22;
+    extra_data[44] = 4.358608e-21;
+
+    // Set the initial conditions (celltype=EPI)
+    offset = num_eq;
+    extra_data[0+offset] = -9.074563e+01;
+    extra_data[1+offset] = 1.273541e-02;
+    extra_data[2+offset] = 5.749921e-05;
+    extra_data[3+offset] = 1.340062e+01;
+    extra_data[4+offset] = 1.340094e+01;
+    extra_data[5+offset] = 1.523639e+02;
+    extra_data[6+offset] = 1.523638e+02;
+    extra_data[7+offset] = 1.806794e+00;
+    extra_data[8+offset] = 1.805047e+00;
+    extra_data[9+offset] = 6.621816e-05;
+    extra_data[10+offset] = 3.431721e+01;
+    extra_data[11+offset] = 3.431719e+01;
+    extra_data[12+offset] = 5.253231e-04;
+    extra_data[13+offset] = 8.645148e-01;
+    extra_data[14+offset] = 8.644571e-01;
+    extra_data[15+offset] = 7.313656e-01;
+    extra_data[16+offset] = 8.643527e-01;
+    extra_data[17+offset] = 1.117969e-04;
+    extra_data[18+offset] = 5.916536e-01;
+    extra_data[19+offset] = 3.476812e-01;
+    extra_data[20+offset] = 8.320408e-04;
+    extra_data[21+offset] = 9.997242e-01;
+    extra_data[22+offset] = 9.997235e-01;
+    extra_data[23+offset] = 4.239121e-04;
+    extra_data[24+offset] = 9.997242e-01;
+    extra_data[25+offset] = 9.997241e-01;
+    extra_data[26+offset] = -2.486527e-36;
+    extra_data[27+offset] = 1.000000e+00;
+    extra_data[28+offset] = 9.510602e-01;
+    extra_data[29+offset] = 1.000000e+00;
+    extra_data[30+offset] = 9.999377e-01;
+    extra_data[31+offset] = 9.999886e-01;
+    extra_data[32+offset] = 1.000000e+00;
+    extra_data[33+offset] = 1.000000e+00;
+    extra_data[34+offset] = 3.049523e-04;
+    extra_data[35+offset] = 5.272668e-04;
+    extra_data[36+offset] = 9.984733e-01;
+    extra_data[37+offset] = 7.393045e-04;
+    extra_data[38+offset] = 6.029079e-04;
+    extra_data[39+offset] = 5.678255e-06;
+    extra_data[40+offset] = 1.787783e-04;
+    extra_data[41+offset] = 2.233584e-01;
+    extra_data[42+offset] = 1.418247e-04;
+    extra_data[43+offset] = 6.778827e-25;
+    extra_data[44+offset] = -1.581941e-23;
+
+    // Set the initial conditions (celltype=MID)
+    offset = num_eq*2;
+    extra_data[0+offset] = -9.133918e+01;
+    extra_data[1+offset] = 2.018820e-02;
+    extra_data[2+offset] = 6.642187e-05;
+    extra_data[3+offset] = 1.594867e+01;
+    extra_data[4+offset] = 1.594922e+01;
+    extra_data[5+offset] = 1.567131e+02;
+    extra_data[6+offset] = 1.567130e+02;
+    extra_data[7+offset] = 2.012225e+00;
+    extra_data[8+offset] = 2.016415e+00;
+    extra_data[9+offset] = 8.297576e-05;
+    extra_data[10+offset] = 4.891277e+01;
+    extra_data[11+offset] = 4.891274e+01;
+    extra_data[12+offset] = 4.619565e-04;
+    extra_data[13+offset] = 8.739077e-01;
+    extra_data[14+offset] = 8.737841e-01;
+    extra_data[15+offset] = 7.478972e-01;
+    extra_data[16+offset] = 8.735375e-01;
+    extra_data[17+offset] = 9.987709e-05;
+    extra_data[18+offset] = 5.986118e-01;
+    extra_data[19+offset] = 3.339899e-01;
+    extra_data[20+offset] = 7.994042e-04;
+    extra_data[21+offset] = 9.997514e-01;
+    extra_data[22+offset] = 5.702538e-01;
+    extra_data[23+offset] = 4.072777e-04;
+    extra_data[24+offset] = 9.997514e-01;
+    extra_data[25+offset] = 6.351927e-01;
+    extra_data[26+offset] = -8.334604e-30;
+    extra_data[27+offset] = 1.000000e+00;
+    extra_data[28+offset] = 9.183587e-01;
+    extra_data[29+offset] = 1.000000e+00;
+    extra_data[30+offset] = 9.997540e-01;
+    extra_data[31+offset] = 9.999743e-01;
+    extra_data[32+offset] = 1.000000e+00;
+    extra_data[33+offset] = 1.000000e+00;
+    extra_data[34+offset] = 5.336520e-04;
+    extra_data[35+offset] = 1.257861e-03;
+    extra_data[36+offset] = 9.983451e-01;
+    extra_data[37+offset] = 7.086460e-04;
+    extra_data[38+offset] = 5.910047e-04;
+    extra_data[39+offset] = 1.064230e-05;
+    extra_data[40+offset] = 3.445733e-04;
+    extra_data[41+offset] = 2.642293e-01;
+    extra_data[42+offset] = 1.327348e-04;
+    extra_data[43+offset] = -1.300486e-21;
+    extra_data[44+offset] = -7.610714e-20;
+
+    offset = num_eq*3;
+
+    struct cell_node ** ac = the_grid->active_cells;
+
+    int i;
+
+    OMP(parallel for)
+    for (i = 0; i < num_active_cells; i++) {
+
+        real center_x = ac[i]->center.x;
+
+        // ENDO
+        if (center_x < side_length_endo)
+            extra_data[i+offset] = 0.0;
+        // MID
+        else if (center_x >= side_length_endo && center_x < side_length_mid)
             extra_data[i+offset] = 1.0;
+        // EPI
+        else
+            extra_data[i+offset] = 2.0;
 
     }
 
