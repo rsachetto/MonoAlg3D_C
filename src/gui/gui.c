@@ -995,25 +995,22 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     if(gui_config->draw_type == DRAW_FILE) {
 
         if(IsKeyPressed(KEY_O)) {
-
-            gui_config->paused = true;
+            if(!gui_config->paused) return;
 
             char *buf = get_current_directory();
 
             char const *tmp = tinyfd_selectFolderDialog("Select a directory", buf);
             if(tmp) {
                 gui_config->input = strdup(tmp);
+                reset(gui_config, gui_state, true);
+                free(gui_config->error_message);
+                gui_config->error_message = strdup("Loading Mesh...");
+
             } else {
                 gui_config->input = NULL;
             }
 
             free(buf);
-
-            if(gui_config->input) {
-                reset(gui_config, gui_state, true);
-                free(gui_config->error_message);
-                gui_config->error_message = strdup("Loading Mesh...");
-            }
 
             return;
         }

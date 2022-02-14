@@ -9,6 +9,7 @@
 #include "utils/file_utils.h"
 #include "vtk_utils/pvd_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
+#include <unistd.h>
 
 #define MAX_ERROR_SIZE 4096
 
@@ -79,6 +80,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
 
         gui_config->error_message = strdup(error);
+        gui_config->input = NULL;
+        options->input = NULL;
         return SIMULATION_FINISHED;
     }
 
@@ -226,6 +229,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 
     bool ensigth_grid_loaded = false;
+    bool ensigth_vis_loaded = false;
 
     while(true) {
 
@@ -283,7 +287,16 @@ static int read_and_render_files(struct visualization_options *options, struct g
             gui_config->grid_info.loaded = false;
             gui_config->paused = true;
         } else {
-            read_visible_cells(gui_config->grid_info.vtk_grid, full_path);
+            if(maybe_ensight) {
+                if(!ensigth_vis_loaded) {
+                    read_visible_cells(gui_config->grid_info.vtk_grid, geometry_file);
+                    ensigth_vis_loaded = true;
+                }
+            }
+            else {
+                read_visible_cells(gui_config->grid_info.vtk_grid, full_path);
+            }
+            //TODO: for ensigth, maybe we should put the data name here.
             gui_config->grid_info.file_name = full_path;
             gui_config->grid_info.loaded = true;
         }
@@ -383,6 +396,10 @@ int main(int argc, char **argv) {
                 int result = read_and_render_files(options, gui_config);
 
                 while(result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
+
+                    //HACK: this should not be needed, we have to find a way to avoid this hack
+                    //if we take this out, the open mesh option does not work properly
+                    usleep(100);
 
                     if(gui_config->input) {
                         options->input = gui_config->input;
