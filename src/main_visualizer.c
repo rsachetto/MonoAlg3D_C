@@ -71,6 +71,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
     struct path_information input_info;
 
     get_path_information(input, &input_info);
+    bool esca_file = false;
+    bool geo_file = false;
 
     if(!input_info.exists) {
         snprintf(error, MAX_ERROR_SIZE,
@@ -111,18 +113,25 @@ static int read_and_render_files(struct visualization_options *options, struct g
             return SIMULATION_FINISHED;
         } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0 ||
                   strcmp(input_info.file_extension, "txt") == 0 || strcmp(input_info.file_extension, "bin") == 0 ||
-                  strcmp(input_info.file_extension, "alg") == 0) {
+                  strcmp(input_info.file_extension, "alg") == 0 || strcmp(input_info.file_extension, "geo") == 0 ||
+                  strncmp(input_info.file_extension, "Esca", 4) == 0)  {
             simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
             simulation_files->files_list = NULL;
             simulation_files->timesteps = NULL;
             single_file = true;
+
             if(input) {
+                if(strcmp(input_info.file_extension, "geo") == 0 || strncmp(input_info.file_extension, "Esca", 4) == 0) {
+                    maybe_ensight = true;
+                    if(strcmp(input_info.file_extension, "geo") == 0) geo_file = true;
+                    else esca_file = true;
+                }
+
                 arrput(simulation_files->files_list, (char *)input);
             }
         }
     }
 
-    free_path_information(&input_info);
 
     uint32_t num_files = arrlen(simulation_files->files_list);
 
@@ -149,9 +158,19 @@ static int read_and_render_files(struct visualization_options *options, struct g
     sds geometry_file = NULL;
 
     if(maybe_ensight) {
-        geometry_file = sdscatfmt(sdsempty(), "%s/geometry.geo", input);
+        if(!single_file || esca_file) {
+            if(esca_file) {
+                geometry_file = sdscatfmt(sdsempty(), "%s/geometry.geo", input_info.dir_name);
+            }
+            else {
+                geometry_file = sdscatfmt(sdsempty(), "%s/geometry.geo", input);
+            }
+            get_path_information(geometry_file,  &input_info);
+        }
+        else {
+            geometry_file = sdsnew(input);
+        }
 
-        get_path_information(geometry_file,  &input_info);
 
         if(!input_info.exists) {
             snprintf(error, MAX_ERROR_SIZE, "Geometry file %s not found", geometry_file);
@@ -176,18 +195,14 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 
     float dt = 0;
-    if(maybe_ensight) {
-        //TODO: make this better
-        gui_config->dt = 0;
-        gui_config->step = 1;
-        gui_config->final_file_index = num_files - 1;
-        gui_config->final_time = gui_config->final_file_index;
-        gui_config->time = -1;
+    if(!using_pvd) {
 
-    } else if(!using_pvd) {
+        if(single_file || maybe_ensight) {
+            if(single_file)
+                gui_config->dt = -1;
+            else
+                gui_config->dt = 1;
 
-        if(single_file) {
-            gui_config->dt = -1;
             gui_config->step = 1;
             gui_config->final_file_index = num_files - 1;
             gui_config->final_time = gui_config->final_file_index;
@@ -231,6 +246,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
     bool ensigth_grid_loaded = false;
     bool ensigth_vis_loaded = false;
 
+    free_path_information(&input_info);
+
     while(true) {
 
         omp_set_lock(&gui_config->draw_lock);
@@ -265,7 +282,13 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(geometry_file, options->value_index);
                 ensigth_grid_loaded = true;
             }
-            set_vtk_grid_values_from_ensight_file(gui_config->grid_info.vtk_grid, full_path);
+            if(!geo_file) {
+                set_vtk_grid_values_from_ensight_file(gui_config->grid_info.vtk_grid, full_path);
+            }
+            else {
+                gui_config->grid_info.vtk_grid->min_v = 0.0001;
+                gui_config->grid_info.vtk_grid->max_v = 0.0002;
+            }
         } else {
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
             gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_path, options->value_index);

@@ -2192,6 +2192,9 @@ static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_
 
     *vtk_grid = new_vtk_unstructured_grid();
 
+    //(*vtk_grid)->max_v = 1;
+    //(*vtk_grid)->min_v = 0.0001;
+
     if(STRCMP(source, "hexa8", 5) == 0) {
         skip_line(&source, binary); //hexa8
 
@@ -2314,12 +2317,17 @@ void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_gri
     (void)read_int(&source, binary); //part #
     skip_line(&source, binary); //hexa8 or bar2
 
+
     if(num_grid_cells > 0) {
         arrfree(vtk_grid->values);
         arrsetlen(vtk_grid->values, num_grid_cells);
 
         for(int i = 0; i < num_grid_cells; i++) {
-            vtk_grid->values[i] = read_float(&source, binary);
+            float v = read_float(&source, binary);
+            vtk_grid->values[i] = v;
+            if(v > vtk_grid->max_v) vtk_grid->max_v = v;
+            if(v < vtk_grid->min_v) vtk_grid->min_v = v;
+
         }
     }
 
@@ -2338,7 +2346,11 @@ void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_gri
         }
 
         for(int i = 0; i < num_purkinje_cells; i++) {
-            vtk_grid->purkinje->values[i] = read_float(&source, binary);
+            float v = read_float(&source, binary);
+            vtk_grid->purkinje->values[i] = v;
+            if(v > vtk_grid->max_v) vtk_grid->max_v = v;
+            if(v < vtk_grid->min_v) vtk_grid->min_v = v;
+
         }
     }
 

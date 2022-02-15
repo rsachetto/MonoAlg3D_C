@@ -318,11 +318,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         mesh_center_y = (float)points[cells[i]].y + dy / 2.0f;
         mesh_center_z = (float)points[cells[i]].z + dz / 2.0f;
 
+        Color c = BLUE;
+        voxel.v = 0.0;
+
         if(grid_to_draw->values) {
             voxel.v = grid_to_draw->values[j];
-        }
-        else {
-            voxel.v = 0.0;
+            c = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
         }
 
         voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
@@ -337,8 +338,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
         translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), translations[count]);
 
-        colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
-
+        colors[count] = c;
         voxel.draw_index = count;
 
         collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
@@ -394,14 +394,15 @@ void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_
         end_pos.z = (points[cells[i+1]].z - mesh_offset.z)/scale;
 
         float v = 0.0;
+        Color c = BLUE;
 
         if(grid_to_draw->values) {
             v = grid_to_draw->values[j];
+            c = get_color((v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
         }
 
         j++;
 
-        Color c = get_color((v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
         DrawLine3D(start_pos, end_pos, c);
     }
 }
