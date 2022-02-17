@@ -14,6 +14,10 @@ EXTRA_DATA_LIB_PATH="src/extra_data_library/"
 CUSTOM_EXTRA_DATA_FILE=${EXTRA_DATA_LIB_PATH}"${CUSTOM_FILE_NAME}"
 DEFAULT_EXTRA_DATA_FILE=${EXTRA_DATA_LIB_PATH}"extra_data.c"
 
+MATRIX_ASSEMBLY_LIB_PATH="src/matrix_assembly_library/"
+CUSTOM_MATRIX_ASSEMBLY_FILE=${MATRIX_ASSEMBLY_LIB_PATH}"${CUSTOM_FILE_NAME}"
+DEFAULT_MATRIX_ASSEMBLY_FILE=${MATRIX_ASSEMBLY_LIB_PATH}"matrix_assembly.c"
+
 ECHOERR() { printf "%s\n" "$*" >&2; }
 
 ADD_HEADER() {
@@ -349,6 +353,41 @@ SET_EXTRA_DATA(${function_name}) {
 EOF
 }
 
+WRITE_MATRIX_ASSEMBLY_FILE_HEADER() {
+cat << EOF >> "${CUSTOM_MATRIX_ASSEMBLY_FILE}"
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
+#include "../alg/grid/grid.h"
+#include "../config/assembly_matrix_config.h"
+#include "../libraries_common/common_data_structures.h"
+#include "../utils/file_utils.h"
+#include "../utils/utils.h"
+#include "../domains_library/mesh_info_data.h"
+
+#include "assembly_common.c"
+
+#ifdef COMPILE_CUDA
+#include "../gpu_utils/gpu_utils.h"
+#endif
+EOF
+}
+
+WRITE_MATRIX_ASSEMBLY_FUNCTION() {
+cat << EOF >> "${CUSTOM_MATRIX_ASSEMBLY_FILE}"
+
+ASSEMBLY_MATRIX(${function_name}) {
+    //TODO: implement
+}
+EOF
+}
+
 CREATE_NEW_EXTRA_DATA() {
     function_name=$1
 
@@ -360,6 +399,21 @@ CREATE_NEW_EXTRA_DATA() {
 
     if [ "$res" == "0" ]; then
         WRITE_EXTRA_DATA_FUNCTION
+    fi
+
+}
+
+CREATE_NEW_MATRIX_ASSEMBLY() {
+    function_name=$1
+
+    if [ ! -f "${CUSTOM_MATRIX_ASSEMBLY_FILE}" ]; then
+        WRITE_MATRIX_ASSEMBLY_FILE_HEADER
+    fi
+
+    res=$(FUNCTION_EXISTS "${CUSTOM_MATRIX_ASSEMBLY_FILE}" "${DEFAULT_MATRIX_ASSEMBLY_FILE}" "ASSEMBLY_MATRIX" "$function_name")
+
+    if [ "$res" == "0" ]; then
+        WRITE_MATRIX_ASSEMBLY_FUNCTION
     fi
 
 }
@@ -500,10 +554,17 @@ MAIN() {
             if [ $# -ne 2 ]
             then
                 COMMON_COMMAND_ERROR "$1" "$CUSTOM_EXTRA_DATA_FILE"
-
             fi
             CREATE_NEW_EXTRA_DATA "$2"
             ;;
+        matrix_assembly)
+            if [ $# -ne 2 ]
+            then
+                COMMON_COMMAND_ERROR "$1" "$CUSTOM_MATRIX_ASSEMBLY_FILE"
+            fi
+            CREATE_NEW_MATRIX_ASSEMBLY "$2"
+            ;;
+
         *)
             ECHOERR
             ECHOERR "Invalid command:" "$@"
@@ -515,6 +576,7 @@ MAIN() {
             ECHOERR "$0" "stimulus function_name"
             ECHOERR "$0" "domain function_name"
             ECHOERR "$0" "extra_data function_name"
+            ECHOERR "$0" "matrix_assembly function_name"
             ECHOERR
             ;;
 
