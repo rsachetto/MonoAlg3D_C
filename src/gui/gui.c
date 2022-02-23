@@ -600,12 +600,15 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     bool update_main = false;
 
     DISABLE_IF_NOT_PAUSED;
+
+
     if(GuiButton(button_pos, "#76#")) {
         reset(gui_config, gui_state, false);
     }
     ENABLE;
 
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
+    if(gui_config->final_file_index == 0) GuiDisable();
 
     button_pos.x += button_pos.width + 4.0;
 
@@ -614,6 +617,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         update_main = true;
     }
 
+    if(gui_config->final_file_index == 0) GuiDisable();
     // return button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -628,6 +632,8 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     ENABLE;
 
+    if(gui_config->final_file_index == 0) GuiDisable();
+
     // Play or pause button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -640,6 +646,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     }
 
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
+    if(gui_config->final_file_index == 0) GuiDisable();
     // advance button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -999,7 +1006,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(IsKeyPressed(KEY_SPACE)) {
+    if(IsKeyPressed(KEY_SPACE) && gui_config->final_file_index != 0) {
         gui_config->paused = !gui_config->paused;
         return;
     }
