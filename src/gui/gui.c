@@ -566,7 +566,7 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     if(gui_config->current_file_index < 0)                                                                                                                     \
         gui_config->current_file_index++;                                                                                                                      \
     else if(gui_config->current_file_index > gui_config->final_file_index)                                                                                     \
-        gui_config->current_file_index--;
+        gui_config->current_file_index = gui_config->final_file_index;
 
 #define NOT_PAUSED !gui_config->paused
 #define NOT_IN_DRAW gui_config->draw_type != DRAW_FILE
