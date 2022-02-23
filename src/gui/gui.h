@@ -24,7 +24,7 @@
 #define WIDER_TEXT " - Alt + R to restart simulation and the box positions"
 #define DOUBLE_CLICK_DELAY 0.7  //seconds
 
-#define TMP_SIZE 128
+#define TMP_SIZE 256
 
 #define V3_SAME(v) (Vector3){v, v, v}
 
@@ -146,6 +146,9 @@ struct gui_state {
 
     int current_window_width;
     int current_window_height;
+
+    int current_data_index;
+    int max_data_index;
 
     float ui_scale;
 

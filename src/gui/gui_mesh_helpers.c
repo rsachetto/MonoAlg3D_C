@@ -292,8 +292,33 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
 
     int count = 0;
 
-    float min_v = gui_config->min_v;
-    float max_v = gui_config->max_v;
+    float min_v = 0;
+    float max_v = 1;
+
+    int extra_data_len = arrlen(grid_to_draw->extra_values);
+
+    if(gui_config->final_file_index == 0) {
+        if(gui_state->current_data_index == -1) {
+            min_v = grid_to_draw->min_v;
+            max_v = grid_to_draw->max_v;
+        }
+        else if(extra_data_len > 0 && gui_state->current_data_index < extra_data_len) {
+            min_v = grid_to_draw->min_extra_value[gui_state->current_data_index];
+            max_v = grid_to_draw->max_extra_value[gui_state->current_data_index];
+        }
+    }
+    else {
+        max_v = gui_config->max_v;
+        min_v = gui_config->min_v;
+    }
+
+    if(min_v == max_v) {
+        max_v = max_v + 0.00001;
+    }
+
+    gui_config->min_v = min_v;
+    gui_config->max_v = max_v;
+
     float time = gui_config->time;
 
     bool collision = false;
@@ -321,10 +346,16 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         Color c = BLUE;
         voxel.v = 0.0;
 
-        if(grid_to_draw->values) {
-            voxel.v = grid_to_draw->values[j];
-            c = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
+        if(gui_state->current_data_index == -1) {
+            if(grid_to_draw->values) {
+                voxel.v = grid_to_draw->values[j];
+            }
         }
+        else if(extra_data_len > 0 && gui_state->current_data_index < extra_data_len) {
+            voxel.v = grid_to_draw->extra_values[gui_state->current_data_index][j];
+        }
+
+        c = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 
         voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
         voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
@@ -379,7 +410,6 @@ void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_
     float max_v = gui_config->max_v;
 
     int j = 0;
-
 
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 

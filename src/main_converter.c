@@ -36,7 +36,7 @@ static void convert_file(const char *input, const char *output, const char *file
     if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg") || FILE_HAS_EXTENSION(file_info.file_extension, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
 
         if(vtk_grid == NULL) {
-            vtk_grid = new_vtk_unstructured_grid_from_file_with_index(full_input_path, value_index);
+            vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false, false);
             if(FILE_HAS_EXTENSION(file_info.file_extension, "geo")) {
                 return;
             }
@@ -83,7 +83,7 @@ static void convert_file(const char *input, const char *output, const char *file
 
     } else if(FILE_HAS_EXTENSION(file_info.file_extension, "vtu")) {
 
-        vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path);
+        vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false, false);
 
         if(!vtk_grid) {
             fprintf(stderr, "%s is not a valid simulation file. Skipping!!\n", full_input_path);

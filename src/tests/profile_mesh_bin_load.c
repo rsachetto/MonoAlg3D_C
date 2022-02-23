@@ -20,7 +20,6 @@ struct elapsed_times {
 
 int main(int argc, char **argv) {
 
-
     struct elapsed_times average_times = { 0 };
 
     if(argc < 2 || argc > 3) {
@@ -48,7 +47,7 @@ int main(int argc, char **argv) {
 
         struct stop_watch total_time;
         start_stop_watch(&total_time);
-        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file_with_index("tests_bin/profile_mesh_load.bin", 6);
+        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file("tests_bin/profile_mesh_load.bin", false, true);
         average_times.total_time += stop_stop_watch(&total_time);
 
         free_vtk_unstructured_grid(vtk_grid);

@@ -110,7 +110,7 @@ POSTPROCESS(calculate_all_cells_activation_time) {
 
         sprintf(full_input_path, "%s/%s", input_dir, file_name);
 
-        vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path);
+        vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false, false);
 
         if(vtk_grid) {
 

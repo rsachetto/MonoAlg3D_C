@@ -187,6 +187,7 @@ ADD_COMPILE_COMMAND() {
 
 	local FILE
 	FILE=$(basename "$FILE_FULL_PATH")
+	FILES=($FILE)
 
 	local DIR
 	DIR=$(dirname "$FILE_FULL_PATH")
@@ -209,7 +210,7 @@ ADD_COMPILE_COMMAND() {
         sed -i "${INSERT_TO_LINE}i\"command\": \"$ESCAPED_COMMAND\", " "$COMPILE_COMMANDS_FILE"
         INSERT_TO_LINE=$((INSERT_TO_LINE+1))
 
-        sed -i "${INSERT_TO_LINE}i\"file\": \"$FILE\" " "$COMPILE_COMMANDS_FILE"
+        sed -i "${INSERT_TO_LINE}i\"file\": \"${FILES[0]}\" " "$COMPILE_COMMANDS_FILE"
         INSERT_TO_LINE=$((INSERT_TO_LINE+1))
 
         sed -i "${INSERT_TO_LINE}i    }," "$COMPILE_COMMANDS_FILE"
