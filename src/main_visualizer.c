@@ -18,7 +18,7 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
     gui_config->grid_info.file_name = NULL;
 
     omp_set_lock(&gui_config->draw_lock);
-    gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file, true, false, NULL);
+    gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file, true);
     gui_config->grid_info.loaded = true;
     gui_config->int_scale = true;
 
@@ -39,18 +39,22 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
     omp_unset_lock(&gui_config->draw_lock);
 }
 
-static void read_visible_cells(struct vtk_unstructured_grid *vtk_grid, sds full_path) {
+static void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, sds full_path) {
 
     sds full_path_cp = sdsnew(full_path);
     full_path_cp = sdscat(full_path_cp, ".vis");
     FILE *vis_file = fopen(full_path_cp, "rw");
 
     if(vis_file) {
-        uint32_t n_cells = vtk_grid->num_cells;
-        arrsetlen(vtk_grid->cell_visibility, n_cells);
-        fread(vtk_grid->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
+        uint32_t n_cells = (*vtk_grid)->num_cells;
+        arrsetlen((*vtk_grid)->cell_visibility, n_cells);
+        fread((*vtk_grid)->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
         fclose(vis_file);
+    } else {
+        set_vtk_grid_visibility(vtk_grid);
     }
+
+
 }
 
 static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
@@ -206,7 +210,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
             gui_config->step = 1;
             gui_config->final_file_index = num_files - 1;
             gui_config->final_time = gui_config->final_file_index;
-            gui_config->time = -1;
         }
         else {
             int step;
@@ -252,7 +255,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         omp_set_lock(&gui_config->draw_lock);
 
-        if(maybe_ensight) {
+        if(maybe_ensight || single_file) {
             gui_config->time = (int)gui_config->current_file_index;
         } else if(!using_pvd) {
             if(dt == 0) {
@@ -279,7 +282,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(maybe_ensight) {
             if(!ensigth_grid_loaded) {
-                gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(geometry_file, false, single_file, NULL);
+                gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(geometry_file, single_file);
                 ensigth_grid_loaded = true;
             }
             if(!geo_file) {
@@ -291,7 +294,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             }
         } else {
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
-            gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path, single_file, single_file, NULL);
+            gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_progress(full_path, single_file, &gui_config->progress, &gui_config->file_size);
         }
 
         if(single_file) {
@@ -312,12 +315,12 @@ static int read_and_render_files(struct visualization_options *options, struct g
         } else {
             if(maybe_ensight) {
                 if(!ensigth_vis_loaded) {
-                    read_visible_cells(gui_config->grid_info.vtk_grid, geometry_file);
+                    read_or_calc_visible_cells(&gui_config->grid_info.vtk_grid, geometry_file);
                     ensigth_vis_loaded = true;
                 }
             }
             else {
-                read_visible_cells(gui_config->grid_info.vtk_grid, full_path);
+                read_or_calc_visible_cells(&gui_config->grid_info.vtk_grid, full_path);
             }
             //TODO: for ensigth, maybe we should put the data name here.
             gui_config->grid_info.file_name = full_path;
@@ -398,7 +401,7 @@ int main(int argc, char **argv) {
     parse_visualization_options(argc, argv, options);
 
     if(options->save_activation_only) {
-        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file(options->input, false, false, NULL);
+        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file(options->input, false);
         if(!vtk_grid) {
             fprintf(stderr, "Failed to convert %s\n", options->input);
             exit(EXIT_FAILURE);

@@ -59,7 +59,7 @@ struct vector3_voxel_entry {
     struct voxel value;
 };
 
-//This strcuct is shared with the main thread
+//This struct is shared with the main thread
 struct gui_shared_info {
     float max_v;
     float min_v;
@@ -74,6 +74,8 @@ struct gui_shared_info {
     int final_file_index;
     float dt;
     int step;
+    size_t progress;
+    size_t file_size;
 
     char *config_name;
     char *input;

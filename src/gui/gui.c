@@ -840,16 +840,19 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
             snprintf(tmp, TMP_SIZE, "Simulation paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         } else if(gui_config->simulating) {
             snprintf(tmp, TMP_SIZE, "Simulation running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
-
         } else {
             snprintf(tmp, TMP_SIZE, "Simulation finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         }
+        (*(info_string))[index++] = strdup(tmp);
     } else {
-
         if(gui_state->max_data_index > 0) {
             snprintf(tmp, TMP_SIZE, " - Current column idx: %d of %d", gui_state->current_data_index + 2, gui_state->max_data_index + 1);
-            (*(info_string))[index++] = strdup(tmp);
         }
+        else {
+            snprintf(tmp, TMP_SIZE, "--");
+        }
+        
+        (*(info_string))[index++] = strdup(tmp);
 
         if(gui_config->paused) {
             if(gui_config->dt == 0) {
@@ -872,6 +875,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
             }
         }
 
+        (*(info_string))[index] = strdup(tmp);
 
     }
 
@@ -881,7 +885,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     gui_state->mesh_info_box.window.bounds.width = box_w;
 
-    (*(info_string))[index] = strdup(tmp);
 
     return true;
 }
@@ -1228,7 +1231,7 @@ static void draw_coordinates(struct gui_state *gui_state) {
 void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     const int end_info_box_lines = 9;
-    const int mesh_info_box_lines = 8;
+    int mesh_info_box_lines = 9;
 
     omp_set_lock(&gui_config->sleep_lock);
 
@@ -1471,7 +1474,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             int rec_width = (int)(error_message_width.x) + 50;
             int rec_height = (int)(error_message_width.y) + 2;
 
-            DrawRectangle(posx, posy, rec_width, rec_height, c);
+
+            int rec_bar_w = (int)Remap(gui_config->progress, 0, gui_config->file_size, 0, rec_width);
+
+            DrawRectangle(posx, posy, rec_bar_w, rec_height, c);
             DrawRectangleLines(posx, posy, rec_width, rec_height, BLACK);
 
             // This should not happen... but it does....

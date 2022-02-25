@@ -34,7 +34,7 @@ static void convert_file(const char *input, const char *output, const char *file
     if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg") || FILE_HAS_EXTENSION(file_info.file_extension, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
 
         if(vtk_grid == NULL) {
-            vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false, false, NULL);
+            vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false);
             if(FILE_HAS_EXTENSION(file_info.file_extension, "geo")) {
                 return;
             }
@@ -81,7 +81,7 @@ static void convert_file(const char *input, const char *output, const char *file
 
     } else if(FILE_HAS_EXTENSION(file_info.file_extension, "vtu")) {
 
-        vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false, false, NULL);
+        vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false);
 
         if(!vtk_grid) {
             fprintf(stderr, "%s is not a valid simulation file. Skipping!!\n", full_input_path);
@@ -106,6 +106,15 @@ static void convert_file(const char *input, const char *output, const char *file
         }
     }
 }
+
+#define SET_OUT_DIR(input)                                                                                                                                     \
+    if(ENDS_WITH_SLASH(input)) {                                                                                                                               \
+        output = sdscatfmt(output, "%sconverted_files", input);                                                                                                \
+    } else {                                                                                                                                                   \
+        output = sdscatfmt(output, "%s/converted_files", input);                                                                                               \
+    }                                                                                                                                                          \
+    create_dir(output);
+
 
 int main(int argc, char **argv) {
 
@@ -139,14 +148,9 @@ int main(int argc, char **argv) {
         output = sdsempty();
 
         if(input_info.is_dir) {
-
-            if(ENDS_WITH_SLASH(input)) {
-                output = sdscatfmt(output, "%sconverted_files", input);
-            } else {
-                output = sdscatfmt(output, "%s/converted_files", input);
-            }
-
-            create_dir(output);
+            
+            SET_OUT_DIR(input);
+            
             string_array geo_file = list_files_from_dir(input, NULL, "geo", NULL, true);
             string_array files_list = NULL;
             if(arrlen(geo_file) > 0) {
@@ -180,11 +184,8 @@ int main(int argc, char **argv) {
                 }
             }
         } else {
-            if(ENDS_WITH_SLASH(input_info.dir_name)) {
-                output = sdscatfmt(output, "%sconverted_files", input_info.dir_name);
-            } else {
-                output = sdscatfmt(output, "%s/converted_files", input_info.dir_name);
-            }
+            
+            SET_OUT_DIR(input_info.dir_name);
 
             create_dir(output);
             convert_file(input, output, NULL/*, value_index*/);
