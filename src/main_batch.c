@@ -12,7 +12,6 @@
 #include "ode_solver/ode_solver.h"
 #include "utils/file_utils.h"
 
-
 struct changed_parameters {
     char *section;
     char *name;

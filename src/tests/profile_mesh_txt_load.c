@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
         struct stop_watch total_time;
         start_stop_watch(&total_time);
-        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file("tests_bin/profile_mesh_load.txt", true, true);
+        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file("tests_bin/profile_mesh_load.txt", true, true, NULL);
         average_times.total_time += stop_stop_watch(&total_time);
 
         free_vtk_unstructured_grid(vtk_grid);

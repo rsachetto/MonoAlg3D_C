@@ -18,7 +18,7 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
     gui_config->grid_info.file_name = NULL;
 
     omp_set_lock(&gui_config->draw_lock);
-    gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file, true, false);
+    gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file, true, false, NULL);
     gui_config->grid_info.loaded = true;
     gui_config->int_scale = true;
 
@@ -279,7 +279,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(maybe_ensight) {
             if(!ensigth_grid_loaded) {
-                gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(geometry_file, false, single_file);
+                gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(geometry_file, false, single_file, NULL);
                 ensigth_grid_loaded = true;
             }
             if(!geo_file) {
@@ -291,7 +291,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             }
         } else {
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
-            gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path, single_file, single_file);
+            gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(full_path, single_file, single_file, NULL);
         }
 
         if(single_file) {
@@ -398,7 +398,7 @@ int main(int argc, char **argv) {
     parse_visualization_options(argc, argv, options);
 
     if(options->save_activation_only) {
-        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file(options->input, false, false);
+        struct vtk_unstructured_grid *vtk_grid = new_vtk_unstructured_grid_from_file(options->input, false, false, NULL);
         if(!vtk_grid) {
             fprintf(stderr, "Failed to convert %s\n", options->input);
             exit(EXIT_FAILURE);

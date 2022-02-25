@@ -59,9 +59,8 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
 void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *vtu_file_name, bool calc_max_min, bool calc_visibility);
-void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values, bool calc_visibility);
-    void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *vtu_file_name, bool calc_max_min, bool calc_visibility, size_t *bytes_read);
+void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
 void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *grid, const char *file_name);
 
 #endif // MONOALG3D_VTK_UNSTRUCTURED_GRID_H

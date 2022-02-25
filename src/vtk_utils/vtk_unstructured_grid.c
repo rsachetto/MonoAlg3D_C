@@ -57,7 +57,7 @@ void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid) {
         arrfree(vtk_grid->extra_values);
         arrfree(vtk_grid->min_extra_value);
         arrfree(vtk_grid->max_extra_value);
-        
+
         free(vtk_grid);
     }
 }
@@ -314,8 +314,11 @@ static void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell
     }
 }
 
-void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values,
-                                           bool calc_visibilty) {
+#define UPDATE_SIZES(var)                                                                                                                                      \
+    source += sizeof((var));                                                                                                                                   \
+    source_size -= sizeof((var));
+
+static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values, bool calc_visibilty, size_t *bytes_read) {
 
     if(!read_only_values) {
         *vtk_grid = new_vtk_unstructured_grid();
@@ -349,6 +352,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
     char* source_limit = source + source_size;
     int read_count;
+    char* original_src = source;
 
     while(source_size) {
 
@@ -427,8 +431,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             if(source < source_limit) {
                 center.x = *(real_cpu *)(source);
-                source += sizeof(center.x);
-                source_size -= sizeof(center.x);
+                UPDATE_SIZES(center.x);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -438,8 +441,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             if(source < source_limit) {
                 center.y = *(real_cpu *)(source);
-                source += sizeof(center.y);
-                source_size -= sizeof(center.y);
+                UPDATE_SIZES(center.y);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -448,8 +450,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             if(source < source_limit) {
                 center.z = *(real_cpu *)(source);
-                source += sizeof(center.z);
-                source_size -= sizeof(center.z);
+                UPDATE_SIZES(center.z);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -458,8 +459,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             if(source < source_limit) {
                 half_face.x = *(real_cpu *)(source);
-                source += sizeof(half_face.x);
-                source_size -= sizeof(half_face.x);
+                UPDATE_SIZES(half_face.x);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -468,8 +468,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             if(source < source_limit) {
                 half_face.y = *(real_cpu *)(source);
-                source += sizeof(half_face.y);
-                source_size -= sizeof(half_face.y);
+                UPDATE_SIZES(half_face.y);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -478,8 +477,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             if(source < source_limit) {
                 half_face.z = *(real_cpu *)(source);
-                source += sizeof(half_face.z);
-                source_size -= sizeof(half_face.z);
+                UPDATE_SIZES(half_face.z);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -488,8 +486,7 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
 
             if(source < source_limit) {
                 v = *(real_cpu *)(source);
-                source += sizeof(v);
-                source_size -= sizeof(v);
+                UPDATE_SIZES(v);
             }
             else {
                 binary_grid_error(vtk_grid);
@@ -512,26 +509,13 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
                 }
             }
             else {
-                source += sizeof(center.x);
-                source_size -= sizeof(center.x);
-
-                source += sizeof(center.y);
-                source_size -= sizeof(center.y);
-
-                source += sizeof(center.z);
-                source_size -= sizeof(center.z);
-
-                source += sizeof(half_face.x);
-                source_size -= sizeof(half_face.x);
-
-                source += sizeof(half_face.y);
-                source_size -= sizeof(half_face.y);
-
-                source += sizeof(half_face.z);
-                source_size -= sizeof(half_face.z);
-
-                source += sizeof(v);
-                source_size -= sizeof(v);
+                UPDATE_SIZES(center.x);
+                UPDATE_SIZES(center.y);
+                UPDATE_SIZES(center.z);
+                UPDATE_SIZES(half_face.x);
+                UPDATE_SIZES(half_face.y);
+                UPDATE_SIZES(half_face.z);
+                UPDATE_SIZES(v);
             }
             continue;
         }
@@ -542,6 +526,10 @@ void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_gr
             discretization.z = half_face.z * 2;
 
             hmput(cells, center, discretization);
+        }
+
+        if(bytes_read != NULL) {
+            *bytes_read = (size_t)(source-original_src);
         }
 
         set_point_data(center, half_face, vtk_grid, &hash, &id);
@@ -654,7 +642,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             }
 
         }
-        
+
         center = cell->center;
         v = cell->v;
 
@@ -2354,15 +2342,14 @@ static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_
     }
 }
 
-//TODO: implement read only values for non-adaptive meshes
-static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, const char *file_name, bool calc_max_min, bool calc_vis) {
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *file_name, bool calc_max_min, bool calc_vis, size_t *bytes_read) {
+    struct vtk_unstructured_grid *vtk_grid = NULL;
 
     size_t size;
     char *tmp = read_entire_file_with_mmap(file_name, &size);
 
     if(tmp == NULL || size  == 0) {
-        *vtk_grid = NULL;
-        return;
+        return NULL;
     }
 
     enum file_type_enum file_type;
@@ -2390,24 +2377,19 @@ static void set_vtk_grid_from_file(struct vtk_unstructured_grid **vtk_grid, cons
     }
 
     if( file_type == VTK_LEGACY || file_type == VTU_XML ) {
-        new_vtk_unstructured_grid_from_vtk_file(vtk_grid, file_type, source, size, calc_max_min);
+        new_vtk_unstructured_grid_from_vtk_file(&vtk_grid, file_type, source, size, calc_max_min);
     } else if(file_type == ACTIVATION) {
-        new_vtk_unstructured_grid_from_string_with_activation_info(vtk_grid, &source[2], size-2);
+        new_vtk_unstructured_grid_from_string_with_activation_info(&vtk_grid, &source[2], size-2);
     } else if(file_type == ENSIGHT_ASCII || file_type == ENSIGHT_BINARY) {
-        new_vtk_unstructured_grid_from_ensigth_file(vtk_grid, file_type, source);
+        new_vtk_unstructured_grid_from_ensigth_file(&vtk_grid, file_type, source);
     } else {
         //Simple text or binary representation
         bool read_only_values = (file_type != ALG_PLAIN_TEXT);
-        new_vtk_unstructured_grid_from_string(vtk_grid, source, size, read_only_values, false, calc_vis);
+        new_vtk_unstructured_grid_from_string(&vtk_grid, source, size, read_only_values, false, calc_vis, bytes_read);
     }
 
     munmap(tmp, size);
 
-}
-
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *file_name, bool calc_max_min, bool calc_visibility) {
-    struct vtk_unstructured_grid *vtk_grid = NULL;
-    set_vtk_grid_from_file(&vtk_grid, file_name, calc_max_min, calc_visibility);
     return vtk_grid;
 }
 

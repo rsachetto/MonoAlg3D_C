@@ -268,3 +268,7 @@ if [ -n "$CRITERION_FOUND" ]; then
     RUNTIME_OUTPUT_DIRECTORY=$ROOT_DIR/tests_bin
     ADD_SUBDIRECTORY "src/tests"
 fi
+
+if [ -n "$WAIT_ENTER" ]; then
+    read -p "Press any key to continue... " -n1 -s
+fi

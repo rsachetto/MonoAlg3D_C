@@ -2,9 +2,6 @@
 #Generate computer HW Hash (very simple)
 inxi -CNM |grep -e Topology  -e Device-1 | sha256sum
 
-Make a function to save a HDF5 database. With this we do not need to save the mesh every time steps, only the Vm values.
-This will work only for non-adaptive meshes.
-
 Report line number only for the debug build in the helpers functions.
 
 Verify the possibility to not copy the SV from the GPU to the CPU when the ODE solver and the PDE solver are using the GPU.
