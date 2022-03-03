@@ -86,6 +86,11 @@ struct point_hash_entry {
     float value;
 };
 
+struct cell_hash_entry {
+    struct point_3d key;
+    struct point_3d value;
+};
+
 struct string_hash_entry {
     char *key;
     char *value;

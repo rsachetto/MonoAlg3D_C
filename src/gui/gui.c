@@ -65,6 +65,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->help_box.window.show = false;
 
+    gui_state->current_data_index = -1;
+
     gui_state->end_info_box.window.show = true;
     gui_state->mesh_info_box.window.show = true;
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
@@ -474,7 +476,11 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     }
 }
 
+
 static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bool int_scale) {
+
+    #define MIN_SCALE_TICKS 5
+    #define MAX_SCALE_TICKS 12
 
     float scale_width = 20 * gui_state->ui_scale;
 
@@ -487,9 +493,14 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     if(!int_scale) {
         num_ticks = (uint32_t)((max_v - min_v) / tick_ofsset);
 
-        if(num_ticks < 5) {
-            num_ticks = 5;
+        if(num_ticks < MIN_SCALE_TICKS) {
+            num_ticks = MIN_SCALE_TICKS;
             tick_ofsset = (max_v - min_v) / (float)num_ticks;
+        }
+        else if(num_ticks > MAX_SCALE_TICKS) {
+            num_ticks = MAX_SCALE_TICKS;
+            tick_ofsset = (max_v - min_v) / (float)num_ticks;
+
         }
     } else {
         num_ticks = 0;
@@ -505,7 +516,7 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     snprintf(tmp, TMP_SIZE, "%.2lf", v);
     Vector2 max_w = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, spacing_small);
 
-    Vector2 p1, p2, width;
+    Vector2 p1, width;
 
     float scale_rec_height = 30.0f * gui_state->ui_scale;
     Color color;
@@ -535,19 +546,14 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     float initial_y = scale_bounds.y;
 
     for(uint32_t t = 0; t <= num_ticks; t++) {
-        p1.x = scale_bounds.x - 50.0f * gui_state->ui_scale;
+        p1.x = scale_bounds.x - 10.0f * gui_state->ui_scale;
         p1.y = initial_y + (float)scale_rec_height / 2.0f;
 
         snprintf(tmp, TMP_SIZE, "%.2lf", v);
         width = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, spacing_small);
 
-        DrawTextEx(gui_state->font, tmp, (Vector2){p1.x + (max_w.x - width.x), p1.y - width.y / 2.0f}, gui_state->font_size_small, spacing_small, BLACK);
+        DrawTextEx(gui_state->font, tmp, (Vector2){p1.x - width.x, p1.y - width.y / 2.0f}, gui_state->font_size_small, spacing_small, BLACK);
 
-        p1.x = p1.x + max_w.x + 2.5f;
-        p2.x = p1.x + 10.0f;
-        p2.y = p1.y;
-
-        DrawLineV(p1, p2, BLACK);
         color = get_color((v - min_v) / (max_v - min_v), gui_state->scale_alpha, gui_state->current_scale);
 
         DrawRectangle((int)scale_bounds.x, (int)initial_y, (int)scale_width, (int)scale_rec_height, color);
@@ -560,7 +566,7 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     if(gui_config->current_file_index < 0)                                                                                                                     \
         gui_config->current_file_index++;                                                                                                                      \
     else if(gui_config->current_file_index > gui_config->final_file_index)                                                                                     \
-        gui_config->current_file_index--;
+        gui_config->current_file_index = gui_config->final_file_index;
 
 #define NOT_PAUSED !gui_config->paused
 #define NOT_IN_DRAW gui_config->draw_type != DRAW_FILE
@@ -581,6 +587,12 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     }
 
 #define ENABLE GuiEnable()
+
+#define DISABLE_IF_IN_DRAW_AND_SINGLE_FILE                                                                                                                     \
+    if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) {                                                                              \
+        GuiDisable();                                                                                                                                          \
+    }
+
 bool spinner_edit = false;
 static void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gui_config) {
 
@@ -594,12 +606,14 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     bool update_main = false;
 
     DISABLE_IF_NOT_PAUSED;
+
     if(GuiButton(button_pos, "#76#")) {
         reset(gui_config, gui_state, false);
     }
     ENABLE;
 
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
 
     button_pos.x += button_pos.width + 4.0;
 
@@ -608,6 +622,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         update_main = true;
     }
 
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     // return button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -622,6 +637,8 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     ENABLE;
 
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
+
     // Play or pause button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -634,6 +651,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     }
 
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     // advance button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -821,17 +839,32 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     snprintf(tmp, TMP_SIZE, " - Min Z: %f", mesh_info->min_size.z);
     (*(info_string))[index++] = strdup(tmp);
-
+ 
     if(draw_type == DRAW_SIMULATION) {
+
+        snprintf(tmp, TMP_SIZE, "--");
+        (*(info_string))[index++] = strdup(tmp);
+
         if(gui_config->paused) {
             snprintf(tmp, TMP_SIZE, "Simulation paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         } else if(gui_config->simulating) {
             snprintf(tmp, TMP_SIZE, "Simulation running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
-
         } else {
             snprintf(tmp, TMP_SIZE, "Simulation finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         }
+        (*(info_string))[index++] = strdup(tmp);
+
+
     } else {
+        if(gui_state->max_data_index > 0) {
+            snprintf(tmp, TMP_SIZE, " - Current column idx: %d of %d", gui_state->current_data_index + 2, gui_state->max_data_index + 1);
+        }
+        else {
+            snprintf(tmp, TMP_SIZE, "--");
+        }
+        
+        (*(info_string))[index++] = strdup(tmp);
+
         if(gui_config->paused) {
             if(gui_config->dt == 0) {
                 snprintf(tmp, TMP_SIZE, "Visualization paused: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
@@ -852,6 +885,9 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
                 snprintf(tmp, TMP_SIZE, "Visualization finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
             }
         }
+
+        (*(info_string))[index] = strdup(tmp);
+
     }
 
     Vector2 wider_text = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, gui_state->font_spacing_small);
@@ -860,7 +896,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     gui_state->mesh_info_box.window.bounds.width = box_w;
 
-    (*(info_string))[index] = strdup(tmp);
 
     return true;
 }
@@ -882,6 +917,37 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
                 return;
             }
+        }
+
+        int kp = GetKeyPressed();
+        if(kp >= KEY_ZERO && kp <= KEY_NINE) {
+            int index = kp - KEY_ONE - 1;
+
+            if(index == -2) {
+                //zero pressed. we consider 8 (10th column)
+                index = 8;
+            }
+
+            if(index <= gui_state->max_data_index - 1) {
+                gui_state->current_data_index = index;
+            }
+        }
+
+        if(IsKeyPressed(KEY_PAGE_UP)) {
+            int index = gui_state->current_data_index + 1;
+
+            if(index <= gui_state->max_data_index - 1) {
+                gui_state->current_data_index = index;
+            }
+
+        }
+        else if(IsKeyPressed(KEY_PAGE_DOWN)) {
+            int index = gui_state->current_data_index - 1;
+
+            if(index >= -1) {
+                gui_state->current_data_index = index;
+            }
+
         }
 
         if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
@@ -955,7 +1021,12 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(IsKeyPressed(KEY_SPACE)) {
-        gui_config->paused = !gui_config->paused;
+        if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index != 0) {
+            gui_config->paused = !gui_config->paused;
+        }
+        else {
+            gui_config->paused = !gui_config->paused;
+        }
         return;
     }
 
@@ -995,25 +1066,22 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     if(gui_config->draw_type == DRAW_FILE) {
 
         if(IsKeyPressed(KEY_O)) {
-
-            gui_config->paused = true;
+            if(!gui_config->paused) return;
 
             char *buf = get_current_directory();
 
             char const *tmp = tinyfd_selectFolderDialog("Select a directory", buf);
             if(tmp) {
                 gui_config->input = strdup(tmp);
+                reset(gui_config, gui_state, true);
+                free(gui_config->error_message);
+                gui_config->error_message = strdup("Loading Mesh...");
+
             } else {
                 gui_config->input = NULL;
             }
 
             free(buf);
-
-            if(gui_config->input) {
-                reset(gui_config, gui_state, true);
-                free(gui_config->error_message);
-                gui_config->error_message = strdup("Loading Mesh...");
-            }
 
             return;
         }
@@ -1179,7 +1247,7 @@ static void draw_coordinates(struct gui_state *gui_state) {
 void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     const int end_info_box_lines = 9;
-    const int mesh_info_box_lines = 8;
+    int mesh_info_box_lines = 9;
 
     omp_set_lock(&gui_config->sleep_lock);
 
@@ -1241,6 +1309,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                                       " - Right arrow to advance one dt when paused",
                                       " - Hold up arrow to advance time when paused",
                                       " - Double click on a volume to show the AP",
+                                      " - from 1 to 0 to show different file column (or PGUP/PGDOWN)",
                                       " - Space to start or pause simulation"};
 
     int help_box_lines = SIZEOF(help_box_strings);
@@ -1317,8 +1386,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             if(!mesh_info->center_calculated) {
                 if(draw_type == DRAW_SIMULATION) {
                     mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
+                    gui_state->max_data_index = 0;
                 } else {
                     mesh_offset = find_mesh_center_vtk(gui_config->grid_info.vtk_grid, mesh_info);
+                    gui_state->max_data_index = arrlen(gui_config->grid_info.vtk_grid->extra_values);
                 }
                 scale = fmaxf(mesh_offset.x, fmaxf(mesh_offset.y, mesh_offset.z)) / 1.8f;
             }
@@ -1419,7 +1490,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             int rec_width = (int)(error_message_width.x) + 50;
             int rec_height = (int)(error_message_width.y) + 2;
 
-            DrawRectangle(posx, posy, rec_width, rec_height, c);
+
+            int rec_bar_w = (int)Remap(gui_config->progress, 0, gui_config->file_size, 0, rec_width);
+
+            DrawRectangle(posx, posy, rec_bar_w, rec_height, c);
             DrawRectangleLines(posx, posy, rec_width, rec_height, BLACK);
 
             // This should not happen... but it does....

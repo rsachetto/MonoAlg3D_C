@@ -29,14 +29,17 @@ struct vtk_unstructured_grid {
     uint8_t cell_type;
 
     f32_array values;
+    f32_array *extra_values;
     real_cpu **fibers;
     int64_array cells;
-    //TODO: create a mask here, so we can draw only the faces that are not occluded
     ui8_array cell_visibility;
     point3d_array points;
 
     float min_v;
     float max_v;
+
+    f32_array min_extra_value;
+    f32_array max_extra_value;
 
     //TODO: I don't know if this is the best place to put this information
     struct vtk_unstructured_grid *purkinje;
@@ -56,10 +59,11 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
 void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *vtu_file_name);
-struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_index(const char *file_name, uint32_t v_index);
-void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size, bool binary, bool read_only_values, int v_index);
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *vtu_file_name, bool calc_max_min);
+struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_progress(const char *file_name, bool calc_max_min, size_t *bytes_read, size_t *file_size);
+
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
 void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *grid, const char *file_name);
+void set_vtk_grid_visibility(struct vtk_unstructured_grid **vtk_grid);
 
 #endif // MONOALG3D_VTK_UNSTRUCTURED_GRID_H

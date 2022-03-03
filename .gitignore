@@ -165,6 +165,7 @@ scripts/tuneCV/configs/*
 scripts/tuneCV/outputs/*
 private_models/
 src/*/custom_functions.c
+src/*/custom_functions.h
 
 .cache/
 .ccls-cache/
@@ -188,3 +189,4 @@ report.xml
 UU_49900.dat 
 VV_49900.dat
 .#*#
+*.build_type*

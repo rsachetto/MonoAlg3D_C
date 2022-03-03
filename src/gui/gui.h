@@ -24,7 +24,7 @@
 #define WIDER_TEXT " - Alt + R to restart simulation and the box positions"
 #define DOUBLE_CLICK_DELAY 0.7  //seconds
 
-#define TMP_SIZE 128
+#define TMP_SIZE 256
 
 #define V3_SAME(v) (Vector3){v, v, v}
 
@@ -59,7 +59,7 @@ struct vector3_voxel_entry {
     struct voxel value;
 };
 
-//This strcuct is shared with the main thread
+//This struct is shared with the main thread
 struct gui_shared_info {
     float max_v;
     float min_v;
@@ -74,6 +74,8 @@ struct gui_shared_info {
     int final_file_index;
     float dt;
     int step;
+    size_t progress;
+    size_t file_size;
 
     char *config_name;
     char *input;
@@ -146,6 +148,9 @@ struct gui_state {
 
     int current_window_width;
     int current_window_height;
+
+    int current_data_index;
+    int max_data_index;
 
     float ui_scale;
 

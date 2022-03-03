@@ -722,6 +722,7 @@ SAVE_MESH(save_as_ensight) {
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
 
         num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
 
@@ -730,6 +731,10 @@ SAVE_MESH(save_as_ensight) {
 
         struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false);
         save_ensight_grid_as_ensight6_geometry(ensight_grid, output_dir_with_file, binary);
+
+        if(save_visible_mask) {
+            save_visibility_mask(output_dir_with_file, ensight_grid->parts[0].cell_visibility);
+        }
 
         free_ensight_grid(ensight_grid);
 
@@ -741,6 +746,7 @@ SAVE_MESH(save_as_ensight) {
         save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate);
 
         sdsfree(output_dir_with_file);
+
 
         ensight_geometry_saved = true;
     }

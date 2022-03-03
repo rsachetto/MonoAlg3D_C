@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e 
+set -e
 
 WARN='\033[0;31m'
 INFO='\033[0;34m'
@@ -20,6 +20,7 @@ LIBRARY_OUTPUT_DIRECTORY=$ROOT_DIR
 
 GLOBAL_FORCE_COMPILATION=""
 QUIET=''
+WAIT_ENTER=''
 WRITE_COMPILE_COMMANDS='y'
 
 DEFAULT_BUILD_DIR="build_"
@@ -93,7 +94,7 @@ GET_BUILD_OPTIONS () {
 
 	OPTIND=1
 
-	while getopts "h?fqlrd" opt; do
+	while getopts "h?fqwlrd" opt; do
 		case "$opt" in
 			h|\?) PRINT_USAGE "$@" ;;
 			f) GLOBAL_FORCE_COMPILATION='y' ;;
@@ -101,6 +102,7 @@ GET_BUILD_OPTIONS () {
 			r) BUILD_TYPE='release' ;;
 			d) BUILD_TYPE='debug' ;;
 			q) QUIET='y' ;;
+            w) WAIT_ENTER='y' ;;
 		esac
 	done
 
@@ -187,6 +189,7 @@ ADD_COMPILE_COMMAND() {
 
 	local FILE
 	FILE=$(basename "$FILE_FULL_PATH")
+	FILES=($FILE)
 
 	local DIR
 	DIR=$(dirname "$FILE_FULL_PATH")
@@ -209,7 +212,7 @@ ADD_COMPILE_COMMAND() {
         sed -i "${INSERT_TO_LINE}i\"command\": \"$ESCAPED_COMMAND\", " "$COMPILE_COMMANDS_FILE"
         INSERT_TO_LINE=$((INSERT_TO_LINE+1))
 
-        sed -i "${INSERT_TO_LINE}i\"file\": \"$FILE\" " "$COMPILE_COMMANDS_FILE"
+        sed -i "${INSERT_TO_LINE}i\"file\": \"${FILES[0]}\" " "$COMPILE_COMMANDS_FILE"
         INSERT_TO_LINE=$((INSERT_TO_LINE+1))
 
         sed -i "${INSERT_TO_LINE}i    }," "$COMPILE_COMMANDS_FILE"
@@ -380,7 +383,7 @@ COMPILE_OBJECT () {
 			S_X_COMPILER_FLAGS=$( printf "%s" "${X_COMPILER_FLAGS[@]}" )
 			COMPILER_COMMAND="$COMPILER $SRC_FILE -c  -o $OBJ_FILE -ccbin $C_COMPILER -m64 -Xcompiler ${S_X_COMPILER_FLAGS} -DNVCC -I$CUDA_INCLUDE_PATH"
 
-		else 
+		else
 			COMPILER_COMMAND="$COMPILER $MY_C_FLAGS -c $SRC_FILE -o $OBJ_FILE"
 			if [ -n "$WRITE_COMPILE_COMMANDS" ] ; then
 				ADD_COMPILE_COMMAND "$COMPILER_COMMAND" "$SRC_FILE"
@@ -478,7 +481,7 @@ COMPILE_SHARED_LIB () {
 	local EXTRA_C_FLAGS=$7
 	local IS_CUDA=$8
 
-	local STATIC_DEPS=()	
+	local STATIC_DEPS=()
 
 	for dep in $STATIC_DEPS_LIST; do
 		STATIC_DEPS+=("${COMPILED_STATIC_LIBS[$dep]}")

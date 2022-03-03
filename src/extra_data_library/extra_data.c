@@ -90,6 +90,8 @@ SET_EXTRA_DATA(set_extra_data_for_no_fibrosis) {
         extra_data->fibrosis[i] = 1.0;
     }
 
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_fibrosis));
+
     return (void*)extra_data;
 }
 
