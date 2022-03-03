@@ -587,6 +587,12 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
     }
 
 #define ENABLE GuiEnable()
+
+#define DISABLE_IF_IN_DRAW_AND_SINGLE_FILE                                                                                                                     \
+    if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) {                                                                              \
+        GuiDisable();                                                                                                                                          \
+    }
+
 bool spinner_edit = false;
 static void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gui_config) {
 
@@ -601,14 +607,13 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     DISABLE_IF_NOT_PAUSED;
 
-
     if(GuiButton(button_pos, "#76#")) {
         reset(gui_config, gui_state, false);
     }
     ENABLE;
 
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
-    if(gui_config->final_file_index == 0) GuiDisable();
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
 
     button_pos.x += button_pos.width + 4.0;
 
@@ -617,7 +622,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         update_main = true;
     }
 
-    if(gui_config->final_file_index == 0) GuiDisable();
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     // return button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -632,7 +637,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     ENABLE;
 
-    if(gui_config->final_file_index == 0) GuiDisable();
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
 
     // Play or pause button
     {
@@ -646,7 +651,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     }
 
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
-    if(gui_config->final_file_index == 0) GuiDisable();
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     // advance button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -834,8 +839,12 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     snprintf(tmp, TMP_SIZE, " - Min Z: %f", mesh_info->min_size.z);
     (*(info_string))[index++] = strdup(tmp);
-
+ 
     if(draw_type == DRAW_SIMULATION) {
+
+        snprintf(tmp, TMP_SIZE, "--");
+        (*(info_string))[index++] = strdup(tmp);
+
         if(gui_config->paused) {
             snprintf(tmp, TMP_SIZE, "Simulation paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         } else if(gui_config->simulating) {
@@ -844,6 +853,8 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
             snprintf(tmp, TMP_SIZE, "Simulation finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         }
         (*(info_string))[index++] = strdup(tmp);
+
+
     } else {
         if(gui_state->max_data_index > 0) {
             snprintf(tmp, TMP_SIZE, " - Current column idx: %d of %d", gui_state->current_data_index + 2, gui_state->max_data_index + 1);
@@ -1009,8 +1020,13 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(IsKeyPressed(KEY_SPACE) && gui_config->final_file_index != 0) {
-        gui_config->paused = !gui_config->paused;
+    if(IsKeyPressed(KEY_SPACE)) {
+        if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index != 0) {
+            gui_config->paused = !gui_config->paused;
+        }
+        else {
+            gui_config->paused = !gui_config->paused;
+        }
         return;
     }
 
