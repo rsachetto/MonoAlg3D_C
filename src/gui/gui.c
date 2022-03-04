@@ -476,11 +476,10 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     }
 }
 
-
 static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bool int_scale) {
 
-    #define MIN_SCALE_TICKS 5
-    #define MAX_SCALE_TICKS 12
+#define MIN_SCALE_TICKS 5
+#define MAX_SCALE_TICKS 12
 
     float scale_width = 20 * gui_state->ui_scale;
 
@@ -496,11 +495,9 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
         if(num_ticks < MIN_SCALE_TICKS) {
             num_ticks = MIN_SCALE_TICKS;
             tick_ofsset = (max_v - min_v) / (float)num_ticks;
-        }
-        else if(num_ticks > MAX_SCALE_TICKS) {
+        } else if(num_ticks > MAX_SCALE_TICKS) {
             num_ticks = MAX_SCALE_TICKS;
             tick_ofsset = (max_v - min_v) / (float)num_ticks;
-
         }
     } else {
         num_ticks = 0;
@@ -677,8 +674,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     if(NOT_IN_DRAW) {
         GuiSpinner(button_pos, NULL, &gui_config->time, 0, gui_config->final_time, false, spinner_edit);
-    }
-    else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, true, spinner_edit)) {
+    } else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, true, spinner_edit)) {
         spinner_edit = !spinner_edit;
     }
 
@@ -839,7 +835,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     snprintf(tmp, TMP_SIZE, " - Min Z: %f", mesh_info->min_size.z);
     (*(info_string))[index++] = strdup(tmp);
- 
+
     if(draw_type == DRAW_SIMULATION) {
 
         snprintf(tmp, TMP_SIZE, "--");
@@ -854,15 +850,13 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
         }
         (*(info_string))[index++] = strdup(tmp);
 
-
     } else {
         if(gui_state->max_data_index > 0) {
             snprintf(tmp, TMP_SIZE, " - Current column idx: %d of %d", gui_state->current_data_index + 2, gui_state->max_data_index + 1);
-        }
-        else {
+        } else {
             snprintf(tmp, TMP_SIZE, "--");
         }
-        
+
         (*(info_string))[index++] = strdup(tmp);
 
         if(gui_config->paused) {
@@ -887,7 +881,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
         }
 
         (*(info_string))[index] = strdup(tmp);
-
     }
 
     Vector2 wider_text = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, gui_state->font_spacing_small);
@@ -895,7 +888,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
     float box_w = wider_text.x * 1.08f;
 
     gui_state->mesh_info_box.window.bounds.width = box_w;
-
 
     return true;
 }
@@ -924,7 +916,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             int index = kp - KEY_ONE - 1;
 
             if(index == -2) {
-                //zero pressed. we consider 8 (10th column)
+                // zero pressed. we consider 8 (10th column)
                 index = 8;
             }
 
@@ -940,14 +932,12 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 gui_state->current_data_index = index;
             }
 
-        }
-        else if(IsKeyPressed(KEY_PAGE_DOWN)) {
+        } else if(IsKeyPressed(KEY_PAGE_DOWN)) {
             int index = gui_state->current_data_index - 1;
 
             if(index >= -1) {
                 gui_state->current_data_index = index;
             }
-
         }
 
         if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
@@ -1023,8 +1013,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     if(IsKeyPressed(KEY_SPACE)) {
         if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index != 0) {
             gui_config->paused = !gui_config->paused;
-        }
-        else {
+        } else {
             gui_config->paused = !gui_config->paused;
         }
         return;
@@ -1066,7 +1055,8 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     if(gui_config->draw_type == DRAW_FILE) {
 
         if(IsKeyPressed(KEY_O)) {
-            if(!gui_config->paused) return;
+            if(!gui_config->paused)
+                return;
 
             char *buf = get_current_directory();
 
@@ -1489,7 +1479,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             int rec_width = (int)(error_message_width.x) + 50;
             int rec_height = (int)(error_message_width.y) + 2;
-
 
             int rec_bar_w = (int)Remap(gui_config->progress, 0, gui_config->file_size, 0, rec_width);
 
