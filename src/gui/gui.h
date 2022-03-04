@@ -12,7 +12,10 @@
 #include "../vtk_utils/vtk_unstructured_grid.h"
 #include "../3dparty/raylib/src/raylib.h"
 #include "../3dparty/raylib/src/raymath.h"
+#include "../3dparty/raylib/src/extras/rlights.h"
 #include "../config/config_parser.h"
+
+
 
 #define MIN_VERTICAL_TICKS 4
 #define MAX_VERTICAL_TICKS 20
@@ -203,6 +206,8 @@ struct gui_state {
     Font font;
 
     Camera3D camera;
+
+    Light light;
 
     bool double_clicked;
 };

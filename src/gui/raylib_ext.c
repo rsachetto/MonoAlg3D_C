@@ -3,8 +3,7 @@
 #include "../alg/cell/cell.h"
 
 // Draw multiple mesh instances with different transforms and colors
-void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix *transforms, int grid_mask, int instances)
-{
+void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix *transforms, int grid_mask, int instances) {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // Instancing required variables
     float16 *instanceTransforms = NULL;
@@ -27,20 +26,23 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
     Matrix matProjection = rlGetMatrixProjection();
 
     // Upload view and projection matrices (if locations available)
-    if (shader.locs[SHADER_LOC_MATRIX_VIEW] != -1) rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
-    if (shader.locs[SHADER_LOC_MATRIX_PROJECTION] != -1) rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
+    if(shader.locs[SHADER_LOC_MATRIX_VIEW] != -1)
+        rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
+    if(shader.locs[SHADER_LOC_MATRIX_PROJECTION] != -1)
+        rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
 
     // Create instances buffer
-    instanceTransforms = (float16 *)RL_MALLOC(instances*sizeof(float16));
-    colorsTransforms = (float4 *)RL_MALLOC(instances*sizeof(float4));
+    instanceTransforms = (float16 *)RL_MALLOC(instances * sizeof(float16));
+    colorsTransforms = (float4 *)RL_MALLOC(instances * sizeof(float4));
 
     // Fill buffer with instances transformations as float16 arrays
-    for (int i = 0; i < instances; i++) instanceTransforms[i] = MatrixToFloatV(transforms[i]);
-    for (int i = 0; i < instances; i++) {
-        colorsTransforms[i].v[0] = (float)colors[i].r/255.0f;
-        colorsTransforms[i].v[1] = (float)colors[i].g/255.0f;
-        colorsTransforms[i].v[2] = (float)colors[i].b/255.0f;
-        colorsTransforms[i].v[3] = (float)colors[i].a/255.0f;
+    for(int i = 0; i < instances; i++)
+        instanceTransforms[i] = MatrixToFloatV(transforms[i]);
+    for(int i = 0; i < instances; i++) {
+        colorsTransforms[i].v[0] = (float)colors[i].r / 255.0f;
+        colorsTransforms[i].v[1] = (float)colors[i].g / 255.0f;
+        colorsTransforms[i].v[2] = (float)colors[i].b / 255.0f;
+        colorsTransforms[i].v[3] = (float)colors[i].a / 255.0f;
     }
 
     // Enable mesh VAO to attach new buffer
@@ -50,13 +52,12 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
     // It isn't clear which would be reliably faster in all cases and on all platforms,
     // anecdotally glMapBuffer() seems very slow (syncs) while glBufferSubData() seems
     // no faster, since we're transferring all the transform matrices anyway
-    instancesVboId = rlLoadVertexBuffer(instanceTransforms, (int)(instances*sizeof(float16)), false);
+    instancesVboId = rlLoadVertexBuffer(instanceTransforms, (int)(instances * sizeof(float16)), false);
 
     // Instances transformation matrices are send to shader attribute location: SHADER_LOC_MATRIX_MODEL
-    for (unsigned int i = 0; i < 4; i++)
-    {
+    for(unsigned int i = 0; i < 4; i++) {
         rlEnableVertexAttribute(shader.locs[SHADER_LOC_MATRIX_MODEL] + i);
-        rlSetVertexAttribute(shader.locs[SHADER_LOC_MATRIX_MODEL] + i, 4, RL_FLOAT, 0, sizeof(Matrix), (void *)(i*sizeof(Vector4)));
+        rlSetVertexAttribute(shader.locs[SHADER_LOC_MATRIX_MODEL] + i, 4, RL_FLOAT, 0, sizeof(Matrix), (void *)(i * sizeof(Vector4)));
         rlSetVertexAttributeDivisor(shader.locs[SHADER_LOC_MATRIX_MODEL] + i, 1);
     }
 
@@ -65,9 +66,9 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
 
     // Enable mesh VAO to attach new buffer
     rlEnableVertexArray(mesh.vaoId);
-    colorsVboId = rlLoadVertexBuffer(colorsTransforms, (int)(instances*sizeof(float4)), true);
+    colorsVboId = rlLoadVertexBuffer(colorsTransforms, (int)(instances * sizeof(float4)), true);
 
-    //Colors are send to shader attribute location: SHADER_LOC_VERTEX_COLOR
+    // Colors are send to shader attribute location: SHADER_LOC_VERTEX_COLOR
     rlEnableVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR]);
     rlSetVertexAttribute(shader.locs[SHADER_LOC_VERTEX_COLOR], 4, RL_FLOAT, 0, sizeof(float4), 0);
     rlSetVertexAttributeDivisor(shader.locs[SHADER_LOC_VERTEX_COLOR], 1);
@@ -80,7 +81,8 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
     matModelView = MatrixMultiply(rlGetMatrixTransform(), matView);
 
     // Upload model normal matrix (if locations available)
-    if (shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
+    if(shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1)
+        rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
 
     int dgrid_loc = GetShaderLocation(shader, "dgrid");
     if(dgrid_loc != 1) {
@@ -88,33 +90,21 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
     }
 
     rlEnableVertexArray(mesh.vaoId);
-    if (mesh.indices != NULL) rlEnableVertexBufferElement(mesh.vboId[6]);
+    if(mesh.indices != NULL)
+        rlEnableVertexBufferElement(mesh.vboId[6]);
 
-    int eyeCount = 1;
-    if (rlIsStereoRenderEnabled()) eyeCount = 2;
+    // Calculate model-view-projection matrix (MVP)
+    Matrix matModelViewProjection;
+    matModelViewProjection = MatrixMultiply(matModelView, matProjection);
 
-    for (int eye = 0; eye < eyeCount; eye++)
-    {
-        // Calculate model-view-projection matrix (MVP)
-        Matrix matModelViewProjection;
-        if (eyeCount == 1) matModelViewProjection = MatrixMultiply(matModelView, matProjection);
-        else
-        {
-            // Setup current eye viewport (half screen width)
-            rlViewport(eye*rlGetFramebufferWidth()/2, 0, rlGetFramebufferWidth()/2, rlGetFramebufferHeight());
-            matModelViewProjection = MatrixMultiply(MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
-        }
+    // Send combined model-view-projection matrix to shader
+    rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
 
-        // Send combined model-view-projection matrix to shader
-        rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
-
-        // Draw mesh instanced
-        if (mesh.indices != NULL) {
-            rlDrawVertexArrayElementsInstanced(0, mesh.triangleCount*3, 0, instances);
-        }
-        else {
-            rlDrawVertexArrayInstanced(0, mesh.vertexCount, instances);
-        }
+    // Draw mesh instanced
+    if(mesh.indices != NULL) {
+        rlDrawVertexArrayElementsInstanced(0, mesh.triangleCount * 3, 0, instances);
+    } else {
+        rlDrawVertexArrayInstanced(0, mesh.vertexCount, instances);
     }
 
     // Disable all possible vertex array objects (or VBOs)

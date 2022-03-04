@@ -26,7 +26,12 @@
 #include "../3dparty/raylib/src/extras/gui_textbox_extended.h"
 
 #include "raylib_ext.h"
+
+#define RLIGHTS_IMPLEMENTATION
+#include "../3dparty/raylib/src/extras/rlights.h"
+
 #undef RAYGUI_IMPLEMENTATION
+
 
 static void set_camera_params(Camera3D *camera, bool set_mode) {
     camera->position = (Vector3){0.1f, 0.1f, 12.0f};
@@ -1005,10 +1010,18 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
+    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+        if(IsKeyPressed(KEY_L)) {
+            gui_state->light.enabled = !gui_state->light.enabled;
+            return;
+        }
+    }
+
     if(IsKeyPressed(KEY_L)) {
         gui_state->draw_grid_lines = !gui_state->draw_grid_lines;
         return;
     }
+
 
     if(IsKeyPressed(KEY_SPACE)) {
         if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index != 0) {
@@ -1257,7 +1270,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     InitWindow(0, 0, window_title);
     free(window_title);
 
-    SetTargetFPS(60);
     Image icon = LoadImage("res/icon.png");
 
     if(icon.data) {
@@ -1334,6 +1346,24 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     int grid_mask = 0;
 
+    Shader shader;
+    Mesh cube;
+
+    shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
+    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+    shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "color");
+    shader.locs[SHADER_LOC_VECTOR_VIEW]  = GetShaderLocation(shader, "viewPos");
+    cube = GenMeshCube(1.0f, 1.0f, 1.0f);
+
+
+    const float light_offset = 0.6;
+
+    Vector3 light_pos = gui_state->camera.position;
+    light_pos.z = light_pos.z + light_offset;
+
+    gui_state->light = CreateLight(LIGHT_POINT, light_pos, gui_state->camera.target, WHITE, shader);
+
     while(!WindowShouldClose()) {
 
         if(gui_state->draw_grid_only) {
@@ -1345,6 +1375,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         }
 
         UpdateCamera(&(gui_state->camera));
+
+        light_pos = gui_state->camera.position;
+        light_pos.z = light_pos.z + light_offset;
+        gui_state->light.position = light_pos;
+        gui_state->light.target = gui_state->camera.target;
+        UpdateLightValues(shader, gui_state->light);
 
         BeginDrawing();
 
@@ -1385,10 +1421,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             if(draw_type == DRAW_SIMULATION) {
-                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state, grid_mask);
+                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state, grid_mask, shader, cube);
                 draw_alg_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
             } else if(draw_type == DRAW_FILE) {
-                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, grid_mask);
+                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, grid_mask, shader, cube);
                 draw_vtk_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
             }
 

@@ -247,20 +247,7 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
     }
 }
 
-#define MAYBE_INIT_SHADER_AND_MESH()                                                                                                                           \
-    static Shader shader;                                                                                                                                      \
-    static Mesh cube;                                                                                                                                          \
-                                                                                                                                                               \
-    static bool first_call = true;                                                                                                                             \
-    if(first_call) {                                                                                                                                           \
-        shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");                                                                       \
-        shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");                                                                                 \
-        shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");                                                           \
-        shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "color");                                                                       \
-        cube = GenMeshCube(1.0f, 1.0f, 1.0f);                                                                                                                  \
-        first_call = false;                                                                                                                                    \
-    }
-void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
+void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
 
@@ -274,8 +261,6 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
     point3d_array points = grid_to_draw->points;
     if(!points)
         return;
-
-    MAYBE_INIT_SHADER_AND_MESH();
 
     uint32_t n_active = grid_to_draw->num_cells;
 
@@ -437,15 +422,12 @@ void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_
     }
 }
 
-void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
-
+void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
     if(!grid_to_draw)
         return;
-
-    MAYBE_INIT_SHADER_AND_MESH();
 
     struct voxel voxel;
 
