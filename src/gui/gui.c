@@ -946,6 +946,9 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         }
 
         if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
+                
+            if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) return;
+            
             gui_config->current_file_index++;
             CHECK_FILE_INDEX(gui_config);
             omp_unset_lock(&gui_config->sleep_lock);
@@ -955,6 +958,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         if(gui_config->draw_type == DRAW_FILE) {
             // Return one step only works on file visualization...
             if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
+                if(gui_config->final_file_index == 0) return;
                 gui_config->current_file_index--;
                 CHECK_FILE_INDEX(gui_config);
                 omp_unset_lock(&gui_config->sleep_lock);
@@ -1022,10 +1026,11 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-
     if(IsKeyPressed(KEY_SPACE)) {
-        if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index != 0) {
-            gui_config->paused = !gui_config->paused;
+        if(gui_config->draw_type == DRAW_FILE) {
+            if(gui_config->final_file_index != 0) {
+                gui_config->paused = !gui_config->paused;
+            }
         } else {
             gui_config->paused = !gui_config->paused;
         }
