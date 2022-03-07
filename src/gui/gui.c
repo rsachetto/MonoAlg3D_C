@@ -1362,7 +1362,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     Vector3 light_pos = gui_state->camera.position;
     light_pos.z = light_pos.z + light_offset;
 
-    gui_state->light = CreateLight(LIGHT_POINT, light_pos, gui_state->camera.target, WHITE, shader);
+    gui_state->light = CreateLight(LIGHT_DIRECTIONAL, light_pos, gui_state->camera.target, WHITE, shader);
 
     while(!WindowShouldClose()) {
 

@@ -31,7 +31,7 @@ void main() {
 
     vec3 lightDot = vec3(0.0);
     vec3 normal = normalize(fragNormal);
-    float ambientStrength = 0.01;
+    float ambientStrength = 0.1;
     vec3 ambient = vec3(1.0);
 
     for (int i = 0; i < MAX_LIGHTS; i++)
