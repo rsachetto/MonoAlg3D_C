@@ -210,6 +210,24 @@ struct gui_state {
     Light light;
 
     bool double_clicked;
+
+    Vector3 plane_normal;
+    Vector3 plane_point;
+
+    bool slicing;
+    bool sliced;
+    bool plane_loaded;
+    bool visibility_recalculated;
+    ui8_array old_cell_visibility;
+    bool *exclude_from_mesh;
+
+    float plane_roll;
+    float plane_pitch;
+    float plane_tx;
+    float plane_ty;
+    float plane_tz;
+
+
 };
 
 struct mesh_info {

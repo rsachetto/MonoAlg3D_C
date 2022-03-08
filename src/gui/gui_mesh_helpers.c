@@ -308,9 +308,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
 
     bool collision = false;
 
+    Vector3 n = gui_state->plane_normal;
+    Vector3 p = gui_state->plane_point;
+
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
-        if(grid_mask != 2) {
+        if(grid_mask != 2 && !gui_state->sliced) {
             if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
                 j += 1;
                 continue;
@@ -328,6 +331,21 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         mesh_center_y = (float)points[cells[i]].y + dy / 2.0f;
         mesh_center_z = (float)points[cells[i]].z + dz / 2.0f;
 
+        voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
+        voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
+        voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
+
+        //TODO: maybe we do not need to check the plain
+        if(gui_state->slicing || gui_state->sliced) {
+            Vector3 test = Vector3Subtract(voxel.position_draw, p);
+            float side = Vector3DotProduct(test, n);
+
+            if(side < 0) {
+                j += 1;
+                continue;
+            }
+        }
+
         Color c = BLUE;
         voxel.v = 0.0;
 
@@ -341,10 +359,6 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         }
 
         c = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
-
-        voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
-        voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
-        voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
 
         voxel.size.x = dx / scale;
         voxel.size.y = dy / scale;
@@ -373,7 +387,6 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
 }
 
 void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
-
 
     if(gui_config->grid_info.vtk_grid == NULL || gui_config->grid_info.vtk_grid->purkinje == NULL) return;
 

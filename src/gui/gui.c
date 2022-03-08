@@ -117,6 +117,19 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->controls_window.show = true;
 
+    gui_state->slicing = false;
+    gui_state->sliced = false;
+    gui_state->visibility_recalculated = false;
+    gui_state->old_cell_visibility = NULL;
+    gui_state->exclude_from_mesh = NULL;
+
+    gui_state->plane_roll  = 0.0;
+    gui_state->plane_pitch = 0.0;
+    gui_state->plane_tx    = 0.0;
+    gui_state->plane_ty    = 0.0;
+    gui_state->plane_tz    = 0.0;
+
+
 #define NUM_BUTTONS 6
     gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
     gui_state->controls_window.bounds.height = 38.0f + WINDOW_STATUSBAR_HEIGHT;
@@ -208,6 +221,14 @@ static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_stat
         reset_ui(gui_state);
 
         gui_state->show_coordinates = true;
+        gui_state->sliced = false;
+        gui_state->slicing = false;
+
+        gui_state->plane_roll  = 0.0;
+        gui_state->plane_pitch = 0.0;
+        gui_state->plane_tx    = 0.0;
+        gui_state->plane_ty    = 0.0;
+        gui_state->plane_tz    = 0.0;
     }
 }
 
@@ -914,6 +935,22 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
                 return;
             }
+            else if(IsKeyPressed(KEY_F)) {
+                gui_state->search_window.show = true;
+                gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
+                gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
+                return;
+            } else if(IsKeyPressed(KEY_L)) {
+                gui_state->light.enabled = !gui_state->light.enabled;
+                return;
+            }
+        }
+
+      if(IsKeyDown(KEY_RIGHT_ALT) || IsKeyDown((KEY_LEFT_ALT))) {
+            if(IsKeyPressed(KEY_S)) {
+                gui_state->slicing = true;
+                gui_state->sliced = false;
+            }
         }
 
         int kp = GetKeyPressed();
@@ -945,34 +982,59 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             }
         }
 
-        if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
-                
-            if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) return;
-            
-            gui_config->current_file_index++;
-            CHECK_FILE_INDEX(gui_config);
-            omp_unset_lock(&gui_config->sleep_lock);
-            return;
-        }
+        if(gui_state->slicing) {
 
-        if(gui_config->draw_type == DRAW_FILE) {
-            // Return one step only works on file visualization...
-            if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
-                if(gui_config->final_file_index == 0) return;
-                gui_config->current_file_index--;
+            if(IsKeyDown(KEY_ENTER)) {
+                gui_state->slicing = false;
+                gui_state->sliced = true;
+            }
+
+            if(IsKeyDown(KEY_BACKSPACE)) {
+                gui_state->slicing = false;
+                gui_state->sliced = false;
+                gui_state->visibility_recalculated = false;
+            }
+
+            if(IsKeyDown(KEY_LEFT_ALT)) {
+                // Plane roll (z-axis) controls
+                if (IsKeyDown(KEY_LEFT)) gui_state->plane_roll += 1.0;
+                else if (IsKeyDown(KEY_RIGHT)) gui_state->plane_roll -= 1.0;
+
+                if (IsKeyDown(KEY_DOWN)) gui_state->plane_pitch += 1.0;
+                else if (IsKeyDown(KEY_UP)) gui_state->plane_pitch -= 1.0;
+
+            }
+            else {
+
+                // Plane roll (z-axis) controls
+                if (IsKeyDown(KEY_LEFT)) gui_state->plane_tx -= 0.1;
+                else if (IsKeyDown(KEY_RIGHT)) gui_state->plane_tx += 0.1;
+
+                if (IsKeyDown(KEY_DOWN)) gui_state->plane_ty -= 0.1;
+                else if (IsKeyDown(KEY_UP)) gui_state->plane_ty += 0.1;
+            }
+        }
+        else {
+            if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
+
+                if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) return;
+
+                gui_config->current_file_index++;
                 CHECK_FILE_INDEX(gui_config);
                 omp_unset_lock(&gui_config->sleep_lock);
                 return;
             }
-        }
-    }
 
-    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-        if(IsKeyPressed(KEY_F)) {
-            gui_state->search_window.show = true;
-            gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
-            gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
-            return;
+            if(gui_config->draw_type == DRAW_FILE) {
+                // Return one step only works on file visualization...
+                if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
+                    if(gui_config->final_file_index == 0) return;
+                    gui_config->current_file_index--;
+                    CHECK_FILE_INDEX(gui_config);
+                    omp_unset_lock(&gui_config->sleep_lock);
+                    return;
+                }
+            }
         }
     }
 
@@ -1014,27 +1076,22 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-        if(IsKeyPressed(KEY_L)) {
-            gui_state->light.enabled = !gui_state->light.enabled;
-            return;
-        }
-    }
-
     if(IsKeyPressed(KEY_L)) {
         gui_state->draw_grid_lines = !gui_state->draw_grid_lines;
         return;
     }
 
     if(IsKeyPressed(KEY_SPACE)) {
-        if(gui_config->draw_type == DRAW_FILE) {
-            if(gui_config->final_file_index != 0) {
+        if(!gui_state->slicing) {
+            if(gui_config->draw_type == DRAW_FILE) {
+                if(gui_config->final_file_index != 0) {
+                    gui_config->paused = !gui_config->paused;
+                }
+            } else {
                 gui_config->paused = !gui_config->paused;
             }
-        } else {
-            gui_config->paused = !gui_config->paused;
+            return;
         }
-        return;
     }
 
     if(IsKeyPressed(KEY_R)) {
@@ -1361,13 +1418,20 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     shader.locs[SHADER_LOC_VECTOR_VIEW]  = GetShaderLocation(shader, "viewPos");
     cube = GenMeshCube(1.0f, 1.0f, 1.0f);
 
-
+    Model plane;
+    Color plane_color = GREEN;
+    plane_color.a = 25;
+  
+    //Lights
     const float light_offset = 0.6;
 
     Vector3 light_pos = gui_state->camera.position;
     light_pos.z = light_pos.z + light_offset;
 
     gui_state->light = CreateLight(LIGHT_DIRECTIONAL, light_pos, gui_state->camera.target, WHITE, shader);
+    //
+
+    Matrix rotation_matrix;
 
     while(!WindowShouldClose()) {
 
@@ -1412,8 +1476,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             ClearBackground(GRAY);
 
-            BeginMode3D(gui_state->camera);
-
             if(!mesh_info->center_calculated) {
                 if(draw_type == DRAW_SIMULATION) {
                     mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
@@ -1423,6 +1485,27 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                     gui_state->max_data_index = arrlen(gui_config->grid_info.vtk_grid->extra_values);
                 }
                 scale = fmaxf(mesh_offset.x, fmaxf(mesh_offset.y, mesh_offset.z)) / 1.8f;
+
+                Vector2 pos;
+                pos.x = (mesh_info->max_size.x - mesh_info->min_size.x)/scale;
+                pos.y = (mesh_info->max_size.z - mesh_info->min_size.z)/scale;
+                float mult = 1.2;
+                plane = LoadModelFromMesh(GenMeshCube(pos.x*mult,0.1/scale,pos.y*mult));
+            }
+
+            if(gui_state->slicing) {
+                plane.transform = MatrixTranslate(gui_state->plane_tx, gui_state->plane_ty, gui_state->plane_tz);
+                rotation_matrix = MatrixRotateXYZ((Vector3){ DEG2RAD*gui_state->plane_pitch, 0.0, DEG2RAD*gui_state->plane_roll });
+                plane.transform = MatrixMultiply(plane.transform, rotation_matrix);
+
+                gui_state->plane_normal = Vector3Normalize(Vector3Transform((Vector3){0, 1, 0}, rotation_matrix));
+                gui_state->plane_point = Vector3Transform((Vector3){0,0,0}, plane.transform);
+            }
+            
+            BeginMode3D(gui_state->camera);
+
+            if(gui_state->slicing) {
+                DrawModel(plane, (Vector3){0,0,0}, 1.0f, plane_color);
             }
 
             if(draw_type == DRAW_SIMULATION) {
@@ -1449,11 +1532,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(gui_state->show_coordinates) {
                 DrawText("x", (int)gui_state->coordinates_label_x_position.x, (int)gui_state->coordinates_label_x_position.y, (int)gui_state->font_size_big,
-                         RED);
+                        RED);
                 DrawText("y", (int)gui_state->coordinates_label_y_position.x, (int)gui_state->coordinates_label_y_position.y, (int)gui_state->font_size_big,
-                         GREEN);
+                        GREEN);
                 DrawText("z", (int)gui_state->coordinates_label_z_position.x, (int)gui_state->coordinates_label_z_position.y, (int)gui_state->font_size_big,
-                         DARKBLUE);
+                        DARKBLUE);
             }
 
             if(gui_state->mesh_info_box.window.show) {
@@ -1529,7 +1612,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             // This should not happen... but it does....
             if(gui_config->error_message) {
                 DrawTextEx(gui_state->font, gui_config->error_message, (Vector2){(float)posx + ((float)rec_width - error_message_width.x) / 2, (float)posy},
-                           gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+                        gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
             }
         }
 
@@ -1539,13 +1622,13 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         Vector2 text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
 
         DrawTextEx(gui_state->font, text,
-                   (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y - 30)},
-                   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+                (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y - 30)},
+                gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
         text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
 
         DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
-                   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+                gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
         float upper_y = text_size.y + 30;
 
@@ -1555,13 +1638,13 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(gui_config->draw_type == DRAW_SIMULATION) {
                 text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i", gui_state->current_mouse_over_volume.position_draw.x,
-                                  gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
-                                  gui_state->current_mouse_over_volume.matrix_position + 1);
+                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
+                        gui_state->current_mouse_over_volume.matrix_position + 1);
 
             } else {
 
                 text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
-                                  gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z);
+                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z);
             }
 
             text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);

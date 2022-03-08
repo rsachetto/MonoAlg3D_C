@@ -2398,7 +2398,7 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_progress
     return vtk_grid;
 }
 
-void set_vtk_grid_visibility(struct vtk_unstructured_grid **vtk_grid) {
+void set_vtk_grid_visibility_excluding(struct vtk_unstructured_grid **vtk_grid, bool *indexes) {
 
     int64_t *cells = (*vtk_grid)->cells;
     if(!cells)
@@ -2417,21 +2417,33 @@ void set_vtk_grid_visibility(struct vtk_unstructured_grid **vtk_grid) {
 
         struct point_3d mesh_center;
         struct point_3d discretization;
+        const struct point_3d cell_point = points[cells[i]];
 
-        discretization.x = (float)fabs((points[cells[i]].x - points[cells[i + 1]].x));
-        discretization.y = (float)fabs((points[cells[i]].y - points[cells[i + 3]].y));
-        discretization.z = (float)fabs((points[cells[i]].z - points[cells[i + 4]].z));
+        discretization.x = (float)fabs((cell_point.x - points[cells[i + 1]].x));
+        discretization.y = (float)fabs((cell_point.y - points[cells[i + 3]].y));
+        discretization.z = (float)fabs((cell_point.z - points[cells[i + 4]].z));
 
-        mesh_center.x = (float)points[cells[i]].x + discretization.x / 2.0f;
-        mesh_center.y = (float)points[cells[i]].y + discretization.y / 2.0f;
-        mesh_center.z = (float)points[cells[i]].z + discretization.z / 2.0f;
+        mesh_center.x = (float)cell_point.x + discretization.x / 2.0f;
+        mesh_center.y = (float)cell_point.y + discretization.y / 2.0f;
+        mesh_center.z = (float)cell_point.z + discretization.z / 2.0f;
 
-        hmput(cells_hash, mesh_center, discretization);
+        if(indexes == NULL) {
+            hmput(cells_hash, mesh_center, discretization);
+        }
+        else {
+            if(indexes[i] == false) {
+                hmput(cells_hash, mesh_center, discretization);
+            }
+        }
 
     }
 
     calc_visibility(vtk_grid, cells_hash, n_active);
-    
+
+}
+
+void set_vtk_grid_visibility(struct vtk_unstructured_grid **vtk_grid) {
+    set_vtk_grid_visibility_excluding(vtk_grid, NULL);
 }
 
 void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_grid, const char *file_name) {
