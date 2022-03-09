@@ -32,7 +32,6 @@
 
 #undef RAYGUI_IMPLEMENTATION
 
-
 static void set_camera_params(Camera3D *camera, bool set_mode) {
     camera->position = (Vector3){0.1f, 0.1f, 12.0f};
     camera->target = (Vector3){0.f, 0.f, 0.f};
