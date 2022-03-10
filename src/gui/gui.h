@@ -166,6 +166,7 @@ struct gui_state {
     bool draw_grid_only;
 
     struct gui_text_window help_box;
+    struct gui_text_window slice_help_box;
     struct gui_text_window mesh_info_box;
     struct gui_text_window end_info_box;
     struct window_commom search_window;

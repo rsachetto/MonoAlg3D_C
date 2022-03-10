@@ -1257,7 +1257,7 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
     }
 }
 
-static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int mesh_info_box_lines, int end_info_box_lines, float box_w,
+static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int mesh_info_box_lines, int end_info_box_lines, float box_w,
                                        float text_offset) {
 
     float margin = 25.0f;
@@ -1265,6 +1265,10 @@ static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box
     gui_state->help_box.window.bounds.width = box_w;
     gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin;
     gui_state->help_box.num_lines = help_box_lines;
+
+    gui_state->slice_help_box.window.bounds.width = box_w - 100;
+    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + margin;
+    gui_state->slice_help_box.num_lines = slice_help_box_lines;
 
     box_w = box_w - 100;
     gui_state->mesh_info_box.window.bounds.width = box_w;
@@ -1387,6 +1391,18 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     int help_box_lines = SIZEOF(help_box_strings);
 
+    gui_state->help_box.lines = (char **)help_box_strings;
+    gui_state->help_box.title = "Default controls";
+
+    const char *slice_help_box_strings[] = {" - Press backspace to reset and exit slice mode",
+                                            " - Press enter to accept the sliced mesh",
+                                            " - Move the slicing plane with arrow keys",
+                                            " - Rotate the slicing plane with ALT + arrow keys"};
+
+    int slice_help_box_lines = SIZEOF(slice_help_box_strings);
+    gui_state->slice_help_box.lines = (char **)slice_help_box_strings;
+    gui_state->slice_help_box.title = "Mesh slicing help";
+
     float wider_text_w = 0;
     float wider_text_h = 0;
 
@@ -1398,9 +1414,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         }
     }
 
-    gui_state->help_box.lines = (char **)help_box_strings;
-    gui_state->help_box.title = "Default controls";
-
     float text_offset = 1.5f * wider_text_h;
     float box_w = wider_text_w * 1.08f;
 
@@ -1409,7 +1422,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     gui_state->mesh_info_box.title = "Mesh information";
     gui_state->mesh_info_box.lines = (char **)malloc(sizeof(char *) * mesh_info_box_lines);
-    configure_info_boxes_sizes(gui_state, help_box_lines, mesh_info_box_lines, end_info_box_lines, box_w, text_offset);
+    configure_info_boxes_sizes(gui_state, help_box_lines, slice_help_box_lines, mesh_info_box_lines, end_info_box_lines, box_w, text_offset);
 
     Vector2 error_message_width;
     struct mesh_info *mesh_info = new_mesh_info();
@@ -1577,7 +1590,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             if(gui_state->help_box.window.show) {
-                draw_text_window(&gui_state->help_box, gui_state, text_offset);
+                if(gui_state->slicing){
+                    draw_text_window(&gui_state->slice_help_box, gui_state, text_offset);
+                }
+                else {
+                    draw_text_window(&gui_state->help_box, gui_state, text_offset);
+                }
             }
 
             if(!gui_config->simulating) {
@@ -1643,8 +1661,14 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
         text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
 
-        DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
-                gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+        if(!gui_state->slicing) {
+            DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
+                    gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+        }
+        else {
+            DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
+                    gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+        }
 
         float upper_y = text_size.y + 30;
 
