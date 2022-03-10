@@ -65,5 +65,6 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_progress
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char* source, size_t source_size);
 void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *grid, const char *file_name);
 void set_vtk_grid_visibility(struct vtk_unstructured_grid **vtk_grid);
-void set_vtk_grid_visibility_excluding(struct vtk_unstructured_grid **vtk_grid, bool *indexes);
+void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell_hash_entry *cells, uint32_t num_cells);
+
 #endif // MONOALG3D_VTK_UNSTRUCTURED_GRID_H

@@ -1044,7 +1044,6 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
         case 'u':
             user_args->ui_scale = fabsf((float)strtod(optarg, NULL));
             break;
-
         case 'h': /* fall-through is intentional */
         case '?':
             display_visualization_usage(argv);

@@ -227,6 +227,8 @@ struct gui_state {
     float plane_ty;
     float plane_tz;
 
+    float mesh_scale_factor;
+    Vector3 mesh_offset;
 
 };
 

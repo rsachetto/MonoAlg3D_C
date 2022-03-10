@@ -136,6 +136,7 @@ static void init_gui_config_for_simulation(struct user_options *options, struct 
     gui_config->error_message = NULL;
     gui_config->grid_info.loaded = false;
     gui_config->int_scale = false;
+    gui_config->ui_scale = 0.0;
 }
 #endif
 

@@ -247,7 +247,7 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
     }
 }
 
-void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
+void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
 
@@ -311,9 +311,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
     Vector3 n = gui_state->plane_normal;
     Vector3 p = gui_state->plane_point;
 
+    float scale = gui_state->mesh_scale_factor;
+    Vector3 mesh_offset = gui_state->mesh_offset;
+
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
-        if(grid_mask != 2 && !gui_state->sliced) {
+        if(grid_mask != 2) {
             if(grid_to_draw->cell_visibility && !grid_to_draw->cell_visibility[j]) {
                 j += 1;
                 continue;
@@ -335,8 +338,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
         voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
         voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
 
-        //TODO: maybe we do not need to check the plain
-        if(gui_state->slicing || gui_state->sliced) {
+        if(gui_state->slicing) {
             Vector3 test = Vector3Subtract(voxel.position_draw, p);
             float side = Vector3DotProduct(test, n);
 
@@ -386,7 +388,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, Vector3 mesh
     free(colors);
 }
 
-void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
+void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask) {
 
     if(gui_config->grid_info.vtk_grid == NULL || gui_config->grid_info.vtk_grid->purkinje == NULL) return;
 
@@ -408,6 +410,9 @@ void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_
     float max_v = gui_config->max_v;
 
     int j = 0;
+
+    float scale = gui_state->mesh_scale_factor;
+    Vector3 mesh_offset = gui_state->mesh_offset;
 
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
@@ -435,7 +440,7 @@ void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_
     }
 }
 
-void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
+void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
@@ -447,6 +452,9 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, floa
     uint32_t n_active = grid_to_draw->num_active_cells;
     struct cell_node **ac = grid_to_draw->active_cells;
 
+    float scale = gui_state->mesh_scale_factor;
+    Vector3 mesh_offset = gui_state->mesh_offset;
+    
     float offsetx_over_scale = mesh_offset.x / scale;
     float offsety_over_scale = mesh_offset.y / scale;
     float offsetz_over_scale = mesh_offset.z / scale;
@@ -466,6 +474,8 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, floa
         int count = 0;
 
         bool collision = false;
+        Vector3 n = gui_state->plane_normal;
+        Vector3 p = gui_state->plane_point;
 
         for(uint32_t i = 0; i < n_active; i++) {
 
@@ -483,6 +493,17 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, floa
             voxel.position_draw.y = (float)grid_cell->center.y / scale - offsety_over_scale;
             voxel.position_draw.z = (float)grid_cell->center.z / scale - offsetz_over_scale;
 
+            /*
+             * No slicing for simulation visualization for now
+            if(gui_state->slicing) {
+                Vector3 test = Vector3Subtract(voxel.position_draw, p);
+                float side = Vector3DotProduct(test, n);
+
+                if(side < 0) {
+                    continue;
+                }
+            }
+            */
             voxel.size.x = (float)grid_cell->discretization.x / scale;
             voxel.size.y = (float)grid_cell->discretization.y / scale;
             voxel.size.z = (float)grid_cell->discretization.z / scale;
@@ -511,7 +532,7 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, Vector3 mesh_offset, floa
     }
 }
 
-void draw_alg_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_offset, float scale, struct gui_state *gui_state, int grid_mask) {
+void draw_alg_purkinje_network(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask) {
 
     if(gui_config->grid_info.alg_grid == NULL || gui_config->grid_info.alg_grid->purkinje == NULL) return;
 
@@ -525,6 +546,8 @@ void draw_alg_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_
     float min_v = gui_config->min_v;
     float max_v = gui_config->max_v;
 
+    float scale = gui_state->mesh_scale_factor;
+    Vector3 mesh_offset = gui_state->mesh_offset;
 
     for(uint32_t i = 0; i < n_active-1; i++) {
 
@@ -541,5 +564,73 @@ void draw_alg_purkinje_network(struct gui_shared_info *gui_config, Vector3 mesh_
         Color c = get_color((ac[i]->v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
         DrawLine3D(start_pos, end_pos, c);
     }
+}
 
+void set_visibility_after_split(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
+    //TODO: extract function
+    struct vtk_unstructured_grid *grid = gui_config->grid_info.vtk_grid;
+
+    if(!grid)
+        return;
+
+    int64_t *cells = grid->cells;
+    if(!cells)
+        return;
+
+    point3d_array points = grid->points;
+    if(!points)
+        return;
+
+    uint32_t n_active = grid->num_cells;
+    uint32_t num_points = grid->points_per_cell;
+
+    Vector3 cube_position;
+    Vector3 n = gui_state->plane_normal;
+    Vector3 p = gui_state->plane_point;
+
+    if(gui_state->old_cell_visibility == NULL) {
+        int n_vis = arrlen(grid->cell_visibility);
+        arrsetlen(gui_state->old_cell_visibility, n_vis);
+        memcpy(gui_state->old_cell_visibility, grid->cell_visibility, n_vis*sizeof(uint8_t));
+    }
+
+    struct cell_hash_entry *cells_hash =  NULL;
+
+    for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+        struct point_3d mesh_center;
+        struct point_3d discretization;
+        const struct point_3d cell_point = points[cells[i]];
+
+        discretization.x = (float)fabs((cell_point.x - points[cells[i + 1]].x));
+        discretization.y = (float)fabs((cell_point.y - points[cells[i + 3]].y));
+        discretization.z = (float)fabs((cell_point.z - points[cells[i + 4]].z));
+
+        mesh_center.x = (float)cell_point.x + discretization.x / 2.0f;
+        mesh_center.y = (float)cell_point.y + discretization.y / 2.0f;
+        mesh_center.z = (float)cell_point.z + discretization.z / 2.0f;
+
+        cube_position.x = (mesh_center.x - gui_state->mesh_offset.x) / gui_state->mesh_scale_factor;
+        cube_position.y = (mesh_center.y - gui_state->mesh_offset.y) / gui_state->mesh_scale_factor;
+        cube_position.z = (mesh_center.z - gui_state->mesh_offset.z) / gui_state->mesh_scale_factor;
+
+        //Testing against the plane
+        Vector3 test = Vector3Subtract(cube_position, p);
+        float side = Vector3DotProduct(test, n);
+
+        if(side < 0) {
+            discretization = (struct point_3d){-1,-1,-1};
+        }
+
+        hmput(cells_hash, mesh_center, discretization);
+    }
+
+    calc_visibility(&gui_config->grid_info.vtk_grid, cells_hash, n_active);
+    hmfree(cells_hash);
+}
+
+void reset_grid_visibility(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
+    struct vtk_unstructured_grid *grid = gui_config->grid_info.vtk_grid;
+    int n_vis = arrlen(gui_state->old_cell_visibility);
+    arrsetlen(grid->cell_visibility, n_vis);
+    memcpy(grid->cell_visibility, gui_state->old_cell_visibility, n_vis*sizeof(uint8_t));
 }

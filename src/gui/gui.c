@@ -6,6 +6,7 @@
 #include "gui_mesh_helpers.h"
 #include "gui_window_helpers.h"
 
+#include <bits/stdint-uintn.h>
 #include <float.h>
 #include <string.h>
 
@@ -29,7 +30,6 @@
 
 #define RLIGHTS_IMPLEMENTATION
 #include "../3dparty/raylib/src/extras/rlights.h"
-
 #undef RAYGUI_IMPLEMENTATION
 
 static void set_camera_params(Camera3D *camera, bool set_mode) {
@@ -128,6 +128,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->plane_ty    = 0.0;
     gui_state->plane_tz    = 0.0;
 
+    gui_state->mesh_scale_factor = 1.0;
+    gui_state->mesh_offset = (Vector3){0, 0, 0};
 
 #define NUM_BUTTONS 6
     gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
@@ -592,6 +594,7 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
 
 #define NOT_PAUSED !gui_config->paused
 #define NOT_IN_DRAW gui_config->draw_type != DRAW_FILE
+#define IN_DRAW gui_config->draw_type == DRAW_FILE
 
 #define DISABLE_IF_NOT_IN_DRAW                                                                                                                                 \
     if(NOT_IN_DRAW) {                                                                                                                                          \
@@ -946,10 +949,17 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         }
 
       if(IsKeyDown(KEY_RIGHT_ALT) || IsKeyDown((KEY_LEFT_ALT))) {
-            if(IsKeyPressed(KEY_S)) {
-                gui_state->slicing = true;
-                gui_state->sliced = false;
-            }
+          if(IsKeyPressed(KEY_S)) {
+              if(IN_DRAW) {
+                  gui_state->slicing = true;
+                  gui_state->sliced = false;
+
+                  if(gui_state->old_cell_visibility) {
+                      reset_grid_visibility(gui_config, gui_state);
+                  }
+              }
+
+          }
         }
 
         int kp = GetKeyPressed();
@@ -986,12 +996,13 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             if(IsKeyDown(KEY_ENTER)) {
                 gui_state->slicing = false;
                 gui_state->sliced = true;
+                set_visibility_after_split(gui_config, gui_state);
             }
 
             if(IsKeyDown(KEY_BACKSPACE)) {
                 gui_state->slicing = false;
                 gui_state->sliced = false;
-                gui_state->visibility_recalculated = false;
+                reset_grid_visibility(gui_config, gui_state);
             }
 
             if(IsKeyDown(KEY_LEFT_ALT)) {
@@ -1331,6 +1342,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     InitWindow(0, 0, window_title);
     free(window_title);
 
+    SetTargetFPS(60);
+
     Image icon = LoadImage("res/icon.png");
 
     if(icon.data) {
@@ -1343,14 +1356,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         Vector2 ui_scale = GetWindowScaleDPI();
         gui_config->ui_scale = ui_scale.x;
     }
+
     const int font_size_small = 16;
     const int font_size_big = 20;
 
     struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
-
-    float scale = 1.0f;
-
-    Vector3 mesh_offset = (Vector3){0, 0, 0};
 
     const char *help_box_strings[] = {" - Mouse Wheel to Zoom in-out",
                                       " - Mouse Wheel Pressed to Pan",
@@ -1432,6 +1442,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     Matrix rotation_matrix;
 
+    if(NOT_IN_DRAW) {
+        gui_config->progress = 100;
+    }
+
     while(!WindowShouldClose()) {
 
         if(gui_state->draw_grid_only) {
@@ -1477,17 +1491,21 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(!mesh_info->center_calculated) {
                 if(draw_type == DRAW_SIMULATION) {
-                    mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
+                    gui_state->mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
                     gui_state->max_data_index = 0;
                 } else {
-                    mesh_offset = find_mesh_center_vtk(gui_config->grid_info.vtk_grid, mesh_info);
+                    gui_state->mesh_offset = find_mesh_center_vtk(gui_config->grid_info.vtk_grid, mesh_info);
                     gui_state->max_data_index = arrlen(gui_config->grid_info.vtk_grid->extra_values);
                 }
-                scale = fmaxf(mesh_offset.x, fmaxf(mesh_offset.y, mesh_offset.z)) / 1.8f;
+                
+                gui_state->mesh_scale_factor = fmaxf(gui_state->mesh_offset.x, fmaxf(gui_state->mesh_offset.y, gui_state->mesh_offset.z)) / 1.8f;
+
+                const float scale = gui_state->mesh_scale_factor;
 
                 Vector2 pos;
                 pos.x = (mesh_info->max_size.x - mesh_info->min_size.x)/scale;
                 pos.y = (mesh_info->max_size.z - mesh_info->min_size.z)/scale;
+
                 float mult = 1.2;
                 plane = LoadModelFromMesh(GenMeshCube(pos.x*mult,0.1/scale,pos.y*mult));
             }
@@ -1508,11 +1526,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             if(draw_type == DRAW_SIMULATION) {
-                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state, grid_mask, shader, cube);
-                draw_alg_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
+                draw_alg_mesh(gui_config, gui_state, grid_mask, shader, cube);
+                draw_alg_purkinje_network(gui_config, gui_state, grid_mask);
             } else if(draw_type == DRAW_FILE) {
-                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, grid_mask, shader, cube);
-                draw_vtk_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
+                draw_vtk_unstructured_grid(gui_config, gui_state, grid_mask, shader, cube);
+                draw_vtk_purkinje_network(gui_config, gui_state, grid_mask);
             }
 
             gui_state->double_clicked = false;
@@ -1596,7 +1614,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             error_message_width = MeasureTextEx(gui_state->font, gui_config->error_message, gui_state->font_size_big, spacing);
-
             int posx = GetScreenWidth() / 2 - (int)error_message_width.x / 2;
             int posy = GetScreenHeight() / 2 - 50;
 

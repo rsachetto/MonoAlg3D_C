@@ -248,65 +248,60 @@ void binary_grid_error(struct vtk_unstructured_grid **vtk_grid) {
     *vtk_grid = NULL;
 }
 
-static void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell_hash_entry *cells, uint32_t num_cells) {
+#define SET_VISIBLE()                                                                                                                                          \
+    i = hmgeti(cells, neighbour_center);                                                                                                                       \
+    if(i == -1) {                                                                                                                                              \
+        arrpush((*vtk_grid)->cell_visibility, 1);                                                                                                              \
+        continue;                                                                                                                                              \
+    } else {                                                                                                                                                   \
+        struct point_3d n_discretization = cells[i].value;                                                                                                     \
+        if(n_discretization.x == -1) {                                                                                                                         \
+            arrpush((*vtk_grid)->cell_visibility, 1);                                                                                                          \
+            continue;                                                                                                                                          \
+        }                                                                                                                                                      \
+    }
 
-    for(int i = 0; i < num_cells; i++) {
-        struct point_3d center = cells[i].key;
-        struct point_3d discretization = cells[i].value;
+
+void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell_hash_entry *cells, uint32_t num_cells) {
+
+    if((*vtk_grid)->cell_visibility != NULL) {
+        arrsetlen((*vtk_grid)->cell_visibility, 0);
+    }
+
+    int i;
+
+    for(int k = 0; k < num_cells; k++) {
+        struct point_3d center = cells[k].key;
+        struct point_3d discretization = cells[k].value;
+
+        if(discretization.x == -1) {
+            arrpush((*vtk_grid)->cell_visibility, 0);
+            continue;
+        }
 
         //FRONT CELL
         struct point_3d neighbour_center = TRANSLATE(center, 0, 0, discretization.z);
-        int i = hmgeti(cells, neighbour_center);
-
-        if(i == -1) {
-            arrpush((*vtk_grid)->cell_visibility, 1);
-            continue;
-        }
-
+        SET_VISIBLE();
+       
         //BACK CELL
         neighbour_center = TRANSLATE(center, 0, 0, -discretization.z);
-        i = hmgeti(cells, neighbour_center);
-
-        if(i == -1) {
-            arrpush((*vtk_grid)->cell_visibility, 1);
-            continue;
-        }
+        SET_VISIBLE();
 
         //TOP CELL
         neighbour_center = TRANSLATE(center, 0, discretization.y, 0);
-        i = hmgeti(cells, neighbour_center);
-
-        if(i == -1) {
-            arrpush((*vtk_grid)->cell_visibility, 1);
-            continue;
-        }
+        SET_VISIBLE();
 
         //DOWN CELL
         neighbour_center = TRANSLATE(center, 0, -discretization.y, 0);
-        i = hmgeti(cells, neighbour_center);
-
-        if(i == -1) {
-            arrpush((*vtk_grid)->cell_visibility, 1);
-            continue;
-        }
+        SET_VISIBLE();
 
         //RIGHT CELL
         neighbour_center = TRANSLATE(center, discretization.x, 0, 0);
-        i = hmgeti(cells, neighbour_center);
-
-        if(i == -1) {
-            arrpush((*vtk_grid)->cell_visibility, 1);
-            continue;
-        }
+        SET_VISIBLE();
 
         //LEFT CELL
         neighbour_center = TRANSLATE(center, -discretization.x, 0, 0);
-        i = hmgeti(cells, neighbour_center);
-
-        if(i == -1) {
-            arrpush((*vtk_grid)->cell_visibility, 1);
-            continue;
-        }
+        SET_VISIBLE();
 
         //We have all neighbours, so we are not visible
         arrpush((*vtk_grid)->cell_visibility, 0);
@@ -2398,7 +2393,7 @@ struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file_with_progress
     return vtk_grid;
 }
 
-void set_vtk_grid_visibility_excluding(struct vtk_unstructured_grid **vtk_grid, bool *indexes) {
+void set_vtk_grid_visibility(struct vtk_unstructured_grid **vtk_grid) {
 
     int64_t *cells = (*vtk_grid)->cells;
     if(!cells)
@@ -2427,23 +2422,13 @@ void set_vtk_grid_visibility_excluding(struct vtk_unstructured_grid **vtk_grid, 
         mesh_center.y = (float)cell_point.y + discretization.y / 2.0f;
         mesh_center.z = (float)cell_point.z + discretization.z / 2.0f;
 
-        if(indexes == NULL) {
-            hmput(cells_hash, mesh_center, discretization);
-        }
-        else {
-            if(indexes[i] == false) {
-                hmput(cells_hash, mesh_center, discretization);
-            }
-        }
+        hmput(cells_hash, mesh_center, discretization);
 
     }
 
     calc_visibility(vtk_grid, cells_hash, n_active);
+    hmfree(cells_hash);
 
-}
-
-void set_vtk_grid_visibility(struct vtk_unstructured_grid **vtk_grid) {
-    set_vtk_grid_visibility_excluding(vtk_grid, NULL);
 }
 
 void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_grid, const char *file_name) {
