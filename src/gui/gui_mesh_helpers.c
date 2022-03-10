@@ -474,9 +474,11 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
         int count = 0;
 
         bool collision = false;
+        
+        /*
         Vector3 n = gui_state->plane_normal;
         Vector3 p = gui_state->plane_point;
-
+        */
         for(uint32_t i = 0; i < n_active; i++) {
 
             if(grid_mask != 2) {
