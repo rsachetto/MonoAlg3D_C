@@ -40,6 +40,8 @@ void check_colisions_for_move(struct gui_state *gui_state) {
         gui_state->search_window.move = true;
     } else if(COLIDE_STATUS_BAR(gui_state->mouse_pos, gui_state->help_box.window.bounds)) {
         gui_state->help_box.window.move = true;
+    } else if(COLIDE_STATUS_BAR(gui_state->mouse_pos, gui_state->slice_help_box.window.bounds)) {
+        gui_state->slice_help_box.window.move = true;
     } else if(COLIDE_STATUS_BAR(gui_state->mouse_pos, gui_state->mesh_info_box.window.bounds)) {
         gui_state->mesh_info_box.window.move = true;
     } else if(COLIDE_STATUS_BAR(gui_state->mouse_pos, gui_state->end_info_box.window.bounds)) {
@@ -103,6 +105,8 @@ void maybe_move_or_drag(struct gui_state *gui_state) {
 
     } else if(gui_state->help_box.window.move) {
         PERFORM_MOVE(gui_state->mouse_pos, gui_state->help_box.window);
+    } else if(gui_state->slice_help_box.window.move) {
+        PERFORM_MOVE(gui_state->mouse_pos, gui_state->slice_help_box.window);
     } else if(gui_state->mesh_info_box.window.move) {
         PERFORM_MOVE(gui_state->mouse_pos, gui_state->mesh_info_box.window);
     } else if(gui_state->end_info_box.window.move) {

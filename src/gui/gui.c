@@ -68,6 +68,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->scale.window.show = true;
 
     gui_state->help_box.window.show = false;
+    gui_state->slice_help_box.window.show = false;
 
     gui_state->current_data_index = -1;
 
@@ -116,17 +117,19 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->controls_window.show = true;
 
-    gui_state->slicing = false;
-    gui_state->sliced = false;
+    gui_state->slicing_mode = false;
+    gui_state->slicing_mesh = false;
+    gui_state->recalculating_visibility = false;
+
     gui_state->visibility_recalculated = false;
     gui_state->old_cell_visibility = NULL;
     gui_state->exclude_from_mesh = NULL;
 
-    gui_state->plane_roll  = 0.0;
+    gui_state->plane_roll = 0.0;
     gui_state->plane_pitch = 0.0;
-    gui_state->plane_tx    = 0.0;
-    gui_state->plane_ty    = 0.0;
-    gui_state->plane_tz    = 0.0;
+    gui_state->plane_tx = 0.0;
+    gui_state->plane_ty = 0.0;
+    gui_state->plane_tz = 0.0;
 
     gui_state->mesh_scale_factor = 1.0;
     gui_state->mesh_offset = (Vector3){0, 0, 0};
@@ -222,14 +225,14 @@ static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_stat
         reset_ui(gui_state);
 
         gui_state->show_coordinates = true;
-        gui_state->sliced = false;
-        gui_state->slicing = false;
+        gui_state->slicing_mesh = false;
+        gui_state->slicing_mode = false;
 
-        gui_state->plane_roll  = 0.0;
+        gui_state->plane_roll = 0.0;
         gui_state->plane_pitch = 0.0;
-        gui_state->plane_tx    = 0.0;
-        gui_state->plane_ty    = 0.0;
-        gui_state->plane_tz    = 0.0;
+        gui_state->plane_tx = 0.0;
+        gui_state->plane_ty = 0.0;
+        gui_state->plane_tz = 0.0;
     }
 }
 
@@ -936,8 +939,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 }
 
                 return;
-            }
-            else if(IsKeyPressed(KEY_F)) {
+            } else if(IsKeyPressed(KEY_F)) {
                 gui_state->search_window.show = true;
                 gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
                 gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
@@ -946,20 +948,6 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 gui_state->light.enabled = !gui_state->light.enabled;
                 return;
             }
-        }
-
-      if(IsKeyDown(KEY_RIGHT_ALT) || IsKeyDown((KEY_LEFT_ALT))) {
-          if(IsKeyPressed(KEY_S)) {
-              if(IN_DRAW) {
-                  gui_state->slicing = true;
-                  gui_state->sliced = false;
-
-                  if(gui_state->old_cell_visibility) {
-                      reset_grid_visibility(gui_config, gui_state);
-                  }
-              }
-
-          }
         }
 
         int kp = GetKeyPressed();
@@ -991,43 +979,60 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             }
         }
 
-        if(gui_state->slicing) {
+        if(IsKeyPressed(KEY_S)) {
+            if(IN_DRAW) {
+                gui_state->slicing_mode = true;
+                gui_state->slicing_mesh = false;
+
+                if(gui_state->old_cell_visibility) {
+                    reset_grid_visibility(gui_config, gui_state);
+                }
+            }
+        }
+
+        if(gui_state->slicing_mode) {
 
             if(IsKeyDown(KEY_ENTER)) {
-                gui_state->slicing = false;
-                gui_state->sliced = true;
-                set_visibility_after_split(gui_config, gui_state);
+                gui_state->slicing_mode = false;
+                gui_state->slicing_mesh = true;
             }
 
             if(IsKeyDown(KEY_BACKSPACE)) {
-                gui_state->slicing = false;
-                gui_state->sliced = false;
+                gui_state->slicing_mode = false;
+                gui_state->slicing_mesh = false;
                 reset_grid_visibility(gui_config, gui_state);
             }
 
             if(IsKeyDown(KEY_LEFT_ALT)) {
                 // Plane roll (z-axis) controls
-                if (IsKeyDown(KEY_LEFT)) gui_state->plane_roll += 1.0;
-                else if (IsKeyDown(KEY_RIGHT)) gui_state->plane_roll -= 1.0;
+                if(IsKeyDown(KEY_LEFT))
+                    gui_state->plane_roll += 1.0;
+                else if(IsKeyDown(KEY_RIGHT))
+                    gui_state->plane_roll -= 1.0;
 
-                if (IsKeyDown(KEY_DOWN)) gui_state->plane_pitch += 1.0;
-                else if (IsKeyDown(KEY_UP)) gui_state->plane_pitch -= 1.0;
+                if(IsKeyDown(KEY_DOWN))
+                    gui_state->plane_pitch += 1.0;
+                else if(IsKeyDown(KEY_UP))
+                    gui_state->plane_pitch -= 1.0;
 
-            }
-            else {
+            } else {
 
                 // Plane roll (z-axis) controls
-                if (IsKeyDown(KEY_LEFT)) gui_state->plane_tx -= 0.1;
-                else if (IsKeyDown(KEY_RIGHT)) gui_state->plane_tx += 0.1;
+                if(IsKeyDown(KEY_LEFT))
+                    gui_state->plane_tx -= 0.1;
+                else if(IsKeyDown(KEY_RIGHT))
+                    gui_state->plane_tx += 0.1;
 
-                if (IsKeyDown(KEY_DOWN)) gui_state->plane_ty -= 0.1;
-                else if (IsKeyDown(KEY_UP)) gui_state->plane_ty += 0.1;
+                if(IsKeyDown(KEY_DOWN))
+                    gui_state->plane_ty -= 0.1;
+                else if(IsKeyDown(KEY_UP))
+                    gui_state->plane_ty += 0.1;
             }
-        }
-        else {
+        } else {
             if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
 
-                if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) return;
+                if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0)
+                    return;
 
                 gui_config->current_file_index++;
                 CHECK_FILE_INDEX(gui_config);
@@ -1038,7 +1043,8 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             if(gui_config->draw_type == DRAW_FILE) {
                 // Return one step only works on file visualization...
                 if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
-                    if(gui_config->final_file_index == 0) return;
+                    if(gui_config->final_file_index == 0)
+                        return;
                     gui_config->current_file_index--;
                     CHECK_FILE_INDEX(gui_config);
                     omp_unset_lock(&gui_config->sleep_lock);
@@ -1092,7 +1098,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(IsKeyPressed(KEY_SPACE)) {
-        if(!gui_state->slicing) {
+        if(!gui_state->slicing_mode) {
             if(gui_config->draw_type == DRAW_FILE) {
                 if(gui_config->final_file_index != 0) {
                     gui_config->paused = !gui_config->paused;
@@ -1133,7 +1139,11 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(IsKeyPressed(KEY_H)) {
-        gui_state->help_box.window.show = !gui_state->help_box.window.show;
+        if(gui_state->slicing_mode) {
+            gui_state->slice_help_box.window.show = !gui_state->slice_help_box.window.show;
+        } else {
+            gui_state->help_box.window.show = !gui_state->help_box.window.show;
+        }
         return;
     }
 
@@ -1257,8 +1267,8 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
     }
 }
 
-static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int mesh_info_box_lines, int end_info_box_lines, float box_w,
-                                       float text_offset) {
+static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int mesh_info_box_lines,
+                                       int end_info_box_lines, float box_w, float text_offset) {
 
     float margin = 25.0f;
 
@@ -1387,6 +1397,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                                       " - Hold up arrow to advance time when paused",
                                       " - Double click on a volume to show the AP",
                                       " - from 1 to 0 to show different file column (or PGUP/PGDOWN)",
+                                      " - S to enter mesh slice mode",
                                       " - Space to start or pause simulation"};
 
     int help_box_lines = SIZEOF(help_box_strings);
@@ -1394,10 +1405,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     gui_state->help_box.lines = (char **)help_box_strings;
     gui_state->help_box.title = "Default controls";
 
-    const char *slice_help_box_strings[] = {" - Press backspace to reset and exit slice mode",
-                                            " - Press enter to accept the sliced mesh",
-                                            " - Move the slicing plane with arrow keys",
-                                            " - Rotate the slicing plane with ALT + arrow keys"};
+    const char *slice_help_box_strings[] = {" - Press backspace to reset and exit slice mode", " - Press enter to accept the sliced mesh",
+                                            " - Move the slicing plane with arrow keys", " - Rotate the slicing plane with ALT + arrow keys"};
 
     int slice_help_box_lines = SIZEOF(slice_help_box_strings);
     gui_state->slice_help_box.lines = (char **)slice_help_box_strings;
@@ -1437,14 +1446,14 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
     shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
     shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "color");
-    shader.locs[SHADER_LOC_VECTOR_VIEW]  = GetShaderLocation(shader, "viewPos");
+    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
     cube = GenMeshCube(1.0f, 1.0f, 1.0f);
 
     Model plane;
-    Color plane_color = GREEN;
-    plane_color.a = 25;
-  
-    //Lights
+    Color plane_color = WHITE;
+    plane_color.a = 100;
+
+    // Lights
     const float light_offset = 0.6;
 
     Vector3 light_pos = gui_state->camera.position;
@@ -1510,40 +1519,42 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                     gui_state->mesh_offset = find_mesh_center_vtk(gui_config->grid_info.vtk_grid, mesh_info);
                     gui_state->max_data_index = arrlen(gui_config->grid_info.vtk_grid->extra_values);
                 }
-                
+
                 gui_state->mesh_scale_factor = fmaxf(gui_state->mesh_offset.x, fmaxf(gui_state->mesh_offset.y, gui_state->mesh_offset.z)) / 1.8f;
 
                 const float scale = gui_state->mesh_scale_factor;
 
                 Vector2 pos;
-                pos.x = (mesh_info->max_size.x - mesh_info->min_size.x)/scale;
-                pos.y = (mesh_info->max_size.z - mesh_info->min_size.z)/scale;
+                pos.x = (mesh_info->max_size.x - mesh_info->min_size.x) / scale;
+                pos.y = (mesh_info->max_size.z - mesh_info->min_size.z) / scale;
 
                 float mult = 1.2;
-                plane = LoadModelFromMesh(GenMeshCube(pos.x*mult,0.1/scale,pos.y*mult));
+                plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1 / scale, pos.y * mult));
             }
 
-            if(gui_state->slicing) {
+            if(gui_state->slicing_mode) {
                 plane.transform = MatrixTranslate(gui_state->plane_tx, gui_state->plane_ty, gui_state->plane_tz);
-                rotation_matrix = MatrixRotateXYZ((Vector3){ DEG2RAD*gui_state->plane_pitch, 0.0, DEG2RAD*gui_state->plane_roll });
+                rotation_matrix = MatrixRotateXYZ((Vector3){DEG2RAD * gui_state->plane_pitch, 0.0, DEG2RAD * gui_state->plane_roll});
                 plane.transform = MatrixMultiply(plane.transform, rotation_matrix);
 
                 gui_state->plane_normal = Vector3Normalize(Vector3Transform((Vector3){0, 1, 0}, rotation_matrix));
-                gui_state->plane_point = Vector3Transform((Vector3){0,0,0}, plane.transform);
+                gui_state->plane_point = Vector3Transform((Vector3){0, 0, 0}, plane.transform);
             }
-            
+
             BeginMode3D(gui_state->camera);
 
-            if(gui_state->slicing) {
-                DrawModel(plane, (Vector3){0,0,0}, 1.0f, plane_color);
+            if(gui_state->slicing_mode) {
+                DrawModel(plane, (Vector3){0, 0, 0}, 1.0f, plane_color);
             }
 
-            if(draw_type == DRAW_SIMULATION) {
-                draw_alg_mesh(gui_config, gui_state, grid_mask, shader, cube);
-                draw_alg_purkinje_network(gui_config, gui_state, grid_mask);
-            } else if(draw_type == DRAW_FILE) {
-                draw_vtk_unstructured_grid(gui_config, gui_state, grid_mask, shader, cube);
-                draw_vtk_purkinje_network(gui_config, gui_state, grid_mask);
+            if(!gui_state->slicing_mesh) {
+                if(draw_type == DRAW_SIMULATION) {
+                    draw_alg_mesh(gui_config, gui_state, grid_mask, shader, cube);
+                    draw_alg_purkinje_network(gui_config, gui_state, grid_mask);
+                } else if(draw_type == DRAW_FILE) {
+                    draw_vtk_unstructured_grid(gui_config, gui_state, grid_mask, shader, cube);
+                    draw_vtk_purkinje_network(gui_config, gui_state, grid_mask);
+                }
             }
 
             gui_state->double_clicked = false;
@@ -1552,6 +1563,25 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             EndMode3D();
+
+            if(gui_state->slicing_mesh) {
+                float spacing = gui_state->font_spacing_big;
+                static Color c = RED;
+
+                error_message_width = MeasureTextEx(gui_state->font, "Slicing Mesh...", gui_state->font_size_big, spacing);
+                int posx = GetScreenWidth() / 2 - (int)error_message_width.x / 2;
+                int posy = GetScreenHeight() / 2 - 50;
+
+                int rec_width = (int)(error_message_width.x) + 50;
+                int rec_height = (int)(error_message_width.y) + 2;
+
+                DrawRectangle(posx, posy, rec_width, rec_height, c);
+
+                DrawTextEx(gui_state->font, "Slicing Mesh...", (Vector2){(float)posx + ((float)rec_width - error_message_width.x) / 2, (float)posy},
+                        gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+
+            }
+
 
             // We finished drawing everything that depends on the mesh being loaded
             omp_unset_lock(&gui_config->draw_lock);
@@ -1590,12 +1620,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             if(gui_state->help_box.window.show) {
-                if(gui_state->slicing){
-                    draw_text_window(&gui_state->slice_help_box, gui_state, text_offset);
-                }
-                else {
-                    draw_text_window(&gui_state->help_box, gui_state, text_offset);
-                }
+                draw_text_window(&gui_state->help_box, gui_state, text_offset);
+            }
+
+            if(gui_state->slice_help_box.window.show) {
+                draw_text_window(&gui_state->slice_help_box, gui_state, text_offset);
             }
 
             if(!gui_config->simulating) {
@@ -1646,7 +1675,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             // This should not happen... but it does....
             if(gui_config->error_message) {
                 DrawTextEx(gui_state->font, gui_config->error_message, (Vector2){(float)posx + ((float)rec_width - error_message_width.x) / 2, (float)posy},
-                        gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+                           gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
             }
         }
 
@@ -1656,18 +1685,25 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         Vector2 text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
 
         DrawTextEx(gui_state->font, text,
-                (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y - 30)},
-                gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+                   (Vector2){((float)gui_state->current_window_width - text_size.x - 10.0f), ((float)gui_state->current_window_height - text_size.y - 30)},
+                   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
         text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
 
-        if(!gui_state->slicing) {
-            DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
-                    gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
-        }
-        else {
-            DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
-                    gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+        if(gui_state->recalculating_visibility) {
+            DrawTextEx(gui_state->font, "Recalculating mesh visibility", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
+                       gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+
+        } else {
+            if(!gui_state->slicing_mode) {
+                DrawTextEx(gui_state->font, "Press H to show/hide the help box",
+                           (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
+                           gui_state->font_spacing_big, BLACK);
+            } else {
+                DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box",
+                           (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
+                           gui_state->font_spacing_big, BLACK);
+            }
         }
 
         float upper_y = text_size.y + 30;
@@ -1678,13 +1714,13 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(gui_config->draw_type == DRAW_SIMULATION) {
                 text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i", gui_state->current_mouse_over_volume.position_draw.x,
-                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
-                        gui_state->current_mouse_over_volume.matrix_position + 1);
+                                  gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
+                                  gui_state->current_mouse_over_volume.matrix_position + 1);
 
             } else {
 
                 text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
-                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z);
+                                  gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z);
             }
 
             text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
@@ -1694,6 +1730,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         }
 
         EndDrawing();
+
+        //TODO: this should go to a separate thread
+        if(gui_state->slicing_mesh) {
+            set_visibility_after_split(gui_config, gui_state);
+            gui_state->slicing_mesh = false;
+        }
     }
 
     gui_config->exit = true;

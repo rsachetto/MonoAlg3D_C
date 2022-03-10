@@ -215,8 +215,10 @@ struct gui_state {
     Vector3 plane_normal;
     Vector3 plane_point;
 
-    bool slicing;
-    bool sliced;
+    bool slicing_mode;
+    bool slicing_mesh;
+    bool recalculating_visibility;
+
     bool plane_loaded;
     bool visibility_recalculated;
     ui8_array old_cell_visibility;
