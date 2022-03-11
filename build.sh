@@ -260,7 +260,6 @@ if [ -n "$COMPILE_POSTPROCESSOR" ]; then
     ADD_SUBDIRECTORY "src/postprocessing_library/"
 fi
 
-
 FIND_CRITERION
 
 if [ -n "$CRITERION_FOUND" ]; then

@@ -60,7 +60,11 @@ int main(int argc, char **argv) {
 
     GDBM_FILE f;
 
+#ifdef DEBUG_INFO
     f = gdbm_open( "./tests_bin/profile_txt_load_times.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
+#else
+    f = gdbm_open( "./tests_bin/profile_txt_load_times_debug.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
+#endif
 
     datum content = gdbm_fetch (f, hash_key);
 
