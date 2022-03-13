@@ -12,7 +12,10 @@
 #include "../vtk_utils/vtk_unstructured_grid.h"
 #include "../3dparty/raylib/src/raylib.h"
 #include "../3dparty/raylib/src/raymath.h"
+#include "../3dparty/raylib/src/extras/rlights.h"
 #include "../config/config_parser.h"
+
+
 
 #define MIN_VERTICAL_TICKS 4
 #define MAX_VERTICAL_TICKS 20
@@ -163,6 +166,7 @@ struct gui_state {
     bool draw_grid_only;
 
     struct gui_text_window help_box;
+    struct gui_text_window slice_help_box;
     struct gui_text_window mesh_info_box;
     struct gui_text_window end_info_box;
     struct window_commom search_window;
@@ -204,7 +208,31 @@ struct gui_state {
 
     Camera3D camera;
 
+    Light light;
+
     bool double_clicked;
+
+    Vector3 plane_normal;
+    Vector3 plane_point;
+
+    bool slicing_mode;
+    bool slicing_mesh;
+    bool recalculating_visibility;
+
+    bool plane_loaded;
+    bool visibility_recalculated;
+    ui8_array old_cell_visibility;
+    bool *exclude_from_mesh;
+
+    float plane_roll;
+    float plane_pitch;
+    float plane_tx;
+    float plane_ty;
+    float plane_tz;
+
+    float mesh_scale_factor;
+    Vector3 mesh_offset;
+
 };
 
 struct mesh_info {

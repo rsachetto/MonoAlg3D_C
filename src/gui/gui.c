@@ -6,6 +6,7 @@
 #include "gui_mesh_helpers.h"
 #include "gui_window_helpers.h"
 
+#include <bits/stdint-uintn.h>
 #include <float.h>
 #include <string.h>
 
@@ -26,6 +27,9 @@
 #include "../3dparty/raylib/src/extras/gui_textbox_extended.h"
 
 #include "raylib_ext.h"
+
+#define RLIGHTS_IMPLEMENTATION
+#include "../3dparty/raylib/src/extras/rlights.h"
 #undef RAYGUI_IMPLEMENTATION
 
 static void set_camera_params(Camera3D *camera, bool set_mode) {
@@ -64,6 +68,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->scale.window.show = true;
 
     gui_state->help_box.window.show = false;
+    gui_state->slice_help_box.window.show = false;
 
     gui_state->current_data_index = -1;
 
@@ -111,6 +116,23 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->scale.calc_bounds = true;
 
     gui_state->controls_window.show = true;
+
+    gui_state->slicing_mode = false;
+    gui_state->slicing_mesh = false;
+    gui_state->recalculating_visibility = false;
+
+    gui_state->visibility_recalculated = false;
+    gui_state->old_cell_visibility = NULL;
+    gui_state->exclude_from_mesh = NULL;
+
+    gui_state->plane_roll = 0.0;
+    gui_state->plane_pitch = 0.0;
+    gui_state->plane_tx = 0.0;
+    gui_state->plane_ty = 0.0;
+    gui_state->plane_tz = 0.0;
+
+    gui_state->mesh_scale_factor = 1.0;
+    gui_state->mesh_offset = (Vector3){0, 0, 0};
 
 #define NUM_BUTTONS 6
     gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
@@ -203,6 +225,14 @@ static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_stat
         reset_ui(gui_state);
 
         gui_state->show_coordinates = true;
+        gui_state->slicing_mesh = false;
+        gui_state->slicing_mode = false;
+
+        gui_state->plane_roll = 0.0;
+        gui_state->plane_pitch = 0.0;
+        gui_state->plane_tx = 0.0;
+        gui_state->plane_ty = 0.0;
+        gui_state->plane_tz = 0.0;
     }
 }
 
@@ -476,11 +506,10 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     }
 }
 
-
 static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bool int_scale) {
 
-    #define MIN_SCALE_TICKS 5
-    #define MAX_SCALE_TICKS 12
+#define MIN_SCALE_TICKS 5
+#define MAX_SCALE_TICKS 12
 
     float scale_width = 20 * gui_state->ui_scale;
 
@@ -496,11 +525,9 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
         if(num_ticks < MIN_SCALE_TICKS) {
             num_ticks = MIN_SCALE_TICKS;
             tick_ofsset = (max_v - min_v) / (float)num_ticks;
-        }
-        else if(num_ticks > MAX_SCALE_TICKS) {
+        } else if(num_ticks > MAX_SCALE_TICKS) {
             num_ticks = MAX_SCALE_TICKS;
             tick_ofsset = (max_v - min_v) / (float)num_ticks;
-
         }
     } else {
         num_ticks = 0;
@@ -570,6 +597,7 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
 
 #define NOT_PAUSED !gui_config->paused
 #define NOT_IN_DRAW gui_config->draw_type != DRAW_FILE
+#define IN_DRAW gui_config->draw_type == DRAW_FILE
 
 #define DISABLE_IF_NOT_IN_DRAW                                                                                                                                 \
     if(NOT_IN_DRAW) {                                                                                                                                          \
@@ -677,8 +705,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     if(NOT_IN_DRAW) {
         GuiSpinner(button_pos, NULL, &gui_config->time, 0, gui_config->final_time, false, spinner_edit);
-    }
-    else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, true, spinner_edit)) {
+    } else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, true, spinner_edit)) {
         spinner_edit = !spinner_edit;
     }
 
@@ -839,7 +866,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     snprintf(tmp, TMP_SIZE, " - Min Z: %f", mesh_info->min_size.z);
     (*(info_string))[index++] = strdup(tmp);
- 
+
     if(draw_type == DRAW_SIMULATION) {
 
         snprintf(tmp, TMP_SIZE, "--");
@@ -854,15 +881,13 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
         }
         (*(info_string))[index++] = strdup(tmp);
 
-
     } else {
         if(gui_state->max_data_index > 0) {
             snprintf(tmp, TMP_SIZE, " - Current column idx: %d of %d", gui_state->current_data_index + 2, gui_state->max_data_index + 1);
-        }
-        else {
+        } else {
             snprintf(tmp, TMP_SIZE, "--");
         }
-        
+
         (*(info_string))[index++] = strdup(tmp);
 
         if(gui_config->paused) {
@@ -887,7 +912,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
         }
 
         (*(info_string))[index] = strdup(tmp);
-
     }
 
     Vector2 wider_text = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, gui_state->font_spacing_small);
@@ -895,7 +919,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
     float box_w = wider_text.x * 1.08f;
 
     gui_state->mesh_info_box.window.bounds.width = box_w;
-
 
     return true;
 }
@@ -916,6 +939,14 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 }
 
                 return;
+            } else if(IsKeyPressed(KEY_F)) {
+                gui_state->search_window.show = true;
+                gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
+                gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
+                return;
+            } else if(IsKeyPressed(KEY_L)) {
+                gui_state->light.enabled = !gui_state->light.enabled;
+                return;
             }
         }
 
@@ -924,7 +955,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             int index = kp - KEY_ONE - 1;
 
             if(index == -2) {
-                //zero pressed. we consider 8 (10th column)
+                // zero pressed. we consider 8 (10th column)
                 index = 8;
             }
 
@@ -940,40 +971,86 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 gui_state->current_data_index = index;
             }
 
-        }
-        else if(IsKeyPressed(KEY_PAGE_DOWN)) {
+        } else if(IsKeyPressed(KEY_PAGE_DOWN)) {
             int index = gui_state->current_data_index - 1;
 
             if(index >= -1) {
                 gui_state->current_data_index = index;
             }
-
         }
 
-        if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
-            gui_config->current_file_index++;
-            CHECK_FILE_INDEX(gui_config);
-            omp_unset_lock(&gui_config->sleep_lock);
-            return;
+        if(IsKeyPressed(KEY_S)) {
+            if(IN_DRAW) {
+                gui_state->slicing_mode = true;
+                gui_state->slicing_mesh = false;
+
+                if(gui_state->old_cell_visibility) {
+                    reset_grid_visibility(gui_config, gui_state);
+                }
+            }
         }
 
-        if(gui_config->draw_type == DRAW_FILE) {
-            // Return one step only works on file visualization...
-            if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
-                gui_config->current_file_index--;
+        if(gui_state->slicing_mode) {
+
+            if(IsKeyDown(KEY_ENTER)) {
+                gui_state->slicing_mode = false;
+                gui_state->slicing_mesh = true;
+            }
+
+            if(IsKeyDown(KEY_BACKSPACE)) {
+                gui_state->slicing_mode = false;
+                gui_state->slicing_mesh = false;
+                reset_grid_visibility(gui_config, gui_state);
+            }
+
+            if(IsKeyDown(KEY_LEFT_ALT)) {
+                // Plane roll (z-axis) controls
+                if(IsKeyDown(KEY_LEFT))
+                    gui_state->plane_roll += 1.0;
+                else if(IsKeyDown(KEY_RIGHT))
+                    gui_state->plane_roll -= 1.0;
+
+                if(IsKeyDown(KEY_DOWN))
+                    gui_state->plane_pitch += 1.0;
+                else if(IsKeyDown(KEY_UP))
+                    gui_state->plane_pitch -= 1.0;
+
+            } else {
+
+                // Plane roll (z-axis) controls
+                if(IsKeyDown(KEY_LEFT))
+                    gui_state->plane_tx -= 0.1;
+                else if(IsKeyDown(KEY_RIGHT))
+                    gui_state->plane_tx += 0.1;
+
+                if(IsKeyDown(KEY_DOWN))
+                    gui_state->plane_ty -= 0.1;
+                else if(IsKeyDown(KEY_UP))
+                    gui_state->plane_ty += 0.1;
+            }
+        } else {
+            if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
+
+                if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0)
+                    return;
+
+                gui_config->current_file_index++;
                 CHECK_FILE_INDEX(gui_config);
                 omp_unset_lock(&gui_config->sleep_lock);
                 return;
             }
-        }
-    }
 
-    if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
-        if(IsKeyPressed(KEY_F)) {
-            gui_state->search_window.show = true;
-            gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
-            gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
-            return;
+            if(gui_config->draw_type == DRAW_FILE) {
+                // Return one step only works on file visualization...
+                if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
+                    if(gui_config->final_file_index == 0)
+                        return;
+                    gui_config->current_file_index--;
+                    CHECK_FILE_INDEX(gui_config);
+                    omp_unset_lock(&gui_config->sleep_lock);
+                    return;
+                }
+            }
         }
     }
 
@@ -1021,13 +1098,16 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(IsKeyPressed(KEY_SPACE)) {
-        if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index != 0) {
-            gui_config->paused = !gui_config->paused;
+        if(!gui_state->slicing_mode) {
+            if(gui_config->draw_type == DRAW_FILE) {
+                if(gui_config->final_file_index != 0) {
+                    gui_config->paused = !gui_config->paused;
+                }
+            } else {
+                gui_config->paused = !gui_config->paused;
+            }
+            return;
         }
-        else {
-            gui_config->paused = !gui_config->paused;
-        }
-        return;
     }
 
     if(IsKeyPressed(KEY_R)) {
@@ -1059,14 +1139,19 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(IsKeyPressed(KEY_H)) {
-        gui_state->help_box.window.show = !gui_state->help_box.window.show;
+        if(gui_state->slicing_mode) {
+            gui_state->slice_help_box.window.show = !gui_state->slice_help_box.window.show;
+        } else {
+            gui_state->help_box.window.show = !gui_state->help_box.window.show;
+        }
         return;
     }
 
     if(gui_config->draw_type == DRAW_FILE) {
 
         if(IsKeyPressed(KEY_O)) {
-            if(!gui_config->paused) return;
+            if(!gui_config->paused)
+                return;
 
             char *buf = get_current_directory();
 
@@ -1182,14 +1267,18 @@ static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *m
     }
 }
 
-static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int mesh_info_box_lines, int end_info_box_lines, float box_w,
-                                       float text_offset) {
+static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int mesh_info_box_lines,
+                                       int end_info_box_lines, float box_w, float text_offset) {
 
     float margin = 25.0f;
 
     gui_state->help_box.window.bounds.width = box_w;
     gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin;
     gui_state->help_box.num_lines = help_box_lines;
+
+    gui_state->slice_help_box.window.bounds.width = box_w - 100;
+    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + margin;
+    gui_state->slice_help_box.num_lines = slice_help_box_lines;
 
     box_w = box_w - 100;
     gui_state->mesh_info_box.window.bounds.width = box_w;
@@ -1268,6 +1357,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     free(window_title);
 
     SetTargetFPS(60);
+
     Image icon = LoadImage("res/icon.png");
 
     if(icon.data) {
@@ -1280,14 +1370,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         Vector2 ui_scale = GetWindowScaleDPI();
         gui_config->ui_scale = ui_scale.x;
     }
+
     const int font_size_small = 16;
     const int font_size_big = 20;
 
     struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
-
-    float scale = 1.0f;
-
-    Vector3 mesh_offset = (Vector3){0, 0, 0};
 
     const char *help_box_strings[] = {" - Mouse Wheel to Zoom in-out",
                                       " - Mouse Wheel Pressed to Pan",
@@ -1310,9 +1397,20 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                                       " - Hold up arrow to advance time when paused",
                                       " - Double click on a volume to show the AP",
                                       " - from 1 to 0 to show different file column (or PGUP/PGDOWN)",
+                                      " - S to enter mesh slice mode",
                                       " - Space to start or pause simulation"};
 
     int help_box_lines = SIZEOF(help_box_strings);
+
+    gui_state->help_box.lines = (char **)help_box_strings;
+    gui_state->help_box.title = "Default controls";
+
+    const char *slice_help_box_strings[] = {" - Press backspace to reset and exit slice mode", " - Press enter to accept the sliced mesh",
+                                            " - Move the slicing plane with arrow keys", " - Rotate the slicing plane with ALT + arrow keys"};
+
+    int slice_help_box_lines = SIZEOF(slice_help_box_strings);
+    gui_state->slice_help_box.lines = (char **)slice_help_box_strings;
+    gui_state->slice_help_box.title = "Mesh slicing help";
 
     float wider_text_w = 0;
     float wider_text_h = 0;
@@ -1325,9 +1423,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         }
     }
 
-    gui_state->help_box.lines = (char **)help_box_strings;
-    gui_state->help_box.title = "Default controls";
-
     float text_offset = 1.5f * wider_text_h;
     float box_w = wider_text_w * 1.08f;
 
@@ -1336,13 +1431,42 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     gui_state->mesh_info_box.title = "Mesh information";
     gui_state->mesh_info_box.lines = (char **)malloc(sizeof(char *) * mesh_info_box_lines);
-    configure_info_boxes_sizes(gui_state, help_box_lines, mesh_info_box_lines, end_info_box_lines, box_w, text_offset);
+    configure_info_boxes_sizes(gui_state, help_box_lines, slice_help_box_lines, mesh_info_box_lines, end_info_box_lines, box_w, text_offset);
 
     Vector2 error_message_width;
     struct mesh_info *mesh_info = new_mesh_info();
     bool end_info_box_strings_configured = false;
 
     int grid_mask = 0;
+
+    Shader shader;
+    Mesh cube;
+
+    shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
+    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+    shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "color");
+    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    cube = GenMeshCube(1.0f, 1.0f, 1.0f);
+
+    Model plane;
+    Color plane_color = WHITE;
+    plane_color.a = 100;
+
+    // Lights
+    const float light_offset = 0.6;
+
+    Vector3 light_pos = gui_state->camera.position;
+    light_pos.z = light_pos.z + light_offset;
+
+    gui_state->light = CreateLight(LIGHT_DIRECTIONAL, light_pos, gui_state->camera.target, WHITE, shader);
+    //
+
+    Matrix rotation_matrix;
+
+    if(NOT_IN_DRAW) {
+        gui_config->progress = 100;
+    }
 
     while(!WindowShouldClose()) {
 
@@ -1355,6 +1479,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         }
 
         UpdateCamera(&(gui_state->camera));
+
+        light_pos = gui_state->camera.position;
+        light_pos.z = light_pos.z + light_offset;
+        gui_state->light.position = light_pos;
+        gui_state->light.target = gui_state->camera.target;
+        UpdateLightValues(shader, gui_state->light);
 
         BeginDrawing();
 
@@ -1381,25 +1511,50 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             ClearBackground(GRAY);
 
-            BeginMode3D(gui_state->camera);
-
             if(!mesh_info->center_calculated) {
                 if(draw_type == DRAW_SIMULATION) {
-                    mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
+                    gui_state->mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
                     gui_state->max_data_index = 0;
                 } else {
-                    mesh_offset = find_mesh_center_vtk(gui_config->grid_info.vtk_grid, mesh_info);
+                    gui_state->mesh_offset = find_mesh_center_vtk(gui_config->grid_info.vtk_grid, mesh_info);
                     gui_state->max_data_index = arrlen(gui_config->grid_info.vtk_grid->extra_values);
                 }
-                scale = fmaxf(mesh_offset.x, fmaxf(mesh_offset.y, mesh_offset.z)) / 1.8f;
+
+                gui_state->mesh_scale_factor = fmaxf(gui_state->mesh_offset.x, fmaxf(gui_state->mesh_offset.y, gui_state->mesh_offset.z)) / 1.8f;
+
+                const float scale = gui_state->mesh_scale_factor;
+
+                Vector2 pos;
+                pos.x = (mesh_info->max_size.x - mesh_info->min_size.x) / scale;
+                pos.y = (mesh_info->max_size.z - mesh_info->min_size.z) / scale;
+
+                float mult = 1.2;
+                plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1 / scale, pos.y * mult));
             }
 
-            if(draw_type == DRAW_SIMULATION) {
-                draw_alg_mesh(gui_config, mesh_offset, scale, gui_state, grid_mask);
-                draw_alg_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
-            } else if(draw_type == DRAW_FILE) {
-                draw_vtk_unstructured_grid(gui_config, mesh_offset, scale, gui_state, grid_mask);
-                draw_vtk_purkinje_network(gui_config, mesh_offset, scale, gui_state, grid_mask);
+            if(gui_state->slicing_mode) {
+                plane.transform = MatrixTranslate(gui_state->plane_tx, gui_state->plane_ty, gui_state->plane_tz);
+                rotation_matrix = MatrixRotateXYZ((Vector3){DEG2RAD * gui_state->plane_pitch, 0.0, DEG2RAD * gui_state->plane_roll});
+                plane.transform = MatrixMultiply(plane.transform, rotation_matrix);
+
+                gui_state->plane_normal = Vector3Normalize(Vector3Transform((Vector3){0, 1, 0}, rotation_matrix));
+                gui_state->plane_point = Vector3Transform((Vector3){0, 0, 0}, plane.transform);
+            }
+
+            BeginMode3D(gui_state->camera);
+
+            if(gui_state->slicing_mode) {
+                DrawModel(plane, (Vector3){0, 0, 0}, 1.0f, plane_color);
+            }
+
+            if(!gui_state->slicing_mesh) {
+                if(draw_type == DRAW_SIMULATION) {
+                    draw_alg_mesh(gui_config, gui_state, grid_mask, shader, cube);
+                    draw_alg_purkinje_network(gui_config, gui_state, grid_mask);
+                } else if(draw_type == DRAW_FILE) {
+                    draw_vtk_unstructured_grid(gui_config, gui_state, grid_mask, shader, cube);
+                    draw_vtk_purkinje_network(gui_config, gui_state, grid_mask);
+                }
             }
 
             gui_state->double_clicked = false;
@@ -1408,6 +1563,25 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             EndMode3D();
+
+            if(gui_state->slicing_mesh) {
+                float spacing = gui_state->font_spacing_big;
+                static Color c = RED;
+
+                error_message_width = MeasureTextEx(gui_state->font, "Slicing Mesh...", gui_state->font_size_big, spacing);
+                int posx = GetScreenWidth() / 2 - (int)error_message_width.x / 2;
+                int posy = GetScreenHeight() / 2 - 50;
+
+                int rec_width = (int)(error_message_width.x) + 50;
+                int rec_height = (int)(error_message_width.y) + 2;
+
+                DrawRectangle(posx, posy, rec_width, rec_height, c);
+
+                DrawTextEx(gui_state->font, "Slicing Mesh...", (Vector2){(float)posx + ((float)rec_width - error_message_width.x) / 2, (float)posy},
+                        gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+
+            }
+
 
             // We finished drawing everything that depends on the mesh being loaded
             omp_unset_lock(&gui_config->draw_lock);
@@ -1418,11 +1592,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(gui_state->show_coordinates) {
                 DrawText("x", (int)gui_state->coordinates_label_x_position.x, (int)gui_state->coordinates_label_x_position.y, (int)gui_state->font_size_big,
-                         RED);
+                        RED);
                 DrawText("y", (int)gui_state->coordinates_label_y_position.x, (int)gui_state->coordinates_label_y_position.y, (int)gui_state->font_size_big,
-                         GREEN);
+                        GREEN);
                 DrawText("z", (int)gui_state->coordinates_label_z_position.x, (int)gui_state->coordinates_label_z_position.y, (int)gui_state->font_size_big,
-                         DARKBLUE);
+                        DARKBLUE);
             }
 
             if(gui_state->mesh_info_box.window.show) {
@@ -1447,6 +1621,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(gui_state->help_box.window.show) {
                 draw_text_window(&gui_state->help_box, gui_state, text_offset);
+            }
+
+            if(gui_state->slice_help_box.window.show) {
+                draw_text_window(&gui_state->slice_help_box, gui_state, text_offset);
             }
 
             if(!gui_config->simulating) {
@@ -1483,13 +1661,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             error_message_width = MeasureTextEx(gui_state->font, gui_config->error_message, gui_state->font_size_big, spacing);
-
             int posx = GetScreenWidth() / 2 - (int)error_message_width.x / 2;
             int posy = GetScreenHeight() / 2 - 50;
 
             int rec_width = (int)(error_message_width.x) + 50;
             int rec_height = (int)(error_message_width.y) + 2;
-
 
             int rec_bar_w = (int)Remap(gui_config->progress, 0, gui_config->file_size, 0, rec_width);
 
@@ -1514,8 +1690,21 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
         text_size = MeasureTextEx(gui_state->font, "Press H to show/hide the help box", gui_state->font_size_big, gui_state->font_spacing_big);
 
-        DrawTextEx(gui_state->font, "Press H to show/hide the help box", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
-                   gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+        if(gui_state->recalculating_visibility) {
+            DrawTextEx(gui_state->font, "Recalculating mesh visibility", (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)},
+                       gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+
+        } else {
+            if(!gui_state->slicing_mode) {
+                DrawTextEx(gui_state->font, "Press H to show/hide the help box",
+                           (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
+                           gui_state->font_spacing_big, BLACK);
+            } else {
+                DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box",
+                           (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
+                           gui_state->font_spacing_big, BLACK);
+            }
+        }
 
         float upper_y = text_size.y + 30;
 
@@ -1541,6 +1730,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         }
 
         EndDrawing();
+
+        //TODO: this should go to a separate thread
+        if(gui_state->slicing_mesh) {
+            set_visibility_after_split(gui_config, gui_state);
+            gui_state->slicing_mesh = false;
+        }
     }
 
     gui_config->exit = true;

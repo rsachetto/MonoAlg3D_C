@@ -38,7 +38,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
 
     // The command line options always overwrite the config file
     parse_options(argc, argv, *options);
-    // This variable is from file_utils.h
+
     set_no_stdout((*(options))->quiet);
 
     // Create the output dir and the logfile
@@ -57,7 +57,7 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
                     free(out_dir_name);
                     out_dir_name = strdup(tmp);
                     free(tmp);
-                    ADD_STRING_PARAMETER_TO_CONFIG("output_dir", out_dir_name, (*(options))->save_mesh_config); //LEAK??
+                    ADD_STRING_PARAMETER_TO_CONFIG("output_dir", out_dir_name, (*(options))->save_mesh_config); // LEAK??
                 }
             }
 
@@ -136,6 +136,7 @@ static void init_gui_config_for_simulation(struct user_options *options, struct 
     gui_config->error_message = NULL;
     gui_config->grid_info.loaded = false;
     gui_config->int_scale = false;
+    gui_config->ui_scale = 0.0;
 }
 #endif
 
@@ -143,7 +144,7 @@ int main(int argc, char **argv) {
 
     struct user_options *options = NULL;
 
-    struct grid *the_grid;
+    struct grid *the_grid = NULL;
     struct monodomain_solver *monodomain_solver = NULL;
     struct ode_solver *ode_solver = NULL;
 
@@ -151,22 +152,21 @@ int main(int argc, char **argv) {
 
 #ifndef COMPILE_CUDA
     if(ode_solver->gpu) {
-        log_warn("Cuda runtime not found in this system. Fall backing to CPU solver!!\n");
+        log_warn("MonoAlg3D was not compiled with CUDA support. Falling back to CPU solver!!\n");
         ode_solver->gpu = false;
     }
 #endif
 
 #ifndef COMPILE_GUI
     if(options->show_gui) {
-        log_warn("OpenGL not found. The output will not be draw!!\n");
+        log_warn("MonoAlg3D was not compiled with GUI support. Using CLI!!\n");
         options->show_gui = false;
     }
 #endif
 
 #ifdef DEBUG_INFO
-    log_warn("Running the debug version. If you do not need debug information, build with ./build -r ou make release to improve the performace!\n");
+    log_warn("Running the debug version. If you do not need debug information, build with './build -r' or 'make release' to improve the performace!\n");
 #endif
-
 
     int np = monodomain_solver->num_threads;
 
