@@ -237,12 +237,12 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time
 
     if(the_ode_solver->gpu) {
         #ifdef COMPILE_CUDA
-        solve_model_ode_gpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_gpu;
-        solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims);
+        solve_model_ode_gpu_fn *solve_odes_fn = the_ode_solver->solve_model_ode_gpu;
+        solve_odes_fn(the_ode_solver, ode_extra_config, cur_time, merged_stims);
         #endif
     } else {
-        solve_model_ode_cpu_fn *solve_odes_pt = the_ode_solver->solve_model_ode_cpu;
-        solve_odes_pt(the_ode_solver, ode_extra_config, cur_time, merged_stims);
+        solve_model_ode_cpu_fn *solve_odes_fn = the_ode_solver->solve_model_ode_cpu;
+        solve_odes_fn(the_ode_solver, ode_extra_config, cur_time, merged_stims);
     }
 
     free(merged_stims);

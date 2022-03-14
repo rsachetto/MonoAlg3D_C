@@ -714,6 +714,8 @@ SAVE_MESH(save_as_ensight) {
 
     static bool ensight_geometry_saved = false;
     static uint64_t num_files;
+    static bool save_ode_state_variables = false;
+    static int n_state_vars = 0;
 
     if(!ensight_geometry_saved) {
 
@@ -723,6 +725,7 @@ SAVE_MESH(save_as_ensight) {
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
 
         num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
 
@@ -743,11 +746,13 @@ SAVE_MESH(save_as_ensight) {
         output_dir_with_file = sdsnew(output_dir);
         output_dir_with_file = sdscat(output_dir_with_file, "/simulation_result.case");
 
-        save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate);
+        if(save_ode_state_variables) {
+            n_state_vars = ode_solver->model_data.number_of_ode_equations - 1; //Vm is always saved
+        }
+
+        save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate, n_state_vars);
 
         sdsfree(output_dir_with_file);
-
-
         ensight_geometry_saved = true;
     }
 
@@ -767,6 +772,45 @@ SAVE_MESH(save_as_ensight) {
     save_en6_result_file(output_dir_with_file, the_grid, binary);
 
     sdsfree(base_name);
+    sdsfree(output_dir_with_file);
+        
+    if(n_state_vars) {
+        size_t num_sv_entries = ode_solver->model_data.number_of_ode_equations;
+        base_name = sdscatprintf(sdsempty(), "Sv%%d.Esca%%0%dd", n_digits);
+        real *sv_cpu;
+
+        if(ode_solver->gpu) {
+
+#ifdef COMPILE_CUDA
+            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, ode_solver->original_num_cells * num_sv_entries);
+            check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
+                        ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
+#endif
+        }
+        else {
+            sv_cpu = ode_solver->sv;
+        }
+
+        for(int i = 1; i <= n_state_vars; i++) {
+
+            char tmp[8192];
+            sprintf(tmp, base_name, i, count);
+
+            sds output_dir_with_file = sdsnew(output_dir);
+            output_dir_with_file = sdscat(output_dir_with_file, "/");
+
+            output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
+
+            save_en6_result_file_state_vars(output_dir_with_file, sv_cpu, ode_solver->original_num_cells, num_sv_entries, i, binary, ode_solver->gpu);
+            sdsfree(output_dir_with_file);
+        }
+
+        sdsfree(base_name);
+        
+        if(ode_solver->gpu) {
+            free(sv_cpu);
+        }
+    }
 
     count++;
 

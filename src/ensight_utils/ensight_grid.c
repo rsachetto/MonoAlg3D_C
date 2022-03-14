@@ -8,7 +8,8 @@
 #include "../utils/file_utils.h"
 #include "../domains_library/mesh_info_data.h"
 #include "../common_types/common_types.h"
-
+#include "../logger/logger.h"
+#include <errno.h>
 #include <math.h>
 #include <stdint.h>
 #include <ctype.h>
@@ -50,7 +51,7 @@ static inline void write_float(float n, FILE *f, bool binary) {
     }
 }
 
-void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_rate) {
+void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_rate, int num_state_vars) {
 
     FILE *case_file = fopen(filename, "w");
 
@@ -73,7 +74,25 @@ void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_r
 
     sdsfree(base_file_name);
 
-    fprintf(case_file, "TIME\n");
+    if(num_state_vars) {
+        base_file_name = sdsnew("%s%d.Esca");
+
+        for(int i = 0; i < n_digits; i++) {
+            base_file_name = sdscat(base_file_name, "*");
+        }    
+    }
+
+    for(int i = 1; i <= num_state_vars; i++) {
+        sds file_name = sdscatprintf(sdsempty(), base_file_name, "Sv", i);
+        fprintf(case_file, "scalar per element:\t1\tSv%d\t%s\n", i, file_name);
+        sdsfree(file_name);
+    }
+
+    if(num_state_vars) {
+        sdsfree(base_file_name);
+    }
+
+    fprintf(case_file, "\nTIME\n");
     fprintf(case_file, "time set: 1 Vm\n");
     fprintf(case_file, "number of steps: %zu\n", num_files);
 
@@ -146,6 +165,57 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
     }
 
     fclose(result_file);
+}
+
+void save_en6_result_file_state_vars(char *filename, real *sv_cpu, size_t num_cells, size_t num_sv_entries, int sv_entry, bool binary, bool gpu) {
+
+    FILE *result_file;
+
+    if(binary) {
+        result_file = fopen(filename, "wb");
+    } else {
+        result_file = fopen(filename, "w");
+    }
+
+    if ( result_file == NULL )  {
+        perror("Error occurred while opening file.\n");
+        exit(1);
+    }
+
+    write_string("SV", result_file, binary);
+    new_line(result_file, binary);
+
+    int part_number = 1;
+
+    if(num_cells > 0) {
+        write_string("part", result_file, binary);
+        new_line(result_file, binary);
+
+        write_int(part_number, result_file, binary);
+        new_line(result_file, binary);
+
+        write_string("hexa8", result_file, binary);
+        new_line(result_file, binary);
+
+        for(int i = 0 ; i < num_cells; i++) {
+            float value;
+            if(gpu) {
+                real *sv_start = sv_cpu + sv_entry*num_cells;
+                value = (float) sv_start[i];
+            }
+            else {
+                value = sv_cpu[i*num_sv_entries + sv_entry];
+            }
+            write_float(value, result_file, binary);
+            new_line(result_file, binary);
+        }
+        part_number++;
+    }
+
+    fclose(result_file);
+
+    //TODO: purkinje
+
 }
 
 struct ensight_grid * new_ensight_grid(uint32_t num_parts) {

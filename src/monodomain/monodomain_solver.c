@@ -298,9 +298,16 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         int device_count;
         int device = the_ode_solver->gpu_id;
         check_cuda_error(cudaGetDeviceCount(&device_count));
+
+        if(device >= device_count) {
+            log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
+            the_ode_solver->gpu_id = device = 0;
+        }
+
         struct cudaDeviceProp prop;
         check_cuda_error(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
         log_info("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
+
         check_cuda_error(cudaSetDevice(device));
     }
 #endif
