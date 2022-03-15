@@ -110,6 +110,8 @@ struct gui_shared_info {
     char *error_message;
     bool int_scale;
     float ui_scale;
+
+    struct simulation_files *simulation_files;
 };
 
 struct window_commom {

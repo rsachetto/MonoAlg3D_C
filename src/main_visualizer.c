@@ -53,8 +53,6 @@ static void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, 
     } else {
         set_vtk_grid_visibility(vtk_grid);
     }
-
-
 }
 
 static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
@@ -136,7 +134,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
     }
 
-
     uint32_t num_files = arrlen(simulation_files->files_list);
 
     sds full_path;
@@ -174,7 +171,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
         else {
             geometry_file = sdsnew(input);
         }
-
 
         if(!input_info.exists) {
             snprintf(error, MAX_ERROR_SIZE, "Geometry file %s not found", geometry_file);
@@ -251,6 +247,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     free_path_information(&input_info);
 
+    simulation_files->base_dir = sdsdup(full_path);
+
+    gui_config->simulation_files = simulation_files;
+
     while(true) {
 
         omp_set_lock(&gui_config->draw_lock);
@@ -269,15 +269,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         sdsfree(full_path);
 
-        if(!using_pvd) {
-            full_path = sdsnew(input);
-        } else {
-            full_path = sdsnew(get_dir_from_path(input));
-        }
-
         if(!single_file) {
-            full_path = sdscat(full_path, "/");
-            full_path = sdscat(full_path, simulation_files->files_list[(int)gui_config->current_file_index]);
+            full_path = sdscatfmt(sdsempty(), "%s/%s", simulation_files->base_dir, simulation_files->files_list[(int)gui_config->current_file_index]);
+        }
+        else {
+            full_path = simulation_files->base_dir;
         }
 
         if(maybe_ensight) {

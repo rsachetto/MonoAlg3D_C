@@ -633,3 +633,7 @@ void reset_grid_visibility(struct gui_shared_info *gui_config, struct gui_state 
     arrsetlen(grid->cell_visibility, n_vis);
     memcpy(grid->cell_visibility, gui_state->old_cell_visibility, n_vis * sizeof(uint8_t));
 }
+
+void calc_min_max_bounds() {
+
+}
