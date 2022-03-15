@@ -13,14 +13,21 @@
 #include <unistd.h>
 
 INIT_CALC_ECG(init_pseudo_bidomain) {
+
     log_info("INIT PSEUDO ECG\n");
+
+    //calc the distances from each volume to each electrode (r)
+    //calc the main diagonal for the ECG calculation (matrix main diag - ALPHA)
+
 }
 
 CALC_ECG(pseudo_bidomain) {
     log_info("CALC PSEUDO ECG\n");
+    //for each electrode, integrate ECG Matrix x Vm (maybe we can save Vm to avoid extra GPU copy)
 }
 
 INIT_CALC_ECG(end_pseudo_bidomain) {
     log_info("END PSEUDO ECG\n");
+    //Free distances and maybe the saved Vm
 }
 
