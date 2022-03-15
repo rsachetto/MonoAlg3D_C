@@ -94,59 +94,67 @@ static inline void set_point_data(struct point_3d center, struct point_3d half_f
     if(point1_idx == -1) {
         arrput((*vtk_grid)->points, point1);
         hmput(*hash, point1, *id);
+        point1_idx = *id;
         *id += 1;
     }
 
     if(point2_idx == -1) {
         arrput((*vtk_grid)->points, point2);
         hmput(*hash, point2, *id);
+        point2_idx = *id;
         *id += 1;
     }
 
     if(point3_idx == -1) {
         hmput(*hash, point3, *id);
         arrput((*vtk_grid)->points, point3);
+        point3_idx = *id;
         *id += 1;
     }
 
     if(point4_idx == -1) {
         hmput(*hash, point4, *id);
         arrput((*vtk_grid)->points, point4);
+        point4_idx = *id;
         *id += 1;
     }
 
     if(point5_idx == -1) {
         arrput((*vtk_grid)->points, point5);
         hmput(*hash, point5, *id);
+        point5_idx = *id;
         *id += 1;
     }
 
     if(point6_idx == -1) {
         arrput((*vtk_grid)->points, point6);
         hmput(*hash, point6, *id);
+        point6_idx = *id;
         *id += 1;
     }
 
     if(point7_idx == -1) {
         arrput((*vtk_grid)->points, point7);
         hmput(*hash, point7, *id);
+        point7_idx = *id;
         *id += 1;
     }
 
     if(point8_idx == -1) {
         arrput((*vtk_grid)->points, point8);
         hmput(*hash, point8, *id);
+        point8_idx = *id;
         *id += 1;
     }
 
-    arrput((*vtk_grid)->cells, (point1_idx != -1) ? point1_idx : hmget(*hash, point1));
-    arrput((*vtk_grid)->cells, (point2_idx != -1) ? point2_idx : hmget(*hash, point2));
-    arrput((*vtk_grid)->cells, (point3_idx != -1) ? point3_idx : hmget(*hash, point3));
-    arrput((*vtk_grid)->cells, (point4_idx != -1) ? point4_idx : hmget(*hash, point4));
-    arrput((*vtk_grid)->cells, (point5_idx != -1) ? point5_idx : hmget(*hash, point5));
-    arrput((*vtk_grid)->cells, (point6_idx != -1) ? point6_idx : hmget(*hash, point6));
-    arrput((*vtk_grid)->cells, (point7_idx != -1) ? point7_idx : hmget(*hash, point7));
-    arrput((*vtk_grid)->cells, (point8_idx != -1) ? point8_idx : hmget(*hash, point8));
+    arrput((*vtk_grid)->cells, point1_idx);
+    arrput((*vtk_grid)->cells, point2_idx);
+    arrput((*vtk_grid)->cells, point3_idx);
+    arrput((*vtk_grid)->cells, point4_idx);
+    arrput((*vtk_grid)->cells, point5_idx);
+    arrput((*vtk_grid)->cells, point6_idx);
+    arrput((*vtk_grid)->cells, point7_idx);
+    arrput((*vtk_grid)->cells, point8_idx);
 }
 
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char *source, size_t source_size) {
