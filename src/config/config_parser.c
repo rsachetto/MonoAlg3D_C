@@ -1351,7 +1351,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
                 log_info("Creating new calc_ecg config from command line!\n");
                 user_args->calc_ecg_config = alloc_and_init_config_data();
             }
-            set_calc_ecg_config(optarg, user_args->domain_config, user_args->config_file);
+            set_calc_ecg_config(optarg, user_args->calc_ecg_config, user_args->config_file);
             break;
 
         case ODE_SOLVER_OPT:
