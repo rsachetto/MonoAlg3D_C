@@ -217,6 +217,7 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
     ADD_SUBDIRECTORY "src/restore_state_library"
     ADD_SUBDIRECTORY "src/update_monodomain_library"
     ADD_SUBDIRECTORY "src/modify_domain"
+    ADD_SUBDIRECTORY "src/ecg_library/"
 fi
 
 #COMPILE THE EXECUTABLES NOW

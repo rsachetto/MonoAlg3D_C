@@ -77,6 +77,7 @@ static const struct option long_options[] = {
     {"restore_state", required_argument, NULL, RESTORE_STATE_OPT},                // Complex option
     {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT},  // Complex option
     {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, // Complex option
+    {"calc_ecg", required_argument, NULL, CALC_ECG_OPT}, // Complex option
     {"visualize", no_argument, NULL, DRAW_OPT},
     {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
     {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
@@ -349,6 +350,7 @@ struct user_options *new_user_options() {
     user_args->restore_state_config = NULL;
     user_args->update_monodomain_config = NULL;
     user_args->purkinje_linear_system_solver_config = NULL;
+    user_args->calc_ecg_config = NULL;
 
     user_args->show_gui = false;
     user_args->max_v = 40.0f;
@@ -459,7 +461,7 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
     }
 
     if(modify_domain_name == NULL) {
-        fprintf(stderr, "The stimulus name must be passed in the stimulus option! Exiting!\n");
+        fprintf(stderr, "The domain name must be passed in the modify domain option! Exiting!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -878,6 +880,66 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
     sdsfreesplitres(extra_config_tokens, tokens_count);
 }
 
+void set_calc_ecg_config(const char *args, struct config *sm, const char *config_file) {
+
+    sds extra_config;
+    sds *extra_config_tokens;
+    int tokens_count;
+    extra_config = sdsnew(args);
+    extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
+    char old_value[32];
+    char *key, *value;
+
+    assert(sm);
+
+    for(int i = 0; i < tokens_count; i++) {
+        extra_config_tokens[i] = sdstrim(extra_config_tokens[i], " ");
+
+        int values_count;
+        sds *key_value = sdssplit(extra_config_tokens[i], "=", &values_count);
+
+        if(values_count != 2) {
+            fprintf(stderr, "Invalid format for options %s. Exiting!\n", args);
+            exit(EXIT_FAILURE);
+        }
+
+        key_value[0] = sdstrim(key_value[0], " ");
+        key_value[1] = sdstrim(key_value[1], " ");
+
+        key = key_value[0];
+        value = key_value[1];
+
+        if(memcmp(key, "calc_rate", 9) == 0) {
+
+            bool calc_rate_was_set;
+            int calc_rate = 0;
+            GET_PARAMETER_NUMERIC_VALUE(int, calc_rate, sm, key, calc_rate_was_set);
+
+            if(calc_rate_was_set) {
+                snprintf(old_value, sizeof(old_value),  "%d", calc_rate);
+                maybe_issue_overwrite_warning(key, "calc_ecg", old_value, value, config_file);
+            }
+            shput_dup_value(sm->config_data, key, value);
+
+        } else if(memcmp(key, "filename", 8) == 0) {
+
+            char *out_file_name = NULL;
+            GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(out_file_name, sm, key);
+
+            if(out_file_name) {
+                maybe_issue_overwrite_warning(key, "calc_ecg", out_file_name, value, config_file);
+            }
+
+            shput_dup_value(sm->config_data, key, value);
+        } else {
+            set_or_overwrite_common_data(sm, key, value, "calc_ecg", config_file);
+        }
+        sdsfreesplitres(key_value, values_count);
+    }
+
+    sdsfreesplitres(extra_config_tokens, tokens_count);
+}
+
 void set_config(const char *args, struct config *config, const char *config_file, char *config_type) {
     sds extra_config;
     sds *extra_config_tokens;
@@ -1284,6 +1346,14 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             }
             set_domain_config(optarg, user_args->domain_config, user_args->config_file);
             break;
+        case CALC_ECG_OPT:
+            if(user_args->calc_ecg_config == NULL) {
+                log_info("Creating new calc_ecg config from command line!\n");
+                user_args->calc_ecg_config = alloc_and_init_config_data();
+            }
+            set_calc_ecg_config(optarg, user_args->domain_config, user_args->config_file);
+            break;
+
         case ODE_SOLVER_OPT:
             set_ode_solver_config(optarg, user_args, user_args->config_file);
             break;
@@ -1674,7 +1744,17 @@ int parse_config_file(void *user, const char *section, const char *name, const c
 
         set_common_data(pconfig->restore_state_config, name, value);
 
-    } else {
+    } else if(MATCH_SECTION(CALC_ECG_SECTION)) {
+
+        if(pconfig->calc_ecg_config == NULL) {
+            pconfig->calc_ecg_config = alloc_and_init_config_data();
+        }
+
+        set_common_data(pconfig->calc_ecg_config, name, value);
+
+    }
+
+    else {
 
         fprintf(stderr, "\033[33;5;7mInvalid name %s in section %s on the config file!\033[0m\n", name, section);
         return 0;
@@ -1846,6 +1926,12 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
     if(config->restore_state_config) {
         WRITE_INI_SECTION(RESTORE_STATE_SECTION);
         write_ini_options(config->restore_state_config, ini_file);
+        fprintf(ini_file, "\n");
+    }
+
+    if(config->calc_ecg_config) {
+        WRITE_INI_SECTION(CALC_ECG_SECTION);
+        write_ini_options(config->calc_ecg_config, ini_file);
         fprintf(ini_file, "\n");
     }
 

@@ -14,6 +14,7 @@
 #include "../3dparty/stb_ds.h"
 #include "../config/modify_current_domain_config.h"
 #include "../config/stim_config.h"
+#include "../config/ecg_config.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../save_mesh_library/save_mesh_helper.h"
 #include "../utils/file_utils.h"
@@ -47,13 +48,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     log_msg(LOG_LINE_SEPARATOR);
 
-    uint64_t ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0, total_deref_time = 0, cg_partial;
+    uint64_t ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0, total_deref_time = 0, cg_partial, total_ecg_time = 0;
 
     uint64_t purkinje_ode_total_time = 0, purkinje_cg_total_time = 0, purkinje_cg_partial = 0;
 
     uint32_t total_cg_it = 0, purkinje_total_cg_it = 0;
 
-    struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time, config_time;
+    struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time, config_time, ecg_time;
 
     struct stop_watch purkinje_ode_time, purkinje_cg_time, purkinje_part_solver;
 
@@ -77,6 +78,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     struct config *save_state_config = configs->save_state_config;
     struct config *restore_state_config = configs->restore_state_config;
     struct config *update_monodomain_config = configs->update_monodomain_config;
+    struct config *calc_ecg_config = configs->calc_ecg_config;
 
     bool has_extra_data = (extra_data_config != NULL);
 
@@ -193,6 +195,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(purkinje_linear_system_solver_config) {
         init_config_functions(purkinje_linear_system_solver_config, "./shared_libs/libdefault_linear_system_solver.so", "purkinje_linear_system_solver");
+    }
+
+    bool calc_ecg = (calc_ecg_config != NULL);
+    int calc_ecg_rate = 1;
+    char *ecg_filename = strdup("ecg.txt");
+
+    if(calc_ecg) {
+        init_config_functions(calc_ecg_config, "./shared_libs/libdefault_calc_ecg.so", "calc_ecg");
+
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, calc_ecg_rate, calc_ecg_config, "calc_rate");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(ecg_filename, calc_ecg_config, "filename");
+        calc_ecg &= (calc_ecg_rate > 0) && (ecg_filename);
     }
 
     int print_rate = 0;
@@ -543,6 +557,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false || !domain_config);
     CALL_INIT_SAVE_MESH(save_mesh_config);
+    CALL_INIT_CALC_ECG(calc_ecg_config, the_grid);
 
     if(purkinje_linear_system_solver_config) {
         CALL_INIT_LINEAR_SYSTEM(purkinje_linear_system_solver_config, the_grid, true);
@@ -586,6 +601,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
                 CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
+                CALL_END_CALC_ECG(calc_ecg_config);
 
                 return RESTART_SIMULATION;
             }
@@ -593,6 +609,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                 CALL_END_SAVE_MESH(save_mesh_config, the_grid);
                 CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
+                CALL_END_CALC_ECG(calc_ecg_config);
 
                 return END_SIMULATION;
             }
@@ -603,6 +620,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&write_time);
             ((save_mesh_fn *)save_mesh_config->main_function)(&time_info, save_mesh_config, the_grid, the_ode_solver);
             total_write_time += stop_stop_watch(&write_time);
+        }
+
+        if(calc_ecg && (count % calc_ecg_rate == 0)) {
+            start_stop_watch(&ecg_time);
+            ((calc_ecg_fn *)calc_ecg_config->main_function)(&time_info, calc_ecg_config, the_grid);
+            total_ecg_time += stop_stop_watch(&ecg_time);
         }
 
         if(cur_time > 0.0) {
@@ -878,6 +901,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     double conv_rate = 1000.0 * 1000.0 * 60.0;
     log_info("Resolution Time: %ld μs (%lf min)\n", res_time, res_time / conv_rate);
 
+    if(calc_ecg) {
+        log_info("ECG calculation Time: %ld μs (%lf min)\n", total_ecg_time, total_ecg_time / conv_rate);
+    }
+
     if(domain_config) {
         log_info("Total Write Time: %ld μs (%lf min)\n", total_write_time, total_write_time / conv_rate);
         log_info("ODE Total Time: %ld μs (%lf min)\n", ode_total_time, ode_total_time / conv_rate);
@@ -892,6 +919,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         log_info("Purkinje CG Total Time: %ld μs (%lf min)\n", purkinje_cg_total_time, purkinje_cg_total_time / conv_rate);
         log_info("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
     }
+
 
     if(purkinje_config && domain_config) {
         print_pmj_delay(the_grid, save_mesh_config, the_terminals);
@@ -914,6 +942,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
     CALL_END_SAVE_MESH(save_mesh_config, the_grid);
+    CALL_END_CALC_ECG(calc_ecg_config);
     if(purkinje_linear_system_solver_config)
         CALL_END_LINEAR_SYSTEM(purkinje_linear_system_solver_config);
 
@@ -1207,6 +1236,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
     if(options->assembly_matrix_config) {
         print_assembly_matrix_config_values(options->assembly_matrix_config);
+        log_msg(LOG_LINE_SEPARATOR);
+    }
+
+    if(options->calc_ecg_config) {
+        print_calc_ecg_config_values(options->calc_ecg_config);
         log_msg(LOG_LINE_SEPARATOR);
     }
 }
