@@ -23,6 +23,7 @@ INIT_CALC_ECG(init_pseudo_bidomain) {
 
 CALC_ECG(pseudo_bidomain) {
     log_info("CALC PSEUDO ECG\n");
+    //use the equation described in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3378475/#FD7
     //for each electrode, integrate ECG Matrix x Vm (maybe we can save Vm to avoid extra GPU copy)
 }
 
