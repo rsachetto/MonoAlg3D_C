@@ -79,7 +79,6 @@ INIT_CALC_ECG(init_pseudo_bidomain) {
     }
 
     PSEUDO_BIDOMAIN_DATA->beta_im = MALLOC_ARRAY_OF_TYPE(real_cpu, n_active);
-
     PSEUDO_BIDOMAIN_DATA->main_diagonal = MALLOC_ARRAY_OF_TYPE(real_cpu, n_active);
 
     // calc the distances from each volume to each electrode (r)
@@ -111,14 +110,13 @@ INIT_CALC_ECG(init_pseudo_bidomain) {
 CALC_ECG(pseudo_bidomain) {
     // log_info("CALC PSEUDO ECG\n");
     // use the equation described in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3378475/#FD7
-    // for each electrode, integrate ECG Matrix x Vm (maybe we can save Vm to avoid extra GPU copy)
-    
+    // for each electrode, integrate ECG Matrix x Vm
+
     int n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
     OMP(parallel for)
     for(int i = 0; i < n_active; i++) {
-
         struct element *cell_elements = ac[i]->elements;
         size_t max_el = arrlen(cell_elements);
 
@@ -132,21 +130,24 @@ CALC_ECG(pseudo_bidomain) {
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", time_info->current_t);
 
     for(int i = 0; i < PSEUDO_BIDOMAIN_DATA->n_leads; i++) {
-        real_cpu local_sum = 0;
+        real_cpu local_sum = 0.0;
         
         OMP(parallel for reduction(+:local_sum))
         for(int j = 0; j < n_active; j++) {
             struct point_3d d = ac[j]->discretization;
-            local_sum += (PSEUDO_BIDOMAIN_DATA->beta_im[j] / PSEUDO_BIDOMAIN_DATA->distances[i][j]) * (d.x*d.y*d.z);
+            real_cpu volume = d.x*d.y*d.z;
+
+            local_sum += ((PSEUDO_BIDOMAIN_DATA->beta_im[j] / PSEUDO_BIDOMAIN_DATA->distances[i][j]))*volume;
         }
 
-        fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", PSEUDO_BIDOMAIN_DATA->scale_factor*local_sum);
+        fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", -PSEUDO_BIDOMAIN_DATA->scale_factor*local_sum);
     }
 
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "\n");
 }
 
 INIT_CALC_ECG(end_pseudo_bidomain) {
-    // Free distances and maybe the saved Vm
     fclose(PSEUDO_BIDOMAIN_DATA->output_file);
+    free(PSEUDO_BIDOMAIN_DATA->beta_im);
+    arrfree(PSEUDO_BIDOMAIN_DATA->leads);
 }
