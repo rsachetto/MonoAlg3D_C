@@ -199,14 +199,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     bool calc_ecg = (calc_ecg_config != NULL);
     int calc_ecg_rate = 1;
-    char *ecg_filename = strdup("ecg.txt");
 
     if(calc_ecg) {
         init_config_functions(calc_ecg_config, "./shared_libs/libdefault_calc_ecg.so", "calc_ecg");
-
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, calc_ecg_rate, calc_ecg_config, "calc_rate");
-        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(ecg_filename, calc_ecg_config, "filename");
-        calc_ecg &= (calc_ecg_rate > 0) && (ecg_filename);
+        calc_ecg &= (calc_ecg_rate > 0);
     }
 
     int print_rate = 0;
@@ -557,7 +554,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false || !domain_config);
     CALL_INIT_SAVE_MESH(save_mesh_config);
-    CALL_INIT_CALC_ECG(calc_ecg_config, the_grid);
+    CALL_INIT_CALC_ECG(calc_ecg_config, the_monodomain_solver, the_grid);
 
     if(purkinje_linear_system_solver_config) {
         CALL_INIT_LINEAR_SYSTEM(purkinje_linear_system_solver_config, the_grid, true);

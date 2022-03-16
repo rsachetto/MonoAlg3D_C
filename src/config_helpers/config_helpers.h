@@ -16,6 +16,7 @@ void report_parameter_error_on_function(int line, const char *file, const char *
 void report_error_on_function(int line, const char *file, const char *error);
 char *get_string_parameter(struct string_hash_entry *config, const char *parameter);
 bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int n);
+bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, const char *parameter);
 
 #define STRINGS_EQUAL(str1, str2) (strcmp((str1), (str2)) == 0)
 
@@ -102,6 +103,17 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
         if(__config_char) {                                                                                                                                    \
             bool __success = get_vector_parameter(&value, config->config_data, __config_char, n);                                                              \
+            if(!__success) {                                                                                                                                   \
+                REPORT_ERROR_ON_FUNCTION("Error parsing vector parameter!\n");                                                                                 \
+            }                                                                                                                                                  \
+        }                                                                                                                                                      \
+    } while(0)
+
+#define GET_PARAMETER_VECTOR3_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                                                  \
+    do {                                                                                                                                                       \
+        char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
+        if(__config_char) {                                                                                                                                    \
+            bool __success = get_vector3_parameter(value, config->config_data, __config_char);                                                              \
             if(!__success) {                                                                                                                                   \
                 REPORT_ERROR_ON_FUNCTION("Error parsing vector parameter!\n");                                                                                 \
             }                                                                                                                                                  \
