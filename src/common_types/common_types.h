@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "../3dparty/sds/sds.h"
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)
@@ -118,6 +119,7 @@ typedef int *int_array;
 typedef char **string_array;
 
 struct simulation_files {
+    sds base_dir;
     string_array files_list;
     f32_array timesteps;
 };

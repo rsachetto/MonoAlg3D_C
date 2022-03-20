@@ -69,6 +69,7 @@ tests_bin/purkinje_ode_cpu/
 tests_bin/purkinje_ode_gpu/
 tests_bin/sim_mesh_cg_cpu_ode_gpu
 tests_bin/sim_mesh_cg_gpu_ode_gpu
+tests_bin/*.gdbm
 
 meshes/*.pts
 meshes/*.mesh

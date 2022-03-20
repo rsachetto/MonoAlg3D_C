@@ -604,8 +604,13 @@ void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_p
 
             nnz_local = 0;
 
-            struct element *cell_elements = cell->elements;
-            max_el = arrlen(cell_elements);
+            //struct element *cell_elements = cell->elements;
+            struct element *cell_elements = NULL;
+            max_el = arrlen(cell->elements);
+
+            for(int i = 0; i < max_el; i++) {
+                arrpush(cell_elements, cell->elements[i]);
+            }
 
             sort_elements(cell_elements, max_el);
 
@@ -619,6 +624,7 @@ void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_p
                 }
             }
 
+            arrfree(cell_elements);
             i++;
         }
     }

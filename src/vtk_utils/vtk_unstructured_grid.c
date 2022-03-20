@@ -73,48 +73,14 @@ static inline void set_point_data(struct point_3d center, struct point_3d half_f
     real_cpu center_z_plus = center.z + half_face.z;
     real_cpu center_z_minus = center.z - half_face.z;
 
-    struct point_3d points[8];
-
-    points[0].x = center_x_minus;
-    points[0].y = center_y_minus;
-    points[0].z = center_z_minus;
-
-    points[1].x = center_x_plus;
-    points[1].y = center_y_minus;
-    points[1].z = center_z_minus;
-
-    points[2].x = center_x_plus;
-    points[2].y = center_y_plus;
-    points[2].z = center_z_minus;
-
-    points[3].x = center_x_minus;
-    points[3].y = center_y_plus;
-    points[3].z = center_z_minus;
-
-    points[4].x = center_x_minus;
-    points[4].y = center_y_minus;
-    points[4].z = center_z_plus;
-
-    points[5].x = center_x_plus;
-    points[5].y = center_y_minus;
-    points[5].z = center_z_plus;
-
-    points[6].x = center_x_plus;
-    points[6].y = center_y_plus;
-    points[6].z = center_z_plus;
-
-    points[7].x = center_x_minus;
-    points[7].y = center_y_plus;
-    points[7].z = center_z_plus;
-
-    struct point_3d point1 = points[0];
-    struct point_3d point2 = points[1];
-    struct point_3d point3 = points[2];
-    struct point_3d point4 = points[3];
-    struct point_3d point5 = points[4];
-    struct point_3d point6 = points[5];
-    struct point_3d point7 = points[6];
-    struct point_3d point8 = points[7];
+    struct point_3d point1 = POINT3D(center_x_minus, center_y_minus, center_z_minus);
+    struct point_3d point2 = POINT3D(center_x_plus, center_y_minus, center_z_minus);
+    struct point_3d point3 = POINT3D(center_x_plus, center_y_plus, center_z_minus);
+    struct point_3d point4 = POINT3D(center_x_minus, center_y_plus, center_z_minus);
+    struct point_3d point5 = POINT3D(center_x_minus, center_y_minus, center_z_plus);
+    struct point_3d point6 = POINT3D(center_x_plus, center_y_minus, center_z_plus);
+    struct point_3d point7 = POINT3D(center_x_plus, center_y_plus, center_z_plus);
+    struct point_3d point8 = POINT3D(center_x_minus, center_y_plus, center_z_plus);
 
     int point1_idx = hmgeti(*hash, point1);
     int point2_idx = hmgeti(*hash, point2);
@@ -128,59 +94,67 @@ static inline void set_point_data(struct point_3d center, struct point_3d half_f
     if(point1_idx == -1) {
         arrput((*vtk_grid)->points, point1);
         hmput(*hash, point1, *id);
+        point1_idx = *id;
         *id += 1;
     }
 
     if(point2_idx == -1) {
         arrput((*vtk_grid)->points, point2);
         hmput(*hash, point2, *id);
+        point2_idx = *id;
         *id += 1;
     }
 
     if(point3_idx == -1) {
         hmput(*hash, point3, *id);
         arrput((*vtk_grid)->points, point3);
+        point3_idx = *id;
         *id += 1;
     }
 
     if(point4_idx == -1) {
         hmput(*hash, point4, *id);
         arrput((*vtk_grid)->points, point4);
+        point4_idx = *id;
         *id += 1;
     }
 
     if(point5_idx == -1) {
         arrput((*vtk_grid)->points, point5);
         hmput(*hash, point5, *id);
+        point5_idx = *id;
         *id += 1;
     }
 
     if(point6_idx == -1) {
         arrput((*vtk_grid)->points, point6);
         hmput(*hash, point6, *id);
+        point6_idx = *id;
         *id += 1;
     }
 
     if(point7_idx == -1) {
         arrput((*vtk_grid)->points, point7);
         hmput(*hash, point7, *id);
+        point7_idx = *id;
         *id += 1;
     }
 
     if(point8_idx == -1) {
         arrput((*vtk_grid)->points, point8);
         hmput(*hash, point8, *id);
+        point8_idx = *id;
         *id += 1;
     }
 
-    arrput((*vtk_grid)->cells, (point1_idx != -1) ? point1_idx : hmget(*hash, point1));
-    arrput((*vtk_grid)->cells, (point2_idx != -1) ? point2_idx : hmget(*hash, point2));
-    arrput((*vtk_grid)->cells, (point3_idx != -1) ? point3_idx : hmget(*hash, point3));
-    arrput((*vtk_grid)->cells, (point4_idx != -1) ? point4_idx : hmget(*hash, point4));
-    arrput((*vtk_grid)->cells, (point5_idx != -1) ? point5_idx : hmget(*hash, point5));
-    arrput((*vtk_grid)->cells, (point6_idx != -1) ? point6_idx : hmget(*hash, point6));
-    arrput((*vtk_grid)->cells, (point7_idx != -1) ? point7_idx : hmget(*hash, point7));
-    arrput((*vtk_grid)->cells, (point8_idx != -1) ? point8_idx : hmget(*hash, point8));
+    arrput((*vtk_grid)->cells, point1_idx);
+    arrput((*vtk_grid)->cells, point2_idx);
+    arrput((*vtk_grid)->cells, point3_idx);
+    arrput((*vtk_grid)->cells, point4_idx);
+    arrput((*vtk_grid)->cells, point5_idx);
+    arrput((*vtk_grid)->cells, point6_idx);
+    arrput((*vtk_grid)->cells, point7_idx);
+    arrput((*vtk_grid)->cells, point8_idx);
 }
 
 void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstructured_grid **vtk_grid, char *source, size_t source_size) {

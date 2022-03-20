@@ -26,6 +26,7 @@
 #include "save_state_config.h"
 #include "restore_state_config.h"
 #include "update_monodomain_config.h"
+#include "ecg_config.h"
 
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
@@ -36,6 +37,7 @@
 #define UPDATE_MONODOMAIN_SOLVER_OPT 2300
 #define MODIFY_DOMAIN_OPT 2400
 #define ODE_SOLVER_OPT 2500
+#define CALC_ECG_OPT 2600
 #define DRAW_OPT 3000
 #define SAVE_OPT 3100
 #define SAVE_STATE_OPT 3200
@@ -148,6 +150,7 @@ struct user_options {
     struct config *restore_state_config;
     struct config *update_monodomain_config;
     struct config *purkinje_linear_system_solver_config;
+    struct config *calc_ecg_config;
 
     struct string_hash_entry *ode_extra_config;
     struct string_hash_entry *purkinje_ode_extra_config;

@@ -134,7 +134,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->mesh_scale_factor = 1.0;
     gui_state->mesh_offset = (Vector3){0, 0, 0};
 
-#define NUM_BUTTONS 6
+#define NUM_BUTTONS 7
     gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
     gui_state->controls_window.bounds.height = 38.0f + WINDOW_STATUSBAR_HEIGHT;
 
@@ -650,7 +650,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         update_main = true;
     }
 
-    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
+    //DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     // return button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -679,7 +679,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     }
 
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
-    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
+    //DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     // advance button
     {
         button_pos.x += button_pos.width + 4.0;
@@ -698,6 +698,17 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         gui_config->current_file_index = gui_config->final_file_index;
     }
 
+    ENABLE;
+
+    DISABLE_IF_NOT_PAUSED;
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
+    button_pos.x += button_pos.width + 4.0;
+    //Calc bounds button
+    if(GuiButton(button_pos, "#94#")) {
+        //
+    }
+
+
     button_pos.x += button_pos.width + 4.0;
     button_pos.width = 96;
 
@@ -715,6 +726,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     gui_state->handle_keyboard_input = !spinner_edit;
 
     ENABLE;
+
 
     if(update_main && gui_config->draw_type == DRAW_FILE) {
 

@@ -25,6 +25,7 @@
 #define BATCH_SECTION "batch"
 #define MODIFICATION_SECTION "modify"
 #define MODIFYDOMAIN_SECTION "modify_current_domain"
+#define CALC_ECG_SECTION "calc_ecg"
 
 #define MATCH_SECTION_AND_NAME(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define MATCH_SECTION(s) strcmp(section, s) == 0

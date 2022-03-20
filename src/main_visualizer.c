@@ -53,8 +53,6 @@ static void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, 
     } else {
         set_vtk_grid_visibility(vtk_grid);
     }
-
-
 }
 
 static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
@@ -136,25 +134,22 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
     }
 
-
     uint32_t num_files = arrlen(simulation_files->files_list);
 
-    sds full_path;
-
     if(!using_pvd) {
-        full_path = sdsnew(input);
+        simulation_files->base_dir = sdsnew(input);
     } else {
-        full_path = sdsnew(get_dir_from_path(input));
+        simulation_files->base_dir = sdsnew(get_dir_from_path(input));
     }
 
     if(!num_files) {
-        snprintf(error, MAX_ERROR_SIZE, "No simulations file found in %s", full_path);
+        snprintf(error, MAX_ERROR_SIZE, "No simulations file found in %s", simulation_files->base_dir);
 
         if(gui_config->error_message)
             free(gui_config->error_message);
         gui_config->error_message = strdup(error);
 
-        sdsfree(full_path);
+        sdsfree(simulation_files->base_dir);
         free(simulation_files);
         return SIMULATION_FINISHED;
     }
@@ -175,7 +170,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
             geometry_file = sdsnew(input);
         }
 
-
         if(!input_info.exists) {
             snprintf(error, MAX_ERROR_SIZE, "Geometry file %s not found", geometry_file);
 
@@ -183,7 +177,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 free(gui_config->error_message);
             gui_config->error_message = strdup(error);
 
-            sdsfree(full_path);
+            sdsfree(simulation_files->base_dir);
             free(simulation_files);
             free_path_information(&input_info);
 
@@ -251,6 +245,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     free_path_information(&input_info);
 
+    gui_config->simulation_files = simulation_files;
+
     while(true) {
 
         omp_set_lock(&gui_config->draw_lock);
@@ -267,17 +263,13 @@ static int read_and_render_files(struct visualization_options *options, struct g
             gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
         }
 
-        sdsfree(full_path);
+        char full_path[2048];
 
-        if(!using_pvd) {
-            full_path = sdsnew(input);
-        } else {
-            full_path = sdsnew(get_dir_from_path(input));
+        if(single_file) {
+            sprintf(full_path, "%s", simulation_files->base_dir);
         }
-
-        if(!single_file) {
-            full_path = sdscat(full_path, "/");
-            full_path = sdscat(full_path, simulation_files->files_list[(int)gui_config->current_file_index]);
+        else {
+            sprintf(full_path, "%s/%s", simulation_files->base_dir, simulation_files->files_list[(int)gui_config->current_file_index]);
         }
 
         if(maybe_ensight) {
@@ -337,16 +329,16 @@ static int read_and_render_files(struct visualization_options *options, struct g
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
+            sdsfree(simulation_files->base_dir);
             free(simulation_files);
-            sdsfree(full_path);
             return RESTART_SIMULATION;
         }
 
         if(gui_config->exit) {
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
+            sdsfree(simulation_files->base_dir);
             free(simulation_files);
-            sdsfree(full_path);
             return END_SIMULATION;
         }
 
