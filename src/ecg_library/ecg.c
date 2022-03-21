@@ -209,9 +209,9 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_beta_im), N, PSEUDO_BIDOMAIN_DATA->beta_im, CUBLAS_SIZE));
     check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_vm), N, the_ode_solver->sv, CUBLAS_SIZE));
 #else
-    check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(persistent_data->descr)));
-    cusparseSetMatType(persistent_data->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-    cusparseSetMatIndexBase(persistent_data->descr, CUSPARSE_INDEX_BASE_ZERO);
+    check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(PSEUDO_BIDOMAIN_DATA->descr)));
+    cusparseSetMatType(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_INDEX_BASE_ZERO);
 #endif
 
     check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice));        // JA
