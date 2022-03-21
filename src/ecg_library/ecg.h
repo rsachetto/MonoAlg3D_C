@@ -29,7 +29,11 @@ struct pseudo_bidomain_persistent_data {
     cusparseDnVecDescr_t vec_beta_im;
     size_t bufferSize;
     void *buffer;
-    bool buffer_allocated;
+
+#if CUBLAS_VER_MAJOR < 10
+    cusparseMatDescr_t descr;
+#endif
+
 #endif
 };
 
