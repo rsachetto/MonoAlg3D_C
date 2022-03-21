@@ -264,9 +264,9 @@ CALC_ECG(pseudo_bidomain_gpu) {
 #else
 
 #ifdef CELL_MODEL_REAL_DOUBLE
-    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
-#else
     cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
+#else
+    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #endif
 
 #endif
