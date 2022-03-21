@@ -30,6 +30,7 @@ struct pseudo_bidomain_persistent_data {
 
 #if CUBLAS_VER_MAJOR < 10
     cusparseMatDescr_t descr;
+    real *local_sv;
 #else
     cusparseSpMatDescr_t matA;
     cusparseDnVecDescr_t vec_vm;
