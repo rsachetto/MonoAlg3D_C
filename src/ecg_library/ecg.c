@@ -13,20 +13,13 @@
 #include <float.h>
 #include <time.h>
 #include <unistd.h>
+#include "../utils/file_utils.h"
+
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
-#include "../utils/file_utils.h"
 #include <cublas_v2.h>
 #include <cusparse_v2.h>
-
-#if CUBLAS_VER_MAJOR < 11
-//  #pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_10.c" )
-//  #include "gpu_solvers_cublas_10.c"
-#else
-//  #pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_11.c" )
-//  #include "gpu_solvers_cublas_11.c"
-#endif
 
 // Precision to be used for the calculations on the GPU
 #ifdef CELL_MODEL_REAL_DOUBLE
