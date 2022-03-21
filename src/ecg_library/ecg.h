@@ -24,14 +24,16 @@ struct pseudo_bidomain_persistent_data {
     real *volumes;
     real *tmp_data;
     real *d_val;
-    cusparseSpMatDescr_t matA;
-    cusparseDnVecDescr_t vec_vm;
-    cusparseDnVecDescr_t vec_beta_im;
+
     size_t bufferSize;
     void *buffer;
 
 #if CUBLAS_VER_MAJOR < 10
     cusparseMatDescr_t descr;
+#else
+    cusparseSpMatDescr_t matA;
+    cusparseDnVecDescr_t vec_vm;
+    cusparseDnVecDescr_t vec_beta_im;
 #endif
 
 #endif
