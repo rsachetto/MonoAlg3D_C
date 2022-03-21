@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "../common_types/common_types.h"
+
 /*! \brief Macros/inlines to assist CLion to parse Cuda files (*.cu, *.cuh) */
 #ifdef __JETBRAINS_IDE__
 #define __CUDACC__ 1
@@ -27,9 +29,12 @@ extern __cuda_fake_struct blockIdx;
 #define check_cuda_error(ans) do{cuda_assert((ans), #ans, __FILE__, __LINE__, "cuda");} while(0)
 #define check_cublas_error(ans) do{cuda_assert((ans), #ans, __FILE__, __LINE__, "cublas");} while(0)
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+void gpu_vec_div_vec(real *vec1, real *vec2, real* res, size_t n);
+real gpu_ecg_integral(real *beta_im, real *distances, real *volumes, size_t vec_size);
 void cuda_assert(int code, char const *const func, const char *const file, int const line, const char *api);
 #ifdef __cplusplus
 }

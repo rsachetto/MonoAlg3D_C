@@ -569,6 +569,10 @@ static void sort_elements(struct element *cell_elements, int tam) {
 }
 
 void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje) {
+    grid_to_csr_new_diag(the_grid, A, IA, JA, is_purkinje, NULL);
+}
+
+void grid_to_csr_new_diag(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje, real_cpu *new_diag) {
 
     struct element element;
 
@@ -604,12 +608,15 @@ void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_p
 
             nnz_local = 0;
 
-            //struct element *cell_elements = cell->elements;
             struct element *cell_elements = NULL;
             max_el = arrlen(cell->elements);
 
             for(int i = 0; i < max_el; i++) {
                 arrpush(cell_elements, cell->elements[i]);
+            }
+
+            if(new_diag != NULL) {
+                cell_elements[0].value = new_diag[i];
             }
 
             sort_elements(cell_elements, max_el);

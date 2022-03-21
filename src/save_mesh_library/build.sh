@@ -1,7 +1,7 @@
-SAVE_STATIC_DEPS="vtk_utils ensight_utils graph config_helpers utils sds alg tinyexpr miniz gpu_utils"
+SAVE_STATIC_DEPS="vtk_utils ensight_utils graph config_helpers utils sds alg tinyexpr miniz"
 
 if [ -n "$CUDA_FOUND" ]; then
-  SAVE_STATIC_DEPS="$SAVE_STATIC_DEPS gpu_utils"
+  SAVE_STATIC_DEPS="$SAVE_STATIC_DEPS"
   SAVE_DYNAMIC_DEPS="cudart"
 fi
 
