@@ -262,7 +262,13 @@ CALC_ECG(pseudo_bidomain_gpu) {
                                     PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_MV_ALG_DEFAULT,
                                     PSEUDO_BIDOMAIN_DATA->buffer));
 #else
+
+#ifdef CELL_MODEL_REAL_DOUBLE
     cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
+#else
+    cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
+#endif
+
 #endif
 
     //real *beta_im = MALLOC_ARRAY_OF_TYPE(real, n_active);
