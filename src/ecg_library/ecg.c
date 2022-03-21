@@ -212,7 +212,7 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(PSEUDO_BIDOMAIN_DATA->descr)));
     cusparseSetMatType(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_INDEX_BASE_ZERO);
-    PSEUDO_BIDOMAIN_DATA->local_sv = he_ode_solver->sv;
+    PSEUDO_BIDOMAIN_DATA->local_sv = the_ode_solver->sv;
 #endif
 
     check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice));        // JA
@@ -262,7 +262,7 @@ CALC_ECG(pseudo_bidomain_gpu) {
                                     PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_MV_ALG_DEFAULT,
                                     PSEUDO_BIDOMAIN_DATA->buffer));
 #else
-    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, the_ode_solver->sv, &beta, persistent_data->beta_im);
+    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #endif
 
     //real *beta_im = MALLOC_ARRAY_OF_TYPE(real, n_active);
