@@ -8,7 +8,7 @@ COMPILE_MODEL_LIB () {
 
     local MODEL_SOURCES="$MODEL_FILE_CPU"    
 
-	local MODELS_STATIC_DEPS="config_helpers utils tinyexpr gpu_utils $EXTRA_STATIC_LIBS"
+	local MODELS_STATIC_DEPS="config_helpers utils tinyexpr $EXTRA_STATIC_LIBS"
  
     if [ -n "$CUDA_FOUND" ]; then
         MODELS_EXTRA_LIB_PATH=$CUDA_LIBRARY_PATH

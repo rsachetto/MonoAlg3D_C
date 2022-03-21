@@ -195,8 +195,8 @@ fi
 SRC_FILES="src/main_simulator.c"
 HDR_FILES=""
 
-STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS_GUI} ${OPT_DEPS_GPU} config_helpers ensight_utils vtk_utils yxml alg graph utils sds miniz"
-DYNAMIC_DEPS="dl m $CUDA_LIBRARIES"
+STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS_GUI} config_helpers ensight_utils vtk_utils yxml alg graph utils sds miniz"
+DYNAMIC_DEPS="dl m ${OPT_DEPS_GPU} $CUDA_LIBRARIES"
 
 if [ -n "$COMPILE_GUI" ]; then
     DYNAMIC_DEPS="$DYNAMIC_DEPS OpenGL GLX GLU pthread X11 rt"

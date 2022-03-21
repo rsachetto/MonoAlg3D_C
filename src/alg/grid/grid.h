@@ -55,6 +55,7 @@ void order_grid_cells (struct grid *the_grid);
 void set_grid_flux(struct grid *the_grid);
 
 void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje);
+void grid_to_csr_new_diag(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje, real_cpu *new_diag);
 
 bool refine_grid_with_bound(struct grid* the_grid, real_cpu refinement_bound,  real_cpu min_dx, real_cpu min_dy, real_cpu min_dz);
 void refine_grid(struct grid* the_grid, int num_steps);

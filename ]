@@ -1,0 +1,78 @@
+#include "gpu_utils.h"
+
+__global__ void sumCommMultiBlock(const real *beta_im, const real* distances, const real *volumes, int n, real *gOut, int* lastBlockCounter);
+
+__global__ void kernel_gpu_vec_div_vec(real *vec1, real *vec2, real *vec3, size_t n);
+
+    extern "C" void gpu_vec_div_vec(real *vec1, real *vec2, real *res, size_t n) {
+    const int GRID  = (n + BLOCK_SIZE - 1)/BLOCK_SIZE;
+    kernel_gpu_vec_div_vec<<<GRID, BLOCK_SIZE>>>(vec1, vec2, res, n);
+    cudaDeviceSynchronize();
+}
+
+extern "C" real gpu_ecg_integral(real *beta_im, real *distances, real *volumes, size_t vec_size) {
+
+    real* dev_out;
+    
+    const int GRID  = (vec_size + BLOCK_SIZE - 1)/BLOCK_SIZE;
+    cudaMalloc((void**)&dev_out, sizeof(real)*GRID);
+
+    int* dev_lastBlockCounter;
+    cudaMalloc((void**)&dev_lastBlockCounter, sizeof(int));
+    cudaMemset(dev_lastBlockCounter, 0, sizeof(int));
+    
+    sumCommMultiBlock<<<GRID, BLOCK_SIZE>>>(beta_im, distances, volumes, vec_size, dev_out, dev_lastBlockCounter);
+    cudaDeviceSynchronize();
+   
+    real out;
+    cudaMemcpy(&out, dev_out, sizeof(real), cudaMemcpyDeviceToHost);
+    cudaFree(dev_out);
+
+    return out;
+}
+__global__ void kernel_gpu_vec_div_vec(real *vec1, real *vec2, real *vec3, size_t n) {
+    
+    unsigned int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if(i < n) {
+        vec3[i] = vec1[i]/vec2[i];
+    }
+}
+
+__device__ bool lastBlock(int* counter) {
+    __threadfence(); //ensure that partial result is visible by all blocks
+    int last = 0;
+    if (threadIdx.x == 0)
+        last = atomicAdd(counter, 1);
+    return __syncthreads_or(last == gridDim.x-1);
+}    
+
+__global__ void sumCommMultiBlock(const real *beta_im, const real* distances, const real *volumes, int n, real *gOut, int* lastBlockCounter) {
+    int thIdx = threadIdx.x;
+    int gthIdx = thIdx + blockIdx.x*BLOCK_SIZE;
+    const int gridSize = BLOCK_SIZE*gridDim.x;
+    real sum = 0;
+    for (int i = gthIdx; i < n; i += gridSize)
+        sum += ((beta_im[i]/distances[i])*volumes[i]);
+    __shared__ real shArr[BLOCK_SIZE];
+    shArr[thIdx] = sum;
+    __syncthreads();
+    for (int size = blockSize/2; size>0; size/=2) { //uniform
+        if (thIdx<size)
+            shArr[thIdx] += shArr[thIdx+size];
+        __syncthreads();
+    }
+    if (thIdx == 0)
+        gOut[blockIdx.x] = shArr[0];
+    if (lastBlock(lastBlockCounter)) {
+        shArr[thIdx] = thIdx<gridSize ? gOut[thIdx] : 0;
+        __syncthreads();
+        for (int size = blockSize/2; size>0; size/=2) { //uniform
+            if (thIdx<size)
+                shArr[thIdx] += shArr[thIdx+size];
+            __syncthreads();
+        }
+        if (thIdx == 0)
+            gOut[0] = shArr[0];            
+    }
+}

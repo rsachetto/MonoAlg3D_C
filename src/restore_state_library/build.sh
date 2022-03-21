@@ -1,8 +1,8 @@
 RESTORE_STATIC_DEPS="alg config_helpers utils sds tinyexpr"
 
 if [ -n "$CUDA_FOUND" ]; then
-    RESTORE_STATIC_DEPS="$RESTORE_STATIC_DEPS gpu_utils"
-    EXTRA_CUDA_LIBS="c cudart"
+    RESTORE_STATIC_DEPS="$RESTORE_STATIC_DEPS"
+    EXTRA_CUDA_LIBS="c cudart "
 fi
 
 CHECK_CUSTOM_FILE

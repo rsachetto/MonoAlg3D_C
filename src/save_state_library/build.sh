@@ -1,7 +1,7 @@
 SAVE_STATE_STATIC_DEPS="alg config_helpers utils sds tinyexpr"
 
 if [ -n "$CUDA_FOUND" ]; then
-	SAVE_STATE_STATIC_DEPS="$SAVE_STATE_STATIC_DEPS gpu_utils"
+	SAVE_STATE_STATIC_DEPS="$SAVE_STATE_STATIC_DEPS"
     EXTRA_CUDA_LIBS="cudart"
 fi
 
