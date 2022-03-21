@@ -69,9 +69,9 @@ INIT_CALC_ECG(init_pseudo_bidomain_cpu) {
     char *filename = strdup("./ecg.txt");
     GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(filename, config, "filename");
 
-    struct path_information file_info;
-    get_path_information(filename, &file_info);
-    create_dir(file_info.dir_name);
+    char *dir = get_dir_from_path(filename);
+    create_dir(dir);
+    free(dir);
 
     PSEUDO_BIDOMAIN_DATA->output_file = fopen(filename, "w");
 
