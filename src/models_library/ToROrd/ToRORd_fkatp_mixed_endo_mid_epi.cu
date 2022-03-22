@@ -2,7 +2,65 @@
 #include <stddef.h>
 #include <stdint.h>
 
-__global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt,\
+__global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt) {
+    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (threadID < num_volumes) {
+        for (int i = 0; i < NEQ; i++) {
+            *((real * )((char *) sv + pitch * 0) + threadID) = -88.7638;
+            *((real * )((char *) sv + pitch * 1) + threadID) = 0.0111;
+            *((real * )((char *) sv + pitch * 2) + threadID)= 7.0305e-5;
+            *((real * )((char *) sv + pitch * 3) + threadID)= 12.1025;
+            *((real * )((char *) sv + pitch * 4) + threadID)= 12.1029;
+            *((real * )((char *) sv + pitch * 5) + threadID)= 142.3002;
+            *((real * )((char *) sv + pitch * 6) + threadID)= 142.3002;
+            *((real * )((char *) sv + pitch * 7) + threadID)= 1.5211;
+            *((real * )((char *) sv + pitch * 8) + threadID)= 1.5214;
+            *((real * )((char *) sv + pitch * 9) + threadID)= 8.1583e-05;
+            *((real * )((char *) sv + pitch * 10) + threadID) = 8.0572e-4;
+            *((real * )((char *) sv + pitch * 11) + threadID) = 0.8286;
+            *((real * )((char *) sv + pitch * 12) + threadID) = 0.8284;
+            *((real * )((char *) sv + pitch * 13) + threadID) = 0.6707;
+            *((real * )((char *) sv + pitch * 14) + threadID) = 0.8281;
+            *((real * )((char *) sv + pitch * 15) + threadID) = 1.629e-4;
+            *((real * )((char *) sv + pitch * 16) + threadID) = 0.5255;
+            *((real * )((char *) sv + pitch * 17) + threadID) = 0.2872;
+            *((real * )((char *) sv + pitch * 18) + threadID) = 9.5098e-4;
+            *((real * )((char *) sv + pitch * 19) + threadID) = 0.9996;
+            *((real * )((char *) sv + pitch * 20) + threadID) = 0.5936;
+            *((real * )((char *) sv + pitch * 21) + threadID) = 4.8454e-4;
+            *((real * )((char *) sv + pitch * 22) + threadID) = 0.9996;
+            *((real * )((char *) sv + pitch * 23) + threadID) = 0.6538;
+            *((real * )((char *) sv + pitch * 24) + threadID) = 8.1084e-9;
+            *((real * )((char *) sv + pitch * 25) + threadID) = 1.0;
+            *((real * )((char *) sv + pitch * 26) + threadID) = 0.939;
+            *((real * )((char *) sv + pitch * 27) + threadID) = 1.0;
+            *((real * )((char *) sv + pitch * 28) + threadID) = 0.9999;
+            *((real * )((char *) sv + pitch * 29) + threadID) = 1.0;
+            *((real * )((char *) sv + pitch * 30) + threadID) = 1.0;
+            *((real * )((char *) sv + pitch * 31) + threadID) = 1.0;
+            *((real * )((char *) sv + pitch * 32) + threadID) = 6.6462e-4;
+            *((real * )((char *) sv + pitch * 33) + threadID) = 0.0012;
+            *((real * )((char *) sv + pitch * 34) + threadID) = 7.0344e-4;
+            *((real * )((char *) sv + pitch * 35) + threadID) = 8.5109e-4;
+            *((real * )((char *) sv + pitch * 36) + threadID) = 0.9981;
+            *((real * )((char *) sv + pitch * 37) + threadID) = 1.3289e-5;
+            *((real * )((char *) sv + pitch * 38) + threadID) = 3.7585e-4;
+            *((real * )((char *) sv + pitch * 39) + threadID) = 0.248;
+            *((real * )((char *) sv + pitch * 40) + threadID) = 1.7707e-4;
+            *((real * )((char *) sv + pitch * 41) + threadID) = 1.6129e-22;
+            *((real * )((char *) sv + pitch * 42) + threadID) = 1.2475e-20;
+        }
+            
+        if(use_adpt_dt) {
+            *((real *)((char *)sv + pitch * 43) + threadID) = min_dt; // dt
+            *((real *)((char *)sv + pitch * 44) + threadID) = 0.0;    // time_new
+            *((real *)((char *)sv + pitch * 45) + threadID) = 0.0;    // previous dt
+        }
+    }
+}
+
+__global__ void kernel_set_model_initial_conditions_endo_mid_epi(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt,\
                                                 real *initial_endo, real *initial_epi, real *initial_mid, real *mapping) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -30,7 +88,6 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     uint8_t use_adpt_dt = (uint8_t)solver->adaptive;
 
-    //TODO: set a model name??
     log_info("Using GPU model implemented in %s\n", __FILE__);
 
     uint32_t num_volumes = solver->original_num_cells;
@@ -76,12 +133,19 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
         check_cuda_error(cudaMemcpy(mapping_device, mapping, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
     }
     else {
-        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
+        log_info("[INFO] You should supply a mask function to tag the cells when using this mixed model!\n");
+        log_info("[INFO] Considering all cells ENDO!\n");
     }
 
-    kernel_set_model_initial_conditions<<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes, pitch_h, use_adpt_dt, solver->min_dt,\
+    if (solver->ode_extra_data) {
+        kernel_set_model_initial_conditions_endo_mid_epi<<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes, pitch_h, use_adpt_dt, solver->min_dt,\
                                                             initial_conditions_endo_device, initial_conditions_epi_device, initial_conditions_mid_device,\
                                                             mapping_device);
+    }
+    else {
+        kernel_set_model_initial_conditions<<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes, pitch_h, use_adpt_dt, solver->min_dt);
+    }
+    
 
     check_cuda_error(cudaPeekAtLastError());
     cudaDeviceSynchronize();
@@ -119,7 +183,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
-    // Get the mapping array
+    // Get the mapping array if exists
     uint32_t num_volumes = ode_solver->original_num_cells;
     real *mapping = NULL;
     real *mapping_device = NULL;
@@ -128,13 +192,18 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         check_cuda_error(cudaMalloc((void **)&mapping_device, sizeof(real)*num_volumes));
         check_cuda_error(cudaMemcpy(mapping_device, mapping, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
     }
-    else {
-        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
-    }
 
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, mapping_device,\
+    // Transmurality mapping defined on 'extra_data' function
+    if (ode_solver->ode_extra_data) {
+        solve_endo_mid_epi_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, mapping_device,\
                                     num_cells_to_solve, num_steps, ode_solver->pitch, ode_solver->adaptive, ode_solver->abs_tol, ode_solver->rel_tol, ode_solver->max_dt);
-
+    }
+    // No transmurality: all cells ENDO
+    else {
+        solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device,\
+                                    num_cells_to_solve, num_steps, ode_solver->pitch, ode_solver->adaptive, ode_solver->abs_tol, ode_solver->rel_tol, ode_solver->max_dt);
+    }
+    
     check_cuda_error(cudaPeekAtLastError());
 
     check_cuda_error(cudaFree(stims_currents_device));
@@ -142,8 +211,63 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     if (mapping_device) check_cuda_error(cudaFree(mapping_device));
 }
 
-// Solving the model for each cell in the tissue matrix ni x nj
-__global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *mapping,\
+__global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve,\
+                          uint32_t num_cells_to_solve, int num_steps, size_t pitch, bool use_adpt, real abstol, real reltol, real max_dt) {
+    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+    int sv_id;
+
+    // Each thread solves one cell model
+    if(threadID < num_cells_to_solve) {
+        if(cells_to_solve)
+            sv_id = cells_to_solve[threadID];
+        else
+            sv_id = threadID;
+
+        if(!use_adpt) {
+            real rDY[NEQ];
+            real a[NEQ], b[NEQ];
+
+            // -------------------------------------------------------------------------------------------
+            // MODEL SPECIFIC:
+            // set the variables which are non-linear and hodkin-huxley type
+            const real TOLERANCE = 1e-8;
+            bool is_rush_larsen[NEQ];
+            for (int i = 0; i < NEQ; i++) {
+                is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
+            }
+            // -------------------------------------------------------------------------------------------
+
+            for(int n = 0; n < num_steps; ++n) {
+
+                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], 0.0, sv_id, dt, pitch, false);
+
+                // Solve variables based on its type:
+                //  Non-linear = Euler
+                //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
+                for (int i = 0; i < NEQ; i++) {
+                    real rY = *((real *)((char *)sv + pitch * i) + sv_id);
+                    if (is_rush_larsen[i]) {
+                        if (abs(a[i]) < TOLERANCE) { 
+                            *((real *)((char *)sv + pitch * i) + sv_id) = rY + dt * ( rY * a[i] + b[i]);
+                        } 
+                        else {
+                            real aux = b[i] / a[i];
+                            *((real *)((char *)sv + pitch * i) + sv_id) = exp(a[i] * dt)*(rY + aux) - aux;
+                        }
+                    }
+                    else {
+                        *((real *)((char *)sv + pitch * i) + sv_id) = rY + dt * rDY[i];
+                    }
+                }
+            }
+        } else {
+            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], 0.0, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], 0.0, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+        }
+    }
+}
+
+__global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *mapping,\
                           uint32_t num_cells_to_solve, int num_steps, size_t pitch, bool use_adpt, real abstol, real reltol, real max_dt) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;

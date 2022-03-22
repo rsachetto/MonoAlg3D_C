@@ -36,33 +36,82 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     real *initial_epi = NULL;
     real *initial_mid = NULL;
     real *mapping = NULL;
-    if(solver->ode_extra_data)
-    {
+    if(solver->ode_extra_data) {
         initial_endo = (real *)solver->ode_extra_data;
         initial_epi = (real *)solver->ode_extra_data+NEQ;
         initial_mid = (real *)solver->ode_extra_data+NEQ+NEQ;
         mapping = (real *)solver->ode_extra_data+NEQ+NEQ+NEQ;
-    }
-    else
-    {
-        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
-    }
 
-    OMP(parallel for)
-    for(uint32_t i = 0; i < num_cells; i++)
-    {
-        real *sv = &solver->sv[i * NEQ];
+        OMP(parallel for)
+        for(uint32_t i = 0; i < num_cells; i++){
+            
+            real *sv = &solver->sv[i * NEQ];
 
-        for (int j = 0; j < NEQ; j++)
-        {
-            if (mapping[i] == ENDO)
-                sv[j] = initial_endo[j];
-            else if (mapping[i] == EPI)
-                sv[j] = initial_epi[j];
-            else
-                sv[j] = initial_mid[j];
+            for (int j = 0; j < NEQ; j++) {
+                if (mapping[i] == ENDO)
+                    sv[j] = initial_endo[j];
+                else if (mapping[i] == EPI)
+                    sv[j] = initial_epi[j];
+                else
+                    sv[j] = initial_mid[j];
+            }
         }
-    }    
+    }
+    else {
+        log_info("[INFO] You should supply a mask function to tag the cells when using this mixed model!\n");
+        log_info("[INFO] Considering all cells ENDO!\n");
+        
+        OMP(parallel for)
+        for(uint32_t i = 0; i < num_cells; i++){
+            
+            real *sv = &solver->sv[i * NEQ];
+
+            sv[0] = -88.7638;
+            sv[1] = 0.0111;
+            sv[2] = 7.0305e-5;
+            sv[3] = 12.1025;
+            sv[4] = 12.1029;
+            sv[5] = 142.3002;
+            sv[6] = 142.3002;
+            sv[7] = 1.5211;
+            sv[8] = 1.5214;
+            sv[9] = 8.1583e-05;
+            sv[10] = 8.0572e-4;
+            sv[11] = 0.8286;
+            sv[12] = 0.8284;
+            sv[13] = 0.6707;
+            sv[14] = 0.8281;
+            sv[15] = 1.629e-4;
+            sv[16] = 0.5255;
+            sv[17] = 0.2872;
+            sv[18] = 9.5098e-4;
+            sv[19] = 0.9996;
+            sv[20] = 0.5936;
+            sv[21] = 4.8454e-4;
+            sv[22] = 0.9996;
+            sv[23] = 0.6538;
+            sv[24] = 8.1084e-9;
+            sv[25] = 1.0;
+            sv[26] = 0.939;
+            sv[27] = 1.0;
+            sv[28] = 0.9999;
+            sv[29] = 1.0;
+            sv[30] = 1.0;
+            sv[31] = 1.0;
+            sv[32] = 6.6462e-4;
+            sv[33] = 0.0012;
+            sv[34] = 7.0344e-4;
+            sv[35] = 8.5109e-4;
+            sv[36] = 0.9981;
+            sv[37] = 1.3289e-5;
+            sv[38] = 3.7585e-4;
+            sv[39] = 0.248;
+            sv[40] = 1.7707e-4;
+            sv[41] = 1.6129e-22;
+            sv[42] = 1.2475e-20;
+        }
+
+    }        
 }
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
@@ -81,9 +130,6 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     if (ode_solver->ode_extra_data) {
         mapping = (real *)ode_solver->ode_extra_data+NEQ+NEQ+NEQ;
     }
-    else {
-        log_error_and_exit("You must supply a mask function to tag the cells when using this mixed model!\n");
-    }
 
 #pragma omp parallel for private(sv_id)
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
@@ -94,12 +140,23 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             sv_id = i;
 
         if(adpt) {
-            //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], mapping[i], current_t + dt, sv_id, ode_solver);
-            solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], mapping[i], current_t + dt, sv_id, ode_solver);
+            if (ode_solver->ode_extra_data) {
+                //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], mapping[i], current_t + dt, sv_id, ode_solver);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], mapping[i], current_t + dt, sv_id, ode_solver);
+            }
+            else {
+                //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver);
+            }
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
-                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], mapping[i]);
+                if (ode_solver->ode_extra_data) {
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], mapping[i]);
+                }
+                else {
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0);
+                }
             }
         }
     }
@@ -272,14 +329,15 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
-    const real TOLERANCE = 1e-8;
+    const real TOLERANCE = 1e-08;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
     }
     // -------------------------------------------------------------------------------------------
 
-    const real _beta_safety_ = 0.8;
+    const real _beta_safety_ = 0.85;
+    const real rel_tol = 1.445;
     int numEDO = NEQ;
 
     real rDY[numEDO], a_[numEDO], b_[numEDO], a_new[numEDO], b_new[numEDO];
@@ -360,7 +418,8 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        *dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);
+        //*dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
 
         if(*dt < min_dt) {
             *dt = min_dt;

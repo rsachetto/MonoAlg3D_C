@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def read_state_variable(filename):
+    print("Reading state-vector from '%s' ..." % (filename))
     sv = np.genfromtxt(filename)
     return sv
 
@@ -29,8 +30,11 @@ def plot_state_variable_comparison(t, sv1, sv2, sv_names):
         sys.exit(1)
 
     for j in range(ncol1):
-            plt.plot(t,sv1[:,j],label="EulerAdapt_Sachetto")
-            plt.plot(t,sv2[:,j],label="RLAdapt_Jhonny")
+            print("Working on state-variable '%s' ..." % (sv_names[j]))
+            #plt.plot(t,sv1[:,j],label="EulerAdapt")
+            #plt.plot(t,sv2[:,j],label="RLAdapt")
+            plt.plot(t[245000:],sv1[245000:,j],label="EulerAdapt")
+            plt.plot(t[245000:],sv2[245000:,j],label="RLAdapt")
             plt.title("%s" % (sv_names[j]))
             plt.legend(loc=0,fontsize=14)
             plt.savefig("outputs/comparison_cell__%s.png" % (sv_names[j]), dpi=150)

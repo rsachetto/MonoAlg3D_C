@@ -291,7 +291,8 @@ inline __device__ void solve_forward_euler_gpu_adpt_2(real *sv, real stim_curr, 
     real sv_local[NEQ];
 
     const real TOLERANCE = 1e-8;
-    const real _beta_safety_ = 0.8;
+    const real _beta_safety_ = 0.85;
+    const real rel_tol = 1.445;
 
     const real __tiny_ = pow(abstol, 2.0);
 
@@ -344,7 +345,8 @@ inline __device__ void solve_forward_euler_gpu_adpt_2(real *sv, real stim_curr, 
 		previous_dt = dt;
 
 		/// adapt the time step
-		dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);
+		//dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        dt = dt * sqrt(0.5 * rel_tol / greatestError);               // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;
@@ -427,7 +429,8 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real _k_aux__[NEQ];
     real sv_local[NEQ];
 
-    const real _beta_safety_ = 0.8;
+    const real _beta_safety_ = 0.85;
+    const real rel_tol = 1.445;
 
     const real __tiny_ = pow(abstol, 2.0);
 
@@ -498,7 +501,8 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 		previous_dt = dt;
 
 		/// adapt the time step
-		dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);
+		//dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        dt = dt * sqrt(0.5 * rel_tol / greatestError);               // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;

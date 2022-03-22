@@ -108,9 +108,9 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             sv_id = i;
 
         if(adpt) {
-            //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
+            solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
             //solve_forward_euler_cpu_adpt_2(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
-            solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
+            //solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
@@ -419,13 +419,12 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
     }
     // -------------------------------------------------------------------------------------------
 
-    const real _beta_safety_ = 0.8;
+    const real _beta_safety_ = 0.85;
+    const real rel_tol = 1.445;
     int numEDO = NEQ;
 
     real rDY[numEDO], a_[numEDO], b_[numEDO], a_new[numEDO], b_new[numEDO];
 
-    real _tolerances_[numEDO];
-    real _aux_tol = 0.0;
     // initializes the variables
     solver->ode_previous_dt[sv_id] = solver->ode_dt[sv_id];
 
@@ -451,7 +450,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
         _k1__[i] = rDY[i];
     }
 
-    const real rel_tol = solver->rel_tol;
+    //const real rel_tol = solver->rel_tol;
     const real abs_tol = solver->abs_tol;
 
     const real __tiny_ = pow(abs_tol, 2.0);
@@ -502,7 +501,8 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        *dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);
+        //*dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
 
         if(*dt < min_dt) {
             *dt = min_dt;
