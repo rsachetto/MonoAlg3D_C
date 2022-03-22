@@ -13,6 +13,11 @@ void report_error_on_function(int line, const char * file, const char *error) {
     log_error_and_exit("Error on line %d of file %s: %s.\n", line, file, error);
 }
 
+void report_error_on_function_and_continue(int line, const char * file, const char *error) {
+    log_error("Error on line %d of file %s: %s.\n", line, file, error);
+}
+
+
 void report_parameter_error_on_function(int line, const char * file, const char *parameter) {
     log_error_and_exit("Error: Call on line %d of file %s needs a parameter named %s. Exiting!\n", line, file, parameter);
 }

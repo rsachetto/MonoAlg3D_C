@@ -14,6 +14,7 @@
 
 void report_parameter_error_on_function(int line, const char *file, const char *parameter);
 void report_error_on_function(int line, const char *file, const char *error);
+void report_error_on_function_and_continue(int line, const char * file, const char *parameter);
 char *get_string_parameter(struct string_hash_entry *config, const char *parameter);
 bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int n);
 bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, const char *parameter);
@@ -30,6 +31,10 @@ bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, cons
         report_error_on_function(__LINE__, __FILE__, error);                                                                                                   \
     } while(0)
 
+#define REPORT_ERROR_ON_FUNCTION_AND_CONTINUE(error)                                                                                                           \
+    do {                                                                                                                                                       \
+        report_error_on_function_and_continue(__LINE__, __FILE__, error);                                                                                                   \
+    } while(0)
 #define GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                                                    \
     do {                                                                                                                                                       \
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \

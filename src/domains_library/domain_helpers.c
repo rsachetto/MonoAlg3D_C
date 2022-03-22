@@ -297,66 +297,66 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
 
     if(start_dx > start_dy) {
         if(side_length_x < side_length_y) {
-            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dx > start_dy, you need side_length_x > side_length_y");
+            REPORT_ERROR_ON_FUNCTION_AND_CONTINUE("Incorrect configuration. If start_dx > start_dy, you need side_length_x > side_length_y");
             error = true;
         }
     }
 
     if(start_dx > start_dz) {
         if(side_length_x < side_length_z) {
-            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dx > start_dz, you need side_length_x > side_length_z");
+            REPORT_ERROR_ON_FUNCTION_AND_CONTINUE("Incorrect configuration. If start_dx > start_dz, you need side_length_x > side_length_z");
             error = true;
         }
     }
 
     if(start_dy > start_dx) {
         if(side_length_y < side_length_x) {
-            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dy > start_dx, you need side_length_y > side_length_x");
+            REPORT_ERROR_ON_FUNCTION_AND_CONTINUE("Incorrect configuration. If start_dy > start_dx, you need side_length_y > side_length_x");
             error = true;
         }
     }
 
     if(start_dy > start_dz) {
         if(side_length_y < side_length_z) {
-            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dy > start_dz, you need side_length_y > side_length_z");
+            REPORT_ERROR_ON_FUNCTION_AND_CONTINUE("Incorrect configuration. If start_dy > start_dz, you need side_length_y > side_length_z");
             error = true;
         }
     }
 
     if(start_dz > start_dx) {
         if(side_length_z < side_length_x) {
-            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dz > start_dx, you need side_length_z > side_length_x");
+            REPORT_ERROR_ON_FUNCTION_AND_CONTINUE("Incorrect configuration. If start_dz > start_dx, you need side_length_z > side_length_x");
             error = true;
         }
     }
 
     if(start_dz > start_dy) {
         if(side_length_z < side_length_y) {
-            REPORT_ERROR_ON_FUNCTION("Incorrect configuration. If start_dz > start_dy, you need side_length_z > side_length_y");
+            REPORT_ERROR_ON_FUNCTION_AND_CONTINUE("Incorrect configuration. If start_dz > start_dy, you need side_length_z > side_length_y");
             error = true;
         }
     }
 
     if(ceil(proportion_dxdy) != proportion_dxdy || ceil(proportion_dxdz) != proportion_dxdz || ceil(proportion_dydz) != proportion_dydz) {
-        REPORT_ERROR_ON_FUNCTION("Incorrect configuration. start_dx, start_dy and start_dz need to be multiples");
+        REPORT_ERROR_ON_FUNCTION_AND_CONTINUE("Incorrect configuration. start_dx, start_dy and start_dz need to be multiples");
         error = true;
     }
 
     if(ceil(nx) != nx) {
         sds error_str = sdscatprintf(sdsempty(), "start_dx: %lf is not multiple of side_length_x: %lf", start_dx, side_length_x);
-        REPORT_ERROR_ON_FUNCTION(error_str);
+        REPORT_ERROR_ON_FUNCTION_AND_CONTINUE(error_str);
         sdsfree(error_str);
         error = true;
     }
     if(ceil(ny) != ny) {
         sds error_str = sdscatprintf(sdsempty(), "start_dy: %lf is not multiple of side_length_y: %lf", start_dy, side_length_y);
-        REPORT_ERROR_ON_FUNCTION(error_str);
+        REPORT_ERROR_ON_FUNCTION_AND_CONTINUE(error_str);
         sdsfree(error_str);
         error = true;
     }
     if(ceil(nz) != nz) {
         sds error_str = sdscatprintf(sdsempty(), "start_dz: %lf is not multiple of side_length_z: %lf", start_dz, side_length_z);
-        REPORT_ERROR_ON_FUNCTION(error_str);
+        REPORT_ERROR_ON_FUNCTION_AND_CONTINUE(error_str);
         sdsfree(error_str);
         error = true;
     }
