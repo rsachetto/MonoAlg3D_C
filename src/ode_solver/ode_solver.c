@@ -312,7 +312,7 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
         solver->max_dt = (real)options->dt_pde;
 
         if(solver->auto_dt || (options->dt_ode == 0.0)) {
-            real min_dt = 0.0000000001;
+            real min_dt = 1e-10;
 
             //This is highly unlikely
             if(min_dt > solver->max_dt) {
