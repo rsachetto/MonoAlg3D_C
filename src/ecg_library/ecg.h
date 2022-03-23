@@ -13,7 +13,7 @@ struct pseudo_bidomain_persistent_data {
     struct point_3d *leads;
     FILE *output_file;
     real_cpu scale_factor;
-    int n_leads;
+    uint32_t n_leads;
 
 #ifdef COMPILE_CUDA
     cusparseHandle_t cusparseHandle;
