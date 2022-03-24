@@ -336,11 +336,12 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
     }
     // -------------------------------------------------------------------------------------------
 
+    //const real _beta_safety_ = 0.8;
     const real _beta_safety_ = 0.85;
-    const real rel_tol = 1.445;
+    //const real rel_tol = 1.445;
     int numEDO = NEQ;
 
-    real rDY[numEDO], a_[numEDO], b_[numEDO], a_new[numEDO], b_new[numEDO];
+    real rDY[numEDO];
 
     // initializes the variables
     solver->ode_previous_dt[sv_id] = solver->ode_dt[sv_id];
@@ -349,7 +350,11 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
     real edos_new_euler_[numEDO];
     real *_k1__ = (real *)malloc(sizeof(real) * numEDO);
     real *_k2__ = (real *)malloc(sizeof(real) * numEDO);
-    real *_k_aux__;
+    real *a_ = (real *)malloc(sizeof(real) * numEDO);
+    real *b_ = (real *)malloc(sizeof(real) * numEDO);
+    real *a_new = (real *)malloc(sizeof(real) * numEDO);
+    real *b_new = (real *)malloc(sizeof(real) * numEDO);
+    real *_k_aux__, *_a_aux__, *_b_aux__;
 
     real *dt = &solver->ode_dt[sv_id];
     real *time_new = &solver->ode_time_new[sv_id];
@@ -418,8 +423,8 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        //*dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
+        *dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        //*dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
 
         if(*dt < min_dt) {
             *dt = min_dt;
@@ -444,9 +449,18 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
                 printf("Accepting solution with error > %lf \n", greatestError);
             }
 
+            // Swap pointers
             _k_aux__ = _k2__;
             _k2__ = _k1__;
             _k1__ = _k_aux__;
+
+            _a_aux__ = a_;
+            a_ = a_new;
+            a_new = _a_aux__;
+
+            _b_aux__ = b_;
+            b_ = b_new;
+            b_new = _b_aux__;
 
             // it steps the method ahead, with euler solution
             for(int i = 0; i < numEDO; i++) {
@@ -469,7 +483,10 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
 
     free(_k1__);
     free(_k2__);
-    
+    free(a_);
+    free(b_);
+    free(a_new);
+    free(b_new);
 }
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real mapping) {

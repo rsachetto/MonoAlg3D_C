@@ -33,9 +33,11 @@ def plot_state_variable_comparison(t, sv1, sv2, sv_names):
             print("Working on state-variable '%s' ..." % (sv_names[j]))
             #plt.plot(t,sv1[:,j],label="EulerAdapt")
             #plt.plot(t,sv2[:,j],label="RLAdapt")
-            plt.plot(t[245000:],sv1[245000:,j],label="EulerAdapt")
-            plt.plot(t[245000:],sv2[245000:,j],label="RLAdapt")
-            plt.title("%s" % (sv_names[j]))
+            #plt.plot(t[245000:],sv1[245000:,j],label="reltol=1e-3")
+            #plt.plot(t[245000:],sv2[245000:,j],label="reltol=1e-12")
+            plt.plot(t[245000:],sv1[245000:,j],label="dt=EulerAdapt",linewidth=1.0)
+            plt.plot(t[245000:],sv2[245000:,j],label="dt=RLAdapt",linewidth=1.0)
+            plt.title("SV variable - %s" % (sv_names[j]))
             plt.legend(loc=0,fontsize=14)
             plt.savefig("outputs/comparison_cell__%s.png" % (sv_names[j]), dpi=150)
             plt.clf()
@@ -47,6 +49,24 @@ def read_state_vector_names (filename):
         sv_names.append(line[0:len(line)-1])
     file.close()
     return sv_names
+
+def calc_error (sv_ref, sv_aprox, sv_names):
+    nlin_ref, ncol_ref = np.shape(sv_ref)
+    nlin_aprox, ncol_aprox = np.shape(sv_aprox)
+    # Sanity check
+    if (nlin_ref != nlin_aprox or ncol_ref != ncol_aprox):
+        print("[-] ERROR! The number of lines or coluns between the state-vectors are different!")
+        sys.exit(1)
+
+    sv_ref = sv_ref[245000:,:]
+    sv_aprox = sv_aprox[245000:,:]
+    rel_error = np.abs(sv_ref-sv_aprox)/np.abs(sv_ref+1e-16)
+    rel_error = rel_error.sum(axis=0) / nlin_ref * 100.0
+
+    for i in range(ncol_ref):
+        print("sv[%d]{%s} = %.2lf" % (i,sv_names[i],rel_error[i]))
+
+    return rel_error
 
 def main():
     if len(sys.argv) != 7:
@@ -79,6 +99,8 @@ def main():
 
     # Get state-vector names
     sv_names = read_state_vector_names(sv_names_filename)
+
+    #calc_error(sv1,sv2,sv_names)
 
     # Plot state-vector comparison
     plot_state_variable_comparison(t,sv1,sv2,sv_names)
