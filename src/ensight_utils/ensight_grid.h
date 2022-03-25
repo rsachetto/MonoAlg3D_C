@@ -40,7 +40,6 @@ struct ensight_grid * new_ensight_grid_from_string(char* source, size_t source_s
 
 void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *filename, bool binary);
 
-void save_ensight_grid_as_alg_file(struct ensight_grid *grid, char *filename, bool binary);
 void free_ensight_grid(struct ensight_grid *ensight_grid);
 void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_rate, int num_state_var);
 void save_en6_result_file(char *filename, struct grid *the_grid, bool binary);

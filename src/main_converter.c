@@ -8,7 +8,7 @@
 #include "utils/file_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
 
-static void convert_file(const char *input, const char *output, const char *file_name/*, uint32_t value_index*/) {
+static void convert_file(const char *input, const char *output, const char *file_name /*, uint32_t value_index*/) {
 
     sds full_input_path;
 
@@ -31,7 +31,8 @@ static void convert_file(const char *input, const char *output, const char *file
 
     static int count = 0;
 
-    if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg") || FILE_HAS_EXTENSION(file_info.file_extension, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+    if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg") ||
+       FILE_HAS_EXTENSION(file_info.file_extension, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
 
         if(vtk_grid == NULL) {
             vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false);
@@ -50,23 +51,35 @@ static void convert_file(const char *input, const char *output, const char *file
                 full_output_path = sdscat(full_output_path, "/");
             }
 
-
             if(FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
                 set_vtk_grid_values_from_ensight_file(vtk_grid, full_input_path);
             }
 
-            if(FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
-                full_output_path = sdscatfmt(full_output_path, "V_it_%i.vtu", count);
-                count++;
+            char ext[4] = ".vtu";
+            bool alg = false;
+
+            if(FILE_HAS_EXTENSION(file_info.file_extension, "alg")) {
+                ext[1] = 'v';
+                ext[2] = 't';
+                ext[3] = 'k';
+                alg = true;
             }
-            else {
+
+            if(FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+                full_output_path = sdscatfmt(full_output_path, "V_it_%i%s", count, ext);
+                count++;
+            } else {
                 full_output_path = sdscat(full_output_path, file_info.filename_without_extension);
-                full_output_path = sdscat(full_output_path, ".vtu");
+                full_output_path = sdscat(full_output_path, ext);
             }
 
             printf("Converting %s to %s\n", full_input_path, full_output_path);
 
-            save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, full_output_path, 6);
+            if(alg){
+                save_vtk_unstructured_grid_as_legacy_vtk(vtk_grid, full_output_path, false, false);
+            } else {
+                save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, full_output_path, 6);
+            }
 
             if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg")) {
                 free_vtk_unstructured_grid(vtk_grid);
@@ -115,17 +128,11 @@ static void convert_file(const char *input, const char *output, const char *file
     }                                                                                                                                                          \
     create_dir(output);
 
-
 int main(int argc, char **argv) {
 
     struct conversion_options *options = new_conversion_options();
 
     parse_conversion_options(argc, argv, options);
-
-    if(options->value_index < 0) {
-        fprintf(stderr, "Invalid index for the value to be saved (%d)! The value parameter should be >= 0\n", options->value_index);
-        return EXIT_FAILURE;
-    }
 
     //    uint32_t value_index = options->value_index;
 
@@ -148,14 +155,14 @@ int main(int argc, char **argv) {
         output = sdsempty();
 
         if(input_info.is_dir) {
-            
+
             SET_OUT_DIR(input);
-            
+
             string_array geo_file = list_files_from_dir(input, NULL, "geo", NULL, true);
             string_array files_list = NULL;
             if(arrlen(geo_file) > 0) {
 
-                convert_file(input, output, geo_file[0]/*, value_index*/);
+                convert_file(input, output, geo_file[0] /*, value_index*/);
                 files_list = list_files_from_dir(input, "Vm.", NULL, NULL, true);
                 int num_files = arrlen(files_list);
 
@@ -164,12 +171,11 @@ int main(int argc, char **argv) {
                     exit(EXIT_FAILURE);
                 } else {
                     for(int i = 0; i < num_files; i++) {
-                        convert_file(input, output, files_list[i]/*, value_index*/);
+                        convert_file(input, output, files_list[i] /*, value_index*/);
                     }
                 }
 
-            }
-            else {
+            } else {
 
                 files_list = list_files_from_dir(input, NULL, NULL, NULL, true);
                 int num_files = arrlen(files_list);
@@ -179,17 +185,16 @@ int main(int argc, char **argv) {
                     exit(EXIT_FAILURE);
                 } else {
                     for(int i = 0; i < num_files; i++) {
-                        convert_file(input, output, files_list[i]/*, value_index*/);
+                        convert_file(input, output, files_list[i] /*, value_index*/);
                     }
                 }
             }
         } else {
-            
+
             SET_OUT_DIR(input_info.dir_name);
 
             create_dir(output);
-            convert_file(input, output, NULL/*, value_index*/);
-
+            convert_file(input, output, NULL /*, value_index*/);
         }
     }
 
