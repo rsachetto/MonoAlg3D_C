@@ -430,7 +430,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real sv_local[NEQ];
 
     const real _beta_safety_ = 0.85;
-    const real rel_tol = 1.445;
+    //const real rel_tol = 1.445;
 
     const real __tiny_ = pow(abstol, 2.0);
 
@@ -501,8 +501,8 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 		previous_dt = dt;
 
 		/// adapt the time step
-		//dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        dt = dt * sqrt(0.5 * rel_tol / greatestError);               // Jhonny`s formula
+		dt = _beta_safety_ * (dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        //dt = dt * sqrt(0.5 * rel_tol / greatestError);               // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;
@@ -527,6 +527,14 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 				_k_aux__[i] = _k2__[i];
 				_k2__[i] = _k1__[i];
 				_k1__[i] = _k_aux__[i];
+
+                _k_aux__[i] = a_[i];
+                a_[i] = a_new[i];
+                a_new[i] = _k_aux__[i];
+
+                _k_aux__[i] = b_[i];
+                b_[i] = b_new[i];
+                b_new[i] = _k_aux__[i];
 			}
 
 			for(int i = 0; i < NEQ; i++) {
