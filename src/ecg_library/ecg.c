@@ -3,18 +3,11 @@
 //
 
 #include "ecg.h"
-#include "../3dparty/sds/sds.h"
 #include "../3dparty/stb_ds.h"
 #include "../config/ecg_config.h"
-#include "../config_helpers/config_helpers.h"
-#include "../libraries_common/common_data_structures.h"
-#include "../logger/logger.h"
+#include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include <float.h>
-#include <time.h>
-#include <unistd.h>
-#include "../utils/file_utils.h"
-
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -34,7 +27,7 @@
 
 #define EUCLIDIAN_DISTANCE(p, q) sqrt(pow(p.x - q.x, 2.0) + pow(p.y - q.y, 2.0) + pow(p.z - q.z, 2.0))
 
-static void get_leads(struct config *config, struct pseudo_bidomain_persistent_data *data) {
+static void get_leads(struct config *config) {
 
     char lead_name[1024];
     int count = 1;
@@ -88,13 +81,13 @@ INIT_CALC_ECG(init_pseudo_bidomain_cpu) {
 
     PSEUDO_BIDOMAIN_DATA->scale_factor = 1.0 / (4.0 * M_PI * sigma_b);
 
-    get_leads(config, PSEUDO_BIDOMAIN_DATA);
+    get_leads(config);
     PSEUDO_BIDOMAIN_DATA->n_leads = arrlen(PSEUDO_BIDOMAIN_DATA->leads);
 
     uint32_t n_active = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    PSEUDO_BIDOMAIN_DATA->distances = MALLOC_ARRAY_OF_TYPE(real, PSEUDO_BIDOMAIN_DATA->n_leads*n_active);
+    PSEUDO_BIDOMAIN_DATA->distances = MALLOC_ARRAY_OF_TYPE(real, PSEUDO_BIDOMAIN_DATA->n_leads * n_active);
 
     PSEUDO_BIDOMAIN_DATA->beta_im = MALLOC_ARRAY_OF_TYPE(real, n_active);
     PSEUDO_BIDOMAIN_DATA->main_diagonal = MALLOC_ARRAY_OF_TYPE(real_cpu, n_active);
@@ -106,11 +99,11 @@ INIT_CALC_ECG(init_pseudo_bidomain_cpu) {
 
         OMP(parallel for)
         for(int j = 0; j < n_active; j++) {
-            uint32_t index = i*n_active + j;
+            uint32_t index = i * n_active + j;
             struct point_3d center = ac[j]->center;
             PSEUDO_BIDOMAIN_DATA->distances[index] = EUCLIDIAN_DISTANCE(lead, center);
         }
-    }    
+    }
 
     real_cpu beta = the_solver->beta;
     real_cpu cm = the_solver->cm;
@@ -142,18 +135,18 @@ CALC_ECG(pseudo_bidomain_cpu) {
             PSEUDO_BIDOMAIN_DATA->beta_im[i] += cell_elements[el].value * cell_elements[el].cell->v;
         }
     }
-    
+
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", time_info->current_t);
 
-    for(int i = 0; i < PSEUDO_BIDOMAIN_DATA->n_leads; i++) {
+    for(uint32_t i = 0; i < PSEUDO_BIDOMAIN_DATA->n_leads; i++) {
         real_cpu local_sum = 0.0;
 
         OMP(parallel for reduction(+:local_sum))
-        for(int j = 0; j < n_active; j++) {
+        for(uint32_t j = 0; j < n_active; j++) {
             struct point_3d d = ac[j]->discretization;
             real_cpu volume = d.x * d.y * d.z;
 
-            int index = i*n_active + j;
+            uint32_t index = i * n_active + j;
             local_sum += ((PSEUDO_BIDOMAIN_DATA->beta_im[j] / PSEUDO_BIDOMAIN_DATA->distances[index])) * volume;
         }
 
@@ -174,6 +167,14 @@ END_CALC_ECG(end_pseudo_bidomain_cpu) {
 INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
     init_pseudo_bidomain_cpu(config, the_solver, NULL, the_grid);
+
+    if(!the_ode_solver->gpu) {
+        log_warn("The current implementation of pseudo_bidomain_gpu only works when the odes are also being solved using the GPU! Falling back to CPU version\n");
+        shput(config->config_data, "use_gpu", "false");
+        return;
+    }
+
+    //This is allocated when using the CPU code, but we do not need it in the gpu version
     free(PSEUDO_BIDOMAIN_DATA->beta_im);
 
     check_cublas_error(cusparseCreate(&(PSEUDO_BIDOMAIN_DATA->cusparseHandle)));
@@ -187,10 +188,11 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     int nz = arrlen(val);
     uint32_t N = the_grid->num_active_cells;
 
+    // We need to do that because val is originally a float value. Maybe we should make it real.
     real *new_val = NULL;
     arrsetlen(new_val, nz);
     for(int i = 0; i < nz; i++) {
-        new_val[i] = val[i];
+        new_val[i] = (real)val[i];
     }
 
     PSEUDO_BIDOMAIN_DATA->nz = nz;
@@ -205,7 +207,7 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
 #if CUBLAS_VER_MAJOR >= 11
     check_cuda_error(cusparseCreateCsr(&(PSEUDO_BIDOMAIN_DATA->matA), N, N, nz, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
-                PSEUDO_BIDOMAIN_DATA->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUBLAS_SIZE));
+                                       PSEUDO_BIDOMAIN_DATA->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUBLAS_SIZE));
     check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_beta_im), N, PSEUDO_BIDOMAIN_DATA->beta_im, CUBLAS_SIZE));
     check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_vm), N, the_ode_solver->sv, CUBLAS_SIZE));
 #else
@@ -218,15 +220,16 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice));        // JA
     check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice));   // IA
     check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_val, new_val, nz * sizeof(real), cudaMemcpyHostToDevice)); // A
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_distances, PSEUDO_BIDOMAIN_DATA->distances, PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real), cudaMemcpyHostToDevice)); 
+    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_distances, PSEUDO_BIDOMAIN_DATA->distances, PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real),
+                                cudaMemcpyHostToDevice));
 
     PSEUDO_BIDOMAIN_DATA->volumes = MALLOC_ARRAY_OF_TYPE(real, N);
 
     struct cell_node **ac = the_grid->active_cells;
     OMP(parallel for)
-    for(int i = 0; i < N; i+=1) {
+    for(int i = 0; i < N; i += 1) {
         struct point_3d d = ac[i]->discretization;
-        PSEUDO_BIDOMAIN_DATA->volumes[i]   = d.x * d.y * d.z;
+        PSEUDO_BIDOMAIN_DATA->volumes[i] = d.x * d.y * d.z;
     }
 
     check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->volumes, N * sizeof(real), cudaMemcpyHostToDevice));
@@ -264,60 +267,60 @@ CALC_ECG(pseudo_bidomain_gpu) {
 #else
 
 #ifdef CELL_MODEL_REAL_DOUBLE
-    cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
+    cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
+                   PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
+                   PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #else
-    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha, PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
+    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
+                   PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
+                   PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #endif
 
 #endif
-
-    //real *beta_im = MALLOC_ARRAY_OF_TYPE(real, n_active);
-    //check_cuda_error(cudaMemcpy(beta_im, PSEUDO_BIDOMAIN_DATA->beta_im, n_active * sizeof(real), cudaMemcpyDeviceToHost));
 
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", time_info->current_t);
-    
+
     for(int i = 0; i < PSEUDO_BIDOMAIN_DATA->n_leads; i++) {
 
-        //beta_im / distance
-        gpu_vec_div_vec(PSEUDO_BIDOMAIN_DATA->beta_im, PSEUDO_BIDOMAIN_DATA->d_distances + n_active*i, PSEUDO_BIDOMAIN_DATA->tmp_data, n_active);
+        // beta_im / distance
+        gpu_vec_div_vec(PSEUDO_BIDOMAIN_DATA->beta_im, PSEUDO_BIDOMAIN_DATA->d_distances + n_active * i, PSEUDO_BIDOMAIN_DATA->tmp_data, n_active);
         real local_sum;
 
-    #ifdef CELL_MODEL_REAL_DOUBLE
-        check_cublas_error(cublasDdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
-    #else
-        check_cublas_error(cublasSdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
-    #endif
-    
-        //OLD NAIVE CODE
-        /*
-        OMP(parallel for reduction(+:local_sum))
-        for(int j = 0; j < n_active; j++) {
-            int index = i*n_active + j;
-            local_sum += ((beta_im[j] / PSEUDO_BIDOMAIN_DATA->distances[index])) * PSEUDO_BIDOMAIN_DATA->volumes[j];
-        }
-        */
+#ifdef CELL_MODEL_REAL_DOUBLE
+        check_cublas_error(
+            cublasDdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
+#else
+        check_cublas_error(
+            cublasSdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
+#endif
 
         fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", -PSEUDO_BIDOMAIN_DATA->scale_factor * local_sum);
     }
 
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "\n");
 
-    //free(beta_im);
 }
 
 END_CALC_ECG(end_pseudo_bidomain_gpu) {
 
- struct pseudo_bidomain_persistent_data *persistent_data = (struct pseudo_bidomain_persistent_data *)config->persistent_data;
+    struct pseudo_bidomain_persistent_data *persistent_data = (struct pseudo_bidomain_persistent_data *)config->persistent_data;
 
-    if(!persistent_data) return;
+    if(!persistent_data)
+        return;
 
     check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->cusparseHandle));
     check_cuda_error((cudaError_t)cublasDestroy(persistent_data->cublasHandle));
 
 #if CUBLAS_VER_MAJOR >= 11
-    if (persistent_data->matA)  { check_cuda_error(cusparseDestroySpMat(persistent_data->matA)); }
-    if (persistent_data->vec_beta_im)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vec_beta_im)); }
-    if (persistent_data->vec_vm)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vec_vm)); }
+    if(persistent_data->matA) {
+        check_cuda_error(cusparseDestroySpMat(persistent_data->matA));
+    }
+    if(persistent_data->vec_beta_im) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vec_beta_im));
+    }
+    if(persistent_data->vec_vm) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vec_vm));
+    }
 #else
     check_cuda_error((cudaError_t)cusparseDestroyMatDescr(persistent_data->descr));
 #endif
@@ -330,7 +333,6 @@ END_CALC_ECG(end_pseudo_bidomain_gpu) {
     check_cuda_error(cudaFree(persistent_data->d_volumes));
 
     free(persistent_data);
-
 }
 #endif
 

@@ -1200,6 +1200,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         }
     }
 
+    //Transmembrane_Potential
     {
         sds tmp = sdscatprintf(sdsempty(), "\nCELL_DATA %d\n", num_cells);
         tmp = sdscat(tmp, "SCALARS Transmembrane_Potential float\n");
@@ -1209,17 +1210,42 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
 
         file_content = sdscatsds(file_content, tmp);
         sdsfree(tmp);
+
+        size_t num_values = arrlenu(vtk_grid->values);
+
+        for(size_t i = 0; i < num_values; i++) {
+            if(binary) {
+                int aux = invert_bytes(*((int *)&(vtk_grid->values[i])));
+                file_content = sdscatlen(file_content, &aux, sizeof(int));
+                size_until_now += sizeof(int);
+            } else {
+                file_content = sdscatprintf(file_content, "%lf ", vtk_grid->values[i]);
+            }
+        }
     }
 
-    size_t num_values = arrlenu(vtk_grid->values);
+    if(vtk_grid->extra_values != NULL) {
+        int n_extra = arrlen(vtk_grid->extra_values);
+        for(int i = 0; i < n_extra; i++) {
+            sds tmp = sdscatfmt(sdsempty(), "\nSCALARS Column_%i float\n", i+1);
+            tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
-    for(size_t i = 0; i < num_values; i++) {
-        if(binary) {
-            int aux = invert_bytes(*((int *)&(vtk_grid->values[i])));
-            file_content = sdscatlen(file_content, &aux, sizeof(int));
-            size_until_now += sizeof(int);
-        } else {
-            file_content = sdscatprintf(file_content, "%lf ", vtk_grid->values[i]);
+            size_until_now += sdslen(tmp);
+
+            file_content = sdscatsds(file_content, tmp);
+            sdsfree(tmp);
+
+            size_t num_values = arrlenu(vtk_grid->extra_values[i]);
+
+            for(size_t j = 0; j < num_values; j++) {
+                if(binary) {
+                    int aux = invert_bytes(*((int *)&(vtk_grid->extra_values[i][j])));
+                    file_content = sdscatlen(file_content, &aux, sizeof(int));
+                    size_until_now += sizeof(int);
+                } else {
+                    file_content = sdscatprintf(file_content, "%lf ", vtk_grid->extra_values[i][j]);
+                }
+            }
         }
     }
 
