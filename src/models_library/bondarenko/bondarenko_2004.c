@@ -243,7 +243,8 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     real calc_beta_a1 = (0.0000689f*exp(((-0.04178f)*V_old_))); //105
     real calc_alpha_i_duplicated_rapid_delayed_rectifier_potassium_current = (0.090821f*exp((0.023391f*(V_old_+5.0f))));    //106
     real calc_beta_i_duplicated_rapid_delayed_rectifier_potassium_current = (0.006497f*exp(((-0.03268f)*(V_old_+5.0f))));   //107
-    real calc_sigma = ((1.0f/7.0f)*(exp((Nao/67300.0f))-1.0f)); //110
+    //real calc_sigma = ((1.0f/7.0f)*(exp((Nao/67300.0f))-1.0f)); //110
+    real calc_sigma = (1.0f/7.0f)*expm1(Nao/67300.0f); //110
     real calc_O_ClCa = (0.2f/(1.0f+exp(((-(V_old_-46.7f))/7.8f)))); //112
     real calc_beta_Na2 = ((calc_alpha_Na13*calc_alpha_Na2*calc_alpha_Na3)/(calc_beta_Na13*calc_beta_Na3));  //60
     real calc_alpha_Na4 = (calc_alpha_Na2/1000.0f); //61

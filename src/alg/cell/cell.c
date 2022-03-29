@@ -193,10 +193,6 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
     real_cpu least_distance_y = the_cell->discretization.y/2.0;
     real_cpu least_distance_z = the_cell->discretization.z/2.0;
 
-    real_cpu local_flux_x;
-    real_cpu local_flux_y;
-    real_cpu local_flux_z;
-
     bool has_found;
 
     /* When neighbour_grid_cell is a transition node, looks for the next neighbor
@@ -253,9 +249,9 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
         if(black_neighbor_cell->discretization.z/2.0 < least_distance_z)
             least_distance_z = black_neighbor_cell->discretization.z / 2.0;
 
-        local_flux_x = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_x);
-        local_flux_y = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_y);
-        local_flux_z = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_z);
+        real_cpu local_flux_x = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_x);
+        real_cpu local_flux_y = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_y);
+        real_cpu local_flux_z = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_z);
 
         lock_cell_node(the_cell);
 

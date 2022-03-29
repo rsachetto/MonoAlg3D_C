@@ -902,24 +902,29 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
         (*(info_string))[index++] = strdup(tmp);
 
-        if(gui_config->paused) {
-            if(gui_config->dt == 0) {
-                snprintf(tmp, TMP_SIZE, "Visualization paused: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
-            } else {
-                snprintf(tmp, TMP_SIZE, "Visualization paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
-            }
-        } else if(gui_config->simulating) {
-            if(gui_config->dt == 0) {
-                snprintf(tmp, TMP_SIZE, "Visualization running: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
-            } else {
-                snprintf(tmp, TMP_SIZE, "Visualization running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
-            }
+        if(gui_config->final_file_index == 0) {
+            snprintf(tmp, TMP_SIZE, "Visualizing single file.                      ");
+        }
+        else {
+            if(gui_config->paused) {
+                if(gui_config->dt == 0) {
+                    snprintf(tmp, TMP_SIZE, "Visualization paused: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
+                } else {
+                    snprintf(tmp, TMP_SIZE, "Visualization paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+                }
+            } else if(gui_config->simulating) {
+                if(gui_config->dt == 0) {
+                    snprintf(tmp, TMP_SIZE, "Visualization running: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
+                } else {
+                    snprintf(tmp, TMP_SIZE, "Visualization running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+                }
 
-        } else {
-            if(gui_config->dt == 0) {
-                snprintf(tmp, TMP_SIZE, "Visualization finished: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
             } else {
-                snprintf(tmp, TMP_SIZE, "Visualization finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+                if(gui_config->dt == 0) {
+                    snprintf(tmp, TMP_SIZE, "Visualization finished: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
+                } else {
+                    snprintf(tmp, TMP_SIZE, "Visualization finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+                }
             }
         }
 
