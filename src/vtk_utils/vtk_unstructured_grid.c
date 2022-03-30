@@ -1200,7 +1200,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         }
     }
 
-    //Transmembrane_Potential
+    // Transmembrane_Potential
     {
         sds tmp = sdscatprintf(sdsempty(), "\nCELL_DATA %d\n", num_cells);
         tmp = sdscat(tmp, "SCALARS Transmembrane_Potential float\n");
@@ -1227,7 +1227,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
     if(vtk_grid->extra_values != NULL) {
         int n_extra = arrlen(vtk_grid->extra_values);
         for(int i = 0; i < n_extra; i++) {
-            sds tmp = sdscatfmt(sdsempty(), "\nSCALARS Column_%i float\n", i+1);
+            sds tmp = sdscatfmt(sdsempty(), "\nSCALARS Column_%i float\n", i + 1);
             tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
             size_until_now += sdslen(tmp);
@@ -2299,7 +2299,7 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file_with_progress(
     // TRYING TO INFER THE FILE TYPE//////////////////////
     if(source[0] == '#') {
         file_type = VTK_LEGACY;
-    } else if isdigit(source[0]) {
+    } else if(isdigit(source[0])) {
         file_type = ALG_PLAIN_TEXT;
     } else if(source[0] == '<') {
         file_type = VTU_XML;

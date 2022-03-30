@@ -43,7 +43,7 @@ static void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, 
 
     sds full_path_cp = sdsnew(full_path);
     full_path_cp = sdscat(full_path_cp, ".vis");
-    FILE *vis_file = fopen(full_path_cp, "rw");
+    FILE *vis_file = fopen(full_path_cp, "r+");
 
     if(vis_file) {
         uint32_t n_cells = (*vtk_grid)->num_cells;

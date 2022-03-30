@@ -66,65 +66,51 @@ FIND_CUDA () {
 
 }
 
-FIND_CRITERION() {
+FIND_LIB() {
+
+	LIB=$1
 
 	PKG_CONFIG=$(command -v pkg-config)	
 
+	LIB_NAME=$(printf '%s\n' "$LIB" | awk '{ print toupper($0) }')
+    LIB_FOUND="$LIB_NAME"_FOUND
+	LIB_LIBRARY_PATH="$LIB_NAME"_LIBRARY_PATH
+	LIB_INCLUDE_PATH="$LIB_NAME"_INCLUDE_PATH
+	LIB_LIBRARIES="$LIB_NAME"_LIBRARIES
+
 	if [ -z "$PKG_CONFIG" ]; then
-		CRITERION_FOUND=''
+	    printf -v "$LIB_FOUND" ""
 	else
-		if "$PKG_CONFIG" --exists criterion; then
-			CRITERION_FOUND='y'
-			CRITERIONS_LIBRARY_PATH=$($PKG_CONFIG --libs-only-L criterion)
-			CRITERION_INCLUDE_PATH=$($PKG_CONFIG --cflags-only-I criterion)
-			LIBS=$($PKG_CONFIG --libs-only-l criterion)
+		if "$PKG_CONFIG" --exists "$LIB"; then
+			printf -v "$LIB_FOUND" "y"
 
-			export CRITERION_FOUND
-			export CRITERIONS_LIBRARY_PATH
-			export CRITERION_INCLUDE_PATH
+			TMP=$($PKG_CONFIG --libs-only-L "$LIB")
+			printf -v "$LIB_LIBRARY_PATH" "%s" "${TMP:2}"
 
+			TMP=$($PKG_CONFIG --cflags-only-I "$LIB")
+			printf -v "$LIB_INCLUDE_PATH" "%s" "${TMP:2}"
+
+			LIBS=$($PKG_CONFIG --libs-only-l "$LIB")		
+			
 			if [ -n "$LIBS" ]; then
+				printf -v "$LIB_LIBRARIES" ""
 				for i in $LIBS; do
 					i=${i:2}
-					CRITERION_LIBRARIES="$CRITERION_LIBRARIES $i"
+					printf -v "$LIB_LIBRARIES" "%s" "${!LIB_LIBRARIES} $i"
 				done			
 			fi
-
 		fi	
-	fi
+	fi	
+}
 
+FIND_CRITERION() {
+	FIND_LIB "criterion"
 }
 
 FIND_MPI () {
-
-	#TODO: command to find MPI (use pkg-config)
-	MPI_FOUND=''
-	MPI_LIBRARIES=mpi
-
-	if [ "$OS" == "Ubuntu" ]; then
-		MPI_FOUND='y'
-		MPI_LIBRARY_PATH='/usr/lib/x86_64-linux-gnu/openmpi/lib'
-		MPI_INCLUDE_PATH='/usr/lib/x86_64-linux-gnu/openmpi/include/'
-	elif [ "$OS" == "Fedora" ]; then
-		MPI_FOUND='y'
-		MPI_LIBRARY_PATH='/usr/local/lib/'
-		MPI_INCLUDE_PATH='/usr/local/include/'
-	elif [ "$OS" == "Manjaro Linux" ]; then
-		MPI_FOUND='y'
-		MPI_LIBRARY_PATH=/usr/lib/openmpi/
-		MPI_INCLUDE_PATH=''
-	fi
-
-	if [ ! -d "$MPI_INCLUDE_PATH" ] || [ ! -d "$MPI_LIBRARY_PATH" ]; then
-		MPI_FOUND=''
-		MPI_INCLUDE_PATH=''
-		MPI_LIBRARY_PATH=''
-		MPI_LIBRARIES=''
-	fi
-
-	export MPI_FOUND
-	export MPI_LIBRARIES
-	export MPI_LIBRARY_PATH
-	export MPI_INCLUDE_PATH
-
+	FIND_LIB "ompi"
+	MPI_FOUND=$OMPI_FOUND
+	MPI_LIBRARIES=$OMPI_LIBRARIES
+	MPI_LIBRARY_PATH=$OMPI_LIBRARY_PATH
+	MPI_INCLUDE_PATH=$OMPI_INCLUDE_PATH
 }
