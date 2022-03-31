@@ -467,6 +467,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
     const real TOLERANCE = 1e-8;
+    const real rel_tol = 1e-7;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
@@ -558,7 +559,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 
 		/// adapt the time step
 		//dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);        // Sachetto`s formula
-        dt = dt * sqrt(0.5 * reltol / greatestError);                  // Jhonny`s formula
+        dt = dt * sqrt(0.5 * rel_tol / greatestError);                  // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;
