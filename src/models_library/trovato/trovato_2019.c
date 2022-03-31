@@ -37,6 +37,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         
         real *sv = &solver->sv[i * NEQ];
 
+        // TODO: Calculate the steady-state for 100 pulses beats (BCL=1000ms)
         // Steady-state 40 pulses (BCL=1000ms)
         sv[0] = -86.7099;
         sv[1] = 0.005431;
@@ -108,9 +109,9 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             sv_id = i;
 
         if(adpt) {
-            solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
+            //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
             //solve_forward_euler_cpu_adpt_2(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
-            //solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
+            solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
@@ -406,9 +407,9 @@ void solve_forward_euler_cpu_adpt_2(real *sv, real stim_curr, real final_time, i
     
 }
 
-// Jhonny`s version
 void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
     
+    // TODO: Remove this boolean array and write the full algebraics instead ...
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
@@ -419,7 +420,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
     }
     // -------------------------------------------------------------------------------------------
 
-    const real _beta_safety_ = 0.85;
+    //const real _beta_safety_ = 0.85;
     //const real rel_tol = 1.445;
     int numEDO = NEQ;
 
@@ -454,7 +455,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
         _k1__[i] = rDY[i];
     }
 
-    //const real rel_tol = solver->rel_tol;
+    const real rel_tol = solver->rel_tol;
     const real abs_tol = solver->abs_tol;
 
     const real __tiny_ = pow(abs_tol, 2.0);
@@ -505,8 +506,8 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        *dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        //*dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
+        //*dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
 
         if(*dt < min_dt) {
             *dt = min_dt;

@@ -5,6 +5,7 @@
 __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
+    // Default initial conditions (endocardium cell)
     if (threadID < num_volumes) {
         for (int i = 0; i < NEQ; i++) {
             *((real * )((char *) sv + pitch * 0) + threadID) = -88.7638;
@@ -227,6 +228,7 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
             real rDY[NEQ];
             real a[NEQ], b[NEQ];
 
+            // TODO: Remove this boolean array and write the full algebraics instead ...
             // -------------------------------------------------------------------------------------------
             // MODEL SPECIFIC:
             // set the variables which are non-linear and hodkin-huxley type
@@ -283,6 +285,7 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
             real rDY[NEQ];
             real a[NEQ], b[NEQ];
 
+            // TODO: Remove this boolean array and write the full algebraics instead ...
             // -------------------------------------------------------------------------------------------
             // MODEL SPECIFIC:
             // set the variables which are non-linear and hodkin-huxley type
@@ -459,6 +462,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
     #define PREVIOUS_DT *((real *)((char *)sv + pitch * (NEQ+2)) + thread_id)
 
+    // TODO: Remove this boolean array and write the full algebraics instead ...
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
@@ -553,8 +557,8 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 		previous_dt = dt;
 
 		/// adapt the time step
-		dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);           // Sachetto`s formula
-        //dt = dt * sqrt(0.5 * rel_tol / greatestError);                // Jhonny`s formula
+		//dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);        // Sachetto`s formula
+        dt = dt * sqrt(0.5 * reltol / greatestError);                  // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;

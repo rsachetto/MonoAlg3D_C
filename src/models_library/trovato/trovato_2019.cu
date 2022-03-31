@@ -9,6 +9,7 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
 
         real STATES[NEQ];
         
+        // TODO: Calculate the steady-state for 100 pulses beats (BCL=1000ms)
         // Steady-state 40 pulses (BCL=1000ms)
         STATES[0] = -86.7099;
         STATES[1] = 0.005431;
@@ -141,6 +142,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         check_cuda_error(cudaFree(cells_to_solve_device));
 }
 
+// Sachetto`s version
 inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
@@ -271,6 +273,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
+// Jhonny`s version
 inline __device__ void solve_forward_euler_gpu_adpt_2(real *sv, real stim_curr, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
@@ -406,6 +409,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
     #define PREVIOUS_DT *((real *)((char *)sv + pitch * (NEQ+2)) + thread_id)
 
+    // TODO: Remove this boolean array and write the full algebraics instead ...
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
@@ -429,7 +433,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real _k_aux__[NEQ];
     real sv_local[NEQ];
 
-    const real _beta_safety_ = 0.85;
+    //const real _beta_safety_ = 0.85;
     //const real rel_tol = 1.445;
 
     const real __tiny_ = pow(abstol, 2.0);
@@ -501,8 +505,8 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 		previous_dt = dt;
 
 		/// adapt the time step
-		dt = _beta_safety_ * (dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        //dt = dt * sqrt(0.5 * rel_tol / greatestError);               // Jhonny`s formula
+		//dt = _beta_safety_ * (dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        dt = dt * sqrt(0.5 * reltol / greatestError);               // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;

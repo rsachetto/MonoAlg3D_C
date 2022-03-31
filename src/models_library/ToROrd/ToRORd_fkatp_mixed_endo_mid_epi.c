@@ -1,6 +1,11 @@
 #include "ToRORd_fkatp_mixed_endo_mid_epi.h"
 #include <stdlib.h>
 
+// Steady-state (endocardium cell)
+// Initial condition after 100 beats (BCL=1000ms)
+// -8.888790e+01 1.210434e+01 1.210468e+01 1.425192e+02 1.425192e+02 7.456986e-05 6.505346e-05 1.530832e+00 1.528495e+00 7.844862e-04 6.747051e-01 8.310291e-01 8.308383e-01 8.304676e-01 1.591028e-04 5.288656e-01 2.892450e-01 9.430575e-04 9.996182e-01 5.937757e-01 4.804996e-04 9.996182e-01 6.542513e-01 -2.292348e-31 1.000000e+00 9.389817e-01 1.000000e+00 9.999003e-01 9.999774e-01 4.924064e-04 8.343472e-04 1.000000e+00 1.000000e+00 2.471233e-01 1.746494e-04 4.772450e-24 1.108211e-02 9.980772e-01 8.436211e-04 6.972081e-04 3.690028e-04 1.296174e-05 1.965537e-22 
+// v nai nass ki kss cai cass cansr cajsr m hp h j jp mL hL hLp a iF iS ap iFp iSp d ff fs fcaf fcas jca nca nca_i ffp fcafp xs1 xs2 Jrel_np CaMKt C0 C1 C2 O I Jrel_p
+
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     if(get_initial_v)
@@ -66,6 +71,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             
             real *sv = &solver->sv[i * NEQ];
 
+            // Default initial conditions (endocardium cell)
             sv[0] = -88.7638;
             sv[1] = 0.0111;
             sv[2] = 7.0305e-5;
@@ -326,6 +332,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real mapping, real f
 
 void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int sv_id, struct ode_solver *solver) {
     
+    // TODO: Remove this boolean array and write the full algebraics instead ...
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
@@ -337,8 +344,9 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
     // -------------------------------------------------------------------------------------------
 
     //const real _beta_safety_ = 0.8;
-    const real _beta_safety_ = 0.85;
-    //const real rel_tol = 1.445;
+    //const real _beta_safety_ = 0.55;
+    //const real rel_tol = 1e-07;
+    //const real rel_tol = 0.02;
     int numEDO = NEQ;
 
     real rDY[numEDO];
@@ -372,7 +380,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
         _k1__[i] = rDY[i];
     }
 
-    //const real rel_tol = solver->rel_tol;
+    const real rel_tol = solver->rel_tol;
     const real abs_tol = solver->abs_tol;
 
     const real __tiny_ = pow(abs_tol, 2.0);
@@ -423,8 +431,8 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        *dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        //*dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
+        //*dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
+        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
 
         if(*dt < min_dt) {
             *dt = min_dt;
