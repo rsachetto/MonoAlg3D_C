@@ -119,7 +119,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     size_t stim_currents_size = sizeof(real) * num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t) * num_cells_to_solve;
 
-    real *stims_currents_device;
+    real *stims_currents_device = NULL;
     check_cuda_error(cudaMalloc((void **)&stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
@@ -137,9 +137,8 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
 
     check_cuda_error(cudaPeekAtLastError());
 
-    check_cuda_error(cudaFree(stims_currents_device));
-    if(cells_to_solve_device)
-        check_cuda_error(cudaFree(cells_to_solve_device));
+    if (stims_currents_device) check_cuda_error(cudaFree(stims_currents_device));
+    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
 }
 
 // Sachetto`s version
@@ -414,7 +413,6 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
     const real TOLERANCE = 1e-8;
-    const real rel_tol = 1e-7;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 16 && i <= 35) || (i >= 37 && i <= 44)) ? true : false;        
@@ -434,8 +432,8 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real _k_aux__[NEQ];
     real sv_local[NEQ];
 
-    //const real _beta_safety_ = 0.85;
-    //const real rel_tol = 1.445;
+    const real _beta_safety_ = 0.85;
+    const real rel_tol = 1e-5;
 
     const real __tiny_ = pow(abstol, 2.0);
 
@@ -507,7 +505,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 
 		/// adapt the time step
 		//dt = _beta_safety_ * (dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        dt = dt * sqrt(0.5 * rel_tol / greatestError);               // Jhonny`s formula
+        dt = dt * sqrt(0.5 * reltol / greatestError);               // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;
@@ -567,6 +565,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     DT = dt;
     TIME_NEW = time_new;
     PREVIOUS_DT = previous_dt;
+    
 }
 
 // Solving the model for each cell in the tissue matrix ni x nj

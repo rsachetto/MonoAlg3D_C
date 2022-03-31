@@ -173,7 +173,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     size_t stim_currents_size = sizeof(real) * num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t) * num_cells_to_solve;
 
-    real *stims_currents_device;
+    real *stims_currents_device = NULL;
     check_cuda_error(cudaMalloc((void **)&stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
@@ -204,10 +204,10 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device,\
                                     num_cells_to_solve, num_steps, ode_solver->pitch, ode_solver->adaptive, ode_solver->abs_tol, ode_solver->rel_tol, ode_solver->max_dt);
     }
-    
+
     check_cuda_error(cudaPeekAtLastError());
 
-    check_cuda_error(cudaFree(stims_currents_device));
+    if (stims_currents_device) check_cuda_error(cudaFree(stims_currents_device));
     if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
     if (mapping_device) check_cuda_error(cudaFree(mapping_device));
 }
@@ -320,8 +320,8 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
                 }
             }
         } else {
-            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            //solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
@@ -467,7 +467,6 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
     const real TOLERANCE = 1e-8;
-    const real rel_tol = 1e-7;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
@@ -488,7 +487,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real sv_local[NEQ];
 
     const real _beta_safety_ = 0.8;
-
+    const real rel_tol = 1e-5;
     const real __tiny_ = pow(abstol, 2.0);
 
     if(time_new + dt > final_time) {
@@ -559,7 +558,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 
 		/// adapt the time step
 		//dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);        // Sachetto`s formula
-        dt = dt * sqrt(0.5 * rel_tol / greatestError);                  // Jhonny`s formula
+        dt = dt * sqrt(0.5f * rel_tol / greatestError);                  // Jhonny`s formula
 
 		if(dt < min_dt) {
 			dt = min_dt;
