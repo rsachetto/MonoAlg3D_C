@@ -320,8 +320,8 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
                 }
             }
         } else {
-            solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            //solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
