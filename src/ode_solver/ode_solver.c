@@ -198,15 +198,16 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time
 
     uint32_t i;
     size_t n = hmlen(stim_configs);
-
     uint32_t num_steps = the_ode_solver->num_steps;
 
     if(stim_configs) {
-        real stim_start = 0.0;
-        real  stim_dur = 0.0;
-        real  stim_period = 0.0;
+       
+        for (size_t k = 0; k < n; k++) { 
 
-        for (size_t k = 0; k < n; k++) {
+            real stim_start = 0.0;
+            real  stim_dur = 0.0;
+            real  stim_period = 0.0;
+
             tmp = (struct config*) stim_configs[k].value;
             GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_start, tmp, "start");
             GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_dur, tmp, "duration");
