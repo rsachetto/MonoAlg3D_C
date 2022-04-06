@@ -954,3 +954,13 @@ void set_plain_fibrosis_inside_region(struct grid *the_grid, real_cpu phi, unsig
         grid_cell = grid_cell->next;
     }
 }
+
+int calc_num_refs(real_cpu start_h, real_cpu desired_h) {
+    int num_refs = 0;
+    while(start_h > desired_h) {
+        start_h = start_h/2.0;
+        num_refs++;
+    }
+
+    return num_refs;
+}

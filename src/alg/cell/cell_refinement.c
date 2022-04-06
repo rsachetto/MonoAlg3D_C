@@ -1143,6 +1143,7 @@ void set_refined_cell_data (struct cell_node *the_cell, struct cell_node *other_
     the_cell->sigma = other_cell->sigma;
     the_cell->discretization = discretization;
     the_cell->center = center;
+    the_cell->original_position_in_file = other_cell->original_position_in_file;
 
     the_cell->bunch_number = bunch_number;
 
