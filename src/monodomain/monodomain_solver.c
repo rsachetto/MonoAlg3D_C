@@ -1102,6 +1102,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     log_msg(LOG_LINE_SEPARATOR);
 
     log_info("System parameters: \n");
+    
+    log_msg(LOG_LINE_SEPARATOR);
+    
 #if defined(_OPENMP)
     log_info("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
 #endif
@@ -1167,6 +1170,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     }
 
     log_msg(LOG_LINE_SEPARATOR);
+
+    if(options->save_state_config) {
+        print_save_state_config_values(options->save_state_config);
+        log_msg(LOG_LINE_SEPARATOR);
+    }
 
     if(options->linear_system_solver_config) {
         print_linear_system_solver_config_values(options->linear_system_solver_config);

@@ -8,7 +8,7 @@
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
 #include "../3dparty/sds/sds.h"
-
+#include "../save_mesh_library/save_mesh_helper.h"
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
@@ -145,11 +145,17 @@ SAVE_STATE(save_simulation_state) {
             fwrite(the_ode_solver->sv, sizeof(real), the_ode_solver->original_num_cells * num_sv_entries,  output_file);
         }
 
-        fwrite(&(the_ode_solver->extra_data_size), sizeof(the_ode_solver->extra_data_size), 1, output_file);
-        fwrite(the_ode_solver->ode_extra_data, the_ode_solver->extra_data_size, 1, output_file);
+        //fwrite(&(the_ode_solver->extra_data_size), sizeof(the_ode_solver->extra_data_size), 1, output_file);
+        //fwrite(the_ode_solver->ode_extra_data, the_ode_solver->extra_data_size, 1, output_file);
 
         fclose(output_file);
 
+    }
+
+    uint32_t num_extra_fn = arrlen(config->extra_functions);
+
+    for(int i = 0; i < num_extra_fn; i++) {
+        ((save_state_fn*)(config->extra_functions[i]))(time_info, config, save_mesh_config, the_grid, the_monodomain_solver, the_ode_solver, output_dir);
     }
 
 }
@@ -186,6 +192,44 @@ static void save_point_float_hash(struct point_hash_entry *p, FILE *output_file)
             fwrite(&key, sizeof(key), 1, output_file);
             fwrite(&value, sizeof(value), 1, output_file);
         }
+}
+
+SAVE_STATE(save_simulation_state_with_activation_times_extra_fn) {
+
+    if(save_mesh_config->persistent_data) {
+        sds tmp = sdsnew(output_dir);
+        tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
+
+        FILE *output_file = fopen(tmp, "wb");
+
+         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->last_time_v, output_file);
+         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->num_activations, output_file);
+         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, output_file);
+
+         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->activation_times, output_file);
+         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->apds, output_file);
+
+         fclose(output_file);
+
+    }
+}
+
+SAVE_STATE(save_simulation_state_with_ensight_extra_fn) {
+
+    if(save_mesh_config->persistent_data) {
+        sds tmp = sdsnew(output_dir);
+        tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
+
+        FILE *output_file = fopen(tmp, "wb");
+
+        struct save_ensigth_persistent_data* persistent_data = (struct save_ensigth_persistent_data*)save_mesh_config->persistent_data;
+
+        fwrite(&(persistent_data->file_count), sizeof(persistent_data->file_count), 1, output_file);
+        fwrite(&(persistent_data->n_digits), sizeof(persistent_data->n_digits), 1, output_file);
+
+        fclose(output_file);
+
+    }
 }
 
 SAVE_STATE(save_simulation_state_with_activation_times) {

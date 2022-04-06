@@ -422,6 +422,8 @@ void set_common_data(struct config *config, const char *key, const char *value) 
         config->end_function_name_was_set = true;
     } else if(IS_IN_LIBRARY_FILE(key)) {
         config->library_file_path = strdup(value);
+    } else if (IS_IN_EXTRA_FUNCTION(key)) {
+        arrput(config->extra_function_names, strdup(value));
     } else {
         shput_dup_value(config->config_data, key, value);
     }

@@ -31,6 +31,10 @@ struct config {
     void *init_function;
     void *end_function;
 
+    //used by save and restore state
+    char **extra_function_names;
+    void **extra_functions;
+
     real_cpu current_t;
 };
 
@@ -54,6 +58,10 @@ void init_config_functions(struct config *config, char *default_lib, char *confi
                                                                                                                                                                \
         if((s)->end_function_name) {                                                                                                                           \
             log_info(tag " end function = %s\n", (s)->end_function_name);                                                                                      \
+        }                                                                                                                                                      \
+                                                                                                                                                               \
+        for(int i = 0; i < arrlen((s)->extra_function_names); i++) {                                                                                           \
+            log_info(tag " extra function %d = %s\n", i+1, (s)->extra_function_names[i]);                                                                      \
         }                                                                                                                                                      \
         STRING_HASH_PRINT_KEY_VALUE_LOG(tag, (s)->config_data);                                                                                                \
     } while(0)
