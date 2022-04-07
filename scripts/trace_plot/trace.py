@@ -101,9 +101,9 @@ def get_correct_indexes (sv):
     sv_new[:,34] = xs2
     sv_new[:,35] = Jrel_np
     sv_new[:,36] = CaMKt
-    sv_new[:,37] = C3
+    sv_new[:,37] = C1
     sv_new[:,38] = C2
-    sv_new[:,39] = C1
+    sv_new[:,39] = C3
     sv_new[:,40] = O
     sv_new[:,41] = I
     sv_new[:,42] = Jrel_p
@@ -241,10 +241,10 @@ def main():
     # Total number of generated files by the simulation
     num_files = int(tmax / (dt*printrate))
     t = [i*dt*printrate for i in range(num_files)]
-    t = np.linspace(0,1000,5000)
+    t = np.linspace(0,1000,50000)
 
     #for i in range(num_files):
-    for i in range(495000,500000):
+    for i in range(4950000,5000000):
         # Calculate the current iteration number
         step_id = i*printrate
 

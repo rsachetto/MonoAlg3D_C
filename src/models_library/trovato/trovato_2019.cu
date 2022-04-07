@@ -141,7 +141,6 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
 }
 
-// Sachetto`s version
 inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
@@ -272,136 +271,6 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
-// Jhonny`s version
-inline __device__ void solve_forward_euler_gpu_adpt_2(real *sv, real stim_curr, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
-
-    #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
-    #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
-    #define PREVIOUS_DT *((real *)((char *)sv + pitch * (NEQ+2)) + thread_id)
-
-    real rDY[NEQ];
-
-    real dt = DT;
-    real time_new = TIME_NEW;
-    real previous_dt = PREVIOUS_DT;
-
-    real edos_old_aux_[NEQ];
-    real edos_new_euler_[NEQ];
-    real _k1__[NEQ];
-    real _k2__[NEQ];
-    real _k_aux__[NEQ];
-    real sv_local[NEQ];
-
-    const real TOLERANCE = 1e-8;
-    const real _beta_safety_ = 0.85;
-    const real rel_tol = 1.445;
-
-    const real __tiny_ = pow(abstol, 2.0);
-
-    if(time_new + dt > final_time) {
-        dt = final_time - time_new;
-    }
-
-    for(int i = 0; i < NEQ; i++) {
-        sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
-    }
-
-    RHS_gpu(sv_local, rDY, stim_curr, thread_id, dt, pitch, true);
-    time_new += dt;
-
-    for(int i = 0; i < NEQ; i++) {
-        _k1__[i] = rDY[i];
-    }
-
-	while(1) {
-
-		for(int i = 0; i < NEQ; i++) {
-			// stores the old variables in a vector
-			edos_old_aux_[i] = sv_local[i];
-			// computes euler method
-			edos_new_euler_[i] = _k1__[i] * dt + edos_old_aux_[i];
-			// steps ahead to compute the rk2 method
-			sv_local[i] = edos_new_euler_[i];
-		}
-
-		time_new += dt;
-
-		RHS_gpu(sv_local, rDY, stim_curr, thread_id, dt, pitch, true);
-		time_new -= dt; // step back
-
-		real greatestError = 0.0, auxError = 0.0;
-		
-		for(int i = 0; i < NEQ; i++) {
-
-			// stores the new evaluation
-            _k2__[i] = rDY[i];
-            real f = (_k1__[i] + _k2__[i]) * 0.5;
-            real y_2nd_order = edos_old_aux_[i] + (dt) * f;
-            auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-			// finds the greatest error between  the steps
-            greatestError = (auxError > greatestError) ? auxError : greatestError;
-		}
-
-		/// adapt the time step
-		greatestError += __tiny_;
-		previous_dt = dt;
-
-		/// adapt the time step
-		//dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        dt = dt * sqrt(0.5 * rel_tol / greatestError);               // Jhonny`s formula
-
-		if(dt < min_dt) {
-			dt = min_dt;
-		}
-		else if(dt > max_dt) {
-			dt = max_dt;
-		}
-
-		if(time_new + dt > final_time) {
-			dt = final_time - time_new;
-		}
-
-		// it doesn't accept the solution or accept and risk a NaN
-		if(greatestError >= 1.0f && dt > min_dt) {
-			// restore the old values to do it again
-			for(int i = 0; i < NEQ; i++) {
-				sv_local[i] = edos_old_aux_[i];
-			}
-		
-		} else {
-			for(int i = 0; i < NEQ; i++) {
-				_k_aux__[i] = _k2__[i];
-				_k2__[i] = _k1__[i];
-				_k1__[i] = _k_aux__[i];
-			}
-
-			for(int i = 0; i < NEQ; i++) {
-				sv_local[i] = edos_new_euler_[i];
-			}
-
-			if(time_new + previous_dt >= final_time) {
-				if(final_time == time_new) {
-					break;
-				} else if(time_new < final_time) {
-					dt = previous_dt = final_time - time_new;
-					time_new += previous_dt;
-					break;
-				} 	
-			} else {
-				time_new += previous_dt;
-			}
-		}
-	}
-
-    for(int i = 0; i < NEQ; i++) {
-        *((real *)((char *)sv + pitch * i) + thread_id) = sv_local[i];
-    }
-
-    DT = dt;
-    TIME_NEW = time_new;
-    PREVIOUS_DT = previous_dt;
-}
-
 inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
@@ -412,7 +281,6 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
-    const real TOLERANCE = 1e-8;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 16 && i <= 35) || (i >= 37 && i <= 44)) ? true : false;        
@@ -431,9 +299,6 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real _k2__[NEQ];
     real _k_aux__[NEQ];
     real sv_local[NEQ];
-
-    const real _beta_safety_ = 0.85;
-    const real rel_tol = 1e-5;
 
     const real __tiny_ = pow(abstol, 2.0);
 
@@ -459,7 +324,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 			edos_old_aux_[i] = sv_local[i];
 			// computes euler method
 			if (is_rush_larsen[i])
-                edos_new_euler_[i] = (a_[i] < TOLERANCE) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(dt) : \
+                edos_new_euler_[i] = (a_[i] < abstol) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(dt) : \
                                                   exp(a_[i]*(dt))*(edos_old_aux_[i] + (b_[i] / a_[i])) - (b_[i] / a_[i]);
             else
                 edos_new_euler_[i] = _k1__[i] * dt + edos_old_aux_[i];
@@ -482,9 +347,9 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
             if (is_rush_larsen[i]) {
                 real as = (a_[i] + a_new[i]) * 0.5;
                 real bs = (b_[i] + b_new[i]) * 0.5;
-                real y_2nd_order = (fabs(as) < TOLERANCE) ? edos_old_aux_[i] + (dt) * (edos_old_aux_[i]*as + bs) : \
+                real y_2nd_order = (fabs(as) < abstol) ? edos_old_aux_[i] + (dt) * (edos_old_aux_[i]*as + bs) : \
                                                        exp(as*(dt))*(edos_old_aux_[i] + (bs/as)) - (bs/as);
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
+                auxError = (fabs(y_2nd_order) < abstol) ? fabs(edos_new_euler_[i] - abstol) : \
                                                         fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
                 // finds the greatest error between  the steps
                 greatestError = (auxError > greatestError) ? auxError : greatestError;
@@ -492,7 +357,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
             else {
                 real f = (_k1__[i] + _k2__[i]) * 0.5;
                 real y_2nd_order = edos_old_aux_[i] + (dt) * f;
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
+                auxError = (fabs(y_2nd_order) < abstol) ? fabs(edos_new_euler_[i] - abstol) : \
                                                         fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
                 // finds the greatest error between  the steps
                 greatestError = (auxError > greatestError) ? auxError : greatestError;
@@ -504,8 +369,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 		previous_dt = dt;
 
 		/// adapt the time step
-		//dt = _beta_safety_ * (dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        dt = dt * sqrt(0.5 * reltol / greatestError);               // Jhonny`s formula
+		dt = dt * sqrt(0.5 * reltol / greatestError);
 
 		if(dt < min_dt) {
 			dt = min_dt;

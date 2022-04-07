@@ -325,6 +325,7 @@ void configure_ode_solver_from_options(struct ode_solver *solver, struct user_op
             solver->min_dt = (real)options->dt_ode;
         }
         solver->abs_tol = options->ode_abstol;
+        solver->rel_tol = options->ode_reltol;
 
     } else {
         if(options->dt_ode == 0.0) {

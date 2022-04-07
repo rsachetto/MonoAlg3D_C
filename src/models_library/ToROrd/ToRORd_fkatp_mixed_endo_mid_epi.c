@@ -1,11 +1,6 @@
 #include "ToRORd_fkatp_mixed_endo_mid_epi.h"
 #include <stdlib.h>
 
-// Steady-state (endocardium cell)
-// Initial condition after 100 beats (BCL=1000ms)
-// -8.888790e+01 1.210434e+01 1.210468e+01 1.425192e+02 1.425192e+02 7.456986e-05 6.505346e-05 1.530832e+00 1.528495e+00 7.844862e-04 6.747051e-01 8.310291e-01 8.308383e-01 8.304676e-01 1.591028e-04 5.288656e-01 2.892450e-01 9.430575e-04 9.996182e-01 5.937757e-01 4.804996e-04 9.996182e-01 6.542513e-01 -2.292348e-31 1.000000e+00 9.389817e-01 1.000000e+00 9.999003e-01 9.999774e-01 4.924064e-04 8.343472e-04 1.000000e+00 1.000000e+00 2.471233e-01 1.746494e-04 4.772450e-24 1.108211e-02 9.980772e-01 8.436211e-04 6.972081e-04 3.690028e-04 1.296174e-05 1.965537e-22 
-// v nai nass ki kss cai cass cansr cajsr m hp h j jp mL hL hLp a iF iS ap iFp iSp d ff fs fcaf fcas jca nca nca_i ffp fcafp xs1 xs2 Jrel_np CaMKt C0 C1 C2 O I Jrel_p
-
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
     if(get_initial_v)
@@ -72,6 +67,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             real *sv = &solver->sv[i * NEQ];
 
             // Default initial conditions (endocardium cell)
+            /*
             sv[0] = -88.7638;
             sv[1] = 0.0111;
             sv[2] = 7.0305e-5;
@@ -115,8 +111,53 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             sv[40] = 1.7707e-4;
             sv[41] = 1.6129e-22;
             sv[42] = 1.2475e-20;
-        }
+            */
 
+            // Steady-state after 200 beats (endocardium cell)
+            sv[0] = -8.890585e+01;
+            sv[1] = 1.107642e-02;
+            sv[2] = 6.504164e-05;
+            sv[3] = 1.210818e+01;
+            sv[4] = 1.210851e+01;
+            sv[5] = 1.426206e+02;
+            sv[6] = 1.426205e+02;
+            sv[7] = 1.530373e+00;
+            sv[8] = 1.528032e+00;
+            sv[9] = 7.455488e-05;
+            sv[10] = 7.814592e-04;
+            sv[11] = 8.313839e-01;
+            sv[12] = 8.311938e-01;
+            sv[13] = 6.752873e-01;
+            sv[14] = 8.308255e-01;
+            sv[15] = 1.585610e-04;
+            sv[16] = 5.294475e-01;
+            sv[17] = 2.896996e-01;
+            sv[18] = 9.419166e-04;
+            sv[19] = 9.996194e-01;
+            sv[20] = 5.938602e-01;
+            sv[21] = 4.799180e-04;
+            sv[22] = 9.996194e-01;
+            sv[23] = 6.543754e-01;
+            sv[24] = -2.898677e-33;
+            sv[25] = 1.000000e+00;
+            sv[26] = 9.389659e-01;
+            sv[27] = 1.000000e+00;
+            sv[28] = 9.999003e-01;
+            sv[29] = 9.999773e-01;
+            sv[30] = 1.000000e+00;
+            sv[31] = 1.000000e+00;
+            sv[32] = 4.920606e-04;
+            sv[33] = 8.337021e-04;
+            sv[34] = 6.962775e-04;
+            sv[35] = 8.425453e-04;
+            sv[36] = 9.980807e-01;
+            sv[37] = 1.289824e-05;
+            sv[38] = 3.675442e-04;
+            sv[39] = 2.471690e-01;
+            sv[40] = 1.742987e-04;
+            sv[41] = 5.421027e-24;
+            sv[42] = 6.407933e-23;
+        }
     }        
 }
 
@@ -137,7 +178,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         mapping = (real *)ode_solver->ode_extra_data+NEQ+NEQ+NEQ;
     }
 
-#pragma omp parallel for private(sv_id)
+    OMP(parallel for private(sv_id))
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
@@ -336,17 +377,14 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
-    const real TOLERANCE = 1e-08;
+    const real TOLERANCE = 1e-09;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
     }
     // -------------------------------------------------------------------------------------------
 
-    //const real _beta_safety_ = 0.8;
-    //const real _beta_safety_ = 0.55;
-    //const real rel_tol = 1e-07;
-    //const real rel_tol = 0.02;
+    const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
 
     real rDY[numEDO];
@@ -395,7 +433,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
             edos_old_aux_[i] = sv[i];
             // computes euler/rush-larsen method
             if (is_rush_larsen[i])
-                edos_new_euler_[i] = (a_[i] < TOLERANCE) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(*dt) : \
+                edos_new_euler_[i] = (fabs(a_[i]) < abs_tol) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(*dt) : \
                                                   exp(a_[i]*(*dt))*(edos_old_aux_[i] + (b_[i] / a_[i])) - (b_[i] / a_[i]);
             else
                 edos_new_euler_[i] = _k1__[i] * *dt + edos_old_aux_[i];
@@ -413,16 +451,16 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
             if (is_rush_larsen[i]) {
                 real as = (a_[i] + a_new[i]) * 0.5;
                 real bs = (b_[i] + b_new[i]) * 0.5;
-                real y_2nd_order = (fabs(as) < TOLERANCE) ? edos_old_aux_[i] + (*dt) * (edos_old_aux_[i]*as + bs) : \
+                real y_2nd_order = (fabs(as) < abs_tol) ? edos_old_aux_[i] + (*dt) * (edos_old_aux_[i]*as + bs) : \
                                                        exp(as*(*dt))*(edos_old_aux_[i] + (bs/as)) - (bs/as);
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
+                auxError = (fabs(y_2nd_order) < abs_tol) ? fabs(edos_new_euler_[i] - abs_tol) : \
                                                         fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
                 greatestError = (auxError > greatestError) ? auxError : greatestError;
             }
             else {
                 real f = (_k1__[i] + _k2__[i]) * 0.5;
                 real y_2nd_order = edos_old_aux_[i] + (*dt) * f;
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
+                auxError = (fabs(y_2nd_order) < abs_tol) ? fabs(edos_new_euler_[i] - abs_tol) : \
                                                         fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
                 greatestError = (auxError > greatestError) ? auxError : greatestError;
             }
@@ -431,7 +469,6 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        //*dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
         *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
 
         if(*dt < min_dt) {
@@ -538,13 +575,13 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real mappin
     real jca = sv[29];
     real ffp = sv[30];
     real fcafp = sv[31];
-    real nca_ss = sv[32];
+    real nca = sv[32];
     real nca_i = sv[33];
-    real C1 = sv[34];
-    real C2 = sv[35];
-    real C3 = sv[36];
-    real I = sv[37];
-    real O = sv[38];
+    real ikr_c0 = sv[34];
+    real ikr_c1 = sv[35];
+    real ikr_c2 = sv[36];
+    real ikr_i = sv[37];
+    real ikr_o = sv[38];
     real xs1 = sv[39];
     real xs2 = sv[40];
     real Jrel_np = sv[41];
@@ -594,13 +631,13 @@ void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_curren
     real jca = sv[29];
     real ffp = sv[30];
     real fcafp = sv[31];
-    real nca_ss = sv[32];
+    real nca = sv[32];
     real nca_i = sv[33];
-    real C1 = sv[34];
-    real C2 = sv[35];
-    real C3 = sv[36];
-    real I = sv[37];
-    real O = sv[38];
+    real ikr_c0 = sv[34];
+    real ikr_c1 = sv[35];
+    real ikr_c2 = sv[36];
+    real ikr_i = sv[37];
+    real ikr_o = sv[38];
     real xs1 = sv[39];
     real xs2 = sv[40];
     real Jrel_np = sv[41];

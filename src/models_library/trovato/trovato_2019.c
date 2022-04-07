@@ -160,7 +160,6 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current) {
     }
 }
 
-// Sachetto`s version
 void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
 
     const real _beta_safety_ = 0.8;
@@ -284,144 +283,18 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
     free(_k2__);
 }
 
-// Jhonny`s version
-void solve_forward_euler_cpu_adpt_2(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
-    const real _beta_safety_ = 0.8;
-    const real TOLERANCE = 1e-8;
-    int numEDO = NEQ;
-
-    real rDY[numEDO];
-
-    real _tolerances_[numEDO];
-    real _aux_tol = 0.0;
-    // initializes the variables
-    solver->ode_previous_dt[sv_id] = solver->ode_dt[sv_id];
-
-    real edos_old_aux_[numEDO];
-    real edos_new_euler_[numEDO];
-    real *_k1__ = (real *)malloc(sizeof(real) * numEDO);
-    real *_k2__ = (real *)malloc(sizeof(real) * numEDO);
-    real *_k_aux__;
-
-    real *dt = &solver->ode_dt[sv_id];
-    real *time_new = &solver->ode_time_new[sv_id];
-    real *previous_dt = &solver->ode_previous_dt[sv_id];
-
-    // Keep 'dt' inside the adaptive interval
-    if(*time_new + *dt > final_time) {
-        *dt = final_time - *time_new;
-    }
-
-    RHS_cpu(sv, rDY, stim_curr, *dt);
-    *time_new += *dt;
-
-    for(int i = 0; i < numEDO; i++) {
-        _k1__[i] = rDY[i];
-    }
-
-    const real rel_tol = solver->rel_tol;
-    const real abs_tol = solver->abs_tol;
-
-    const real __tiny_ = pow(abs_tol, 2.0);
-
-    real min_dt = solver->min_dt;
-    real max_dt = solver->max_dt;
-
-    while(1) {
-
-        for(int i = 0; i < numEDO; i++) {
-            // stores the old variables in a vector
-            edos_old_aux_[i] = sv[i];
-            // computes euler method
-            edos_new_euler_[i] = _k1__[i] * *dt + edos_old_aux_[i];
-            // steps ahead to compute the rk2 method
-            sv[i] = edos_new_euler_[i];
-        }
-
-        *time_new += *dt;
-        RHS_cpu(sv, rDY, stim_curr, *dt);
-        *time_new -= *dt; // step back
-
-        double greatestError = 0.0, auxError = 0.0;
-        for(int i = 0; i < numEDO; i++) {
-            _k2__[i] = rDY[i];
-            real f = (_k1__[i] + _k2__[i]) * 0.5;
-            real y_2nd_order = edos_old_aux_[i] + (*dt) * f;
-            auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-            greatestError = (auxError > greatestError) ? auxError : greatestError;
-        }
-        /// adapt the time step
-        greatestError += __tiny_;
-        *previous_dt = *dt;
-        /// adapt the time step
-        *dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);
-
-        if(*dt < min_dt) {
-            *dt = min_dt;
-        } else if(*dt > max_dt) {
-            *dt = max_dt;
-        }
-
-        if(*time_new + *dt > final_time) {
-            *dt = final_time - *time_new;
-        }
-
-        // it doesn't accept the solution
-        if(greatestError >= 1.0f && *dt > min_dt) {
-            // restore the old values to do it again
-            for(int i = 0; i < numEDO; i++) {
-                sv[i] = edos_old_aux_[i];
-            }
-            // throw the results away and compute again
-        } else {
-            // it accepts the solutions
-            if(greatestError >= 1.0) {
-                printf("Accepting solution with error > %lf \n", greatestError);
-            }
-
-            _k_aux__ = _k2__;
-            _k2__ = _k1__;
-            _k1__ = _k_aux__;
-
-            // it steps the method ahead, with euler solution
-            for(int i = 0; i < numEDO; i++) {
-                sv[i] = edos_new_euler_[i];
-            }
-
-            if(*time_new + *previous_dt >= final_time) {
-                if(final_time == *time_new) {
-                    break;
-                } else if(*time_new < final_time) {
-                    *dt = *previous_dt = final_time - *time_new;
-                    *time_new += *previous_dt;
-                    break;
-                }
-            } else {
-                *time_new += *previous_dt;
-            }
-        }
-    }
-
-    free(_k1__);
-    free(_k2__);
-    
-}
-
 void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
     
     // TODO: Remove this boolean array and write the full algebraics instead ...
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
-    const real TOLERANCE = 1e-8;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 16 && i <= 35) || (i >= 37 && i <= 44)) ? true : false;        
     }
     // -------------------------------------------------------------------------------------------
 
-    //const real _beta_safety_ = 0.85;
-    //const real rel_tol = 1.445;
     int numEDO = NEQ;
 
     real rDY[numEDO];
@@ -470,7 +343,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
             edos_old_aux_[i] = sv[i];
             // computes euler/rush-larsen method
             if (is_rush_larsen[i])
-                edos_new_euler_[i] = (a_[i] < TOLERANCE) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(*dt) : \
+                edos_new_euler_[i] = (fabs(a_[i]) < abs_tol) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(*dt) : \
                                                   exp(a_[i]*(*dt))*(edos_old_aux_[i] + (b_[i] / a_[i])) - (b_[i] / a_[i]);
             else
                 edos_new_euler_[i] = _k1__[i] * *dt + edos_old_aux_[i];
@@ -488,16 +361,16 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
             if (is_rush_larsen[i]) {
                 real as = (a_[i] + a_new[i]) * 0.5;
                 real bs = (b_[i] + b_new[i]) * 0.5;
-                real y_2nd_order = (fabs(as) < TOLERANCE) ? edos_old_aux_[i] + (*dt) * (edos_old_aux_[i]*as + bs) : \
+                real y_2nd_order = (fabs(as) < abs_tol) ? edos_old_aux_[i] + (*dt) * (edos_old_aux_[i]*as + bs) : \
                                                        exp(as*(*dt))*(edos_old_aux_[i] + (bs/as)) - (bs/as);
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
+                auxError = (fabs(y_2nd_order) < abs_tol) ? fabs(edos_new_euler_[i] - abs_tol) : \
                                                         fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
                 greatestError = (auxError > greatestError) ? auxError : greatestError;
             }
             else {
                 real f = (_k1__[i] + _k2__[i]) * 0.5;
                 real y_2nd_order = edos_old_aux_[i] + (*dt) * f;
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
+                auxError = (fabs(y_2nd_order) < abs_tol) ? fabs(edos_new_euler_[i] - abs_tol) : \
                                                         fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
                 greatestError = (auxError > greatestError) ? auxError : greatestError;
             }
@@ -506,8 +379,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        //*dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
+        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);
 
         if(*dt < min_dt) {
             *dt = min_dt;

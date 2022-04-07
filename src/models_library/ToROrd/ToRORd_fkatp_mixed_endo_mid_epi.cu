@@ -8,6 +8,8 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
     // Default initial conditions (endocardium cell)
     if (threadID < num_volumes) {
         for (int i = 0; i < NEQ; i++) {
+            /*
+            // Default initial conditions (endocardium cell)
             *((real * )((char *) sv + pitch * 0) + threadID) = -88.7638;
             *((real * )((char *) sv + pitch * 1) + threadID) = 0.0111;
             *((real * )((char *) sv + pitch * 2) + threadID)= 7.0305e-5;
@@ -51,6 +53,51 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
             *((real * )((char *) sv + pitch * 40) + threadID) = 1.7707e-4;
             *((real * )((char *) sv + pitch * 41) + threadID) = 1.6129e-22;
             *((real * )((char *) sv + pitch * 42) + threadID) = 1.2475e-20;
+            */
+            // Steady-state after 200 beats (endocardium cell)
+            *((real * )((char *) sv + pitch * 0) + threadID) = -8.890585e+01;
+            *((real * )((char *) sv + pitch * 1) + threadID) = 1.107642e-02;
+            *((real * )((char *) sv + pitch * 2) + threadID) = 6.504164e-05;
+            *((real * )((char *) sv + pitch * 3) + threadID) = 1.210818e+01;
+            *((real * )((char *) sv + pitch * 4) + threadID) = 1.210851e+01;
+            *((real * )((char *) sv + pitch * 5) + threadID) = 1.426206e+02;
+            *((real * )((char *) sv + pitch * 6) + threadID) = 1.426205e+02;
+            *((real * )((char *) sv + pitch * 7) + threadID) = 1.530373e+00;
+            *((real * )((char *) sv + pitch * 8) + threadID) = 1.528032e+00;
+            *((real * )((char *) sv + pitch * 9) + threadID) = 7.455488e-05;
+            *((real * )((char *) sv + pitch * 10) + threadID) = 7.814592e-04;
+            *((real * )((char *) sv + pitch * 11) + threadID) = 8.313839e-01;
+            *((real * )((char *) sv + pitch * 12) + threadID) = 8.311938e-01;
+            *((real * )((char *) sv + pitch * 13) + threadID) = 6.752873e-01;
+            *((real * )((char *) sv + pitch * 14) + threadID) = 8.308255e-01;
+            *((real * )((char *) sv + pitch * 15) + threadID) = 1.585610e-04;
+            *((real * )((char *) sv + pitch * 16) + threadID) = 5.294475e-01;
+            *((real * )((char *) sv + pitch * 17) + threadID) = 2.896996e-01;
+            *((real * )((char *) sv + pitch * 18) + threadID) = 9.419166e-04;
+            *((real * )((char *) sv + pitch * 19) + threadID) = 9.996194e-01;
+            *((real * )((char *) sv + pitch * 20) + threadID) = 5.938602e-01;
+            *((real * )((char *) sv + pitch * 21) + threadID) = 4.799180e-04;
+            *((real * )((char *) sv + pitch * 22) + threadID) = 9.996194e-01;
+            *((real * )((char *) sv + pitch * 23) + threadID) = 6.543754e-01;
+            *((real * )((char *) sv + pitch * 24) + threadID) = -2.898677e-33;
+            *((real * )((char *) sv + pitch * 25) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 26) + threadID) = 9.389659e-01;
+            *((real * )((char *) sv + pitch * 27) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 28) + threadID) = 9.999003e-01;
+            *((real * )((char *) sv + pitch * 29) + threadID) = 9.999773e-01;
+            *((real * )((char *) sv + pitch * 30) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 31) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 32) + threadID) = 4.920606e-04;
+            *((real * )((char *) sv + pitch * 33) + threadID) = 8.337021e-04;
+            *((real * )((char *) sv + pitch * 34) + threadID) = 6.962775e-04;
+            *((real * )((char *) sv + pitch * 35) + threadID) = 8.425453e-04;
+            *((real * )((char *) sv + pitch * 36) + threadID) = 9.980807e-01;
+            *((real * )((char *) sv + pitch * 37) + threadID) = 1.289824e-05;
+            *((real * )((char *) sv + pitch * 38) + threadID) = 3.675442e-04;
+            *((real * )((char *) sv + pitch * 39) + threadID) = 2.471690e-01;
+            *((real * )((char *) sv + pitch * 40) + threadID) = 1.742987e-04;
+            *((real * )((char *) sv + pitch * 41) + threadID) = 5.421027e-24;
+            *((real * )((char *) sv + pitch * 42) + threadID) = 6.407933e-23;
         }
             
         if(use_adpt_dt) {
@@ -466,7 +513,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     // -------------------------------------------------------------------------------------------
     // MODEL SPECIFIC:
     // set the variables which are non-linear and hodkin-huxley type
-    const real TOLERANCE = 1e-8;
+    const real TOLERANCE = 1e-16;
     bool is_rush_larsen[NEQ];
     for (int i = 0; i < NEQ; i++) {
         is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
@@ -486,8 +533,6 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real _k_aux__[NEQ];
     real sv_local[NEQ];
 
-    const real _beta_safety_ = 0.8;
-    const real rel_tol = 1e-5;
     const real __tiny_ = pow(abstol, 2.0);
 
     if(time_new + dt > final_time) {
@@ -557,8 +602,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 		previous_dt = dt;
 
 		/// adapt the time step
-		//dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);        // Sachetto`s formula
-        dt = dt * sqrt(0.5f * rel_tol / greatestError);                  // Jhonny`s formula
+		dt = dt * sqrt(0.5f * reltol / greatestError);                  
 
 		if(dt < min_dt) {
 			dt = min_dt;
@@ -661,13 +705,13 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
     real jca;
     real ffp;
     real fcafp;
-    real nca_ss;
+    real nca;
     real nca_i;
-    real C1;
-    real C2;
-    real C3;
-    real I;
-    real O;
+    real ikr_c0;
+    real ikr_c1;
+    real ikr_c2;
+    real ikr_i;
+    real ikr_o;
     real xs1;
     real xs2;
     real Jrel_np;
@@ -706,13 +750,13 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
         jca = sv[29];
         ffp = sv[30];
         fcafp = sv[31];
-        nca_ss = sv[32];
+        nca = sv[32];
         nca_i = sv[33];
-        C1 = sv[34];
-        C2 = sv[35];
-        C3 = sv[36];
-        I = sv[37];
-        O = sv[38];
+        ikr_c0 = sv[34];
+        ikr_c1 = sv[35];
+        ikr_c2 = sv[36];
+        ikr_i = sv[37];
+        ikr_o = sv[38];
         xs1 = sv[39];
         xs2 = sv[40];
         Jrel_np = sv[41];
@@ -750,13 +794,13 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
         jca = *((real *)((char *)sv + pitch * 29) + threadID_);
         ffp = *((real *)((char *)sv + pitch * 30) + threadID_);
         fcafp = *((real *)((char *)sv + pitch * 31) + threadID_);
-        nca_ss = *((real *)((char *)sv + pitch * 32) + threadID_);
+        nca = *((real *)((char *)sv + pitch * 32) + threadID_);
         nca_i = *((real *)((char *)sv + pitch * 33) + threadID_);
-        C1 = *((real *)((char *)sv + pitch * 34) + threadID_);
-        C2 = *((real *)((char *)sv + pitch * 35) + threadID_);
-        C3 = *((real *)((char *)sv + pitch * 36) + threadID_);
-        I = *((real *)((char *)sv + pitch * 37) + threadID_);
-        O = *((real *)((char *)sv + pitch * 38) + threadID_);
+        ikr_c0 = *((real *)((char *)sv + pitch * 34) + threadID_);
+        ikr_c1 = *((real *)((char *)sv + pitch * 35) + threadID_);
+        ikr_c2 = *((real *)((char *)sv + pitch * 36) + threadID_);
+        ikr_i = *((real *)((char *)sv + pitch * 37) + threadID_);
+        ikr_o = *((real *)((char *)sv + pitch * 38) + threadID_);
         xs1 = *((real *)((char *)sv + pitch * 39) + threadID_);
         xs2 = *((real *)((char *)sv + pitch * 40) + threadID_);
         Jrel_np = *((real *)((char *)sv + pitch * 41) + threadID_);
@@ -807,13 +851,13 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
     real jca;
     real ffp;
     real fcafp;
-    real nca_ss;
+    real nca;
     real nca_i;
-    real C1;
-    real C2;
-    real C3;
-    real I;
-    real O;
+    real ikr_c0;
+    real ikr_c1;
+    real ikr_c2;
+    real ikr_i;
+    real ikr_o;
     real xs1;
     real xs2;
     real Jrel_np;
@@ -852,13 +896,13 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
         jca = sv[29];
         ffp = sv[30];
         fcafp = sv[31];
-        nca_ss = sv[32];
+        nca = sv[32];
         nca_i = sv[33];
-        C1 = sv[34];
-        C2 = sv[35];
-        C3 = sv[36];
-        I = sv[37];
-        O = sv[38];
+        ikr_c0 = sv[34];
+        ikr_c1 = sv[35];
+        ikr_c2 = sv[36];
+        ikr_i = sv[37];
+        ikr_o = sv[38];
         xs1 = sv[39];
         xs2 = sv[40];
         Jrel_np = sv[41];
@@ -896,13 +940,13 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
         jca = *((real *)((char *)sv + pitch * 29) + threadID_);
         ffp = *((real *)((char *)sv + pitch * 30) + threadID_);
         fcafp = *((real *)((char *)sv + pitch * 31) + threadID_);
-        nca_ss = *((real *)((char *)sv + pitch * 32) + threadID_);
+        nca = *((real *)((char *)sv + pitch * 32) + threadID_);
         nca_i = *((real *)((char *)sv + pitch * 33) + threadID_);
-        C1 = *((real *)((char *)sv + pitch * 34) + threadID_);
-        C2 = *((real *)((char *)sv + pitch * 35) + threadID_);
-        C3 = *((real *)((char *)sv + pitch * 36) + threadID_);
-        I = *((real *)((char *)sv + pitch * 37) + threadID_);
-        O = *((real *)((char *)sv + pitch * 38) + threadID_);
+        ikr_c0 = *((real *)((char *)sv + pitch * 34) + threadID_);
+        ikr_c1 = *((real *)((char *)sv + pitch * 35) + threadID_);
+        ikr_c2 = *((real *)((char *)sv + pitch * 36) + threadID_);
+        ikr_i = *((real *)((char *)sv + pitch * 37) + threadID_);
+        ikr_o = *((real *)((char *)sv + pitch * 38) + threadID_);
         xs1 = *((real *)((char *)sv + pitch * 39) + threadID_);
         xs2 = *((real *)((char *)sv + pitch * 40) + threadID_);
         Jrel_np = *((real *)((char *)sv + pitch * 41) + threadID_);
