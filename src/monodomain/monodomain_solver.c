@@ -285,10 +285,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     bool activity;
 
-#ifdef COMPILE_CUDA
-    bool gpu = the_ode_solver->gpu;
-#endif
-
     real_cpu refinement_bound = the_monodomain_solver->refinement_bound;
     real_cpu derefinement_bound = the_monodomain_solver->derefinement_bound;
 
