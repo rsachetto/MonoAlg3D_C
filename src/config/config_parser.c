@@ -1555,7 +1555,11 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->quiet = false;
         }
         pconfig->quiet = true;
-    } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
+    } 
+    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "gpu_id")) {
+        parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->gpu_id, &pconfig->gpu_id_was_set);
+    }
+    else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
         parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->ref_bound, &pconfig->ref_bound_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "derefinement_bound")) {
         parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->deref_bound, &pconfig->deref_bound_was_set);
@@ -1580,6 +1584,7 @@ int parse_config_file(void *user, const char *section, const char *name, const c
             pconfig->gpu = IS_TRUE(value);
             pconfig->gpu_was_set = true;
         } else if(MATCH_NAME("gpu_id")) {
+            log_warn("The gpu_id option is being moved to the [main] section. Please update your config files!\n");
             parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->gpu_id, &pconfig->gpu_id_was_set);
         } else if(MATCH_NAME("library_file")) {
             pconfig->model_file_path = strdup(value);
