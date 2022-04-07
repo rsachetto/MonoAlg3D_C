@@ -61,7 +61,7 @@ void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_r
     fprintf(case_file, "GEOMETRY\n");
     fprintf(case_file, "model:\t%s\n\n", "geometry.geo");
 
-    int n_digits = (num_files==0) ? 1 : log10(num_files) + 1;
+    int n_digits = log10(num_files*500) + 1;
 
     sds base_file_name = sdsnew("Vm.Esca");
 
