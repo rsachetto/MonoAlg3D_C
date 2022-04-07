@@ -305,11 +305,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
 #ifdef COMPILE_CUDA
-    if(gpu) {
-        int device_count;
-        int device = the_ode_solver->gpu_id;
-        check_cuda_error(cudaGetDeviceCount(&device_count));
+    int device_count;
+    int device = the_ode_solver->gpu_id;
+    check_cuda_error(cudaGetDeviceCount(&device_count));
 
+    if(device_count > 0) {
         if(device >= device_count) {
             log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
             the_ode_solver->gpu_id = device = 0;
