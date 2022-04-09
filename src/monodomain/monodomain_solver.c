@@ -285,10 +285,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     bool activity;
 
-#ifdef COMPILE_CUDA
-    bool gpu = the_ode_solver->gpu;
-#endif
-
     real_cpu refinement_bound = the_monodomain_solver->refinement_bound;
     real_cpu derefinement_bound = the_monodomain_solver->derefinement_bound;
 
@@ -305,11 +301,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
 #ifdef COMPILE_CUDA
-    if(gpu) {
-        int device_count;
-        int device = the_ode_solver->gpu_id;
-        check_cuda_error(cudaGetDeviceCount(&device_count));
+    int device_count;
+    int device = the_ode_solver->gpu_id;
+    check_cuda_error(cudaGetDeviceCount(&device_count));
 
+    if(device_count > 0) {
         if(device >= device_count) {
             log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
             the_ode_solver->gpu_id = device = 0;
@@ -1102,6 +1098,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     log_msg(LOG_LINE_SEPARATOR);
 
     log_info("System parameters: \n");
+    
+    log_msg(LOG_LINE_SEPARATOR);
+    
 #if defined(_OPENMP)
     log_info("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
 #endif
@@ -1167,6 +1166,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     }
 
     log_msg(LOG_LINE_SEPARATOR);
+
+    if(options->save_state_config) {
+        print_save_state_config_values(options->save_state_config);
+        log_msg(LOG_LINE_SEPARATOR);
+    }
 
     if(options->linear_system_solver_config) {
         print_linear_system_solver_config_values(options->linear_system_solver_config);

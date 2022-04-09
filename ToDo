@@ -21,6 +21,8 @@ Improve activation time calculus to use the maximum derivative (check Lucas's ol
 
 Think a way to optimize the activation time calculus. Try to reduce the simulation time, especially when using the GPU
 
+Remove depracated code from src/linear_system_solver_library/gpu_solvers_cublas_11.c. Use https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSPARSE/spsv_csr/spsv_csr_example.c as reference. Change cusparseScsrsv2 to cusparseSpSV.
+
 #KNOW ISSUES:
 The logger symbols are only exported to an executable if an static library linked to a shared library uses then. For now this is ok. But I think it will be a pain in future releases.
 The GPU linear system solver is not working for purkinje-only simulations

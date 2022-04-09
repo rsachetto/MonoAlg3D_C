@@ -21,6 +21,7 @@ bool cell_needs_derefinement (struct cell_node *grid_cell, real_cpu derefinement
 
     if (grid_cell == NULL) {
         fprintf (stderr, "cell_needs_derefinement: Parameter grid_cell is NULL.");
+        return false;
     }
 
     struct cell_node *first_cell = grid_cell;
@@ -250,6 +251,7 @@ void derefine_cell_bunch (struct cell_node *first_bunch_cell, ui32_array *free_s
 struct cell_node *get_front_northeast_cell (struct cell_node *first_bunch_cell) {
     if (first_bunch_cell == NULL) {
         fprintf (stderr, "get_front_northeast_cell: Parameter first_bunch_cell is NULL.");
+        return NULL;
     }
 
     struct cell_node *first_cell = first_bunch_cell;
@@ -416,7 +418,6 @@ void simplify_derefinement(struct transition_node *transition_node) {
     struct transition_node *white_neighbor_cell;
     struct cell_node *black_neighbor_cell;
     struct transition_node *neighbor_transition_node;
-    void *quadruple_connector[4];
 
     /* All quadruple connectors point to the  same  cell.  It  means  that  two
      * transition nodes of the same level have been connected. This connection is
@@ -462,6 +463,9 @@ void simplify_derefinement(struct transition_node *transition_node) {
         free(neighbor_transition_node);
         free(transition_node);
     } else {
+
+        void *quadruple_connector[4];
+
         /* Connects outside to the transition node, if this was not deleted. That is,
         * the quadruple connectors point to different cells. */
         quadruple_connector[0] = transition_node->quadruple_connector1;

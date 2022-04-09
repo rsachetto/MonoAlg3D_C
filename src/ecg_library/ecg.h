@@ -28,7 +28,7 @@ struct pseudo_bidomain_persistent_data {
     size_t bufferSize;
     void *buffer;
 
-#if CUBLAS_VER_MAJOR < 10
+#if CUBLAS_VER_MAJOR <= 10
     cusparseMatDescr_t descr;
     real *local_sv;
 #else

@@ -48,10 +48,11 @@
 #define CM 5000
 #define VISUALIZATION_PAUSED_OPT 5100
 
-#define IS_IN_MAIN_FUNCTION(key) memcmp((key), "main_function", 13) == 0
-#define IS_IN_INIT_FUNCTION(key) memcmp((key), "init_function", 13) == 0
-#define IS_IN_END_FUNCTION(key)  memcmp((key), "end_function" , 12) == 0
-#define IS_IN_LIBRARY_FILE(key)  memcmp((key), "library_file" , 12) == 0
+#define IS_IN_MAIN_FUNCTION(key)  memcmp((key), "main_function" , 13) == 0
+#define IS_IN_INIT_FUNCTION(key)  memcmp((key), "init_function" , 13) == 0
+#define IS_IN_END_FUNCTION(key)   memcmp((key), "end_function"  , 12) == 0
+#define IS_IN_EXTRA_FUNCTION(key) memcmp((key), "extra_function", 14) == 0
+#define IS_IN_LIBRARY_FILE(key)   memcmp((key), "library_file"  , 12) == 0
 
 struct user_options {
     real_cpu final_time;                /*-f option */

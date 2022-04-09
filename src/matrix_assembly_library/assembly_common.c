@@ -1,5 +1,5 @@
 static struct element fill_element(uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x,
-                                   real_cpu sigma_y, real_cpu sigma_z, struct element *cell_elements);
+                                   real_cpu sigma_y, real_cpu sigma_z, struct element *cell_elements, struct cell_node *cell);
 
 static void initialize_diagonal_elements(struct monodomain_solver *the_solver, struct grid *the_grid) {
 
@@ -38,12 +38,13 @@ static void initialize_diagonal_elements(struct monodomain_solver *the_solver, s
 }
 
 static struct element fill_element(uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x,
-                                   real_cpu sigma_y, real_cpu sigma_z, struct element *cell_elements) {
+                                   real_cpu sigma_y, real_cpu sigma_z, struct element *cell_elements, struct cell_node *cell) {
 
     real_cpu multiplier;
 
     struct element new_element;
     new_element.column = position;
+    new_element.cell = cell;
 
     if(direction == FRONT) { // Z direction front
         multiplier = ((dx * dy) / dz);
@@ -1013,8 +1014,8 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
 
             if(insert) {
-                struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements);
-                new_element.cell = black_neighbor_cell;
+                struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements, black_neighbor_cell);
+                //new_element.cell = black_neighbor_cell;
                 arrput(grid_cell->elements, new_element);
             }
             unlock_cell_node(grid_cell);
@@ -1034,8 +1035,8 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             }
 
             if(insert) {
-                struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements);
-                new_element.cell = grid_cell;
+                struct element new_element = fill_element(position, direction, dx, dy, dz, sigma_x, sigma_y, sigma_z, cell_elements, grid_cell);
+                //new_element.cell = grid_cell;
                 arrput(black_neighbor_cell->elements, new_element);
             }
 

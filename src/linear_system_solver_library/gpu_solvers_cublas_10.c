@@ -461,6 +461,7 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
         }
         i++;
     }
+
     cudaMemcpy(rhs, persistent_data->d_x, N * sizeof(float), cudaMemcpyDeviceToHost);
 
     *number_of_iterations = i - 1;

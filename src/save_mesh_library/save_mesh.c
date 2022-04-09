@@ -736,21 +736,31 @@ SAVE_MESH(save_with_activation_times) {
     fclose(act_file);
 }
 
+INIT_SAVE_MESH(init_save_as_ensight) {
+    if(config->persistent_data == NULL) {
+        config->persistent_data = malloc(sizeof(struct save_ensigth_persistent_data));
+        ((struct save_ensigth_persistent_data*)config->persistent_data)->file_count = 0;
+        ((struct save_ensigth_persistent_data*)config->persistent_data)->n_digits = 0;
+    }
+}
+
 SAVE_MESH(save_as_ensight) {
 
+    struct save_ensigth_persistent_data *persistent_data = (struct save_ensigth_persistent_data*) config->persistent_data;
+
     if(the_grid == NULL && the_grid->purkinje == NULL) {
-        log_error_and_exit("Error in save_as_ensight. No grid and no purkinje grid defined\n");
+        log_error_and_exit("Error in save_as_ensight. No grid and/or no purkinje grid defined\n");
     }
 
     if(the_grid != NULL && the_grid->adaptive) {
         log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
     }
 
-    static bool ensight_geometry_saved = false;
-    static uint64_t num_files;
     static int n_state_vars = 0;
+    static bool geometry_saved = false;
+    static uint32_t num_files = 0;
 
-    if(!ensight_geometry_saved) {
+    if(!geometry_saved) {
 
         int print_rate = 1;
 
@@ -786,19 +796,20 @@ SAVE_MESH(save_as_ensight) {
         save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate, n_state_vars);
 
         sdsfree(output_dir_with_file);
-        ensight_geometry_saved = true;
+        geometry_saved = true;
     }
-
-    static int count = 0;
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
 
-    int n_digits = (num_files == 0) ? 1 : log10(num_files) + 1;
-    sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", n_digits);
+    if(persistent_data->n_digits == 0) {
+        persistent_data->n_digits = log10(num_files*500) + 1;
+    }
+    
+    sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", persistent_data->n_digits);
 
     char tmp[8192];
-    sprintf(tmp, base_name, count);
+    sprintf(tmp, base_name, persistent_data->file_count);
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
 
@@ -809,7 +820,7 @@ SAVE_MESH(save_as_ensight) {
 
     if(n_state_vars) {
         size_t num_sv_entries = ode_solver->model_data.number_of_ode_equations;
-        base_name = sdscatprintf(sdsempty(), "Sv%%d.Esca%%0%dd", n_digits);
+        base_name = sdscatprintf(sdsempty(), "Sv%%d.Esca%%0%dd", persistent_data->n_digits);
         real *sv_cpu;
 
         if(ode_solver->gpu) {
@@ -826,7 +837,7 @@ SAVE_MESH(save_as_ensight) {
         for(int i = 1; i <= n_state_vars; i++) {
 
             char tmp[8192];
-            sprintf(tmp, base_name, i, count);
+            sprintf(tmp, base_name, i, persistent_data->file_count);
 
             sds output_dir_with_file = sdsnew(output_dir);
             output_dir_with_file = sdscat(output_dir_with_file, "/");
@@ -844,7 +855,11 @@ SAVE_MESH(save_as_ensight) {
         }
     }
 
-    count++;
+    persistent_data->file_count++;
+}
+
+END_SAVE_MESH(end_save_as_ensight) {
+    free(config->persistent_data);
 }
 
 SAVE_MESH(no_save) {

@@ -49,4 +49,6 @@ void set_plain_fibrosis_inside_region(struct grid *the_grid, real_cpu phi, unsig
 uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file, uint32_t num_volumes, double start_h, uint8_t num_extra_fields,
                                    set_custom_data_for_mesh_fn set_custom_data_for_mesh);
 
+int calc_num_refs(real_cpu start_h, real_cpu desired_h);
+
 #endif // MONOALG3D_DOMAIN_HELPERS_H

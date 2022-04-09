@@ -26,11 +26,13 @@
 #define MODIFICATION_SECTION "modify"
 #define MODIFYDOMAIN_SECTION "modify_current_domain"
 #define CALC_ECG_SECTION "calc_ecg"
+#define EXTRA_FUNCTION "extra_function"
 
 #define MATCH_SECTION_AND_NAME(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define MATCH_SECTION(s) strcmp(section, s) == 0
 #define MATCH_NAME(v) strcmp(name, v) == 0
 #define SECTION_STARTS_WITH(s) strncmp(section, s, strlen(s)) == 0
+#define NAME_STARTS_WITH(n) strncmp(name, s, strlen(n)) == 0
 
 
 #endif //MONOALG3D_INI_FILE_HEADERS_H

@@ -270,5 +270,5 @@ if [ -n "$CRITERION_FOUND" ]; then
 fi
 
 if [ -n "$WAIT_ENTER" ]; then
-    read -p "Press any key to continue... " -n1 -s
+    read -r -p "Press any key to continue... " -n1 -s
 fi

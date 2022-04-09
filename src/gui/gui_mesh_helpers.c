@@ -447,24 +447,24 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
     uint32_t n_active = grid_to_draw->num_active_cells;
     struct cell_node **ac = grid_to_draw->active_cells;
 
-    float scale = gui_state->mesh_scale_factor;
-    Vector3 mesh_offset = gui_state->mesh_offset;
-
-    float offsetx_over_scale = mesh_offset.x / scale;
-    float offsety_over_scale = mesh_offset.y / scale;
-    float offsetz_over_scale = mesh_offset.z / scale;
-
-    float min_v = gui_config->min_v;
-    float max_v = gui_config->max_v;
-    float time = gui_config->time;
-
-    gui_state->ray_hit_distance = FLT_MAX;
-    gui_state->ray_mouse_over_hit_distance = FLT_MAX;
-
-    Matrix *translations = RL_MALLOC(n_active * sizeof(Matrix)); // Locations of instances
-    Color *colors = RL_MALLOC(n_active * sizeof(Color));
-
     if(ac) {
+
+        float scale = gui_state->mesh_scale_factor;
+        Vector3 mesh_offset = gui_state->mesh_offset;
+
+        float offsetx_over_scale = mesh_offset.x / scale;
+        float offsety_over_scale = mesh_offset.y / scale;
+        float offsetz_over_scale = mesh_offset.z / scale;
+
+        float min_v = gui_config->min_v;
+        float max_v = gui_config->max_v;
+        float time = gui_config->time;
+
+        gui_state->ray_hit_distance = FLT_MAX;
+        gui_state->ray_mouse_over_hit_distance = FLT_MAX;
+
+        Matrix *translations = (Matrix *)malloc(n_active * sizeof(Matrix)); // Locations of instances
+        Color *colors = (Color *)malloc(n_active * sizeof(Color));
 
         int count = 0;
 
@@ -635,5 +635,4 @@ void reset_grid_visibility(struct gui_shared_info *gui_config, struct gui_state 
 }
 
 void calc_min_max_bounds() {
-
 }
