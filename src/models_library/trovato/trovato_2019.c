@@ -37,8 +37,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         
         real *sv = &solver->sv[i * NEQ];
 
-        // TODO: Calculate the steady-state for 100 pulses beats (BCL=1000ms)
         // Steady-state 40 pulses (BCL=1000ms)
+        /*
         sv[0] = -86.7099;
         sv[1] = 0.005431;
         sv[2] = 0.000104;
@@ -85,6 +85,54 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         sv[43] = 0.233515;
         sv[44] = 0.997077;
         sv[45] = 0.471259;
+        */
+        // Steady-state 200 pulses (BCL=1000ms)
+        sv[0] = -8.624360e+01;
+        sv[1] = 5.630790e-03;
+        sv[2] = 1.054370e-04;
+        sv[3] = 9.466440e+00;
+        sv[4] = 9.466260e+00;
+        sv[5] = 9.466270e+00;
+        sv[6] = 1.425260e+02;
+        sv[7] = 1.425270e+02;
+        sv[8] = 1.425270e+02;
+        sv[9] = 4.510620e-05;
+        sv[10] = 1.056840e-04;
+        sv[11] = 1.306220e+00;
+        sv[12] = 1.288550e+00;
+        sv[13] = 1.307830e+00;
+        sv[14] = 1.942560e-05;
+        sv[15] = 0.000000e+00;
+        sv[16] = 6.700990e-03;
+        sv[17] = 7.766820e-01;
+        sv[18] = 7.765920e-01;
+        sv[19] = 7.786300e-01;
+        sv[20] = 5.625060e-01;
+        sv[21] = 7.786110e-01;
+        sv[22] = 2.629000e-04;
+        sv[23] = 4.458380e-01;
+        sv[24] = 2.226750e-01;
+        sv[25] = 2.821920e-04;
+        sv[26] = 6.318960e-01;
+        sv[27] = 9.896260e-01;
+        sv[28] = 7.738090e-09;
+        sv[29] = 1.000000e+00;
+        sv[30] = 9.158970e-01;
+        sv[31] = 1.000000e+00;
+        sv[32] = 1.000000e+00;
+        sv[33] = 9.999690e-01;
+        sv[34] = 1.000000e+00;
+        sv[35] = 1.000000e+00;
+        sv[36] = 6.281230e-03;
+        sv[37] = 3.238800e-04;
+        sv[38] = 9.936880e-01;
+        sv[39] = 5.662920e-04;
+        sv[40] = 5.862410e-01;
+        sv[41] = 2.096640e-01;
+        sv[42] = 2.338270e-04;
+        sv[43] = 2.088430e-01;
+        sv[44] = 9.971860e-01;
+        sv[45] = 4.756220e-01;
     }
 }
 
@@ -100,7 +148,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     bool adpt = ode_solver->adaptive;
 
-#pragma omp parallel for private(sv_id)
+    OMP(parallel for private(sv_id))
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
@@ -110,7 +158,6 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
         if(adpt) {
             //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
-            //solve_forward_euler_cpu_adpt_2(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
             solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
         }
         else {
@@ -123,15 +170,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
 void solve_model_ode_cpu(real dt, real *sv, real stim_current) {
 
-    // -------------------------------------------------------------------------------------------
-    // MODEL SPECIFIC:
-    // set the variables which are non-linear and hodkin-huxley type
     const real TOLERANCE = 1e-8;
-    bool is_rush_larsen[NEQ];
-    for (int i = 0; i < NEQ; i++) {
-        is_rush_larsen[i] = ((i >= 16 && i <= 35) || (i >= 37 && i <= 44)) ? true : false;        
-    }
-    // -------------------------------------------------------------------------------------------
     real rY[NEQ], rDY[NEQ];
 
     for(int i = 0; i < NEQ; i++)
@@ -144,20 +183,52 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current) {
     // Solve variables based on its type:
     //  Non-linear = Euler
     //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
-    for (int i = 0; i < NEQ; i++) {
-        if (is_rush_larsen[i]) {
-            if (abs(a[i]) < TOLERANCE) { 
-                sv[i] = rY[i] + dt * (rY[i] * a[i] + b[i]);
-            } 
-            else {
-                real aux = b[i] / a[i];
-                sv[i] = exp(a[i] * dt)*(rY[i] + aux) - aux;
-            }
-        }
-        else {
-            sv[i] = dt * rDY[i] + rY[i];
-        }
-    }
+    SOLVE_EQUATION_EULER_CPU(0);        // v        
+    SOLVE_EQUATION_EULER_CPU(1);        // CaMKt    
+    SOLVE_EQUATION_EULER_CPU(2);        // cass 
+    SOLVE_EQUATION_EULER_CPU(3);        // nai  
+    SOLVE_EQUATION_EULER_CPU(4);        // nasl 
+    SOLVE_EQUATION_EULER_CPU(5);        // nass 
+    SOLVE_EQUATION_EULER_CPU(6);        // ki 
+    SOLVE_EQUATION_EULER_CPU(7);        // kss
+    SOLVE_EQUATION_EULER_CPU(8);        // ksl
+    SOLVE_EQUATION_EULER_CPU(9);        // cai
+    SOLVE_EQUATION_EULER_CPU(10);       // casl
+    SOLVE_EQUATION_EULER_CPU(11);       // cansr
+    SOLVE_EQUATION_EULER_CPU(12);       // cajsr
+    SOLVE_EQUATION_EULER_CPU(13);       // cacsr
+    SOLVE_EQUATION_EULER_CPU(14);       // Jrel1
+    SOLVE_EQUATION_EULER_CPU(15);       // Jrel2
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(16); // m
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(17); // hf
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(18); // hs
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(19); // j
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(20); // hsp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(21); // jp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(22); // mL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(23); // hL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(24); // hLp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(25); // a
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(26); // i1
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(27); // i2
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(28); // d
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(29); // ff
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(30); // fs
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(31); // fcaf
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(32); // fcas
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(33); // jca
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(34); // ffp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(35); // fcafp
+    SOLVE_EQUATION_EULER_CPU(36);       // nca
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(37); // b
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(38); // g
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(39); // xrf
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(40); // xrs
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(41); // xs1
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(42); // xs2
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(43); // y
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(44); // xk1
+    SOLVE_EQUATION_EULER_CPU(45);       // u
 }
 
 void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
@@ -285,18 +356,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
 
 void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
     
-    // TODO: Remove this boolean array and write the full algebraics instead ...
-    // -------------------------------------------------------------------------------------------
-    // MODEL SPECIFIC:
-    // set the variables which are non-linear and hodkin-huxley type
-    bool is_rush_larsen[NEQ];
-    for (int i = 0; i < NEQ; i++) {
-        is_rush_larsen[i] = ((i >= 16 && i <= 35) || (i >= 37 && i <= 44)) ? true : false;        
-    }
-    // -------------------------------------------------------------------------------------------
-
     int numEDO = NEQ;
-
     real rDY[numEDO];
 
     // initializes the variables
@@ -338,43 +398,106 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
 
     while(1) {
 
-        for(int i = 0; i < numEDO; i++) {
-            // stores the old variables in a vector
-            edos_old_aux_[i] = sv[i];
-            // computes euler/rush-larsen method
-            if (is_rush_larsen[i])
-                edos_new_euler_[i] = (fabs(a_[i]) < abs_tol) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(*dt) : \
-                                                  exp(a_[i]*(*dt))*(edos_old_aux_[i] + (b_[i] / a_[i])) - (b_[i] / a_[i]);
-            else
-                edos_new_euler_[i] = _k1__[i] * *dt + edos_old_aux_[i];
-            // steps ahead to compute the rk2 method
-            sv[i] = edos_new_euler_[i];
-        }
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(0);        // v        
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(1);        // CaMKt    
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(2);        // cass 
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(3);        // nai  
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(4);        // nasl 
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(5);        // nass 
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(6);        // ki 
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(7);        // kss
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(8);        // ksl
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(9);        // cai
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(10);       // casl
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(11);       // cansr
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(12);       // cajsr
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(13);       // cacsr
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(14);       // Jrel1
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(15);       // Jrel2
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(16);          // m
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(17);          // hf
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(18);          // hs
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(19);          // j
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(20);          // hsp
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(21);          // jp
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(22);          // mL
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(23);          // hL
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(24);          // hLp
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(25);          // a
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(26);          // i1
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(27);          // i2
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(28);          // d
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(29);          // ff
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(30);          // fs
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(31);          // fcaf
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(32);          // fcas
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(33);          // jca
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(34);          // ffp
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(35);          // fcafp
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(36);       // nca
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(37);          // b
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(38);          // g
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(39);          // xrf
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(40);          // xrs
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(41);          // xs1
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(42);          // xs2
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(43);          // y
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(44);          // xk1
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(45);       // u
 
         *time_new += *dt;
         RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt);
         *time_new -= *dt; // step back
 
         double greatestError = 0.0, auxError = 0.0;
-        for(int i = 0; i < numEDO; i++) {
-            _k2__[i] = rDY[i];
-            if (is_rush_larsen[i]) {
-                real as = (a_[i] + a_new[i]) * 0.5;
-                real bs = (b_[i] + b_new[i]) * 0.5;
-                real y_2nd_order = (fabs(as) < abs_tol) ? edos_old_aux_[i] + (*dt) * (edos_old_aux_[i]*as + bs) : \
-                                                       exp(as*(*dt))*(edos_old_aux_[i] + (bs/as)) - (bs/as);
-                auxError = (fabs(y_2nd_order) < abs_tol) ? fabs(edos_new_euler_[i] - abs_tol) : \
-                                                        fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-                greatestError = (auxError > greatestError) ? auxError : greatestError;
-            }
-            else {
-                real f = (_k1__[i] + _k2__[i]) * 0.5;
-                real y_2nd_order = edos_old_aux_[i] + (*dt) * f;
-                auxError = (fabs(y_2nd_order) < abs_tol) ? fabs(edos_new_euler_[i] - abs_tol) : \
-                                                        fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-                greatestError = (auxError > greatestError) ? auxError : greatestError;
-            }
-        }
+        real as, bs, f, y_2nd_order;
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(0);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(1);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(2);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(3);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(4);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(5);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(6);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(7);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(8);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(9);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(10);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(11);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(12);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(13);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(14);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(15);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(16);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(17);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(18);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(19);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(20);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(21);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(22);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(23);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(24);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(25);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(26);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(27);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(28);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(29);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(30);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(31);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(32);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(33);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(34);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(35);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(36);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(37);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(38);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(39);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(40);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(41);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(42);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(43);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(44);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(45);
+
         /// adapt the time step
         greatestError += __tiny_;
         *previous_dt = *dt;
