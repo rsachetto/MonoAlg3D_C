@@ -28,6 +28,11 @@ The logger symbols are only exported to an executable if an static library linke
 The GPU linear system solver is not working for purkinje-only simulations
 When the minimum number of PMJs is not reached the solver will be in an infinite loop
 
-ToRORd model:
-- Include the current multipliers as extra parameters, just like the Ten & Tusscher model
-- Remove the if statements in the Rush-Larsen code and write the whole equation instead
+## Scripts:
+- Rewrite the 'trace_plot' script in a more general way.
+- The output should be written in the limpetGUI format as well:
+
+<t> <sv_1> <sv_2> <sv_3> ... <sv_n>
+.   .       .       .           .
+.   .       .       .           .
+.   .       .       .           .
