@@ -248,11 +248,8 @@ RESTORE_STATE (restore_simulation_state) {
         fclose (input_file);
     }
 
-    uint32_t num_extra_fn = arrlen(config->extra_functions);
 
-    for(int i = 0; i < num_extra_fn; i++) {
-        ((restore_state_fn*)(config->extra_functions[i]))(time_info, config, save_mesh_config, the_grid, the_monodomain_solver, the_ode_solver, input_dir);
-    }
+    CALL_EXTRA_FUNCTIONS(restore_state_fn, time_info, config, save_mesh_config, the_grid, the_monodomain_solver, the_ode_solver, input_dir);
 
     return true;
 }

@@ -65,4 +65,15 @@ void init_config_functions(struct config *config, char *default_lib, char *confi
         }                                                                                                                                                      \
         STRING_HASH_PRINT_KEY_VALUE_LOG(tag, (s)->config_data);                                                                                                \
     } while(0)
+
+#define CALL_EXTRA_FUNCTIONS(fn, ...)                                                                                                                          \
+    {                                                                                                                                                          \
+        uint32_t num_extra_fn = arrlen(config->extra_functions);                                                                                               \
+                                                                                                                                                               \
+        for(int i = 0; i < num_extra_fn; i++) {                                                                                                                \
+            ((fn *)(config->extra_functions[i]))(__VA_ARGS__);                                                                                                 \
+        }                                                                                                                                                      \
+    }
+
 #endif // MONOALG3D_CONFIG_COMMON_H
+
