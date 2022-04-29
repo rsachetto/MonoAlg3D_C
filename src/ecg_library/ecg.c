@@ -458,7 +458,7 @@ INIT_CALC_ECG(init_pseudo_bidomain) {
         init_pseudo_bidomain_gpu(config, the_ode_solver, the_grid);
 #else
         log_warn("Cuda runtime not found in this system. Falling back to CPU version!!\n");
-        init_pseudo_bidomain_cpu(config, the_solver, NULL, the_grid);
+        init_pseudo_bidomain_cpu(config, NULL, the_grid);
 #endif
     } else {
         init_pseudo_bidomain_cpu(config, NULL, the_grid);
