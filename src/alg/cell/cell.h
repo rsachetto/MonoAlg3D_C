@@ -74,6 +74,7 @@ struct element {
     enum transition_direction direction;
 #endif
     real_cpu value;
+    real_cpu value_ecg; //used for ecg computation
     uint32_t column; // Column of the matrix to which this element belongs.
     struct cell_node *cell;
 };

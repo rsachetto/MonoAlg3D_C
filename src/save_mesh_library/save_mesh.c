@@ -295,8 +295,6 @@ SAVE_MESH(save_as_text_or_binary) {
 
     tmp = sdscat(tmp, base_name);
 
-    //if (time_info->current_t >= 99000) {
-
     FILE *output_file = fopen(tmp, "w");
 
     struct cell_node *grid_cell = the_grid->first_cell;
@@ -401,7 +399,9 @@ SAVE_MESH(save_as_text_or_binary) {
     sdsfree(tmp);
 
     fclose(output_file);
-    //}
+
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
+
 }
 
 struct save_as_vtk_or_vtu_persistent_data {
@@ -485,6 +485,8 @@ SAVE_MESH(save_as_vtk) {
 
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
+
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
 }
 
 SAVE_MESH(save_as_vtu) {
@@ -568,6 +570,9 @@ SAVE_MESH(save_as_vtu) {
         free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid);
         ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid = NULL;
     }
+
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
+
 }
 
 INIT_SAVE_MESH(init_save_with_activation_times) {
@@ -734,6 +739,8 @@ SAVE_MESH(save_with_activation_times) {
     }
 
     fclose(act_file);
+
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
 }
 
 INIT_SAVE_MESH(init_save_as_ensight) {
@@ -856,10 +863,46 @@ SAVE_MESH(save_as_ensight) {
     }
 
     persistent_data->file_count++;
+
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
 }
 
 END_SAVE_MESH(end_save_as_ensight) {
     free(config->persistent_data);
+}
+
+SAVE_MESH(save_vm_matrix) {
+
+    static FILE *f = NULL;
+
+    real save_after = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, save_after, config, "start_saving_at");
+
+    if(time_info->current_t >= save_after) {
+
+        if(f == NULL) {
+            GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+            sds output_dir_with_file = sdsnew(output_dir);
+            output_dir_with_file = sdscat(output_dir_with_file, "/Vm_matrix.txt");
+            f = fopen(output_dir_with_file, "w");
+            sdsfree(output_dir_with_file);
+        }
+
+        uint32_t n_active = the_grid->num_active_cells;
+
+        fprintf(f, "%e ", time_info->current_t);
+
+        for(uint32_t i = 0; i < n_active; i++) {
+            fprintf(f, "%e ", the_grid->active_cells[i]->v);
+        }
+    }
+
+    fprintf(f, "\n");
+
+    if(time_info->current_t >= time_info->final_t) {
+        fclose(f);
+    }
+
 }
 
 SAVE_MESH(no_save) {

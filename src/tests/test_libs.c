@@ -89,9 +89,9 @@ Test (utils, arr_element) {
 
     struct cell_node *c = new_cell_node();
 #ifdef ENABLE_DDM
-    struct element a = {'a', 0, 1, c};
+    struct element a = {'a', 0, 0, 1, c};
 #else
-    struct element a = {0, 1, c};
+    struct element a = {0, 0, 1, c};
 #endif
     arrput(v, a);
 

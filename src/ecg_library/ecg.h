@@ -8,7 +8,6 @@
 
 struct pseudo_bidomain_persistent_data {
     real *distances;
-    real_cpu *main_diagonal;
     real *beta_im;
     struct point_3d *leads;
     FILE *output_file;

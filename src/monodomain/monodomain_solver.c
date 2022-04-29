@@ -549,7 +549,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false || !domain_config);
     CALL_INIT_SAVE_MESH(save_mesh_config);
-    CALL_INIT_CALC_ECG(calc_ecg_config, the_monodomain_solver, the_ode_solver, the_grid);
+    CALL_INIT_CALC_ECG(calc_ecg_config, the_ode_solver, the_grid);
 
     if(purkinje_linear_system_solver_config) {
         CALL_INIT_LINEAR_SYSTEM(purkinje_linear_system_solver_config, the_grid, true);

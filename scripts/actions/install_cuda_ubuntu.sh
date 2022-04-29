@@ -122,7 +122,9 @@ echo "APT_KEY_URL ${APT_KEY_URL}"
 echo "Adding CUDA Repository"
 wget ${PIN_URL}
 sudo mv ${PIN_FILENAME} /etc/apt/preferences.d/cuda-repository-pin-600
-sudo apt-key adv --fetch-keys ${APT_KEY_URL}
+#sudo apt-key adv --fetch-keys ${APT_KEY_URL}
+sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/3bf863cc.pub
+sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu${UBUNTU_VERSION}/x86_64/7fa2af80.pub
 sudo add-apt-repository "deb ${REPO_URL} /"
 sudo apt-get update
 

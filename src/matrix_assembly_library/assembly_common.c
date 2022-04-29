@@ -26,6 +26,7 @@ static void initialize_diagonal_elements(struct monodomain_solver *the_solver, s
         element.column = ac[i]->grid_position;
         element.cell = ac[i];
         element.value = alpha;
+        element.value_ecg = 0.0;
 
         if(ac[i]->elements)
             arrfree(ac[i]->elements);
@@ -420,15 +421,17 @@ static inline real_cpu DIVIDE(real_cpu num, real_cpu denom) {
 
 #define UPDATE_OR_ADD_ELEMENT(g_cell, n_cell, v)                                                                                                               \
     do {                                                                                                                                                       \
-        struct element el;                                                                                                                                     \
-        int el_index = find_neighbour_index(g_cell, n_cell);                                                                                                   \
-        if(el_index != -1) {                                                                                                                                   \
-            g_cell->elements[el_index].value += v;                                                                                                             \
-        } else {                                                                                                                                               \
-            el.value = v;                                                                                                                                      \
-            el.cell = n_cell;                                                                                                                                  \
-            el.column = n_cell->grid_position;                                                                                                                 \
-            arrput(g_cell->elements, el);                                                                                                                      \
+        if(v != 0) {                                                                                                                                           \
+            struct element el;                                                                                                                                 \
+            int el_index = find_neighbour_index(g_cell, n_cell);                                                                                               \
+            if(el_index != -1) {                                                                                                                               \
+                g_cell->elements[el_index].value += v;                                                                                                         \
+            } else {                                                                                                                                           \
+                el.value = v;                                                                                                                                  \
+                el.cell = n_cell;                                                                                                                              \
+                el.column = n_cell->grid_position;                                                                                                             \
+                arrput(g_cell->elements, el);                                                                                                                  \
+            }                                                                                                                                                  \
         }                                                                                                                                                      \
     } while(0)
 
