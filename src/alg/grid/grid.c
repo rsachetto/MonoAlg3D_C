@@ -569,10 +569,10 @@ static void sort_elements(struct element *cell_elements, int tam) {
 }
 
 void grid_to_csr(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje) {
-    grid_to_csr_new_diag(the_grid, A, IA, JA, is_purkinje, NULL);
+    grid_to_csr_for_ecg(the_grid, A, IA, JA, is_purkinje, false);
 }
 
-void grid_to_csr_new_diag(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje, real_cpu *new_diag) {
+void grid_to_csr_for_ecg(struct grid *the_grid, float **A, int **IA, int **JA, bool is_purkinje, bool for_ecg) {
 
     struct element element;
 
@@ -615,19 +615,26 @@ void grid_to_csr_new_diag(struct grid *the_grid, float **A, int **IA, int **JA, 
                 arrpush(cell_elements, cell->elements[i]);
             }
 
-            if(new_diag != NULL) {
-                cell_elements[0].value = new_diag[i];
-            }
-
             sort_elements(cell_elements, max_el);
 
             for(int el = 0; el < max_el; el++) {
                 element = cell_elements[el];
-                if(element.value != 0) {
-                    arrpush(*A, element.value);
-                    arrpush(*JA, element.column);
-                    nnz++;
-                    nnz_local++;
+                if(for_ecg) {
+                    if(element.value_ecg != 0) {
+                        arrpush(*A, element.value_ecg);
+                        arrpush(*JA, element.column);
+                        nnz++;
+                        nnz_local++;
+                    }
+                }
+                else {
+                    if(element.value != 0) {
+                        arrpush(*A, element.value);
+                        arrpush(*JA, element.column);
+                        nnz++;
+                        nnz_local++;
+                    }
+
                 }
             }
 

@@ -27,6 +27,125 @@
 
 #define EUCLIDIAN_DISTANCE(p, q) sqrt(pow(p.x - q.x, 2.0) + pow(p.y - q.y, 2.0) + pow(p.z - q.z, 2.0))
 
+void fill_element(uint32_t position, real_cpu dx, real_cpu dy, real_cpu dz, struct element *cell_elements) {
+
+    real_cpu multiplier;
+    multiplier = ((dx * dy) / dz);
+    cell_elements[position].value_ecg = -multiplier;
+    cell_elements[0].value_ecg += (multiplier);
+}
+
+static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, enum transition_direction direction) {
+
+    bool has_found;
+
+    struct transition_node *white_neighbor_cell;
+    struct cell_node *black_neighbor_cell;
+
+    /* When neighbour_grid_cell is a transition node, looks for the next neighbor
+* cell which is a cell node. */
+    uint16_t neighbour_grid_cell_level = ((struct basic_cell_data *)(neighbour_grid_cell))->level;
+    enum cell_type neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+
+    if(neighbour_grid_cell_level > grid_cell->cell_data.level) {
+        if(neighbour_grid_cell_type == TRANSITION_NODE) {
+            has_found = false;
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
+                    white_neighbor_cell = (struct transition_node *)neighbour_grid_cell;
+                    if(white_neighbor_cell->single_connector == NULL) {
+                        has_found = true;
+                    } else {
+                        neighbour_grid_cell = white_neighbor_cell->quadruple_connector1;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    } else {
+        if(neighbour_grid_cell_level <= grid_cell->cell_data.level && (neighbour_grid_cell_type == TRANSITION_NODE)) {
+            has_found = false;
+            while(!has_found) {
+                if(neighbour_grid_cell_type == TRANSITION_NODE) {
+                    white_neighbor_cell = (struct transition_node *)(neighbour_grid_cell);
+                    if(white_neighbor_cell->single_connector == 0) {
+                        has_found = true;
+                    } else {
+                        neighbour_grid_cell = white_neighbor_cell->single_connector;
+                        neighbour_grid_cell_type = ((struct basic_cell_data *)(neighbour_grid_cell))->type;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // We care only with the interior points
+    if(neighbour_grid_cell_type == CELL_NODE) {
+
+        black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
+
+        if(black_neighbor_cell->active) {
+
+            uint32_t position;
+            real_cpu dx, dy, dz;
+
+            if(black_neighbor_cell->cell_data.level > grid_cell->cell_data.level) {
+                dx = black_neighbor_cell->discretization.x;
+                dy = black_neighbor_cell->discretization.y;
+                dz = black_neighbor_cell->discretization.z;
+            } else {
+                dx = grid_cell->discretization.x;
+                dy = grid_cell->discretization.y;
+                dz = grid_cell->discretization.z;
+            }
+
+            lock_cell_node(grid_cell);
+
+            struct element *cell_elements = grid_cell->elements;
+            position = black_neighbor_cell->grid_position;
+
+            size_t max_elements = arrlen(cell_elements);
+
+        bool insert = false;
+        int p;
+
+        for(size_t i = 0; i < max_elements; i++) {
+            if(cell_elements[i].column == position) {
+            p = i;
+            insert = true;
+                break;
+            }
+        }
+
+        if(insert) {
+            fill_element(p, dx, dy, dz, cell_elements);
+        }
+            unlock_cell_node(grid_cell);
+        }
+    }
+}
+
+void assembly_divergent(struct grid *the_grid) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    for(uint32_t i = 0; i < num_active_cells; i++) {
+
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[BACK], BACK);
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[FRONT], FRONT);
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[TOP], TOP);
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[DOWN], DOWN);
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[RIGHT], RIGHT);
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[LEFT], LEFT);
+    }
+
+}
+
 static void get_leads(struct config *config) {
 
     char lead_name[1024];
@@ -90,7 +209,6 @@ INIT_CALC_ECG(init_pseudo_bidomain_cpu) {
     PSEUDO_BIDOMAIN_DATA->distances = MALLOC_ARRAY_OF_TYPE(real, PSEUDO_BIDOMAIN_DATA->n_leads * n_active);
 
     PSEUDO_BIDOMAIN_DATA->beta_im = MALLOC_ARRAY_OF_TYPE(real, n_active);
-    PSEUDO_BIDOMAIN_DATA->main_diagonal = MALLOC_ARRAY_OF_TYPE(real_cpu, n_active);
 
     // calc the distances from each volume to each electrode (r)
     for(uint32_t i = 0; i < PSEUDO_BIDOMAIN_DATA->n_leads; i++) {
@@ -105,16 +223,7 @@ INIT_CALC_ECG(init_pseudo_bidomain_cpu) {
         }
     }
 
-    real_cpu beta = the_solver->beta;
-    real_cpu cm = the_solver->cm;
-    real_cpu dt = the_solver->dt;
-
-    // calc the main diagonal for the ECG calculation (matrix main diag - ALPHA)
-    OMP(parallel for)
-    for(int i = 0; i < n_active; i++) {
-        real_cpu alpha = ALPHA(beta, cm, dt, ac[i]->discretization.x, ac[i]->discretization.y, ac[i]->discretization.z);
-        PSEUDO_BIDOMAIN_DATA->main_diagonal[i] = ac[i]->elements[0].value - alpha;
-    }
+    assembly_divergent(the_grid);
 
     free(filename);
 }
@@ -129,10 +238,13 @@ CALC_ECG(pseudo_bidomain_cpu) {
         struct element *cell_elements = ac[i]->elements;
         size_t max_el = arrlen(cell_elements);
 
-        PSEUDO_BIDOMAIN_DATA->beta_im[i] = PSEUDO_BIDOMAIN_DATA->main_diagonal[i] * cell_elements[0].cell->v;
+        struct point_3d d = ac[i]->discretization;
+        real_cpu volume = d.x * d.y * d.z;
 
-        for(size_t el = 1; el < max_el; el++) {
-            PSEUDO_BIDOMAIN_DATA->beta_im[i] += cell_elements[el].value * cell_elements[el].cell->v;
+        PSEUDO_BIDOMAIN_DATA->beta_im[i] = 0;
+
+        for(size_t el = 0; el < max_el; el++) {
+            PSEUDO_BIDOMAIN_DATA->beta_im[i] += cell_elements[el].value_ecg * cell_elements[el].cell->v / volume;
         }
     }
 
@@ -166,7 +278,7 @@ END_CALC_ECG(end_pseudo_bidomain_cpu) {
 
 INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
-    init_pseudo_bidomain_cpu(config, the_solver, NULL, the_grid);
+    init_pseudo_bidomain_cpu(config, NULL, the_grid);
 
     if(!the_ode_solver->gpu) {
         log_warn("The current implementation of pseudo_bidomain_gpu only works when the odes are also being solved using the GPU! Falling back to CPU version\n");
@@ -183,7 +295,7 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
 
-    grid_to_csr_new_diag(the_grid, &val, &I, &J, false, PSEUDO_BIDOMAIN_DATA->main_diagonal);
+    grid_to_csr_for_ecg(the_grid, &val, &I, &J, false, true);
 
     int nz = arrlen(val);
     uint32_t N = the_grid->num_active_cells;
@@ -280,6 +392,8 @@ CALC_ECG(pseudo_bidomain_gpu) {
 
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", time_info->current_t);
 
+    gpu_vec_div_vec(PSEUDO_BIDOMAIN_DATA->beta_im, PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->tmp_data, n_active);
+
     for(int i = 0; i < PSEUDO_BIDOMAIN_DATA->n_leads; i++) {
 
         // beta_im / distance
@@ -341,13 +455,13 @@ INIT_CALC_ECG(init_pseudo_bidomain) {
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config, "use_gpu");
     if(gpu) {
 #ifdef COMPILE_CUDA
-        init_pseudo_bidomain_gpu(config, the_solver, the_ode_solver, the_grid);
+        init_pseudo_bidomain_gpu(config, the_ode_solver, the_grid);
 #else
         log_warn("Cuda runtime not found in this system. Falling back to CPU version!!\n");
         init_pseudo_bidomain_cpu(config, the_solver, NULL, the_grid);
 #endif
     } else {
-        init_pseudo_bidomain_cpu(config, the_solver, NULL, the_grid);
+        init_pseudo_bidomain_cpu(config, NULL, the_grid);
     }
 }
 
