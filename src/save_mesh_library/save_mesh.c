@@ -346,41 +346,41 @@ SAVE_MESH(save_as_text_or_binary) {
                 fwrite(&v, sizeof(v), 1, output_file);
             } else {
                 if(save_ode_state_variables) {
+
+                    int n_state_vars = ode_solver->model_data.number_of_ode_equations - 1; // Vm is always saved
+                    size_t num_sv_entries = n_state_vars + 1;
+                    real *sv_cpu;
+
+                    if(ode_solver->gpu) {
+
+#ifdef COMPILE_CUDA
+                        sv_cpu = MALLOC_ARRAY_OF_TYPE(real, ode_solver->original_num_cells * num_sv_entries);
+                        check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
+                                    ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
+#endif
+                    } else {
+                        sv_cpu = ode_solver->sv;
+                    }
+
+                    fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g", center_x, center_y, center_z, dx, dy, dz, v);
+
+                    for(int i = 1; i <= n_state_vars; i++) {
+                        float value;
+                        if(ode_solver->gpu) {
+                            value = (float) sv_cpu[i*ode_solver->original_num_cells];
+                        }
+                        else {
+                            value = sv_cpu[i];
+                        }
+
+                        fprintf(output_file, ",%g", value);
+                    }
+
+                    if(ode_solver->gpu) {
+                        free(sv_cpu);
+                    }
                     
-                        int n_state_vars = ode_solver->model_data.number_of_ode_equations - 1; // Vm is always saved
-                        size_t num_sv_entries = n_state_vars + 1;
-                        real *sv_cpu;
-
-                        if(ode_solver->gpu) {
-
-                            #ifdef COMPILE_CUDA
-                            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, ode_solver->original_num_cells * num_sv_entries);
-                            check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
-                                        ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
-                            #endif
-                        } else {
-                            sv_cpu = ode_solver->sv;
-                        }
-
-                        fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g", center_x, center_y, center_z, dx, dy, dz, v);
-
-                        for(int i = 1; i <= n_state_vars; i++) {
-                            float value;
-                            if(ode_solver->gpu) {
-                                value = (float) sv_cpu[i*ode_solver->original_num_cells];
-                            }
-                            else {
-                                value = sv_cpu[i];
-                            }
-
-                            fprintf(output_file, ",%g", value);
-                        }
-
-                        if(ode_solver->gpu) {
-                            free(sv_cpu);
-                        }
-                        
-                        fprintf(output_file, "\n");
+                    fprintf(output_file, "\n");
                 }
                 else {                
                     fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
