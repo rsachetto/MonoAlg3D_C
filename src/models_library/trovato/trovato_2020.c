@@ -1,4 +1,4 @@
-#include "trovato_2019.h"
+#include "trovato_2020.h"
 #include <stdlib.h>
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
@@ -11,7 +11,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_info("Using Trovato_2019 CPU model\n");
+    log_info("Using Trovato_2020 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
     solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
@@ -37,102 +37,53 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         
         real *sv = &solver->sv[i * NEQ];
 
-        // Steady-state 40 pulses (BCL=1000ms)
-        /*
-        sv[0] = -86.7099;
-        sv[1] = 0.005431;
-        sv[2] = 0.000104;
-        sv[3] = 8.25533;
-        sv[4] = 8.25502;
-        sv[5] = 8.25503;
-        sv[6] = 143.743;
-        sv[7] = 143.744;
-        sv[8] = 143.744;
-        sv[9] = 4.4e-05;
-        sv[10] = 0.000103;
-        sv[11] = 1.26947;
-        sv[12] = 1.25254;
-        sv[13] = 1.27103;
-        sv[14] = 1.1e-05;
-        sv[15] = 0;
-        sv[16] = 0.006303;
-        sv[17] = 0.789469;
-        sv[18] = 0.789392;
-        sv[19] = 0.791301;
-        sv[20] = 0.580955;
-        sv[21] = 0.791719;
-        sv[22] = 0.000241;
-        sv[23] = 0.463851;
-        sv[24] = 0.239936;
-        sv[25] = 0.000272;
-        sv[26] = 0.646362;
-        sv[27] = 0.98999;
-        sv[28] = 0;
-        sv[29] = 1;
-        sv[30] = 0.926919;
-        sv[31] = 1;
-        sv[32] = 1;
-        sv[33] = 0.999976;
-        sv[34] = 1;
-        sv[35] = 1;
-        sv[36] = 0.005885;
-        sv[37] = 0.000303;
-        sv[38] = 0.994251;
-        sv[39] = 0.000367;
-        sv[40] = 0.566131;
-        sv[41] = 0.189842;
-        sv[42] = 0.000222;
-        sv[43] = 0.233515;
-        sv[44] = 0.997077;
-        sv[45] = 0.471259;
-        */
-        // Steady-state 200 pulses (BCL=1000ms)
-        sv[0] = -8.624360e+01;
-        sv[1] = 5.630790e-03;
-        sv[2] = 1.054370e-04;
-        sv[3] = 9.466440e+00;
-        sv[4] = 9.466260e+00;
-        sv[5] = 9.466270e+00;
-        sv[6] = 1.425260e+02;
-        sv[7] = 1.425270e+02;
-        sv[8] = 1.425270e+02;
-        sv[9] = 4.510620e-05;
-        sv[10] = 1.056840e-04;
-        sv[11] = 1.306220e+00;
-        sv[12] = 1.288550e+00;
-        sv[13] = 1.307830e+00;
-        sv[14] = 1.942560e-05;
-        sv[15] = 0.000000e+00;
-        sv[16] = 6.700990e-03;
-        sv[17] = 7.766820e-01;
-        sv[18] = 7.765920e-01;
-        sv[19] = 7.786300e-01;
-        sv[20] = 5.625060e-01;
-        sv[21] = 7.786110e-01;
-        sv[22] = 2.629000e-04;
-        sv[23] = 4.458380e-01;
-        sv[24] = 2.226750e-01;
-        sv[25] = 2.821920e-04;
-        sv[26] = 6.318960e-01;
-        sv[27] = 9.896260e-01;
-        sv[28] = 7.738090e-09;
-        sv[29] = 1.000000e+00;
-        sv[30] = 9.158970e-01;
-        sv[31] = 1.000000e+00;
-        sv[32] = 1.000000e+00;
-        sv[33] = 9.999690e-01;
-        sv[34] = 1.000000e+00;
-        sv[35] = 1.000000e+00;
-        sv[36] = 6.281230e-03;
-        sv[37] = 3.238800e-04;
-        sv[38] = 9.936880e-01;
-        sv[39] = 5.662920e-04;
-        sv[40] = 5.862410e-01;
-        sv[41] = 2.096640e-01;
-        sv[42] = 2.338270e-04;
-        sv[43] = 2.088430e-01;
-        sv[44] = 9.971860e-01;
-        sv[45] = 4.756220e-01;
+        // Default initial conditions (1000 beats at BCL=1000ms) 
+        sv[0]       = -86.550102957989600;
+        sv[1]       = 0.005060490773142;
+        sv[2]       = 1.017658486729359e-04;
+        sv[3]       = 8.231857731510893;     
+        sv[4]       = 8.231553454361393;     
+        sv[5]       = 8.231561539013950;
+        sv[6]       = 1.437673447706863e+02;  
+        sv[7]       = 1.437677533510394e+02;
+        sv[8]       = 1.437677771226899e+02;  
+        sv[9]       = 4.360080908582633e-05; 
+        sv[10]      = 1.020101597047671e-04; 
+        sv[11]      = 1.263525645841406;   
+        sv[12]      = 1.248146625349512;    
+        sv[13]      = 1.265185617721750;
+        sv[14]      = 0;                    
+        sv[15]      = 0;
+        sv[16]      = 0.006341207769833;       
+        sv[17]      = 0.788541761218318;       
+        sv[18]      = 0.788474863764949;
+        sv[19]      = 0.790412100577539;       
+        sv[20]      = 0.579594138981772;      
+        sv[21]      = 0.790885181877794;
+        sv[22]      = 0.0;                    
+        sv[23]      = 0.463478975643765;       
+        sv[24]      = 0.240123148015689;
+        sv[25]      = 0.0;                     
+        sv[26]      = 0.649386868151536;        
+        sv[27]      = 0.989963717273401;
+        sv[28]      = 0.0;                     
+        sv[29]      = 0.999999963501871;       
+        sv[30]      = 0.926598485399264;
+        sv[31]      = 0.999999963493016;    
+        sv[32]      = 0.999834100785052;     
+        sv[33]      = 0.999979200703676;
+        sv[34]      = 0.999999963494571;      
+        sv[35]      = 0.999999963612862;
+        sv[36]      = 0.005470852996192;     
+        sv[37]      = 0.0;                     
+        sv[38]      = 0.994211562437775;        
+        sv[39]      = 0.0;
+        sv[40]      = 0.568856244015729;     
+        sv[41]      = 0.191294664752654;      
+        sv[42]      = 0.0;
+        sv[43]      = 0.233014639857230;        
+        sv[44]      = 0.997085416662044;     
+        sv[45]      = 0.466232550741101;       
     }
 }
 
@@ -574,7 +525,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     real calc_I_stim = stim_current;
 
     //State variables
-    const real V = sv[0];
+    const real v = sv[0];
     const real CaMKt = sv[1];
     const real cass = sv[2];
     const real nai = sv[3];
@@ -621,7 +572,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     const real xk1 = sv[44];
     const real u = sv[45];
 
-    #include "trovato_2019_common.inc.c"
+    #include "trovato_2020_common.inc.c"
 }
 
 void RHS_RL_cpu (real *a_, real *b_, real *sv, real *rDY_, real stim_current, real dt) {
@@ -630,7 +581,7 @@ void RHS_RL_cpu (real *a_, real *b_, real *sv, real *rDY_, real stim_current, re
     real calc_I_stim = stim_current;
 
     //State variables
-    const real V = sv[0];
+    const real v = sv[0];
     const real CaMKt = sv[1];
     const real cass = sv[2];
     const real nai = sv[3];
@@ -677,5 +628,5 @@ void RHS_RL_cpu (real *a_, real *b_, real *sv, real *rDY_, real stim_current, re
     const real xk1 = sv[44];
     const real u = sv[45];
 
-    #include "trovato_2019_RL_common.inc.c"
+    #include "trovato_2020_RL_common.inc.c"
 }

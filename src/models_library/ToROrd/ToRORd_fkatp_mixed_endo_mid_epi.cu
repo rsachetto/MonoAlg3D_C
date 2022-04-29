@@ -5,8 +5,11 @@
 __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
+    // Default initial conditions (endocardium cell)
     if (threadID < num_volumes) {
         for (int i = 0; i < NEQ; i++) {
+            /*
+            // Default initial conditions (endocardium cell)
             *((real * )((char *) sv + pitch * 0) + threadID) = -88.7638;
             *((real * )((char *) sv + pitch * 1) + threadID) = 0.0111;
             *((real * )((char *) sv + pitch * 2) + threadID)= 7.0305e-5;
@@ -50,6 +53,51 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
             *((real * )((char *) sv + pitch * 40) + threadID) = 1.7707e-4;
             *((real * )((char *) sv + pitch * 41) + threadID) = 1.6129e-22;
             *((real * )((char *) sv + pitch * 42) + threadID) = 1.2475e-20;
+            */
+            // Steady-state after 200 beats (endocardium cell)
+            *((real * )((char *) sv + pitch * 0) + threadID) = -8.890585e+01;
+            *((real * )((char *) sv + pitch * 1) + threadID) = 1.107642e-02;
+            *((real * )((char *) sv + pitch * 2) + threadID) = 6.504164e-05;
+            *((real * )((char *) sv + pitch * 3) + threadID) = 1.210818e+01;
+            *((real * )((char *) sv + pitch * 4) + threadID) = 1.210851e+01;
+            *((real * )((char *) sv + pitch * 5) + threadID) = 1.426206e+02;
+            *((real * )((char *) sv + pitch * 6) + threadID) = 1.426205e+02;
+            *((real * )((char *) sv + pitch * 7) + threadID) = 1.530373e+00;
+            *((real * )((char *) sv + pitch * 8) + threadID) = 1.528032e+00;
+            *((real * )((char *) sv + pitch * 9) + threadID) = 7.455488e-05;
+            *((real * )((char *) sv + pitch * 10) + threadID) = 7.814592e-04;
+            *((real * )((char *) sv + pitch * 11) + threadID) = 8.313839e-01;
+            *((real * )((char *) sv + pitch * 12) + threadID) = 8.311938e-01;
+            *((real * )((char *) sv + pitch * 13) + threadID) = 6.752873e-01;
+            *((real * )((char *) sv + pitch * 14) + threadID) = 8.308255e-01;
+            *((real * )((char *) sv + pitch * 15) + threadID) = 1.585610e-04;
+            *((real * )((char *) sv + pitch * 16) + threadID) = 5.294475e-01;
+            *((real * )((char *) sv + pitch * 17) + threadID) = 2.896996e-01;
+            *((real * )((char *) sv + pitch * 18) + threadID) = 9.419166e-04;
+            *((real * )((char *) sv + pitch * 19) + threadID) = 9.996194e-01;
+            *((real * )((char *) sv + pitch * 20) + threadID) = 5.938602e-01;
+            *((real * )((char *) sv + pitch * 21) + threadID) = 4.799180e-04;
+            *((real * )((char *) sv + pitch * 22) + threadID) = 9.996194e-01;
+            *((real * )((char *) sv + pitch * 23) + threadID) = 6.543754e-01;
+            *((real * )((char *) sv + pitch * 24) + threadID) = -2.898677e-33;
+            *((real * )((char *) sv + pitch * 25) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 26) + threadID) = 9.389659e-01;
+            *((real * )((char *) sv + pitch * 27) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 28) + threadID) = 9.999003e-01;
+            *((real * )((char *) sv + pitch * 29) + threadID) = 9.999773e-01;
+            *((real * )((char *) sv + pitch * 30) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 31) + threadID) = 1.000000e+00;
+            *((real * )((char *) sv + pitch * 32) + threadID) = 4.920606e-04;
+            *((real * )((char *) sv + pitch * 33) + threadID) = 8.337021e-04;
+            *((real * )((char *) sv + pitch * 34) + threadID) = 6.962775e-04;
+            *((real * )((char *) sv + pitch * 35) + threadID) = 8.425453e-04;
+            *((real * )((char *) sv + pitch * 36) + threadID) = 9.980807e-01;
+            *((real * )((char *) sv + pitch * 37) + threadID) = 1.289824e-05;
+            *((real * )((char *) sv + pitch * 38) + threadID) = 3.675442e-04;
+            *((real * )((char *) sv + pitch * 39) + threadID) = 2.471690e-01;
+            *((real * )((char *) sv + pitch * 40) + threadID) = 1.742987e-04;
+            *((real * )((char *) sv + pitch * 41) + threadID) = 5.421027e-24;
+            *((real * )((char *) sv + pitch * 42) + threadID) = 6.407933e-23;
         }
             
         if(use_adpt_dt) {
@@ -61,14 +109,14 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
 }
 
 __global__ void kernel_set_model_initial_conditions_endo_mid_epi(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt,\
-                                                real *initial_endo, real *initial_epi, real *initial_mid, real *mapping) {
+                                                real *initial_endo, real *initial_epi, real *initial_mid, real *transmurality) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (threadID < num_volumes) {
         for (int i = 0; i < NEQ; i++) {
-            if (mapping[threadID] == ENDO)
+            if (transmurality[threadID] == ENDO)
                 *((real * )((char *) sv + pitch * i) + threadID) = initial_endo[i];
-            else if (mapping[threadID] == EPI)
+            else if (transmurality[threadID] == EPI)
                 *((real * )((char *) sv + pitch * i) + threadID) = initial_epi[i];
             else
                 *((real * )((char *) sv + pitch * i) + threadID) = initial_mid[i];
@@ -112,25 +160,26 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     real *initial_conditions_endo = NULL;
     real *initial_conditions_epi = NULL;
     real *initial_conditions_mid = NULL;
-    real *mapping = NULL;
+    real *transmurality = NULL;
     real *initial_conditions_endo_device = NULL;
     real *initial_conditions_epi_device = NULL;
     real *initial_conditions_mid_device = NULL;
-    real *mapping_device = NULL;
+    real *transmurality_device = NULL;
 
     if(solver->ode_extra_data) {
-        initial_conditions_endo = (real *)solver->ode_extra_data;
-        initial_conditions_epi = (real *)solver->ode_extra_data+NEQ;
-        initial_conditions_mid = (real *)solver->ode_extra_data+NEQ+NEQ;
-        mapping = (real *)solver->ode_extra_data+NEQ+NEQ+NEQ;
+        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)solver->ode_extra_data;
+        initial_conditions_endo = extra_data->initial_ss_endo;
+        initial_conditions_epi = extra_data->initial_ss_epi;
+        initial_conditions_mid = extra_data->initial_ss_mid;
+        transmurality = extra_data->transmurality;
         check_cuda_error(cudaMalloc((void **)&initial_conditions_endo_device, sizeof(real)*NEQ));
         check_cuda_error(cudaMemcpy(initial_conditions_endo_device, initial_conditions_endo, sizeof(real)*NEQ, cudaMemcpyHostToDevice));
         check_cuda_error(cudaMalloc((void **)&initial_conditions_epi_device, sizeof(real)*NEQ));
         check_cuda_error(cudaMemcpy(initial_conditions_epi_device, initial_conditions_epi, sizeof(real)*NEQ, cudaMemcpyHostToDevice));
         check_cuda_error(cudaMalloc((void **)&initial_conditions_mid_device, sizeof(real)*NEQ));
         check_cuda_error(cudaMemcpy(initial_conditions_mid_device, initial_conditions_mid, sizeof(real)*NEQ, cudaMemcpyHostToDevice));
-        check_cuda_error(cudaMalloc((void **)&mapping_device, sizeof(real)*num_volumes));
-        check_cuda_error(cudaMemcpy(mapping_device, mapping, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
+        check_cuda_error(cudaMalloc((void **)&transmurality_device, sizeof(real)*num_volumes));
+        check_cuda_error(cudaMemcpy(transmurality_device, transmurality, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
     }
     else {
         log_info("[INFO] You should supply a mask function to tag the cells when using this mixed model!\n");
@@ -140,7 +189,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     if (solver->ode_extra_data) {
         kernel_set_model_initial_conditions_endo_mid_epi<<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes, pitch_h, use_adpt_dt, solver->min_dt,\
                                                             initial_conditions_endo_device, initial_conditions_epi_device, initial_conditions_mid_device,\
-                                                            mapping_device);
+                                                            transmurality_device);
     }
     else {
         kernel_set_model_initial_conditions<<<GRID, BLOCK_SIZE>>>(solver->sv, num_volumes, pitch_h, use_adpt_dt, solver->min_dt);
@@ -153,7 +202,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     check_cuda_error(cudaFree(initial_conditions_endo_device));
     check_cuda_error(cudaFree(initial_conditions_epi_device));
     check_cuda_error(cudaFree(initial_conditions_mid_device));
-    check_cuda_error(cudaFree(mapping_device));
+    check_cuda_error(cudaFree(transmurality_device));
 
     return pitch_h;
 }
@@ -172,7 +221,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     size_t stim_currents_size = sizeof(real) * num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t) * num_cells_to_solve;
 
-    real *stims_currents_device;
+    real *stims_currents_device = NULL;
     check_cuda_error(cudaMalloc((void **)&stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
 
@@ -183,36 +232,85 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
 
-    // Get the mapping array if exists
+    // Get the extra data array if exists
     uint32_t num_volumes = ode_solver->original_num_cells;
-    real *mapping = NULL;
-    real *mapping_device = NULL;
+    real *transmurality = NULL;
+    real *transmurality_device = NULL;
+    int num_extra_parameters = 17;
+    real extra_par[num_extra_parameters];
+    real *extra_par_device = NULL;
     if(ode_solver->ode_extra_data) {
-        mapping = (real *)ode_solver->ode_extra_data+NEQ+NEQ+NEQ;
-        check_cuda_error(cudaMalloc((void **)&mapping_device, sizeof(real)*num_volumes));
-        check_cuda_error(cudaMemcpy(mapping_device, mapping, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
+        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
+        extra_par[0]  = extra_data->INa_Multiplier; 
+        extra_par[1]  = extra_data->ICaL_Multiplier;
+        extra_par[2]  = extra_data->Ito_Multiplier;
+        extra_par[3]  = extra_data->INaL_Multiplier;
+        extra_par[4]  = extra_data->IKr_Multiplier; 
+        extra_par[5]  = extra_data->IKs_Multiplier; 
+        extra_par[6]  = extra_data->IK1_Multiplier; 
+        extra_par[7]  = extra_data->IKb_Multiplier; 
+        extra_par[8]  = extra_data->INaCa_Multiplier;
+        extra_par[9]  = extra_data->INaK_Multiplier;  
+        extra_par[9]  = extra_data->INab_Multiplier;  
+        extra_par[10] = extra_data->ICab_Multiplier;  
+        extra_par[11] = extra_data->IpCa_Multiplier;  
+        extra_par[12] = extra_data->ICaCl_Multiplier;
+        extra_par[13] = extra_data->IClb_Multiplier; 
+        extra_par[15] = extra_data->Jrel_Multiplier; 
+        extra_par[16] = extra_data->Jup_Multiplier;
+        transmurality = extra_data->transmurality;
+        
+        check_cuda_error(cudaMalloc((void **)&transmurality_device, sizeof(real)*num_volumes));
+        check_cuda_error(cudaMemcpy(transmurality_device, transmurality, sizeof(real)*num_volumes, cudaMemcpyHostToDevice));
+
+        check_cuda_error(cudaMalloc((void **)&extra_par_device, sizeof(real)*num_extra_parameters));
+        check_cuda_error(cudaMemcpy(extra_par_device, extra_par, sizeof(real)*num_extra_parameters, cudaMemcpyHostToDevice));
+    }
+    else {
+        extra_par[0]  = 1.0; 
+        extra_par[1]  = 1.0;
+        extra_par[2]  = 1.0;
+        extra_par[3]  = 1.0;
+        extra_par[4]  = 1.0;
+        extra_par[5]  = 1.0;
+        extra_par[6]  = 1.0; 
+        extra_par[7]  = 1.0; 
+        extra_par[8]  = 1.0;
+        extra_par[9]  = 1.0;
+        extra_par[9]  = 1.0; 
+        extra_par[10] = 1.0;  
+        extra_par[11] = 1.0; 
+        extra_par[12] = 1.0;
+        extra_par[13] = 1.0;
+        extra_par[15] = 1.0;
+        extra_par[16] = 1.0;
+
+        check_cuda_error(cudaMalloc((void **)&extra_par_device, sizeof(real)*num_extra_parameters));
+        check_cuda_error(cudaMemcpy(extra_par_device, extra_par, sizeof(real)*num_extra_parameters, cudaMemcpyHostToDevice));
     }
 
     // Transmurality mapping defined on 'extra_data' function
     if (ode_solver->ode_extra_data) {
-        solve_endo_mid_epi_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, mapping_device,\
+        solve_endo_mid_epi_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, transmurality_device, extra_par_device,\
                                     num_cells_to_solve, num_steps, ode_solver->pitch, ode_solver->adaptive, ode_solver->abs_tol, ode_solver->rel_tol, ode_solver->max_dt);
     }
     // No transmurality: all cells ENDO
     else {
-        solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device,\
+        solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, extra_par_device,\
                                     num_cells_to_solve, num_steps, ode_solver->pitch, ode_solver->adaptive, ode_solver->abs_tol, ode_solver->rel_tol, ode_solver->max_dt);
     }
-    
+
     check_cuda_error(cudaPeekAtLastError());
 
-    check_cuda_error(cudaFree(stims_currents_device));
-    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
-    if (mapping_device) check_cuda_error(cudaFree(mapping_device));
+    if (stims_currents_device) check_cuda_error(cudaFree(stims_currents_device));
+    if (cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
+    if (transmurality_device) check_cuda_error(cudaFree(transmurality_device));
+    if (extra_par_device) check_cuda_error(cudaFree(extra_par_device));
 }
 
-__global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve,\
+__global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *extra_params,\
                           uint32_t num_cells_to_solve, int num_steps, size_t pitch, bool use_adpt, real abstol, real reltol, real max_dt) {
+    const real TOLERANCE = 1e-8;
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
 
@@ -227,48 +325,67 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
             real rDY[NEQ];
             real a[NEQ], b[NEQ];
 
-            // -------------------------------------------------------------------------------------------
-            // MODEL SPECIFIC:
-            // set the variables which are non-linear and hodkin-huxley type
-            const real TOLERANCE = 1e-8;
-            bool is_rush_larsen[NEQ];
-            for (int i = 0; i < NEQ; i++) {
-                is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
-            }
-            // -------------------------------------------------------------------------------------------
-
             for(int n = 0; n < num_steps; ++n) {
 
-                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], 0.0, sv_id, dt, pitch, false);
+                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], 0.0, extra_params, sv_id, dt, pitch, false);
 
                 // Solve variables based on its type:
                 //  Non-linear = Euler
                 //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
-                for (int i = 0; i < NEQ; i++) {
-                    real rY = *((real *)((char *)sv + pitch * i) + sv_id);
-                    if (is_rush_larsen[i]) {
-                        if (abs(a[i]) < TOLERANCE) { 
-                            *((real *)((char *)sv + pitch * i) + sv_id) = rY + dt * ( rY * a[i] + b[i]);
-                        } 
-                        else {
-                            real aux = b[i] / a[i];
-                            *((real *)((char *)sv + pitch * i) + sv_id) = exp(a[i] * dt)*(rY + aux) - aux;
-                        }
-                    }
-                    else {
-                        *((real *)((char *)sv + pitch * i) + sv_id) = rY + dt * rDY[i];
-                    }
-                }
+                SOLVE_EQUATION_EULER_GPU(0);        // v        
+                SOLVE_EQUATION_EULER_GPU(1);        // CaMKt    
+                SOLVE_EQUATION_EULER_GPU(2);        // cass 
+                SOLVE_EQUATION_EULER_GPU(3);        // nai  
+                SOLVE_EQUATION_EULER_GPU(4);        // nass 
+                SOLVE_EQUATION_EULER_GPU(5);        // ki   
+                SOLVE_EQUATION_EULER_GPU(6);        // kss  
+                SOLVE_EQUATION_EULER_GPU(7);        // cansr
+                SOLVE_EQUATION_EULER_GPU(8);        // cajsr
+                SOLVE_EQUATION_EULER_GPU(9);        // cai
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(10); // m
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(11); // h
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(12); // j
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(13); // hp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(14); // jp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(15); // mL
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(16); // hL
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(17); // hLp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(18); // a
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(19); // iF
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(20); // iS
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(21); // ap
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(22); // iFp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(23); // iSp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(24); // d
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(25); // ff
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(26); // fs
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(27); // fcaf
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(28); // fcas
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(29); // jca
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(30); // ffp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(31); // fcafp
+                SOLVE_EQUATION_EULER_GPU(32);       // nca
+                SOLVE_EQUATION_EULER_GPU(33);       // nca_i
+                SOLVE_EQUATION_EULER_GPU(34);       // ikr_c0
+                SOLVE_EQUATION_EULER_GPU(35);       // ikr_c1
+                SOLVE_EQUATION_EULER_GPU(36);       // ikr_c2
+                SOLVE_EQUATION_EULER_GPU(37);       // ikr_i
+                SOLVE_EQUATION_EULER_GPU(38);       // ikr_o
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(39); // xs1
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(40); // xs2
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(41); // Jrel_np
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(42); // Jrel_p
             }
         } else {
-            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], 0.0, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], 0.0, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
 
-__global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *mapping,\
+__global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *transmurality, real *extra_params,\
                           uint32_t num_cells_to_solve, int num_steps, size_t pitch, bool use_adpt, real abstol, real reltol, real max_dt) {
+    const real TOLERANCE = 1e-8;
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
     int sv_id;
 
@@ -283,47 +400,65 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
             real rDY[NEQ];
             real a[NEQ], b[NEQ];
 
-            // -------------------------------------------------------------------------------------------
-            // MODEL SPECIFIC:
-            // set the variables which are non-linear and hodkin-huxley type
-            const real TOLERANCE = 1e-8;
-            bool is_rush_larsen[NEQ];
-            for (int i = 0; i < NEQ; i++) {
-                is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
-            }
-            // -------------------------------------------------------------------------------------------
-
             for(int n = 0; n < num_steps; ++n) {
 
-                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], mapping[threadID], sv_id, dt, pitch, false);
+                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], transmurality[threadID], extra_params, sv_id, dt, pitch, false);
 
                 // Solve variables based on its type:
                 //  Non-linear = Euler
                 //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
-                for (int i = 0; i < NEQ; i++) {
-                    real rY = *((real *)((char *)sv + pitch * i) + sv_id);
-                    if (is_rush_larsen[i]) {
-                        if (abs(a[i]) < TOLERANCE) { 
-                            *((real *)((char *)sv + pitch * i) + sv_id) = rY + dt * ( rY * a[i] + b[i]);
-                        } 
-                        else {
-                            real aux = b[i] / a[i];
-                            *((real *)((char *)sv + pitch * i) + sv_id) = exp(a[i] * dt)*(rY + aux) - aux;
-                        }
-                    }
-                    else {
-                        *((real *)((char *)sv + pitch * i) + sv_id) = rY + dt * rDY[i];
-                    }
-                }
+                SOLVE_EQUATION_EULER_GPU(0);        // v        
+                SOLVE_EQUATION_EULER_GPU(1);        // CaMKt    
+                SOLVE_EQUATION_EULER_GPU(2);        // cass 
+                SOLVE_EQUATION_EULER_GPU(3);        // nai  
+                SOLVE_EQUATION_EULER_GPU(4);        // nass 
+                SOLVE_EQUATION_EULER_GPU(5);        // ki   
+                SOLVE_EQUATION_EULER_GPU(6);        // kss  
+                SOLVE_EQUATION_EULER_GPU(7);        // cansr
+                SOLVE_EQUATION_EULER_GPU(8);        // cajsr
+                SOLVE_EQUATION_EULER_GPU(9);        // cai
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(10); // m
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(11); // h
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(12); // j
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(13); // hp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(14); // jp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(15); // mL
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(16); // hL
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(17); // hLp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(18); // a
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(19); // iF
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(20); // iS
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(21); // ap
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(22); // iFp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(23); // iSp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(24); // d
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(25); // ff
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(26); // fs
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(27); // fcaf
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(28); // fcas
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(29); // jca
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(30); // ffp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(31); // fcafp
+                SOLVE_EQUATION_EULER_GPU(32);       // nca
+                SOLVE_EQUATION_EULER_GPU(33);       // nca_i
+                SOLVE_EQUATION_EULER_GPU(34);       // ikr_c0
+                SOLVE_EQUATION_EULER_GPU(35);       // ikr_c1
+                SOLVE_EQUATION_EULER_GPU(36);       // ikr_c2
+                SOLVE_EQUATION_EULER_GPU(37);       // ikr_i
+                SOLVE_EQUATION_EULER_GPU(38);       // ikr_o
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(39); // xs1
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(40); // xs2
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(41); // Jrel_np
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(42); // Jrel_p
             }
         } else {
-            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], mapping[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
 
-inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
+inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real mapping, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
@@ -356,7 +491,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
 
-    RHS_gpu(sv_local, rDY, stim_curr, mapping, thread_id, dt, pitch, true);
+    RHS_gpu(sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
     time_new += dt;
 
     for(int i = 0; i < NEQ; i++) {
@@ -376,7 +511,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 
 		time_new += dt;
 
-		RHS_gpu(sv_local, rDY, stim_curr, mapping, thread_id, dt, pitch, true);
+		RHS_gpu(sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
 		time_new -= dt; // step back
 
 		real greatestError = 0.0, auxError = 0.0;
@@ -453,21 +588,11 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
-inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
+inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real mapping, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
     #define PREVIOUS_DT *((real *)((char *)sv + pitch * (NEQ+2)) + thread_id)
-
-    // -------------------------------------------------------------------------------------------
-    // MODEL SPECIFIC:
-    // set the variables which are non-linear and hodkin-huxley type
-    const real TOLERANCE = 1e-8;
-    bool is_rush_larsen[NEQ];
-    for (int i = 0; i < NEQ; i++) {
-        is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
-    }
-    // -------------------------------------------------------------------------------------------
 
     real rDY[NEQ], a_[NEQ], b_[NEQ], a_new[NEQ], b_new[NEQ];
 
@@ -482,8 +607,6 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     real _k_aux__[NEQ];
     real sv_local[NEQ];
 
-    const real _beta_safety_ = 0.8;
-
     const real __tiny_ = pow(abstol, 2.0);
 
     if(time_new + dt > final_time) {
@@ -494,7 +617,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
 
-    RHS_RL_gpu(a_, b_, sv_local, rDY, stim_curr, mapping, thread_id, dt, pitch, true);
+    RHS_RL_gpu(a_, b_, sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
     time_new += dt;
 
     for(int i = 0; i < NEQ; i++) {
@@ -503,58 +626,107 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 
 	while(1) {
 
-		for(int i = 0; i < NEQ; i++) {
-			// stores the old variables in a vector
-			edos_old_aux_[i] = sv_local[i];
-			// computes euler method
-			if (is_rush_larsen[i])
-                edos_new_euler_[i] = (a_[i] < TOLERANCE) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(dt) : \
-                                                  exp(a_[i]*(dt))*(edos_old_aux_[i] + (b_[i] / a_[i])) - (b_[i] / a_[i]);
-            else
-                edos_new_euler_[i] = _k1__[i] * dt + edos_old_aux_[i];
-			// steps ahead to compute the rk2 method
-			sv_local[i] = edos_new_euler_[i];
-		}
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(0);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(1);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(2);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(3);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(4);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(5);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(6);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(7);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(8);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(9);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(10);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(11);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(12);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(13);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(14);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(15);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(16);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(17);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(18);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(19);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(20);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(21);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(22);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(23);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(24);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(25);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(26);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(27);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(28);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(29);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(30);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(31);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(32);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(33);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(34);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(35);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(36);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(37);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(38);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(39);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(40);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(41);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(42);
 
 		time_new += dt;
 
-		RHS_RL_gpu(a_new, b_new, sv_local, rDY, stim_curr, mapping, thread_id, dt, pitch, true);
+		RHS_RL_gpu(a_new, b_new, sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
 		time_new -= dt; // step back
 
 		real greatestError = 0.0, auxError = 0.0;
-		
-		for(int i = 0; i < NEQ; i++) {
-            // stores the new evaluation
-            _k2__[i] = rDY[i];
-
-            // Check if the variable is Hodkin-Huxley or Non-linear type
-            if (is_rush_larsen[i]) {
-                real as = (a_[i] + a_new[i]) * 0.5;
-                real bs = (b_[i] + b_new[i]) * 0.5;
-                real y_2nd_order = (fabs(as) < TOLERANCE) ? edos_old_aux_[i] + (dt) * (edos_old_aux_[i]*as + bs) : \
-                                                       exp(as*(dt))*(edos_old_aux_[i] + (bs/as)) - (bs/as);
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
-                                                        fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-                // finds the greatest error between  the steps
-                greatestError = (auxError > greatestError) ? auxError : greatestError;
-            }
-            else {
-                real f = (_k1__[i] + _k2__[i]) * 0.5;
-                real y_2nd_order = edos_old_aux_[i] + (dt) * f;
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
-                                                        fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-                // finds the greatest error between  the steps
-                greatestError = (auxError > greatestError) ? auxError : greatestError;
-            }
-		}
+		real as, bs, f, y_2nd_order;
+		SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(0);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(1);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(2);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(3);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(4);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(5);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(6);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(7);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(8);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(9);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(10);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(11);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(12);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(13);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(14);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(15);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(16);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(17);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(18);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(19);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(20);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(21);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(22);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(23);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(24);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(25);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(26);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(27);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(28);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(29);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(30);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(31);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(32);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(33);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(34);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(35);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(36);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(37);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(38);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(39);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(40);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(41);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(42);
 
 		/// adapt the time step
 		greatestError += __tiny_;
 		previous_dt = dt;
 
 		/// adapt the time step
-		dt = _beta_safety_ * dt * sqrt(1.0f / greatestError);           // Sachetto`s formula
-        //dt = dt * sqrt(0.5 * rel_tol / greatestError);                // Jhonny`s formula
+		dt = dt * sqrt(0.5f * reltol / greatestError);                  
 
 		if(dt < min_dt) {
 			dt = min_dt;
@@ -616,8 +788,27 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     PREVIOUS_DT = previous_dt;
 }
 
-inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real mapping, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real mapping, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
     
+    // Current modifiers
+    real INa_Multiplier   = extra_params[0]; 
+    real ICaL_Multiplier  = extra_params[1];
+    real Ito_Multiplier   = extra_params[2];
+    real INaL_Multiplier  = extra_params[3];
+    real IKr_Multiplier   = extra_params[4]; 
+    real IKs_Multiplier   = extra_params[5]; 
+    real IK1_Multiplier   = extra_params[6]; 
+    real IKb_Multiplier   = extra_params[7]; 
+    real INaCa_Multiplier = extra_params[8];
+    real INaK_Multiplier  = extra_params[9];  
+    real INab_Multiplier  = extra_params[10];  
+    real ICab_Multiplier  = extra_params[11];  
+    real IpCa_Multiplier  = extra_params[12];  
+    real ICaCl_Multiplier = extra_params[13];
+    real IClb_Multiplier  = extra_params[14]; 
+    real Jrel_Multiplier  = extra_params[15]; 
+    real Jup_Multiplier   = extra_params[16];
+
     // Get the celltype for the current cell
     real celltype = mapping;
     
@@ -657,13 +848,13 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
     real jca;
     real ffp;
     real fcafp;
-    real nca_ss;
+    real nca;
     real nca_i;
-    real C1;
-    real C2;
-    real C3;
-    real I;
-    real O;
+    real ikr_c0;
+    real ikr_c1;
+    real ikr_c2;
+    real ikr_i;
+    real ikr_o;
     real xs1;
     real xs2;
     real Jrel_np;
@@ -702,13 +893,13 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
         jca = sv[29];
         ffp = sv[30];
         fcafp = sv[31];
-        nca_ss = sv[32];
+        nca = sv[32];
         nca_i = sv[33];
-        C1 = sv[34];
-        C2 = sv[35];
-        C3 = sv[36];
-        I = sv[37];
-        O = sv[38];
+        ikr_c0 = sv[34];
+        ikr_c1 = sv[35];
+        ikr_c2 = sv[36];
+        ikr_i = sv[37];
+        ikr_o = sv[38];
         xs1 = sv[39];
         xs2 = sv[40];
         Jrel_np = sv[41];
@@ -746,13 +937,13 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
         jca = *((real *)((char *)sv + pitch * 29) + threadID_);
         ffp = *((real *)((char *)sv + pitch * 30) + threadID_);
         fcafp = *((real *)((char *)sv + pitch * 31) + threadID_);
-        nca_ss = *((real *)((char *)sv + pitch * 32) + threadID_);
+        nca = *((real *)((char *)sv + pitch * 32) + threadID_);
         nca_i = *((real *)((char *)sv + pitch * 33) + threadID_);
-        C1 = *((real *)((char *)sv + pitch * 34) + threadID_);
-        C2 = *((real *)((char *)sv + pitch * 35) + threadID_);
-        C3 = *((real *)((char *)sv + pitch * 36) + threadID_);
-        I = *((real *)((char *)sv + pitch * 37) + threadID_);
-        O = *((real *)((char *)sv + pitch * 38) + threadID_);
+        ikr_c0 = *((real *)((char *)sv + pitch * 34) + threadID_);
+        ikr_c1 = *((real *)((char *)sv + pitch * 35) + threadID_);
+        ikr_c2 = *((real *)((char *)sv + pitch * 36) + threadID_);
+        ikr_i = *((real *)((char *)sv + pitch * 37) + threadID_);
+        ikr_o = *((real *)((char *)sv + pitch * 38) + threadID_);
         xs1 = *((real *)((char *)sv + pitch * 39) + threadID_);
         xs2 = *((real *)((char *)sv + pitch * 40) + threadID_);
         Jrel_np = *((real *)((char *)sv + pitch * 41) + threadID_);
@@ -762,8 +953,27 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
     #include "ToRORd_fkatp_mixed_endo_mid_epi.common.c"
 }
 
-inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, real mapping, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, real mapping, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
     
+    // Current modifiers
+    real INa_Multiplier   = extra_params[0]; 
+    real ICaL_Multiplier  = extra_params[1];
+    real Ito_Multiplier   = extra_params[2];
+    real INaL_Multiplier  = extra_params[3];
+    real IKr_Multiplier   = extra_params[4]; 
+    real IKs_Multiplier   = extra_params[5]; 
+    real IK1_Multiplier   = extra_params[6]; 
+    real IKb_Multiplier   = extra_params[7]; 
+    real INaCa_Multiplier = extra_params[8];
+    real INaK_Multiplier  = extra_params[9];  
+    real INab_Multiplier  = extra_params[10];  
+    real ICab_Multiplier  = extra_params[11];  
+    real IpCa_Multiplier  = extra_params[12];  
+    real ICaCl_Multiplier = extra_params[13];
+    real IClb_Multiplier  = extra_params[14]; 
+    real Jrel_Multiplier  = extra_params[15]; 
+    real Jup_Multiplier   = extra_params[16];
+
     // Get the celltype for the current cell
     real celltype = mapping;
     
@@ -803,13 +1013,13 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
     real jca;
     real ffp;
     real fcafp;
-    real nca_ss;
+    real nca;
     real nca_i;
-    real C1;
-    real C2;
-    real C3;
-    real I;
-    real O;
+    real ikr_c0;
+    real ikr_c1;
+    real ikr_c2;
+    real ikr_i;
+    real ikr_o;
     real xs1;
     real xs2;
     real Jrel_np;
@@ -848,13 +1058,13 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
         jca = sv[29];
         ffp = sv[30];
         fcafp = sv[31];
-        nca_ss = sv[32];
+        nca = sv[32];
         nca_i = sv[33];
-        C1 = sv[34];
-        C2 = sv[35];
-        C3 = sv[36];
-        I = sv[37];
-        O = sv[38];
+        ikr_c0 = sv[34];
+        ikr_c1 = sv[35];
+        ikr_c2 = sv[36];
+        ikr_i = sv[37];
+        ikr_o = sv[38];
         xs1 = sv[39];
         xs2 = sv[40];
         Jrel_np = sv[41];
@@ -892,13 +1102,13 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
         jca = *((real *)((char *)sv + pitch * 29) + threadID_);
         ffp = *((real *)((char *)sv + pitch * 30) + threadID_);
         fcafp = *((real *)((char *)sv + pitch * 31) + threadID_);
-        nca_ss = *((real *)((char *)sv + pitch * 32) + threadID_);
+        nca = *((real *)((char *)sv + pitch * 32) + threadID_);
         nca_i = *((real *)((char *)sv + pitch * 33) + threadID_);
-        C1 = *((real *)((char *)sv + pitch * 34) + threadID_);
-        C2 = *((real *)((char *)sv + pitch * 35) + threadID_);
-        C3 = *((real *)((char *)sv + pitch * 36) + threadID_);
-        I = *((real *)((char *)sv + pitch * 37) + threadID_);
-        O = *((real *)((char *)sv + pitch * 38) + threadID_);
+        ikr_c0 = *((real *)((char *)sv + pitch * 34) + threadID_);
+        ikr_c1 = *((real *)((char *)sv + pitch * 35) + threadID_);
+        ikr_c2 = *((real *)((char *)sv + pitch * 36) + threadID_);
+        ikr_i = *((real *)((char *)sv + pitch * 37) + threadID_);
+        ikr_o = *((real *)((char *)sv + pitch * 38) + threadID_);
         xs1 = *((real *)((char *)sv + pitch * 39) + threadID_);
         xs2 = *((real *)((char *)sv + pitch * 40) + threadID_);
         Jrel_np = *((real *)((char *)sv + pitch * 41) + threadID_);

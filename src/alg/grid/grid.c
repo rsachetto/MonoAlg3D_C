@@ -941,7 +941,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     free(tissue_ids);
     free(dist_array);
 
-    print_terminals(the_terminals,number_of_terminals);
+    //print_terminals(the_terminals,number_of_terminals);
    
     return the_terminals;
 }

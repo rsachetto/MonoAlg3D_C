@@ -1,4 +1,4 @@
-#include "trovato_2019.h"
+#include "trovato_2020.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -7,104 +7,52 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
 
     if (threadID < num_volumes) {
 
-        real STATES[NEQ];
-        
-        // Steady-state 40 pulses (BCL=1000ms)
-/*
-        STATES[0] = -86.7099;
-        STATES[1] = 0.005431;
-        STATES[2] = 0.000104;
-        STATES[3] = 8.25533;
-        STATES[4] = 8.25502;
-        STATES[5] = 8.25503;
-        STATES[6] = 143.743;
-        STATES[7] = 143.744;
-        STATES[8] = 143.744;
-        STATES[9] = 4.4e-05;
-        STATES[10] = 0.000103;
-        STATES[11] = 1.26947;
-        STATES[12] = 1.25254;
-        STATES[13] = 1.27103;
-        STATES[14] = 1.1e-05;
-        STATES[15] = 0;
-        STATES[16] = 0.006303;
-        STATES[17] = 0.789469;
-        STATES[18] = 0.789392;
-        STATES[19] = 0.791301;
-        STATES[20] = 0.580955;
-        STATES[21] = 0.791719;
-        STATES[22] = 0.000241;
-        STATES[23] = 0.463851;
-        STATES[24] = 0.239936;
-        STATES[25] = 0.000272;
-        STATES[26] = 0.646362;
-        STATES[27] = 0.98999;
-        STATES[28] = 0;
-        STATES[29] = 1;
-        STATES[30] = 0.926919;
-        STATES[31] = 1;
-        STATES[32] = 1;
-        STATES[33] = 0.999976;
-        STATES[34] = 1;
-        STATES[35] = 1;
-        STATES[36] = 0.005885;
-        STATES[37] = 0.000303;
-        STATES[38] = 0.994251;
-        STATES[39] = 0.000367;
-        STATES[40] = 0.566131;
-        STATES[41] = 0.189842;
-        STATES[42] = 0.000222;
-        STATES[43] = 0.233515;
-        STATES[44] = 0.997077;
-        STATES[45] = 0.471259;
-*/
-        // Steady-state 200 pulses (BCL=1000ms)
-        *((real * )((char *) sv + pitch * 0) + threadID) = -8.624360e+01;
-        *((real * )((char *) sv + pitch * 1) + threadID) = 5.630790e-03;
-        *((real * )((char *) sv + pitch * 2) + threadID) = 1.054370e-04;
-        *((real * )((char *) sv + pitch * 3) + threadID) = 9.466440e+00;
-        *((real * )((char *) sv + pitch * 4) + threadID) = 9.466260e+00;
-        *((real * )((char *) sv + pitch * 5) + threadID) = 9.466270e+00;
-        *((real * )((char *) sv + pitch * 6) + threadID) = 1.425260e+02;
-        *((real * )((char *) sv + pitch * 7) + threadID) = 1.425270e+02;
-        *((real * )((char *) sv + pitch * 8) + threadID) = 1.425270e+02;
-        *((real * )((char *) sv + pitch * 9) + threadID) = 4.510620e-05;
-        *((real * )((char *) sv + pitch * 10) + threadID) = 1.056840e-04;
-        *((real * )((char *) sv + pitch * 11) + threadID) = 1.306220e+00;
-        *((real * )((char *) sv + pitch * 12) + threadID) = 1.288550e+00;
-        *((real * )((char *) sv + pitch * 13) + threadID) = 1.307830e+00;
-        *((real * )((char *) sv + pitch * 14) + threadID) = 1.942560e-05;
-        *((real * )((char *) sv + pitch * 15) + threadID) = 0.000000e+00;
-        *((real * )((char *) sv + pitch * 16) + threadID) = 6.700990e-03;
-        *((real * )((char *) sv + pitch * 17) + threadID) = 7.766820e-01;
-        *((real * )((char *) sv + pitch * 18) + threadID) = 7.765920e-01;
-        *((real * )((char *) sv + pitch * 19) + threadID) = 7.786300e-01;
-        *((real * )((char *) sv + pitch * 20) + threadID) = 5.625060e-01;
-        *((real * )((char *) sv + pitch * 21) + threadID) = 7.786110e-01;
-        *((real * )((char *) sv + pitch * 22) + threadID) = 2.629000e-04;
-        *((real * )((char *) sv + pitch * 23) + threadID) = 4.458380e-01;
-        *((real * )((char *) sv + pitch * 24) + threadID) = 2.226750e-01;
-        *((real * )((char *) sv + pitch * 25) + threadID) = 2.821920e-04;
-        *((real * )((char *) sv + pitch * 26) + threadID) = 6.318960e-01;
-        *((real * )((char *) sv + pitch * 27) + threadID) = 9.896260e-01;
-        *((real * )((char *) sv + pitch * 28) + threadID) = 7.738090e-09;
-        *((real * )((char *) sv + pitch * 29) + threadID) = 1.000000e+00;
-        *((real * )((char *) sv + pitch * 30) + threadID) = 9.158970e-01;
-        *((real * )((char *) sv + pitch * 31) + threadID) = 1.000000e+00;
-        *((real * )((char *) sv + pitch * 32) + threadID) = 1.000000e+00;
-        *((real * )((char *) sv + pitch * 33) + threadID) = 9.999690e-01;
-        *((real * )((char *) sv + pitch * 34) + threadID) = 1.000000e+00;
-        *((real * )((char *) sv + pitch * 35) + threadID) = 1.000000e+00;
-        *((real * )((char *) sv + pitch * 36) + threadID) = 6.281230e-03;
-        *((real * )((char *) sv + pitch * 37) + threadID) = 3.238800e-04;
-        *((real * )((char *) sv + pitch * 38) + threadID) = 9.936880e-01;
-        *((real * )((char *) sv + pitch * 39) + threadID) = 5.662920e-04;
-        *((real * )((char *) sv + pitch * 40) + threadID) = 5.862410e-01;
-        *((real * )((char *) sv + pitch * 41) + threadID) = 2.096640e-01;
-        *((real * )((char *) sv + pitch * 42) + threadID) = 2.338270e-04;
-        *((real * )((char *) sv + pitch * 43) + threadID) = 2.088430e-01;
-        *((real * )((char *) sv + pitch * 44) + threadID) = 9.971860e-01;
-        *((real * )((char *) sv + pitch * 45) + threadID) = 4.756220e-01;
+        *((real * )((char *) sv + pitch * 0) + threadID)      = -86.550102957989600;
+        *((real * )((char *) sv + pitch * 1) + threadID)      = 0.005060490773142;
+        *((real * )((char *) sv + pitch * 2) + threadID)      = 1.017658486729359e-04;
+        *((real * )((char *) sv + pitch * 3) + threadID)      = 8.231857731510893;     
+        *((real * )((char *) sv + pitch * 4) + threadID)      = 8.231553454361393;     
+        *((real * )((char *) sv + pitch * 5) + threadID)      = 8.231561539013950;
+        *((real * )((char *) sv + pitch * 6) + threadID)      = 1.437673447706863e+02;  
+        *((real * )((char *) sv + pitch * 7) + threadID)      = 1.437677533510394e+02;
+        *((real * )((char *) sv + pitch * 8) + threadID)      = 1.437677771226899e+02;  
+        *((real * )((char *) sv + pitch * 9) + threadID)      = 4.360080908582633e-05; 
+        *((real * )((char *) sv + pitch * 10) + threadID)      = 1.020101597047671e-04; 
+        *((real * )((char *) sv + pitch * 11) + threadID)      = 1.263525645841406;   
+        *((real * )((char *) sv + pitch * 12) + threadID)      = 1.248146625349512;    
+        *((real * )((char *) sv + pitch * 13) + threadID)      = 1.265185617721750;
+        *((real * )((char *) sv + pitch * 14) + threadID)      = 0;                    
+        *((real * )((char *) sv + pitch * 15) + threadID)      = 0;
+        *((real * )((char *) sv + pitch * 16) + threadID)      = 0.006341207769833;       
+        *((real * )((char *) sv + pitch * 17) + threadID)      = 0.788541761218318;       
+        *((real * )((char *) sv + pitch * 18) + threadID)      = 0.788474863764949;
+        *((real * )((char *) sv + pitch * 19) + threadID)      = 0.790412100577539;       
+        *((real * )((char *) sv + pitch * 20) + threadID)      = 0.579594138981772;      
+        *((real * )((char *) sv + pitch * 21) + threadID)      = 0.790885181877794;
+        *((real * )((char *) sv + pitch * 22) + threadID)      = 0.0;                    
+        *((real * )((char *) sv + pitch * 23) + threadID)      = 0.463478975643765;       
+        *((real * )((char *) sv + pitch * 24) + threadID)      = 0.240123148015689;
+        *((real * )((char *) sv + pitch * 25) + threadID)      = 0.0;                     
+        *((real * )((char *) sv + pitch * 26) + threadID)      = 0.649386868151536;        
+        *((real * )((char *) sv + pitch * 27) + threadID)      = 0.989963717273401;
+        *((real * )((char *) sv + pitch * 28) + threadID)      = 0.0;                     
+        *((real * )((char *) sv + pitch * 29) + threadID)      = 0.999999963501871;       
+        *((real * )((char *) sv + pitch * 30) + threadID)      = 0.926598485399264;
+        *((real * )((char *) sv + pitch * 31) + threadID)      = 0.999999963493016;    
+        *((real * )((char *) sv + pitch * 32) + threadID)      = 0.999834100785052;     
+        *((real * )((char *) sv + pitch * 33) + threadID)      = 0.999979200703676;
+        *((real * )((char *) sv + pitch * 34) + threadID)      = 0.999999963494571;      
+        *((real * )((char *) sv + pitch * 35) + threadID)      = 0.999999963612862;
+        *((real * )((char *) sv + pitch * 36) + threadID)      = 0.005470852996192;     
+        *((real * )((char *) sv + pitch * 37) + threadID)      = 0.0;                     
+        *((real * )((char *) sv + pitch * 38) + threadID)      = 0.994211562437775;        
+        *((real * )((char *) sv + pitch * 39) + threadID)      = 0.0;
+        *((real * )((char *) sv + pitch * 40) + threadID)      = 0.568856244015729;     
+        *((real * )((char *) sv + pitch * 41) + threadID)      = 0.191294664752654;      
+        *((real * )((char *) sv + pitch * 42) + threadID)      = 0.0;
+        *((real * )((char *) sv + pitch * 43) + threadID)      = 0.233014639857230;        
+        *((real * )((char *) sv + pitch * 44) + threadID)      = 0.997085416662044;     
+        *((real * )((char *) sv + pitch * 45) + threadID)      = 0.466232550741101;
 
         if(use_adpt_dt) {
             *((real *)((char *)sv + pitch * NEQ) + threadID) = min_dt; // dt
@@ -120,7 +68,6 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 
     uint8_t use_adpt_dt = (uint8_t)solver->adaptive;
 
-    //TODO: set a model name??
     log_info("Using GPU model implemented in %s\n", __FILE__);
 
     uint32_t num_volumes = solver->original_num_cells;
@@ -608,7 +555,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     real calc_I_stim = stim_current;
 
     // State variables
-    real V;
+    real v;
     real CaMKt;
     real cass;
     real nai;
@@ -657,7 +604,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
 
     if (use_adpt_dt)
     {
-        V = sv[0];
+        v = sv[0];
         CaMKt = sv[1];
         cass = sv[2];
         nai = sv[3];
@@ -706,7 +653,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     }
     else
     {
-        V = *((real *)((char *)sv + pitch * 0) + threadID_);
+        v = *((real *)((char *)sv + pitch * 0) + threadID_);
         CaMKt = *((real *)((char *)sv + pitch * 1) + threadID_);
         cass = *((real *)((char *)sv + pitch * 2) + threadID_);
         nai = *((real *)((char *)sv + pitch * 3) + threadID_);
@@ -754,7 +701,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
         u = *((real *)((char *)sv + pitch * 45) + threadID_);
     }
 
-    #include "trovato_2019_common.inc.c"
+    #include "trovato_2020_common.inc.c"
 }
 
 inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
@@ -763,7 +710,7 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
     real calc_I_stim = stim_current;
 
     // State variables
-    real V;
+    real v;
     real CaMKt;
     real cass;
     real nai;
@@ -812,7 +759,7 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
 
     if (use_adpt_dt)
     {
-        V = sv[0];
+        v = sv[0];
         CaMKt = sv[1];
         cass = sv[2];
         nai = sv[3];
@@ -861,7 +808,7 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
     }
     else
     {
-        V = *((real *)((char *)sv + pitch * 0) + threadID_);
+        v = *((real *)((char *)sv + pitch * 0) + threadID_);
         CaMKt = *((real *)((char *)sv + pitch * 1) + threadID_);
         cass = *((real *)((char *)sv + pitch * 2) + threadID_);
         nai = *((real *)((char *)sv + pitch * 3) + threadID_);
@@ -909,5 +856,5 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
         u = *((real *)((char *)sv + pitch * 45) + threadID_);
     }
 
-    #include "trovato_2019_RL_common.inc.c"
+    #include "trovato_2020_RL_common.inc.c"
 }

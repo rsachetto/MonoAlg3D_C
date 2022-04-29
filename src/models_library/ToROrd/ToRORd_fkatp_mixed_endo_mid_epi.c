@@ -35,12 +35,13 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     real *initial_endo = NULL;
     real *initial_epi = NULL;
     real *initial_mid = NULL;
-    real *mapping = NULL;
+    real *transmurality = NULL;
     if(solver->ode_extra_data) {
-        initial_endo = (real *)solver->ode_extra_data;
-        initial_epi = (real *)solver->ode_extra_data+NEQ;
-        initial_mid = (real *)solver->ode_extra_data+NEQ+NEQ;
-        mapping = (real *)solver->ode_extra_data+NEQ+NEQ+NEQ;
+        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)solver->ode_extra_data;
+        initial_endo = extra_data->initial_ss_endo;
+        initial_epi = extra_data->initial_ss_epi;
+        initial_mid = extra_data->initial_ss_mid;
+        transmurality = extra_data->transmurality;
 
         OMP(parallel for)
         for(uint32_t i = 0; i < num_cells; i++){
@@ -48,9 +49,9 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             real *sv = &solver->sv[i * NEQ];
 
             for (int j = 0; j < NEQ; j++) {
-                if (mapping[i] == ENDO)
+                if (transmurality[i] == ENDO)
                     sv[j] = initial_endo[j];
-                else if (mapping[i] == EPI)
+                else if (transmurality[i] == EPI)
                     sv[j] = initial_epi[j];
                 else
                     sv[j] = initial_mid[j];
@@ -66,6 +67,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             
             real *sv = &solver->sv[i * NEQ];
 
+            // Default initial conditions (endocardium cell)
+            /*
             sv[0] = -88.7638;
             sv[1] = 0.0111;
             sv[2] = 7.0305e-5;
@@ -109,8 +112,53 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             sv[40] = 1.7707e-4;
             sv[41] = 1.6129e-22;
             sv[42] = 1.2475e-20;
-        }
+            */
 
+            // Steady-state after 200 beats (endocardium cell)
+            sv[0] = -8.890585e+01;
+            sv[1] = 1.107642e-02;
+            sv[2] = 6.504164e-05;
+            sv[3] = 1.210818e+01;
+            sv[4] = 1.210851e+01;
+            sv[5] = 1.426206e+02;
+            sv[6] = 1.426205e+02;
+            sv[7] = 1.530373e+00;
+            sv[8] = 1.528032e+00;
+            sv[9] = 7.455488e-05;
+            sv[10] = 7.814592e-04;
+            sv[11] = 8.313839e-01;
+            sv[12] = 8.311938e-01;
+            sv[13] = 6.752873e-01;
+            sv[14] = 8.308255e-01;
+            sv[15] = 1.585610e-04;
+            sv[16] = 5.294475e-01;
+            sv[17] = 2.896996e-01;
+            sv[18] = 9.419166e-04;
+            sv[19] = 9.996194e-01;
+            sv[20] = 5.938602e-01;
+            sv[21] = 4.799180e-04;
+            sv[22] = 9.996194e-01;
+            sv[23] = 6.543754e-01;
+            sv[24] = -2.898677e-33;
+            sv[25] = 1.000000e+00;
+            sv[26] = 9.389659e-01;
+            sv[27] = 1.000000e+00;
+            sv[28] = 9.999003e-01;
+            sv[29] = 9.999773e-01;
+            sv[30] = 1.000000e+00;
+            sv[31] = 1.000000e+00;
+            sv[32] = 4.920606e-04;
+            sv[33] = 8.337021e-04;
+            sv[34] = 6.962775e-04;
+            sv[35] = 8.425453e-04;
+            sv[36] = 9.980807e-01;
+            sv[37] = 1.289824e-05;
+            sv[38] = 3.675442e-04;
+            sv[39] = 2.471690e-01;
+            sv[40] = 1.742987e-04;
+            sv[41] = 5.421027e-24;
+            sv[42] = 6.407933e-23;
+        }
     }        
 }
 
@@ -125,13 +173,52 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     uint32_t num_steps = ode_solver->num_steps;
     bool adpt = ode_solver->adaptive;
 
-    // Get the mapping array
-    real *mapping = NULL;
+    // Get the extra parameters
+    int num_extra_parameters = 17;
+    real extra_par[num_extra_parameters];
+    real *transmurality = NULL;
     if (ode_solver->ode_extra_data) {
-        mapping = (real *)ode_solver->ode_extra_data+NEQ+NEQ+NEQ;
+        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
+        extra_par[0]  = extra_data->INa_Multiplier; 
+        extra_par[1]  = extra_data->ICaL_Multiplier;
+        extra_par[2]  = extra_data->Ito_Multiplier;
+        extra_par[3]  = extra_data->INaL_Multiplier;
+        extra_par[4]  = extra_data->IKr_Multiplier; 
+        extra_par[5]  = extra_data->IKs_Multiplier; 
+        extra_par[6]  = extra_data->IK1_Multiplier; 
+        extra_par[7]  = extra_data->IKb_Multiplier; 
+        extra_par[8]  = extra_data->INaCa_Multiplier;
+        extra_par[9]  = extra_data->INaK_Multiplier;  
+        extra_par[9]  = extra_data->INab_Multiplier;  
+        extra_par[10] = extra_data->ICab_Multiplier;  
+        extra_par[11] = extra_data->IpCa_Multiplier;  
+        extra_par[12] = extra_data->ICaCl_Multiplier;
+        extra_par[13] = extra_data->IClb_Multiplier; 
+        extra_par[15] = extra_data->Jrel_Multiplier; 
+        extra_par[16] = extra_data->Jup_Multiplier;
+        transmurality = extra_data->transmurality;
+    }
+    else {
+        extra_par[0]  = 1.0; 
+        extra_par[1]  = 1.0;
+        extra_par[2]  = 1.0;
+        extra_par[3]  = 1.0;
+        extra_par[4]  = 1.0;
+        extra_par[5]  = 1.0;
+        extra_par[6]  = 1.0; 
+        extra_par[7]  = 1.0; 
+        extra_par[8]  = 1.0;
+        extra_par[9]  = 1.0;
+        extra_par[9]  = 1.0; 
+        extra_par[10] = 1.0;  
+        extra_par[11] = 1.0; 
+        extra_par[12] = 1.0;
+        extra_par[13] = 1.0;
+        extra_par[15] = 1.0;
+        extra_par[16] = 1.0;
     }
 
-#pragma omp parallel for private(sv_id)
+    OMP(parallel for private(sv_id))
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
 
         if(cells_to_solve)
@@ -141,38 +228,30 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
         if(adpt) {
             if (ode_solver->ode_extra_data) {
-                //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], mapping[i], current_t + dt, sv_id, ode_solver);
-                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], mapping[i], current_t + dt, sv_id, ode_solver);
+                //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, extra_par);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, extra_par);
             }
             else {
-                //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver);
-                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver);
+                //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par);
             }
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
                 if (ode_solver->ode_extra_data) {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], mapping[i]);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], extra_par);
                 }
                 else {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0, extra_par);
                 }
             }
         }
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real mapping) {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const *extra_params) {
 
-    // -------------------------------------------------------------------------------------------
-    // MODEL SPECIFIC:
-    // set the variables which are non-linear and hodkin-huxley type
     const real TOLERANCE = 1e-8;
-    bool is_rush_larsen[NEQ];
-    for (int i = 0; i < NEQ; i++) {
-        is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
-    }
-    // -------------------------------------------------------------------------------------------
     real rY[NEQ], rDY[NEQ];
 
     for(int i = 0; i < NEQ; i++)
@@ -180,28 +259,57 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real mapping) {
 
     // Compute 'a', 'b' coefficients alongside 'rhs'
     real a[NEQ], b[NEQ];
-    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt, mapping);
+    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt, transmurality, extra_params);
 
     // Solve variables based on its type:
     //  Non-linear = Euler
     //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
-    for (int i = 0; i < NEQ; i++) {
-        if (is_rush_larsen[i]) {
-            if (abs(a[i]) < TOLERANCE) { 
-                sv[i] = rY[i] + dt * (rY[i] * a[i] + b[i]);
-            } 
-            else {
-                real aux = b[i] / a[i];
-                sv[i] = exp(a[i] * dt)*(rY[i] + aux) - aux;
-            }
-        }
-        else {
-            sv[i] = dt * rDY[i] + rY[i];
-        }
-    }
+    SOLVE_EQUATION_EULER_CPU(0);        // v        
+    SOLVE_EQUATION_EULER_CPU(1);        // CaMKt    
+    SOLVE_EQUATION_EULER_CPU(2);        // cass 
+    SOLVE_EQUATION_EULER_CPU(3);        // nai  
+    SOLVE_EQUATION_EULER_CPU(4);        // nass 
+    SOLVE_EQUATION_EULER_CPU(5);        // ki   
+    SOLVE_EQUATION_EULER_CPU(6);        // kss  
+    SOLVE_EQUATION_EULER_CPU(7);        // cansr
+    SOLVE_EQUATION_EULER_CPU(8);        // cajsr
+    SOLVE_EQUATION_EULER_CPU(9);        // cai
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(10); // m
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(11); // h
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(12); // j
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(13); // hp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(14); // jp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(15); // mL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(16); // hL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(17); // hLp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(18); // a
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(19); // iF
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(20); // iS
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(21); // ap
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(22); // iFp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(23); // iSp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(24); // d
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(25); // ff
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(26); // fs
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(27); // fcaf
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(28); // fcas
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(29); // jca
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(30); // ffp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(31); // fcafp
+    SOLVE_EQUATION_EULER_CPU(32);       // nca
+    SOLVE_EQUATION_EULER_CPU(33);       // nca_i
+    SOLVE_EQUATION_EULER_CPU(34);       // ikr_c0
+    SOLVE_EQUATION_EULER_CPU(35);       // ikr_c1
+    SOLVE_EQUATION_EULER_CPU(36);       // ikr_c2
+    SOLVE_EQUATION_EULER_CPU(37);       // ikr_i
+    SOLVE_EQUATION_EULER_CPU(38);       // ikr_o
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(39); // xs1
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(40); // xs2
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(41); // Jrel_np
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(42); // Jrel_p
 }
 
-void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int sv_id, struct ode_solver *solver) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
@@ -228,7 +336,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real mapping, real f
         *dt = final_time - *time_new;
     }
 
-    RHS_cpu(sv, rDY, stim_curr, *dt, mapping);
+    RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, extra_params);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++) {
@@ -255,7 +363,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real mapping, real f
         }
 
         *time_new += *dt;
-        RHS_cpu(sv, rDY, stim_curr, *dt, mapping);
+        RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, extra_params);
         *time_new -= *dt; // step back
 
         double greatestError = 0.0, auxError = 0.0;
@@ -324,23 +432,9 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real mapping, real f
     free(_k2__);
 }
 
-void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real final_time, int sv_id, struct ode_solver *solver) {
+void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
     
-    // -------------------------------------------------------------------------------------------
-    // MODEL SPECIFIC:
-    // set the variables which are non-linear and hodkin-huxley type
-    const real TOLERANCE = 1e-08;
-    bool is_rush_larsen[NEQ];
-    for (int i = 0; i < NEQ; i++) {
-        is_rush_larsen[i] = ((i >= 10 && i <= 31) || (i >= 39 && i <= 42)) ? true : false;        
-    }
-    // -------------------------------------------------------------------------------------------
-
-    //const real _beta_safety_ = 0.8;
-    const real _beta_safety_ = 0.85;
-    //const real rel_tol = 1.445;
     int numEDO = NEQ;
-
     real rDY[numEDO];
 
     // initializes the variables
@@ -365,14 +459,14 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
         *dt = final_time - *time_new;
     }
 
-    RHS_RL_cpu(a_, b_, sv, rDY, stim_curr, *dt, mapping);
+    RHS_RL_cpu(a_, b_, sv, rDY, stim_curr, *dt, transmurality, extra_params);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++) {
         _k1__[i] = rDY[i];
     }
 
-    //const real rel_tol = solver->rel_tol;
+    const real rel_tol = solver->rel_tol;
     const real abs_tol = solver->abs_tol;
 
     const real __tiny_ = pow(abs_tol, 2.0);
@@ -382,49 +476,106 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
 
     while(1) {
 
-        for(int i = 0; i < numEDO; i++) {
-            // stores the old variables in a vector
-            edos_old_aux_[i] = sv[i];
-            // computes euler/rush-larsen method
-            if (is_rush_larsen[i])
-                edos_new_euler_[i] = (a_[i] < TOLERANCE) ? edos_old_aux_[i] + (edos_old_aux_[i] * a_[i] + b_[i])*(*dt) : \
-                                                  exp(a_[i]*(*dt))*(edos_old_aux_[i] + (b_[i] / a_[i])) - (b_[i] / a_[i]);
-            else
-                edos_new_euler_[i] = _k1__[i] * *dt + edos_old_aux_[i];
-            // steps ahead to compute the rk2 method
-            sv[i] = edos_new_euler_[i];
-        }
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(0);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(1);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(2);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(3);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(4);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(5);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(6);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(7);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(8);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(9);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(10);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(11);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(12);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(13);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(14);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(15);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(16);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(17);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(18);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(19);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(20);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(21);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(22);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(23);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(24);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(25);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(26);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(27);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(28);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(29);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(30);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(31);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(32);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(33);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(34);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(35);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(36);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(37);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(38);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(39);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(40);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(41);
+        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(42);
 
         *time_new += *dt;
-        RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt, mapping);
+        RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt, transmurality, extra_params);
         *time_new -= *dt; // step back
 
+        // Compute errors
         double greatestError = 0.0, auxError = 0.0;
-        for(int i = 0; i < numEDO; i++) {
-            _k2__[i] = rDY[i];
-            if (is_rush_larsen[i]) {
-                real as = (a_[i] + a_new[i]) * 0.5;
-                real bs = (b_[i] + b_new[i]) * 0.5;
-                real y_2nd_order = (fabs(as) < TOLERANCE) ? edos_old_aux_[i] + (*dt) * (edos_old_aux_[i]*as + bs) : \
-                                                       exp(as*(*dt))*(edos_old_aux_[i] + (bs/as)) - (bs/as);
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
-                                                        fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-                greatestError = (auxError > greatestError) ? auxError : greatestError;
-            }
-            else {
-                real f = (_k1__[i] + _k2__[i]) * 0.5;
-                real y_2nd_order = edos_old_aux_[i] + (*dt) * f;
-                auxError = (fabs(y_2nd_order) < TOLERANCE) ? fabs(edos_new_euler_[i] - TOLERANCE) : \
-                                                        fabs( (y_2nd_order - edos_new_euler_[i])/(y_2nd_order) );
-                greatestError = (auxError > greatestError) ? auxError : greatestError;
-            }
-        }
+        real as, bs, f, y_2nd_order;
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(0);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(1);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(2);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(3);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(4);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(5);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(6);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(7);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(8);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(9);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(10);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(11);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(12);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(13);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(14);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(15);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(16);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(17);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(18);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(19);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(20);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(21);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(22);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(23);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(24);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(25);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(26);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(27);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(28);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(29);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(30);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(31);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(32);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(33);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(34);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(35);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(36);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(37);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(38);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(39);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(40);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(41);
+        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(42);
+    
         /// adapt the time step
         greatestError += __tiny_;
         *previous_dt = *dt;
         /// adapt the time step
-        *dt = _beta_safety_ * (*dt) * sqrt(1.0f / greatestError);   // Sachetto`s formula
-        //*dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
+        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
 
         if(*dt < min_dt) {
             *dt = min_dt;
@@ -489,10 +640,29 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real mapping, real fin
     free(b_new);
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real mapping) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params) {
+
+    // Current modifiers
+    real INa_Multiplier   = extra_params[0]; 
+    real ICaL_Multiplier  = extra_params[1];
+    real Ito_Multiplier   = extra_params[2];
+    real INaL_Multiplier  = extra_params[3];
+    real IKr_Multiplier   = extra_params[4]; 
+    real IKs_Multiplier   = extra_params[5]; 
+    real IK1_Multiplier   = extra_params[6]; 
+    real IKb_Multiplier   = extra_params[7]; 
+    real INaCa_Multiplier = extra_params[8];
+    real INaK_Multiplier  = extra_params[9];  
+    real INab_Multiplier  = extra_params[10];  
+    real ICab_Multiplier  = extra_params[11];  
+    real IpCa_Multiplier  = extra_params[12];  
+    real ICaCl_Multiplier = extra_params[13];
+    real IClb_Multiplier  = extra_params[14]; 
+    real Jrel_Multiplier  = extra_params[15]; 
+    real Jup_Multiplier   = extra_params[16];
 
     // Get the celltype for the current cell
-    real celltype = mapping;
+    real celltype = transmurality;
 
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
@@ -530,13 +700,13 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real mappin
     real jca = sv[29];
     real ffp = sv[30];
     real fcafp = sv[31];
-    real nca_ss = sv[32];
+    real nca = sv[32];
     real nca_i = sv[33];
-    real C1 = sv[34];
-    real C2 = sv[35];
-    real C3 = sv[36];
-    real I = sv[37];
-    real O = sv[38];
+    real ikr_c0 = sv[34];
+    real ikr_c1 = sv[35];
+    real ikr_c2 = sv[36];
+    real ikr_i = sv[37];
+    real ikr_o = sv[38];
     real xs1 = sv[39];
     real xs2 = sv[40];
     real Jrel_np = sv[41];
@@ -545,10 +715,29 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real mappin
     #include "ToRORd_fkatp_mixed_endo_mid_epi.common.c"
 }
 
-void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real mapping) {
+void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params) {
+
+    // Current modifiers
+    real INa_Multiplier   = extra_params[0]; 
+    real ICaL_Multiplier  = extra_params[1];
+    real Ito_Multiplier   = extra_params[2];
+    real INaL_Multiplier  = extra_params[3];
+    real IKr_Multiplier   = extra_params[4]; 
+    real IKs_Multiplier   = extra_params[5]; 
+    real IK1_Multiplier   = extra_params[6]; 
+    real IKb_Multiplier   = extra_params[7]; 
+    real INaCa_Multiplier = extra_params[8];
+    real INaK_Multiplier  = extra_params[9];  
+    real INab_Multiplier  = extra_params[10];  
+    real ICab_Multiplier  = extra_params[11];  
+    real IpCa_Multiplier  = extra_params[12];  
+    real ICaCl_Multiplier = extra_params[13];
+    real IClb_Multiplier  = extra_params[14]; 
+    real Jrel_Multiplier  = extra_params[15]; 
+    real Jup_Multiplier   = extra_params[16];
 
     // Get the celltype for the current cell
-    real celltype = mapping;
+    real celltype = transmurality;
 
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
@@ -586,13 +775,13 @@ void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_curren
     real jca = sv[29];
     real ffp = sv[30];
     real fcafp = sv[31];
-    real nca_ss = sv[32];
+    real nca = sv[32];
     real nca_i = sv[33];
-    real C1 = sv[34];
-    real C2 = sv[35];
-    real C3 = sv[36];
-    real I = sv[37];
-    real O = sv[38];
+    real ikr_c0 = sv[34];
+    real ikr_c1 = sv[35];
+    real ikr_c2 = sv[36];
+    real ikr_i = sv[37];
+    real ikr_o = sv[38];
     real xs1 = sv[39];
     real xs2 = sv[40];
     real Jrel_np = sv[41];
