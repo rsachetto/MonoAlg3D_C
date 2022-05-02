@@ -96,8 +96,47 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     real *sv = ode_solver->sv;
     real dt = ode_solver->min_dt;
     uint32_t num_steps = ode_solver->num_steps;
-
     bool adpt = ode_solver->adaptive;
+
+    int num_extra_parameters = 29;
+    real extra_par[num_extra_parameters];
+    if (ode_solver->ode_extra_data) {
+        struct extra_data_for_trovato *extra_data = (struct extra_data_for_trovato*)ode_solver->ode_extra_data;
+        extra_par[0]     = extra_data->GNa_Multiplier;
+        extra_par[1]     = extra_data->GNaL_Multiplier;
+        extra_par[2]     = extra_data->GCaT_Multiplier;
+        extra_par[3]     = extra_data->Gto_Multiplier;
+        extra_par[4]     = extra_data->Gsus_Multiplier;
+        extra_par[5]     = extra_data->Gkr_Multiplier;
+        extra_par[6]     = extra_data->Gks_Multiplier;
+        extra_par[7]     = extra_data->GfNa_Multiplier;
+        extra_par[8]     = extra_data->GfK_Multiplier;
+        extra_par[9]     = extra_data->GK1_Multiplier;
+        extra_par[10]    = extra_data->GNCX_Multiplier;
+        extra_par[11]    = extra_data->GNaK_Multiplier;
+        extra_par[12]    = extra_data->INa_Multiplier;
+        extra_par[13]    = extra_data->ICaL_Multiplier;
+        extra_par[14]    = extra_data->ICaNa_Multiplier;
+        extra_par[15]    = extra_data->ICaK_Multiplier;
+        extra_par[16]    = extra_data->Ito_Multiplier;
+        extra_par[17]    = extra_data->INaL_Multiplier;
+        extra_par[18]    = extra_data->IKr_Multiplier;
+        extra_par[19]    = extra_data->IKs_Multiplier;
+        extra_par[20]    = extra_data->IK1_Multiplier;
+        extra_par[21]    = extra_data->INaCa_Multiplier;
+        extra_par[22]    = extra_data->INaK_Multiplier;
+        extra_par[23]    = extra_data->INab_Multiplier;
+        extra_par[24]    = extra_data->ICab_Multiplier;
+        extra_par[25]    = extra_data->ICaT_Multiplier;
+        extra_par[26]    = extra_data->Isus_Multiplier;
+        extra_par[27]    = extra_data->If_Multiplier;
+        extra_par[28]    = extra_data->IpCa_Multiplier;
+    }
+    else {
+        for (int i = 0; i < num_extra_parameters; i++) {
+            extra_par[i] = 1.0;
+        }
+    }
 
     OMP(parallel for private(sv_id))
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
@@ -108,18 +147,18 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             sv_id = i;
 
         if(adpt) {
-            //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
-            solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver);
+            //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver, extra_par);
+            solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], current_t + dt, sv_id, ode_solver, extra_par);
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
-                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i]);
+                solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], extra_par);
             }
         }
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current) {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real const *extra_params) {
 
     const real TOLERANCE = 1e-8;
     real rY[NEQ], rDY[NEQ];
@@ -129,7 +168,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current) {
 
     // Compute 'a', 'b' coefficients alongside 'rhs'
     real a[NEQ], b[NEQ];
-    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt);
+    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt, extra_params);
 
     // Solve variables based on its type:
     //  Non-linear = Euler
@@ -182,7 +221,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current) {
     SOLVE_EQUATION_EULER_CPU(45);       // u
 }
 
-void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
@@ -209,7 +248,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
         *dt = final_time - *time_new;
     }
 
-    RHS_cpu(sv, rDY, stim_curr, *dt);
+    RHS_cpu(sv, rDY, stim_curr, *dt, extra_params);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++) {
@@ -236,7 +275,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
         }
 
         *time_new += *dt;
-        RHS_cpu(sv, rDY, stim_curr, *dt);
+        RHS_cpu(sv, rDY, stim_curr, *dt, extra_params);
         *time_new -= *dt; // step back
 
         double greatestError = 0.0, auxError = 0.0;
@@ -305,7 +344,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real final_time, int
     free(_k2__);
 }
 
-void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver) {
+void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
     
     int numEDO = NEQ;
     real rDY[numEDO];
@@ -332,7 +371,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
         *dt = final_time - *time_new;
     }
 
-    RHS_RL_cpu(a_, b_, sv, rDY, stim_curr, *dt);
+    RHS_RL_cpu(a_, b_, sv, rDY, stim_curr, *dt, extra_params);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++) {
@@ -397,7 +436,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
         SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(45);       // u
 
         *time_new += *dt;
-        RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt);
+        RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt, extra_params);
         *time_new -= *dt; // step back
 
         double greatestError = 0.0, auxError = 0.0;
@@ -519,7 +558,38 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real final_time, int s
     
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real const *extra_params) {
+
+    // Current modifiers
+    real GNa_Multiplier     =  extra_params[0];
+    real GNaL_Multiplier    =  extra_params[1];
+    real GCaT_Multiplier    =  extra_params[2];
+    real Gto_Multiplier     =  extra_params[3];
+    real Gsus_Multiplier    =  extra_params[4];
+    real Gkr_Multiplier     =  extra_params[5];
+    real Gks_Multiplier     =  extra_params[6];
+    real GfNa_Multiplier    =  extra_params[7];
+    real GfK_Multiplier     =  extra_params[8];
+    real GK1_Multiplier     =  extra_params[9];
+    real GNCX_Multiplier    =  extra_params[10];
+    real GNaK_Multiplier    =  extra_params[11];
+    real INa_Multiplier     =  extra_params[12]; 
+    real ICaL_Multiplier    =  extra_params[13];
+    real ICaNa_Multiplier   =  extra_params[14];
+    real ICaK_Multiplier    =  extra_params[15];
+    real Ito_Multiplier     =  extra_params[16];
+    real INaL_Multiplier    =  extra_params[17];
+    real IKr_Multiplier     =  extra_params[18]; 
+    real IKs_Multiplier     =  extra_params[19]; 
+    real IK1_Multiplier     =  extra_params[20]; 
+    real INaCa_Multiplier   =  extra_params[21];
+    real INaK_Multiplier    =  extra_params[22];  
+    real INab_Multiplier    =  extra_params[23];  
+    real ICab_Multiplier    =  extra_params[24];
+    real ICaT_Multiplier    =  extra_params[25];
+    real Isus_Multiplier    =  extra_params[26];
+    real If_Multiplier      =  extra_params[27];
+    real IpCa_Multiplier    =  extra_params[28];
 
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
@@ -575,8 +645,39 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     #include "trovato_2020_common.inc.c"
 }
 
-void RHS_RL_cpu (real *a_, real *b_, real *sv, real *rDY_, real stim_current, real dt) {
+void RHS_RL_cpu (real *a_, real *b_, real *sv, real *rDY_, real stim_current, real dt, real const *extra_params) {
     
+    // Current modifiers
+    real GNa_Multiplier     =  extra_params[0];
+    real GNaL_Multiplier    =  extra_params[1];
+    real GCaT_Multiplier    =  extra_params[2];
+    real Gto_Multiplier     =  extra_params[3];
+    real Gsus_Multiplier    =  extra_params[4];
+    real Gkr_Multiplier     =  extra_params[5];
+    real Gks_Multiplier     =  extra_params[6];
+    real GfNa_Multiplier    =  extra_params[7];
+    real GfK_Multiplier     =  extra_params[8];
+    real GK1_Multiplier     =  extra_params[9];
+    real GNCX_Multiplier    =  extra_params[10];
+    real GNaK_Multiplier    =  extra_params[11];
+    real INa_Multiplier     =  extra_params[12]; 
+    real ICaL_Multiplier    =  extra_params[13];
+    real ICaNa_Multiplier   =  extra_params[14];
+    real ICaK_Multiplier    =  extra_params[15];
+    real Ito_Multiplier     =  extra_params[16];
+    real INaL_Multiplier    =  extra_params[17];
+    real IKr_Multiplier     =  extra_params[18]; 
+    real IKs_Multiplier     =  extra_params[19]; 
+    real IK1_Multiplier     =  extra_params[20]; 
+    real INaCa_Multiplier   =  extra_params[21];
+    real INaK_Multiplier    =  extra_params[22];  
+    real INab_Multiplier    =  extra_params[23];  
+    real ICab_Multiplier    =  extra_params[24];
+    real ICaT_Multiplier    =  extra_params[25];
+    real Isus_Multiplier    =  extra_params[26];
+    real If_Multiplier      =  extra_params[27];
+    real IpCa_Multiplier    =  extra_params[28];
+
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
 

@@ -470,3 +470,19 @@ SET_EXTRA_DATA(set_extra_data_for_spiral_fhn) {
     }
     return sv_cpu;
 }
+
+// This only works on tissue
+SET_EXTRA_DATA(set_extra_data_trovato) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    struct extra_data_for_trovato *extra_data = NULL;
+
+    extra_data = set_common_trovato_data(config, num_active_cells);
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_trovato));
+
+    return (void*)extra_data;
+
+}
