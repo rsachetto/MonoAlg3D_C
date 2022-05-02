@@ -88,7 +88,9 @@ FIND_LIB() {
 			printf -v "$LIB_LIBRARY_PATH" "%s" "${TMP:2}"
 
 			TMP=$($PKG_CONFIG --cflags-only-I "$LIB")
-			printf -v "$LIB_INCLUDE_PATH" "%s" "${TMP:2}"
+			if [ -n "$TMP" ]; then
+				printf -v "$LIB_INCLUDE_PATH" "-I%s" "${TMP:2}"
+			fi
 
 			LIBS=$($PKG_CONFIG --libs-only-l "$LIB")		
 			
