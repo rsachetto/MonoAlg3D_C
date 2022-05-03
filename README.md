@@ -26,17 +26,27 @@ The binary files will be saved in the ```bin``` folder.
 $ bin/MonoAlg3D -c example_configs/cuboid_ohara.ini 
 ```
 
-The output will be saved in the VTK format. In order to see the results you can use Paraview (https://www.paraview.org/) or the compiled visualization tool in ```bin/MonoAlg3D_visualizer```. You can also set the output to plain text, by changing the option ```vtk_output``` to false in the configuration file. The text format is defined as following:
+The output will be saved in the VTK format. In order to see the results you can use Paraview (https://www.paraview.org/) or the compiled visualization tool in ```bin/MonoAlg3D_visualizer```. You can also set the output to plain text, by changing the section ```save_result``` to:
+
+```ìni
+[save_result]
+print_rate=250
+output_dir=./outputs/tmp_cube
+main_function=save_as_text_or_binary
+binary=false
+```
+
+In the plain text format we have:
 
 - Each line represents a Volume
-- Each volume is represented by its center point (X, Y, and Z), the value of half of its side length and the calculated V
+- Each volume is represented by its center point (X, Y, and Z), the value of half of its side length on x, y and z and the calculated V
 
 Example file:
 
 ```
-850,850,950,50,-85
-850,950,950,50,-85
-850,950,850,50,-85
+850,850,950,50,50,50, -85
+850,950,950,50,50,50, -85
+850,950,850,50,50,50, -85
 ```
 
 This file represents 3 volumes with 100 micrometer of side. The first volume is centered at  at 850,850,950 and the calculated V is -85 mV.
