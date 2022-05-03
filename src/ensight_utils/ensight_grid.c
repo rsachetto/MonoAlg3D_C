@@ -232,20 +232,17 @@ struct ensight_grid * new_ensight_grid(uint32_t num_parts) {
         grid->parts[i].cell_visibility = NULL;
     }
 
-
-    //TODO: incomplete
-
     return grid;
 }
 
 void free_ensight_grid(struct ensight_grid *grid) {
-    //TODO: incomplete
     if(grid) {
         for(int i = 0; i < grid->num_parts; i++) {
             arrfree(grid->parts[i].cells);
             arrfree(grid->parts[i].points);
             arrfree(grid->parts[i].cell_visibility);
         }
+        arrfree(grid->parts);
         free(grid);
     }
 }
