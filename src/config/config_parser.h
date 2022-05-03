@@ -31,6 +31,7 @@
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
 #define EXTRA_DATA_OPT 1900
+#define PURKINJE_EXTRA_DATA_OPT 1950
 #define STIM_OPT 2000
 #define ASSEMBLY_MATRIX_OPT 2100
 #define LINEAR_SYSTEM_SOLVER_OPT 2200
@@ -144,6 +145,7 @@ struct user_options {
     struct config *domain_config;
     struct config *purkinje_config;
     struct config *extra_data_config;
+    struct config *purkinje_extra_data_config;
     struct config *assembly_matrix_config;
     struct config *linear_system_solver_config;
     struct config *save_mesh_config;

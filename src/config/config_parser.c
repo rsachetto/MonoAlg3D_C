@@ -343,6 +343,7 @@ struct user_options *new_user_options() {
     user_args->domain_config = NULL;
     user_args->purkinje_config = NULL;
     user_args->extra_data_config = NULL;
+    user_args->purkinje_extra_data_config = NULL;
     user_args->assembly_matrix_config = NULL;
     user_args->linear_system_solver_config = NULL;
     user_args->save_mesh_config = NULL;
@@ -1394,6 +1395,13 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             }
             set_config(optarg, user_args->extra_data_config, user_args->config_file, "extra_data");
             break;
+        case PURKINJE_EXTRA_DATA_OPT:
+            if(user_args->purkinje_extra_data_config == NULL) {
+                log_info("Creating new purkinje extra data config from command line!\n");
+                user_args->purkinje_extra_data_config = alloc_and_init_config_data();
+            }
+            set_config(optarg, user_args->purkinje_extra_data_config, user_args->config_file, "purkinje_extra_data");
+            break;
         case STIM_OPT:
             if(user_args->stim_configs == NULL) {
                 log_info("Creating new stim config from command line!\n");
@@ -1727,6 +1735,14 @@ int parse_config_file(void *user, const char *section, const char *name, const c
 
         set_common_data(pconfig->extra_data_config, name, value);
 
+    } else if(MATCH_SECTION(PURKINJE_EXTRA_DATA_SECTION)) {
+
+        if(pconfig->purkinje_extra_data_config == NULL) {
+            pconfig->purkinje_extra_data_config = alloc_and_init_config_data();
+        }
+
+        set_common_data(pconfig->purkinje_extra_data_config, name, value);
+
     } else if(MATCH_SECTION(SAVE_RESULT_SECTION)) {
 
         if(pconfig->save_mesh_config == NULL) {
@@ -1918,6 +1934,12 @@ void options_to_ini_file(struct user_options *config, char *ini_file_path) {
         fprintf(ini_file, "\n");
     }
 
+    if(config->purkinje_extra_data_config) {
+        WRITE_INI_SECTION(PURKINJE_EXTRA_DATA_SECTION);
+        write_ini_options(config->purkinje_extra_data_config, ini_file);
+        fprintf(ini_file, "\n");
+    }
+
     if(config->save_mesh_config) {
         WRITE_INI_SECTION(SAVE_RESULT_SECTION);
         write_ini_options(config->save_mesh_config, ini_file);
@@ -1980,6 +2002,9 @@ void free_user_options(struct user_options *s) {
 
     if(s->extra_data_config)
         free_config_data(s->extra_data_config);
+    
+    if(s->purkinje_extra_data_config)
+        free_config_data(s->purkinje_extra_data_config);
 
     if(s->domain_config)
         free_config_data(s->domain_config);

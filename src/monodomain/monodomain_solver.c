@@ -69,6 +69,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     struct string_voidp_hash_entry *modify_domain_configs = configs->modify_domain_configs;
     struct string_voidp_hash_entry *purkinje_stimuli_configs = configs->purkinje_stim_configs;
     struct config *extra_data_config = configs->extra_data_config;
+    struct config *purkinje_extra_data_config = configs->purkinje_extra_data_config;
     struct config *domain_config = configs->domain_config;
     struct config *purkinje_config = configs->purkinje_config;
     struct config *assembly_matrix_config = configs->assembly_matrix_config;
@@ -81,6 +82,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     struct config *calc_ecg_config = configs->calc_ecg_config;
 
     bool has_extra_data = (extra_data_config != NULL);
+    bool has_purkinje_extra_data = (purkinje_extra_data_config != NULL);
 
     real_cpu last_stimulus_time = -1.0;
     bool has_any_periodic_stim = false;
@@ -254,6 +256,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(has_extra_data) {
         init_config_functions(extra_data_config, "./shared_libs/libdefault_extra_data.so", "extra_data");
+    }
+
+    if(has_purkinje_extra_data) {
+        init_config_functions(purkinje_extra_data_config, "./shared_libs/libdefault_extra_data.so", "extra_data");
     }
 
     log_msg(LOG_LINE_SEPARATOR);
@@ -431,6 +437,20 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             log_warn("set_extra_data function was called but returned NULL!\n");
         } else {
             if(the_ode_solver->extra_data_size == 0) {
+                log_warn("set_extra_data function was called but extra_data_size is 0!\n");
+                log_warn("Maybe you forgot to call the SET_EXTRA_DATA_SIZE(size) macro in your extra_data_function!\n");
+            }
+        }
+    }
+
+    if(has_purkinje_extra_data) {
+        the_purkinje_ode_solver->ode_extra_data =
+            ((set_extra_data_fn *)purkinje_extra_data_config->main_function)(&time_info, purkinje_extra_data_config, the_grid, &(the_purkinje_ode_solver->extra_data_size));
+
+        if(the_purkinje_ode_solver->ode_extra_data == NULL) {
+            log_warn("set_extra_data function was called but returned NULL!\n");
+        } else {
+            if(the_purkinje_ode_solver->extra_data_size == 0) {
                 log_warn("set_extra_data function was called but extra_data_size is 0!\n");
                 log_warn("Maybe you forgot to call the SET_EXTRA_DATA_SIZE(size) macro in your extra_data_function!\n");
             }
@@ -1226,6 +1246,11 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
 
     if(options->extra_data_config) {
         print_extra_data_config_values(options->extra_data_config);
+        log_msg(LOG_LINE_SEPARATOR);
+    }
+
+    if(options->purkinje_extra_data_config) {
+        print_extra_data_config_values(options->purkinje_extra_data_config);
         log_msg(LOG_LINE_SEPARATOR);
     }
 

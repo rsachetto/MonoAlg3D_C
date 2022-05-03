@@ -22,6 +22,7 @@
 #define LINEAR_SYSTEM_SOLVER_SECTION "linear_system_solver"
 #define LINEAR_SYSTEM_SOLVER_PURKINJE_SECTION "purkinje_linear_system_solver"
 #define EXTRA_DATA_SECTION "extra_data"
+#define PURKINJE_EXTRA_DATA_SECTION "purkinje_extra_data"
 #define BATCH_SECTION "batch"
 #define MODIFICATION_SECTION "modify"
 #define MODIFYDOMAIN_SECTION "modify_current_domain"
