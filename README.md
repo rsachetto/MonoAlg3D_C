@@ -26,7 +26,7 @@ The binary files will be saved in the ```bin``` folder.
 $ bin/MonoAlg3D -c example_configs/cuboid_ohara.ini 
 ```
 
-The output will be saved in the VTK format. In order to see the results you can use Paraview (https://www.paraview.org/) or the compiled visualization tool in ```bin/MonoAlg3D_visualizer```. You can also set the output to plain text, by changing the section ```save_result``` to:
+The output will be saved in the VTK format. In order to see the results you can use Paraview (https://www.paraview.org/) or the compiled visualization tool in ```bin/MonoAlg3D_visualizer```. You can also set the output to plain text, by changing the section ```save_result``` in example_configs/cuboid_ohara.ini to:
 
 ```ìni
 [save_result]
