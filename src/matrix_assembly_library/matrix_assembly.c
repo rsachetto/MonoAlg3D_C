@@ -1122,16 +1122,15 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
         }
 
         // Check if the current cell is tagged as FASTENDO
-        real_cpu fast_endo_scale = 10.0;
         real_cpu tag = TISSUE_TYPE(ac[i]);
         if (tag == 0) {
-            ac[i]->sigma.x = D[0][0]*fast_endo_scale;
-            ac[i]->sigma.y = D[1][1]*fast_endo_scale;
-            ac[i]->sigma.z = D[2][2]*fast_endo_scale;
+            ac[i]->sigma.x = D[0][0]*fast_endo_layer_scale;
+            ac[i]->sigma.y = D[1][1]*fast_endo_layer_scale;
+            ac[i]->sigma.z = D[2][2]*fast_endo_layer_scale;
 
-            ac[i]->sigma.xy = D[0][1]*fast_endo_scale;
-            ac[i]->sigma.xz = D[0][2]*fast_endo_scale;
-            ac[i]->sigma.yz = D[1][2]*fast_endo_scale;
+            ac[i]->sigma.xy = D[0][1]*fast_endo_layer_scale;
+            ac[i]->sigma.xz = D[0][2]*fast_endo_layer_scale;
+            ac[i]->sigma.yz = D[1][2]*fast_endo_layer_scale;
         } 
         // Normal type of cell
         else {
