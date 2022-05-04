@@ -566,7 +566,7 @@ void draw_alg_purkinje_network(struct gui_shared_info *gui_config, struct gui_st
 }
 
 void set_visibility_after_split(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
-    // TODO: extract function
+    
     struct vtk_unstructured_grid *grid = gui_config->grid_info.vtk_grid;
 
     if(!grid)

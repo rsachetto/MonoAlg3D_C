@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,7 @@
 #include "utils/file_utils.h"
 #include "vtk_utils/pvd_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
+#include <sys/mman.h>
 #include <unistd.h>
 
 #define MAX_ERROR_SIZE 4096
@@ -55,6 +57,43 @@ static void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, 
     }
 }
 
+static void read_timesteps_from_case_file(sds case_file_path, float **timesteps) {
+    size_t case_file_size;
+
+    char *content = read_entire_file_with_mmap(case_file_path, &case_file_size);
+    char *tmp = content;
+
+    char *word = NULL;
+
+    while(*tmp) {
+
+        if(*tmp != '\n' && *tmp != ':') {
+            arrpush(word, *tmp);
+        } else {
+            arrpush(word, 0);
+
+            if(strcmp(word, "time values") == 0) {
+                while(!isdigit(*tmp))
+                    tmp++;
+                break;
+            } else {
+                arrsetlen(word, 0);
+            }
+        }
+
+        tmp++;
+    }
+
+    while(*tmp) {
+        double time_val = strtod(tmp, &tmp);
+        arrput(*timesteps, time_val);
+        while(isspace(*tmp))
+            tmp++;
+    }
+
+    munmap(content, case_file_size);
+}
+
 static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
 
     char error[MAX_ERROR_SIZE];
@@ -68,13 +107,14 @@ static int read_and_render_files(struct visualization_options *options, struct g
     gui_config->current_file_index = options->start_file;
     int v_step = options->step;
 
-    bool maybe_ensight = false;
+    bool ensight = false;
 
     struct path_information input_info;
 
     get_path_information(input, &input_info);
     bool esca_file = false;
     bool geo_file = false;
+    bool case_loaded = false;
 
     if(!input_info.exists) {
         snprintf(error, MAX_ERROR_SIZE,
@@ -99,9 +139,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
             simulation_files->files_list = list_files_from_dir(input, prefix, NULL, ignore_files, true);
 
             if(arrlen(simulation_files->files_list) == 0) {
-                //Maybe is an ensight folder, lets try again
+                // Maybe is an ensight folder, lets try again
                 simulation_files->files_list = list_files_from_dir(input, "Vm", NULL, ignore_files, true);
-                maybe_ensight = true;
+                ensight = true;
             }
 
             arrfree(ignore_files);
@@ -116,7 +156,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0 ||
                   strcmp(input_info.file_extension, "txt") == 0 || strcmp(input_info.file_extension, "bin") == 0 ||
                   strcmp(input_info.file_extension, "alg") == 0 || strcmp(input_info.file_extension, "geo") == 0 ||
-                  strncmp(input_info.file_extension, "Esca", 4) == 0)  {
+                  strncmp(input_info.file_extension, "Esca", 4) == 0) {
             simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
             simulation_files->files_list = NULL;
             simulation_files->timesteps = NULL;
@@ -124,9 +164,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
             if(input) {
                 if(strcmp(input_info.file_extension, "geo") == 0 || strncmp(input_info.file_extension, "Esca", 4) == 0) {
-                    maybe_ensight = true;
-                    if(strcmp(input_info.file_extension, "geo") == 0) geo_file = true;
-                    else esca_file = true;
+                    ensight = true;
+                    if(strcmp(input_info.file_extension, "geo") == 0)
+                        geo_file = true;
+                    else
+                        esca_file = true;
                 }
 
                 arrput(simulation_files->files_list, (char *)input);
@@ -156,17 +198,15 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     sds geometry_file = NULL;
 
-    if(maybe_ensight) {
+    if(ensight) {
         if(!single_file || esca_file) {
             if(esca_file) {
                 geometry_file = sdscatfmt(sdsempty(), "%s/geometry.geo", input_info.dir_name);
-            }
-            else {
+            } else {
                 geometry_file = sdscatfmt(sdsempty(), "%s/geometry.geo", input);
             }
-            get_path_information(geometry_file,  &input_info);
-        }
-        else {
+            get_path_information(geometry_file, &input_info);
+        } else {
             geometry_file = sdsnew(input);
         }
 
@@ -183,29 +223,46 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
             return SIMULATION_FINISHED;
         }
-
     }
 
     if(gui_config->current_file_index > num_files) {
         fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", (int)gui_config->current_file_index,
                 num_files, num_files);
-        gui_config->current_file_index = num_files - 1;
+        gui_config->current_file_index = (int)(num_files - 1);
     }
 
     float dt = 0;
     if(!using_pvd) {
 
-        if(single_file || maybe_ensight) {
-            if(single_file)
-                gui_config->dt = -1;
-            else
-                gui_config->dt = 1;
-
+        if(single_file) {
+            gui_config->dt = -1;
             gui_config->step = 1;
             gui_config->final_file_index = num_files - 1;
             gui_config->final_time = gui_config->final_file_index;
         }
-        else {
+        else if(ensight) {
+
+            if(!case_loaded) {
+
+                struct path_information case_info;
+                sds case_file_path = sdscatfmt(sdsempty(), "%s/simulation_result.case", input);
+                get_path_information(case_file_path, &case_info);
+
+                if(!case_info.exists) {
+                    gui_config->dt = 1;
+                } else {
+					read_timesteps_from_case_file(case_file_path, &simulation_files->timesteps);
+                }
+                sdsfree(case_file_path);
+                free_path_information(&case_info);
+                case_loaded = true;
+
+                gui_config->dt = -1;
+                gui_config->final_file_index = num_files - 1;
+				gui_config->final_time = simulation_files->timesteps[num_files - 1];
+            }
+
+        } else {
             int step;
             int step1;
             int final_step;
@@ -236,6 +293,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             }
         }
     } else {
+        gui_config->final_file_index = num_files - 1;
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
         gui_config->dt = -1;
     }
@@ -251,42 +309,41 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         omp_set_lock(&gui_config->draw_lock);
 
-        if(maybe_ensight || single_file) {
-            gui_config->time = (int)gui_config->current_file_index;
-        } else if(!using_pvd) {
-            if(dt == 0) {
+        if(single_file) {
+            gui_config->time = gui_config->current_file_index;
+        } else if(using_pvd || ensight) {
+            gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
+        } else {
+			if(dt == 0) {
                 gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
             } else {
                 gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
             }
-        } else {
-            gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
         }
 
         char full_path[2048];
 
         if(single_file) {
             sprintf(full_path, "%s", simulation_files->base_dir);
-        }
-        else {
+        } else {
             sprintf(full_path, "%s/%s", simulation_files->base_dir, simulation_files->files_list[(int)gui_config->current_file_index]);
         }
 
-        if(maybe_ensight) {
+        if(ensight) {
             if(!ensigth_grid_loaded) {
                 gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(geometry_file, single_file);
                 ensigth_grid_loaded = true;
             }
             if(!geo_file) {
                 set_vtk_grid_values_from_ensight_file(gui_config->grid_info.vtk_grid, full_path);
-            }
-            else {
-                gui_config->grid_info.vtk_grid->min_v = 0.0001;
-                gui_config->grid_info.vtk_grid->max_v = 0.0002;
+            } else {
+                gui_config->grid_info.vtk_grid->min_v = 0.0001f;
+                gui_config->grid_info.vtk_grid->max_v = 0.0002f;
             }
         } else {
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
-            gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file_with_progress(full_path, single_file, &gui_config->progress, &gui_config->file_size);
+            gui_config->grid_info.vtk_grid =
+                new_vtk_unstructured_grid_from_file_with_progress(full_path, single_file, &gui_config->progress, &gui_config->file_size);
         }
 
         if(single_file) {
@@ -305,16 +362,15 @@ static int read_and_render_files(struct visualization_options *options, struct g
             gui_config->grid_info.loaded = false;
             gui_config->paused = true;
         } else {
-            if(maybe_ensight) {
+            if(ensight) {
                 if(!ensigth_vis_loaded) {
                     read_or_calc_visible_cells(&gui_config->grid_info.vtk_grid, geometry_file);
                     ensigth_vis_loaded = true;
                 }
-            }
-            else {
+            } else {
                 read_or_calc_visible_cells(&gui_config->grid_info.vtk_grid, full_path);
             }
-            //TODO: for ensigth, maybe we should put the data name here.
+            // TODO: for ensigth, maybe we should put the data name here.
             gui_config->grid_info.file_name = full_path;
             gui_config->grid_info.loaded = true;
         }
@@ -343,9 +399,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
 
         if(!gui_config->paused) {
-            gui_config->current_file_index += v_step;
-            if(gui_config->current_file_index >= num_files) {
-                gui_config->current_file_index -= v_step;
+            gui_config->current_file_index += (float) v_step;
+            if(gui_config->current_file_index >= (float) num_files) {
+                gui_config->current_file_index -= (float) v_step;
                 gui_config->paused = true;
             }
         }
@@ -415,8 +471,8 @@ int main(int argc, char **argv) {
 
                 while(result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
 
-                    //HACK: this should not be needed, we have to find a way to avoid this hack
-                    //if we take this out, the open mesh option does not work properly
+                    // HACK: this should not be needed, we have to find a way to avoid this hack
+                    // if we take this out, the open mesh option does not work properly
                     usleep(100);
 
                     if(gui_config->input) {
@@ -434,7 +490,7 @@ int main(int argc, char **argv) {
                             init_gui_config_for_visualization(options, gui_config, true);
                             result = read_and_render_files(options, gui_config);
                         }
-                    } else if(result == END_SIMULATION || gui_config->exit) {
+                    } else if(gui_config->exit) {
                         break;
                     }
                 }
