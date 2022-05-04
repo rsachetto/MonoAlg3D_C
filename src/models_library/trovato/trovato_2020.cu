@@ -121,18 +121,68 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         check_cuda_error(
             cudaMemcpy(cells_to_solve_device, cells_to_solve, cells_to_solve_size, cudaMemcpyHostToDevice));
     }
+    
+    // Get the extra data array if exists
+    uint32_t num_volumes = ode_solver->original_num_cells;
+    int num_extra_parameters = 29;
+    real extra_par[num_extra_parameters];
+    real *extra_par_device = NULL;
+    if(ode_solver->ode_extra_data) {
+        struct extra_data_for_trovato *extra_data = (struct extra_data_for_trovato*)ode_solver->ode_extra_data;
+        extra_par[0]     = extra_data->GNa_Multiplier;
+        extra_par[1]     = extra_data->GNaL_Multiplier;
+        extra_par[2]     = extra_data->GCaT_Multiplier;
+        extra_par[3]     = extra_data->Gto_Multiplier;
+        extra_par[4]     = extra_data->Gsus_Multiplier;
+        extra_par[5]     = extra_data->Gkr_Multiplier;
+        extra_par[6]     = extra_data->Gks_Multiplier;
+        extra_par[7]     = extra_data->GfNa_Multiplier;
+        extra_par[8]     = extra_data->GfK_Multiplier;
+        extra_par[9]     = extra_data->GK1_Multiplier;
+        extra_par[10]    = extra_data->GNCX_Multiplier;
+        extra_par[11]    = extra_data->GNaK_Multiplier;
+        extra_par[12]    = extra_data->INa_Multiplier;
+        extra_par[13]    = extra_data->ICaL_Multiplier;
+        extra_par[14]    = extra_data->ICaNa_Multiplier;
+        extra_par[15]    = extra_data->ICaK_Multiplier;
+        extra_par[16]    = extra_data->Ito_Multiplier;
+        extra_par[17]    = extra_data->INaL_Multiplier;
+        extra_par[18]    = extra_data->IKr_Multiplier;
+        extra_par[19]    = extra_data->IKs_Multiplier;
+        extra_par[20]    = extra_data->IK1_Multiplier;
+        extra_par[21]    = extra_data->INaCa_Multiplier;
+        extra_par[22]    = extra_data->INaK_Multiplier;
+        extra_par[23]    = extra_data->INab_Multiplier;
+        extra_par[24]    = extra_data->ICab_Multiplier;
+        extra_par[25]    = extra_data->ICaT_Multiplier;
+        extra_par[26]    = extra_data->Isus_Multiplier;
+        extra_par[27]    = extra_data->If_Multiplier;
+        extra_par[28]    = extra_data->IpCa_Multiplier;
+        
+        check_cuda_error(cudaMalloc((void **)&extra_par_device, sizeof(real)*num_extra_parameters));
+        check_cuda_error(cudaMemcpy(extra_par_device, extra_par, sizeof(real)*num_extra_parameters, cudaMemcpyHostToDevice));
+    }
+    else {
+        for (int i = 0; i < num_extra_parameters; i++) {
+            extra_par[i] = 1.0;
+        }
 
-    solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, num_cells_to_solve,
+        check_cuda_error(cudaMalloc((void **)&extra_par_device, sizeof(real)*num_extra_parameters));
+        check_cuda_error(cudaMemcpy(extra_par_device, extra_par, sizeof(real)*num_extra_parameters, cudaMemcpyHostToDevice));
+    }
+
+    solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, extra_par_device, num_cells_to_solve,
                                     num_steps, ode_solver->pitch, ode_solver->adaptive, ode_solver->abs_tol,
                                     ode_solver->rel_tol, ode_solver->max_dt);
 
     check_cuda_error(cudaPeekAtLastError());
 
     if (stims_currents_device) check_cuda_error(cudaFree(stims_currents_device));
-    if(cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
+    if (cells_to_solve_device) check_cuda_error(cudaFree(cells_to_solve_device));
+    if (extra_par_device) check_cuda_error(cudaFree(extra_par_device));
 }
 
-inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
+inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
@@ -165,7 +215,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
 
-    RHS_gpu(sv_local, rDY, stim_curr, thread_id, dt, pitch, true);
+    RHS_gpu(sv_local, rDY, stim_curr, extra_params, thread_id, dt, pitch, true);
     time_new += dt;
 
     for(int i = 0; i < NEQ; i++) {
@@ -185,7 +235,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 
 		time_new += dt;
 
-		RHS_gpu(sv_local, rDY, stim_curr, thread_id, dt, pitch, true);
+		RHS_gpu(sv_local, rDY, stim_curr, extra_params, thread_id, dt, pitch, true);
 		time_new -= dt; // step back
 
 		real greatestError = 0.0, auxError = 0.0;
@@ -262,7 +312,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
-inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
+inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
@@ -291,7 +341,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
 
-    RHS_RL_gpu(a_, b_, sv_local, rDY, stim_curr, thread_id, dt, pitch, true);
+    RHS_RL_gpu(a_, b_, sv_local, rDY, stim_curr, extra_params, thread_id, dt, pitch, true);
     time_new += dt;
 
     for(int i = 0; i < NEQ; i++) {
@@ -349,7 +399,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 
 		time_new += dt;
 
-		RHS_RL_gpu(a_new, b_new, sv_local, rDY, stim_curr, thread_id, dt, pitch, true);
+		RHS_RL_gpu(a_new, b_new, sv_local, rDY, stim_curr, extra_params, thread_id, dt, pitch, true);
 		time_new -= dt; // step back
 
 		real greatestError = 0.0, auxError = 0.0;
@@ -469,7 +519,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     
 }
 
-__global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve,
+__global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *extra_params,
                           uint32_t num_cells_to_solve, int num_steps, size_t pitch, bool use_adpt,
                           real abstol, real reltol, real max_dt) {
     const real TOLERANCE = 1e-8;
@@ -489,7 +539,7 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
 
             for(int n = 0; n < num_steps; ++n) {
 
-                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], sv_id, dt, pitch, false);
+                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], extra_params, sv_id, dt, pitch, false);
 
                 // Solve variables based on its type:
                 //  Non-linear = Euler
@@ -542,14 +592,44 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
                 SOLVE_EQUATION_EULER_GPU(45);       // u
             }
         } else {
-            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            //solve_forward_euler_gpu_adpt_2(sv, stim_currents[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
 
-inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+
+    // Current modifiers
+    real GNa_Multiplier     =  extra_params[0];
+    real GNaL_Multiplier    =  extra_params[1];
+    real GCaT_Multiplier    =  extra_params[2];
+    real Gto_Multiplier     =  extra_params[3];
+    real Gsus_Multiplier    =  extra_params[4];
+    real Gkr_Multiplier     =  extra_params[5];
+    real Gks_Multiplier     =  extra_params[6];
+    real GfNa_Multiplier    =  extra_params[7];
+    real GfK_Multiplier     =  extra_params[8];
+    real GK1_Multiplier     =  extra_params[9];
+    real GNCX_Multiplier    =  extra_params[10];
+    real GNaK_Multiplier    =  extra_params[11];
+    real INa_Multiplier     =  extra_params[12]; 
+    real ICaL_Multiplier    =  extra_params[13];
+    real ICaNa_Multiplier   =  extra_params[14];
+    real ICaK_Multiplier    =  extra_params[15];
+    real Ito_Multiplier     =  extra_params[16];
+    real INaL_Multiplier    =  extra_params[17];
+    real IKr_Multiplier     =  extra_params[18]; 
+    real IKs_Multiplier     =  extra_params[19]; 
+    real IK1_Multiplier     =  extra_params[20]; 
+    real INaCa_Multiplier   =  extra_params[21];
+    real INaK_Multiplier    =  extra_params[22];  
+    real INab_Multiplier    =  extra_params[23];  
+    real ICab_Multiplier    =  extra_params[24];
+    real ICaT_Multiplier    =  extra_params[25];
+    real Isus_Multiplier    =  extra_params[26];
+    real If_Multiplier      =  extra_params[27];
+    real IpCa_Multiplier    =  extra_params[28];
 
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
@@ -704,7 +784,38 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, int thre
     #include "trovato_2020_common.inc.c"
 }
 
-inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+
+    // Current modifiers
+    real GNa_Multiplier     =  extra_params[0];
+    real GNaL_Multiplier    =  extra_params[1];
+    real GCaT_Multiplier    =  extra_params[2];
+    real Gto_Multiplier     =  extra_params[3];
+    real Gsus_Multiplier    =  extra_params[4];
+    real Gkr_Multiplier     =  extra_params[5];
+    real Gks_Multiplier     =  extra_params[6];
+    real GfNa_Multiplier    =  extra_params[7];
+    real GfK_Multiplier     =  extra_params[8];
+    real GK1_Multiplier     =  extra_params[9];
+    real GNCX_Multiplier    =  extra_params[10];
+    real GNaK_Multiplier    =  extra_params[11];
+    real INa_Multiplier     =  extra_params[12]; 
+    real ICaL_Multiplier    =  extra_params[13];
+    real ICaNa_Multiplier   =  extra_params[14];
+    real ICaK_Multiplier    =  extra_params[15];
+    real Ito_Multiplier     =  extra_params[16];
+    real INaL_Multiplier    =  extra_params[17];
+    real IKr_Multiplier     =  extra_params[18]; 
+    real IKs_Multiplier     =  extra_params[19]; 
+    real IK1_Multiplier     =  extra_params[20]; 
+    real INaCa_Multiplier   =  extra_params[21];
+    real INaK_Multiplier    =  extra_params[22];  
+    real INab_Multiplier    =  extra_params[23];  
+    real ICab_Multiplier    =  extra_params[24];
+    real ICaT_Multiplier    =  extra_params[25];
+    real Isus_Multiplier    =  extra_params[26];
+    real If_Multiplier      =  extra_params[27];
+    real IpCa_Multiplier    =  extra_params[28];
 
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;

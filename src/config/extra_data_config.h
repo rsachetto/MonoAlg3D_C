@@ -17,6 +17,7 @@ typedef SET_EXTRA_DATA(set_extra_data_fn);
 typedef FREE_EXTRA_DATA(free_extra_data_fn);
 
 #define print_extra_data_config_values(s) LOG_COMMON_CONFIG("[extra_data]", s)
+#define print_purkinje_extra_data_config_values(s) LOG_COMMON_CONFIG("[purkinje_extra_data]", s)
 
 #define CALL_FREE_EXTRA_DATA(config, extra_data)                                                                      \
     do {                                                                                                              \

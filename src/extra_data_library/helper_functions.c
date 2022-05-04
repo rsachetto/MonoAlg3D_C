@@ -259,3 +259,98 @@ struct extra_data_for_torord * set_common_torord_data (struct config *config, ui
 
     return extra_data;
 }
+
+struct extra_data_for_trovato * set_common_trovato_data (struct config *config, uint32_t num_cells) {
+    struct extra_data_for_trovato *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_trovato);
+
+    real GNa_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNa_Multiplier, config, "GNa_Multiplier");
+    real GNaL_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNaL_Multiplier, config, "GNaL_Multiplier");
+    real GCaT_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GCaT_Multiplier, config, "GCaT_Multiplier");
+    real Gto_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Gto_Multiplier, config, "Gto_Multiplier");
+    real Gsus_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Gsus_Multiplier, config, "Gsus_Multiplier");
+    real Gkr_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Gkr_Multiplier, config, "Gkr_Multiplier");
+    real Gks_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Gks_Multiplier, config, "Gks_Multiplier");
+    real GfNa_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GfNa_Multiplier, config, "GfNa_Multiplier");
+    real GfK_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GfK_Multiplier, config, "GfK_Multiplier");
+    real GK1_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GK1_Multiplier, config, "GK1_Multiplier");
+    real GNCX_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNCX_Multiplier, config, "GNCX_Multiplier");
+    real GNaK_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, GNaK_Multiplier, config, "GNaK_Multiplier");
+    real INa_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INa_Multiplier, config, "INa_Multiplier");
+    real ICaL_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaL_Multiplier, config, "ICaL_Multiplier");
+    real ICaNa_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaNa_Multiplier, config, "ICaNa_Multiplier");
+    real ICaK_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaK_Multiplier, config, "ICaK_Multiplier");
+    real Ito_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ito_Multiplier, config, "Ito_Multiplier");
+    real INaL_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaL_Multiplier, config, "INaL_Multiplier");
+    real IKr_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKr_Multiplier, config, "IKr_Multiplier");
+    real IKs_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKs_Multiplier, config, "IKs_Multiplier");
+    real IK1_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IK1_Multiplier, config, "IK1_Multiplier");
+    real INaCa_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_Multiplier, config, "INaCa_Multiplier");
+    real INaK_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaK_Multiplier, config, "INaK_Multiplier");
+    real INab_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INab_Multiplier, config, "INab_Multiplier");
+    real ICab_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICab_Multiplier, config, "ICab_Multiplier");
+    real ICaT_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaT_Multiplier, config, "ICaT_Multiplier");
+    real Isus_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Isus_Multiplier, config, "Isus_Multiplier");
+    real If_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, If_Multiplier, config, "If_Multiplier");
+    real IpCa_Multiplier = 1.0;    
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IpCa_Multiplier, config, "IpCa_Multiplier");
+
+    extra_data->GNa_Multiplier  = GNa_Multiplier;
+    extra_data->GNaL_Multiplier = GNaL_Multiplier;
+    extra_data->GCaT_Multiplier = GCaT_Multiplier;
+    extra_data->Gto_Multiplier  = Gto_Multiplier;
+    extra_data->Gsus_Multiplier = Gsus_Multiplier;
+    extra_data->Gkr_Multiplier  = Gkr_Multiplier;
+    extra_data->Gks_Multiplier  = Gks_Multiplier;
+    extra_data->GfNa_Multiplier = GfNa_Multiplier;
+    extra_data->GfK_Multiplier  = GfK_Multiplier;
+    extra_data->GK1_Multiplier  = GK1_Multiplier;
+    extra_data->GNCX_Multiplier = GNCX_Multiplier;
+    extra_data->GNaK_Multiplier = GNaK_Multiplier;
+    extra_data->INa_Multiplier  = INa_Multiplier; 
+    extra_data->ICaL_Multiplier = ICaL_Multiplier;
+    extra_data->ICaNa_Multiplier= ICaNa_Multiplier;
+    extra_data->ICaK_Multiplier = ICaK_Multiplier;
+    extra_data->Ito_Multiplier  = Ito_Multiplier;
+    extra_data->INaL_Multiplier = INaL_Multiplier;
+    extra_data->IKr_Multiplier  = IKr_Multiplier; 
+    extra_data->IKs_Multiplier  = IKs_Multiplier; 
+    extra_data->IK1_Multiplier  = IK1_Multiplier; 
+    extra_data->INaCa_Multiplier= INaCa_Multiplier;
+    extra_data->INaK_Multiplier = INaK_Multiplier;  
+    extra_data->INab_Multiplier = INab_Multiplier;  
+    extra_data->ICab_Multiplier = ICab_Multiplier;
+    extra_data->ICaT_Multiplier = ICaT_Multiplier;
+    extra_data->Isus_Multiplier = Isus_Multiplier;
+    extra_data->If_Multiplier   = If_Multiplier;
+    extra_data->IpCa_Multiplier = IpCa_Multiplier;
+
+    return extra_data;
+}

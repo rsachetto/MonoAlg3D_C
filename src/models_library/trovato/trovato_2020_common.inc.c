@@ -1,3 +1,5 @@
+real INaCa_fractionSS = 0.2;
+
 // Constants
 real pi = 3.14;
 real cao = 1.8;  //[Ca]o mM
@@ -75,9 +77,10 @@ real dhs=(hss-hs)/ths;
 real dj=(jss-j)/tj;
 real dhsp=(hssp-hsp)/thsp;
 real djp=(jss-jp)/tjp;
-real GNa=39.4572;
+real GNa=39.4572*GNa_Multiplier;
 real fINap=(1.0/(1.0+KmCaMK/CaMKa));
 real INa=GNa*(v-ENa)*pow(m,3.0)*((1.0-fINap)*h*j+fINap*hp*jp);
+INa *= INa_Multiplier;
 
 // INaL current [from ORd]
 real mLss=1.0/(1.0+exp((-(v+42.85))/5.264));
@@ -89,9 +92,10 @@ real thLp=3.0*thL;
 real dmL=(mLss-mL)/tmL;
 real dhL=(hLss-hL)/thL;
 real dhLp=(hLssp-hLp)/thLp;
-real GNaL=0.0189; 
+real GNaL=0.0189*GNaL_Multiplier; 
 real fINaLp=(1.0/(1.0+KmCaMK/CaMKa));
 real INaL=GNaL*(v-ENa)*mL*((1.0-fINaLp)*hL+fINaLp*hLp);
+INaL *= INaL_Multiplier;
 
 // ICaL [from ORd]
 real vshift=15.19;
@@ -141,9 +145,12 @@ real fICaLp=(1.0/(1.0+KmCaMK/CaMKa));
 real ICaL=(1.0-fICaLp)*PCa*PhiCaL*d*(f*(1.0-nca)+jca*fca*nca)+fICaLp*PCap*PhiCaL*d*(fp*(1.0-nca)+jca*fcap*nca);
 real ICaNa=(1.0-fICaLp)*PCaNa*PhiCaNa*d*(f*(1.0-nca)+jca*fca*nca)+fICaLp*PCaNap*PhiCaNa*d*(fp*(1.0-nca)+jca*fcap*nca);
 real ICaK=(1.0-fICaLp)*PCaK*PhiCaK*d*(f*(1.0-nca)+jca*fca*nca)+fICaLp*PCaKp*PhiCaK*d*(fp*(1.0-nca)+jca*fcap*nca);
+ICaL *= ICaL_Multiplier;
+ICaNa *= ICaNa_Multiplier;
+ICaK *= ICaK_Multiplier;
 
 // T_type_calcium_current_ICaT [from PRd]
-real gcat= 0.0754;      
+real gcat= 0.0754*GCaT_Multiplier;      
 real bss= 1/(1+ exp (-(v+30)/7));
 real gss= 1/(1+exp((v+61)/5));
 real taub= 1/(1.068*exp((v+16.3)/30)+1.068*exp(-(v+16.3)/30));
@@ -151,9 +158,10 @@ real taug= 1/(0.015*exp(-(v+71.7)/83.3)+0.015*exp((v+71.7)/15.4));
 real db= (bss-b)/taub;
 real dg= (gss-g)/taug;
 real ICaT= gcat*b*g*(v-ECa);
+ICaT *= ICaT_Multiplier;
 
 // Ito current [from Han's data]
-real gtos= 0.192;          
+real gtos= 0.192*Gto_Multiplier;          
 real ass= 1.0/(1.0+exp((20.0-v)/13.0));
 real iss= 1.0/(1.0+exp((v+27.0)/13.0));
 real atau= 1.0515/(1.0/(1.2089*(1.0+exp(-(v-18.4099)/29.3814)))+ 3.5/(1.0+exp((v+100.0)/29.3814))); 
@@ -163,11 +171,13 @@ real da= (ass-a)/atau;
 real di1= (iss-i1)/tiS;
 real di2= (iss-i2)/tiF;
 real Ito= gtos*a*i1*i2*(v-EK);
+Ito *= Ito_Multiplier;
 
 // Sustained_outward_current [from Han's data]
-real g_sus=0.0301;
+real g_sus=0.0301*Gsus_Multiplier;
 real asus = 1.0/(1.0+exp(-(v-12)/16.0));
 real Isus= g_sus*asus*(v-EK);
+Isus *= Isus_Multiplier;
 
 // IKr current [modified from ORd]
 real xrss=1.0/(1.0+exp((-(v+8.337))/6.789));
@@ -179,8 +189,9 @@ real dxrf=(xrss-xrf)/txrf;
 real dxrs=(xrss-xrs)/txrs;
 real xr=Axrf*xrf+Axrs*xrs;
 real rkr=1/(1+exp((v+55)/(0.32*75)))*1/(1+exp((v-10)/(0.32*30)));
-real GKr=0.0342;
+real GKr=0.0342*Gkr_Multiplier;
 real IKr=GKr*sqrt(ko/5.4)*xr*rkr*(v-EK);
+IKr *= IKr_Multiplier;
 
 // IKs current [from ORd]
 real xs1ss=1.0/(1.0+exp((-(v+11.60))/8.932));
@@ -190,24 +201,32 @@ real xs2ss=xs1ss;
 real txs2=1.0/(0.01*exp((v-50.0)/20.0)+0.0193*exp((-(v+66.54))/31.0));
 real dxs2=(xs2ss-xs2)/txs2;
 real KsCa=1.0+0.6/(1.0+pow(3.8e-5/casl,1.4));
-real GKs=0.0029;                       
+real GKs=0.0029*Gks_Multiplier;                       
 real IKs=GKs*KsCa*xs1*xs2*(v-EKs);
+IKs *= IKs_Multiplier;
 
 // Hyper-polarization Activated Current (If) [From PRd]
 real yss= 1/(1+exp((v+87)/9.5));
 real tau_y= 2000/(exp(-(v+132)/10) + exp((v+57)/60));
 real dy=(yss-y)/tau_y;
-real IfNa  = 0.0116*y*y*(v-ENa);   
-real IfK = 0.0232*y*y*(v-EK);    
+real g_fna = 0.0116;
+g_fna *= GfNa_Multiplier;
+real g_fk = 0.0232; 
+g_fk *= GfK_Multiplier;
+real IfNa  = g_fna*y*y*(v-ENa);   
+real IfK = g_fk*y*y*(v-EK);    
 real If = IfNa + IfK;
+If *= If_Multiplier;
 
 // IK1 current [from ORd's formulation with Han's data]
-real gk1=2.3238*sqrt(ko/5.4)*0.0455;               
+real gk1=2.3238*sqrt(ko/5.4)*0.0455;      
+gk1 *= GK1_Multiplier;         
 real xk1ss=1.0/(1.0+exp(-(v+2.5538*ko+144.59)/(1.5692*ko+3.8115)));
 real xk1tau=122.2/(exp((-(v+127.2))/20.36)+exp((v+236.8)/69.33));
 real dxk1=(xk1ss-xk1)/xk1tau;
 real rk1=1/(1.0+exp((v+116-5.5*ko)/11)); 
 real IK1=gk1*rk1*xk1*(v-EK);
+IK1 *= IK1_Multiplier;
 
 // INaCa current [from ORd]
 real kna1=15.0;      
@@ -223,6 +242,7 @@ real kcaoff=5.0e3;
 real qna=0.5224;     
 real qca=0.1670;
 real Gncx=9.5709e-04;
+Gncx *= GNCX_Multiplier;
 
 // INaCa_i current
 real hca=exp((qca*v*F)/(R*T));       
@@ -266,7 +286,7 @@ real E4=x4/(x1+x2+x3+x4);
 real allo=1.0/(1.0+pow((KmCaAct/casl),2.0));   
 real JncxNa=3.0*(E4*k7-E1*k8)+E3*k4pp-E2*k3pp;   
 real JncxCa=E2*k2-E1*k1;
-real INaCa_i=0.8*Gncx*allo*(zna*JncxNa+zca*JncxCa);
+real INaCa_i=(1-INaCa_fractionSS)*Gncx*allo*(zna*JncxNa+zca*JncxCa);
 
 // INaCa_ss current
 h1=1+nass/kna3*(1+hna);         
@@ -308,7 +328,9 @@ E4=x4/(x1+x2+x3+x4);
 allo=1.0/(1.0+pow((KmCaAct/cass),2.0));
 JncxNa=3.0*(E4*k7-E1*k8)+E3*k4pp-E2*k3pp;
 JncxCa=E2*k2-E1*k1;
-real INaCa_ss=0.2*Gncx*allo*(zna*JncxNa+zca*JncxCa);
+real INaCa_ss=INaCa_fractionSS*Gncx*allo*(zna*JncxNa+zca*JncxCa);
+real INaCa = INaCa_i + INaCa_ss;
+INaCa *= INaCa_Multiplier;
 
 // INaK current [from ORd]
 real k1p=949.5;      
@@ -358,22 +380,28 @@ E4=x4/(x1+x2+x3+x4);
 real JnakNa=3.0*(E1*a3-E2*b3);   
 real JnakK=2.0*(E4*b1-E3*a1);    
 real Pnak=32.4872;
+Pnak *= GNaK_Multiplier;
 real INaK=Pnak*(zna*JnakNa+zk*JnakK);
+INaK *= INaK_Multiplier;
 
 // Background currents: INab, ICab [from ORd]
 // INab current
 real PNab = 3.75e-10*2.5;
 real INab = PNab*vffrt*(nasl*exp(vfrt)-nao)/(exp(vfrt)-1.0);
+INab *= INab_Multiplier;
 // ICab current
 real PCab = 2.5e-8;
 real ICab = PCab*4.0*vffrt*(casl*exp(2.0*vfrt)-0.341*cao)/(exp(2.0*vfrt)-1.0);
+ICab *= ICab_Multiplier;
 // IpCa current  [from PRd]
 real ipcabar = 0.0005; 
 real kmpca = 0.0005;
 real IpCa= ipcabar/((kmpca/casl)+1);
+IpCa *= IpCa_Multiplier; 
 // Stimulation
 real Istim = calc_I_stim;
-real dv = - (INa+INaL+Ito+Isus+ICaL+ICaNa+ICaK+ICaT+If+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IpCa+ICab+Istim);
+//real dv = - (INa+INaL+Ito+Isus+ICaL+ICaNa+ICaK+ICaT+If+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IpCa+ICab+Istim);
+real dv = - (INa+INaL+Ito+Isus+ICaL+ICaNa+ICaK+ICaT+If+IKr+IKs+IK1+INaCa+INaK+INab+IpCa+ICab+Istim);
 
 // ------------------------------------------------------------------------
 //                        SR_CA_FLUXES [from PRd]                      

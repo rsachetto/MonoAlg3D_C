@@ -470,3 +470,23 @@ SET_EXTRA_DATA(set_extra_data_for_spiral_fhn) {
     }
     return sv_cpu;
 }
+
+SET_EXTRA_DATA(set_extra_data_trovato) {
+
+    if (!the_grid->purkinje) {
+        fprintf(stderr,"[ERR] There is no Purkinje network configured for this mesh!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    uint32_t num_purkinje_active_cells = the_grid->purkinje->num_active_purkinje_cells;
+    struct cell_node **purkinje_ac = the_grid->purkinje->purkinje_cells;
+
+    struct extra_data_for_trovato *extra_data = NULL;
+
+    extra_data = set_common_trovato_data(config, num_purkinje_active_cells);
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_trovato));
+
+    return (void*)extra_data;
+
+}
