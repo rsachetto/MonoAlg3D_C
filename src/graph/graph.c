@@ -63,7 +63,7 @@ void insert_edge_graph (struct graph *g, const uint32_t id_1, const uint32_t id_
     n1 = search_node(g,id_1);
     n2 = search_node(g,id_2);
 
-    norm = calc_norm(n1->x,n1->y,n1->z,n2->x,n2->y,n2->z);
+    norm = calc_norm(n1->pos[0],n1->pos[1],n1->pos[2],n2->pos[0],n2->pos[1],n2->pos[2]);
     edge = new_edge(id_2,norm,n2);
     // First edge
     if (!n1->list_edges) {
@@ -98,11 +98,11 @@ void insert_node_graph (struct graph *g, const real_cpu pos[], const real_cpu si
 struct node* new_node (uint32_t id, const real_cpu pos[], const real_cpu sigma) {
     struct node *n = MALLOC_ONE_TYPE(struct node);
     n->id = id;
-    n->x = pos[0];
-    n->y = pos[1];
-    n->z = pos[2];
+    memcpy(n->pos,pos,sizeof(real_cpu)*3);
     n->sigma = sigma;
     n->num_edges = 0;
+    n->nmin_pmj = 10;
+    n->rpmj = 1000.0;
     n->next = NULL;
     n->list_edges = NULL;
 
@@ -200,14 +200,14 @@ void print_graph (struct graph *g) {
     while (n != NULL) {
         struct edge *e = n->list_edges;
         if (g->has_point_data) {
-            fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) [%g] ||",n->id,n->x,n->y,n->z,n->sigma);
+            fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) [%g] ||",n->id,n->pos[0],n->pos[1],n->pos[2],n->sigma);
         } else {
-            fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) ||",n->id,n->x,n->y,n->z);
+            fprintf(stdout,"|| %d (%.3lf,%.3lf,%.3lf) ||",n->id,n->pos[0],n->pos[1],n->pos[2]);
         }
         
 
         while (e != NULL) {
-            fprintf(stdout," --> || %d %.3lf (%.3lf,%.3lf,%.3lf) ||",e->id,e->w,e->dest->x,e->dest->y,e->dest->z);
+            fprintf(stdout," --> || %d %.3lf (%.3lf,%.3lf,%.3lf) ||",e->id,e->w,e->dest->pos[0],e->dest->pos[1],e->dest->pos[2]);
             e = e->next;
         }
         fprintf(stdout,"\n");

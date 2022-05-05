@@ -109,9 +109,7 @@ void build_mesh_purkinje (struct graph *the_purkinje_network, struct graph *skel
     // Construct the first node
     struct node *tmp = skeleton_network->list_nodes;
     real_cpu pos[3], sigma;
-    pos[0] = tmp->x;
-    pos[1] = tmp->y;
-    pos[2] = tmp->z;
+    memcpy(pos,tmp->pos,sizeof(real_cpu)*3);
     sigma = tmp->sigma;
     insert_node_graph(the_purkinje_network,pos,sigma);
 
@@ -156,9 +154,7 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
     calc_unitary_vector(d_ori,u,v->dest);
 
     // Copy the position of the source node
-    d[0] = u->x;
-    d[1] = u->y;
-    d[2] = u->z;
+    memcpy(d,u->pos,sizeof(real_cpu)*3);
 
     // Calculate the mean conductivity between the source and destination node
     real_cpu sigma_x1 = u->sigma;
@@ -207,9 +203,8 @@ void grow_segment (struct graph *the_purkinje_network, struct node *u, struct ed
 
 void calc_unitary_vector (real_cpu d_ori[], struct node *u, struct node *v) {
 
-    d_ori[0] = v->x - u->x;
-    d_ori[1] = v->y - u->y;
-    d_ori[2] = v->z - u->z;
+    for (int i = 0; i < 3; i++) 
+        d_ori[i] = v->pos[i] - u->pos[i];
     real_cpu norm = sqrt(d_ori[0]*d_ori[0] + d_ori[1]*d_ori[1] + d_ori[2]*d_ori[2]);
     for (int i = 0; i < 3; i++)
         d_ori[i] /= norm;
@@ -233,7 +228,7 @@ void write_purkinje_network_to_vtk (struct graph *the_purkinje_network) {
 
     n = the_purkinje_network->list_nodes;
     while (n != NULL) {
-        fprintf(file,"%g %g %g\n",n->x,n->y,n->z);
+        fprintf(file,"%g %g %g\n",n->pos[0],n->pos[1],n->pos[2]);
         n = n->next;
     }
 
@@ -294,8 +289,8 @@ int check_purkinje_mesh_for_errors (struct graph *the_purkinje_network) {
     while (tmp != NULL) {
         struct node *tmp2 = the_purkinje_network->list_nodes;
         while (tmp2 != NULL) {
-            if (tmp->x == tmp2->x && tmp->y == tmp2->y && tmp->z == tmp2->z && tmp->id != tmp2->id) {
-                printf("[purkinje] Duplicates are indexes: %u and %u --> (%g,%g,%g) x (%g,%g,%g)\n",tmp->id,tmp2->id,tmp->x,tmp->y,tmp->z,tmp2->x,tmp2->y,tmp2->z);
+            if (tmp->pos[0] == tmp2->pos[0] && tmp->pos[1] == tmp2->pos[1] && tmp->pos[2] == tmp2->pos[2] && tmp->id != tmp2->id) {
+                printf("[purkinje] Duplicates are indexes: %u and %u --> (%g,%g,%g) x (%g,%g,%g)\n",tmp->id,tmp2->id,tmp->pos[0],tmp->pos[1],tmp->pos[2],tmp2->pos[0],tmp2->pos[1],tmp2->pos[2]);
                 printf("\t|| %u has %u edges || %u has %u edges ||\n",tmp->id,tmp->num_edges,tmp2->id,tmp2->num_edges);
                 no_duplicates = 0;
             }
