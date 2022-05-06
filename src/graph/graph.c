@@ -101,8 +101,8 @@ struct node* new_node (uint32_t id, const real_cpu pos[], const real_cpu sigma) 
     memcpy(n->pos,pos,sizeof(real_cpu)*3);
     n->sigma = sigma;
     n->num_edges = 0;
-    n->nmin_pmj = 10;
-    n->rpmj = 1000.0;
+    n->nmin_pmj = 10;           // Default values
+    n->rpmj = 1000.0;           // Default values
     n->next = NULL;
     n->list_edges = NULL;
 

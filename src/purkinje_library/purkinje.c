@@ -24,7 +24,7 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_with_custom_mesh)  {
     char *name = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config, "name");
 
-    real_cpu dx = 0.0;
+    real_cpu dx = 100.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu,dx, config, "dx");
 
     char *network_file = NULL;
@@ -57,13 +57,13 @@ SET_SPATIAL_PURKINJE (initialize_purkinje_coupling_with_custom_mesh) {
     char *name = NULL;
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(name, config, "name");
 
-    real_cpu dx = 0.0;
+    real_cpu dx = 100.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, dx, config, "dx");
 
     real_cpu rpmj = 1000.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, rpmj, config, "rpmj");
 
-    real_cpu pmj_scale = 1000.0;
+    real_cpu pmj_scale = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, pmj_scale, config, "pmj_scale");
 
     real_cpu asymm_ratio = 1.0;

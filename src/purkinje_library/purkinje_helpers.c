@@ -37,6 +37,14 @@ void set_purkinje_coupling_parameters(struct graph *the_purkinje_network, const 
     the_purkinje_network->nmax_pmj = nmax_pmj;
     the_purkinje_network->calc_retropropagation = retro_propagation;
 
+    // Initialize the Purkinje coupling parameters of all Purkinje cells with the value from the configuration file
+    struct node *tmp = the_purkinje_network->list_nodes;
+    while (tmp != NULL) {
+        tmp->rpmj = rpmj;
+        tmp->nmin_pmj = nmin_pmj;
+        tmp = tmp->next;
+    }
+
     if (pmj_filename) {
         the_purkinje_network->pmj_location_filename = strdup(pmj_filename);
         the_purkinje_network->has_pmj_location = true;
