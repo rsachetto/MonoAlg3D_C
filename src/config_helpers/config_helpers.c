@@ -81,3 +81,39 @@ bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, cons
 
     return true;
 }
+
+bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int nlin, int ncol) {
+
+    *v = malloc(sizeof(real_cpu) * nlin * ncol);
+
+    int c;
+
+    sds config_value = sdsnew(parameter);
+
+    config_value = sdstrim(config_value, "{ }");
+    sds *components = sdssplit(config_value, "-", &c);
+
+    for(int i = 0; i < nlin; i++) {
+        
+        sds config_value_2 = sdsnew(components[i]);
+
+        config_value_2 = sdstrim(config_value_2, "[ ]");
+        sds *components_2 = sdssplit(config_value_2, ",", &c);
+
+        for (int j = 0; j < ncol; j++) {
+            int expr_parse_error = 0;
+            real_cpu expr_parse_result = (real_cpu) te_interp(components_2[j], &expr_parse_error);
+            if(expr_parse_error) {
+                return false;
+            }
+            else {
+                (*v)[i*ncol+j] = expr_parse_result;
+            }
+        }
+
+        sdsfreesplitres(components_2, c);
+    }
+    sdsfreesplitres(components, c);
+
+    return true;
+}

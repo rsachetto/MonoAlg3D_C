@@ -57,6 +57,14 @@ struct save_one_cell_state_variables_persistent_data {
     uint32_t cell_sv_position;
 };
 
+struct save_multiple_cell_state_variables_persistent_data {
+    uint32_t num_cells;
+    FILE **files;
+    char *file_name_prefix;
+    real_cpu *cell_centers;
+    uint32_t *cell_sv_positions;
+};
+
 struct save_ensigth_persistent_data {
     uint32_t file_count;
     uint32_t n_digits;

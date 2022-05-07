@@ -908,3 +908,90 @@ SAVE_MESH(save_vm_matrix) {
 SAVE_MESH(no_save) {
     // Nop
 }
+
+INIT_SAVE_MESH(init_save_multiple_cell_state_variables) {
+    config->persistent_data = malloc(sizeof(struct save_multiple_cell_state_variables_persistent_data));
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells,
+                                                config, "num_cells");
+    GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_centers,
+                                                config, "cell_centers", ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells, 3);
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->file_name_prefix, config,
+                                               "file_name_prefix");
+
+    uint32_t num_cells = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells;
+    char *file_name_prefix = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->file_name_prefix;
+    uint32_t *cell_sv_positions = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions;
+
+    ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files = MALLOC_ARRAY_OF_TYPE(FILE*, num_cells);
+    ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, num_cells);
+
+    for (int i = 0; i < num_cells; i++) {
+        
+        sds base_name = NULL;
+        base_name = create_base_name(file_name_prefix, i, "dat");
+
+        ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files[i] = fopen(base_name, "w");
+        ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions[i] = -1;
+    }
+}
+
+SAVE_MESH(save_multiple_cell_state_variables) {
+    struct save_multiple_cell_state_variables_persistent_data *params = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data);
+
+    for (uint32_t i = 0; i < params->num_cells; i++) {
+        if(params->cell_sv_positions[i] == -1) {
+            if(!the_grid->adaptive) {
+                FOR_EACH_CELL(the_grid) {
+                    if(cell->center.x == params->cell_centers[i*3] && cell->center.y == params->cell_centers[i*3+1] && cell->center.z == params->cell_centers[i*3+2]) {
+                        params->cell_sv_positions[i] = cell->sv_position;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if(ode_solver->gpu) {
+#ifdef COMPILE_CUDA
+        for (uint32_t k = 0; k < params->num_cells; k++) {
+            real *cell_sv;
+
+            cell_sv = MALLOC_ARRAY_OF_TYPE(real, ode_solver->model_data.number_of_ode_equations);
+
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_positions[k], ode_solver->pitch, sizeof(real),
+                                        ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+            fprintf(params->files[k], "%lf ", time_info->current_t);
+            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->files[k], "%lf ", cell_sv[i]);
+            }
+            fprintf(params->files[k], "\n");
+
+            free(cell_sv);
+        }
+        
+#endif
+    } else {
+        for (uint32_t k = 0; k < params->num_cells; k++) {
+            real *cell_sv = &ode_solver->sv[params->cell_sv_positions[k] * ode_solver->model_data.number_of_ode_equations];
+
+            fprintf(params->files[k], "%lf ", time_info->current_t);
+            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->files[k], "%lf ", cell_sv[i]);
+            }
+            fprintf(params->files[k], "\n");
+        }
+    }
+}
+
+END_SAVE_MESH(end_save_multiple_cell_state_variables) {
+    uint32_t num_cells = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells;
+    free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->file_name_prefix);
+    free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions);
+    free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_centers);
+    for (uint32_t i = 0; i < num_cells; i++) {
+        fclose(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files[i]);
+    }
+    free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files);
+    free(config->persistent_data);
+}
