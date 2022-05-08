@@ -400,7 +400,7 @@ SAVE_MESH(save_as_text_or_binary) {
 
     fclose(output_file);
 
-    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
 
 }
 
@@ -486,7 +486,7 @@ SAVE_MESH(save_as_vtk) {
     sdsfree(output_dir_with_file);
     sdsfree(base_name);
 
-    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
 }
 
 SAVE_MESH(save_as_vtu) {
@@ -571,7 +571,7 @@ SAVE_MESH(save_as_vtu) {
         ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid = NULL;
     }
 
-    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
 
 }
 
@@ -601,7 +601,7 @@ SAVE_MESH(save_with_activation_times) {
 
     if(mesh_output_pr) {
         if(iteration_count % mesh_output_pr == 0)
-            save_as_text_or_binary(time_info, config, the_grid, ode_solver);
+            save_as_text_or_binary(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
     }
 
     float time_threshold = 10.0f;
@@ -740,7 +740,7 @@ SAVE_MESH(save_with_activation_times) {
 
     fclose(act_file);
 
-    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
 }
 
 INIT_SAVE_MESH(init_save_as_ensight) {
@@ -864,7 +864,7 @@ SAVE_MESH(save_as_ensight) {
 
     persistent_data->file_count++;
 
-    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver);
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
 }
 
 END_SAVE_MESH(end_save_as_ensight) {

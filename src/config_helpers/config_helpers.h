@@ -132,7 +132,7 @@ bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const 
         if(__config_char) {                                                                                                                                    \
             bool __success = get_matrix_parameter(&value, config->config_data, __config_char, nlin, ncol);                                                              \
             if(!__success) {                                                                                                                                   \
-                REPORT_ERROR_ON_FUNCTION("Error parsing vector parameter!\n");                                                                                 \
+                REPORT_ERROR_ON_FUNCTION("Error parsing matrix parameter!\n");                                                                                 \
             }                                                                                                                                                  \
         }                                                                                                                                                      \
     } while(0)

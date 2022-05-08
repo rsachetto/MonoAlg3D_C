@@ -91,7 +91,7 @@ bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const 
     sds config_value = sdsnew(parameter);
 
     config_value = sdstrim(config_value, "{ }");
-    sds *components = sdssplit(config_value, "-", &c);
+    sds *components = sdssplit(config_value, "_", &c);
 
     for(int i = 0; i < nlin; i++) {
         

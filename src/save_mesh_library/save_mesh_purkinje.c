@@ -544,3 +544,167 @@ SAVE_MESH(save_one_cell_state_variables) {
         fprintf(params->file, "\n");
     }
 }
+
+INIT_SAVE_MESH(init_save_multiple_cell_state_variables) {
+    config->persistent_data = malloc(sizeof(struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data));
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_tissue_cells,
+                                                config, "tissue_num_cells");
+    GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_cell_centers,
+                                                config, "tissue_cell_centers", ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_tissue_cells, 3);
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_file_name_prefix, config,
+                                               "tissue_file_name_prefix");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_purkinje_cells,
+                                                config, "purkinje_num_cells");
+    GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_cell_centers,
+                                                config, "purkinje_cell_centers", ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_purkinje_cells, 3);
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_file_name_prefix, config,
+                                               "purkinje_file_name_prefix");
+
+    uint32_t tissue_num_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_tissue_cells;
+    char *tissue_file_name_prefix = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_file_name_prefix;
+    uint32_t *tissue_cell_sv_positions = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_cell_sv_positions;
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_files = MALLOC_ARRAY_OF_TYPE(FILE*, tissue_num_cells);
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, tissue_num_cells);
+
+    uint32_t purkinje_num_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_purkinje_cells;
+    char *purkinje_file_name_prefix = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_file_name_prefix;
+    uint32_t *purkinje_cell_sv_positions = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_cell_sv_positions;
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_files = MALLOC_ARRAY_OF_TYPE(FILE*, purkinje_num_cells);
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, purkinje_num_cells);
+
+    for (int i = 0; i < tissue_num_cells; i++) {
+        
+        sds base_name = NULL;
+        base_name = create_base_name(tissue_file_name_prefix, i, "dat");
+
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_files[i] = fopen(base_name, "w");
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_cell_sv_positions[i] = -1;
+    }
+
+    for (int i = 0; i < purkinje_num_cells; i++) {
+        
+        sds base_name = NULL;
+        base_name = create_base_name(purkinje_file_name_prefix, i, "dat");
+
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_files[i] = fopen(base_name, "w");
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_cell_sv_positions[i] = -1;
+    }
+}
+
+SAVE_MESH(save_multiple_cell_state_variables) {
+    struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *params = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data);
+
+// [DOMAIN]
+    for (uint32_t i = 0; i < params->num_tissue_cells; i++) {
+        if(params->tissue_cell_sv_positions[i] == -1) {
+            if(!the_grid->adaptive) {
+                FOR_EACH_CELL(the_grid) {
+                    if(cell->center.x == params->tissue_cell_centers[i*3] && cell->center.y == params->tissue_cell_centers[i*3+1] && cell->center.z == params->tissue_cell_centers[i*3+2]) {
+                        params->tissue_cell_sv_positions[i] = cell->sv_position;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if(ode_solver->gpu) {
+#ifdef COMPILE_CUDA
+        for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
+            real *cell_sv;
+
+            cell_sv = MALLOC_ARRAY_OF_TYPE(real, ode_solver->model_data.number_of_ode_equations);
+
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->tissue_cell_sv_positions[k], ode_solver->pitch, sizeof(real),
+                                        ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+            fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
+            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
+            }
+            fprintf(params->tissue_files[k], "\n");
+
+            free(cell_sv);
+        }
+        
+#endif
+    } else {
+        for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
+            real *cell_sv = &ode_solver->sv[params->tissue_cell_sv_positions[k] * ode_solver->model_data.number_of_ode_equations];
+
+            fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
+            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
+            }
+            fprintf(params->tissue_files[k], "\n");
+        }
+    }
+
+// [PURKINJE]
+    for (uint32_t i = 0; i < params->num_purkinje_cells; i++) {
+        if(params->purkinje_cell_sv_positions[i] == -1) {
+            FOR_EACH_PURKINJE_CELL(the_grid) {
+                real_cpu dist = calc_norm(cell->center.x,cell->center.y,cell->center.z,\
+                                        params->purkinje_cell_centers[i*3],params->purkinje_cell_centers[i*3+1],params->purkinje_cell_centers[i*3+2]);
+                if (dist < 1e-8) {
+                    params->purkinje_cell_sv_positions[i] = cell->sv_position;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if(purkinje_ode_solver->gpu) {
+#ifdef COMPILE_CUDA
+        for (uint32_t k = 0; k < params->num_purkinje_cells; k++) {
+            real *cell_sv;
+
+            cell_sv = MALLOC_ARRAY_OF_TYPE(real, purkinje_ode_solver->model_data.number_of_ode_equations);
+
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), purkinje_ode_solver->sv + params->purkinje_cell_sv_positions[k], purkinje_ode_solver->pitch, sizeof(real),
+                                        purkinje_ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+            fprintf(params->purkinje_files[k], "%lf ", time_info->current_t);
+            for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->purkinje_files[k], "%lf ", cell_sv[i]);
+            }
+            fprintf(params->purkinje_files[k], "\n");
+
+            free(cell_sv);
+        }
+        
+#endif
+    } else {
+        for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
+            real *cell_sv = &purkinje_ode_solver->sv[params->purkinje_cell_sv_positions[k] * purkinje_ode_solver->model_data.number_of_ode_equations];
+
+            fprintf(params->purkinje_files[k], "%lf ", time_info->current_t);
+            for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->purkinje_files[k], "%lf ", cell_sv[i]);
+            }
+            fprintf(params->purkinje_files[k], "\n");
+        }
+    }
+}
+
+END_SAVE_MESH(end_save_multiple_cell_state_variables) {
+    uint32_t num_tissue_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_tissue_cells;
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_file_name_prefix);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_cell_sv_positions);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_cell_centers);
+    for (uint32_t i = 0; i < num_tissue_cells; i++) {
+        fclose(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_files[i]);
+    }
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->tissue_files);
+
+    uint32_t num_purkinje_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->num_purkinje_cells;
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_file_name_prefix);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_cell_sv_positions);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_cell_centers);
+    for (uint32_t i = 0; i < num_purkinje_cells; i++) {
+        fclose(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_files[i]);
+    }
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data *)config->persistent_data)->purkinje_files);
+
+    free(config->persistent_data);
+}
