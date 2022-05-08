@@ -31,12 +31,12 @@ static void convert_file(const char *input, const char *output, const char *file
 
     static int count = 0;
 
-    if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg") ||
-       FILE_HAS_EXTENSION(file_info.file_extension, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+    if(FILE_HAS_EXTENSION(file_info, "txt") || FILE_HAS_EXTENSION(file_info, "alg") ||
+       FILE_HAS_EXTENSION(file_info, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info, "Esca")) {
 
         if(vtk_grid == NULL) {
             vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false);
-            if(FILE_HAS_EXTENSION(file_info.file_extension, "geo")) {
+            if(FILE_HAS_EXTENSION(file_info, "geo")) {
                 return;
             }
         }
@@ -51,21 +51,21 @@ static void convert_file(const char *input, const char *output, const char *file
                 full_output_path = sdscat(full_output_path, "/");
             }
 
-            if(FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+            if(FILE_HAS_EXTENSION_PREFIX(file_info, "Esca")) {
                 set_vtk_grid_values_from_ensight_file(vtk_grid, full_input_path);
             }
 
             char ext[4] = ".vtu";
             bool alg = false;
 
-            if(FILE_HAS_EXTENSION(file_info.file_extension, "alg")) {
+            if(FILE_HAS_EXTENSION(file_info, "alg")) {
                 ext[1] = 'v';
                 ext[2] = 't';
                 ext[3] = 'k';
                 alg = true;
             }
 
-            if(FILE_HAS_EXTENSION_PREFIX(file_info.file_extension, "Esca")) {
+            if(FILE_HAS_EXTENSION_PREFIX(file_info, "Esca")) {
                 full_output_path = sdscatfmt(full_output_path, "V_it_%i%s", count, ext);
                 count++;
             } else {
@@ -81,7 +81,7 @@ static void convert_file(const char *input, const char *output, const char *file
                 save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, full_output_path, 6);
             }
 
-            if(FILE_HAS_EXTENSION(file_info.file_extension, "txt") || FILE_HAS_EXTENSION(file_info.file_extension, "alg")) {
+            if(FILE_HAS_EXTENSION(file_info, "txt") || FILE_HAS_EXTENSION(file_info, "alg")) {
                 free_vtk_unstructured_grid(vtk_grid);
                 vtk_grid = NULL;
             }
@@ -92,7 +92,7 @@ static void convert_file(const char *input, const char *output, const char *file
             sdsfree(full_input_path);
         }
 
-    } else if(FILE_HAS_EXTENSION(file_info.file_extension, "vtu")) {
+    } else if(FILE_HAS_EXTENSION(file_info, "vtu")) {
 
         vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false);
 

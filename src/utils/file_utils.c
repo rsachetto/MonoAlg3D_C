@@ -20,13 +20,13 @@
 
 char* get_timestamped_dir_name(char* dir_name) {
 
-    char* rc = NULL;
-    char timestamp[32];
+    char* rc = NULL;    
 
     time_t rawtime = time(0);
     struct tm *now = localtime(&rawtime);
 
     if(rawtime != -1) {
+        char timestamp[32];
         strftime(timestamp, 32, "%d_%m_%y_%H_%M_%S", now);
         size_t dir_name_size = strlen(dir_name);
         rc = malloc(dir_name_size + strlen(timestamp) + 2);
@@ -235,8 +235,10 @@ char *read_entire_file(const char *filename, size_t *size) {
 
     buffer = (char *)malloc(numbytes * sizeof(char));
 
-    if(buffer == NULL)
+    if(buffer == NULL) {
+        fclose(infile);
         return NULL;
+    }
 
     fread(buffer, sizeof(char), numbytes, infile);
     fclose(infile);
@@ -325,7 +327,7 @@ string_array list_files_from_dir(const char *dir, const char *prefix, const char
             bool ignore = false;
 
             for(int i = 0; i < n; i++) {
-                if(FILE_HAS_EXTENSION(get_filename_ext(file_name), ignore_extensions[i])) {
+                if(FILE_EXTENSION_EQUALS(get_filename_ext(file_name), ignore_extensions[i])) {
                     ignore = true;
                     break;
                 }
@@ -337,7 +339,7 @@ string_array list_files_from_dir(const char *dir, const char *prefix, const char
         if(extension) {
             const char *file_ext = get_filename_ext(file_name);
 
-            if(!FILE_HAS_EXTENSION(file_ext, extension)) {
+            if(!FILE_EXTENSION_EQUALS(file_ext, extension)) {
                 continue;
             }
         }
@@ -605,7 +607,7 @@ unsigned char *base64_encode(const unsigned char *src, size_t len, size_t *out_l
  * Caller is responsible for allocating the out buffer.
  */
 size_t base64_decode(unsigned char *out, const char *src, size_t len, size_t *bytes_read) {
-    unsigned char dtable[256], *pos, block[4], tmp;
+    unsigned char dtable[256], *pos, block[4];
     size_t i, count;
     int pad = 0;
 
@@ -629,7 +631,7 @@ size_t base64_decode(unsigned char *out, const char *src, size_t len, size_t *by
 
     count = 0;
     for(i = 0; i < len; i++) {
-        tmp = dtable[src[i]];
+        unsigned char tmp = dtable[src[i]];
         if(tmp == 0x80)
             continue;
 

@@ -114,7 +114,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
     get_path_information(input, &input_info);
     bool esca_file = false;
     bool geo_file = false;
-    bool case_loaded = false;
 
     if(!input_info.exists) {
         snprintf(error, MAX_ERROR_SIZE,
@@ -147,25 +146,25 @@ static int read_and_render_files(struct visualization_options *options, struct g
             arrfree(ignore_files);
         }
     } else {
-        if(strcmp(input_info.file_extension, "pvd") == 0) {
+        if(FILE_HAS_EXTENSION(input_info, "pvd")) {
             using_pvd = true;
             simulation_files = list_files_from_and_timesteps_from_pvd(input);
-        } else if(strcmp(input_info.file_extension, "acm") == 0) {
+        } else if(FILE_HAS_EXTENSION(input_info, "acm")) {
             read_and_render_activation_map(gui_config, (char *)input, error);
             return SIMULATION_FINISHED;
-        } else if(strcmp(input_info.file_extension, "vtk") == 0 || strcmp(input_info.file_extension, "vtu") == 0 ||
-                  strcmp(input_info.file_extension, "txt") == 0 || strcmp(input_info.file_extension, "bin") == 0 ||
-                  strcmp(input_info.file_extension, "alg") == 0 || strcmp(input_info.file_extension, "geo") == 0 ||
-                  strncmp(input_info.file_extension, "Esca", 4) == 0) {
+        } else if(FILE_HAS_EXTENSION(input_info, "vtk") || FILE_HAS_EXTENSION(input_info, "vtu") ||
+                  FILE_HAS_EXTENSION(input_info, "txt") || FILE_HAS_EXTENSION(input_info, "bin") ||
+                  FILE_HAS_EXTENSION(input_info, "alg") || FILE_HAS_EXTENSION(input_info, "geo") ||
+                  FILE_HAS_EXTENSION_PREFIX(input_info, "Esca")) {
             simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
             simulation_files->files_list = NULL;
             simulation_files->timesteps = NULL;
             single_file = true;
 
             if(input) {
-                if(strcmp(input_info.file_extension, "geo") == 0 || strncmp(input_info.file_extension, "Esca", 4) == 0) {
+                if(FILE_HAS_EXTENSION(input_info, "geo") || FILE_HAS_EXTENSION_PREFIX(input_info, "Esca")) {
                     ensight = true;
-                    if(strcmp(input_info.file_extension, "geo") == 0)
+                    if(FILE_HAS_EXTENSION(input_info, "geo"))
                         geo_file = true;
                     else
                         esca_file = true;
@@ -226,7 +225,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 
     if(gui_config->current_file_index > num_files) {
-        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%d). Setting start_at to %d\n", (int)gui_config->current_file_index,
+        fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%u). Setting start_at to %u\n", (int)gui_config->current_file_index,
                 num_files, num_files);
         gui_config->current_file_index = (int)(num_files - 1);
     }
@@ -241,26 +240,21 @@ static int read_and_render_files(struct visualization_options *options, struct g
             gui_config->final_time = gui_config->final_file_index;
         }
         else if(ensight) {
+            struct path_information case_info;
+            sds case_file_path = sdscatfmt(sdsempty(), "%s/simulation_result.case", input);
+            get_path_information(case_file_path, &case_info);
 
-            if(!case_loaded) {
-
-                struct path_information case_info;
-                sds case_file_path = sdscatfmt(sdsempty(), "%s/simulation_result.case", input);
-                get_path_information(case_file_path, &case_info);
-
-                if(!case_info.exists) {
-                    gui_config->dt = 1;
-                } else {
-					read_timesteps_from_case_file(case_file_path, &simulation_files->timesteps);
-                }
-                sdsfree(case_file_path);
-                free_path_information(&case_info);
-                case_loaded = true;
-
-                gui_config->dt = -1;
-                gui_config->final_file_index = num_files - 1;
-				gui_config->final_time = simulation_files->timesteps[num_files - 1];
+            if(!case_info.exists) {
+                gui_config->dt = 1;
+            } else {
+                read_timesteps_from_case_file(case_file_path, &simulation_files->timesteps);
             }
+            sdsfree(case_file_path);
+            free_path_information(&case_info);
+
+            gui_config->dt = -1;
+            gui_config->final_file_index = num_files - 1;
+            gui_config->final_time = simulation_files->timesteps[num_files - 1];
 
         } else {
             int step;

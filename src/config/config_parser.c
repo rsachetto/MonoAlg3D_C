@@ -362,6 +362,18 @@ struct user_options *new_user_options() {
     user_args->only_abort_after_dt = 0.0;
     user_args->only_abort_after_dt_was_set = false;
 
+    user_args->purkinje_model_file_path = NULL;
+    user_args->purkinje_model_file_path_was_set = false;
+
+    user_args->purkinje_gpu = false;
+    user_args->purkinje_gpu_was_set = false;
+
+    user_args->purkinje_dt_ode_was_set = false;
+    user_args->purkinje_dt_ode = 0.01;
+
+    user_args->purkinje_gpu_id_was_set = false;
+    user_args->purkinje_gpu_id = 0;
+
     return user_args;
 }
 
@@ -439,7 +451,6 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
     extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
     char *modify_domain_name = NULL;
     char old_value[32];
-    char *key, *value;
 
     assert(modify_domain_configs);
 
@@ -484,8 +495,8 @@ void set_modify_domain_config(const char *args, struct string_voidp_hash_entry *
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        key = key_value[0];
-        value = key_value[1];
+        char *key = key_value[0];
+        char *value = key_value[1];
 
         if(memcmp(key, "modify_after_dt", 15) == 0) {
 
@@ -517,7 +528,6 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
     extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
     char *stim_name = NULL;
     char old_value[32];
-    char *key, *value;
 
     assert(stim_configs);
 
@@ -560,8 +570,8 @@ void set_stim_config(const char *args, struct string_voidp_hash_entry *stim_conf
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        key = key_value[0];
-        value = key_value[1];
+        char *key = key_value[0];
+        char *value = key_value[1];
 
         if(memcmp(key, "start", 5) == 0) {
 
@@ -626,7 +636,6 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
     extra_config = sdsnew(args);
     extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
     char old_value[32];
-    char *key, *value;
 
     assert(user_args);
 
@@ -644,8 +653,8 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        key = key_value[0];
-        value = key_value[1];
+        char *key = key_value[0];
+        char *value = key_value[1];
 
         if(memcmp(key, "dt", 2) == 0) {
             real dt_ode = (real)strtod(value, NULL);
@@ -692,7 +701,6 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
     extra_config = sdsnew(args);
     extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
     char old_value[32];
-    char *key, *value;
 
     assert(dc);
 
@@ -710,8 +718,8 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        key = key_value[0];
-        value = key_value[1];
+        char *key = key_value[0];
+        char *value = key_value[1];
 
         if(memcmp(key, "name", 4) == 0) {
             char *domain_name = NULL;
@@ -806,7 +814,6 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
     extra_config = sdsnew(args);
     extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
     char old_value[32];
-    char *key, *value;
 
     assert(sm);
 
@@ -824,8 +831,8 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        key = key_value[0];
-        value = key_value[1];
+        char *key = key_value[0];
+        char *value = key_value[1];
 
         if(memcmp(key, "print_rate", 10) == 0) {
 
@@ -891,7 +898,6 @@ void set_calc_ecg_config(const char *args, struct config *sm, const char *config
     extra_config = sdsnew(args);
     extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
     char old_value[32];
-    char *key, *value;
 
     assert(sm);
 
@@ -909,8 +915,8 @@ void set_calc_ecg_config(const char *args, struct config *sm, const char *config
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        key = key_value[0];
-        value = key_value[1];
+        char *key = key_value[0];
+        char *value = key_value[1];
 
         if(memcmp(key, "calc_rate", 9) == 0) {
 
@@ -950,7 +956,6 @@ void set_config(const char *args, struct config *config, const char *config_file
     extra_config = sdsnew(args);
     extra_config_tokens = sdssplit(extra_config, ",", &tokens_count);
     char *opt_value;
-    char *key, *value;
 
     struct string_hash_entry *sh = config->config_data;
 
@@ -968,8 +973,8 @@ void set_config(const char *args, struct config *config, const char *config_file
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        key   = key_value[0];
-        value = key_value[1];
+        char *key   = key_value[0];
+        char *value = key_value[1];
 
         if(IS_IN_MAIN_FUNCTION(key)) {
             if(config->main_function_name_was_set) {
@@ -1562,7 +1567,6 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else {
             pconfig->quiet = false;
         }
-        pconfig->quiet = true;
     } 
     else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "gpu_id")) {
         parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->gpu_id, &pconfig->gpu_id_was_set);
