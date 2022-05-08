@@ -91,7 +91,7 @@ int profile_cuboid_mesh(char *start_dx, char* start_dy, char* start_dz, char* si
 
     struct stop_watch save_time;
     start_stop_watch(&save_time);
-    ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL);
+    ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL, NULL);
     times->save_time = stop_stop_watch(&save_time);
 
     struct stop_watch end_time;
