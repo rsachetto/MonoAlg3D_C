@@ -57,6 +57,28 @@ struct save_one_cell_state_variables_persistent_data {
     uint32_t cell_sv_position;
 };
 
+struct save_multiple_cell_state_variables_persistent_data {
+    uint32_t num_cells;
+    FILE **files;
+    char *file_name_prefix;
+    real_cpu *cell_centers;
+    uint32_t *cell_sv_positions;
+};
+
+struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data {
+    uint32_t num_tissue_cells;
+    FILE **tissue_files;
+    char *tissue_file_name_prefix;
+    real_cpu *tissue_cell_centers;
+    uint32_t *tissue_cell_sv_positions;
+
+    uint32_t num_purkinje_cells;
+    FILE **purkinje_files;
+    char *purkinje_file_name_prefix;
+    real_cpu *purkinje_cell_centers;
+    uint32_t *purkinje_cell_sv_positions;
+};
+
 struct save_ensigth_persistent_data {
     uint32_t file_count;
     uint32_t n_digits;

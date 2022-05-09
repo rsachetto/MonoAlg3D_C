@@ -22,8 +22,10 @@ struct edge;
 struct node {
     uint32_t id;
     uint32_t num_edges;
+    uint32_t nmin_pmj;
     real_cpu sigma;
-    real_cpu x, y, z;
+    real_cpu rpmj;
+    real_cpu pos[3];
 
     struct edge *list_edges;
     struct node *next;

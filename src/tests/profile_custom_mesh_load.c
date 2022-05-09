@@ -90,7 +90,7 @@ int profile_custom_mesh_load(char *discretization, struct elapsed_times *times) 
 
     struct stop_watch save_time;
     start_stop_watch(&save_time);
-    ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL);
+    ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL, NULL);
     times->save_time = stop_stop_watch(&save_time);
 
     struct stop_watch end_time;

@@ -630,7 +630,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if(save_to_file && (count % print_rate == 0) && (cur_time >= start_saving_after_dt)) {
             start_stop_watch(&write_time);
-            ((save_mesh_fn *)save_mesh_config->main_function)(&time_info, save_mesh_config, the_grid, the_ode_solver);
+            ((save_mesh_fn *)save_mesh_config->main_function)(&time_info, save_mesh_config, the_grid, the_ode_solver, the_purkinje_ode_solver);
             total_write_time += stop_stop_watch(&write_time);
         }
 
@@ -1335,6 +1335,8 @@ void compute_pmj_current_purkinje_to_tissue(struct ode_solver *the_ode_solver, s
             real Ipmj = 0.0;
             uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
             uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
             for(uint32_t j = 0; j < num_tissue_cells; j++) {
                 uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
                 Ipmj += (vms[tissue_index] - ac_purkinje[purkinje_index]->v);
@@ -1360,6 +1362,8 @@ void compute_pmj_current_purkinje_to_tissue(struct ode_solver *the_ode_solver, s
             real Ipmj = 0.0;
             uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
             uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
             for(uint32_t j = 0; j < num_tissue_cells; j++) {
                 uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
                 Ipmj += (sv[tissue_index * nodes] - ac_purkinje[purkinje_index]->v);
@@ -1414,6 +1418,8 @@ void compute_pmj_current_tissue_to_purkinje(struct ode_solver *the_purkinje_ode_
             real Ipmj = 0.0;
             uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
             uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
             for(uint32_t j = 0; j < num_tissue_cells; j++) {
                 uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
                 Ipmj += (vms[purkinje_index] - ac[tissue_index]->v);
@@ -1435,6 +1441,8 @@ void compute_pmj_current_tissue_to_purkinje(struct ode_solver *the_purkinje_ode_
             real Ipmj = 0.0;
             uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
             uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
             for(uint32_t j = 0; j < num_tissue_cells; j++) {
                 uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
                 Ipmj += (sv[purkinje_index * nodes] - ac[tissue_index]->v);

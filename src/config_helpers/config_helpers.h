@@ -18,6 +18,7 @@ void report_error_on_function_and_continue(int line, const char * file, const ch
 char *get_string_parameter(struct string_hash_entry *config, const char *parameter);
 bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int n);
 bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, const char *parameter);
+bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int nlin, int ncol);
 
 #define STRINGS_EQUAL(str1, str2) (strcmp((str1), (str2)) == 0)
 
@@ -121,6 +122,17 @@ bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, cons
             bool __success = get_vector3_parameter(value, config->config_data, __config_char);                                                              \
             if(!__success) {                                                                                                                                   \
                 REPORT_ERROR_ON_FUNCTION("Error parsing vector parameter!\n");                                                                                 \
+            }                                                                                                                                                  \
+        }                                                                                                                                                      \
+    } while(0)
+
+#define GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(value, config, parameter, nlin, ncol)                                                                                 \
+    do {                                                                                                                                                       \
+        char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
+        if(__config_char) {                                                                                                                                    \
+            bool __success = get_matrix_parameter(&value, config->config_data, __config_char, nlin, ncol);                                                              \
+            if(!__success) {                                                                                                                                   \
+                REPORT_ERROR_ON_FUNCTION("Error parsing matrix parameter!\n");                                                                                 \
             }                                                                                                                                                  \
         }                                                                                                                                                      \
     } while(0)

@@ -519,14 +519,14 @@ void construct_grid_purkinje(struct grid *the_grid) {
 
         if(i == 0)
             set_cell_node_data(purkinje_cells[i], side_length, 0, neighbours, NULL,
-                               purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z));
+                               purkinje_cells[i + 1], i, 0, POINT3D(n->pos[0], n->pos[1], n->pos[2]));
 
         else if(i == total_purkinje_nodes - 1)
             set_cell_node_data(purkinje_cells[i], side_length, 0, neighbours,
-                               purkinje_cells[i - 1], NULL, i, 0, POINT3D(n->x, n->y, n->z));
+                               purkinje_cells[i - 1], NULL, i, 0, POINT3D(n->pos[0], n->pos[1], n->pos[2]));
         else
             set_cell_node_data(purkinje_cells[i], side_length, 0, neighbours,
-                               purkinje_cells[i - 1], purkinje_cells[i + 1], i, 0, POINT3D(n->x, n->y, n->z));
+                               purkinje_cells[i - 1], purkinje_cells[i + 1], i, 0, POINT3D(n->pos[0], n->pos[1], n->pos[2]));
 
         // Do not refine the Purkinje cells !
         purkinje_cells[i]->can_change = false;
@@ -805,7 +805,7 @@ struct terminal* link_purkinje_to_tissue_default (struct grid *the_grid) {
 
                 for(uint32_t i = 0; i < n_active; i++) {
 
-                    real_cpu dist = calc_norm(n->x, n->y, n->z,\
+                    real_cpu dist = calc_norm(n->pos[0], n->pos[1], n->pos[2],\
                                             ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
 
                     if(dist < scale) {
@@ -889,7 +889,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
         // Purkinje terminals loop
         for (j = 0; j < number_of_terminals; j++) {
             n = the_terminals[j].purkinje_cell;
-            real_cpu dist = calc_norm(n->x, n->y, n->z, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+            real_cpu dist = calc_norm(n->pos[0], n->pos[1], n->pos[2], ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
 
             dist_array[j*n_active+i] = dist;
         }
@@ -1006,23 +1006,56 @@ void set_active_terminals (struct terminal *the_terminals, const uint32_t number
         exit(1);
     }
     struct node *pmjs = NULL;
+    real_cpu *rpmjs = NULL;
+    uint32_t *nmin_pmjs = NULL;
 
     char str[200];
     while (fscanf(file,"%s",str) != EOF) {
         if (strcmp(str,"POINTS") == 0) break;
     }
-    uint32_t num_pmjs;
+    uint32_t num_pmjs, dummy;
     fscanf(file,"%u %s",&num_pmjs,str);
     for (uint32_t i = 0; i < num_pmjs; i++) {
         double pos[3];
         fscanf(file,"%lf %lf %lf",&pos[0],&pos[1],&pos[2]);
 
         struct node n;
-        n.x = pos[0];
-        n.y = pos[1];
-        n.z = pos[2];
+        for (int i = 0; i < 3; i++)
+            n.pos[i] = pos[i];
         arrput(pmjs,n);
 
+    }
+    fscanf(file,"%s %u %u",str,&dummy,&dummy);
+    for (uint32_t i = 0; i < num_pmjs; i++) {
+        fscanf(file,"%u %u",&dummy,&dummy);
+    }
+    // Read the POINT_DATA section, if it exist
+    bool has_point_data = false;
+    if (fscanf(file,"%s",str) != EOF) {
+        if (strcmp(str,"POINT_DATA") == 0) {
+
+            while (fscanf(file,"%s",str) != EOF) {
+                if (strcmp(str,"float") == 0) break;
+            }
+
+            for (int i = 0; i < num_pmjs; i++) {
+                real_cpu rpmj;
+                fscanf(file,"%lf",&rpmj);
+                arrput(rpmjs,rpmj);
+            }
+
+            while (fscanf(file,"%s",str) != EOF) {
+                if (strcmp(str,"float") == 0) break;
+            }
+
+            for (int i = 0; i < num_pmjs; i++) {
+                uint32_t nmin_pmj;
+                fscanf(file,"%u",&nmin_pmj);
+                arrput(nmin_pmjs,nmin_pmj);
+            }
+
+            has_point_data = true;
+        }
     }
     fclose(file);
 
@@ -1032,16 +1065,22 @@ void set_active_terminals (struct terminal *the_terminals, const uint32_t number
         double min_dist = __DBL_MAX__;
         for (uint32_t j = 0; j < number_of_terminals; j++) {
             struct node *tmp = the_terminals[j].purkinje_cell;
-            double dist = calc_norm(tmp->x,tmp->y,tmp->z,pmjs[i].x,pmjs[i].y,pmjs[i].z);
+            double dist = calc_norm(tmp->pos[0],tmp->pos[1],tmp->pos[2],pmjs[i].pos[0],pmjs[i].pos[1],pmjs[i].pos[2]);
             if (dist < min_dist) {
                 min_dist = dist;
                 min_index = j;
             }
         }
+        if (has_point_data) {
+            the_terminals[min_index].purkinje_cell->nmin_pmj = nmin_pmjs[i];
+            the_terminals[min_index].purkinje_cell->rpmj = rpmjs[i];    
+        }
         the_terminals[min_index].active = true;
     }
 
     arrfree(pmjs);
+    if (rpmjs) arrfree(rpmjs);
+    if (nmin_pmjs) arrfree(nmin_pmjs);
 }
 
 void print_terminals (struct terminal *the_terminals, const uint32_t number_of_terminals)

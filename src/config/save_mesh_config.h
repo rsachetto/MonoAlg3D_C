@@ -10,7 +10,7 @@
 #include "../monodomain/constants.h"
 #include "config_common.h"
 
-#define SAVE_MESH(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid, struct ode_solver *ode_solver)
+#define SAVE_MESH(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid, struct ode_solver *ode_solver, struct ode_solver *purkinje_ode_solver)
 typedef SAVE_MESH(save_mesh_fn);
 
 #define INIT_SAVE_MESH(name)  void name(struct config *config)
