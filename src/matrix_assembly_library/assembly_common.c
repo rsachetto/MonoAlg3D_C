@@ -125,290 +125,289 @@ static void calc_sigmas(struct cell_node *cell_node, struct cell_node *neighbour
         if(neighbours[RIGHT]) {
             *sigma_1 = (neighbours[RIGHT]->sigma.x + cell_node->sigma.x) / 2.0;
             *count_s1 = 1;
+
+            sigma_neighbours[0] = neighbours[TOP];
+            sigma_neighbours[1] = neighbours[DOWN];
+
+            sigma_neighbours[2] = neighbours[TOP_RIGHT];
+            sigma_neighbours[3] = neighbours[DOWN_RIGHT];
+
+            sigma_neighbours[4] = neighbours[FRONT_TOP];
+            sigma_neighbours[5] = neighbours[FRONT_DOWN];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[FRONT_DOWN_RIGHT];
+
+            sigma_neighbours[8] = neighbours[BACK_TOP];
+            sigma_neighbours[9] = neighbours[BACK_DOWN];
+
+            sigma_neighbours[10] = neighbours[BACK_TOP_RIGHT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_RIGHT];
+
+            CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
+            /////////////////////////////////////////////////////////////
+
+            sigma_neighbours[0] = neighbours[FRONT];
+            sigma_neighbours[1] = neighbours[BACK];
+
+            sigma_neighbours[2] = neighbours[FRONT_RIGHT];
+            sigma_neighbours[3] = neighbours[BACK_RIGHT];
+
+            sigma_neighbours[4] = neighbours[FRONT_TOP];
+            sigma_neighbours[5] = neighbours[BACK_TOP];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[BACK_TOP_RIGHT];
+
+            sigma_neighbours[8] = neighbours[FRONT_DOWN];
+            sigma_neighbours[9] = neighbours[BACK_DOWN];
+
+            sigma_neighbours[10] = neighbours[FRONT_DOWN_RIGHT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_RIGHT];
+
+            CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_3, *count_s3);
         }
-
-        sigma_neighbours[0] = neighbours[TOP];
-        sigma_neighbours[1] = neighbours[DOWN];
-
-        sigma_neighbours[2] = neighbours[TOP_RIGHT];
-        sigma_neighbours[3] = neighbours[DOWN_RIGHT];
-
-        sigma_neighbours[4] = neighbours[FRONT_TOP];
-        sigma_neighbours[5] = neighbours[FRONT_DOWN];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[FRONT_DOWN_RIGHT];
-
-        sigma_neighbours[8] = neighbours[BACK_TOP];
-        sigma_neighbours[9] = neighbours[BACK_DOWN];
-
-        sigma_neighbours[10] = neighbours[BACK_TOP_RIGHT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_RIGHT];
-
-        CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
-
-        /////////////////////////////////////////////////////////////
-
-        sigma_neighbours[0] = neighbours[FRONT];
-        sigma_neighbours[1] = neighbours[BACK];
-
-        sigma_neighbours[2] = neighbours[FRONT_RIGHT];
-        sigma_neighbours[3] = neighbours[BACK_RIGHT];
-
-        sigma_neighbours[4] = neighbours[FRONT_TOP];
-        sigma_neighbours[5] = neighbours[BACK_TOP];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[BACK_TOP_RIGHT];
-
-        sigma_neighbours[8] = neighbours[FRONT_DOWN];
-        sigma_neighbours[9] = neighbours[BACK_DOWN];
-
-        sigma_neighbours[10] = neighbours[FRONT_DOWN_RIGHT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_RIGHT];
-
-        CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_3, *count_s3);
 
     } else if(flux_direction == LEFT) {
         if(neighbours[LEFT]) {
             *sigma_1 = (neighbours[LEFT]->sigma.x + cell_node->sigma.x) / 2.0;
             *count_s1 = 1;
+
+            sigma_neighbours[0] = neighbours[TOP];
+            sigma_neighbours[1] = neighbours[DOWN];
+
+            sigma_neighbours[2] = neighbours[TOP_LEFT];
+            sigma_neighbours[3] = neighbours[DOWN_LEFT];
+
+            sigma_neighbours[4] = neighbours[FRONT_TOP];
+            sigma_neighbours[5] = neighbours[FRONT_DOWN];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_LEFT];
+            sigma_neighbours[7] = neighbours[FRONT_DOWN_LEFT];
+
+            sigma_neighbours[8] = neighbours[BACK_TOP];
+            sigma_neighbours[9] = neighbours[BACK_DOWN];
+
+            sigma_neighbours[10] = neighbours[BACK_TOP_LEFT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
+
+            /////////////////////////////////////////////////////////////
+
+            sigma_neighbours[0] = neighbours[FRONT];
+            sigma_neighbours[1] = neighbours[BACK];
+
+            sigma_neighbours[2] = neighbours[FRONT_LEFT];
+            sigma_neighbours[3] = neighbours[BACK_LEFT];
+
+            sigma_neighbours[4] = neighbours[FRONT_TOP];
+            sigma_neighbours[5] = neighbours[BACK_TOP];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_LEFT];
+            sigma_neighbours[7] = neighbours[BACK_TOP_LEFT];
+
+            sigma_neighbours[8] = neighbours[FRONT_DOWN];
+            sigma_neighbours[9] = neighbours[BACK_DOWN];
+
+            sigma_neighbours[10] = neighbours[FRONT_DOWN_LEFT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_3, *count_s3);
+
         }
-
-        sigma_neighbours[0] = neighbours[TOP];
-        sigma_neighbours[1] = neighbours[DOWN];
-
-        sigma_neighbours[2] = neighbours[TOP_LEFT];
-        sigma_neighbours[3] = neighbours[DOWN_LEFT];
-
-        sigma_neighbours[4] = neighbours[FRONT_TOP];
-        sigma_neighbours[5] = neighbours[FRONT_DOWN];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_LEFT];
-        sigma_neighbours[7] = neighbours[FRONT_DOWN_LEFT];
-
-        sigma_neighbours[8] = neighbours[BACK_TOP];
-        sigma_neighbours[9] = neighbours[BACK_DOWN];
-
-        sigma_neighbours[10] = neighbours[BACK_TOP_LEFT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
-
-        /////////////////////////////////////////////////////////////
-
-        sigma_neighbours[0] = neighbours[FRONT];
-        sigma_neighbours[1] = neighbours[BACK];
-
-        sigma_neighbours[2] = neighbours[FRONT_LEFT];
-        sigma_neighbours[3] = neighbours[BACK_LEFT];
-
-        sigma_neighbours[4] = neighbours[FRONT_TOP];
-        sigma_neighbours[5] = neighbours[BACK_TOP];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_LEFT];
-        sigma_neighbours[7] = neighbours[BACK_TOP_LEFT];
-
-        sigma_neighbours[8] = neighbours[FRONT_DOWN];
-        sigma_neighbours[9] = neighbours[BACK_DOWN];
-
-        sigma_neighbours[10] = neighbours[FRONT_DOWN_LEFT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_3, *count_s3);
-
     } else if(flux_direction == TOP) {
         if(neighbours[TOP]) {
             *sigma_1 = (neighbours[TOP]->sigma.y + cell_node->sigma.y) / 2.0;
             *count_s1 = 1;
+
+            sigma_neighbours[0] = neighbours[RIGHT];
+            sigma_neighbours[1] = neighbours[LEFT];
+
+            sigma_neighbours[2] = neighbours[TOP_RIGHT];
+            sigma_neighbours[3] = neighbours[TOP_LEFT];
+
+            sigma_neighbours[4] = neighbours[FRONT_RIGHT];
+            sigma_neighbours[5] = neighbours[FRONT_LEFT];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[FRONT_TOP_LEFT];
+
+            sigma_neighbours[8] = neighbours[BACK_RIGHT];
+            sigma_neighbours[9] = neighbours[BACK_LEFT];
+
+            sigma_neighbours[10] = neighbours[BACK_TOP_RIGHT];
+            sigma_neighbours[11] = neighbours[BACK_TOP_LEFT];
+
+            CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
+
+            /////////////////////////////////////////////////////////////
+
+            sigma_neighbours[0] = neighbours[FRONT];
+            sigma_neighbours[1] = neighbours[BACK];
+
+            sigma_neighbours[2] = neighbours[FRONT_TOP];
+            sigma_neighbours[3] = neighbours[BACK_TOP];
+
+            sigma_neighbours[4] = neighbours[FRONT_RIGHT];
+            sigma_neighbours[5] = neighbours[BACK_RIGHT];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[BACK_TOP_RIGHT];
+
+            sigma_neighbours[8] = neighbours[FRONT_LEFT];
+            sigma_neighbours[9] = neighbours[BACK_LEFT];
+
+            sigma_neighbours[10] = neighbours[FRONT_TOP_LEFT];
+            sigma_neighbours[11] = neighbours[BACK_TOP_LEFT];
+
+            CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
+
         }
-
-        sigma_neighbours[0] = neighbours[RIGHT];
-        sigma_neighbours[1] = neighbours[LEFT];
-
-        sigma_neighbours[2] = neighbours[TOP_RIGHT];
-        sigma_neighbours[3] = neighbours[TOP_LEFT];
-
-        sigma_neighbours[4] = neighbours[FRONT_RIGHT];
-        sigma_neighbours[5] = neighbours[FRONT_LEFT];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[FRONT_TOP_LEFT];
-
-        sigma_neighbours[8] = neighbours[BACK_RIGHT];
-        sigma_neighbours[9] = neighbours[BACK_LEFT];
-
-        sigma_neighbours[10] = neighbours[BACK_TOP_RIGHT];
-        sigma_neighbours[11] = neighbours[BACK_TOP_LEFT];
-
-        CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
-
-        /////////////////////////////////////////////////////////////
-
-        sigma_neighbours[0] = neighbours[FRONT];
-        sigma_neighbours[1] = neighbours[BACK];
-
-        sigma_neighbours[2] = neighbours[FRONT_TOP];
-        sigma_neighbours[3] = neighbours[BACK_TOP];
-
-        sigma_neighbours[4] = neighbours[FRONT_RIGHT];
-        sigma_neighbours[5] = neighbours[BACK_RIGHT];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[BACK_TOP_RIGHT];
-
-        sigma_neighbours[8] = neighbours[FRONT_LEFT];
-        sigma_neighbours[9] = neighbours[BACK_LEFT];
-
-        sigma_neighbours[10] = neighbours[FRONT_TOP_LEFT];
-        sigma_neighbours[11] = neighbours[BACK_TOP_LEFT];
-
-        CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
-
     } else if(flux_direction == DOWN) {
         if(neighbours[DOWN]) {
             *sigma_1 = (neighbours[DOWN]->sigma.y + cell_node->sigma.y) / 2.0;
             *count_s1 = 1;
+
+            sigma_neighbours[0] = neighbours[RIGHT];
+            sigma_neighbours[1] = neighbours[LEFT];
+
+            sigma_neighbours[2] = neighbours[DOWN_RIGHT];
+            sigma_neighbours[3] = neighbours[DOWN_LEFT];
+
+            sigma_neighbours[4] = neighbours[FRONT_RIGHT];
+            sigma_neighbours[5] = neighbours[FRONT_LEFT];
+
+            sigma_neighbours[6] = neighbours[FRONT_DOWN_RIGHT];
+            sigma_neighbours[7] = neighbours[FRONT_DOWN_LEFT];
+
+            sigma_neighbours[8] = neighbours[BACK_RIGHT];
+            sigma_neighbours[9] = neighbours[BACK_LEFT];
+
+            sigma_neighbours[10] = neighbours[BACK_DOWN_RIGHT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
+
+            /////////////////////////////////////////////////////////////
+
+            sigma_neighbours[0] = neighbours[FRONT];
+            sigma_neighbours[1] = neighbours[BACK];
+
+            sigma_neighbours[2] = neighbours[FRONT_DOWN];
+            sigma_neighbours[3] = neighbours[BACK_DOWN];
+
+            sigma_neighbours[4] = neighbours[FRONT_RIGHT];
+            sigma_neighbours[5] = neighbours[BACK_RIGHT];
+
+            sigma_neighbours[6] = neighbours[FRONT_DOWN_RIGHT];
+            sigma_neighbours[7] = neighbours[BACK_DOWN_RIGHT];
+
+            sigma_neighbours[8] = neighbours[FRONT_LEFT];
+            sigma_neighbours[9] = neighbours[BACK_LEFT];
+
+            sigma_neighbours[10] = neighbours[FRONT_DOWN_LEFT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
+
         }
-
-        sigma_neighbours[0] = neighbours[RIGHT];
-        sigma_neighbours[1] = neighbours[LEFT];
-
-        sigma_neighbours[2] = neighbours[DOWN_RIGHT];
-        sigma_neighbours[3] = neighbours[DOWN_LEFT];
-
-        sigma_neighbours[4] = neighbours[FRONT_RIGHT];
-        sigma_neighbours[5] = neighbours[FRONT_LEFT];
-
-        sigma_neighbours[6] = neighbours[FRONT_DOWN_RIGHT];
-        sigma_neighbours[7] = neighbours[FRONT_DOWN_LEFT];
-
-        sigma_neighbours[8] = neighbours[BACK_RIGHT];
-        sigma_neighbours[9] = neighbours[BACK_LEFT];
-
-        sigma_neighbours[10] = neighbours[BACK_DOWN_RIGHT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(xy, sigma_neighbours, *sigma_2, *count_s2);
-
-        /////////////////////////////////////////////////////////////
-
-        sigma_neighbours[0] = neighbours[FRONT];
-        sigma_neighbours[1] = neighbours[BACK];
-
-        sigma_neighbours[2] = neighbours[FRONT_DOWN];
-        sigma_neighbours[3] = neighbours[BACK_DOWN];
-
-        sigma_neighbours[4] = neighbours[FRONT_RIGHT];
-        sigma_neighbours[5] = neighbours[BACK_RIGHT];
-
-        sigma_neighbours[6] = neighbours[FRONT_DOWN_RIGHT];
-        sigma_neighbours[7] = neighbours[BACK_DOWN_RIGHT];
-
-        sigma_neighbours[8] = neighbours[FRONT_LEFT];
-        sigma_neighbours[9] = neighbours[BACK_LEFT];
-
-        sigma_neighbours[10] = neighbours[FRONT_DOWN_LEFT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
-
     } else if(flux_direction == FRONT) {
 
         if(neighbours[FRONT]) {
             *sigma_1 = (neighbours[FRONT]->sigma.z + cell_node->sigma.z) / 2.0;
             *count_s1 = 1;
+
+            sigma_neighbours[0] = neighbours[RIGHT];
+            sigma_neighbours[1] = neighbours[LEFT];
+
+            sigma_neighbours[2] = neighbours[FRONT_RIGHT];
+            sigma_neighbours[3] = neighbours[FRONT_LEFT];
+
+            sigma_neighbours[4] = neighbours[TOP_RIGHT];
+            sigma_neighbours[5] = neighbours[TOP_LEFT];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[FRONT_TOP_LEFT];
+
+            sigma_neighbours[8] = neighbours[DOWN_RIGHT];
+            sigma_neighbours[9] = neighbours[DOWN_LEFT];
+
+            sigma_neighbours[10] = neighbours[FRONT_DOWN_RIGHT];
+            sigma_neighbours[11] = neighbours[FRONT_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_2, *count_s2);
+
+            /////////////////////////////////////////////////////////////
+
+            sigma_neighbours[0] = neighbours[TOP];
+            sigma_neighbours[1] = neighbours[DOWN];
+
+            sigma_neighbours[2] = neighbours[FRONT_TOP];
+            sigma_neighbours[3] = neighbours[FRONT_DOWN];
+
+            sigma_neighbours[4] = neighbours[TOP_RIGHT];
+            sigma_neighbours[5] = neighbours[DOWN_RIGHT];
+
+            sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[FRONT_DOWN_RIGHT];
+
+            sigma_neighbours[8] = neighbours[TOP_LEFT];
+            sigma_neighbours[9] = neighbours[DOWN_LEFT];
+
+            sigma_neighbours[10] = neighbours[FRONT_TOP_LEFT];
+            sigma_neighbours[11] = neighbours[FRONT_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
+
         }
-
-        sigma_neighbours[0] = neighbours[RIGHT];
-        sigma_neighbours[1] = neighbours[LEFT];
-
-        sigma_neighbours[2] = neighbours[FRONT_RIGHT];
-        sigma_neighbours[3] = neighbours[FRONT_LEFT];
-
-        sigma_neighbours[4] = neighbours[TOP_RIGHT];
-        sigma_neighbours[5] = neighbours[TOP_LEFT];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[FRONT_TOP_LEFT];
-
-        sigma_neighbours[8] = neighbours[DOWN_RIGHT];
-        sigma_neighbours[9] = neighbours[DOWN_LEFT];
-
-        sigma_neighbours[10] = neighbours[FRONT_DOWN_RIGHT];
-        sigma_neighbours[11] = neighbours[FRONT_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_2, *count_s2);
-
-        /////////////////////////////////////////////////////////////
-
-        sigma_neighbours[0] = neighbours[TOP];
-        sigma_neighbours[1] = neighbours[DOWN];
-
-        sigma_neighbours[2] = neighbours[FRONT_TOP];
-        sigma_neighbours[3] = neighbours[FRONT_DOWN];
-
-        sigma_neighbours[4] = neighbours[TOP_RIGHT];
-        sigma_neighbours[5] = neighbours[DOWN_RIGHT];
-
-        sigma_neighbours[6] = neighbours[FRONT_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[FRONT_DOWN_RIGHT];
-
-        sigma_neighbours[8] = neighbours[TOP_LEFT];
-        sigma_neighbours[9] = neighbours[DOWN_LEFT];
-
-        sigma_neighbours[10] = neighbours[FRONT_TOP_LEFT];
-        sigma_neighbours[11] = neighbours[FRONT_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
-
     } else if(flux_direction == BACK) {
         if(neighbours[BACK]) {
             *sigma_1 = (neighbours[BACK]->sigma.z + cell_node->sigma.z) / 2.0;
             *count_s1 = 1;
+
+            sigma_neighbours[0] = neighbours[RIGHT];
+            sigma_neighbours[1] = neighbours[LEFT];
+
+            sigma_neighbours[2] = neighbours[BACK_RIGHT];
+            sigma_neighbours[3] = neighbours[BACK_LEFT];
+
+            sigma_neighbours[4] = neighbours[TOP_RIGHT];
+            sigma_neighbours[5] = neighbours[TOP_LEFT];
+
+            sigma_neighbours[6] = neighbours[BACK_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[BACK_TOP_LEFT];
+
+            sigma_neighbours[8] = neighbours[DOWN_RIGHT];
+            sigma_neighbours[9] = neighbours[DOWN_LEFT];
+
+            sigma_neighbours[10] = neighbours[BACK_DOWN_RIGHT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_2, *count_s2);
+
+            /////////////////////////////////////////////////////////////
+
+            sigma_neighbours[0] = neighbours[TOP];
+            sigma_neighbours[1] = neighbours[DOWN];
+
+            sigma_neighbours[2] = neighbours[BACK_TOP];
+            sigma_neighbours[3] = neighbours[BACK_DOWN];
+
+            sigma_neighbours[4] = neighbours[TOP_RIGHT];
+            sigma_neighbours[5] = neighbours[DOWN_RIGHT];
+
+            sigma_neighbours[6] = neighbours[BACK_TOP_RIGHT];
+            sigma_neighbours[7] = neighbours[BACK_DOWN_RIGHT];
+
+            sigma_neighbours[8] = neighbours[TOP_LEFT];
+            sigma_neighbours[9] = neighbours[DOWN_LEFT];
+
+            sigma_neighbours[10] = neighbours[BACK_TOP_LEFT];
+            sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
+
+            CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
         }
-
-        sigma_neighbours[0] = neighbours[RIGHT];
-        sigma_neighbours[1] = neighbours[LEFT];
-
-        sigma_neighbours[2] = neighbours[BACK_RIGHT];
-        sigma_neighbours[3] = neighbours[BACK_LEFT];
-
-        sigma_neighbours[4] = neighbours[TOP_RIGHT];
-        sigma_neighbours[5] = neighbours[TOP_LEFT];
-
-        sigma_neighbours[6] = neighbours[BACK_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[BACK_TOP_LEFT];
-
-        sigma_neighbours[8] = neighbours[DOWN_RIGHT];
-        sigma_neighbours[9] = neighbours[DOWN_LEFT];
-
-        sigma_neighbours[10] = neighbours[BACK_DOWN_RIGHT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(xz, sigma_neighbours, *sigma_2, *count_s2);
-
-        /////////////////////////////////////////////////////////////
-
-        sigma_neighbours[0] = neighbours[TOP];
-        sigma_neighbours[1] = neighbours[DOWN];
-
-        sigma_neighbours[2] = neighbours[BACK_TOP];
-        sigma_neighbours[3] = neighbours[BACK_DOWN];
-
-        sigma_neighbours[4] = neighbours[TOP_RIGHT];
-        sigma_neighbours[5] = neighbours[DOWN_RIGHT];
-
-        sigma_neighbours[6] = neighbours[BACK_TOP_RIGHT];
-        sigma_neighbours[7] = neighbours[BACK_DOWN_RIGHT];
-
-        sigma_neighbours[8] = neighbours[TOP_LEFT];
-        sigma_neighbours[9] = neighbours[DOWN_LEFT];
-
-        sigma_neighbours[10] = neighbours[BACK_TOP_LEFT];
-        sigma_neighbours[11] = neighbours[BACK_DOWN_LEFT];
-
-        CALC_PARTIAL_SIGMA(yz, sigma_neighbours, *sigma_3, *count_s3);
     }
 }
 

@@ -250,6 +250,27 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
     return 1;
 }
 
+SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_and_sphere_fibrotic_mesh) {
+
+    real_cpu phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config, "phi");
+
+    real_cpu sphere_center[3] = {0,0,0};
+    GET_PARAMETER_VECTOR3_VALUE_OR_USE_DEFAULT(sphere_center, config, "sphere_center");
+
+    real_cpu sphere_radius = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config, "sphere_radius");
+
+
+    unsigned seed = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config, "seed");
+
+    initialize_grid_with_cuboid_mesh(config, the_grid);
+    set_cube_sphere_fibrosis(the_grid, phi, sphere_center, sphere_radius, seed);
+
+    return 1;
+}
+
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh_without_inactivating) {
 
     real_cpu plain_center = 0.0;

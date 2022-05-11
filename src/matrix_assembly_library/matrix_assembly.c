@@ -95,7 +95,7 @@ ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
@@ -242,7 +242,7 @@ ASSEMBLY_MATRIX(source_sink_discretization_matrix_with_different_sigma) {
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
@@ -340,7 +340,7 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
@@ -426,7 +426,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
 
     if(fiber_file) {
         log_info("Loading mesh fibers\n");
-        fibers = read_fibers(fiber_file, false);
+        fibers = read_fibers(fiber_file, true);
     }
     else if(!fibers_in_mesh) {
         GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config, "f", 3);
@@ -577,7 +577,7 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix) {
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
@@ -669,7 +669,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix) {
 
     initialize_diagonal_elements(the_solver, the_grid);
 
-    int i;
+    uint32_t i;
 
     real sigma_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
@@ -854,7 +854,7 @@ ASSEMBLY_MATRIX(heterogenous_sigma_with_factor_assembly_matrix_from_file) {
     }
 
     OMP(parallel for)
-    for(int i = 0; i < num_active_cells; i++) {
+    for(uint32_t i = 0; i < num_active_cells; i++) {
 
         // Computes and designates the flux due to south cells.
         fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[BACK], BACK);
