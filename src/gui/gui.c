@@ -189,7 +189,9 @@ static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_stat
 
     gui_state->voxel_alpha = 255;
 
-    for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+    size_t n = hmlen(gui_state->ap_graph_config->selected_aps);
+
+    for(size_t i = 0; i < n; i++) {
         arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
     }
 
@@ -207,7 +209,7 @@ static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_stat
 
     if(full_reset) {
 
-        for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+        for(size_t i = 0; i < n; i++) {
             arrfree(gui_state->ap_graph_config->selected_aps[i].value);
         }
 
@@ -550,7 +552,7 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
 
     if(gui_state->scale.calc_bounds) {
         gui_state->scale.window.bounds.height += max_w.y;
-        for(int t = 0; t <= num_ticks; t++) {
+        for(uint32_t t = 0; t <= num_ticks; t++) {
             gui_state->scale.window.bounds.height += scale_rec_height;
         }
 
@@ -733,7 +735,8 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         CHECK_FILE_INDEX(gui_config);
 
         if(gui_config->current_file_index == 0) {
-            for(size_t i = 0; i < hmlen(gui_state->ap_graph_config->selected_aps); i++) {
+            size_t n = hmlen(gui_state->ap_graph_config->selected_aps);
+            for(size_t i = 0; i < n; i++) {
                 arrsetlen(gui_state->ap_graph_config->selected_aps[i].value, 0);
             }
         }
@@ -1216,7 +1219,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 }
 
-static void handle_input(struct gui_shared_info *gui_config, struct mesh_info *mesh_info, struct gui_state *gui_state) {
+static void handle_input(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
 
     if(gui_state->handle_keyboard_input) {
         handle_keyboard_input(gui_config, gui_state);
@@ -1358,20 +1361,17 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     omp_set_lock(&gui_config->sleep_lock);
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
-    char *window_title = NULL;
+    char window_title[4096];
 
     int draw_type = gui_config->draw_type;
 
     if(draw_type == DRAW_SIMULATION) {
-        size_t max = strlen(gui_config->config_name) + strlen("Simulation visualization - ") + 2;
-        window_title = (char *)malloc(max);
-        snprintf(window_title, max + 1, "Simulation visualization - %s", gui_config->config_name);
+        sprintf(window_title, "Simulation visualization - %s", gui_config->config_name);
     } else {
-        window_title = strdup("Monoalg3D Simulator");
+        sprintf(window_title, "Monoalg3D Simulator");
     }
 
     InitWindow(0, 0, window_title);
-    free(window_title);
 
     SetTargetFPS(60);
 
@@ -1485,6 +1485,24 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         gui_config->progress = 100;
     }
 
+    bool matrix_colors_allocated = false;
+    Matrix *translations = NULL;
+    Color *colors = NULL;
+
+    void (*draw_grid_function)(struct gui_shared_info *, struct gui_state *, int , Shader , Mesh , Matrix *, Color *);
+    void (*draw_purkinje_function)(struct gui_shared_info *, struct gui_state *, int);
+    
+    draw_purkinje_function = NULL;
+    
+    if(draw_type == DRAW_SIMULATION) {
+        draw_grid_function = &draw_alg_mesh;
+        draw_purkinje_function = &draw_alg_purkinje_network;
+    }
+    else {
+        draw_grid_function = &draw_vtk_unstructured_grid;
+        draw_purkinje_function = &draw_vtk_purkinje_network;
+    }
+
     while(!WindowShouldClose()) {
 
         if(gui_state->draw_grid_only) {
@@ -1511,21 +1529,18 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             reset_ui(gui_state);
         }
 
-        handle_input(gui_config, mesh_info, gui_state);
+        handle_input(gui_config, gui_state);
+
         if(gui_config->grid_info.loaded) {
 
             omp_set_lock(&gui_config->draw_lock);
 
             if(draw_type == DRAW_FILE) {
                 if(gui_config->grid_info.file_name) {
-                    size_t max = strlen(gui_config->grid_info.file_name) + strlen("Visualizing file - ") + 2;
-                    window_title = (char *)malloc(max);
-                    snprintf(window_title, max + 1, "Visualizing file - %s", gui_config->grid_info.file_name);
+                    sprintf(window_title, "Visualizing file - %s", gui_config->grid_info.file_name);
                     SetWindowTitle(window_title);
-                    free(window_title);
                 }
             }
-
             ClearBackground(GRAY);
 
             if(!mesh_info->center_calculated) {
@@ -1565,13 +1580,32 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             if(!gui_state->slicing_mesh) {
-                if(draw_type == DRAW_SIMULATION) {
-                    draw_alg_mesh(gui_config, gui_state, grid_mask, shader, cube);
-                    draw_alg_purkinje_network(gui_config, gui_state, grid_mask);
-                } else if(draw_type == DRAW_FILE) {
-                    draw_vtk_unstructured_grid(gui_config, gui_state, grid_mask, shader, cube);
-                    draw_vtk_purkinje_network(gui_config, gui_state, grid_mask);
+
+                if(!matrix_colors_allocated) {
+                    uint32_t n_active;
+                    if(draw_type == DRAW_SIMULATION) {
+                        n_active = gui_config->grid_info.alg_grid->num_active_cells;
+                    } else {
+                        n_active = gui_config->grid_info.vtk_grid->num_cells;
+                    }
+
+                    translations = RL_MALLOC(n_active * sizeof(Matrix)); // Locations of instances
+                    colors = RL_MALLOC(n_active * sizeof(Color));
+                    matrix_colors_allocated = true;
                 }
+
+                draw_grid_function(gui_config, gui_state, grid_mask, shader, cube, translations, colors);
+
+                if(draw_purkinje_function != NULL) {
+                    draw_purkinje_function(gui_config, gui_state, grid_mask);
+                }
+
+                if(gui_config->adaptive) {
+                    free(translations);
+                    free(colors);
+                    matrix_colors_allocated = false;
+                }
+
             }
 
             gui_state->double_clicked = false;
@@ -1598,7 +1632,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                         gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
             }
-
 
             // We finished drawing everything that depends on the mesh being loaded
             omp_unset_lock(&gui_config->draw_lock);
@@ -1665,7 +1698,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 gui_state->search_window.show = update;
                 gui_state->handle_keyboard_input = !update;
             }
-
         } else {
 
             ClearBackground(GRAY);
@@ -1774,5 +1806,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     omp_unset_lock(&gui_config->draw_lock);
     omp_unset_lock(&gui_config->sleep_lock);
 
+    free(translations);
+    free(colors);
+        
     CloseWindow();
 }
