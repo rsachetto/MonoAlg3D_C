@@ -13,6 +13,6 @@ typedef struct float4 {
     float v[4];
 } float4;
 
-void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color* colors, Matrix *transforms, int grid_mask, int instances);
+void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color* colors, Matrix *transforms, int grid_mask, int instances, bool adapt);
 
 #endif // MONOALG3D_C_RAYLIB_EXT_H

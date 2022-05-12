@@ -212,15 +212,18 @@ static void add_or_remove_selected_to_ap_graph(struct gui_shared_info *gui_confi
 static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t) {
 
     Vector3 p_mesh = voxel->position_mesh;
+    action_potential_array aps = NULL;
 
-    action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
-
-    struct action_potential ap1;
-    ap1.t = t;
-    ap1.v = voxel->v;
-    size_t aps_len = arrlen(aps);
+    if(hmlen(gui_state->ap_graph_config->selected_aps) > 0) {
+        aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
+    }
 
     if(aps != NULL) {
+        struct action_potential ap1;
+        ap1.t = t;
+        ap1.v = voxel->v;
+        size_t aps_len = arrlen(aps);
+
         if(aps_len == 0 || ap1.t > aps[aps_len - 1].t) {
             arrput(aps, ap1);
             hmput(gui_state->ap_graph_config->selected_aps, p_mesh, aps);
@@ -244,20 +247,23 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
     }
 }
 
-void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
+void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube, Matrix *translations, Color *colors) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
 
-    if(!grid_to_draw)
+    if(!grid_to_draw) {
         return;
+    }
 
     int64_t *cells = grid_to_draw->cells;
-    if(!cells)
+    if(!cells) {
         return;
+    }
 
     point3d_array points = grid_to_draw->points;
-    if(!points)
+    if(!points) {
         return;
+    }
 
     uint32_t n_active = grid_to_draw->num_cells;
 
@@ -268,9 +274,6 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
 
     gui_state->ray_hit_distance = FLT_MAX;
     gui_state->ray_mouse_over_hit_distance = FLT_MAX;
-
-    Matrix *translations = RL_MALLOC(n_active * sizeof(Matrix)); // Locations of instances
-    Color *colors = RL_MALLOC(n_active * sizeof(Color));
 
     int count = 0;
 
@@ -366,8 +369,9 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
 
         colors[count] = c;
         voxel.draw_index = count;
-
-        collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
+        if(gui_state->double_clicked || gui_config->adaptive) {
+            collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
+        }
         trace_ap(gui_state, &voxel, time);
 
         count++;
@@ -376,10 +380,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
     }
 
     update_selected(collision, gui_state, gui_config, colors);
-
-    DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
-    free(translations);
-    free(colors);
+    DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count, gui_config->adaptive);
 }
 
 void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask) {
@@ -435,7 +436,7 @@ void draw_vtk_purkinje_network(struct gui_shared_info *gui_config, struct gui_st
     }
 }
 
-void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube) {
+void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, Shader shader, Mesh cube, Matrix *translations, Color *colors) {
 
     struct grid *grid_to_draw = gui_config->grid_info.alg_grid;
 
@@ -462,9 +463,6 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
 
         gui_state->ray_hit_distance = FLT_MAX;
         gui_state->ray_mouse_over_hit_distance = FLT_MAX;
-
-        Matrix *translations = (Matrix *)malloc(n_active * sizeof(Matrix)); // Locations of instances
-        Color *colors = (Color *)malloc(n_active * sizeof(Color));
 
         int count = 0;
 
@@ -515,17 +513,18 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
             colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 
             voxel.draw_index = count;
-            collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
+
+            if(gui_state->double_clicked || gui_config->adaptive) {
+                collision |= check_volume_selection(&voxel, gui_state, min_v, max_v, time);
+            }
+
             trace_ap(gui_state, &voxel, time);
 
             count++;
         }
 
         update_selected(collision, gui_state, gui_config, colors);
-        DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count);
-
-        free(translations);
-        free(colors);
+        DrawMeshInstancedWithColors(cube, shader, colors, translations, grid_mask, count, gui_config->adaptive);
     }
 }
 

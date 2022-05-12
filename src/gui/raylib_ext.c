@@ -3,14 +3,16 @@
 #include "../alg/cell/cell.h"
 
 // Draw multiple mesh instances with different transforms and colors
-void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix *transforms, int grid_mask, int instances) {
+void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix *transforms, int grid_mask, int instances, bool adapt) {
 #if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
     // Instancing required variables
-    float16 *instanceTransforms = NULL;
+    static float16 *instanceTransforms = NULL;
     unsigned int instancesVboId;
 
-    float4 *colorsTransforms = NULL;
+    static float4 *colorsTransforms = NULL;
     unsigned int colorsVboId;
+
+    static bool allocated = false;
 
     // Bind shader program
     rlEnableShader(shader.id);
@@ -32,8 +34,11 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
         rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
 
     // Create instances buffer
-    instanceTransforms = (float16 *)RL_MALLOC(instances * sizeof(float16));
-    colorsTransforms = (float4 *)RL_MALLOC(instances * sizeof(float4));
+    if(!allocated) {
+        instanceTransforms = (float16 *)RL_MALLOC(instances * sizeof(float16));
+        colorsTransforms = (float4 *)RL_MALLOC(instances * sizeof(float4));
+        allocated = true;
+    }
 
     // Fill buffer with instances transformations as float16 arrays
     for(int i = 0; i < instances; i++)
@@ -101,11 +106,11 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
     rlSetUniformMatrix(shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
 
     // Draw mesh instanced
-    if(mesh.indices != NULL) {
+    //if(mesh.indices != NULL) {
         rlDrawVertexArrayElementsInstanced(0, mesh.triangleCount * 3, 0, instances);
-    } else {
-        rlDrawVertexArrayInstanced(0, mesh.vertexCount, instances);
-    }
+    //} else {
+       // rlDrawVertexArrayInstanced(0, mesh.vertexCount, instances);
+    //}
 
     // Disable all possible vertex array objects (or VBOs)
     rlDisableVertexArray();
@@ -118,7 +123,10 @@ void DrawMeshInstancedWithColors(Mesh mesh, Shader shader, Color *colors, Matrix
     // Remove instance transforms buffer
     rlUnloadVertexBuffer(instancesVboId);
     rlUnloadVertexBuffer(colorsVboId);
-    RL_FREE(instanceTransforms);
-    RL_FREE(colorsTransforms);
+    if(adapt) {
+        RL_FREE(instanceTransforms);
+        RL_FREE(colorsTransforms);
+        allocated = false;
+    }
 #endif
 }
