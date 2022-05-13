@@ -1742,8 +1742,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                            (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
             } else {
-                DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box",
-                           (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
+                DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box.\nPress Enter to confirm or Backspace to reset and exit.",
+                           (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 35.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
             }
         }
