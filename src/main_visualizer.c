@@ -404,6 +404,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
 static void init_gui_config_for_visualization(struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
+    //TODO: set this from command line
+    gui_config->adaptive = false;
+
     gui_config->grid_info.vtk_grid = NULL;
 
     gui_config->simulating = true;

@@ -230,11 +230,11 @@ static void reset(struct gui_shared_info *gui_config, struct gui_state *gui_stat
         gui_state->slicing_mesh = false;
         gui_state->slicing_mode = false;
 
-        gui_state->plane_roll = 0.0;
-        gui_state->plane_pitch = 0.0;
-        gui_state->plane_tx = 0.0;
-        gui_state->plane_ty = 0.0;
-        gui_state->plane_tz = 0.0;
+        gui_state->plane_roll  = 0.0f;
+        gui_state->plane_pitch = 0.0f;
+        gui_state->plane_tx    = 0.0f;
+        gui_state->plane_ty    = 0.0f;
+        gui_state->plane_tz    = 0.0f;
     }
 }
 
@@ -645,7 +645,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
     DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
 
-    button_pos.x += button_pos.width + 4.0;
+    button_pos.x += button_pos.width + 4.0f;
 
     if(GuiButton(button_pos, "#129#")) {
         gui_config->current_file_index = 0;
@@ -655,7 +655,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
     //DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     // return button
     {
-        button_pos.x += button_pos.width + 4.0;
+        button_pos.x += button_pos.width + 4.0f;
 
         if(GuiButton(button_pos, "#114#")) {
             if(gui_config->paused) {
@@ -1456,28 +1456,9 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     int grid_mask = 0;
 
-    Shader shader;
-    Mesh cube;
-
-    shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
-    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
-    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
-    shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(shader, "color");
-    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-    cube = GenMeshCube(1.0f, 1.0f, 1.0f);
-
     Model plane;
     Color plane_color = WHITE;
     plane_color.a = 100;
-
-    // Lights
-    const float light_offset = 0.6;
-
-    Vector3 light_pos = gui_state->camera.position;
-    light_pos.z = light_pos.z + light_offset;
-
-    gui_state->light = CreateLight(LIGHT_DIRECTIONAL, light_pos, gui_state->camera.target, WHITE, shader);
-    //
 
     Matrix rotation_matrix;
 
@@ -1485,12 +1466,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         gui_config->progress = 100;
     }
 
-    bool matrix_colors_allocated = false;
-    Matrix *translations = NULL;
-    Color *colors = NULL;
-
-    void (*draw_grid_function)(struct gui_shared_info *, struct gui_state *, int , Shader , Mesh , Matrix *, Color *);
-    void (*draw_purkinje_function)(struct gui_shared_info *, struct gui_state *, int);
+    void (*draw_grid_function)(struct gui_shared_info *, struct gui_state *, int , struct draw_context *);
+    void (*draw_purkinje_function)(struct gui_shared_info *, struct gui_state *);
     
     draw_purkinje_function = NULL;
     
@@ -1502,6 +1479,22 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         draw_grid_function = &draw_vtk_unstructured_grid;
         draw_purkinje_function = &draw_vtk_purkinje_network;
     }
+
+    struct draw_context draw_context;
+    draw_context.allocated = false;
+
+    draw_context.shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
+    draw_context.shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(draw_context.shader, "mvp");
+    draw_context.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(draw_context.shader, "instanceTransform");
+    draw_context.shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(draw_context.shader, "color");
+    draw_context.shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(draw_context.shader, "viewPos");
+    draw_context.mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
+
+    // Lights
+    const float light_offset = 0.6f;
+    Vector3 light_pos = gui_state->camera.position;
+    light_pos.z = light_pos.z + light_offset;
+    gui_state->light = CreateLight(LIGHT_DIRECTIONAL, light_pos, gui_state->camera.target, WHITE, draw_context.shader);
 
     while(!WindowShouldClose()) {
 
@@ -1519,7 +1512,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         light_pos.z = light_pos.z + light_offset;
         gui_state->light.position = light_pos;
         gui_state->light.target = gui_state->camera.target;
-        UpdateLightValues(shader, gui_state->light);
+        UpdateLightValues(draw_context.shader, gui_state->light);
 
         BeginDrawing();
 
@@ -1560,13 +1553,13 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 pos.x = (mesh_info->max_size.x - mesh_info->min_size.x) / scale;
                 pos.y = (mesh_info->max_size.z - mesh_info->min_size.z) / scale;
 
-                float mult = 1.2;
-                plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1 / scale, pos.y * mult));
+                float mult = 1.2f;
+                plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1f / scale, pos.y * mult));
             }
 
             if(gui_state->slicing_mode) {
                 plane.transform = MatrixTranslate(gui_state->plane_tx, gui_state->plane_ty, gui_state->plane_tz);
-                rotation_matrix = MatrixRotateXYZ((Vector3){DEG2RAD * gui_state->plane_pitch, 0.0, DEG2RAD * gui_state->plane_roll});
+                rotation_matrix = MatrixRotateXYZ((Vector3){DEG2RAD * gui_state->plane_pitch, 0.0f, DEG2RAD * gui_state->plane_roll});
                 plane.transform = MatrixMultiply(plane.transform, rotation_matrix);
 
                 gui_state->plane_normal = Vector3Normalize(Vector3Transform((Vector3){0, 1, 0}, rotation_matrix));
@@ -1581,7 +1574,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(!gui_state->slicing_mesh) {
 
-                if(!matrix_colors_allocated) {
+                if(!draw_context.allocated) {
                     uint32_t n_active;
                     if(draw_type == DRAW_SIMULATION) {
                         n_active = gui_config->grid_info.alg_grid->num_active_cells;
@@ -1589,21 +1582,27 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                         n_active = gui_config->grid_info.vtk_grid->num_cells;
                     }
 
-                    translations = RL_MALLOC(n_active * sizeof(Matrix)); // Locations of instances
-                    colors = RL_MALLOC(n_active * sizeof(Color));
-                    matrix_colors_allocated = true;
+                    draw_context.colors       = malloc(n_active * sizeof(Color));
+                    draw_context.translations = malloc(n_active * sizeof(Matrix)); // Locations of instances
+
+                    draw_context.instance_transforms = (float16 *)malloc(n_active * sizeof(float16));
+                    draw_context.colors_transforms   = (float4 *)malloc(n_active * sizeof(float4));
+
+                    draw_context.allocated = true;
                 }
 
-                draw_grid_function(gui_config, gui_state, grid_mask, shader, cube, translations, colors);
+                draw_grid_function(gui_config, gui_state, grid_mask, &draw_context);
 
                 if(draw_purkinje_function != NULL) {
-                    draw_purkinje_function(gui_config, gui_state, grid_mask);
+                    draw_purkinje_function(gui_config, gui_state);
                 }
 
                 if(gui_config->adaptive) {
-                    free(translations);
-                    free(colors);
-                    matrix_colors_allocated = false;
+                    free(draw_context.translations);
+                    free(draw_context.colors);
+                    free(draw_context.colors_transforms);
+                    free(draw_context.instance_transforms);
+                    draw_context.allocated = false;
                 }
 
             }
@@ -1806,8 +1805,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     omp_unset_lock(&gui_config->draw_lock);
     omp_unset_lock(&gui_config->sleep_lock);
 
-    free(translations);
-    free(colors);
-        
+    free(draw_context.translations);
+    free(draw_context.colors);
+    free(draw_context.instance_transforms);
+    free(draw_context.colors_transforms);
+
     CloseWindow();
 }

@@ -180,6 +180,8 @@ struct visualization_options {
     uint32_t value_index;
     float max_v, min_v, dt;
     float ui_scale;
+    //TODO: set this option
+    bool adaptive;
 };
 
 struct conversion_options {
