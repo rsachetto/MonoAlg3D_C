@@ -216,22 +216,23 @@ static void add_or_remove_selected_to_ap_graph(struct gui_shared_info *gui_confi
 // we only trace the arrays that were previously added to the ap graph
 static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t) {
 
-    Vector3 p_mesh = voxel->position_mesh;
-    action_potential_array aps = NULL;
+    if(hmlen(gui_state->ap_graph_config->selected_aps) == 0) {
+        return;
+    } else {
+        Vector3 p_mesh = voxel->position_mesh;
+        action_potential_array aps = NULL;
 
-    if(hmlen(gui_state->ap_graph_config->selected_aps) > 0) {
         aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
-    }
+        if(aps != NULL) {
+            struct action_potential ap1;
+            ap1.t = t;
+            ap1.v = voxel->v;
+            size_t aps_len = arrlen(aps);
 
-    if(aps != NULL) {
-        struct action_potential ap1;
-        ap1.t = t;
-        ap1.v = voxel->v;
-        size_t aps_len = arrlen(aps);
-
-        if(aps_len == 0 || ap1.t > aps[aps_len - 1].t) {
-            arrput(aps, ap1);
-            hmput(gui_state->ap_graph_config->selected_aps, p_mesh, aps);
+            if(aps_len == 0 || ap1.t > aps[aps_len - 1].t) {
+                arrput(aps, ap1);
+                hmput(gui_state->ap_graph_config->selected_aps, p_mesh, aps);
+            }
         }
     }
 }
@@ -377,6 +378,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         if(gui_state->double_clicked || gui_config->adaptive) {
             collision |= check_volume_selection(&voxel, gui_state);
         }
+
         trace_ap(gui_state, &voxel, time);
 
         count++;
