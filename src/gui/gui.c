@@ -125,13 +125,13 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->old_cell_visibility = NULL;
     gui_state->exclude_from_mesh = NULL;
 
-    gui_state->plane_roll = 0.0;
-    gui_state->plane_pitch = 0.0;
-    gui_state->plane_tx = 0.0;
-    gui_state->plane_ty = 0.0;
-    gui_state->plane_tz = 0.0;
+    gui_state->plane_roll  = 0.0f;
+    gui_state->plane_pitch = 0.0f;
+    gui_state->plane_tx    = 0.0f;
+    gui_state->plane_ty    = 0.0f;
+    gui_state->plane_tz    = 0.0f;
 
-    gui_state->mesh_scale_factor = 1.0;
+    gui_state->mesh_scale_factor = 1.0f;
     gui_state->mesh_offset = (Vector3){0, 0, 0};
 
 #define NUM_BUTTONS 7
@@ -177,7 +177,7 @@ static inline void reset_ui(struct gui_state *gui_state) {
     gui_state->scale.window.bounds.height = 0;
     gui_state->scale.calc_bounds = true;
 
-    gui_state->controls_window.bounds.x = (float)gui_state->current_window_width / 2.0 - gui_state->controls_window.bounds.width;
+    gui_state->controls_window.bounds.x = (float)gui_state->current_window_width / 2.0f - gui_state->controls_window.bounds.width;
     gui_state->controls_window.bounds.y = 10;
 }
 
@@ -592,19 +592,14 @@ static void draw_scale(float min_v, float max_v, struct gui_state *gui_state, bo
 }
 
 #define CHECK_FILE_INDEX(gui_config)                                                                                                                           \
-    if(gui_config->current_file_index < 0)                                                                                                                     \
-        gui_config->current_file_index++;                                                                                                                      \
-    else if(gui_config->current_file_index > gui_config->final_file_index)                                                                                     \
-        gui_config->current_file_index = gui_config->final_file_index;
+    if((gui_config)->current_file_index < 0)                                                                                                                   \
+        (gui_config)->current_file_index++;                                                                                                                    \
+    else if((gui_config)->current_file_index > (gui_config)->final_file_index)                                                                                 \
+        (gui_config)->current_file_index = (gui_config)->final_file_index;
 
 #define NOT_PAUSED !gui_config->paused
 #define NOT_IN_DRAW gui_config->draw_type != DRAW_FILE
 #define IN_DRAW gui_config->draw_type == DRAW_FILE
-
-#define DISABLE_IF_NOT_IN_DRAW                                                                                                                                 \
-    if(NOT_IN_DRAW) {                                                                                                                                          \
-        GuiDisable();                                                                                                                                          \
-    }
 
 #define DISABLE_IF_NOT_PAUSED                                                                                                                                  \
     if(NOT_PAUSED) {                                                                                                                                           \
@@ -630,19 +625,19 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     Rectangle button_pos = (Rectangle){0, 0, 32, 32};
 
-    button_pos.x = gui_state->controls_window.bounds.x + 2.0;
-    button_pos.y = gui_state->controls_window.bounds.y + WINDOW_STATUSBAR_HEIGHT + 3.0;
+    button_pos.x = gui_state->controls_window.bounds.x + 2.0f;
+    button_pos.y = gui_state->controls_window.bounds.y + WINDOW_STATUSBAR_HEIGHT + 3.0f;
 
     bool update_main = false;
 
-    DISABLE_IF_NOT_PAUSED;
+    DISABLE_IF_NOT_PAUSED
 
     if(GuiButton(button_pos, "#76#")) {
         reset(gui_config, gui_state, false);
     }
     ENABLE;
 
-    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
+    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW
     DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
 
     button_pos.x += button_pos.width + 4.0f;
@@ -671,7 +666,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     // Play or pause button
     {
-        button_pos.x += button_pos.width + 4.0;
+        button_pos.x += button_pos.width + 4.0f;
 
         if(gui_config->paused) {
             gui_config->paused = !GuiButton(button_pos, "#131#");
@@ -680,11 +675,10 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         }
     }
 
-    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW;
-    //DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
+    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW
     // advance button
     {
-        button_pos.x += button_pos.width + 4.0;
+        button_pos.x += button_pos.width + 4.0f;
 
         if(GuiButton(button_pos, "#115#")) {
             if(gui_config->paused) {
@@ -694,35 +688,35 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
         }
     }
 
-    button_pos.x += button_pos.width + 4.0;
+    button_pos.x += button_pos.width + 4.0f;
     if(GuiButton(button_pos, "#134#")) {
         update_main = true;
-        gui_config->current_file_index = gui_config->final_file_index;
+        gui_config->current_file_index = (float) gui_config->final_file_index;
     }
 
     ENABLE;
 
-    DISABLE_IF_NOT_PAUSED;
+    DISABLE_IF_NOT_PAUSED
     DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
-    button_pos.x += button_pos.width + 4.0;
+    button_pos.x += button_pos.width + 4.0f;
     //Calc bounds button
     if(GuiButton(button_pos, "#94#")) {
         //
     }
 
 
-    button_pos.x += button_pos.width + 4.0;
+    button_pos.x += button_pos.width + 4.0f;
     button_pos.width = 96;
 
-    int old_index = gui_config->current_file_index;
+    int old_index = (int) gui_config->current_file_index;
 
     if(NOT_IN_DRAW) {
         GuiSpinner(button_pos, NULL, &gui_config->time, 0, gui_config->final_time, false, spinner_edit);
-    } else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, gui_config->final_file_index, true, spinner_edit)) {
+    } else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, (float) gui_config->final_file_index, true, spinner_edit)) {
         spinner_edit = !spinner_edit;
     }
 
-    if(old_index != gui_config->current_file_index) {
+    if(old_index != (int) gui_config->current_file_index) {
         update_main = true;
     }
     gui_state->handle_keyboard_input = !spinner_edit;
@@ -732,7 +726,7 @@ static void draw_control_window(struct gui_state *gui_state, struct gui_shared_i
 
     if(update_main && gui_config->draw_type == DRAW_FILE) {
 
-        CHECK_FILE_INDEX(gui_config);
+        CHECK_FILE_INDEX(gui_config)
 
         if(gui_config->current_file_index == 0) {
             size_t n = hmlen(gui_state->ap_graph_config->selected_aps);
@@ -1026,27 +1020,27 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             if(IsKeyDown(KEY_LEFT_ALT)) {
                 // Plane roll (z-axis) controls
                 if(IsKeyDown(KEY_LEFT))
-                    gui_state->plane_roll += 1.0;
+                    gui_state->plane_roll += 1.0f;
                 else if(IsKeyDown(KEY_RIGHT))
-                    gui_state->plane_roll -= 1.0;
+                    gui_state->plane_roll -= 1.0f;
 
                 if(IsKeyDown(KEY_DOWN))
-                    gui_state->plane_pitch += 1.0;
+                    gui_state->plane_pitch += 1.0f;
                 else if(IsKeyDown(KEY_UP))
-                    gui_state->plane_pitch -= 1.0;
+                    gui_state->plane_pitch -= 1.0f;
 
             } else {
 
                 // Plane roll (z-axis) controls
                 if(IsKeyDown(KEY_LEFT))
-                    gui_state->plane_tx -= 0.1;
+                    gui_state->plane_tx -= 0.1f;
                 else if(IsKeyDown(KEY_RIGHT))
-                    gui_state->plane_tx += 0.1;
+                    gui_state->plane_tx += 0.1f;
 
                 if(IsKeyDown(KEY_DOWN))
-                    gui_state->plane_ty -= 0.1;
+                    gui_state->plane_ty -= 0.1f;
                 else if(IsKeyDown(KEY_UP))
-                    gui_state->plane_ty += 0.1;
+                    gui_state->plane_ty += 0.1f;
             }
         } else {
             if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
@@ -1055,7 +1049,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                     return;
 
                 gui_config->current_file_index++;
-                CHECK_FILE_INDEX(gui_config);
+                CHECK_FILE_INDEX(gui_config)
                 omp_unset_lock(&gui_config->sleep_lock);
                 return;
             }
@@ -1066,7 +1060,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                     if(gui_config->final_file_index == 0)
                         return;
                     gui_config->current_file_index--;
-                    CHECK_FILE_INDEX(gui_config);
+                    CHECK_FILE_INDEX(gui_config)
                     omp_unset_lock(&gui_config->sleep_lock);
                     return;
                 }
@@ -1715,7 +1709,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             int rec_width = (int)(error_message_width.x) + 50;
             int rec_height = (int)(error_message_width.y) + 2;
 
-            int rec_bar_w = (int)Remap(gui_config->progress, 0, gui_config->file_size, 0, rec_width);
+            int rec_bar_w = (int)Remap((float) gui_config->progress, 0, (float) gui_config->file_size, 0, (float) rec_width);
 
             DrawRectangle(posx, posy, rec_bar_w, rec_height, c);
             DrawRectangleLines(posx, posy, rec_width, rec_height, BLACK);
