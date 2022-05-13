@@ -1474,8 +1474,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         draw_purkinje_function = &draw_vtk_purkinje_network;
     }
 
-    struct draw_context draw_context;
-    draw_context.allocated = false;
+    struct draw_context draw_context = {0};
 
     draw_context.shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
     draw_context.shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(draw_context.shader, "mvp");
