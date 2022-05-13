@@ -30,9 +30,8 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
         rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
 
     // Fill buffer with instances transformations as float16 arrays
-    for(int i = 0; i < instances; i++)
-        draw_context->instance_transforms[i] = MatrixToFloatV(draw_context->translations[i]);
     for(int i = 0; i < instances; i++) {
+        draw_context->instance_transforms[i] = MatrixToFloatV(draw_context->translations[i]);
         draw_context->colors_transforms[i].v[0] = (float)draw_context->colors[i].r / 255.0f;
         draw_context->colors_transforms[i].v[1] = (float)draw_context->colors[i].g / 255.0f;
         draw_context->colors_transforms[i].v[2] = (float)draw_context->colors[i].b / 255.0f;
