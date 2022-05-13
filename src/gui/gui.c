@@ -1191,7 +1191,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
             char *buf = get_current_directory();
 
-            char const *filter[4] = {"*.pvd", "*.acm", "*.vtk", "*.vtu"};
+            char const *filter[] = {"*.geo", "*.Esca", "*.pvd", "*.acm", "*.vtk", "*.vtu"};
 
             char const *tmp = tinyfd_openFileDialog("Select a simulation file", buf, 4, filter, "simulation result (pvd, vtk, vtu or acm)", 0);
 

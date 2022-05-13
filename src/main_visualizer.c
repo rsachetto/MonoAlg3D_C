@@ -300,8 +300,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     while(true) {
 
-        omp_set_lock(&gui_config->draw_lock);
-
         if(single_file) {
             gui_config->time = gui_config->current_file_index;
         } else if(using_pvd || ensight) {
@@ -321,6 +319,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
         } else {
             sprintf(full_path, "%s/%s", simulation_files->base_dir, simulation_files->files_list[(int)gui_config->current_file_index]);
         }
+
+        omp_set_lock(&gui_config->draw_lock);
 
         if(ensight) {
             if(!ensigth_grid_loaded) {
@@ -469,7 +469,7 @@ int main(int argc, char **argv) {
 
                     // HACK: this should not be needed, we have to find a way to avoid this hack
                     // if we take this out, the open mesh option does not work properly
-                    usleep(100);
+                    usleep(10);
 
                     if(gui_config->input) {
                         options->input = gui_config->input;
