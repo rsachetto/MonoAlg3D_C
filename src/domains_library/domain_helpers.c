@@ -813,6 +813,52 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
     }
 }
 
+void set_cube_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu sphere_center[3], real_cpu sphere_radius, unsigned fib_seed) {
+
+    log_info("Making %.2lf %% of cells inactive\n", phi * 100.0f);
+
+    if(fib_seed == 0)
+        fib_seed = (unsigned)time(NULL) + getpid();
+
+    srand(fib_seed);
+
+    log_info("Using %u as seed\n", fib_seed);
+
+    real_cpu sphere_radius_2 = pow(sphere_radius, 2.0);
+
+    struct cell_node *grid_cell;
+
+    grid_cell = the_grid->first_cell;
+    while(grid_cell != 0) {
+
+        real_cpu distance = pow(grid_cell->center.x - sphere_center[0], 2.0) + pow(grid_cell->center.y - sphere_center[1], 2.0) + pow(grid_cell->center.z - sphere_center[2], 2.0);
+
+        if(grid_cell->active) {
+
+            INITIALIZE_FIBROTIC_INFO(grid_cell);
+            if(distance <= sphere_radius_2) {
+                FIBROTIC(grid_cell) = true;
+            }
+        }
+        grid_cell = grid_cell->next;
+    }
+
+    grid_cell = the_grid->first_cell;
+
+    while(grid_cell != 0) {
+
+        if(grid_cell->active) {
+            if(FIBROTIC(grid_cell)) {
+                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+                if(p < phi)
+                    grid_cell->active = false;
+                grid_cell->can_change = false;
+            } 
+        }
+        grid_cell = grid_cell->next;
+    }
+}
+
 void set_plain_sphere_fibrosis_without_inactivating(struct grid *the_grid, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_radius) {
 
     real_cpu bz_radius_2 = pow(bz_radius, 2.0);

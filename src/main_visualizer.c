@@ -104,7 +104,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     const char *input = options->input;
     const char *prefix = options->files_prefix;
-    gui_config->current_file_index = options->start_file;
+    gui_config->current_file_index = (float) options->start_file;
     int v_step = options->step;
 
     bool ensight = false;
@@ -224,10 +224,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
     }
 
-    if(gui_config->current_file_index > num_files) {
+    if(gui_config->current_file_index > (float) num_files) {
         fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%u). Setting start_at to %u\n", (int)gui_config->current_file_index,
                 num_files, num_files);
-        gui_config->current_file_index = (int)(num_files - 1);
+        gui_config->current_file_index = (float)(num_files - 1);
     }
 
     float dt = 0;
@@ -236,8 +236,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
         if(single_file) {
             gui_config->dt = -1;
             gui_config->step = 1;
-            gui_config->final_file_index = num_files - 1;
-            gui_config->final_time = gui_config->final_file_index;
+            gui_config->final_file_index = (int) num_files - 1;
+            gui_config->final_time = (float) gui_config->final_file_index;
         }
         else if(ensight) {
             struct path_information case_info;
@@ -253,7 +253,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             free_path_information(&case_info);
 
             gui_config->dt = -1;
-            gui_config->final_file_index = num_files - 1;
+            gui_config->final_file_index = (int) num_files - 1;
             gui_config->final_time = simulation_files->timesteps[num_files - 1];
 
         } else {
@@ -264,8 +264,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             step1 = get_step_from_filename(simulation_files->files_list[0]);
 
             if(num_files > 1) {
-                int step2 = 0;
-                step2 = get_step_from_filename(simulation_files->files_list[1]);
+                int step2 = get_step_from_filename(simulation_files->files_list[1]);
                 step = step2 - step1;
             } else {
                 step = step1;
@@ -287,7 +286,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             }
         }
     } else {
-        gui_config->final_file_index = num_files - 1;
+        gui_config->final_file_index = (int) num_files - 1;
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
         gui_config->dt = -1;
     }
@@ -300,8 +299,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
     gui_config->simulation_files = simulation_files;
 
     while(true) {
-
-        omp_set_lock(&gui_config->draw_lock);
 
         if(single_file) {
             gui_config->time = gui_config->current_file_index;
@@ -322,6 +319,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
         } else {
             sprintf(full_path, "%s/%s", simulation_files->base_dir, simulation_files->files_list[(int)gui_config->current_file_index]);
         }
+
+        omp_set_lock(&gui_config->draw_lock);
 
         if(ensight) {
             if(!ensigth_grid_loaded) {
@@ -404,6 +403,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
 static void init_gui_config_for_visualization(struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
+    //TODO: set this from command line
+    gui_config->adaptive = false;
+
     gui_config->grid_info.vtk_grid = NULL;
 
     gui_config->simulating = true;
@@ -467,7 +469,7 @@ int main(int argc, char **argv) {
 
                     // HACK: this should not be needed, we have to find a way to avoid this hack
                     // if we take this out, the open mesh option does not work properly
-                    usleep(100);
+                    usleep(10);
 
                     if(gui_config->input) {
                         options->input = gui_config->input;
