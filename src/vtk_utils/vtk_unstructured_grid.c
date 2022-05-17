@@ -1933,7 +1933,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
                 *bytes_read_out += bytes_read;
             }
 
-            get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->values, header_size, num_blocks,
+            get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->values, num_blocks,
                                                     block_size_uncompressed, last_block_size, block_sizes_compressed);
         } else {
             get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->values, header_size);
@@ -1965,7 +1965,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
                 struct f32points *f32_points = NULL;
                 arrsetcap(f32_points, (*vtk_grid)->num_points);
 
-                get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, f32_points, header_size, num_blocks, block_size_uncompressed,
+                get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, f32_points, num_blocks, block_size_uncompressed,
                                                         last_block_size, block_sizes_compressed);
 
                 for(int i = 0; i < (*vtk_grid)->num_points; i++) {
@@ -1975,7 +1975,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
                 }
 
             } else {
-                get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->points, header_size, num_blocks,
+                get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->points, num_blocks,
                                                         block_size_uncompressed, last_block_size, block_sizes_compressed);
             }
         } else {
@@ -2017,8 +2017,8 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
                 *bytes_read_out += bytes_read;
             }
 
-            get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->cells, header_size, num_blocks,
-                                                    block_size_uncompressed, last_block_size, block_sizes_compressed);
+            get_data_block_from_compressed_vtu_file(raw_data + raw_data_after_blocks_offset, (*vtk_grid)->cells, num_blocks, block_size_uncompressed,
+                                                    last_block_size, block_sizes_compressed);
         } else
             get_data_block_from_uncompressed_binary_vtu_file(raw_data, (*vtk_grid)->cells, header_size);
 
