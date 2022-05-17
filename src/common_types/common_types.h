@@ -143,17 +143,17 @@ struct save_with_activation_times_persistent_data {
 
 #define STRING_HASH_PRINT_KEY_VALUE_LOG(tag, d)                                                                                                                \
     do {                                                                                                                                                       \
-        for(int64_t i__ = 0; i__ < shlen(d); i__++) {                                                                                                          \
-            struct string_hash_entry e = (d)[i__];                                                                                                             \
-            log_info("%s %s = %s\n", tag, e.key, e.value);                                                                                                     \
+        for(int64_t __i = 0; __i < shlen(d); __i++) {                                                                                                          \
+            struct string_hash_entry __e = (d)[__i];                                                                                                             \
+            log_info("%s %s = %s\n", tag, __e.key, __e.value);                                                                                                     \
         }                                                                                                                                                      \
     } while(0)
 
 #define STIM_CONFIG_HASH_FOR_EACH_KEY_APPLY_FN_IN_VALUE(d, fn)                                                                                                 \
     do {                                                                                                                                                       \
-        for(int64_t i__ = 0; i__ < hmlen(d); i__++) {                                                                                                          \
-            struct string_voidp_hash_entry e = (d)[i__];                                                                                                       \
-            fn(e.value);                                                                                                                                       \
+        for(int64_t __i = 0; __i < hmlen(d); __i++) {                                                                                                          \
+            struct string_voidp_hash_entry __e = (d)[__i];                                                                                                     \
+            fn(__e.value);                                                                                                                                     \
         }                                                                                                                                                      \
     } while(0)
 
@@ -175,9 +175,9 @@ struct save_with_activation_times_persistent_data {
 
 #define MODIFY_DOMAIN_CONFIG_HASH_FOR_INIT_FUNCTIONS(d)                                                                                                        \
     do {                                                                                                                                                       \
-        for(int64_t i__ = 0; i__ < hmlen(d); i__++) {                                                                                                          \
-            struct string_voidp_hash_entry e = (d)[i__];                                                                                                       \
-            init_config_functions(e.value, "./shared_libs/libdefault_modify_domain.so", e.key);                                                                \
+        for(int64_t __i = 0; __i < hmlen(d); __i++) {                                                                                                          \
+            struct string_voidp_hash_entry e__ = (d)[__i];                                                                                                     \
+            init_config_functions(e__.value, "./shared_libs/libdefault_modify_domain.so", e__.key);                                                            \
         }                                                                                                                                                      \
     } while(0)
 

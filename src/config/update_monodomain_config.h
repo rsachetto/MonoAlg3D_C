@@ -22,6 +22,6 @@ struct monodomain_solver;
 typedef UPDATE_MONODOMAIN(update_monodomain_fn);
 
 
-#define print_update_monodomain_config_values(s) LOG_COMMON_CONFIG("[update_monodomain]", s);
+#define print_update_monodomain_config_values(s) LOG_COMMON_CONFIG("[update_monodomain]", s)
 
 #endif // MONOALG3D_UPDATE_MONODOMAIN_CONFIG_H

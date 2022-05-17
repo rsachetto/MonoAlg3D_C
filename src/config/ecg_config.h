@@ -22,15 +22,15 @@ typedef END_CALC_ECG(end_calc_ecg_fn);
 
 #define CALL_INIT_CALC_ECG(config, ode_solver, grid)                                                                                                           \
     do {                                                                                                                                                       \
-        if(config && config->init_function) {                                                                                                                  \
-            ((init_calc_ecg_fn *)config->init_function)(config, ode_solver, grid);                                                                             \
+        if((config) && (config)->init_function) {                                                                                                              \
+            ((init_calc_ecg_fn *)(config)->init_function)((config), (ode_solver), (grid));                                                                           \
         }                                                                                                                                                      \
     } while(0)
 
 #define CALL_END_CALC_ECG(config)                                                                                                                              \
     do {                                                                                                                                                       \
-        if(config && config->end_function) {                                                                                                                   \
-            ((end_calc_ecg_fn *)config->end_function)(config);                                                                                                 \
+        if((config) && (config)->end_function) {                                                                                                               \
+            ((end_calc_ecg_fn *)(config)->end_function)((config));                                                                                               \
         }                                                                                                                                                      \
     } while(0)
 
