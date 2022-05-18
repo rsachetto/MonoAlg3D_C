@@ -128,7 +128,7 @@ char *get_filename_without_ext(const char *filename) {
 int cp_file(const char *to, const char *from) {
     int fd_to, fd_from;
     char buf[4096];
-    int nread;
+    size_t nread;
     int saved_errno;
 
     fd_from = open(from, O_RDONLY);
@@ -141,7 +141,7 @@ int cp_file(const char *to, const char *from) {
 
     while(nread = read(fd_from, buf, sizeof buf), nread > 0) {
         char *out_ptr = buf;
-        int nwritten;
+        size_t nwritten;
 
         do {
             nwritten = write(fd_to, out_ptr, nread);
@@ -377,12 +377,13 @@ bool file_exists(const char *path) {
 bool dir_exists(const char *path) {
     struct stat info;
 
-    if(stat(path, &info) != 0)
+    if(stat(path, &info) != 0) {
         return false;
-    else if(info.st_mode & S_IFDIR)
+    } else if(info.st_mode & S_IFDIR) {
         return true;
-    else
-        return false;
+    }
+
+    return false;
 }
 
 void free_path_information(struct path_information *input_info) {
@@ -418,7 +419,6 @@ void get_path_information(const char *path, struct path_information *input_info)
         input_info->dir_name = strdup(path);
     }
 
-    return;
 }
 
 int remove_directory(const char *path) {

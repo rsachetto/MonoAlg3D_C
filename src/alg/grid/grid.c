@@ -551,12 +551,12 @@ void initialize_and_construct_grid_purkinje(struct grid *the_grid) {
     construct_grid_purkinje(the_grid);
 }
 
-static void sort_elements(struct element *cell_elements, int tam) {
+static void sort_elements(struct element *cell_elements, size_t size) {
     int i, j, min;
     struct element aux;
-    for(i = 0; i < (tam - 1); i++) {
+    for(i = 0; i < (size - 1); i++) {
         min = i;
-        for(j = (i + 1); j < tam; j++) {
+        for(j = (i + 1); j < size; j++) {
             if(cell_elements[j].column < cell_elements[min].column)
                 min = j;
         }
@@ -578,9 +578,7 @@ void grid_to_csr_for_ecg(struct grid *the_grid, float **A, int **IA, int **JA, b
 
     arrpush(*IA, 0);
 
-    int i = 0;
     int nnz = 0;
-    size_t max_el = 0;
     int nnz_local;
 
     struct cell_node *cell;
@@ -591,6 +589,7 @@ void grid_to_csr_for_ecg(struct grid *the_grid, float **A, int **IA, int **JA, b
         cell = the_grid->first_cell;
     }
 
+    int i = 0;
     for(; cell != NULL; cell = cell->next) {
 
         bool insert = cell->active;
@@ -609,10 +608,10 @@ void grid_to_csr_for_ecg(struct grid *the_grid, float **A, int **IA, int **JA, b
             nnz_local = 0;
 
             struct element *cell_elements = NULL;
-            max_el = arrlen(cell->elements);
+            size_t max_el = arrlen(cell->elements);
 
-            for(int i = 0; i < max_el; i++) {
-                arrpush(cell_elements, cell->elements[i]);
+            for(int el = 0; el < max_el; el++) {
+                arrpush(cell_elements, cell->elements[el]);
             }
 
             sort_elements(cell_elements, max_el);
@@ -849,9 +848,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
     struct graph *the_network = the_grid->purkinje->network;
 
     uint32_t number_of_terminals = the_network->number_of_terminals;
-    real_cpu pmj_scale = the_network->pmj_scale;
     real_cpu nmin_pmj = the_network->nmin_pmj;
-    real_cpu nmax_pmj = the_network->nmax_pmj;
 
     struct terminal *the_terminals = MALLOC_ARRAY_OF_TYPE(struct terminal,  number_of_terminals);
 
@@ -905,7 +902,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
         if (the_terminals[i].active) {
             
             real_cpu *tissue_dist = &dist_array[i*n_active];
-            sort_vector_by_distance(tissue_dist,tissue_ids,n_active);
+            sort_vector_by_distance(tissue_dist,tissue_ids, n_active);
             
             // Fill the 'tissue_cells_to_link' array until we achieve the 'nmin_pmjs'
             uint32_t *tissue_cells_to_link = NULL;
@@ -1020,8 +1017,9 @@ void set_active_terminals (struct terminal *the_terminals, const uint32_t number
         fscanf(file,"%lf %lf %lf",&pos[0],&pos[1],&pos[2]);
 
         struct node n;
-        for (int i = 0; i < 3; i++)
-            n.pos[i] = pos[i];
+        for (int j = 0; j < 3; j++) {
+            n.pos[j] = pos[j];
+        }
         arrput(pmjs,n);
 
     }

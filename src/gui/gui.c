@@ -17,7 +17,7 @@
 #include "../3dparty/raylib/src/rcamera.h"
 
 #define RAYGUI_IMPLEMENTATION
-#define RAYGUI_SUPPORT_RICONS
+//#define RAYGUI_SUPPORT_RICONS
 #include "../3dparty/raylib/src/extras/raygui.h"
 
 #include "../3dparty/raylib/src/external/glad.h"
