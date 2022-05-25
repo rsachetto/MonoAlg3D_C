@@ -70,6 +70,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->help_box.window.show = false;
     gui_state->slice_help_box.window.show = false;
 
+    gui_state->ctrl_pressed = false;
+
     gui_state->current_data_index = -1;
 
     gui_state->end_info_box.window.show = true;
@@ -941,7 +943,17 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
     if(gui_config->paused) {
 
-        if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown((KEY_LEFT_CONTROL))) {
+        if(IsKeyUp(KEY_RIGHT_CONTROL) || IsKeyUp(KEY_LEFT_CONTROL)) {
+            gui_state->ctrl_pressed = false;
+        }
+        
+        if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown(KEY_LEFT_CONTROL)) {
+            
+            gui_state->mouse_pos = GetMousePosition();
+            gui_state->ray_mouse_over = GetMouseRay(GetMousePosition(), gui_state->camera);
+
+            gui_state->ctrl_pressed = true;
+
             if(IsKeyPressed(KEY_S)) {
                 char const *filter[1] = {"*.vtu"};
 
@@ -1218,10 +1230,6 @@ static void handle_input(struct gui_shared_info *gui_config, struct gui_state *g
     if(gui_state->handle_keyboard_input) {
         handle_keyboard_input(gui_config, gui_state);
     }
-
-    gui_state->mouse_pos = GetMousePosition();
-    gui_state->ray_mouse_over = GetMouseRay(GetMousePosition(), gui_state->camera);
-
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
 
         gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
@@ -1392,6 +1400,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                                       " - Alt + Mouse Wheel Pressed to Rotate",
                                       " - Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
                                       " - Ctrl + F to search a cell based on it's center",
+                                      " - Hold Ctrl and move the mouse over a cell to see it's position",
                                       " - G to only draw the grid lines",
                                       " - L to enable or disable the grid lines",
                                       " - R to restart simulation (only works when paused)",
@@ -1749,19 +1758,19 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
         float upper_y = text_size.y + 30;
 
-        if(gui_state->current_mouse_over_volume.position_draw.x != -1) {
+        if(gui_state->ctrl_pressed && gui_state->current_mouse_over_volume.position_draw.x != -1) {
 
             Vector2 info_pos;
 
             if(gui_config->draw_type == DRAW_SIMULATION) {
                 text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i", gui_state->current_mouse_over_volume.position_draw.x,
-                                  gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
-                                  gui_state->current_mouse_over_volume.matrix_position + 1);
+                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
+                        gui_state->current_mouse_over_volume.matrix_position + 1);
 
             } else {
 
                 text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
-                                  gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z);
+                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z);
             }
 
             text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
