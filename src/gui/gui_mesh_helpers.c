@@ -136,6 +136,33 @@ Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct 
     return get_max_min(mesh_max, mesh_min, mesh_max_d, mesh_min_d, mesh_info);
 }
 
+static void check_mouse_over_volume(struct voxel *voxel, struct gui_state *gui_state) {
+
+    Vector3 p_draw = voxel->position_draw;
+    Vector3 p_mesh = voxel->position_mesh;
+
+    Vector3 cube_size = voxel->size;
+
+    float csx = cube_size.x;
+    float csy = cube_size.y;
+    float csz = cube_size.z;
+
+    BoundingBox bb = (BoundingBox){(Vector3){p_draw.x - csx / 2, p_draw.y - csy / 2, p_draw.z - csz / 2},
+                                   (Vector3){p_draw.x + csx / 2, p_draw.y + csy / 2, p_draw.z + csz / 2}};
+
+
+    RayCollision collision_mouse_over = GetRayCollisionBox(gui_state->ray_mouse_over, bb);
+
+    if(collision_mouse_over.hit) {
+        if(gui_state->ray_mouse_over_hit_distance > collision_mouse_over.distance) {
+            gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
+            gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
+            gui_state->ray_mouse_over_hit_distance = collision_mouse_over.distance;
+        }
+    }
+
+}
+
 static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_state) {
 
     Vector3 p_draw = voxel->position_draw;
@@ -179,15 +206,6 @@ static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_st
         collision.hit = true;
     }
 
-    RayCollision collision_mouse_over = GetRayCollisionBox(gui_state->ray_mouse_over, bb);
-
-    if(collision_mouse_over.hit) {
-        if(gui_state->ray_mouse_over_hit_distance > collision_mouse_over.distance) {
-            gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
-            gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
-            gui_state->ray_mouse_over_hit_distance = collision_mouse_over.distance;
-        }
-    }
 
     return collision.hit;
 }
@@ -379,6 +397,10 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
             collision |= check_volume_selection(&voxel, gui_state);
         }
 
+        if(gui_state->ctrl_pressed) {
+            check_mouse_over_volume(&voxel, gui_state);
+        }
+
         trace_ap(gui_state, &voxel, time);
 
         count++;
@@ -522,6 +544,10 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
 
             if(gui_state->double_clicked || gui_config->adaptive) {
                 collision |= check_volume_selection(&voxel, gui_state);
+            }
+
+            if(gui_state->ctrl_pressed) {
+                check_mouse_over_volume(&voxel, gui_state);
             }
 
             trace_ap(gui_state, &voxel, time);

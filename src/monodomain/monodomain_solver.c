@@ -10,11 +10,9 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
-#include "../3dparty/sds/sds.h"
 #include "../3dparty/stb_ds.h"
 #include "../config/modify_current_domain_config.h"
 #include "../config/stim_config.h"
-#include "../config/ecg_config.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../save_mesh_library/save_mesh_helper.h"
 #include "../utils/file_utils.h"

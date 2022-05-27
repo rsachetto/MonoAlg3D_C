@@ -226,6 +226,8 @@ struct gui_state {
     ui8_array old_cell_visibility;
     bool *exclude_from_mesh;
 
+    bool ctrl_pressed;
+
     float plane_roll;
     float plane_pitch;
     float plane_tx;

@@ -60,20 +60,20 @@ void init_config_functions(struct config *config, char *default_lib, char *confi
             log_info(tag " end function = %s\n", (s)->end_function_name);                                                                                      \
         }                                                                                                                                                      \
                                                                                                                                                                \
-        for(int i = 0; i < arrlen((s)->extra_function_names); i++) {                                                                                           \
-            log_info(tag " extra function %d = %s\n", i+1, (s)->extra_function_names[i]);                                                                      \
+        for(int __i = 0; __i < arrlen((s)->extra_function_names); __i++) {                                                                                     \
+            log_info(tag " extra function %d = %s\n", __i+1, (s)->extra_function_names[__i]);                                                                  \
         }                                                                                                                                                      \
         STRING_HASH_PRINT_KEY_VALUE_LOG(tag, (s)->config_data);                                                                                                \
     } while(0)
 
 #define CALL_EXTRA_FUNCTIONS(fn, ...)                                                                                                                          \
-    {                                                                                                                                                          \
+    do {                                                                                                                                                       \
         uint32_t num_extra_fn = arrlen(config->extra_functions);                                                                                               \
                                                                                                                                                                \
-        for(int i = 0; i < num_extra_fn; i++) {                                                                                                                \
-            ((fn *)(config->extra_functions[i]))(__VA_ARGS__);                                                                                                 \
+        for(int __i = 0; __i < num_extra_fn; __i++) {                                                                                                          \
+            ((fn *)(config->extra_functions[__i]))(__VA_ARGS__);                                                                                               \
         }                                                                                                                                                      \
-    }
+    } while(0)
 
 #endif // MONOALG3D_CONFIG_COMMON_H
 
