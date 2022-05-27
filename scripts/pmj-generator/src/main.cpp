@@ -105,7 +105,8 @@ int main (int argc, char *argv[])
     }
     
     // Now, search for the closest tissue cell to each Purkinje terminal node  
-    const double lat_offset = 10.0;
+    //const double lat_offset = 10.0;
+    const double lat_offset = 20.0;
     vector<uint32_t> new_pmjs_ids;
     for (uint32_t i = 0; i < num_terminals; i++)
     {
@@ -151,7 +152,7 @@ int main (int argc, char *argv[])
     }
 
     // Define a percentage of the candidate points to be selected
-    const double percentage = 0.25;
+    const double percentage = 1.0;
     write_terminals_to_vtk(the_pmjs,total_num_pmjs,num_root_nodes,percentage);
 
     free_purkinje_network(the_purkinje_network);

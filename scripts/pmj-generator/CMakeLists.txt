@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0.1)
  
 PROJECT(PMJGenerator)
  
@@ -13,4 +13,4 @@ ADD_SUBDIRECTORY(src/purkinje)
 add_executable(PMJGenerator src/main.cpp )
 ADD_DEPENDENCIES(PMJGenerator graph purkinje)
  
-target_link_libraries(PMJGenerator graph purkinje ${VTK_LIBRARIES})
+target_link_libraries(PMJGenerator ${VTK_LIBRARIES} graph purkinje)

@@ -48,6 +48,9 @@ real vss=0.02*vcell;
 real cli = 24;   // Intracellular Cl  [mM]
 real clo = 150;  // Extracellular Cl  [mM]
 
+real fkatp = 0.0;
+real gkatp = 4.3195;
+
 // CaMK constants
 real KmCaMK=0.15;
 real aCaMK=0.05;
@@ -64,6 +67,12 @@ real ENa=(R*T/F)*log(nao/nai);
 real EK=(R*T/F)*log(ko/ki);
 real PKNa=0.01833;
 real EKs=(R*T/F)*log((ko+PKNa*nao)/(ki+PKNa*nai));
+
+real K_o_n = 5.0;
+real A_atp = 2.0;
+real K_atp = 0.25;
+real akik = pow((ko / K_o_n), 0.24);
+real bkik = (1.0 / (1.0 + pow((A_atp / K_atp), 2.0)));
 
 // convenient shorthand calculations
 real vffrt=v*F*F/(R*T);
@@ -520,7 +529,7 @@ real IpCa=GpCa*cai/(0.0005+cai);
 // Chloride
 // I_ClCa: Ca-activated Cl Current, I_Clbk: background Cl Current
 
-real ecl = (R*T/F)*log(cli/clo);            // [mV]
+real ECl = (R*T/F)*log(cli/clo);            // [mV]
 
 real Fjunc = 1;   
 real Fsl = 1-Fjunc; // fraction in SS and in myoplasm - as per literature, I(Ca)Cl is in junctional subspace
@@ -529,11 +538,11 @@ real GClCa = ICaCl_Multiplier * 0.2843;   // [mS/uF]
 real GClB = IClb_Multiplier * 1.98e-3;    // [mS/uF] 
 real KdClCa = 0.1;                        // [mM]
 
-real I_ClCa_junc = Fjunc*GClCa/(1+KdClCa/cass)*(v-ecl);
-real I_ClCa_sl = Fsl*GClCa/(1+KdClCa/cai)*(v-ecl);
+real I_ClCa_junc = Fjunc*GClCa/(1+KdClCa/cass)*(v-ECl);
+real I_ClCa_sl = Fsl*GClCa/(1+KdClCa/cai)*(v-ECl);
 
 real I_ClCa = I_ClCa_junc+I_ClCa_sl;
-real I_Clbk = GClB*(v-ecl);
+real I_Clbk = GClB*(v-ECl);
 
 // Calcium handling
 // calculate ryanodione receptor calcium induced calcium release from the jsr
@@ -598,11 +607,14 @@ real Jup=(1.0-fJupp)*Jupnp+fJupp*Jupp-Jleak;
 //calculate tranlocation flux
 real Jtr=(cansr-cajsr)/60;
 
+// I_katp current
+real I_katp = (fkatp * gkatp * akik * bkik * (v - EK));
+
 // stimulus current
 real Istim = calc_I_stim;
 
 //update the membrane voltage
-real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+Istim);    // Euler
+real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+I_katp+Istim);    // Euler
 
 // calculate diffusion fluxes
 real JdiffNa=(nass-nai)/2.0;
