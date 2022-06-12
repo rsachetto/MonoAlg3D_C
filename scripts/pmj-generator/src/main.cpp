@@ -105,8 +105,9 @@ int main (int argc, char *argv[])
     }
     
     // Now, search for the closest tissue cell to each Purkinje terminal node  
-    //const double lat_offset = 10.0;
-    const double lat_offset = 20.0;
+    //const double lat_offset = 5.0;    // low
+    //const double lat_offset = 10.0;   // medium
+    const double lat_offset = 15.0;   // high
     vector<uint32_t> new_pmjs_ids;
     for (uint32_t i = 0; i < num_terminals; i++)
     {

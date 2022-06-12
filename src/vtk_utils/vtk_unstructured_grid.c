@@ -632,6 +632,145 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
     hmfree(hash);
 }
 
+void new_vtk_unstructured_grid_from_alg_grid_using_values(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
+                                                                     float *plain_coordinates, bool clip_with_bounds,
+                                                                     float *bounds, bool read_only_values, bool read_fibers_f,
+                                                                     bool save_fibrotic, real *values) {
+    if(grid == NULL) {
+        return;
+    }
+
+    uint32_t num_active_cells = grid->num_active_cells;
+
+    if(!read_only_values) {
+        *vtk_grid = new_vtk_unstructured_grid();
+        arrsetcap((*vtk_grid)->values, num_active_cells);
+        arrsetcap((*vtk_grid)->cell_visibility, num_active_cells);
+        arrsetcap((*vtk_grid)->cells, num_active_cells);
+        arrsetcap((*vtk_grid)->points, num_active_cells);
+    } else {
+        if(!(*vtk_grid)) {
+            fprintf(stderr, "Function new_vtk_unstructured_grid_from_alg_grid can only be called with read_only_values if the grid is already loaded!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        assert(*vtk_grid);
+        arrfree((*vtk_grid)->values);
+        (*vtk_grid)->values = NULL;
+        (*vtk_grid)->cell_visibility = NULL;
+    }
+
+    real_cpu min_x = 0.0;
+    real_cpu min_y = 0.0;
+    real_cpu min_z = 0.0;
+    real_cpu max_x = 0.0;
+    real_cpu max_y = 0.0;
+    real_cpu max_z = 0.0;
+
+    real_cpu p0[3] = {0, 0, 0};
+    real_cpu n[3] = {0, 0, 0};
+
+    if(!plain_coordinates) {
+        clip_with_plain = false;
+    } else {
+        p0[0] = plain_coordinates[0];
+        p0[1] = plain_coordinates[1];
+        p0[2] = plain_coordinates[2];
+
+        n[0] = plain_coordinates[3];
+        n[0] = plain_coordinates[4];
+        n[0] = plain_coordinates[5];
+    }
+
+    if(!bounds) {
+        clip_with_bounds = false;
+    } else {
+        min_x = bounds[0];
+        min_y = bounds[1];
+        min_z = bounds[2];
+        max_x = bounds[3];
+        max_y = bounds[4];
+        max_z = bounds[5];
+    }
+
+    uint32_t id = 0;
+    uint32_t num_cells = 0;
+
+    real_cpu l = sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+    real_cpu A = n[0] / l;
+    real_cpu B = n[1] / l;
+    real_cpu C = n[2] / l;
+    real_cpu D = -(n[0] * p0[0] + n[1] * p0[1] + n[2] * p0[2]);
+
+    real_cpu side;
+    struct point_hash_entry *hash = NULL;
+
+    struct point_3d half_face;
+    struct point_3d center;
+
+    real_cpu v;
+
+    FOR_EACH_CELL(grid) {
+
+        if(!cell->active) {
+            if(!save_fibrotic) {
+                continue;
+            } else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
+                continue;
+            }
+        }
+
+        center = cell->center;
+        v = cell->v;
+
+        if(clip_with_plain) {
+            side = A * center.x + B * center.y + C * center.z + D;
+            if(side < 0) {
+                continue;
+            }
+        }
+
+        if(clip_with_bounds) {
+            bool ignore_cell = center.x < min_x || center.x > max_x || center.y < min_y || center.y > max_y || center.z < min_z || center.z > max_z;
+
+            if(ignore_cell) {
+                continue;
+            }
+        }
+
+        if(read_fibers_f) {
+            arrput((*vtk_grid)->fibers, cell->sigma.fibers.f);
+        }
+
+        arrput((*vtk_grid)->values, values[cell->sv_position]);
+        arrput((*vtk_grid)->cell_visibility, cell->visible);
+
+        if(v > (*vtk_grid)->max_v)
+            (*vtk_grid)->max_v = (float) v;
+        if(v < (*vtk_grid)->min_v)
+            (*vtk_grid)->min_v = (float) v;
+
+        if(read_only_values) {
+            continue;
+        }
+
+        half_face.x = cell->discretization.x / 2.0f;
+        half_face.y = cell->discretization.y / 2.0f;
+        half_face.z = cell->discretization.z / 2.0f;
+
+        set_point_data(center, half_face, vtk_grid, &hash, &id);
+
+        num_cells++;
+    }
+
+    if(!read_only_values) {
+        (*vtk_grid)->num_cells = num_cells;
+        (*vtk_grid)->num_points = id;
+    }
+
+    hmfree(hash);                                                                     
+}
+
 static sds create_common_vtu_header(bool compressed, int num_points, int num_cells) {
 
     sds header = sdsempty();
