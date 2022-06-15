@@ -81,6 +81,7 @@ struct extra_data_for_trovato {
 
 struct extra_data_for_fibrosis * set_common_schemia_data(struct config *config, uint32_t num_cells);
 struct extra_data_for_torord * set_common_torord_data (struct config *config, uint32_t num_cells);
+struct extra_data_for_torord * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_trovato * set_common_trovato_data (struct config *config, uint32_t num_cells);
 
 #endif // MONOALG3D_C_EXTRA_DATA_HELPER_FUNCTIONS_H

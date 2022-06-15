@@ -295,6 +295,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     bool adaptive = the_grid->adaptive;
     real_cpu start_adpt_at = the_monodomain_solver->start_adapting_at;
 
+    bool calc_retropropagation = true;
+
 #ifdef COMPILE_GUI
     bool show_gui = configs->show_gui;
     if(show_gui) {
@@ -347,6 +349,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if(!success) {
             log_error_and_exit("Error configuring the Purkinje domain!\n");
         }
+
+        calc_retropropagation = the_grid->purkinje->network->calc_retropropagation; 
     }
 
     if(domain_config) {
@@ -676,7 +680,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             //            #endif
 
             // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
-            if(domain_config)
+            if(domain_config && calc_retropropagation)
                 compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver, the_grid, the_terminals);
 
             // DIFUSION: Purkinje

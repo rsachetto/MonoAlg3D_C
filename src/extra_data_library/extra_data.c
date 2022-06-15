@@ -222,6 +222,44 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_fkatp_epi_mid_endo) {
 
 }
 
+// Initial condition - 'libToRORd_dynCl_mixed_endo_mid_epi.so' + transmurality (cable and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_epi_mid_endo) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    real side_length = the_grid->mesh_side_length.x;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    // The percentages were taken from the ToRORd paper (Transmural experiment)
+    real side_length_endo = side_length*0.45;
+    real side_length_mid = side_length_endo + side_length*0.25;
+    real side_length_epi = side_length_mid + side_length*0.3;
+
+    struct extra_data_for_torord *extra_data = NULL;
+
+    extra_data = set_common_torord_dyncl_data(config, num_active_cells);
+
+    OMP(parallel for)
+    for (int i = 0; i < num_active_cells; i++) {
+
+        real center_x = ac[i]->center.x;
+
+        // ENDO
+        if (center_x < side_length_endo)
+            extra_data->transmurality[i] = 0.0;
+        // MID
+        else if (center_x >= side_length_endo && center_x < side_length_mid)
+            extra_data->transmurality[i] = 1.0;
+        // EPI
+        else
+            extra_data->transmurality[i] = 2.0;
+    }
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord));
+
+    return (void*)extra_data;
+
+}
+
 struct uv {
     real_cpu u;
     real_cpu v;

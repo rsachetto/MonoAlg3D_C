@@ -45,7 +45,6 @@ real vnsr=0.0552*vcell;
 real vjsr=0.0048*vcell;
 real vss=0.02*vcell;
 
-real cli = 24;   // Intracellular Cl  [mM]
 real clo = 150;  // Extracellular Cl  [mM]
 
 real fkatp = 0.0;
@@ -185,7 +184,8 @@ real dfcaf=(fcass-fcaf)/tfcaf;                                                  
 real dfcas=(fcass-fcas)/tfcas;                                                          // Rush-Larsen
 real fca=Afcaf*fcaf+Afcas*fcas;
 
-real tjca = 75;
+//real tjca = 75;
+real tjca = 72.5;
 real jcass = 1.0/(1.0+exp((v+18.08)/(2.7916)));   
 real djca=(jcass-jca)/tjca;                                                                  // Rush-Larsen
 real tffp=2.5*tff;
@@ -207,8 +207,8 @@ real anca_i = 1.0/(k2n/km2n+pow((1.0+Kmn/cai),4.0));
 real dnca_i = anca_i*k2n-nca_i*km2n;                                                     // Euler
 
 // SS driving force
-real Io = 0.5*(nao + ko + clo + 4*cao)/1000;        //% ionic strength outside. /1000 is for things being in micromolar
-real Ii = 0.5*(nass + kss + cli + 4*cass)/1000;     // ionic strength outside. /1000 is for things being in micromolar
+real Io = 0.5*(nao + ko + clo + 4*cao)/1000;         // ionic strength outside. /1000 is for things being in micromolar
+real Ii = 0.5*(nass + kss + clss + 4*cass)/1000;     // ionic strength outside. /1000 is for things being in micromolar
 // The ionic strength is too high for basic DebHuc. We'll use Davies
 real dielConstant = 74;     // water at 37 degrees.
 real temp = 310;            // body temp in kelvins.
@@ -530,6 +530,7 @@ real IpCa=GpCa*cai/(0.0005+cai);
 // I_ClCa: Ca-activated Cl Current, I_Clbk: background Cl Current
 
 real ECl = (R*T/F)*log(cli/clo);            // [mV]
+real EClss = (R*T/F)*log(clss/clo);         // [mV]
 
 real Fjunc = 1;   
 real Fsl = 1-Fjunc; // fraction in SS and in myoplasm - as per literature, I(Ca)Cl is in junctional subspace
@@ -538,7 +539,7 @@ real GClCa = ICaCl_Multiplier * 0.2843;   // [mS/uF]
 real GClB = IClb_Multiplier * 1.98e-3;    // [mS/uF] 
 real KdClCa = 0.1;                        // [mM]
 
-real I_ClCa_junc = Fjunc*GClCa/(1+KdClCa/cass)*(v-ECl);
+real I_ClCa_junc = Fjunc*GClCa/(1+KdClCa/cass)*(v-EClss);
 real I_ClCa_sl = Fsl*GClCa/(1+KdClCa/cai)*(v-ECl);
 
 real I_ClCa = I_ClCa_junc+I_ClCa_sl;
@@ -620,6 +621,7 @@ real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IK
 real JdiffNa=(nass-nai)/2.0;
 real JdiffK=(kss-ki)/2.0;
 real Jdiff=(cass-cai)/0.2;
+real JdiffCl=(clss-cli)/2.0;
 
 // calcium buffer constants 
 real cmdnmax= 0.05; 
@@ -652,6 +654,65 @@ real dcansr=Jup-Jtr*vjsr/vnsr;
 
 real Bcajsr=1.0/(1.0+csqnmax*kmcsqn/pow((kmcsqn+cajsr),2.0));
 real dcajsr=Bcajsr*(Jtr-Jrel);
+
+real dcli  = - (I_Clbk + I_ClCa_sl)*Acap/(-1*F*vmyo)+JdiffCl*vss/vmyo;
+real dclss = - I_ClCa_junc*Acap/(-1*F*vss)-JdiffCl;
+
+// Compute 'a' coefficients for the Hodkin-Huxley variables
+a_[10] = -1.0 / tm;
+a_[11] = -1.0 / tauh;
+a_[12] = -1.0 / tauj;
+a_[13] = -1.0 / tauh;
+a_[14] = -1.0 / taujp;
+a_[15] = -1.0 / tmL;
+a_[16] = -1.0 / thL;
+a_[17] = -1.0 / thLp;
+a_[18] = -1.0 / ta;
+a_[19] = -1.0 / tiF;
+a_[20] = -1.0 / tiS;
+a_[21] = -1.0 / ta;
+a_[22] = -1.0 / tiFp;
+a_[23] = -1.0 / tiSp;
+a_[24] = -1.0 / td;
+a_[25] = -1.0 / tff;
+a_[26] = -1.0 / tfs;
+a_[27] = -1.0 / tfcaf;
+a_[28] = -1.0 / tfcas;
+a_[29] = -1.0 / tjca;
+a_[30] = -1.0 / tffp;
+a_[31] = -1.0 / tfcafp;
+a_[39] = -1.0 / txs1;
+a_[40] = -1.0 / txs2;
+a_[41] = -1.0 / tau_rel;
+a_[42] = -1.0 / tau_relp;    
+
+// Compute 'b' coefficients for the Hodkin-Huxley variables
+b_[10] = mss / tm;
+b_[11] = hss / tauh;
+b_[12] = jss / tauj;
+b_[13] = hssp / tauh;
+b_[14] = jss / taujp;
+b_[15] = mLss / tmL;
+b_[16] = hLss / thL;
+b_[17] = hLssp / thLp;
+b_[18] = ass / ta;
+b_[19] = iss / tiF;
+b_[20] = iss / tiS;
+b_[21] = assp / ta;
+b_[22] = iss / tiFp;
+b_[23] = iss / tiSp;
+b_[24] = dss / td;
+b_[25] = fss / tff;
+b_[26] = fss / tfs;
+b_[27] = fcass / tfcaf;
+b_[28] = fcass / tfcas;
+b_[29] = jcass / tjca;
+b_[30] = fss / tffp;
+b_[31] = fcass / tfcafp;
+b_[39] = xs1ss / txs1;
+b_[40] = xs2ss / txs2;
+b_[41] = Jrel_inf / tau_rel;
+b_[42] = Jrel_infp / tau_relp;
 
 // Right-hand side
 rDY_[0]  = dv;
@@ -697,3 +758,5 @@ rDY_[39] = dxs1;
 rDY_[40] = dxs2;
 rDY_[41] = dJrelnp;
 rDY_[42] = dJrelp;
+rDY_[43] = dcli;
+rDY_[44] = dclss;
