@@ -25,8 +25,14 @@ def main ():
 
     sv = np.genfromtxt(input_file)
 
-    plt.plot(sv[:,0],sv[:,1])
-    plt.show()
+    #plt.grid()
+    plt.plot(sv[:,0],sv[:,1], label="Vm", c="black", linewidth=2.0)
+    plt.xlabel("Time (ms)",fontsize=15)
+    plt.ylabel("Transmembrane potential (mV)",fontsize=15)
+    plt.title("Action potential - ToRORd_dynCl - EPI (2020)",fontsize=14)
+    plt.legend(loc=0,fontsize=14)
+    #plt.show()
+    plt.savefig("action_potential_ToRORd_dynCl_2020_EPI_bcl_1000ms.pdf")
 
 if __name__ == "__main__":
 	main()

@@ -7,6 +7,8 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
 
     if (threadID < num_volumes) {
 
+        // Default initial conditions (1000 beats at BCL=1000ms)
+        /*
         *((real * )((char *) sv + pitch * 0) + threadID)      = -86.550102957989600;
         *((real * )((char *) sv + pitch * 1) + threadID)      = 0.005060490773142;
         *((real * )((char *) sv + pitch * 2) + threadID)      = 1.017658486729359e-04;
@@ -53,6 +55,54 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
         *((real * )((char *) sv + pitch * 43) + threadID)      = 0.233014639857230;        
         *((real * )((char *) sv + pitch * 44) + threadID)      = 0.997085416662044;     
         *((real * )((char *) sv + pitch * 45) + threadID)      = 0.466232550741101;
+        */
+        // Initial conditions (200 beats at BCL=1000ms)
+        *((real * )((char *) sv + pitch * 0) + threadID) = -8.668819e+01;
+        *((real * )((char *) sv + pitch * 1) + threadID) = 4.962000e-03;
+        *((real * )((char *) sv + pitch * 2) + threadID) = 1.020000e-04;
+        *((real * )((char *) sv + pitch * 3) + threadID) = 8.240764e+00;
+        *((real * )((char *) sv + pitch * 4) + threadID) = 8.240456e+00;
+        *((real * )((char *) sv + pitch * 5) + threadID) = 8.240464e+00;
+        *((real * )((char *) sv + pitch * 6) + threadID) = 1.437586e+02;
+        *((real * )((char *) sv + pitch * 7) + threadID) = 1.437590e+02;
+        *((real * )((char *) sv + pitch * 8) + threadID) = 1.437590e+02;
+        *((real * )((char *) sv + pitch * 9) + threadID) = 4.400000e-05;
+        *((real * )((char *) sv + pitch * 10) + threadID) = 1.020000e-04;
+        *((real * )((char *) sv + pitch * 11) + threadID) = 1.260273e+00;
+        *((real * )((char *) sv + pitch * 12) + threadID) = 1.245054e+00;
+        *((real * )((char *) sv + pitch * 13) + threadID) = 1.261940e+00;
+        *((real * )((char *) sv + pitch * 14) + threadID) = 1.530000e-04;
+        *((real * )((char *) sv + pitch * 15) + threadID) = 0.000000e+00;
+        *((real * )((char *) sv + pitch * 16) + threadID) = 6.321000e-03;
+        *((real * )((char *) sv + pitch * 17) + threadID) = 7.887830e-01;
+        *((real * )((char *) sv + pitch * 18) + threadID) = 7.887200e-01;
+        *((real * )((char *) sv + pitch * 19) + threadID) = 7.906340e-01;
+        *((real * )((char *) sv + pitch * 20) + threadID) = 5.799350e-01;
+        *((real * )((char *) sv + pitch * 21) + threadID) = 7.911100e-01;
+        *((real * )((char *) sv + pitch * 22) + threadID) = 2.420000e-04;
+        *((real * )((char *) sv + pitch * 23) + threadID) = 4.638110e-01;
+        *((real * )((char *) sv + pitch * 24) + threadID) = 2.404730e-01;
+        *((real * )((char *) sv + pitch * 25) + threadID) = 2.730000e-04;
+        *((real * )((char *) sv + pitch * 26) + threadID) = 6.497620e-01;
+        *((real * )((char *) sv + pitch * 27) + threadID) = 9.899710e-01;
+        *((real * )((char *) sv + pitch * 28) + threadID) = 0.000000e+00;
+        *((real * )((char *) sv + pitch * 29) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 30) + threadID) = 9.268520e-01;
+        *((real * )((char *) sv + pitch * 31) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 32) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 33) + threadID) = 9.999790e-01;
+        *((real * )((char *) sv + pitch * 34) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 35) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 36) + threadID) = 5.431000e-03;
+        *((real * )((char *) sv + pitch * 37) + threadID) = 3.040000e-04;
+        *((real * )((char *) sv + pitch * 38) + threadID) = 9.942210e-01;
+        *((real * )((char *) sv + pitch * 39) + threadID) = 3.290000e-04;
+        *((real * )((char *) sv + pitch * 40) + threadID) = 5.707310e-01;
+        *((real * )((char *) sv + pitch * 41) + threadID) = 1.909580e-01;
+        *((real * )((char *) sv + pitch * 42) + threadID) = 2.230000e-04;
+        *((real * )((char *) sv + pitch * 43) + threadID) = 2.334660e-01;
+        *((real * )((char *) sv + pitch * 44) + threadID) = 9.970830e-01;
+        *((real * )((char *) sv + pitch * 45) + threadID) = 4.655710e-01;
 
         if(use_adpt_dt) {
             *((real *)((char *)sv + pitch * NEQ) + threadID) = min_dt; // dt

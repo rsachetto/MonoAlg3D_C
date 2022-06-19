@@ -520,10 +520,15 @@ END_SAVE_MESH(end_save_one_cell_state_variables) {
 SAVE_MESH(save_one_cell_state_variables) {
 
     struct save_one_cell_state_variables_persistent_data *params = ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data);
+    real_cpu cur_time = time_info->current_t;
+    real_cpu final_time = time_info->final_t;
+    real_cpu dt = time_info->dt;
+    real_cpu bcl = 1000.0;
 
     if(params->cell_sv_position == -1) {
         if(!the_grid->adaptive) {
             FOR_EACH_PURKINJE_CELL(the_grid) {
+            //FOR_EACH_CELL(the_grid) {
                 if(cell->center.x == params->cell_center_x && cell->center.y == params->cell_center_y && cell->center.z == params->cell_center_z) {
                     params->cell_sv_position = cell->sv_position;
                     printf("%d\n", params->cell_sv_position);
@@ -533,35 +538,37 @@ SAVE_MESH(save_one_cell_state_variables) {
         }
     }
 
-    if(ode_solver->gpu) {
-#ifdef COMPILE_CUDA
-        int num_odes = ode_solver->model_data.number_of_ode_equations;
-        real *cell_sv;
+    //if (cur_time+dt >= final_time-bcl) {
+        if(ode_solver->gpu) {
+    #ifdef COMPILE_CUDA
+            int num_odes = ode_solver->model_data.number_of_ode_equations;
+            real *cell_sv;
 
-        cell_sv = (real *)malloc(sizeof(real) * num_odes);
+            cell_sv = (real *)malloc(sizeof(real) * num_odes);
 
-        check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
-                                      ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
+                                        ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
-        fprintf(params->file, "%lf ", time_info->current_t);
-        for(int i = 0; i < num_odes; i++) {
-            fprintf(params->file, "%lf ", cell_sv[i]);
+            fprintf(params->file, "%lf ", time_info->current_t);
+            for(int i = 0; i < num_odes; i++) {
+                fprintf(params->file, "%lf ", cell_sv[i]);
+            }
+            fprintf(params->file, "\n");
+
+            free(cell_sv);
+    #endif
+        } else {
+
+            int num_odes = ode_solver->model_data.number_of_ode_equations;
+            real *cell_sv = &ode_solver->sv[params->cell_sv_position * num_odes];
+
+            fprintf(params->file, "%lf ", time_info->current_t);
+            for(int i = 0; i < num_odes; i++) {
+                fprintf(params->file, "%lf ", cell_sv[i]);
+            }
+            fprintf(params->file, "\n");
         }
-        fprintf(params->file, "\n");
-
-        free(cell_sv);
-#endif
-    } else {
-
-        int num_odes = ode_solver->model_data.number_of_ode_equations;
-        real *cell_sv = &ode_solver->sv[params->cell_sv_position * num_odes];
-
-        fprintf(params->file, "%lf ", time_info->current_t);
-        for(int i = 0; i < num_odes; i++) {
-            fprintf(params->file, "%lf ", cell_sv[i]);
-        }
-        fprintf(params->file, "\n");
-    }
+    //}
 }
 
 INIT_SAVE_MESH(init_save_multiple_cell_state_variables) {
