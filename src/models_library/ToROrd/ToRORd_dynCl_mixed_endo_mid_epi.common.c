@@ -1,3 +1,6 @@
+// Avoid NaN errors
+if (v >= 200.0) v = 200.0;
+
 // Changeable parameters
 real nao = 140.0;
 real cao = 1.8;
