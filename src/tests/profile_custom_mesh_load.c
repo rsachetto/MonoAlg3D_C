@@ -9,6 +9,7 @@
 #include "../3dparty/sds/sds.h"
 #include "../3dparty/stb_ds.h"
 #include "../utils/stop_watch.h"
+#include "../vtk_utils/vtk_unstructured_grid.h"
 
 #include <gdbm.h>
 
@@ -21,7 +22,7 @@ struct elapsed_times {
     double end_time;
     double clean_time;
     double total_time;
-
+    double load_mesh_time;
 } __attribute__((packed));
 
 //TODO: check for memory leaks with valgrind
@@ -98,14 +99,25 @@ int profile_custom_mesh_load(char *discretization, struct elapsed_times *times) 
     ((end_save_mesh_fn *)save_mesh_config->end_function)(save_mesh_config, grid);
     times->end_time = stop_stop_watch(&end_time);
 
-    free_config_data(save_mesh_config);
+    file_prefix = sdscat(file_prefix, "_it_0.vtu");
+    
+    sds tmp_mesh = sdsnew("/tmp/");
+    tmp_mesh = sdscat(tmp_mesh, file_prefix);    
+
+    struct stop_watch load_time;
+    start_stop_watch(&load_time);    
+    struct vtk_unstructured_grid *loaded_mesh = new_vtk_unstructured_grid_from_file(tmp_mesh, true);
+    times->load_mesh_time= stop_stop_watch(&load_time);
+    
     sdsfree(file_prefix);
+    sdsfree(tmp_mesh);
 
     struct stop_watch clean_time;
     start_stop_watch(&clean_time);
     clean_and_free_grid(grid);
     times->clean_time = stop_stop_watch(&clean_time);
 
+    free_vtk_unstructured_grid(loaded_mesh);
     free_config_data(domain_config);
 
     return 1;
@@ -143,6 +155,7 @@ int main(int argc, char **argv) {
         average_times.save_time        += times.save_time;
         average_times.end_time         += times.end_time;
         average_times.clean_time       += times.clean_time;
+        average_times.load_mesh_time   += times.load_mesh_time;
 
     }
 
@@ -153,10 +166,12 @@ int main(int argc, char **argv) {
     average_times.save_time        /= nruns;
     average_times.end_time         /= nruns;
     average_times.clean_time       /= nruns;
+    average_times.load_mesh_time   /= nruns;
 
     average_times.total_time = average_times.config_time + average_times.create_grid_time +
                                average_times.order_grid_time + average_times.init_time +
-                               average_times.save_time + average_times.end_time + average_times.clean_time;
+                               average_times.save_time + average_times.end_time +
+                               average_times.clean_time + average_times.load_mesh_time;
 
     GDBM_FILE f;
 
@@ -175,6 +190,7 @@ int main(int argc, char **argv) {
     printf("Avg Init save function time: μs %lf\n", average_times.init_time);
     printf("Avg Save function time: %lf μs\n", average_times.save_time);
     printf("Avg End save function time: %lf μs\n", average_times.end_time);
+    printf("Avg Load mesh from file time: %lf μs\n", average_times.load_mesh_time);
     printf("Avg Clean grid time: %lf μs\n", average_times.clean_time);
     printf("Avg Total time: %lf μs\n", average_times.total_time);
 
@@ -194,6 +210,7 @@ int main(int argc, char **argv) {
         printf("Avg Init save function time: %lf μs\n", best_run->init_time);
         printf("Avg Save function time: %lf μs\n", best_run->save_time);
         printf("Avg End save function time: %lf μs\n", best_run->end_time);
+        printf("Avg Load mesh from file time: %lf μs\n", average_times.load_mesh_time);
         printf("Avg Clean grid time: %lf μs\n", best_run->clean_time);
         printf("Avg Total time: %lf μs\n", best_run->total_time);
 

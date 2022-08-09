@@ -292,6 +292,8 @@ void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell_hash_e
 static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char *source, size_t source_size, bool binary, bool read_only_values,
                                                   size_t *bytes_read) {
 
+    assert(bytes_read);
+    
     if(!read_only_values) {
         *vtk_grid = new_vtk_unstructured_grid();
     } else {
@@ -477,9 +479,7 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
             continue;
         }
 
-        if(bytes_read != NULL) {
-            *bytes_read = (size_t)(source - original_src);
-        }
+        *bytes_read = (size_t)(source - original_src);
 
         set_point_data(center, half_face, vtk_grid, &hash, &id);
         num_cells++;
@@ -1338,16 +1338,16 @@ void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_gr
 
 static int parse_vtk_legacy(char *source, size_t source_size, struct parser_state *state, size_t *bytes_read) {
 
+    assert(bytes_read);
+    
 #define UPDATE_SIZES_READ                                                                                                                                      \
     do {                                                                                                                                                       \
         source++;                                                                                                                                              \
         source_size--;                                                                                                                                         \
-        if(bytes_read != NULL)                                                                                                                                 \
-            (*bytes_read)++;                                                                                                                                   \
-    } while(0)
+        (*bytes_read)++;                                                                                                                                       \
+    } while(0)                         
 
-    if(bytes_read != NULL)
-        *bytes_read = 0;
+    *bytes_read = 0;
 
     // ignoring the first two lines...
     while(*source != '\n') {
@@ -1427,8 +1427,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
                     source += 12;
                     source_size -= 12;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 12;
+                    (*bytes_read) += 12;
                 }
 
                 UPDATE_SIZES_READ;
@@ -1471,8 +1470,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
                     int points_per_cell = invert_bytes(*(int *)source);
                     source += 4;
                     source_size -= 4;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 4;
+                    (*bytes_read) += 4;
 
                     for(int c = 0; c < points_per_cell; c++) {
                         uint64_t cell_point = (uint64_t)invert_bytes(*(int *)source);
@@ -1482,8 +1480,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
                         source += 4;
                         source_size -= 4;
-                        if(bytes_read != NULL)
-                            (*bytes_read) += 4;
+                        (*bytes_read) += 4;
                     }
                 }
                 UPDATE_SIZES_READ;
@@ -1507,8 +1504,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
                 for(unsigned long i = 0; i < num_cells; i++) {
                     source += 4;
                     source_size -= 4;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 4;
+                    (*bytes_read) += 4;
                 }
                 UPDATE_SIZES_READ;
             }
@@ -1562,8 +1558,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
                     source += 4;
                     source_size -= 4;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 4;
+                    (*bytes_read) += 4;
                 }
                 if(source_size) {
                     UPDATE_SIZES_READ;
@@ -1795,6 +1790,7 @@ static void free_parser_state(struct parser_state *parser_state) {
 static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid **vtk_grid, enum file_type_enum file_type, char *source, size_t size,
                                                     bool calc_max_min, size_t *bytes_read_out) {
 
+    assert(bytes_read_out);
     struct parser_state *parser_state = NULL;
 
     parser_state = calloc(1, sizeof(struct parser_state));
@@ -1830,9 +1826,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
         for(size_t i = 0; i < size; i++) {
             yxml_ret_t r = yxml_parse(x, source[i]);
             bytes_read++;
-            if(bytes_read_out != NULL) {
-                *bytes_read_out = bytes_read;
-            }
+            *bytes_read_out = bytes_read;
             if(parse_vtk_xml(x, r, parser_state) == -1) {
                 break;
             }
@@ -1919,6 +1913,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
 
         if(is_raw) {
             raw_data = (source + scalars_offset_value);
+
             *bytes_read_out = (size_t)(raw_data - original_src);
 
         } else if(is_b64) {
@@ -1935,6 +1930,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
             if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { // We read only the header.. need to read the data
                 b64_size -= bytes_read;
                 base64_decode((unsigned char *)raw_data + base64_outlen, data_tmp + bytes_read, b64_size, &bytes_read);
+            
                 *bytes_read_out += bytes_read;
             }
 
@@ -2279,11 +2275,14 @@ static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_
 }
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file(const char *file_name, bool calc_max_min) {
-    return new_vtk_unstructured_grid_from_file_with_progress(file_name, calc_max_min, NULL, NULL);
+    size_t unused;
+    return new_vtk_unstructured_grid_from_file_with_progress(file_name, calc_max_min, &unused, NULL);
 }
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file_with_progress(const char *file_name, bool calc_max_min, size_t *bytes_read,
                                                                                 size_t *file_size) {
+    
+    assert(bytes_read);
     struct vtk_unstructured_grid *vtk_grid = NULL;
 
     size_t size;
