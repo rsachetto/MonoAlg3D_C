@@ -18,6 +18,45 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+float* read_timesteps_from_case_file(sds case_file_path) {
+    size_t case_file_size;
+    float *timesteps = NULL;
+
+    char *content = read_entire_file_with_mmap(case_file_path, &case_file_size);
+    char *tmp = content;
+
+    char *word = NULL;
+
+    while(*tmp) {
+
+        if(*tmp != '\n' && *tmp != ':') {
+            arrpush(word, *tmp);
+        } else {
+            arrpush(word, 0);
+
+            if(strcmp(word, "time values") == 0) {
+                while(!isdigit(*tmp))
+                    tmp++;
+                break;
+            } else {
+                arrsetlen(word, 0);
+            }
+        }
+
+        tmp++;
+    }
+
+    while(*tmp) {
+        double time_val = strtod(tmp, &tmp);
+        arrput(timesteps, time_val);
+        while(isspace(*tmp))
+            tmp++;
+    }
+
+    munmap(content, case_file_size);
+    return timesteps;
+}
+
 char* get_timestamped_dir_name(char* dir_name) {
 
     char* rc = NULL;    
