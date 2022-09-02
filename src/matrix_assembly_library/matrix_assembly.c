@@ -16,6 +16,7 @@
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include "../domains_library/mesh_info_data.h"
+#include "../domains_library/custom_mesh_info_data.h"
 
 #include "assembly_common.c"
 
@@ -1010,6 +1011,71 @@ ASSEMBLY_MATRIX(heterogenous_fibrotic_region_file_write_using_seed) {
     // We just leave the program after this ...
     log_info("[!] Finish writing fibrotic region file '%s'!\n", new_fib_file);
     exit(EXIT_SUCCESS);
+}
+
+ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix_with_fast_endocardium_layer) {
+
+    static bool sigma_initialized = false;
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    initialize_diagonal_elements(the_solver, the_grid);
+
+    uint32_t i;
+
+    real sigma_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_x, config, "sigma_x");
+
+    real sigma_y = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_y, config, "sigma_y");
+
+    real sigma_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
+
+    real_cpu fast_endo_layer_scale = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu ,fast_endo_layer_scale, config, "fast_endo_layer_scale");
+
+    if(!sigma_initialized) {
+        OMP(parallel for)
+        for(i = 0; i < num_active_cells; i++) {
+            // Check if the current cell is tagged as FASTENDO
+            real_cpu tag = TISSUE_TYPE(ac[i]);
+            if (tag == 0) {
+                ac[i]->sigma.x = sigma_x*fast_endo_layer_scale;
+                ac[i]->sigma.y = sigma_y*fast_endo_layer_scale;
+                ac[i]->sigma.z = sigma_z*fast_endo_layer_scale;
+            } 
+            // Normal type of cell
+            else {
+                ac[i]->sigma.x = sigma_x;
+                ac[i]->sigma.y = sigma_y;
+                ac[i]->sigma.z = sigma_z;
+            }
+        }
+    }
+
+    OMP(parallel for)
+    for(i = 0; i < num_active_cells; i++) {
+
+        // Computes and designates the flux due to south cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[BACK], BACK);
+
+        // Computes and designates the flux due to north cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[FRONT], FRONT);
+
+        // Computes and designates the flux due to east cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[TOP], TOP);
+
+        // Computes and designates the flux due to west cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[DOWN], DOWN);
+
+        // Computes and designates the flux due to front cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[RIGHT], RIGHT);
+
+        // Computes and designates the flux due to back cells.
+        fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[LEFT], LEFT);
+    }
 }
 
 ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {

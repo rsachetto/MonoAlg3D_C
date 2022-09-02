@@ -16,6 +16,7 @@
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include "../domains_library/mesh_info_data.h"
+#include "../domains_library/custom_mesh_info_data.h"
 
 #include "assembly_common.c"
 
