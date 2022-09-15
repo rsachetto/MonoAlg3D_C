@@ -262,8 +262,10 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     const float graph_x = gui_state->ap_graph_config->graph.bounds.x;
     const float graph_y = gui_state->ap_graph_config->graph.bounds.y;
 
-    static const Color colors[] = {DARKGRAY, GOLD,     ORANGE, PINK,   RED,        MAROON, GREEN,     LIME,  DARKGREEN,
-                                   BLUE,     DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN,  DARKBROWN, BLACK, MAGENTA};
+    static const Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON,
+                                   GREEN, LIME, DARKGREEN, BLUE, DARKBLUE,
+                                   PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN,
+                                   BLACK, MAGENTA};
 
     int num_colors = SIZEOF(colors);
 
