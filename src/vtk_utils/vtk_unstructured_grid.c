@@ -224,6 +224,22 @@ void binary_grid_error(struct vtk_unstructured_grid **vtk_grid) {
     *vtk_grid = NULL;
 }
 
+void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, sds full_path) {
+
+    sds full_path_cp = sdsnew(full_path);
+    full_path_cp = sdscat(full_path_cp, ".vis");
+    FILE *vis_file = fopen(full_path_cp, "r+");
+
+    if(vis_file) {
+        uint32_t n_cells = (*vtk_grid)->num_cells;
+        arrsetlen((*vtk_grid)->cell_visibility, n_cells);
+        fread((*vtk_grid)->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
+        fclose(vis_file);
+    } else {
+        set_vtk_grid_visibility(vtk_grid);
+    }
+}
+
 #define SET_VISIBLE                                                                                                                                            \
     i = hmgeti(cells, neighbour_center);                                                                                                                       \
     if(i == -1) {                                                                                                                                              \
