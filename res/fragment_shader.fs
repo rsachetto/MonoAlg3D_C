@@ -30,13 +30,16 @@ void main() {
     vec3 lightDot = vec3(0.0);
     vec3 normal = normalize(fragNormal);
     vec3 ambient = vec3(1.0);
-	struct Light l = lights[0];
+
+    vec3 lp = lights[0].position;
+    vec3 lt = lights[0].target;
+    vec4 lc = lights[0].color;
 
     vec3 light = vec3(0.0);
-    light = -normalize(l.target - l.position);
+    light = -normalize(lt - lp);
     float NdotL = max(dot(normal, light), 0.0);
-    lightDot += l.color.rgb * NdotL;
-    ambient = ambientStrength * l.color.rgb;
+    lightDot += lc.rgb * NdotL;
+    ambient = ambientStrength * lc.rgb;
 
     bool draw_countour = fragTexCoord.x < offset || fragTexCoord.y < offset || fragTexCoord.x > one_minus_offset || fragTexCoord.y > one_minus_offset;
     bool selected = (fragColor.a == 0);
