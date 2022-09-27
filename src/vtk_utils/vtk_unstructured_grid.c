@@ -1585,6 +1585,10 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
             arrsetlen(data_name, 0);
 
         } else {
+	    if (data_name[0] == 0) { 
+            	arrsetlen(data_name, 0);
+		continue;
+	    }
             while(*source != '\n') {
                 UPDATE_SIZES_READ;
             }
