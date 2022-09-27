@@ -17,7 +17,7 @@ static void convert_file(const char *input, const char *output, const char *file
 
     full_input_path = sdsnew(input);
 
-    struct path_information file_info;
+    struct path_information input_file_info;
 
     if(file_name != NULL) {
         if(!ENDS_WITH_SLASH(full_input_path)) {
@@ -27,16 +27,16 @@ static void convert_file(const char *input, const char *output, const char *file
         full_input_path = sdscat(full_input_path, file_name);
     }
 
-    get_path_information(full_input_path, &file_info);
+    get_path_information(full_input_path, &input_file_info);
 
     static int count = 0;
 
-    if(FILE_HAS_EXTENSION(file_info, "txt") || FILE_HAS_EXTENSION(file_info, "alg") ||
-       FILE_HAS_EXTENSION(file_info, "geo") || FILE_HAS_EXTENSION_PREFIX(file_info, "Esca")) {
+    if(FILE_HAS_EXTENSION(input_file_info, "txt") || FILE_HAS_EXTENSION(input_file_info, "alg") ||
+       FILE_HAS_EXTENSION(input_file_info, "geo") || FILE_HAS_EXTENSION_PREFIX(input_file_info, "Esca")) {
 
         if(vtk_grid == NULL) {
             vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false);
-            if(FILE_HAS_EXTENSION(file_info, "geo")) {
+            if(FILE_HAS_EXTENSION(input_file_info, "geo")) {
                 return;
             }
         }
@@ -51,25 +51,25 @@ static void convert_file(const char *input, const char *output, const char *file
                 full_output_path = sdscat(full_output_path, "/");
             }
 
-            if(FILE_HAS_EXTENSION_PREFIX(file_info, "Esca")) {
+            if(FILE_HAS_EXTENSION_PREFIX(input_file_info, "Esca")) {
                 set_vtk_grid_values_from_ensight_file(vtk_grid, full_input_path);
             }
 
             char ext[4] = ".vtu";
             bool alg = false;
 
-            if(FILE_HAS_EXTENSION(file_info, "alg")) {
+            if(FILE_HAS_EXTENSION(input_file_info, "alg")) {
                 ext[1] = 'v';
                 ext[2] = 't';
                 ext[3] = 'k';
                 alg = true;
             }
 
-            if(FILE_HAS_EXTENSION_PREFIX(file_info, "Esca")) {
+            if(FILE_HAS_EXTENSION_PREFIX(input_file_info, "Esca")) {
                 full_output_path = sdscatfmt(full_output_path, "V_it_%i%s", count, ext);
                 count++;
             } else {
-                full_output_path = sdscat(full_output_path, file_info.filename_without_extension);
+                full_output_path = sdscat(full_output_path, input_file_info.filename_without_extension);
                 full_output_path = sdscat(full_output_path, ext);
             }
 
@@ -81,18 +81,18 @@ static void convert_file(const char *input, const char *output, const char *file
                 save_vtk_unstructured_grid_as_vtu_compressed(vtk_grid, full_output_path, 6);
             }
 
-            if(FILE_HAS_EXTENSION(file_info, "txt") || FILE_HAS_EXTENSION(file_info, "alg")) {
+            if(FILE_HAS_EXTENSION(input_file_info, "txt") || FILE_HAS_EXTENSION(input_file_info, "alg")) {
                 free_vtk_unstructured_grid(vtk_grid);
                 vtk_grid = NULL;
             }
 
             sdsfree(full_output_path);
 
-            free_path_information(&file_info);
+            free_path_information(&input_file_info);
             sdsfree(full_input_path);
         }
 
-    } else if(FILE_HAS_EXTENSION(file_info, "vtu")) {
+    } else if(FILE_HAS_EXTENSION(input_file_info, "vtu")) {
 
         vtk_grid = new_vtk_unstructured_grid_from_file(full_input_path, false);
 
@@ -105,7 +105,7 @@ static void convert_file(const char *input, const char *output, const char *file
                 full_output_path = sdscat(full_output_path, "/");
             }
 
-            full_output_path = sdscat(full_output_path, file_info.filename_without_extension);
+            full_output_path = sdscat(full_output_path, input_file_info.filename_without_extension);
             full_output_path = sdscat(full_output_path, ".txt");
 
             printf("Converting %s to %s\n", full_input_path, full_output_path);
@@ -114,7 +114,7 @@ static void convert_file(const char *input, const char *output, const char *file
             free_vtk_unstructured_grid(vtk_grid);
             sdsfree(full_output_path);
 
-            free_path_information(&file_info);
+            free_path_information(&input_file_info);
             sdsfree(full_input_path);
         }
     }
