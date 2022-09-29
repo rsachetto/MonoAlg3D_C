@@ -16,10 +16,10 @@
 static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
-static const char *conversion_opt_string = "i:o:v:h?";
+static const char *conversion_opt_string = "i:o:c:h?";
 static const struct option long_conversion_options[] = {{"input", required_argument, NULL, 'i'},
                                                         {"output", required_argument, NULL, 'o'},
-                                                        {"value_index", required_argument, NULL, 'v'}};
+                                                        {"config_file", required_argument, NULL, 'c'}};
 
 static const char *fiber_conversion_opt_string = "f:e:n:a:h?";
 static const struct option long_fiber_conversion_options[] = {{"fib", required_argument, NULL, 'f'},
@@ -145,6 +145,7 @@ void display_conversion_usage(char **argv) {
     printf("Options:\n");
     printf("--input  | -i [input]. Input directory or file. Default NULL.\n");
     printf("--output | -o [output]. Output directory to save the converted files. Default NULL.\n");
+    printf("--config_file | -c [configuration_file_path]. ini file used to map alg mesh colums to vtk scalars (optional).\n");
     printf("--help | -h. Shows this help and exit \n");
     exit(EXIT_FAILURE);
 }
@@ -233,7 +234,9 @@ struct conversion_options *new_conversion_options() {
     struct conversion_options *options = (struct conversion_options *)malloc(sizeof(struct conversion_options));
     options->input = NULL;
     options->output = NULL;
-    options->value_index = 6; //Value for the default position of V in your text format
+    options->conversion_config_file = NULL;
+    sh_new_arena(options->extra_data_config);
+    shdefault(options->extra_data_config, NULL);
     return options;
 };
 
@@ -1055,10 +1058,9 @@ void parse_conversion_options(int argc, char **argv, struct conversion_options *
         case 'o':
             user_args->output = strdup(optarg);
             break;
-        case 'v':
-            user_args->value_index = strtol(optarg, NULL, 10);
+        case 'c':
+            user_args->conversion_config_file = strdup(optarg);
             break;
-
         case 'h': /* fall-through is intentional */
         case '?':
             display_conversion_usage(argv);
@@ -1497,6 +1499,23 @@ int parse_batch_config_file(void *user, const char *section, const char *name, c
         fprintf(stderr, "\033[33;5;7mInvalid name %s in section %s on the batch config file!\033[0m\n", name, section);
         return 0;
     }
+
+    return 1;
+}
+
+int parse_converter_config_file(void *user, const char *section, const char *name, const char *value) {
+
+    struct conversion_options *pconfig = (struct conversion_options *)user;
+
+    struct string_hash_entry *section_entry = shget(pconfig->extra_data_config, section);
+
+    if( section_entry == NULL) {
+        sh_new_arena(section_entry);
+        shdefault(section_entry, NULL);
+    }
+    
+    shput(section_entry, name, strdup(value));
+    shput(pconfig->extra_data_config, section, section_entry);
 
     return 1;
 }
