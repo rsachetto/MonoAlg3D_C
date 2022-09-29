@@ -8,7 +8,7 @@
         result.coord = mesh_max.coord;                                                                                                                         \
         if(mesh_max.coord != mesh_min.coord)                                                                                                                   \
             result.coord = (mesh_max.coord - mesh_min.coord) / 2.0f;                                                                                           \
-    }    while(0)
+    } while(0)
 
 #define SET_MESH_MIN_MAX(vec1, vec2, vec3)                                                                                                                     \
     do {                                                                                                                                                       \

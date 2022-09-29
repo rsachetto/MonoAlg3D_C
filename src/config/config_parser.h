@@ -177,7 +177,6 @@ struct visualization_options {
     bool save_activation_only;
     int start_file;
     int step;
-    uint32_t value_index;
     float max_v, min_v, dt;
     float ui_scale;
     //TODO: set this option

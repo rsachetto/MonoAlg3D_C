@@ -6,11 +6,7 @@
 #include "../3dparty/tinyexpr/tinyexpr.h"
 #include "../utils/file_utils.h"
 #include "config_parser.h"
-#include "stim_config.h"
-
 #include "../3dparty/stb_ds.h"
-#include "../config_helpers/config_helpers.h"
-
 #include "postprocessor_config.h"
 
 static const char *batch_opt_string = "c:h?";
@@ -27,11 +23,10 @@ static const struct option long_fiber_conversion_options[] = {{"fib", required_a
                                                               {"nod", required_argument, NULL, 'n'},
                                                               {"alg", required_argument, NULL, 'a'}};
 
-static const char *visualization_opt_string = "x:m:i:d:p:v:a:cs:t:u:h?";
+static const char *visualization_opt_string = "x:m:d:p:v:a:cs:t:u:h?";
 static const struct option long_visualization_options[] = {{"visualization_max_v", required_argument, NULL, 'x'},
                                                            {"visualization_min_v", required_argument, NULL, 'm'},
                                                            {"dt", required_argument, NULL, 'd'},
-                                                           {"value_index", required_argument, NULL, 'i'},
                                                            {"show_activation_map", required_argument, NULL, 'a'},
                                                            {"convert_activation_map", no_argument, NULL, 'c'},
                                                            {"prefix", required_argument, NULL, 'p'},
@@ -219,7 +214,6 @@ struct visualization_options *new_visualization_options() {
     options->step = 1;
     options->start_file = 0;
     options->save_activation_only = false;
-    options->value_index = 6; //Value for the default position of V in your text format
     options->ui_scale = 0.0f;
     return options;
 }
@@ -238,7 +232,7 @@ struct conversion_options *new_conversion_options() {
     sh_new_arena(options->extra_data_config);
     shdefault(options->extra_data_config, NULL);
     return options;
-};
+}
 
 void free_conversion_options(struct conversion_options *options) {
     free(options->input);
@@ -1092,9 +1086,6 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
             break;
         case 'm':
             user_args->min_v = (float)  strtod(optarg, NULL);
-            break;
-        case 'i':
-            user_args->value_index = strtol(optarg, NULL, 10);
             break;
         case 'd':
             user_args->dt = (float)  strtod(optarg, NULL);

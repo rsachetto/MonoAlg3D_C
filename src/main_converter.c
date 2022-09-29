@@ -135,8 +135,6 @@ int main(int argc, char **argv) {
 
     parse_conversion_options(argc, argv, options);
 
-    //    uint32_t value_index = options->value_index;
-
     char *input = options->input;
     char *output = options->output;
 
