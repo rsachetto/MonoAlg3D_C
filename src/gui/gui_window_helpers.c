@@ -36,6 +36,7 @@ static void check_window_bounds(Rectangle *box, float current_window_width, floa
 #define COLIDE_STATUS_BAR(mouse_pos, bounds) COLIDE_STATUS_BAR_WITH_OFFSET(mouse_pos, bounds, 0)
 
 void check_colisions_for_move(struct gui_state *gui_state) {
+
     if(COLIDE_STATUS_BAR(gui_state->mouse_pos, gui_state->search_window.bounds)) {
         gui_state->search_window.move = true;
     } else if(COLIDE_STATUS_BAR(gui_state->mouse_pos, gui_state->help_box.window.bounds)) {
@@ -59,9 +60,11 @@ void check_colisions_for_move(struct gui_state *gui_state) {
 }
 
 #define PERFORM_MOVE(mouse_pos, win)                                                                                                                           \
-    move_rect((Vector2){(mouse_pos.x) - (win.bounds.width - 18.0f) / 2.0f, (mouse_pos.y) + WINDOW_STATUSBAR_HEIGHT / 2.0f}, &(win.bounds));                    \
-    if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))                                                                                                               \
-        win.move = false;
+    do {                                                                                                                                                       \
+        move_rect((Vector2){(mouse_pos.x) - (win.bounds.width - 18.0f) / 2.0f, (mouse_pos.y) + WINDOW_STATUSBAR_HEIGHT / 2.0f}, &(win.bounds));                \
+        if(IsMouseButtonReleased(MOUSE_LEFT_BUTTON))                                                                                                           \
+            win.move = false;                                                                                                                                  \
+    } while(0)
 
 void maybe_move_or_drag(struct gui_state *gui_state) {
 

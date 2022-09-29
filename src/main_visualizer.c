@@ -41,59 +41,6 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
     omp_unset_lock(&gui_config->draw_lock);
 }
 
-static void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, sds full_path) {
-
-    sds full_path_cp = sdsnew(full_path);
-    full_path_cp = sdscat(full_path_cp, ".vis");
-    FILE *vis_file = fopen(full_path_cp, "r+");
-
-    if(vis_file) {
-        uint32_t n_cells = (*vtk_grid)->num_cells;
-        arrsetlen((*vtk_grid)->cell_visibility, n_cells);
-        fread((*vtk_grid)->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
-        fclose(vis_file);
-    } else {
-        set_vtk_grid_visibility(vtk_grid);
-    }
-}
-
-static void read_timesteps_from_case_file(sds case_file_path, float **timesteps) {
-    size_t case_file_size;
-
-    char *content = read_entire_file_with_mmap(case_file_path, &case_file_size);
-    char *tmp = content;
-
-    char *word = NULL;
-
-    while(*tmp) {
-
-        if(*tmp != '\n' && *tmp != ':') {
-            arrpush(word, *tmp);
-        } else {
-            arrpush(word, 0);
-
-            if(strcmp(word, "time values") == 0) {
-                while(!isdigit(*tmp))
-                    tmp++;
-                break;
-            } else {
-                arrsetlen(word, 0);
-            }
-        }
-
-        tmp++;
-    }
-
-    while(*tmp) {
-        double time_val = strtod(tmp, &tmp);
-        arrput(*timesteps, time_val);
-        while(isspace(*tmp))
-            tmp++;
-    }
-
-    munmap(content, case_file_size);
-}
-
 static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
 
     char error[MAX_ERROR_SIZE];
@@ -247,7 +194,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             if(!case_info.exists) {
                 gui_config->dt = 1;
             } else {
-                read_timesteps_from_case_file(case_file_path, &simulation_files->timesteps);
+                simulation_files->timesteps = read_timesteps_from_case_file(case_file_path);
             }
             sdsfree(case_file_path);
             free_path_information(&case_info);

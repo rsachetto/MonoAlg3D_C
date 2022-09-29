@@ -474,7 +474,7 @@ SAVE_MESH(save_as_vtk) {
                                             plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells);
 
     save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary,
-                                             save_f);
+                                             save_f, NULL);
 
     if(save_visible_mask) {
         save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid)->cell_visibility);

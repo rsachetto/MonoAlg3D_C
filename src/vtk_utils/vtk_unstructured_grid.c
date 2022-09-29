@@ -224,6 +224,22 @@ void binary_grid_error(struct vtk_unstructured_grid **vtk_grid) {
     *vtk_grid = NULL;
 }
 
+void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, sds full_path) {
+
+    sds full_path_cp = sdsnew(full_path);
+    full_path_cp = sdscat(full_path_cp, ".vis");
+    FILE *vis_file = fopen(full_path_cp, "r+");
+
+    if(vis_file) {
+        uint32_t n_cells = (*vtk_grid)->num_cells;
+        arrsetlen((*vtk_grid)->cell_visibility, n_cells);
+        fread((*vtk_grid)->cell_visibility, sizeof(uint8_t), n_cells, vis_file);
+        fclose(vis_file);
+    } else {
+        set_vtk_grid_visibility(vtk_grid);
+    }
+}
+
 #define SET_VISIBLE                                                                                                                                            \
     i = hmgeti(cells, neighbour_center);                                                                                                                       \
     if(i == -1) {                                                                                                                                              \
@@ -292,6 +308,8 @@ void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell_hash_e
 static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid **vtk_grid, char *source, size_t source_size, bool binary, bool read_only_values,
                                                   size_t *bytes_read) {
 
+    assert(bytes_read);
+    
     if(!read_only_values) {
         *vtk_grid = new_vtk_unstructured_grid();
     } else {
@@ -477,9 +495,7 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
             continue;
         }
 
-        if(bytes_read != NULL) {
-            *bytes_read = (size_t)(source - original_src);
-        }
+        *bytes_read = (size_t)(source - original_src);
 
         set_point_data(center, half_face, vtk_grid, &hash, &id);
         num_cells++;
@@ -1252,7 +1268,7 @@ void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *
     fclose(output_file);
 }
 
-void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary, bool save_f) {
+void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary, bool save_f, struct string_voidp_hash_entry *extra_data_config) {
 
     sds file_content = sdsempty();
 
@@ -1341,34 +1357,11 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
         }
     }
 
-    // Transmembrane_Potential
-    {
-        sds tmp = sdscatprintf(sdsempty(), "\nCELL_DATA %d\n", num_cells);
-        tmp = sdscat(tmp, "SCALARS Transmembrane_Potential float\n");
-        tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
-
-        size_until_now += sdslen(tmp);
-
-        file_content = sdscatsds(file_content, tmp);
-        sdsfree(tmp);
-
-        size_t num_values = arrlenu(vtk_grid->values);
-
-        for(size_t i = 0; i < num_values; i++) {
-            if(binary) {
-                int aux = invert_bytes(*((int *)&(vtk_grid->values[i])));
-                file_content = sdscatlen(file_content, &aux, sizeof(int));
-                size_until_now += sizeof(int);
-            } else {
-                file_content = sdscatprintf(file_content, "%lf ", vtk_grid->values[i]);
-            }
-        }
-    }
-
-    if(vtk_grid->extra_values != NULL) {
-        int n_extra = arrlen(vtk_grid->extra_values);
-        for(int i = 0; i < n_extra; i++) {
-            sds tmp = sdscatfmt(sdsempty(), "\nSCALARS Column_%i float\n", i + 1);
+    if(extra_data_config == NULL) {
+        // Transmembrane_Potential
+        {
+            sds tmp = sdscatprintf(sdsempty(), "\nCELL_DATA %d\n", num_cells);
+            tmp = sdscat(tmp, "SCALARS Transmembrane_Potential float\n");
             tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
             size_until_now += sdslen(tmp);
@@ -1376,49 +1369,175 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
             file_content = sdscatsds(file_content, tmp);
             sdsfree(tmp);
 
-            size_t num_values = arrlenu(vtk_grid->extra_values[i]);
+            size_t num_values = arrlenu(vtk_grid->values);
 
-            for(size_t j = 0; j < num_values; j++) {
+            for(size_t i = 0; i < num_values; i++) {
                 if(binary) {
-                    int aux = invert_bytes(*((int *)&(vtk_grid->extra_values[i][j])));
+                    int aux = invert_bytes(*((int *)&(vtk_grid->values[i])));
                     file_content = sdscatlen(file_content, &aux, sizeof(int));
                     size_until_now += sizeof(int);
                 } else {
-                    file_content = sdscatprintf(file_content, "%lf ", vtk_grid->extra_values[i][j]);
+                    file_content = sdscatprintf(file_content, "%lf ", vtk_grid->values[i]);
                 }
             }
         }
-    }
 
-    if(save_f) {
-        sds tmp = sdscat(sdsempty(), "\nSCALARS fibers float 3\n");
-        tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
+        if(vtk_grid->extra_values != NULL) {
+            int n_extra = arrlen(vtk_grid->extra_values);
+            for(int i = 0; i < n_extra; i++) {
+                sds tmp = sdscatfmt(sdsempty(), "\nSCALARS Column_%i float\n", i + 1);
+                tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
 
-        size_until_now += sdslen(tmp);
+                size_until_now += sdslen(tmp);
 
-        file_content = sdscatsds(file_content, tmp);
-        sdsfree(tmp);
+                file_content = sdscatsds(file_content, tmp);
+                sdsfree(tmp);
 
-        for(size_t i = 0, count = 0; i < num_cells; i++, count += 3) {
-            real_cpu *f = vtk_grid->fibers[i];
-            if(binary) {
-                int aux = invert_bytes(*((int *)&(f[0])));
-                file_content = sdscatlen(file_content, &aux, sizeof(int));
-                size_until_now += sizeof(int);
+                size_t num_values = arrlenu(vtk_grid->extra_values[i]);
 
-                aux = invert_bytes(*((int *)&(f[1])));
-                file_content = sdscatlen(file_content, &aux, sizeof(int));
-                size_until_now += sizeof(int);
-
-                aux = invert_bytes(*((int *)&(f[2])));
-                file_content = sdscatlen(file_content, &aux, sizeof(int));
-                size_until_now += sizeof(int);
-
-            } else {
-                file_content = sdscatprintf(file_content, "%lf ", f[0]);
-                file_content = sdscatprintf(file_content, " %lf ", f[1]);
-                file_content = sdscatprintf(file_content, " %lf\n", f[2]);
+                for(size_t j = 0; j < num_values; j++) {
+                    if(binary) {
+                        int aux = invert_bytes(*((int *)&(vtk_grid->extra_values[i][j])));
+                        file_content = sdscatlen(file_content, &aux, sizeof(int));
+                        size_until_now += sizeof(int);
+                    } else {
+                        file_content = sdscatprintf(file_content, "%lf ", vtk_grid->extra_values[i][j]);
+                    }
+                }
             }
+        }
+
+        if(save_f) {
+            sds tmp = sdscat(sdsempty(), "\nSCALARS fibers float 3\n");
+            tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
+
+            size_until_now += sdslen(tmp);
+
+            file_content = sdscatsds(file_content, tmp);
+            sdsfree(tmp);
+
+            for(size_t i = 0, count = 0; i < num_cells; i++, count += 3) {
+                real_cpu *f = vtk_grid->fibers[i];
+                if(binary) {
+                    int aux = invert_bytes(*((int *)&(f[0])));
+                    file_content = sdscatlen(file_content, &aux, sizeof(int));
+                    size_until_now += sizeof(int);
+
+                    aux = invert_bytes(*((int *)&(f[1])));
+                    file_content = sdscatlen(file_content, &aux, sizeof(int));
+                    size_until_now += sizeof(int);
+
+                    aux = invert_bytes(*((int *)&(f[2])));
+                    file_content = sdscatlen(file_content, &aux, sizeof(int));
+                    size_until_now += sizeof(int);
+
+                } else {
+                    file_content = sdscatprintf(file_content, "%lf ", f[0]);
+                    file_content = sdscatprintf(file_content, " %lf ", f[1]);
+                    file_content = sdscatprintf(file_content, " %lf\n", f[2]);
+                }
+            }
+        }
+    } else {
+        int n_configs = shlen(extra_data_config); 
+        for(int i = 0; i < n_configs; i++) {
+            char *name = extra_data_config[i].key;
+            struct string_hash_entry *configs = (struct string_hash_entry*) extra_data_config[i].value;
+
+            char *column_index = shget(configs, "column_index");
+            int column_index_int = 0;
+
+            if(column_index == NULL) {
+                log_error_and_exit("column_index not specified at section %s!. Aborting\n", name);
+            }
+            else {
+                column_index_int = strtol(column_index, NULL, 10);
+            }
+
+            int n_extra_values = arrlen(vtk_grid->extra_values);
+
+            const int min_columns = 7;
+
+            int starting_index = column_index_int - min_columns - 1;
+            bool invalid_column = starting_index < -1 || starting_index > n_extra_values - 1;
+
+            if(invalid_column) {
+                log_warn("Invalid column value %d! Skipping section %s\n", column_index_int, name);
+                continue;
+            }
+
+            float *vals = NULL;
+            
+            if(starting_index == -1) {
+                vals = vtk_grid->values;
+            }
+            else {
+                vals = vtk_grid->extra_values[starting_index];
+            }
+
+            char *n_components = shget(configs, "n_components");
+            int n_components_int = 1;
+
+            if(n_components != NULL) {
+                n_components_int = strtol(n_components, NULL, 10);
+            }
+            
+            size_t num_values = arrlenu(vals);
+
+            sds tmp = sdsempty();
+
+            if(i == 0) {
+                tmp = sdscatprintf(tmp, "\nCELL_DATA %d\n", num_cells);
+            }
+
+            if(n_components_int == 1) {
+                tmp = sdscatfmt(tmp, "\nSCALARS %s float\n", name);
+                tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
+
+                size_until_now += sdslen(tmp);
+
+                file_content = sdscatsds(file_content, tmp);
+                sdsfree(tmp);
+
+
+                for(size_t j = 0; j < num_values; j++) {
+                    if(binary) {
+                        int aux = invert_bytes(*((int *)&(vals[j])));
+                        file_content = sdscatlen(file_content, &aux, sizeof(int));
+                        size_until_now += sizeof(int);
+                    } else {
+                        file_content = sdscatprintf(file_content, "%lf ", vals[j]);
+                    }
+                }
+            }
+            else if(n_components_int > 1) {
+                tmp = sdscatfmt(tmp, "\nSCALARS %s float %i\n", name, n_components_int);
+                tmp = sdscat(tmp, "LOOKUP_TABLE default\n");
+
+                size_until_now += sdslen(tmp);
+
+                file_content = sdscatsds(file_content, tmp);
+                sdsfree(tmp);
+
+                //TODO: check if n_components is correct
+                for(size_t i = 0; i < num_values; i++) {
+                    if(binary) {
+                        for(int j = 0; j < n_components_int; j++) {
+                            int aux = invert_bytes(*((int *)&(vtk_grid->extra_values[starting_index+j][i])));
+                            file_content = sdscatlen(file_content, &aux, sizeof(int));
+                            size_until_now += sizeof(int);
+                        }
+
+                    } else {
+                        for(int j = 0; j < n_components_int; j++) {
+                            file_content = sdscatprintf(file_content, "%lf ", vtk_grid->extra_values[starting_index+j][i]);
+                        }
+                        file_content = sdscatprintf(file_content, "\n");
+                    }
+                }
+
+            }
+
         }
     }
 
@@ -1477,16 +1596,16 @@ void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_gr
 
 static int parse_vtk_legacy(char *source, size_t source_size, struct parser_state *state, size_t *bytes_read) {
 
+    assert(bytes_read);
+    
 #define UPDATE_SIZES_READ                                                                                                                                      \
     do {                                                                                                                                                       \
         source++;                                                                                                                                              \
         source_size--;                                                                                                                                         \
-        if(bytes_read != NULL)                                                                                                                                 \
-            (*bytes_read)++;                                                                                                                                   \
-    } while(0)
+        (*bytes_read)++;                                                                                                                                       \
+    } while(0)                         
 
-    if(bytes_read != NULL)
-        *bytes_read = 0;
+    *bytes_read = 0;
 
     // ignoring the first two lines...
     while(*source != '\n') {
@@ -1566,8 +1685,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
                     source += 12;
                     source_size -= 12;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 12;
+                    (*bytes_read) += 12;
                 }
 
                 UPDATE_SIZES_READ;
@@ -1610,8 +1728,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
                     int points_per_cell = invert_bytes(*(int *)source);
                     source += 4;
                     source_size -= 4;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 4;
+                    (*bytes_read) += 4;
 
                     for(int c = 0; c < points_per_cell; c++) {
                         uint64_t cell_point = (uint64_t)invert_bytes(*(int *)source);
@@ -1621,8 +1738,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
                         source += 4;
                         source_size -= 4;
-                        if(bytes_read != NULL)
-                            (*bytes_read) += 4;
+                        (*bytes_read) += 4;
                     }
                 }
                 UPDATE_SIZES_READ;
@@ -1646,8 +1762,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
                 for(unsigned long i = 0; i < num_cells; i++) {
                     source += 4;
                     source_size -= 4;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 4;
+                    (*bytes_read) += 4;
                 }
                 UPDATE_SIZES_READ;
             }
@@ -1701,8 +1816,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
                     source += 4;
                     source_size -= 4;
-                    if(bytes_read != NULL)
-                        (*bytes_read) += 4;
+                    (*bytes_read) += 4;
                 }
                 if(source_size) {
                     UPDATE_SIZES_READ;
@@ -1713,6 +1827,10 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
             arrsetlen(data_name, 0);
 
         } else {
+	    if (data_name[0] == 0) { 
+            	arrsetlen(data_name, 0);
+		continue;
+	    }
             while(*source != '\n') {
                 UPDATE_SIZES_READ;
             }
@@ -1934,6 +2052,7 @@ static void free_parser_state(struct parser_state *parser_state) {
 static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid **vtk_grid, enum file_type_enum file_type, char *source, size_t size,
                                                     bool calc_max_min, size_t *bytes_read_out) {
 
+    assert(bytes_read_out);
     struct parser_state *parser_state = NULL;
 
     parser_state = calloc(1, sizeof(struct parser_state));
@@ -1969,9 +2088,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
         for(size_t i = 0; i < size; i++) {
             yxml_ret_t r = yxml_parse(x, source[i]);
             bytes_read++;
-            if(bytes_read_out != NULL) {
-                *bytes_read_out = bytes_read;
-            }
+            *bytes_read_out = bytes_read;
             if(parse_vtk_xml(x, r, parser_state) == -1) {
                 break;
             }
@@ -2058,6 +2175,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
 
         if(is_raw) {
             raw_data = (source + scalars_offset_value);
+
             *bytes_read_out = (size_t)(raw_data - original_src);
 
         } else if(is_b64) {
@@ -2074,6 +2192,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
             if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { // We read only the header.. need to read the data
                 b64_size -= bytes_read;
                 base64_decode((unsigned char *)raw_data + base64_outlen, data_tmp + bytes_read, b64_size, &bytes_read);
+            
                 *bytes_read_out += bytes_read;
             }
 
@@ -2418,11 +2537,14 @@ static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_
 }
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file(const char *file_name, bool calc_max_min) {
-    return new_vtk_unstructured_grid_from_file_with_progress(file_name, calc_max_min, NULL, NULL);
+    size_t unused;
+    return new_vtk_unstructured_grid_from_file_with_progress(file_name, calc_max_min, &unused, NULL);
 }
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file_with_progress(const char *file_name, bool calc_max_min, size_t *bytes_read,
                                                                                 size_t *file_size) {
+    
+    assert(bytes_read);
     struct vtk_unstructured_grid *vtk_grid = NULL;
 
     size_t size;

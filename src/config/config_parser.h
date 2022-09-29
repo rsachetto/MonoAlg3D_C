@@ -177,7 +177,6 @@ struct visualization_options {
     bool save_activation_only;
     int start_file;
     int step;
-    uint32_t value_index;
     float max_v, min_v, dt;
     float ui_scale;
     //TODO: set this option
@@ -187,7 +186,8 @@ struct visualization_options {
 struct conversion_options {
     char *input;
     char *output;
-    uint32_t value_index;
+    char *conversion_config_file;
+    struct string_voidp_hash_entry *extra_data_config;
 };
 
 struct fibers_conversion_options {
@@ -219,6 +219,7 @@ void get_config_file(int argc, char**argv, struct user_options *user_args);
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
 int parse_preprocessor_config(void* user, const char* section, const char* name, const char* value);
+int parse_converter_config_file(void *user, const char *section, const char *name, const char *value);
 
 void options_to_ini_file(struct user_options *config, char *ini_file_path);
 

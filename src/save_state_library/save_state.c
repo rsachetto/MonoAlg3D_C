@@ -7,7 +7,6 @@
 
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
-#include "../3dparty/sds/sds.h"
 #include "../save_mesh_library/save_mesh_helper.h"
 
 #ifdef COMPILE_CUDA

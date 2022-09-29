@@ -58,4 +58,4 @@ Oliveira RS, Rocha BM, Burgarelli D, Meira Jr W, Constantinides C, dos Santos RW
 
 # Credits
 ----
-"Icon made by Pixel perfect from www.flaticon.com"
+[Heart icons created by phatplus - Flaticon](https://www.flaticon.com/free-icons/heart)

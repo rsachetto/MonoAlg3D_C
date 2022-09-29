@@ -262,8 +262,10 @@ static void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *g
     const float graph_x = gui_state->ap_graph_config->graph.bounds.x;
     const float graph_y = gui_state->ap_graph_config->graph.bounds.y;
 
-    static const Color colors[] = {DARKGRAY, GOLD,     ORANGE, PINK,   RED,        MAROON, GREEN,     LIME,  DARKGREEN,
-                                   BLUE,     DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN,  DARKBROWN, BLACK, MAGENTA};
+    static const Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON,
+                                   GREEN, LIME, DARKGREEN, BLUE, DARKBLUE,
+                                   PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN,
+                                   BLACK, MAGENTA};
 
     int num_colors = SIZEOF(colors);
 
@@ -949,7 +951,6 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         
         if(IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown(KEY_LEFT_CONTROL)) {
             
-            gui_state->mouse_pos = GetMousePosition();
             gui_state->ray_mouse_over = GetMouseRay(GetMousePosition(), gui_state->camera);
 
             gui_state->ctrl_pressed = true;
@@ -1227,9 +1228,12 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
 static void handle_input(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
 
+    gui_state->mouse_pos = GetMousePosition();
+
     if(gui_state->handle_keyboard_input) {
         handle_keyboard_input(gui_config, gui_state);
     }
+
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
 
         gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);

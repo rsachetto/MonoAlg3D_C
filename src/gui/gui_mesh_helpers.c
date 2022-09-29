@@ -8,7 +8,7 @@
         result.coord = mesh_max.coord;                                                                                                                         \
         if(mesh_max.coord != mesh_min.coord)                                                                                                                   \
             result.coord = (mesh_max.coord - mesh_min.coord) / 2.0f;                                                                                           \
-    }    while(0)
+    } while(0)
 
 #define SET_MESH_MIN_MAX(vec1, vec2, vec3)                                                                                                                     \
     do {                                                                                                                                                       \
@@ -95,6 +95,8 @@ Vector3 find_mesh_center(struct grid *grid_to_draw, struct mesh_info *mesh_info)
     } while(0)
 
 Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct mesh_info *mesh_info) {
+
+
     uint32_t n_active = grid_to_draw->num_cells;
 
     Vector3 mesh_max = V3_SAME(FLT_MIN);
@@ -106,6 +108,7 @@ Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
 
+    assert(points);
     uint32_t num_points = grid_to_draw->points_per_cell;
 
     Vector3 d;
@@ -274,23 +277,19 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
 void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, struct draw_context *draw_context) {
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
-
-    if(!grid_to_draw) {
-        return;
-    }
+    if (!grid_to_draw) return;
 
     int64_t *cells = grid_to_draw->cells;
-    if(!cells) {
-        return;
-    }
+    if(!cells) return;
 
     point3d_array points = grid_to_draw->points;
-    if(!points) {
-        return;
-    }
+    if(!points) return;
+
+    f32_array values = grid_to_draw->values;
+
+    bool single_file = (gui_config->final_file_index == 0);
 
     uint32_t n_active = grid_to_draw->num_cells;
-
     uint32_t num_points = grid_to_draw->points_per_cell;
     int j = 0;
 
@@ -304,13 +303,15 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
 
     int extra_data_len = arrlen(grid_to_draw->extra_values);
 
+    int current_data_index = gui_state->current_data_index;
+
     if(gui_config->final_file_index == 0) {
-        if(gui_state->current_data_index == -1) {
+        if(current_data_index == -1) {
             min_v = grid_to_draw->min_v;
             max_v = grid_to_draw->max_v;
-        } else if(extra_data_len > 0 && gui_state->current_data_index < extra_data_len) {
-            min_v = grid_to_draw->min_extra_value[gui_state->current_data_index];
-            max_v = grid_to_draw->max_extra_value[gui_state->current_data_index];
+        } else if(extra_data_len > 0 && current_data_index < extra_data_len) {
+            min_v = grid_to_draw->min_extra_value[current_data_index];
+            max_v = grid_to_draw->max_extra_value[current_data_index];
         }
     } else {
         max_v = gui_config->max_v;
@@ -334,6 +335,8 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
     float scale = gui_state->mesh_scale_factor;
     Vector3 mesh_offset = gui_state->mesh_offset;
 
+    bool slicing_mode = gui_state->slicing_mode;
+
     int count = 0;
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
@@ -344,22 +347,27 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
             }
         }
 
+        struct point_3d cell_point = points[cells[i]];
+        float cell_point_x = (float) cell_point.x;
+        float cell_point_y = (float) cell_point.y;
+        float cell_point_z = (float) cell_point.z;
+
         float mesh_center_x, mesh_center_y, mesh_center_z;
         float dx, dy, dz;
 
-        dx = (float)fabs((points[cells[i]].x - points[cells[i + 1]].x));
-        dy = (float)fabs((points[cells[i]].y - points[cells[i + 3]].y));
-        dz = (float)fabs((points[cells[i]].z - points[cells[i + 4]].z));
+        dx = fabs((cell_point_x - points[cells[i + 1]].x));
+        dy = fabs((cell_point_y - points[cells[i + 3]].y));
+        dz = fabs((cell_point_z - points[cells[i + 4]].z));
 
-        mesh_center_x = (float)points[cells[i]].x + dx / 2.0f;
-        mesh_center_y = (float)points[cells[i]].y + dy / 2.0f;
-        mesh_center_z = (float)points[cells[i]].z + dz / 2.0f;
+        mesh_center_x = cell_point_x + dx / 2.0f;
+        mesh_center_y = cell_point_y + dy / 2.0f;
+        mesh_center_z = cell_point_z + dz / 2.0f;
 
         voxel.position_draw.x = (mesh_center_x - mesh_offset.x) / scale;
         voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
         voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
 
-        if(gui_state->slicing_mode) {
+        if(slicing_mode) {
             Vector3 test = Vector3Subtract(voxel.position_draw, p);
             float side = Vector3DotProduct(test, n);
 
@@ -372,12 +380,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         Color c = BLUE;
         voxel.v = 0.0f;
 
-        if(gui_state->current_data_index == -1) {
-            if(grid_to_draw->values) {
-                voxel.v = grid_to_draw->values[j];
+        if(current_data_index == -1) {
+            if(values) {
+                voxel.v = values[j];
             }
-        } else if(extra_data_len > 0 && gui_state->current_data_index < extra_data_len) {
-            voxel.v = grid_to_draw->extra_values[gui_state->current_data_index][j];
+        } else if(extra_data_len > 0 && current_data_index < extra_data_len) {
+            voxel.v = grid_to_draw->extra_values[current_data_index][j];
         }
 
         c = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
@@ -393,7 +401,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         draw_context->colors[count] = c;
         voxel.draw_index = count;
         
-        if(gui_state->double_clicked || gui_config->adaptive) {
+        if((gui_state->double_clicked || gui_config->adaptive) && !single_file) {
             collision |= check_volume_selection(&voxel, gui_state);
         }
 
@@ -401,14 +409,19 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
             check_mouse_over_volume(&voxel, gui_state);
         }
 
-        trace_ap(gui_state, &voxel, time);
+        if(!single_file) {
+            trace_ap(gui_state, &voxel, time);
+        }
 
         count++;
 
         j += 1;
     }
 
-    update_selected(collision, gui_state, gui_config, draw_context->colors);
+    if(!single_file) {
+        update_selected(collision, gui_state, gui_config, draw_context->colors);
+    }
+
     DrawMeshInstancedWithColors(draw_context, grid_mask, count);
 }
 

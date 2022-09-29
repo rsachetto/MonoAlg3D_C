@@ -3,7 +3,6 @@
 //
 
 #include "vtk_polydata_grid.h"
-#include "../3dparty/sds/sds.h"
 #include "data_utils.h"
 #include <stdint.h>
 

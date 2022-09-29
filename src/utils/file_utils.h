@@ -28,6 +28,7 @@ struct path_information {
     char *dir_name;
 };
 
+float* read_timesteps_from_case_file(sds case_file_path);
 char *get_current_directory();
 const char *get_filename_ext(const char *filename);
 int cp_file(const char *to, const char *from);
