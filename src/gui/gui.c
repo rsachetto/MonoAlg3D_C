@@ -891,6 +891,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
             snprintf(tmp, TMP_SIZE, "Simulation running: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
         } else {
             snprintf(tmp, TMP_SIZE, "Simulation finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
+            gui_config->paused = true;
         }
         (*(info_string))[index++] = strdup(tmp);
 
@@ -1379,7 +1380,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     InitWindow(0, 0, window_title);
 
-    SetTargetFPS(60);
+//    SetTargetFPS(60);
 
     Image icon = LoadImage("res/icon.png");
 
