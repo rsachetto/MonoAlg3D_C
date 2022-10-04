@@ -3,6 +3,12 @@
 #include "raylib_ext.h"
 #include <float.h>
 
+struct mesh_info *new_mesh_info() {
+    struct mesh_info *mesh_info = (struct mesh_info *)malloc(sizeof(struct mesh_info));
+    mesh_info->center_calculated = false;
+    return mesh_info;
+}
+
 #define SET_MAX(coord)                                                                                                                                         \
     do {                                                                                                                                                       \
         result.coord = mesh_max.coord;                                                                                                                         \

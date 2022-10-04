@@ -46,8 +46,6 @@ static void set_camera_params(Camera3D *camera, bool set_mode) {
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
 
-    MaximizeWindow();
-
     struct gui_state *gui_state = CALLOC_ONE_TYPE(struct gui_state);
     gui_state->current_selected_volumes = NULL;
 
@@ -144,12 +142,6 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->double_clicked = false;
 
     return gui_state;
-}
-
-static struct mesh_info *new_mesh_info() {
-    struct mesh_info *mesh_info = (struct mesh_info *)malloc(sizeof(struct mesh_info));
-    mesh_info->center_calculated = false;
-    return mesh_info;
 }
 
 static inline void reset_ui(struct gui_state *gui_state) {
@@ -792,21 +784,6 @@ static bool draw_search_window(struct gui_state *gui_state) {
     return window_closed || btn_ok_clicked;
 }
 
-static void draw_text_window(struct gui_text_window *box, struct gui_state *gui_state, float text_offset) {
-
-    float text_x = box->window.bounds.x + 20;
-    float text_y = box->window.bounds.y + 10 + WINDOW_STATUSBAR_HEIGHT;
-
-    box->window.show = !GuiWindowBox(box->window.bounds, box->title);
-
-    int num_lines = box->num_lines;
-
-    for(int i = 0; i < num_lines; i++) {
-        DrawTextEx(gui_state->font, box->lines[i], (Vector2){text_x, text_y}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
-        text_y += text_offset;
-    }
-}
-
 static inline void configure_end_info_box_strings(struct gui_shared_info *gui_config, char ***info_string) {
 
     char tmp[TMP_SIZE];
@@ -1380,7 +1357,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     InitWindow(0, 0, window_title);
 
-//    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     Image icon = LoadImage("res/icon.png");
 
@@ -1397,6 +1374,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     const int font_size_small = 16;
     const int font_size_big = 20;
+
+    MaximizeWindow();
 
     struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
 

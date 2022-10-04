@@ -123,3 +123,18 @@ void maybe_move_or_drag(struct gui_state *gui_state) {
             gui_state->scale.window.move = false;
     }
 }
+
+void draw_text_window(struct gui_text_window *box, struct gui_state *gui_state, float text_offset) {
+
+    float text_x = box->window.bounds.x + 20;
+    float text_y = box->window.bounds.y + 10 + WINDOW_STATUSBAR_HEIGHT;
+
+    box->window.show = !GuiWindowBox(box->window.bounds, box->title);
+
+    int num_lines = box->num_lines;
+
+    for(int i = 0; i < num_lines; i++) {
+        DrawTextEx(gui_state->font, box->lines[i], (Vector2){text_x, text_y}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+        text_y += text_offset;
+    }
+}

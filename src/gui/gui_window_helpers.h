@@ -6,5 +6,6 @@
 
 void check_colisions_for_move(struct gui_state *gui_state);
 void maybe_move_or_drag(struct gui_state *gui_state);
+void draw_text_window(struct gui_text_window *box, struct gui_state *gui_state, float text_offset);
 
 #endif /* __GUI_WINDOW_HELPERS_H */
