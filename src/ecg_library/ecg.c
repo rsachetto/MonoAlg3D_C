@@ -37,6 +37,8 @@ void fill_element(uint32_t position, real_cpu dx, real_cpu dy, real_cpu dz, stru
 
 static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, enum transition_direction direction) {
 
+    (void) direction;
+
     bool has_found;
 
     struct transition_node *white_neighbor_cell;
@@ -111,7 +113,7 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
             size_t max_elements = arrlen(cell_elements);
 
         bool insert = false;
-        int p;
+        size_t p;
 
         for(size_t i = 0; i < max_elements; i++) {
             if(cell_elements[i].column == position) {
