@@ -1,8 +1,6 @@
 #include "gui_window_helpers.h"
 #include <float.h>
 
-#define WINDOW_STATUSBAR_HEIGHT        22
-
 static inline void move_rect(Vector2 new_pos, Rectangle *rect) {
 
     float new_x = new_pos.x;
@@ -137,4 +135,53 @@ void draw_text_window(struct gui_text_window *box, struct gui_state *gui_state, 
         DrawTextEx(gui_state->font, box->lines[i], (Vector2){text_x, text_y}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
         text_y += text_offset;
     }
+}
+
+bool draw_search_window(struct gui_state *gui_state) {
+
+#define CENTER_X "Center X"
+#define CENTER_Y "Center Y"
+#define CENTER_Z "Center Z"
+
+    Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
+
+    float text_box_y_dist = text_box_size.y * 2.5f;
+    float label_box_y_dist = 30;
+    float x_off = 10;
+
+    static char center_x_text[128] = {0};
+    static char center_y_text[128] = {0};
+    static char center_z_text[128] = {0};
+
+    float pos_x = gui_state->search_window.bounds.x;
+    float pos_y = gui_state->search_window.bounds.y;
+
+    float box_pos = pos_x + x_off;
+    gui_state->search_window.bounds.width = text_box_size.x * 3.5f;
+    gui_state->search_window.bounds.height = (text_box_size.y + text_box_y_dist) * 1.6f;
+
+    bool window_closed = GuiWindowBox(gui_state->search_window.bounds, "Enter the center of the cell");
+
+    DrawTextEx(gui_state->font, CENTER_X, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_x_text, SIZEOF(center_x_text) - 1, true);
+
+    box_pos = pos_x + text_box_size.x + 2 * x_off;
+    DrawTextEx(gui_state->font, CENTER_Y, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_y_text, SIZEOF(center_y_text) - 1, true);
+
+    box_pos = pos_x + 2 * text_box_size.x + 3 * x_off;
+    DrawTextEx(gui_state->font, CENTER_Z, (Vector2){box_pos, pos_y + label_box_y_dist}, gui_state->font_size_small, gui_state->font_spacing_small, BLACK);
+    GuiTextBoxEx((Rectangle){box_pos, pos_y + text_box_y_dist, text_box_size.x, text_box_size.y}, center_z_text, SIZEOF(center_z_text) - 1, true);
+
+    bool btn_ok_clicked =
+        GuiButton((Rectangle){pos_x + text_box_size.x + 2 * x_off, pos_y + (text_box_size.y + text_box_y_dist) * 1.2f, text_box_size.x, text_box_size.y}, "OK");
+
+    if(btn_ok_clicked) {
+        gui_state->found_volume.position_mesh.x = strtof(center_x_text, NULL);
+        gui_state->found_volume.position_mesh.y = strtof(center_y_text, NULL);
+        gui_state->found_volume.position_mesh.z = strtof(center_z_text, NULL);
+    }
+
+    return window_closed || btn_ok_clicked;
 }
