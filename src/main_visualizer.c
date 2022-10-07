@@ -252,7 +252,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         } else if(using_pvd || ensight) {
             gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
         } else {
-			if(dt == 0) {
+            if(dt == 0) {
                 gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
             } else {
                 gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
@@ -314,7 +314,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
             }
         }
-      
+
         omp_unset_lock(&gui_config->draw_lock);
 
         // here we wait until the mesh was rendered

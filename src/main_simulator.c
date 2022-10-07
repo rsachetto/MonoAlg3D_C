@@ -16,10 +16,10 @@
 void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver, struct ode_solver **ode_solver,
                           struct grid **the_grid) {
 
-    *options = new_user_options();
-    *the_grid = new_grid();
+    *options           = new_user_options();
+    *the_grid          = new_grid();
     *monodomain_solver = new_monodomain_solver();
-    *ode_solver = new_ode_solver();
+    *ode_solver        = new_ode_solver();
 
     // First we have to get the config file path
     get_config_file(argc, argv, *options);
