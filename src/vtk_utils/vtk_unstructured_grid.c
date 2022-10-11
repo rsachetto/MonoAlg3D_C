@@ -2288,7 +2288,7 @@ static inline float read_float(char **source, bool binary) {
         memcpy(&result, *source, sizeof(float));
         *source += sizeof(float);
     } else {
-        result = (float)strtod(*source, NULL);
+        result = strtof(*source, NULL);
         skip_line(source, false);
     }
 

@@ -29,9 +29,39 @@
 
 #define RLIGHTS_IMPLEMENTATION
 #include "../3dparty/raylib/src/extras/rlights.h"
-#undef RAYGUI_IMPLEMENTATION
 
 #include "raylib_ext.h"
+
+static const char *help_box_strings[] = {
+    " - Mouse Wheel to Zoom in-out",
+    " - Mouse Wheel Pressed to Pan",
+    " - Alt + Mouse Wheel Pressed to Rotate",
+    " - Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
+    " - Ctrl + F to search a cell based on it's center",
+    " - Hold Ctrl and move the mouse over a cell to see it's position",
+    " - G to only draw the grid lines",
+    " - L to enable or disable the grid lines",
+    " - R to restart simulation (only works when paused)",
+    " - Alt + R to restart simulation and the box positions",
+    " - X to show/hide AP visualization",
+    " - Q to show/hide scale",
+    " - C to show/hide everything except grid",
+    " - F to open a simulation file",
+    " - O to open a simulation directory",
+    " - F12 to take a screenshot",
+    " - CTRL + F12 to start/stop recording the screen",
+    " - . or , to change color scales",
+    " - Right arrow to advance one dt when paused",
+    " - Hold up arrow to advance time when paused",
+    " - Double click on a volume to show the AP",
+    " - from 1 to 0 to show different file column (or PGUP/PGDOWN)",
+    " - S to enter mesh slice mode",
+    " - Space to start or pause simulation"
+};
+
+static const char *slice_help_box_strings[] = {" - Press backspace to reset and exit slice mode", " - Press enter to accept the sliced mesh",
+                                            " - Move the slicing plane with arrow keys", " - Rotate the slicing plane with ALT + arrow keys"};
+
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
 
@@ -652,14 +682,18 @@ static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box
 void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     const int end_info_box_lines = 9;
-    int mesh_info_box_lines = 9;
+    const int mesh_info_box_lines = 9;
+    const int font_size_small = 16;
+    const int font_size_big = 20;
+    const int help_box_lines = SIZEOF(help_box_strings);
+    const int slice_help_box_lines = SIZEOF(slice_help_box_strings);
 
     omp_set_lock(&gui_config->sleep_lock);
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     char window_title[4096];
 
-    int draw_type = gui_config->draw_type;
+    const int draw_type = gui_config->draw_type;
 
     if(draw_type == DRAW_SIMULATION) {
         sprintf(window_title, "Simulation visualization - %s", gui_config->config_name);
@@ -684,47 +718,13 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         gui_config->ui_scale = ui_scale.x;
     }
 
-    const int font_size_small = 16;
-    const int font_size_big = 20;
-
     MaximizeWindow();
 
     struct gui_state *gui_state = new_gui_state_with_font_sizes((float)font_size_small, (float)font_size_big, gui_config->ui_scale);
 
-    const char *help_box_strings[] = {" - Mouse Wheel to Zoom in-out",
-                                      " - Mouse Wheel Pressed to Pan",
-                                      " - Alt + Mouse Wheel Pressed to Rotate",
-                                      " - Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
-                                      " - Ctrl + F to search a cell based on it's center",
-                                      " - Hold Ctrl and move the mouse over a cell to see it's position",
-                                      " - G to only draw the grid lines",
-                                      " - L to enable or disable the grid lines",
-                                      " - R to restart simulation (only works when paused)",
-                                      " - Alt + R to restart simulation and the box positions",
-                                      " - X to show/hide AP visualization",
-                                      " - Q to show/hide scale",
-                                      " - C to show/hide everything except grid",
-                                      " - F to open a simulation file",
-                                      " - O to open a simulation directory",
-                                      " - F12 to take a screenshot",
-                                      " - CTRL + F12 to start/stop recording the screen",
-                                      " - . or , to change color scales",
-                                      " - Right arrow to advance one dt when paused",
-                                      " - Hold up arrow to advance time when paused",
-                                      " - Double click on a volume to show the AP",
-                                      " - from 1 to 0 to show different file column (or PGUP/PGDOWN)",
-                                      " - S to enter mesh slice mode",
-                                      " - Space to start or pause simulation"};
-
-    int help_box_lines = SIZEOF(help_box_strings);
-
     gui_state->help_box.lines = (char **)help_box_strings;
     gui_state->help_box.title = "Default controls";
 
-    const char *slice_help_box_strings[] = {" - Press backspace to reset and exit slice mode", " - Press enter to accept the sliced mesh",
-                                            " - Move the slicing plane with arrow keys", " - Rotate the slicing plane with ALT + arrow keys"};
-
-    int slice_help_box_lines = SIZEOF(slice_help_box_strings);
     gui_state->slice_help_box.lines = (char **)slice_help_box_strings;
     gui_state->slice_help_box.title = "Mesh slicing help";
 
@@ -739,8 +739,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         }
     }
 
-    float text_offset = 1.5f * wider_text_h;
-    float box_w = wider_text_w * 1.08f;
+    const float text_offset = 1.5f * wider_text_h;
+    const float box_w = wider_text_w * 1.08f;
 
     gui_state->end_info_box.lines = (char **)malloc(sizeof(char *) * end_info_box_lines);
     gui_state->end_info_box.title = "Simulation time";
@@ -851,7 +851,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 pos.x = (mesh_info->max_size.x - mesh_info->min_size.x) / scale;
                 pos.y = (mesh_info->max_size.z - mesh_info->min_size.z) / scale;
 
-                float mult = 1.2f;
+                const float mult = 1.2f;
                 plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1f / scale, pos.y * mult));
             }
 
@@ -1077,7 +1077,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
         EndDrawing();
 
-        //TODO: this should go to a separate thread
+        //TODO: this should go to a separate thread (maybe??)
         if(gui_state->slicing_mesh) {
             set_visibility_after_split(gui_config, gui_state);
             gui_state->slicing_mesh = false;
