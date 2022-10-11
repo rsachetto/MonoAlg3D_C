@@ -394,7 +394,7 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
                     v = strtod(end + 1, &end);
 
                     for(int i = 0; i < num_extra; i++) {
-                        float tmp_value = (float) strtod(end + 1, &end);
+                        float tmp_value = strtof(end + 1, &end);
                         arrput(extra_values[i], tmp_value);
 
                         if(tmp_value > (*vtk_grid)->max_extra_value[i])
