@@ -258,7 +258,7 @@ SAVE_MESH(save_tissue_as_vtu_purkinje_as_vtp) {
 
     bool read_only_data = ((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid != NULL;
     new_vtk_unstructured_grid_from_alg_grid(&((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid, the_grid,
-                                            clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f, false);
+                                            clip_with_plain, plain_coords, clip_with_bounds, bounds, read_only_data, save_f, false, NULL);
 
     if(compress) {
         save_vtk_unstructured_grid_as_vtu_compressed(((struct save_tissue_as_vtu_purkinje_as_vtp_persistent_data *)config->persistent_data)->grid,
@@ -797,7 +797,7 @@ SAVE_MESH(save_transmurality_as_vtk) {
 
     bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid != NULL;
 
-    new_vtk_unstructured_grid_from_alg_grid_using_values(&(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
                                             plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, transmurality);
 
     save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary, save_f, NULL);

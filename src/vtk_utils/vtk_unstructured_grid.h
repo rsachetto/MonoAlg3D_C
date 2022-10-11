@@ -48,11 +48,11 @@ struct vtk_unstructured_grid {
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid();
 
-void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
-                                                                     float *plain_coordinates, bool clip_with_bounds,
-                                                                     float *bounds, bool read_only_values, bool read_fibers_f,
-                                                                     bool save_fibrotic);
-void new_vtk_unstructured_grid_from_alg_grid_using_values(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
+//void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
+//                                                                     float *plain_coordinates, bool clip_with_bounds,
+//                                                                     float *bounds, bool read_only_values, bool read_fibers_f,
+//                                                                     bool save_fibrotic);
+void new_vtk_unstructured_grid_from_alg_grid (struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
                                                                      float *bounds, bool read_only_values, bool read_fibers_f,
                                                                      bool save_fibrotic, real *values);
