@@ -9,7 +9,7 @@
 #include "../../extra_data_library/helper_functions.h"
 
 #define NEQ 45
-#define INITIAL_V (-89.74808)
+#define INITIAL_V (-9.035192e+01)
 
 #define ENDO 0.0
 #define MID  1.0

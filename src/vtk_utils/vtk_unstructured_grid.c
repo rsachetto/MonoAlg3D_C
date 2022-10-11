@@ -510,9 +510,10 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
     hmfree(hash);
 }
 
-void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain, float *plain_coordinates,
-                                             bool clip_with_bounds, float *bounds, bool read_only_values, bool read_fibers_f, bool save_fibrotic) {
-
+void new_vtk_unstructured_grid_from_alg_grid (struct vtk_unstructured_grid **vtk_grid, struct grid *grid, bool clip_with_plain,
+                                                                     float *plain_coordinates, bool clip_with_bounds,
+                                                                     float *bounds, bool read_only_values, bool read_fibers_f,
+                                                                     bool save_fibrotic, real *values) {
     if(grid == NULL) {
         return;
     }
@@ -619,7 +620,13 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
             arrput((*vtk_grid)->fibers, cell->sigma.fibers.f);
         }
 
-        arrput((*vtk_grid)->values, cell->v);
+        if (values != NULL) {
+            arrput((*vtk_grid)->values, values[cell->sv_position]);
+        }
+        else {
+            arrput((*vtk_grid)->values, cell->v);
+        }
+        
         arrput((*vtk_grid)->cell_visibility, cell->visible);
 
         if(v > (*vtk_grid)->max_v)
@@ -645,7 +652,7 @@ void new_vtk_unstructured_grid_from_alg_grid(struct vtk_unstructured_grid **vtk_
         (*vtk_grid)->num_points = id;
     }
 
-    hmfree(hash);
+    hmfree(hash);                                                                     
 }
 
 static sds create_common_vtu_header(bool compressed, int num_points, int num_cells) {

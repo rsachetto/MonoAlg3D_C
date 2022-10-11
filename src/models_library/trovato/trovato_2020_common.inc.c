@@ -1,3 +1,7 @@
+// Avoid NaN errors
+if (v >= 100.0) v = 100.0;
+if (v <= -100.0) v = -100.0;
+
 real INaCa_fractionSS = 0.2;
 
 // Constants
