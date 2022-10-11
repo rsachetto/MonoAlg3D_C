@@ -1082,13 +1082,13 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
     while(opt != -1) {
         switch(opt) {
         case 'x':
-            user_args->max_v = (float) strtod(optarg, NULL);
+            user_args->max_v = strtof(optarg, NULL);
             break;
         case 'm':
-            user_args->min_v = (float)  strtod(optarg, NULL);
+            user_args->min_v = strtof(optarg, NULL);
             break;
         case 'd':
-            user_args->dt = (float)  strtod(optarg, NULL);
+            user_args->dt = strtof(optarg, NULL);
             break;
         case 'p':
             free(user_args->files_prefix);
@@ -1104,7 +1104,7 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
             user_args->step = (int)strtol(optarg, NULL, 10);
             break;
         case 'u':
-            user_args->ui_scale = fabsf((float)strtod(optarg, NULL));
+            user_args->ui_scale = fabsf(strtof(optarg, NULL));
             break;
         case 'h': /* fall-through is intentional */
         case '?':

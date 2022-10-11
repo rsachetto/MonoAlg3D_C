@@ -109,6 +109,7 @@ struct parser_state {
     bool compressed;
     bool binary;
     bool ascii;
+    bool can_handle;
 };
 
 

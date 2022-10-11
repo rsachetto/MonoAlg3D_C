@@ -309,7 +309,7 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
                                                   size_t *bytes_read) {
 
     assert(bytes_read);
-    
+
     if(!read_only_values) {
         *vtk_grid = new_vtk_unstructured_grid();
     } else {
@@ -394,7 +394,7 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
                     v = strtod(end + 1, &end);
 
                     for(int i = 0; i < num_extra; i++) {
-                        float tmp_value = (float) strtod(end + 1, &end);
+                        float tmp_value = strtof(end + 1, &end);
                         arrput(extra_values[i], tmp_value);
 
                         if(tmp_value > (*vtk_grid)->max_extra_value[i])
@@ -1439,7 +1439,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
             }
         }
     } else {
-        int n_configs = shlen(extra_data_config); 
+        int n_configs = shlen(extra_data_config);
         for(int i = 0; i < n_configs; i++) {
             char *name = extra_data_config[i].key;
             struct string_hash_entry *configs = (struct string_hash_entry*) extra_data_config[i].value;
@@ -1467,7 +1467,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
             }
 
             float *vals = NULL;
-            
+
             if(starting_index == -1) {
                 vals = vtk_grid->values;
             }
@@ -1481,7 +1481,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
             if(n_components != NULL) {
                 n_components_int = strtol(n_components, NULL, 10);
             }
-            
+
             size_t num_values = arrlenu(vals);
 
             sds tmp = sdsempty();
@@ -1597,13 +1597,13 @@ void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_gr
 static int parse_vtk_legacy(char *source, size_t source_size, struct parser_state *state, size_t *bytes_read) {
 
     assert(bytes_read);
-    
+
 #define UPDATE_SIZES_READ                                                                                                                                      \
     do {                                                                                                                                                       \
         source++;                                                                                                                                              \
         source_size--;                                                                                                                                         \
         (*bytes_read)++;                                                                                                                                       \
-    } while(0)                         
+    } while(0)
 
     *bytes_read = 0;
 
@@ -1827,7 +1827,7 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
             arrsetlen(data_name, 0);
 
         } else {
-	    if (data_name[0] == 0) { 
+	    if (data_name[0] == 0) {
             	arrsetlen(data_name, 0);
 		continue;
 	    }
@@ -1845,187 +1845,213 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
 
 static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
     switch(r) {
-    case YXML_OK:
-        break;
-    case YXML_ELEMSTART:
-        if(STRCMP(POINTS, x->elem, POINTS_LEN) == 0) {
-            state->in_points_array = true;
-        } else if(STRCMP(DATAARRAY, x->elem, DATAARRAY_LEN) == 0) {
-            state->in_dataarray = true;
-        }
-        break;
-    case YXML_ELEMEND:
-
-        if(STRCMP(POINTS, x->elem, POINTS_LEN) == 0) {
-            state->in_points_array = false;
-        }
-
-        else if(STRCMP(DATAARRAY, x->elem, DATAARRAY_LEN) == 0) {
-            state->in_dataarray = false;
-        }
-
-        else if(state->ascii) {
-            if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
-                arrput(state->celldata_ascii, '\0');
-            } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
-                arrput(state->points_ascii, '\0');
+        case YXML_OK:
+            break;
+        case YXML_ELEMSTART:
+            if(STRCMP(POINTS, x->elem, POINTS_LEN) == 0) {
+                state->in_points_array = true;
+            } else if(STRCMP(DATAARRAY, x->elem, DATAARRAY_LEN) == 0) {
+                state->in_dataarray = true;
+            }
+            break;
+        case YXML_ELEMEND:
+            if(STRCMP(POINTS, x->elem, POINTS_LEN) == 0) {
+                state->in_points_array = false;
             }
 
-            state->name_value[0] = '\0';
-            arrsetlen(state->name_value, 0);
-        }
-
-        break;
-    case YXML_ATTRSTART:
-        if(STRCMP(COMPRESSOR, x->attr, COMPRESSOR_LEN) == 0) {
-            state->compressed = true;
-        }
-        break;
-    case YXML_ATTREND:
-        if(state->in_dataarray) {
-
-            if(state->in_points_array) {
-                if(STRCMP(TYPE, x->attr, TYPE_LEN) == 0) {
-                    arrput(state->point_data_type, '\0');
-                }
+            else if(STRCMP(DATAARRAY, x->elem, DATAARRAY_LEN) == 0) {
+                state->in_dataarray = false;
             }
 
-            if(STRCMP(FORMAT, x->attr, FORMAT_LEN) == 0) {
-                arrput(state->format, '\0');
-                if(STRCMP(state->format, ASCII, ASCII_LEN) == 0) {
-                    state->ascii = true;
+            else if(state->ascii) {
+                if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
+                    arrput(state->celldata_ascii, '\0');
+                } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
+                    arrput(state->points_ascii, '\0');
                 }
-            } else if(STRCMP(NAME, x->attr, NAME_LEN) == 0) {
-                arrput(state->name_value, '\0');
-            } else if(arrlen(state->name_value)) {
-                if(STRCMP(OFFSET, x->attr, OFFSET_LEN) == 0) {
-                    if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
-                        arrput(state->celldata_ofsset, '\0');
-                        if(!state->compressed)
-                            state->binary = true;
-                    } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
-                        arrput(state->points_ofsset, '\0');
-                    } else if(STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
-                        arrput(state->cells_connectivity_ofsset, '\0');
-                    } else if(STRCMP(OFFSETS, state->name_value, OFFSETS_LEN) == 0) {
-                        arrput(state->cells_offsets_ofsset, '\0');
-                    } else if(STRCMP(TYPES, state->name_value, TYPES_LEN) == 0) {
-                        arrput(state->cells_types_ofsset, '\0');
+
+                state->name_value[0] = '\0';
+                arrsetlen(state->name_value, 0);
+            }
+
+            break;
+        case YXML_ATTRSTART:
+            if(STRCMP(COMPRESSOR, x->attr, COMPRESSOR_LEN) == 0) {
+                state->compressed = true;
+            }
+            break;
+        case YXML_ATTREND:
+            if(state->in_dataarray) {
+                if(state->in_points_array) {
+                    if(STRCMP(TYPE, x->attr, TYPE_LEN) == 0) {
+                        arrput(state->point_data_type, '\0');
                     }
+                }
 
-                    state->name_value[0] = '\0';
-                    arrsetlen(state->name_value, 0);
+                if(STRCMP(FORMAT, x->attr, FORMAT_LEN) == 0) {
+                    arrput(state->format, '\0');
+                    if(STRCMP(state->format, ASCII, ASCII_LEN) == 0) {
+                        state->ascii = true;
+                    }
+                } else if(STRCMP(NAME, x->attr, NAME_LEN) == 0) {
+                    arrput(state->name_value, '\0');
+                } else if(arrlen(state->name_value)) {
+                    if(STRCMP(OFFSET, x->attr, OFFSET_LEN) == 0) {
+                        if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
+                            arrput(state->celldata_ofsset, '\0');
+                            state->can_handle = true;
+                            if(!state->compressed)
+                                state->binary = true;
+                        } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
+                            arrput(state->points_ofsset, '\0');
+                        } else if(STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
+                            arrput(state->cells_connectivity_ofsset, '\0');
+                        } else if(STRCMP(OFFSETS, state->name_value, OFFSETS_LEN) == 0) {
+                            arrput(state->cells_offsets_ofsset, '\0');
+                        } else if(STRCMP(TYPES, state->name_value, TYPES_LEN) == 0) {
+                            arrput(state->cells_types_ofsset, '\0');
+                        }
+
+                        state->name_value[0] = '\0';
+                        arrsetlen(state->name_value, 0);
+                    }
                 }
             }
-        }
 
-        if(STRCMP(NUMBER_OF_POINTS, x->attr, NUMBER_OF_POINTS_LEN) == 0) {
-            arrput(state->number_of_points, '\0');
-        } else if(STRCMP(NUMBER_OF_CELLS, x->attr, NUMBER_OF_CELLS_LEN) == 0) {
-            arrput(state->number_of_cells, '\0');
-        } else if(STRCMP(ENCODING, x->attr, ENCODING_LEN) == 0) {
-            arrput(state->encoding_type, '\0');
-        } else if(STRCMP(HEADER_TYPE, x->attr, HEADER_TYPE_LEN) == 0) {
-            arrput(state->header_type, '\0');
-        }
-        break;
-    case YXML_PICONTENT:
-    case YXML_CONTENT:
-        if(state->ascii) {
+            if(STRCMP(NUMBER_OF_POINTS, x->attr, NUMBER_OF_POINTS_LEN) == 0) {
+                arrput(state->number_of_points, '\0');
+            } else if(STRCMP(NUMBER_OF_CELLS, x->attr, NUMBER_OF_CELLS_LEN) == 0) {
+                arrput(state->number_of_cells, '\0');
+            } else if(STRCMP(ENCODING, x->attr, ENCODING_LEN) == 0) {
+                arrput(state->encoding_type, '\0');
+            } else if(STRCMP(HEADER_TYPE, x->attr, HEADER_TYPE_LEN) == 0) {
+                arrput(state->header_type, '\0');
+            }
+            break;
+        case YXML_PICONTENT:
+        case YXML_CONTENT:
+            if(state->ascii) {
+                if(state->in_dataarray) {
+
+                    if(x->data[0] == '\n')
+                        x->data[0] = ' ';
+                    if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
+                        state->can_handle = true;
+                        if(x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
+                            arrput(state->celldata_ascii, x->data[0]);
+                        }
+                    } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
+                        if(x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
+                            arrput(state->points_ascii, x->data[0]);
+                        }
+                    } else if(STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
+                        if(x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
+                            arrput(state->cells_connectivity_ascii, x->data[0]);
+                        }
+                    }
+                }
+            } else {
+                if(STRCMP(APPENDEDDATA, x->elem, APPENDEDDATA_LEN) == 0) {
+                    if(STRCMP(state->encoding_type, "raw", 3) == 0) {
+                        // We dont have a valid XML code anymore. So we have to
+                        // return here
+                        return -1;
+                    } else if(STRCMP(state->encoding_type, "base64", 6) == 0) {
+                        // base64 is a valid xml content.
+                        arrput(state->base64_content, x->data[0]);
+                    }
+                }
+            }
+            break;
+        case YXML_ATTRVAL:
             if(state->in_dataarray) {
 
-                if(x->data[0] == '\n')
-                    x->data[0] = ' ';
-                if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
-                    if(x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
-                        arrput(state->celldata_ascii, x->data[0]);
-                    }
-                } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
-                    if(x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
-                        arrput(state->points_ascii, x->data[0]);
-                    }
-                } else if(STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
-                    if(x->data[0] == '.' || x->data[0] == '-' || isspace(x->data[0]) || isdigit(x->data[0])) {
-                        arrput(state->cells_connectivity_ascii, x->data[0]);
+                if(state->in_points_array) {
+                    if(STRCMP(TYPE, x->attr, TYPE_LEN) == 0) {
+                        arrput(state->point_data_type, x->data[0]);
                     }
                 }
-            }
-        } else {
-            if(STRCMP(APPENDEDDATA, x->elem, APPENDEDDATA_LEN) == 0) {
-                if(STRCMP(state->encoding_type, "raw", 3) == 0) {
-                    // We dont have a valid XML code anymore. So we have to
-                    // return here
-                    return -1;
-                } else if(STRCMP(state->encoding_type, "base64", 6) == 0) {
-                    // base64 is a valid xml content.
-                    arrput(state->base64_content, x->data[0]);
-                }
-            }
-        }
-        break;
-    case YXML_ATTRVAL:
-        if(state->in_dataarray) {
 
-            if(state->in_points_array) {
-                if(STRCMP(TYPE, x->attr, TYPE_LEN) == 0) {
-                    arrput(state->point_data_type, x->data[0]);
-                }
-            }
-
-            if(STRCMP(NAME, x->attr, NAME_LEN) == 0) {
-                arrput(state->name_value, x->data[0]);
-            } else if(arrlen(state->name_value)) {
-                if(STRCMP(FORMAT, x->attr, FORMAT_LEN) == 0) {
-                    arrput(state->format, x->data[0]);
-                } else if(STRCMP(OFFSET, x->attr, OFFSET_LEN) == 0) {
-                    if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
-                        if(isdigit(x->data[0])) {
-                            arrput(state->celldata_ofsset, x->data[0]);
-                        }
-                    } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
-                        if(isdigit(x->data[0])) {
-                            arrput(state->points_ofsset, x->data[0]);
-                        }
-                    } else if(STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
-                        if(isdigit(x->data[0])) {
-                            arrput(state->cells_connectivity_ofsset, x->data[0]);
-                        }
-                    } else if(STRCMP(OFFSETS, state->name_value, OFFSETS_LEN) == 0) {
-                        if(isdigit(x->data[0])) {
-                            arrput(state->cells_offsets_ofsset, x->data[0]);
-                        }
-                    } else if(STRCMP(TYPES, state->name_value, TYPES_LEN) == 0) {
-                        if(isdigit(x->data[0])) {
-                            arrput(state->cells_types_ofsset, x->data[0]);
+                if(STRCMP(NAME, x->attr, NAME_LEN) == 0) {
+                    arrput(state->name_value, x->data[0]);
+                } else if(arrlen(state->name_value)) {
+                    if(STRCMP(FORMAT, x->attr, FORMAT_LEN) == 0) {
+                        arrput(state->format, x->data[0]);
+                    } else if(STRCMP(OFFSET, x->attr, OFFSET_LEN) == 0) {
+                        if(STRCMP(SCALARS_NAME, state->name_value, SCALARS_NAME_LEN) == 0) {
+                            if(isdigit(x->data[0])) {
+                                arrput(state->celldata_ofsset, x->data[0]);
+                            }
+                        } else if(STRCMP(POINTS, state->name_value, POINTS_LEN) == 0) {
+                            if(isdigit(x->data[0])) {
+                                arrput(state->points_ofsset, x->data[0]);
+                            }
+                        } else if(STRCMP(CONNECTIVITY, state->name_value, CONNECTIVITY_LEN) == 0) {
+                            if(isdigit(x->data[0])) {
+                                arrput(state->cells_connectivity_ofsset, x->data[0]);
+                            }
+                        } else if(STRCMP(OFFSETS, state->name_value, OFFSETS_LEN) == 0) {
+                            if(isdigit(x->data[0])) {
+                                arrput(state->cells_offsets_ofsset, x->data[0]);
+                            }
+                        } else if(STRCMP(TYPES, state->name_value, TYPES_LEN) == 0) {
+                            if(isdigit(x->data[0])) {
+                                arrput(state->cells_types_ofsset, x->data[0]);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if(STRCMP(NUMBER_OF_POINTS, x->attr, NUMBER_OF_POINTS_LEN) == 0) {
-            if(isdigit(x->data[0])) {
-                arrput(state->number_of_points, x->data[0]);
+            if(STRCMP(NUMBER_OF_POINTS, x->attr, NUMBER_OF_POINTS_LEN) == 0) {
+                if(isdigit(x->data[0])) {
+                    arrput(state->number_of_points, x->data[0]);
+                }
+            } else if(STRCMP(NUMBER_OF_CELLS, x->attr, NUMBER_OF_CELLS_LEN) == 0) {
+                if(isdigit(x->data[0])) {
+                    arrput(state->number_of_cells, x->data[0]);
+                }
+            } else if(STRCMP(ENCODING, x->attr, ENCODING_LEN) == 0) {
+                arrput(state->encoding_type, x->data[0]);
+            } else if(STRCMP(HEADER_TYPE, x->attr, HEADER_TYPE_LEN) == 0) {
+                arrput(state->header_type, x->data[0]);
             }
-        } else if(STRCMP(NUMBER_OF_CELLS, x->attr, NUMBER_OF_CELLS_LEN) == 0) {
-            if(isdigit(x->data[0])) {
-                arrput(state->number_of_cells, x->data[0]);
-            }
-        } else if(STRCMP(ENCODING, x->attr, ENCODING_LEN) == 0) {
-            arrput(state->encoding_type, x->data[0]);
-        } else if(STRCMP(HEADER_TYPE, x->attr, HEADER_TYPE_LEN) == 0) {
-            arrput(state->header_type, x->data[0]);
-        }
-        break;
-    case YXML_PISTART:
-    case YXML_PIEND:
-        break;
-    default:
-        fprintf(stderr, "Error on xml %s \n", x->attr);
-        //  exit(0);
+            break;
+        case YXML_PISTART:
+        case YXML_PIEND:
+            break;
+        default:
+            fprintf(stderr, "Error on xml %s \n", x->attr);
+            //  exit(0);
     }
 
     return 0;
+}
+
+static struct parser_state * new_parser_state() {
+
+    struct parser_state *parser_state = NULL;
+
+    parser_state = calloc(1, sizeof(struct parser_state));
+    arrsetcap(parser_state->number_of_points, 64);
+    arrsetcap(parser_state->number_of_cells, 64);
+    arrsetcap(parser_state->celldata_ofsset, 64);
+    arrsetcap(parser_state->points_ofsset, 64);
+    arrsetcap(parser_state->cells_connectivity_ofsset, 64);
+    arrsetcap(parser_state->cells_offsets_ofsset, 64);
+    arrsetcap(parser_state->cells_types_ofsset, 64);
+    arrsetcap(parser_state->name_value, 64);
+    arrsetcap(parser_state->cells_connectivity_ascii, 64);
+    arrsetcap(parser_state->points_ascii, 64);
+    arrsetcap(parser_state->celldata_ascii, 64);
+    arrsetcap(parser_state->encoding_type, 64);
+    arrsetcap(parser_state->header_type, 64);
+    arrsetcap(parser_state->format, 64);
+    arrsetcap(parser_state->base64_content, 64);
+    arrsetcap(parser_state->point_data_type, 64);
+
+    return parser_state;
+
 }
 
 static void free_parser_state(struct parser_state *parser_state) {
@@ -2053,25 +2079,8 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
                                                     bool calc_max_min, size_t *bytes_read_out) {
 
     assert(bytes_read_out);
-    struct parser_state *parser_state = NULL;
 
-    parser_state = calloc(1, sizeof(struct parser_state));
-    arrsetcap(parser_state->number_of_points, 64);
-    arrsetcap(parser_state->number_of_cells, 64);
-    arrsetcap(parser_state->celldata_ofsset, 64);
-    arrsetcap(parser_state->points_ofsset, 64);
-    arrsetcap(parser_state->cells_connectivity_ofsset, 64);
-    arrsetcap(parser_state->cells_offsets_ofsset, 64);
-    arrsetcap(parser_state->cells_types_ofsset, 64);
-    arrsetcap(parser_state->name_value, 64);
-    arrsetcap(parser_state->cells_connectivity_ascii, 64);
-    arrsetcap(parser_state->points_ascii, 64);
-    arrsetcap(parser_state->celldata_ascii, 64);
-    arrsetcap(parser_state->encoding_type, 64);
-    arrsetcap(parser_state->header_type, 64);
-    arrsetcap(parser_state->format, 64);
-    arrsetcap(parser_state->base64_content, 64);
-    arrsetcap(parser_state->point_data_type, 64);
+    struct parser_state *parser_state = new_parser_state();
 
     size_t base64_outlen = 0;
     char *original_src = source;
@@ -2094,9 +2103,16 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
             }
         }
 
-        source = source + bytes_read;
+        if(!parser_state->can_handle) {
+            *vtk_grid = NULL;
+            free_parser_state(parser_state);
+            free(x);
+            return;
+        }
 
+        source = source + bytes_read;
         free(x);
+
     } else if(file_type == VTK_LEGACY) {
         // VTK legacy file
         if(parse_vtk_legacy(source, size, parser_state, bytes_read_out) == -1) {
@@ -2192,7 +2208,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
             if(is_b64 && (raw_data_after_blocks_offset == base64_outlen)) { // We read only the header.. need to read the data
                 b64_size -= bytes_read;
                 base64_decode((unsigned char *)raw_data + base64_outlen, data_tmp + bytes_read, b64_size, &bytes_read);
-            
+
                 *bytes_read_out += bytes_read;
             }
 
@@ -2411,7 +2427,7 @@ static inline float read_float(char **source, bool binary) {
         memcpy(&result, *source, sizeof(float));
         *source += sizeof(float);
     } else {
-        result = (float)strtod(*source, NULL);
+        result = strtof(*source, NULL);
         skip_line(source, false);
     }
 
@@ -2543,7 +2559,7 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file(const char *fi
 
 struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file_with_progress(const char *file_name, bool calc_max_min, size_t *bytes_read,
                                                                                 size_t *file_size) {
-    
+
     assert(bytes_read);
     struct vtk_unstructured_grid *vtk_grid = NULL;
 

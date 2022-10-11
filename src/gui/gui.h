@@ -15,7 +15,7 @@
 #include "../3dparty/raylib/src/extras/rlights.h"
 #include "../config/config_parser.h"
 
-
+#include "gui_colors.h"
 
 #define MIN_VERTICAL_TICKS 4
 #define MAX_VERTICAL_TICKS 20
@@ -30,6 +30,35 @@
 #define TMP_SIZE 256
 
 #define V3_SAME(v) (Vector3){v, v, v}
+
+#define WINDOW_STATUSBAR_HEIGHT        22
+
+#define CHECK_FILE_INDEX(gui_config)                                                                                                                           \
+    if((gui_config)->current_file_index < 0)                                                                                                                   \
+        (gui_config)->current_file_index++;                                                                                                                    \
+    else if((gui_config)->current_file_index > (gui_config)->final_file_index)                                                                                 \
+        (gui_config)->current_file_index = (gui_config)->final_file_index;
+
+#define NOT_PAUSED !gui_config->paused
+#define NOT_IN_DRAW gui_config->draw_type != DRAW_FILE
+#define IN_DRAW gui_config->draw_type == DRAW_FILE
+
+#define DISABLE_IF_NOT_PAUSED                                                                                                                                  \
+    if(NOT_PAUSED) {                                                                                                                                           \
+        GuiDisable();                                                                                                                                          \
+    }
+
+#define DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW                                                                                                                   \
+    if(NOT_PAUSED || NOT_IN_DRAW) {                                                                                                                            \
+        GuiDisable();                                                                                                                                          \
+    }
+
+#define ENABLE GuiEnable()
+
+#define DISABLE_IF_IN_DRAW_AND_SINGLE_FILE                                                                                                                     \
+    if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) {                                                                              \
+        GuiDisable();                                                                                                                                          \
+    }
 
 struct action_potential {
     float v;

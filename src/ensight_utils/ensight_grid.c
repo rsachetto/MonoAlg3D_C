@@ -3,16 +3,11 @@
 //
 
 #include "ensight_grid.h"
-#include "../3dparty/sds/sds.h"
 #include "../3dparty/stb_ds.h"
-#include "../utils/file_utils.h"
 #include "../domains_library/mesh_info_data.h"
-#include "../common_types/common_types.h"
 #include "../logger/logger.h"
-#include <errno.h>
 #include <math.h>
 #include <stdint.h>
-#include <ctype.h>
 #include <sys/mman.h>
 #include <float.h>
 

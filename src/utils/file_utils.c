@@ -18,7 +18,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-float* read_timesteps_from_case_file(sds case_file_path) {
+float * read_timesteps_from_case_file(sds case_file_path) {
     size_t case_file_size;
     float *timesteps = NULL;
 

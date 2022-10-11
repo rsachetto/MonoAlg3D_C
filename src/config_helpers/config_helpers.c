@@ -3,10 +3,8 @@
 //
 
 #include "config_helpers.h"
-#include "../3dparty/sds/sds.h"
 #include "../3dparty/stb_ds.h"
 #include "../logger/logger.h"
-#include <stdio.h>
 #include <stdlib.h>
 
 void report_error_on_function(int line, const char * file, const char *error) {
@@ -27,7 +25,7 @@ char *get_string_parameter (struct string_hash_entry *config, const char *parame
     return config_value;
 }
 
-bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int n) {
+bool get_vector_parameter(real_cpu **v, const char *parameter, int n) {
 
     *v = malloc(sizeof(real_cpu) * n);
 
@@ -53,7 +51,7 @@ bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const 
     return true;
 }
 
-bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, const char *parameter) {
+bool get_vector3_parameter(real_cpu v[3], const char *parameter) {
 
     int c;
 
@@ -82,7 +80,7 @@ bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, cons
     return true;
 }
 
-bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int nlin, int ncol) {
+bool get_matrix_parameter(real_cpu **v, const char *parameter, int nlin, int ncol) {
 
     *v = malloc(sizeof(real_cpu) * nlin * ncol);
 

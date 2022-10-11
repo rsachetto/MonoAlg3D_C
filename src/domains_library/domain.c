@@ -4,7 +4,6 @@
 
 #include "domain_helpers.h"
 
-#include "../3dparty/sds/sds.h"
 #include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
@@ -114,8 +113,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
 
     log_info("Loading Rabbit Heart Mesh\n");
 
-    int num_volumes = 470197;
-    int num_loaded = set_custom_mesh_from_file(the_grid, mesh_file, num_volumes, start_discretization, 0, NULL);
+    uint32_t num_volumes = 470197;
+    uint32_t num_loaded = set_custom_mesh_from_file(the_grid, mesh_file, num_volumes, start_discretization, 0, NULL);
 
     log_info("Read %d volumes from file: %s\n", num_loaded, mesh_file);
 

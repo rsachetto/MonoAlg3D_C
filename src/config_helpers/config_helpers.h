@@ -14,11 +14,11 @@
 
 void report_parameter_error_on_function(int line, const char *file, const char *parameter);
 void report_error_on_function(int line, const char *file, const char *error);
-void report_error_on_function_and_continue(int line, const char * file, const char *parameter);
+void report_error_on_function_and_continue(int line, const char *file, const char *parameter);
 char *get_string_parameter(struct string_hash_entry *config, const char *parameter);
-bool get_vector_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int n);
-bool get_vector3_parameter(real_cpu v[3], struct string_hash_entry *config, const char *parameter);
-bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const char *parameter, int nlin, int ncol);
+bool get_vector_parameter(real_cpu **v, const char *parameter, int n);
+bool get_vector3_parameter(real_cpu v[3], const char *parameter);
+bool get_matrix_parameter(real_cpu **v, const char *parameter, int nlin, int ncol);
 
 #define STRINGS_EQUAL(str1, str2) (strcmp((str1), (str2)) == 0)
 
@@ -34,7 +34,7 @@ bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const 
 
 #define REPORT_ERROR_ON_FUNCTION_AND_CONTINUE(error)                                                                                                           \
     do {                                                                                                                                                       \
-        report_error_on_function_and_continue(__LINE__, __FILE__, error);                                                                                                   \
+        report_error_on_function_and_continue(__LINE__, __FILE__, error);                                                                                      \
     } while(0)
 #define GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                                                    \
     do {                                                                                                                                                       \
@@ -108,29 +108,29 @@ bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const 
     do {                                                                                                                                                       \
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
         if(__config_char) {                                                                                                                                    \
-            bool __success = get_vector_parameter(&value, config->config_data, __config_char, n);                                                              \
+            bool __success = get_vector_parameter(&value, __config_char, n);                                                              \
             if(!__success) {                                                                                                                                   \
                 REPORT_ERROR_ON_FUNCTION("Error parsing vector parameter!\n");                                                                                 \
             }                                                                                                                                                  \
         }                                                                                                                                                      \
     } while(0)
 
-#define GET_PARAMETER_VECTOR3_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                                                  \
+#define GET_PARAMETER_VECTOR3_VALUE_OR_USE_DEFAULT(value, config, parameter)                                                                                   \
     do {                                                                                                                                                       \
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
         if(__config_char) {                                                                                                                                    \
-            bool __success = get_vector3_parameter(value, config->config_data, __config_char);                                                              \
+            bool __success = get_vector3_parameter(value, __config_char);                                                                                      \
             if(!__success) {                                                                                                                                   \
                 REPORT_ERROR_ON_FUNCTION("Error parsing vector parameter!\n");                                                                                 \
             }                                                                                                                                                  \
         }                                                                                                                                                      \
     } while(0)
 
-#define GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(value, config, parameter, nlin, ncol)                                                                                 \
+#define GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(value, config, parameter, nlin, ncol)                                                                        \
     do {                                                                                                                                                       \
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
         if(__config_char) {                                                                                                                                    \
-            bool __success = get_matrix_parameter(&value, config->config_data, __config_char, nlin, ncol);                                                              \
+            bool __success = get_matrix_parameter(&value, __config_char, nlin, ncol);                                                                          \
             if(!__success) {                                                                                                                                   \
                 REPORT_ERROR_ON_FUNCTION("Error parsing matrix parameter!\n");                                                                                 \
             }                                                                                                                                                  \
@@ -141,16 +141,15 @@ bool get_matrix_parameter(real_cpu **v, struct string_hash_entry *config, const 
     do {                                                                                                                                                       \
         sds _char_param__ = sdscatprintf(sdsempty(), "%d", param_value);                                                                                       \
         shput_dup_value(config->config_data, param_name, _char_param__);                                                                                       \
-        sdsfree(_char_param__);                                                                                                                                 \
+        sdsfree(_char_param__);                                                                                                                                \
     } while(0)
 
-#define ADD_UINT_PARAMETER_TO_CONFIG(param_name, param_value, config)                                                                                           \
+#define ADD_UINT_PARAMETER_TO_CONFIG(param_name, param_value, config)                                                                                          \
     do {                                                                                                                                                       \
         sds _char_param__ = sdscatprintf(sdsempty(), "%u", param_value);                                                                                       \
         shput_dup_value(config->config_data, param_name, _char_param__);                                                                                       \
-        sdsfree(_char_param__);                                                                                                                                 \
+        sdsfree(_char_param__);                                                                                                                                \
     } while(0)
-
 
 #define ADD_REAL_PARAMETER_TO_CONFIG(param_name, param_value, config)                                                                                          \
     do {                                                                                                                                                       \

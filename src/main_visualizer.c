@@ -252,7 +252,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         } else if(using_pvd || ensight) {
             gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
         } else {
-			if(dt == 0) {
+            if(dt == 0) {
                 gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
             } else {
                 gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
@@ -286,12 +286,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 new_vtk_unstructured_grid_from_file_with_progress(full_path, single_file, &gui_config->progress, &gui_config->file_size);
         }
 
-        if(single_file) {
-            gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
-            gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
-        }
-
-        if(!gui_config->grid_info.vtk_grid) {
+         if(!gui_config->grid_info.vtk_grid) {
             snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[(int)gui_config->current_file_index]);
 
             if(gui_config->error_message) {
@@ -313,6 +308,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
             // TODO: for ensigth, maybe we should put the data name here.
             gui_config->grid_info.file_name = full_path;
             gui_config->grid_info.loaded = true;
+
+            if(single_file) {
+                gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
+                gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
+            }
         }
 
         omp_unset_lock(&gui_config->draw_lock);
