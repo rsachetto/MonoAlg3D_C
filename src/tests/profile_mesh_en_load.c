@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
     GDBM_FILE f;
 
-    f = gdbm_open( "./tests_bin/profile_vtu_load_times.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
+    f = gdbm_open( "./tests_bin/profile_en_load_times.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
 
     datum content = gdbm_fetch (f, hash_key);
 
