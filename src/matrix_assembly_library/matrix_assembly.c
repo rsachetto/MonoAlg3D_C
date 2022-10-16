@@ -1087,9 +1087,6 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
-    struct extra_data_for_torord *extra_data = NULL;
-	extra_data = set_common_torord_dyncl_data(config, num_active_cells);		// ToRORd_dynCl
-
     initialize_diagonal_elements(the_solver, the_grid);
 
     //      D tensor    //
