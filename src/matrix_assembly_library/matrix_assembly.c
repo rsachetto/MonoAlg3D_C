@@ -16,6 +16,7 @@
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include "../domains_library/mesh_info_data.h"
+#include "../domains_library/custom_mesh_info_data.h"
 
 #include "assembly_common.c"
 
@@ -1086,6 +1087,9 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
+    struct extra_data_for_torord *extra_data = NULL;
+	extra_data = set_common_torord_dyncl_data(config, num_active_cells);		// ToRORd_dynCl
+
     initialize_diagonal_elements(the_solver, the_grid);
 
     //      D tensor    //
@@ -1187,8 +1191,10 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
         }
 
         // Check if the current cell is tagged as FASTENDO
-        real_cpu tag = TISSUE_TYPE(ac[i]);
-        if (tag == 0) {
+        // TODO: Try to load the "extra_data" array and check if a cell is fast_endo or not
+        real_cpu tag = DTI004_MESH_TRANSMURALITY_LABELS(ac[i]);
+            
+        if (tag == 3) {
             ac[i]->sigma.x = D[0][0]*fast_endo_layer_scale;
             ac[i]->sigma.y = D[1][1]*fast_endo_layer_scale;
             ac[i]->sigma.z = D[2][2]*fast_endo_layer_scale;
