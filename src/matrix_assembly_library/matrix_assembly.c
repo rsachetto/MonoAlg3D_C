@@ -16,7 +16,6 @@
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
 #include "../domains_library/mesh_info_data.h"
-#include "../domains_library/custom_mesh_info_data.h"
 
 #include "assembly_common.c"
 
@@ -1189,7 +1188,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
 
         // Check if the current cell is tagged as FASTENDO
         // TODO: Try to load the "extra_data" array and check if a cell is fast_endo or not
-        real_cpu tag = DTI004_MESH_TRANSMURALITY_LABELS(ac[i]);
+        real_cpu tag = DTI_MESH_TRANSMURALITY_LABELS(ac[i]);
             
         if (tag == 3) {
             ac[i]->sigma.x = D[0][0]*fast_endo_layer_scale;
