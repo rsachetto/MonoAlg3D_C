@@ -1825,13 +1825,13 @@ Color get_color(float value, int alpha, int current_scale) {
         fract_between = value - (float)idx1;
     }
 
-    float color_idx1_0 = color_scales[current_scale][idx1][0];
-    float color_idx1_1 = color_scales[current_scale][idx1][1];
-    float color_idx1_2 = color_scales[current_scale][idx1][2];
+    const float color_idx1_0 = color_scales[current_scale][idx1][0];
+    const float color_idx1_1 = color_scales[current_scale][idx1][1];
+    const float color_idx1_2 = color_scales[current_scale][idx1][2];
 
-    float color_idx2_0 = color_scales[current_scale][idx2][0];
-    float color_idx2_1 = color_scales[current_scale][idx2][1];
-    float color_idx2_2 = color_scales[current_scale][idx2][2];
+    const float color_idx2_0 = color_scales[current_scale][idx2][0];
+    const float color_idx2_1 = color_scales[current_scale][idx2][1];
+    const float color_idx2_2 = color_scales[current_scale][idx2][2];
 
     Color result;
 
