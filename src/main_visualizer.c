@@ -79,19 +79,18 @@ static int read_and_render_files(struct visualization_options *options, struct g
         simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
         simulation_files->files_list = NULL;
         simulation_files->timesteps = NULL;
-        if(input) {
-            string_array ignore_files = NULL;
-            arrput(ignore_files, strdup("vis"));
-            simulation_files->files_list = list_files_from_dir(input, prefix, NULL, ignore_files, true);
 
-            if(arrlen(simulation_files->files_list) == 0) {
-                // Maybe is an ensight folder, lets try again
-                simulation_files->files_list = list_files_from_dir(input, "Vm", NULL, ignore_files, true);
-                ensight = true;
-            }
+        string_array ignore_files = NULL;
+        arrput(ignore_files, strdup("vis"));
+        simulation_files->files_list = list_files_from_dir(input, prefix, NULL, ignore_files, true);
 
-            arrfree(ignore_files);
+        if(arrlen(simulation_files->files_list) == 0) {
+            // Maybe is an ensight folder, lets try again
+            simulation_files->files_list = list_files_from_dir(input, "Vm", NULL, ignore_files, true);
+            ensight = true;
         }
+
+        arrfree(ignore_files);
     } else {
         if(FILE_HAS_EXTENSION(input_info, "pvd")) {
             using_pvd = true;
@@ -108,27 +107,25 @@ static int read_and_render_files(struct visualization_options *options, struct g
             simulation_files->timesteps = NULL;
             single_file = true;
 
-            if(input) {
-                if(FILE_HAS_EXTENSION(input_info, "geo") || FILE_HAS_EXTENSION_PREFIX(input_info, "Esca")) {
-                    ensight = true;
-                    if(FILE_HAS_EXTENSION(input_info, "geo"))
-                        geo_file = true;
-                    else
-                        esca_file = true;
-                }
-
-                arrput(simulation_files->files_list, (char *)input);
+            if(FILE_HAS_EXTENSION(input_info, "geo") || FILE_HAS_EXTENSION_PREFIX(input_info, "Esca")) {
+                ensight = true;
+                if(FILE_HAS_EXTENSION(input_info, "geo"))
+                    geo_file = true;
+                else
+                    esca_file = true;
             }
+
+            arrput(simulation_files->files_list, (char *)input);
         }
     }
-
-    uint32_t num_files = arrlen(simulation_files->files_list);
 
     if(!using_pvd) {
         simulation_files->base_dir = sdsnew(input);
     } else {
         simulation_files->base_dir = sdsnew(get_dir_from_path(input));
     }
+
+    uint32_t num_files = arrlen(simulation_files->files_list);
 
     if(!num_files) {
         snprintf(error, MAX_ERROR_SIZE, "No simulations file found in %s", simulation_files->base_dir);
@@ -181,12 +178,14 @@ static int read_and_render_files(struct visualization_options *options, struct g
     if(!using_pvd) {
 
         if(single_file) {
+
             gui_config->dt = -1;
             gui_config->step = 1;
             gui_config->final_file_index = (int) num_files - 1;
             gui_config->final_time = (float) gui_config->final_file_index;
-        }
-        else if(ensight) {
+
+        } else if(ensight) {
+
             struct path_information case_info;
             sds case_file_path = sdscatfmt(sdsempty(), "%s/simulation_result.case", input);
             get_path_information(case_file_path, &case_info);
@@ -204,6 +203,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             gui_config->final_time = simulation_files->timesteps[num_files - 1];
 
         } else {
+
             int step;
             int step1;
             int final_step;
@@ -245,25 +245,23 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     gui_config->simulation_files = simulation_files;
 
+    char full_path[2048];
+
     while(true) {
 
         if(single_file) {
             gui_config->time = gui_config->current_file_index;
-        } else if(using_pvd || ensight) {
-            gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
-        } else {
-            if(dt == 0) {
-                gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
-            } else {
-                gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
-            }
-        }
-
-        char full_path[2048];
-
-        if(single_file) {
             sprintf(full_path, "%s", simulation_files->base_dir);
         } else {
+            if(using_pvd || ensight) {
+                gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
+            } else {
+                if(dt == 0) {
+                    gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
+                } else {
+                    gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]) * dt;
+                }
+            }
             sprintf(full_path, "%s/%s", simulation_files->base_dir, simulation_files->files_list[(int)gui_config->current_file_index]);
         }
 
@@ -274,12 +272,14 @@ static int read_and_render_files(struct visualization_options *options, struct g
                 gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(geometry_file, single_file);
                 ensigth_grid_loaded = true;
             }
+
             if(!geo_file) {
                 set_vtk_grid_values_from_ensight_file(gui_config->grid_info.vtk_grid, full_path);
             } else {
                 gui_config->grid_info.vtk_grid->min_v = 0.0001f;
                 gui_config->grid_info.vtk_grid->max_v = 0.0002f;
             }
+
         } else {
             free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
             gui_config->grid_info.vtk_grid =
