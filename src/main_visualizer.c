@@ -249,19 +249,22 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     while(true) {
 
+        int current_file_index = (int)gui_config->current_file_index;
+        char *current_file_name = simulation_files->files_list[current_file_index];
+
         if(single_file) {
             gui_config->time = gui_config->current_file_index;
             sprintf(full_path, "%s", simulation_files->base_dir);
         } else {
             if(using_pvd || ensight) {
-                gui_config->time = simulation_files->timesteps[(int)gui_config->current_file_index];
+                gui_config->time = simulation_files->timesteps[current_file_index];
             } else {
-                gui_config->time = (float)get_step_from_filename(simulation_files->files_list[(int)gui_config->current_file_index]);
+                gui_config->time = (float)get_step_from_filename(current_file_name);
                 if(dt != 0) {
                     gui_config->time = gui_config->time * dt;
                 }
             }
-            sprintf(full_path, "%s/%s", simulation_files->base_dir, simulation_files->files_list[(int)gui_config->current_file_index]);
+            sprintf(full_path, "%s/%s", simulation_files->base_dir, current_file_name);
         }
 
         omp_set_lock(&gui_config->draw_lock);
@@ -286,7 +289,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
 
         if(!gui_config->grid_info.vtk_grid) {
-            snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", simulation_files->files_list[(int)gui_config->current_file_index]);
+            snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", current_file_name);
 
             if(gui_config->error_message) {
                 free(gui_config->error_message);
