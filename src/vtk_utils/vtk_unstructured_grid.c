@@ -1,6 +1,12 @@
 //
 // Created by sachetto on 30/10/18.
 //
+//
+
+#include "../3dparty/fast_double_parser.h"
+
+//#define IEEE_8087
+//#include "../3dparty/dtoa.c"
 
 #include "vtk_unstructured_grid.h"
 #include "../3dparty/stb_ds.h"
@@ -62,23 +68,23 @@ void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid) {
 }
 
 static inline void set_point_data(struct point_3d center, struct point_3d half_face, struct vtk_unstructured_grid **vtk_grid, struct point_hash_entry **hash, uint32_t *id) {
-    real_cpu center_x_plus = center.x + half_face.x;
-    real_cpu center_x_minus = center.x - half_face.x;
+    const real_cpu center_x_plus = center.x + half_face.x;
+    const real_cpu center_x_minus = center.x - half_face.x;
 
-    real_cpu center_y_plus = center.y + half_face.y;
-    real_cpu center_y_minus = center.y - half_face.y;
+    const real_cpu center_y_plus = center.y + half_face.y;
+    const real_cpu center_y_minus = center.y - half_face.y;
 
-    real_cpu center_z_plus = center.z + half_face.z;
-    real_cpu center_z_minus = center.z - half_face.z;
+    const real_cpu center_z_plus = center.z + half_face.z;
+    const real_cpu center_z_minus = center.z - half_face.z;
 
-    struct point_3d point1 = POINT3D(center_x_minus, center_y_minus, center_z_minus);
-    struct point_3d point2 = POINT3D(center_x_plus, center_y_minus, center_z_minus);
-    struct point_3d point3 = POINT3D(center_x_plus, center_y_plus, center_z_minus);
-    struct point_3d point4 = POINT3D(center_x_minus, center_y_plus, center_z_minus);
-    struct point_3d point5 = POINT3D(center_x_minus, center_y_minus, center_z_plus);
-    struct point_3d point6 = POINT3D(center_x_plus, center_y_minus, center_z_plus);
-    struct point_3d point7 = POINT3D(center_x_plus, center_y_plus, center_z_plus);
-    struct point_3d point8 = POINT3D(center_x_minus, center_y_plus, center_z_plus);
+    const struct point_3d point1 = POINT3D(center_x_minus, center_y_minus, center_z_minus);
+    const struct point_3d point2 = POINT3D(center_x_plus, center_y_minus, center_z_minus);
+    const struct point_3d point3 = POINT3D(center_x_plus, center_y_plus, center_z_minus);
+    const struct point_3d point4 = POINT3D(center_x_minus, center_y_plus, center_z_minus);
+    const struct point_3d point5 = POINT3D(center_x_minus, center_y_minus, center_z_plus);
+    const struct point_3d point6 = POINT3D(center_x_plus, center_y_minus, center_z_plus);
+    const struct point_3d point7 = POINT3D(center_x_plus, center_y_plus, center_z_plus);
+    const struct point_3d point8 = POINT3D(center_x_minus, center_y_plus, center_z_plus);
 
     int point1_idx = hmgeti(*hash, point1);
     int point2_idx = hmgeti(*hash, point2);
@@ -217,7 +223,7 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
     hmfree(hash);
 }
 
-void binary_grid_error(struct vtk_unstructured_grid **vtk_grid) {
+inline static void binary_grid_error(struct vtk_unstructured_grid **vtk_grid) {
     free(*vtk_grid);
     *vtk_grid = NULL;
 }
@@ -2292,8 +2298,12 @@ static inline float read_float(char **source, bool binary) {
         memcpy(&result, *source, sizeof(float));
         *source += sizeof(float);
     } else {
-        result = strtof(*source, NULL);
-        skip_line(source, false);
+        double n;
+        const char *end = parse_number(*source, &n);
+        result = (float)n;
+        //Skipping a line after reading a float
+        *source += (end - *source + 1);
+
     }
 
     return result;
