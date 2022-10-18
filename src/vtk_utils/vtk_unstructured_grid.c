@@ -5,9 +5,6 @@
 
 #include "../3dparty/fast_double_parser.h"
 
-//#define IEEE_8087
-//#include "../3dparty/dtoa.c"
-
 #include "vtk_unstructured_grid.h"
 #include "../3dparty/stb_ds.h"
 #include "../3dparty/xml_parser/yxml.h"

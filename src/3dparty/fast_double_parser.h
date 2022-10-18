@@ -151,10 +151,11 @@ inline static int leading_zeroes(uint64_t input_num) {
 #endif // _MSC_VER
 }
 
-inline static bool is_integer(char c) {
-  return (c >= '0' && c <= '9');
+#define is_integer(c) (c >= '0' && c <= '9')
+//inline static bool is_integer(char c) {
+//  return (c >= '0' && c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
-}
+//}
 
 
 /**
