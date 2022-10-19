@@ -4,7 +4,6 @@
 
 // Draw multiple mesh instances with different transforms and colors
 void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mask, int instances) {
-#if defined(GRAPHICS_API_OPENGL_33) || defined(GRAPHICS_API_OPENGL_ES2)
 
     // Instancing required variables
     unsigned int instancesVboId;
@@ -112,5 +111,4 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
     rlUnloadVertexBuffer(instancesVboId);
     rlUnloadVertexBuffer(colorsVboId);
 
-#endif
 }

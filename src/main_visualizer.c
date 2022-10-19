@@ -324,7 +324,6 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
         if(gui_config->restart) {
             gui_config->time = 0.0f;
-            free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
             arrfree(simulation_files->files_list);
             arrfree(simulation_files->timesteps);
             sdsfree(simulation_files->base_dir);
