@@ -1712,8 +1712,8 @@ static int parse_vtk_legacy(char *source, size_t source_size, struct parser_stat
     return 1;
 }
 
-static int parse_vtk_xml(yxml_t *x, yxml_ret_t r, struct parser_state *state) {
-    switch(r) {
+static int parse_vtk_xml(yxml_t *x, const yxml_ret_t *r, struct parser_state *state) {
+    switch(*r) {
         case YXML_OK:
             break;
         case YXML_ELEMSTART:
@@ -1967,7 +1967,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
             yxml_ret_t r = yxml_parse(x, source[i]);
             bytes_read++;
             *bytes_read_out = bytes_read;
-            if(parse_vtk_xml(x, r, parser_state) == -1) {
+            if(parse_vtk_xml(x, &r, parser_state) == -1) {
                 break;
             }
         }
@@ -2060,9 +2060,7 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
 
         if(is_raw) {
             raw_data = (source + scalars_offset_value);
-
             *bytes_read_out = (size_t)(raw_data - original_src);
-
         } else if(is_b64) {
             // TODO: maybe we don't need to allocate this amount of memory
             raw_data = malloc(b64_size);
@@ -2179,14 +2177,16 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
         memcpy((*vtk_grid)->cells, parser_state->cells_connectivity_ascii, (size_t)(*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell * sizeof(uint64_t));
         memcpy((*vtk_grid)->values, parser_state->celldata_ascii, (*vtk_grid)->num_cells * sizeof(float));
     } else if(parser_state->ascii) {
-        char *tmp_data = parser_state->celldata_ascii;
-        char *p_end;
+        const char *tmp_data = parser_state->celldata_ascii;
+        const char *p_end;
 
         while(*tmp_data != '-' && !isdigit(*tmp_data))
             tmp_data++;
 
+        double n;
         for(int i = 0; i < (*vtk_grid)->num_cells; i++) {
-            arrput((*vtk_grid)->values, strtof(tmp_data, &p_end));
+            p_end = parse_number(tmp_data, &n);
+            arrput((*vtk_grid)->values, (float)n);
             tmp_data = p_end;
         }
 
@@ -2201,15 +2201,18 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
 
                 switch(j) {
                     case 0:
-                        p.x = strtof(tmp_data, &p_end);
+                        p_end = parse_number(tmp_data, &n);
+                        p.x = (float)n;
                         tmp_data = p_end;
                         break;
                     case 1:
-                        p.y = strtof(tmp_data, &p_end);
+                        p_end = parse_number(tmp_data, &n);
+                        p.y = (float)n;
                         tmp_data = p_end;
                         break;
                     case 2:
-                        p.z = strtof(tmp_data, &p_end);
+                        p_end = parse_number(tmp_data, &n);
+                        p.z = (float)n;
                         tmp_data = p_end;
                         break;
                     default:
@@ -2225,7 +2228,8 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
             tmp_data++;
 
         for(uint32_t i = 0; i < (*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell; i++) {
-            arrput((*vtk_grid)->cells, strtol(tmp_data, &p_end, 10));
+            p_end = parse_number(tmp_data, &n);
+            arrput((*vtk_grid)->cells, (int)n);
             tmp_data = p_end;
         }
     }
