@@ -242,7 +242,6 @@ void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, sds ful
 }
 
 #define SET_VISIBLE                                                                                                                                            \
-    do {                                                                                                                                                       \
         i = hmgeti(cells, neighbour_center);                                                                                                                   \
         if(i == -1) {                                                                                                                                          \
             arrpush((*vtk_grid)->cell_visibility, 1);                                                                                                          \
@@ -254,7 +253,6 @@ void read_or_calc_visible_cells(struct vtk_unstructured_grid **vtk_grid, sds ful
                 continue;                                                                                                                                      \
             }                                                                                                                                                  \
         }                                                                                                                                                      \
-    } while(0)
 
 void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell_hash_entry *cells, uint32_t num_cells) {
 
