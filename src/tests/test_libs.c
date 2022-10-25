@@ -2,6 +2,7 @@
 //// Created by sachetto on 06/10/17.
 ////
 #include <criterion/criterion.h>
+#include <criterion/internal/assert.h>
 #include <signal.h>
 
 #include "../alg/grid/grid.h"
@@ -16,6 +17,8 @@
 
 #include "../3dparty/stb_ds.h"
 #include "../config_helpers/config_helpers.h"
+
+#include "../3dparty/fast_double_parser.h"
 
 Test (utils, arr_int) {
 
@@ -123,4 +126,37 @@ Test (utils, arr_element) {
     cr_assert_eq(b.column, 3);
 
     free(c);
+}
+
+static void test_file(char *file) {
+{
+        size_t size;
+        char *values = read_entire_file_with_mmap(file, &size);
+        char *fast_floats = values;
+        char *strtod_floats = values;
+        while(*fast_floats) {
+            double n_fast;
+            const char *end = parse_number(fast_floats, &n_fast);
+
+            if(!end) break;
+
+            fast_floats += (end - fast_floats + 1);
+
+            double n_strtod = 0;
+            char *end2;
+            n_strtod = strtod(strtod_floats, &end2);
+
+            strtod_floats += (end2 - strtod_floats + 1);
+
+            cr_assert_float_eq(n_fast, n_strtod, 0.00001);
+        }
+
+        munmap(values, size);
+    }
+}
+
+Test (float_parser, fast_parser) {
+    test_file("./tests_bin/float_pos.txt");
+    test_file("./tests_bin/float_neg.txt");
+    test_file("./tests_bin/float_mixed.txt");
 }

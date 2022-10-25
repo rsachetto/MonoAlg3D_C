@@ -1,4 +1,5 @@
 #include "gui_draw.h"
+#include "gui.h"
 #include <float.h>
 
 void set_camera_params(Camera3D *camera, bool set_mode) {
@@ -450,8 +451,13 @@ void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool
     }
 
     gui_config->restart = true;
-    gui_config->grid_info.alg_grid = NULL;
-    gui_config->grid_info.vtk_grid = NULL;
+
+    if(gui_config->draw_type == DRAW_SIMULATION) {
+        gui_config->grid_info.alg_grid = NULL;
+    } else {
+        free_vtk_unstructured_grid(gui_config->grid_info.vtk_grid);
+        gui_config->grid_info.vtk_grid = NULL;
+    }
 
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};

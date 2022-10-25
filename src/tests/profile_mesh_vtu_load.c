@@ -15,11 +15,9 @@
 
 struct elapsed_times {
     double total_time;
-
 } __attribute__((packed));
 
 int main(int argc, char **argv) {
-
 
     struct elapsed_times average_times = { 0 };
 

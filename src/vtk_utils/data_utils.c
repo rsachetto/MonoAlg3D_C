@@ -126,8 +126,6 @@ void read_binary_point(void *source, struct point_3d *p) {
 
     data = invert_bytes(*(int *)source);
     p->z = *(float *)&(data);
-
-
 }
 
 sds write_binary_point(sds output_string, struct point_3d *p) {

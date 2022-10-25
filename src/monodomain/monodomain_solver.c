@@ -350,7 +350,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             log_error_and_exit("Error configuring the Purkinje domain!\n");
         }
 
-        calc_retropropagation = the_grid->purkinje->network->calc_retropropagation; 
+        calc_retropropagation = the_grid->purkinje->network->calc_retropropagation;
     }
 
     if(domain_config) {
@@ -1119,9 +1119,9 @@ void print_solver_info(struct monodomain_solver *the_monodomain_solver, struct o
     log_msg(LOG_LINE_SEPARATOR);
 
     log_info("System parameters: \n");
-    
+
     log_msg(LOG_LINE_SEPARATOR);
-    
+
 #if defined(_OPENMP)
     log_info("[main] Using OpenMP with %d threads\n", omp_get_max_threads());
 #endif
