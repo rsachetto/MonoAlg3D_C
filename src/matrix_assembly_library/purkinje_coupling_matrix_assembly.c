@@ -511,8 +511,8 @@ ASSEMBLY_MATRIX (purkinje_coupling_with_anisotropic_sigma_and_fast_endocardium_l
         }
 
         // Check if the current cell is tagged as FASTENDO
-        real_cpu tag = TISSUE_TYPE(ac[i]);
-        if (tag == 0) {
+        real_cpu tag = DTI_MESH_TRANSMURALITY_LABELS(ac[i]);
+        if (tag == 3) {
             ac[i]->sigma.x = D[0][0]*fast_endo_layer_scale;
             ac[i]->sigma.y = D[1][1]*fast_endo_layer_scale;
             ac[i]->sigma.z = D[2][2]*fast_endo_layer_scale;
