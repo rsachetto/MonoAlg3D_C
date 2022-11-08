@@ -108,7 +108,7 @@ bool get_matrix_parameter(real_cpu **v, const char *parameter, int nlin, int nco
     do {                                                                                                                                                       \
         char *__config_char = get_string_parameter(config->config_data, parameter);                                                                            \
         if(__config_char) {                                                                                                                                    \
-            bool __success = get_vector_parameter(&value, __config_char, n);                                                              \
+            bool __success = get_vector_parameter(&value, __config_char, n);                                                                                   \
             if(!__success) {                                                                                                                                   \
                 REPORT_ERROR_ON_FUNCTION("Error parsing vector parameter!\n");                                                                                 \
             }                                                                                                                                                  \
