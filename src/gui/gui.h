@@ -6,6 +6,7 @@
 #define MONOALG3D_GUI_H
 
 #include <omp.h>
+#include <sys/types.h>
 
 #include "../alg/grid/grid.h"
 #include "../alg/cell/cell.h"
@@ -265,6 +266,7 @@ struct gui_state {
 
     float mesh_scale_factor;
     Vector3 mesh_offset;
+    u_int32_t last_n_active;
 
 };
 

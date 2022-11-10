@@ -20,7 +20,6 @@ struct draw_context {
     Color *colors;
     float16 *instance_transforms;
     float4 *colors_transforms;
-    bool allocated;
 };
 
 void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mask, int instances);

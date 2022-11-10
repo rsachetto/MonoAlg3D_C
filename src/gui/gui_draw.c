@@ -442,6 +442,8 @@ void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool
         return;
     }
 
+    gui_config->grid_info.loaded = false;
+
     gui_state->voxel_alpha = 255;
 
     size_t n = hmlen(gui_state->ap_graph_config->selected_aps);

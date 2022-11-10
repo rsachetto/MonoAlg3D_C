@@ -826,6 +826,17 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             omp_set_lock(&gui_config->draw_lock);
 
+            uint32_t n_active;
+
+            if(draw_type == DRAW_SIMULATION) {
+                n_active = gui_config->grid_info.alg_grid->num_active_cells;
+            } else {
+                n_active = gui_config->grid_info.vtk_grid->num_cells;
+            }
+
+            bool realloc_matrices = gui_state->last_n_active != n_active;
+            gui_state->last_n_active = n_active;
+
             if(draw_type == DRAW_FILE) {
                 if(gui_config->grid_info.file_name) {
                     sprintf(window_title, "Visualizing file - %s", gui_config->grid_info.file_name);
@@ -872,13 +883,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(!gui_state->slicing_mesh) {
 
-                if(!draw_context.allocated) {
-                    uint32_t n_active;
-                    if(draw_type == DRAW_SIMULATION) {
-                        n_active = gui_config->grid_info.alg_grid->num_active_cells;
-                    } else {
-                        n_active = gui_config->grid_info.vtk_grid->num_cells;
-                    }
+                if( gui_config->grid_info.loaded && realloc_matrices ) {
+
+                    free(draw_context.translations);
+                    free(draw_context.colors);
+                    free(draw_context.instance_transforms);
+                    free(draw_context.colors_transforms);
 
                     draw_context.colors       = malloc(n_active * sizeof(Color));
                     draw_context.translations = malloc(n_active * sizeof(Matrix)); // Locations of instances
@@ -886,7 +896,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                     draw_context.instance_transforms = (float16 *)malloc(n_active * sizeof(float16));
                     draw_context.colors_transforms   = (float4 *)malloc(n_active * sizeof(float4));
 
-                    draw_context.allocated = true;
+                    gui_state->handle_keyboard_input = true;
                 }
 
                 draw_grid_function(gui_config, gui_state, grid_mask, &draw_context);
@@ -894,18 +904,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 if(draw_purkinje_function != NULL) {
                     draw_purkinje_function(gui_config, gui_state);
                 }
-
-                if(gui_config->adaptive) {
-                    free(draw_context.translations);
-                    free(draw_context.colors);
-                    free(draw_context.colors_transforms);
-                    free(draw_context.instance_transforms);
-                    draw_context.allocated = false;
-                }
-
             }
 
             gui_state->double_clicked = false;
+
             if(gui_state->show_coordinates) {
                 draw_coordinates(gui_state);
             }
@@ -997,6 +999,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
         } else {
 
+            gui_state->handle_keyboard_input = false;
             ClearBackground(GRAY);
             float spacing = gui_state->font_spacing_big;
             static Color c = RED;
