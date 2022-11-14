@@ -95,56 +95,56 @@ static inline void set_point_data(struct point_3d center, struct point_3d half_f
     if(point1_idx == -1) {
         arrput((*vtk_grid)->points, point1);
         hmput(*hash, point1, *id);
-        point1_idx = *id;
+        point1_idx = (int)*id;
         *id += 1;
     }
 
     if(point2_idx == -1) {
         arrput((*vtk_grid)->points, point2);
         hmput(*hash, point2, *id);
-        point2_idx = *id;
+        point2_idx = (int)*id;
         *id += 1;
     }
 
     if(point3_idx == -1) {
         hmput(*hash, point3, *id);
         arrput((*vtk_grid)->points, point3);
-        point3_idx = *id;
+        point3_idx = (int)*id;
         *id += 1;
     }
 
     if(point4_idx == -1) {
         hmput(*hash, point4, *id);
         arrput((*vtk_grid)->points, point4);
-        point4_idx = *id;
+        point4_idx = (int)*id;
         *id += 1;
     }
 
     if(point5_idx == -1) {
         arrput((*vtk_grid)->points, point5);
         hmput(*hash, point5, *id);
-        point5_idx = *id;
+        point5_idx = (int)*id;
         *id += 1;
     }
 
     if(point6_idx == -1) {
         arrput((*vtk_grid)->points, point6);
         hmput(*hash, point6, *id);
-        point6_idx = *id;
+        point6_idx = (int)*id;
         *id += 1;
     }
 
     if(point7_idx == -1) {
         arrput((*vtk_grid)->points, point7);
         hmput(*hash, point7, *id);
-        point7_idx = *id;
+        point7_idx = (int)*id;
         *id += 1;
     }
 
     if(point8_idx == -1) {
         arrput((*vtk_grid)->points, point8);
         hmput(*hash, point8, *id);
-        point8_idx = *id;
+        point8_idx = (int)*id;
         *id += 1;
     }
 
@@ -273,27 +273,27 @@ void calc_visibility(struct vtk_unstructured_grid **vtk_grid, struct cell_hash_e
 
         // FRONT CELL
         struct point_3d neighbour_center = TRANSLATE(center, 0, 0, discretization.z);
-        SET_VISIBLE;
+        SET_VISIBLE
 
         // BACK CELL
         neighbour_center = TRANSLATE(center, 0, 0, -discretization.z);
-        SET_VISIBLE;
+        SET_VISIBLE
 
         // TOP CELL
         neighbour_center = TRANSLATE(center, 0, discretization.y, 0);
-        SET_VISIBLE;
+        SET_VISIBLE
 
         // DOWN CELL
         neighbour_center = TRANSLATE(center, 0, -discretization.y, 0);
-        SET_VISIBLE;
+        SET_VISIBLE
 
         // RIGHT CELL
         neighbour_center = TRANSLATE(center, discretization.x, 0, 0);
-        SET_VISIBLE;
+        SET_VISIBLE
 
         // LEFT CELL
         neighbour_center = TRANSLATE(center, -discretization.x, 0, 0);
-        SET_VISIBLE;
+        SET_VISIBLE
 
         // We have all neighbours, so we are not visible
         arrpush((*vtk_grid)->cell_visibility, 0);
@@ -591,6 +591,7 @@ void new_vtk_unstructured_grid_from_alg_grid (struct vtk_unstructured_grid **vtk
     FOR_EACH_CELL(grid) {
 
         if(!cell->active) {
+            //TODO: remove else
             if(!save_fibrotic) {
                 continue;
             } else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
@@ -1318,7 +1319,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
                 log_error_and_exit("column_index not specified at section %s!. Aborting\n", name);
             }
             else {
-                column_index_int = strtol(column_index, NULL, 10);
+                column_index_int = (int) strtol(column_index, NULL, 10);
             }
 
             int n_extra_values = arrlen(vtk_grid->extra_values);
@@ -1346,7 +1347,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
             int n_components_int = 1;
 
             if(n_components != NULL) {
-                n_components_int = strtol(n_components, NULL, 10);
+                n_components_int = (int) strtol(n_components, NULL, 10);
             }
 
             size_t num_values = arrlenu(vals);
@@ -1387,17 +1388,17 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
                 sdsfree(tmp);
 
                 //TODO: check if n_components is correct
-                for(size_t i = 0; i < num_values; i++) {
+                for(size_t v = 0; v < num_values; v++) {
                     if(binary) {
                         for(int j = 0; j < n_components_int; j++) {
-                            int aux = invert_bytes(*((int *)&(vtk_grid->extra_values[starting_index+j][i])));
+                            int aux = invert_bytes(*((int *)&(vtk_grid->extra_values[starting_index+j][v])));
                             file_content = sdscatlen(file_content, &aux, sizeof(int));
                             size_until_now += sizeof(int);
                         }
 
                     } else {
                         for(int j = 0; j < n_components_int; j++) {
-                            file_content = sdscatprintf(file_content, "%lf ", vtk_grid->extra_values[starting_index+j][i]);
+                            file_content = sdscatprintf(file_content, "%lf ", vtk_grid->extra_values[starting_index+j][v]);
                         }
                         file_content = sdscatprintf(file_content, "\n");
                     }
