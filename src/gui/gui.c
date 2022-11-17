@@ -5,6 +5,7 @@
 #include <bits/stdint-uintn.h>
 #include <float.h>
 #include <string.h>
+#include <sys/types.h>
 
 //This need to be before RAYGUI_IMPLEMENTATION
 #include "gui.h"
@@ -153,12 +154,12 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->mesh_scale_factor = 1.0f;
     gui_state->mesh_offset = (Vector3){0, 0, 0};
 
-#define NUM_BUTTONS 7
-    gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
-    gui_state->controls_window.bounds.height = 38.0f + WINDOW_STATUSBAR_HEIGHT;
-
     gui_state->show_coordinates = true;
     gui_state->double_clicked = false;
+
+    const u_int8_t NUM_BUTTONS = 7;
+    gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
+    gui_state->controls_window.bounds.height = 38.0f + WINDOW_STATUSBAR_HEIGHT;
 
     return gui_state;
 }

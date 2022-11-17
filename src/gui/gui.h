@@ -142,6 +142,8 @@ struct gui_shared_info {
     float ui_scale;
 
     struct simulation_files *simulation_files;
+
+    bool calc_bounds;
 };
 
 struct window_commom {

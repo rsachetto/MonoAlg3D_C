@@ -14,8 +14,6 @@ void set_camera_params(Camera3D *camera, bool set_mode) {
     }
 }
 
-
-
 void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *gui_config) {
 
     int n = hmlen(gui_state->ap_graph_config->selected_aps);
@@ -500,9 +498,9 @@ void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool
     }
 }
 
-bool spinner_edit = false;
 void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gui_config) {
 
+    static bool spinner_edit = false;
     gui_state->controls_window.show = !GuiWindowBox(gui_state->controls_window.bounds, "Controls");
 
     Rectangle button_pos = (Rectangle){0, 0, 32, 32};
@@ -576,19 +574,23 @@ void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gu
         gui_config->current_file_index = (float) gui_config->final_file_index;
     }
 
-    ENABLE;
-
-    DISABLE_IF_NOT_PAUSED
-    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     button_pos.x += button_pos.width + 4.0f;
+
+    ENABLE;
+    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
     //Calc bounds button
     if(GuiButton(button_pos, "#94#")) {
-        //
+        gui_config->calc_bounds = true;
+        omp_unset_lock(&gui_config->sleep_lock);
     }
-
 
     button_pos.x += button_pos.width + 4.0f;
     button_pos.width = 96;
+
+    ENABLE;
+    DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW
+    DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
 
     int old_index = (int) gui_config->current_file_index;
 

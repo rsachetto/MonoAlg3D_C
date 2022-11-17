@@ -2557,10 +2557,14 @@ void set_vtk_grid_values_from_ensight_file(struct vtk_unstructured_grid *vtk_gri
         for(int i = 0; i < num_grid_cells; i++) {
             float v = read_float(&source, binary);
             vtk_grid->values[i] = v;
-            if(v > vtk_grid->max_v)
+
+            if(v > vtk_grid->max_v) {
                 vtk_grid->max_v = v;
-            if(v < vtk_grid->min_v)
+            }
+
+            if(v < vtk_grid->min_v) {
                 vtk_grid->min_v = v;
+            }
         }
     }
 
