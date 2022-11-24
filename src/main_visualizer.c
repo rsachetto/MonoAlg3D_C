@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +11,6 @@
 #include "utils/file_utils.h"
 #include "vtk_utils/pvd_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
-#include <sys/mman.h>
 #include <unistd.h>
 
 #define MAX_ERROR_SIZE 4096
@@ -249,6 +249,63 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     while(true) {
 
+        if(!single_file && gui_config->calc_bounds) {
+
+            char path[2048];
+            gui_config->grid_info.loaded = false;
+
+            snprintf(error, MAX_ERROR_SIZE, "Calculating Vm bounds!");
+
+            if(gui_config->error_message) {
+                free(gui_config->error_message);
+            }
+
+            gui_config->error_message = strdup(error);
+            static struct vtk_unstructured_grid *tmp_grid = NULL;
+            static bool en_tmp_loaded = false;
+
+            gui_config->max_v = -10000.0;
+            gui_config->min_v = 10000.0;
+
+            for(int i = 0; i < num_files; i++) {
+                char *current_file_name = simulation_files->files_list[i];
+                sprintf(path, "%s/%s", simulation_files->base_dir, current_file_name);
+
+                if(ensight) {
+                    if(!en_tmp_loaded) {
+                        tmp_grid = new_vtk_unstructured_grid_from_file(geometry_file, true);
+                        en_tmp_loaded = true;
+                    }
+
+                    set_vtk_grid_values_from_ensight_file(tmp_grid, path);
+                }
+                else {
+                    tmp_grid = new_vtk_unstructured_grid_from_file(path, true);
+                }
+
+                if(tmp_grid->max_v > gui_config->max_v) {
+                    gui_config->max_v = tmp_grid->max_v;
+                }
+
+                if(tmp_grid->min_v < gui_config->min_v) {
+                    gui_config->min_v = tmp_grid->min_v;
+                }
+
+                if(!ensight) {
+                    free_vtk_unstructured_grid(tmp_grid);
+                }
+            }
+
+            if(ensight) {
+                free_vtk_unstructured_grid(tmp_grid);
+                tmp_grid = NULL;
+                en_tmp_loaded = false;
+            }
+
+            gui_config->grid_info.loaded = true;
+            gui_config->calc_bounds = false;
+        }
+
         int current_file_index = (int)gui_config->current_file_index;
         char *current_file_name = simulation_files->files_list[current_file_index];
 
@@ -310,11 +367,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
             // TODO: for ensigth, maybe we should put the data name here.
             gui_config->grid_info.file_name = full_path;
             gui_config->grid_info.loaded = true;
+        }
 
-            if(single_file) {
-                gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
-                gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
-            }
+        if(single_file) {
+            gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
+            gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
         }
 
         omp_unset_lock(&gui_config->draw_lock);
@@ -386,7 +443,7 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
 
 int main(int argc, char **argv) {
 
-    struct gui_shared_info *gui_config = MALLOC_ONE_TYPE(struct gui_shared_info);
+    struct gui_shared_info *gui_config = CALLOC_ONE_TYPE(struct gui_shared_info);
 
     struct visualization_options *options = new_visualization_options();
 
@@ -415,8 +472,8 @@ int main(int argc, char **argv) {
 
                 while(result == RESTART_SIMULATION || result == SIMULATION_FINISHED) {
 
-                    // HACK: this should not be needed, we have to find a way to avoid this hack
-                    // if we take this out, the open mesh option does not work properly
+                    // HACK: this should not be needed, we have to find a way to avoid this hack.
+                    // If we take this out, the open mesh option does not work properly
                     usleep(10);
 
                     if(gui_config->input) {
