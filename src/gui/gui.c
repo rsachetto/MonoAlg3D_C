@@ -301,6 +301,8 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
 static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
 
+    int kp = GetKeyPressed();
+
     if(gui_config->paused) {
 
         if(IsKeyUp(KEY_RIGHT_CONTROL) || IsKeyUp(KEY_LEFT_CONTROL)) {
@@ -313,7 +315,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
             gui_state->ctrl_pressed = true;
 
-            if(IsKeyPressed(KEY_S)) {
+            if(kp == KEY_S) {
                 char const *filter[1] = {"*.vtu"};
 
                 const char *save_path = tinyfd_saveFileDialog("Save VTK file", gui_config->input, 1, filter, "vtu files");
@@ -324,18 +326,14 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 }
 
                 return;
-            } else if(IsKeyPressed(KEY_F)) {
+            } else if(kp == KEY_F) {
                 gui_state->search_window.show = true;
                 gui_state->search_window.bounds.x = (float)GetScreenWidth() / 2.0f - gui_state->search_window.bounds.width;
                 gui_state->search_window.bounds.y = (float)GetScreenHeight() / 2.0f - gui_state->search_window.bounds.height;
                 return;
-            } else if(IsKeyPressed(KEY_L)) {
-                gui_state->light.enabled = !gui_state->light.enabled;
-                return;
             }
         }
 
-        int kp = GetKeyPressed();
         if(kp >= KEY_ZERO && kp <= KEY_NINE) {
             int index = kp - KEY_ONE - 1;
 
@@ -349,14 +347,14 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             }
         }
 
-        if(IsKeyPressed(KEY_PAGE_UP)) {
+        if(kp == KEY_PAGE_UP) {
             int index = gui_state->current_data_index + 1;
 
             if(index <= gui_state->max_data_index - 1) {
                 gui_state->current_data_index = index;
             }
 
-        } else if(IsKeyPressed(KEY_PAGE_DOWN)) {
+        } else if(kp == KEY_PAGE_DOWN) {
             int index = gui_state->current_data_index - 1;
 
             if(index >= -1) {
@@ -364,7 +362,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             }
         }
 
-        if(IsKeyPressed(KEY_S)) {
+        if(kp == KEY_S) {
             if(IN_DRAW) {
                 gui_state->slicing_mode = true;
                 gui_state->slicing_mesh = false;
@@ -414,7 +412,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                     gui_state->plane_ty += 0.1f;
             }
         } else {
-            if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_UP)) {
+            if(kp == KEY_RIGHT || IsKeyDown(KEY_UP)) {
 
                 if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0)
                     return;
@@ -427,7 +425,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
             if(gui_config->draw_type == DRAW_FILE) {
                 // Return one step only works on file visualization...
-                if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_DOWN)) {
+                if(kp == KEY_LEFT || IsKeyDown(KEY_DOWN)) {
                     if(gui_config->final_file_index == 0)
                         return;
                     gui_config->current_file_index--;
@@ -439,7 +437,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         }
     }
 
-    if(IsKeyPressed(KEY_Q)) {
+    if(kp == KEY_Q) {
         gui_state->scale.window.show = !gui_state->scale.window.show;
         return;
     }
@@ -458,17 +456,17 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(IsKeyPressed(KEY_G)) {
+    if(kp == KEY_G) {
         gui_state->draw_grid_only = !gui_state->draw_grid_only;
         return;
     }
 
-    if(IsKeyPressed(KEY_PERIOD)) {
+    if(kp == KEY_PERIOD) {
         gui_state->current_scale = (gui_state->current_scale + 1) % NUM_SCALES;
         return;
     }
 
-    if(IsKeyPressed(KEY_COMMA)) {
+    if(kp == KEY_COMMA) {
         if(gui_state->current_scale - 1 >= 0) {
             gui_state->current_scale = (gui_state->current_scale - 1);
         } else {
@@ -477,12 +475,12 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(IsKeyPressed(KEY_L)) {
+    if(kp == KEY_L) {
         gui_state->draw_grid_lines = !gui_state->draw_grid_lines;
         return;
     }
 
-    if(IsKeyPressed(KEY_SPACE)) {
+    if(kp  == KEY_SPACE) {
         if(!gui_state->slicing_mode) {
             if(gui_config->draw_type == DRAW_FILE) {
                 if(gui_config->final_file_index != 0) {
@@ -495,7 +493,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         }
     }
 
-    if(IsKeyPressed(KEY_R)) {
+    if(kp == KEY_R) {
         bool full_reset = false;
 
         if(IsKeyDown(KEY_LEFT_ALT)) {
@@ -506,12 +504,12 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(IsKeyPressed(KEY_X)) {
+    if(kp == KEY_X) {
         gui_state->ap_graph_config->graph.show = !gui_state->ap_graph_config->graph.show;
         return;
     }
 
-    if(IsKeyPressed(KEY_C)) {
+    if(kp == KEY_C) {
         gui_state->scale.window.show = gui_state->c_pressed;
         gui_state->ap_graph_config->graph.show = gui_state->c_pressed;
         gui_state->end_info_box.window.show = gui_state->c_pressed;
@@ -523,7 +521,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(IsKeyPressed(KEY_H)) {
+    if(kp == KEY_H) {
         if(gui_state->slicing_mode) {
             gui_state->slice_help_box.window.show = !gui_state->slice_help_box.window.show;
         } else {
@@ -533,8 +531,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(gui_config->draw_type == DRAW_FILE) {
-
-        if(IsKeyPressed(KEY_O)) {
+        if(kp == KEY_O) {
             if(!gui_config->paused)
                 return;
 
@@ -556,7 +553,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             return;
         }
 
-        if(IsKeyPressed(KEY_F)) {
+        if(kp == KEY_F) {
 
             gui_config->paused = true;
 
@@ -760,8 +757,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     Color plane_color = WHITE;
     plane_color.a = 100;
 
-    Matrix rotation_matrix;
-
     if(NOT_IN_DRAW) {
         gui_config->progress = 100;
     }
@@ -794,6 +789,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     Vector3 light_pos = gui_state->camera.position;
     light_pos.z = light_pos.z + light_offset;
     gui_state->light = CreateLight(LIGHT_DIRECTIONAL, light_pos, gui_state->camera.target, WHITE, draw_context.shader);
+
+    Matrix rotation_matrix;
 
     while(!WindowShouldClose()) {
 
@@ -1074,8 +1071,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
+
             info_pos =
                 (Vector2){((float)gui_state->current_window_width - text_size.x - 10), ((float)gui_state->current_window_height - text_size.y - upper_y)};
+
             DrawTextEx(gui_state->font, text, info_pos, gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
         }
 
