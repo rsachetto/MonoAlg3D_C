@@ -38,5 +38,4 @@ jobs:
         cuda: '11.7.0'
 
     - name: Build with cuda
-      run: echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
       run: ./build.sh -r simulator
