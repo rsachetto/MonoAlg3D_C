@@ -2391,9 +2391,6 @@ static void new_vtk_unstructured_grid_from_ensigth_file(struct vtk_unstructured_
 
     *vtk_grid = new_vtk_unstructured_grid();
 
-    //(*vtk_grid)->max_v = 1;
-    //(*vtk_grid)->min_v = 0.0001;
-
     if(STRCMP(source, "hexa8", 5) == 0) {
         skip_line(&source, binary); // hexa8
 
