@@ -36,6 +36,8 @@ jobs:
       id: cuda-toolkit
       with:
         cuda: '11.7.0'
+        method: 'network'
+        linux-local-args: '["--toolkit"]'
 
     - name: Build with cuda
       run: ./build.sh -r simulator
