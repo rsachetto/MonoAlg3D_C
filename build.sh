@@ -117,6 +117,8 @@ C_FLAGS="$C_FLAGS $DEFAULT_C_FLAGS"
 
 GET_LINUX_VERSION
 
+echo -e "${INFO}Linux version: ${OS}-${VER}"
+
 if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
 
     if [ -z "$DISABLE_CUDA" ]; then
