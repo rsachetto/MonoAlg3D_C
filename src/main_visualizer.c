@@ -41,6 +41,69 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
     omp_unset_lock(&gui_config->draw_lock);
 }
 
+static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simulation_files *simulation_files,  const sds geometry_file, const bool ensight) {
+
+    char path[2048];
+    gui_config->grid_info.loaded = false;
+
+    char error[MAX_ERROR_SIZE];
+    snprintf(error, MAX_ERROR_SIZE, "Calculating Vm bounds!");
+
+    if(gui_config->error_message) {
+        free(gui_config->error_message);
+    }
+
+    gui_config->error_message = strdup(error);
+    static struct vtk_unstructured_grid *tmp_grid = NULL;
+    static bool en_tmp_loaded = false;
+
+    gui_config->max_v = -10000.0;
+    gui_config->min_v = 10000.0;
+
+    uint32_t num_files = arrlen(simulation_files->files_list);
+    gui_config->file_size = num_files;
+
+    for(int i = 0; i < num_files; i++) {
+        gui_config->progress = i;
+        char *current_file_name = simulation_files->files_list[i];
+        sprintf(path, "%s/%s", simulation_files->base_dir, current_file_name);
+
+        if(ensight) {
+            if(!en_tmp_loaded) {
+                tmp_grid = new_vtk_unstructured_grid_from_file(geometry_file, true);
+                en_tmp_loaded = true;
+            }
+
+            set_vtk_grid_values_from_ensight_file(tmp_grid, path);
+        }
+        else {
+            tmp_grid = new_vtk_unstructured_grid_from_file(path, true);
+        }
+
+        if(tmp_grid->max_v > gui_config->max_v) {
+            gui_config->max_v = tmp_grid->max_v;
+        }
+
+        if(tmp_grid->min_v < gui_config->min_v) {
+            gui_config->min_v = tmp_grid->min_v;
+        }
+
+        if(!ensight) {
+            free_vtk_unstructured_grid(tmp_grid);
+        }
+    }
+
+    if(ensight) {
+        free_vtk_unstructured_grid(tmp_grid);
+        tmp_grid = NULL;
+        en_tmp_loaded = false;
+    }
+
+    gui_config->grid_info.loaded = true;
+    gui_config->calc_bounds = false;
+
+}
+
 static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
 
     char error[MAX_ERROR_SIZE];
@@ -250,60 +313,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     while(true) {
 
         if(!single_file && gui_config->calc_bounds) {
-
-            char path[2048];
-            gui_config->grid_info.loaded = false;
-
-            snprintf(error, MAX_ERROR_SIZE, "Calculating Vm bounds!");
-
-            if(gui_config->error_message) {
-                free(gui_config->error_message);
-            }
-
-            gui_config->error_message = strdup(error);
-            static struct vtk_unstructured_grid *tmp_grid = NULL;
-            static bool en_tmp_loaded = false;
-
-            gui_config->max_v = -10000.0;
-            gui_config->min_v = 10000.0;
-
-            for(int i = 0; i < num_files; i++) {
-                char *current_file_name = simulation_files->files_list[i];
-                sprintf(path, "%s/%s", simulation_files->base_dir, current_file_name);
-
-                if(ensight) {
-                    if(!en_tmp_loaded) {
-                        tmp_grid = new_vtk_unstructured_grid_from_file(geometry_file, true);
-                        en_tmp_loaded = true;
-                    }
-
-                    set_vtk_grid_values_from_ensight_file(tmp_grid, path);
-                }
-                else {
-                    tmp_grid = new_vtk_unstructured_grid_from_file(path, true);
-                }
-
-                if(tmp_grid->max_v > gui_config->max_v) {
-                    gui_config->max_v = tmp_grid->max_v;
-                }
-
-                if(tmp_grid->min_v < gui_config->min_v) {
-                    gui_config->min_v = tmp_grid->min_v;
-                }
-
-                if(!ensight) {
-                    free_vtk_unstructured_grid(tmp_grid);
-                }
-            }
-
-            if(ensight) {
-                free_vtk_unstructured_grid(tmp_grid);
-                tmp_grid = NULL;
-                en_tmp_loaded = false;
-            }
-
-            gui_config->grid_info.loaded = true;
-            gui_config->calc_bounds = false;
+            calc_vm_bounds(gui_config, simulation_files, geometry_file, ensight);
         }
 
         int current_file_index = (int)gui_config->current_file_index;
