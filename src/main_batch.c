@@ -1,4 +1,5 @@
 #include <mpi.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "3dparty/ini_parser/ini.h"
@@ -329,8 +330,9 @@ int main(int argc, char **argv) {
         num_max_proc = num_proccess;
     }
 
-    if (rank < num_max_proc)
+    if (rank < num_max_proc) {
         num_simulations = total_simulations / num_max_proc;
+    }
 
     int last_rank_extra = total_simulations % num_max_proc;
 
@@ -339,11 +341,6 @@ int main(int argc, char **argv) {
     }
 
     simulation_number_start = rank * num_simulations;
-
-    if (num_simulations == 0) {
-        MPI_Finalize();
-        return EXIT_SUCCESS;
-    }
 
     struct user_options *options;
     options = new_user_options();
@@ -372,6 +369,12 @@ int main(int argc, char **argv) {
     options->show_gui = false;
 
     MPI_Barrier(MPI_COMM_WORLD);
+
+    if (num_simulations == 0) {
+        MPI_Finalize();
+        return EXIT_SUCCESS;
+    }
+
     for (int s = simulation_number_start; s < simulation_number_start + num_simulations; s++) {
 
         the_grid = new_grid();
