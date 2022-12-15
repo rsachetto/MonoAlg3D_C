@@ -19,7 +19,11 @@ FIND_CUDA () {
 			CUDA_INCLUDE_PATH="/usr/local/cuda/include"
 			CUDA_LIBRARY_PATH="/usr/local/cuda/lib64"
 		else
-			CUDA_INCLUDE_PATH='/usr/include/'
+            if [ "$CI" = true ]; then
+			    CUDA_INCLUDE_PATH='/usr/local/cuda/include'
+            else
+			    CUDA_INCLUDE_PATH='/usr/include/'
+            fi
 		fi
 	fi
 
@@ -70,7 +74,7 @@ FIND_LIB() {
 
 	LIB=$1
 
-	PKG_CONFIG=$(command -v pkg-config)	
+	PKG_CONFIG=$(command -v pkg-config)
 
 	LIB_NAME=$(printf '%s\n' "$LIB" | awk '{ print toupper($0) }')
     LIB_FOUND="$LIB_NAME"_FOUND
@@ -89,17 +93,17 @@ FIND_LIB() {
 
 			LIB_INCLUDE_PATH=$($PKG_CONFIG --cflags-only-I "$LIB")
 
-			LIBS=$($PKG_CONFIG --libs-only-l "$LIB")		
-			
+			LIBS=$($PKG_CONFIG --libs-only-l "$LIB")
+
 			if [ -n "$LIBS" ]; then
 				printf -v "$LIB_LIBRARIES" ""
 				for i in $LIBS; do
 					i=${i:2}
 					printf -v "$LIB_LIBRARIES" "%s" "${!LIB_LIBRARIES} $i"
-				done			
+				done
 			fi
-		fi	
-	fi	
+		fi
+	fi
 }
 
 FIND_CRITERION() {

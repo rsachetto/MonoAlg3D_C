@@ -44,14 +44,12 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     // execution configuration
     const int GRID  = ((int)num_cells_to_solve + BLOCK_SIZE - 1)/BLOCK_SIZE;
 
-
     size_t stim_currents_size = sizeof(real)*num_cells_to_solve;
     size_t cells_to_solve_size = sizeof(uint32_t)*num_cells_to_solve;
 
     real *stims_currents_device;
     check_cuda_error(cudaMalloc((void **) &stims_currents_device, stim_currents_size));
     check_cuda_error(cudaMemcpy(stims_currents_device, stim_currents, stim_currents_size, cudaMemcpyHostToDevice));
-
 
     //the array cells to solve is passed when we are using and adaptive mesh
     uint32_t *cells_to_solve_device = NULL;
