@@ -1187,8 +1187,10 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
         }
 
         // Check if the current cell is tagged as FASTENDO
-        real_cpu tag = TISSUE_TYPE(ac[i]);
-        if (tag == 0) {
+        // TODO: Try to load the "extra_data" array and check if a cell is fast_endo or not
+        real_cpu tag = DTI_MESH_TRANSMURALITY_LABELS(ac[i]);
+            
+        if (tag == 3) {
             ac[i]->sigma.x = D[0][0]*fast_endo_layer_scale;
             ac[i]->sigma.y = D[1][1]*fast_endo_layer_scale;
             ac[i]->sigma.z = D[2][2]*fast_endo_layer_scale;
