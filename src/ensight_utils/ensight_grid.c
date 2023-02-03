@@ -535,9 +535,9 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
 
             if (grid_cell->active) {
 
-                float center_x = grid_cell->center.x;
-                float center_y = grid_cell->center.y;
-                float center_z = grid_cell->center.z;
+                real_cpu center_x = grid_cell->center.x;
+                real_cpu center_y = grid_cell->center.y;
+                real_cpu center_z = grid_cell->center.z;
 
                 // Insert the point to the array of points
                 aux.x = center_x;
