@@ -726,7 +726,7 @@ SAVE_MESH(save_with_activation_times) {
     char *mesh_format = NULL;
     GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_format, config, "mesh_format");
 
-    if(mesh_output_pr) {
+    if(mesh_format && mesh_output_pr) {
         if(iteration_count % mesh_output_pr == 0) {
             if(STRINGS_EQUAL("vtk", mesh_format)) {
                 save_as_vtk(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
