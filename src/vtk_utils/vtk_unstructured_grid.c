@@ -199,8 +199,9 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
 
         arrsetlen(line, 0);
 
-        if(!active)
+        if(!active) {
             continue;
+        }
 
         arrput((*vtk_grid)->values, v);
         if(v > (*vtk_grid)->max_v)
@@ -2452,18 +2453,16 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid_from_file_with_progress(
     // TRYING TO INFER THE FILE TYPE//////////////////////
     if(source[0] == '#') {
         file_type = VTK_LEGACY;
+    } else if((source[0] == '0' || source[0] == '1') && (source[1] == '\n')) {
+        file_type = ACTIVATION;
     } else if(isdigit(source[0])) {
         file_type = ALG_PLAIN_TEXT;
     } else if(source[0] == '<') {
         file_type = VTU_XML;
-    } else if((source[0] == '0' || source[0] == '1') && (source[1] == '\n')) {
-        file_type = ACTIVATION;
     } else if(size > 8 && STRCMP(source, "C Binary", 8) == 0) {
         file_type = ENSIGHT_BINARY;
-
     } else if(size > 4 && STRCMP(source, "Grid", 4) == 0) {
         file_type = ENSIGHT_ASCII;
-
     } else {
         file_type = ALG_BINARY;
     }

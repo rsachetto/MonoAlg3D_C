@@ -640,19 +640,19 @@ static void restore_point_float_hash(struct point_hash_entry **p, FILE *input_fi
 RESTORE_STATE(restore_simulation_state_with_activation_times_extra_fn) {
 
     if(save_mesh_config->persistent_data == NULL) {
-        save_mesh_config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
+        save_mesh_config->persistent_data = calloc(1, sizeof(struct common_persistent_data));
 
         sds tmp = sdsnew (input_dir);
         tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
 
         FILE *input_file = fopen (tmp, "rb");
-        ((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->first_save_call = false;
-        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->last_time_v, input_file);
-        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->num_activations, input_file);
-        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, input_file);
+        ((struct common_persistent_data*)save_mesh_config->persistent_data)->first_save_call = false;
+        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->last_time_v, input_file);
+        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->num_activations, input_file);
+        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, input_file);
 
-        restore_point_array_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->activation_times, input_file);
-        restore_point_array_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->apds, input_file);
+        restore_point_array_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->activation_times, input_file);
+        restore_point_array_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->apds, input_file);
 
         fclose(input_file);
     }
@@ -664,8 +664,8 @@ RESTORE_STATE(restore_simulation_state_with_activation_times_extra_fn) {
 RESTORE_STATE(restore_simulation_state_with_ensight_extra_fn) {
 
     if(save_mesh_config->persistent_data == NULL) {
-        save_mesh_config->persistent_data = calloc(1, sizeof(struct save_ensigth_persistent_data));
-        struct save_ensigth_persistent_data* persistent_data = (struct save_ensigth_persistent_data*)save_mesh_config->persistent_data;
+        save_mesh_config->persistent_data = calloc(1, sizeof(struct common_persistent_data));
+        struct common_persistent_data* persistent_data = (struct common_persistent_data*)save_mesh_config->persistent_data;
 
         sds tmp = sdsnew (input_dir);
         tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
@@ -687,19 +687,19 @@ RESTORE_STATE(restore_simulation_state_with_activation_times) {
     restore_simulation_state(time_info, config, save_mesh_config, the_grid, the_monodomain_solver, the_ode_solver, the_purkinje_ode_solver, input_dir);
 
     if(save_mesh_config->persistent_data == NULL) {
-        save_mesh_config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
+        save_mesh_config->persistent_data = calloc(1, sizeof(struct common_persistent_data));
 
         sds tmp = sdsnew (input_dir);
         tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
 
         FILE *input_file = fopen (tmp, "rb");
-        ((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->first_save_call = false;
-        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->last_time_v, input_file);
-        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->num_activations, input_file);
-        restore_point_float_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, input_file);
+        ((struct common_persistent_data*)save_mesh_config->persistent_data)->first_save_call = false;
+        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->last_time_v, input_file);
+        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->num_activations, input_file);
+        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, input_file);
 
-        restore_point_array_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->activation_times, input_file);
-        restore_point_array_hash(&((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->apds, input_file);
+        restore_point_array_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->activation_times, input_file);
+        restore_point_array_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->apds, input_file);
 
         fclose(input_file);
     }

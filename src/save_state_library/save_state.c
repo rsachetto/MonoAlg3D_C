@@ -419,12 +419,12 @@ SAVE_STATE(save_simulation_state_with_activation_times_extra_fn) {
 
         FILE *output_file = fopen(tmp, "wb");
 
-         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->last_time_v, output_file);
-         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->num_activations, output_file);
-         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, output_file);
+         save_point_float_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->last_time_v, output_file);
+         save_point_float_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->num_activations, output_file);
+         save_point_float_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, output_file);
 
-         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->activation_times, output_file);
-         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->apds, output_file);
+         save_point_array_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->activation_times, output_file);
+         save_point_array_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->apds, output_file);
 
          fclose(output_file);
 
@@ -439,7 +439,7 @@ SAVE_STATE(save_simulation_state_with_ensight_extra_fn) {
 
         FILE *output_file = fopen(tmp, "wb");
 
-        struct save_ensigth_persistent_data* persistent_data = (struct save_ensigth_persistent_data*)save_mesh_config->persistent_data;
+        struct common_persistent_data* persistent_data = (struct common_persistent_data*)save_mesh_config->persistent_data;
 
         fwrite(&(persistent_data->file_count), sizeof(persistent_data->file_count), 1, output_file);
         fwrite(&(persistent_data->n_digits), sizeof(persistent_data->n_digits), 1, output_file);
@@ -457,12 +457,12 @@ SAVE_STATE(save_simulation_state_with_activation_times) {
 
         FILE *output_file = fopen(tmp, "wb");
 
-         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->last_time_v, output_file);
-         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->num_activations, output_file);
-         save_point_float_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, output_file);
+         save_point_float_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->last_time_v, output_file);
+         save_point_float_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->num_activations, output_file);
+         save_point_float_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, output_file);
 
-         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->activation_times, output_file);
-         save_point_array_hash(((struct save_with_activation_times_persistent_data*)save_mesh_config->persistent_data)->apds, output_file);
+         save_point_array_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->activation_times, output_file);
+         save_point_array_hash(((struct common_persistent_data*)save_mesh_config->persistent_data)->apds, output_file);
 
          fclose(output_file);
 
