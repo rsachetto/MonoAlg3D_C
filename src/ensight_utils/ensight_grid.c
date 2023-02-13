@@ -461,11 +461,9 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
             if(!cell->active) {
                 if(!save_fibrotic) {
                     continue;
-                }
-                else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
+                } else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
                     continue;
                 }
-
             }
 
             center = cell->center;
@@ -489,8 +487,8 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
 
             arrput(ensight_grid->parts[0].cell_visibility, cell->visible);
 
-            if(v > ensight_grid->max_v) ensight_grid->max_v = v;
-            if(v < ensight_grid->min_v) ensight_grid->min_v = v;
+            if(v > ensight_grid->max_v) ensight_grid->max_v = (float) v;
+            if(v < ensight_grid->min_v) ensight_grid->min_v = (float) v;
 
 
             half_face.x = cell->discretization.x / 2.0f;
