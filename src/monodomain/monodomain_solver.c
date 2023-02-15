@@ -936,7 +936,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 
     if(purkinje_config && domain_config) {
-        print_pmj_delay(the_grid, save_mesh_config, the_terminals);
+        write_pmj_delay(the_grid, save_mesh_config, the_terminals);
+        write_terminals_info(the_grid, save_mesh_config, the_terminals);
         free_terminals(the_terminals, the_grid->purkinje->network->number_of_terminals);
     }
 
@@ -1457,21 +1458,30 @@ void compute_pmj_current_tissue_to_purkinje(struct ode_solver *the_purkinje_ode_
     }
 }
 
-// TODO: Maybe move this to a post-processing function ...
-void print_pmj_delay(struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
+// TODO: Find a better place to this function ...
+void write_pmj_delay (struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
     assert(the_grid);
     assert(config);
     assert(the_terminals);
-
-    log_info(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
-
-    uint32_t num_terminals = the_grid->purkinje->network->number_of_terminals;
 
     struct save_coupling_with_activation_times_persistent_data *persistent_data =
         (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
     char *main_function_name = config->main_function_name;
 
     if(strcmp(main_function_name, "save_purkinje_coupling_with_activation_times") == 0) {
+
+        char *output_dir = NULL;
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/pmj_delay.csv");
+        log_warn("PMJ delay information will be saved at:> '%s'\n", output_dir_with_file);
+
+        FILE *output_file = NULL;
+        output_file = fopen(output_dir_with_file, "w");
+        fprintf(output_file,"curPulse,curTerm,pkLAT,meanTissLAT,pmjDelay,isActive\n");
+
+        uint32_t num_terminals = the_grid->purkinje->network->number_of_terminals;
 
         uint32_t purkinje_index;
         struct node *purkinje_cell;
@@ -1497,6 +1507,7 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
         // For each pulses calculate its PMJ delay
         for(int k = 0; k < n_pulses; k++) {
 
+            //fprintf(output_file,"====================== PULSE %u ======================\n", k+1);
             for(uint32_t i = 0; i < num_terminals; i++) {
 
                 bool is_terminal_active = the_terminals[i].active;
@@ -1520,6 +1531,7 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                 activation_times_array_purkinje = (float *)hmget(persistent_data->purkinje_activation_times, cell_coordinates);
 
                 real_cpu purkinje_lat = activation_times_array_purkinje[k];
+                //fprintf(output_file,"Terminal %u --> Purkinje cell %u --> LAT = %g\n", i, purkinje_index, purkinje_lat);
 
                 // [TISSUE] Get the informaion from the Tissue cells
                 struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
@@ -1540,15 +1552,16 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                     n_activations_tissue = (int)hmget(persistent_data->tissue_num_activations, cell_coordinates);
                     activation_times_array_tissue = (float *)hmget(persistent_data->tissue_activation_times, cell_coordinates);
 
-                    // Check if the number of activations from the current tissue and Purkinje cell are equal
+                    // Check if the number of activations from the tissue and Purkinje cell are equal
                     if(n_activations_purkinje > n_activations_tissue) {
                         log_error("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
                         log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
                         log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
+                        fprintf(output_file,"ERROR! Probably there was a block on the anterograde direction!\n");
                         cur_pulse = 0;
                         return;
                     }
-                    log_info("Tissue cell %u --> LAT = %g\n",j,activation_times_array_tissue[cur_pulse]);
+                    //fprintf(output_file,"\tTissue cell %u --> LAT = %g\n", j, activation_times_array_tissue[cur_pulse]);
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                 }
 
@@ -1557,16 +1570,136 @@ void print_pmj_delay(struct grid *the_grid, struct config *config, struct termin
 
                     real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
 
-                    log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms [Active = %d]\n", i,
-                            purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,
-                            purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
+                    // pulse_id, terminal_id, purkinje_lat, mean_tissue_lat, pmj_delay, is_active 
+                    fprintf(output_file,"%d,%u,%g,%g,%g,%d\n", k, i, purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
+                    
+                    //log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms [Active = %d]\n", i,
+                    //        purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,
+                    //        purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
                 }
             }
         }
+        fclose(output_file);
     } else {
         log_error("[purkinje_coupling] ERROR! No 'persistant_data' was found!\n");
         log_error("[purkinje_coupling] You must use the 'save_purkinje_coupling_with_activation_times' function to print the PMJ delay!\n");
     }
+}
 
-    log_info(">>>>>>>>>> PMJ delay <<<<<<<<<<\n");
+// TODO: Find a better place to this function ...
+void write_terminals_info (struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
+    assert(the_grid);
+    assert(config);
+    assert(the_terminals);
+
+    struct save_coupling_with_activation_times_persistent_data *persistent_data =
+        (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
+    char *main_function_name = config->main_function_name;
+
+    if(strcmp(main_function_name, "save_purkinje_coupling_with_activation_times") == 0) {
+
+        char *output_dir = NULL;
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+
+        // Purkinje terminal output file
+        uint32_t num_coupled_tissue_cells = 0;
+        uint32_t num_terminals = the_grid->purkinje->network->number_of_terminals;
+        uint32_t purkinje_index;
+        struct node *purkinje_cell;
+        real_cpu center_x, center_y, center_z;
+        struct cell_node **purkinje_cells = the_grid->purkinje->purkinje_cells;
+
+        sds purkinje_term_file = sdsnew(output_dir);
+        purkinje_term_file = sdscat(purkinje_term_file, "/purkinje_terminals.vtk");
+        log_warn("Purkinje terminal information will be saved at:> '%s'\n", purkinje_term_file);
+
+        FILE *output_pk_term_file = NULL;
+        output_pk_term_file = fopen(purkinje_term_file, "w");
+
+        fprintf(output_pk_term_file,"# vtk DataFile Version 4.2\n");
+        fprintf(output_pk_term_file,"vtk output\n");
+        fprintf(output_pk_term_file,"ASCII\n");
+        fprintf(output_pk_term_file,"DATASET POLYDATA\n");
+        fprintf(output_pk_term_file,"POINTS %u float\n", num_terminals);
+
+        for(uint32_t i = 0; i < num_terminals; i++) {
+
+            struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
+            num_coupled_tissue_cells += arrlen(tissue_cells);
+
+            purkinje_cell = the_terminals[i].purkinje_cell;
+            purkinje_index = purkinje_cell->id;
+
+            center_x = purkinje_cells[purkinje_index]->center.x;
+            center_y = purkinje_cells[purkinje_index]->center.y;
+            center_z = purkinje_cells[purkinje_index]->center.z;
+
+            fprintf(output_pk_term_file,"%g %g %g\n", center_x, center_y, center_z);
+        }
+        fprintf(output_pk_term_file,"VERTICES %u %u\n", num_terminals, num_terminals*2);
+        for(uint32_t i = 0; i < num_terminals; i++) {
+            fprintf(output_pk_term_file, "1 %u\n", i);
+        }
+        fprintf(output_pk_term_file,"POINT_DATA %u\n", num_terminals);
+        fprintf(output_pk_term_file,"FIELD FieldData 1\n");
+        fprintf(output_pk_term_file,"isActive 1 %u float\n", num_terminals);
+        for(uint32_t i = 0; i < num_terminals; i++) {
+            bool is_terminal_active = the_terminals[i].active;
+            fprintf(output_pk_term_file, "%d\n", (int)is_terminal_active);
+        }
+        fclose(output_pk_term_file);
+
+        // Purkinje-tissue coupled file
+        sds coupled_tissue_cells_file = sdsnew(output_dir);
+        coupled_tissue_cells_file = sdscat(coupled_tissue_cells_file, "/coupled_tissue_cells.vtk");
+        log_warn("Coupled tissue information will be saved at:> '%s'\n", coupled_tissue_cells_file);
+
+        FILE *output_coupled_tiss_file = NULL;
+        output_coupled_tiss_file = fopen(coupled_tissue_cells_file, "w");
+
+        fprintf(output_coupled_tiss_file,"# vtk DataFile Version 4.2\n");
+        fprintf(output_coupled_tiss_file,"vtk output\n");
+        fprintf(output_coupled_tiss_file,"ASCII\n");
+        fprintf(output_coupled_tiss_file,"DATASET POLYDATA\n");
+        fprintf(output_coupled_tiss_file,"POINTS %u float\n", num_coupled_tissue_cells);
+
+        for(uint32_t i = 0; i < num_terminals; i++) {
+            struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
+            for (uint32_t j = 0; j < arrlen(tissue_cells); j++) {
+                center_x = tissue_cells[j]->center.x;
+                center_y = tissue_cells[j]->center.y;
+                center_z = tissue_cells[j]->center.z;
+                fprintf(output_coupled_tiss_file,"%g %g %g\n", center_x, center_y, center_z);
+            }
+        }
+        fprintf(output_coupled_tiss_file,"VERTICES %u %u\n", num_coupled_tissue_cells, num_coupled_tissue_cells*2);
+        for(uint32_t i = 0; i < num_coupled_tissue_cells; i++) {
+            fprintf(output_coupled_tiss_file, "1 %u\n", i);
+        }
+        fprintf(output_coupled_tiss_file,"POINT_DATA %u\n", num_coupled_tissue_cells);
+        fprintf(output_coupled_tiss_file,"FIELD FieldData 2\n");
+        fprintf(output_coupled_tiss_file,"isActive 1 %u float\n", num_coupled_tissue_cells);
+        for(uint32_t i = 0; i < num_terminals; i++) {
+            bool is_terminal_active = the_terminals[i].active;
+            struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
+            for (uint32_t j = 0; j < arrlen(tissue_cells); j++) {
+                fprintf(output_coupled_tiss_file, "%d\n", (int)is_terminal_active);
+            }
+        }
+        fprintf(output_coupled_tiss_file,"METADATA\n");
+        fprintf(output_coupled_tiss_file,"INFORMATION 0\n\n");
+        fprintf(output_coupled_tiss_file,"associatedTerminal 1 %u float\n", num_coupled_tissue_cells);
+        for(uint32_t i = 0; i < num_terminals; i++) {
+            struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
+            for (uint32_t j = 0; j < arrlen(tissue_cells); j++) {
+                fprintf(output_coupled_tiss_file, "%u\n", i);
+            }
+        }
+        fprintf(output_coupled_tiss_file,"METADATA\n");
+        fprintf(output_coupled_tiss_file,"INFORMATION 0\n\n");
+        fclose(output_coupled_tiss_file);
+    } else {
+        log_error("[purkinje_coupling] ERROR! No 'persistant_data' was found!\n");
+        log_error("[purkinje_coupling] You must use the 'save_purkinje_coupling_with_activation_times' function to print the PMJ delay!\n");
+    }
 }
