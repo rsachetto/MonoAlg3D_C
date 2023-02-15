@@ -18,6 +18,25 @@
 #include "../vtk_utils/vtk_polydata_grid.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
 
+struct common_persistent_data {
+
+    //Ensigth
+    uint32_t file_count;
+    uint32_t n_digits;
+
+    //Activation times
+    struct point_hash_entry *last_time_v;
+    struct point_hash_entry *num_activations;
+    struct point_hash_entry *cell_was_active;
+    struct point_voidp_hash_entry *activation_times;
+    struct point_voidp_hash_entry *apds;
+
+    //VTK or VTK
+    struct vtk_unstructured_grid *grid;
+
+    bool first_save_call;
+};
+
 struct save_as_vtp_persistent_data {
     struct vtk_polydata_grid *grid;
     bool first_save_call;
@@ -77,11 +96,6 @@ struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data {
     char *purkinje_file_name_prefix;
     real_cpu *purkinje_cell_centers;
     uint32_t *purkinje_cell_sv_positions;
-};
-
-struct save_ensigth_persistent_data {
-    uint32_t file_count;
-    uint32_t n_digits;
 };
 
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);

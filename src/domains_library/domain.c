@@ -337,7 +337,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     the_grid->start_discretization = SAME_POINT3D(start_h);
     the_grid->max_discretization = SAME_POINT3D(max_h);
 
-    int ret = set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
+    int ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
 
     free(mesh_file);
 

@@ -461,11 +461,9 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
             if(!cell->active) {
                 if(!save_fibrotic) {
                     continue;
-                }
-                else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
+                } else if(cell->mesh_extra_info == NULL || !FIBROTIC(cell)) {
                     continue;
                 }
-
             }
 
             center = cell->center;
@@ -489,8 +487,8 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
 
             arrput(ensight_grid->parts[0].cell_visibility, cell->visible);
 
-            if(v > ensight_grid->max_v) ensight_grid->max_v = v;
-            if(v < ensight_grid->min_v) ensight_grid->min_v = v;
+            if(v > ensight_grid->max_v) ensight_grid->max_v = (float) v;
+            if(v < ensight_grid->min_v) ensight_grid->min_v = (float) v;
 
 
             half_face.x = cell->discretization.x / 2.0f;
@@ -535,14 +533,10 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
 
             if (grid_cell->active) {
 
-                real_cpu center_x = grid_cell->center.x;
-                real_cpu center_y = grid_cell->center.y;
-                real_cpu center_z = grid_cell->center.z;
-
                 // Insert the point to the array of points
-                aux.x = center_x;
-                aux.y = center_y;
-                aux.z = center_z;
+                aux.x = grid_cell->center.x;
+                aux.y = grid_cell->center.y;
+                aux.z = grid_cell->center.z;
 
                 // Search for duplicates
                 if(hmget(hash, aux) == -1) {

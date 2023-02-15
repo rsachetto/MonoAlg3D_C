@@ -11,7 +11,6 @@
 #include "../utils/utils.h"
 #include "../extra_data_library/helper_functions.h"
 
-#include "../libraries_common/common_data_structures.h"
 #include "../domains_library/mesh_info_data.h"
 #include "../ensight_utils/ensight_grid.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
@@ -406,19 +405,16 @@ SAVE_MESH(save_as_text_or_binary) {
 
 }
 
-struct save_as_vtk_or_vtu_persistent_data {
-    struct vtk_unstructured_grid *grid;
-    bool first_save_call;
-};
-
 INIT_SAVE_MESH(init_save_as_vtk_or_vtu) {
-    config->persistent_data = malloc(sizeof(struct save_as_vtk_or_vtu_persistent_data));
-    ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid = NULL;
-    ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call = true;
+    if(config->persistent_data == NULL) {
+        config->persistent_data = malloc(sizeof(struct common_persistent_data));
+        ((struct common_persistent_data *)config->persistent_data)->grid = NULL;
+        ((struct common_persistent_data *)config->persistent_data)->first_save_call = true;
+    }
 }
 
 END_SAVE_MESH(end_save_as_vtk_or_vtu) {
-    free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid);
+    free_vtk_unstructured_grid(((struct common_persistent_data *)config->persistent_data)->grid);
     free(config->persistent_data);
 }
 
@@ -426,7 +422,7 @@ SAVE_MESH(save_as_vtk) {
 
     int iteration_count = time_info->iteration;
 
-    if(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call) {
+    if(((struct common_persistent_data *)config->persistent_data)->first_save_call) {
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
@@ -436,7 +432,7 @@ SAVE_MESH(save_as_vtk) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_scar_cells, config, "save_scar_cells");
 
-        ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call = false;
+        ((struct common_persistent_data *)config->persistent_data)->first_save_call = false;
     }
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
@@ -468,21 +464,21 @@ SAVE_MESH(save_as_vtk) {
     // TODO: change this. We dont need the current_t here
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid != NULL;
+    bool read_only_data = ((struct common_persistent_data *)config->persistent_data)->grid != NULL;
 
-    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct common_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
                                             plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, NULL);
 
-    save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary,
+    save_vtk_unstructured_grid_as_legacy_vtk(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary,
                                              save_f, NULL);
 
     if(save_visible_mask) {
-        save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid)->cell_visibility);
+        save_visibility_mask(output_dir_with_file, (((struct common_persistent_data *)config->persistent_data)->grid)->cell_visibility);
     }
 
     if(the_grid->adaptive) {
-        free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid);
-        ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid = NULL;
+        free_vtk_unstructured_grid(((struct common_persistent_data *)config->persistent_data)->grid);
+        ((struct common_persistent_data *)config->persistent_data)->grid = NULL;
     }
 
     sdsfree(output_dir_with_file);
@@ -495,7 +491,7 @@ SAVE_MESH(save_as_vtu) {
 
     int iteration_count = time_info->iteration;
 
-    if(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call) {
+    if(((struct common_persistent_data *)config->persistent_data)->first_save_call) {
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
@@ -511,7 +507,7 @@ SAVE_MESH(save_as_vtu) {
             binary = true;
 
         if(!save_pvd) {
-            ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call = false;
+            ((struct common_persistent_data *)config->persistent_data)->first_save_call = false;
         }
     }
 
@@ -545,23 +541,23 @@ SAVE_MESH(save_as_vtu) {
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
     if(save_pvd) {
-        add_file_to_pvd(current_t, output_dir, base_name, ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call);
-        ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call = false;
+        add_file_to_pvd(current_t, output_dir, base_name, ((struct common_persistent_data *)config->persistent_data)->first_save_call);
+        ((struct common_persistent_data *)config->persistent_data)->first_save_call = false;
     }
 
-    bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid, the_grid, clip_with_plain,
+    bool read_only_data = ((struct common_persistent_data *)config->persistent_data)->grid != NULL;
+    new_vtk_unstructured_grid_from_alg_grid(&((struct common_persistent_data *)config->persistent_data)->grid, the_grid, clip_with_plain,
                                             plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, NULL);
 
     if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid, output_dir_with_file,
+        save_vtk_unstructured_grid_as_vtu_compressed(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file,
                                                      compression_level);
     } else {
-        save_vtk_unstructured_grid_as_vtu(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary);
+        save_vtk_unstructured_grid_as_vtu(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary);
     }
 
     if(save_visible_mask) {
-        save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid)->cell_visibility);
+        save_visibility_mask(output_dir_with_file, (((struct common_persistent_data *)config->persistent_data)->grid)->cell_visibility);
     }
 
     sdsfree(output_dir_with_file);
@@ -569,24 +565,150 @@ SAVE_MESH(save_as_vtu) {
 
     // TODO: I do not know if we should to this here or call the end and init save functions on the adaptivity step.....
     if(the_grid->adaptive) {
-        free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid);
-        ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid = NULL;
+        free_vtk_unstructured_grid(((struct common_persistent_data *)config->persistent_data)->grid);
+        ((struct common_persistent_data *)config->persistent_data)->grid = NULL;
     }
 
     CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
 
 }
 
+INIT_SAVE_MESH(init_save_as_ensight) {
+    if(config->persistent_data == NULL) {
+        config->persistent_data = calloc(1, sizeof(struct common_persistent_data));
+    }
+}
+
+SAVE_MESH(save_as_ensight) {
+
+    struct common_persistent_data *persistent_data = (struct common_persistent_data*) config->persistent_data;
+
+    if(the_grid == NULL && the_grid->purkinje == NULL) {
+        log_error_and_exit("Error in save_as_ensight. No grid and/or no purkinje grid defined\n");
+    }
+
+    if(the_grid != NULL && the_grid->adaptive) {
+        log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
+    }
+
+    static int n_state_vars = 0;
+    static bool geometry_saved = false;
+    static uint32_t num_files = 0;
+
+    if(!geometry_saved) {
+
+        int print_rate = 1;
+
+        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
+
+        num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
+
+        sds output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
+
+        struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false);
+        save_ensight_grid_as_ensight6_geometry(ensight_grid, output_dir_with_file, binary);
+
+        if(save_visible_mask) {
+            save_visibility_mask(output_dir_with_file, ensight_grid->parts[0].cell_visibility);
+        }
+
+        free_ensight_grid(ensight_grid);
+
+        sdsfree(output_dir_with_file);
+
+        output_dir_with_file = sdsnew(output_dir);
+        output_dir_with_file = sdscat(output_dir_with_file, "/simulation_result.case");
+
+        if(save_ode_state_variables) {
+            n_state_vars = ode_solver->model_data.number_of_ode_equations - 1; // Vm is always saved
+        }
+
+        save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate, n_state_vars);
+
+        sdsfree(output_dir_with_file);
+        geometry_saved = true;
+    }
+
+    sds output_dir_with_file = sdsnew(output_dir);
+    output_dir_with_file = sdscat(output_dir_with_file, "/");
+
+    if(persistent_data->n_digits == 0) {
+        persistent_data->n_digits = log10(num_files*500) + 1;
+    }
+    
+    sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", persistent_data->n_digits);
+
+    char tmp[8192];
+    sprintf(tmp, base_name, persistent_data->file_count);
+
+    output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
+
+    save_en6_result_file(output_dir_with_file, the_grid, binary);
+
+    sdsfree(base_name);
+    sdsfree(output_dir_with_file);
+
+    if(n_state_vars) {
+        size_t num_sv_entries = ode_solver->model_data.number_of_ode_equations;
+        base_name = sdscatprintf(sdsempty(), "Sv%%d.Esca%%0%dd", persistent_data->n_digits);
+        real *sv_cpu;
+
+        if(ode_solver->gpu) {
+
+#ifdef COMPILE_CUDA
+            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, ode_solver->original_num_cells * num_sv_entries);
+            check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
+                                          ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
+#endif
+        } else {
+            sv_cpu = ode_solver->sv;
+        }
+
+        for(int i = 1; i <= n_state_vars; i++) {
+
+            char tmp[8192];
+            sprintf(tmp, base_name, i, persistent_data->file_count);
+
+            sds output_dir_with_file = sdsnew(output_dir);
+            output_dir_with_file = sdscat(output_dir_with_file, "/");
+
+            output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
+
+            save_en6_result_file_state_vars(output_dir_with_file, sv_cpu, ode_solver->original_num_cells, num_sv_entries, i, binary, ode_solver->gpu);
+            sdsfree(output_dir_with_file);
+        }
+
+        sdsfree(base_name);
+
+        if(ode_solver->gpu) {
+            free(sv_cpu);
+        }
+    }
+
+    persistent_data->file_count++;
+
+    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
+}
+
+END_SAVE_MESH(end_save_as_ensight) {
+    free(config->persistent_data);
+}
+
 INIT_SAVE_MESH(init_save_with_activation_times) {
 
     if(config->persistent_data == NULL) {
-        config->persistent_data = calloc(1, sizeof(struct save_with_activation_times_persistent_data));
-        hmdefault(((struct save_with_activation_times_persistent_data *)config->persistent_data)->cell_was_active, 0.0);
-        hmdefault(((struct save_with_activation_times_persistent_data *)config->persistent_data)->last_time_v, -100.0);
-        hmdefault(((struct save_with_activation_times_persistent_data *)config->persistent_data)->num_activations, 0);
-        hmdefault(((struct save_with_activation_times_persistent_data *)config->persistent_data)->activation_times, NULL);
-        hmdefault(((struct save_with_activation_times_persistent_data *)config->persistent_data)->apds, NULL);
-        ((struct save_with_activation_times_persistent_data *)config->persistent_data)->first_save_call = true;
+        config->persistent_data = calloc(1, sizeof(struct common_persistent_data));
+        hmdefault(((struct common_persistent_data *)config->persistent_data)->cell_was_active, 0.0);
+        hmdefault(((struct common_persistent_data *)config->persistent_data)->last_time_v, -100.0);
+        hmdefault(((struct common_persistent_data *)config->persistent_data)->num_activations, 0);
+        hmdefault(((struct common_persistent_data *)config->persistent_data)->activation_times, NULL);
+        hmdefault(((struct common_persistent_data *)config->persistent_data)->apds, NULL);
+        ((struct common_persistent_data *)config->persistent_data)->first_save_call = true;
     }
 }
 
@@ -601,9 +723,21 @@ SAVE_MESH(save_with_activation_times) {
 
     int iteration_count = time_info->iteration;
 
-    if(mesh_output_pr) {
-        if(iteration_count % mesh_output_pr == 0)
-            save_as_text_or_binary(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
+    char *mesh_format = NULL;
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_format, config, "mesh_format");
+
+    if(mesh_format && mesh_output_pr) {
+        if(iteration_count % mesh_output_pr == 0) {
+            if(STRINGS_EQUAL("vtk", mesh_format)) {
+                save_as_vtk(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
+            } else if(STRINGS_EQUAL("vtu", mesh_format)) {
+                save_as_vtu(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
+            } else if(STRINGS_EQUAL("ensight", mesh_format)) {
+                save_as_ensight(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
+            } else if(STRINGS_EQUAL("txt", mesh_format)) {
+                save_as_text_or_binary(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
+            }
+        }
     }
 
     float time_threshold = 10.0f;
@@ -626,7 +760,7 @@ SAVE_MESH(save_with_activation_times) {
     sds base_name = create_base_name("activation_info", 0, "acm");
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    struct save_with_activation_times_persistent_data *persistent_data = (struct save_with_activation_times_persistent_data *)config->persistent_data;
+    struct common_persistent_data *persistent_data = (struct common_persistent_data *)config->persistent_data;
 
     struct cell_node *grid_cell = the_grid->first_cell;
 
@@ -743,134 +877,6 @@ SAVE_MESH(save_with_activation_times) {
     fclose(act_file);
 
     CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
-}
-
-INIT_SAVE_MESH(init_save_as_ensight) {
-    if(config->persistent_data == NULL) {
-        config->persistent_data = malloc(sizeof(struct save_ensigth_persistent_data));
-        ((struct save_ensigth_persistent_data*)config->persistent_data)->file_count = 0;
-        ((struct save_ensigth_persistent_data*)config->persistent_data)->n_digits = 0;
-    }
-}
-
-SAVE_MESH(save_as_ensight) {
-
-    struct save_ensigth_persistent_data *persistent_data = (struct save_ensigth_persistent_data*) config->persistent_data;
-
-    if(the_grid == NULL && the_grid->purkinje == NULL) {
-        log_error_and_exit("Error in save_as_ensight. No grid and/or no purkinje grid defined\n");
-    }
-
-    if(the_grid != NULL && the_grid->adaptive) {
-        log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
-    }
-
-    static int n_state_vars = 0;
-    static bool geometry_saved = false;
-    static uint32_t num_files = 0;
-
-    if(!geometry_saved) {
-
-        int print_rate = 1;
-
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
-
-        num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
-
-        sds output_dir_with_file = sdsnew(output_dir);
-        output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
-
-        struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false);
-        save_ensight_grid_as_ensight6_geometry(ensight_grid, output_dir_with_file, binary);
-
-        if(save_visible_mask) {
-            save_visibility_mask(output_dir_with_file, ensight_grid->parts[0].cell_visibility);
-        }
-
-        free_ensight_grid(ensight_grid);
-
-        sdsfree(output_dir_with_file);
-
-        output_dir_with_file = sdsnew(output_dir);
-        output_dir_with_file = sdscat(output_dir_with_file, "/simulation_result.case");
-
-        if(save_ode_state_variables) {
-            n_state_vars = ode_solver->model_data.number_of_ode_equations - 1; // Vm is always saved
-        }
-
-        save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate, n_state_vars);
-
-        sdsfree(output_dir_with_file);
-        geometry_saved = true;
-    }
-
-    sds output_dir_with_file = sdsnew(output_dir);
-    output_dir_with_file = sdscat(output_dir_with_file, "/");
-
-    if(persistent_data->n_digits == 0) {
-        persistent_data->n_digits = log10(num_files*500) + 1;
-    }
-    
-    sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", persistent_data->n_digits);
-
-    char tmp[8192];
-    sprintf(tmp, base_name, persistent_data->file_count);
-
-    output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
-
-    save_en6_result_file(output_dir_with_file, the_grid, binary);
-
-    sdsfree(base_name);
-    sdsfree(output_dir_with_file);
-
-    if(n_state_vars) {
-        size_t num_sv_entries = ode_solver->model_data.number_of_ode_equations;
-        base_name = sdscatprintf(sdsempty(), "Sv%%d.Esca%%0%dd", persistent_data->n_digits);
-        real *sv_cpu;
-
-        if(ode_solver->gpu) {
-
-#ifdef COMPILE_CUDA
-            sv_cpu = MALLOC_ARRAY_OF_TYPE(real, ode_solver->original_num_cells * num_sv_entries);
-            check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
-                                          ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
-#endif
-        } else {
-            sv_cpu = ode_solver->sv;
-        }
-
-        for(int i = 1; i <= n_state_vars; i++) {
-
-            char tmp[8192];
-            sprintf(tmp, base_name, i, persistent_data->file_count);
-
-            sds output_dir_with_file = sdsnew(output_dir);
-            output_dir_with_file = sdscat(output_dir_with_file, "/");
-
-            output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
-
-            save_en6_result_file_state_vars(output_dir_with_file, sv_cpu, ode_solver->original_num_cells, num_sv_entries, i, binary, ode_solver->gpu);
-            sdsfree(output_dir_with_file);
-        }
-
-        sdsfree(base_name);
-
-        if(ode_solver->gpu) {
-            free(sv_cpu);
-        }
-    }
-
-    persistent_data->file_count++;
-
-    CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
-}
-
-END_SAVE_MESH(end_save_as_ensight) {
-    free(config->persistent_data);
 }
 
 SAVE_MESH(save_vm_matrix) {
@@ -1005,7 +1011,7 @@ SAVE_MESH(save_transmurality_as_vtk) {
 
     int iteration_count = time_info->iteration;
 
-    if(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call) {
+    if(((struct common_persistent_data *)config->persistent_data)->first_save_call) {
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
@@ -1015,7 +1021,7 @@ SAVE_MESH(save_transmurality_as_vtk) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_scar_cells, config, "save_scar_cells");
 
-        ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->first_save_call = false;
+        ((struct common_persistent_data *)config->persistent_data)->first_save_call = false;
     }
     float plain_coords[6] = {0, 0, 0, 0, 0, 0};
     float bounds[6] = {0, 0, 0, 0, 0, 0};
@@ -1047,20 +1053,20 @@ SAVE_MESH(save_transmurality_as_vtk) {
     // TODO: change this. We dont need the current_t here
     output_dir_with_file = sdscatprintf(output_dir_with_file, base_name, current_t);
 
-    bool read_only_data = ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid != NULL;
+    bool read_only_data = ((struct common_persistent_data *)config->persistent_data)->grid != NULL;
 
-    new_vtk_unstructured_grid_from_alg_grid(&(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct common_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
                                             plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, transmurality);
 
-    save_vtk_unstructured_grid_as_legacy_vtk(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary, save_f, NULL);
+    save_vtk_unstructured_grid_as_legacy_vtk(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary, save_f, NULL);
 
     if(save_visible_mask) {
-        save_visibility_mask(output_dir_with_file, (((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid)->cell_visibility);
+        save_visibility_mask(output_dir_with_file, (((struct common_persistent_data *)config->persistent_data)->grid)->cell_visibility);
     }
 
     if(the_grid->adaptive) {
-        free_vtk_unstructured_grid(((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid);
-        ((struct save_as_vtk_or_vtu_persistent_data *)config->persistent_data)->grid = NULL;
+        free_vtk_unstructured_grid(((struct common_persistent_data *)config->persistent_data)->grid);
+        ((struct common_persistent_data *)config->persistent_data)->grid = NULL;
     }
 
     sdsfree(output_dir_with_file);

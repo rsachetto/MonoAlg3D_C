@@ -124,15 +124,6 @@ struct simulation_files {
     f32_array timesteps;
 };
 
-struct save_with_activation_times_persistent_data {
-    struct point_hash_entry *last_time_v;
-    struct point_hash_entry *num_activations;
-    struct point_hash_entry *cell_was_active;
-    struct point_voidp_hash_entry *activation_times;
-    struct point_voidp_hash_entry *apds;
-    bool first_save_call;
-};
-
 #define STRING_HASH_PRINT_KEY_VALUE(d)                                                                                                                         \
     do {                                                                                                                                                       \
         for(int64_t i__ = 0; i__ < shlen(d); i__++) {                                                                                                          \

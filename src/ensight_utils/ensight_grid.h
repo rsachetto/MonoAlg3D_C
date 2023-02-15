@@ -35,9 +35,6 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
                                                                      float *bounds, bool read_fibers_f,
                                                                      bool save_fibrotic);
 
-struct ensight_grid * new_ensight_grid_from_file(const char *ensight_file_name);
-struct ensight_grid * new_ensight_grid_from_string(char* source, size_t source_size);
-
 void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *filename, bool binary);
 
 void free_ensight_grid(struct ensight_grid *ensight_grid);
