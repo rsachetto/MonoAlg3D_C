@@ -962,7 +962,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 draw_scale(gui_config->min_v, gui_config->max_v, gui_state, gui_config->int_scale);
             }
 
-            if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->ap_graph_config->graph.show) {
+            if( gui_state->ap_graph_config->graph.show && hmlen(gui_state->ap_graph_config->selected_aps)) {
                 draw_ap_graph(gui_state, gui_config);
             }
 
