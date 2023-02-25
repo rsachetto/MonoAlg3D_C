@@ -386,30 +386,37 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 reset_grid_visibility(gui_config, gui_state);
             }
 
+            float slice_inc = 0.8f;
+
             if(IsKeyDown(KEY_LEFT_ALT)) {
                 // Plane roll (z-axis) controls
                 if(IsKeyDown(KEY_LEFT))
-                    gui_state->plane_roll += 1.0f;
+                    gui_state->plane_roll += slice_inc;
                 else if(IsKeyDown(KEY_RIGHT))
-                    gui_state->plane_roll -= 1.0f;
+                    gui_state->plane_roll -= slice_inc;
 
                 if(IsKeyDown(KEY_DOWN))
-                    gui_state->plane_pitch += 1.0f;
+                    gui_state->plane_pitch += slice_inc;
                 else if(IsKeyDown(KEY_UP))
-                    gui_state->plane_pitch -= 1.0f;
+                    gui_state->plane_pitch -= slice_inc;
 
             } else {
 
+                slice_inc = 0.05f;
+
+                if(IsKeyDown(KEY_LEFT_CONTROL)) {
+                    slice_inc = 0.01f;
+                }
                 // Plane roll (z-axis) controls
                 if(IsKeyDown(KEY_LEFT))
-                    gui_state->plane_tx -= 0.1f;
+                    gui_state->plane_tx -= slice_inc;
                 else if(IsKeyDown(KEY_RIGHT))
-                    gui_state->plane_tx += 0.1f;
+                    gui_state->plane_tx += slice_inc;
 
                 if(IsKeyDown(KEY_DOWN))
-                    gui_state->plane_ty -= 0.1f;
+                    gui_state->plane_ty -= slice_inc;
                 else if(IsKeyDown(KEY_UP))
-                    gui_state->plane_ty += 0.1f;
+                    gui_state->plane_ty += slice_inc;
             }
         } else {
             if(kp == KEY_RIGHT || IsKeyDown(KEY_UP)) {
@@ -962,7 +969,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 draw_scale(gui_config->min_v, gui_config->max_v, gui_state, gui_config->int_scale);
             }
 
-            if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->ap_graph_config->graph.show) {
+            if( gui_state->ap_graph_config->graph.show && hmlen(gui_state->ap_graph_config->selected_aps)) {
                 draw_ap_graph(gui_state, gui_config);
             }
 
