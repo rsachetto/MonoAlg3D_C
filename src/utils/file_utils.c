@@ -48,7 +48,7 @@ float * read_timesteps_from_case_file(sds case_file_path) {
 
     while(*tmp) {
         double time_val = strtod(tmp, &tmp);
-        arrput(timesteps, time_val);
+        arrput(timesteps, (float)time_val);
         while(isspace(*tmp))
             tmp++;
     }
@@ -59,7 +59,7 @@ float * read_timesteps_from_case_file(sds case_file_path) {
 
 char* get_timestamped_dir_name(char* dir_name) {
 
-    char* rc = NULL;    
+    char* rc = NULL;
 
     time_t rawtime = time(0);
     struct tm *now = localtime(&rawtime);

@@ -101,6 +101,7 @@ struct gui_shared_info {
     bool exit;
     bool adaptive;
     bool restart;
+    bool enable_slice;
     float time;
     float final_time;
     float current_file_index;

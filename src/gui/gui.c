@@ -34,34 +34,34 @@
 #include "raylib_ext.h"
 
 static const char *help_box_strings[] = {
-    " - Mouse Wheel to Zoom in-out",
-    " - Mouse Wheel Pressed to Pan",
-    " - Alt + Mouse Wheel Pressed to Rotate",
-    " - Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
-    " - Ctrl + F to search a cell based on it's center",
-    " - Hold Ctrl and move the mouse over a cell to see it's position",
-    " - G to only draw the grid lines",
-    " - L to enable or disable the grid lines",
-    " - R to restart simulation (only works when paused)",
-    " - Alt + R to restart simulation and the box positions",
-    " - X to show/hide AP visualization",
-    " - Q to show/hide scale",
-    " - C to show/hide everything except grid",
-    " - F to open a simulation file",
-    " - O to open a simulation directory",
-    " - F12 to take a screenshot",
-    " - CTRL + F12 to start/stop recording the screen",
-    " - . or , to change color scales",
-    " - Right arrow to advance one dt when paused",
-    " - Hold up arrow to advance time when paused",
-    " - Double click on a volume to show the AP",
-    " - from 1 to 0 to show different file column (or PGUP/PGDOWN)",
-    " - S to enter mesh slice mode",
-    " - Space to start or pause simulation"
+    "  Mouse Wheel to Zoom in-out",
+    "  Mouse Wheel Pressed to Pan",
+    "  Alt + Mouse Wheel Pressed to Rotate",
+    "  Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
+    "  Ctrl + F to search a cell based on it's center",
+    "  Hold Ctrl and move the mouse over a cell to see it's position",
+    "  G to only draw the grid lines",
+    "  L to enable or disable the grid lines",
+    "  R to restart simulation (only works when paused)",
+    "  Alt + R to restart simulation and the box positions",
+    "  X to show/hide AP visualization",
+    "  Q to show/hide scale",
+    "  C to show/hide everything except grid",
+    "  F to open a simulation file",
+    "  O to open a simulation directory",
+    "  F12 to take a screenshot",
+    "  CTRL + F12 to start/stop recording the screen",
+    "  . or , to change color scales",
+    "  Right arrow to advance one dt when paused",
+    "  Hold up arrow to advance time when paused",
+    "  Double click on a volume to show the AP",
+    "  from 1 to 0 to show different file column (or PGUP/PGDOWN)",
+    "  S to enter mesh slice mode",
+    "  Space to start or pause simulation"
 };
 
-static const char *slice_help_box_strings[] = {" - Press backspace to reset and exit slice mode", " - Press enter to accept the sliced mesh",
-                                            " - Move the slicing plane with arrow keys", " - Rotate the slicing plane with ALT + arrow keys"};
+static const char *slice_help_box_strings[] = {"  Press backspace to reset and exit slice mode", " Press enter to accept the sliced mesh",
+                                            "  Move the slicing plane with arrow keys", "  Rotate the slicing plane with ALT + arrow keys"};
 
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
@@ -216,25 +216,25 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
         n_active = gui_config->grid_info.vtk_grid->num_cells;
     }
 
-    snprintf(tmp, TMP_SIZE, " - Num. of Volumes: %u", n_active);
+    snprintf(tmp, TMP_SIZE, "Num. of Volumes: %u", n_active);
     (*(info_string))[index++] = strdup(tmp);
 
-    snprintf(tmp, TMP_SIZE, " - Max X: %f", mesh_info->max_size.x);
+    snprintf(tmp, TMP_SIZE, "Max X: %f", mesh_info->max_size.x);
     (*(info_string))[index++] = strdup(tmp);
 
-    snprintf(tmp, TMP_SIZE, " - Max Y: %f", mesh_info->max_size.y);
+    snprintf(tmp, TMP_SIZE, "Max Y: %f", mesh_info->max_size.y);
     (*(info_string))[index++] = strdup(tmp);
 
-    snprintf(tmp, TMP_SIZE, " - Max Z: %f", mesh_info->max_size.z);
+    snprintf(tmp, TMP_SIZE, "Max Z: %f", mesh_info->max_size.z);
     (*(info_string))[index++] = strdup(tmp);
 
-    snprintf(tmp, TMP_SIZE, " - Min X: %f", mesh_info->min_size.x);
+    snprintf(tmp, TMP_SIZE, "Min X: %f", mesh_info->min_size.x);
     (*(info_string))[index++] = strdup(tmp);
 
-    snprintf(tmp, TMP_SIZE, " - Min Y: %f", mesh_info->min_size.y);
+    snprintf(tmp, TMP_SIZE, "Min Y: %f", mesh_info->min_size.y);
     (*(info_string))[index++] = strdup(tmp);
 
-    snprintf(tmp, TMP_SIZE, " - Min Z: %f", mesh_info->min_size.z);
+    snprintf(tmp, TMP_SIZE, "Min Z: %f", mesh_info->min_size.z);
     (*(info_string))[index++] = strdup(tmp);
 
     if(draw_type == DRAW_SIMULATION) {
@@ -254,7 +254,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     } else {
         if(gui_state->max_data_index > 0) {
-            snprintf(tmp, TMP_SIZE, " - Current column idx: %d of %d", gui_state->current_data_index + 2, gui_state->max_data_index + 1);
+            snprintf(tmp, TMP_SIZE, "Current column idx: %d of %d", gui_state->current_data_index + 2, gui_state->max_data_index + 1);
         } else {
             snprintf(tmp, TMP_SIZE, "--");
         }
@@ -363,7 +363,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         }
 
         if(kp == KEY_S) {
-            if(IN_DRAW) {
+            if(IN_DRAW && gui_config->enable_slice) {
                 gui_state->slicing_mode = true;
                 gui_state->slicing_mesh = false;
 
@@ -661,23 +661,23 @@ static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box
     float margin = 25.0f;
 
     gui_state->help_box.window.bounds.width = box_w;
-    gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin;
+    gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin + 10.0;
     gui_state->help_box.num_lines = help_box_lines;
 
     gui_state->slice_help_box.window.bounds.width = box_w - 100;
-    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + margin;
+    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + margin + 10.0;
     gui_state->slice_help_box.num_lines = slice_help_box_lines;
 
     box_w = box_w - 100;
     gui_state->mesh_info_box.window.bounds.width = box_w;
-    gui_state->mesh_info_box.window.bounds.height = (text_offset * (float)mesh_info_box_lines) + margin;
+    gui_state->mesh_info_box.window.bounds.height = (text_offset * (float)mesh_info_box_lines) + margin + 10.0;
     gui_state->mesh_info_box.num_lines = mesh_info_box_lines;
 
     gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - box_w - margin;
     gui_state->mesh_info_box.window.bounds.y = 10.0f;
 
     gui_state->end_info_box.window.bounds.width = box_w;
-    gui_state->end_info_box.window.bounds.height = (text_offset * (float)end_info_box_lines) + margin;
+    gui_state->end_info_box.window.bounds.height = (text_offset * (float)end_info_box_lines) + margin + 10.0;
     gui_state->end_info_box.num_lines = end_info_box_lines;
 
     gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - margin;

@@ -261,6 +261,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
             sdsfree(case_file_path);
             free_path_information(&case_info);
 
+            if(arrlen(simulation_files->files_list) != arrlen(simulation_files->timesteps)) {
+                printf("[WARN] Inconsistent number of files and file steps\n");
+            }
+
             gui_config->dt = -1;
             gui_config->final_file_index = (int) num_files - 1;
             gui_config->final_time = simulation_files->timesteps[num_files - 1];
@@ -309,6 +313,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
     gui_config->simulation_files = simulation_files;
 
     char full_path[2048];
+
+    if(ensight || single_file) {
+        gui_config->enable_slice = true;
+    }
 
     while(true) {
 
@@ -429,6 +437,8 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
 
     gui_config->paused = true;
     gui_config->grid_info.loaded = false;
+
+    gui_config->enable_slice = false;
 
     gui_config->ui_scale = options->ui_scale;
 

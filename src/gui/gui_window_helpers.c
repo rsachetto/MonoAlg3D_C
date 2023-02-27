@@ -145,7 +145,7 @@ bool draw_search_window(struct gui_state *gui_state) {
 
     Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
 
-    float text_box_y_dist = text_box_size.y * 2.5f;
+    float text_box_y_dist = text_box_size.y * 3.0f;
     float label_box_y_dist = 30;
     float x_off = 10;
 
@@ -157,7 +157,7 @@ bool draw_search_window(struct gui_state *gui_state) {
     float pos_y = gui_state->search_window.bounds.y;
 
     float box_pos = pos_x + x_off;
-    gui_state->search_window.bounds.width = text_box_size.x * 3.5f;
+    gui_state->search_window.bounds.width = text_box_size.x * 3.8f;
     gui_state->search_window.bounds.height = (text_box_size.y + text_box_y_dist) * 1.6f;
 
     bool window_closed = GuiWindowBox(gui_state->search_window.bounds, "Enter the center of the cell");
