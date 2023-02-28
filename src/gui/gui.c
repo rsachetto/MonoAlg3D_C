@@ -661,23 +661,23 @@ static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box
     float margin = 25.0f;
 
     gui_state->help_box.window.bounds.width = box_w;
-    gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin + 10.0;
+    gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin + 10.0f;
     gui_state->help_box.num_lines = help_box_lines;
 
     gui_state->slice_help_box.window.bounds.width = box_w - 100;
-    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + margin + 10.0;
+    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + margin + 10.0f;
     gui_state->slice_help_box.num_lines = slice_help_box_lines;
 
     box_w = box_w - 100;
     gui_state->mesh_info_box.window.bounds.width = box_w;
-    gui_state->mesh_info_box.window.bounds.height = (text_offset * (float)mesh_info_box_lines) + margin + 10.0;
+    gui_state->mesh_info_box.window.bounds.height = (text_offset * (float)mesh_info_box_lines) + margin + 10.0f;
     gui_state->mesh_info_box.num_lines = mesh_info_box_lines;
 
     gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - box_w - margin;
     gui_state->mesh_info_box.window.bounds.y = 10.0f;
 
     gui_state->end_info_box.window.bounds.width = box_w;
-    gui_state->end_info_box.window.bounds.height = (text_offset * (float)end_info_box_lines) + margin + 10.0;
+    gui_state->end_info_box.window.bounds.height = (text_offset * (float)end_info_box_lines) + margin + 10.0f;
     gui_state->end_info_box.num_lines = end_info_box_lines;
 
     gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - margin;
@@ -758,8 +758,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     struct mesh_info *mesh_info = new_mesh_info();
     bool end_info_box_strings_configured = false;
 
-    int grid_mask = 0;
-
     Model plane;
     Color plane_color = WHITE;
     plane_color.a = 100;
@@ -798,6 +796,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     gui_state->light = CreateLight(LIGHT_DIRECTIONAL, light_pos, gui_state->camera.target, WHITE, draw_context.shader);
 
     Matrix rotation_matrix;
+
+    int grid_mask;
 
     while(!WindowShouldClose()) {
 
