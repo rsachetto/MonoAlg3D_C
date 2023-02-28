@@ -20,15 +20,6 @@ static inline void drag_box(Vector2 mouse_pos, Rectangle *box) {
     move_rect((Vector2){new_x, new_y}, box);
 }
 
-static void check_window_bounds(Rectangle *box, float current_window_width, float current_window_height) {
-
-    if(box->x + box->width > current_window_width)
-        move_rect((Vector2){current_window_width - box->width - 10, box->y}, box);
-
-    if(box->y + box->height > current_window_height)
-        move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
-}
-
 #define COLIDE_STATUS_BAR_WITH_OFFSET(mouse_pos, bounds, y_off)                                                                                                \
     CheckCollisionPointRec(mouse_pos, (Rectangle){bounds.x, bounds.y - y_off, bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})
 #define COLIDE_STATUS_BAR(mouse_pos, bounds) COLIDE_STATUS_BAR_WITH_OFFSET(mouse_pos, bounds, 0)
