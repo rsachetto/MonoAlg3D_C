@@ -60,6 +60,8 @@ static const char *help_box_strings[] = {
     "  Space to start or pause simulation"
 };
 
+#define BOX_MARGIN 25.0f
+
 static const char *slice_help_box_strings[] = {"  Press backspace to reset and exit slice mode", " Press enter to accept the sliced mesh",
                                             "  Move the slicing plane with arrow keys", "  Rotate the slicing plane with ALT + arrow keys"};
 
@@ -206,8 +208,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
     char tmp[TMP_SIZE];
 
-    int index = 0;
-
     uint32_t n_active = 0;
 
     if(draw_type == DRAW_SIMULATION) {
@@ -217,30 +217,44 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
     }
 
     snprintf(tmp, TMP_SIZE, "Num. of Volumes: %u", n_active);
-    (*(info_string))[index++] = strdup(tmp);
+    arrput((*(info_string)), strdup(tmp));
 
     snprintf(tmp, TMP_SIZE, "Max X: %f", mesh_info->max_size.x);
-    (*(info_string))[index++] = strdup(tmp);
+    arrput((*(info_string)), strdup(tmp));
 
     snprintf(tmp, TMP_SIZE, "Max Y: %f", mesh_info->max_size.y);
-    (*(info_string))[index++] = strdup(tmp);
+    arrput((*(info_string)), strdup(tmp));
 
     snprintf(tmp, TMP_SIZE, "Max Z: %f", mesh_info->max_size.z);
-    (*(info_string))[index++] = strdup(tmp);
+    arrput((*(info_string)), strdup(tmp));
 
     snprintf(tmp, TMP_SIZE, "Min X: %f", mesh_info->min_size.x);
-    (*(info_string))[index++] = strdup(tmp);
+    arrput((*(info_string)), strdup(tmp));
 
     snprintf(tmp, TMP_SIZE, "Min Y: %f", mesh_info->min_size.y);
-    (*(info_string))[index++] = strdup(tmp);
+    arrput((*(info_string)), strdup(tmp));
 
     snprintf(tmp, TMP_SIZE, "Min Z: %f", mesh_info->min_size.z);
-    (*(info_string))[index++] = strdup(tmp);
+    arrput((*(info_string)), strdup(tmp));
+
+    if(!gui_config->adaptive) {
+        if(draw_type == DRAW_FILE) {
+            snprintf(tmp, TMP_SIZE, "Average DX: %f", gui_config->grid_info.vtk_grid->average_discretization.x);
+            arrput((*(info_string)), strdup(tmp));
+
+            snprintf(tmp, TMP_SIZE, "Average DY: %f", gui_config->grid_info.vtk_grid->average_discretization.y);
+            arrput((*(info_string)), strdup(tmp));
+
+            snprintf(tmp, TMP_SIZE, "Average DZ: %f", gui_config->grid_info.vtk_grid->average_discretization.z);
+            arrput((*(info_string)), strdup(tmp));
+
+        }
+    }
 
     if(draw_type == DRAW_SIMULATION) {
 
         snprintf(tmp, TMP_SIZE, "--");
-        (*(info_string))[index++] = strdup(tmp);
+        arrput((*(info_string)), strdup(tmp));
 
         if(gui_config->paused) {
             snprintf(tmp, TMP_SIZE, "Simulation paused: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
@@ -250,7 +264,8 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
             snprintf(tmp, TMP_SIZE, "Simulation finished: %.3lf of %.3lf ms", gui_config->time, gui_config->final_time);
             gui_config->paused = true;
         }
-        (*(info_string))[index++] = strdup(tmp);
+
+        arrput((*(info_string)), strdup(tmp));
 
     } else {
         if(gui_state->max_data_index > 0) {
@@ -259,7 +274,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
             snprintf(tmp, TMP_SIZE, "--");
         }
 
-        (*(info_string))[index++] = strdup(tmp);
+        arrput((*(info_string)), strdup(tmp));
 
         if(gui_config->final_file_index == 0) {
             snprintf(tmp, TMP_SIZE, "Visualizing single file.                      ");
@@ -287,7 +302,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
             }
         }
 
-        (*(info_string))[index] = strdup(tmp);
+        arrput((*(info_string)), strdup(tmp));
     }
 
     Vector2 wider_text = MeasureTextEx(gui_state->font, tmp, gui_state->font_size_small, gui_state->font_spacing_small);
@@ -655,39 +670,34 @@ static void handle_input(struct gui_shared_info *gui_config, struct gui_state *g
     }
 }
 
-static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int mesh_info_box_lines,
-                                       int end_info_box_lines, float box_w, float text_offset) {
-
-    float margin = 25.0f;
+static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int end_info_box_lines, float box_w,
+                                       float text_offset) {
 
     gui_state->help_box.window.bounds.width = box_w;
-    gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + margin + 10.0f;
+    gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + BOX_MARGIN + 10.0f;
     gui_state->help_box.num_lines = help_box_lines;
 
     gui_state->slice_help_box.window.bounds.width = box_w - 100;
-    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + margin + 10.0f;
+    gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + BOX_MARGIN + 10.0f;
     gui_state->slice_help_box.num_lines = slice_help_box_lines;
 
     box_w = box_w - 100;
     gui_state->mesh_info_box.window.bounds.width = box_w;
-    gui_state->mesh_info_box.window.bounds.height = (text_offset * (float)mesh_info_box_lines) + margin + 10.0f;
-    gui_state->mesh_info_box.num_lines = mesh_info_box_lines;
 
-    gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - box_w - margin;
+    gui_state->mesh_info_box.window.bounds.x = (float)gui_state->current_window_width - box_w - BOX_MARGIN;
     gui_state->mesh_info_box.window.bounds.y = 10.0f;
 
     gui_state->end_info_box.window.bounds.width = box_w;
-    gui_state->end_info_box.window.bounds.height = (text_offset * (float)end_info_box_lines) + margin + 10.0f;
+    gui_state->end_info_box.window.bounds.height = (text_offset * (float)end_info_box_lines) + BOX_MARGIN + 10.0f;
     gui_state->end_info_box.num_lines = end_info_box_lines;
 
-    gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - margin;
+    gui_state->end_info_box.window.bounds.x = gui_state->mesh_info_box.window.bounds.x - gui_state->mesh_info_box.window.bounds.width - BOX_MARGIN;
     gui_state->end_info_box.window.bounds.y = gui_state->mesh_info_box.window.bounds.y;
 }
 
 void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     const int end_info_box_lines = 9;
-    const int mesh_info_box_lines = 9;
     const int font_size_small = 16;
     const int font_size_big = 20;
     const int help_box_lines = SIZEOF(help_box_strings);
@@ -751,8 +761,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     gui_state->end_info_box.title = "Simulation time";
 
     gui_state->mesh_info_box.title = "Mesh information";
-    gui_state->mesh_info_box.lines = (char **)malloc(sizeof(char *) * mesh_info_box_lines);
-    configure_info_boxes_sizes(gui_state, help_box_lines, slice_help_box_lines, mesh_info_box_lines, end_info_box_lines, box_w, text_offset);
+    gui_state->mesh_info_box.lines = NULL;
+    configure_info_boxes_sizes(gui_state, help_box_lines, slice_help_box_lines, end_info_box_lines, box_w, text_offset);
 
     Vector2 error_message_width;
     struct mesh_info *mesh_info = new_mesh_info();
@@ -957,11 +967,16 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 bool configured = configure_mesh_info_box_strings(gui_state, gui_config, &gui_state->mesh_info_box.lines, draw_type, mesh_info);
 
                 if(configured) {
+                    int mesh_info_box_lines = arrlen(gui_state->mesh_info_box.lines);
+                    gui_state->mesh_info_box.num_lines = mesh_info_box_lines;
+                    gui_state->mesh_info_box.window.bounds.height = (text_offset * (float)mesh_info_box_lines) + BOX_MARGIN + 10.0f;
                     draw_text_window(&gui_state->mesh_info_box, gui_state, text_offset);
 
                     for(int i = 0; i < mesh_info_box_lines; i++) {
                         free(gui_state->mesh_info_box.lines[i]);
                     }
+                    arrfree(gui_state->mesh_info_box.lines);
+                    gui_state->mesh_info_box.lines = NULL;
                 }
             }
 

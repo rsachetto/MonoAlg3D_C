@@ -284,6 +284,8 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
 
 void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, struct draw_context *draw_context) {
 
+    static bool discretization_calc = false;
+
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
     if (!grid_to_draw) return;
 
@@ -367,6 +369,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         dy = fabs((cell_point_y - points[cells[i + 3]].y));
         dz = fabs((cell_point_z - points[cells[i + 4]].z));
 
+        if(!discretization_calc) {
+            grid_to_draw->average_discretization.x += dx;
+            grid_to_draw->average_discretization.y += dy;
+            grid_to_draw->average_discretization.z += dz;
+        }
+
         mesh_center_x = cell_point_x + dx / 2.0f;
         mesh_center_y = cell_point_y + dy / 2.0f;
         mesh_center_z = cell_point_z + dz / 2.0f;
@@ -432,6 +440,13 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
 
     if(!single_file) {
         update_selected(collision, gui_state, gui_config, draw_context->colors);
+    }
+
+    if(!discretization_calc) {
+        grid_to_draw->average_discretization.x /= count;
+        grid_to_draw->average_discretization.y /= count;
+        grid_to_draw->average_discretization.z /= count;
+        discretization_calc = true;
     }
 
     gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};

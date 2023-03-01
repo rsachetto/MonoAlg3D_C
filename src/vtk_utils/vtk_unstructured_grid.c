@@ -42,6 +42,8 @@ struct vtk_unstructured_grid *new_vtk_unstructured_grid() {
 
     grid->min_extra_value = NULL;
     grid->max_extra_value = NULL;
+    grid->average_discretization = SAME_POINT3D(0.0);
+
     return grid;
 }
 
@@ -497,7 +499,6 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
         }
 
         *bytes_read = (size_t)(source - original_src);
-
         set_point_data(center, half_face, vtk_grid, &hash, &id);
         num_cells++;
     }
