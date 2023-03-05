@@ -231,22 +231,20 @@ void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *gui_conf
             Color line_color = colors[j % num_colors];
             for(int i = 0; i < c; i += step) {
 
-                if(aps[i].t <= gui_config->time) {
-                    if(i + step < c) {
+                if(i + step < c && aps[i].t <= gui_config->time) {
 
-                        p1.x = Remap(aps[i].t, 0.0f, gui_config->final_time, min_x, max_x);
-                        p1.y = Remap(aps[i].v, gui_config->min_v, gui_config->max_v, min_y, max_y);
+                    p1.x = Remap(aps[i].t, 0.0f, gui_config->final_time, min_x, max_x);
+                    p1.y = Remap(aps[i].v, gui_config->min_v, gui_config->max_v, min_y, max_y);
 
-                        p2.x = Remap(aps[i + step].t, 0.0f, gui_config->final_time, min_x, max_x);
-                        p2.y = Remap(aps[i + step].v, gui_config->min_v, gui_config->max_v, min_y, max_y);
+                    p2.x = Remap(aps[i + step].t, 0.0f, gui_config->final_time, min_x, max_x);
+                    p2.y = Remap(aps[i + step].v, gui_config->min_v, gui_config->max_v, min_y, max_y);
 
-                        if(aps[i + step].v > gui_config->max_v)
-                            gui_config->max_v = aps[i + step].v;
-                        if(aps[i + step].v < gui_config->min_v)
-                            gui_config->min_v = aps[i + step].v;
+                    if(aps[i + step].v > gui_config->max_v)
+                        gui_config->max_v = aps[i + step].v;
+                    if(aps[i + step].v < gui_config->min_v)
+                        gui_config->min_v = aps[i + step].v;
 
-                        DrawLineEx(p1, p2, 2.0f, line_color);
-                    }
+                    DrawLineEx(p1, p2, 2.0f, line_color);
                 }
             }
         }

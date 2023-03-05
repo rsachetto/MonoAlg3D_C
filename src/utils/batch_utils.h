@@ -1,4 +1,5 @@
 #include "../common_types/common_types.h"
+#include "../config/config_parser.h"
 
 struct changed_parameters {
     char *section;

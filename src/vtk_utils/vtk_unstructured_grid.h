@@ -41,6 +41,8 @@ struct vtk_unstructured_grid {
     f32_array min_extra_value;
     f32_array max_extra_value;
 
+    struct point_3d average_discretization;
+
     //TODO: I don't know if this is the best place to put this information
     struct vtk_unstructured_grid *purkinje;
 

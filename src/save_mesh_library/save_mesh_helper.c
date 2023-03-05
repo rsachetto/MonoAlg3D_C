@@ -359,12 +359,8 @@ void set_purkinje_vtk_values_with_mean_apd(void **persistent_data, struct grid *
 
             uint64_t apd_len = arrlen(apds_array);
 
-            // Calculate the mean APD values
-            float mean_value = 0.0;
-            mean_value = calculate_mean(apds_array, apd_len);
-
             // Update the scalar value from the "vtk_unstructured_grid"
-            (*data)->purkinje_grid->values[i] = mean_value;
+            (*data)->purkinje_grid->values[i] = calculate_mean(apds_array, apd_len);
         }
     }
 }
@@ -688,17 +684,11 @@ void set_tissue_vtk_values_with_mean_apd(void **persistent_data, struct grid *th
         float *apds_array = NULL;
 
         if(grid_cell[i]->active) {
-
             apds_array = (float *)hmget((*data)->tissue_apds, cell_coordinates);
-
             uint64_t apd_len = arrlen(apds_array);
 
-            // Calculate the mean APD values
-            float mean_value = 0.0;
-            mean_value = calculate_mean(apds_array, apd_len);
-
             // Update the scalar value from the "vtk_unstructured_grid"
-            (*data)->tissue_grid->values[i] = mean_value;
+            (*data)->tissue_grid->values[i] = calculate_mean(apds_array, apd_len);
         }
     }
 }

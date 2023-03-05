@@ -187,7 +187,7 @@ static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_st
                                    (Vector3){p_draw.x + csx / 2, p_draw.y + csy / 2, p_draw.z + csz / 2}};
 
     RayCollision collision = {0};
-    
+
     if(gui_state->double_clicked) {
         collision = GetRayCollisionBox(gui_state->ray, bb);
 
@@ -208,13 +208,14 @@ static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_st
         }
     }
 
-    if(gui_state->found_volume.position_mesh.x == p_mesh.x && gui_state->found_volume.position_mesh.y == p_mesh.y &&
-       gui_state->found_volume.position_mesh.z == p_mesh.z) {
-        gui_state->current_selected_volume = *voxel;
-        gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};
-        collision.hit = true;
+    if(gui_state->found_volume.position_mesh.x >= 0 && gui_state->found_volume.position_mesh.y >= 0 && gui_state->found_volume.position_mesh.z >= 0) {
+        if(gui_state->found_volume.position_mesh.x == p_mesh.x && gui_state->found_volume.position_mesh.y == p_mesh.y &&
+           gui_state->found_volume.position_mesh.z == p_mesh.z) {
+            gui_state->current_selected_volume = *voxel;
+            collision.hit = true;
+            gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};
+        }
     }
-
 
     return collision.hit;
 }
@@ -254,6 +255,7 @@ static void trace_ap(struct gui_state *gui_state, struct voxel *voxel, float t) 
             struct action_potential ap1;
             ap1.t = t;
             ap1.v = voxel->v;
+
             size_t aps_len = arrlen(aps);
 
             if(aps_len == 0 || ap1.t > aps[aps_len - 1].t) {
@@ -281,6 +283,8 @@ static void update_selected(bool collision, struct gui_state *gui_state, struct 
 }
 
 void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_state *gui_state, int grid_mask, struct draw_context *draw_context) {
+
+    static bool discretization_calc = false;
 
     struct vtk_unstructured_grid *grid_to_draw = gui_config->grid_info.vtk_grid;
     if (!grid_to_draw) return;
@@ -365,6 +369,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         dy = fabs((cell_point_y - points[cells[i + 3]].y));
         dz = fabs((cell_point_z - points[cells[i + 4]].z));
 
+        if(!discretization_calc) {
+            grid_to_draw->average_discretization.x += dx;
+            grid_to_draw->average_discretization.y += dy;
+            grid_to_draw->average_discretization.z += dz;
+        }
+
         mesh_center_x = cell_point_x + dx / 2.0f;
         mesh_center_y = cell_point_y + dy / 2.0f;
         mesh_center_z = cell_point_z + dz / 2.0f;
@@ -406,8 +416,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
 
         draw_context->colors[count] = c;
         voxel.draw_index = count;
-        
-        if((gui_state->double_clicked || gui_config->adaptive) && !single_file) {
+
+        bool searching = gui_state->found_volume.position_mesh.x >= 0
+                         && gui_state->found_volume.position_mesh.y >= 0
+                         && gui_state->found_volume.position_mesh.z >= 0;
+
+        if((gui_state->double_clicked || gui_config->adaptive || searching) && !single_file) {
             collision |= check_volume_selection(&voxel, gui_state);
         }
 
@@ -428,6 +442,14 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         update_selected(collision, gui_state, gui_config, draw_context->colors);
     }
 
+    if(!discretization_calc) {
+        grid_to_draw->average_discretization.x /= count;
+        grid_to_draw->average_discretization.y /= count;
+        grid_to_draw->average_discretization.z /= count;
+        discretization_calc = true;
+    }
+
+    gui_state->found_volume.position_mesh = (Vector3){-1, -1, -1};
     DrawMeshInstancedWithColors(draw_context, grid_mask, count);
 }
 
@@ -561,7 +583,11 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
 
             voxel.draw_index = count;
 
-            if(gui_state->double_clicked || gui_config->adaptive) {
+            bool searching = gui_state->found_volume.position_mesh.x >= 0
+                         && gui_state->found_volume.position_mesh.y >= 0
+                         && gui_state->found_volume.position_mesh.z >= 0;
+
+            if(gui_state->double_clicked || gui_config->adaptive || searching) {
                 collision |= check_volume_selection(&voxel, gui_state);
             }
 
@@ -616,7 +642,7 @@ void draw_alg_purkinje_network(struct gui_shared_info *gui_config, struct gui_st
 }
 
 void set_visibility_after_split(struct gui_shared_info *gui_config, struct gui_state *gui_state) {
-    
+
     struct vtk_unstructured_grid *grid = gui_config->grid_info.vtk_grid;
 
     if(!grid)
@@ -686,5 +712,5 @@ void reset_grid_visibility(struct gui_shared_info *gui_config, struct gui_state 
 
 //TODO
 void calc_min_max_bounds() {
-    
+
 }

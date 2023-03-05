@@ -20,15 +20,6 @@ static inline void drag_box(Vector2 mouse_pos, Rectangle *box) {
     move_rect((Vector2){new_x, new_y}, box);
 }
 
-static void check_window_bounds(Rectangle *box, float current_window_width, float current_window_height) {
-
-    if(box->x + box->width > current_window_width)
-        move_rect((Vector2){current_window_width - box->width - 10, box->y}, box);
-
-    if(box->y + box->height > current_window_height)
-        move_rect((Vector2){box->x, current_window_height - box->height - 10}, box);
-}
-
 #define COLIDE_STATUS_BAR_WITH_OFFSET(mouse_pos, bounds, y_off)                                                                                                \
     CheckCollisionPointRec(mouse_pos, (Rectangle){bounds.x, bounds.y - y_off, bounds.width - 18, WINDOW_STATUSBAR_HEIGHT})
 #define COLIDE_STATUS_BAR(mouse_pos, bounds) COLIDE_STATUS_BAR_WITH_OFFSET(mouse_pos, bounds, 0)
@@ -145,7 +136,7 @@ bool draw_search_window(struct gui_state *gui_state) {
 
     Vector2 text_box_size = MeasureTextEx(gui_state->font, CENTER_X, gui_state->font_size_small, gui_state->font_spacing_small);
 
-    float text_box_y_dist = text_box_size.y * 2.5f;
+    float text_box_y_dist = text_box_size.y * 3.0f;
     float label_box_y_dist = 30;
     float x_off = 10;
 
@@ -157,7 +148,7 @@ bool draw_search_window(struct gui_state *gui_state) {
     float pos_y = gui_state->search_window.bounds.y;
 
     float box_pos = pos_x + x_off;
-    gui_state->search_window.bounds.width = text_box_size.x * 3.5f;
+    gui_state->search_window.bounds.width = text_box_size.x * 3.8f;
     gui_state->search_window.bounds.height = (text_box_size.y + text_box_y_dist) * 1.6f;
 
     bool window_closed = GuiWindowBox(gui_state->search_window.bounds, "Enter the center of the cell");
