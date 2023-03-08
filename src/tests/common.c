@@ -1,8 +1,6 @@
 #include "common.h"
 #include "../3dparty/ini_parser/ini.h"
 #include "../utils/file_utils.h"
-#include "../3dparty/sds/sds.h"
-#include "../alg/grid/grid.h"
 
 struct user_options *load_options_from_file(char *config_file) {
     // Here we parse the config file
