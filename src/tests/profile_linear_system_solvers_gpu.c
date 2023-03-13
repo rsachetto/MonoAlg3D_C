@@ -5,15 +5,12 @@
 #include "../alg/grid/grid.h"
 #include "../config/domain_config.h"
 #include "../config/save_mesh_config.h"
-#include "../config/config_parser.h"
-#include "../utils/file_utils.h"
 #include "../3dparty/ini_parser/ini.h"
-#include "../3dparty/sds/sds.h"
 
 #include "../3dparty/stb_ds.h"
-#include "../config_helpers/config_helpers.h"
 #include "../utils/stop_watch.h"
-#include "../logger/logger.h"
+
+#include "../gpu_utils/gpu_utils.h"
 
 #include <gdbm.h>
 
@@ -65,9 +62,27 @@ int main(int argc, char **argv) {
 
     construct_grid_from_file(grid, A, B);
 
+    printf("Get cuda Device info\n");
+
+    int device_count;
+    int device = 0;
+    check_cuda_error(cudaGetDeviceCount(&device_count));
+
+    if(device_count > 0) {
+        if(device >= device_count) {
+            log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
+        }
+
+        struct cudaDeviceProp prop;
+        check_cuda_error(cudaGetDeviceProperties(&prop, device));
+        log_info("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
+
+        check_cuda_error(cudaSetDevice(device));
+    }
+
     for(int i = 0; i < nruns; i++) {
 
-        profile_solver(true, "cpu_conjugate_gradient", "init_cpu_conjugate_gradient", NULL, grid, 1, &times);
+        profile_solver(false, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient", grid, 1, &times);
 
         average_times.init_time += times.init_time;
         average_times.run_time  += times.run_time;
@@ -88,7 +103,7 @@ int main(int argc, char **argv) {
 
     GDBM_FILE f;
 
-    f = gdbm_open( "./tests_bin/profile_solver_times.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
+    f = gdbm_open( "./tests_bin/profile_solver_times_gpu.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
 
     datum content = gdbm_fetch (f, hash_key);
 

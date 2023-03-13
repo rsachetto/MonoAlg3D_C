@@ -38,5 +38,9 @@ COMPILE_EXECUTABLE "Custom_meshProfiler" "profile_custom_mesh_load.c" "" "$TESTS
 
 COMPILE_EXECUTABLE "SolversProfiler" "profile_linear_system_solvers.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
+if [ -n "$CUDA_FOUND" ]; then
+    COMPILE_EXECUTABLE "GpusolversProfiler" "profile_linear_system_solvers_gpu.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
+fi
+
 TESTS_STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr config_helpers alg graph utils sds"
 COMPILE_EXECUTABLE "SimulationProfiler" "profile_simulation.c common.o" "common.h" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
