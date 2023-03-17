@@ -592,22 +592,22 @@ ASSEMBLY_MATRIX(fibrotic_region_with_sigma_factor_assembly_matrix) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_factor, config, "sigma_factor");
 
     real min_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_x, config, "region_min_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, min_x, config, "region_min_x");
 
     real max_x = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_x, config, "region_max_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, max_x, config, "region_max_x");
 
     real min_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_y, config, "region_min_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, min_y, config, "region_min_y");
 
     real max_y = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_y, config, "region_max_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, max_y, config, "region_max_y");
 
     real min_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, min_z, config, "region_min_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, min_z, config, "region_min_z");
 
     real max_z = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, max_z, config, "region_max_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, max_z, config, "region_max_z");
 
     bool inside;
 
@@ -1044,7 +1044,7 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix_with_fast_endocardium_layer) {
                 ac[i]->sigma.x = sigma_x*fast_endo_layer_scale;
                 ac[i]->sigma.y = sigma_y*fast_endo_layer_scale;
                 ac[i]->sigma.z = sigma_z*fast_endo_layer_scale;
-            } 
+            }
             // Normal type of cell
             else {
                 ac[i]->sigma.x = sigma_x;
@@ -1082,7 +1082,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
     if(the_grid->adaptive) {
         log_error_and_exit("anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer function does not support mesh adaptivity yet!. Aborting!\n");
     }
-    
+
     uint32_t num_active_cells = the_grid->num_active_cells;
     struct cell_node **ac = the_grid->active_cells;
 
@@ -1189,7 +1189,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
         // Check if the current cell is tagged as FASTENDO
         // TODO: Try to load the "extra_data" array and check if a cell is fast_endo or not
         real_cpu tag = DTI_MESH_TRANSMURALITY_LABELS(ac[i]);
-            
+
         if (tag == 3) {
             ac[i]->sigma.x = D[0][0]*fast_endo_layer_scale;
             ac[i]->sigma.y = D[1][1]*fast_endo_layer_scale;
@@ -1198,7 +1198,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
             ac[i]->sigma.xy = D[0][1]*fast_endo_layer_scale;
             ac[i]->sigma.xz = D[0][2]*fast_endo_layer_scale;
             ac[i]->sigma.yz = D[1][2]*fast_endo_layer_scale;
-        } 
+        }
         // Normal type of cell
         else {
             ac[i]->sigma.x = D[0][0];
