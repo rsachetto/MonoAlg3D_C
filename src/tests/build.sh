@@ -2,7 +2,7 @@
 if [ -n "$CUDA_FOUND" ]; then
     TEST_OPT_DEPS=gpu_utils
 fi
-	
+
 	TESTS_DYNAMIC_DEPS="$CUDA_LIBRARIES $CRITERION_LIBRARIES dl m logger ${TEST_OPT_DEPS}"
 
 ##Tests
@@ -26,16 +26,21 @@ COMPILE_EXECUTABLE "MeshProfiler" "profile_mesh_load.c" "" "$TESTS_STATIC_DEPS" 
 
 COMPILE_EXECUTABLE "VtuProfiler"  "profile_mesh_vtu_load.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
+COMPILE_EXECUTABLE "AlgProfiler"  "profile_mesh_alg_load.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
+
 COMPILE_EXECUTABLE "EnProfiler"  "profile_mesh_en_load.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
 COMPILE_EXECUTABLE "TxtProfiler"  "profile_mesh_txt_load.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
 COMPILE_EXECUTABLE "BinProfiler"  "profile_mesh_bin_load.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
-
-
 COMPILE_EXECUTABLE "Custom_meshProfiler" "profile_custom_mesh_load.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
+
 COMPILE_EXECUTABLE "SolversProfiler" "profile_linear_system_solvers.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
+
+if [ -n "$CUDA_FOUND" ]; then
+    COMPILE_EXECUTABLE "GpusolversProfiler" "profile_linear_system_solvers_gpu.c" "" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
+fi
 
 TESTS_STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr config_helpers alg graph utils sds"
 COMPILE_EXECUTABLE "SimulationProfiler" "profile_simulation.c common.o" "common.h" "$TESTS_STATIC_DEPS" "$TESTS_DYNAMIC_DEPS gdbm" "$CUDA_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"

@@ -380,10 +380,10 @@ SAVE_MESH(save_as_text_or_binary) {
                     if(ode_solver->gpu) {
                         free(sv_cpu);
                     }
-                    
+
                     fprintf(output_file, "\n");
                 }
-                else {                
+                else {
                     fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
                 }
             }
@@ -599,8 +599,18 @@ SAVE_MESH(save_as_ensight) {
 
         int print_rate = 1;
 
+        char *mesh_format = NULL;
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_format, config, "mesh_format");
+
+        //We are getting called from save_with_activation_times
+        if(mesh_format != NULL) {
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "mesh_print_rate");
+        }
+        else { //We are being directly called
+            GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
+        }
+
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
@@ -640,7 +650,7 @@ SAVE_MESH(save_as_ensight) {
     if(persistent_data->n_digits == 0) {
         persistent_data->n_digits = log10(num_files*500) + 1;
     }
-    
+
     sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", persistent_data->n_digits);
 
     char tmp[8192];
@@ -934,7 +944,7 @@ INIT_SAVE_MESH(init_save_multiple_cell_state_variables) {
     ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, num_cells);
 
     for (int i = 0; i < num_cells; i++) {
-        
+
         sds base_name = NULL;
         base_name = create_base_name(file_name_prefix, i, "dat");
 
@@ -958,7 +968,7 @@ SAVE_MESH(save_multiple_cell_state_variables) {
             }
         }
     }
-    
+
     if(ode_solver->gpu) {
 #ifdef COMPILE_CUDA
         for (uint32_t k = 0; k < params->num_cells; k++) {
@@ -977,7 +987,7 @@ SAVE_MESH(save_multiple_cell_state_variables) {
 
             free(cell_sv);
         }
-        
+
 #endif
     } else {
         for (uint32_t k = 0; k < params->num_cells; k++) {
