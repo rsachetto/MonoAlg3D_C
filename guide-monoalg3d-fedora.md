@@ -118,7 +118,7 @@ $ wget -nc https://developer.download.nvidia.com/compute/cuda/11.3.0/local_insta
 ### Install dependencies
 
 ```sh
-$ sudo dnf install gcc-c++ mesa-libGLU-devel libX11-devel libXi-devel libXmu-devel libXcursor-devel
+$ sudo dnf install gcc-c++ mesa-libGLU-devel libX11-devel libXi-devel libXmu-devel libXcursor-devel libXrandr-devel
 $ sudo dnf install freeglut freeglut-devel
 ```
 
