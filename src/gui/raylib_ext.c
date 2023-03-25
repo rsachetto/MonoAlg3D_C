@@ -17,16 +17,17 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
     // NOTE: At this point the modelview matrix just contains the view matrix (camera)
     // That's because BeginMode3D() sets it and there is no model-drawing function
     // that modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matModel = MatrixIdentity();
+    static const Matrix matModel = {1.0f, 0.0f, 0.0f, 0.0f,
+                                    0.0f, 1.0f, 0.0f, 0.0f,
+                                    0.0f, 0.0f, 1.0f, 0.0f,
+                                    0.0f, 0.0f, 0.0f, 1.0f};
+
     Matrix matView = rlGetMatrixModelview();
     Matrix matModelView;
     Matrix matProjection = rlGetMatrixProjection();
 
-    // Upload view and projection matrices (if locations available)
-    if(draw_context->shader.locs[SHADER_LOC_MATRIX_VIEW] != -1)
-        rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
-    if(draw_context->shader.locs[SHADER_LOC_MATRIX_PROJECTION] != -1)
-        rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
+    rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
+    rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
 
     // Fill buffer with instances transformations as float16 arrays
     for(int i = 0; i < instances; i++) {
@@ -71,19 +72,13 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
     // Accumulate internal matrix transform (push/pop) and view matrix
     // NOTE: In this case, model instance transformation must be computed in the shader
     matModelView = MatrixMultiply(rlGetMatrixTransform(), matView);
-
-    // Upload model normal matrix (if locations available)
-    if(draw_context->shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1)
-        rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
+    rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_NORMAL], matModel);
 
     int dgrid_loc = GetShaderLocation(draw_context->shader, "dgrid");
-    if(dgrid_loc != 1) {
-        rlSetUniform(dgrid_loc, (void *)&grid_mask, RL_SHADER_UNIFORM_INT, 1);
-    }
+    rlSetUniform(dgrid_loc, (void *)&grid_mask, RL_SHADER_UNIFORM_INT, 1);
 
     rlEnableVertexArray(draw_context->mesh.vaoId);
-    if(draw_context->mesh.indices != NULL)
-        rlEnableVertexBufferElement(draw_context->mesh.vboId[6]);
+    rlEnableVertexBufferElement(draw_context->mesh.vboId[6]);
 
     // Calculate model-view-projection matrix (MVP)
     Matrix matModelViewProjection;
@@ -91,13 +86,7 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
 
     // Send combined model-view-projection matrix to shader
     rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
-
-    // Draw mesh instanced
-    //if(mesh.indices != NULL) {
-        rlDrawVertexArrayElementsInstanced(0, draw_context->mesh.triangleCount * 3, 0, instances);
-    //} else {
-       // rlDrawVertexArrayInstanced(0, mesh.vertexCount, instances);
-    //}
+    rlDrawVertexArrayElementsInstanced(0, draw_context->mesh.triangleCount * 3, 0, instances);
 
     // Disable all possible vertex array objects (or VBOs)
     rlDisableVertexArray();
