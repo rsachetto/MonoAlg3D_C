@@ -13,7 +13,6 @@ paraview_plugin_version = '0.1'
 alg_input_filetypes = ['alg']
 alg_extensions = ['alg']
 
-
 def LoadAlgMesh(filePath, output):
     algFile = open(filePath, 'r')
 
@@ -22,10 +21,16 @@ def LoadAlgMesh(filePath, output):
     p_id = 0
     points = []
     cells = []
+    cell_arrays = None
+    extra_arrays_len = 0
 
     for line in algFile:
 
         spl_line = line.split(',')
+
+        if cell_arrays == None:
+            extra_arrays_len = len(spl_line) - 6
+            cell_arrays = [[] for i in range(extra_arrays_len)]
 
         center_x = float(spl_line[0])
         center_y = float(spl_line[1])
@@ -34,6 +39,9 @@ def LoadAlgMesh(filePath, output):
         half_face_x = float(spl_line[3])
         half_face_y = float(spl_line[4])
         half_face_z = float(spl_line[5])
+
+        for i in range(extra_arrays_len):
+            cell_arrays[i].append(float(spl_line[i+6]))
 
         center_x_plus = center_x + half_face_x
         center_x_minus = center_x - half_face_x
@@ -129,6 +137,14 @@ def LoadAlgMesh(filePath, output):
     cell_conn = np.hstack([cell_conn, conn])
     output.SetCells(cell_types, cell_offsets, cell_conn)
 
+    # Cell data
+    if cell_arrays:
+        count = 1
+        for data in cell_arrays:
+            name = "Cell data " + str(count)
+            output.CellData.append(np.array(data), name)
+            count += 1
+
 
 @smproxy.reader(
     name="alg reader",
@@ -182,11 +198,6 @@ class AlgReader(VTKPythonAlgorithmBase):
         # Point data
         for name, array in mesh.point_data.items():
             output.PointData.append(array, name)
-
-        # Cell data
-        for name, data in mesh.cell_data.items():
-            array = np.concatenate(data)
-            output.CellData.append(array, name)
 
         # Field data
         for name, array in mesh.field_data.items():
