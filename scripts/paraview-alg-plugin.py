@@ -14,6 +14,7 @@ alg_input_filetypes = ['alg']
 alg_extensions = ['alg']
 
 def LoadAlgMesh(filePath, output):
+
     algFile = open(filePath, 'r')
 
     p_dict = {}
@@ -23,25 +24,33 @@ def LoadAlgMesh(filePath, output):
     cells = []
     cell_arrays = None
     extra_arrays_len = 0
+    cell_arrays_inited = False
 
     for line in algFile:
 
         spl_line = line.split(',')
 
-        if cell_arrays == None:
+        if not cell_arrays_inited:
             extra_arrays_len = len(spl_line) - 6
             cell_arrays = [[] for i in range(extra_arrays_len)]
+            cell_arrays_inited = True
 
         center_x = float(spl_line[0])
         center_y = float(spl_line[1])
         center_z = float(spl_line[2])
 
-        half_face_x = float(spl_line[3])
-        half_face_y = float(spl_line[4])
-        half_face_z = float(spl_line[5])
+        if extra_arrays_len >=0:
+            half_face_x = float(spl_line[3])
+            half_face_y = float(spl_line[4])
+            half_face_z = float(spl_line[5])
 
-        for i in range(extra_arrays_len):
-            cell_arrays[i].append(float(spl_line[i+6]))
+            for i in range(extra_arrays_len):
+                cell_arrays[i].append(float(spl_line[i+6]))
+
+        else:
+            half_face_x = float(spl_line[3])
+            half_face_y = float(spl_line[3])
+            half_face_z = float(spl_line[3])
 
         center_x_plus = center_x + half_face_x
         center_x_minus = center_x - half_face_x
@@ -60,14 +69,15 @@ def LoadAlgMesh(filePath, output):
         point7 = (center_x_plus, center_y_plus, center_z_plus)
         point8 = (center_x_minus, center_y_plus, center_z_plus)
 
-        point1_idx = p_dict.get(point1, -1);
-        point2_idx = p_dict.get(point2, -1);
-        point3_idx = p_dict.get(point3, -1);
-        point4_idx = p_dict.get(point4, -1);
-        point5_idx = p_dict.get(point5, -1);
-        point6_idx = p_dict.get(point6, -1);
-        point7_idx = p_dict.get(point7, -1);
-        point8_idx = p_dict.get(point8, -1);
+        point1_idx = p_dict.get(point1, -1)
+        point2_idx = p_dict.get(point2, -1)
+        point3_idx = p_dict.get(point3, -1)
+        point4_idx = p_dict.get(point4, -1)
+        point5_idx = p_dict.get(point5, -1)
+        point6_idx = p_dict.get(point6, -1)
+        point7_idx = p_dict.get(point7, -1)
+        point8_idx = p_dict.get(point8, -1)
+
 
         if point1_idx == -1:
             points.append(list(point1))
@@ -144,7 +154,7 @@ def LoadAlgMesh(filePath, output):
             name = "Cell data " + str(count)
             output.CellData.append(np.array(data), name)
             count += 1
-
+    algFile.close()
 
 @smproxy.reader(
     name="alg reader",
