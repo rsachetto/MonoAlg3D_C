@@ -1810,14 +1810,16 @@ static float color_scales[NUM_SCALES][NUM_COLORS][3] = {
 
 Color get_color(float value, int alpha, int current_scale) {
 
-    int idx1 = 0;
-    int idx2 = 0;
+    int idx1;
+    int idx2;
     float fract_between = 0;
 
-    if(value >= 1) {
+    if(value <= 0) {
+        idx1 = idx2 = 0;
+    } else if(value >= 1) {
         idx1 = idx2 = NUM_COLORS - 1;
-    } else if(value > 0){
-        value = value * NUM_COLORS - 1;
+    } else {
+        value = value * (NUM_COLORS - 1);
         idx1 = (int)floor(value); // Our desired color will be after this index.
         idx2 = idx1 + 1;          // ... and before this index (inclusive).
         fract_between = value - (float)idx1;
