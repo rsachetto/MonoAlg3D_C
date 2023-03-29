@@ -8,10 +8,11 @@ from paraview.util.vtkAlgorithm import (
 )
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
+import os
 
 paraview_plugin_version = '0.1'
-alg_input_filetypes = ['alg']
-alg_extensions = ['alg']
+alg_input_filetypes = ['alg', 'acm']
+alg_extensions = ['alg', 'acm']
 
 def LoadAlgMesh(filePath, output):
 
@@ -26,12 +27,24 @@ def LoadAlgMesh(filePath, output):
     extra_arrays_len = 0
     cell_arrays_inited = False
 
+    _, extension = os.path.splitext(filePath)
+
+    acm_file = False
+
+    if('acm' in extension):
+        acm_file = True
+        next(algFile) #skip the first line as it is not used in acm files
+
     for line in algFile:
 
         spl_line = line.split(',')
 
         if not cell_arrays_inited:
-            extra_arrays_len = len(spl_line) - 6
+            if acm_file:
+                extra_arrays_len = 1
+            else:
+                extra_arrays_len = len(spl_line) - 6
+
             cell_arrays = [[] for i in range(extra_arrays_len)]
             cell_arrays_inited = True
 
@@ -44,8 +57,12 @@ def LoadAlgMesh(filePath, output):
             half_face_y = float(spl_line[4])
             half_face_z = float(spl_line[5])
 
-            for i in range(extra_arrays_len):
-                cell_arrays[i].append(float(spl_line[i+6]))
+            if(acm_file):
+                if bool(spl_line[6]) == False: continue
+                cell_arrays[0].append(float(spl_line[8].split()[1]))
+            else:
+                for i in range(extra_arrays_len):
+                    cell_arrays[i].append(float(spl_line[i+6]))
 
         else:
             half_face_x = float(spl_line[3])
@@ -151,7 +168,10 @@ def LoadAlgMesh(filePath, output):
     if cell_arrays:
         count = 1
         for data in cell_arrays:
-            name = "Cell data " + str(count)
+            if count == 1 and acm_file:
+                name = "Activaton data"
+            else:
+                name = "Cell data " + str(count)
             output.CellData.append(np.array(data), name)
             count += 1
     algFile.close()
