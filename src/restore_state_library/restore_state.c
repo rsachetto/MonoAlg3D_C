@@ -693,13 +693,25 @@ RESTORE_STATE(restore_simulation_state_with_activation_times) {
         tmp = sdscat(tmp, "/persistent_data_checkpoint.dat");
 
         FILE *input_file = fopen (tmp, "rb");
-        ((struct common_persistent_data*)save_mesh_config->persistent_data)->first_save_call = false;
-        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->last_time_v, input_file);
-        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->num_activations, input_file);
-        restore_point_float_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->cell_was_active, input_file);
+        sdsfree(tmp);
 
-        restore_point_array_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->activation_times, input_file);
-        restore_point_array_hash(&((struct common_persistent_data*)save_mesh_config->persistent_data)->apds, input_file);
+        struct common_persistent_data* persistent_data = (struct common_persistent_data*)save_mesh_config->persistent_data;
+
+        persistent_data->first_save_call = false;
+        restore_point_float_hash(&persistent_data->last_time_v, input_file);
+        restore_point_float_hash(&persistent_data->num_activations, input_file);
+        restore_point_float_hash(&persistent_data->cell_was_active, input_file);
+
+        restore_point_array_hash(&persistent_data->activation_times, input_file);
+        restore_point_array_hash(&persistent_data->apds, input_file);
+
+        char *mesh_format = NULL;
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_format, save_mesh_config, "mesh_format");
+        if(mesh_format != NULL && STRINGS_EQUAL(mesh_format, "ensight")) {            
+            fread(&(persistent_data->file_count), sizeof(persistent_data->file_count), 1, input_file);
+            fread(&(persistent_data->n_digits), sizeof(persistent_data->n_digits), 1, input_file);
+            free(mesh_format);
+        }
 
         fclose(input_file);
     }

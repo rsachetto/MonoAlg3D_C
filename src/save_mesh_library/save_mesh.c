@@ -938,7 +938,6 @@ INIT_SAVE_MESH(init_save_multiple_cell_state_variables) {
 
     uint32_t num_cells = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells;
     char *file_name_prefix = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->file_name_prefix;
-    uint32_t *cell_sv_positions = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions;
 
     ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files = MALLOC_ARRAY_OF_TYPE(FILE*, num_cells);
     ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, num_cells);

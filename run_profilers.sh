@@ -13,7 +13,7 @@ function RUN_PROFILER() {
     test_bin_name="$(tr '[:lower:]' '[:upper:]' <<< "${lower_case_name:0:1}")${lower_case_name:1}"
     test_bin_name="./tests_bin/${test_bin_name}Profiler"
 
-    hardware_key=$(inxi -CNM |grep -e Topology  -e Device-1 | sha256sum | awk '{print $1}')
+    hardware_key=$(inxi -CNM |grep -e Topology  -e Device-1 -e Mobo | sha256sum | awk '{print $1}')
 
     if [ "$lower_case_name" == "all" ]; then
         for t in ${VALID_TESTS}; do
