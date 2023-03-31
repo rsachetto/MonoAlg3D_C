@@ -393,7 +393,6 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
             }
         }
 
-        Color c = BLUE;
         voxel.v = 0.0f;
 
         if(current_data_index == -1) {
@@ -404,8 +403,6 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
             voxel.v = grid_to_draw->extra_values[current_data_index][j];
         }
 
-        c = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
-
         voxel.size.x = dx / scale;
         voxel.size.y = dy / scale;
         voxel.size.z = dz / scale;
@@ -414,7 +411,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         draw_context->translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
         draw_context->translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), draw_context->translations[count]);
 
-        draw_context->colors[count] = c;
+        draw_context->colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
         voxel.draw_index = count;
 
         bool searching = gui_state->found_volume.position_mesh.x >= 0

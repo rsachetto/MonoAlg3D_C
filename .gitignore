@@ -186,10 +186,11 @@ retired_code/
 *.gcno
 *.gcda
 export_report.sh
-report.xml 
+report.xml
 /gmon.out
-UU_49900.dat 
+UU_49900.dat
 VV_49900.dat
 .#*#
 *.build_type*
 /ecg.txt
+__pycache__/
