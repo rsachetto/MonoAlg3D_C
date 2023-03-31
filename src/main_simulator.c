@@ -92,6 +92,14 @@ void configure_simulation(int argc, char **argv, struct user_options **options, 
         }
     }
 
+    if((*(options))->save_state_config) {
+        char *save_state_out_dir_name = NULL;
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(save_state_out_dir_name, (*(options))->save_state_config, "output_dir");
+        if(save_state_out_dir_name != NULL) {
+            create_dir(save_state_out_dir_name);
+        }
+    }
+
     configure_ode_solver_from_options(*ode_solver, *options);
     configure_monodomain_solver_from_options(*monodomain_solver, *options);
     configure_grid_from_options(*the_grid, *options);

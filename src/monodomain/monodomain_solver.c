@@ -242,6 +242,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     bool restore_checkpoint = (restore_state_config != NULL);
+    char *restore_in_dir_name = NULL;
 
     if(restore_checkpoint && the_grid->adaptive) {
         log_warn("Restoring checkpoint is not implemented for adaptive grids yet!\n");
@@ -250,6 +251,10 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(restore_state_config) {
         init_config_functions(restore_state_config, "./shared_libs/libdefault_restore_state.so", "restore_state");
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(restore_in_dir_name, restore_state_config, "input_dir");
+        if(restore_in_dir_name == NULL) {
+            restore_in_dir_name = out_dir_name;
+        }
     }
 
     if(has_extra_data) {
@@ -269,7 +274,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     if(restore_checkpoint) {
         // Here we only restore the monodomain_solver_state...
         restore_success =
-            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, the_monodomain_solver, NULL, NULL, out_dir_name);
+            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, the_monodomain_solver, NULL, NULL, restore_in_dir_name);
     }
 
     //HACK: we have to restore the last_t time info as the restore state function changes it to a wrong value
@@ -362,7 +367,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     if(restore_checkpoint) {
-        restore_success &= ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, the_grid, NULL, NULL, NULL, out_dir_name);
+        restore_success &= ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, the_grid, NULL, NULL, NULL, restore_in_dir_name);
     }
 
     real_cpu start_dx, start_dy, start_dz;
@@ -472,7 +477,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     // we pass this parameters to the cell model....
     if(restore_checkpoint) {
         restore_success &=
-            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, NULL, the_ode_solver, the_purkinje_ode_solver, out_dir_name);
+            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, NULL, the_ode_solver, the_purkinje_ode_solver, restore_in_dir_name);
     }
 
     real_cpu initial_v, purkinje_initial_v = 0;
@@ -544,9 +549,16 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     start_stop_watch(&solver_time);
 
     int save_state_rate = 0;
+    char *save_checkpoint_out_dir = NULL;
 
     if(save_checkpoint) {
+        GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(save_checkpoint_out_dir, save_state_config, "output_dir");
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, save_state_rate, save_state_config, "save_rate");
+
+        if(save_checkpoint_out_dir == NULL) {
+            save_checkpoint_out_dir = out_dir_name;
+        }
+
     }
 
     real_cpu vm_threshold = configs->vm_threshold;
@@ -890,7 +902,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 time_info.current_t = cur_time;
                 printf("Saving state with time = %lf, and count = %d\n", time_info.current_t, time_info.iteration);
                 ((save_state_fn *)save_state_config->main_function)(&time_info, save_state_config, save_mesh_config, the_grid, the_monodomain_solver,
-                                                                    the_ode_solver, the_purkinje_ode_solver, out_dir_name);
+                                                                    the_ode_solver, the_purkinje_ode_solver, save_checkpoint_out_dir);
             }
         }
 
@@ -907,7 +919,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         time_info.current_t = cur_time;
         printf("Saving state with time = %lf, and count = %d\n", time_info.current_t, time_info.iteration);
         ((save_state_fn *)save_state_config->main_function)(&time_info, save_state_config, save_mesh_config, the_grid, the_monodomain_solver,
-            the_ode_solver, the_purkinje_ode_solver, out_dir_name);
+                                                            the_ode_solver, the_purkinje_ode_solver, save_checkpoint_out_dir);
     }
 
     uint64_t res_time = stop_stop_watch(&solver_time);
