@@ -713,12 +713,18 @@ INIT_SAVE_MESH(init_save_with_activation_times) {
 
     if(config->persistent_data == NULL) {
         config->persistent_data = calloc(1, sizeof(struct common_persistent_data));
-        hmdefault(((struct common_persistent_data *)config->persistent_data)->cell_was_active, 0.0);
-        hmdefault(((struct common_persistent_data *)config->persistent_data)->last_time_v, -100.0);
-        hmdefault(((struct common_persistent_data *)config->persistent_data)->num_activations, 0);
-        hmdefault(((struct common_persistent_data *)config->persistent_data)->activation_times, NULL);
-        hmdefault(((struct common_persistent_data *)config->persistent_data)->apds, NULL);
-        ((struct common_persistent_data *)config->persistent_data)->first_save_call = true;
+
+        struct common_persistent_data *cpd = (struct common_persistent_data *) config->persistent_data;
+
+        hmdefault(cpd->cell_was_active, 0.0);
+        hmdefault(cpd->last_time_v, -100.0);
+        hmdefault(cpd->num_activations, 0);
+        hmdefault(cpd->activation_times, NULL);
+        hmdefault(cpd->apds, NULL);
+        cpd->first_save_call = true;
+
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, cpd->print_rate, config, "print_rate");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int,cpd->mesh_print_rate, config, "mesh_print_rate");
     }
 }
 
@@ -728,16 +734,14 @@ END_SAVE_MESH(end_save_with_activation_times) {
 
 SAVE_MESH(save_with_activation_times) {
 
-    int mesh_output_pr = 0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, mesh_output_pr, config, "mesh_print_rate");
-
     int iteration_count = time_info->iteration;
+    struct common_persistent_data *cpd = (struct common_persistent_data *) config->persistent_data;
 
     char *mesh_format = NULL;
     GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_format, config, "mesh_format");
 
-    if(mesh_format && mesh_output_pr) {
-        if(iteration_count % mesh_output_pr == 0) {
+    if(mesh_format && cpd->mesh_print_rate) {
+        if(iteration_count % cpd->mesh_print_rate == 0) {
             if(STRINGS_EQUAL("vtk", mesh_format)) {
                 save_as_vtk(time_info, config, the_grid, ode_solver, purkinje_ode_solver);
             } else if(STRINGS_EQUAL("vtu", mesh_format)) {
