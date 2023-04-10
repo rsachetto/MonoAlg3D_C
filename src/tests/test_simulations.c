@@ -250,6 +250,34 @@ Test(run_gold_simulation, mesh_simulation) {
     shput_dup_value(options->save_mesh_config->config_data, "print_rate", "250");
     shput_dup_value(options->save_mesh_config->config_data, "file_prefix", "V");
     shput_dup_value(options->domain_config->config_data, strdup("seed"), "1526531136");
+    shput_dup_value(options->calc_ecg_config->config_data, strdup("use_gpu"), "no");
+
+    int success = 1;
+    success = run_simulation_with_config(options, out_dir_sim_gpu);
+    cr_assert(success);
+
+    success &= check_output_equals(out_dir_gold_gpu, out_dir_sim_gpu, 10e-2f);
+    success &= check_ecg_file_equals(ecg_gold, ecg_sim, 10e-2f);
+
+    cr_assert(success);
+
+    free_user_options(options);
+}
+
+Test(run_gold_simulation, mesh_simulation_ecg_gpu) {
+    char *out_dir_gold_gpu = "tests_bin/gold_sim_mesh_cg_gpu_ode_gpu/";
+    char *out_dir_sim_gpu  = "tests_bin/sim_mesh_cg_gpu_ode_gpu/";
+
+    char *ecg_gold = "tests_bin/gold_sim_mesh_cg_gpu_ode_gpu/ecg_gold.txt";
+    char *ecg_sim  = "tests_bin/sim_mesh_cg_gpu_ode_gpu/ecg.txt";
+
+    struct user_options *options = load_options_from_file("tests_bin/sim_mesh_cg_gpu_ode_gpu.ini");
+    free(options->save_mesh_config->main_function_name);
+
+    options->save_mesh_config->main_function_name = strdup("save_as_text_or_binary");
+    shput_dup_value(options->save_mesh_config->config_data, "print_rate", "250");
+    shput_dup_value(options->save_mesh_config->config_data, "file_prefix", "V");
+    shput_dup_value(options->domain_config->config_data, strdup("seed"), "1526531136");
 
     int success = 1;
     success = run_simulation_with_config(options, out_dir_sim_gpu);
