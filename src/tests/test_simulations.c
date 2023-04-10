@@ -7,6 +7,44 @@
 #include "common.h"
 #include <criterion/criterion.h>
 
+static int check_ecg_file_equals(sds gold_ecg, sds tested_ecg, float tol) {
+
+    string_array lines_gold = read_lines(gold_ecg);
+    string_array lines_tested = read_lines(tested_ecg);
+
+    cr_assert(lines_gold);
+    cr_assert(lines_tested);
+
+    ptrdiff_t n_lines_gold = arrlen(lines_gold);
+    ptrdiff_t n_lines_tested = arrlen(lines_tested);
+
+    cr_assert_eq(n_lines_gold, n_lines_tested, "%s %ld lines, %s %ld lines", gold_ecg, n_lines_gold, tested_ecg, n_lines_tested );
+
+    for(int j = 0; j < n_lines_gold; j++) {
+
+        int count_gold;
+        int count_tested;
+
+        sds *gold_values = sdssplit(lines_gold[j], " ", &count_gold);
+        sds *tested_simulation_values = sdssplit(lines_tested[j], " ", &count_tested);
+
+        cr_assert_eq(count_gold, count_tested);
+
+        for(int k = 0; k < count_gold; k++) {
+            real_cpu value_gold = strtod(gold_values[k], NULL);
+            real_cpu value_tested = strtod(tested_simulation_values[k], NULL);
+            cr_assert_float_eq(value_gold, value_tested, tol, "Found %lf, Expected %lf (error %e) on line %d of %s when comparing with %s", value_tested, value_gold, fabs(value_tested-value_gold), j+1, tested_ecg, gold_ecg);
+
+        }
+
+        sdsfreesplitres(gold_values, count_gold);
+        sdsfreesplitres(tested_simulation_values, count_tested);
+    }
+
+    return 1;
+
+}
+
 static int check_output_equals(sds gold_output, sds tested_output, float tol) {
 
     string_array files_gold = list_files_from_dir(gold_output, "V_it_", "txt", NULL, true);
@@ -202,6 +240,9 @@ Test(run_gold_simulation, mesh_simulation) {
     char *out_dir_gold_gpu = "tests_bin/gold_sim_mesh_cg_gpu_ode_gpu/";
     char *out_dir_sim_gpu  = "tests_bin/sim_mesh_cg_gpu_ode_gpu/";
 
+    char *ecg_gold = "tests_bin/gold_sim_mesh_cg_gpu_ode_gpu/ecg_gold.txt";
+    char *ecg_sim  = "tests_bin/sim_mesh_cg_gpu_ode_gpu/ecg.txt";
+
     struct user_options *options = load_options_from_file("tests_bin/sim_mesh_cg_gpu_ode_gpu.ini");
     free(options->save_mesh_config->main_function_name);
 
@@ -215,6 +256,7 @@ Test(run_gold_simulation, mesh_simulation) {
     cr_assert(success);
 
     success &= check_output_equals(out_dir_gold_gpu, out_dir_sim_gpu, 10e-2f);
+    success &= check_ecg_file_equals(ecg_gold, ecg_sim, 10e-2f);
 
     cr_assert(success);
 
