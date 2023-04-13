@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
     - name: Test without cuda
       run:  ./run_tests.sh
 
-  build_ubuntu_latest:
+  build_ubuntu_latest_cuda11:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,12 +32,31 @@ jobs:
     - name: Build without cuda
       run: ./build.sh -r simulator
 
-    - uses: Jimver/cuda-toolkit@v0.2.8
+    - uses: Jimver/cuda-toolkit@v0.2.10
       id: cuda-toolkit
       with:
         cuda: '11.7.0'
         method: 'network'
         linux-local-args: '["--toolkit"]'
 
-    - name: Build with cuda
+    - name: Build with cuda 11
+      run: ./build.sh -r simulator
+
+  build_ubuntu_latest_cuda12:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build without cuda
+      run: ./build.sh -r simulator
+
+    - uses: Jimver/cuda-toolkit@v0.2.10
+      id: cuda-toolkit
+      with:
+        cuda: '12.1.0'
+        method: 'network'
+        linux-local-args: '["--toolkit"]'
+
+    - name: Build with cuda 12
       run: ./build.sh -r simulator
