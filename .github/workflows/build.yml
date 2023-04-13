@@ -3,8 +3,8 @@ name: Build
 on: [push]
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
+  build_ubuntu_latests_no_cuda:
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
