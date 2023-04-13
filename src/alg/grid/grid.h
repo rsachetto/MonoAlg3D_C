@@ -65,8 +65,6 @@ void refine_grid_cell(struct grid *the_grid, struct cell_node* grid_cell);
 bool derefine_grid_with_bound (struct grid *the_grid, real_cpu derefinement_bound, real_cpu max_dx, real_cpu max_dy, real_cpu max_dz);
 void derefine_all_grid (struct grid* the_grid);
 void derefine_grid_inactive_cells (struct grid* the_grid);
-bool derefine_grid_cell (struct grid *the_grid, struct cell_node *grid_cell);
-
 
 void print_grid_matrix(struct grid *the_grid, FILE* output_file);
 void print_grid_vector(struct grid* the_grid, FILE *output_file, char name);
