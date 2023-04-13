@@ -18,7 +18,10 @@ function RUN_PROFILER() {
     if [ "$lower_case_name" == "all" ]; then
         for t in ${VALID_TESTS}; do
             t_bin_name="$(tr '[:lower:]' '[:upper:]' <<< "${t:0:1}")${t:1}"
-            ./tests_bin/"${t_bin_name}"Profiler $hardware_key
+            echo "-----------------------------"
+            echo "Running ${t_bin_name}Profiler"
+            echo "-----------------------------"
+            ./tests_bin/"${t_bin_name}"Profiler "$hardware_key"
         done
     else
         if [ -f "${test_bin_name}" ]; then

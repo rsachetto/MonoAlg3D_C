@@ -128,7 +128,7 @@ GET_BUILD_OPTIONS () {
     echo "new=$NEW"  >>  $BUILD_TYPE_FILE
 
     if [ "$NEW" != "$LAST" ]; then
-       rm -f $COMPILE_COMMANDS_FILE
+       rm -f "$COMPILE_COMMANDS_FILE"
     fi
 
 }
