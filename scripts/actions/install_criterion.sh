@@ -1,2 +1,2 @@
 sudo apt-get update
-sudo apt-get install criterion-dev libgdbm-dev
+sudo apt-get install libcriterion-dev libgdbm-dev
