@@ -7,11 +7,6 @@
 
 #include "../../3dparty/stb_ds.h"
 
-void init_basic_cell_data_with_type(struct basic_cell_data *data, enum cell_type type) {
-    data->type = type;
-    data->level = 1;
-}
-
 struct cell_node *new_cell_node() {
     struct cell_node *result = (struct cell_node *)malloc(sizeof(struct cell_node));
     init_cell_node(result);
@@ -20,7 +15,8 @@ struct cell_node *new_cell_node() {
 
 void init_cell_node(struct cell_node *cell_node) {
 
-    init_basic_cell_data_with_type(&(cell_node->cell_data), CELL_NODE);
+    cell_node->cell_data.type = CELL_NODE;
+    cell_node->cell_data.level = 1;
 
     cell_node->center.x = 0.0;
     cell_node->center.y = 0.0;
@@ -107,7 +103,10 @@ struct transition_node *new_transition_node() {
 }
 
 void init_transition_node(struct transition_node *transition_node) {
-    init_basic_cell_data_with_type(&(transition_node->cell_data), TRANSITION_NODE);
+
+    transition_node->cell_data.type = TRANSITION_NODE;
+    transition_node->cell_data.level = 1;
+
     transition_node->single_connector = NULL;
     transition_node->quadruple_connector1 = NULL;
     transition_node->quadruple_connector2 = NULL;

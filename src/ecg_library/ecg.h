@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 #ifdef COMPILE_CUDA
+#include <cublas_v2.h>
 #include <cusparse_v2.h>
-#include <cublas.h>
 #endif
 
 struct pseudo_bidomain_persistent_data {

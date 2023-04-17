@@ -35,6 +35,8 @@ struct common_persistent_data {
     struct vtk_unstructured_grid *grid;
 
     bool first_save_call;
+    int print_rate;
+    int mesh_print_rate;
 };
 
 struct save_as_vtp_persistent_data {

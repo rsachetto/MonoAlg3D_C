@@ -178,8 +178,6 @@ struct transition_node {
     enum transition_direction direction;
 };
 
-void init_basic_cell_data_with_type(struct basic_cell_data *data, enum cell_type type);
-
 struct cell_node *new_cell_node();
 
 void init_cell_node(struct cell_node *cell_node);

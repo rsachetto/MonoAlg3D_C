@@ -10,9 +10,8 @@
 #include <float.h>
 
 #ifdef COMPILE_CUDA
+
 #include "../gpu_utils/gpu_utils.h"
-#include <cublas_v2.h>
-#include <cusparse_v2.h>
 
 // Precision to be used for the calculations on the GPU
 #ifdef CELL_MODEL_REAL_DOUBLE
@@ -21,6 +20,12 @@
 #else
 #pragma message("calc_ecg, using single precision on the GPU")
 #define CUBLAS_SIZE CUDA_R_32F
+#endif
+
+#if CUSPARSE_VER_MAJOR >= 12
+#define CUSPARSE_ALG CUSPARSE_SPMV_ALG_DEFAULT
+#elif CUSPARSE_VER_MAJOR == 11
+#define CUSPARSE_ALG CUSPARSE_MV_ALG_DEFAULT
 #endif
 
 #endif // COMPILE_CUDA
@@ -348,11 +353,12 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
     check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->volumes, N * sizeof(real), cudaMemcpyHostToDevice));
 
-#if CUBLAS_VER_MAJOR >= 11
+#if CUSPARSE_VER_MAJOR >= 11
     real alpha = 1.0;
     real beta = 0.0;
+
     check_cuda_error(cusparseSpMV_bufferSize(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
-                                             PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_MV_ALG_DEFAULT,
+                                             PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
                                              &(PSEUDO_BIDOMAIN_DATA->bufferSize)));
 
     check_cuda_error(cudaMalloc(&(PSEUDO_BIDOMAIN_DATA->buffer), PSEUDO_BIDOMAIN_DATA->bufferSize));
@@ -374,9 +380,9 @@ CALC_ECG(pseudo_bidomain_gpu) {
     // VM is correct
     real alpha = 1.0;
     real beta = 0.0;
-#if CUBLAS_VER_MAJOR >= 11
+#if CUSPARSE_VER_MAJOR >= 11
     check_cublas_error(cusparseSpMV(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
-                                    PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_MV_ALG_DEFAULT,
+                                    PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
                                     PSEUDO_BIDOMAIN_DATA->buffer));
 #else
 
@@ -394,7 +400,7 @@ CALC_ECG(pseudo_bidomain_gpu) {
 
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", time_info->current_t);
 
-    gpu_vec_div_vec(PSEUDO_BIDOMAIN_DATA->beta_im, PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->tmp_data, n_active);
+    gpu_vec_div_vec(PSEUDO_BIDOMAIN_DATA->beta_im, PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->beta_im, n_active);
 
     for(int i = 0; i < PSEUDO_BIDOMAIN_DATA->n_leads; i++) {
 
@@ -447,6 +453,8 @@ END_CALC_ECG(end_pseudo_bidomain_gpu) {
     check_cuda_error(cudaFree(persistent_data->tmp_data));
     check_cuda_error(cudaFree(persistent_data->d_distances));
     check_cuda_error(cudaFree(persistent_data->d_volumes));
+
+    fclose(persistent_data->output_file);
 
     free(persistent_data);
 }
