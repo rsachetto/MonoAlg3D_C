@@ -363,18 +363,18 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
 
             arrput(line, '\0');
 
-            char *end;
+            const char *end;
 
-            center.x = strtod(line, &end);
-            center.y = strtod(end + 1, &end);
-            center.z = strtod(end + 1, &end);
+            end = parse_number(line, &center.x);
+            end = parse_number(end + 1, &center.y);
+            end = parse_number(end + 1, &center.z);
 
-            half_face.x = strtod(end + 1, &end);
+            end = parse_number(end + 1, &half_face.x);
             read_count = 4;
 
             if(data_count >= 6) {
-                half_face.y = strtod(end + 1, &end);
-                half_face.z = strtod(end + 1, &end);
+                end = parse_number(end + 1, &half_face.y);
+                end = parse_number(end + 1, &half_face.z);
                 read_count += 2;
 
                 int num_extra = data_count - read_count - 1;
@@ -394,11 +394,12 @@ static void new_vtk_unstructured_grid_from_string(struct vtk_unstructured_grid *
                         }
                     }
 
-                    v = strtod(end + 1, &end);
+                    end = parse_number(end + 1, &v);
 
                     for(int i = 0; i < num_extra; i++) {
-                        float tmp_value = strtof(end + 1, &end);
-                        arrput(extra_values[i], tmp_value);
+                        double tmp_value;
+                        end = parse_number(end + 1, &tmp_value);
+                        arrput(extra_values[i], (float)tmp_value);
 
                         if(tmp_value > (*vtk_grid)->max_extra_value[i])
                             (*vtk_grid)->max_extra_value[i] = tmp_value;
@@ -1913,13 +1914,13 @@ static struct parser_state * new_parser_state() {
     arrsetcap(parser_state->name_value, 64);
     arrsetcap(parser_state->cells_connectivity_ascii, 64);
     arrsetcap(parser_state->points_ascii, 64);
-    arrsetcap(parser_state->celldata_ascii, 64);
     arrsetcap(parser_state->encoding_type, 64);
     arrsetcap(parser_state->header_type, 64);
     arrsetcap(parser_state->format, 64);
     arrsetcap(parser_state->base64_content, 64);
     arrsetcap(parser_state->point_data_type, 64);
 
+    parser_state->celldata_ascii = NULL;
     return parser_state;
 
 }
@@ -2176,19 +2177,25 @@ static void new_vtk_unstructured_grid_from_vtk_file(struct vtk_unstructured_grid
     } else if((file_type == VTK_LEGACY) && parser_state->binary) {
         memcpy((*vtk_grid)->points, parser_state->points_ascii, (*vtk_grid)->num_points * sizeof(struct point_3d));
         memcpy((*vtk_grid)->cells, parser_state->cells_connectivity_ascii, (size_t)(*vtk_grid)->num_cells * (*vtk_grid)->points_per_cell * sizeof(uint64_t));
-        memcpy((*vtk_grid)->values, parser_state->celldata_ascii, (*vtk_grid)->num_cells * sizeof(float));
+        if(parser_state->celldata_ascii) {
+            memcpy((*vtk_grid)->values, parser_state->celldata_ascii, (*vtk_grid)->num_cells * sizeof(float));
+        }
     } else if(parser_state->ascii) {
+
         const char *tmp_data = parser_state->celldata_ascii;
         const char *p_end;
-
-        while(*tmp_data != '-' && !isdigit(*tmp_data))
-            tmp_data++;
-
         double n;
-        for(int i = 0; i < (*vtk_grid)->num_cells; i++) {
-            p_end = parse_number(tmp_data, &n);
-            arrput((*vtk_grid)->values, (float)n);
-            tmp_data = p_end;
+
+        if(tmp_data) {
+
+            while(*tmp_data != '-' && !isdigit(*tmp_data))
+                tmp_data++;
+
+            for(int i = 0; i < (*vtk_grid)->num_cells; i++) {
+                p_end = parse_number(tmp_data, &n);
+                arrput((*vtk_grid)->values, (float)n);
+                tmp_data = p_end;
+            }
         }
 
         tmp_data = parser_state->points_ascii;
