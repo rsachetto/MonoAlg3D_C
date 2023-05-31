@@ -218,7 +218,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt) {
     real IKs = g_Ks * pow(Xs, 2.0f) * (V - EKs);
     real IpK = (g_pK * (V - EK)) / (1.0f + exp((25.0f - V) / 5.98f));
 
-    real ICaL = (V < 15.0f-1.0e-5f || V > 15.0f+1.0e-5f) ? ((((g_CaL * d * f * f2 * fCass * 4.0f * (V - 15.0f) * pow(F, 2.0f)) / (R * T)) * ((0.25f * Ca_ss * exp((2.0f * (V - 15.0f) * F) / (R * T))) - Cao)) / (exp((2.0f * (V - 15.0f) * F) / (R * T)) - 1.0f)) : g_CaL * d * f * f2 * fCass * 2.0f * F * (0.25f * Ca_ss  - Cao);
+    real ICaL = (V < 15.0f-1.0e-5f || V > 15.0f+1.0e-5f) ? ((((g_CaL * d * f * f2 * fCass * 4.0f * (V - 15.0f) * pow(F, 2.0f)) / (R * T)) * ((0.25f * Ca_ss * exp((2.0f * (V - 15.0f) * F) / (R * T))) - Cao)) / (expm1((2.0f * (V - 15.0f) * F) / (R * T)))) : g_CaL * d * f * f2 * fCass * 2.0f * F * (0.25f * Ca_ss  - Cao);
     real IbCa = g_bca * (V - ECa);
     real IpCa = (g_pCa * Ca_i) / (Ca_i + K_pCa);
 
