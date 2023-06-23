@@ -672,7 +672,7 @@ SAVE_MESH(save_multiple_cell_state_variables) {
             FOR_EACH_PURKINJE_CELL(the_grid) {
                 real_cpu dist = calc_norm(cell->center.x,cell->center.y,cell->center.z,\
                                         params->purkinje_cell_centers[i*3],params->purkinje_cell_centers[i*3+1],params->purkinje_cell_centers[i*3+2]);
-                if (dist < 1e-8) {
+                if (dist < 1e-1) {
                     params->purkinje_cell_sv_positions[i] = cell->sv_position;
                     break;
                 }
