@@ -1032,10 +1032,6 @@ void simplify_refinement( struct transition_node *transition_node ) {
 
     assert(transition_node);
 
-    // Pointers used to convert the Cell in a cell node or transition node.
-    struct transition_node *neighbour_transition_node;
-    struct cell_node *neighbour_cell_node;
-
     if( transition_node->single_connector != 0 ) {
 
         // Both transition node and neighbor transition node must have the same
@@ -1077,7 +1073,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
                 type = neighbor_cell[i]->cell_data.type;
                 switch( type ) {
                     case CELL_NODE: {
-                        neighbour_cell_node = neighbor_cell[i];
+                        struct cell_node * neighbour_cell_node = neighbor_cell[i];
                         switch(direction) {
                             case FRONT:            { neighbour_cell_node->neighbours[BACK]             = cell_node[i];  break; }
                             case BACK:             { neighbour_cell_node->neighbours[FRONT]            = cell_node[i]; break; }
@@ -1091,7 +1087,7 @@ void simplify_refinement( struct transition_node *transition_node ) {
                     }
 
                     case TRANSITION_NODE: {
-                        neighbour_transition_node = (struct transition_node*)(neighbor_cell[i]);
+                        struct transition_node *neighbour_transition_node = (struct transition_node*)(neighbor_cell[i]);
                         if( neighbour_node == neighbour_transition_node->single_connector )
                             neighbour_transition_node->single_connector = cell_node[i];
 
