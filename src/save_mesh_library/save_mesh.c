@@ -229,6 +229,7 @@ END_SAVE_MESH(end_save_one_cell_state_variables) {
     free(((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file_name);
     fclose(((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file);
     free(config->persistent_data);
+    config->persistent_data = NULL;
 }
 
 SAVE_MESH(save_as_text_or_binary) {
@@ -416,6 +417,7 @@ INIT_SAVE_MESH(init_save_as_vtk_or_vtu) {
 END_SAVE_MESH(end_save_as_vtk_or_vtu) {
     free_vtk_unstructured_grid(((struct common_persistent_data *)config->persistent_data)->grid);
     free(config->persistent_data);
+    config->persistent_data = NULL;
 }
 
 SAVE_MESH(save_as_vtk) {
@@ -707,6 +709,7 @@ SAVE_MESH(save_as_ensight) {
 
 END_SAVE_MESH(end_save_as_ensight) {
     free(config->persistent_data);
+    config->persistent_data = NULL;
 }
 
 INIT_SAVE_MESH(init_save_with_activation_times) {
@@ -730,6 +733,7 @@ INIT_SAVE_MESH(init_save_with_activation_times) {
 
 END_SAVE_MESH(end_save_with_activation_times) {
     free(config->persistent_data);
+    config->persistent_data = NULL;
 }
 
 SAVE_MESH(save_with_activation_times) {
@@ -1015,6 +1019,7 @@ END_SAVE_MESH(end_save_multiple_cell_state_variables) {
     }
     free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files);
     free(config->persistent_data);
+    config->persistent_data = NULL;
 }
 
 SAVE_MESH(save_transmurality_as_vtk) {

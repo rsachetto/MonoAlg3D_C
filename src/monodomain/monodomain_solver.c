@@ -312,21 +312,36 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
 #ifdef COMPILE_CUDA
-    int device_count;
-    int device = the_ode_solver->gpu_id;
-    check_cuda_error(cudaGetDeviceCount(&device_count));
+    bool linear_solver_on_gpu = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(linear_solver_on_gpu, linear_system_solver_config, "use_gpu");
 
-    if(device_count > 0) {
-        if(device >= device_count) {
-            log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
-            the_ode_solver->gpu_id = device = 0;
+    bool init_gpu = linear_solver_on_gpu || the_ode_solver->gpu;
+
+    if(init_gpu) {
+        int device_count;
+        int device = the_ode_solver->gpu_id;
+        check_cuda_error(cudaGetDeviceCount(&device_count));
+
+        if(device_count > 0) {
+            if(device >= device_count) {
+                log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
+                the_ode_solver->gpu_id = device = 0;
+            }
+
+            struct cudaDeviceProp prop;
+            check_cuda_error(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
+
+            if(the_ode_solver->gpu && linear_solver_on_gpu) {
+                log_info("%d devices available, running both ODE and linear system solvers on GPU (device %d -> %s)\n", device_count, device, prop.name);
+            } else if(the_ode_solver->gpu) {
+                log_info("%d devices available, running only the ODE solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
+            }
+            else {
+                log_info("%d devices available, running only the linear system solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
+            }
+
+            check_cuda_error(cudaSetDevice(device));
         }
-
-        struct cudaDeviceProp prop;
-        check_cuda_error(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
-        log_info("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
-
-        check_cuda_error(cudaSetDevice(device));
     }
 #endif
 
@@ -1582,9 +1597,9 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
                     real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
 
-                    // pulse_id, terminal_id, purkinje_lat, mean_tissue_lat, pmj_delay, is_active 
+                    // pulse_id, terminal_id, purkinje_lat, mean_tissue_lat, pmj_delay, is_active
                     fprintf(output_file,"%d,%u,%g,%g,%g,%d\n", k, i, purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
-                    
+
                     //log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms [Active = %d]\n", i,
                     //        purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,
                     //        purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
@@ -1604,8 +1619,6 @@ void write_terminals_info (struct grid *the_grid, struct config *config, struct 
     assert(config);
     assert(the_terminals);
 
-    struct save_coupling_with_activation_times_persistent_data *persistent_data =
-        (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
     char *main_function_name = config->main_function_name;
 
     if(strcmp(main_function_name, "save_purkinje_coupling_with_activation_times") == 0) {
