@@ -729,8 +729,13 @@ void print_purkinje_propagation_velocity(struct config *config, struct grid *the
             // Get the terminal cell LAT
             float *activation_times_array = (float *)hmget(persistent_data->purkinje_activation_times, cell_coordinates);
 
+            // Calculate the stimulation period
+            float period = 0.0;
+            if (n_pulses > 1) {
+                period = activation_times_array[1] - activation_times_array[0];
+            }
             for(size_t j = 0; j < n_pulses; j++) {
-                real_cpu delta_t = activation_times_array[j];
+                real_cpu delta_t = activation_times_array[j] - j*period;
                 real_cpu delta_s = shortest_dist[id];
                 real_cpu v = delta_s / delta_t;
 

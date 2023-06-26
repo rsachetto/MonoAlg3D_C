@@ -1088,11 +1088,15 @@ void print_terminals (struct terminal *the_terminals, const uint32_t number_of_t
         if (the_terminals[j].active) {
             
             uint32_t num_tissue_cells = arrlen(the_terminals[j].tissue_cells);
-            printf("Terminal %u is linked to %u tissue cells\n",j,num_tissue_cells);
+            uint32_t num_border_cells = 0;
             for (uint32_t i = 0; i < num_tissue_cells; i++) {
-                printf("\tTissue cell %u = (%g,%g,%g)\n",the_terminals[j].tissue_cells[i]->sv_position,\
-                                                    the_terminals[j].tissue_cells[i]->center.x,the_terminals[j].tissue_cells[i]->center.y,the_terminals[j].tissue_cells[i]->center.z);
+                struct cell_node **tcells = the_terminals[j].tissue_cells;
+                uint8_t visibility_flag = get_visibility_mask(tcells[i]);   // Tricky way to discover if a cell has all the neighbours
+                if (visibility_flag != 0)
+                    num_border_cells++;
+                printf("\tTissue cell %u = (%g,%g,%g) || Visibility flag = %u\n",tcells[i]->sv_position,tcells[i]->center.x,tcells[i]->center.y,tcells[i]->center.z,visibility_flag);
             }
+            printf("[Terminal %u] is linked to %u tissue cells. There are %u/%u border cells\n",j,num_tissue_cells,num_border_cells,num_tissue_cells);
         }
     }
 }
