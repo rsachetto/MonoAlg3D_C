@@ -902,6 +902,7 @@ struct terminal* link_purkinje_to_tissue_using_pmj_locations (struct grid *the_g
         if (the_terminals[i].active) {
             
             real_cpu *tissue_dist = &dist_array[i*n_active];
+            nmin_pmj = the_terminals[i].purkinje_cell->nmin_pmj;
             sort_vector_by_distance(tissue_dist,tissue_ids, n_active);
             
             // Fill the 'tissue_cells_to_link' array until we achieve the 'nmin_pmjs'
