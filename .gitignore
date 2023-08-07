@@ -92,9 +92,11 @@ tags
 scripts/output
 scripts/animations/convert_png_to_mp4.sh
 scripts/animations/frames
-scripts/animations/video
+scripts/animations/drop_zone
+scripts/animations/videos
 scripts/animations/videos/*.mp4
 scripts/apd_error/*.png
+scripts/mesh-converter
 scripts/traces/*
 scripts/plot_comparison_potential.py
 scripts/trace_plot.py

@@ -344,3 +344,29 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     return ret;
 
 }
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_purkinje_coupling_mesh) {
+
+    real_cpu start_dx = 100.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dx, config, "start_dx");
+
+    real_cpu start_dy = 100.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dy, config, "start_dy");
+
+    real_cpu start_dz = 100.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, start_dz, config, "start_dz");
+
+    real_cpu side_length_x = 10000.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_x, config, "side_length_x");
+
+    real_cpu side_length_y = 5000.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_y, config, "side_length_y");
+
+    real_cpu side_length_z = 5000.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_z, config, "side_length_z");
+
+    // Reference: "Influence of the Purkinje-muscle junction on transmural repolarization heterogeneity", Walton, R.D. et al. (2014)
+    log_info("Loading Purkinje coupling benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_dx, start_dy, start_dz);
+
+    return set_cuboid_domain_mesh(the_grid, start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z);
+}
