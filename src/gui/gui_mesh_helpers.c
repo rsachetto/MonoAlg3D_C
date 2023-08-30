@@ -345,7 +345,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
     float scale = gui_state->mesh_scale_factor;
     Vector3 mesh_offset = gui_state->mesh_offset;
 
-    bool slicing_mode = gui_state->slicing_mode;
+    enum mode current_mode = gui_state->current_mode;
 
     int count = 0;
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
@@ -383,7 +383,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
         voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
 
-        if(slicing_mode) {
+        if(current_mode == SLICING) {
             Vector3 test = Vector3Subtract(voxel.position_draw, p);
             float side = Vector3DotProduct(test, n);
 

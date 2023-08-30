@@ -139,7 +139,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->controls_window.show = true;
 
-    gui_state->slicing_mode = false;
+    gui_state->current_mode = VISUALIZING;
     gui_state->slicing_mesh = false;
     gui_state->recalculating_visibility = false;
 
@@ -379,7 +379,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
         if(kp == KEY_S) {
             if(IN_DRAW && gui_config->enable_slice) {
-                gui_state->slicing_mode = true;
+                gui_state->current_mode = SLICING;
                 gui_state->slicing_mesh = false;
 
                 if(gui_state->old_cell_visibility) {
@@ -388,15 +388,15 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             }
         }
 
-        if(gui_state->slicing_mode) {
+        if(gui_state->current_mode == SLICING) {
 
             if(IsKeyDown(KEY_ENTER)) {
-                gui_state->slicing_mode = false;
+                gui_state->current_mode = VISUALIZING;
                 gui_state->slicing_mesh = true;
             }
 
             if(IsKeyDown(KEY_BACKSPACE)) {
-                gui_state->slicing_mode = false;
+                gui_state->current_mode = VISUALIZING;
                 gui_state->slicing_mesh = false;
                 reset_grid_visibility(gui_config, gui_state);
             }
@@ -503,7 +503,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(kp  == KEY_SPACE) {
-        if(!gui_state->slicing_mode) {
+        if(gui_state->current_mode == VISUALIZING) {
             if(gui_config->draw_type == DRAW_FILE) {
                 if(gui_config->final_file_index != 0) {
                     gui_config->paused = !gui_config->paused;
@@ -544,9 +544,9 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(kp == KEY_H) {
-        if(gui_state->slicing_mode) {
+        if(gui_state->current_mode == SLICING) {
             gui_state->slice_help_box.window.show = !gui_state->slice_help_box.window.show;
-        } else {
+        } else { //TODO: edit mode
             gui_state->help_box.window.show = !gui_state->help_box.window.show;
         }
         return;
@@ -881,18 +881,16 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1f / scale, pos.y * mult));
             }
 
-            if(gui_state->slicing_mode) {
+            BeginMode3D(gui_state->camera);
+
+            if(gui_state->current_mode == SLICING) {
                 plane.transform = MatrixTranslate(gui_state->plane_tx, gui_state->plane_ty, gui_state->plane_tz);
                 rotation_matrix = MatrixRotateXYZ((Vector3){DEG2RAD * gui_state->plane_pitch, 0.0f, DEG2RAD * gui_state->plane_roll});
                 plane.transform = MatrixMultiply(plane.transform, rotation_matrix);
 
                 gui_state->plane_normal = Vector3Normalize(Vector3Transform((Vector3){0, 1, 0}, rotation_matrix));
                 gui_state->plane_point = Vector3Transform((Vector3){0, 0, 0}, plane.transform);
-            }
 
-            BeginMode3D(gui_state->camera);
-
-            if(gui_state->slicing_mode) {
                 DrawModel(plane, (Vector3){0, 0, 0}, 1.0f, plane_color);
             }
 
@@ -1064,11 +1062,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                        gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
         } else {
-            if(!gui_state->slicing_mode) {
+            if(gui_state->current_mode == VISUALIZING) {
                 DrawTextEx(gui_state->font, "Press H to show/hide the help box",
                            (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
-            } else {
+            } else if(gui_state->current_mode == SLICING) {
                 DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box.\nPress Enter to confirm or Backspace to reset and exit.",
                            (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 35.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
