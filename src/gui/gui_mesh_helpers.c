@@ -1,4 +1,5 @@
 #include "gui_mesh_helpers.h"
+#include "gui.h"
 #include "gui_colors.h"
 #include "raylib_ext.h"
 #include <float.h>
@@ -188,7 +189,27 @@ static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_st
 
     RayCollision collision = {0};
 
-    if(gui_state->double_clicked) {
+    if(gui_state->current_mode == VISUALIZING) {
+        if(gui_state->double_clicked) {
+            collision = GetRayCollisionBox(gui_state->ray, bb);
+
+            if(collision.hit) {
+                if(gui_state->ray_hit_distance > collision.distance) {
+                    gui_state->current_selected_volume = *voxel;
+                    gui_state->ray_hit_distance = collision.distance;
+                }
+
+            } else {
+                collision.hit = false;
+            }
+        } else {
+            action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
+            if(aps != NULL) {
+                // This is needed when we are using adaptive meshes
+                hmput(gui_state->current_selected_volumes, p_mesh, *voxel);
+            }
+        }
+    } else if(gui_state->current_mode == EDITING) {
         collision = GetRayCollisionBox(gui_state->ray, bb);
 
         if(collision.hit) {
@@ -199,12 +220,6 @@ static bool check_volume_selection(struct voxel *voxel, struct gui_state *gui_st
 
         } else {
             collision.hit = false;
-        }
-    } else {
-        action_potential_array aps = (struct action_potential *)hmget(gui_state->ap_graph_config->selected_aps, p_mesh);
-        if(aps != NULL) {
-            // This is needed when we are using adaptive meshes
-            hmput(gui_state->current_selected_volumes, p_mesh, *voxel);
         }
     }
 
@@ -345,7 +360,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
     float scale = gui_state->mesh_scale_factor;
     Vector3 mesh_offset = gui_state->mesh_offset;
 
-    bool slicing_mode = gui_state->slicing_mode;
+    enum mode current_mode = gui_state->current_mode;
 
     int count = 0;
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
@@ -383,7 +398,7 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         voxel.position_draw.y = (mesh_center_y - mesh_offset.y) / scale;
         voxel.position_draw.z = (mesh_center_z - mesh_offset.z) / scale;
 
-        if(slicing_mode) {
+        if(current_mode == SLICING) {
             Vector3 test = Vector3Subtract(voxel.position_draw, p);
             float side = Vector3DotProduct(test, n);
 
@@ -418,8 +433,31 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
                          && gui_state->found_volume.position_mesh.y >= 0
                          && gui_state->found_volume.position_mesh.z >= 0;
 
-        if((gui_state->double_clicked || gui_config->adaptive || searching) && !single_file) {
-            collision |= check_volume_selection(&voxel, gui_state);
+        if(gui_state->current_mode == VISUALIZING) {
+            if((gui_state->double_clicked || gui_config->adaptive || searching) && !single_file) {
+                collision |= check_volume_selection(&voxel, gui_state);
+            }
+        } else if (gui_state->current_mode == EDITING) {
+
+            if(gui_state->get_cell_property) {
+                collision |= check_volume_selection(&voxel, gui_state);
+            }
+
+            if(gui_state->paste_cell_property) {
+                collision = check_volume_selection(&voxel, gui_state);
+                if(collision) {
+                    if(current_data_index == -1) {
+                        if(values) {
+                            values[j] = gui_state->copied_property_value;
+                        }
+                    } else if(extra_data_len > 0 && current_data_index < extra_data_len) {
+                        printf("Changing %lf to %lf\n", grid_to_draw->extra_values[current_data_index][j], gui_state->copied_property_value);
+                        grid_to_draw->extra_values[current_data_index][j] = gui_state->copied_property_value;
+                    }
+
+                    gui_state->paste_cell_property = false;
+                }
+            }
         }
 
         if(gui_state->ctrl_pressed) {
@@ -437,6 +475,9 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
 
     if(!single_file) {
         update_selected(collision, gui_state, gui_config, draw_context->colors);
+    } else if(collision && gui_state->current_mode == EDITING && gui_state->get_cell_property) {
+        gui_state->copied_property_value = gui_state->current_selected_volume.v;
+        gui_state->get_cell_property = false;
     }
 
     if(!discretization_calc) {
@@ -705,9 +746,4 @@ void reset_grid_visibility(struct gui_shared_info *gui_config, struct gui_state 
     int n_vis = arrlen(gui_state->old_cell_visibility);
     arrsetlen(grid->cell_visibility, n_vis);
     memcpy(grid->cell_visibility, gui_state->old_cell_visibility, n_vis * sizeof(uint8_t));
-}
-
-//TODO
-void calc_min_max_bounds() {
-
 }

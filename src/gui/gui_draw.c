@@ -486,7 +486,7 @@ void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool
 
         gui_state->show_coordinates = true;
         gui_state->slicing_mesh = false;
-        gui_state->slicing_mode = false;
+        gui_state->current_mode = VISUALIZING;
 
         gui_state->plane_roll  = 0.0f;
         gui_state->plane_pitch = 0.0f;

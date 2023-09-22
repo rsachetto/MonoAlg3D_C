@@ -62,8 +62,11 @@ static const char *help_box_strings[] = {
 
 #define BOX_MARGIN 25.0f
 
-static const char *slice_help_box_strings[] = {"  Press backspace to reset and exit slice mode", " Press enter to accept the sliced mesh",
-                                            "  Move the slicing plane with arrow keys", "  Rotate the slicing plane with ALT + arrow keys"};
+static const char *slice_help_box_strings[] = {" Press backspace to reset and exit slice mode", " Press enter to accept the sliced mesh",
+                                            " Move the slicing plane with arrow keys", " Rotate the slicing plane with ALT + arrow keys"};
+
+static const char *edit_help_box_strings[] = {" Press E to exit edit mode", " Press S to save the current file (overwrite)",
+                                            " Right click to copy a cell property", "  Left click to paste the copied property to another cell"};
 
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
@@ -89,6 +92,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->help_box.window.show = false;
     gui_state->slice_help_box.window.show = false;
+    gui_state->edit_help_box.window.show = false;
 
     gui_state->ctrl_pressed = false;
 
@@ -139,7 +143,7 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->controls_window.show = true;
 
-    gui_state->slicing_mode = false;
+    gui_state->current_mode = VISUALIZING;
     gui_state->slicing_mesh = false;
     gui_state->recalculating_visibility = false;
 
@@ -158,6 +162,9 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->show_coordinates = true;
     gui_state->double_clicked = false;
+
+    gui_state->get_cell_property = false;
+    gui_state->paste_cell_property = false;
 
     const u_int8_t NUM_BUTTONS = 7;
     gui_state->controls_window.bounds.width = NUM_BUTTONS * 32.0 + (NUM_BUTTONS + 1) * 4 + 96;
@@ -318,6 +325,18 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
     int kp = GetKeyPressed();
 
+    if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) {
+        //Visualizing single file
+        if(kp == KEY_E) {
+            if(gui_state->current_mode == VISUALIZING) {
+                gui_state->current_mode = EDITING;
+            } else if(gui_state->current_mode == EDITING) {
+                gui_state->current_mode = VISUALIZING;
+            }
+
+        }
+    }
+
     if(gui_config->paused) {
 
         if(IsKeyUp(KEY_RIGHT_CONTROL) || IsKeyUp(KEY_LEFT_CONTROL)) {
@@ -378,25 +397,42 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         }
 
         if(kp == KEY_S) {
-            if(IN_DRAW && gui_config->enable_slice) {
-                gui_state->slicing_mode = true;
+            if(IN_DRAW && gui_config->enable_slice && gui_state->current_mode != EDITING) {
+                gui_state->current_mode = SLICING;
                 gui_state->slicing_mesh = false;
 
                 if(gui_state->old_cell_visibility) {
                     reset_grid_visibility(gui_config, gui_state);
                 }
             }
+
+            if(IN_DRAW && gui_state->current_mode == EDITING) {
+                const char *save_path;
+
+                if(gui_state->ctrl_pressed) {
+                    char const *filter[1] = {"*.alg"};
+                    save_path = tinyfd_saveFileDialog("Save ALG file", gui_config->input, 1, filter, "alg files");
+                }
+                else {
+                    save_path = gui_config->grid_info.file_name;
+                }
+
+                if(save_path) {
+                    save_vtk_unstructured_grid_as_alg_file(gui_config->grid_info.vtk_grid, save_path, false);
+                    log_info("Saved vtk file as %s\n", save_path);
+                }
+            }
         }
 
-        if(gui_state->slicing_mode) {
+        if(gui_state->current_mode == SLICING) {
 
             if(IsKeyDown(KEY_ENTER)) {
-                gui_state->slicing_mode = false;
+                gui_state->current_mode = VISUALIZING;
                 gui_state->slicing_mesh = true;
             }
 
             if(IsKeyDown(KEY_BACKSPACE)) {
-                gui_state->slicing_mode = false;
+                gui_state->current_mode = VISUALIZING;
                 gui_state->slicing_mesh = false;
                 reset_grid_visibility(gui_config, gui_state);
             }
@@ -503,7 +539,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(kp  == KEY_SPACE) {
-        if(!gui_state->slicing_mode) {
+        if(gui_state->current_mode == VISUALIZING) {
             if(gui_config->draw_type == DRAW_FILE) {
                 if(gui_config->final_file_index != 0) {
                     gui_config->paused = !gui_config->paused;
@@ -544,10 +580,12 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     }
 
     if(kp == KEY_H) {
-        if(gui_state->slicing_mode) {
-            gui_state->slice_help_box.window.show = !gui_state->slice_help_box.window.show;
-        } else {
+        if(gui_state->current_mode == VISUALIZING) {
             gui_state->help_box.window.show = !gui_state->help_box.window.show;
+        } if(gui_state->current_mode == SLICING) {
+            gui_state->slice_help_box.window.show = !gui_state->slice_help_box.window.show;
+        } else if(gui_state->current_mode == EDITING) {
+            gui_state->edit_help_box.window.show = !gui_state->edit_help_box.window.show;
         }
         return;
     }
@@ -613,20 +651,24 @@ static void handle_input(struct gui_shared_info *gui_config, struct gui_state *g
 
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
 
-        gui_state->ray = GetMouseRay(GetMousePosition(), gui_state->camera);
+        gui_state->ray = GetMouseRay(gui_state->mouse_pos, gui_state->camera);
 
-        if(!gui_state->search_window.show) {
-            if(gui_state->mouse_timer == -1) {
-                gui_state->double_clicked = false;
-                gui_state->mouse_timer = GetTime();
-            } else {
-                double delay = GetTime() - gui_state->mouse_timer;
-                if(delay < DOUBLE_CLICK_DELAY) {
-                    gui_state->double_clicked = true;
-                    gui_state->mouse_timer = -1;
-                } else {
-                    gui_state->mouse_timer = -1;
+        if(gui_state->current_mode == EDITING) {
+            gui_state->get_cell_property = true;
+        } else {
+            if(!gui_state->search_window.show) {
+                if(gui_state->mouse_timer == -1) {
                     gui_state->double_clicked = false;
+                    gui_state->mouse_timer = GetTime();
+                } else {
+                    double delay = GetTime() - gui_state->mouse_timer;
+                    if(delay < DOUBLE_CLICK_DELAY) {
+                        gui_state->double_clicked = true;
+                        gui_state->mouse_timer = -1;
+                    } else {
+                        gui_state->mouse_timer = -1;
+                        gui_state->double_clicked = false;
+                    }
                 }
             }
         }
@@ -634,21 +676,27 @@ static void handle_input(struct gui_shared_info *gui_config, struct gui_state *g
         check_colisions_for_move(gui_state);
 
     } else if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-        if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->ap_graph_config->graph.show) {
-            if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph.bounds)) {
-                if(gui_state->ap_graph_config->selected_point_for_apd1.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y == FLT_MAX) {
-                    gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
-                    gui_state->ap_graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
-                } else {
-                    if(gui_state->ap_graph_config->selected_point_for_apd2.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd2.y == FLT_MAX) {
-                        gui_state->ap_graph_config->selected_point_for_apd2.x = gui_state->mouse_pos.x;
-                        gui_state->ap_graph_config->selected_point_for_apd2.y = gui_state->ap_graph_config->selected_point_for_apd1.y;
-                    } else {
+
+        if(gui_state->current_mode == EDITING) {
+            gui_state->ray = GetMouseRay(gui_state->mouse_pos, gui_state->camera);
+            gui_state->paste_cell_property = true;
+        } else {
+            if(hmlen(gui_state->ap_graph_config->selected_aps) && gui_state->ap_graph_config->graph.show) {
+                if(CheckCollisionPointRec(gui_state->mouse_pos, gui_state->ap_graph_config->graph.bounds)) {
+                    if(gui_state->ap_graph_config->selected_point_for_apd1.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd1.y == FLT_MAX) {
                         gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
                         gui_state->ap_graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
+                    } else {
+                        if(gui_state->ap_graph_config->selected_point_for_apd2.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd2.y == FLT_MAX) {
+                            gui_state->ap_graph_config->selected_point_for_apd2.x = gui_state->mouse_pos.x;
+                            gui_state->ap_graph_config->selected_point_for_apd2.y = gui_state->ap_graph_config->selected_point_for_apd1.y;
+                        } else {
+                            gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
+                            gui_state->ap_graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
 
-                        gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
-                        gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
+                            gui_state->ap_graph_config->selected_point_for_apd2.x = FLT_MAX;
+                            gui_state->ap_graph_config->selected_point_for_apd2.y = FLT_MAX;
+                        }
                     }
                 }
             }
@@ -670,8 +718,8 @@ static void handle_input(struct gui_shared_info *gui_config, struct gui_state *g
     }
 }
 
-static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int end_info_box_lines, float box_w,
-                                       float text_offset) {
+static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int edit_help_box_lines,
+                                       int end_info_box_lines, float box_w,float text_offset) {
 
     gui_state->help_box.window.bounds.width = box_w;
     gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + BOX_MARGIN + 10.0f;
@@ -680,6 +728,11 @@ static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box
     gui_state->slice_help_box.window.bounds.width = box_w - 100;
     gui_state->slice_help_box.window.bounds.height = (text_offset * (float)slice_help_box_lines) + BOX_MARGIN + 10.0f;
     gui_state->slice_help_box.num_lines = slice_help_box_lines;
+
+    gui_state->edit_help_box.window.bounds.width = box_w - 60;
+    gui_state->edit_help_box.window.bounds.height = (text_offset * (float)edit_help_box_lines) + BOX_MARGIN + 10.0f;
+    gui_state->edit_help_box.num_lines = edit_help_box_lines;
+
 
     box_w = box_w - 100;
     gui_state->mesh_info_box.window.bounds.width = box_w;
@@ -702,6 +755,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     const int font_size_big = 20;
     const int help_box_lines = SIZEOF(help_box_strings);
     const int slice_help_box_lines = SIZEOF(slice_help_box_strings);
+    const int edit_help_box_lines = SIZEOF(edit_help_box_strings);
 
     omp_set_lock(&gui_config->sleep_lock);
 
@@ -743,6 +797,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     gui_state->slice_help_box.lines = (char **)slice_help_box_strings;
     gui_state->slice_help_box.title = "Mesh slicing help";
 
+    gui_state->edit_help_box.lines = (char **)edit_help_box_strings;
+    gui_state->edit_help_box.title = "Mesh slicing help";
+
+
     float wider_text_w = 0;
     float wider_text_h = 0;
 
@@ -762,7 +820,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     gui_state->mesh_info_box.title = "Mesh information";
     gui_state->mesh_info_box.lines = NULL;
-    configure_info_boxes_sizes(gui_state, help_box_lines, slice_help_box_lines, end_info_box_lines, box_w, text_offset);
+    configure_info_boxes_sizes(gui_state, help_box_lines, slice_help_box_lines, edit_help_box_lines, end_info_box_lines, box_w, text_offset);
 
     Vector2 error_message_width;
     struct mesh_info *mesh_info = new_mesh_info();
@@ -881,18 +939,16 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1f / scale, pos.y * mult));
             }
 
-            if(gui_state->slicing_mode) {
+            BeginMode3D(gui_state->camera);
+
+            if(gui_state->current_mode == SLICING) {
                 plane.transform = MatrixTranslate(gui_state->plane_tx, gui_state->plane_ty, gui_state->plane_tz);
                 rotation_matrix = MatrixRotateXYZ((Vector3){DEG2RAD * gui_state->plane_pitch, 0.0f, DEG2RAD * gui_state->plane_roll});
                 plane.transform = MatrixMultiply(plane.transform, rotation_matrix);
 
                 gui_state->plane_normal = Vector3Normalize(Vector3Transform((Vector3){0, 1, 0}, rotation_matrix));
                 gui_state->plane_point = Vector3Transform((Vector3){0, 0, 0}, plane.transform);
-            }
 
-            BeginMode3D(gui_state->camera);
-
-            if(gui_state->slicing_mode) {
                 DrawModel(plane, (Vector3){0, 0, 0}, 1.0f, plane_color);
             }
 
@@ -996,6 +1052,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 draw_text_window(&gui_state->slice_help_box, gui_state, text_offset);
             }
 
+            if(gui_state->edit_help_box.window.show) {
+                draw_text_window(&gui_state->edit_help_box, gui_state, text_offset);
+            }
+
+
             if(!gui_config->simulating) {
                 if(draw_type == DRAW_SIMULATION) {
                     if(gui_state->end_info_box.window.show) {
@@ -1064,15 +1125,20 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                        gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
         } else {
-            if(!gui_state->slicing_mode) {
+            if(gui_state->current_mode == VISUALIZING) {
                 DrawTextEx(gui_state->font, "Press H to show/hide the help box",
                            (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 30.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
-            } else {
+            } else if(gui_state->current_mode == SLICING) {
                 DrawTextEx(gui_state->font, "Slicing mode - Press H to show/hide the help box.\nPress Enter to confirm or Backspace to reset and exit.",
                            (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 35.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
+            } else if(gui_state->current_mode == EDITING) {
+                DrawTextEx(gui_state->font, "Editing mode - Press H to show/hide the help box.\nPress E exit edit mode or S to save the changes to the mesh file.",
+                           (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 35.0f)}, gui_state->font_size_big,
+                           gui_state->font_spacing_big, BLACK);
             }
+
         }
 
         float upper_y = text_size.y + 30;
