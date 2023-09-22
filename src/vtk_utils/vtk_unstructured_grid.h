@@ -55,10 +55,10 @@ void new_vtk_unstructured_grid_from_alg_grid (struct vtk_unstructured_grid **vtk
                                                                      float *bounds, bool read_only_values, bool read_fibers_f,
                                                                      bool save_fibrotic, real *values);
 
-void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
+void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, const char *filename, bool binary);
 void save_vtk_unstructured_grid_as_vtu_compressed(struct vtk_unstructured_grid *vtk_grid, const char *filename, int compression_level);
 void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary, bool save_f, struct string_voidp_hash_entry *extra_data_config);
-void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary);
+void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, const char *filename, bool binary);
 void free_vtk_unstructured_grid(struct vtk_unstructured_grid *vtk_grid);
 
 struct vtk_unstructured_grid * new_vtk_unstructured_grid_from_file(const char *vtu_file_name, bool calc_max_min);

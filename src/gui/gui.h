@@ -208,6 +208,7 @@ struct gui_state {
 
     struct gui_text_window help_box;
     struct gui_text_window slice_help_box;
+    struct gui_text_window edit_help_box;
     struct gui_text_window mesh_info_box;
     struct gui_text_window end_info_box;
     struct window_commom search_window;
@@ -277,6 +278,10 @@ struct gui_state {
     float mesh_scale_factor;
     Vector3 mesh_offset;
     u_int32_t last_n_active;
+
+    bool get_cell_property;
+    bool paste_cell_property;
+    float copied_property_value;
 
 };
 

@@ -175,15 +175,19 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
     char *line = NULL;
 
     int active, fibrotic, bz;
-
+    active = 1;
     while(*source) {
 
+        int num_commas = 0;
         int line_end = 0;
         while(*source != '[') {
             arrput(line, *source);
             source++;
             source_size--;
             line_end++;
+            if(*source == ',') {
+                num_commas++;
+            }
         }
         source++;
         source_size--;
@@ -197,7 +201,43 @@ void new_vtk_unstructured_grid_from_string_with_activation_info(struct vtk_unstr
 
         line[line_end - 1] = '\0';
 
-        sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%d %f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &active, &fibrotic, &bz, &v);
+        char *tmp;
+        center.x = strtod(line, &tmp);
+        tmp++;
+        center.y = strtod(tmp, &tmp);
+        tmp++;
+        center.z = strtod(tmp, &tmp);
+        tmp++;
+
+        half_face.x = strtod(tmp, &tmp);
+        tmp++;
+        half_face.y = strtod(tmp, &tmp);
+        tmp++;
+        half_face.z = strtod(tmp, &tmp);
+
+        if(*tmp == ' ') {
+            tmp++;
+        } else {
+            tmp++;
+            active = strtol(tmp, &tmp, 10);
+
+            while(*(tmp++) == ',') {
+                (void)strtol(tmp, &tmp, 10);
+            }
+        }
+
+        v = strtol(tmp, &tmp, 10);
+
+        /*
+        printf("%lf,%lf,%lf,%lf,%lf,%lf %f\n", center.x, center.y, center.z, half_face.x, half_face.y, half_face.z, v);
+
+        if(num_commas == 8) {
+            sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%d %f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &active, &fibrotic, &bz, &v);
+        } else {
+            active = 1;
+            sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf %f", &center.x, &center.y, &center.z, &half_face.x, &half_face.y, &half_face.z, &v);
+        }
+        */
 
         arrsetlen(line, 0);
 
@@ -678,7 +718,7 @@ static sds create_common_vtu_header(bool compressed, int num_points, int num_cel
     return header;
 }
 
-void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary) {
+void save_vtk_unstructured_grid_as_vtu(struct vtk_unstructured_grid *vtk_grid, const char *filename, bool binary) {
 
     size_t offset = 0;
 
@@ -1423,7 +1463,7 @@ void save_vtk_unstructured_grid_as_legacy_vtk(struct vtk_unstructured_grid *vtk_
     fclose(output_file);
 }
 
-void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, char *filename, bool binary) {
+void save_vtk_unstructured_grid_as_alg_file(struct vtk_unstructured_grid *vtk_grid, const char *filename, bool binary) {
 
     sds file_content = sdsempty();
 
