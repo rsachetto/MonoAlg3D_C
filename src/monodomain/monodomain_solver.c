@@ -1537,6 +1537,7 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
             //fprintf(output_file,"====================== PULSE %u ======================\n", k+1);
             for(uint32_t i = 0; i < num_terminals; i++) {
 
+                uint32_t term_id = i;
                 bool is_terminal_active = the_terminals[i].active;
 
                 // [PURKINJE] Get the informaion from the Purkinje cell
@@ -1566,7 +1567,9 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
                 // Calculate the mean LAT of the tissue cells surrounding the Purkinje cell
                 real_cpu mean_tissue_lat = 0.0;
+                real_cpu min_tissue_lat = __DBL_MAX__;
                 uint32_t cur_pulse = k;
+                uint32_t min_tissue_lat_id = 0;
                 for(uint32_t j = 0; j < number_tissue_cells; j++) {
 
                     cell_coordinates.x = tissue_cells[j]->center.x;
@@ -1588,8 +1591,12 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
                         cur_pulse = 0;
                         return;
                     }
-                    //fprintf(output_file,"\tTissue cell %u --> LAT = %g\n", j, activation_times_array_tissue[cur_pulse]);
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
+                    if (activation_times_array_tissue[cur_pulse] < min_tissue_lat) {
+                        min_tissue_lat = activation_times_array_tissue[cur_pulse];
+                        min_tissue_lat_id = tissue_cells[j]->sv_position;
+                    }
+                        
                 }
 
                 if (is_terminal_active) {
@@ -1597,8 +1604,11 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
                     real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
 
-                    // pulse_id, terminal_id, purkinje_lat, mean_tissue_lat, pmj_delay, is_active
-                    fprintf(output_file,"%d,%u,%g,%g,%g,%d\n", k, i, purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
+                    // version 1 = pulse_id, terminal_id, purkinje_lat, mean_tissue_lat, pmj_delay, is_active
+                    //fprintf(output_file,"%d,%u,%g,%g,%g,%d\n", k, term_id, purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active);
+
+                    // version 2 = pulse_id, purkinje_terminal_id, min_tissue_coupled_cell_id, purkinje_lat, min_tissue_lat, pmj_delay, is_active
+                    fprintf(output_file,"%d,%u,%u,%g,%g,%g,%d\n", k, term_id, min_tissue_lat_id, purkinje_lat, min_tissue_lat, pmj_delay, (int)is_terminal_active);
 
                     //log_info("[purkinje_coupling] Terminal %u (%g,%g,%g) [Pulse %d] -- Purkinje LAT = %g ms -- Tissue mean LAT = %g ms -- PMJ delay = %g ms [Active = %d]\n", i,
                     //        purkinje_cells[purkinje_index]->center.x, purkinje_cells[purkinje_index]->center.y, purkinje_cells[purkinje_index]->center.z, k,

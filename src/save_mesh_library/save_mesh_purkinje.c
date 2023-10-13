@@ -624,14 +624,20 @@ SAVE_MESH(save_multiple_cell_state_variables) {
     for (uint32_t i = 0; i < params->num_tissue_cells; i++) {
         if(params->tissue_cell_sv_positions[i] == -1) {
             if(!the_grid->adaptive) {
-                FOR_EACH_CELL(the_grid) {
-                    if(cell->center.x == params->tissue_cell_centers[i*3] && cell->center.y == params->tissue_cell_centers[i*3+1] && cell->center.z == params->tissue_cell_centers[i*3+2]) {
-                        params->tissue_cell_sv_positions[i] = cell->sv_position;
-                        break;
+                FOR_EACH_CELL(the_grid) {    
+                    if (cell->active) {
+                        if(cell->center.x == params->tissue_cell_centers[i*3] && cell->center.y == params->tissue_cell_centers[i*3+1] && cell->center.z == params->tissue_cell_centers[i*3+2]) {
+                            params->tissue_cell_sv_positions[i] = cell->sv_position;
+                            break;
+                        }
                     }
                 }
             }
         }
+        printf("Found cell %u with coordinates: (%lf %lf %lf)\n", params->tissue_cell_sv_positions[i], \
+                                                                params->tissue_cell_centers[i*3], \
+                                                                params->tissue_cell_centers[i*3+1], \
+                                                                params->tissue_cell_centers[i*3+2]);
     }
     
     if(ode_solver->gpu) {
