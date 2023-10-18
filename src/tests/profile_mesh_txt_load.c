@@ -60,11 +60,7 @@ int main(int argc, char **argv) {
 
     GDBM_FILE f;
 
-#ifdef DEBUG_INFO
     f = gdbm_open( "./tests_bin/profile_txt_load_times.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
-#else
-    f = gdbm_open( "./tests_bin/profile_txt_load_times_debug.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
-#endif
 
     datum content = gdbm_fetch (f, hash_key);
 
@@ -78,20 +74,15 @@ int main(int argc, char **argv) {
     printf("---------------------------------------------------\n");
 
     if (content.dptr == NULL) {
-        printf("\nFirst run in this hardware with nruns = %lld\n", nruns);
+        printf("First run in this hardware with nruns = %lld\n", nruns);
         printf("---------------------------------------------------\n");
         gdbm_store(f, hash_key, data, GDBM_INSERT);
     }
     else {
-        printf("BEST RUN\n");
         struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
-        printf("Avg Total time: %lf μs (%lf ms) \n", best_run->total_time, best_run->total_time/1000.0);
-
-        printf("---------------------------------------------------\n");
 
         double speedup = best_run->total_time/average_times.total_time;
 
-        //10% speedup
         if(speedup > 1.0) {
             printf("Current run is %lfx faster than best run. Replacing record.\n", speedup);
             gdbm_store(f, hash_key, data, GDBM_REPLACE);
@@ -102,6 +93,33 @@ int main(int argc, char **argv) {
 
         free(best_run);
     }
+
+    datum value;
+    datum key = gdbm_firstkey (f);
+
+    while (key.dptr) {
+
+        datum nextkey;
+        value = gdbm_fetch(f, key);
+
+        // process the key and value
+        if(strncmp(key.dptr, hash_key.dptr, key.dsize) == 0) {
+            printf("THIS MACHINE (%.*s):\n", key.dsize, key.dptr);
+        }
+        else {
+            printf("MACHINE: %.*s\n", key.dsize, key.dptr);
+        }
+
+        struct elapsed_times *best_run = (struct elapsed_times *)value.dptr;
+        printf("total time: %lf μs (%lf ms) \n", best_run->total_time, best_run->total_time/1000.0);
+
+        printf("---------------------------------------------------\n");
+
+        nextkey = gdbm_nextkey (f, key);
+        free (key.dptr);
+        key = nextkey;
+    }
+
 
     sdsfree(hash_key_with_size);
     gdbm_close(f);

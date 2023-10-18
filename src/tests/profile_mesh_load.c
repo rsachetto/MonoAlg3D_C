@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
     printf("---------------------------------------------------\n");
 
     if (content.dptr == NULL) {
-        printf("\nFirst run in this hardware with nruns = %lld\n", nruns);
+        printf("First run in this hardware with nruns = %lld\n", nruns);
         printf("---------------------------------------------------\n");
         gdbm_store(f, hash_key, data, GDBM_INSERT);
     }
@@ -203,7 +203,7 @@ int main(int argc, char **argv) {
         free(best_run);
     }
 
-gdbm_count_t count;
+    gdbm_count_t count;
     gdbm_count(f, &count);
 
     printf("BEST RUN IN ALL MACHINES\n");

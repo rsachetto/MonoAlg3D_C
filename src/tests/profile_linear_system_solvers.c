@@ -110,14 +110,8 @@ int main(int argc, char **argv) {
         gdbm_store(f, hash_key, data, GDBM_INSERT);
     }
     else {
-        printf("BEST RUN\n");
-        struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
-        printf("Avg Init function time: %lf us\n", best_run->init_time);
-        printf("Avg Run function time: %lf us\n", best_run->run_time);
-        printf("Avg End function time: %lf us\n", best_run->end_time);
-        printf("Avg Total time: %lf us\n", best_run->total_time);
 
-        printf("---------------------------------------------------\n");
+        struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
 
         double speedup = (double)best_run->total_time/(double)average_times.total_time;
 
@@ -130,6 +124,38 @@ int main(int argc, char **argv) {
         }
 
         free(best_run);
+    }
+
+    printf("BEST RUN IN ALL MACHINES\n");
+    printf("---------------------------------------------------\n");
+
+    datum value;
+    datum key = gdbm_firstkey (f);
+
+    while (key.dptr) {
+
+        datum nextkey;
+        value = gdbm_fetch(f, key);
+
+        // Process the key and value
+        if(strncmp(key.dptr, hash_key.dptr, key.dsize) == 0) {
+            printf("THIS MACHINE (%.*s):\n", key.dsize, key.dptr);
+        }
+        else {
+            printf("MACHINE: %.*s\n", key.dsize, key.dptr);
+        }
+
+        struct elapsed_times *best_run = (struct elapsed_times *)value.dptr;
+        printf("Avg Init function time: %lf us\n", best_run->init_time);
+        printf("Avg Run function time: %lf us\n", best_run->run_time);
+        printf("Avg End function time: %lf us\n", best_run->end_time);
+        printf("Avg Total time: %lf us\n", best_run->total_time);
+
+        printf("---------------------------------------------------\n");
+
+        nextkey = gdbm_nextkey (f, key);
+        free (key.dptr);
+        key = nextkey;
     }
 
     sdsfree(hash_key_with_size);

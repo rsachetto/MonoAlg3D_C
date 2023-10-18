@@ -91,9 +91,6 @@ int main(int argc, char **argv) {
         free(best_run);
     }
 
-    gdbm_count_t count;
-    gdbm_count(f, &count);
-
     printf("BEST RUN IN ALL MACHINES\n");
     printf("---------------------------------------------------\n");
 
@@ -105,7 +102,7 @@ int main(int argc, char **argv) {
         datum nextkey;
         value = gdbm_fetch(f, key);
 
-        // Process the key and value
+        // process the key and value
         if(strncmp(key.dptr, hash_key.dptr, key.dsize) == 0) {
             printf("THIS MACHINE (%.*s):\n", key.dsize, key.dptr);
         }
@@ -114,7 +111,7 @@ int main(int argc, char **argv) {
         }
 
         struct elapsed_times *best_run = (struct elapsed_times *)value.dptr;
-        printf("Total time: %lf μs (%lf ms) \n", best_run->total_time, best_run->total_time/1000.0);
+        printf("total time: %lf μs (%lf ms) \n", best_run->total_time, best_run->total_time/1000.0);
 
         printf("---------------------------------------------------\n");
 
