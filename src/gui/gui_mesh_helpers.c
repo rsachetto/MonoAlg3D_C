@@ -103,7 +103,6 @@ Vector3 find_mesh_center(struct grid *grid_to_draw, struct mesh_info *mesh_info)
 
 Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct mesh_info *mesh_info) {
 
-
     uint32_t n_active = grid_to_draw->num_cells;
 
     Vector3 mesh_max = V3_SAME(FLT_MIN);
@@ -115,7 +114,6 @@ Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct 
     int64_t *cells = grid_to_draw->cells;
     point3d_array points = grid_to_draw->points;
 
-    assert(points);
     uint32_t num_points = grid_to_draw->points_per_cell;
 
     Vector3 d;
@@ -142,6 +140,8 @@ Vector3 find_mesh_center_vtk(struct vtk_unstructured_grid *grid_to_draw, struct 
             SET_CENTER();
         }
     }
+
+    assert(points);
 
     return get_max_min(mesh_max, mesh_min, mesh_max_d, mesh_min_d, mesh_info);
 }
