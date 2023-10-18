@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
         gdbm_store(f, hash_key, data, GDBM_INSERT);
     }
     else {
-        printf("BEST RUN\n");
+        printf("BEST RUN IN THIS MACHINE\n");
         struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
         printf("Avg Init function time: %lf us\n", best_run->init_time);
         printf("Avg Run function time: %lf us\n", best_run->run_time);
@@ -145,6 +145,35 @@ int main(int argc, char **argv) {
         }
 
         free(best_run);
+    }
+
+    gdbm_close(f);
+    f = gdbm_open( "./tests_bin/profile_solver_times_gpu.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
+
+    printf("BEST RUN IN ALL MACHINES\n");
+
+    datum key = gdbm_firstkey(f);
+    datum value;
+
+    while (key.dptr != NULL) {
+        value = gdbm_fetch(f, key);
+
+        // Process the key and value
+        printf("MACHINE KEY: %.*s\n", key.dsize, key.dptr);
+
+        struct elapsed_times *best_run = (struct elapsed_times *)value.dptr;
+        printf("Avg Init function time: %lf us\n", best_run->init_time);
+        printf("Avg Run function time: %lf us\n", best_run->run_time);
+        printf("Avg End function time: %lf us\n", best_run->end_time);
+        printf("Avg Total time: %lf us\n", best_run->total_time);
+
+        printf("---------------------------------------------------\n");
+
+        // Free the memory used by key and value
+        free(key.dptr);
+        free(value.dptr);
+
+        key = gdbm_nextkey(f, key);
     }
 
     sdsfree(hash_key_with_size);

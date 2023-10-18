@@ -188,8 +188,45 @@ int main(int argc, char **argv) {
         gdbm_store(f, hash_key, data, GDBM_INSERT);
     }
     else {
-        printf("BEST RUN\n");
         struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
+
+        double speedup = best_run->total_time/average_times.total_time;
+
+        if(speedup > 1.0) {
+            printf("Current run is %lfx faster than best run. Replacing record.\n", speedup);
+            gdbm_store(f, hash_key, data, GDBM_REPLACE);
+        }
+        else if(speedup < 1.0) {
+            printf("Current run is %lfx slower than best run.\n", speedup);
+        }
+
+        free(best_run);
+    }
+
+gdbm_count_t count;
+    gdbm_count(f, &count);
+
+    printf("BEST RUN IN ALL MACHINES\n");
+    printf("---------------------------------------------------\n");
+
+    datum value;
+    datum key = gdbm_firstkey (f);
+
+    while (key.dptr) {
+
+        datum nextkey;
+        value = gdbm_fetch(f, key);
+
+        // Process the key and value
+        if(strncmp(key.dptr, hash_key.dptr, key.dsize) == 0) {
+            printf("THIS MACHINE (%.*s):\n", key.dsize, key.dptr);
+        }
+        else {
+            printf("MACHINE: %.*s\n", key.dsize, key.dptr);
+        }
+
+        struct elapsed_times *best_run = (struct elapsed_times *)value.dptr;
+
         printf("Avg Config time: %lf μs\n", best_run->config_time);
         printf("Avg Create grid time: %lf μs\n", best_run->create_grid_time);
         printf("Avg Order grid time: %lf μs\n", best_run->order_grid_time);
@@ -201,18 +238,9 @@ int main(int argc, char **argv) {
 
         printf("---------------------------------------------------\n");
 
-        double speedup = best_run->total_time/average_times.total_time;
-
-        //10% speedup
-        if(speedup > 1.0) {
-            printf("Current run is %lfx faster than best run. Replacing record.\n", speedup);
-            gdbm_store(f, hash_key, data, GDBM_REPLACE);
-        }
-        else if(speedup < 1.0) {
-            printf("Current run is %lfx slower than best run.\n", speedup);
-        }
-
-        free(best_run);
+        nextkey = gdbm_nextkey (f, key);
+        free (key.dptr);
+        key = nextkey;
     }
 
     sdsfree(hash_key_with_size);
