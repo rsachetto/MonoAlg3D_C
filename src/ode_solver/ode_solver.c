@@ -180,7 +180,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
     }
 
     if(solver->sv == NULL) {
-            log_error_and_exit("Error allocating memory for the ODE's state vector. Exiting!");
+            log_error_and_exit("Error allocating memory for the ODE's state vector. Exiting!\n");
     }
 }
 
