@@ -161,7 +161,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
         solver->pitch = soicg_fn_pt(solver, ode_extra_config);
 
         if(solver->sv == NULL) {
-            log_error_and_exit("Error allocating memory for the ODE's state vector. Exiting!")
+            log_error_and_exit("Error allocating memory for the ODE's state vector. Exiting!");
         }
 #endif
     } else {
