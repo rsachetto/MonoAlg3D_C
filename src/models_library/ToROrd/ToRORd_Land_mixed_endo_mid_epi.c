@@ -68,55 +68,55 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             real *sv = &solver->sv[i * NEQ];
 
             // Default initial conditions for ENDO cell (from original Matlab script)
-            sv[0] = -8.863699e+01;
-            sv[1] = 1.189734e+01;
-            sv[2] = 1.189766e+01;
-            sv[3] = 1.412345e+02;
-            sv[4] = 1.412344e+02;
-            sv[5] = 7.267473e-05;
-            sv[6] = 6.337870e-05;
-            sv[7] = 1.532653e+00;
-            sv[8] = 1.533946e+00;
-            sv[9] = 8.280078e-04;
-            sv[10] = 6.665272e-01;
-            sv[11] = 8.260208e-01;
-            sv[12] = 8.260560e-01;
-            sv[13] = 8.258509e-01;
-            sv[14] = 1.668686e-04;
-            sv[15] = 5.228306e-01;
-            sv[16] = 2.859696e-01;
-            sv[17] = 9.591370e-04;
-            sv[18] = 9.996012e-01;
-            sv[19] = 5.934016e-01;
-            sv[20] = 4.886961e-04;
-            sv[21] = 9.996011e-01;
-            sv[22] = 6.546687e-01;
-            sv[23] = 9.500075e-32;
-            sv[24] = 1.000000e+00;
-            sv[25] = 9.392580e-01;
-            sv[26] = 1.000000e+00;
-            sv[27] = 9.998984e-01;
-            sv[28] = 9.999783e-01;
-            sv[29] = 4.448162e-04;
-            sv[30] = 7.550725e-04;
-            sv[31] = 1.000000e+00;
-            sv[32] = 1.000000e+00;
-            sv[33] = 2.424047e-01;
-            sv[34] = 1.795377e-04;
-            sv[35] = -6.883086e-25;
-            sv[36] = 1.117498e-02;
-            sv[37] = 9.980366e-01;
-            sv[38] = 8.588018e-04;
-            sv[39] = 7.097447e-04;
-            sv[40] = 3.812617e-04;
-            sv[41] = 1.357116e-05;
-            sv[42] = 2.302525e-23;
-            sv[43] = 1.561941e-04;
-            sv[44] = 2.351289e-04;
-            sv[45] = 8.077631e-03;
-            sv[46] = 9.993734e-01;
-            sv[47] = 0.000000e+00;
-            sv[48] = 0.000000e+00;
+            //sv[0] = -8.863699e+01;
+            //sv[1] = 1.189734e+01;
+            //sv[2] = 1.189766e+01;
+            //sv[3] = 1.412345e+02;
+            //sv[4] = 1.412344e+02;
+            //sv[5] = 7.267473e-05;
+            //sv[6] = 6.337870e-05;
+            //sv[7] = 1.532653e+00;
+            //sv[8] = 1.533946e+00;
+            //sv[9] = 8.280078e-04;
+            //sv[10] = 6.665272e-01;
+            //sv[11] = 8.260208e-01;
+            //sv[12] = 8.260560e-01;
+            //sv[13] = 8.258509e-01;
+            //sv[14] = 1.668686e-04;
+            //sv[15] = 5.228306e-01;
+            //sv[16] = 2.859696e-01;
+            //sv[17] = 9.591370e-04;
+            //sv[18] = 9.996012e-01;
+            //sv[19] = 5.934016e-01;
+            //sv[20] = 4.886961e-04;
+            //sv[21] = 9.996011e-01;
+            //sv[22] = 6.546687e-01;
+            //sv[23] = 9.500075e-32;
+            //sv[24] = 1.000000e+00;
+            //sv[25] = 9.392580e-01;
+            //sv[26] = 1.000000e+00;
+            //sv[27] = 9.998984e-01;
+            //sv[28] = 9.999783e-01;
+            //sv[29] = 4.448162e-04;
+            //sv[30] = 7.550725e-04;
+            //sv[31] = 1.000000e+00;
+            //sv[32] = 1.000000e+00;
+            //sv[33] = 2.424047e-01;
+            //sv[34] = 1.795377e-04;
+            //sv[35] = -6.883086e-25;
+            //sv[36] = 1.117498e-02;
+            //sv[37] = 9.980366e-01;
+            //sv[38] = 8.588018e-04;
+            //sv[39] = 7.097447e-04;
+            //sv[40] = 3.812617e-04;
+            //sv[41] = 1.357116e-05;
+            //sv[42] = 2.302525e-23;
+            //sv[43] = 1.561941e-04;
+            //sv[44] = 2.351289e-04;
+            //sv[45] = 8.077631e-03;
+            //sv[46] = 9.993734e-01;
+            //sv[47] = 0.000000e+00;
+            //sv[48] = 0.000000e+00;
 
             // Default initial conditions for MID cell (from original Matlab script)
             //sv[0] = -8.953800e+01;
@@ -170,55 +170,55 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             //sv[48] = 0.000000e+00;
 
             // Default initial conditions for EPI cell (from original Matlab script)
-            //sv[0] = -8.904628e+01;
-            //sv[1] = 1.272190e+01;
-            //sv[2] = 1.272220e+01;
-            //sv[3] = 1.422490e+02;
-            //sv[4] = 1.422489e+02;
-            //sv[5] = 6.541058e-05;
-            //sv[6] = 5.684431e-05;
-            //sv[7] = 1.809117e+00;
-            //sv[8] = 1.809702e+00;
-            //sv[9] = 7.581821e-04;
-            //sv[10] = 6.798398e-01;
-            //sv[11] = 8.341502e-01;
-            //sv[12] = 8.341883e-01;
-            //sv[13] = 8.340817e-01;
-            //sv[14] = 1.543877e-04;
-            //sv[15] = 5.382951e-01;
-            //sv[16] = 3.027694e-01;
-            //sv[17] = 9.330351e-04;
-            //sv[18] = 9.996287e-01;
-            //sv[19] = 9.996262e-01;
-            //sv[20] = 4.753907e-04;
-            //sv[21] = 9.996287e-01;
-            //sv[22] = 9.996285e-01;
-            //sv[23] = 1.742134e-37;
-            //sv[24] = 1.000000e+00;
-            //sv[25] = 9.479522e-01;
-            //sv[26] = 1.000000e+00;
-            //sv[27] = 9.999327e-01;
-            //sv[28] = 9.999829e-01;
-            //sv[29] = 2.915447e-04;
-            //sv[30] = 5.026045e-04;
-            //sv[31] = 1.000000e+00;
-            //sv[32] = 1.000000e+00;
-            //sv[33] = 2.288155e-01;
-            //sv[34] = 1.714978e-04;
-            //sv[35] = -1.131190e-26;
-            //sv[36] = 1.295052e-02;
-            //sv[37] = 9.981944e-01;
-            //sv[38] = 8.342321e-04;
-            //sv[39] = 6.838658e-04;
-            //sv[40] = 2.778785e-04;
-            //sv[41] = 9.667759e-06;
-            //sv[42] = 8.169304e-24;
-            //sv[43] = 1.259996e-04;
-            //sv[44] = 1.899522e-04;
-            //sv[45] = 6.551494e-03;
-            //sv[46] = 9.994940e-01;
-            //sv[47] = 0.000000e+00;
-            //sv[48] = 0.000000e+00;
+            sv[0] = -8.904628e+01;
+            sv[1] = 1.272190e+01;
+            sv[2] = 1.272220e+01;
+            sv[3] = 1.422490e+02;
+            sv[4] = 1.422489e+02;
+            sv[5] = 6.541058e-05;
+            sv[6] = 5.684431e-05;
+            sv[7] = 1.809117e+00;
+            sv[8] = 1.809702e+00;
+            sv[9] = 7.581821e-04;
+            sv[10] = 6.798398e-01;
+            sv[11] = 8.341502e-01;
+            sv[12] = 8.341883e-01;
+            sv[13] = 8.340817e-01;
+            sv[14] = 1.543877e-04;
+            sv[15] = 5.382951e-01;
+            sv[16] = 3.027694e-01;
+            sv[17] = 9.330351e-04;
+            sv[18] = 9.996287e-01;
+            sv[19] = 9.996262e-01;
+            sv[20] = 4.753907e-04;
+            sv[21] = 9.996287e-01;
+            sv[22] = 9.996285e-01;
+            sv[23] = 1.742134e-37;
+            sv[24] = 1.000000e+00;
+            sv[25] = 9.479522e-01;
+            sv[26] = 1.000000e+00;
+            sv[27] = 9.999327e-01;
+            sv[28] = 9.999829e-01;
+            sv[29] = 2.915447e-04;
+            sv[30] = 5.026045e-04;
+            sv[31] = 1.000000e+00;
+            sv[32] = 1.000000e+00;
+            sv[33] = 2.288155e-01;
+            sv[34] = 1.714978e-04;
+            sv[35] = -1.131190e-26;
+            sv[36] = 1.295052e-02;
+            sv[37] = 9.981944e-01;
+            sv[38] = 8.342321e-04;
+            sv[39] = 6.838658e-04;
+            sv[40] = 2.778785e-04;
+            sv[41] = 9.667759e-06;
+            sv[42] = 8.169304e-24;
+            sv[43] = 1.259996e-04;
+            sv[44] = 1.899522e-04;
+            sv[45] = 6.551494e-03;
+            sv[46] = 9.994940e-01;
+            sv[47] = 0.000000e+00;
+            sv[48] = 0.000000e+00;
         }
     }
 }
@@ -277,16 +277,13 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             sv_id = cells_to_solve[i];
         else
             sv_id = i;
-        //printf("sv_id = %u\n", sv_id);
 
         if(adpt) {
             if (ode_solver->ode_extra_data) {
                 solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, extra_par);
-                //solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, extra_par);
             }
             else {
                 solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par);
-                //solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par);
             }
         }
         else {
@@ -326,7 +323,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
     SOLVE_EQUATION_EULER_CPU(6);        // cass  
     SOLVE_EQUATION_EULER_CPU(7);        // cansr
     SOLVE_EQUATION_EULER_CPU(8);        // cajsr
-    SOLVE_EQUATION_EULER_CPU(9);        // m
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(9);  // m
     SOLVE_EQUATION_RUSH_LARSEN_CPU(10); // hp
     SOLVE_EQUATION_RUSH_LARSEN_CPU(11); // h
     SOLVE_EQUATION_RUSH_LARSEN_CPU(12); // j
@@ -346,19 +343,19 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
     SOLVE_EQUATION_RUSH_LARSEN_CPU(26); // fcaf
     SOLVE_EQUATION_RUSH_LARSEN_CPU(27); // fcas
     SOLVE_EQUATION_RUSH_LARSEN_CPU(28); // jca
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(29); // nca
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(30); // nca_i
+    SOLVE_EQUATION_EULER_CPU(29);       // nca
+    SOLVE_EQUATION_EULER_CPU(30);       // nca_i
     SOLVE_EQUATION_RUSH_LARSEN_CPU(31); // ffp
-    SOLVE_EQUATION_EULER_CPU(32);       // fcafp
-    SOLVE_EQUATION_EULER_CPU(33);       // xs1
-    SOLVE_EQUATION_EULER_CPU(34);       // xs2
-    SOLVE_EQUATION_EULER_CPU(35);       // Jrel_np
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(32); // fcafp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(33); // xs1
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(34); // xs2
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(35); // Jrel_np
     SOLVE_EQUATION_EULER_CPU(36);       // CaMKt
     SOLVE_EQUATION_EULER_CPU(37);       // ikr_c0
     SOLVE_EQUATION_EULER_CPU(38);       // ikr_c1
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(39); // ikr_c2
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(40); // ikr_o
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(41); // ikr_i
+    SOLVE_EQUATION_EULER_CPU(39);       // ikr_c2
+    SOLVE_EQUATION_EULER_CPU(40);       // ikr_o
+    SOLVE_EQUATION_EULER_CPU(41);       // ikr_i
     SOLVE_EQUATION_RUSH_LARSEN_CPU(42); // Jrel_p
     // ---------------------------------------------------
     // Land-Niederer
@@ -491,230 +488,6 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
 
     free(_k1__);
     free(_k2__);
-}
-
-void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
-    
-    int numEDO = NEQ;
-    real rDY[numEDO];
-
-    // initializes the variables
-    solver->ode_previous_dt[sv_id] = solver->ode_dt[sv_id];
-
-    real edos_old_aux_[numEDO];
-    real edos_new_euler_[numEDO];
-    real *_k1__ = (real *)malloc(sizeof(real) * numEDO);
-    real *_k2__ = (real *)malloc(sizeof(real) * numEDO);
-    real *a_ = (real *)malloc(sizeof(real) * numEDO);
-    real *b_ = (real *)malloc(sizeof(real) * numEDO);
-    real *a_new = (real *)malloc(sizeof(real) * numEDO);
-    real *b_new = (real *)malloc(sizeof(real) * numEDO);
-    real *_k_aux__, *_a_aux__, *_b_aux__;
-
-    real *dt = &solver->ode_dt[sv_id];
-    real *time_new = &solver->ode_time_new[sv_id];
-    real *previous_dt = &solver->ode_previous_dt[sv_id];
-
-    // Keep 'dt' inside the adaptive interval
-    if(*time_new + *dt > final_time) {
-        *dt = final_time - *time_new;
-    }
-
-    RHS_RL_cpu(a_, b_, sv, rDY, stim_curr, *dt, transmurality, extra_params);
-    *time_new += *dt;
-
-    for(int i = 0; i < numEDO; i++) {
-        _k1__[i] = rDY[i];
-    }
-
-    const real rel_tol = solver->rel_tol;
-    const real abs_tol = solver->abs_tol;
-
-    const real __tiny_ = pow(abs_tol, 2.0);
-
-    real min_dt = solver->min_dt;
-    real max_dt = solver->max_dt;
-
-    while(1) {
-
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(0);        // v        
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(1);        // nai    
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(2);        // nass 
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(3);        // ki 
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(4);        // kss 
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(5);        // cai   
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(6);        // cass  
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(7);        // cansr
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(8);        // cajsr
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(9);        // m
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(10); // hp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(11); // h
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(12); // j
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(13); // jp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(14); // mL
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(15); // hL
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(16); // hLp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(17); // a
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(18); // iF
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(19); // iS
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(20); // ap
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(21); // iFp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(22); // iSp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(23); // d
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(24); // ff
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(25); // fs
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(26); // fcaf
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(27); // fcas
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(28); // jca
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(29); // nca
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(30); // nca_i
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(31); // ffp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(32);       // fcafp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(33);       // xs1
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(34);       // xs2
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(35);       // Jrel_np
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(36);       // CaMKt
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(37);       // ikr_c0
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(38);       // ikr_c1
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(39); // ikr_c2
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(40); // ikr_o
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(41); // ikr_i
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_CPU(42); // Jrel_p
-        // ---------------------------------------------------
-        // Land-Niederer
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(43);       // XS
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(44);       // XW
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(45);       // Ca_TRPN
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(46);       // TmBlocked
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(47);       // ZETAS
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(48);       // ZETAW
-
-        *time_new += *dt;
-        RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt, transmurality, extra_params);
-        *time_new -= *dt; // step back
-
-        // Compute errors
-        double greatestError = 0.0, auxError = 0.0;
-        real as, bs, f, y_2nd_order;
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(0);        // v        
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(1);        // nai    
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(2);        // nass 
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(3);        // ki 
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(4);        // kss 
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(5);        // cai   
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(6);        // cass  
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(7);        // cansr
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(8);        // cajsr
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(9);        // m
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(10); // hp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(11); // h
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(12); // j
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(13); // jp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(14); // mL
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(15); // hL
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(16); // hLp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(17); // a
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(18); // iF
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(19); // iS
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(20); // ap
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(21); // iFp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(22); // iSp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(23); // d
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(24); // ff
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(25); // fs
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(26); // fcaf
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(27); // fcas
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(28); // jca
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(29); // nca
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(30); // nca_i
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(31); // ffp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(32);       // fcafp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(33);       // xs1
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(34);       // xs2
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(35);       // Jrel_np
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(36);       // CaMKt
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(37);       // ikr_c0
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(38);       // ikr_c1
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(39); // ikr_c2
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(40); // ikr_o
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(41); // ikr_i
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_CPU(42); // Jrel_p
-        // ---------------------------------------------------
-        // Land-Niederer
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(43);       // XS
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(44);       // XW
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(45);       // Ca_TRPN
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(46);       // TmBlocked
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(47);       // ZETAS
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_CPU(48);       // ZETAW
-    
-        /// adapt the time step
-        greatestError += __tiny_;
-        *previous_dt = *dt;
-        /// adapt the time step
-        *dt = (*dt) * sqrt(0.5 * rel_tol / greatestError);            // Jhonny`s formula
-
-        if(*dt < min_dt) {
-            *dt = min_dt;
-        } else if(*dt > max_dt) {
-            *dt = max_dt;
-        }
-
-        if(*time_new + *dt > final_time) {
-            *dt = final_time - *time_new;
-        }
-
-        // it doesn't accept the solution
-        if(greatestError >= 1.0f && *dt > min_dt) {
-            // restore the old values to do it again
-            for(int i = 0; i < numEDO; i++) {
-                sv[i] = edos_old_aux_[i];
-            }
-            // throw the results away and compute again
-        } else {
-            // it accepts the solutions
-            if(greatestError >= 1.0) {
-                printf("Accepting solution with error > %lf \n", greatestError);
-            }
-
-            // Swap pointers
-            _k_aux__ = _k2__;
-            _k2__ = _k1__;
-            _k1__ = _k_aux__;
-
-            _a_aux__ = a_;
-            a_ = a_new;
-            a_new = _a_aux__;
-
-            _b_aux__ = b_;
-            b_ = b_new;
-            b_new = _b_aux__;
-
-            // it steps the method ahead, with euler solution
-            for(int i = 0; i < numEDO; i++) {
-                sv[i] = edos_new_euler_[i];
-            }
-
-            if(*time_new + *previous_dt >= final_time) {
-                if(final_time == *time_new) {
-                    break;
-                } else if(*time_new < final_time) {
-                    *dt = *previous_dt = final_time - *time_new;
-                    *time_new += *previous_dt;
-                    break;
-                }
-            } else {
-                *time_new += *previous_dt;
-            }
-        }
-    }
-
-    free(_k1__);
-    free(_k2__);
-    free(a_);
-    free(b_);
-    free(a_new);
-    free(b_new);
 }
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params) {

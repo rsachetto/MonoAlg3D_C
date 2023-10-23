@@ -289,7 +289,7 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
                 SOLVE_EQUATION_EULER_GPU(6);        // cass  
                 SOLVE_EQUATION_EULER_GPU(7);        // cansr
                 SOLVE_EQUATION_EULER_GPU(8);        // cajsr
-                SOLVE_EQUATION_EULER_GPU(9);        // m
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(9);  // m
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(10); // hp
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(11); // h
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(12); // j
@@ -309,19 +309,19 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(26); // fcaf
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(27); // fcas
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(28); // jca
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(29); // nca
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(30); // nca_i
+                SOLVE_EQUATION_EULER_GPU(29);       // nca
+                SOLVE_EQUATION_EULER_GPU(30);       // nca_i
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(31); // ffp
-                SOLVE_EQUATION_EULER_GPU(32);       // fcafp
-                SOLVE_EQUATION_EULER_GPU(33);       // xs1
-                SOLVE_EQUATION_EULER_GPU(34);       // xs2
-                SOLVE_EQUATION_EULER_GPU(35);       // Jrel_np
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(32); // fcafp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(33); // xs1
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(34); // xs2
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(35); // Jrel_np
                 SOLVE_EQUATION_EULER_GPU(36);       // CaMKt
                 SOLVE_EQUATION_EULER_GPU(37);       // ikr_c0
                 SOLVE_EQUATION_EULER_GPU(38);       // ikr_c1
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(39); // ikr_c2
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(40); // ikr_o
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(41); // ikr_i
+                SOLVE_EQUATION_EULER_GPU(39);       // ikr_c2
+                SOLVE_EQUATION_EULER_GPU(40);       // ikr_o
+                SOLVE_EQUATION_EULER_GPU(41);       // ikr_i
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(42); // Jrel_p
                 // ---------------------------------------------------
                 // Land-Niederer
@@ -334,7 +334,6 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
             }
         } else {
             solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            //solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
@@ -372,7 +371,7 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
                 SOLVE_EQUATION_EULER_GPU(6);        // cass  
                 SOLVE_EQUATION_EULER_GPU(7);        // cansr
                 SOLVE_EQUATION_EULER_GPU(8);        // cajsr
-                SOLVE_EQUATION_EULER_GPU(9);        // m
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(9);  // m
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(10); // hp
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(11); // h
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(12); // j
@@ -392,19 +391,19 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(26); // fcaf
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(27); // fcas
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(28); // jca
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(29); // nca
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(30); // nca_i
+                SOLVE_EQUATION_EULER_GPU(29);       // nca
+                SOLVE_EQUATION_EULER_GPU(30);       // nca_i
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(31); // ffp
-                SOLVE_EQUATION_EULER_GPU(32);       // fcafp
-                SOLVE_EQUATION_EULER_GPU(33);       // xs1
-                SOLVE_EQUATION_EULER_GPU(34);       // xs2
-                SOLVE_EQUATION_EULER_GPU(35);       // Jrel_np
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(32); // fcafp
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(33); // xs1
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(34); // xs2
+                SOLVE_EQUATION_RUSH_LARSEN_GPU(35); // Jrel_np
                 SOLVE_EQUATION_EULER_GPU(36);       // CaMKt
                 SOLVE_EQUATION_EULER_GPU(37);       // ikr_c0
                 SOLVE_EQUATION_EULER_GPU(38);       // ikr_c1
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(39); // ikr_c2
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(40); // ikr_o
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(41); // ikr_i
+                SOLVE_EQUATION_EULER_GPU(39);       // ikr_c2
+                SOLVE_EQUATION_EULER_GPU(40);       // ikr_o
+                SOLVE_EQUATION_EULER_GPU(41);       // ikr_i
                 SOLVE_EQUATION_RUSH_LARSEN_GPU(42); // Jrel_p
                 // ---------------------------------------------------
                 // Land-Niederer
@@ -417,7 +416,6 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
             }
         } else {
             solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            //solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
@@ -523,222 +521,6 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 				_k_aux__[i] = _k2__[i];
 				_k2__[i] = _k1__[i];
 				_k1__[i] = _k_aux__[i];
-			}
-
-			for(int i = 0; i < NEQ; i++) {
-				sv_local[i] = edos_new_euler_[i];
-			}
-
-			if(time_new + previous_dt >= final_time) {
-				if(final_time == time_new) {
-					break;
-				} else if(time_new < final_time) {
-					dt = previous_dt = final_time - time_new;
-					time_new += previous_dt;
-					break;
-				} 	
-			} else {
-				time_new += previous_dt;
-			}
-		}
-	}
-
-    for(int i = 0; i < NEQ; i++) {
-        *((real *)((char *)sv + pitch * i) + thread_id) = sv_local[i];
-    }
-
-    DT = dt;
-    TIME_NEW = time_new;
-    PREVIOUS_DT = previous_dt;
-}
-
-inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real mapping, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
-
-    #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
-    #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
-    #define PREVIOUS_DT *((real *)((char *)sv + pitch * (NEQ+2)) + thread_id)
-
-    real rDY[NEQ], a_[NEQ], b_[NEQ], a_new[NEQ], b_new[NEQ];
-
-    real dt = DT;
-    real time_new = TIME_NEW;
-    real previous_dt = PREVIOUS_DT;
-
-    real edos_old_aux_[NEQ];
-    real edos_new_euler_[NEQ];
-    real _k1__[NEQ];
-    real _k2__[NEQ];
-    real _k_aux__[NEQ];
-    real sv_local[NEQ];
-
-    const real __tiny_ = pow(abstol, 2.0);
-
-    if(time_new + dt > final_time) {
-        dt = final_time - time_new;
-    }
-
-    for(int i = 0; i < NEQ; i++) {
-        sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
-    }
-
-    RHS_RL_gpu(a_, b_, sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
-    time_new += dt;
-
-    for(int i = 0; i < NEQ; i++) {
-        _k1__[i] = rDY[i];
-    }
-
-	while(1) {
-
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(0);        // v        
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(1);        // nai    
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(2);        // nass 
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(3);        // ki 
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(4);        // kss 
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(5);        // cai   
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(6);        // cass  
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(7);        // cansr
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(8);        // cajsr
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(9);        // m
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(10); // hp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(11); // h
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(12); // j
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(13); // jp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(14); // mL
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(15); // hL
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(16); // hLp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(17); // a
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(18); // iF
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(19); // iS
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(20); // ap
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(21); // iFp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(22); // iSp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(23); // d
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(24); // ff
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(25); // fs
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(26); // fcaf
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(27); // fcas
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(28); // jca
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(29); // nca
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(30); // nca_i
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(31); // ffp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(32);       // fcafp
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(33);       // xs1
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(34);       // xs2
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(35);       // Jrel_np
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(36);       // CaMKt
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(37);       // ikr_c0
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(38);       // ikr_c1
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(39); // ikr_c2
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(40); // ikr_o
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(41); // ikr_i
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_RL_GPU(42); // Jrel_p
-        // ---------------------------------------------------
-        // Land-Niederer
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(43);       // XS
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(44);       // XW
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(45);       // Ca_TRPN
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(46);       // TmBlocked
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(47);       // ZETAS
-        SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_GPU(48);       // ZETAW
-
-		time_new += dt;
-
-		RHS_RL_gpu(a_new, b_new, sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
-		time_new -= dt; // step back
-
-		real greatestError = 0.0, auxError = 0.0;
-		real as, bs, f, y_2nd_order;
-		SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(0);        // v        
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(1);        // nai    
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(2);        // nass 
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(3);        // ki 
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(4);        // kss 
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(5);        // cai   
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(6);        // cass  
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(7);        // cansr
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(8);        // cajsr
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(9);        // m
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(10); // hp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(11); // h
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(12); // j
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(13); // jp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(14); // mL
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(15); // hL
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(16); // hLp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(17); // a
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(18); // iF
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(19); // iS
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(20); // ap
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(21); // iFp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(22); // iSp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(23); // d
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(24); // ff
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(25); // fs
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(26); // fcaf
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(27); // fcas
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(28); // jca
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(29); // nca
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(30); // nca_i
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(31); // ffp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(32);       // fcafp
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(33);       // xs1
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(34);       // xs2
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(35);       // Jrel_np
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(36);       // CaMKt
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(37);       // ikr_c0
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(38);       // ikr_c1
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(39); // ikr_c2
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(40); // ikr_o
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(41); // ikr_i
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_RL_GPU(42); // Jrel_p
-        // ---------------------------------------------------
-        // Land-Niederer
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(43);       // XS
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(44);       // XW
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(45);       // Ca_TRPN
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(46);       // TmBlocked
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(47);       // ZETAS
-        SOLVE_ERROR_ADAPT_RUSH_LARSEN_EULER_GPU(48);       // ZETAW
-
-		/// adapt the time step
-		greatestError += __tiny_;
-		previous_dt = dt;
-
-		/// adapt the time step
-		dt = dt * sqrt(0.5f * reltol / greatestError);                  
-
-		if(dt < min_dt) {
-			dt = min_dt;
-		}
-		else if(dt > max_dt) {
-			dt = max_dt;
-		}
-
-		if(time_new + dt > final_time) {
-			dt = final_time - time_new;
-		}
-
-		// it doesn't accept the solution or accept and risk a NaN
-		if(greatestError >= 1.0f && dt > min_dt) {
-			// restore the old values to do it again
-			for(int i = 0; i < NEQ; i++) {
-				sv_local[i] = edos_old_aux_[i];
-			}
-		
-		} else {
-			for(int i = 0; i < NEQ; i++) {
-				_k_aux__[i] = _k2__[i];
-				_k2__[i] = _k1__[i];
-				_k1__[i] = _k_aux__[i];
-
-                _k_aux__[i] = a_[i];
-                a_[i] = a_new[i];
-                a_new[i] = _k_aux__[i];
-
-                _k_aux__[i] = b_[i];
-                b_[i] = b_new[i];
-                b_new[i] = _k_aux__[i];
 			}
 
 			for(int i = 0; i < NEQ; i++) {

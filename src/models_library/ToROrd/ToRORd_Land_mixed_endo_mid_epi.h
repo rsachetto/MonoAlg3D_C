@@ -95,15 +95,13 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
 inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real transmurality, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt);
 inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, real transmurality, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt);
 inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real transmurality, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt);
-inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real transmurality, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt);
 
 #endif
 
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params);
 void RHS_RL_cpu (real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params);
 void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params);
-void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params);
 void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const *extra_params);
 
-#endif //MONOALG3D_MODEL_TORORD_DYNCL_MIXED_ENDO_MID_EPI_H
+#endif //MONOALG3D_MODEL_TORORD_LAND_MIXED_ENDO_MID_EPI_H
 

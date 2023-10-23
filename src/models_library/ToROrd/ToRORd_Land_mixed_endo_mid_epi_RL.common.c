@@ -2,9 +2,9 @@
 //if (v >= 100.0) v = 100.0;
 //if (v <= -100.0) v = -100.0;
 
-celltype = EPI;
+//real aux, aux2, aux3;
 
-real aux, aux2, aux3;
+celltype = EPI;
 
 // Changeable parameters
 real nao = 140.0;
@@ -74,10 +74,12 @@ real k_wu = k_uw*(1/wfrac-1)-k_ws;
 real k_su = k_ws*(1/dr-1)*wfrac; 
 real A = (0.25*TOT_A)/((1-dr)*wfrac+dr)*(dr/0.25);
 
-real lambda0 = (lambda_max < lambda) ? lambda_max : lambda;
-real lambda_aux = (lambda_min < lambda0) ? lambda_min : lambda0;
-aux = 1+beta_0*(lambda0+lambda_aux-(1+lambda_min));
-real Lfac = (aux > 0) ? aux : 0;
+//real lambda0 = (lambda_max < lambda) ? lambda_max : lambda;
+real lambda0 = fminf(lambda_max, lambda);
+//real lambda_aux = (lambda_min < lambda0) ? lambda_min : lambda0;
+//aux = 1+beta_0*(lambda0+lambda_aux-(1+lambda_min));
+//real Lfac = (aux > 0) ? aux : 0;
+real Lfac = fmaxf(0,1+beta_0*(lambda0+fminf(lambda_min,lambda0)-(1+lambda_min)));
 
 real XU = (1-TmBlocked)-XW-XS; // unattached available xb = all - tm blocked - already prepowerstroke - already post-poststroke - no overlap
 real xb_ws = k_ws*XW;
@@ -86,8 +88,8 @@ real xb_wu = k_wu*XW;
 real xb_su = k_su*XS;
 
 // TODO: Check this expression again with the ternary operator
-aux = ((ZETAS>0)*ZETAS > (ZETAS<-1)*(-ZETAS-1)) ? (ZETAS>0)*ZETAS : (ZETAS<-1)*(-ZETAS-1); 
-real gamma_rate=gamma*aux;
+//aux = ((ZETAS>0)*ZETAS > (ZETAS<-1)*(-ZETAS-1)) ? (ZETAS>0)*ZETAS : (ZETAS<-1)*(-ZETAS-1); 
+real gamma_rate=gamma*fmaxf((ZETAS>0)*ZETAS,(ZETAS<-1)*(-ZETAS-1));
 real xb_su_gamma=gamma_rate*XS;
 real gamma_rate_w=gamma_wu*abs(ZETAW); // weak xbs don't like being strained
 real xb_wu_gamma=gamma_rate_w*XW;
@@ -97,8 +99,9 @@ real xb_wu_gamma=gamma_rate_w*XW;
 real dXS = xb_ws-xb_su-xb_su_gamma;
 real dXW = xb_uw-xb_wu-xb_ws-xb_wu_gamma;
 
-aux = (lambda-1 < 0.2) ? (lambda-1) : 0.2;
-ca50 = ca50+beta_1*aux;
+//aux = (lambda-1 < 0.2) ? (lambda-1) : 0.2;
+//ca50 = ca50+beta_1*aux;
+ca50=ca50+beta_1*fminf(0.2,lambda-1);
 //dydt[2] = koff*(pow(((cai*1000)/ca50),TRPN_n)*(1-Ca_TRPN)-Ca_TRPN); // untouched
 real dCa_TRPN = koff*(pow(((cai*1000)/ca50),TRPN_n)*(1-Ca_TRPN)-Ca_TRPN);
 
@@ -106,11 +109,12 @@ real XSSS = dr*0.5;
 real XWSS = (1-dr)*wfrac*0.5;
 real ktm_block = ktm_unblock*(pow(perm50,nperm))*0.5/(0.5-XSSS-XWSS);
 
-aux = pow(Ca_TRPN,-(nperm/2));
-aux2 = pow(Ca_TRPN,(nperm/2));
-aux3 = (100 < aux) ? 100 : aux;
+//aux = pow(Ca_TRPN,-(nperm/2));
+//aux2 = pow(Ca_TRPN,(nperm/2));
+//aux3 = (100 < aux) ? 100 : aux;
 //dydt[3] = ktm_block*aux3*XU-ktm_unblock*aux2*TmBlocked;
-real dTmBlocked = ktm_block*aux3*XU-ktm_unblock*aux2*TmBlocked;
+//real dTmBlocked = ktm_block*aux3*XU-ktm_unblock*aux2*TmBlocked;
+real dTmBlocked = ktm_block*fminf(100, pow(Ca_TRPN,-(nperm/2)))*XU - ktm_unblock*( pow(Ca_TRPN,(nperm/2)))*TmBlocked;
 
 // velocity dependence -- assumes distortion resets on W->S
 //dydt[4] = A*lambda_rate-cds*ZETAS;    // - gamma_rate * ZETAS;
@@ -600,7 +604,7 @@ real JnakK=2.0*(E4*b1-E3*a1);
 real Pnak= 15.4509;
 if (celltype==EPI)
     Pnak=Pnak*0.9;
-else if (celltype==2)
+else if (celltype==MID)
     Pnak=Pnak*0.7;
 
 real INaK = Pnak*(zna*JnakNa+zk*JnakK)*INaK_Multiplier;
@@ -610,7 +614,7 @@ real INaK = Pnak*(zna*JnakNa+zk*JnakK)*INaK_Multiplier;
 real xkb=1.0/(1.0+exp(-(v-10.8968)/(23.9871)));
 real GKb=0.0189;
 // TODO: Check with Jenny if this only apply to the 'bz1' and 'bz2' condition
-//if (IKCa_Multiplier != 1.0)
+//if (IKCa_Multiplier > 0.0)
 //    GKb = GKb*0.9;
 if (celltype==EPI)
     GKb=GKb*0.6;

@@ -4,6 +4,8 @@
 
 //real aux, aux2, aux3;
 
+celltype = MID;
+
 // Changeable parameters
 real nao = 140.0;
 real cao = 1.8;
