@@ -79,7 +79,6 @@ POSTPROCESS(calculate_all_cells_activation_time) {
 
     int step;
     int step1;
-    int step2 = 0;
     int final_step;
     float final_time;
     float current_t = 0.0;
@@ -87,6 +86,7 @@ POSTPROCESS(calculate_all_cells_activation_time) {
     step1 = get_step_from_filename(files_list[0]);
 
     if(num_files > 1) {
+        int step2 = 0;
         step2 = get_step_from_filename(files_list[1]);
         step = step2 - step1;
     } else {
@@ -105,7 +105,7 @@ POSTPROCESS(calculate_all_cells_activation_time) {
 
     ARRAY_FOR_EACH(files_list) {
 
-        char *file_name = files_list[i];
+        const char *file_name = files_list[i];
         char full_input_path[strlen(input_dir) + strlen(file_name) + 2];
 
         sprintf(full_input_path, "%s/%s", input_dir, file_name);
@@ -114,7 +114,7 @@ POSTPROCESS(calculate_all_cells_activation_time) {
 
         if(vtk_grid) {
 
-            int64_t *cells = vtk_grid->cells;
+            const int64_t *cells = vtk_grid->cells;
             point3d_array points = vtk_grid->points;
 
             uint32_t n_active = vtk_grid->num_cells;
@@ -125,6 +125,7 @@ POSTPROCESS(calculate_all_cells_activation_time) {
             struct point_3d cell_coordinates;
 
             for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
+
                 float center_x, center_y, center_z;
                 float dx, dy, dz, v;
 
@@ -223,15 +224,15 @@ POSTPROCESS(calculate_all_cells_activation_time) {
 
         fprintf(act_file, "%d [ ", n_activations);
 
-        for(unsigned long i = 0; i < n_activations; i++) {
-            fprintf(act_file, "%lf ", activation_times_array[i]);
+        for(int j = 0; j < n_activations; j++) {
+            fprintf(act_file, "%lf ", activation_times_array[j]);
         }
         fprintf(act_file, "] ");
 
         fprintf(act_file, "[ ");
 
-        for(unsigned long i = 0; i < arrlen(apds_array); i++) {
-            fprintf(act_file, "%lf ", apds_array[i]);
+        for(ptrdiff_t j = 0; j < arrlen(apds_array); j++) {
+            fprintf(act_file, "%lf ", apds_array[j]);
         }
         fprintf(act_file, "]\n");
     }
