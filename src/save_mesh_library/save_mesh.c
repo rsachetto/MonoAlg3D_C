@@ -156,72 +156,105 @@ SAVE_MESH(save_one_cell_state_variables) {
         check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
                                       ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
-        fprintf(params->file, "%lf %lf ", time_info->current_t, cell_sv[0]);
-        for(int i = 2; i < 11; i++) {
-            fprintf(params->file, " %lf ", cell_sv[i]);
-        }
+        fprintf(params->file, "%lf %lf\n", time_info->current_t, cell_sv[0]);
+        
+        //fprintf(params->file, "%lf %lf ", time_info->current_t, cell_sv[0]);
+        //for(int i = 2; i < 11; i++) {
+        //    fprintf(params->file, " %lf ", cell_sv[i]);
+        //}
 
-        fprintf(params->file, " %lf ", cell_sv[13]);
-        fprintf(params->file, " %lf ", cell_sv[11]);
-        fprintf(params->file, " %lf ", cell_sv[12]);
+        //fprintf(params->file, " %lf ", cell_sv[13]);
+        //fprintf(params->file, " %lf ", cell_sv[11]);
+        //fprintf(params->file, " %lf ", cell_sv[12]);
 
-        for(int i = 14; i < 30; i++) {
-            fprintf(params->file, " %lf ", cell_sv[i]);
-        }
+        //for(int i = 14; i < 30; i++) {
+        //    fprintf(params->file, " %lf ", cell_sv[i]);
+        //}
 
-        fprintf(params->file, " %lf ", cell_sv[32]);
-        fprintf(params->file, " %lf ", cell_sv[33]);
+        //fprintf(params->file, " %lf ", cell_sv[32]);
+        //fprintf(params->file, " %lf ", cell_sv[33]);
 
-        fprintf(params->file, " %lf ", cell_sv[30]);
-        fprintf(params->file, " %lf ", cell_sv[31]);
+        //fprintf(params->file, " %lf ", cell_sv[30]);
+        //fprintf(params->file, " %lf ", cell_sv[31]);
 
-        fprintf(params->file, " %lf ", cell_sv[39]);
-        fprintf(params->file, " %lf ", cell_sv[40]);
-        fprintf(params->file, " %lf ", cell_sv[41]);
-        fprintf(params->file, " %lf ", cell_sv[1]);
+        //fprintf(params->file, " %lf ", cell_sv[39]);
+        //fprintf(params->file, " %lf ", cell_sv[40]);
+        //fprintf(params->file, " %lf ", cell_sv[41]);
+        //fprintf(params->file, " %lf ", cell_sv[1]);
 
-        fprintf(params->file, " %lf ", cell_sv[34]);
-        fprintf(params->file, " %lf ", cell_sv[35]);
-        fprintf(params->file, " %lf ", cell_sv[36]);
-        fprintf(params->file, " %lf ", cell_sv[37]);
-        fprintf(params->file, " %lf ", cell_sv[38]);
-        fprintf(params->file, " %lf\n", cell_sv[42]);
+        //fprintf(params->file, " %lf ", cell_sv[34]);
+        //fprintf(params->file, " %lf ", cell_sv[35]);
+        //fprintf(params->file, " %lf ", cell_sv[36]);
+        //fprintf(params->file, " %lf ", cell_sv[37]);
+        //fprintf(params->file, " %lf ", cell_sv[38]);
+        //fprintf(params->file, " %lf\n", cell_sv[42]);
         free(cell_sv);
 #endif
     } else {
 
         real *cell_sv = &ode_solver->sv[params->cell_sv_position * ode_solver->model_data.number_of_ode_equations];
 
-        fprintf(params->file, "%lf %lf ", time_info->current_t, cell_sv[0]);
-        for(int i = 2; i < 11; i++) {
-            fprintf(params->file, " %lf ", cell_sv[i]);
+        // Time and transmembrane potential
+        //fprintf(params->file, "%g %g\n", time_info->current_t, cell_sv[0]);
+        
+        // Time, Cai and Vm
+        //fprintf(params->file, "%g %g %g\n", time_info->current_t, cell_sv[0], cell_sv[5]);
+
+        // Only transmembrane potential
+        //fprintf(params->file, "%g\n", cell_sv[0]);
+
+        // All state variables
+        //for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+        //    fprintf(params->file, "%g, ", cell_sv[i]);
+        //}
+        //fprintf(params->file, "\n");
+
+        // Time, Cai and Vm at certain timestep
+        if (time_info->current_t >= 15200) {
+            fprintf(params->file, "%.3lf %g %g\n", time_info->current_t, cell_sv[0], cell_sv[5]);
         }
 
-        fprintf(params->file, " %lf ", cell_sv[13]);
-        fprintf(params->file, " %lf ", cell_sv[11]);
-        fprintf(params->file, " %lf ", cell_sv[12]);
+        // All state-variables at certain timestep
+        //if (time_info->current_t >= 15200) {
+        //    for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+        //        fprintf(params->file, "%g, ", cell_sv[i]);
+        //    }
+        //    fprintf(params->file, "\n");
+        //}
+        
+        //if (time_info->current_t >= 3200-time_info->dt)
+        //    fprintf(params->file, "%lf\n", cell_sv[0]);
 
-        for(int i = 14; i < 30; i++) {
-            fprintf(params->file, " %lf ", cell_sv[i]);
-        }
+        //fprintf(params->file, "%lf %lf ", time_info->current_t, cell_sv[0]);
+        //for(int i = 2; i < 11; i++) {
+        //    fprintf(params->file, " %lf ", cell_sv[i]);
+        //}
 
-        fprintf(params->file, " %lf ", cell_sv[32]);
-        fprintf(params->file, " %lf ", cell_sv[33]);
+        //fprintf(params->file, " %lf ", cell_sv[13]);
+        //fprintf(params->file, " %lf ", cell_sv[11]);
+        //fprintf(params->file, " %lf ", cell_sv[12]);
 
-        fprintf(params->file, " %lf ", cell_sv[30]);
-        fprintf(params->file, " %lf ", cell_sv[31]);
+        //for(int i = 14; i < 30; i++) {
+        //    fprintf(params->file, " %lf ", cell_sv[i]);
+        //}
 
-        fprintf(params->file, " %lf ", cell_sv[39]);
-        fprintf(params->file, " %lf ", cell_sv[40]);
-        fprintf(params->file, " %lf ", cell_sv[41]);
-        fprintf(params->file, " %lf ", cell_sv[1]);
+        //fprintf(params->file, " %lf ", cell_sv[32]);
+        //fprintf(params->file, " %lf ", cell_sv[33]);
 
-        fprintf(params->file, " %lf ", cell_sv[34]);
-        fprintf(params->file, " %lf ", cell_sv[35]);
-        fprintf(params->file, " %lf ", cell_sv[36]);
-        fprintf(params->file, " %lf ", cell_sv[37]);
-        fprintf(params->file, " %lf ", cell_sv[38]);
-        fprintf(params->file, " %lf\n", cell_sv[42]);
+        //fprintf(params->file, " %lf ", cell_sv[30]);
+        //fprintf(params->file, " %lf ", cell_sv[31]);
+
+        //fprintf(params->file, " %lf ", cell_sv[39]);
+        //fprintf(params->file, " %lf ", cell_sv[40]);
+        //fprintf(params->file, " %lf ", cell_sv[41]);
+        //fprintf(params->file, " %lf ", cell_sv[1]);
+
+        //fprintf(params->file, " %lf ", cell_sv[34]);
+        //fprintf(params->file, " %lf ", cell_sv[35]);
+        //fprintf(params->file, " %lf ", cell_sv[36]);
+        //fprintf(params->file, " %lf ", cell_sv[37]);
+        //fprintf(params->file, " %lf ", cell_sv[38]);
+        //fprintf(params->file, " %lf\n", cell_sv[42]);
     }
 }
 
