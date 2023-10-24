@@ -506,7 +506,7 @@ struct extra_data_for_torord_land * set_common_torord_Land_data (struct config *
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IK1_Multiplier, config, "IK1_Multiplier");
     real IKb_Multiplier = 1.0;    
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKb_Multiplier, config, "IKb_Multiplier");
-    real IKCa_Multiplier = 1.0;    
+    real IKCa_Multiplier = 0.0;    
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKCa_Multiplier, config, "IKCa_Multiplier");
     real ICaL_Multiplier = 1.0;    
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaL_Multiplier, config, "ICaL_Multiplier");

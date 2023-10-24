@@ -202,7 +202,7 @@ real dhp = (hssp - hp) / tauh;                  // Rush-Larsen
 real taujp = 1.46 * tauj;
 real djp = (jss - jp) / taujp;                  // Rush-Larsen
 real GNa = 11.7802;
-real INa = GNa*(v-ENa)*pow(m,3.0)*((1.0-fINap)*h*j+fINap*hp*jp) * INa_Multiplier;
+real INa = INa_Multiplier*GNa*(v-ENa)*pow(m,3.0)*((1.0-fINap)*h*j+fINap*hp*jp);
 
 // INaL
 // calculate INaL
@@ -216,9 +216,9 @@ real dhL=(hLss-hL)/thL;                                         // Rush-Larsen
 real hLssp=1.0/(1.0+exp((v+93.81)/7.488));
 real thLp=3.0*thL;
 real dhLp=(hLssp-hLp)/thLp;                                     // Rush-Larsen
-real GNaL=0.0279;
+real GNaL=0.0279*INaL_Multiplier;
 if (celltype==EPI) GNaL=GNaL*0.6;
-real INaL = GNaL*(v-ENa)*mL*((1.0-fINaLp)*hL+fINaLp*hLp)*INaL_Multiplier;
+real INaL = GNaL*(v-ENa)*mL*((1.0-fINaLp)*hL+fINaLp*hLp);
 
 // ITo
 // calculate Ito
@@ -245,9 +245,9 @@ real tiSp=dti_develop*dti_recover*tiS;
 real diFp=(iss-iFp)/tiFp;                                                   // Rush-Larsen
 real diSp=(iss-iSp)/tiSp;                                                   // Rush-Larsen
 real ip=AiF*iFp+AiS*iSp;
-real Gto=0.16;
+real Gto=0.16*Ito_Multiplier;
 Gto = (celltype == EPI || celltype == MID) ? Gto*2.0 : Gto;
-real Ito = Gto*(v-EK)*((1.0-fItop)*a*i+fItop*ap*ip) * Ito_Multiplier;
+real Ito = Gto*(v-EK)*((1.0-fItop)*a*i+fItop*ap*ip);
 
 // ICaL
 // a variant updated by jakub, using a changed activation curve
@@ -440,10 +440,10 @@ real xs2ss=xs1ss;
 real txs2=1.0/(0.01*exp((v-50.0)/20.0)+0.0193*exp((-(v+66.54))/31.0));
 real dxs2=(xs2ss-xs2)/txs2;                               // Rush-Larsen
 real KsCa=1.0+0.6/(1.0+pow((3.8e-5/cai),1.4));
-real GKs= 0.0011;
+real GKs= 0.0011*IKs_Multiplier;
 if (celltype==EPI)
     GKs=GKs*1.4;
-real IKs = GKs*KsCa*xs1*xs2*(v-EKs)*IKs_Multiplier;
+real IKs = GKs*KsCa*xs1*xs2*(v-EKs);
 
 // IK1
 real aK1 = 4.094/(1+exp(0.1217*(v-EK-49.934)));
@@ -455,6 +455,15 @@ if (celltype==EPI)
 else if (celltype==MID)
     GK1=GK1*1.3;
 real IK1=GK1*sqrt(ko/5)*K1ss*(v-EK);
+
+// IKCa
+real fIKCass = 0.8;
+real kdikca = 6.05e-4;
+real ikcan = 3.5;
+real GKCa = 0.003 * IKCa_Multiplier;
+real IKCa_ss = GKCa * fIKCass * pow(cass,ikcan) / (pow(cass,ikcan) + pow(kdikca,ikcan)) * (v-EK);
+real IKCa_i = GKCa * (1.0-fIKCass) * pow(cai,ikcan) / (pow(cai,ikcan) + pow(kdikca,ikcan)) * (v-EK);
+real IKCa = IKCa_ss + IKCa_i;
 
 // INaCa
 real zca = 2.0;
@@ -610,21 +619,21 @@ real INaK = Pnak*(zna*JnakNa+zk*JnakK)*INaK_Multiplier;
 // Minor/background currents
 // calculate IKb
 real xkb=1.0/(1.0+exp(-(v-10.8968)/(23.9871)));
-real GKb=0.0189;
+real GKb=0.0189*IKb_Multiplier;
 // TODO: Check with Jenny if this only apply to the 'bz1' and 'bz2' condition
-//if (IKCa_Multiplier > 0.0)
-//    GKb = GKb*0.9;
+if (IKCa_Multiplier > 0.0)
+    GKb = GKb*0.9;
 if (celltype==EPI)
     GKb=GKb*0.6;
-real IKb = GKb*xkb*(v-EK)*IKb_Multiplier;
+real IKb = GKb*xkb*(v-EK);
 
 // calculate INab
-real PNab=1.9239e-09;
-real INab=PNab*vffrt*(nai*exp(vfrt)-nao)/(exp(vfrt)-1.0)*INab_Multiplier;
+real PNab=1.9239e-09*INab_Multiplier;
+real INab=PNab*vffrt*(nai*exp(vfrt)-nao)/(exp(vfrt)-1.0);
 
 // calculate ICab
-real PCab=5.9194e-08; 
-real ICab=PCab*4.0*vffrt*(gammaCaiMyo*cai*exp(2.0*vfrt)-gammaCaoMyo*cao)/(exp(2.0*vfrt)-1.0)*ICab_Multiplier;
+real PCab=5.9194e-08*ICab_Multiplier; 
+real ICab=PCab*4.0*vffrt*(gammaCaiMyo*cai*exp(2.0*vfrt)-gammaCaoMyo*cao)/(exp(2.0*vfrt)-1.0);
 
 // calculate IpCa
 real GpCa=5e-04*IpCa_Multiplier;
@@ -723,7 +732,8 @@ real Jtr=(cansr-cajsr)/60;
 real Istim = calc_I_stim;
 
 //update the membrane voltage
-real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+Istim);    // Euler
+//real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+Istim);    // Euler
+real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+IKCa+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+Istim);    // Euler
 //real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+I_katp+Istim);    // Euler
 
 // calculate diffusion fluxes

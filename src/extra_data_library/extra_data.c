@@ -539,6 +539,32 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_Land_epi_mid_endo) {
 
 }
 
+// Initial condition - 'libToRORd_Land_mixed_endo_mid_epi.so' + current modifiers (cell, plain and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_Land_same_celltype) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    struct extra_data_for_torord_land *extra_data = NULL;
+    extra_data = set_common_torord_Land_data(config, num_active_cells);
+
+    // All cells will be the same type
+    OMP(parallel for)
+    for (int i = 0; i < num_active_cells; i++) {
+        // ENDO
+        extra_data->transmurality[i] = 0.0;
+        // MID
+        //extra_data->transmurality[i] = 1.0;
+        // EPI
+        //extra_data->transmurality[i] = 2.0;
+    }
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord_land));
+
+    return (void*)extra_data;
+
+}
+
 // Current modifiers - 'libtrovato_2020.so'
 SET_EXTRA_DATA(set_extra_data_trovato) {
 

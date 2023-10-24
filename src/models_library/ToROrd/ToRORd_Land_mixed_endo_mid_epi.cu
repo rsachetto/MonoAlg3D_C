@@ -209,11 +209,11 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         extra_par[7]  = extra_data->IKs_Multiplier; 
         extra_par[8]  = extra_data->IK1_Multiplier;
         extra_par[9]  = extra_data->IKb_Multiplier;
-        extra_par[9]  = extra_data->IKCa_Multiplier;
-        extra_par[10] = extra_data->ICaL_Multiplier;  
-        extra_par[11] = extra_data->ICab_Multiplier;  
-        extra_par[12] = extra_data->IpCa_Multiplier;
-        extra_par[13] = extra_data->ICaCl_Multiplier; 
+        extra_par[10]  = extra_data->IKCa_Multiplier;
+        extra_par[11] = extra_data->ICaL_Multiplier;  
+        extra_par[12] = extra_data->ICab_Multiplier;  
+        extra_par[13] = extra_data->IpCa_Multiplier;
+        extra_par[14] = extra_data->ICaCl_Multiplier; 
         extra_par[15] = extra_data->IClb_Multiplier;
         extra_par[16] = extra_data->Jrel_Multiplier;
         extra_par[17] = extra_data->Jup_Multiplier;
@@ -228,9 +228,12 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         check_cuda_error(cudaMemcpy(extra_par_device, extra_par, sizeof(real)*num_extra_parameters, cudaMemcpyHostToDevice));
     }
     else {
-        // Default: initialize all current modifiers to one
+        // Default: initialize all current modifiers
         for (uint32_t i = 0; i < num_extra_parameters; i++) {
-            extra_par[i] = 1.0;
+            if (i == 9)
+                extra_par[i] = 0.0;
+            else 
+                extra_par[i] = 1.0;
         }
 
         check_cuda_error(cudaMalloc((void **)&extra_par_device, sizeof(real)*num_extra_parameters));
@@ -564,11 +567,11 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, \
     real IKs_Multiplier = extra_params[7];   
     real IK1_Multiplier = extra_params[8];  
     real IKb_Multiplier = extra_params[9];  
-    real IKCa_Multiplier = extra_params[9];  
-    real ICaL_Multiplier = extra_params[10];   
-    real ICab_Multiplier = extra_params[11];   
-    real IpCa_Multiplier = extra_params[12]; 
-    real ICaCl_Multiplier = extra_params[13];  
+    real IKCa_Multiplier = extra_params[10];  
+    real ICaL_Multiplier = extra_params[11];   
+    real ICab_Multiplier = extra_params[12];   
+    real IpCa_Multiplier = extra_params[13]; 
+    real ICaCl_Multiplier = extra_params[14];  
     real IClb_Multiplier = extra_params[15]; 
     real Jrel_Multiplier = extra_params[16]; 
     real Jup_Multiplier = extra_params[17]; 
@@ -764,7 +767,7 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
                                 real mapping, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
     
     // Current modifiers
-    real INa_Multiplier = extra_params[0];   
+    real INa_Multiplier = extra_params[0];
     real INaL_Multiplier = extra_params[1];  
     real INaCa_Multiplier = extra_params[2];  
     real INaK_Multiplier = extra_params[3];  
@@ -774,11 +777,11 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
     real IKs_Multiplier = extra_params[7];   
     real IK1_Multiplier = extra_params[8];  
     real IKb_Multiplier = extra_params[9];  
-    real IKCa_Multiplier = extra_params[9];  
-    real ICaL_Multiplier = extra_params[10];   
-    real ICab_Multiplier = extra_params[11];   
-    real IpCa_Multiplier = extra_params[12]; 
-    real ICaCl_Multiplier = extra_params[13];  
+    real IKCa_Multiplier = extra_params[10];  
+    real ICaL_Multiplier = extra_params[11];   
+    real ICab_Multiplier = extra_params[12];   
+    real IpCa_Multiplier = extra_params[13]; 
+    real ICaCl_Multiplier = extra_params[14];  
     real IClb_Multiplier = extra_params[15]; 
     real Jrel_Multiplier = extra_params[16]; 
     real Jup_Multiplier = extra_params[17]; 
