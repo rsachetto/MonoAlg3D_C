@@ -144,7 +144,7 @@ struct gui_shared_info {
         bool loaded;
     } grid_info;
 
-    char *error_message;
+    char *message;
     bool int_scale;
     float ui_scale;
 

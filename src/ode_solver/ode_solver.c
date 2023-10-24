@@ -159,7 +159,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
         }
 
         solver->pitch = soicg_fn_pt(solver, ode_extra_config);
-#endif
+        #endif
     } else {
 
         set_ode_initial_conditions_cpu_fn *soicc_fn_pt = solver->set_ode_initial_conditions_cpu;
@@ -179,7 +179,9 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
         soicc_fn_pt(solver, ode_extra_config);
     }
 
-    assert(solver->sv);
+    if(solver->sv == NULL) {
+            log_error_and_exit("Error allocating memory for the ODE's state vector. Exiting!\n");
+    }
 }
 
 void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time, struct string_voidp_hash_entry *stim_configs,

@@ -26,10 +26,10 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
 
     if(!gui_config->grid_info.vtk_grid) {
         snprintf(error, MAX_ERROR_SIZE, "%s is not an activation map", input_file);
-        if(gui_config->error_message) {
-            free(gui_config->error_message);
+        if(gui_config->message) {
+            free(gui_config->message);
         }
-        gui_config->error_message = strdup(error);
+        gui_config->message = strdup(error);
         omp_unset_lock(&gui_config->draw_lock);
         return;
     }
@@ -49,11 +49,11 @@ static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simu
     char error[MAX_ERROR_SIZE];
     snprintf(error, MAX_ERROR_SIZE, "Calculating Vm bounds!");
 
-    if(gui_config->error_message) {
-        free(gui_config->error_message);
+    if(gui_config->message) {
+        free(gui_config->message);
     }
 
-    gui_config->error_message = strdup(error);
+    gui_config->message = strdup(error);
     static struct vtk_unstructured_grid *tmp_grid = NULL;
     static bool en_tmp_loaded = false;
 
@@ -63,9 +63,9 @@ static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simu
     uint32_t num_files = arrlen(simulation_files->files_list);
     gui_config->file_size = num_files;
 
-    for(int i = 0; i < num_files; i++) {
+    for(uint32_t i = 0; i < num_files; i++) {
         gui_config->progress = i;
-        char *current_file_name = simulation_files->files_list[i];
+        const char *current_file_name = simulation_files->files_list[i];
         sprintf(path, "%s/%s", simulation_files->base_dir, current_file_name);
 
         if(ensight) {
@@ -128,11 +128,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
     if(!input_info.exists) {
         snprintf(error, MAX_ERROR_SIZE,
                  "Invalid path or pvd file provided! Press 'o' to open an directory or 'f' to open a simulation file (pvd, vtu, vtk, acm or alg)!");
-        if(gui_config->error_message) {
-            free(gui_config->error_message);
+        if(gui_config->message) {
+            free(gui_config->message);
         }
 
-        gui_config->error_message = strdup(error);
+        gui_config->message = strdup(error);
         gui_config->input = NULL;
         options->input = NULL;
         return SIMULATION_FINISHED;
@@ -193,9 +193,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
     if(!num_files) {
         snprintf(error, MAX_ERROR_SIZE, "No simulations file found in %s", simulation_files->base_dir);
 
-        if(gui_config->error_message)
-            free(gui_config->error_message);
-        gui_config->error_message = strdup(error);
+        if(gui_config->message)
+            free(gui_config->message);
+        gui_config->message = strdup(error);
 
         sdsfree(simulation_files->base_dir);
         free(simulation_files);
@@ -219,9 +219,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
         if(!input_info.exists) {
             snprintf(error, MAX_ERROR_SIZE, "Geometry file %s not found", geometry_file);
 
-            if(gui_config->error_message)
-                free(gui_config->error_message);
-            gui_config->error_message = strdup(error);
+            if(gui_config->message)
+                free(gui_config->message);
+            gui_config->message = strdup(error);
 
             sdsfree(simulation_files->base_dir);
             free(simulation_files);
@@ -366,11 +366,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
         if(!gui_config->grid_info.vtk_grid) {
             snprintf(error, MAX_ERROR_SIZE, "Decoder not available for file %s", current_file_name);
 
-            if(gui_config->error_message) {
-                free(gui_config->error_message);
+            if(gui_config->message) {
+                free(gui_config->message);
             }
 
-            gui_config->error_message = strdup(error);
+            gui_config->message = strdup(error);
             gui_config->grid_info.loaded = false;
             gui_config->paused = true;
         } else {
@@ -424,7 +424,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 }
 
-static void init_gui_config_for_visualization(struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
+static void init_gui_config_for_visualization(const struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
     //TODO: set this from command line
     gui_config->adaptive = false;
@@ -456,7 +456,7 @@ static void init_gui_config_for_visualization(struct visualization_options *opti
         gui_config->dt = options->dt;
         gui_config->draw_type = DRAW_FILE;
         gui_config->grid_info.file_name = NULL;
-        gui_config->error_message = NULL;
+        gui_config->message = NULL;
         gui_config->int_scale = false;
     }
 }

@@ -115,7 +115,7 @@ void free_current_simulation_resources(struct user_options *options, struct mono
 }
 
 #ifdef COMPILE_GUI
-static void init_gui_config_for_simulation(struct user_options *options, struct gui_shared_info *gui_config, bool only_restart) {
+static void init_gui_config_for_simulation(const struct user_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
     if(!only_restart) {
         omp_init_lock(&gui_config->draw_lock);
@@ -141,7 +141,7 @@ static void init_gui_config_for_simulation(struct user_options *options, struct 
     gui_config->restart = false;
 
     gui_config->draw_type = DRAW_SIMULATION;
-    gui_config->error_message = NULL;
+    gui_config->message = NULL;
     gui_config->grid_info.loaded = false;
     gui_config->int_scale = false;
     gui_config->ui_scale = 0.0;
@@ -176,12 +176,12 @@ int main(int argc, char **argv) {
     log_warn("Running the debug version. If you do not need debug information, build with './build -r' or 'make release' to improve the performace!\n");
 #endif
 
+#if defined(_OPENMP)
     int np = monodomain_solver->num_threads;
 
     if(np == 0)
         np = 1;
 
-#if defined(_OPENMP)
     omp_set_num_threads(np);
 #endif
 

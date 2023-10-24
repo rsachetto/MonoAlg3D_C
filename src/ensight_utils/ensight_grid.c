@@ -526,20 +526,17 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
         int id = 0;
         int num_cells = 0;
 
-
         struct point_hash_entry *lines =  NULL;
 
         while (grid_cell != NULL) {
 
             if (grid_cell->active) {
 
-                // Insert the point to the array of points
-                aux.x = grid_cell->center.x;
-                aux.y = grid_cell->center.y;
-                aux.z = grid_cell->center.z;
+                aux = grid_cell->center;
 
                 // Search for duplicates
                 if(hmget(hash, aux) == -1) {
+                    // Insert the point to the array of points
                     arrput(ensight_grid->parts[part_n].points, aux);
                     hmput(hash, aux, id);
                     id++;

@@ -558,11 +558,15 @@ SAVE_MESH(save_as_ensight) {
 
     struct common_persistent_data *persistent_data = (struct common_persistent_data*) config->persistent_data;
 
-    if(the_grid == NULL && the_grid->purkinje == NULL) {
+    if(the_grid == NULL) {
+        log_error_and_exit("Error in save_as_ensight. No grid defined\n");
+    }
+
+    if(the_grid->num_active_cells == 0 && the_grid->purkinje == NULL) {
         log_error_and_exit("Error in save_as_ensight. No grid and/or no purkinje grid defined\n");
     }
 
-    if(the_grid != NULL && the_grid->adaptive) {
+    if(the_grid->adaptive) {
         log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
     }
 

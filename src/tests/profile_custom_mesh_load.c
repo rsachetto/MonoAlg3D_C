@@ -100,15 +100,15 @@ int profile_custom_mesh_load(char *discretization, struct elapsed_times *times) 
     times->end_time = stop_stop_watch(&end_time);
 
     file_prefix = sdscat(file_prefix, "_it_0.vtu");
-    
+
     sds tmp_mesh = sdsnew("/tmp/");
-    tmp_mesh = sdscat(tmp_mesh, file_prefix);    
+    tmp_mesh = sdscat(tmp_mesh, file_prefix);
 
     struct stop_watch load_time;
-    start_stop_watch(&load_time);    
+    start_stop_watch(&load_time);
     struct vtk_unstructured_grid *loaded_mesh = new_vtk_unstructured_grid_from_file(tmp_mesh, true);
     times->load_mesh_time= stop_stop_watch(&load_time);
-    
+
     sdsfree(file_prefix);
     sdsfree(tmp_mesh);
 
@@ -197,13 +197,49 @@ int main(int argc, char **argv) {
     printf("---------------------------------------------------\n");
 
     if (content.dptr == NULL) {
-        printf("\nFirst run in this hardware with nruns = %lld\n", nruns);
+        printf("First run in this hardware with nruns = %lld\n", nruns);
         printf("---------------------------------------------------\n");
         gdbm_store(f, hash_key, data, GDBM_INSERT);
     }
     else {
-        printf("BEST RUN\n");
         struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
+
+        double speedup = best_run->total_time/average_times.total_time;
+
+        if(speedup > 1.0) {
+            printf("Current run is %lfx faster than best run. Replacing record.\n", speedup);
+            gdbm_store(f, hash_key, data, GDBM_REPLACE);
+        }
+        else if(speedup < 1.0) {
+            printf("Current run is %lfx slower than best run.\n", speedup);
+        }
+
+        free(best_run);
+    }
+
+    gdbm_count_t count;
+    gdbm_count(f, &count);
+
+    printf("BEST RUN IN ALL MACHINES\n");
+    printf("---------------------------------------------------\n");
+
+    datum value;
+    datum key = gdbm_firstkey (f);
+
+    while (key.dptr) {
+
+        datum nextkey;
+        value = gdbm_fetch(f, key);
+
+        // process the key and value
+        if(strncmp(key.dptr, hash_key.dptr, key.dsize) == 0) {
+            printf("THIS MACHINE (%.*s):\n", key.dsize, key.dptr);
+        }
+        else {
+            printf("machine: %.*s\n", key.dsize, key.dptr);
+        }
+
+        struct elapsed_times *best_run = (struct elapsed_times *)value.dptr;
         printf("Avg Config time: %lf μs\n", best_run->config_time);
         printf("Avg Create grid time: %lf μs\n", best_run->create_grid_time);
         printf("Avg Order grid time: %lf μs\n", best_run->order_grid_time);
@@ -216,19 +252,11 @@ int main(int argc, char **argv) {
 
         printf("---------------------------------------------------\n");
 
-        double speedup = best_run->total_time/average_times.total_time;
-
-        //10% speedup
-        if(speedup > 1.0) {
-            printf("Current run is %lfx faster than best run. Replacing record.\n", speedup);
-            gdbm_store(f, hash_key, data, GDBM_REPLACE);
-        }
-        else if(speedup < 1.0) {
-            printf("Current run is %lfx slower than best run.\n", speedup);
-        }
-
-        free(best_run);
+        nextkey = gdbm_nextkey (f, key);
+        free (key.dptr);
+        key = nextkey;
     }
+
 
     sdsfree(hash_key_with_size);
     gdbm_close(f);
