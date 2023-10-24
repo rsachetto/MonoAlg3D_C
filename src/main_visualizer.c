@@ -63,9 +63,9 @@ static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simu
     uint32_t num_files = arrlen(simulation_files->files_list);
     gui_config->file_size = num_files;
 
-    for(int i = 0; i < num_files; i++) {
+    for(uint32_t i = 0; i < num_files; i++) {
         gui_config->progress = i;
-        char *current_file_name = simulation_files->files_list[i];
+        const char *current_file_name = simulation_files->files_list[i];
         sprintf(path, "%s/%s", simulation_files->base_dir, current_file_name);
 
         if(ensight) {
@@ -424,7 +424,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
     }
 }
 
-static void init_gui_config_for_visualization(struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
+static void init_gui_config_for_visualization(const struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
     //TODO: set this from command line
     gui_config->adaptive = false;
