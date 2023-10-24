@@ -141,7 +141,7 @@ static void init_gui_config_for_simulation(const struct user_options *options, s
     gui_config->restart = false;
 
     gui_config->draw_type = DRAW_SIMULATION;
-    gui_config->error_message = NULL;
+    gui_config->message = NULL;
     gui_config->grid_info.loaded = false;
     gui_config->int_scale = false;
     gui_config->ui_scale = 0.0;

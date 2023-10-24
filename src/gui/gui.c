@@ -601,8 +601,8 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
             if(tmp) {
                 gui_config->input = strdup(tmp);
                 reset(gui_config, gui_state, true);
-                free(gui_config->error_message);
-                gui_config->error_message = strdup("Loading Mesh...");
+                free(gui_config->message);
+                gui_config->message = strdup("Loading Mesh...");
 
             } else {
                 gui_config->input = NULL;
@@ -633,8 +633,8 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
             if(tmp) {
                 reset(gui_config, gui_state, true);
-                free(gui_config->error_message);
-                gui_config->error_message = strdup("Loading Mesh...");
+                free(gui_config->message);
+                gui_config->message = strdup("Loading Mesh...");
             }
             return;
         }
@@ -822,7 +822,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     gui_state->mesh_info_box.lines = NULL;
     configure_info_boxes_sizes(gui_state, help_box_lines, slice_help_box_lines, edit_help_box_lines, end_info_box_lines, box_w, text_offset);
 
-    Vector2 error_message_width;
+    Vector2 message_width;
     struct mesh_info *mesh_info = new_mesh_info();
     bool end_info_box_strings_configured = false;
 
@@ -989,16 +989,16 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 float spacing = gui_state->font_spacing_big;
                 static Color c = RED;
 
-                error_message_width = MeasureTextEx(gui_state->font, "Slicing Mesh...", gui_state->font_size_big, spacing);
-                int posx = GetScreenWidth() / 2 - (int)error_message_width.x / 2;
+                message_width = MeasureTextEx(gui_state->font, "Slicing Mesh...", gui_state->font_size_big, spacing);
+                int posx = GetScreenWidth() / 2 - (int)message_width.x / 2;
                 int posy = GetScreenHeight() / 2 - 50;
 
-                int rec_width = (int)(error_message_width.x) + 50;
-                int rec_height = (int)(error_message_width.y) + 2;
+                int rec_width = (int)(message_width.x) + 50;
+                int rec_height = (int)(message_width.y) + 2;
 
                 DrawRectangle(posx, posy, rec_width, rec_height, c);
 
-                DrawTextEx(gui_state->font, "Slicing Mesh...", (Vector2){(float)posx + ((float)rec_width - error_message_width.x) / 2, (float)posy},
+                DrawTextEx(gui_state->font, "Slicing Mesh...", (Vector2){(float)posx + ((float)rec_width - message_width.x) / 2, (float)posy},
                         gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
 
             }
@@ -1085,17 +1085,17 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             float spacing = gui_state->font_spacing_big;
             static Color c = RED;
 
-            if(!gui_config->error_message) {
-                gui_config->error_message = strdup("Loading Mesh...");
+            if(!gui_config->message) {
+                gui_config->message = strdup("Loading Mesh...");
                 c = WHITE;
             }
 
-            error_message_width = MeasureTextEx(gui_state->font, gui_config->error_message, gui_state->font_size_big, spacing);
-            int posx = GetScreenWidth() / 2 - (int)error_message_width.x / 2;
+            message_width = MeasureTextEx(gui_state->font, gui_config->message, gui_state->font_size_big, spacing);
+            int posx = GetScreenWidth() / 2 - (int)message_width.x / 2;
             int posy = GetScreenHeight() / 2 - 50;
 
-            int rec_width = (int)(error_message_width.x) + 50;
-            int rec_height = (int)(error_message_width.y) + 2;
+            int rec_width = (int)(message_width.x) + 50;
+            int rec_height = (int)(message_width.y) + 2;
 
             int rec_bar_w = (int)Remap((float) gui_config->progress, 0, (float) gui_config->file_size, 0, (float) rec_width);
 
@@ -1103,10 +1103,13 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             DrawRectangleLines(posx, posy, rec_width, rec_height, BLACK);
 
             // This should not happen... but it does....
-            if(gui_config->error_message) {
-                DrawTextEx(gui_state->font, gui_config->error_message, (Vector2){(float)posx + ((float)rec_width - error_message_width.x) / 2, (float)posy},
+            if(gui_config->message) {
+                DrawTextEx(gui_state->font, gui_config->message, (Vector2){(float)posx + ((float)rec_width - message_width.x) / 2, (float)posy},
                            gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
+
+                gui_state->handle_keyboard_input = true;
             }
+
         }
 
         // Draw FPS
