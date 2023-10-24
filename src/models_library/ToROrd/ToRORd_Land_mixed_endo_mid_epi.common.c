@@ -85,7 +85,6 @@ real xb_uw = k_uw*XU;
 real xb_wu = k_wu*XW;
 real xb_su = k_su*XS;
 
-// TODO: Check this expression again with the ternary operator
 //aux = ((ZETAS>0)*ZETAS > (ZETAS<-1)*(-ZETAS-1)) ? (ZETAS>0)*ZETAS : (ZETAS<-1)*(-ZETAS-1); 
 real gamma_rate=gamma*fmaxf((ZETAS>0)*ZETAS,(ZETAS<-1)*(-ZETAS-1));
 real xb_su_gamma=gamma_rate*XS;
@@ -620,7 +619,7 @@ real INaK = Pnak*(zna*JnakNa+zk*JnakK)*INaK_Multiplier;
 // calculate IKb
 real xkb=1.0/(1.0+exp(-(v-10.8968)/(23.9871)));
 real GKb=0.0189*IKb_Multiplier;
-// TODO: Check with Jenny if this only apply to the 'bz1' and 'bz2' condition
+
 if (IKCa_Multiplier > 0.0)
     GKb = GKb*0.9;
 if (celltype==EPI)
@@ -639,7 +638,6 @@ real ICab=PCab*4.0*vffrt*(gammaCaiMyo*cai*exp(2.0*vfrt)-gammaCaoMyo*cao)/(exp(2.
 real GpCa=5e-04*IpCa_Multiplier;
 real IpCa=GpCa*cai/(0.0005+cai);
 
-// TODO: Include dynamic chloride or not ?
 // Chloride
 // I_ClCa: Ca-activated Cl Current, I_Clbk: background Cl Current
 
@@ -725,7 +723,6 @@ real Jup=(1.0-fJupp)*Jupnp+fJupp*Jupp-Jleak;
 real Jtr=(cansr-cajsr)/60;
 
 // I_katp current (fkatp current)
-// TODO: Ask if we need to include the 'fkatp' in the dvdt equation
 //real I_katp = (fkatp * gkatp * akik * bkik * (v - EK));
 
 // stimulus current
