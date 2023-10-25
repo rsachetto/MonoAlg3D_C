@@ -10,6 +10,67 @@
 #include "../domains_library/mesh_info_data.h"
 #include "helper_functions.h"
 
+struct uv {
+    real_cpu u;
+    real_cpu v;
+};
+
+struct original_volumes_hash_entry {
+    struct point_3d key;
+    struct uv value;
+};
+
+struct cells_hash_entry {
+    struct point_3d key;
+    struct cell_node *value;
+};
+
+struct point_3d find_next_point(struct original_volumes_hash_entry *original_volumes, int l, struct point_3d p, struct point_3d *n, int np) {
+
+    double dist;
+    double min_dist = 100000.0;
+    int min_idx = -1;
+
+    int continue_loop = false;
+    struct point_3d aux;
+
+    for(int i = 0; i < l; i++) {
+
+       aux = original_volumes[i].key;
+       double ax = aux.x;
+       double ay = aux.y;
+
+        for(int j = 0; j < np; j++) {
+            if(ax == n[j].x && ay == n[j].y) {
+                continue_loop = true;
+                break;
+            }
+        }
+
+        if(continue_loop) {
+            continue_loop = false;
+            continue;
+        }
+
+        double a = ax - p.x;
+        double b = ay - p.y;
+
+        dist = a*a + b*b;
+
+        if(dist < min_dist) {
+            min_dist = dist;
+            min_idx = i;
+        }
+    }
+
+    if(min_idx > -1) {
+        return original_volumes[min_idx].key;
+    }
+    else {
+        return POINT3D(0,0,0);
+    }
+
+}
 
 SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 
@@ -125,210 +186,10 @@ SET_EXTRA_DATA(set_extra_data_for_benchmark) {
     return (void*)initial_conditions;
 }
 
-SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
-{
-    uint32_t num_active_cells = the_grid->num_active_cells;
-
-    *extra_data_size = sizeof(uint32_t)*(num_active_cells);
-
-    uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
-
-    struct cell_node ** ac = the_grid->active_cells;
-
-    real x_limit = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, x_limit, config, "x_limit");
-
-    int i;
-    bool inside;
-
-    OMP(parallel for)
-    for (i = 0; i < num_active_cells; i++)
-    {
-        real center_x = ac[i]->center.x;
-
-        inside = (center_x <= x_limit);
-
-        if (inside)
-            mapping[i] = 0;
-        else
-            mapping[i] = 1;
-    }
-
-    return (void*)mapping;
-}
-
-SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
-{
-    uint32_t num_active_tissue_cells = the_grid->num_active_cells;
-    uint32_t num_active_purkinje_cells = the_grid->purkinje->num_active_purkinje_cells;
-    uint32_t num_active_cells = num_active_tissue_cells + num_active_purkinje_cells;
-
-    *extra_data_size = sizeof(uint32_t)*(num_active_cells + 1);
-
-    uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
-
-    int i;
-
-    // Purkinje section
-    OMP(parallel for)
-    for (i = 0; i < num_active_purkinje_cells; i++) {
-        mapping[i] = 0;
-    }
-
-    // Tissue section
-    OMP(parallel for)
-    for (i = num_active_purkinje_cells; i < num_active_cells; i++) {
-        mapping[i] = 1;
-    }
-
-    return (void*)mapping;
-}
-
-// Initial condition - 'libToRORd_fkatp_mixed_endo_mid_epi.so' + transmurality (cable and cuboid)
-SET_EXTRA_DATA(set_extra_data_mixed_torord_fkatp_epi_mid_endo) {
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    real side_length = the_grid->mesh_side_length.x;
-    struct cell_node ** ac = the_grid->active_cells;
-
-    // The percentages were taken from the ToRORd paper (Transmural experiment)
-    real side_length_endo = side_length*0.45;
-    real side_length_mid = side_length_endo + side_length*0.25;
-    real side_length_epi = side_length_mid + side_length*0.3;
-
-    struct extra_data_for_torord *extra_data = NULL;
-
-    extra_data = set_common_torord_data(config, num_active_cells);
-
-    OMP(parallel for)
-    for (int i = 0; i < num_active_cells; i++) {
-
-        real center_x = ac[i]->center.x;
-
-        // ENDO
-        if (center_x < side_length_endo)
-            extra_data->transmurality[i] = 0.0;
-        // MID
-        else if (center_x >= side_length_endo && center_x < side_length_mid)
-            extra_data->transmurality[i] = 1.0;
-        // EPI
-        else
-            extra_data->transmurality[i] = 2.0;
-    }
-
-    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord));
-
-    return (void*)extra_data;
-
-}
-
-// Initial condition - 'libToRORd_dynCl_mixed_endo_mid_epi.so' + transmurality (cable and cuboid)
-SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_epi_mid_endo) {
-
-    uint32_t num_active_cells = the_grid->num_active_cells;
-    real side_length = the_grid->mesh_side_length.x;
-    struct cell_node ** ac = the_grid->active_cells;
-
-    // The percentages were taken from the ToRORd paper (Transmural experiment)
-    real side_length_endo = side_length*0.45;
-    real side_length_mid = side_length_endo + side_length*0.25;
-    real side_length_epi = side_length_mid + side_length*0.3;
-
-    struct extra_data_for_torord *extra_data = NULL;
-
-    extra_data = set_common_torord_dyncl_data(config, num_active_cells);
-
-    OMP(parallel for)
-    for (int i = 0; i < num_active_cells; i++) {
-
-        real center_x = ac[i]->center.x;
-
-        // ENDO
-        if (center_x < side_length_endo)
-            extra_data->transmurality[i] = 0.0;
-        // MID
-        else if (center_x >= side_length_endo && center_x < side_length_mid)
-            extra_data->transmurality[i] = 1.0;
-        // EPI
-        else
-            extra_data->transmurality[i] = 2.0;
-    }
-
-    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord));
-
-    return (void*)extra_data;
-
-}
-
-struct uv {
-    real_cpu u;
-    real_cpu v;
-};
-
-struct original_volumes_hash_entry {
-    struct point_3d key;
-    struct uv value;
-};
-
-struct cells_hash_entry {
-    struct point_3d key;
-    struct cell_node *value;
-};
-
-
-struct point_3d find_next_point(struct original_volumes_hash_entry *original_volumes, int l, struct point_3d p, struct point_3d *n, int np) {
-
-    double dist;
-    double min_dist = 100000.0;
-    int min_idx = -1;
-
-    int continue_loop = false;
-    struct point_3d aux;
-
-    for(int i = 0; i < l; i++) {
-
-       aux = original_volumes[i].key;
-       double ax = aux.x;
-       double ay = aux.y;
-
-        for(int j = 0; j < np; j++) {
-            if(ax == n[j].x && ay == n[j].y) {
-                continue_loop = true;
-                break;
-            }
-        }
-
-        if(continue_loop) {
-            continue_loop = false;
-            continue;
-        }
-
-        double a = ax - p.x;
-        double b = ay - p.y;
-
-        dist = a*a + b*b;
-
-        if(dist < min_dist) {
-            min_dist = dist;
-            min_idx = i;
-        }
-    }
-
-    if(min_idx > -1) {
-        return original_volumes[min_idx].key;
-    }
-    else {
-        return POINT3D(0,0,0);
-    }
-
-}
-
 SET_EXTRA_DATA(set_extra_data_for_spiral_fhn) {
-
 
     size_t num_sv_entries = 2;
     uint32_t num_active_cells = the_grid->num_active_cells;
-
 
     *extra_data_size = num_active_cells * num_sv_entries;
 
@@ -509,6 +370,202 @@ SET_EXTRA_DATA(set_extra_data_for_spiral_fhn) {
     return sv_cpu;
 }
 
+SET_EXTRA_DATA (set_mixed_model_if_x_less_than)
+{
+    uint32_t num_active_cells = the_grid->num_active_cells;
+
+    *extra_data_size = sizeof(uint32_t)*(num_active_cells);
+
+    uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
+
+    struct cell_node ** ac = the_grid->active_cells;
+
+    real x_limit = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, x_limit, config, "x_limit");
+
+    int i;
+    bool inside;
+
+    OMP(parallel for)
+    for (i = 0; i < num_active_cells; i++)
+    {
+        real center_x = ac[i]->center.x;
+
+        inside = (center_x <= x_limit);
+
+        if (inside)
+            mapping[i] = 0;
+        else
+            mapping[i] = 1;
+    }
+
+    return (void*)mapping;
+}
+
+SET_EXTRA_DATA (set_mixed_model_purkinje_and_tissue)
+{
+    uint32_t num_active_tissue_cells = the_grid->num_active_cells;
+    uint32_t num_active_purkinje_cells = the_grid->purkinje->num_active_purkinje_cells;
+    uint32_t num_active_cells = num_active_tissue_cells + num_active_purkinje_cells;
+
+    *extra_data_size = sizeof(uint32_t)*(num_active_cells + 1);
+
+    uint32_t *mapping = (uint32_t*)malloc(*extra_data_size);
+
+    int i;
+
+    // Purkinje section
+    OMP(parallel for)
+    for (i = 0; i < num_active_purkinje_cells; i++) {
+        mapping[i] = 0;
+    }
+
+    // Tissue section
+    OMP(parallel for)
+    for (i = num_active_purkinje_cells; i < num_active_cells; i++) {
+        mapping[i] = 1;
+    }
+
+    return (void*)mapping;
+}
+
+// Initial condition - 'libToRORd_fkatp_mixed_endo_mid_epi.so' + transmurality + current modifiers (plain and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_fkatp_epi_mid_endo) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    real side_length = the_grid->mesh_side_length.x;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    // The percentages were taken from the ToRORd paper (Transmural experiment)
+    real side_length_endo = side_length*0.45;
+    real side_length_mid = side_length_endo + side_length*0.25;
+    real side_length_epi = side_length_mid + side_length*0.3;
+
+    struct extra_data_for_torord *extra_data = NULL;
+    extra_data = set_common_torord_data(config, num_active_cells);
+
+    OMP(parallel for)
+    for (int i = 0; i < num_active_cells; i++) {
+
+        real center_x = ac[i]->center.x;
+
+        // ENDO
+        if (center_x < side_length_endo)
+            extra_data->transmurality[i] = 0.0;
+        // MID
+        else if (center_x >= side_length_endo && center_x < side_length_mid)
+            extra_data->transmurality[i] = 1.0;
+        // EPI
+        else
+            extra_data->transmurality[i] = 2.0;
+    }
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord));
+
+    return (void*)extra_data;
+
+}
+
+// Initial condition - 'libToRORd_dynCl_mixed_endo_mid_epi.so' + transmurality + current modifiers (plain and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_epi_mid_endo) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    real side_length = the_grid->mesh_side_length.x;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    // The percentages were taken from the ToRORd paper (Transmural experiment)
+    real side_length_endo = side_length*0.45;
+    real side_length_mid = side_length_endo + side_length*0.25;
+    real side_length_epi = side_length_mid + side_length*0.3;
+
+    struct extra_data_for_torord *extra_data = NULL;
+    extra_data = set_common_torord_dyncl_data(config, num_active_cells);
+
+    OMP(parallel for)
+    for (int i = 0; i < num_active_cells; i++) {
+
+        real center_x = ac[i]->center.x;
+
+        // ENDO
+        if (center_x < side_length_endo)
+            extra_data->transmurality[i] = 0.0;
+        // MID
+        else if (center_x >= side_length_endo && center_x < side_length_mid)
+            extra_data->transmurality[i] = 1.0;
+        // EPI
+        else
+            extra_data->transmurality[i] = 2.0;
+    }
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord));
+
+    return (void*)extra_data;
+}
+
+// Initial condition - 'libToRORd_Land_mixed_endo_mid_epi.so' + transmurality + current modifiers (plain and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_Land_epi_mid_endo) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    real side_length = the_grid->mesh_side_length.x;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    // The percentages were taken from the ToRORd paper (Transmural experiment)
+    real side_length_endo = side_length*0.45;
+    real side_length_mid = side_length_endo + side_length*0.25;
+    real side_length_epi = side_length_mid + side_length*0.3;
+
+    struct extra_data_for_torord_land *extra_data = NULL;
+    extra_data = set_common_torord_Land_data(config, num_active_cells);
+
+    OMP(parallel for)
+    for (int i = 0; i < num_active_cells; i++) {
+
+        real center_x = ac[i]->center.x;
+
+        // ENDO
+        if (center_x < side_length_endo)
+            extra_data->transmurality[i] = 0.0;
+        // MID
+        else if (center_x >= side_length_endo && center_x < side_length_mid)
+            extra_data->transmurality[i] = 1.0;
+        // EPI
+        else
+            extra_data->transmurality[i] = 2.0;
+    }
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord_land));
+
+    return (void*)extra_data;
+
+}
+
+// Initial condition - 'libToRORd_Land_mixed_endo_mid_epi.so' + current modifiers (cell, plain and cuboid)
+SET_EXTRA_DATA(set_extra_data_mixed_torord_Land_same_celltype) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    struct extra_data_for_torord_land *extra_data = NULL;
+    extra_data = set_common_torord_Land_data(config, num_active_cells);
+
+    // All cells will be the same type
+    OMP(parallel for)
+    for (int i = 0; i < num_active_cells; i++) {
+        // ENDO
+        extra_data->transmurality[i] = 0.0;
+        // MID
+        //extra_data->transmurality[i] = 1.0;
+        // EPI
+        //extra_data->transmurality[i] = 2.0;
+    }
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord_land));
+
+    return (void*)extra_data;
+
+}
+
+// Current modifiers - 'libtrovato_2020.so'
 SET_EXTRA_DATA(set_extra_data_trovato) {
 
     if (!the_grid->purkinje) {
