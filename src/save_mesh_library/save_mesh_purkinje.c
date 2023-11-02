@@ -634,7 +634,7 @@ SAVE_MESH(save_multiple_cell_state_variables) {
                 }
             }
         }
-        printf("Found cell %u with coordinates: (%lf %lf %lf)\n", params->tissue_cell_sv_positions[i], \
+        //printf("[tissue] Found cell %u with coordinates: (%lf %lf %lf)\n", params->tissue_cell_sv_positions[i], \
                                                                 params->tissue_cell_centers[i*3], \
                                                                 params->tissue_cell_centers[i*3+1], \
                                                                 params->tissue_cell_centers[i*3+2]);
@@ -650,11 +650,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
             check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->tissue_cell_sv_positions[k], ode_solver->pitch, sizeof(real),
                                         ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
-            fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->tissue_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->tissue_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectors
+            //fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
+            //for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
+            //}
+            //fprintf(params->tissue_files[k], "\n");
 
             free(cell_sv);
         }
@@ -664,11 +668,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
         for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
             real *cell_sv = &ode_solver->sv[params->tissue_cell_sv_positions[k] * ode_solver->model_data.number_of_ode_equations];
 
-            fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->tissue_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->tissue_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectors
+            //fprintf(params->tissue_files[k], "%.3lf ", time_info->current_t);
+            //for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->tissue_files[k], "%g ", cell_sv[i]);
+            //}
+            //fprintf(params->tissue_files[k], "\n");
         }
     }
 
@@ -680,6 +688,10 @@ SAVE_MESH(save_multiple_cell_state_variables) {
                                         params->purkinje_cell_centers[i*3],params->purkinje_cell_centers[i*3+1],params->purkinje_cell_centers[i*3+2]);
                 if (dist < 1e-1) {
                     params->purkinje_cell_sv_positions[i] = cell->sv_position;
+                    //printf("[purkinje] Found cell %u with coordinates: (%lf %lf %lf)\n", params->purkinje_cell_sv_positions[i], \
+                                                                params->purkinje_cell_centers[i*3], \
+                                                                params->purkinje_cell_centers[i*3+1], \
+                                                                params->purkinje_cell_centers[i*3+2]);
                     break;
                 }
             }
@@ -696,11 +708,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
             check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), purkinje_ode_solver->sv + params->purkinje_cell_sv_positions[k], purkinje_ode_solver->pitch, sizeof(real),
                                         purkinje_ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
-            fprintf(params->purkinje_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->purkinje_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->purkinje_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->purkinje_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectors
+            //fprintf(params->purkinje_files[k], "%.3lf ", time_info->current_t);
+            //for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->purkinje_files[k], "%g ", cell_sv[i]);
+            //}
+            //fprintf(params->purkinje_files[k], "\n");
 
             free(cell_sv);
         }
@@ -710,11 +726,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
         for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
             real *cell_sv = &purkinje_ode_solver->sv[params->purkinje_cell_sv_positions[k] * purkinje_ode_solver->model_data.number_of_ode_equations];
 
-            fprintf(params->purkinje_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->purkinje_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->purkinje_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->purkinje_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectos
+            //fprintf(params->purkinje_files[k], "%.3lf ", time_info->current_t);
+            //for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->purkinje_files[k], "%g ", cell_sv[i]);
+            //}
+            //fprintf(params->purkinje_files[k], "\n");
         }
     }
 }
