@@ -12,6 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 
+
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     real_cpu start_dx = 0.0;
@@ -320,6 +321,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region) {
     return 1;
 }
 
+SET_CUSTOM_DATA_FOR_MESH(generic_custom_data) {
+     size_t size = num_fields*sizeof(real);
+     cell->mesh_extra_info = malloc (size);
+     cell->mesh_extra_info_size = size;
+     memcpy(cell->mesh_extra_info, custom_data, size);
+}
+
+
 SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
     char *mesh_file = NULL;
@@ -334,10 +343,20 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     uint32_t total_number_mesh_points = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, total_number_mesh_points, config, "number_of_points");
 
+    uint32_t num_extra_fields = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(uint32_t, num_extra_fields, config, "num_extra_fields");
+
     the_grid->start_discretization = SAME_POINT3D(start_h);
     the_grid->max_discretization = SAME_POINT3D(max_h);
 
-    int ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
+    int ret;
+
+    if(num_extra_fields == 0) {
+        ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
+    } else {
+        ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, num_extra_fields, generic_custom_data);
+
+    }
 
     free(mesh_file);
 

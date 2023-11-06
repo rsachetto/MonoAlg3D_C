@@ -86,6 +86,7 @@ for i in "${BUILD_ARGS[@]}"; do
             COMPILE_CONVERTER='y'
             COMPILE_FIBER_CONVERTER='y'
             COMPILE_POSTPROCESSOR='y'
+            COMPILE_EXPAND='y'
             ;;
         simulator)
             COMPILE_SIMULATOR='y'
@@ -259,6 +260,10 @@ fi
 if [ -n "$COMPILE_POSTPROCESSOR" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_postprocessor" "src/main_postprocessor.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $CUDA_MATH_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
     ADD_SUBDIRECTORY "src/postprocessing_library/"
+fi
+
+if [ -n "$COMPILE_EXPAND" ]; then
+COMPILE_EXECUTABLE "MonoAlg3D_expand_scar" "src/main_expand_scar.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $CUDA_MATH_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
 
 FIND_CRITERION
