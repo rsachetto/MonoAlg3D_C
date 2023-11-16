@@ -328,7 +328,6 @@ SET_CUSTOM_DATA_FOR_MESH(generic_custom_data) {
      memcpy(cell->mesh_extra_info, custom_data, size);
 }
 
-
 SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
 
     char *mesh_file = NULL;
@@ -355,7 +354,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
         ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
     } else {
         ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, num_extra_fields, generic_custom_data);
-
     }
 
     free(mesh_file);

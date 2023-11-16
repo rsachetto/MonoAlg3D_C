@@ -114,7 +114,6 @@ static void expand_scar(const char *input, const char *output, int n_rows, char*
 
     for (int i = 0; i < n_rows; i++) {
 
-
         FOR_EACH_CELL(grid) {
             cell->visited = false;
         }
