@@ -675,7 +675,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if(save_to_file && (count % print_rate == 0) && (cur_time >= start_saving_after_dt)) {
             start_stop_watch(&write_time);
 
-            if(edp_gpu) {
+            //TODO: this is not needed if the EDO is in the GPU
+            if(edp_gpu && count > 0) {
 
 #ifdef COMPILE_CUDA
                 cudaMemcpy(gpu_rhs, linear_system_solver_result, original_num_cells * sizeof(float), cudaMemcpyDeviceToHost);
@@ -1084,7 +1085,9 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
                 check_cuda_error(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
                 free(vms);
             } else {
-                check_cuda_error(cudaMemcpy(sv, linear_solver_result, mem_size, cudaMemcpyDeviceToDevice));
+                //TODO: make the gpu linear system solver use the same size as the edo solver
+                //check_cuda_error(cudaMemcpy(sv, linear_solver_result, mem_size, cudaMemcpyDeviceToDevice));
+                gpu_copy_vectors(sv, linear_solver_result, max_number_of_cells);
                 //TODO: make a kernel to check for activity
                 act = true;
             }

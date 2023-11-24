@@ -30,3 +30,18 @@ extern "C" void gpu_update_monodomain(real *vm, float *b, real alpha, size_t n) 
     kernel_update_monodomain<<<GRID, BLOCK_SIZE>>>(vm, b, alpha, n);
     cudaDeviceSynchronize();
 }
+
+__global__ void kernel_copy_vectors(real *dst, float *src, size_t n) {
+
+    unsigned int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+    if(i < n) {
+        dst[i] = src[i];
+    }
+}
+
+extern "C" void gpu_copy_vectors(real *dst, float *src, size_t n) {
+    const int GRID  = (n + BLOCK_SIZE - 1)/BLOCK_SIZE;
+    kernel_copy_vectors<<<GRID, BLOCK_SIZE>>>(dst, src, n);
+    cudaDeviceSynchronize();
+}
