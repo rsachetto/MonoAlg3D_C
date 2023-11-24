@@ -39,6 +39,9 @@ struct grid {
 
     struct point_3d start_discretization;
     struct point_3d max_discretization;
+
+    float *gpu_rhs;
+
 };
 
 struct grid* new_grid();

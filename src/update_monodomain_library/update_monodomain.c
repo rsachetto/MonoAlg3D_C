@@ -15,7 +15,6 @@
 #include "../gpu_utils/gpu_utils.h"
 #endif
 
-
 UPDATE_MONODOMAIN(update_monodomain_default) {
 
     real_cpu alpha;
@@ -28,31 +27,50 @@ UPDATE_MONODOMAIN(update_monodomain_default) {
     int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
 
-    #ifdef COMPILE_CUDA
-    real *vms = NULL;
-    size_t mem_size = initial_number_of_cells * sizeof(real);
 
     if(use_gpu) {
-        vms = MALLOC_BYTES(real, mem_size);
-        check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
-    }
-    #endif
+        #ifdef COMPILE_CUDA
+        if(!edp_gpu) {
+            real *vms = NULL;
+            size_t mem_size = initial_number_of_cells * sizeof(real);
 
-    OMP(parallel for private(alpha))
-    for(uint32_t i = 0; i < num_active_cells; i++) {
-        alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
+            vms = MALLOC_BYTES(real, mem_size);
+            check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-        if(use_gpu) {
-            #ifdef COMPILE_CUDA
-            active_cells[i]->b = vms[active_cells[i]->sv_position] * alpha;
-            #endif
+            OMP(parallel for private(alpha))
+            for(uint32_t i = 0; i < num_active_cells; i++) {
+                alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
+                active_cells[i]->b = vms[active_cells[i]->sv_position] * alpha;
+            }
+
+            free(vms);
         } else {
-            active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
+            alpha = ALPHA(beta, cm, dt_pde, active_cells[0]->discretization.x, active_cells[0]->discretization.y, active_cells[0]->discretization.z);
+            gpu_update_monodomain(sv, the_grid->gpu_rhs, alpha, num_active_cells);
+        }
+        #endif
+    } else {
+        if(!edp_gpu) {
+            OMP(parallel for private(alpha))
+            for(uint32_t i = 0; i < num_active_cells; i++) {
+                alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
+                active_cells[i]->b = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
+            }
+        } else {
+            #ifdef COMPILE_CUDA
+            float *b = malloc(sizeof(float)*num_active_cells);
+
+            OMP(parallel for private(alpha))
+            for(uint32_t i = 0; i < num_active_cells; i++) {
+                alpha = ALPHA(beta, cm, dt_pde, active_cells[i]->discretization.x, active_cells[i]->discretization.y, active_cells[i]->discretization.z);
+                b[i] = sv[active_cells[i]->sv_position * n_equations_cell_model] * alpha;
+            }
+
+            check_cuda_error(cudaMemcpy(the_grid->gpu_rhs, b, sizeof(float)*num_active_cells, cudaMemcpyHostToDevice));
+            free(b);
+            #endif
         }
     }
-    #ifdef COMPILE_CUDA
-    free(vms);
-    #endif
 }
 
 #ifdef ENABLE_DDM

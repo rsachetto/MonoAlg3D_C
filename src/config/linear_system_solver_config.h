@@ -8,10 +8,11 @@
 #include "../alg/grid/grid.h"
 #include "../monodomain/constants.h"
 #include "config_common.h"
+#include "../ode_solver/ode_solver.h"
 
-#define SOLVE_LINEAR_SYSTEM(name)                                                                                      \
-              void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                     \
-                        uint32_t num_active_cells, struct cell_node **active_cells,                                    \
+#define SOLVE_LINEAR_SYSTEM(name)                                                                                        \
+              float *name(struct time_info *time_info, struct config *config, struct grid *the_grid,                     \
+                        uint32_t num_active_cells, struct cell_node **active_cells,                                      \
                         uint32_t *number_of_iterations, real_cpu *error)
 typedef SOLVE_LINEAR_SYSTEM(linear_system_solver_fn);
 

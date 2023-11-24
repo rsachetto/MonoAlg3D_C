@@ -16,7 +16,7 @@ struct monodomain_solver;
      void name(struct time_info *time_info, struct config *config, struct grid *the_grid,                              \
                struct monodomain_solver *the_solver,                                                                   \
                uint32_t num_active_cells, struct cell_node ** active_cells,                                            \
-               struct ode_solver *the_ode_solver, uint32_t initial_number_of_cells)
+               struct ode_solver *the_ode_solver, uint32_t initial_number_of_cells, bool edp_gpu)
 
 
 typedef UPDATE_MONODOMAIN(update_monodomain_fn);

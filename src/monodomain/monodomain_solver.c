@@ -89,6 +89,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     real_cpu finalT = the_monodomain_solver->final_time;
     real_cpu dt_ode = the_ode_solver->min_dt;
 
+    float *linear_system_solver_result = NULL;
+
+
     size_t num_stims = shlen(stimuli_configs);
     if(num_stims) {
         // Init all stimuli
@@ -624,6 +627,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     log_info("Starting simulation\n");
 
+    bool edp_gpu = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(edp_gpu, linear_system_solver_config, "use_gpu");
+
+    float *gpu_rhs = NULL;
+
+    if(edp_gpu) {
+#ifdef COMPILE_CUDA
+        cudaMalloc((void**)&the_grid->gpu_rhs, sizeof(float)*original_num_cells);
+        gpu_rhs = (float*)malloc(sizeof(float)*original_num_cells);
+#endif
+    }
+
     // Main simulation loop start
     while(cur_time-finalT <= dt_pde) {
 
@@ -659,6 +674,18 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if(save_to_file && (count % print_rate == 0) && (cur_time >= start_saving_after_dt)) {
             start_stop_watch(&write_time);
+
+            if(edp_gpu) {
+
+#ifdef COMPILE_CUDA
+                cudaMemcpy(gpu_rhs, linear_system_solver_result, original_num_cells * sizeof(float), cudaMemcpyDeviceToHost);
+#endif
+                OMP(parallel for)
+                for(uint32_t i = 0; i < original_num_cells; i++) {
+                    the_grid->active_cells[i]->v = gpu_rhs[i];
+                }
+            }
+
             ((save_mesh_fn *)save_mesh_config->main_function)(&time_info, save_mesh_config, the_grid, the_ode_solver, the_purkinje_ode_solver);
             total_write_time += stop_stop_watch(&write_time);
         }
@@ -670,7 +697,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
 
         if(cur_time > 0.0) {
-            activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver, the_purkinje_ode_solver, the_grid);
+            activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver,
+                                                                      the_purkinje_ode_solver, the_grid,
+                                                                      linear_system_solver_result, edp_gpu);
 
             if(abort_on_no_activity && cur_time > last_stimulus_time && cur_time > only_abort_after_dt) {
                 if(!activity) {
@@ -693,7 +722,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             // UPDATE: Purkinje
             ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
                                                                               the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,
-                                                                              the_purkinje_ode_solver, original_num_purkinje_cells);
+                                                                              the_purkinje_ode_solver, original_num_purkinje_cells, edp_gpu);
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
@@ -735,7 +764,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             solve_all_volumes_odes(the_ode_solver, cur_time, stimuli_configs, configs->ode_extra_config);
             ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
                                                                               the_grid->num_active_cells, the_grid->active_cells, the_ode_solver,
-                                                                              original_num_cells);
+                                                                              original_num_cells, edp_gpu);
 
             ode_total_time += stop_stop_watch(&ode_time);
 
@@ -753,8 +782,24 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             }
 
             // DIFUSION: Tissue
-            ((linear_system_solver_fn *)linear_system_solver_config->main_function)(
-                &time_info, linear_system_solver_config, the_grid, the_grid->num_active_cells, the_grid->active_cells, &solver_iterations, &solver_error);
+            linear_system_solver_result = ((linear_system_solver_fn *)linear_system_solver_config->main_function)(
+                &time_info, linear_system_solver_config, the_grid, the_grid->num_active_cells, the_grid->active_cells,
+                &solver_iterations, &solver_error);
+
+
+            if(edp_gpu && !the_ode_solver->gpu) {
+
+#ifdef COMPILE_CUDA
+                cudaMemcpy(gpu_rhs, linear_system_solver_result, original_num_cells * sizeof(float), cudaMemcpyDeviceToHost);
+#endif
+                OMP(parallel for)
+                for(uint32_t i = 0; i < original_num_cells; i++) {
+                    the_grid->active_cells[i]->v = gpu_rhs[i];
+                }
+
+            }
+
+
             if(isnan(solver_error)) {
                 log_error("\nSimulation stopped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
 #ifdef COMPILE_GUI
@@ -1001,8 +1046,9 @@ void set_spatial_stim(struct time_info *time_info, struct string_voidp_hash_entr
     }
 }
 
-bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver, struct ode_solver *the_purkinje_ode_solver,
-                                                    struct grid *the_grid) {
+bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver,
+                                                    struct ode_solver *the_purkinje_ode_solver,
+                                                    struct grid *the_grid, float *linear_solver_result, bool edp_gpu) {
     bool act = false;
 
     // Tissue section
@@ -1017,25 +1063,31 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
         if(the_ode_solver->gpu) {
 #ifdef COMPILE_CUDA
             uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
-            real *vms;
             size_t mem_size = max_number_of_cells * sizeof(real);
+            if(!edp_gpu) {
+                real *vms;
 
-            vms = (real *)malloc(mem_size);
+                vms = (real *)malloc(mem_size);
 
-            if(the_grid->adaptive)
-                check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+                if(the_grid->adaptive)
+                    check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
 
-            OMP(parallel for)
-            for(uint32_t i = 0; i < n_active; i++) {
-                vms[ac[i]->sv_position] = (real)ac[i]->v;
+                OMP(parallel for)
+                    for(uint32_t i = 0; i < n_active; i++) {
+                        vms[ac[i]->sv_position] = (real)ac[i]->v;
 
-                if(ac[i]->v > vm_threshold) {
-                    act = true;
-                }
+                        if(ac[i]->v > vm_threshold) {
+                            act = true;
+                        }
+                    }
+
+                check_cuda_error(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
+                free(vms);
+            } else {
+                check_cuda_error(cudaMemcpy(sv, linear_solver_result, mem_size, cudaMemcpyDeviceToDevice));
+                //TODO: make a kernel to check for activity
+                act = true;
             }
-
-            check_cuda_error(cudaMemcpy(sv, vms, mem_size, cudaMemcpyHostToDevice));
-            free(vms);
 #endif
         } else {
             OMP(parallel for)
@@ -1596,7 +1648,7 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
                         min_tissue_lat = activation_times_array_tissue[cur_pulse];
                         min_tissue_lat_id = tissue_cells[j]->sv_position;
                     }
-                        
+
                 }
 
                 if (is_terminal_active) {

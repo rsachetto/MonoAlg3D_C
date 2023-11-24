@@ -35,6 +35,7 @@ extern "C" {
 #endif
 void gpu_vec_div_vec(real *vec1, real *vec2, real* res, size_t n);
 real gpu_ecg_integral(real *beta_im, real *distances, real *volumes, size_t vec_size);
+void gpu_update_monodomain(real *vm, float *b, real alpha, size_t n);
 void cuda_assert(int code, char const *const func, const char *const file, int const line, const char *api);
 #ifdef __cplusplus
 }
