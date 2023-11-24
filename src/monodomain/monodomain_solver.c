@@ -627,12 +627,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     log_info("Starting simulation\n");
 
-    bool edp_gpu = false;
-    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(edp_gpu, linear_system_solver_config, "use_gpu");
+    bool pde_gpu = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(pde_gpu, linear_system_solver_config, "use_gpu");
 
     float *gpu_rhs = NULL;
 
-    if(edp_gpu) {
+    if(pde_gpu) {
 #ifdef COMPILE_CUDA
         cudaMalloc((void**)&the_grid->gpu_rhs, sizeof(float)*original_num_cells);
         gpu_rhs = (float*)malloc(sizeof(float)*original_num_cells);
@@ -676,7 +676,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             start_stop_watch(&write_time);
 
             //TODO: this is not needed if the EDO is in the GPU
-            if(edp_gpu && count > 0) {
+            if(pde_gpu && count > 0) {
 
 #ifdef COMPILE_CUDA
                 cudaMemcpy(gpu_rhs, linear_system_solver_result, original_num_cells * sizeof(float), cudaMemcpyDeviceToHost);
@@ -700,7 +700,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if(cur_time > 0.0) {
             activity = update_ode_state_vector_and_check_for_activity(vm_threshold, the_ode_solver,
                                                                       the_purkinje_ode_solver, the_grid,
-                                                                      linear_system_solver_result, edp_gpu);
+                                                                      linear_system_solver_result, pde_gpu);
 
             if(abort_on_no_activity && cur_time > last_stimulus_time && cur_time > only_abort_after_dt) {
                 if(!activity) {
@@ -723,7 +723,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             // UPDATE: Purkinje
             ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
                                                                               the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,
-                                                                              the_purkinje_ode_solver, original_num_purkinje_cells, edp_gpu);
+                                                                              the_purkinje_ode_solver, original_num_purkinje_cells, pde_gpu);
 
             purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
 
@@ -765,7 +765,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             solve_all_volumes_odes(the_ode_solver, cur_time, stimuli_configs, configs->ode_extra_config);
             ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
                                                                               the_grid->num_active_cells, the_grid->active_cells, the_ode_solver,
-                                                                              original_num_cells, edp_gpu);
+                                                                              original_num_cells, pde_gpu);
 
             ode_total_time += stop_stop_watch(&ode_time);
 
@@ -788,7 +788,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 &solver_iterations, &solver_error);
 
 
-            if(edp_gpu && !the_ode_solver->gpu) {
+            if(pde_gpu && !the_ode_solver->gpu) {
 
 #ifdef COMPILE_CUDA
                 cudaMemcpy(gpu_rhs, linear_system_solver_result, original_num_cells * sizeof(float), cudaMemcpyDeviceToHost);
@@ -1049,7 +1049,7 @@ void set_spatial_stim(struct time_info *time_info, struct string_voidp_hash_entr
 
 bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struct ode_solver *the_ode_solver,
                                                     struct ode_solver *the_purkinje_ode_solver,
-                                                    struct grid *the_grid, float *linear_solver_result, bool edp_gpu) {
+                                                    struct grid *the_grid, float *linear_solver_result, bool pde_gpu) {
     bool act = false;
 
     // Tissue section
@@ -1065,7 +1065,7 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 #ifdef COMPILE_CUDA
             uint32_t max_number_of_cells = the_ode_solver->original_num_cells;
             size_t mem_size = max_number_of_cells * sizeof(real);
-            if(!edp_gpu) {
+            if(!pde_gpu) {
                 real *vms;
 
                 vms = (real *)malloc(mem_size);
