@@ -699,8 +699,8 @@ void print_purkinje_propagation_velocity(struct config *config, struct grid *the
     assert(config);
     assert(the_grid);
 
-    struct save_coupling_with_activation_times_persistent_data *persistent_data =
-        (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
+    struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *persistent_data =
+        (struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data;
     struct cell_node **purkinje_cells = the_grid->purkinje->purkinje_cells;
 
     // Compute the shortest distance from the root to all other nodes
