@@ -1495,7 +1495,8 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
         (struct save_coupling_with_activation_times_persistent_data *)config->persistent_data;
     char *main_function_name = config->main_function_name;
 
-    if(strcmp(main_function_name, "save_purkinje_coupling_with_activation_times") == 0) {
+    if(strcmp(main_function_name, "save_purkinje_coupling_with_activation_times") == 0 ||
+        strcmp(main_function_name, "save_multiple_cell_state_variables_purkinje_coupling_with_activation_times") == 0) {
 
         char *output_dir = NULL;
         GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
