@@ -32,7 +32,7 @@ def main():
     result_data = pd.concat([alg_data, fibers_data], axis=1)
     #print(result_data)
 
-    result_data.to_csv("output.alg", header=False, index=False)
+    result_data.to_csv("output.alg", header=True, index=False)
 
 if __name__ == "__main__":
 	main()
