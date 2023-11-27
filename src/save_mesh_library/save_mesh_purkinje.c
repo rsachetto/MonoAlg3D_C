@@ -851,30 +851,34 @@ INIT_SAVE_MESH(init_save_multiple_cell_state_variables_purkinje_coupling_with_ac
     config->persistent_data = calloc(1, sizeof(struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data));
     
     // [PURKINJE COUPLED MULTIPLE CELLS]
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells,
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells,
                                                 config, "tissue_num_cells");
     GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_centers,
                                                 config, "tissue_cell_centers", ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells, 3);
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix, config,
-                                               "tissue_file_name_prefix");
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells,
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix = "";
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix,
+                                                config, "tissue_file_name_prefix");
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells,
                                                 config, "purkinje_num_cells");
     GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_centers,
                                                 config, "purkinje_cell_centers", ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells, 3);
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix, config,
-                                               "purkinje_file_name_prefix");
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix = "";
+    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix,
+                                                config, "purkinje_file_name_prefix");
 
     uint32_t tissue_num_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells;
     char *tissue_file_name_prefix = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix;
     uint32_t *tissue_cell_sv_positions = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions;
-    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files = MALLOC_ARRAY_OF_TYPE(FILE*, tissue_num_cells);
-    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, tissue_num_cells);
+    if (tissue_num_cells > 0) ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files = MALLOC_ARRAY_OF_TYPE(FILE*, tissue_num_cells);
+    if (tissue_num_cells > 0) ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, tissue_num_cells);
 
     uint32_t purkinje_num_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells;
     char *purkinje_file_name_prefix = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix;
     uint32_t *purkinje_cell_sv_positions = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions;
-    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files = MALLOC_ARRAY_OF_TYPE(FILE*, purkinje_num_cells);
-    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, purkinje_num_cells);
+    if (purkinje_num_cells > 0) ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files = MALLOC_ARRAY_OF_TYPE(FILE*, purkinje_num_cells);
+    if (purkinje_num_cells > 0) ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, purkinje_num_cells);
 
     for (int i = 0; i < tissue_num_cells; i++) {
         
@@ -916,22 +920,30 @@ END_SAVE_MESH(end_save_multiple_cell_state_variables_purkinje_coupling_with_acti
 
     // [PURKINJE COUPLED MULTIPLE CELLS]
     uint32_t num_tissue_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells;
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix);
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions);
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_centers);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix) 
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions)
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_centers)
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_centers);
     for (uint32_t i = 0; i < num_tissue_cells; i++) {
         fclose(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files[i]);
     }
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files)
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files);
 
     uint32_t num_purkinje_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells;
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix);
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions);
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_centers);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix)
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions)
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_centers)
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_centers);
     for (uint32_t i = 0; i < num_purkinje_cells; i++) {
         fclose(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files[i]);
     }
-    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files);
+    if (((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files)
+        free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files);
 
     // [PURKINJE COUPLED ACTIVATION TIMES]
     bool save_activation_time_map = false;
