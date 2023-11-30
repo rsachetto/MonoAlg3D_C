@@ -86,7 +86,7 @@ for i in "${BUILD_ARGS[@]}"; do
             COMPILE_CONVERTER='y'
             COMPILE_FIBER_CONVERTER='y'
             COMPILE_POSTPROCESSOR='y'
-            COMPILE_EXPAND='y'
+            #COMPILE_EXPAND='y'
             ;;
         simulator)
             COMPILE_SIMULATOR='y'
