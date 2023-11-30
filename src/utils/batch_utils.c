@@ -43,6 +43,16 @@ void configure_new_parameters(struct changed_parameters *changed, struct user_op
                 free(options->model_file_path);
                 options->model_file_path = strdup(changed[n].value);
             }
+        } else if (strcmp(ODE_PURKINJE_SECTION, changed[n].section) == 0) {
+            if (strcmp("dt", changed[n].name) == 0) {
+                options->dt_ode = float_value;
+                //TODO: this is deprecated
+            } else if (strcmp("gpu_id", changed[n].name) == 0) {
+                options->gpu_id = (int) float_value;
+            } else if (strcmp("library_file", changed[n].name) == 0) {
+                free(options->model_file_path);
+                options->model_file_path = strdup(changed[n].value);
+            }
         }
 
         if (strcmp(EXTRA_DATA_SECTION, changed[n].section) == 0) {
@@ -55,7 +65,13 @@ void configure_new_parameters(struct changed_parameters *changed, struct user_op
             if (options->domain_config) {
                 set_or_overwrite_common_data(options->domain_config, changed[n].name, changed[n].value, NULL, NULL);
             }
-        } else if (strcmp(MATRIX_ASSEMBLY_SECTION, changed[n].section) == 0) {
+        } else if (strcmp(PURKINJE_SECTION, changed[n].section) == 0) {
+
+            if (options->purkinje_config) {
+                set_or_overwrite_common_data(options->purkinje_config, changed[n].name, changed[n].value, NULL, NULL);
+            }
+        }
+          else if (strcmp(MATRIX_ASSEMBLY_SECTION, changed[n].section) == 0) {
             if (options->assembly_matrix_config) {
                 set_or_overwrite_common_data(options->assembly_matrix_config, changed[n].name, changed[n].value, NULL, NULL);
             }
@@ -65,7 +81,21 @@ void configure_new_parameters(struct changed_parameters *changed, struct user_op
                 set_or_overwrite_common_data(options->linear_system_solver_config, changed[n].name, changed[n].value, NULL, NULL);
 
             }
+        } else if (strcmp(LINEAR_SYSTEM_SOLVER_PURKINJE_SECTION, changed[n].section) == 0) {
+            if (options->purkinje_linear_system_solver_config) {
+                set_or_overwrite_common_data(options->purkinje_linear_system_solver_config, changed[n].name, changed[n].value, NULL, NULL);
+
+            }
         } else if (strncmp(changed[n].section, STIM_SECTION, strlen(STIM_SECTION)) == 0) {
+
+            struct config *sc = (struct config *) shget(options->stim_configs, changed[n].section);
+            if (sc) {
+                set_or_overwrite_common_data(sc, changed[n].name, changed[n].value, NULL, NULL);
+                shput(options->stim_configs, changed[n].section, sc);
+
+            }
+
+        } else if (strncmp(changed[n].section, STIM_PURKINJE_SECTION, strlen(STIM_PURKINJE_SECTION)) == 0) {
 
             struct config *sc = (struct config *) shget(options->stim_configs, changed[n].section);
             if (sc) {
