@@ -237,7 +237,7 @@ uint32_t set_custom_mesh_from_file(struct grid *the_grid, const char *mesh_file,
                 cell->active = true;
                 cell->original_position_in_file = index;
                 if(load_custom_data) {
-                    set_custom_data_for_mesh(cell, custom_data[cell->original_position_in_file]);
+                    set_custom_data_for_mesh(cell, custom_data[cell->original_position_in_file], num_extra_fields);
                 }
 
                 num_loaded++;

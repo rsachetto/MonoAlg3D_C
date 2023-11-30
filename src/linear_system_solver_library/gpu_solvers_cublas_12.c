@@ -204,7 +204,6 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
         
         cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_p, 1, persistent_data->d_Ax, 1, &dot);
 
-        cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_p, 1, persistent_data->d_Ax, 1, &dot);
         a = r1 / dot;
 
         cublasSaxpy(persistent_data->cublasHandle, N, &a, persistent_data->d_p, 1, persistent_data->d_x, 1);
