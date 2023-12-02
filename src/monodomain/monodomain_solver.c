@@ -333,11 +333,14 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             if(the_ode_solver->gpu && linear_solver_on_gpu) {
                 log_info("%d devices available, running both ODE and linear system solvers on GPU (device %d -> %s)\n", device_count, device, prop.name);
+                uuid_print(prop.uuid);
             } else if(the_ode_solver->gpu) {
                 log_info("%d devices available, running only the ODE solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
+                uuid_print(prop.uuid);
             }
             else {
                 log_info("%d devices available, running only the linear system solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
+                uuid_print(prop.uuid);
             }
 
             check_cuda_error(cudaSetDevice(device));
