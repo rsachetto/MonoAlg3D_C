@@ -10,6 +10,7 @@
 #include "../config/save_mesh_config.h"
 #include "../utils/utils.h"
 #include "../extra_data_library/helper_functions.h"
+#include "../domains_library/mesh_info_data.h"
 
 #include "../libraries_common/common_data_structures.h"
 #include "../ensight_utils/ensight_grid.h"
@@ -634,7 +635,7 @@ SAVE_MESH(save_multiple_cell_state_variables) {
                 }
             }
         }
-        printf("Found cell %u with coordinates: (%lf %lf %lf)\n", params->tissue_cell_sv_positions[i], \
+        //printf("[tissue] Found cell %u with coordinates: (%lf %lf %lf)\n", params->tissue_cell_sv_positions[i], \
                                                                 params->tissue_cell_centers[i*3], \
                                                                 params->tissue_cell_centers[i*3+1], \
                                                                 params->tissue_cell_centers[i*3+2]);
@@ -650,11 +651,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
             check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->tissue_cell_sv_positions[k], ode_solver->pitch, sizeof(real),
                                         ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
-            fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->tissue_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->tissue_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectors
+            //fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
+            //for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
+            //}
+            //fprintf(params->tissue_files[k], "\n");
 
             free(cell_sv);
         }
@@ -664,11 +669,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
         for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
             real *cell_sv = &ode_solver->sv[params->tissue_cell_sv_positions[k] * ode_solver->model_data.number_of_ode_equations];
 
-            fprintf(params->tissue_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->tissue_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->tissue_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->tissue_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectors
+            //fprintf(params->tissue_files[k], "%.3lf ", time_info->current_t);
+            //for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->tissue_files[k], "%g ", cell_sv[i]);
+            //}
+            //fprintf(params->tissue_files[k], "\n");
         }
     }
 
@@ -680,6 +689,10 @@ SAVE_MESH(save_multiple_cell_state_variables) {
                                         params->purkinje_cell_centers[i*3],params->purkinje_cell_centers[i*3+1],params->purkinje_cell_centers[i*3+2]);
                 if (dist < 1e-1) {
                     params->purkinje_cell_sv_positions[i] = cell->sv_position;
+                    //printf("[purkinje] Found cell %u with coordinates: (%lf %lf %lf)\n", params->purkinje_cell_sv_positions[i], \
+                                                                params->purkinje_cell_centers[i*3], \
+                                                                params->purkinje_cell_centers[i*3+1], \
+                                                                params->purkinje_cell_centers[i*3+2]);
                     break;
                 }
             }
@@ -696,11 +709,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
             check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), purkinje_ode_solver->sv + params->purkinje_cell_sv_positions[k], purkinje_ode_solver->pitch, sizeof(real),
                                         purkinje_ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
-            fprintf(params->purkinje_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->purkinje_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->purkinje_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->purkinje_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectors
+            //fprintf(params->purkinje_files[k], "%.3lf ", time_info->current_t);
+            //for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->purkinje_files[k], "%g ", cell_sv[i]);
+            //}
+            //fprintf(params->purkinje_files[k], "\n");
 
             free(cell_sv);
         }
@@ -710,11 +727,15 @@ SAVE_MESH(save_multiple_cell_state_variables) {
         for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
             real *cell_sv = &purkinje_ode_solver->sv[params->purkinje_cell_sv_positions[k] * purkinje_ode_solver->model_data.number_of_ode_equations];
 
-            fprintf(params->purkinje_files[k], "%lf ", time_info->current_t);
-            for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
-                fprintf(params->purkinje_files[k], "%lf ", cell_sv[i]);
-            }
-            fprintf(params->purkinje_files[k], "\n");
+            // Only 'time' and 'Vm'
+            fprintf(params->purkinje_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            // All state-vectos
+            //fprintf(params->purkinje_files[k], "%.3lf ", time_info->current_t);
+            //for(int i = 0; i < purkinje_ode_solver->model_data.number_of_ode_equations; i++) {
+            //    fprintf(params->purkinje_files[k], "%g ", cell_sv[i]);
+            //}
+            //fprintf(params->purkinje_files[k], "\n");
         }
     }
 }
@@ -823,4 +844,404 @@ SAVE_MESH(save_transmurality_as_vtk) {
     CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
 
     exit(EXIT_SUCCESS);
+}
+
+INIT_SAVE_MESH(init_save_multiple_cell_state_variables_purkinje_coupling_with_activation_times) {
+
+    config->persistent_data = calloc(1, sizeof(struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data));
+    
+    // [PURKINJE COUPLED MULTIPLE CELLS]
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells,
+                                                config, "tissue_num_cells");
+    GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_centers,
+                                                config, "tissue_cell_centers", ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells, 3);
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix, config,
+                                               "tissue_file_name_prefix");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells,
+                                                config, "purkinje_num_cells");
+    GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_centers,
+                                                config, "purkinje_cell_centers", ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells, 3);
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix, config,
+                                               "purkinje_file_name_prefix");
+
+    uint32_t tissue_num_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells;
+    char *tissue_file_name_prefix = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix;
+    uint32_t *tissue_cell_sv_positions = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions;
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files = MALLOC_ARRAY_OF_TYPE(FILE*, tissue_num_cells);
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, tissue_num_cells);
+
+    uint32_t purkinje_num_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells;
+    char *purkinje_file_name_prefix = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix;
+    uint32_t *purkinje_cell_sv_positions = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions;
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files = MALLOC_ARRAY_OF_TYPE(FILE*, purkinje_num_cells);
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, purkinje_num_cells);
+
+    for (int i = 0; i < tissue_num_cells; i++) {
+        
+        sds base_name = NULL;
+        base_name = create_base_name(tissue_file_name_prefix, i, "dat");
+
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files[i] = fopen(base_name, "w");
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions[i] = -1;
+    }
+
+    for (int i = 0; i < purkinje_num_cells; i++) {
+        
+        sds base_name = NULL;
+        base_name = create_base_name(purkinje_file_name_prefix, i, "dat");
+
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files[i] = fopen(base_name, "w");
+        ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions[i] = -1;
+    }
+
+    // [PURKINJE COUPLED ACTIVATION TIMES]
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_was_active, 0.0);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_last_time_v, -100.0);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_num_activations, 0);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_activation_times, NULL);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_apds, NULL);
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_grid = NULL;
+
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_was_active, 0.0);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_last_time_v, -100.0);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_num_activations, 0);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_activation_times, NULL);
+    hmdefault(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_apds, NULL);
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_grid = NULL;
+
+    ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->first_save_call = true;
+}
+
+END_SAVE_MESH(end_save_multiple_cell_state_variables_purkinje_coupling_with_activation_times) {
+
+    // [PURKINJE COUPLED MULTIPLE CELLS]
+    uint32_t num_tissue_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_tissue_cells;
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_file_name_prefix);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_sv_positions);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_cell_centers);
+    for (uint32_t i = 0; i < num_tissue_cells; i++) {
+        fclose(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files[i]);
+    }
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->tissue_files);
+
+    uint32_t num_purkinje_cells = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->num_purkinje_cells;
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_file_name_prefix);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_sv_positions);
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_cell_centers);
+    for (uint32_t i = 0; i < num_purkinje_cells; i++) {
+        fclose(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files[i]);
+    }
+    free(((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data)->purkinje_files);
+
+    // [PURKINJE COUPLED ACTIVATION TIMES]
+    bool save_activation_time_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_activation_time_map, config, "save_activation_time");
+
+    bool save_apd_map = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_apd_map, config, "save_apd");
+
+    bool save_purkinje_velocity = false;
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje_velocity, config, "save_purkinje_velocity");
+
+    if(save_activation_time_map) {
+        log_info("[!] Saving activation time maps !!!!\n");
+        write_tissue_activation_time_maps(config, the_grid, output_dir, file_prefix, clip_with_plain, clip_with_bounds, binary, compress,
+                                          compression_level, save_f);
+        write_purkinje_activation_time_maps(config, the_grid, output_dir, file_prefix_purkinje, clip_with_plain, clip_with_bounds, binary,  compress,
+                                            compression_level);
+    }
+
+    if(save_apd_map) {
+        log_info("[!] Saving APD map !!!!\n");
+        write_tissue_apd_map(config, the_grid, output_dir, file_prefix, clip_with_plain, clip_with_bounds, binary, compress, compression_level,
+                             save_f);
+        write_purkinje_apd_map(config, the_grid, output_dir, file_prefix_purkinje, clip_with_plain, clip_with_bounds, binary, compress,
+                               compression_level);
+    }
+
+    if(save_purkinje_velocity) {
+        log_info("[!] Calculating Purkinje propagation velocity !!!!\n");
+        print_purkinje_propagation_velocity(config, the_grid);
+    }
+
+    free(config->persistent_data);
+}
+
+SAVE_MESH(save_multiple_cell_state_variables_purkinje_coupling_with_activation_times) {
+
+    // [PURKINJE COUPLED ACTIVATION TIMES]
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+
+    float time_threshold = 10.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, time_threshold, config, "time_threshold");
+
+    float tissue_activation_threshold = -30.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_activation_threshold, config, "activation_threshold_tissue");
+
+    float tissue_apd_threshold = -83.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, tissue_apd_threshold, config, "apd_threshold_tissue");
+
+    float purkinje_activation_threshold = -30.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_activation_threshold, config, "activation_threshold_purkinje");
+
+    float purkinje_apd_threshold = -83.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(float, purkinje_apd_threshold, config, "apd_threshold_purkinje");
+
+// [TISSUE]
+    real_cpu current_t = time_info->current_t;
+    real_cpu last_t = time_info->final_t;
+    real_cpu dt = time_info->dt;
+
+    struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *persistent_data =
+        (struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data;
+    
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    //OMP(parallel for)
+    for (uint32_t i = 0; i < num_active_cells; i++) {
+        if (ac[i]->active || (ac[i]->mesh_extra_info && (FIBROTIC(ac[i])) || BORDER_ZONE(ac[i]) )) {
+            
+            real_cpu center_x, center_y, center_z;
+            real_cpu v;
+            
+            center_x = ac[i]->center.x;
+            center_y = ac[i]->center.y;
+            center_z = ac[i]->center.z;
+
+            v = ac[i]->v;
+
+            struct point_3d cell_coordinates;
+            cell_coordinates.x = center_x;
+            cell_coordinates.y = center_y;
+            cell_coordinates.z = center_z;
+
+            int n_activations = 0;
+            float *apds_array = NULL;
+            float *activation_times_array = NULL;
+
+            if(ac[i]->active) {
+
+                float last_v = hmget(persistent_data->tissue_last_time_v, cell_coordinates);
+
+                n_activations = (int)hmget(persistent_data->tissue_num_activations, cell_coordinates);
+                activation_times_array = (float *)hmget(persistent_data->tissue_activation_times, cell_coordinates);
+                apds_array = (float *)hmget(persistent_data->tissue_apds, cell_coordinates);
+
+                int act_times_len = arrlen(activation_times_array);
+                
+                if(current_t == 0.0f) {
+                    hmput(persistent_data->tissue_last_time_v, cell_coordinates, v);
+                } else {
+                    if((last_v < tissue_activation_threshold) && (v >= tissue_activation_threshold)) {
+                        if(act_times_len == 0) {
+                            n_activations++;
+                            hmput(persistent_data->tissue_num_activations, cell_coordinates, n_activations);
+                            arrput(activation_times_array, current_t);
+                            float tmp = hmget(persistent_data->tissue_cell_was_active, cell_coordinates);
+                            hmput(persistent_data->tissue_cell_was_active, cell_coordinates, tmp + 1);
+                            hmput(persistent_data->tissue_activation_times, cell_coordinates, activation_times_array);
+                        } else { // This is to avoid spikes in the middle of an Action Potential
+                            float last_act_time = activation_times_array[act_times_len - 1];
+                            if(current_t - last_act_time > time_threshold) {
+                                n_activations++;
+                                hmput(persistent_data->tissue_num_activations, cell_coordinates, n_activations);
+                                arrput(activation_times_array, current_t);
+                                float tmp = hmget(persistent_data->tissue_cell_was_active, cell_coordinates);
+                                hmput(persistent_data->tissue_cell_was_active, cell_coordinates, tmp + 1);
+                                hmput(persistent_data->tissue_activation_times, cell_coordinates, activation_times_array);
+                            }
+                        }
+                    }
+
+                    // CHECK APD
+                    bool was_active = (hmget(persistent_data->tissue_cell_was_active, cell_coordinates) != 0.0);
+                    if(was_active) {
+                        if(v <= tissue_apd_threshold || (hmget(persistent_data->tissue_cell_was_active, cell_coordinates) == 2.0) ||
+                           (last_t - current_t) <= dt) {
+                    
+                            int tmp = (int)hmget(persistent_data->tissue_cell_was_active, cell_coordinates);
+                            int act_time_array_len = arrlen(activation_times_array);
+                            // if this in being calculated because we had a new activation before the cell achieved the rest potential,
+                            // we need to get the activation before this one
+                            real_cpu last_act_time = activation_times_array[act_time_array_len - tmp];
+                            real_cpu apd = current_t - last_act_time;
+                            arrput(apds_array, apd);
+                            hmput(persistent_data->tissue_apds, cell_coordinates, apds_array);
+                            hmput(persistent_data->tissue_cell_was_active, cell_coordinates, tmp - 1);
+                        }
+                    }
+                    hmput(persistent_data->tissue_last_time_v, cell_coordinates, v);
+                }
+            }
+        }
+    }
+
+// [PURKINJE]
+    uint32_t num_active_purkinje_cells = the_grid->purkinje->num_active_purkinje_cells;
+    struct cell_node **ac_purkinje = the_grid->purkinje->purkinje_cells;
+
+    //OMP(parallel for)
+    for (uint32_t i = 0; i < num_active_purkinje_cells; i++) {
+        if (ac_purkinje[i]->active || (ac_purkinje[i]->mesh_extra_info && (FIBROTIC(ac_purkinje[i]) || BORDER_ZONE(ac_purkinje[i]) )) ) {
+            real_cpu center_x, center_y, center_z;
+            real_cpu v;
+
+            center_x = ac_purkinje[i]->center.x;
+            center_y = ac_purkinje[i]->center.y;
+            center_z = ac_purkinje[i]->center.z;
+
+            v = ac_purkinje[i]->v;
+
+            struct point_3d cell_coordinates;
+            cell_coordinates.x = center_x;
+            cell_coordinates.y = center_y;
+            cell_coordinates.z = center_z;
+
+            int n_activations = 0;
+            float *apds_array = NULL;
+            float *activation_times_array = NULL;
+
+            if(ac_purkinje[i]->active) {
+
+                float last_v = hmget(persistent_data->purkinje_last_time_v, cell_coordinates);
+
+                n_activations = (int)hmget(persistent_data->purkinje_num_activations, cell_coordinates);
+                activation_times_array = (float *)hmget(persistent_data->purkinje_activation_times, cell_coordinates);
+                apds_array = (float *)hmget(persistent_data->purkinje_apds, cell_coordinates);
+
+                int act_times_len = arrlen(activation_times_array);
+
+                if(current_t == 0.0f) {
+                    hmput(persistent_data->purkinje_last_time_v, cell_coordinates, v);
+                } else {
+                    if((last_v < purkinje_activation_threshold) && (v >= purkinje_activation_threshold)) {
+
+                        if(act_times_len == 0) {
+                            n_activations++;
+                            hmput(persistent_data->purkinje_num_activations, cell_coordinates, n_activations);
+                            arrput(activation_times_array, current_t);
+                            float tmp = hmget(persistent_data->purkinje_cell_was_active, cell_coordinates);
+                            hmput(persistent_data->purkinje_cell_was_active, cell_coordinates, tmp + 1);
+                            hmput(persistent_data->purkinje_activation_times, cell_coordinates, activation_times_array);
+                        } else { // This is to avoid spikes in the middle of an Action Potential
+                            float last_act_time = activation_times_array[act_times_len - 1];
+                            if(current_t - last_act_time > time_threshold) {
+                                n_activations++;
+                                hmput(persistent_data->purkinje_num_activations, cell_coordinates, n_activations);
+                                arrput(activation_times_array, current_t);
+                                float tmp = hmget(persistent_data->purkinje_cell_was_active, cell_coordinates);
+                                hmput(persistent_data->purkinje_cell_was_active, cell_coordinates, tmp + 1);
+                                hmput(persistent_data->purkinje_activation_times, cell_coordinates, activation_times_array);
+                            }
+                        }
+                    }
+
+                    // CHECK APD
+                    bool was_active = (hmget(persistent_data->purkinje_cell_was_active, cell_coordinates) != 0.0);
+                    if(was_active) {
+                        if(v <= purkinje_apd_threshold || (hmget(persistent_data->purkinje_cell_was_active, cell_coordinates) == 2.0) ||
+                           (last_t - current_t) <= dt) {
+
+                            int tmp = (int)hmget(persistent_data->purkinje_cell_was_active, cell_coordinates);
+                            int act_time_array_len = arrlen(activation_times_array);
+                            // if this in being calculated because we had a new activation before the cell achieved the rest potential,
+                            // we need to get the activation before this one
+                            real_cpu last_act_time = activation_times_array[act_time_array_len - tmp];
+                            real_cpu apd = current_t - last_act_time;
+                            arrput(apds_array, apd);
+                            hmput(persistent_data->purkinje_apds, cell_coordinates, apds_array);
+                            hmput(persistent_data->purkinje_cell_was_active, cell_coordinates, tmp - 1);
+                        }
+                    }
+
+                    hmput(persistent_data->purkinje_last_time_v, cell_coordinates, v);
+                }
+            }
+        }
+    }
+
+    struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *params = ((struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data *)config->persistent_data);
+
+    // [DOMAIN]
+    for (uint32_t i = 0; i < params->num_tissue_cells; i++) {
+        if(params->tissue_cell_sv_positions[i] == -1) {
+            if(!the_grid->adaptive) {
+                FOR_EACH_CELL(the_grid) {    
+                    if (cell->active) {
+                        if(cell->center.x == params->tissue_cell_centers[i*3] && cell->center.y == params->tissue_cell_centers[i*3+1] && cell->center.z == params->tissue_cell_centers[i*3+2]) {
+                            params->tissue_cell_sv_positions[i] = cell->sv_position;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if(ode_solver->gpu) {
+#ifdef COMPILE_CUDA
+        for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
+            real *cell_sv;
+
+            cell_sv = MALLOC_ARRAY_OF_TYPE(real, ode_solver->model_data.number_of_ode_equations);
+
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->tissue_cell_sv_positions[k], ode_solver->pitch, sizeof(real),
+                                        ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+            // Only 'time' and 'Vm'
+            fprintf(params->tissue_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            free(cell_sv);
+        }
+        
+#endif
+    } else {
+        for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
+            real *cell_sv = &ode_solver->sv[params->tissue_cell_sv_positions[k] * ode_solver->model_data.number_of_ode_equations];
+
+            // Only 'time' and 'Vm'
+            fprintf(params->tissue_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+        }
+    }
+
+// [PURKINJE]
+    for (uint32_t i = 0; i < params->num_purkinje_cells; i++) {
+        if(params->purkinje_cell_sv_positions[i] == -1) {
+            FOR_EACH_PURKINJE_CELL(the_grid) {
+                real_cpu dist = calc_norm(cell->center.x,cell->center.y,cell->center.z,\
+                                        params->purkinje_cell_centers[i*3],params->purkinje_cell_centers[i*3+1],params->purkinje_cell_centers[i*3+2]);
+                if (dist < 1e-1) {
+                    params->purkinje_cell_sv_positions[i] = cell->sv_position;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if(purkinje_ode_solver->gpu) {
+#ifdef COMPILE_CUDA
+        for (uint32_t k = 0; k < params->num_purkinje_cells; k++) {
+            real *cell_sv;
+
+            cell_sv = MALLOC_ARRAY_OF_TYPE(real, purkinje_ode_solver->model_data.number_of_ode_equations);
+
+            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), purkinje_ode_solver->sv + params->purkinje_cell_sv_positions[k], purkinje_ode_solver->pitch, sizeof(real),
+                                        purkinje_ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+            // Only 'time' and 'Vm'
+            fprintf(params->purkinje_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+
+            free(cell_sv);
+        }
+        
+#endif
+    } else {
+        for (uint32_t k = 0; k < params->num_tissue_cells; k++) {
+            real *cell_sv = &purkinje_ode_solver->sv[params->purkinje_cell_sv_positions[k] * purkinje_ode_solver->model_data.number_of_ode_equations];
+
+            // Only 'time' and 'Vm'
+            fprintf(params->purkinje_files[k], "%g %g\n", time_info->current_t, cell_sv[0]);
+        }
+    }
 }

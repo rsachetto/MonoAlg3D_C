@@ -100,6 +100,36 @@ struct save_multiple_cell_state_variables_purkinje_coupling_persistent_data {
     uint32_t *purkinje_cell_sv_positions;
 };
 
+struct save_multiple_cell_state_variables_purkinje_coupling_with_activation_times_data {
+    uint32_t num_tissue_cells;
+    FILE **tissue_files;
+    char *tissue_file_name_prefix;
+    real_cpu *tissue_cell_centers;
+    uint32_t *tissue_cell_sv_positions;
+
+    uint32_t num_purkinje_cells;
+    FILE **purkinje_files;
+    char *purkinje_file_name_prefix;
+    real_cpu *purkinje_cell_centers;
+    uint32_t *purkinje_cell_sv_positions;
+
+    struct vtk_unstructured_grid *tissue_grid;
+    struct point_hash_entry *tissue_last_time_v;
+    struct point_hash_entry *tissue_num_activations;
+    struct point_hash_entry *tissue_cell_was_active;
+    struct point_voidp_hash_entry *tissue_activation_times;
+    struct point_voidp_hash_entry *tissue_apds;
+
+    struct vtk_polydata_grid *purkinje_grid;
+    struct point_hash_entry *purkinje_last_time_v;
+    struct point_hash_entry *purkinje_num_activations;
+    struct point_hash_entry *purkinje_cell_was_active;
+    struct point_voidp_hash_entry *purkinje_activation_times;
+    struct point_voidp_hash_entry *purkinje_apds;
+
+    bool first_save_call;
+};
+
 void add_file_to_pvd(real_cpu current_t, const char *output_dir, const char *base_name, bool first_save_call);
 sds create_base_name(char *f_prefix, int iteration_count, char *extension);
 

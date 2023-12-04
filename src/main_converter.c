@@ -56,13 +56,14 @@ static void convert_file(const char *input, const char *output, const char *file
                 set_vtk_grid_values_from_ensight_file(vtk_grid, full_input_path);
             }
 
-            char ext[4] = ".vtu";
+            char ext[5] = ".vtu\0";
             bool alg = false;
 
             if(FILE_HAS_EXTENSION(input_file_info, "alg")) {
                 ext[1] = 'v';
                 ext[2] = 't';
                 ext[3] = 'k';
+                ext[4] = '\0';
                 alg = true;
             }
 

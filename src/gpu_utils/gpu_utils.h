@@ -36,6 +36,7 @@ extern "C" {
 void gpu_vec_div_vec(real *vec1, real *vec2, real* res, size_t n);
 real gpu_ecg_integral(real *beta_im, real *distances, real *volumes, size_t vec_size);
 void cuda_assert(int code, char const *const func, const char *const file, int const line, const char *api);
+void uuid_print (cudaUUID_t a);
 #ifdef __cplusplus
 }
 #endif

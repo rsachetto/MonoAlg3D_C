@@ -11,7 +11,6 @@ struct default_fibrotic_mesh_info {
 };
 
 struct dti_mesh_info {
-
 	enum dti_transmurality_labels {
 		DTI_FAST_ENDO,
 		DTI_ENDO,
@@ -19,7 +18,9 @@ struct dti_mesh_info {
 		DTI_EPI
 	} dti_transmurality_labels;
 	float transmurality;
+    float apicobasal;
 	float base_apex_heterogeneity;
+    int fast_endo;
 };
 
 #define FIBROTIC_INFO(grid_cell) (struct default_fibrotic_mesh_info *)(grid_cell)->mesh_extra_info
@@ -42,5 +43,7 @@ struct dti_mesh_info {
 #define DTI_MESH_TRANSMURALITY_LABELS(grid_cell) (DTI_MESH_INFO(grid_cell))->dti_transmurality_labels
 #define DTI_MESH_TRANSMURALITY(grid_cell) (DTI_MESH_INFO(grid_cell))->transmurality
 #define DTI_MESH_BASE_APEX_HETEROGENEITY(grid_cell) (DTI_MESH_INFO(grid_cell))->base_apex_heterogeneity
+#define DTI_MESH_APICOBASAL(grid_cell) (DTI_MESH_INFO(grid_cell))->apicobasal
+#define DTI_MESH_FAST_ENDO(grid_cell) (DTI_MESH_INFO(grid_cell))->fast_endo
 
 #endif /* __MESH_INFO_DATA_H */

@@ -1,38 +1,21 @@
 #TODO
-Report line number only for the debug build in the helpers functions.
 
-Verify the possibility to not copy the SV from the GPU to the CPU when the ODE solver and the PDE solver are using the GPU.
+1) Report line number only for the debug build in the helpers functions.
 
-Allow the writing of multiple AP traces from different cells (Purkinje and tissue). Follow Cristian suggestion to use a file with the following syntax:
+2) Verify the possibility to not copy the SV from the GPU to the CPU when the ODE solver and the PDE solver are using the GPU.
 
-<x> <y> <z> <domain_id>
-<x> <y> <z> <domain_id>
-.
-.
-.
-<x> <y> <z> <domain_id>
+3) Make the "vm_threashold" calculus dynamic inside the code. The idea is to calculate the value using only an input percentage (e.g: APD_90, APD_80)
 
-Make the "vm_threashold" calculus dynamic inside the code. The idea is to calculate the value using only an input percentage (e.g: APD_90, APD_80)
+4) Improve activation time calculus to use the maximum derivative (check Lucas's old function from 2018)
+    - Optimize the activation time calculus
+    - Parallelize with #pragma and avoid race conditions inside the "persistent_data" structure
+    - Use simple arrays ? Will consume more memory, but it will be faster.
 
-Improve activation time calculus to use the maximum derivative (check Lucas's old function from 2018)
+5) Remove depracated code from src/linear_system_solver_library/gpu_solvers_cublas_11.c. Use https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSPARSE/spsv_csr/spsv_csr_example.c as reference. Change cusparseScsrsv2 to cusparseSpSV.
 
-Think a way to optimize the activation time calculus. Try to reduce the simulation time, especially when using the GPU
-
-Remove depracated code from src/linear_system_solver_library/gpu_solvers_cublas_11.c. Use https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSPARSE/spsv_csr/spsv_csr_example.c as reference. Change cusparseScsrsv2 to cusparseSpSV.
+6) Find a way to write the INa, Ito and ICaL currents in the ToRORd and Trovato models.
 
 #KNOW ISSUES:
 The logger symbols are only exported to an executable if an static library linked to a shared library uses then. For now this is ok. But I think it will be a pain in future releases.
 The GPU linear system solver is not working for purkinje-only simulations
 When the minimum number of PMJs is not reached the solver will be in an infinite loop
-
-## Scripts:
-- Rewrite the 'trace_plot' script in a more general way.
-- The output should be written in the limpetGUI format as well:
-
-<t> <sv_1> <sv_2> <sv_3> ... <sv_n>
-.   .       .       .           .
-.   .       .       .           .
-.   .       .       .           .
-
-
-Fix the "save_multiple_cell_state_variables". It cannot find the proper cell center.
