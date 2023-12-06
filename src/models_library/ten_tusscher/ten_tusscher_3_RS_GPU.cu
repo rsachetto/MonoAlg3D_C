@@ -66,7 +66,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
 
     real *fibrosis_device;
     real *fibs = NULL;
-    int num_extra_parameters = 7;
+    int num_extra_parameters = 8;
     real extra_par[num_extra_parameters];
 
     size_t extra_parameters_size = num_extra_parameters * sizeof(real);
@@ -87,6 +87,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         extra_par[4] = extra_data_from_cpu->GNa_multiplicator;
         extra_par[5] = extra_data_from_cpu->GCaL_multiplicator;
         extra_par[6] = extra_data_from_cpu->INaCa_multiplicator;
+        extra_par[7] = extra_data_from_cpu->Ikatp_multiplicator;
     }
     else {
         extra_par[0] = 6.8f;
@@ -96,6 +97,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
         extra_par[4] = 1.0f;
         extra_par[5] = 1.0f;
         extra_par[6] = 1.0f;
+        extra_par[7] = 1.0f;
 
         fibs = (real*) malloc(fibs_size);
 

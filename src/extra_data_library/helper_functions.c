@@ -32,12 +32,16 @@ struct extra_data_for_fibrosis* set_common_schemia_data(struct config *config, u
     real Vm_modifier = 0.0f;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Vm_modifier, config, "Vm_modifier");
 
+    real Ikatp_multiplicator = 1.0f;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ikatp_multiplicator, config, "Ikatp_multiplicator");
+
     extra_data->atpi = atpi;
     extra_data->Ko = Ko;
     extra_data->Ki = Ki;
     extra_data->GNa_multiplicator = GNa_multiplicator;
     extra_data->GCaL_multiplicator = GCaL_multiplicator;
     extra_data->INaCa_multiplicator = INaCa_multiplicator;
+    extra_data->Ikatp_multiplicator = Ikatp_multiplicator;
     extra_data->Vm_modifier = Vm_modifier;
     extra_data->fibrosis = MALLOC_ARRAY_OF_TYPE(real, num_cells);
 

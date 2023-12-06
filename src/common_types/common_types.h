@@ -67,6 +67,13 @@ struct fiber_coords {
     real_cpu n[3];
 };
 
+struct fiber_coords_scale {
+    real_cpu f[3];
+    real_cpu s[3];
+    real_cpu n[3];
+    real_cpu x[3];
+};
+
 struct condutivity {
     real_cpu x, y, z, xy, xz, yz;
     struct fiber_coords fibers;

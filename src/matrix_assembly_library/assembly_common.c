@@ -1185,3 +1185,43 @@ static struct fiber_coords *read_fibers(char *fiber_file_path, bool normalize_ve
 
     return fibers;
 }
+
+// Albert`s code
+static struct fiber_coords_scale *read_fibers_scale(char *fiber_file_path) {
+
+    FILE *fibers_file = open_file_or_exit(fiber_file_path, "r");
+
+    struct fiber_coords_scale *fibers = NULL;
+    char *line = NULL;
+    size_t len;
+
+    while((getline(&line, &len, fibers_file)) != -1) {
+
+        int split_count;
+        sds *points = sdssplit(line, " ", &split_count);
+        struct fiber_coords_scale f_coords;
+
+        f_coords.f[0] = strtod(points[0], NULL);
+        f_coords.f[1] = strtod(points[1], NULL);
+        f_coords.f[2] = strtod(points[2], NULL);
+
+        f_coords.s[0] = strtod(points[3], NULL);
+        f_coords.s[1] = strtod(points[4], NULL);
+        f_coords.s[2] = strtod(points[5], NULL);
+
+        f_coords.n[0] = strtod(points[6], NULL);
+        f_coords.n[1] = strtod(points[7], NULL);
+        f_coords.n[2] = strtod(points[8], NULL);
+
+        f_coords.x[0] = strtod(points[9], NULL);
+        f_coords.x[1] = strtod(points[10], NULL);
+        f_coords.x[2] = strtod(points[11], NULL);
+
+        arrput(fibers, f_coords);
+        sdsfreesplitres(points, split_count);
+    }
+
+    free(line);
+
+    return fibers;
+}

@@ -5,7 +5,7 @@
     //Linear changing of atpi depending on the fibrosis and distance from the center of the scar (only for border zone cells)
     real atpi = extra_parameters[0];
     real atpi_change = 6.8f - atpi;
-    atpi = atpi +atpi_change*fibrosis;
+    atpi = atpi + atpi_change*fibrosis;
 
     //Extracellular potassium concentration was elevated
     //from its default value of 5.4 mM to values between 6.0 and 8.0 mM
@@ -32,6 +32,10 @@
     real INaCa_multplicator = extra_parameters[6];
     real INaCa_multplicator_change  = 1.0f - INaCa_multplicator;
     INaCa_multplicator = INaCa_multplicator + INaCa_multplicator_change*fibrosis;
+
+    real Ikatp_multiplicator = extra_parameters[7];
+    real Ikatp_multiplicator_change  = 1.0f - Ikatp_multiplicator;
+    Ikatp_multiplicator = Ikatp_multiplicator + Ikatp_multiplicator_change*fibrosis;
      
 
     //real katp = 0.306;
@@ -203,7 +207,7 @@
     IbNa=GbNa*(svolt-Ena);
     IbCa=GbCa*(svolt-Eca);
 
-    IKatp = gkbaratp*(svolt-Ek);
+    IKatp = gkbaratp*(svolt-Ek) * Ikatp_multiplicator;
 
 
     //Determine total current

@@ -18,6 +18,7 @@ struct extra_data_for_fibrosis {
     real GNa_multiplicator;
     real GCaL_multiplicator;
     real INaCa_multiplicator;
+    real Ikatp_multiplicator;
     real Vm_modifier;
     real *fibrosis;
 };

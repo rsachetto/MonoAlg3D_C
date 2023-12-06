@@ -66,7 +66,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     real dt = ode_solver->min_dt;
     uint32_t num_steps = ode_solver->num_steps;
 
-    int num_extra_parameters = 7;
+    int num_extra_parameters = 8;
     real extra_par[num_extra_parameters];
     real fibs_size = num_cells_to_solve*sizeof(real);
 
@@ -82,6 +82,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         extra_par[4] = extra_data_from_solver->GNa_multiplicator;
         extra_par[5] = extra_data_from_solver->GCaL_multiplicator;
         extra_par[6] = extra_data_from_solver->INaCa_multiplicator;
+        extra_par[7] = extra_data_from_solver->Ikatp_multiplicator;
     }
     else {
         // Default values for a healthy cell ///////////
@@ -92,6 +93,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         extra_par[4] = 1.0f;
         extra_par[5] = 1.0f;
         extra_par[6] = 1.0f;
+        extra_par[7] = 1.0f;
 
         fibrosis = (real*) malloc(fibs_size);
 
