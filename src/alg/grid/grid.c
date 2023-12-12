@@ -26,6 +26,8 @@ struct grid *new_grid() {
 
     result->purkinje = NULL;
 
+    result->extra_info = NULL;
+
     return result;
 }
 
