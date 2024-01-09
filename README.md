@@ -55,8 +55,11 @@ This file represents 3 volumes with 100 micrometer of side. The first volume is 
 ----
 
 @rsachetto Rafael Sachetto Oliveira
+
 @bergolho Lucas Arantes Berg
+
 @Rodrigo-Weber-dos-Santos Rodrigo Weber dos Santos
+
 Among others.
 
 # How to cite:
