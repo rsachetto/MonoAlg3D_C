@@ -51,6 +51,14 @@ Example file:
 
 This file represents 3 volumes with 100 micrometer of side. The first volume is centered at  at 850,850,950 and the calculated V is -85 mV.
 
+# Contributors:
+----
+
+@rsachetto Rafael Sachetto Oliveira
+@bergolho Lucas Arantes Berg
+@Rodrigo-Weber-dos-Santos Rodrigo Weber dos Santos
+Among others.
+
 # How to cite:
 ----
 
