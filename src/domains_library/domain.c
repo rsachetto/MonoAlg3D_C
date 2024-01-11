@@ -361,3 +361,45 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     return ret;
 
 }
+
+SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_source_sink_fibrotic_region) {
+
+    real_cpu phi = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config, "phi");
+
+    unsigned seed = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config, "seed");
+
+    real_cpu min_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, min_x, config, "region_min_x");
+
+    real_cpu max_x = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_x, config, "region_max_x");
+
+    real_cpu min_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, min_y, config, "region_min_y");
+
+    real_cpu max_y = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_y, config, "region_max_y");
+
+    real_cpu min_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, min_z, config, "region_min_z");
+
+    real_cpu max_z = 0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_z, config, "region_max_z");
+
+    real_cpu source_sink_min_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, source_sink_min_x, config, "source_sink_min_x");
+
+    real_cpu source_sink_max_x = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, source_sink_max_x, config, "source_sink_max_x");
+
+    real_cpu side_length = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length, config, "side_length");
+
+    set_square_mesh(config, the_grid);
+
+    set_plain_fibrosis_source_sink_region(the_grid, phi, seed, min_x, max_x, min_y, max_y, min_z, max_z, source_sink_min_x, source_sink_max_x, side_length);
+
+    return 1;
+}

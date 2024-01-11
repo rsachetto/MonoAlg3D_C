@@ -1009,3 +1009,45 @@ int calc_num_refs(real_cpu start_h, real_cpu desired_h) {
 
     return num_refs;
 }
+
+void set_plain_fibrosis_source_sink_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed, const double min_x, const double max_x, const double min_y,
+                                      const double max_y, const double min_z, const double max_z,
+                                      real_cpu source_sink_min_x, real_cpu source_sink_max_x, real_cpu side_length) {
+    log_info("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
+
+    struct cell_node *grid_cell;
+
+    if(fib_seed == 0)
+        fib_seed = (unsigned)time(NULL) + getpid();
+
+    srand(fib_seed);
+
+    log_info("Using %u as seed\n", fib_seed);
+
+    real_cpu a1 = (2.0*side_length) / (side_length - 2*source_sink_min_x);
+    real_cpu b1 = -source_sink_min_x*a1;
+    real_cpu a2 = (2.0*side_length) / (side_length - 2*source_sink_max_x);
+    real_cpu b2 = -source_sink_max_x*a2;
+
+    grid_cell = the_grid->first_cell;
+    while(grid_cell != 0) {
+        real center_x = grid_cell->center.x;
+        real center_y = grid_cell->center.y;
+        real center_z = grid_cell->center.z;
+
+        if(center_x >= min_x && center_x <= max_x && center_y >= min_y && center_y <= max_y && center_z >= min_z && center_z <= max_z
+            && (center_y > a1*center_x + b1 || center_y > a2*center_x + b2)) {
+            if(grid_cell->active) {
+                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+                if(p < phi) {
+                    grid_cell->active = false;
+                }
+
+                INITIALIZE_FIBROTIC_INFO(grid_cell);
+                FIBROTIC(grid_cell) = true;
+            }
+        }
+
+        grid_cell = grid_cell->next;
+    }
+}
