@@ -6,7 +6,6 @@
 #define MONOALG3D_GRID_H
 
 #include "../cell/cell.h"
-#include "../../graph/graph.h"
 #include "../grid_purkinje/grid_purkinje.h"
 #include "../../common_types/common_types.h"
 
@@ -39,6 +38,9 @@ struct grid {
 
     struct point_3d start_discretization;
     struct point_3d max_discretization;
+
+    void *extra_info;
+
 };
 
 struct grid* new_grid();
