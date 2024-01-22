@@ -68,27 +68,30 @@
     const real Gkr=0.101;
 //Parameters for Iks
     const real pKNa=0.03;
-#ifdef EPI
-    const real Gks=0.257;
-#endif
-#ifdef ENDO
-    const real Gks=0.392;
-#endif
-#ifdef MCELL
-    const real Gks=0.098;
-#endif
+
+    real Gks = 0.257;
+    if (transmurality == EPI) {
+        Gks=0.257;
+    }
+    else if (transmurality == ENDO) {
+        Gks=0.392;
+    }
+    else if (transmurality == MID) {
+        Gks=0.098;
+    }
 //Parameters for Ik1
-    const real GK1=5.405;
+    real GK1=5.405;
 //Parameters for Ito
-#ifdef EPI
-    const real Gto=0.294;
-#endif
-#ifdef ENDO
-    const real Gto=0.073;
-#endif
-#ifdef MCELL
-    const real Gto=0.294;
-#endif
+    real Gto = 0.294;
+    if (transmurality == EPI) {
+        Gto=0.294;
+    }
+    else if (transmurality == ENDO) {
+        Gto=0.073;
+    }
+    else if (transmurality == MID) {
+        Gto=0.294;
+    }
 //Parameters for INa
     const real GNa=14.838*GNa_multplicator; //ACIDOSIS
 //Parameters for IbNa
@@ -272,22 +275,21 @@
     Bxs=(1./(1.+exp((svolt-35.)/15.)));
     TAU_Xs=Axs*Bxs+80;
 
-#ifdef EPI
-    R_INF_new=1./(1.+exp((20-svolt)/6.));
-    S_INF=1./(1.+exp((svolt+20)/5.));
-    TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
-#endif
-#ifdef ENDO
-    R_INF_new=1./(1.+exp((20-svolt)/6.));
-    S_INF=1./(1.+exp((svolt+28)/5.));
-    TAU_S=1000.*exp(-(svolt+67)*(svolt+67)/1000.)+8.;
-#endif
-#ifdef MCELL
-    R_INF_new=1./(1.+exp((20-svolt)/6.));
-    S_INF=1./(1.+exp((svolt+20)/5.));
-    TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
-#endif
-
+    if (transmurality == EPI) {
+        R_INF_new=1./(1.+exp((20-svolt)/6.));
+        S_INF=1./(1.+exp((svolt+20)/5.));
+        TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;
+    }
+    else if (transmurality == ENDO) {
+        R_INF_new=1./(1.+exp((20-svolt)/6.));
+        S_INF=1./(1.+exp((svolt+28)/5.));
+        TAU_S=1000.*exp(-(svolt+67)*(svolt+67)/1000.)+8.;    
+    }
+    else if (transmurality == MID) {
+        R_INF_new=1./(1.+exp((20-svolt)/6.));
+        S_INF=1./(1.+exp((svolt+20)/5.));
+        TAU_S=85.*exp(-(svolt+45.)*(svolt+45.)/320.)+5./(1.+exp((svolt-20.)/5.))+3.;    
+    }
 
     D_INF_new=1./(1.+exp((-8-svolt)/7.5));
     F_INF=1./(1.+exp((svolt+20)/7));

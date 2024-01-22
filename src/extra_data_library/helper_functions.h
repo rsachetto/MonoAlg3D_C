@@ -18,8 +18,22 @@ struct extra_data_for_fibrosis {
     real GNa_multiplicator;
     real GCaL_multiplicator;
     real INaCa_multiplicator;
+    real Ikatp_multiplicator;
     real Vm_modifier;
     real *fibrosis;
+};
+
+struct extra_data_for_tt3 {
+    real atpi;
+    real Ko;
+    real Ki;
+    real GNa_multiplicator;
+    real GCaL_multiplicator;
+    real INaCa_multiplicator;
+    real Ikatp_multiplicator;
+    real Vm_modifier;
+    real *fibrosis;
+    real *transmurality;
 };
 
 struct extra_data_for_torord {
@@ -107,6 +121,7 @@ struct extra_data_for_trovato {
 };
 
 struct extra_data_for_fibrosis * set_common_schemia_data(struct config *config, uint32_t num_cells);
+struct extra_data_for_tt3 * set_common_tt3_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord * set_common_torord_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord_land * set_common_torord_Land_data (struct config *config, uint32_t num_cells);

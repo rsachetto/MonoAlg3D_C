@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
-#include "ten_tusscher_3_RS.h"
+#include "ten_tusscher_tt3_mixed_endo_mid_epi.h"
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
@@ -15,21 +15,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    char *cell_type;
-#ifdef ENDO
-    cell_type = strdup("ENDO");
-#endif
-
-#ifdef EPI
-    cell_type = strdup("EPI");
-#endif
-
-#ifdef MCELL
-    cell_type = strdup("MCELL");
-#endif
-
-    log_info("Using ten Tusscher 3 %s CPU model\n", cell_type);
-    free(cell_type);
+    log_info("Using Mixed Ten & Tusscher 3 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
 
@@ -58,7 +44,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
-    real *fibrosis;
+    real *transmurality = NULL;
+    real *fibrosis = NULL;
 
     size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
     uint32_t * cells_to_solve = ode_solver->cells_to_solve;
@@ -68,12 +55,12 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     int num_extra_parameters = 8;
     real extra_par[num_extra_parameters];
-    real fibs_size = num_cells_to_solve*sizeof(real);
 
-    struct extra_data_for_fibrosis* extra_data_from_solver = (struct extra_data_for_fibrosis*)ode_solver->ode_extra_data;
+    struct extra_data_for_tt3* extra_data_from_solver = (struct extra_data_for_tt3*)ode_solver->ode_extra_data;
     bool deallocate = false;
 
     if(ode_solver->ode_extra_data) {
+        transmurality = extra_data_from_solver->transmurality;
         fibrosis = extra_data_from_solver->fibrosis;
         extra_par[0] = extra_data_from_solver->atpi;
         extra_par[1] = extra_data_from_solver->Ko;
@@ -95,10 +82,13 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         extra_par[6] = 1.0f;
         extra_par[7] = 1.0f;
 
-        fibrosis = (real*) malloc(fibs_size);
+        fibrosis = (real*)malloc(num_cells_to_solve*sizeof(real));
+        transmurality = (real*)malloc(num_cells_to_solve*sizeof(real));
 
+        // Default case: all cells ENDO and Healthy
         for(uint64_t i = 0; i < num_cells_to_solve; i++) {
-            fibrosis[i] = 1.0;
+            fibrosis[i] = 1.0;          // Healthy
+            transmurality[i] = 0.0;     // ENDO
         }
 
         deallocate = true;
@@ -114,16 +104,18 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             sv_id = i;
 
         for (int j = 0; j < num_steps; ++j) {
-            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], extra_par);
-
+            solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], fibrosis[i], transmurality[i], extra_par);
         }
     }
 
-    if(deallocate) free(fibrosis);
+    if(deallocate) {
+        free(fibrosis);
+        free(transmurality);
+    }
 }
 
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real *extra_parameters)  {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, real transmurality, real *extra_parameters)  {
 
     assert(sv);
 
@@ -132,7 +124,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
     for(int i = 0; i < NEQ; i++)
         rY[i] = sv[i];
 
-    RHS_cpu(rY, rDY, stim_current, dt, fibrosis, extra_parameters);
+    RHS_cpu(rY, rDY, stim_current, dt, fibrosis, transmurality, extra_parameters);
 
     //THIS MODEL USES THE Rush Larsen Method TO SOLVE THE EDOS
     sv[0] = dt*rDY[0] + rY[0];
@@ -150,9 +142,10 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real fibrosis, re
 }
 
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real const *extra_parameters) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibrosis, real transmurality, real const *extra_parameters) {
 
     //fibrosis = 0 means that the cell is fibrotic, 1 is not fibrotic. Anything between 0 and 1 means border zone
+    //transmurality = 0 means cell is endocardium, 1 is mid-myocardium and 2 is epicardium
 
     //THIS IS THE STATE VECTOR THAT WE NEED TO SAVE IN THE STEADY STATE
     const real svolt    = sv[0];
@@ -168,5 +161,5 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real fibros
     const real R_INF    = sv[10];
     const real Xr2_INF  = sv[11];
 
-    #include "ten_tusscher_3_RS_common.inc"
+    #include "ten_tusscher_tt3_mixed_endo_mid_epi.common.c"
 }

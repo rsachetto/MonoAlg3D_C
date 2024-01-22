@@ -170,6 +170,8 @@ src/*/custom_functions.c
 src/*/custom_functions_BACKUP.c
 src/*/custom_functions.h
 
+bsbash/find_functions_with_mpi.sh
+
 .cache/
 .ccls-cache/
 
