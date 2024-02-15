@@ -14,16 +14,16 @@
 #define CALC_ECG(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid)
 typedef CALC_ECG(calc_ecg_fn);
 
-#define INIT_CALC_ECG(name) void name(struct config *config, struct ode_solver *the_ode_solver, struct grid *the_grid)
+#define INIT_CALC_ECG(name) void name(struct config *config, struct ode_solver *the_ode_solver, struct grid *the_grid, char *output_dir)
 typedef INIT_CALC_ECG(init_calc_ecg_fn);
 
 #define END_CALC_ECG(name) void name(struct config *config)
 typedef END_CALC_ECG(end_calc_ecg_fn);
 
-#define CALL_INIT_CALC_ECG(config, ode_solver, grid)                                                                                                           \
+#define CALL_INIT_CALC_ECG(config, ode_solver, grid, output_dir)                                                                                                           \
     do {                                                                                                                                                       \
         if((config) && (config)->init_function) {                                                                                                              \
-            ((init_calc_ecg_fn *)(config)->init_function)((config), (ode_solver), (grid));                                                                           \
+            ((init_calc_ecg_fn *)(config)->init_function)((config), (ode_solver), (grid), (output_dir));                                                                           \
         }                                                                                                                                                      \
     } while(0)
 

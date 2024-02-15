@@ -185,9 +185,11 @@ static void get_leads(struct config *config) {
 INIT_CALC_ECG(init_pseudo_bidomain_cpu) {
     config->persistent_data = CALLOC_ONE_TYPE(struct pseudo_bidomain_persistent_data);
 
-    char *filename = strdup("./ecg.txt");
-    GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(filename, config, "filename");
-
+    // The filename for the ECG will be always the "OUTPUT_DIR/ecg.txt"
+    uint32_t nlen_output_dir = strlen(output_dir);
+    char *filename = (char*)malloc(sizeof(char)*nlen_output_dir+10);
+    sprintf(filename, "%s/ecg.txt", output_dir);
+    
     char *dir = get_dir_from_path(filename);
     create_dir(dir);
     free(dir);
@@ -285,7 +287,7 @@ END_CALC_ECG(end_pseudo_bidomain_cpu) {
 
 INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
-    init_pseudo_bidomain_cpu(config, NULL, the_grid);
+    init_pseudo_bidomain_cpu(config, NULL, the_grid, output_dir);
 
     if(!the_ode_solver->gpu) {
         log_warn("The current implementation of pseudo_bidomain_gpu only works when the odes are also being solved using the GPU! Falling back to CPU version\n");
@@ -465,13 +467,13 @@ INIT_CALC_ECG(init_pseudo_bidomain) {
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(gpu, config, "use_gpu");
     if(gpu) {
 #ifdef COMPILE_CUDA
-        init_pseudo_bidomain_gpu(config, the_ode_solver, the_grid);
+        init_pseudo_bidomain_gpu(config, the_ode_solver, the_grid, output_dir);
 #else
         log_warn("Cuda runtime not found in this system. Falling back to CPU version!!\n");
-        init_pseudo_bidomain_cpu(config, NULL, the_grid);
+        init_pseudo_bidomain_cpu(config, NULL, the_grid, output_dir);
 #endif
     } else {
-        init_pseudo_bidomain_cpu(config, NULL, the_grid);
+        init_pseudo_bidomain_cpu(config, NULL, the_grid, output_dir);
     }
 }
 
