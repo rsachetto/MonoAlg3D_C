@@ -185,6 +185,7 @@ sync.sh
 sync_local.sh
 sync_outputs.sh
 private_configs/
+private_parameter_sets/
 /src/domains_library/custom_mesh_info_data.h
 retired_code/
 *.gcno
