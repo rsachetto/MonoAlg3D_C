@@ -87,6 +87,7 @@ for i in "${BUILD_ARGS[@]}"; do
             COMPILE_FIBER_CONVERTER='y'
             COMPILE_POSTPROCESSOR='y'
             #COMPILE_EXPAND='y'
+            COMPILE_CLIP='y'
             ;;
         simulator)
             COMPILE_SIMULATOR='y'
@@ -270,6 +271,11 @@ fi
 if [ -n "$COMPILE_EXPAND" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_expand_scar" "src/main_expand_scar.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $CUDA_MATH_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
 fi
+
+if [ -n "$COMPILE_CLIP" ]; then
+    COMPILE_EXECUTABLE "MonoAlg3D_clip_mesh" "src/main_clip_mesh.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$CUDA_LIBRARY_PATH $CUDA_MATH_LIBRARY_PATH $EXTRA_LIB_PATH $LIBRARY_OUTPUT_DIRECTORY"
+fi
+
 
 FIND_CRITERION
 
