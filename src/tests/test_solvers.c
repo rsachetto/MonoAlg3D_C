@@ -72,9 +72,9 @@ void test_solver(bool preconditioner, char *method_name, char *init_name, char *
 
     shput(linear_system_solver_config->config_data, "tolerance", "1e-16");
     if (preconditioner)
-    shput(linear_system_solver_config->config_data, "use_preconditioner", "yes");
+        shput(linear_system_solver_config->config_data, "use_preconditioner", "yes");
     else
-    shput(linear_system_solver_config->config_data, "use_preconditioner", "no");
+        shput(linear_system_solver_config->config_data, "use_preconditioner", "no");
 
     shput(linear_system_solver_config->config_data, "max_iterations", "200");
 
@@ -245,6 +245,11 @@ Test (solvers, bcg_gpu_no_preconditioner_1t_2) {
 Test (solvers, bcg_gpu_no_preconditioner_6t_2) {
     test_solver(false, "gpu_biconjugate_gradient", "init_gpu_biconjugate_gradient", NULL, 6, 2);
 }
+
+Test (solvers, amgx_6t_2) {
+    test_solver(false, "amgx", "init_amgx", NULL, 6, 2);
+}
+
 #endif
 
 #endif
