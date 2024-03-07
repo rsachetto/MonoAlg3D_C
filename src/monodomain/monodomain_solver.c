@@ -46,19 +46,19 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     log_msg(LOG_LINE_SEPARATOR);
 
-    uint64_t ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0, total_deref_time = 0, cg_partial, total_ecg_time = 0;
+    uint64_t ode_total_time = 0, cg_total_time = 0, total_write_time = 0, total_mat_time = 0, total_ref_time = 0, total_deref_time = 0, cg_partial,
+             total_ecg_time = 0, total_order_time = 0;
+    uint64_t total_update_sv_time = 0;
+    uint64_t total_update_cells_time = 0;
 
     uint64_t purkinje_ode_total_time = 0, purkinje_cg_total_time = 0, purkinje_cg_partial = 0;
 
     uint32_t total_cg_it = 0, purkinje_total_cg_it = 0;
 
-    struct stop_watch solver_time, ode_time, cg_time, part_solver, part_mat, write_time, ref_time, deref_time, config_time, ecg_time;
+    struct stop_watch stop_watch, solver_time;
 
-    struct stop_watch purkinje_ode_time, purkinje_cg_time, purkinje_part_solver;
-
-    init_stop_watch(&config_time);
-
-    start_stop_watch(&config_time);
+    init_stop_watch(&stop_watch);
+    init_stop_watch(&solver_time);
 
     ///////MAIN CONFIGURATION BEGIN//////////////////
     init_ode_solver_with_cell_model(the_ode_solver);
@@ -273,11 +273,11 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     if(restore_checkpoint) {
         // Here we only restore the monodomain_solver_state...
-        restore_success =
-            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, the_monodomain_solver, NULL, NULL, restore_in_dir_name);
+        restore_success = ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL,
+                                                                                    the_monodomain_solver, NULL, NULL, restore_in_dir_name);
     }
 
-    //HACK: we have to restore the last_t time info as the restore state function changes it to a wrong value
+    // HACK: we have to restore the last_t time info as the restore state function changes it to a wrong value
     time_info.final_t = finalT;
 
     if(update_monodomain_config) {
@@ -337,8 +337,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             } else if(the_ode_solver->gpu) {
                 log_info("%d devices available, running only the ODE solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
                 uuid_print(prop.uuid);
-            }
-            else {
+            } else {
                 log_info("%d devices available, running only the linear system solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
                 uuid_print(prop.uuid);
             }
@@ -385,7 +384,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     if(restore_checkpoint) {
-        restore_success &= ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, the_grid, NULL, NULL, NULL, restore_in_dir_name);
+        restore_success &= ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, the_grid, NULL, NULL,
+                                                                                     NULL, restore_in_dir_name);
     }
 
     real_cpu start_dx, start_dy, start_dz;
@@ -469,8 +469,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 
     if(has_purkinje_extra_data) {
-        the_purkinje_ode_solver->ode_extra_data =
-            ((set_extra_data_fn *)purkinje_extra_data_config->main_function)(&time_info, purkinje_extra_data_config, the_grid, &(the_purkinje_ode_solver->extra_data_size));
+        the_purkinje_ode_solver->ode_extra_data = ((set_extra_data_fn *)purkinje_extra_data_config->main_function)(
+            &time_info, purkinje_extra_data_config, the_grid, &(the_purkinje_ode_solver->extra_data_size));
 
         if(the_purkinje_ode_solver->ode_extra_data == NULL) {
             log_warn("set_extra_data function was called but returned NULL!\n");
@@ -494,8 +494,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     // We need to call this function after because of the pitch.... maybe we have to change the way
     // we pass this parameters to the cell model....
     if(restore_checkpoint) {
-        restore_success &=
-            ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, NULL, the_ode_solver, the_purkinje_ode_solver, restore_in_dir_name);
+        restore_success &= ((restore_state_fn *)restore_state_config->main_function)(&time_info, restore_state_config, save_mesh_config, NULL, NULL,
+                                                                                     the_ode_solver, the_purkinje_ode_solver, restore_in_dir_name);
     }
 
     real_cpu initial_v, purkinje_initial_v = 0;
@@ -535,27 +535,12 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     fflush(stdout);
 
-    init_stop_watch(&solver_time);
-    init_stop_watch(&ode_time);
-    init_stop_watch(&cg_time);
-    init_stop_watch(&part_solver);
-    init_stop_watch(&part_mat);
-    init_stop_watch(&write_time);
-    init_stop_watch(&ref_time);
-    init_stop_watch(&deref_time);
-
-    if(purkinje_config) {
-        init_stop_watch(&purkinje_ode_time);
-        init_stop_watch(&purkinje_cg_time);
-        init_stop_watch(&purkinje_part_solver);
-    }
-
-    start_stop_watch(&part_mat);
+    start_stop_watch(&stop_watch);
 
     if(!restore_checkpoint || !restore_success) {
         if(assembly_matrix_config->init_function) {
-            ((set_pde_initial_condition_fn *)assembly_matrix_config->init_function)(assembly_matrix_config, the_monodomain_solver, the_ode_solver, the_grid, initial_v,
-                                                                                    purkinje_initial_v);
+            ((set_pde_initial_condition_fn *)assembly_matrix_config->init_function)(assembly_matrix_config, the_monodomain_solver, the_ode_solver, the_grid,
+                                                                                    initial_v, purkinje_initial_v);
         } else {
             log_error_and_exit("Function for the Monodomain initial conditions not provided (init_function on [assembly_matrix] section)!\n");
         }
@@ -563,7 +548,8 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
     ((assembly_matrix_fn *)assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
 
-    total_mat_time = stop_stop_watch(&part_mat);
+    total_mat_time = stop_stop_watch(&stop_watch);
+
     start_stop_watch(&solver_time);
 
     int save_state_rate = 0;
@@ -576,7 +562,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         if(save_checkpoint_out_dir == NULL) {
             save_checkpoint_out_dir = out_dir_name;
         }
-
     }
 
     real_cpu vm_threshold = configs->vm_threshold;
@@ -628,7 +613,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     log_info("Starting simulation\n");
 
     // Main simulation loop start
-    while(cur_time-finalT <= dt_pde) {
+    while(cur_time - finalT <= dt_pde) {
 
         start_stop_watch(&iteration_time_watch);
 
@@ -661,15 +646,15 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #endif
 
         if(save_to_file && (count % print_rate == 0) && (cur_time >= start_saving_after_dt)) {
-            start_stop_watch(&write_time);
+            start_stop_watch(&stop_watch);
             ((save_mesh_fn *)save_mesh_config->main_function)(&time_info, save_mesh_config, the_grid, the_ode_solver, the_purkinje_ode_solver);
-            total_write_time += stop_stop_watch(&write_time);
+            total_write_time += stop_stop_watch(&stop_watch);
         }
 
         if(calc_ecg && (count % calc_ecg_rate == 0)) {
-            start_stop_watch(&ecg_time);
+            start_stop_watch(&stop_watch);
             ((calc_ecg_fn *)calc_ecg_config->main_function)(&time_info, calc_ecg_config, the_grid);
-            total_ecg_time += stop_stop_watch(&ecg_time);
+            total_ecg_time += stop_stop_watch(&stop_watch);
         }
 
         if(cur_time > 0.0) {
@@ -684,23 +669,23 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
 
         if(purkinje_config) {
-            start_stop_watch(&purkinje_ode_time);
+            start_stop_watch(&stop_watch);
 
             // REACTION: Purkinje
             solve_all_volumes_odes(the_purkinje_ode_solver, cur_time, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
 
-            purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
+            purkinje_ode_total_time += stop_stop_watch(&stop_watch);
 
-            start_stop_watch(&purkinje_ode_time);
+            start_stop_watch(&stop_watch);
 
             // UPDATE: Purkinje
             ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
                                                                               the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,
                                                                               the_purkinje_ode_solver, original_num_purkinje_cells);
 
-            purkinje_ode_total_time += stop_stop_watch(&purkinje_ode_time);
+            purkinje_ode_total_time += stop_stop_watch(&stop_watch);
 
-            start_stop_watch(&purkinje_cg_time);
+            start_stop_watch(&stop_watch);
 
             // TODO: show the purkinje fibers in the visualization tool
             //            #ifdef COMPILE_GUI
@@ -723,7 +708,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                     &time_info, linear_system_solver_config, the_grid, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,
                     &purkinje_solver_iterations, &purkinje_solver_error);
 
-            purkinje_cg_partial = stop_stop_watch(&purkinje_cg_time);
+            purkinje_cg_partial = stop_stop_watch(&stop_watch);
 
             purkinje_cg_total_time += purkinje_cg_partial;
 
@@ -732,7 +717,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if(domain_config) {
 
-            start_stop_watch(&ode_time);
+            start_stop_watch(&stop_watch);
 
             // REACTION
             solve_all_volumes_odes(the_ode_solver, cur_time, stimuli_configs, configs->ode_extra_config);
@@ -740,9 +725,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                                                               the_grid->num_active_cells, the_grid->active_cells, the_ode_solver,
                                                                               original_num_cells);
 
-            ode_total_time += stop_stop_watch(&ode_time);
+            ode_total_time += stop_stop_watch(&stop_watch);
 
-            start_stop_watch(&cg_time);
+            start_stop_watch(&stop_watch);
 
 #ifdef COMPILE_GUI
             if(show_gui) {
@@ -768,7 +753,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 return SIMULATION_FINISHED;
             }
 
-            cg_partial = stop_stop_watch(&cg_time);
+            cg_partial = stop_stop_watch(&stop_watch);
 
             cg_total_time += cg_partial;
 
@@ -802,18 +787,22 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             redo_matrix = false;
             if(cur_time >= start_adpt_at) {
                 if(count % refine_each == 0) {
-                    start_stop_watch(&ref_time);
+                    start_stop_watch(&stop_watch);
                     redo_matrix = refine_grid_with_bound(the_grid, refinement_bound, start_dx, start_dy, start_dz);
-                    total_ref_time += stop_stop_watch(&ref_time);
+                    total_ref_time += stop_stop_watch(&stop_watch);
                 }
 
                 if(count % derefine_each == 0) {
-                    start_stop_watch(&deref_time);
+                    start_stop_watch(&stop_watch);
                     redo_matrix |= derefine_grid_with_bound(the_grid, derefinement_bound, max_dx, max_dy, max_dz);
-                    total_deref_time += stop_stop_watch(&deref_time);
+                    total_deref_time += stop_stop_watch(&stop_watch);
                 }
+
                 if(redo_matrix) {
+
+                    start_stop_watch(&stop_watch);
                     order_grid_cells(the_grid);
+                    total_order_time += stop_stop_watch(&stop_watch);
 
                     if(stimuli_configs) {
                         if(cur_time <= last_stimulus_time || has_any_periodic_stim) {
@@ -826,15 +815,19 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                                                                                                                  &(the_ode_solver->extra_data_size));
                     }
 
+                    start_stop_watch(&stop_watch);
                     update_cells_to_solve(the_grid, the_ode_solver);
+                    total_update_cells_time += stop_stop_watch(&stop_watch);
 
+                    start_stop_watch(&stop_watch);
                     if(arrlen(the_grid->refined_this_step) > 0) {
                         update_state_vectors_after_refinement(the_ode_solver, the_grid->refined_this_step);
                     }
+                    total_update_sv_time += stop_stop_watch(&stop_watch);
 
-                    start_stop_watch(&part_mat);
+                    start_stop_watch(&stop_watch);
                     ((assembly_matrix_fn *)assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
-                    total_mat_time += stop_stop_watch(&part_mat);
+                    total_mat_time += stop_stop_watch(&stop_watch);
 
                     // MAPPING: Update the mapping between the Purkinje mesh and the refined/derefined grid
                     if(purkinje_config && domain_config) {
@@ -889,9 +882,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
                         update_cells_to_solve(the_grid, the_ode_solver);
 
-                        start_stop_watch(&part_mat);
+                        start_stop_watch(&stop_watch);
                         ((assembly_matrix_fn *)assembly_matrix_config->main_function)(assembly_matrix_config, the_monodomain_solver, the_grid);
-                        total_mat_time += stop_stop_watch(&part_mat);
+                        total_mat_time += stop_stop_watch(&stop_watch);
 
                         CALL_END_LINEAR_SYSTEM(linear_system_solver_config);
                         CALL_INIT_LINEAR_SYSTEM(linear_system_solver_config, the_grid, false);
@@ -908,7 +901,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 #ifdef COMPILE_GUI
         if(configs->show_gui) {
             omp_unset_lock(&gui_config->draw_lock);
-            gui_config->time = (float) cur_time;
+            gui_config->time = (float)cur_time;
         }
 #endif
         count++;
@@ -931,13 +924,13 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         }
     }
 
-    //if no save_rate is passed we only save at the end of the simulation;
+    // if no save_rate is passed we only save at the end of the simulation;
     if(save_checkpoint && save_state_rate == 0) {
         time_info.iteration = count;
         time_info.current_t = cur_time;
         printf("Saving state with time = %lf, and count = %d\n", time_info.current_t, time_info.iteration);
-        ((save_state_fn *)save_state_config->main_function)(&time_info, save_state_config, save_mesh_config, the_grid, the_monodomain_solver,
-                                                            the_ode_solver, the_purkinje_ode_solver, save_checkpoint_out_dir);
+        ((save_state_fn *)save_state_config->main_function)(&time_info, save_state_config, save_mesh_config, the_grid, the_monodomain_solver, the_ode_solver,
+                                                            the_purkinje_ode_solver, save_checkpoint_out_dir);
     }
 
     uint64_t res_time = stop_stop_watch(&solver_time);
@@ -953,9 +946,22 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         log_info("Total Write Time: %ld μs (%lf min)\n", total_write_time, total_write_time / conv_rate);
         log_info("ODE Total Time: %ld μs (%lf min)\n", ode_total_time, ode_total_time / conv_rate);
         log_info("CG Total Time: %ld μs (%lf min)\n", cg_total_time, cg_total_time / conv_rate);
-        log_info("Refine time: %ld μs (%lf min)\n", total_ref_time, total_ref_time / conv_rate);
-        log_info("Derefine time: %ld μs (%lf min)\n", total_deref_time, total_deref_time / conv_rate);
+
+        if(adaptive) {
+            log_info("Assemble matrix time: %ld μs (%lf min)\n", total_mat_time, total_mat_time / conv_rate);
+            log_info("Refine time: %ld μs (%lf min)\n", total_ref_time, total_ref_time / conv_rate);
+            log_info("Derefine time: %ld μs (%lf min)\n", total_deref_time, total_deref_time / conv_rate);
+            log_info("Order grid time: %ld μs (%lf min)\n", total_order_time, total_order_time / conv_rate);
+            log_info("Update cells time: %ld μs (%lf min)\n", total_update_cells_time, total_update_cells_time / conv_rate);
+            log_info("Update SV time: %ld μs (%lf min)\n", total_update_sv_time, total_update_sv_time / conv_rate);
+        }
+
         log_info("CG Total Iterations: %u\n", total_cg_it);
+
+        uint64_t u_time = res_time - (total_ecg_time + total_write_time + ode_total_time + cg_total_time + total_mat_time + total_ref_time + total_deref_time +
+                                      total_order_time + total_update_sv_time + total_update_cells_time);
+
+        log_info("Unmeasured time: %ld μs (%lf min)\n", u_time, u_time / conv_rate);
     }
 
     if(purkinje_config) {
@@ -963,7 +969,6 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
         log_info("Purkinje CG Total Time: %ld μs (%lf min)\n", purkinje_cg_total_time, purkinje_cg_total_time / conv_rate);
         log_info("Purkinje CG Total Iterations: %u\n", purkinje_total_cg_it);
     }
-
 
     if(purkinje_config && domain_config) {
         write_pmj_delay(the_grid, save_mesh_config, the_terminals);
@@ -1489,7 +1494,7 @@ void compute_pmj_current_tissue_to_purkinje(struct ode_solver *the_purkinje_ode_
 }
 
 // TODO: Maybe write a library to the PMJ coupling ...
-void write_pmj_delay (struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
+void write_pmj_delay(struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
     assert(the_grid);
     assert(config);
     assert(the_terminals);
@@ -1509,11 +1514,11 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
         FILE *output_file = NULL;
         output_file = fopen(output_dir_with_file, "w");
-        fprintf(output_file,"curPulse,curTerm,pkLAT,meanTissLAT,pmjDelay,isActive,hasBlock\n");
+        fprintf(output_file, "curPulse,curTerm,pkLAT,meanTissLAT,pmjDelay,isActive,hasBlock\n");
 
         uint32_t num_terminals = the_grid->purkinje->network->number_of_terminals;
 
-	    bool has_block;
+        bool has_block;
         uint32_t purkinje_index;
         struct node *purkinje_cell;
         struct point_3d cell_coordinates;
@@ -1538,11 +1543,11 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
         // For each pulses calculate its PMJ delay
         for(int k = 0; k < n_pulses; k++) {
 
-            //fprintf(output_file,"====================== PULSE %u ======================\n", k+1);
+            // fprintf(output_file,"====================== PULSE %u ======================\n", k+1);
             for(uint32_t i = 0; i < num_terminals; i++) {
 
                 has_block = false;
-		        uint32_t term_id = i;
+                uint32_t term_id = i;
                 bool is_terminal_active = the_terminals[i].active;
 
                 // [PURKINJE] Get the informaion from the Purkinje cell
@@ -1564,7 +1569,7 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
                 activation_times_array_purkinje = (float *)hmget(persistent_data->purkinje_activation_times, cell_coordinates);
 
                 real_cpu purkinje_lat = activation_times_array_purkinje[k];
-                //fprintf(output_file,"Terminal %u --> Purkinje cell %u --> LAT = %g\n", i, purkinje_index, purkinje_lat);
+                // fprintf(output_file,"Terminal %u --> Purkinje cell %u --> LAT = %g\n", i, purkinje_index, purkinje_lat);
 
                 // [TISSUE] Get the information from the Tissue cells
                 struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
@@ -1574,7 +1579,6 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
                 real_cpu mean_tissue_lat = 0.0;
                 real_cpu min_tissue_lat = __DBL_MAX__;
                 uint32_t cur_pulse = k;
-                uint32_t min_tissue_lat_id = 0;
                 for(uint32_t j = 0; j < number_tissue_cells; j++) {
 
                     cell_coordinates.x = tissue_cells[j]->center.x;
@@ -1589,30 +1593,29 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 
                     // Check if the number of activations from the tissue and Purkinje cell are equal
                     if(n_activations_purkinje > n_activations_tissue) {
-                        //log_error("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
-                        //log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
-                        //log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
-                        //fprintf(output_file,"ERROR! Probably there was a block on the anterograde direction!\n");
+                        // log_error("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
+                        // log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
+                        // log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
+                        // fprintf(output_file,"ERROR! Probably there was a block on the anterograde direction!\n");
                         has_block = true;
-			            cur_pulse = 0;
-                        //return;
+                        cur_pulse = 0;
+                        // return;
                     }
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
-                    if (activation_times_array_tissue[cur_pulse] < min_tissue_lat) {
+                    if(activation_times_array_tissue[cur_pulse] < min_tissue_lat) {
                         min_tissue_lat = activation_times_array_tissue[cur_pulse];
-                        min_tissue_lat_id = tissue_cells[j]->sv_position;
                     }
                 }
 
-                if (is_terminal_active) {
+                if(is_terminal_active) {
                     mean_tissue_lat /= (real_cpu)number_tissue_cells;
 
                     // PMJ delay is calculated using the mean LAT of the coupled tissue cells minus the LAT of the terminal Purkinje cell
                     real_cpu pmj_delay = (mean_tissue_lat - purkinje_lat);
 
                     // pulse_id, terminal_id, purkinje_lat, mean_tissue_lat, pmj_delay, is_active, has_block
-                    fprintf(output_file,"%d,%u,%g,%g,%g,%d,%d\n", k, term_id, purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active, (int)has_block);
-
+                    fprintf(output_file, "%d,%u,%g,%g,%g,%d,%d\n", k, term_id, purkinje_lat, mean_tissue_lat, pmj_delay, (int)is_terminal_active,
+                            (int)has_block);
                 }
             }
         }
@@ -1624,7 +1627,7 @@ void write_pmj_delay (struct grid *the_grid, struct config *config, struct termi
 }
 
 // TODO: Find a better place to this function ...
-void write_terminals_info (struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
+void write_terminals_info(struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
     assert(the_grid);
     assert(config);
     assert(the_terminals);
@@ -1651,11 +1654,11 @@ void write_terminals_info (struct grid *the_grid, struct config *config, struct 
         FILE *output_pk_term_file = NULL;
         output_pk_term_file = fopen(purkinje_term_file, "w");
 
-        fprintf(output_pk_term_file,"# vtk DataFile Version 4.2\n");
-        fprintf(output_pk_term_file,"vtk output\n");
-        fprintf(output_pk_term_file,"ASCII\n");
-        fprintf(output_pk_term_file,"DATASET POLYDATA\n");
-        fprintf(output_pk_term_file,"POINTS %u float\n", num_terminals);
+        fprintf(output_pk_term_file, "# vtk DataFile Version 4.2\n");
+        fprintf(output_pk_term_file, "vtk output\n");
+        fprintf(output_pk_term_file, "ASCII\n");
+        fprintf(output_pk_term_file, "DATASET POLYDATA\n");
+        fprintf(output_pk_term_file, "POINTS %u float\n", num_terminals);
 
         for(uint32_t i = 0; i < num_terminals; i++) {
 
@@ -1669,15 +1672,15 @@ void write_terminals_info (struct grid *the_grid, struct config *config, struct 
             center_y = purkinje_cells[purkinje_index]->center.y;
             center_z = purkinje_cells[purkinje_index]->center.z;
 
-            fprintf(output_pk_term_file,"%g %g %g\n", center_x, center_y, center_z);
+            fprintf(output_pk_term_file, "%g %g %g\n", center_x, center_y, center_z);
         }
-        fprintf(output_pk_term_file,"VERTICES %u %u\n", num_terminals, num_terminals*2);
+        fprintf(output_pk_term_file, "VERTICES %u %u\n", num_terminals, num_terminals * 2);
         for(uint32_t i = 0; i < num_terminals; i++) {
             fprintf(output_pk_term_file, "1 %u\n", i);
         }
-        fprintf(output_pk_term_file,"POINT_DATA %u\n", num_terminals);
-        fprintf(output_pk_term_file,"FIELD FieldData 1\n");
-        fprintf(output_pk_term_file,"isActive 1 %u float\n", num_terminals);
+        fprintf(output_pk_term_file, "POINT_DATA %u\n", num_terminals);
+        fprintf(output_pk_term_file, "FIELD FieldData 1\n");
+        fprintf(output_pk_term_file, "isActive 1 %u float\n", num_terminals);
         for(uint32_t i = 0; i < num_terminals; i++) {
             bool is_terminal_active = the_terminals[i].active;
             fprintf(output_pk_term_file, "%d\n", (int)is_terminal_active);
@@ -1692,46 +1695,46 @@ void write_terminals_info (struct grid *the_grid, struct config *config, struct 
         FILE *output_coupled_tiss_file = NULL;
         output_coupled_tiss_file = fopen(coupled_tissue_cells_file, "w");
 
-        fprintf(output_coupled_tiss_file,"# vtk DataFile Version 4.2\n");
-        fprintf(output_coupled_tiss_file,"vtk output\n");
-        fprintf(output_coupled_tiss_file,"ASCII\n");
-        fprintf(output_coupled_tiss_file,"DATASET POLYDATA\n");
-        fprintf(output_coupled_tiss_file,"POINTS %u float\n", num_coupled_tissue_cells);
+        fprintf(output_coupled_tiss_file, "# vtk DataFile Version 4.2\n");
+        fprintf(output_coupled_tiss_file, "vtk output\n");
+        fprintf(output_coupled_tiss_file, "ASCII\n");
+        fprintf(output_coupled_tiss_file, "DATASET POLYDATA\n");
+        fprintf(output_coupled_tiss_file, "POINTS %u float\n", num_coupled_tissue_cells);
 
         for(uint32_t i = 0; i < num_terminals; i++) {
             struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
-            for (uint32_t j = 0; j < arrlen(tissue_cells); j++) {
+            for(uint32_t j = 0; j < arrlen(tissue_cells); j++) {
                 center_x = tissue_cells[j]->center.x;
                 center_y = tissue_cells[j]->center.y;
                 center_z = tissue_cells[j]->center.z;
-                fprintf(output_coupled_tiss_file,"%g %g %g\n", center_x, center_y, center_z);
+                fprintf(output_coupled_tiss_file, "%g %g %g\n", center_x, center_y, center_z);
             }
         }
-        fprintf(output_coupled_tiss_file,"VERTICES %u %u\n", num_coupled_tissue_cells, num_coupled_tissue_cells*2);
+        fprintf(output_coupled_tiss_file, "VERTICES %u %u\n", num_coupled_tissue_cells, num_coupled_tissue_cells * 2);
         for(uint32_t i = 0; i < num_coupled_tissue_cells; i++) {
             fprintf(output_coupled_tiss_file, "1 %u\n", i);
         }
-        fprintf(output_coupled_tiss_file,"POINT_DATA %u\n", num_coupled_tissue_cells);
-        fprintf(output_coupled_tiss_file,"FIELD FieldData 2\n");
-        fprintf(output_coupled_tiss_file,"isActive 1 %u float\n", num_coupled_tissue_cells);
+        fprintf(output_coupled_tiss_file, "POINT_DATA %u\n", num_coupled_tissue_cells);
+        fprintf(output_coupled_tiss_file, "FIELD FieldData 2\n");
+        fprintf(output_coupled_tiss_file, "isActive 1 %u float\n", num_coupled_tissue_cells);
         for(uint32_t i = 0; i < num_terminals; i++) {
             bool is_terminal_active = the_terminals[i].active;
             struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
-            for (uint32_t j = 0; j < arrlen(tissue_cells); j++) {
+            for(uint32_t j = 0; j < arrlen(tissue_cells); j++) {
                 fprintf(output_coupled_tiss_file, "%d\n", (int)is_terminal_active);
             }
         }
-        fprintf(output_coupled_tiss_file,"METADATA\n");
-        fprintf(output_coupled_tiss_file,"INFORMATION 0\n\n");
-        fprintf(output_coupled_tiss_file,"associatedTerminal 1 %u float\n", num_coupled_tissue_cells);
+        fprintf(output_coupled_tiss_file, "METADATA\n");
+        fprintf(output_coupled_tiss_file, "INFORMATION 0\n\n");
+        fprintf(output_coupled_tiss_file, "associatedTerminal 1 %u float\n", num_coupled_tissue_cells);
         for(uint32_t i = 0; i < num_terminals; i++) {
             struct cell_node **tissue_cells = the_terminals[i].tissue_cells;
-            for (uint32_t j = 0; j < arrlen(tissue_cells); j++) {
+            for(uint32_t j = 0; j < arrlen(tissue_cells); j++) {
                 fprintf(output_coupled_tiss_file, "%u\n", i);
             }
         }
-        fprintf(output_coupled_tiss_file,"METADATA\n");
-        fprintf(output_coupled_tiss_file,"INFORMATION 0\n\n");
+        fprintf(output_coupled_tiss_file, "METADATA\n");
+        fprintf(output_coupled_tiss_file, "INFORMATION 0\n\n");
         fclose(output_coupled_tiss_file);
     } else {
         log_error("[purkinje_coupling] ERROR! No 'persistant_data' was found!\n");
