@@ -815,7 +815,7 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
 void set_plain_rectangle(struct grid *the_grid, real_cpu rectangle_x_left, real_cpu rectangle_x_right, real_cpu rectangle_y_left, real_cpu rectangle_y_right,
                                unsigned fib_seed) {
 
-    log_info("Creating rectangle of size %.2lf %%\n", (rectangle_x_right - rerectangle_x_left) * (rectangle_y_right - rerectangle_y_left));
+    log_info("Creating rectangle of size %.2lf %%\n", (rectangle_x_right - rectangle_x_left) * (rectangle_y_right - rectangle_y_left));
 
     if(fib_seed == 0)
         fib_seed = (unsigned)time(NULL) + getpid();
