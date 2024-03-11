@@ -128,16 +128,16 @@ SET_EXTRA_DATA(set_extra_data_for_rectangle) {
     struct extra_data_for_fibrosis *extra_data = NULL;
 
     real rectangle_x_left = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config, "rectangle_x_left");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_x_left, config, "rectangle_x_left");
 
     real rectangle_x_right = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config, "rectangle_x_right");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_x_right, config, "rectangle_x_right");
 
     real rectangle_y_left = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config, "rectangle_y_left");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_left, config, "rectangle_y_left");
 
     real rectangle_y_right = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config, "rectangle_y_right");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_right, config, "rectangle_y_right");
 
     extra_data = set_common_schemia_data(config, num_active_cells);
     SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_fibrosis));

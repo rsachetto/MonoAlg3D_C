@@ -253,16 +253,16 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_sphere_fibrotic_mesh) {
 SET_SPATIAL_DOMAIN(initialize_grid_with_plain_and_rectangle_mesh) {
 
     real_cpu rectangle_x_left = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config, "rectangle_x_left");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_x_left, config, "rectangle_x_left");
 
     real_cpu rectangle_x_right = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config, "rectangle_x_right");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_x_right, config, "rectangle_x_right");
 
     real_cpu rectangle_y_left = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config, "rectangle_y_left");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_left, config, "rectangle_y_left");
 
     real_cpu rectangle_y_right = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config, "rectangle_y_right");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_right, config, "rectangle_y_right");
 
     unsigned seed = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config, "seed");
