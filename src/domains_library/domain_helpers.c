@@ -812,6 +812,35 @@ void set_plain_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu pla
     }
 }
 
+void set_plain_rectangle(struct grid *the_grid, real_cpu rectangle_x_left, real_cpu rectangle_x_right, real_cpu rectangle_y_left, real_cpu rectangle_y_right,
+                               unsigned fib_seed) {
+
+    log_info("Creating rectangle of size %.2lf %%\n", (rectangle_x_right - rerectangle_x_left) * (rectangle_y_right - rerectangle_y_left));
+
+    if(fib_seed == 0)
+        fib_seed = (unsigned)time(NULL) + getpid();
+
+    srand(fib_seed);
+
+    log_info("Using %u as seed\n", fib_seed);
+
+    struct cell_node *grid_cell;
+
+    grid_cell = the_grid->first_cell;
+
+    while(grid_cell != 0) {
+
+        if(grid_cell->active) {
+            INITIALIZE_FIBROTIC_INFO(grid_cell);
+            if(grid_cell->center.x >= rectangle_x_left && grid_cell->center.x <= rectangle_x_right && grid_cell->center.y >= rectangle_y_left && grid_cell->center.y <= rectangle_y_right) {
+               FIBROTIC(grid_cell) = true;
+            }
+        }
+
+        grid_cell = grid_cell->next;
+    }
+}
+
 void set_cube_sphere_fibrosis(struct grid *the_grid, real_cpu phi, real_cpu sphere_center[3], real_cpu sphere_radius, unsigned fib_seed) {
 
     log_info("Making %.2lf %% of cells inactive\n", phi * 100.0f);
