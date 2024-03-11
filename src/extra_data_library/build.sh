@@ -1,4 +1,4 @@
-LIB_STATIC_LIBS="config_helpers utils tinyexpr"
+LIB_STATIC_LIBS="config_helpers utils tinyexpr sds"
 
 CHECK_CUSTOM_FILE
 
