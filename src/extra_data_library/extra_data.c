@@ -7,6 +7,7 @@
 #include "../config/extra_data_config.h"
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
+#include "../logger/logger.h"
 #include "../domains_library/mesh_info_data.h"
 #include "helper_functions.h"
 
