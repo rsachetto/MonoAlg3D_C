@@ -123,6 +123,7 @@ SET_EXTRA_DATA(set_extra_data_for_fibrosis_sphere) {
 SET_EXTRA_DATA(set_extra_data_for_rectangle) {
 
     uint32_t num_active_cells = the_grid->num_active_cells;
+    log_info("Found %d active cells\n", num_active_cells);
     struct cell_node ** ac = the_grid->active_cells;
 
     struct extra_data_for_fibrosis *extra_data = NULL;
@@ -140,6 +141,17 @@ SET_EXTRA_DATA(set_extra_data_for_rectangle) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_right, config, "rectangle_y_right");
 
     extra_data = set_common_schemia_data(config, num_active_cells);
+
+    OMP(parallel for)
+    for (uint32_t i = 0; i < num_active_cells; i++) {
+        if(FIBROTIC(ac[i])) {
+            extra_data->fibrosis[i] = 0.0;
+        }
+        else {
+            extra_data->fibrosis[i] = 1.0;
+        }
+    }
+
     SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_fibrosis));
 
     return (void*)extra_data;
