@@ -834,7 +834,6 @@ void set_plain_rectangle(struct grid *the_grid, real_cpu rectangle_x_left, real_
             INITIALIZE_FIBROTIC_INFO(grid_cell);
             if(grid_cell->center.x >= rectangle_x_left && grid_cell->center.x <= rectangle_x_right && grid_cell->center.y >= rectangle_y_left && grid_cell->center.y <= rectangle_y_right) {
                FIBROTIC(grid_cell) = true;
-			   log_info("Making cell fibrotic");
             }
         }
 
