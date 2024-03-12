@@ -552,7 +552,7 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
     real side_length = the_grid->mesh_side_length.x;
     struct cell_node ** ac = the_grid->active_cells;
 
-    struct extra_data_for_torord *extra_data = NULL;
+    struct extra_data_for_torord_cell_wise *extra_data = NULL;
     extra_data = set_common_torord_dyncl_data(config, num_active_cells);
 
     real rectangle_x_left = 0.0;
