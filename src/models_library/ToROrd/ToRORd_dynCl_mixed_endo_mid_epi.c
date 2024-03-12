@@ -131,7 +131,8 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     // Get the extra parameters
     int num_extra_parameters = 17;
-    real extra_par[num_extra_parameters];
+    // Initialize extra_par as an array of arrays
+    real** extra_par = new real*[num_parameters];
     real *transmurality = NULL;
     if (ode_solver->ode_extra_data) {
         struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
