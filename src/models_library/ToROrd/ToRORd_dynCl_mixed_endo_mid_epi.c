@@ -227,27 +227,27 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         if(adpt) {
             if (ode_solver->ode_extra_data) {
                 //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, extra_par);
-                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, this_extra_par, i);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, this_extra_par);
             }
             else {
                 //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par);
-                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, this_extra_par, i);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, this_extra_par);
             }
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
                 if (ode_solver->ode_extra_data) {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], this_extra_par, i);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], this_extra_par);
                 }
                 else {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0, this_extra_par, i);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0, this_extra_par);
                 }
             }
         }
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const *extra_params, int cell_id) {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const *extra_params) {
 
     const real TOLERANCE = 1e-8;
     real rY[NEQ], rDY[NEQ];
@@ -257,7 +257,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
 
     // Compute 'a', 'b' coefficients alongside 'rhs'
     real a[NEQ], b[NEQ];
-    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt, transmurality, extra_params, cell_id);
+    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt, transmurality, extra_params);
 
     // Solve variables based on its type:
     //  Non-linear = Euler
@@ -309,7 +309,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
     SOLVE_EQUATION_EULER_CPU(44);       // clss
 }
 
-void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params, int cell_id) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
@@ -336,7 +336,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
         *dt = final_time - *time_new;
     }
 
-    RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, extra_params, cell_id);
+    RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, extra_params);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++) {
@@ -363,7 +363,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
         }
 
         *time_new += *dt;
-        RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, extra_params, cell_id);
+        RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, extra_params);
         *time_new -= *dt; // step back
 
         double greatestError = 0.0, auxError = 0.0;
@@ -432,7 +432,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
     free(_k2__);
 }
 
-void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params, int cell_id) {
+void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
     
     int numEDO = NEQ;
     real rDY[numEDO];
@@ -459,7 +459,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, re
         *dt = final_time - *time_new;
     }
 
-    RHS_RL_cpu(a_, b_, sv, rDY, stim_curr, *dt, transmurality, extra_params, cell_id);
+    RHS_RL_cpu(a_, b_, sv, rDY, stim_curr, *dt, transmurality, extra_params);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++) {
@@ -523,7 +523,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, re
         SOLVE_EQUATION_ADAPT_RUSH_LARSEN_EULER_CPU(44);
 
         *time_new += *dt;
-        RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt, transmurality, extra_params, cell_id);
+        RHS_RL_cpu(a_new, b_new, sv, rDY, stim_curr, *dt, transmurality, extra_params);
         *time_new -= *dt; // step back
 
         // Compute errors
@@ -644,7 +644,7 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, re
     free(b_new);
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params, int cell_id) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params) {
 
     // Current modifiers
     real INa_Multiplier   = extra_params[0];
@@ -721,7 +721,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
     #include "ToRORd_dynCl_mixed_endo_mid_epi.common.c"
 }
 
-void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params, int cell_id) {
+void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params) {
 
     // Current modifiers
     real INa_Multiplier   = extra_params[0];
