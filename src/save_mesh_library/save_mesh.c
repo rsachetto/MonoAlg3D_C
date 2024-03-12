@@ -1001,7 +1001,7 @@ END_SAVE_MESH(end_save_multiple_cell_state_variables) {
 
 SAVE_MESH(save_transmurality_as_vtk) {
 
-    struct extra_data_for_torord_old *extra_data = (struct extra_data_for_torord_old*)ode_solver->ode_extra_data;
+    struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
     real *transmurality = extra_data->transmurality;
 
     int iteration_count = time_info->iteration;

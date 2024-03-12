@@ -37,7 +37,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     real *initial_mid = NULL;
     real *transmurality = NULL;
     if(solver->ode_extra_data) {
-        struct extra_data_for_torord_old *extra_data = (struct extra_data_for_torord_old*)solver->ode_extra_data;
+        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)solver->ode_extra_data;
         initial_endo = extra_data->initial_ss_endo;
         initial_epi = extra_data->initial_ss_epi;
         initial_mid = extra_data->initial_ss_mid;
@@ -178,7 +178,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     real extra_par[num_extra_parameters];
     real *transmurality = NULL;
     if (ode_solver->ode_extra_data) {
-        struct extra_data_for_torord_old *extra_data = (struct extra_data_for_torord_old*)ode_solver->ode_extra_data;
+        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
         extra_par[0]  = extra_data->INa_Multiplier; 
         extra_par[1]  = extra_data->ICaL_Multiplier;
         extra_par[2]  = extra_data->Ito_Multiplier;
