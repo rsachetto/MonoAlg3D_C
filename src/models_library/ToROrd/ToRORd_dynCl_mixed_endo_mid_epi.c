@@ -1,5 +1,6 @@
 #include "ToRORd_dynCl_mixed_endo_mid_epi.h"
 #include <stdlib.h>
+#include <helper_functions.h>
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
@@ -118,6 +119,14 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     }        
 }
 
+real * extract_extra_data(real **extra_par, int i) {
+    real *out = malloc(17 * sizeof(real));
+    for (int j = 0; j < 17; j++) {
+        out[j] = extra_par[j][i];
+    }
+    return out;
+}
+
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
     uint32_t sv_id;
@@ -208,6 +217,9 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     OMP(parallel for private(sv_id))
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
 
+        real * this_extra_par;
+                this_extra_par = extract_extra_data(extra_par, i);
+
         if(cells_to_solve)
             sv_id = cells_to_solve[i];
         else
@@ -216,27 +228,27 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         if(adpt) {
             if (ode_solver->ode_extra_data) {
                 //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, extra_par);
-                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, extra_par, i);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], current_t + dt, sv_id, ode_solver, this_extra_par, i);
             }
             else {
                 //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par);
-                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par, i);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, this_extra_par, i);
             }
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
                 if (ode_solver->ode_extra_data) {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], extra_par, i);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], this_extra_par, i);
                 }
                 else {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0, extra_par, i);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0, this_extra_par, i);
                 }
             }
         }
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const **extra_params, int cell_id) {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const *extra_params, int cell_id) {
 
     const real TOLERANCE = 1e-8;
     real rY[NEQ], rDY[NEQ];
@@ -298,7 +310,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
     SOLVE_EQUATION_EULER_CPU(44);       // clss
 }
 
-void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const **extra_params, int cell_id) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params, int cell_id) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
@@ -421,7 +433,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
     free(_k2__);
 }
 
-void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const **extra_params, int cell_id) {
+void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params, int cell_id) {
     
     int numEDO = NEQ;
     real rDY[numEDO];
@@ -633,26 +645,26 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, re
     free(b_new);
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const **extra_params, int cell_id) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params, int cell_id) {
 
     // Current modifiers
-    real INa_Multiplier   = 1.0; //extra_params[0][cell_id];
-    real ICaL_Multiplier  = 1.0; //extra_params[1][cell_id];
-    real Ito_Multiplier   = 1.0; //extra_params[2][cell_id];
-    real INaL_Multiplier  = 1.0; //extra_params[3][cell_id];
-    real IKr_Multiplier   = 1.0; //extra_params[4][cell_id];
-    real IKs_Multiplier   = 1.0; //extra_params[5][cell_id];
-    real IK1_Multiplier   = 1.0; //extra_params[6][cell_id];
-    real IKb_Multiplier   = 1.0; //extra_params[7][cell_id];
-    real INaCa_Multiplier = 1.0; //extra_params[8][cell_id];
-    real INaK_Multiplier  = 1.0; //extra_params[9][cell_id];
-    real INab_Multiplier  = 1.0; //extra_params[10][cell_id];
-    real ICab_Multiplier  = 1.0; //extra_params[11][cell_id];
-    real IpCa_Multiplier  = 1.0; //extra_params[12][cell_id];
-    real ICaCl_Multiplier = 1.0; //extra_params[13][cell_id];
-    real IClb_Multiplier  = 1.0; //extra_params[14][cell_id];
-    real Jrel_Multiplier  = 1.0; //extra_params[15][cell_id];
-    real Jup_Multiplier   = 1.0; //extra_params[16][cell_id];
+    real INa_Multiplier   = extra_params[0];
+    real ICaL_Multiplier  = extra_params[1];
+    real Ito_Multiplier   = extra_params[2];
+    real INaL_Multiplier  = extra_params[3];
+    real IKr_Multiplier   = extra_params[4];
+    real IKs_Multiplier   = extra_params[5];
+    real IK1_Multiplier   = extra_params[6];
+    real IKb_Multiplier   = extra_params[7];
+    real INaCa_Multiplier = extra_params[8];
+    real INaK_Multiplier  = extra_params[9];
+    real INab_Multiplier  = extra_params[10];
+    real ICab_Multiplier  = extra_params[11];
+    real IpCa_Multiplier  = extra_params[12];
+    real ICaCl_Multiplier = extra_params[13];
+    real IClb_Multiplier  = extra_params[14];
+    real Jrel_Multiplier  = extra_params[15];
+    real Jup_Multiplier   = extra_params[16];
 
     // Get the celltype for the current cell
     real celltype = transmurality;
@@ -710,26 +722,26 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
     #include "ToRORd_dynCl_mixed_endo_mid_epi.common.c"
 }
 
-void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const **extra_params, int cell_id) {
+void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params, int cell_id) {
 
     // Current modifiers
-    real INa_Multiplier   = 1.0; //extra_params[0][cell_id];
-    real ICaL_Multiplier  = 1.0; //extra_params[1][cell_id];
-    real Ito_Multiplier   = 1.0; //extra_params[2][cell_id];
-    real INaL_Multiplier  = 1.0; //extra_params[3][cell_id];
-    real IKr_Multiplier   = 1.0; //extra_params[4][cell_id];
-    real IKs_Multiplier   = 1.0; //extra_params[5][cell_id];
-    real IK1_Multiplier   = 1.0; //extra_params[6][cell_id];
-    real IKb_Multiplier   = 1.0; //extra_params[7][cell_id];
-    real INaCa_Multiplier = 1.0; //extra_params[8][cell_id];
-    real INaK_Multiplier  = 1.0; //extra_params[9][cell_id];
-    real INab_Multiplier  = 1.0; //extra_params[10][cell_id];
-    real ICab_Multiplier  = 1.0; //extra_params[11][cell_id];
-    real IpCa_Multiplier  = 1.0; //extra_params[12][cell_id];
-    real ICaCl_Multiplier = 1.0; //extra_params[13][cell_id];
-    real IClb_Multiplier  = 1.0; //extra_params[14][cell_id];
-    real Jrel_Multiplier  = 1.0; //extra_params[15][cell_id];
-    real Jup_Multiplier   = 1.0; //extra_params[16][cell_id];
+    real INa_Multiplier   = extra_params[0];
+    real ICaL_Multiplier  = extra_params[1];
+    real Ito_Multiplier   = extra_params[2];
+    real INaL_Multiplier  = extra_params[3];
+    real IKr_Multiplier   = extra_params[4];
+    real IKs_Multiplier   = extra_params[5];
+    real IK1_Multiplier   = extra_params[6];
+    real IKb_Multiplier   = extra_params[7];
+    real INaCa_Multiplier = extra_params[8];
+    real INaK_Multiplier  = extra_params[9];
+    real INab_Multiplier  = extra_params[10];
+    real ICab_Multiplier  = extra_params[11];
+    real IpCa_Multiplier  = extra_params[12];
+    real ICaCl_Multiplier = extra_params[13];
+    real IClb_Multiplier  = extra_params[14];
+    real Jrel_Multiplier  = extra_params[15];
+    real Jup_Multiplier   = extra_params[16];
 
     // Get the celltype for the current cell
     real celltype = transmurality;
