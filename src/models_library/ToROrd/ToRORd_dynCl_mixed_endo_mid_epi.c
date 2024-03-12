@@ -156,23 +156,16 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         transmurality = extra_data->transmurality;
     }
     else {
-        extra_par[0]  = 1.0; 
-        extra_par[1]  = 1.0;
-        extra_par[2]  = 1.0;
-        extra_par[3]  = 1.0;
-        extra_par[4]  = 1.0;
-        extra_par[5]  = 1.0;
-        extra_par[6]  = 1.0; 
-        extra_par[7]  = 1.0; 
-        extra_par[8]  = 1.0;
-        extra_par[9]  = 1.0;
-        extra_par[9]  = 1.0; 
-        extra_par[10] = 1.0;  
-        extra_par[11] = 1.0; 
-        extra_par[12] = 1.0;
-        extra_par[13] = 1.0;
-        extra_par[15] = 1.0;
-        extra_par[16] = 1.0;
+        for (int i = 0; i < num_extra_parameters; i++) {
+            extra_par[i] = new real[num_cells_to_solve];
+            for (int j = 0; j < num_cells_to_solve; j++) {
+                extra_par[i][j] = 1.0;
+            }
+        }
+        transmurality = new real[num_cells_to_solve];
+        for (int i = 0; i < num_cells_to_solve; i++) {
+            transmurality[i] = EPI;
+        }
     }
 
     OMP(parallel for private(sv_id))
@@ -206,7 +199,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const *extra_params, int cell_id) {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real const **extra_params, int cell_id) {
 
     const real TOLERANCE = 1e-8;
     real rY[NEQ], rDY[NEQ];
@@ -391,7 +384,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
     free(_k2__);
 }
 
-void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params, int cell_id) {
+void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const **extra_params, int cell_id) {
     
     int numEDO = NEQ;
     real rDY[numEDO];
@@ -603,26 +596,26 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, re
     free(b_new);
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params, int i) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const **extra_params, int cell_id) {
 
     // Current modifiers
-    real INa_Multiplier   = extra_params[0][i];
-    real ICaL_Multiplier  = extra_params[1][i];
-    real Ito_Multiplier   = extra_params[2][i];
-    real INaL_Multiplier  = extra_params[3][i];
-    real IKr_Multiplier   = extra_params[4][i];
-    real IKs_Multiplier   = extra_params[5][i];
-    real IK1_Multiplier   = extra_params[6][i];
-    real IKb_Multiplier   = extra_params[7][i];
-    real INaCa_Multiplier = extra_params[8][i];
-    real INaK_Multiplier  = extra_params[9][i];
-    real INab_Multiplier  = extra_params[10][i];
-    real ICab_Multiplier  = extra_params[11][i];
-    real IpCa_Multiplier  = extra_params[12][i];
-    real ICaCl_Multiplier = extra_params[13][i];
-    real IClb_Multiplier  = extra_params[14][i];
-    real Jrel_Multiplier  = extra_params[15][i];
-    real Jup_Multiplier   = extra_params[16][i];
+    real INa_Multiplier   = extra_params[0][cell_id];
+    real ICaL_Multiplier  = extra_params[1][cell_id];
+    real Ito_Multiplier   = extra_params[2][cell_id];
+    real INaL_Multiplier  = extra_params[3][cell_id];
+    real IKr_Multiplier   = extra_params[4][cell_id];
+    real IKs_Multiplier   = extra_params[5][cell_id];
+    real IK1_Multiplier   = extra_params[6][cell_id];
+    real IKb_Multiplier   = extra_params[7][cell_id];
+    real INaCa_Multiplier = extra_params[8][cell_id];
+    real INaK_Multiplier  = extra_params[9][cell_id];
+    real INab_Multiplier  = extra_params[10][cell_id];
+    real ICab_Multiplier  = extra_params[11][cell_id];
+    real IpCa_Multiplier  = extra_params[12][cell_id];
+    real ICaCl_Multiplier = extra_params[13][cell_id];
+    real IClb_Multiplier  = extra_params[14][cell_id];
+    real Jrel_Multiplier  = extra_params[15][cell_id];
+    real Jup_Multiplier   = extra_params[16][cell_id];
 
     // Get the celltype for the current cell
     real celltype = transmurality;
@@ -680,7 +673,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
     #include "ToRORd_dynCl_mixed_endo_mid_epi.common.c"
 }
 
-void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const *extra_params, int cell_id) {
+void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const **extra_params, int cell_id) {
 
     // Current modifiers
     real INa_Multiplier   = extra_params[0][cell_id];
