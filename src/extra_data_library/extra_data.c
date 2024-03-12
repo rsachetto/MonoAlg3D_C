@@ -141,7 +141,7 @@ SET_EXTRA_DATA(set_extra_data_for_rectangle) {
     real rectangle_y_right = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_right, config, "rectangle_y_right");
 
-    extra_data = set_common_schemia_data(config, num_active_cells);
+    extra_data = set_common_torord_data(config, num_active_cells);
 
     OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
@@ -149,7 +149,7 @@ SET_EXTRA_DATA(set_extra_data_for_rectangle) {
             extra_data->fibrosis[i] = 0.0;
         }
         else {
-            extra_data->fibrosis[i] = 1.0;
+            extra_data->fibrosis[i] = 0.0;
         }
     }
 
