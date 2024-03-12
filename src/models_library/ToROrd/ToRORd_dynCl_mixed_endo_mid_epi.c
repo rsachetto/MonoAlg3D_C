@@ -261,7 +261,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
     SOLVE_EQUATION_EULER_CPU(44);       // clss
 }
 
-void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params, int cell_id) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const **extra_params, int cell_id) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
