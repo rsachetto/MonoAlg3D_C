@@ -546,6 +546,59 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_fkatp_epi_mid_endo) {
 
 }
 
+SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
+
+    uint32_t num_active_cells = the_grid->num_active_cells;
+    real side_length = the_grid->mesh_side_length.x;
+    struct cell_node ** ac = the_grid->active_cells;
+
+    struct extra_data_for_torord *extra_data = NULL;
+    extra_data = set_common_torord_dyncl_data(config, num_active_cells);
+
+    real rectangle_x_left = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_x_left, config, "rectangle_x_left");
+
+    real rectangle_x_right = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_x_right, config, "rectangle_x_right");
+
+    real rectangle_y_left = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_left, config, "rectangle_y_left");
+
+    real rectangle_y_right = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, rectangle_y_right, config, "rectangle_y_right");
+
+    real INa_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INa_Multiplier, config, "INa_Multiplier");
+
+    real ICaL_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaL_Multiplier, config, "ICaL_Multiplier");
+
+    real IKr_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKr_Multiplier, config, "IKr_Multiplier");
+
+    extra_data = set_common_torord_data(config, num_active_cells);
+
+    OMP(parallel for)
+    for (uint32_t i = 0; i < num_active_cells; i++) {
+        if(ac[i]->center.x < rectangle_x_right && ac[i]->center.x > rectangle_x_left && ac[i]->center.y < rectangle_y_right && ac[i]->center.y > rectangle_y_left) {
+            extra_data->INa_Multiplier[i] = INa_Multiplier;
+            extra_data->ICaL_Multiplier[i] = ICaL_Multiplier;
+            extra_data->IKr_Multiplier[i] = IKr_Multiplier;
+        }
+        else {
+            extra_data->INa_Multiplier[i] = 1.0;
+            extra_data->ICaL_Multiplier[i] = 1.0;
+            extra_data->IKr_Multiplier[i] = 1.0;
+        }
+        // EPI
+        extra_data->transmurality[i] = 2.0;
+    }
+
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord));
+
+    return (void*)extra_data;
+}
+
 // Initial condition - 'libToRORd_dynCl_mixed_endo_mid_epi.so' + transmurality + current modifiers (plain and cuboid)
 SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_epi_mid_endo) {
 
