@@ -136,7 +136,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     real *transmurality = NULL;
     if (ode_solver->ode_extra_data) {
         struct extra_data_for_torord_cell_wise *extra_data = (struct extra_data_for_torord_cell_wise*)ode_solver->ode_extra_data;
-        for (int i = 1; i <= num_extra_parameters; i++) {
+        for (int i = 0; i < num_extra_parameters; i++) {
             extra_par[i] = malloc(num_cells_to_solve * sizeof(real));
             for (int j = 0; j < num_cells_to_solve; j++) {
                 switch (i) {
