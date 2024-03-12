@@ -11,7 +11,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_info("Using ToRORd_dynCl_2020 CPU model\n");
+    log_info("Using ToRORd_dynCl_2020 CPU model with localised Multipliers\n");
 
     uint32_t num_cells = solver->original_num_cells;
     solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
@@ -595,23 +595,23 @@ void solve_rush_larsen_cpu_adpt(real *sv, real stim_curr, real transmurality, re
 void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const **extra_params, int cell_id) {
 
     // Current modifiers
-    real INa_Multiplier   = extra_params[0][cell_id];
-    real ICaL_Multiplier  = extra_params[1][cell_id];
-    real Ito_Multiplier   = extra_params[2][cell_id];
-    real INaL_Multiplier  = extra_params[3][cell_id];
-    real IKr_Multiplier   = extra_params[4][cell_id];
-    real IKs_Multiplier   = extra_params[5][cell_id];
-    real IK1_Multiplier   = extra_params[6][cell_id];
-    real IKb_Multiplier   = extra_params[7][cell_id];
-    real INaCa_Multiplier = extra_params[8][cell_id];
-    real INaK_Multiplier  = extra_params[9][cell_id];
-    real INab_Multiplier  = extra_params[10][cell_id];
-    real ICab_Multiplier  = extra_params[11][cell_id];
-    real IpCa_Multiplier  = extra_params[12][cell_id];
-    real ICaCl_Multiplier = extra_params[13][cell_id];
-    real IClb_Multiplier  = extra_params[14][cell_id];
-    real Jrel_Multiplier  = extra_params[15][cell_id];
-    real Jup_Multiplier   = extra_params[16][cell_id];
+    real INa_Multiplier   = 1.0; //extra_params[0][cell_id];
+    real ICaL_Multiplier  = 1.0; //extra_params[1][cell_id];
+    real Ito_Multiplier   = 1.0; //extra_params[2][cell_id];
+    real INaL_Multiplier  = 1.0; //extra_params[3][cell_id];
+    real IKr_Multiplier   = 1.0; //extra_params[4][cell_id];
+    real IKs_Multiplier   = 1.0; //extra_params[5][cell_id];
+    real IK1_Multiplier   = 1.0; //extra_params[6][cell_id];
+    real IKb_Multiplier   = 1.0; //extra_params[7][cell_id];
+    real INaCa_Multiplier = 1.0; //extra_params[8][cell_id];
+    real INaK_Multiplier  = 1.0; //extra_params[9][cell_id];
+    real INab_Multiplier  = 1.0; //extra_params[10][cell_id];
+    real ICab_Multiplier  = 1.0; //extra_params[11][cell_id];
+    real IpCa_Multiplier  = 1.0; //extra_params[12][cell_id];
+    real ICaCl_Multiplier = 1.0; //extra_params[13][cell_id];
+    real IClb_Multiplier  = 1.0; //extra_params[14][cell_id];
+    real Jrel_Multiplier  = 1.0; //extra_params[15][cell_id];
+    real Jup_Multiplier   = 1.0; //extra_params[16][cell_id];
 
     // Get the celltype for the current cell
     real celltype = transmurality;
@@ -672,23 +672,23 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
 void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real const **extra_params, int cell_id) {
 
     // Current modifiers
-    real INa_Multiplier   = extra_params[0][cell_id];
-    real ICaL_Multiplier  = extra_params[1][cell_id];
-    real Ito_Multiplier   = extra_params[2][cell_id];
-    real INaL_Multiplier  = extra_params[3][cell_id];
-    real IKr_Multiplier   = extra_params[4][cell_id];
-    real IKs_Multiplier   = extra_params[5][cell_id];
-    real IK1_Multiplier   = extra_params[6][cell_id];
-    real IKb_Multiplier   = extra_params[7][cell_id];
-    real INaCa_Multiplier = extra_params[8][cell_id];
-    real INaK_Multiplier  = extra_params[9][cell_id];
-    real INab_Multiplier  = extra_params[10][cell_id];
-    real ICab_Multiplier  = extra_params[11][cell_id];
-    real IpCa_Multiplier  = extra_params[12][cell_id];
-    real ICaCl_Multiplier = extra_params[13][cell_id];
-    real IClb_Multiplier  = extra_params[14][cell_id];
-    real Jrel_Multiplier  = extra_params[15][cell_id];
-    real Jup_Multiplier   = extra_params[16][cell_id];
+    real INa_Multiplier   = 1.0; //extra_params[0][cell_id];
+    real ICaL_Multiplier  = 1.0; //extra_params[1][cell_id];
+    real Ito_Multiplier   = 1.0; //extra_params[2][cell_id];
+    real INaL_Multiplier  = 1.0; //extra_params[3][cell_id];
+    real IKr_Multiplier   = 1.0; //extra_params[4][cell_id];
+    real IKs_Multiplier   = 1.0; //extra_params[5][cell_id];
+    real IK1_Multiplier   = 1.0; //extra_params[6][cell_id];
+    real IKb_Multiplier   = 1.0; //extra_params[7][cell_id];
+    real INaCa_Multiplier = 1.0; //extra_params[8][cell_id];
+    real INaK_Multiplier  = 1.0; //extra_params[9][cell_id];
+    real INab_Multiplier  = 1.0; //extra_params[10][cell_id];
+    real ICab_Multiplier  = 1.0; //extra_params[11][cell_id];
+    real IpCa_Multiplier  = 1.0; //extra_params[12][cell_id];
+    real ICaCl_Multiplier = 1.0; //extra_params[13][cell_id];
+    real IClb_Multiplier  = 1.0; //extra_params[14][cell_id];
+    real Jrel_Multiplier  = 1.0; //extra_params[15][cell_id];
+    real Jup_Multiplier   = 1.0; //extra_params[16][cell_id];
 
     // Get the celltype for the current cell
     real celltype = transmurality;
