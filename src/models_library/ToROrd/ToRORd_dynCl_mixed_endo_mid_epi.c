@@ -136,23 +136,64 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     real *transmurality = NULL;
     if (ode_solver->ode_extra_data) {
         struct extra_data_for_torord_cell_wise *extra_data = (struct extra_data_for_torord_cell_wise*)ode_solver->ode_extra_data;
-        extra_par[0]  = extra_data->INa_Multiplier; 
-        extra_par[1]  = extra_data->ICaL_Multiplier;
-        extra_par[2]  = extra_data->Ito_Multiplier;
-        extra_par[3]  = extra_data->INaL_Multiplier;
-        extra_par[4]  = extra_data->IKr_Multiplier; 
-        extra_par[5]  = extra_data->IKs_Multiplier; 
-        extra_par[6]  = extra_data->IK1_Multiplier; 
-        extra_par[7]  = extra_data->IKb_Multiplier; 
-        extra_par[8]  = extra_data->INaCa_Multiplier;
-        extra_par[9]  = extra_data->INaK_Multiplier;  
-        extra_par[10]  = extra_data->INab_Multiplier;
-        extra_par[11] = extra_data->ICab_Multiplier;
-        extra_par[12] = extra_data->IpCa_Multiplier;
-        extra_par[13] = extra_data->ICaCl_Multiplier;
-        extra_par[14] = extra_data->IClb_Multiplier;
-        extra_par[15] = extra_data->Jrel_Multiplier; 
-        extra_par[16] = extra_data->Jup_Multiplier;
+        for (int i = 1; i <= num_extra_parameters; i++) {
+            extra_par[i] = malloc(num_cells_to_solve * sizeof(real));
+            for (int j = 0; j < num_cells_to_solve; j++) {
+                switch (i) {
+                    case 0:
+                        extra_par[i][j] = extra_data->INa_Multiplier[j];
+                        break;
+                    case 1:
+                        extra_par[i][j] = extra_data->ICaL_Multiplier[j];
+                        break;
+                    case 2:
+                        extra_par[i][j] = extra_data->Ito_Multiplier[j];
+                        break;
+                    case 3:
+                        extra_par[i][j] = extra_data->INaL_Multiplier[j];
+                        break;
+                    case 4:
+                        extra_par[i][j] = extra_data->IKr_Multiplier[j];
+                        break;
+                    case 5:
+                        extra_par[i][j] = extra_data->IKs_Multiplier[j];
+                        break;
+                    case 6:
+                        extra_par[i][j] = extra_data->IK1_Multiplier[j];
+                        break;
+                    case 7:
+                        extra_par[i][j] = extra_data->IKb_Multiplier[j];
+                        break;
+                    case 8:
+                        extra_par[i][j] = extra_data->INaCa_Multiplier[j];
+                        break;
+                    case 9:
+                        extra_par[i][j] = extra_data->INaK_Multiplier[j];
+                        break;
+                    case 10:
+                        extra_par[i][j] = extra_data->INab_Multiplier[j];
+                        break;
+                    case 11:
+                        extra_par[i][j] = extra_data->ICab_Multiplier[j];
+                        break;
+                    case 12:
+                        extra_par[i][j] = extra_data->IpCa_Multiplier[j];
+                        break;
+                    case 13:
+                        extra_par[i][j] = extra_data->ICaCl_Multiplier[j];
+                        break;
+                    case 14:
+                        extra_par[i][j] = extra_data->IClb_Multiplier[j];
+                        break;
+                    case 15:
+                        extra_par[i][j] = extra_data->Jrel_Multiplier[j];
+                        break;
+                    case 16:
+                        extra_par[i][j] = extra_data->Jup_Multiplier[j];
+                        break;
+                }
+            }
+        }
         transmurality = extra_data->transmurality;
     }
     else {
