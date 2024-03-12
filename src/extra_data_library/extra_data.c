@@ -576,7 +576,7 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
     real IKr_Multiplier = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKr_Multiplier, config, "IKr_Multiplier");
 
-    extra_data = set_common_torord_data(config, num_active_cells);
+    extra_data = set_common_torord_data_cell_wise(config, num_active_cells);
 
     OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
@@ -594,7 +594,7 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
         extra_data->transmurality[i] = 2.0;
     }
 
-    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord));
+    SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord_cell_wise));
 
     return (void*)extra_data;
 }

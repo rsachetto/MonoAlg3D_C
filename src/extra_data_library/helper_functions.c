@@ -306,6 +306,243 @@ struct extra_data_for_torord * set_common_torord_data (struct config *config, ui
     return extra_data;
 }
 
+struct extra_data_for_torord_cell_wise * set_common_torord_data_cell_wise (struct config *config, uint32_t num_cells) {
+    struct extra_data_for_torord_cell_wise *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord_cell_wise);
+
+    real INa_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INa_Multiplier, config, "INa_Multiplier");
+
+    real ICaL_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaL_Multiplier, config, "ICaL_Multiplier");
+
+    real Ito_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Ito_Multiplier, config, "Ito_Multiplier");
+
+    real INaL_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaL_Multiplier, config, "INaL_Multiplier");
+
+    real IKr_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKr_Multiplier, config, "IKr_Multiplier");
+
+    real IKs_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKs_Multiplier, config, "IKs_Multiplier");
+
+    real IK1_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IK1_Multiplier, config, "IK1_Multiplier");
+
+    real IKb_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKb_Multiplier, config, "IKb_Multiplier");
+
+    real INaCa_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaCa_Multiplier, config, "INaCa_Multiplier");
+
+    real INaK_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INaK_Multiplier, config, "INaK_Multiplier");
+
+    real INab_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INab_Multiplier, config, "INab_Multiplier");
+
+    real ICab_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICab_Multiplier, config, "ICab_Multiplier");
+
+    real IpCa_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IpCa_Multiplier, config, "IpCa_Multiplier");
+
+    real ICaCl_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, ICaCl_Multiplier, config, "ICaCl_Multiplier");
+
+    real IClb_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IClb_Multiplier, config, "IClb_Multiplier");
+
+    real Jrel_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Jrel_Multiplier, config, "Jrel_Multiplier");
+
+    real Jup_Multiplier = 1.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, Jup_Multiplier, config, "Jup_Multiplier");
+
+    extra_data->INa_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->ICaL_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->Ito_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->INaL_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->IKr_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->IKs_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->IK1_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->IKb_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->INaCa_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->INaK_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->INab_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->ICab_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->IpCa_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->ICaCl_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->IClb_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->Jrel_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+    extra_data->Jup_Multiplier = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+
+    extra_data->initial_ss_endo = MALLOC_ARRAY_OF_TYPE(real, 43);
+    extra_data->initial_ss_epi = MALLOC_ARRAY_OF_TYPE(real, 43);
+    extra_data->initial_ss_mid = MALLOC_ARRAY_OF_TYPE(real, 43);
+
+    //set initial values for multipliers
+    for (uint i = 0; i < num_cells; i++) {
+        extra_data->INa_Multiplier[i] = INa_Multiplier;
+        extra_data->ICaL_Multiplier[i] = ICaL_Multiplier;
+        extra_data->Ito_Multiplier[i] = Ito_Multiplier;
+        extra_data->INaL_Multiplier[i] = INaL_Multiplier;
+        extra_data->IKr_Multiplier[i] = IKr_Multiplier;
+        extra_data->IKs_Multiplier[i] = IKs_Multiplier;
+        extra_data->IK1_Multiplier[i] = IK1_Multiplier;
+        extra_data->IKb_Multiplier[i] = IKb_Multiplier;
+        extra_data->INaCa_Multiplier[i] = INaCa_Multiplier;
+        extra_data->INaK_Multiplier[i] = INaK_Multiplier;
+        extra_data->INab_Multiplier[i] = INab_Multiplier;
+        extra_data->ICab_Multiplier[i] = ICab_Multiplier;
+        extra_data->IpCa_Multiplier[i] = IpCa_Multiplier;
+        extra_data->ICaCl_Multiplier[i] = ICaCl_Multiplier;
+        extra_data->IClb_Multiplier[i] = IClb_Multiplier;
+        extra_data->Jrel_Multiplier[i] = Jrel_Multiplier;
+        extra_data->Jup_Multiplier[i] = Jup_Multiplier;
+    }
+
+    // Set the initial conditions (celltype = ENDO)
+    extra_data->initial_ss_endo[0]  = -8.890585e+01;
+    extra_data->initial_ss_endo[1]  = 1.107642e-02;
+    extra_data->initial_ss_endo[2]  = 6.504164e-05;
+    extra_data->initial_ss_endo[3]  = 1.210818e+01;
+    extra_data->initial_ss_endo[4]  = 1.210851e+01;
+    extra_data->initial_ss_endo[5]  = 1.426206e+02;
+    extra_data->initial_ss_endo[6]  = 1.426205e+02;
+    extra_data->initial_ss_endo[7]  = 1.530373e+00;
+    extra_data->initial_ss_endo[8]  = 1.528032e+00;
+    extra_data->initial_ss_endo[9]  = 7.455488e-05;
+    extra_data->initial_ss_endo[10] = 7.814592e-04;
+    extra_data->initial_ss_endo[11] = 8.313839e-01;
+    extra_data->initial_ss_endo[12] = 8.311938e-01;
+    extra_data->initial_ss_endo[13] = 6.752873e-01;
+    extra_data->initial_ss_endo[14] = 8.308255e-01;
+    extra_data->initial_ss_endo[15] = 1.585610e-04;
+    extra_data->initial_ss_endo[16] = 5.294475e-01;
+    extra_data->initial_ss_endo[17] = 2.896996e-01;
+    extra_data->initial_ss_endo[18] = 9.419166e-04;
+    extra_data->initial_ss_endo[19] = 9.996194e-01;
+    extra_data->initial_ss_endo[20] = 5.938602e-01;
+    extra_data->initial_ss_endo[21] = 4.799180e-04;
+    extra_data->initial_ss_endo[22] = 9.996194e-01;
+    extra_data->initial_ss_endo[23] = 6.543754e-01;
+    extra_data->initial_ss_endo[24] = -2.898677e-33;
+    extra_data->initial_ss_endo[25] = 1.000000e+00;
+    extra_data->initial_ss_endo[26] = 9.389659e-01;
+    extra_data->initial_ss_endo[27] = 1.000000e+00;
+    extra_data->initial_ss_endo[28] = 9.999003e-01;
+    extra_data->initial_ss_endo[29] = 9.999773e-01;
+    extra_data->initial_ss_endo[30] = 1.000000e+00;
+    extra_data->initial_ss_endo[31] = 1.000000e+00;
+    extra_data->initial_ss_endo[32] = 4.920606e-04;
+    extra_data->initial_ss_endo[33] = 8.337021e-04;
+    extra_data->initial_ss_endo[34] = 6.962775e-04;
+    extra_data->initial_ss_endo[35] = 8.425453e-04;
+    extra_data->initial_ss_endo[36] = 9.980807e-01;
+    extra_data->initial_ss_endo[37] = 1.289824e-05;
+    extra_data->initial_ss_endo[38] = 3.675442e-04;
+    extra_data->initial_ss_endo[39] = 2.471690e-01;
+    extra_data->initial_ss_endo[40] = 1.742987e-04;
+    extra_data->initial_ss_endo[41] = 5.421027e-24;
+    extra_data->initial_ss_endo[42] = 6.407933e-23;
+
+    // Set the initial conditions (celltype = EPI)
+    extra_data->initial_ss_epi[0]  = -8.917755e+01;
+    extra_data->initial_ss_epi[1]  = 1.288116e-02;
+    extra_data->initial_ss_epi[2]  = 5.767956e-05;
+    extra_data->initial_ss_epi[3]  = 1.284260e+01;
+    extra_data->initial_ss_epi[4]  = 1.284291e+01;
+    extra_data->initial_ss_epi[5]  = 1.429114e+02;
+    extra_data->initial_ss_epi[6]  = 1.429113e+02;
+    extra_data->initial_ss_epi[7]  = 1.812268e+00;
+    extra_data->initial_ss_epi[8]  = 1.810520e+00;
+    extra_data->initial_ss_epi[9]  = 6.631866e-05;
+    extra_data->initial_ss_epi[10] = 7.370422e-04;
+    extra_data->initial_ss_epi[11] = 8.366816e-01;
+    extra_data->initial_ss_epi[12] = 8.366012e-01;
+    extra_data->initial_ss_epi[13] = 6.840260e-01;
+    extra_data->initial_ss_epi[14] = 8.363958e-01;
+    extra_data->initial_ss_epi[15] = 1.505860e-04;
+    extra_data->initial_ss_epi[16] = 5.412669e-01;
+    extra_data->initial_ss_epi[17] = 3.043382e-01;
+    extra_data->initial_ss_epi[18] = 9.248184e-04;
+    extra_data->initial_ss_epi[19] = 9.996371e-01;
+    extra_data->initial_ss_epi[20] = 9.996342e-01;
+    extra_data->initial_ss_epi[21] = 4.712023e-04;
+    extra_data->initial_ss_epi[22] = 9.996371e-01;
+    extra_data->initial_ss_epi[23] = 9.996366e-01;
+    extra_data->initial_ss_epi[24] = 4.333129e-43;
+    extra_data->initial_ss_epi[25] = 1.000000e+00;
+    extra_data->initial_ss_epi[26] = 9.485160e-01;
+    extra_data->initial_ss_epi[27] = 1.000000e+00;
+    extra_data->initial_ss_epi[28] = 9.999339e-01;
+    extra_data->initial_ss_epi[29] = 9.999822e-01;
+    extra_data->initial_ss_epi[30] = 1.000000e+00;
+    extra_data->initial_ss_epi[31] = 1.000000e+00;
+    extra_data->initial_ss_epi[32] = 3.086885e-04;
+    extra_data->initial_ss_epi[33] = 5.303737e-04;
+    extra_data->initial_ss_epi[34] = 6.775197e-04;
+    extra_data->initial_ss_epi[35] = 8.264829e-04;
+    extra_data->initial_ss_epi[36] = 9.982135e-01;
+    extra_data->initial_ss_epi[37] = 9.433146e-06;
+    extra_data->initial_ss_epi[38] = 2.730221e-04;
+    extra_data->initial_ss_epi[39] = 2.308784e-01;
+    extra_data->initial_ss_epi[40] = 1.690386e-04;
+    extra_data->initial_ss_epi[41] = -1.103286e-23;
+    extra_data->initial_ss_epi[42] = -6.177055e-22;
+
+    // Set the initial conditions (celltype = MCELL)
+    extra_data->initial_ss_mid[0]  = -8.924177e+01;
+    extra_data->initial_ss_mid[1]  = 1.922391e-02;
+    extra_data->initial_ss_mid[2]  = 6.585066e-05;
+    extra_data->initial_ss_mid[3]  = 1.503347e+01;
+    extra_data->initial_ss_mid[4]  = 1.503401e+01;
+    extra_data->initial_ss_mid[5]  = 1.434407e+02;
+    extra_data->initial_ss_mid[6]  = 1.434406e+02;
+    extra_data->initial_ss_mid[7]  = 1.959747e+00;
+    extra_data->initial_ss_mid[8]  = 1.963459e+00;
+    extra_data->initial_ss_mid[9]  = 8.177438e-05;
+    extra_data->initial_ss_mid[10] = 7.269124e-04;
+    extra_data->initial_ss_mid[11] = 8.379059e-01;
+    extra_data->initial_ss_mid[12] = 8.377164e-01;
+    extra_data->initial_ss_mid[13] = 6.860578e-01;
+    extra_data->initial_ss_mid[14] = 8.372100e-01;
+    extra_data->initial_ss_mid[15] = 1.487602e-04;
+    extra_data->initial_ss_mid[16] = 5.350003e-01;
+    extra_data->initial_ss_mid[17] = 2.851164e-01;
+    extra_data->initial_ss_mid[18] = 9.208259e-04;
+    extra_data->initial_ss_mid[19] = 9.996411e-01;
+    extra_data->initial_ss_mid[20] = 5.673539e-01;
+    extra_data->initial_ss_mid[21] = 4.691672e-04;
+    extra_data->initial_ss_mid[22] = 9.996412e-01;
+    extra_data->initial_ss_mid[23] = 6.265825e-01;
+    extra_data->initial_ss_mid[24] = -4.922960e-40;
+    extra_data->initial_ss_mid[25] = 1.000000e+00;
+    extra_data->initial_ss_mid[26] = 9.200354e-01;
+    extra_data->initial_ss_mid[27] = 1.000000e+00;
+    extra_data->initial_ss_mid[28] = 9.997888e-01;
+    extra_data->initial_ss_mid[29] = 9.999665e-01;
+    extra_data->initial_ss_mid[30] = 1.000000e+00;
+    extra_data->initial_ss_mid[31] = 1.000000e+00;
+    extra_data->initial_ss_mid[32] = 5.161178e-04;
+    extra_data->initial_ss_mid[33] = 1.189422e-03;
+    extra_data->initial_ss_mid[34] = 6.917041e-04;
+    extra_data->initial_ss_mid[35] = 8.225453e-04;
+    extra_data->initial_ss_mid[36] = 9.979358e-01;
+    extra_data->initial_ss_mid[37] = 1.835276e-05;
+    extra_data->initial_ss_mid[38] = 5.316232e-04;
+    extra_data->initial_ss_mid[39] = 2.650323e-01;
+    extra_data->initial_ss_mid[40] = 1.678628e-04;
+    extra_data->initial_ss_mid[41] = 2.091039e-25;
+    extra_data->initial_ss_mid[42] = 2.438403e-23;
+
+    extra_data->transmurality = MALLOC_ARRAY_OF_TYPE(real, num_cells);
+
+    return extra_data;
+}
+
 struct extra_data_for_torord * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells) {
     struct extra_data_for_torord *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord);
 
