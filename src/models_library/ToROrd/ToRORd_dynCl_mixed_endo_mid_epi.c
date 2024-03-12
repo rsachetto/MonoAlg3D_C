@@ -132,7 +132,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     // Get the extra parameters
     int num_extra_parameters = 17;
     // Initialize extra_par as an array of arrays
-    real** extra_par = new real*[num_parameters];
+    real extra_par[num_extra_parameters][num_cells_to_solve];
     real *transmurality = NULL;
     if (ode_solver->ode_extra_data) {
         struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
@@ -146,25 +146,20 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         extra_par[7]  = extra_data->IKb_Multiplier; 
         extra_par[8]  = extra_data->INaCa_Multiplier;
         extra_par[9]  = extra_data->INaK_Multiplier;  
-        extra_par[9]  = extra_data->INab_Multiplier;  
-        extra_par[10] = extra_data->ICab_Multiplier;  
-        extra_par[11] = extra_data->IpCa_Multiplier;  
-        extra_par[12] = extra_data->ICaCl_Multiplier;
-        extra_par[13] = extra_data->IClb_Multiplier; 
+        extra_par[10]  = extra_data->INab_Multiplier;
+        extra_par[11] = extra_data->ICab_Multiplier;
+        extra_par[12] = extra_data->IpCa_Multiplier;
+        extra_par[13] = extra_data->ICaCl_Multiplier;
+        extra_par[14] = extra_data->IClb_Multiplier;
         extra_par[15] = extra_data->Jrel_Multiplier; 
         extra_par[16] = extra_data->Jup_Multiplier;
         transmurality = extra_data->transmurality;
     }
     else {
         for (int i = 0; i < num_extra_parameters; i++) {
-            extra_par[i] = new real[num_cells_to_solve];
             for (int j = 0; j < num_cells_to_solve; j++) {
                 extra_par[i][j] = 1.0;
             }
-        }
-        transmurality = new real[num_cells_to_solve];
-        for (int i = 0; i < num_cells_to_solve; i++) {
-            transmurality[i] = EPI;
         }
     }
 
