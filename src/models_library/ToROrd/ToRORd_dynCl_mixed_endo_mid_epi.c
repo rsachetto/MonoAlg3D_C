@@ -132,7 +132,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     // Get the extra parameters
     int num_extra_parameters = 17;
     // Initialize extra_par as an array of arrays
-    real extra_par[num_extra_parameters][num_cells_to_solve];
+    real *extra_par[num_extra_parameters];
     real *transmurality = NULL;
     if (ode_solver->ode_extra_data) {
         struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
@@ -157,6 +157,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     }
     else {
         for (int i = 0; i < num_extra_parameters; i++) {
+            extra_par[i] = malloc(num_cells_to_solve * sizeof(real));
             for (int j = 0; j < num_cells_to_solve; j++) {
                 extra_par[i][j] = 1.0;
             }
