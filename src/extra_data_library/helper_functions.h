@@ -36,7 +36,7 @@ struct extra_data_for_tt3 {
     real *transmurality;
 };
 
-struct extra_data_for_torord_cell_wise {
+struct extra_data_for_torord {
     real *INa_Multiplier;
     real *ICaL_Multiplier;
     real *Ito_Multiplier;
@@ -60,7 +60,7 @@ struct extra_data_for_torord_cell_wise {
     real *transmurality;
 };
 
-struct extra_data_for_torord {
+struct extra_data_for_torord_old {
     real INa_Multiplier;
     real ICaL_Multiplier;
     real Ito_Multiplier;
@@ -146,9 +146,9 @@ struct extra_data_for_trovato {
 
 struct extra_data_for_fibrosis * set_common_schemia_data(struct config *config, uint32_t num_cells);
 struct extra_data_for_tt3 * set_common_tt3_data (struct config *config, uint32_t num_cells);
-struct extra_data_for_torord * set_common_torord_data (struct config *config, uint32_t num_cells);
-struct extra_data_for_torord_cell_wise * set_common_torord_data_cell_wise (struct config *config, uint32_t num_cells);
-struct extra_data_for_torord * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells);
+struct extra_data_for_torord_old * set_common_torord_data (struct config *config, uint32_t num_cells);
+struct extra_data_for_torord * set_common_torord_data_cell_wise (struct config *config, uint32_t num_cells);
+struct extra_data_for_torord_old * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord_land * set_common_torord_Land_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_trovato * set_common_trovato_data (struct config *config, uint32_t num_cells);
 

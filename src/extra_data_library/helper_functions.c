@@ -90,8 +90,8 @@ struct extra_data_for_tt3* set_common_tt3_data (struct config *config, uint32_t 
     return extra_data;
 }
 
-struct extra_data_for_torord * set_common_torord_data (struct config *config, uint32_t num_cells) {
-    struct extra_data_for_torord *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord);
+struct extra_data_for_torord_old * set_common_torord_data (struct config *config, uint32_t num_cells) {
+    struct extra_data_for_torord_old *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord_old);
 
     real INa_Multiplier = 1.0;    
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INa_Multiplier, config, "INa_Multiplier");
@@ -306,8 +306,8 @@ struct extra_data_for_torord * set_common_torord_data (struct config *config, ui
     return extra_data;
 }
 
-struct extra_data_for_torord_cell_wise * set_common_torord_data_cell_wise (struct config *config, uint32_t num_cells) {
-    struct extra_data_for_torord_cell_wise *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord_cell_wise);
+struct extra_data_for_torord * set_common_torord_data_cell_wise (struct config *config, uint32_t num_cells) {
+    struct extra_data_for_torord *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord);
 
     real INa_Multiplier = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INa_Multiplier, config, "INa_Multiplier");
@@ -543,8 +543,8 @@ struct extra_data_for_torord_cell_wise * set_common_torord_data_cell_wise (struc
     return extra_data;
 }
 
-struct extra_data_for_torord * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells) {
-    struct extra_data_for_torord *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord);
+struct extra_data_for_torord_old * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells) {
+    struct extra_data_for_torord_old *extra_data = MALLOC_ONE_TYPE(struct extra_data_for_torord_old);
 
     real INa_Multiplier = 1.0;    
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, INa_Multiplier, config, "INa_Multiplier");
