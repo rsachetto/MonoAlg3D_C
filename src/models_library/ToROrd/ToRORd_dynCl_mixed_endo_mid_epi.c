@@ -1,6 +1,5 @@
 #include "ToRORd_dynCl_mixed_endo_mid_epi.h"
 #include <stdlib.h>
-#include <helper_functions.h>
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
 
