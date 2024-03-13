@@ -563,7 +563,7 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
 
     SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord_cell_wise));
 
-    log_info("Set special values for %d cells in the rectangle.", number_of_cells_in_rect);
+    log_info("Set special values for %d cells in the rectangle.\n", number_of_cells_in_rect);
 
     return (void*)extra_data;
 }
