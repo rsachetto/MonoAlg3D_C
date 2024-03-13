@@ -244,8 +244,12 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
                 }
             }
         }
-        
+
         free(this_extra_par);
+    }
+
+    for (int i = 0; i < num_extra_parameters; i++) {
+            free(extra_par[i]);
     }
 }
 
