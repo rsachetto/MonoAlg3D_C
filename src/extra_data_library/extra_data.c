@@ -540,12 +540,17 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
 
     extra_data = set_common_torord_data_cell_wise(config, num_active_cells);
 
+    uint32_t number_of_cells_in_rect = 0;
+
     OMP(parallel for)
     for (uint32_t i = 0; i < num_active_cells; i++) {
-        if(ac[i]->center.x < rectangle_x_right && ac[i]->center.x > rectangle_x_left && ac[i]->center.y < rectangle_y_right && ac[i]->center.y > rectangle_y_left) {
+        real_cpu center_x = ac[i]->center.x;
+        real_cpu center_y = ac[i]->center.y;
+        if(center_x >= rectangle_x_left && center_x <= rectangle_x_right && center_y >= rectangle_y_left && center_y <= rectangle_y_right) {
             extra_data->INa_Multiplier[i] = INa_Multiplier;
             extra_data->ICaL_Multiplier[i] = ICaL_Multiplier;
             extra_data->IKr_Multiplier[i] = IKr_Multiplier;
+            number_of_cells_in_rect++;
         }
         else {
             extra_data->INa_Multiplier[i] = 1.0;
@@ -557,6 +562,8 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
     }
 
     SET_EXTRA_DATA_SIZE(sizeof(struct extra_data_for_torord_cell_wise));
+
+    log_info("Set special values for %d cells in the rectangle.", number_of_cells_in_rect);
 
     return (void*)extra_data;
 }
