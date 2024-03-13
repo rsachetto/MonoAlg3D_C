@@ -231,7 +231,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
             }
             else {
                 //solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, extra_par);
-                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, current_t + dt, sv_id, ode_solver, this_extra_par);
+                solve_rush_larsen_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 2.0, current_t + dt, sv_id, ode_solver, this_extra_par);
             }
         }
         else {
@@ -240,7 +240,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
                     solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], this_extra_par);
                 }
                 else {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0, this_extra_par);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 2.0, this_extra_par);
                 }
             }
         }
