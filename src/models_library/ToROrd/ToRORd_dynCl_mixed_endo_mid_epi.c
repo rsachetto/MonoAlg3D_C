@@ -244,6 +244,8 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
                 }
             }
         }
+        
+        free(this_extra_par);
     }
 }
 
