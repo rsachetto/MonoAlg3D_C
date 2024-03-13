@@ -748,10 +748,6 @@ void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_curren
     real Jrel_Multiplier  = extra_params[15];
     real Jup_Multiplier   = extra_params[16];
 
-    if (INa_Multiplier < 1.0) {
-        log_info("INa_Multiplier: %lf", INa_Multiplier);
-    }
-    
     // Get the celltype for the current cell
     real celltype = transmurality;
 
