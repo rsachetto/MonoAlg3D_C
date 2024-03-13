@@ -538,6 +538,8 @@ SET_EXTRA_DATA(set_extra_data_mixed_torord_dynCl_rectangle) {
     real IKr_Multiplier = 1.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, IKr_Multiplier, config, "IKr_Multiplier");
 
+    log_info("Set rectangle values for:\n INa_Multiplier = %lf, ICaL_Multiplier = %lf, IKr_Multiplier = %lf\n", INa_Multiplier, ICaL_Multiplier, IKr_Multiplier);
+
     extra_data = set_common_torord_data_cell_wise(config, num_active_cells);
 
     uint32_t number_of_cells_in_rect = 0;
