@@ -120,7 +120,7 @@ GET_LINUX_VERSION
 
 echo -e "${INFO}Linux version: ${OS}-${VER}"
 
-if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
+if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_MPI" ]; then
 
     if [ -z "$DISABLE_CUDA" ]; then
        FIND_CUDA
