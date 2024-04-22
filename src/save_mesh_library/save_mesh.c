@@ -570,11 +570,8 @@ SAVE_MESH(save_as_ensight) {
         log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
     }
 
-    static int n_state_vars = 0;
-    static bool geometry_saved = false;
-    static uint32_t num_files = 0;
-
-    if(!geometry_saved) {
+    
+    if(!persistent_data->geometry_saved) {
 
         int print_rate = 1;
 
@@ -594,7 +591,7 @@ SAVE_MESH(save_as_ensight) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
 
-        num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
+        persistent_data->num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
 
         sds output_dir_with_file = sdsnew(output_dir);
         output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
@@ -614,20 +611,20 @@ SAVE_MESH(save_as_ensight) {
         output_dir_with_file = sdscat(output_dir_with_file, "/simulation_result.case");
 
         if(save_ode_state_variables) {
-            n_state_vars = ode_solver->model_data.number_of_ode_equations - 1; // Vm is always saved
+            persistent_data->n_state_vars = ode_solver->model_data.number_of_ode_equations - 1; // Vm is always saved
         }
 
-        save_case_file(output_dir_with_file, num_files, time_info->dt, print_rate, n_state_vars);
+        save_case_file(output_dir_with_file, persistent_data->num_files, time_info->dt, print_rate, persistent_data->n_state_vars);
 
         sdsfree(output_dir_with_file);
-        geometry_saved = true;
+        persistent_data->geometry_saved = true;
     }
 
     sds output_dir_with_file = sdsnew(output_dir);
     output_dir_with_file = sdscat(output_dir_with_file, "/");
 
     if(persistent_data->n_digits == 0) {
-        persistent_data->n_digits = log10(num_files*500) + 1;
+        persistent_data->n_digits = log10(persistent_data->num_files*500) + 1;
     }
 
     sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", persistent_data->n_digits);
@@ -642,7 +639,7 @@ SAVE_MESH(save_as_ensight) {
     sdsfree(base_name);
     sdsfree(output_dir_with_file);
 
-    if(n_state_vars) {
+    if(persistent_data->n_state_vars) {
         size_t num_sv_entries = ode_solver->model_data.number_of_ode_equations;
         base_name = sdscatprintf(sdsempty(), "Sv%%d.Esca%%0%dd", persistent_data->n_digits);
         real *sv_cpu;
@@ -658,7 +655,7 @@ SAVE_MESH(save_as_ensight) {
             sv_cpu = ode_solver->sv;
         }
 
-        for(int i = 1; i <= n_state_vars; i++) {
+        for(int i = 1; i <= persistent_data->n_state_vars; i++) {
 
             char tmp[8192];
             sprintf(tmp, base_name, i, persistent_data->file_count);

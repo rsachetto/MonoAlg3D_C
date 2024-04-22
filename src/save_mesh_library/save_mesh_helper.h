@@ -23,6 +23,10 @@ struct common_persistent_data {
     //Ensigth
     uint32_t file_count;
     uint32_t n_digits;
+    int n_state_vars;
+    bool geometry_saved;
+    int32_t num_files;
+
 
     //Activation times
     struct point_hash_entry *last_time_v;
