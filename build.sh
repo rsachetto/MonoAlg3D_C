@@ -87,6 +87,7 @@ for i in "${BUILD_ARGS[@]}"; do
             COMPILE_POSTPROCESSOR='y'
             COMPILE_EXPAND='y'
             COMPILE_CLIP='y'
+            COMPILE_EIKONAL='y'
             ;;
         simulator)
             COMPILE_SIMULATOR='y'
@@ -293,6 +294,11 @@ fi
 if [ -n "$COMPILE_CLIP" ]; then
     COMPILE_EXECUTABLE "MonoAlg3D_clip_mesh" "src/main_clip_mesh.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH"
 fi
+
+if [ -n "$COMPILE_EIKONAL" ]; then
+    COMPILE_EXECUTABLE "MonoAlg3D_eikonal_solver" "src/main_eikonal.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH"
+fi
+
 
 FIND_CRITERION
 
