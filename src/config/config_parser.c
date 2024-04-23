@@ -12,6 +12,9 @@
 static const char *batch_opt_string = "c:h?";
 static const struct option long_batch_options[] = {{"config_file", required_argument, NULL, 'c'}};
 
+#define eikonal_opt_string batch_opt_string
+#define long_eikonal_options long_batch_options
+
 static const char *conversion_opt_string = "i:o:c:h?";
 static const struct option long_conversion_options[] = {{"input", required_argument, NULL, 'i'},
                                                         {"output", required_argument, NULL, 'o'},
@@ -134,6 +137,15 @@ void display_batch_usage(char **argv) {
     exit(EXIT_FAILURE);
 }
 
+void display_eikonal_usage(char **argv) {
+
+    printf("Usage: %s [options]\n\n", argv[0]);
+    printf("Options:\n");
+    printf("--config_file | -c [configuration_file_path]. Eikonal solver configuration file. Default NULL.\n");
+    printf("--help | -h. Shows this help and exit \n");
+    exit(EXIT_FAILURE);
+}
+
 void display_conversion_usage(char **argv) {
 
     printf("Usage: %s [options]\n\n", argv[0]);
@@ -168,13 +180,33 @@ void display_visualization_usage(char **argv) {
     exit(EXIT_FAILURE);
 }
 
-void maybe_issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file) {
+static void maybe_issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file) {
     if(strcmp(old_value, new_value) != 0) {
         fprintf(stderr,
                 "WARNING: option %s in %s was set in the file %s to %s and is being overwritten "
                 "by the command line flag to %s!\n",
                 var, section, config_file, old_value, new_value);
     }
+}
+
+struct eikonal_options *new_eikonal_options() {
+    struct eikonal_options *user_args = (struct eikonal_options *)calloc(1, sizeof(struct eikonal_options));
+
+    user_args->stim_configs = NULL;
+    sh_new_arena(user_args->stim_configs);
+    shdefault(user_args->stim_configs, NULL);
+
+    user_args->domain_config = NULL;
+    user_args->save_mesh_config = NULL;
+
+    return user_args;
+}
+
+void free_eikonal_options(struct eikonal_options *options) {
+    shfree(options->stim_configs);
+    free_config_data(options->domain_config);
+    free_config_data(options->save_mesh_config);
+    free(options);
 }
 
 struct batch_options *new_batch_options() {
@@ -1022,7 +1054,7 @@ void parse_batch_options(int argc, char **argv, struct batch_options *user_args)
     while(opt != -1) {
         switch(opt) {
         case 'c':
-            user_args->batch_config_file = strdup(optarg);
+            user_args->config_file = strdup(optarg);
             break;
         case 'h': /* fall-through is intentional */
         case '?':
@@ -1034,6 +1066,31 @@ void parse_batch_options(int argc, char **argv, struct batch_options *user_args)
         }
 
         opt = getopt_long(argc, argv, batch_opt_string, long_batch_options, &option_index);
+    }
+}
+
+void parse_eikonal_options(int argc, char **argv, struct eikonal_options *user_args) {
+
+    int opt = 0;
+    int option_index;
+
+    opt = getopt_long_only(argc, argv, eikonal_opt_string, long_eikonal_options, &option_index);
+
+    while(opt != -1) {
+        switch(opt) {
+        case 'c':
+            user_args->config_file = strdup(optarg);
+            break;
+        case 'h': /* fall-through is intentional */
+        case '?':
+            display_eikonal_usage(argv);
+            break;
+        default:
+            /* You won't actually get here. */
+            break;
+        }
+
+        opt = getopt_long(argc, argv, eikonal_opt_string, long_eikonal_options, &option_index);
     }
 }
 
@@ -1799,6 +1856,53 @@ int parse_config_file(void *user, const char *section, const char *name, const c
     return 1;
 }
 
+int parse_eikonal_config_file(void *options, const char *section, const char *name, const char *value) {
+
+    struct eikonal_options *pconfig = (struct eikonal_options *)options;
+
+    if(SECTION_STARTS_WITH(STIM_SECTION)) {
+
+        struct config *tmp = (struct config *)shget(pconfig->stim_configs, section);
+
+        if(tmp == NULL) {
+            tmp = alloc_and_init_config_data();
+            shput(pconfig->stim_configs, section, tmp);
+        }
+
+        if(MATCH_NAME("name")) {
+            fprintf(stderr,
+                    "name is a reserved word and should not be used inside a stimulus config section. Found in %s. "
+                    "Exiting!\n",
+                    section);
+            exit(EXIT_FAILURE);
+        } else {
+            set_common_data(tmp, name, value);
+        }
+
+    } else if(MATCH_SECTION(DOMAIN_SECTION)) {
+
+        if(pconfig->domain_config == NULL) {
+            pconfig->domain_config = alloc_and_init_config_data();
+        }
+
+        set_common_data(pconfig->domain_config, name, value);
+    } else if(MATCH_SECTION(SAVE_RESULT_SECTION)) {
+
+        if(pconfig->save_mesh_config == NULL) {
+            pconfig->save_mesh_config = alloc_and_init_config_data();
+        }
+
+        set_common_data(pconfig->save_mesh_config, name, value);
+
+    } else {
+
+        fprintf(stderr, "\033[33;5;7mInvalid name %s in section %s on the config file!\033[0m\n", name, section);
+        return 0;
+    }
+
+    return 1;
+}
+
 int parse_preprocessor_config(void *user, const char *section, const char *name, const char *value) {
 
     static int function_counter = 0;
@@ -1831,6 +1935,8 @@ int parse_preprocessor_config(void *user, const char *section, const char *name,
 
     return 1;
 }
+
+
 
 #define WRITE_INI_SECTION(SECTION) fprintf(ini_file, "[%s]\n", SECTION)
 

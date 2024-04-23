@@ -35,8 +35,8 @@ int main(int argc, char **argv) {
 
     parse_batch_options(argc, argv, batch_options);
 
-    if (ini_parse(batch_options->batch_config_file, parse_batch_config_file, batch_options) < 0) {
-        fprintf(stderr, "Error: Can't load the config file %s\n", batch_options->batch_config_file);
+    if (ini_parse(batch_options->config_file, parse_batch_config_file, batch_options) < 0) {
+        fprintf(stderr, "Error: Can't load the config file %s\n", batch_options->config_file);
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
