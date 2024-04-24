@@ -190,14 +190,11 @@ static void maybe_issue_overwrite_warning(const char *var, const char *section, 
 }
 
 struct eikonal_options *new_eikonal_options() {
+
     struct eikonal_options *user_args = (struct eikonal_options *)calloc(1, sizeof(struct eikonal_options));
 
-    user_args->stim_configs = NULL;
     sh_new_arena(user_args->stim_configs);
     shdefault(user_args->stim_configs, NULL);
-
-    user_args->domain_config = NULL;
-    user_args->save_mesh_config = NULL;
 
     return user_args;
 }
@@ -1860,7 +1857,15 @@ int parse_eikonal_config_file(void *options, const char *section, const char *na
 
     struct eikonal_options *pconfig = (struct eikonal_options *)options;
 
-    if(SECTION_STARTS_WITH(STIM_SECTION)) {
+    if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "simulation_time)")) {
+    
+        parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->final_time, &pconfig->final_time_was_set);
+    
+    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "dt")) {
+    
+        parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->dt, &pconfig->dt_was_set);
+    
+    } else if(SECTION_STARTS_WITH(STIM_SECTION)) {
 
         struct config *tmp = (struct config *)shget(pconfig->stim_configs, section);
 

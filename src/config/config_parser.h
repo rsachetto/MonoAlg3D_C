@@ -176,7 +176,12 @@ struct eikonal_options {
     struct string_voidp_hash_entry *stim_configs;
     struct config *domain_config;
     struct config *save_mesh_config;
+    real dt;
+    bool dt_was_set;
+    real final_time;
+    bool final_time_was_set;
 };
+
 struct visualization_options {
     char *input;
     char *files_prefix;
