@@ -3,7 +3,6 @@
 
 struct heap_point {
     struct cell_node *grid_cell;
-    real distance;
     real time;
     real repolarization_time;
 };

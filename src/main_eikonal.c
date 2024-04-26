@@ -9,6 +9,10 @@
 #include "3dparty/ini_parser/ini.h"
 #include "utils/file_utils.h"
 
+#define WAVE_SPEED 100.0 // um/ms //TODO: this should be a parameter
+#define APD 400.0 //TODO: make this a parameter
+#define REFRACTORY_PERIOD 200.0 //TODO: make this a parameter
+
 struct heap_point_hash_entry {
     struct point_3d key;
     struct heap_point value;
@@ -18,7 +22,9 @@ static struct point_3d compute_wave_speed(struct point_3d conductivity_tensor) {
     //Compute wave speed based on conductivity tensor (e.g., using eigenvalues)
     //Example: For isotropic conductivity, return sqrt(1 / conductivity_tensor)
     //For anisotropic conductivity, compute wave speed based on eigenvalues
-    return POINT3D(sqrt(conductivity_tensor.x), sqrt(conductivity_tensor.y), sqrt(conductivity_tensor.z));
+    //return POINT3D(sqrt(conductivity_tensor.x), sqrt(conductivity_tensor.y), sqrt(conductivity_tensor.z));
+    //return POINT3D(500.0, 500.0, 500.0); // um/ms
+    return SAME_POINT3D(WAVE_SPEED);
 }
 
 //TODO: add an hash map in the heap to make the search faster
@@ -42,7 +48,7 @@ static real euclidean_distance(struct cell_node *cell1, struct cell_node *cell2)
     return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-void compute_t(struct heap_point x, void *neighbour, struct heap_point_hash_entry *known, struct point_3d condutivity_tensor, struct point_distance_heap *heap, real *elapsed_time, real integrated_time) {    
+void compute_t(struct heap_point x, void *neighbour, struct heap_point_hash_entry *known, struct point_3d condutivity_tensor, struct point_distance_heap *heap, real *elapsed_time, real integrated_time, real dt) {    
 
     void *neighbour_grid_cell = neighbour;
     struct cell_node *grid_cell = x.grid_cell;
@@ -104,33 +110,34 @@ void compute_t(struct heap_point x, void *neighbour, struct heap_point_hash_entr
 
         int index = in_heap(heap, xi, heap->size);        
 
-        real neighbour_distance = INFINITY;
+        real neighbour_time = INFINITY;
 
         real wave_speed = compute_wave_speed(condutivity_tensor).x;
 
         //TODO: we have to know the neighbour's direction to calculate the wave speed
-        real tentative_distance = x.distance + wave_speed * euclidean_distance(grid_cell, neighbour_grid_cell);
-        real time = tentative_distance/wave_speed;
+        real tentative_time = x.time + euclidean_distance(grid_cell, neighbour_grid_cell)/wave_speed;
+
+        if(elapsed_time != NULL) {
+            *elapsed_time = tentative_time - integrated_time;        
+            if(*elapsed_time > dt) {
+                heap_push(heap, x); 
+                return;
+            }
+        }
 
         if(index != -1) {            
-            neighbour_distance = heap->arr[index].distance;
-        } else {
-            xi.distance = tentative_distance;   
-            xi.grid_cell->v = time;             
-            heap_push(heap, xi);
+            neighbour_time = heap->arr[index].time;
 
-            if(elapsed_time != NULL) {
-                *elapsed_time = time - integrated_time;
+            if(tentative_time < neighbour_time) {       
+                heap->arr[index].time = tentative_time;
+                heap->arr[index].grid_cell->v = tentative_time;
             }
 
-            return;
-        }
-
-        if(tentative_distance < neighbour_distance) {       
-            heap->arr[index].distance = tentative_distance;
-            heap->arr[index].time = time;
-            heap->arr[index].grid_cell->v = time;
-        }
+        } else {            
+            xi.time = tentative_time;   
+            xi.grid_cell->v = tentative_time;            
+            heap_push(heap, xi);
+        }       
     }
 }
 
@@ -142,7 +149,7 @@ int main(int argc, char **argv) {
     struct grid *grid = new_grid();  
     
     if (ini_parse(eikonal_options->config_file, parse_eikonal_config_file, eikonal_options) < 0) {
-        log_error_and_exit(stderr, "Error: Can't load the config file %s\n", eikonal_options->config_file);
+        log_error_and_exit("Error: Can't load the config file %s\n", eikonal_options->config_file);
     }
 
     if(eikonal_options->dt_was_set == false) {
@@ -207,7 +214,7 @@ int main(int argc, char **argv) {
     hmdefault(known, default_entry);
 
     struct heap_point_hash_entry *refractory = NULL;
-    hmdefault(refracory, default_entry);
+    hmdefault(refractory, default_entry);
 
     if(stimuli_configs) {
 
@@ -249,12 +256,9 @@ int main(int argc, char **argv) {
                 real value =  ((real *)(tmp->persistent_data))[i];
                 if(value != 0.0) {
                     struct heap_point node;
-                    node.grid_cell = ac[i];
-                    if(stim_start == 0.0) {
-                        node.distance = 0.0;
-                    } else {
-                        node.distance = compute_wave_speed(condutivity_tensor).x / stim_start;
-                    }
+                    node.grid_cell = ac[i]; 
+                    node.time = 0.0;
+                    node.grid_cell->v = node.time;
                     hmput(known, ac[i]->center, node);
                 }
             }
@@ -273,9 +277,6 @@ int main(int argc, char **argv) {
 
     }
 
-    #define APD 400.0 //TODO: make this a parameter
-    #define REFRACTORY_PERIOD 400.0 //TODO: make this a parameter
-
     struct time_info ti = ZERO_TIME_INFO;
     ti.dt = dt;
     ti.final_t = simulation_time;
@@ -283,49 +284,55 @@ int main(int argc, char **argv) {
 
     CALL_INIT_SAVE_MESH(save_mesh_config);
 
-    real integrated_time = 0.0;
-    real elapsed_time = 0.0;
+    ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL, NULL);
 
     for(int i = 0; i < hmlen(known); i++) {
         struct heap_point x = known[i].value;
         for (int j = 0; j <= LEFT; j++) {
-            compute_t(x, x.grid_cell->neighbours[j], known, condutivity_tensor, trial, NULL, 0.0); 
+            compute_t(x, x.grid_cell->neighbours[j], known, condutivity_tensor, trial, NULL, 0.0, dt); 
         }        
     }
+    
+    real integrated_time = 0;    
 
     while(integrated_time < simulation_time) {           
-  
-        while(trial->size > 0 && elapsed_time < dt) {
-            struct heap_point x = heap_pop(trial);
-            hmput(known, x.grid_cell->center, x);
-            
-            for (int i = 0; i <= LEFT; i++) {
-                compute_t(x, x.grid_cell->neighbours[i], known, condutivity_tensor, trial, &elapsed_time, integrated_time); 
-            }
+        
+        real elapsed_time = 0.0;  
+        ti.current_t += dt;
+        ti.iteration += 1;
 
+        while(trial->size > 0 && elapsed_time <= dt) {
+
+            struct heap_point x = heap_pop(trial);                      
+
+            hmput(known, x.grid_cell->center, x);
+
+            for (int i = 0; i <= LEFT; i++) {
+                compute_t(x, x.grid_cell->neighbours[i], known, condutivity_tensor, trial, &elapsed_time, integrated_time, dt); 
+            }
+            
             for(int i = 0; i < hmlen(known); i++) {
                 struct heap_point x = known[i].value;
                 if(elapsed_time - x.time > APD) {
                     hmdel(known, x.grid_cell->center);
                     x.repolarization_time = x.time + APD;
-                    hmput(refracory, x.grid_cell->center, x);
+                    hmput(refractory, x.grid_cell->center, x);
                 } 
             }
 
-            for(int i = 0; i < hmlen(refracory); i++) {
+            for(int i = 0; i < hmlen(refractory); i++) {
                 struct heap_point x = refractory[i].value;
                 if(elapsed_time - x.repolarization_time > REFRACTORY_PERIOD) {
-                    hmdel(refracory, x.grid_cell->center);
+                    hmdel(refractory, x.grid_cell->center);
                 }
             }
+            
         }
+        
+        integrated_time += dt;          
 
-        integrated_time += dt;
-
-        ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL, NULL);
-
-        ti.current_t += dt;
-        ti.iteration += 1;
+        ((save_mesh_fn *)save_mesh_config->main_function)(&ti, save_mesh_config, grid, NULL, NULL);                
+    
     }
     
     CALL_END_SAVE_MESH(save_mesh_config, grid);

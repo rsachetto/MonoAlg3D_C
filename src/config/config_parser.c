@@ -1857,7 +1857,7 @@ int parse_eikonal_config_file(void *options, const char *section, const char *na
 
     struct eikonal_options *pconfig = (struct eikonal_options *)options;
 
-    if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "simulation_time)")) {
+    if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "simulation_time")) {
     
         parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->final_time, &pconfig->final_time_was_set);
     

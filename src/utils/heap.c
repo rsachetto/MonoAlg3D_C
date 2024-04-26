@@ -12,9 +12,9 @@ static void heapify(struct point_distance_heap* h, int index) {
     if (right >= h->size || right < 0)
         right = -1;
  
-    if (left != -1 && h->arr[left].distance < h->arr[index].distance)
+    if (left != -1 && h->arr[left].time < h->arr[index].time)
         min = left;
-    if (right != -1 && h->arr[right].distance < h->arr[min].distance)
+    if (right != -1 && h->arr[right].time < h->arr[min].time)
         min = right;
  
     if (min != index) {
@@ -50,7 +50,7 @@ void insert_helper(struct point_distance_heap* h, int index) {
  
     int parent = (index - 1) / 2;
  
-    if (h->arr[parent].distance > h->arr[index].distance) {
+    if (h->arr[parent].time > h->arr[index].time) {
         struct heap_point temp = h->arr[parent];
         h->arr[parent] = h->arr[index];
         h->arr[index] = temp;
