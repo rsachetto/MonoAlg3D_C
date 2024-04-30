@@ -1,0 +1,5 @@
+/tables
+build/*
+outputs/*
+bin/*
+configs/*
