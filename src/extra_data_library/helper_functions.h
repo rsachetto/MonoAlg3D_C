@@ -31,10 +31,15 @@ struct extra_data_for_tt3 {
     real GCaL_multiplicator;
     real INaCa_multiplicator;
     real Ikatp_multiplicator;
+    real GKr_multiplicator;
+    real GKs_multiplicator;
+    real alpha_multiplicator;
     real Vm_modifier;
     real *fibrosis;
     real *transmurality;
 };
+
+
 
 struct extra_data_for_torord {
     real INa_Multiplier; 
@@ -54,6 +59,8 @@ struct extra_data_for_torord {
     real IClb_Multiplier; 
     real Jrel_Multiplier; 
     real Jup_Multiplier;
+    real aCaMK_Multiplier;
+    real taurelp_Multiplier;
     real *initial_ss_endo;
     real *initial_ss_epi;
     real *initial_ss_mid;
@@ -120,11 +127,78 @@ struct extra_data_for_trovato {
     //real *purkinje_tags;
 };
 
+struct extra_data_for_torord_land_twave {
+    real INa_Multiplier; 
+    real INaL_Multiplier;
+    real INaCa_Multiplier;
+    real INaK_Multiplier;  
+    real INab_Multiplier;
+    real Ito_Multiplier;
+    real IKr_Multiplier; 
+    real IKs_Multiplier; 
+    real IK1_Multiplier; 
+    real IKb_Multiplier; 
+    real IKCa_Multiplier;
+    real ICaL_Multiplier;
+    real ICab_Multiplier;  
+    real IpCa_Multiplier;  
+    real ICaCl_Multiplier;
+    real IClb_Multiplier; 
+    real Jrel_Multiplier; 
+    real Jup_Multiplier;
+    real aCaMK_Multiplier;
+    real taurelp_Multiplier;
+    real *initial_ss_endo;
+    real *initial_ss_epi;
+    real *initial_ss_mid;
+    real *transmurality;
+    real *sf_IKs;
+    real *basetoapex;
+};
+
+struct extra_data_for_torord_general {
+    real INa_Multiplier; 
+    real INaL_Multiplier;
+    real INaCa_Multiplier;
+    real INaK_Multiplier;  
+    real INab_Multiplier;
+    real Ito_Multiplier;
+    real IKr_Multiplier; 
+    real IKs_Multiplier; 
+    real IK1_Multiplier; 
+    real IKb_Multiplier; 
+    real IKCa_Multiplier;
+    real ICaL_Multiplier;
+    real ICab_Multiplier;  
+    real IpCa_Multiplier;  
+    real ICaCl_Multiplier;
+    real IClb_Multiplier; 
+    real Jrel_Multiplier; 
+    real Jup_Multiplier;
+    real aCaMK_Multiplier;
+    real taurelp_Multiplier;
+    real *initial_ss_endo;
+    real *initial_ss_epi;
+    real *initial_ss_mid;
+    real *transmurality;
+    real *sf_IKs;
+    real *basetoapex;
+};
+
 struct extra_data_for_fibrosis * set_common_schemia_data(struct config *config, uint32_t num_cells);
 struct extra_data_for_tt3 * set_common_tt3_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord * set_common_torord_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord_land * set_common_torord_Land_data (struct config *config, uint32_t num_cells);
+struct extra_data_for_torord_land_twave * set_common_torord_Land_twave_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_trovato * set_common_trovato_data (struct config *config, uint32_t num_cells);
+
+struct extra_data_for_torord_general * set_common_torord_general (struct config *config, uint32_t num_cells, uint32_t model_id);
+
+void configure_torord_extra_data_with_user_input (struct extra_data_for_torord_general *extra_data, struct config *config, uint32_t model_id);
+void configure_torord_extra_data_initial_conditions (struct extra_data_for_torord_general *extra_data, uint32_t model_id);
+void configure_torord_fkatp_initial_conditions (struct extra_data_for_torord_general *extra_data);
+void configure_torord_dynCl_initial_conditions (struct extra_data_for_torord_general *extra_data);
+void configure_torord_Land_initial_conditions (struct extra_data_for_torord_general *extra_data);
 
 #endif // MONOALG3D_C_EXTRA_DATA_HELPER_FUNCTIONS_H

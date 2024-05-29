@@ -71,6 +71,10 @@ int main (int argc, char *argv[])
         cerr << "[-] ERROR! The number of cells are different" << endl;
         exit(EXIT_FAILURE);
     }
+    else
+    {
+        cout << "[+] Cell number are equal " << total_num_cells_1 << " " << total_num_cells_2 << endl;
+    }
 
     vtkSmartPointer<vtkFloatArray> array_1 = 
             vtkFloatArray::SafeDownCast(unstructured_grid_1->GetCellData()->GetArray(array_name.c_str()));

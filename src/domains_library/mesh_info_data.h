@@ -10,6 +10,7 @@ struct default_fibrotic_mesh_info {
     int tissue_type;
 };
 
+// TODO: Move this struct and its macros to "custom_mesh_info_data.h"!
 struct dti_mesh_info {
 	enum dti_transmurality_labels {
 		DTI_FAST_ENDO,
@@ -20,6 +21,7 @@ struct dti_mesh_info {
 	float transmurality;
     float apicobasal;
 	float base_apex_heterogeneity;
+    float sf_IKs;
     int fast_endo;
 };
 
@@ -45,5 +47,6 @@ struct dti_mesh_info {
 #define DTI_MESH_BASE_APEX_HETEROGENEITY(grid_cell) (DTI_MESH_INFO(grid_cell))->base_apex_heterogeneity
 #define DTI_MESH_APICOBASAL(grid_cell) (DTI_MESH_INFO(grid_cell))->apicobasal
 #define DTI_MESH_FAST_ENDO(grid_cell) (DTI_MESH_INFO(grid_cell))->fast_endo
+#define DTI_MESH_SCALE_FACTOR_IKS(grid_cell) (DTI_MESH_INFO(grid_cell))->sf_IKs
 
 #endif /* __MESH_INFO_DATA_H */

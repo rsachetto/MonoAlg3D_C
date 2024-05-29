@@ -668,45 +668,73 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
             }
         }
 
-        if(purkinje_config) {
+    // REACTION TERM
+        // REACTION: Purkinje
+        if (purkinje_config) {
             start_stop_watch(&stop_watch);
 
-            // REACTION: Purkinje
             solve_all_volumes_odes(the_purkinje_ode_solver, cur_time, purkinje_stimuli_configs, configs->purkinje_ode_extra_config);
 
-            purkinje_ode_total_time += stop_stop_watch(&stop_watch);
-
-            start_stop_watch(&stop_watch);
-
-            // UPDATE: Purkinje
             ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
                                                                               the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,
                                                                               the_purkinje_ode_solver, original_num_purkinje_cells);
 
             purkinje_ode_total_time += stop_stop_watch(&stop_watch);
+        }
+        // REACTION: Myocardium
+        if (domain_config) {
+            start_stop_watch(&stop_watch);
+
+            solve_all_volumes_odes(the_ode_solver, cur_time, stimuli_configs, configs->ode_extra_config);
+
+            ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
+                                                                              the_grid->num_active_cells, the_grid->active_cells, the_ode_solver,
+                                                                              original_num_cells);
+
+            ode_total_time += stop_stop_watch(&stop_watch);
+
+            #ifdef COMPILE_GUI
+            if(show_gui) {
+                omp_set_lock(&gui_config->draw_lock);
+            }
+            #endif
+        }
+
+    // PURKINJE-MUSCLE-JUNCTION COUPLING: 
+        // TODO: Compute the PMJ coupling time ...
+        if(purkinje_config && domain_config) {
+            // Calculate the PMJ current from the Myocardium to the Purkinje (retrograde direction)
+            if (calc_retropropagation) {
+                compute_pmj_current_myocardium_to_purkinje(the_purkinje_ode_solver, the_ode_solver, the_grid, the_terminals);
+            }
+            // Calculate the PMJ current from the Purkinje to the Myocardium (anterograde direction)
+            compute_pmj_current_purkinje_to_myocardium(the_purkinje_ode_solver, the_ode_solver, the_grid, the_terminals);
+        }
+
+    // DIFFUSION TERM:
+        // DIFFUSION: Purkinje
+        if (purkinje_config) {
 
             start_stop_watch(&stop_watch);
 
-            // TODO: show the purkinje fibers in the visualization tool
-            //            #ifdef COMPILE_GUI
-            //            if (show_gui) {
-            //                omp_set_lock(&gui_config->draw_lock);
-            //            }
-            //            #endif
-
-            // COUPLING: Calculate the PMJ current from the Tissue to the Purkinje
-            if(domain_config && calc_retropropagation)
-                compute_pmj_current_tissue_to_purkinje(the_purkinje_ode_solver, the_grid, the_terminals);
-
-            // DIFUSION: Purkinje
-            if(purkinje_linear_system_solver_config) // Purkinje-coupled
+            // Purkinje-coupled
+            if(purkinje_linear_system_solver_config) {
                 ((linear_system_solver_fn *)purkinje_linear_system_solver_config->main_function)(
                     &time_info, purkinje_linear_system_solver_config, the_grid, the_grid->purkinje->num_active_purkinje_cells,
                     the_grid->purkinje->purkinje_cells, &purkinje_solver_iterations, &purkinje_solver_error);
-            else // Only-Purkinje
+                if(isnan(solver_error)) {
+                    log_error("\nSimulation stopped due to NaN on time %lf. This is probably a problem with the Purkinje cellular model solver.\n.", cur_time);
+                
+                    return SIMULATION_FINISHED;
+            }
+            } 
+            // Only-Purkinje
+            else {
                 ((linear_system_solver_fn *)linear_system_solver_config->main_function)(
                     &time_info, linear_system_solver_config, the_grid, the_grid->purkinje->num_active_purkinje_cells, the_grid->purkinje->purkinje_cells,
                     &purkinje_solver_iterations, &purkinje_solver_error);
+            }
+                
 
             purkinje_cg_partial = stop_stop_watch(&stop_watch);
 
@@ -714,42 +742,22 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             purkinje_total_cg_it += purkinje_solver_iterations;
         }
-
-        if(domain_config) {
-
-            start_stop_watch(&stop_watch);
-
-            // REACTION
-            solve_all_volumes_odes(the_ode_solver, cur_time, stimuli_configs, configs->ode_extra_config);
-            ((update_monodomain_fn *)update_monodomain_config->main_function)(&time_info, update_monodomain_config, the_grid, the_monodomain_solver,
-                                                                              the_grid->num_active_cells, the_grid->active_cells, the_ode_solver,
-                                                                              original_num_cells);
-
-            ode_total_time += stop_stop_watch(&stop_watch);
+        // DIFFUSION: Myocardium
+        if (domain_config) {
 
             start_stop_watch(&stop_watch);
-
-#ifdef COMPILE_GUI
-            if(show_gui) {
-                omp_set_lock(&gui_config->draw_lock);
-            }
-#endif
-
-            // COUPLING: Calculate the PMJ current from the Purkinje to the Tissue
-            if(purkinje_config) {
-                compute_pmj_current_purkinje_to_tissue(the_ode_solver, the_grid, the_terminals);
-            }
-
-            // DIFUSION: Tissue
+            
             ((linear_system_solver_fn *)linear_system_solver_config->main_function)(
                 &time_info, linear_system_solver_config, the_grid, the_grid->num_active_cells, the_grid->active_cells, &solver_iterations, &solver_error);
             if(isnan(solver_error)) {
-                log_error("\nSimulation stopped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
-#ifdef COMPILE_GUI
+                log_error("\nSimulation stopped due to NaN on time %lf. This is probably a problem with the myocardium cellular model solver.\n.", cur_time);
+                
+                #ifdef COMPILE_GUI
                 if(show_gui) {
                     omp_unset_lock(&gui_config->draw_lock);
                 }
-#endif
+                #endif
+                
                 return SIMULATION_FINISHED;
             }
 
@@ -1493,6 +1501,230 @@ void compute_pmj_current_tissue_to_purkinje(struct ode_solver *the_purkinje_ode_
     }
 }
 
+void compute_pmj_current_purkinje_to_myocardium(struct ode_solver *the_purkinje_ode_solver, struct ode_solver *the_myocardium_ode_solver,\
+                                                struct grid *the_grid, struct terminal *the_terminals) {
+    assert(the_myocardium_ode_solver);
+    assert(the_purkinje_ode_solver);
+    assert(the_grid);
+    assert(the_grid->purkinje);
+    assert(the_terminals);
+
+    // Myocardium solution
+    struct cell_node **ac_myo = the_grid->active_cells;
+    uint32_t num_active_myo = the_grid->num_active_cells;
+    real *sv_myo = the_myocardium_ode_solver->sv;
+    uint32_t num_odes_myo = the_myocardium_ode_solver->model_data.number_of_ode_equations;
+
+    // Purkinje solution
+    struct cell_node **ac_purk = the_grid->purkinje->purkinje_cells;
+    uint32_t num_active_purk = the_grid->purkinje->num_active_purkinje_cells;
+    real *sv_purk = the_purkinje_ode_solver->sv;
+    uint32_t num_odes_purk = the_purkinje_ode_solver->model_data.number_of_ode_equations;
+
+    // Purkinje coupling parameters
+    real rpmj = the_grid->purkinje->network->rpmj;
+    real pmj_scale = the_grid->purkinje->network->pmj_scale;
+
+    real Gpmj = 1.0 / rpmj;
+
+    // TODO: Consider other combinations for the device that is solving the ODE
+    //   Example: Purkinje=CPU, Myocardium=GPU || Purkinje=GPU, Myocardium=CPU 
+    if(the_myocardium_ode_solver->gpu && the_purkinje_ode_solver->gpu) {
+        #ifdef COMPILE_CUDA
+
+        real *vms_myo;
+        real *vms_purk;
+        uint32_t max_number_of_cells_myo = the_myocardium_ode_solver->original_num_cells;
+        uint32_t max_number_of_cells_purk = the_purkinje_ode_solver->original_num_cells;
+        size_t mem_size_myo = max_number_of_cells_myo * sizeof(real);
+        size_t mem_size_purk = max_number_of_cells_purk * sizeof(real);
+        
+        vms_myo = (real*)malloc(mem_size_myo);
+        vms_purk = (real*)malloc(mem_size_purk);
+
+        check_cuda_error(cudaMemcpy(vms_myo, sv_myo, mem_size_myo, cudaMemcpyDeviceToHost));
+        check_cuda_error(cudaMemcpy(vms_purk, sv_purk, mem_size_purk, cudaMemcpyDeviceToHost));
+
+        if(the_grid->adaptive) {
+            printf("[-] ERROR! The PMJ coupling is not yet implemented when using space adaptivity.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
+        for(uint32_t i = 0; i < num_of_purkinje_terminals; i++) {
+
+            // Compute the PMJ current
+            real Ipmj = 0.0;
+            uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
+            uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
+            for(uint32_t j = 0; j < num_tissue_cells; j++) {
+                uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
+                Ipmj += (vms_myo[tissue_index] - vms_purk[purkinje_index]);
+            }
+            Ipmj *= (Gpmj / pmj_scale);
+
+            // Add this current to the RHS from each tissue cell
+            for(uint32_t j = 0; j < num_tissue_cells; j++) {
+                uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
+
+                ac_myo[tissue_index]->b -= Ipmj;
+            }
+        }
+
+        free(vms_myo);
+        free(vms_purk);
+
+        #endif
+    } else if (!the_myocardium_ode_solver->gpu && !the_purkinje_ode_solver->gpu) {
+        uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
+        for(uint32_t i = 0; i < num_of_purkinje_terminals; i++) {
+
+            // Compute the PMJ current
+            real Ipmj = 0.0;
+            uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
+            uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
+            for(uint32_t j = 0; j < num_tissue_cells; j++) {
+                uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
+                Ipmj += (sv_myo[tissue_index * num_odes_myo] - sv_purk[purkinje_index * num_odes_purk]);
+            }
+            Ipmj *= (Gpmj / pmj_scale);
+
+            // Add this current to the RHS from each tissue cell
+            for(uint32_t j = 0; j < num_tissue_cells; j++) {
+                uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
+
+                ac_myo[tissue_index]->b -= Ipmj;
+            }
+        }
+    }
+    else {
+        printf("[purkinje coupling] ERROR! You are using the cellular models in different devices!\n");
+        if (!the_myocardium_ode_solver->gpu)
+            printf("[purkinje coupling] Myocardium cellular model = GPU\n");
+        else 
+            printf("[purkinje coupling] Myocardium cellular model = CPU\n");
+        if (!the_purkinje_ode_solver->gpu)
+            printf("[purkinje coupling] Purkinje cellular model = GPU\n");
+        else 
+            printf("[purkinje coupling] Purkinje cellular model = CPU\n");
+        printf("[purkinje coupling] Please change your configuration file, so that all cellular models are on the same device!\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void compute_pmj_current_myocardium_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct ode_solver *the_myocardium_ode_solver,\
+                                                struct grid *the_grid, struct terminal *the_terminals) {
+    assert(the_purkinje_ode_solver);
+    assert(the_myocardium_ode_solver);
+    assert(the_grid);
+    assert(the_grid->purkinje);
+    assert(the_terminals);
+
+    // Myocardium solution
+    struct cell_node **ac = the_grid->active_cells;
+    uint32_t num_active_myo = the_grid->num_active_cells;
+    real *sv_myo = the_myocardium_ode_solver->sv;
+    uint32_t num_odes_myo = the_myocardium_ode_solver->model_data.number_of_ode_equations;
+    
+    // Purkinje solution
+    struct cell_node **ac_purk = the_grid->purkinje->purkinje_cells;
+    uint32_t num_active_purk = the_grid->purkinje->num_active_purkinje_cells;
+    real *sv_purk = the_purkinje_ode_solver->sv;
+    uint32_t num_odes_purk = the_purkinje_ode_solver->model_data.number_of_ode_equations;
+
+    // Purkinje coupling parameters
+    real rpmj = the_grid->purkinje->network->rpmj;
+    real pmj_scale = the_grid->purkinje->network->pmj_scale;
+    real asymm_ratio = the_grid->purkinje->network->asymm_ratio;
+
+    real Gpmj = 1.0 / rpmj;
+
+    // TODO: Consider other combinations for the device that is solving the ODE
+    //   Example: Purkinje=CPU, Myocardium=GPU || Purkinje=GPU, Myocardium=CPU
+    if(the_myocardium_ode_solver->gpu && the_purkinje_ode_solver->gpu) {
+        #ifdef COMPILE_CUDA
+        
+        real *vms_myo;
+        real *vms_purk;
+        uint32_t max_number_of_cells_myo = the_myocardium_ode_solver->original_num_cells;
+        uint32_t max_number_of_cells_purk = the_purkinje_ode_solver->original_num_cells;
+        size_t mem_size_myo = max_number_of_cells_myo * sizeof(real);
+        size_t mem_size_purk = max_number_of_cells_purk * sizeof(real);
+
+        vms_myo = (real*)malloc(mem_size_myo);
+        vms_purk = (real*)malloc(mem_size_purk);
+
+        check_cuda_error(cudaMemcpy(vms_myo, sv_myo, mem_size_myo, cudaMemcpyDeviceToHost));
+        check_cuda_error(cudaMemcpy(vms_purk, sv_purk, mem_size_purk, cudaMemcpyDeviceToHost));
+
+        if(the_grid->adaptive) {
+            printf("[-] ERROR! The PMJ coupling is not yet implemented when using space adaptivity.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
+        for(uint32_t i = 0; i < num_of_purkinje_terminals; i++) {
+
+            // Compute the PMJ current
+            real Ipmj = 0.0;
+            uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
+            uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
+            for(uint32_t j = 0; j < num_tissue_cells; j++) {
+                uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
+                Ipmj += (vms_purk[purkinje_index] - vms_myo[tissue_index]);
+            }
+            // Asymmetry of conduction across the PMJ
+            Ipmj *= (Gpmj / (pmj_scale * asymm_ratio));
+
+            // Add this current to the RHS of the Purkinje cell
+            ac_purk[purkinje_index]->b -= Ipmj;
+        }
+
+        free(vms_myo);
+        free(vms_purk);
+        
+        #endif
+    } else if (!the_myocardium_ode_solver->gpu && !the_purkinje_ode_solver->gpu) {
+        uint32_t num_of_purkinje_terminals = the_grid->purkinje->network->number_of_terminals;
+        for(uint32_t i = 0; i < num_of_purkinje_terminals; i++) {
+
+            // Compute the PMJ current
+            real Ipmj = 0.0;
+            uint32_t num_tissue_cells = arrlen(the_terminals[i].tissue_cells);
+            uint32_t purkinje_index = the_terminals[i].purkinje_cell->id;
+            rpmj = the_terminals[i].purkinje_cell->rpmj;
+            Gpmj = 1.0 / rpmj;
+            for(uint32_t j = 0; j < num_tissue_cells; j++) {
+                uint32_t tissue_index = the_terminals[i].tissue_cells[j]->sv_position;
+                Ipmj += (sv_purk[purkinje_index * num_odes_purk] - sv_myo[tissue_index * num_odes_myo]);
+            }
+            Ipmj *= (Gpmj / (pmj_scale * asymm_ratio));
+
+            // Add this current to the RHS of the Purkinje cell
+            ac_purk[purkinje_index]->b -= Ipmj;
+        }
+    }
+    else {
+        printf("[purkinje coupling] ERROR! You are using the cellular models in different devices!\n");
+        if (!the_myocardium_ode_solver->gpu)
+            printf("[purkinje coupling] Myocardium cellular model = GPU\n");
+        else 
+            printf("[purkinje coupling] Myocardium cellular model = CPU\n");
+        if (!the_purkinje_ode_solver->gpu)
+            printf("[purkinje coupling] Purkinje cellular model = GPU\n");
+        else 
+            printf("[purkinje coupling] Purkinje cellular model = CPU\n");
+        printf("[purkinje coupling] Please change your configuration file, so that all cellular models are on the same device!\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 // TODO: Maybe write a library to the PMJ coupling ...
 void write_pmj_delay(struct grid *the_grid, struct config *config, struct terminal *the_terminals) {
     assert(the_grid);
@@ -1593,13 +1825,14 @@ void write_pmj_delay(struct grid *the_grid, struct config *config, struct termin
 
                     // Check if the number of activations from the tissue and Purkinje cell are equal
                     if(n_activations_purkinje > n_activations_tissue) {
-                        // log_error("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
-                        // log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
-                        // log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
-                        // fprintf(output_file,"ERROR! Probably there was a block on the anterograde direction!\n");
                         has_block = true;
                         cur_pulse = 0;
-                        // return;
+                        log_error("[purkinje_coupling] ERROR! The number of activations of the tissue and Purkinje cells are different!\n");
+                        log_error("[purkinje_coupling] Probably there was a block on the anterograde direction!\n");
+                        log_error("[purkinje_coupling] Consider only the result from the second pulse! (retrograde direction)!\n");
+                        fprintf(output_file,"%d,%u,%g,%g,%g,%d,%d\n", k, term_id, purkinje_lat, mean_tissue_lat, 0.0, (int)is_terminal_active, (int)has_block);
+                        fclose(output_file);
+                        return;
                     }
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                     if(activation_times_array_tissue[cur_pulse] < min_tissue_lat) {
