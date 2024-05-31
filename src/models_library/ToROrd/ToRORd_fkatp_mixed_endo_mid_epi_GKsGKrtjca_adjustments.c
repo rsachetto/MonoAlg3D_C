@@ -1,4 +1,4 @@
-#include "ToRORd_fkatp_mixed_endo_mid_epi.h"
+#include "ToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.h"
 #include <stdlib.h>
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
