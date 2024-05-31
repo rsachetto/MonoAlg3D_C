@@ -109,7 +109,7 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
 }
 
 __global__ void kernel_set_model_initial_conditions_endo_mid_epi(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt,\
-                                                real *initial_endo, real *initial_epi, real *initial_mid, real *transmurality) {
+                                                real *initial_endo, real *initial_epi, real *initial_mid, real *transmurality, real *sf_Iks) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (threadID < num_volumes) {
@@ -169,7 +169,7 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
 	real *sf_Iks_device = NULL;
 
     if(solver->ode_extra_data) {
-        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)solver->ode_extra_data;
+        struct extra_data_for_torord_land_twave *extra_data = (struct extra_data_for_torord_land_twave*)solver->ode_extra_data;
         initial_conditions_endo = extra_data->initial_ss_endo;
         initial_conditions_epi = extra_data->initial_ss_epi;
         initial_conditions_mid = extra_data->initial_ss_mid;
@@ -247,7 +247,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     real extra_par[num_extra_parameters];
     real *extra_par_device = NULL;
     if(ode_solver->ode_extra_data) {
-        struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
+        struct extra_data_for_torord_land_twave *extra_data = (struct extra_data_for_torord_land_twave*)ode_solver->ode_extra_data;
         extra_par[0]  = extra_data->INa_Multiplier; 
         extra_par[1]  = extra_data->ICaL_Multiplier;
         extra_par[2]  = extra_data->Ito_Multiplier;
@@ -317,81 +317,6 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     if (transmurality_device) check_cuda_error(cudaFree(transmurality_device));
 	if (sf_Iks_device) check_cuda_error(cudaFree(sf_Iks_device));
     if (extra_par_device) check_cuda_error(cudaFree(extra_par_device));
-}
-
-__global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *extra_params,\
-                          uint32_t num_cells_to_solve, int num_steps, size_t pitch, bool use_adpt, real abstol, real reltol, real max_dt) {
-    const real TOLERANCE = 1e-8;
-    int threadID = blockDim.x * blockIdx.x + threadIdx.x;
-    int sv_id;
-
-    // Each thread solves one cell model
-    if(threadID < num_cells_to_solve) {
-        if(cells_to_solve)
-            sv_id = cells_to_solve[threadID];
-        else
-            sv_id = threadID;
-
-        if(!use_adpt) {
-            real rDY[NEQ];
-            real a[NEQ], b[NEQ];
-
-            for(int n = 0; n < num_steps; ++n) {
-
-                RHS_RL_gpu(a, b, sv, rDY, stim_currents[threadID], 0.0, extra_params, sv_id, dt, pitch, false);
-
-                // Solve variables based on its type:
-                //  Non-linear = Euler
-                //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
-                SOLVE_EQUATION_EULER_GPU(0);        // v        
-                SOLVE_EQUATION_EULER_GPU(1);        // CaMKt    
-                SOLVE_EQUATION_EULER_GPU(2);        // cass 
-                SOLVE_EQUATION_EULER_GPU(3);        // nai  
-                SOLVE_EQUATION_EULER_GPU(4);        // nass 
-                SOLVE_EQUATION_EULER_GPU(5);        // ki   
-                SOLVE_EQUATION_EULER_GPU(6);        // kss  
-                SOLVE_EQUATION_EULER_GPU(7);        // cansr
-                SOLVE_EQUATION_EULER_GPU(8);        // cajsr
-                SOLVE_EQUATION_EULER_GPU(9);        // cai
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(10); // m
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(11); // h
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(12); // j
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(13); // hp
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(14); // jp
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(15); // mL
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(16); // hL
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(17); // hLp
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(18); // a
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(19); // iF
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(20); // iS
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(21); // ap
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(22); // iFp
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(23); // iSp
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(24); // d
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(25); // ff
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(26); // fs
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(27); // fcaf
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(28); // fcas
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(29); // jca
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(30); // ffp
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(31); // fcafp
-                SOLVE_EQUATION_EULER_GPU(32);       // nca
-                SOLVE_EQUATION_EULER_GPU(33);       // nca_i
-                SOLVE_EQUATION_EULER_GPU(34);       // ikr_c0
-                SOLVE_EQUATION_EULER_GPU(35);       // ikr_c1
-                SOLVE_EQUATION_EULER_GPU(36);       // ikr_c2
-                SOLVE_EQUATION_EULER_GPU(37);       // ikr_i
-                SOLVE_EQUATION_EULER_GPU(38);       // ikr_o
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(39); // xs1
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(40); // xs2
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(41); // Jrel_np
-                SOLVE_EQUATION_RUSH_LARSEN_GPU(42); // Jrel_p
-            }
-        } else {
-            solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            //solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-        }
-    }
 }
 
 __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *stim_currents, uint32_t *cells_to_solve, real *transmurality, real *sf_Iks, real *extra_params,\
@@ -464,12 +389,12 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
             }
         } else {
             //solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
-            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID],sf_Iks[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
+            solve_rush_larsen_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], sf_Iks[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
         }
     }
 }
 
-inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real mapping, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
+inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, real transmurality, real sf_Iks, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
@@ -502,7 +427,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
 
-    RHS_gpu(sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
+    RHS_gpu(sv_local, rDY, stim_curr, transmurality, sf_Iks, extra_params, thread_id, dt, pitch, true);
     time_new += dt;
 
     for(int i = 0; i < NEQ; i++) {
@@ -522,7 +447,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
 
 		time_new += dt;
 
-		RHS_gpu(sv_local, rDY, stim_curr, mapping, extra_params, thread_id, dt, pitch, true);
+		RHS_gpu(sv_local, rDY, stim_curr, transmurality, sf_Iks, extra_params, thread_id, dt, pitch, true);
 		time_new -= dt; // step back
 
 		real greatestError = 0.0, auxError = 0.0;
@@ -599,7 +524,7 @@ inline __device__ void solve_forward_euler_gpu_adpt(real *sv, real stim_curr, re
     PREVIOUS_DT = previous_dt;
 }
 
-inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real mapping, real sf_Iks, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
+inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real transmurality, real sf_Iks, real *extra_params, real final_time, int thread_id, size_t pitch, real abstol, real reltol, real min_dt, real max_dt) {
 
     #define DT *((real *)((char *)sv + pitch * (NEQ)) + thread_id)
     #define TIME_NEW *((real *)((char *)sv + pitch * (NEQ+1)) + thread_id)
@@ -628,7 +553,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
         sv_local[i] = *((real *)((char *)sv + pitch * i) + thread_id);
     }
 
-    RHS_RL_gpu(a_, b_, sv_local, rDY, stim_curr, mapping, sf_Iks, extra_params, thread_id, dt, pitch, true);
+    RHS_RL_gpu(a_, b_, sv_local, rDY, stim_curr, transmurality, sf_Iks, extra_params, thread_id, dt, pitch, true);
     time_new += dt;
 
     for(int i = 0; i < NEQ; i++) {
@@ -683,7 +608,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
 
 		time_new += dt;
 
-		RHS_RL_gpu(a_new, b_new, sv_local, rDY, stim_curr, mapping, sf_Iks, extra_params, thread_id, dt, pitch, true);
+		RHS_RL_gpu(a_new, b_new, sv_local, rDY, stim_curr, transmurality, sf_Iks, extra_params, thread_id, dt, pitch, true);
 		time_new -= dt; // step back
 
 		real greatestError = 0.0, auxError = 0.0;
@@ -799,7 +724,7 @@ inline __device__ void solve_rush_larsen_gpu_adpt(real *sv, real stim_curr, real
     PREVIOUS_DT = previous_dt;
 }
 
-inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real mapping, real sf_Iks, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real transmurality, real sf_Iks, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
     
     // Current modifiers
     real INa_Multiplier   = extra_params[0]; 
@@ -821,7 +746,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
     real Jup_Multiplier   = extra_params[16];
 
     // Get the celltype for the current cell
-    real celltype = mapping;
+    real celltype = transmurality;
     
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
@@ -964,7 +889,8 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, real map
     #include "ToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.common.c"
 }
 
-inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, real mapping, real sf_Iks, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
+
+inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real stim_current, real transmurality, real sf_Iks, real *extra_params, int threadID_, real dt, size_t pitch, bool use_adpt_dt) {
     
     // Current modifiers
     real INa_Multiplier   = extra_params[0]; 
@@ -986,7 +912,7 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
     real Jup_Multiplier   = extra_params[16];
 
     // Get the celltype for the current cell
-    real celltype = mapping;
+    real celltype = transmurality;
     
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;

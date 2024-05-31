@@ -96,7 +96,7 @@ double calculate_conduction_velocity_from_cable_simulation ()
 // TODO: Maybe pass a pre-configured config file as an input parameter with the cellular model setup that the user will use
 void write_configuration_file (const double sigma)
 {
-    FILE *file = fopen("/home/Julia/MonoAlg3D_C/scripts/tuneCVbenchmark/configs/cable.ini","w+");
+    FILE *file = fopen("/home/jenny/MonoAlg3D_C/scripts/tuneCVbenchmark/configs/cable.ini","w+");
 
     fprintf(file,"[main]\n");
     fprintf(file,"num_threads=6\n");
@@ -109,18 +109,18 @@ void write_configuration_file (const double sigma)
     
     fprintf(file,"[update_monodomain]\n");
     fprintf(file,"main_function=update_monodomain_default\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_update_monodomain.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libdefault_update_monodomain.so\n");
     fprintf(file,"\n");
     
     // For saving the LATs in a format that can be read for calculating the CVs
     fprintf(file,"[save_result]\n");
     fprintf(file,"print_rate=1\n");
-    fprintf(file,"output_dir=/home/Julia/MonoAlg3D_C/scripts/tuneCVbenchmark/outputs/cable\n");
+    fprintf(file,"output_dir=/home/jenny/MonoAlg3D_C/scripts/tuneCVbenchmark/outputs/cable\n");
     fprintf(file,"save_pvd=true\n");
     fprintf(file,"file_prefix=V\n");
     fprintf(file,"save_activation_time=true\n");
     fprintf(file,"save_apd=false\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_save_mesh_purkinje.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libdefault_save_mesh_purkinje.so\n");
     fprintf(file,"main_function=save_tissue_with_activation_times\n");
     fprintf(file,"init_function=init_save_tissue_with_activation_times\n");
     fprintf(file,"end_function=end_save_tissue_with_activation_times\n");
@@ -132,7 +132,7 @@ void write_configuration_file (const double sigma)
     fprintf(file,"sigma_x=%g\n",sigma);
     fprintf(file,"sigma_y=%g\n",sigma);
     fprintf(file,"sigma_z=%g\n",sigma);
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_matrix_assembly.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libdefault_matrix_assembly.so\n");
     fprintf(file,"main_function=homogeneous_sigma_assembly_matrix\n");
     fprintf(file,"\n");
     
@@ -141,7 +141,7 @@ void write_configuration_file (const double sigma)
     fprintf(file,"use_preconditioner=no\n");
     fprintf(file,"use_gpu=yes\n");
     fprintf(file,"max_iterations=200\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_linear_system_solver.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libdefault_linear_system_solver.so\n");
     fprintf(file,"init_function=init_conjugate_gradient\n");
     fprintf(file,"end_function=end_conjugate_gradient\n");
     fprintf(file,"main_function=conjugate_gradient\n");
@@ -153,7 +153,7 @@ void write_configuration_file (const double sigma)
     fprintf(file,"start_dy=500.0\n");
     fprintf(file,"start_dz=500.0\n");
     fprintf(file,"cable_length=20000.0\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_domains.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libdefault_domains.so\n");
     fprintf(file,"main_function=initialize_grid_with_cable_mesh\n");
     fprintf(file,"\n");
     
@@ -161,7 +161,7 @@ void write_configuration_file (const double sigma)
     fprintf(file,"dt=0.01\n");
     fprintf(file,"use_gpu=yes\n");
     fprintf(file,"gpu_id=0\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libToRORd_fkatp_mixed_endo_mid_epi.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libten_tusscher_tt3_mixed_endo_mid_epi.so\n");
     fprintf(file,"\n");
     
     fprintf(file,"[stim_benchmark]\n");
@@ -175,7 +175,7 @@ void write_configuration_file (const double sigma)
     fprintf(file, "min_z = 0.0\n");
     fprintf(file, "max_z = 3000.0\n");
     fprintf(file,"main_function=stim_x_y_z_limits\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_stimuli.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libdefault_stimuli.so\n");
     fprintf(file,"\n");
     
     fclose(file);
@@ -209,7 +209,7 @@ int main (int argc, char *argv[])
         write_configuration_file(sigma);
         
         // Run the simulation
-        system("/home/Julia/MonoAlg3D_C/bin/MonoAlg3D -c /home/Julia/MonoAlg3D_C/scripts/tuneCVbenchmark/configs/cable.ini");
+        system("/home/jenny/MonoAlg3D_C/bin/MonoAlg3D -c /home/jenny/MonoAlg3D_C/scripts/tuneCVbenchmark/configs/cable.ini");
         
         cv = calculate_conduction_velocity_from_cable_simulation();
         factor = pow(target_cv/cv,2);
