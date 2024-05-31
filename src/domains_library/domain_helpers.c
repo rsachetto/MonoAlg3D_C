@@ -445,13 +445,13 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
  * (http://rsta.royalsocietypublishing.org/content/369/1954/4331)
  *
  */
-void set_benchmark_domain(struct grid *the_grid, real_cpu sx, real_cpu sy, real_cpu sz) {
+void set_benchmark_domain(struct grid *the_grid) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    //real_cpu sx, sy, sz;
-    //sx = 20000;
-    //sy = 7000;
-    //sz = 3000;
+    real_cpu sx, sy, sz;
+    sx = 20000;
+    sy = 7000;
+    sz = 3000;
 
     while(grid_cell != 0) {
         grid_cell->active = (grid_cell->center.x < sx) && (grid_cell->center.y < sy) && (grid_cell->center.z < sz);
@@ -1010,10 +1010,12 @@ int calc_num_refs(real_cpu start_h, real_cpu desired_h) {
     return num_refs;
 }
 
-void set_cuboid_sphere_fibrosis_with_conic_path(struct grid *the_grid, real_cpu phi, real_cpu plain_center, real_cpu sphere_radius, real_cpu bz_size, real_cpu bz_radius,
-                               unsigned fib_seed, real_cpu cone_slope) {
+void set_plain_fibrosis_source_sink_region (struct grid *the_grid, real_cpu phi, unsigned fib_seed, const double min_x, const double max_x, const double min_y,
+                                      const double max_y, const double min_z, const double max_z,
+                                      real_cpu source_sink_min_x, real_cpu source_sink_max_x, real_cpu side_length) {
+    log_info("Making %.2lf %% of cells inside the region inactive\n", phi * 100.0);
 
-    log_info("Making %.2lf %% of cells inactive\n", phi * 100.0f);
+    struct cell_node *grid_cell;
 
     if(fib_seed == 0)
         fib_seed = (unsigned)time(NULL) + getpid();
@@ -1022,63 +1024,30 @@ void set_cuboid_sphere_fibrosis_with_conic_path(struct grid *the_grid, real_cpu 
 
     log_info("Using %u as seed\n", fib_seed);
 
-    real_cpu bz_radius_2 = pow(bz_radius, 2.0);
-    real_cpu sphere_radius_2 = pow(sphere_radius, 2.0);
-    struct cell_node *grid_cell;
+    real_cpu a1 = (2.0*side_length) / (side_length - 2*source_sink_min_x);
+    real_cpu b1 = -source_sink_min_x*a1;
+    real_cpu a2 = (2.0*side_length) / (side_length - 2*source_sink_max_x);
+    real_cpu b2 = -source_sink_max_x*a2;
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
-        //Calcula distância da célula para o centro da malha
-        real_cpu distance = pow(grid_cell->center.x - plain_center, 2.0) + pow(grid_cell->center.y - plain_center, 2.0);
-        real_cpu h_distance = abs(grid_cell->center.x - plain_center); 
-        
-        if(grid_cell->active) {
+        real center_x = grid_cell->center.x;
+        real center_y = grid_cell->center.y;
+        real center_z = grid_cell->center.z;
 
-            INITIALIZE_FIBROTIC_INFO(grid_cell);
-
-            if(distance <= bz_radius_2) {
-                //Dentro da border zone 
-                if(distance <= sphere_radius_2) {
-                    //dentro da "esfera"
-                    if(h_distance < cone_slope*grid_cell->center.y*plain_center) //abs(cone_slope*grid_cell->center.y)
-                    {
-                        FIBROTIC(grid_cell) = true;
-                        
-                        //Dentro do cone
-                    }
-                    else{
-                        grid_cell->active = false;
-                        grid_cell->can_change = false;
-                        FIBROTIC(grid_cell) = true;
-                    }
-                } else {
-                    BORDER_ZONE(grid_cell) = true;
+        if(center_x >= min_x && center_x <= max_x && center_y >= min_y && center_y <= max_y && center_z >= min_z && center_z <= max_z
+            && (center_y > a1*center_x + b1 || center_y > a2*center_x + b2)) {
+            if(grid_cell->active) {
+                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
+                if(p < phi) {
+                    grid_cell->active = false;
                 }
+
+                INITIALIZE_FIBROTIC_INFO(grid_cell);
+                FIBROTIC(grid_cell) = true;
             }
         }
-        grid_cell = grid_cell->next;
-    }
 
-    grid_cell = the_grid->first_cell;
-
-    while(grid_cell != 0) {
-        if(grid_cell->active) {
-            if(FIBROTIC(grid_cell)) {
-                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi)
-                    grid_cell->active = false;
-                grid_cell->can_change = false;
-            } else if(BORDER_ZONE(grid_cell)) {
-                real_cpu distance_from_center = sqrt((grid_cell->center.x - plain_center) * (grid_cell->center.x - plain_center) +
-                                                     (grid_cell->center.y - plain_center) * (grid_cell->center.y - plain_center));
-                distance_from_center = (distance_from_center - sphere_radius) / bz_size;
-                real_cpu phi_local = phi - phi * distance_from_center;
-                real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi_local)
-                    grid_cell->active = false;
-                grid_cell->can_change = false;
-            }
-        }
         grid_cell = grid_cell->next;
     }
 }
