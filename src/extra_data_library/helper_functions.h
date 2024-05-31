@@ -156,7 +156,7 @@ struct extra_data_for_torord_land_twave {
     real *basetoapex;
 };
 
-struct extra_data_for_torord_general {
+struct extra_data_for_torord_gksgkrtjca_twave {
     real INa_Multiplier; 
     real INaL_Multiplier;
     real INaCa_Multiplier;
@@ -182,7 +182,6 @@ struct extra_data_for_torord_general {
     real *initial_ss_mid;
     real *transmurality;
     real *sf_IKs;
-    real *basetoapex;
 };
 
 struct extra_data_for_fibrosis * set_common_schemia_data(struct config *config, uint32_t num_cells);
@@ -191,14 +190,7 @@ struct extra_data_for_torord * set_common_torord_data (struct config *config, ui
 struct extra_data_for_torord * set_common_torord_dyncl_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord_land * set_common_torord_Land_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord_land_twave * set_common_torord_Land_twave_data (struct config *config, uint32_t num_cells);
+struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twave_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_trovato * set_common_trovato_data (struct config *config, uint32_t num_cells);
-
-struct extra_data_for_torord_general * set_common_torord_general (struct config *config, uint32_t num_cells, uint32_t model_id);
-
-void configure_torord_extra_data_with_user_input (struct extra_data_for_torord_general *extra_data, struct config *config, uint32_t model_id);
-void configure_torord_extra_data_initial_conditions (struct extra_data_for_torord_general *extra_data, uint32_t model_id);
-void configure_torord_fkatp_initial_conditions (struct extra_data_for_torord_general *extra_data);
-void configure_torord_dynCl_initial_conditions (struct extra_data_for_torord_general *extra_data);
-void configure_torord_Land_initial_conditions (struct extra_data_for_torord_general *extra_data);
 
 #endif // MONOALG3D_C_EXTRA_DATA_HELPER_FUNCTIONS_H
