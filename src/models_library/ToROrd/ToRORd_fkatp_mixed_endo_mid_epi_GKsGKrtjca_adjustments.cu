@@ -306,8 +306,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     }
     // No transmurality: all cells ENDO
     else {
-        solve_gpu<<<GRID, BLOCK_SIZE>>>(current_t, dt, sv, stims_currents_device, cells_to_solve_device, extra_par_device,\
-                                    num_cells_to_solve, num_steps, ode_solver->pitch, ode_solver->adaptive, ode_solver->abs_tol, ode_solver->rel_tol, ode_solver->max_dt);
+	    log_error_and_exit("[INFO] You should supply a mask function with this mixed model! The mask function must have transmurality', 'sf_Iks' fields!\n");
     }
 
     check_cuda_error(cudaPeekAtLastError());
