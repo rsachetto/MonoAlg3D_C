@@ -160,13 +160,18 @@ void write_configuration_file (const double sigma)
     fprintf(file,"[extra_data]\n");
 	fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libdefault_extra_data.so\n");
 	fprintf(file,"main_function=set_extra_data_for_cable_ToRORd_Land_mixed_endo_mid_epi_IKs\n");
+	fprintf(file,"\n");
     
     fprintf(file,"[ode_solver]\n");
-    fprintf(file,"dt=0.01\n");
+    //fprintf(file,"dt=0.001\n");
     fprintf(file,"use_gpu=yes\n");
     fprintf(file,"gpu_id=0\n");
-    //fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.so\n");
-	fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libToRORd_Land_Iks_baseToApex_mixed_endo_mid_epi.so\n");
+	fprintf(file,"adaptive=true\n");
+	fprintf(file,"reltol=1e-10\n");
+	fprintf(file,"abstol=1e-10\n");
+	//fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libToRORd_fkatp_mixed_endo_mid_epi.so\n");
+    fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.so\n");
+	//fprintf(file,"library_file=/home/jenny/MonoAlg3D_C/shared_libs/libToRORd_Land_Iks_baseToApex_mixed_endo_mid_epi.so\n");
     fprintf(file,"\n");
     
     fprintf(file,"[stim_benchmark]\n");

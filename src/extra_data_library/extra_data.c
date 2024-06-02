@@ -634,7 +634,7 @@ SET_EXTRA_DATA(set_extra_data_for_cable_ToRORd_Land_mixed_endo_mid_epi_IKs) {
     struct cell_node ** ac = the_grid->active_cells;
 
     struct extra_data_for_torord_land_twave *extra_data = NULL;
-    extra_data = set_common_torord_Land_data(config, num_active_cells);
+    extra_data = set_common_torord_Land_twave_data(config, num_active_cells);
 
     // All cells will be the same type
     OMP(parallel for)
