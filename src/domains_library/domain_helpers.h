@@ -17,7 +17,7 @@ int set_cuboid_domain_mesh(struct grid *the_grid, real_cpu start_dx, real_cpu st
                            real_cpu side_length_z);
 int set_square_mesh(struct config *config, struct grid *the_grid);
 
-void set_benchmark_domain(struct grid *the_grid, real_cpu sx, real_cpu sy, real_cpu sz);
+void set_benchmark_domain(struct grid *the_grid);
 void set_cuboid_domain(struct grid *the_grid, real_cpu sizeX, real_cpu sizeY, real_cpu sizeZ);
 
 void set_custom_mesh(struct grid *the_grid, const char *file_name, size_t size, char *read_format);

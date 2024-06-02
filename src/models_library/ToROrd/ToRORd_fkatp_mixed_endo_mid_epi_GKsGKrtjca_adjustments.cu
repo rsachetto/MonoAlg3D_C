@@ -245,7 +245,6 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
             else 
                 extra_par[i] = 1.0;
         }
-
         check_cuda_error(cudaMalloc((void **)&extra_par_device, sizeof(real)*num_extra_parameters));
         check_cuda_error(cudaMemcpy(extra_par_device, extra_par, sizeof(real)*num_extra_parameters, cudaMemcpyHostToDevice));
     }
