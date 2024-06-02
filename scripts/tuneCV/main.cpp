@@ -166,9 +166,9 @@ void write_configuration_file (const double sigma) {
     fprintf(file,"duration = 2.0\n");
     fprintf(file,"current = -50.0\n");
     fprintf(file, "min_x = 0.0\n");
-    fprintf(file, "max_x = 500.0\n");
+    fprintf(file, "max_x = 3000.0\n");
     fprintf(file, "min_y = 0.0\n");
-    fprintf(file, "max_y = 500.0\n");
+    fprintf(file, "max_y = 3000.0\n");
     fprintf(file, "min_z = 0.0\n");
     fprintf(file, "max_z = 3000.0\n");
     fprintf(file,"main_function=stim_x_y_z_limits\n");
