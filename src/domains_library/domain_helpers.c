@@ -445,13 +445,13 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
  * (http://rsta.royalsocietypublishing.org/content/369/1954/4331)
  *
  */
-void set_benchmark_domain(struct grid *the_grid) {
+void set_benchmark_domain(struct grid *the_grid, real_cpu sx, real_cpu sy, real_cpu sz) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    real_cpu sx, sy, sz;
-    sx = 20000;
-    sy = 7000;
-    sz = 3000;
+    //real_cpu sx, sy, sz;
+    //sx = 20000;
+    //sy = 7000;
+    //sz = 3000;
 
     while(grid_cell != 0) {
         grid_cell->active = (grid_cell->center.x < sx) && (grid_cell->center.y < sy) && (grid_cell->center.z < sz);

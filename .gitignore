@@ -186,6 +186,7 @@ sync_local.sh
 sync_outputs.sh
 private_configs/
 private_parameter_sets/
+private_src/
 /src/domains_library/custom_mesh_info_data.h
 retired_code/
 *.gcno
@@ -199,3 +200,4 @@ VV_49900.dat
 *.build_type*
 /ecg.txt
 __pycache__/
+backup/
