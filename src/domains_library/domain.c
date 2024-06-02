@@ -426,11 +426,8 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_and_sphere_fibrotic_mesh_with_con
     real_cpu phi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config, "phi");
 
-    real_cpu plain_center_x = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center_x, config, "plain_center_x");
-
-    real_cpu plain_center_y = 0.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center_y, config, "plain_center_y");
+    real_cpu plain_center = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, plain_center, config, "plain_center");
 
     real_cpu sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config, "sphere_radius");
@@ -449,7 +446,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_and_sphere_fibrotic_mesh_with_con
 
     //set_square_mesh(config, the_grid);
     set_cuboid_domain_mesh(the_grid, start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z);
-    set_cuboid_sphere_fibrosis_with_conic_path(the_grid, phi, plain_center_x, plain_center_y, sphere_radius, border_zone_size, border_zone_radius, seed, conic_slope);
+    set_cuboid_sphere_fibrosis_with_conic_path(the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, seed, conic_slope);
 
     return 1;
 }
