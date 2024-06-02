@@ -445,13 +445,13 @@ int calculate_cuboid_side_lengths(real_cpu start_dx, real_cpu start_dy, real_cpu
  * (http://rsta.royalsocietypublishing.org/content/369/1954/4331)
  *
  */
-void set_benchmark_domain(struct grid *the_grid, real_cpu sx, real_cpu sy, real_cpu sz) {
+void set_benchmark_domain(struct grid *the_grid) {
     struct cell_node *grid_cell = the_grid->first_cell;
 
-    //real_cpu sx, sy, sz;
-    //sx = 20000;
-    //sy = 7000;
-    //sz = 3000;
+    real_cpu sx, sy, sz;
+    sx = 20000;
+    sy = 7000;
+    sz = 3000;
 
     while(grid_cell != 0) {
         grid_cell->active = (grid_cell->center.x < sx) && (grid_cell->center.y < sy) && (grid_cell->center.z < sz);
@@ -1013,7 +1013,7 @@ int calc_num_refs(real_cpu start_h, real_cpu desired_h) {
 void set_cuboid_sphere_fibrosis_with_conic_path(struct grid *the_grid, real_cpu phi, real_cpu plain_center_x, real_cpu plain_center_y, \
                                                 real_cpu sphere_radius, real_cpu bz_size, real_cpu bz_radius, unsigned fib_seed, real_cpu cone_slope) {
 
-    log_info("Making %.2lf %% of cells inactive\n", phi * 100.0f);
+    struct cell_node *grid_cell;
 
     if(fib_seed == 0)
         fib_seed = (unsigned)time(NULL) + getpid();
@@ -1022,9 +1022,10 @@ void set_cuboid_sphere_fibrosis_with_conic_path(struct grid *the_grid, real_cpu 
 
     log_info("Using %u as seed\n", fib_seed);
 
-    real_cpu bz_radius_2 = pow(bz_radius, 2.0);
-    real_cpu sphere_radius_2 = pow(sphere_radius, 2.0);
-    struct cell_node *grid_cell;
+    real_cpu a1 = (2.0*side_length) / (side_length - 2*source_sink_min_x);
+    real_cpu b1 = -source_sink_min_x*a1;
+    real_cpu a2 = (2.0*side_length) / (side_length - 2*source_sink_max_x);
+    real_cpu b2 = -source_sink_max_x*a2;
 
     grid_cell = the_grid->first_cell;
     while(grid_cell != 0) {
@@ -1073,11 +1074,15 @@ void set_cuboid_sphere_fibrosis_with_conic_path(struct grid *the_grid, real_cpu 
                 distance_from_center = (distance_from_center - sphere_radius) / bz_size;
                 real_cpu phi_local = phi - phi * distance_from_center;
                 real_cpu p = (real_cpu)(rand()) / (RAND_MAX);
-                if(p < phi_local)
+                if(p < phi) {
                     grid_cell->active = false;
-                grid_cell->can_change = false;
+                }
+
+                INITIALIZE_FIBROTIC_INFO(grid_cell);
+                FIBROTIC(grid_cell) = true;
             }
         }
+
         grid_cell = grid_cell->next;
     }
 }

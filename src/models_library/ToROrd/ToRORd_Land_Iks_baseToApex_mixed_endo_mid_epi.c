@@ -1,4 +1,4 @@
-#include "ToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.h"
+#include "ToRORd_Land_Iks_baseToApex_mixed_endo_mid_epi.h"
 #include <stdlib.h>
 
 GET_CELL_MODEL_DATA(init_cell_model_data) {
@@ -11,7 +11,7 @@ GET_CELL_MODEL_DATA(init_cell_model_data) {
 
 SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
 
-    log_info("Using ToRORd_fkatp_2019 CPU model with GKs GKr and tjca adjustments\n");
+    log_info("Using ToRORd_Land_Iks_baseToApex_2020 CPU model\n");
 
     uint32_t num_cells = solver->original_num_cells;
     solver->sv = (real*)malloc(NEQ*num_cells*sizeof(real));
@@ -36,14 +36,14 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
     real *initial_epi = NULL;
     real *initial_mid = NULL;
     real *transmurality = NULL;
-	real *sf_Iks = NULL;
+    real *basetoapex = NULL;
     if(solver->ode_extra_data) {
-        struct extra_data_for_torord_gksgkrtjca_twave *extra_data = (struct extra_data_for_torord_gksgkrtjca_twave*)solver->ode_extra_data;
+        struct extra_data_for_torord_land_twave *extra_data = (struct extra_data_for_torord_land_twave*)solver->ode_extra_data;
         initial_endo = extra_data->initial_ss_endo;
         initial_epi = extra_data->initial_ss_epi;
         initial_mid = extra_data->initial_ss_mid;
         transmurality = extra_data->transmurality;
-		sf_Iks = extra_data->sf_IKs;
+        basetoapex = extra_data->basetoapex;
 
         OMP(parallel for)
         for(uint32_t i = 0; i < num_cells; i++){
@@ -61,59 +61,8 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         }
     }
     else {
-        log_info("[INFO] You should supply a mask function to tag the cells when using this mixed model!\n");
-        log_info("[INFO] Considering all cells ENDO!\n");
-        
-        OMP(parallel for)
-        for(uint32_t i = 0; i < num_cells; i++){
-            
-            real *sv = &solver->sv[i * NEQ];
-            // Steady-state after 200 beats (endocardium cell)
-            sv[0] = -8.890585e+01;
-            sv[1] = 1.107642e-02;
-            sv[2] = 6.504164e-05;
-            sv[3] = 1.210818e+01;
-            sv[4] = 1.210851e+01;
-            sv[5] = 1.426206e+02;
-            sv[6] = 1.426205e+02;
-            sv[7] = 1.530373e+00;
-            sv[8] = 1.528032e+00;
-            sv[9] = 7.455488e-05;
-            sv[10] = 7.814592e-04;
-            sv[11] = 8.313839e-01;
-            sv[12] = 8.311938e-01;
-            sv[13] = 6.752873e-01;
-            sv[14] = 8.308255e-01;
-            sv[15] = 1.585610e-04;
-            sv[16] = 5.294475e-01;
-            sv[17] = 2.896996e-01;
-            sv[18] = 9.419166e-04;
-            sv[19] = 9.996194e-01;
-            sv[20] = 5.938602e-01;
-            sv[21] = 4.799180e-04;
-            sv[22] = 9.996194e-01;
-            sv[23] = 6.543754e-01;
-            sv[24] = -2.898677e-33;
-            sv[25] = 1.000000e+00;
-            sv[26] = 9.389659e-01;
-            sv[27] = 1.000000e+00;
-            sv[28] = 9.999003e-01;
-            sv[29] = 9.999773e-01;
-            sv[30] = 1.000000e+00;
-            sv[31] = 1.000000e+00;
-            sv[32] = 4.920606e-04;
-            sv[33] = 8.337021e-04;
-            sv[34] = 6.962775e-04;
-            sv[35] = 8.425453e-04;
-            sv[36] = 9.980807e-01;
-            sv[37] = 1.289824e-05;
-            sv[38] = 3.675442e-04;
-            sv[39] = 2.471690e-01;
-            sv[40] = 1.742987e-04;
-            sv[41] = 5.421027e-24;
-            sv[42] = 6.407933e-23;
-        }
-    }        
+        log_error_and_exit("[INFO] You should supply a mask function with this mixed model! The mask function must have 'transmurality', 'sf_Iks' and 'basetoapex' fields!\n");
+    }
 }
 
 SOLVE_MODEL_ODES(solve_model_odes_cpu) {
@@ -131,9 +80,10 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     int num_extra_parameters = 20;
     real extra_par[num_extra_parameters];
     real *transmurality = NULL;
-	real *sf_Iks = NULL;
+    real *sf_Iks = NULL;
+    real *basetoapex = NULL;
     if (ode_solver->ode_extra_data) {
-        struct extra_data_for_torord_gksgkrtjca_twave *extra_data = (struct extra_data_for_torord_gksgkrtjca_twave*)ode_solver->ode_extra_data;
+        struct extra_data_for_torord_land_twave *extra_data = (struct extra_data_for_torord_land_twave*)ode_solver->ode_extra_data;
         extra_par[0]  = extra_data->INa_Multiplier; 
         extra_par[1]  = extra_data->INaL_Multiplier;
         extra_par[2]  = extra_data->INaCa_Multiplier;
@@ -154,19 +104,21 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         extra_par[17] = extra_data->Jup_Multiplier;
         extra_par[18] = extra_data->aCaMK_Multiplier;
         extra_par[19] = extra_data->taurelp_Multiplier;
-        sf_Iks = extra_data->sf_IKs;
         transmurality = extra_data->transmurality;
+        sf_Iks = extra_data->sf_IKs;
+        basetoapex = extra_data->basetoapex;
     }
     else {
         // Default: initialize all current modifiers
         for (uint32_t i = 0; i < num_extra_parameters; i++) {
             if (i == 9)
                 extra_par[i] = 0.0;
-            else 
+            else
                 extra_par[i] = 1.0;
         }
     }
 
+    // Solve the ODEs
     OMP(parallel for private(sv_id))
     for (u_int32_t i = 0; i < num_cells_to_solve; i++) {
 
@@ -177,26 +129,26 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
 
         if(adpt) {
             if (ode_solver->ode_extra_data) {
-                solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], sf_Iks[i], current_t + dt, sv_id, ode_solver, extra_par);
+                solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], transmurality[i], sf_Iks[i], basetoapex[i], current_t + dt, sv_id, ode_solver, extra_par);
             }
             else {
-			    solve_forward_euler_cpu_adpt(sv + (sv_id * NEQ), stim_currents[i], 0.0, 1.0, current_t + dt, sv_id, ode_solver, extra_par);
+                log_error_and_exit("This cellular model needs an extra data section!");
             }
         }
         else {
             for (int j = 0; j < num_steps; ++j) {
                 if (ode_solver->ode_extra_data) {
-                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], sf_Iks[i], extra_par);
+                    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], transmurality[i], sf_Iks[i], basetoapex[i], extra_par);
                 }
                 else {
-				    solve_model_ode_cpu(dt, sv + (sv_id * NEQ), stim_currents[i], 0.0, 1.0, extra_par);
+                    log_error_and_exit("This cellular model needs an extra data section!");
                 }
             }
         }
     }
 }
 
-void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real sf_Iks, real const *extra_params) {
+void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmurality, real sf_Iks, real basetoapex, real const *extra_params) {
 
     const real TOLERANCE = 1e-8;
     real rY[NEQ], rDY[NEQ];
@@ -206,57 +158,65 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
 
     // Compute 'a', 'b' coefficients alongside 'rhs'
     real a[NEQ], b[NEQ];
-    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt, transmurality, sf_Iks, extra_params);
+    RHS_RL_cpu(a, b, sv, rDY, stim_current, dt, transmurality, sf_Iks, basetoapex, extra_params);
 
     // Solve variables based on its type:
     //  Non-linear = Euler
     //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
     SOLVE_EQUATION_EULER_CPU(0);        // v        
-    SOLVE_EQUATION_EULER_CPU(1);        // CaMKt    
-    SOLVE_EQUATION_EULER_CPU(2);        // cass 
-    SOLVE_EQUATION_EULER_CPU(3);        // nai  
-    SOLVE_EQUATION_EULER_CPU(4);        // nass 
-    SOLVE_EQUATION_EULER_CPU(5);        // ki   
-    SOLVE_EQUATION_EULER_CPU(6);        // kss  
+    SOLVE_EQUATION_EULER_CPU(1);        // nai    
+    SOLVE_EQUATION_EULER_CPU(2);        // nass 
+    SOLVE_EQUATION_EULER_CPU(3);        // ki 
+    SOLVE_EQUATION_EULER_CPU(4);        // kss 
+    SOLVE_EQUATION_EULER_CPU(5);        // cai   
+    SOLVE_EQUATION_EULER_CPU(6);        // cass  
     SOLVE_EQUATION_EULER_CPU(7);        // cansr
     SOLVE_EQUATION_EULER_CPU(8);        // cajsr
-    SOLVE_EQUATION_EULER_CPU(9);        // cai
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(10); // m
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(9);  // m
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(10); // hp
     SOLVE_EQUATION_RUSH_LARSEN_CPU(11); // h
     SOLVE_EQUATION_RUSH_LARSEN_CPU(12); // j
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(13); // hp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(14); // jp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(15); // mL
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(16); // hL
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(17); // hLp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(18); // a
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(19); // iF
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(20); // iS
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(21); // ap
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(22); // iFp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(23); // iSp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(24); // d
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(25); // ff
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(26); // fs
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(27); // fcaf
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(28); // fcas
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(29); // jca
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(30); // ffp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(31); // fcafp
-    SOLVE_EQUATION_EULER_CPU(32);       // nca
-    SOLVE_EQUATION_EULER_CPU(33);       // nca_i
-    SOLVE_EQUATION_EULER_CPU(34);       // ikr_c0
-    SOLVE_EQUATION_EULER_CPU(35);       // ikr_c1
-    SOLVE_EQUATION_EULER_CPU(36);       // ikr_c2
-    SOLVE_EQUATION_EULER_CPU(37);       // ikr_i
-    SOLVE_EQUATION_EULER_CPU(38);       // ikr_o
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(39); // xs1
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(40); // xs2
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(41); // Jrel_np
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(13); // jp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(14); // mL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(15); // hL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(16); // hLp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(17); // a
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(18); // iF
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(19); // iS
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(20); // ap
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(21); // iFp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(22); // iSp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(23); // d
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(24); // ff
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(25); // fs
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(26); // fcaf
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(27); // fcas
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(28); // jca
+    SOLVE_EQUATION_EULER_CPU(29);       // nca
+    SOLVE_EQUATION_EULER_CPU(30);       // nca_i
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(31); // ffp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(32); // fcafp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(33); // xs1
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(34); // xs2
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(35); // Jrel_np
+    SOLVE_EQUATION_EULER_CPU(36);       // CaMKt
+    SOLVE_EQUATION_EULER_CPU(37);       // ikr_c0
+    SOLVE_EQUATION_EULER_CPU(38);       // ikr_c1
+    SOLVE_EQUATION_EULER_CPU(39);       // ikr_c2
+    SOLVE_EQUATION_EULER_CPU(40);       // ikr_o
+    SOLVE_EQUATION_EULER_CPU(41);       // ikr_i
     SOLVE_EQUATION_RUSH_LARSEN_CPU(42); // Jrel_p
+    // ---------------------------------------------------
+    // Land-Niederer
+    SOLVE_EQUATION_EULER_CPU(43);       // XS
+    SOLVE_EQUATION_EULER_CPU(44);       // XW
+    SOLVE_EQUATION_EULER_CPU(45);       // Ca_TRPN
+    SOLVE_EQUATION_EULER_CPU(46);       // TmBlocked
+    SOLVE_EQUATION_EULER_CPU(47);       // ZETAS
+    SOLVE_EQUATION_EULER_CPU(48);       // ZETAW 
 }
 
-void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real sf_Iks, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
+void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real sf_Iks, real basetoapex, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
 
     const real _beta_safety_ = 0.8;
     int numEDO = NEQ;
@@ -283,7 +243,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
         *dt = final_time - *time_new;
     }
 
-    RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, sf_Iks, extra_params);
+    RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, sf_Iks, basetoapex, extra_params);
     *time_new += *dt;
 
     for(int i = 0; i < numEDO; i++) {
@@ -292,7 +252,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
 
     const real rel_tol = solver->rel_tol;
     const real abs_tol = solver->abs_tol;
-
+    
     const real __tiny_ = pow(abs_tol, 2.0);
 
     real min_dt = solver->min_dt;
@@ -310,7 +270,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
         }
 
         *time_new += *dt;
-        RHS_cpu(sv, rDY, stim_curr, *dt, transmurality,sf_Iks, extra_params);
+        RHS_cpu(sv, rDY, stim_curr, *dt, transmurality, sf_Iks, basetoapex, extra_params);
         *time_new -= *dt; // step back
 
         double greatestError = 0.0, auxError = 0.0;
@@ -379,7 +339,7 @@ void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, 
     free(_k2__);
 }
 
-void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real sf_Iks, real const *extra_params) {
+void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real sf_Iks, real basetoapex, real const *extra_params) {
 
     // Current modifiers
     real INa_Multiplier = extra_params[0];   
@@ -401,7 +361,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
     real Jrel_Multiplier = extra_params[16]; 
     real Jup_Multiplier = extra_params[17]; 
     real aCaMK_Multiplier = extra_params[18]; 
-    real taurelp_Multiplier = extra_params[19];
+    real taurelp_Multiplier = extra_params[19]; 
 
     // Get the celltype for the current cell
     real celltype = transmurality;
@@ -409,58 +369,75 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
 
-    // State variables
+    // State variables (same order as the original Matlab script)
     real v = sv[0];
-    real CaMKt = sv[1];
-    real cass = sv[2];
-    real nai = sv[3];
-    real nass = sv[4];
-    real ki = sv[5];
-    real kss = sv[6];
+    real nai = sv[1];
+    real nass = sv[2];
+    real ki = sv[3];
+    real kss = sv[4];
+    real cai = sv[5];
+    real cass = sv[6];
     real cansr = sv[7];
     real cajsr = sv[8];
-    real cai = sv[9];
-    real m = sv[10];
+    real m = sv[9];
+    real hp = sv[10];
     real h = sv[11];
     real j = sv[12];
-    real hp = sv[13];
-    real jp = sv[14];
-    real mL = sv[15];
-    real hL = sv[16];
-    real hLp = sv[17];
-    real a = sv[18];
-    real iF = sv[19];
-    real iS = sv[20];
-    real ap = sv[21];
-    real iFp = sv[22];
-    real iSp = sv[23];
-    real d = sv[24];
-    real ff = sv[25];
-    real fs = sv[26];
-    real fcaf = sv[27];
-    real fcas = sv[28];
-    real jca = sv[29];
-    real ffp = sv[30];
-    real fcafp = sv[31];
-    real nca = sv[32];
-    real nca_i = sv[33];
-    real ikr_c0 = sv[34];
-    real ikr_c1 = sv[35];
-    real ikr_c2 = sv[36];
-    real ikr_i = sv[37];
-    real ikr_o = sv[38];
-    real xs1 = sv[39];
-    real xs2 = sv[40];
-    real Jrel_np = sv[41];
+    real jp = sv[13];
+    real mL = sv[14];
+    real hL = sv[15];
+    real hLp = sv[16];
+    real a = sv[17];
+    real iF = sv[18];
+    real iS = sv[19];
+    real ap = sv[20];
+    real iFp = sv[21];
+    real iSp = sv[22];
+
+    // ical
+    real d = sv[23];
+    real ff = sv[24];
+    real fs = sv[25];
+    real fcaf = sv[26];
+    real fcas = sv[27];
+    real jca = sv[28];
+    real nca = sv[29];
+    real nca_i = sv[30];
+    real ffp = sv[31];
+    real fcafp = sv[32];
+
+    real xs1 = sv[33];
+    real xs2 = sv[34];
+    real Jrel_np = sv[35];
+    real CaMKt = sv[36];
+
+    // new MM ICaL states
+    real ikr_c0 = sv[37];
+    real ikr_c1 = sv[38];
+    real ikr_c2 = sv[39];
+    real ikr_o = sv[40];
+    real ikr_i = sv[41];
     real Jrel_p = sv[42];
 
-    #include "ToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.common.c"
+    const real cli = 24;   // Intracellular Cl  [mM]
+    const real clo = 150;  // Extracellular Cl  [mM]
+// -----------------------------------------------------
+    // Land-Niederer model
+    real XS = fmaxf(0,sv[43]);
+    real XW = fmaxf(0,sv[44]);
+    real Ca_TRPN = fmaxf(0,sv[45]);
+    real TmBlocked = sv[46];
+    real ZETAS = sv[47];
+    real ZETAW = sv[48];
+
+    #include "ToRORd_Land_Iks_baseToApex_mixed_endo_mid_epi.common.c"
 }
 
-void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, real transmurality, real sf_Iks, real const *extra_params) {
+void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_current, real dt, \
+                real transmurality, real sf_Iks, real basetoapex, real const *extra_params) {
 
     // Current modifiers
-    real INa_Multiplier = extra_params[0];   
+    real INa_Multiplier = extra_params[0];
     real INaL_Multiplier = extra_params[1];  
     real INaCa_Multiplier = extra_params[2];  
     real INaK_Multiplier = extra_params[3];  
@@ -479,7 +456,7 @@ void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_curren
     real Jrel_Multiplier = extra_params[16]; 
     real Jup_Multiplier = extra_params[17]; 
     real aCaMK_Multiplier = extra_params[18]; 
-    real taurelp_Multiplier = extra_params[19];
+    real taurelp_Multiplier = extra_params[19]; 
 
     // Get the celltype for the current cell
     real celltype = transmurality;
@@ -487,50 +464,65 @@ void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_curren
     // Get the stimulus current from the current cell
     real calc_I_stim = stim_current;
 
-    // State variables
+    // State variables (same order as the original Matlab script)
     real v = sv[0];
-    real CaMKt = sv[1];
-    real cass = sv[2];
-    real nai = sv[3];
-    real nass = sv[4];
-    real ki = sv[5];
-    real kss = sv[6];
+    real nai = sv[1];
+    real nass = sv[2];
+    real ki = sv[3];
+    real kss = sv[4];
+    real cai = sv[5];
+    real cass = sv[6];
     real cansr = sv[7];
     real cajsr = sv[8];
-    real cai = sv[9];
-    real m = sv[10];
+    real m = sv[9];
+    real hp = sv[10];
     real h = sv[11];
     real j = sv[12];
-    real hp = sv[13];
-    real jp = sv[14];
-    real mL = sv[15];
-    real hL = sv[16];
-    real hLp = sv[17];
-    real a = sv[18];
-    real iF = sv[19];
-    real iS = sv[20];
-    real ap = sv[21];
-    real iFp = sv[22];
-    real iSp = sv[23];
-    real d = sv[24];
-    real ff = sv[25];
-    real fs = sv[26];
-    real fcaf = sv[27];
-    real fcas = sv[28];
-    real jca = sv[29];
-    real ffp = sv[30];
-    real fcafp = sv[31];
-    real nca = sv[32];
-    real nca_i = sv[33];
-    real ikr_c0 = sv[34];
-    real ikr_c1 = sv[35];
-    real ikr_c2 = sv[36];
-    real ikr_i = sv[37];
-    real ikr_o = sv[38];
-    real xs1 = sv[39];
-    real xs2 = sv[40];
-    real Jrel_np = sv[41];
+    real jp = sv[13];
+    real mL = sv[14];
+    real hL = sv[15];
+    real hLp = sv[16];
+    real a = sv[17];
+    real iF = sv[18];
+    real iS = sv[19];
+    real ap = sv[20];
+    real iFp = sv[21];
+    real iSp = sv[22];
+
+    // ical
+    real d = sv[23];
+    real ff = sv[24];
+    real fs = sv[25];
+    real fcaf = sv[26];
+    real fcas = sv[27];
+    real jca = sv[28];
+    real nca = sv[29];
+    real nca_i = sv[30];
+    real ffp = sv[31];
+    real fcafp = sv[32];
+
+    real xs1 = sv[33];
+    real xs2 = sv[34];
+    real Jrel_np = sv[35];
+    real CaMKt = sv[36];
+
+    // new MM ICaL states
+    real ikr_c0 = sv[37];
+    real ikr_c1 = sv[38];
+    real ikr_c2 = sv[39];
+    real ikr_o = sv[40];
+    real ikr_i = sv[41];
     real Jrel_p = sv[42];
 
-    #include "ToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments_RL.common.c"
+    const real cli = 24;   // Intracellular Cl  [mM]
+    const real clo = 150;  // Extracellular Cl  [mM]
+// -----------------------------------------------------
+    real XS = fmaxf(0,sv[43]);
+    real XW = fmaxf(0,sv[44]);
+    real Ca_TRPN = fmaxf(0,sv[45]);
+    real TmBlocked = sv[46];
+    real ZETAS = sv[47];
+    real ZETAW = sv[48];
+
+    #include "ToRORd_Land_Iks_baseToApex_mixed_endo_mid_epi_RL.common.c"
 }
