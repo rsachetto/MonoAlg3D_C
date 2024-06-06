@@ -1,9 +1,9 @@
 #ifndef MONOALG3D_COMMON_TYPES_H
 #define MONOALG3D_COMMON_TYPES_H
 
+#include "../3dparty/sds/sds.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "../3dparty/sds/sds.h"
 
 #define Pragma(x) _Pragma(#x)
 #define OMP(directive) Pragma(omp directive)
@@ -16,6 +16,42 @@ typedef double real;
 #else
 typedef float real;
 #endif
+
+#define EPS (real)1e-16
+
+#define ALLOCATE_3D_ARRAY(array, type, size_x, size_y, size_z)                                                                                                 \
+    do {                                                                                                                                                       \
+        array = (type ***)malloc(size_x * sizeof(type **));                                                                                                    \
+                                                                                                                                                               \
+        if(array == NULL) {                                                                                                                                    \
+            log_error_and_exit("Memory allocation failed for first dimension\n");                                                                              \
+        }                                                                                                                                                      \
+                                                                                                                                                               \
+        for(int i = 0; i < size_x; ++i) {                                                                                                                      \
+            array[i] = (type **)malloc(size_y * sizeof(type *));                                                                                               \
+            if(array[i] == NULL) {                                                                                                                             \
+                log_error_and_exit("Memory allocation failed for second dimension\n");                                                                         \
+            }                                                                                                                                                  \
+                                                                                                                                                               \
+            for(int j = 0; j < size_y; ++j) {                                                                                                                  \
+                array[i][j] = (type *)calloc(size_z, sizeof(type));                                                                                            \
+                if(array[i][j] == NULL) {                                                                                                                      \
+                    log_error_and_exit("Memory allocation failed for third dimension\n");                                                                      \
+                }                                                                                                                                              \
+            }                                                                                                                                                  \
+        }                                                                                                                                                      \
+    } while(0)
+
+#define FREE_3D_ARRAY(array, size_x, size_y)                                                                                                                   \
+    do {                                                                                                                                                       \
+        for(int i = 0; i < size_x; ++i) {                                                                                                                      \
+            for(int j = 0; j < size_y; ++j) {                                                                                                                  \
+                free(array[i][j]);                                                                                                                             \
+            }                                                                                                                                                  \
+            free(array[i]);                                                                                                                                    \
+        }                                                                                                                                                      \
+        free(array);                                                                                                                                           \
+    } while(0)
 
 #define MALLOC_BYTES(type, bytes) (type *)malloc(bytes)
 #define MALLOC_ONE_TYPE(type) (type *)malloc(sizeof(type))
@@ -142,8 +178,8 @@ struct simulation_files {
 #define STRING_HASH_PRINT_KEY_VALUE_LOG(tag, d)                                                                                                                \
     do {                                                                                                                                                       \
         for(int64_t __i = 0; __i < shlen(d); __i++) {                                                                                                          \
-            struct string_hash_entry __e = (d)[__i];                                                                                                             \
-            log_info("%s %s = %s\n", tag, __e.key, __e.value);                                                                                                     \
+            struct string_hash_entry __e = (d)[__i];                                                                                                           \
+            log_info("%s %s = %s\n", tag, __e.key, __e.value);                                                                                                 \
         }                                                                                                                                                      \
     } while(0)
 

@@ -5,8 +5,6 @@
 #ifndef MONOALG3D_FILE_UTILS_H
 #define MONOALG3D_FILE_UTILS_H
 
-#define LOG_LINE_SEPARATOR "======================================================================\n"
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>

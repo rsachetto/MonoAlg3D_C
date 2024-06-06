@@ -185,6 +185,7 @@ ADD_SUBDIRECTORY "src/3dparty/tinyexpr"
 ADD_SUBDIRECTORY "src/3dparty/miniz"
 ADD_SUBDIRECTORY "src/vtk_utils"
 ADD_SUBDIRECTORY "src/ensight_utils"
+ADD_SUBDIRECTORY "src/eikonal/"
 
 
 #DINAMIC DEPS
@@ -265,7 +266,6 @@ if [ -n "$COMPILE_MPI" ]; then
 	 COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH" "$INCLUDE_P -I$MPI_INCLUDE_PATH"
       fi
 
-
   fi
 
 fi
@@ -296,7 +296,7 @@ if [ -n "$COMPILE_CLIP" ]; then
 fi
 
 if [ -n "$COMPILE_EIKONAL" ]; then
-    COMPILE_EXECUTABLE "MonoAlg3D_eikonal_solver" "src/main_eikonal.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH"
+    COMPILE_EXECUTABLE "MonoAlg3D_eikonal_solver" "src/main_eikonal.c" "" "$STATIC_DEPS" "$DYNAMIC_DEPS eikonal_solver" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH"
 fi
 
 
