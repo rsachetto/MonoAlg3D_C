@@ -1151,14 +1151,15 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             Vector2 info_pos;
 
             if(gui_config->draw_type == DRAW_SIMULATION) {
-                text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i", gui_state->current_mouse_over_volume.position_draw.x,
+                text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i and value %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
                         gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
-                        gui_state->current_mouse_over_volume.matrix_position + 1);
+                        gui_state->current_mouse_over_volume.matrix_position + gui_state->current_mouse_over_volume.v);
 
             } else {
 
-                text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
-                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z);
+                text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with value %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
+                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z, 
+                        gui_state->current_mouse_over_volume.v);
             }
 
             text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);

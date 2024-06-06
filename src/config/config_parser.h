@@ -163,12 +163,23 @@ struct user_options {
 };
 
 struct batch_options {
-    char *batch_config_file;
+    char *config_file;
     char *output_folder;
     char *initial_config;
     int num_simulations;
     bool skip_existing_run;
     struct string_hash_entry *config_to_change;
+};
+struct eikonal_options {
+    char *config_file;
+    char *output_folder;
+    struct string_voidp_hash_entry *stim_configs;
+    struct config *domain_config;
+    struct config *save_mesh_config;
+    real dt;
+    bool dt_was_set;
+    real final_time;
+    bool final_time_was_set;
 };
 
 struct visualization_options {
@@ -198,19 +209,23 @@ struct fibers_conversion_options {
     char *output_file;
 };
 
-void display_usage( char** argv );
+void display_usage(char **argv);
 void display_batch_usage(char **argv);
+void display_eikonal_usage(char **argv);
 void display_conversion_usage(char **argv);
 void display_fibers_conversion_usage(char **argv);
+void display_visualization_usage(char **argv);
 
 struct user_options * new_user_options();
 struct batch_options * new_batch_options();
+struct eikonal_options * new_eikonal_options();
 struct visualization_options * new_visualization_options();
 struct conversion_options * new_conversion_options();
 struct fibers_conversion_options * new_fibers_conversion_options();
 
 void parse_options(int argc, char**argv, struct user_options *user_args);
 void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
+void parse_eikonal_options(int argc, char**argv, struct eikonal_options *user_args);
 void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
 void parse_conversion_options(int argc, char **argv, struct conversion_options *user_args);
 void parse_fibers_conversion_options(int argc, char **argv, struct fibers_conversion_options *user_args);
@@ -218,6 +233,7 @@ void get_config_file(int argc, char**argv, struct user_options *user_args);
 
 int parse_config_file(void* user, const char* section, const char* name, const char* value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
+int parse_eikonal_config_file(void *user, const char *section, const char *name, const char *value);
 int parse_preprocessor_config(void* user, const char* section, const char* name, const char* value);
 int parse_converter_config_file(void *user, const char *section, const char *name, const char *value);
 
@@ -231,7 +247,6 @@ void free_visualization_options(struct visualization_options * options);
 void free_conversion_options(struct conversion_options *options);
 void free_fibers_conversion_options(struct fibers_conversion_options *options);
 
-void maybe_issue_overwrite_warning(const char *var, const char *section, const char *old_value, const char *new_value, const char *config_file);
 void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
 
 

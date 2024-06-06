@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define LOG_LINE_SEPARATOR "======================================================================\n"
+
 struct logt {
     FILE *fp;
     bool quiet;
