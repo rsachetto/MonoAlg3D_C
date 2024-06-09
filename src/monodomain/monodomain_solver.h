@@ -56,11 +56,6 @@ bool update_ode_state_vector_and_check_for_activity(real_cpu vm_threshold, struc
 void compute_pmj_current_purkinje_to_tissue (struct ode_solver *the_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 void compute_pmj_current_tissue_to_purkinje (struct ode_solver *the_purkinje_ode_solver, struct grid *the_grid, struct terminal *the_terminals);
 
-void compute_pmj_current_purkinje_to_myocardium(struct ode_solver *the_purkinje_ode_solver, struct ode_solver *the_myocardium_ode_solver,\
-                                                struct grid *the_grid, struct terminal *the_terminals);
-void compute_pmj_current_myocardium_to_purkinje(struct ode_solver *the_purkinje_ode_solver, struct ode_solver *the_myocardium_ode_solver,\
-                                                struct grid *the_grid, struct terminal *the_terminals);
-
 void write_pmj_delay (struct grid *the_grid, struct config *config, struct terminal *the_terminals);
 void write_terminals_info (struct grid *the_grid, struct config *config, struct terminal *the_terminals);
 

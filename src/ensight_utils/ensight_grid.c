@@ -108,7 +108,7 @@ void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_r
     fclose(case_file);
 }
 
-void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
+void save_en6_result_file(char *filename, struct grid *the_grid, bool binary, bool save_purkinje) {
 
     FILE *result_file;
 
@@ -142,7 +142,7 @@ void save_en6_result_file(char *filename, struct grid *the_grid, bool binary) {
         part_number++;
     }
 
-    if(the_grid->purkinje) {
+    if(the_grid->purkinje && save_purkinje) {
         write_string("part", result_file, binary);
         new_line(result_file, binary);
 
@@ -366,26 +366,35 @@ static inline void set_point_data(struct point_3d center, struct point_3d half_f
 struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
                                                                      float *bounds, bool read_fibers_f,
-                                                                     bool save_fibrotic) {
+                                                                     bool save_fibrotic, bool save_purkinje) {
 
     struct ensight_grid *ensight_grid;
 
     if(grid->num_active_cells > 0 && grid->purkinje) {
 
-        uint32_t num_active_cells = grid->num_active_cells;
-        uint32_t number_of_purkinje_cells = grid->purkinje->num_active_purkinje_cells;
-        ensight_grid = new_ensight_grid(2);
+        if (save_purkinje) {
+            uint32_t num_active_cells = grid->num_active_cells;
+            uint32_t number_of_purkinje_cells = grid->purkinje->num_active_purkinje_cells;
+            ensight_grid = new_ensight_grid(2);
 
-        arrsetcap(ensight_grid->parts[0].points, num_active_cells * 8);
-        arrsetcap(ensight_grid->parts[0].cell_visibility, num_active_cells);
-        arrsetcap(ensight_grid->parts[0].cells,  num_active_cells);
+            arrsetcap(ensight_grid->parts[0].points, num_active_cells * 8);
+            arrsetcap(ensight_grid->parts[0].cell_visibility, num_active_cells);
+            arrsetcap(ensight_grid->parts[0].cells,  num_active_cells);
 
-        arrsetcap(ensight_grid->parts[1].points, number_of_purkinje_cells * 2);
-        arrsetcap(ensight_grid->parts[1].cells,  number_of_purkinje_cells);
+            arrsetcap(ensight_grid->parts[1].points, number_of_purkinje_cells * 2);
+            arrsetcap(ensight_grid->parts[1].cells,  number_of_purkinje_cells);
 
-        ensight_grid->max_v = FLT_MIN;
-        ensight_grid->min_v = FLT_MAX;
+            ensight_grid->max_v = FLT_MIN;
+            ensight_grid->min_v = FLT_MAX;
+        }
+        else {
+            ensight_grid = new_ensight_grid(1);
 
+            uint32_t num_active_cells = grid->num_active_cells;
+            arrsetcap(ensight_grid->parts[0].points, num_active_cells * 8);
+            arrsetcap(ensight_grid->parts[0].cell_visibility, num_active_cells);
+            arrsetcap(ensight_grid->parts[0].cells,  num_active_cells);
+        }
     } else {
         ensight_grid = new_ensight_grid(1);
 
@@ -399,7 +408,6 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
             arrsetcap(ensight_grid->parts[0].points, number_of_purkinje_cells * 2);
             arrsetcap(ensight_grid->parts[0].cells,  number_of_purkinje_cells);
         }
-
     }
 
     ensight_grid->max_v = FLT_MIN;
@@ -511,7 +519,7 @@ struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool cli
         hash = NULL;
     }
 
-    if(grid->purkinje) {
+    if(grid->purkinje && save_purkinje) {
 
         int part_n = 0;
 

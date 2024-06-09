@@ -18,4 +18,4 @@
 #KNOW ISSUES:
 The logger symbols are only exported to an executable if an static library linked to a shared library uses then. For now this is ok. But I think it will be a pain in future releases.
 The GPU linear system solver is not working for purkinje-only simulations
-When the minimum number of PMJs is not reached the solver will be in an infinite loop  
+When the minimum number of PMJs is not reached the solver will be in an infinite loop

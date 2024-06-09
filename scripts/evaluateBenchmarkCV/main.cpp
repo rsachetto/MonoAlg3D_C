@@ -1,4 +1,7 @@
-// Author: Lucas Berg
+// ------------------------------------------------------------------------------------
+// Author: Lucas Berg, Julia Camps and Jenny Wang
+// Script to evaluate the conductivities calibrated using the 'tuneCV' on a 3D wedge.
+// ------------------------------------------------------------------------------------
 
 #include <iostream>
 #include <string>

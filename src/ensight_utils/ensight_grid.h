@@ -33,12 +33,12 @@ struct ensight_grid * new_ensight_grid(uint32_t num_parts);
 struct ensight_grid * new_ensight_grid_from_alg_grid(struct grid *grid, bool clip_with_plain,
                                                                      float *plain_coordinates, bool clip_with_bounds,
                                                                      float *bounds, bool read_fibers_f,
-                                                                     bool save_fibrotic);
+                                                                     bool save_fibrotic, bool save_purkinje);
 
 void save_ensight_grid_as_ensight6_geometry(struct ensight_grid *grid, char *filename, bool binary);
 
 void free_ensight_grid(struct ensight_grid *ensight_grid);
 void save_case_file(char *filename, uint64_t num_files, real_cpu dt, int print_rate, int num_state_var);
-void save_en6_result_file(char *filename, struct grid *the_grid, bool binary);
+void save_en6_result_file(char *filename, struct grid *the_grid, bool binary, bool save_purkinje);
 void save_en6_result_file_state_vars(char *filename, real *sv_cpu, size_t num_cells, size_t num_sv_entries, int sv_entry, bool binary, bool gpu);
 #endif //MONOALG3D_ENSIGHT_GRID_H

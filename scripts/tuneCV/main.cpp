@@ -28,7 +28,7 @@ using namespace std;
 const char MONOALG_PATH[500] = "/home/berg/Github/MonoAlg3D_C";
 // ----------------------------------------------------------
 
-const double TOLERANCE = 1.0e-03;
+const double TOLERANCE = 5.0e-03;
 
 double calculate_conduction_velocity_from_simulation ()
 {
@@ -135,6 +135,16 @@ void write_configuration_file (const double sigma) {
     fprintf(file,"library_file=%s/shared_libs/libdefault_matrix_assembly.so\n", MONOALG_PATH);
     fprintf(file,"main_function=homogeneous_sigma_assembly_matrix\n");
     fprintf(file,"\n");
+
+    //fprintf(file,"[assembly_matrix]\n");
+    //fprintf(file,"init_function=set_initial_conditions_fvm\n");
+    //fprintf(file,"sigma_l=%g\n",sigma);
+    //fprintf(file,"sigma_t=%g\n",sigma);
+    //fprintf(file,"sigma_n=%g\n",sigma);
+    //fprintf(file,"f=[1,0,0]\n");
+    //fprintf(file,"library_file=%s/shared_libs/libdefault_matrix_assembly.so\n", MONOALG_PATH);
+    //fprintf(file,"main_function=anisotropic_sigma_assembly_matrix\n");
+    //fprintf(file,"\n");
     
     fprintf(file,"[linear_system_solver]\n");
     fprintf(file,"tolerance=1e-16\n");
