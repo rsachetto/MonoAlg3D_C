@@ -33,6 +33,7 @@ static int compression_level = 3;
 char *output_dir;
 bool save_visible_mask = true;
 bool save_scar_cells = false;
+bool save_purkinje = true;
 static bool initialized = false;
 static bool save_ode_state_variables = false;
 
@@ -590,13 +591,14 @@ SAVE_MESH(save_as_ensight) {
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
         GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
+        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_purkinje, config, "save_purkinje");
 
         persistent_data->num_files = ((time_info->final_t / time_info->dt) / print_rate) + 1;
 
         sds output_dir_with_file = sdsnew(output_dir);
         output_dir_with_file = sdscat(output_dir_with_file, "/geometry.geo");
 
-        struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false);
+        struct ensight_grid *ensight_grid = new_ensight_grid_from_alg_grid(the_grid, false, NULL, false, NULL, false, false, save_purkinje);
         save_ensight_grid_as_ensight6_geometry(ensight_grid, output_dir_with_file, binary);
 
         if(save_visible_mask) {
@@ -634,7 +636,7 @@ SAVE_MESH(save_as_ensight) {
 
     output_dir_with_file = sdscatprintf(output_dir_with_file, "/%s", tmp);
 
-    save_en6_result_file(output_dir_with_file, the_grid, binary);
+    save_en6_result_file(output_dir_with_file, the_grid, binary, save_purkinje);
 
     sdsfree(base_name);
     sdsfree(output_dir_with_file);

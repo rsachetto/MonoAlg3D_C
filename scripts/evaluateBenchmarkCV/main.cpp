@@ -1,4 +1,7 @@
-// Author: Lucas Berg
+// ------------------------------------------------------------------------------------
+// Author: Lucas Berg, Julia Camps and Jenny Wang
+// Script to evaluate the conductivities calibrated using the 'tuneCV' on a 3D wedge.
+// ------------------------------------------------------------------------------------
 
 #include <iostream>
 #include <string>
@@ -27,8 +30,12 @@
 
 using namespace std;
 
-double* calculate_conduction_velocity_from_benchmark_simulation ()
-{
+// Change your MonoAlg3D path here:
+// ----------------------------------------------------------
+const char MONOALG_PATH[500] = "/home/berg/Github/MonoAlg3D_C";
+// ----------------------------------------------------------
+
+double* calculate_conduction_velocity_from_benchmark_simulation () {
     string filename = "outputs/benchmark/tissue_activation_time_map_pulse_it_0.vtu";
 
     // Read all the data from the file
@@ -93,8 +100,7 @@ double* calculate_conduction_velocity_from_benchmark_simulation ()
     double cv_y = -1.0;
     double cv_z = -1.0;
 
-    if(array)
-    {
+    if(array) {
                 
         double delta_lat_x = (array->GetValue(cellId_x_1) - array->GetValue(cellId_x_0)); // ms
         double delta_lat_y = (array->GetValue(cellId_y_1) - array->GetValue(cellId_y_0)); // ms
@@ -109,8 +115,7 @@ double* calculate_conduction_velocity_from_benchmark_simulation ()
         cv_y = (delta_s_y / delta_lat_y)*0.001;     // {m/s}
         cv_z = (delta_s_z / delta_lat_z)*0.001;     // {m/s}
     }
-    else
-    {
+    else {
         cerr << "[!] ERROR! No Scalar_value found for the points!" << endl;
         exit(EXIT_FAILURE);
     }
@@ -126,12 +131,14 @@ double* calculate_conduction_velocity_from_benchmark_simulation ()
 // TODO: Maybe pass a pre-configured config file as an input parameter with the cellular model setup that the user will use
 void write_configuration_file (const double sigma_x, const double sigma_y, const double sigma_z)
 {
-    FILE *file = fopen("/home/Julia/MonoAlg3D_C/scripts/evaluateBenchmarkCV/configs/benchmark.ini","w+");
+    char filename[500];
+    sprintf(filename,"%s/scripts/evaluateBenchmarkCV/configs/benchmark.ini",MONOALG_PATH);
+    FILE *file = fopen(filename,"w+");
 
     fprintf(file,"[main]\n");
     fprintf(file,"num_threads=6\n");
     fprintf(file,"dt_pde=0.01\n");
-    fprintf(file,"simulation_time=50.0\n"); // CAREFUL DON'T USE A VALUE THAT'S TOO SMALL!
+    fprintf(file,"simulation_time=100.0\n"); // CAREFUL DON'T USE A VALUE THAT'S TOO SMALL!
     fprintf(file,"abort_on_no_activity=false\n");
     fprintf(file,"use_adaptivity=false\n");
     fprintf(file,"quiet=true\n");
@@ -139,18 +146,18 @@ void write_configuration_file (const double sigma_x, const double sigma_y, const
     
     fprintf(file,"[update_monodomain]\n");
     fprintf(file,"main_function=update_monodomain_default\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_update_monodomain.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libdefault_update_monodomain.so\n",MONOALG_PATH);
     fprintf(file,"\n");
    
     // For saving the LATs in a format that can be read for calculating the CVs
     fprintf(file,"[save_result]\n");
     fprintf(file,"print_rate=1\n");
-    fprintf(file,"output_dir=/home/Julia/MonoAlg3D_C/scripts/evaluateBenchmarkCV/outputs/benchmark\n");
+    fprintf(file,"output_dir=%s/scripts/evaluateBenchmarkCV/outputs/benchmark\n",MONOALG_PATH);
     fprintf(file,"save_pvd=true\n");
     fprintf(file,"file_prefix=V\n");
     fprintf(file,"save_activation_time=true\n");
     fprintf(file,"save_apd=false\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_save_mesh_purkinje.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libdefault_save_mesh_purkinje.so\n",MONOALG_PATH);
     fprintf(file,"main_function=save_tissue_with_activation_times\n");
     fprintf(file,"init_function=init_save_tissue_with_activation_times\n");
     fprintf(file,"end_function=end_save_tissue_with_activation_times\n");
@@ -161,10 +168,10 @@ void write_configuration_file (const double sigma_x, const double sigma_y, const
     // For saving the VMs for debugging
     fprintf(file,"[save_result]\n");
     fprintf(file,"print_rate=100\n");
-    fprintf(file,"output_dir=/home/Julia/MonoAlg3D_C/scripts/evaluateBenchmarkCV/outputs/benchmark\n");
+    fprintf(file,"output_dir=%s/scripts/evaluateBenchmarkCV/outputs/benchmark\n",MONOALG_PATH);
     fprintf(file,"add_timestamp=false\n");
     fprintf(file,"binary=true\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_save_mesh.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libdefault_save_mesh.so\n",MONOALG_PATH);
     fprintf(file,"main_function=save_as_ensight\n");
     fprintf(file,"remove_older_simulation=true\n");
     fprintf(file,"\n");
@@ -175,7 +182,7 @@ void write_configuration_file (const double sigma_x, const double sigma_y, const
     fprintf(file,"sigma_x=%g\n",sigma_x);
     fprintf(file,"sigma_y=%g\n",sigma_y);
     fprintf(file,"sigma_z=%g\n",sigma_z);
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_matrix_assembly.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libdefault_matrix_assembly.so\n",MONOALG_PATH);
     fprintf(file,"main_function=homogeneous_sigma_assembly_matrix\n");
     fprintf(file,"\n");
     
@@ -184,7 +191,7 @@ void write_configuration_file (const double sigma_x, const double sigma_y, const
     fprintf(file,"use_preconditioner=no\n");
     fprintf(file,"use_gpu=yes\n");
     fprintf(file,"max_iterations=200\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_linear_system_solver.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libdefault_linear_system_solver.so\n",MONOALG_PATH);
     fprintf(file,"init_function=init_conjugate_gradient\n");
     fprintf(file,"end_function=end_conjugate_gradient\n");
     fprintf(file,"main_function=conjugate_gradient\n");
@@ -194,7 +201,7 @@ void write_configuration_file (const double sigma_x, const double sigma_y, const
     fprintf(file,"name=N-Version Benchmark\n");
     fprintf(file,"start_discretization=500.0\n");
     fprintf(file,"maximum_discretization=500.0\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_domains.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libdefault_domains.so\n",MONOALG_PATH);
     fprintf(file,"main_function=initialize_grid_with_benchmark_mesh\n");
     fprintf(file,"side_length_x=20000\n");
     fprintf(file,"side_length_y=10000\n");
@@ -205,7 +212,7 @@ void write_configuration_file (const double sigma_x, const double sigma_y, const
     fprintf(file,"dt=0.01\n");
     fprintf(file,"use_gpu=yes\n");
     fprintf(file,"gpu_id=0\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libToRORd_fkatp_mixed_endo_mid_epi.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.so\n",MONOALG_PATH);
     fprintf(file,"\n");
     
     fprintf(file,"[stim_benchmark]\n");
@@ -219,26 +226,25 @@ void write_configuration_file (const double sigma_x, const double sigma_y, const
     fprintf(file, "min_z = 0.0\n");
     fprintf(file, "max_z = 3000.0\n");
     fprintf(file,"main_function=stim_x_y_z_limits\n");
-    fprintf(file,"library_file=/home/Julia/MonoAlg3D_C/shared_libs/libdefault_stimuli.so\n");
+    fprintf(file,"library_file=%s/shared_libs/libdefault_stimuli.so\n",MONOALG_PATH);
     fprintf(file,"\n");
 
     fclose(file);
 }
 
-int main (int argc, char *argv[])
-{
-    if (argc-1 != 6)
-    {
+int main (int argc, char *argv[]) {
+    if (argc-1 != 6) {
         cerr << "=============================================================================" << endl;
         cerr << "Usage:> " << argv[0] << " <target_cv_x>" << " <target_cv_y>" << " <target_cv_z>" << \
  " <sigma_x>" <<  " <sigma_y>" <<   " <sigma_z>" << endl;
         cerr << "=============================================================================" << endl;
         cerr << "<target_CV> = Target conduction velocity in m/s" << endl;
+        cerr << "<sigma> = Target conductivity in mS/um" << endl;
         cerr << "=============================================================================" << endl;
         cerr << "Example:" << endl;
-        cerr << argv[1] << " 0.67 (Longitudinal normal direction ventricle)" << endl;
-        cerr << argv[2] << " 0.33 (Transversal normal direction ventricle)" << endl;
-        cerr << argv[3] << " 0.17 (Sheet normal direction ventricle)" << endl;
+        cerr << argv[1] << " 0.65 (Longitudinal direction ventricle)" << endl;
+        cerr << argv[2] << " 0.39 (Transversal direction ventricle)" << endl;
+        cerr << argv[3] << " 0.48 (Normal direction ventricle)" << endl;
         cerr << "=============================================================================" << endl;
         
         exit(EXIT_FAILURE);
@@ -255,7 +261,9 @@ int main (int argc, char *argv[])
     write_configuration_file(sigma_x, sigma_y, sigma_z);
         
     // Run the simulation
-    system("/home/Julia/MonoAlg3D_C/bin/MonoAlg3D -c /home/Julia/MonoAlg3D_C/scripts/evaluateBenchmarkCV/configs/benchmark.ini");
+    char command[500];
+    sprintf(command,"%s/bin/MonoAlg3D -c %s/scripts/evaluateBenchmarkCV/configs/benchmark.ini",MONOALG_PATH,MONOALG_PATH);
+    system(command);
     
     double* cv;
     cv = calculate_conduction_velocity_from_benchmark_simulation();
