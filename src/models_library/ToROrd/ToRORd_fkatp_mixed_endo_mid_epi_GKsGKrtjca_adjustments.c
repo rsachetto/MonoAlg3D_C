@@ -68,50 +68,50 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
         for(uint32_t i = 0; i < num_cells; i++){
             
             real *sv = &solver->sv[i * NEQ];
-            // Steady-state after 200 beats (endocardium cell)
-            sv[0] = -8.890585e+01;
-            sv[1] = 1.107642e-02;
-            sv[2] = 6.504164e-05;
-            sv[3] = 1.210818e+01;
-            sv[4] = 1.210851e+01;
-            sv[5] = 1.426206e+02;
-            sv[6] = 1.426205e+02;
-            sv[7] = 1.530373e+00;
-            sv[8] = 1.528032e+00;
-            sv[9] = 7.455488e-05;
-            sv[10] = 7.814592e-04;
-            sv[11] = 8.313839e-01;
-            sv[12] = 8.311938e-01;
-            sv[13] = 6.752873e-01;
-            sv[14] = 8.308255e-01;
-            sv[15] = 1.585610e-04;
-            sv[16] = 5.294475e-01;
-            sv[17] = 2.896996e-01;
-            sv[18] = 9.419166e-04;
-            sv[19] = 9.996194e-01;
-            sv[20] = 5.938602e-01;
-            sv[21] = 4.799180e-04;
-            sv[22] = 9.996194e-01;
-            sv[23] = 6.543754e-01;
-            sv[24] = -2.898677e-33;
-            sv[25] = 1.000000e+00;
-            sv[26] = 9.389659e-01;
-            sv[27] = 1.000000e+00;
-            sv[28] = 9.999003e-01;
-            sv[29] = 9.999773e-01;
-            sv[30] = 1.000000e+00;
-            sv[31] = 1.000000e+00;
-            sv[32] = 4.920606e-04;
-            sv[33] = 8.337021e-04;
-            sv[34] = 6.962775e-04;
-            sv[35] = 8.425453e-04;
-            sv[36] = 9.980807e-01;
-            sv[37] = 1.289824e-05;
-            sv[38] = 3.675442e-04;
-            sv[39] = 2.471690e-01;
-            sv[40] = 1.742987e-04;
-            sv[41] = 5.421027e-24;
-            sv[42] = 6.407933e-23;
+            // Default initial condition from Matlab (endocardium cell)
+            sv[0]  = -88.6369922306458;
+            sv[1]  = 11.8973412949238;
+            sv[2]  = 11.897661047085;
+            sv[3]  = 141.234464714982;
+            sv[4]  = 141.234423402713;
+            sv[5]  = 7.26747296460659e-05;
+            sv[6]  = 6.33786975780735e-05;
+            sv[7]  = 1.5326530637197;
+            sv[8]  = 1.53394579180493;
+            sv[9]  = 0.000828007761976018;
+            sv[10] = 0.666527193684116;
+            sv[11] = 0.826020806005678;
+            sv[12] = 0.826055985895856;
+            sv[13] = 0.825850881115628;
+            sv[14] = 0.000166868626513013;
+            sv[15] = 0.522830604669169;
+            sv[16] = 0.285969584294187;
+            sv[17] = 0.000959137028030184;
+            sv[18] = 0.999601150012565;
+            sv[19] = 0.5934016398361;
+            sv[20] = 0.000488696137242056;
+            sv[21] = 0.999601147267179;
+            sv[22] = 0.654668660159696;
+            sv[23] = 9.50007519781516e-32;
+            sv[24] = 0.999999992317577;
+            sv[25] = 0.939258048397962;
+            sv[26] = 0.999999992317557;
+            sv[27] = 0.999898379647465;
+            sv[28] = 0.99997825156004;
+            sv[29] = 0.000444816183420527;
+            sv[30] = 0.000755072490632667;
+            sv[31] = 0.999999992318446;
+            sv[32] = 0.999999992318445;
+            sv[33] = 0.24240468344952;
+            sv[34] = 0.000179537726989804;
+            sv[35] = -6.88308558109975e-25;
+            sv[36] = 0.0111749845355653;
+            sv[37] = 0.998036620213316;
+            sv[38] = 0.000858801779013532;
+            sv[39] = 0.000709744678350176;
+            sv[40] = 0.000381261722195702;
+            sv[41] = 1.35711566929992e-05;
+            sv[42] = 2.30252452954649e-23;
         }
     }        
 }
@@ -160,7 +160,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     else {
         // Default: initialize all current modifiers
         for (uint32_t i = 0; i < num_extra_parameters; i++) {
-            if (i == 9)
+            if (i == 10)
                 extra_par[i] = 0.0;
             else 
                 extra_par[i] = 1.0;
@@ -212,47 +212,47 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
     //  Non-linear = Euler
     //  Hodkin-Huxley = Rush-Larsen || Euler (if 'a' coefficient is too small)
     SOLVE_EQUATION_EULER_CPU(0);        // v        
-    SOLVE_EQUATION_EULER_CPU(1);        // CaMKt    
-    SOLVE_EQUATION_EULER_CPU(2);        // cass 
-    SOLVE_EQUATION_EULER_CPU(3);        // nai  
-    SOLVE_EQUATION_EULER_CPU(4);        // nass 
-    SOLVE_EQUATION_EULER_CPU(5);        // ki   
-    SOLVE_EQUATION_EULER_CPU(6);        // kss  
+    SOLVE_EQUATION_EULER_CPU(1);        // nai
+    SOLVE_EQUATION_EULER_CPU(2);        // nass
+    SOLVE_EQUATION_EULER_CPU(3);        // ki   
+    SOLVE_EQUATION_EULER_CPU(4);        // kss
+    SOLVE_EQUATION_EULER_CPU(5);        // cai
+    SOLVE_EQUATION_EULER_CPU(6);        // cass 
     SOLVE_EQUATION_EULER_CPU(7);        // cansr
     SOLVE_EQUATION_EULER_CPU(8);        // cajsr
-    SOLVE_EQUATION_EULER_CPU(9);        // cai
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(10); // m
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(9);  // m
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(10); // hp
     SOLVE_EQUATION_RUSH_LARSEN_CPU(11); // h
     SOLVE_EQUATION_RUSH_LARSEN_CPU(12); // j
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(13); // hp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(14); // jp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(15); // mL
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(16); // hL
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(17); // hLp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(18); // a
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(19); // iF
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(20); // iS
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(21); // ap
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(22); // iFp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(23); // iSp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(24); // d
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(25); // ff
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(26); // fs
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(27); // fcaf
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(28); // fcas
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(29); // jca
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(30); // ffp
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(31); // fcafp
-    SOLVE_EQUATION_EULER_CPU(32);       // nca
-    SOLVE_EQUATION_EULER_CPU(33);       // nca_i
-    SOLVE_EQUATION_EULER_CPU(34);       // ikr_c0
-    SOLVE_EQUATION_EULER_CPU(35);       // ikr_c1
-    SOLVE_EQUATION_EULER_CPU(36);       // ikr_c2
-    SOLVE_EQUATION_EULER_CPU(37);       // ikr_i
-    SOLVE_EQUATION_EULER_CPU(38);       // ikr_o
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(39); // xs1
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(40); // xs2
-    SOLVE_EQUATION_RUSH_LARSEN_CPU(41); // Jrel_np
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(13); // jp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(14); // mL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(15); // hL
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(16); // hLp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(17); // a
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(18); // iF
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(19); // iS
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(20); // ap
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(21); // iFp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(22); // iSp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(23); // d
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(24); // ff
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(25); // fs
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(26); // fcaf
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(27); // fcas
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(28); // jca
+    SOLVE_EQUATION_EULER_CPU(29);       // nca
+    SOLVE_EQUATION_EULER_CPU(30);       // nca_i
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(31); // ffp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(32); // fcafp
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(33); // xs1
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(34); // xs2
+    SOLVE_EQUATION_RUSH_LARSEN_CPU(35); // Jrel_np
+    SOLVE_EQUATION_EULER_CPU(36);        // CaMKt 
+    SOLVE_EQUATION_EULER_CPU(37);       // ikr_c0
+    SOLVE_EQUATION_EULER_CPU(38);       // ikr_c1
+    SOLVE_EQUATION_EULER_CPU(39);       // ikr_c2
+    SOLVE_EQUATION_EULER_CPU(40);       // ikr_o
+    SOLVE_EQUATION_EULER_CPU(41);       // ikr_i
     SOLVE_EQUATION_RUSH_LARSEN_CPU(42); // Jrel_p
 }
 
@@ -410,49 +410,49 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
     real calc_I_stim = stim_current;
 
     // State variables
-    real v = sv[0];
-    real CaMKt = sv[1];
-    real cass = sv[2];
-    real nai = sv[3];
-    real nass = sv[4];
-    real ki = sv[5];
-    real kss = sv[6];
-    real cansr = sv[7];
-    real cajsr = sv[8];
-    real cai = sv[9];
-    real m = sv[10];
-    real h = sv[11];
-    real j = sv[12];
-    real hp = sv[13];
-    real jp = sv[14];
-    real mL = sv[15];
-    real hL = sv[16];
-    real hLp = sv[17];
-    real a = sv[18];
-    real iF = sv[19];
-    real iS = sv[20];
-    real ap = sv[21];
-    real iFp = sv[22];
-    real iSp = sv[23];
-    real d = sv[24];
-    real ff = sv[25];
-    real fs = sv[26];
-    real fcaf = sv[27];
-    real fcas = sv[28];
-    real jca = sv[29];
-    real ffp = sv[30];
-    real fcafp = sv[31];
-    real nca = sv[32];
-    real nca_i = sv[33];
-    real ikr_c0 = sv[34];
-    real ikr_c1 = sv[35];
-    real ikr_c2 = sv[36];
-    real ikr_i = sv[37];
-    real ikr_o = sv[38];
-    real xs1 = sv[39];
-    real xs2 = sv[40];
-    real Jrel_np = sv[41];
-    real Jrel_p = sv[42];
+    real v       = sv[0];
+    real nai     = sv[1];
+    real nass    = sv[2];
+    real ki      = sv[3];
+    real kss     = sv[4];
+    real cai     = sv[5];
+    real cass    = sv[6];
+    real cansr   = sv[7];
+    real cajsr   = sv[8];
+    real m       = sv[9];
+    real hp      = sv[10];
+    real h       = sv[11];
+    real j       = sv[12];
+    real jp      = sv[13];
+    real mL      = sv[14];
+    real hL      = sv[15];
+    real hLp     = sv[16];
+    real a       = sv[17];
+    real iF      = sv[18];
+    real iS      = sv[19];
+    real ap      = sv[20];
+    real iFp     = sv[21];
+    real iSp     = sv[22];
+    real d       = sv[23];
+    real ff      = sv[24];
+    real fs      = sv[25];
+    real fcaf    = sv[26];
+    real fcas    = sv[27];
+    real jca     = sv[28];
+    real nca     = sv[29];
+    real nca_i   = sv[30];
+    real ffp     = sv[31];
+    real fcafp   = sv[32];
+    real xs1     = sv[33];
+    real xs2     = sv[34];
+    real Jrel_np = sv[35];
+    real CaMKt   = sv[36];
+    real ikr_c0  = sv[37];
+    real ikr_c1  = sv[38];
+    real ikr_c2  = sv[39];
+    real ikr_o   = sv[40];
+    real ikr_i   = sv[41];
+    real Jrel_p  = sv[42];
 
     #include "ToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments.common.c"
 }
@@ -488,49 +488,49 @@ void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_curren
     real calc_I_stim = stim_current;
 
     // State variables
-    real v = sv[0];
-    real CaMKt = sv[1];
-    real cass = sv[2];
-    real nai = sv[3];
-    real nass = sv[4];
-    real ki = sv[5];
-    real kss = sv[6];
-    real cansr = sv[7];
-    real cajsr = sv[8];
-    real cai = sv[9];
-    real m = sv[10];
-    real h = sv[11];
-    real j = sv[12];
-    real hp = sv[13];
-    real jp = sv[14];
-    real mL = sv[15];
-    real hL = sv[16];
-    real hLp = sv[17];
-    real a = sv[18];
-    real iF = sv[19];
-    real iS = sv[20];
-    real ap = sv[21];
-    real iFp = sv[22];
-    real iSp = sv[23];
-    real d = sv[24];
-    real ff = sv[25];
-    real fs = sv[26];
-    real fcaf = sv[27];
-    real fcas = sv[28];
-    real jca = sv[29];
-    real ffp = sv[30];
-    real fcafp = sv[31];
-    real nca = sv[32];
-    real nca_i = sv[33];
-    real ikr_c0 = sv[34];
-    real ikr_c1 = sv[35];
-    real ikr_c2 = sv[36];
-    real ikr_i = sv[37];
-    real ikr_o = sv[38];
-    real xs1 = sv[39];
-    real xs2 = sv[40];
-    real Jrel_np = sv[41];
-    real Jrel_p = sv[42];
+    real v       = sv[0];
+    real nai     = sv[1];
+    real nass    = sv[2];
+    real ki      = sv[3];
+    real kss     = sv[4];
+    real cai     = sv[5];
+    real cass    = sv[6];
+    real cansr   = sv[7];
+    real cajsr   = sv[8];
+    real m       = sv[9];
+    real hp      = sv[10];
+    real h       = sv[11];
+    real j       = sv[12];
+    real jp      = sv[13];
+    real mL      = sv[14];
+    real hL      = sv[15];
+    real hLp     = sv[16];
+    real a       = sv[17];
+    real iF      = sv[18];
+    real iS      = sv[19];
+    real ap      = sv[20];
+    real iFp     = sv[21];
+    real iSp     = sv[22];
+    real d       = sv[23];
+    real ff      = sv[24];
+    real fs      = sv[25];
+    real fcaf    = sv[26];
+    real fcas    = sv[27];
+    real jca     = sv[28];
+    real nca     = sv[29];
+    real nca_i   = sv[30];
+    real ffp     = sv[31];
+    real fcafp   = sv[32];
+    real xs1     = sv[33];
+    real xs2     = sv[34];
+    real Jrel_np = sv[35];
+    real CaMKt   = sv[36];
+    real ikr_c0  = sv[37];
+    real ikr_c1  = sv[38];
+    real ikr_c2  = sv[39];
+    real ikr_o   = sv[40];
+    real ikr_i   = sv[41];
+    real Jrel_p  = sv[42];
 
     #include "ToRORd_fkatp_mixed_endo_mid_epi_GKsGKrtjca_adjustments_RL.common.c"
 }
