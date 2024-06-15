@@ -8,8 +8,14 @@ FIND_CUDA () {
 	NVCC=""
 	CUDA_FOUND=""
 
+	LD_CONFIG=ldconfig
+
+	if [ "$OS" == "openSUSE Tumbleweed" ]; then
+		LD_CONFIG=/sbin/ldconfig
+	fi
+
 	if [ -z "$CUDA_LIBRARY_PATH" ]; then
-		CUDA_LIBRARY_PATH=$(dirname "$(ldconfig -p | grep libcudart | awk '{print $4}' | head -n 1 | head -c -5)" 2> /dev/null)
+		CUDA_LIBRARY_PATH=$(dirname "$($LD_CONFIG -p | grep libcudart | awk '{print $4}' | head -n 1 | head -c -5)" 2> /dev/null)
 	fi
 
 	if [ -z "$CUDA_INCLUDE_PATH" ]; then
@@ -19,6 +25,8 @@ FIND_CUDA () {
 		elif [ "$OS" == "Fedora" ]; then
 			CUDA_INCLUDE_PATH="/usr/local/cuda/include"
 			CUDA_LIBRARY_PATH="/usr/local/cuda/lib64"
+		elif [ "$OS" == "openSUSE Tumbleweed" ]; then
+			CUDA_INCLUDE_PATH="/usr/local/cuda/include"
 		else
             if [ "$CI" = true ]; then
 			    CUDA_INCLUDE_PATH='/usr/local/cuda/include'
@@ -120,7 +128,7 @@ FIND_MPI () {
 }
 
 FIND_AMGX() {
-  AMGX_LIBRARIES=""
+  AMGX_LIBRARIES="amgxsh"
   AMGX_LIBRARY_PATH=""
   AMGX_INCLUDE_PATH=""
   AMGX_FOUND=""

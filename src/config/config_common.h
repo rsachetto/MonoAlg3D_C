@@ -46,24 +46,24 @@ void init_config_functions(struct config *config, char *default_lib, char *confi
     do {                                                                                                                                                       \
         if((s) == NULL) {                                                                                                                                      \
             log_info(tag " no configuration.\n");                                                                                                              \
-            return;                                                                                                                                            \
+        } else {                                                                                                                                               \
+            log_info(tag " configuration:\n");                                                                                                                     \
+            log_info(tag " library = %s\n", (s)->library_file_path);                                                                                               \
+            log_info(tag " main function = %s\n", (s)->main_function_name);                                                                                        \
+                                                                                                                                                                \
+            if((s)->init_function_name) {                                                                                                                          \
+                log_info(tag " init function = %s\n", (s)->init_function_name);                                                                                    \
+            }                                                                                                                                                      \
+                                                                                                                                                                \
+            if((s)->end_function_name) {                                                                                                                           \
+                log_info(tag " end function = %s\n", (s)->end_function_name);                                                                                      \
+            }                                                                                                                                                      \
+                                                                                                                                                                \
+            for(int __i = 0; __i < arrlen((s)->extra_function_names); __i++) {                                                                                     \
+                log_info(tag " extra function %d = %s\n", __i+1, (s)->extra_function_names[__i]);                                                                  \
+            }                                                                                                                                                      \
+            STRING_HASH_PRINT_KEY_VALUE_LOG(tag, (s)->config_data);                                                                                                \
         }                                                                                                                                                      \
-        log_info(tag " configuration:\n");                                                                                                                     \
-        log_info(tag " library = %s\n", (s)->library_file_path);                                                                                               \
-        log_info(tag " main function = %s\n", (s)->main_function_name);                                                                                        \
-                                                                                                                                                               \
-        if((s)->init_function_name) {                                                                                                                          \
-            log_info(tag " init function = %s\n", (s)->init_function_name);                                                                                    \
-        }                                                                                                                                                      \
-                                                                                                                                                               \
-        if((s)->end_function_name) {                                                                                                                           \
-            log_info(tag " end function = %s\n", (s)->end_function_name);                                                                                      \
-        }                                                                                                                                                      \
-                                                                                                                                                               \
-        for(int __i = 0; __i < arrlen((s)->extra_function_names); __i++) {                                                                                     \
-            log_info(tag " extra function %d = %s\n", __i+1, (s)->extra_function_names[__i]);                                                                  \
-        }                                                                                                                                                      \
-        STRING_HASH_PRINT_KEY_VALUE_LOG(tag, (s)->config_data);                                                                                                \
     } while(0)
 
 #define CALL_EXTRA_FUNCTIONS(fn, ...)                                                                                                                          \

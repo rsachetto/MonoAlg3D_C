@@ -168,6 +168,7 @@ static void check_mouse_over_volume(struct voxel *voxel, struct gui_state *gui_s
             gui_state->current_mouse_over_volume.position_draw = (Vector3){p_mesh.x, p_mesh.y, p_mesh.z};
             gui_state->current_mouse_over_volume.matrix_position = voxel->matrix_position;
             gui_state->ray_mouse_over_hit_distance = collision_mouse_over.distance;
+            gui_state->current_mouse_over_volume.v = voxel->v;
         }
     }
 
