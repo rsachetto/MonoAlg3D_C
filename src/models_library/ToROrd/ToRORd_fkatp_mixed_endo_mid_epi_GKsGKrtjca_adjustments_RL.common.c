@@ -594,6 +594,7 @@ real Istim = calc_I_stim;
 
 //update the membrane voltage
 real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+I_katp+Istim);    // Euler
+//real dv=-(INa+INaL+Ito+ICaL+ICaNa+ICaK+IKr+IKs+IK1+INaCa_i+INaCa_ss+INaK+INab+IKb+IpCa+ICab+I_ClCa+I_Clbk+Istim);    // Euler
 
 // calculate diffusion fluxes
 real JdiffNa=(nass-nai)/2.0;
