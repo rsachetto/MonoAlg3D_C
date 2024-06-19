@@ -653,7 +653,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if(calc_ecg && (count % calc_ecg_rate == 0)) {
             start_stop_watch(&stop_watch);
-            ((calc_ecg_fn *)calc_ecg_config->main_function)(&time_info, calc_ecg_config, the_grid);
+            ((calc_ecg_fn *)calc_ecg_config->main_function)(&time_info, calc_ecg_config, the_grid, out_dir_name);
             total_ecg_time += stop_stop_watch(&stop_watch);
         }
 

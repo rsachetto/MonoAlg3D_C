@@ -13,6 +13,8 @@ struct pseudo_bidomain_persistent_data {
     FILE *output_file;
     real_cpu scale_factor;
     uint32_t n_leads;
+    uint32_t diff_curr_rate;
+    real_cpu diff_curr_max_time;
 
 #ifdef COMPILE_CUDA
     cusparseHandle_t cusparseHandle;
@@ -23,6 +25,7 @@ struct pseudo_bidomain_persistent_data {
     real *volumes;
     real *tmp_data;
     real *d_val;
+    real *beta_im_cpu;
 
     size_t bufferSize;
     void *buffer;
