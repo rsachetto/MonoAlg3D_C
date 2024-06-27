@@ -1,3 +1,7 @@
+//
+// Created by sachetto on 06/06/24.
+// Based on https://github.com/SCIInstitute/StructuredEikonal
+
 #include <assert.h>
 #include <cuda_runtime.h>
 #include "eikonal_solver.h"
@@ -28,7 +32,6 @@ struct eikonal_solver * new_eikonal_solver(bool verbose) {
 
 void free_eikonal_solver(struct eikonal_solver *solver) {
 
-    //TODO: free 3D arrays
     FREE_3D_ARRAY(solver->speeds, solver->width, solver->height);
     FREE_3D_ARRAY(solver->answer, solver->width, solver->height);
     FREE_3D_ARRAY(solver->mask, solver->width, solver->height);
@@ -251,18 +254,25 @@ static void get_solution(struct eikonal_solver *solver) {
         for(int k = 0; k < BLOCK_LENGTH; k++) {
             for(int j = 0; j < BLOCK_LENGTH; j++) {
                 for(int i = 0; i < BLOCK_LENGTH; i++) {
-                    double d = solver->memory_struct.h_sol[baseAddr +
-                                                           k * BLOCK_LENGTH * BLOCK_LENGTH +
-                                                           j * BLOCK_LENGTH + i];
+                    double d = solver->memory_struct.h_sol[baseAddr + k * BLOCK_LENGTH * BLOCK_LENGTH + j * BLOCK_LENGTH + i];
                     if ((i + bx * BLOCK_LENGTH) < solver->width &&
                         (j + by * BLOCK_LENGTH) < solver->height &&
                         (k + bz * BLOCK_LENGTH) < solver->depth) {
-                        solver->answer[(i + bx * BLOCK_LENGTH)][(j +
-                                                                 by * BLOCK_LENGTH)][k + bz * BLOCK_LENGTH] = d;
+                        solver->answer[(i + bx * BLOCK_LENGTH)][(j + by * BLOCK_LENGTH)][k + bz * BLOCK_LENGTH] = d;
                     }
                 }
             }
         }
+    }
+
+    for(int i = 0 ; i < solver->num_active_cells; i++) {
+        solver->active_cells[i]->v = solver->answer[(int)solver->active_cells[i]->center.x][(int)solver->active_cells[i]->center.y][(int)solver->active_cells[i]->center.z];
+
+        //Translating back to original space
+        solver->active_cells[i]->center.x = solver->active_cells[i]->center.x * solver->active_cells[i]->discretization.x + solver->active_cells[i]->discretization.x/2.0;
+        solver->active_cells[i]->center.y  = solver->active_cells[i]->center.y * solver->active_cells[i]->discretization.y + solver->active_cells[i]->discretization.y/2.0;
+        solver->active_cells[i]->center.z = solver->active_cells[i]->center.z * solver->active_cells[i]->discretization.z + solver->active_cells[i]->discretization.z/2.0;
+
     }
 }
 
@@ -387,29 +397,6 @@ void use_seeds(struct eikonal_solver *solver) {
     check_cuda_error( cudaMemcpy(solver->memory_struct.d_listVol, solver->memory_struct.h_listVol, blockNum*sizeof(bool), cudaMemcpyHostToDevice) );
     // initialize GPU memory with constant value
     check_cuda_error( cudaMemset(solver->memory_struct.d_con, 1, volSize*sizeof(bool)) );
-}
-
-void write_alg(struct eikonal_solver *solver, char *filename) {
-
-    FILE *out = fopen(filename, "w");
-
-    if (out == NULL) {
-        log_error_and_exit("Error opening file: %s\n", filename);
-    }
-
-    for (int k = 0; k < solver->depth; k++) {
-        for (int j = 0; j < solver->height; j++) {
-            for (int i = 0; i < solver->width; i++) {
-                if(solver->mask[i][j][k] == true) {
-                    real d = solver->answer[i][j][k];
-                    fprintf(out, "%lf, %lf, %lf, 0.5, 0.5, 0.5, %lf\n", i + 0.5, j + 0.5, k + 0.5, d);
-                }
-            }
-        }
-    }
-
-    fclose(out);
-
 }
 
 void solve_eikonal(struct eikonal_solver *solver) {
