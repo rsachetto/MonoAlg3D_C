@@ -1031,8 +1031,8 @@ struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twa
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, aCaMK_Multiplier, config, "aCaMK_Multiplier");
     real taurelp_Multiplier = 1.0;    
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, taurelp_Multiplier, config, "taurelp_Multiplier");
-    char *mesh_name = NULL;
-    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(mesh_name, config, "mesh_name");
+	real cycle_length = 1000;
+	GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real, cycle_length, config, "cycle_length");
 
     extra_data->INa_Multiplier = INa_Multiplier;
     extra_data->INaL_Multiplier = INaL_Multiplier;
@@ -1060,7 +1060,7 @@ struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twa
     extra_data->initial_ss_mid = MALLOC_ARRAY_OF_TYPE(real, neq);
 
     // (DTI032) Basic cycle length => 810ms
-    if (strcmp(mesh_name, "DTI032") == 0) {
+    if (cycle_length == 810) {
         printf("[ToRORd] Setting hacked initial conditions for DTI032 CL 810!!!");
         extra_data->initial_ss_endo[0 ]  = -88.676; // Vm
         extra_data->initial_ss_endo[1 ]  = 12.084; // Nai
@@ -1106,8 +1106,53 @@ struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twa
         extra_data->initial_ss_endo[41] = 0.00012677; // ikr_i
         extra_data->initial_ss_endo[42] = -3.6032e-20; // Jrel_p
     }
-    else if (strcmp(mesh_name, "DTI024") == 0) {
+    else if (cycle_length == 909) {
         printf("[ToRORd] Setting hacked initial conditions for DTI024 CL 909!!!");
+        extra_data->initial_ss_endo[0 ]  = -88.606; // Vm
+        extra_data->initial_ss_endo[1 ]  = 11.951; // Nai
+        extra_data->initial_ss_endo[2 ]  = 11.951; // Nass
+        extra_data->initial_ss_endo[3 ]  = 141.37; // ki
+        extra_data->initial_ss_endo[4 ]  = 141.37; // kss
+        extra_data->initial_ss_endo[5 ]  = 7.3303e-05; //cai
+        extra_data->initial_ss_endo[6 ]  = 6.4258e-05;  // cass
+        extra_data->initial_ss_endo[7 ]  = 1.4869; //cansr
+        extra_data->initial_ss_endo[8 ]  = 1.4799; // cajsr
+        extra_data->initial_ss_endo[9 ] = 0.00082298; // m
+        extra_data->initial_ss_endo[10] = 0.66742; // hp
+        extra_data->initial_ss_endo[11] = 0.82657; // h
+        extra_data->initial_ss_endo[12] = 0.8262; // j
+        extra_data->initial_ss_endo[13] = 0.82484; // jp
+        extra_data->initial_ss_endo[14] = 0.00016597; // mL
+        extra_data->initial_ss_endo[15] = 0.50798; // hL
+        extra_data->initial_ss_endo[16] = 0.26085; // hLp
+        extra_data->initial_ss_endo[17] = 0.00095732; // a
+        extra_data->initial_ss_endo[18] = 0.9996; // iF
+        extra_data->initial_ss_endo[19] = 0.51827; // iS
+        extra_data->initial_ss_endo[20] = 0.00048777; // ap
+        extra_data->initial_ss_endo[21] = 0.9996; // iFp
+        extra_data->initial_ss_endo[22] = 0.57465; // iSp
+        extra_data->initial_ss_endo[23] = -3.7135e-25; // d
+        extra_data->initial_ss_endo[24] = 1.000000e+00; // ff
+        extra_data->initial_ss_endo[25] = 9.2181e-01; // fs
+        extra_data->initial_ss_endo[26] = 1.000000e+00; // fcaf
+        extra_data->initial_ss_endo[27] = 9.996e-01; // fcas
+        extra_data->initial_ss_endo[28] = 0.99999; // jca
+        extra_data->initial_ss_endo[29] = 4.6963e-04; // nca
+        extra_data->initial_ss_endo[30] = 7.8127e-04; // nca_i
+        extra_data->initial_ss_endo[31] = 1.000000e+00; // ffp
+        extra_data->initial_ss_endo[32] = 1.000000e+00; // fcafp
+        extra_data->initial_ss_endo[33] = 0.2845; // xs1
+        extra_data->initial_ss_endo[34] = 0.0001791; // xs2
+        extra_data->initial_ss_endo[35] = 8.7097e-22; // Jrel_np
+        extra_data->initial_ss_endo[36]  = 0.011988; // CaMKt  
+        extra_data->initial_ss_endo[37] = 0.99695; // ikr_c0
+        extra_data->initial_ss_endo[38] = 0.00085638; // ikr_c1
+        extra_data->initial_ss_endo[39] = 0.00077257; // ikr_c2
+        extra_data->initial_ss_endo[40] = 0.00013754; // ikr_o
+        extra_data->initial_ss_endo[41] = 4.9031e-05; // ikr_i
+        extra_data->initial_ss_endo[42] = -1.724e-20; // Jrel_p
+    } else if (cycle_length == 1250) {
+	    printf("[ToRORd] Setting hacked initial conditions for DTI004 CL 1250!!!");
         extra_data->initial_ss_endo[0 ]  = -88.606; // Vm
         extra_data->initial_ss_endo[1 ]  = 11.523; // Nai
         extra_data->initial_ss_endo[2 ]  = 11.523; // Nass
@@ -1131,7 +1176,7 @@ struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twa
         extra_data->initial_ss_endo[20] = 0.00048973; // ap
         extra_data->initial_ss_endo[21] = 0.9996; // iFp
         extra_data->initial_ss_endo[22] = 0.72701; // iSp
-        extra_data->initial_ss_endo[23] = -6.5507e-27; // d
+        extra_data->initial_ss_endo[23] = -7.7171e-27; // d
         extra_data->initial_ss_endo[24] = 1.000000e+00; // ff
         extra_data->initial_ss_endo[25] = 9.5029e-01; // fs
         extra_data->initial_ss_endo[26] = 1.000000e+00; // fcaf
@@ -1151,8 +1196,7 @@ struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twa
         extra_data->initial_ss_endo[40] = 0.00016919; // ikr_o
         extra_data->initial_ss_endo[41] = 6.0064e-06; // ikr_i
         extra_data->initial_ss_endo[42] = -8.5262e-21; // Jrel_p
-    }
-    else {
+    }else {
         printf("[ToRORd] Setting default initial conditions!!!");
         // Set the default initial conditions from Matlab (celltype = ENDO)
         extra_data->initial_ss_endo[0]  = -88.6369922306458;
@@ -1289,8 +1333,6 @@ struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twa
         extra_data->initial_ss_mid[41] = 1.78956481798154e-05;
         extra_data->initial_ss_mid[42] = 7.0591623795627e-23;
     }
-
-    
 
     extra_data->transmurality = MALLOC_ARRAY_OF_TYPE(real, num_cells);
     extra_data->sf_IKs = MALLOC_ARRAY_OF_TYPE(real, num_cells);
