@@ -5,6 +5,7 @@
 #include "config/config_parser.h"
 #include "config/domain_config.h"
 #include "eikonal/eikonal_solver.h"
+#include "config/stim_config.h"
 #include "logger/logger.h"
 #include "utils/file_utils.h"
 #include <stdlib.h>
@@ -19,7 +20,7 @@ static int compare_coordinates(const void *a, const void *b) {
     }
 
     if (coord1->center.x != coord2->center.x) {
-          return (int) (coord1->center.x - coord2->center.x);
+        return (int) (coord1->center.x - coord2->center.x);
     }
 
 
@@ -32,6 +33,9 @@ int main(int argc, char *argv[]) {
     struct eikonal_options *eikonal_options = new_eikonal_options();
     parse_eikonal_options(argc, argv, eikonal_options);
     struct grid *grid = new_grid();
+    struct string_voidp_hash_entry *stimuli_configs = eikonal_options->stim_configs;
+
+    struct eikonal_solver *solver = new_eikonal_solver(false);
 
     if(ini_parse(eikonal_options->config_file, parse_eikonal_config_file, eikonal_options) < 0) {
         log_error_and_exit("Error: Can't load the config file %s\n", eikonal_options->config_file);
@@ -59,6 +63,52 @@ int main(int argc, char *argv[]) {
 
     }
 
+    if(stimuli_configs) {
+
+        size_t n = shlen(stimuli_configs);
+        struct time_info time_info = {0.0, 0.0, 0.0, 0};
+
+        if(n > 0) {
+            STIM_CONFIG_HASH_FOR_INIT_FUNCTIONS(stimuli_configs);
+        }
+
+        for(int i = 0; i < n; i++) {
+
+            struct string_voidp_hash_entry e = stimuli_configs[i];
+            log_info("Stimulus name: %s\n", e.key);
+            struct config *tmp = (struct config *)e.value;
+            print_stim_config_values(tmp);
+            log_msg(LOG_LINE_SEPARATOR);
+        }
+
+        set_spatial_stim(&time_info, stimuli_configs, grid, false);
+
+        struct config *tmp = NULL;
+
+        uint32_t n_active = grid->num_active_cells;
+        struct cell_node **ac = grid->active_cells;
+
+        for(size_t k = 0; k < n; k++) {
+
+            tmp = (struct config *)stimuli_configs[k].value;
+
+            for(uint32_t i = 0; i < n_active; i++) {
+                real value =  ((real *)(tmp->persistent_data))[i];
+                if(value != 0.0) {
+                    size_t *initial_seed = calloc(sizeof(size_t), 3);
+                    double new_pos_x = (ac[i]->center.x-ac[i]->discretization.x/2.0)/ac[i]->discretization.x;
+                    double new_pos_y = (ac[i]->center.y-ac[i]->discretization.y/2.0)/ac[i]->discretization.y;
+                    double new_pos_z = (ac[i]->center.z-ac[i]->discretization.z/2.0)/ac[i]->discretization.z;
+
+                    initial_seed[0] = new_pos_x;
+                    initial_seed[1] = new_pos_y;
+                    initial_seed[2] = new_pos_z;
+                    arrput(solver->seeds, initial_seed);
+                }
+            }
+        }
+    }
+
     //Translating to 0
     for(int i = 0 ; i < grid->num_active_cells; i++) {
         double new_pos_x = (grid->active_cells[i]->center.x-grid->active_cells[i]->discretization.x/2.0)/grid->active_cells[i]->discretization.x;
@@ -76,7 +126,6 @@ int main(int argc, char *argv[]) {
 
     size_t itersPerBlock = 10, type = 1;
 
-    struct eikonal_solver *solver = new_eikonal_solver(false);
     solver->width  = (int) (grid->cube_side_length.x/grid->active_cells[0]->discretization.x);
     solver->height = (int) (grid->cube_side_length.y/grid->active_cells[0]->discretization.y);
     solver->depth  = (int) (grid->cube_side_length.z/grid->active_cells[0]->discretization.z);
@@ -84,12 +133,6 @@ int main(int argc, char *argv[]) {
     solver->solver_type = type;
     solver->iters_per_block = itersPerBlock;
 
-    size_t *initial_seed = calloc(sizeof(size_t), 3);
-    initial_seed[0] = 128;
-    initial_seed[1] = 48;
-    initial_seed[2] = 63;
-
-    arrput(solver->seeds, initial_seed);
     solver->active_cells = grid->active_cells;
     solver->num_active_cells = grid->num_active_cells;
 
@@ -115,7 +158,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    free(initial_seed);
     free_eikonal_solver(solver);
     free_eikonal_options(eikonal_options);
 
