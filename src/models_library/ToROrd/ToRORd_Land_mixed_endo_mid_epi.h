@@ -13,9 +13,9 @@
 #define NEQ 50
 #define INITIAL_V (-8.863699e+01)
 
-#define ENDO 1.0
-#define MID  2.0
-#define EPI  3.0
+#define ENDO 0.0
+#define MID  1.0
+#define EPI  2.0
 
 // CPU macros
 #define SOLVE_EQUATION_CONSTANT_CPU(id) sv[id] = rDY[id]
