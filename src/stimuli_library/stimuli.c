@@ -11,6 +11,48 @@
 #include "../config_helpers/config_helpers.h"
 #include "../utils/utils.h"
 
+SET_SPATIAL_STIM(stim_if_point_equal) {
+
+    uint32_t n_active = the_grid->num_active_cells;
+    struct cell_node **ac = the_grid->active_cells;
+
+    if(is_purkinje) {
+        n_active = the_grid->purkinje->num_active_purkinje_cells;
+        ac = the_grid->purkinje->purkinje_cells;
+    }
+
+    ALLOCATE_STIMS();
+
+    real stim_current = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, stim_current, config, "current");
+
+    bool stim;
+    real stim_value;
+
+    real_cpu center_x = 0.0;
+    real_cpu center_y = 0.0;
+    real_cpu center_z = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, center_x, config, "center_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, center_y, config, "center_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, center_z, config, "center_z");
+
+    uint32_t i;
+
+    OMP(parallel for private(stim, stim_value))
+    for(i = 0; i < n_active; i++) {
+        stim = ac[i]->center.x == center_x && ac[i]->center.y == center_y && ac[i]->center.z == center_z;
+
+        if(stim) {
+            stim_value = stim_current;
+        } else {
+            stim_value = 0.0;
+        }
+
+        SET_STIM_VALUE(i, stim_value);
+    }
+
+}
+
 SET_SPATIAL_STIM(stim_if_x_less_than) {
 
     uint32_t n_active = the_grid->num_active_cells;

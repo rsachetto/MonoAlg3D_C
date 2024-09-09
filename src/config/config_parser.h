@@ -246,6 +246,7 @@ void free_batch_options(struct batch_options * options);
 void free_visualization_options(struct visualization_options * options);
 void free_conversion_options(struct conversion_options *options);
 void free_fibers_conversion_options(struct fibers_conversion_options *options);
+void free_eikonal_options(struct eikonal_options *options);
 
 void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
 
