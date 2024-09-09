@@ -1599,7 +1599,7 @@ void write_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                         // fprintf(output_file,"ERROR! Probably there was a block on the anterograde direction!\n");
                         has_block = true;
                         cur_pulse = 0;
-                        // return;
+                        return;
                     }
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                     if(activation_times_array_tissue[cur_pulse] < min_tissue_lat) {

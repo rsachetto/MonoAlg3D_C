@@ -87,22 +87,17 @@ static void expand_scar(const char *input, const char *output, int n_rows, char*
     struct config *domain_config;
 
     domain_config = alloc_and_init_config_data();
-    char *discretization = "300";
-    //char *discretization = "500";
+    char *discretization = "500";
 
-    shput_dup_value(domain_config->config_data, "start_discretization", strdup(discretization));
-    shput_dup_value(domain_config->config_data, "maximum_discretization", strdup(discretization));
+    shput_dup_value(domain_config->config_data, "original_discretization", strdup(discretization));
+    shput_dup_value(domain_config->config_data, "desired_discretization", strdup(discretization));
     shput_dup_value(domain_config->config_data, "mesh_file", strdup(input));
 
-    domain_config->main_function_name = strdup("initialize_grid_with_dti_mesh");
-    shput_dup_value(domain_config->config_data, "name", "Oxford DTI004 with Transmurality and Fiber orientation");
-
-    //shput(domain_config->config_data, "side_length_x", strdup(discretization));
-    //shput(domain_config->config_data, "side_length_y", strdup(discretization));
-    //shput(domain_config->config_data, "side_length_z", strdup(discretization));
+    domain_config->main_function_name = strdup("initialize_grid_with_dti_mesh_with_dense_and_sparse_regions_twave");
+    shput_dup_value(domain_config->config_data, "name", "Oxford DTI004 with Transmurality, Fiber orientation and Dense/Sparse regions");
+    
     shput(domain_config->config_data, "num_volumes", strdup(n_volumes));
-    //shput(domain_config->config_data, "num_extra_fields", "5");
-
+    
     init_config_functions(domain_config, "./shared_libs/libdefault_domains.so", "domain");
 
     int success = ((set_spatial_domain_fn*)domain_config->main_function)(domain_config, grid);
@@ -117,15 +112,16 @@ static void expand_scar(const char *input, const char *output, int n_rows, char*
     real_cpu dx, dy, dz;
     real_cpu min_x, max_x, min_y, max_y, min_z, max_z;
     real *f, *s, *n;
-    real_cpu transmurality, base_apex_heterogeneity, apicobasal;
-    uint32_t transmurality_labels;
+    real_cpu transmurality, transmurality_labels, base_apex;
+    real_cpu dense_sparse_tag, healthy, sf_IKs;
 
-    min_x=76803.6;
-    min_y=51176.3;
-    min_z=8740.9;
-    max_x=96803.6;
-    max_y=71176.3;
-    max_z=28740.9;
+    // Box bounds
+    min_x=67108;
+    min_y=52945;
+    min_z=14308;
+    max_x=77108;
+    max_y=62945;
+    max_z=24308;
 
     FILE *out = fopen(output, "w");
     FOR_EACH_CELL(grid) {
@@ -141,22 +137,20 @@ static void expand_scar(const char *input, const char *output, int n_rows, char*
 
             extra_data = (struct dti_mesh_info *)cell->mesh_extra_info;
             transmurality = extra_data->transmurality;
-            base_apex_heterogeneity = extra_data->base_apex_heterogeneity;
-            apicobasal = extra_data->apicobasal;
             transmurality_labels = extra_data->dti_transmurality_labels;
-            
-            // Change the FAST_ENDO tag to ENDO
-            if (transmurality_labels == 3) {
-                transmurality_labels = 0;
-            }
+            base_apex = extra_data->base_apex_heterogeneity;
+            dense_sparse_tag = extra_data->fast_endo;
+            healthy = 1.0;
+            sf_IKs = extra_data->sf_IKs;
 
             ignore_cell = cell->center.x < min_x || cell->center.x > max_x || cell->center.y < min_y || cell->center.y > max_y || cell->center.z < min_z || cell->center.z > max_z;
 
             if(!ignore_cell) {
-                fprintf(out, "%g,%g,%g,%g,%g,%g,%g,%g,%g,%u,%g,%g,%g,%g,%g,%g,%g,%g,%g\n", cell->center.x, cell->center.y, cell->center.z, dx, dy, dz, \
-                                                    transmurality, base_apex_heterogeneity, apicobasal, \
-                                                    transmurality_labels, \
-                                                    f[0], f[1], f[2], s[0], s[1], s[2], n[0], n[1], n[2]);
+                fprintf(out, "%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n", cell->center.x, cell->center.y, cell->center.z, dx, dy, dz, \
+                                                    transmurality, transmurality_labels, base_apex, \
+                                                    dense_sparse_tag, healthy, \
+                                                    f[0], f[1], f[2], s[0], s[1], s[2], n[0], n[1], n[2], \
+                                                    sf_IKs);
             }
 
         }
@@ -183,7 +177,7 @@ int main(int argc, char **argv) {
     }
 
     if(!output) {
-        output = "expanded_mesh.alg";
+        output = "clipped_mesh.alg";
     }
 
     expand_scar(input, output, options->n_rows, options->n_volumes);

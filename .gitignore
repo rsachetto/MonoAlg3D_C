@@ -169,6 +169,7 @@ scripts/tuneCV/outputs/*
 private_models/
 src/*/custom_functions.c
 src/*/custom_functions_BACKUP.c
+src/*/custom_functions_luana.c
 src/*/custom_functions.h
 
 bsbash/find_functions_with_mpi.sh
