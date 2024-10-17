@@ -57,12 +57,13 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
             *((real * )((char *) sv + pitch * 46) + threadID) = 9.993734e-01;
             *((real * )((char *) sv + pitch * 47) + threadID) = 0.000000e+00;
             *((real * )((char *) sv + pitch * 48) + threadID) = 0.000000e+00;
+	        *((real * )((char *) sv + pitch * 49) + threadID) = 0.000000e+00;
         }
             
         if(use_adpt_dt) {
-            *((real *)((char *)sv + pitch * 49) + threadID) = min_dt; // dt
-            *((real *)((char *)sv + pitch * 50) + threadID) = 0.0;    // time_new
-            *((real *)((char *)sv + pitch * 51) + threadID) = 0.0;    // previous dt
+            *((real *)((char *)sv + pitch * 50) + threadID) = min_dt; // dt
+            *((real *)((char *)sv + pitch * 51) + threadID) = 0.0;    // time_new
+            *((real *)((char *)sv + pitch * 52) + threadID) = 0.0;    // previous dt
         }
     }
 }
@@ -230,7 +231,7 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
     else {
         // Default: initialize all current modifiers
         for (uint32_t i = 0; i < num_extra_parameters; i++) {
-            if (i == 9)
+            if (i == 10)
                 extra_par[i] = 0.0;
             else 
                 extra_par[i] = 1.0;
@@ -334,6 +335,7 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
                 SOLVE_EQUATION_EULER_GPU(46);       // TmBlocked
                 SOLVE_EQUATION_EULER_GPU(47);       // ZETAS
                 SOLVE_EQUATION_EULER_GPU(48);       // ZETAW
+		        SOLVE_EQUATION_CONSTANT_GPU(49);    // Ta
             }
         } else {
             solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
@@ -416,6 +418,7 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
                 SOLVE_EQUATION_EULER_GPU(46);       // TmBlocked
                 SOLVE_EQUATION_EULER_GPU(47);       // ZETAS
                 SOLVE_EQUATION_EULER_GPU(48);       // ZETAW
+		        SOLVE_EQUATION_CONSTANT_GPU(49);    // Ta
             }
         } else {
             solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
@@ -645,6 +648,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, \
     real ZETAS;
     real ZETAW;
 
+    real TA;
     if (use_adpt_dt) {
         v = sv[0];
         nai = sv[1];
@@ -701,6 +705,7 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, \
         TmBlocked = sv[46];
         ZETAS = sv[47];
         ZETAW = sv[48];
+        TA = sv[49];
     } else {
         v = *((real *)((char *)sv + pitch * 0) + threadID_);
         nai = *((real *)((char *)sv + pitch * 1) + threadID_);
@@ -758,6 +763,8 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, \
         TmBlocked = (*((real *)((char *)sv + pitch * 46) + threadID_));
         ZETAS = (*((real *)((char *)sv + pitch * 47) + threadID_));
         ZETAW = (*((real *)((char *)sv + pitch * 48) + threadID_));
+
+	TA = (*((real *)((char *)sv + pitch * 49) + threadID_));
     }
 
     #include "ToRORd_Land_mixed_endo_mid_epi.common.c"
@@ -855,6 +862,8 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
     real ZETAS;
     real ZETAW;
 
+    real TA;
+
     if (use_adpt_dt) {
         v = sv[0];
         nai = sv[1];
@@ -911,6 +920,7 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
         TmBlocked = sv[46];
         ZETAS = sv[47];
         ZETAW = sv[48];
+	    TA = sv[49];
     } else {
         v = *((real *)((char *)sv + pitch * 0) + threadID_);
         nai = *((real *)((char *)sv + pitch * 1) + threadID_);
@@ -968,6 +978,7 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
         TmBlocked = (*((real *)((char *)sv + pitch * 46) + threadID_));
         ZETAS = (*((real *)((char *)sv + pitch * 47) + threadID_));
         ZETAW = (*((real *)((char *)sv + pitch * 48) + threadID_));
+	    TA = (*((real *)((char *)sv + pitch * 49) + threadID_));
     }
 
     #include "ToRORd_Land_mixed_endo_mid_epi_RL.common.c"

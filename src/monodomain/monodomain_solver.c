@@ -653,7 +653,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
         if(calc_ecg && (count % calc_ecg_rate == 0)) {
             start_stop_watch(&stop_watch);
-            ((calc_ecg_fn *)calc_ecg_config->main_function)(&time_info, calc_ecg_config, the_grid);
+            ((calc_ecg_fn *)calc_ecg_config->main_function)(&time_info, calc_ecg_config, the_grid, out_dir_name);
             total_ecg_time += stop_stop_watch(&stop_watch);
         }
 
@@ -1599,7 +1599,7 @@ void write_pmj_delay(struct grid *the_grid, struct config *config, struct termin
                         // fprintf(output_file,"ERROR! Probably there was a block on the anterograde direction!\n");
                         has_block = true;
                         cur_pulse = 0;
-                        // return;
+                        return;
                     }
                     mean_tissue_lat += activation_times_array_tissue[cur_pulse];
                     if(activation_times_array_tissue[cur_pulse] < min_tissue_lat) {

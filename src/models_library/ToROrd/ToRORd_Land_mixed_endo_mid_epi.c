@@ -117,6 +117,7 @@ SET_ODE_INITIAL_CONDITIONS_CPU(set_model_initial_conditions_cpu) {
             sv[46] = 9.993734e-01;
             sv[47] = 0.000000e+00;
             sv[48] = 0.000000e+00;
+	        sv[49] = 0.000000e+00;
 
             // Default initial conditions for MID cell (from original Matlab script)
             //sv[0] = -8.953800e+01;
@@ -265,7 +266,7 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
     else {
         // Default: initialize all current modifiers
         for (uint32_t i = 0; i < num_extra_parameters; i++) {
-            if (i == 9)
+            if (i == 10)
                 extra_par[i] = 0.0;
             else
                 extra_par[i] = 1.0;
@@ -368,6 +369,7 @@ void solve_model_ode_cpu(real dt, real *sv, real stim_current, real transmuralit
     SOLVE_EQUATION_EULER_CPU(46);       // TmBlocked
     SOLVE_EQUATION_EULER_CPU(47);       // ZETAS
     SOLVE_EQUATION_EULER_CPU(48);       // ZETAW 
+    SOLVE_EQUATION_CONSTANT_CPU(49);	// Ta
 }
 
 void solve_forward_euler_cpu_adpt(real *sv, real stim_curr, real transmurality, real final_time, int sv_id, struct ode_solver *solver, real const *extra_params) {
@@ -583,6 +585,7 @@ void RHS_cpu(const real *sv, real *rDY_, real stim_current, real dt, real transm
     real TmBlocked = sv[46];
     real ZETAS = sv[47];
     real ZETAW = sv[48];
+    real TA = sv[49];
 
     #include "ToRORd_Land_mixed_endo_mid_epi.common.c"
 }
@@ -677,6 +680,8 @@ void RHS_RL_cpu(real *a_, real *b_, const real *sv, real *rDY_, real stim_curren
     real TmBlocked = sv[46];
     real ZETAS = sv[47];
     real ZETAW = sv[48];
+
+    real TA = sv[49];
 
     #include "ToRORd_Land_mixed_endo_mid_epi_RL.common.c"
 }

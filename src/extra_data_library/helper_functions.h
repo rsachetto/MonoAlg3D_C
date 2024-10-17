@@ -39,6 +39,8 @@ struct extra_data_for_tt3 {
     real *transmurality;
 };
 
+
+
 struct extra_data_for_torord {
     real INa_Multiplier; 
     real ICaL_Multiplier;
@@ -190,5 +192,6 @@ struct extra_data_for_torord_land * set_common_torord_Land_data (struct config *
 struct extra_data_for_torord_land_twave * set_common_torord_Land_twave_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_torord_gksgkrtjca_twave * set_common_torord_gksgkrtjca_twave_data (struct config *config, uint32_t num_cells);
 struct extra_data_for_trovato * set_common_trovato_data (struct config *config, uint32_t num_cells);
+
 
 #endif // MONOALG3D_C_EXTRA_DATA_HELPER_FUNCTIONS_H

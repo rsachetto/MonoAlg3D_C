@@ -11,7 +11,7 @@
 #include "../monodomain/monodomain_solver.h"
 #include "config_common.h"
 
-#define CALC_ECG(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid)
+#define CALC_ECG(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid, char *output_dir)
 typedef CALC_ECG(calc_ecg_fn);
 
 #define INIT_CALC_ECG(name) void name(struct config *config, struct ode_solver *the_ode_solver, struct grid *the_grid, char *output_dir)

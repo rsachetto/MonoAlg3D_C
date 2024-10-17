@@ -12,17 +12,12 @@ struct default_fibrotic_mesh_info {
 
 // TODO: Move this struct and its macros to "custom_mesh_info_data.h"!
 struct dti_mesh_info {
-	enum dti_transmurality_labels {
-		DTI_FAST_ENDO,
-		DTI_ENDO,
-		DTI_MID,
-		DTI_EPI
-	} dti_transmurality_labels;
-	float transmurality;
-    float apicobasal;
-	float base_apex_heterogeneity;
-    float sf_IKs;
-    int fast_endo;
+		float dti_transmurality_labels;
+		float transmurality;
+    	float apicobasal;
+		float base_apex_heterogeneity;
+    	float sf_IKs;
+    	int fast_endo;
 };
 
 #define FIBROTIC_INFO(grid_cell) (struct default_fibrotic_mesh_info *)(grid_cell)->mesh_extra_info

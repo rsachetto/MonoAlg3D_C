@@ -10,7 +10,7 @@
 #include "../../extra_data_library/helper_functions.h"
 #include <stdlib.h>
 
-#define NEQ 49
+#define NEQ 50
 #define INITIAL_V (-8.863699e+01)
 
 #define ENDO 0.0
@@ -18,7 +18,7 @@
 #define EPI  2.0
 
 // CPU macros
-#define SOLVE_EQUATION_CONSTANT_CPU(id) sv[id] = rY[id]
+#define SOLVE_EQUATION_CONSTANT_CPU(id) sv[id] = rDY[id]
 
 #define SOLVE_EQUATION_EULER_CPU(id) sv[id] = dt * rDY[id] + rY[id]
 
@@ -49,7 +49,7 @@
                                                     greatestError = (auxError > greatestError) ? auxError : greatestError
 
 // GPU macros
-#define SOLVE_EQUATION_CONSTANT_GPU(id) *((real *)((char *)sv + pitch * id) + sv_id) = *((real *)((char *)sv + pitch * id) + sv_id)
+#define SOLVE_EQUATION_CONSTANT_GPU(id) *((real *)((char *)sv + pitch * id) + sv_id) = rDY[id]
 
 #define SOLVE_EQUATION_EULER_GPU(id) *((real *)((char *)sv + pitch * id) + sv_id) = *((real *)((char *)sv + pitch * id) + sv_id) + dt * rDY[id]
 

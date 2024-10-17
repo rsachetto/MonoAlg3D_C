@@ -100,7 +100,7 @@ int ini_parse_string(const char* string, ini_handler handler, void* user);
 
 /* Maximum line length for any line in INI file. */
 #ifndef INI_MAX_LINE
-#define INI_MAX_LINE 200
+#define INI_MAX_LINE 2048
 #endif
 
 #ifdef __cplusplus
