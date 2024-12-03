@@ -344,8 +344,7 @@ SAVE_MESH(save_as_text_or_binary) {
                         float value;
                         if(ode_solver->gpu) {
                             value = (float) sv_cpu[i*ode_solver->original_num_cells];
-                        }
-                        else {
+                        } else {
                             value = sv_cpu[i];
                         }
 
@@ -357,8 +356,7 @@ SAVE_MESH(save_as_text_or_binary) {
                     }
 
                     fprintf(output_file, "\n");
-                }
-                else {
+                } else {
                     fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
                 }
             }

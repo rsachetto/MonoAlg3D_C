@@ -9,9 +9,10 @@
 #include "../utils/utils.h"
 #include <float.h>
 
-#ifdef COMPILE_CUDA
+#if defined(COMPILE_CUDA) || defined(COMPILE_SYCL)
 
 #include "../gpu_utils/gpu_utils.h"
+#include "../gpu_utils/accel_utils.h"
 
 // Precision to be used for the calculations on the GPU
 #ifdef CELL_MODEL_REAL_DOUBLE
@@ -122,8 +123,8 @@ static void fill_discretization_matrix_elements(struct cell_node *grid_cell, voi
 
         for(size_t i = 0; i < max_elements; i++) {
             if(cell_elements[i].column == position) {
-            p = i;
-            insert = true;
+                p = i;
+                insert = true;
                 break;
             }
         }
@@ -283,7 +284,7 @@ END_CALC_ECG(end_pseudo_bidomain_cpu) {
     arrfree(PSEUDO_BIDOMAIN_DATA->leads);
 }
 
-#ifdef COMPILE_CUDA
+#if defined(COMPILE_CUDA) || defined(COMPILE_SYCL)
 
 INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
@@ -298,8 +299,8 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     //This is allocated when using the CPU code, but we do not need it in the gpu version
     free(PSEUDO_BIDOMAIN_DATA->beta_im);
 
-    check_cublas_error(cusparseCreate(&(PSEUDO_BIDOMAIN_DATA->cusparseHandle)));
-    check_cublas_error(cublasCreate(&(PSEUDO_BIDOMAIN_DATA->cublasHandle)));
+    create_sparse_handle(&(PSEUDO_BIDOMAIN_DATA->sparseHandle));
+    create_blas_handle(&(PSEUDO_BIDOMAIN_DATA->blasHandle));
 
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
@@ -318,31 +319,31 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
     PSEUDO_BIDOMAIN_DATA->nz = nz;
 
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_col), nz * sizeof(int)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_row), (N + 1) * sizeof(int)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_val), nz * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->beta_im), N * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_distances), PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_volumes), N * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->tmp_data), N * sizeof(real)));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_col), nz * sizeof(int));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_row), (N + 1) * sizeof(int));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_val), nz * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->beta_im), N * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_distances), PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_volumes), N * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->tmp_data), N * sizeof(real));
 
-#if CUBLAS_VER_MAJOR >= 11
+#if defined(COMPILE_CUDA) && CUBLAS_VER_MAJOR >= 11
     check_cuda_error(cusparseCreateCsr(&(PSEUDO_BIDOMAIN_DATA->matA), N, N, nz, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
                                        PSEUDO_BIDOMAIN_DATA->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUBLAS_SIZE));
     check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_beta_im), N, PSEUDO_BIDOMAIN_DATA->beta_im, CUBLAS_SIZE));
     check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_vm), N, the_ode_solver->sv, CUBLAS_SIZE));
-#else
+#elif defined(COMPILE_CUDA)
     check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(PSEUDO_BIDOMAIN_DATA->descr)));
     cusparseSetMatType(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_INDEX_BASE_ZERO);
     PSEUDO_BIDOMAIN_DATA->local_sv = the_ode_solver->sv;
 #endif
 
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice));        // JA
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice));   // IA
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_val, new_val, nz * sizeof(real), cudaMemcpyHostToDevice)); // A
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_distances, PSEUDO_BIDOMAIN_DATA->distances, PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real),
-                                cudaMemcpyHostToDevice));
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_col, J, nz * sizeof(int), HOST_TO_DEVICE);        // JA
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_row, I, (N + 1) * sizeof(int), HOST_TO_DEVICE);   // IA
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_val, new_val, nz * sizeof(real), HOST_TO_DEVICE); // A
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_distances, PSEUDO_BIDOMAIN_DATA->distances, PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real),
+                                HOST_TO_DEVICE);
 
     PSEUDO_BIDOMAIN_DATA->volumes = MALLOC_ARRAY_OF_TYPE(real, N);
 
@@ -353,17 +354,17 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
         PSEUDO_BIDOMAIN_DATA->volumes[i] = d.x * d.y * d.z;
     }
 
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->volumes, N * sizeof(real), cudaMemcpyHostToDevice));
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->volumes, N * sizeof(real), HOST_TO_DEVICE);
 
-#if CUSPARSE_VER_MAJOR >= 11
+#if defined(COMPILE_CUDA) && CUSPARSE_VER_MAJOR >= 11
     real alpha = 1.0;
     real beta = 0.0;
 
-    check_cuda_error(cusparseSpMV_bufferSize(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
+    check_cuda_error(cusparseSpMV_bufferSize(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
                                              PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
                                              &(PSEUDO_BIDOMAIN_DATA->bufferSize)));
 
-    check_cuda_error(cudaMalloc(&(PSEUDO_BIDOMAIN_DATA->buffer), PSEUDO_BIDOMAIN_DATA->bufferSize));
+    malloc_device(&(PSEUDO_BIDOMAIN_DATA->buffer), PSEUDO_BIDOMAIN_DATA->bufferSize);
 #endif
 
     arrfree(I);
@@ -383,17 +384,17 @@ CALC_ECG(pseudo_bidomain_gpu) {
     real alpha = 1.0;
     real beta = 0.0;
 #if CUSPARSE_VER_MAJOR >= 11
-    check_cublas_error(cusparseSpMV(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
+    check_cublas_error(cusparseSpMV(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
                                     PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
                                     PSEUDO_BIDOMAIN_DATA->buffer));
 #else
 
 #ifdef CELL_MODEL_REAL_DOUBLE
-    cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
+    cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
                    PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
                    PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #else
-    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
+    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
                    PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
                    PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #endif
@@ -412,10 +413,10 @@ CALC_ECG(pseudo_bidomain_gpu) {
 
 #ifdef CELL_MODEL_REAL_DOUBLE
         check_cublas_error(
-            cublasDdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
+            cublasDdot(PSEUDO_BIDOMAIN_DATA->blasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
 #else
         check_cublas_error(
-            cublasSdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
+            cublasSdot(PSEUDO_BIDOMAIN_DATA->blasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
 #endif
 
         fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", -PSEUDO_BIDOMAIN_DATA->scale_factor * local_sum);
@@ -432,8 +433,8 @@ END_CALC_ECG(end_pseudo_bidomain_gpu) {
     if(!persistent_data)
         return;
 
-    check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->cusparseHandle));
-    check_cuda_error((cudaError_t)cublasDestroy(persistent_data->cublasHandle));
+    check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->sparseHandle));
+    check_cuda_error((cudaError_t)cublasDestroy(persistent_data->blasHandle));
 
 #if CUBLAS_VER_MAJOR >= 11
     if(persistent_data->matA) {
@@ -448,13 +449,13 @@ END_CALC_ECG(end_pseudo_bidomain_gpu) {
 #else
     check_cuda_error((cudaError_t)cusparseDestroyMatDescr(persistent_data->descr));
 #endif
-    check_cuda_error(cudaFree(persistent_data->d_col));
-    check_cuda_error(cudaFree(persistent_data->d_row));
-    check_cuda_error(cudaFree(persistent_data->d_val));
-    check_cuda_error(cudaFree(persistent_data->beta_im));
-    check_cuda_error(cudaFree(persistent_data->tmp_data));
-    check_cuda_error(cudaFree(persistent_data->d_distances));
-    check_cuda_error(cudaFree(persistent_data->d_volumes));
+    free_device(persistent_data->d_col);
+    free_device(persistent_data->d_row);
+    free_device(persistent_data->d_val);
+    free_device(persistent_data->beta_im);
+    free_device(persistent_data->tmp_data);
+    free_device(persistent_data->d_distances);
+    free_device(persistent_data->d_volumes);
 
     fclose(persistent_data->output_file);
 
@@ -511,7 +512,7 @@ INIT_CALC_ECG(init_pseudo_bidomain_with_diffusive_current_cpu) {
     uint32_t nlen_output_dir = strlen(output_dir);
     char *filename = (char*)malloc(sizeof(char)*nlen_output_dir+10);
     sprintf(filename, "%s/ecg.txt", output_dir);
-    
+
     char *dir = get_dir_from_path(filename);
     create_dir(dir);
     free(dir);
@@ -587,7 +588,7 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_cpu) {
 
     // DIFFUSIVE CURRENT PLOT
     if (time_info->iteration % PSEUDO_BIDOMAIN_DATA->diff_curr_rate == 0 && time_info->current_t <= PSEUDO_BIDOMAIN_DATA->diff_curr_max_time) {
-        char *filename_diffusive_current[200];
+        char filename_diffusive_current[200];
         sprintf(filename_diffusive_current, "%s/diffusive_current_t_%g_ms.txt", output_dir, time_info->current_t);
         FILE *output_diffusive_current = fopen(filename_diffusive_current, "w");
         for(uint32_t i = 0; i < n_active; i++) {
@@ -615,7 +616,7 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_cpu) {
 
     fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "\n");
 }
-    
+
 END_CALC_ECG(end_pseudo_bidomain_with_diffusive_current_cpu) {
     fclose(PSEUDO_BIDOMAIN_DATA->output_file);
     free(PSEUDO_BIDOMAIN_DATA->beta_im);
@@ -637,8 +638,8 @@ INIT_CALC_ECG(init_pseudo_bidomain_with_diffusive_current_gpu) {
     //This is allocated when using the CPU code, but we do not need it in the gpu version
     free(PSEUDO_BIDOMAIN_DATA->beta_im);
 
-    check_cublas_error(cusparseCreate(&(PSEUDO_BIDOMAIN_DATA->cusparseHandle)));
-    check_cublas_error(cublasCreate(&(PSEUDO_BIDOMAIN_DATA->cublasHandle)));
+    check_cublas_error(cusparseCreate(&(PSEUDO_BIDOMAIN_DATA->sparseHandle)));
+    check_cublas_error(cublasCreate(&(PSEUDO_BIDOMAIN_DATA->blasHandle)));
 
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
@@ -661,13 +662,13 @@ INIT_CALC_ECG(init_pseudo_bidomain_with_diffusive_current_gpu) {
 
     PSEUDO_BIDOMAIN_DATA->nz = nz;
 
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_col), nz * sizeof(int)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_row), (N + 1) * sizeof(int)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_val), nz * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->beta_im), N * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_distances), PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->d_volumes), N * sizeof(real)));
-    check_cuda_error(cudaMalloc((void **)&(PSEUDO_BIDOMAIN_DATA->tmp_data), N * sizeof(real)));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_col), nz * sizeof(int));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_row), (N + 1) * sizeof(int));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_val), nz * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->beta_im), N * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_distances), PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_volumes), N * sizeof(real));
+    malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->tmp_data), N * sizeof(real));
 
 #if CUBLAS_VER_MAJOR >= 11
     check_cuda_error(cusparseCreateCsr(&(PSEUDO_BIDOMAIN_DATA->matA), N, N, nz, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
@@ -681,11 +682,11 @@ INIT_CALC_ECG(init_pseudo_bidomain_with_diffusive_current_gpu) {
     PSEUDO_BIDOMAIN_DATA->local_sv = the_ode_solver->sv;
 #endif
 
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice));        // JA
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_row, I, (N + 1) * sizeof(int), cudaMemcpyHostToDevice));   // IA
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_val, new_val, nz * sizeof(real), cudaMemcpyHostToDevice)); // A
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_distances, PSEUDO_BIDOMAIN_DATA->distances, PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real),
-                                cudaMemcpyHostToDevice));
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_col, J, nz * sizeof(int), HOST_TO_DEVICE);        // JA
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_row, I, (N + 1) * sizeof(int), HOST_TO_DEVICE);   // IA
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_val, new_val, nz * sizeof(real), HOST_TO_DEVICE); // A
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_distances, PSEUDO_BIDOMAIN_DATA->distances, PSEUDO_BIDOMAIN_DATA->n_leads * N * sizeof(real),
+                                HOST_TO_DEVICE);
 
     PSEUDO_BIDOMAIN_DATA->volumes = MALLOC_ARRAY_OF_TYPE(real, N);
 
@@ -696,17 +697,17 @@ INIT_CALC_ECG(init_pseudo_bidomain_with_diffusive_current_gpu) {
         PSEUDO_BIDOMAIN_DATA->volumes[i] = d.x * d.y * d.z;
     }
 
-    check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->volumes, N * sizeof(real), cudaMemcpyHostToDevice));
+    memcpy_device(PSEUDO_BIDOMAIN_DATA->d_volumes, PSEUDO_BIDOMAIN_DATA->volumes, N * sizeof(real), HOST_TO_DEVICE);
 
 #if CUSPARSE_VER_MAJOR >= 11
     real alpha = 1.0;
     real beta = 0.0;
 
-    check_cuda_error(cusparseSpMV_bufferSize(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
+    check_cuda_error(cusparseSpMV_bufferSize(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
                                              PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
                                              &(PSEUDO_BIDOMAIN_DATA->bufferSize)));
 
-    check_cuda_error(cudaMalloc(&(PSEUDO_BIDOMAIN_DATA->buffer), PSEUDO_BIDOMAIN_DATA->bufferSize));
+    malloc_device(&(PSEUDO_BIDOMAIN_DATA->buffer), PSEUDO_BIDOMAIN_DATA->bufferSize);
 #endif
 
     arrfree(I);
@@ -726,17 +727,17 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_gpu) {
     real alpha = 1.0;
     real beta = 0.0;
 #if CUSPARSE_VER_MAJOR >= 11
-    check_cublas_error(cusparseSpMV(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
+    check_cublas_error(cusparseSpMV(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
                                     PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
                                     PSEUDO_BIDOMAIN_DATA->buffer));
 #else
 
 #ifdef CELL_MODEL_REAL_DOUBLE
-    cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
+    cusparseDcsrmv(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
                    PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
                    PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #else
-    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
+    cusparseScsrmv(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, n_active, n_active, PSEUDO_BIDOMAIN_DATA->nz, &alpha,
                    PSEUDO_BIDOMAIN_DATA->descr, PSEUDO_BIDOMAIN_DATA->d_val, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
                    PSEUDO_BIDOMAIN_DATA->local_sv, &beta, PSEUDO_BIDOMAIN_DATA->beta_im);
 #endif
@@ -749,7 +750,7 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_gpu) {
 
     // DIFFUSIVE CURRENT
     if (time_info->iteration % PSEUDO_BIDOMAIN_DATA->diff_curr_rate == 0 && time_info->current_t <= PSEUDO_BIDOMAIN_DATA->diff_curr_max_time) {
-        char *filename_diffusive_current[200];
+        char filename_diffusive_current[200];
         sprintf(filename_diffusive_current, "%s/diffusive_current_t_%g_ms.txt", output_dir, time_info->current_t);
         FILE *output_diffusive_current = fopen(filename_diffusive_current, "w");
         check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->beta_im_cpu, PSEUDO_BIDOMAIN_DATA->beta_im, n_active * sizeof(real), cudaMemcpyDeviceToHost));
@@ -767,10 +768,10 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_gpu) {
 
 #ifdef CELL_MODEL_REAL_DOUBLE
         check_cublas_error(
-            cublasDdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
+            cublasDdot(PSEUDO_BIDOMAIN_DATA->blasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
 #else
         check_cublas_error(
-            cublasSdot(PSEUDO_BIDOMAIN_DATA->cublasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
+            cublasSdot(PSEUDO_BIDOMAIN_DATA->blasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
 #endif
 
         fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", -PSEUDO_BIDOMAIN_DATA->scale_factor * local_sum);
@@ -787,8 +788,8 @@ END_CALC_ECG(end_pseudo_bidomain_with_diffusive_current_gpu) {
     if(!persistent_data)
         return;
 
-    check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->cusparseHandle));
-    check_cuda_error((cudaError_t)cublasDestroy(persistent_data->cublasHandle));
+    check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->sparseHandle));
+    check_cuda_error((cudaError_t)cublasDestroy(persistent_data->blasHandle));
 
 #if CUBLAS_VER_MAJOR >= 11
     if(persistent_data->matA) {
@@ -803,13 +804,13 @@ END_CALC_ECG(end_pseudo_bidomain_with_diffusive_current_gpu) {
 #else
     check_cuda_error((cudaError_t)cusparseDestroyMatDescr(persistent_data->descr));
 #endif
-    check_cuda_error(cudaFree(persistent_data->d_col));
-    check_cuda_error(cudaFree(persistent_data->d_row));
-    check_cuda_error(cudaFree(persistent_data->d_val));
-    check_cuda_error(cudaFree(persistent_data->beta_im));
-    check_cuda_error(cudaFree(persistent_data->tmp_data));
-    check_cuda_error(cudaFree(persistent_data->d_distances));
-    check_cuda_error(cudaFree(persistent_data->d_volumes));
+    free_device(persistent_data->d_col);
+    free_device(persistent_data->d_row);
+    free_device(persistent_data->d_val);
+    free_device(persistent_data->beta_im);
+    free_device(persistent_data->tmp_data);
+    free_device(persistent_data->d_distances);
+    free_device(persistent_data->d_volumes);
 
     free(persistent_data->beta_im_cpu);
     fclose(persistent_data->output_file);
