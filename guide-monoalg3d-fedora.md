@@ -1,18 +1,18 @@
-## GUIDE TO CONFIGURE THE MONOALG_3D ON A FEDORA 33 MACHINE
+## GUIDE TO CONFIGURE MONOALG_3D ON A FEDORA 40 MACHINE
 
 ----------------------------------------------------------
 
-This guide provides instructions to configure the MonoAlg3D solver in a fresh instalation of Fedora 33 with all its features working.
+This guide provides instructions to configure the MonoAlg3D solver in a fresh instalation of Fedora 40 with all its features working.
 
 ## 1) Download and build a USB boot drive
 
-### Download the Fedora 33 ISO image:
+### Download the Fedora 40 ISO image for your system:
 
-- https://getfedora.org/pt_BR/
+- https://dl.fedoraproject.org/pub/fedora/linux/releases/40/Workstation/
 
-### Burn the ISO image in a USB device using the Rufus program (Windows) or any other program.
+- Burn the ISO image in a USB device using the Rufus program (Windows) or any other similar program.
 
-### Install Fedora 33 in the target machine
+- Install Fedora 40 on the target machine
 
 ### Perform a system update:
 
@@ -24,7 +24,7 @@ $ sudo dnf update
 
 - Close your current session
 - Click on your user
-- Click on the gear symbol and select the "GNOME over Xorg"
+- Click on the gear symbol and select the _"GNOME over Xorg"_
 - Begin your session again
 
 ### Reboot your system
@@ -39,10 +39,25 @@ $ reboot
 $ sudo dnf install gnome-tweak-tool
 ```
 
-### Open the Gnome-Tweak-Tool
+### Open Configurations
 
-- Disable animations to save memory
+- Disable energy saving options
 - Disable the suspend screen when notebook is closed
+
+### Install gedit
+```sh
+$ sudo dnf gedit
+```
+
+### Install the Resources program to replace the System Monitor
+
+- Search for the 'Programs' software
+- Open 'Programs' and search for the Resources program
+- Install using the Flathub package
+
+### Install the Engrampa package manager
+
+- Get the 'Engrampa' software from Programs
 
 ## 2) Install RPMFusion
 
@@ -53,29 +68,17 @@ $ sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-re
 $ sudo dnf update
 ```
 
-### Open the Gnome-Programs
-
-- Go to Program Repositories
-- Enable the RPMFusion repositories for NVIDIA
-- Update the repositories again
-
-```sh
-$ sudo dnf update
-```
-
 - Reboot your system
 
 ```sh
 $ reboot
 ```
 
-## 3) Install the NVIDIA driver
-
-### Reboot your system
-
 - Enter your BIOS by pressing F12 (check your computer key)
 - Disable the Secure Boot
 - Save your changes and exit
+
+## 3) Install the NVIDIA driver
 
 ### Run the following commands
 
@@ -103,8 +106,8 @@ $ reboot
 
 ### Check if the NVIDIA driver is correctly installed 
 
-- Go to Settings > About
-- Your NVIDIA Graphics Card should appear below the Processor field.
+- Go to Settings > System > About > System Details
+- Your NVIDIA Graphics Card should appear in Graphics field.
 
 ## 4) Install CUDA libraries
 
@@ -112,27 +115,30 @@ $ reboot
 
 ```sh
 $ cd ~; mkdir CUDA-Install; cd CUDA-Install
-$ wget -nc https://developer.download.nvidia.com/compute/cuda/11.3.0/local_installers/cuda_11.3.0_465.19.01_linux.run
+$ wget -nc https://developer.download.nvidia.com/compute/cuda/12.6.3/local_installers/cuda_12.6.3_560.35.05_linux.run
 ```
+
+- Here, I am using the CUDA version 12.6.3.
 
 ### Install dependencies
 
 ```sh
-$ sudo dnf install gcc-c++ mesa-libGLU-devel libX11-devel libXi-devel libXmu-devel libXcursor-devel libXrandr-devel
+$ sudo dnf install gcc-c++ mesa-libGLU-devel libX11-devel libXi-devel libXmu-devel 
 $ sudo dnf install freeglut freeglut-devel
+$ sudo dnf install gcc13-c++-13.3.1-2.fc40.x86_64
 ```
 
 ### Run the CUDA runfile
 
 ```sh
-$ chmod +x cuda_11.3.0_465.19.01_linux.run
-$ sudo ./cuda_11.3.0_465.19.01_linux.run
+$ chmod +x cuda_12.6.3_560.35.05_linux.run
+$ sudo ./cuda_12.6.3_560.35.05_linux.run
 ```
 
 ### Configure the installation
 
 - Accept the terms
-- Disable the NVIDIA Driver installation
+- **IMPORTANT!** Disable the NVIDIA Driver installation
 - Enable the installation: CUDA Toolkit, CUDA Samples, CUDA Demo, CUDA Documentation
 - Install the package
 
@@ -144,7 +150,7 @@ $ sudo ./cuda_11.3.0_465.19.01_linux.run
 $ su -
 ```
 
-- If is the first time logging as root, you can set a password to the "root" user with:
+- If is the first time logging as root, you can set a password to the _"root"_ user with:
 
 ```sh
 $ sudo passwd root
@@ -166,20 +172,24 @@ export PATH LD_LIBRARY_PATH
 EOF
 ```
 
-#### Logout and login again and check the variables
+#### Logout and login again. Check the variables
 
 ```sh
 $ echo $PATH
 $ echo $LD_LIBRARY_PATH
 ```
 
+- The new paths must appear.
+
 #### Test the CUDA library
 
 ```sh
-$ cd /home/<username>/NVIDIA_CUDA-11.1_Samples/1_Utilities/deviceQuery
+$ cd /home/<username>/NVIDIA_CUDA-12.6_Samples/1_Utilities/deviceQuery
 $ make
 $ ./deviceQuery
 ```
+
+- This should print some information about your GPU hardware.
 
 ## 5) Configure MonoAlg3D_C
 
@@ -189,6 +199,21 @@ $ ./deviceQuery
 $ sudo dnf install libXcursor-devel libXrandr-devel libXinerama-devel
 ```
 
+### Make a symbolic link for GCC version 13
+
+```sh
+$ sudo ln -s /usr/bin/gcc-13 /usr/local/cuda/bin/gcc
+$ sudo ln -s /usr/bin/g++-13 /usr/local/cuda/bin/g++
+```
+
+### Build and compile MonoAlg3D
+
+```sh
+$ ./build.sh -f
+```
+
+**IMPORTANT!** If you stop here you already have a working MonoAlg3D binary executable in the _/bin_ folder
+
 #### If you stop here you already have a working MonoAlg3D binary executable in the /bin folder
 
 ### [OPTIONAL] Install and configure MPI for batch simulations
@@ -196,8 +221,8 @@ $ sudo dnf install libXcursor-devel libXrandr-devel libXinerama-devel
 #### Download OpenMPI
 
 ```sh
-$ cd ~; make OpenMPI-Install; cd OpenMPI-Install
-$ wget -nc https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.1.tar.gz
+$ cd ~; mkdir OpenMPI-build; cd OpenMPI-build
+$ wget -nc https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.6.tar.gz
 ```
 
 #### Build OpenMPI
@@ -208,3 +233,24 @@ $ cd openmpi-4.1.1
 $ ./configure --prefix=/usr/local
 $ sudo make all install
 ```
+
+#### Configure OpenMPI for MonoAlg3D
+
+- Change the following function in the _'bsbash/find_functions.sh'_ file:
+
+```sh
+FIND_MPI () {
+	MPI_FOUND="y"
+	MPI_LIBRARIES="mpi"
+	MPI_LIBRARY_PATH=$OMPI_LIBRARY_PATH
+	MPI_INCLUDE_PATH=$OMPI_INCLUDE_PATH
+}
+```
+
+- Rebuild MonoAlg3D
+
+```sh
+./build.sh -f
+```
+
+- Check if you have the _"MonoAlg3D_batch"_ executable inside the _"/bin"_ folder.
