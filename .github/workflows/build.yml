@@ -23,8 +23,8 @@ jobs:
     - name: Test without cuda
       run:  ./run_tests.sh
 
-  build_ubuntu_latest_cuda11:
-    runs-on: ubuntu-latest
+  build_ubuntu_22_04_cuda11:
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -32,7 +32,7 @@ jobs:
     - name: Build without cuda
       run: ./build.sh -r simulator
 
-    - uses: Jimver/cuda-toolkit@v0.2.10
+    - uses: Jimver/cuda-toolkit@v0.2.19
       id: cuda-toolkit
       with:
         cuda: '11.7.0'
@@ -42,8 +42,8 @@ jobs:
     - name: Build with cuda 11
       run: ./build.sh -r simulator
 
-  build_ubuntu_latest_cuda12:
-    runs-on: ubuntu-latest
+  build_ubuntu_22_04_cuda12:
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -51,7 +51,7 @@ jobs:
     - name: Build without cuda
       run: ./build.sh -r simulator
 
-    - uses: Jimver/cuda-toolkit@v0.2.10
+    - uses: Jimver/cuda-toolkit@v0.2.19
       id: cuda-toolkit
       with:
         cuda: '12.1.0'

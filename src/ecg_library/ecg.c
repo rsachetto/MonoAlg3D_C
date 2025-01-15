@@ -587,7 +587,7 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_cpu) {
 
     // DIFFUSIVE CURRENT PLOT
     if (time_info->iteration % PSEUDO_BIDOMAIN_DATA->diff_curr_rate == 0 && time_info->current_t <= PSEUDO_BIDOMAIN_DATA->diff_curr_max_time) {
-        char *filename_diffusive_current[200];
+        char filename_diffusive_current[200];
         sprintf(filename_diffusive_current, "%s/diffusive_current_t_%g_ms.txt", output_dir, time_info->current_t);
         FILE *output_diffusive_current = fopen(filename_diffusive_current, "w");
         for(uint32_t i = 0; i < n_active; i++) {
@@ -749,7 +749,7 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_gpu) {
 
     // DIFFUSIVE CURRENT
     if (time_info->iteration % PSEUDO_BIDOMAIN_DATA->diff_curr_rate == 0 && time_info->current_t <= PSEUDO_BIDOMAIN_DATA->diff_curr_max_time) {
-        char *filename_diffusive_current[200];
+        char filename_diffusive_current[200];
         sprintf(filename_diffusive_current, "%s/diffusive_current_t_%g_ms.txt", output_dir, time_info->current_t);
         FILE *output_diffusive_current = fopen(filename_diffusive_current, "w");
         check_cuda_error(cudaMemcpy(PSEUDO_BIDOMAIN_DATA->beta_im_cpu, PSEUDO_BIDOMAIN_DATA->beta_im, n_active * sizeof(real), cudaMemcpyDeviceToHost));
