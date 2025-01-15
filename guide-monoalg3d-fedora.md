@@ -214,8 +214,6 @@ $ ./build.sh -f
 
 **IMPORTANT!** If you stop here you already have a working MonoAlg3D binary executable in the _/bin_ folder
 
-#### If you stop here you already have a working MonoAlg3D binary executable in the /bin folder
-
 ### [OPTIONAL] Install and configure MPI for batch simulations
 
 #### Download OpenMPI
@@ -228,8 +226,8 @@ $ wget -nc https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.6.tar
 #### Build OpenMPI
 
 ```sh
-$ gunzip -c openmpi-4.1.1.tar.gz | tar xf -
-$ cd openmpi-4.1.1
+$ gunzip -c openmpi-5.0.6.tar.gz | tar xf -
+$ cd openmpi-5.0.6
 $ ./configure --prefix=/usr/local
 $ sudo make all install
 ```
