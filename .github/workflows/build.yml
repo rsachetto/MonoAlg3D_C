@@ -24,7 +24,7 @@ jobs:
       run:  ./run_tests.sh
 
   build_ubuntu_latest_cuda11:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -36,12 +36,14 @@ jobs:
       id: cuda-toolkit
       with:
         cuda: '11.7.0'
+        method: 'network'
+        linux-local-args: '["--toolkit"]'
 
     - name: Build with cuda 11
       run: ./build.sh -r simulator
 
   build_ubuntu_latest_cuda12:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -53,6 +55,8 @@ jobs:
       id: cuda-toolkit
       with:
         cuda: '12.1.0'
+        method: 'network'
+        linux-local-args: '["--toolkit"]'
 
     - name: Build with cuda 12
       run: ./build.sh -r simulator
