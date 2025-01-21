@@ -15,20 +15,28 @@ This guide provides instructions to configure the MonoAlg3D solver in a fresh in
 ```sh
 	$ wsl.exe --install
 ```
-- Create na username for the Ubuntu virtual machine
-- Perform a system update
+- Create a username for the Ubuntu virtual machine
+- Perform a system update inside the Ubuntu machine
+```sh
 	$ sudo apt-get update
+```
 
 ## 2) Install dependencies
 
 In your Ubuntu machine do the following:
 
 - Install GCC/G++ compilers
+```sh
 	$ sudo apt-get install build-essential
+```
 - Install other packages
+```sh
 	$ sudo apt-get install libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libz-dev libxi-dev libglu1-mesa-dev libglvnd-dev
-- Check if you have the NVIDIA driver configured
+```
+- Check if you have the NVIDIA driver configured and enabled
+```sh
 	$ nvidia-smi
+```
 
 ## 3) Install CUDA
 
@@ -67,7 +75,7 @@ $ cd ~
 $ nano .bashrc
 ```
 
-- Open your "~/.bashrc" file and include the following lines:
+- Open your _"~/.bashrc"_ file and include the following lines:
 
 ```sh
 PATH=$PATH:/usr/local/cuda/include:/usr/local/cuda/bin
@@ -76,7 +84,7 @@ export PATH
 export LD_LIBRARY_PATH
 ```
 
-#### Logout and login again or execute "source .bashrc". Check the variables
+#### Logout and login again or execute _"source .bashrc"_. Check the variables
 
 ```sh
 $ echo $PATH
@@ -104,7 +112,7 @@ $ ./deviceInfo
 $ sudo apt-get install libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libz-dev libxi-dev libglu1-mesa-dev libglvnd-dev
 ```
 
-### Update the "bsbash/find_functions.sh" file with the following:
+### Update the _"bsbash/find_functions.sh"_ file with the following:
 
 ```sh
 CUDA_LIBRARY_PATH="/usr/local/cuda/lib64"
