@@ -14,6 +14,8 @@ Ubuntu: Refer to [the ubuntu guide](guide-monoalg3d-ubuntu.md)
 
 Fedora: Refer to [the fedora guide](guide-monoalg3d-fedora.md)
 
+Windows: Refer to [the windows guide](guide-monoalg3d-windows.md)
+
 ### Compile
 ```sh
 $ ./build.sh
