@@ -17,9 +17,11 @@
 // Precision to be used for the calculations on the GPU
 #ifdef CELL_MODEL_REAL_DOUBLE
 #pragma message("calc_ecg, using double precision on the GPU")
+#define BLAS_SIZE REAL_DOUBLE
 #define CUBLAS_SIZE CUDA_R_64F
 #else
 #pragma message("calc_ecg, using single precision on the GPU")
+#define BLAS_SIZE REAL_FLOAT
 #define CUBLAS_SIZE CUDA_R_32F
 #endif
 
@@ -299,8 +301,8 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     //This is allocated when using the CPU code, but we do not need it in the gpu version
     free(PSEUDO_BIDOMAIN_DATA->beta_im);
 
-    create_sparse_handle(&(PSEUDO_BIDOMAIN_DATA->sparseHandle));
-    create_blas_handle(&(PSEUDO_BIDOMAIN_DATA->blasHandle));
+    create_sparse_handle((void**)&(PSEUDO_BIDOMAIN_DATA->sparseHandle));
+    create_blas_handle((void**)&(PSEUDO_BIDOMAIN_DATA->blasHandle));
 
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
@@ -319,6 +321,7 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
 
     PSEUDO_BIDOMAIN_DATA->nz = nz;
 
+
     malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_col), nz * sizeof(int));
     malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_row), (N + 1) * sizeof(int));
     malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_val), nz * sizeof(real));
@@ -327,11 +330,14 @@ INIT_CALC_ECG(init_pseudo_bidomain_gpu) {
     malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->d_volumes), N * sizeof(real));
     malloc_device((void **)&(PSEUDO_BIDOMAIN_DATA->tmp_data), N * sizeof(real));
 
-#if defined(COMPILE_CUDA) && CUBLAS_VER_MAJOR >= 11
-    check_cuda_error(cusparseCreateCsr(&(PSEUDO_BIDOMAIN_DATA->matA), N, N, nz, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
-                                       PSEUDO_BIDOMAIN_DATA->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUBLAS_SIZE));
-    check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_beta_im), N, PSEUDO_BIDOMAIN_DATA->beta_im, CUBLAS_SIZE));
-    check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_vm), N, the_ode_solver->sv, CUBLAS_SIZE));
+#if (defined(COMPILE_CUDA) && CUBLAS_VER_MAJOR >= 11) || defined(COMPILE_SYCL)
+
+    sparse_create_scr(&(PSEUDO_BIDOMAIN_DATA->matA), N, N, nz, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col, PSEUDO_BIDOMAIN_DATA->d_val,
+                      INDEX_INT32, INDEX_INT32, INDEX_BASE_ZERO, BLAS_SIZE);
+
+    create_dense_vector((void**)&(PSEUDO_BIDOMAIN_DATA->vec_beta_im), N, PSEUDO_BIDOMAIN_DATA->beta_im, BLAS_SIZE);
+    create_dense_vector((void**)&(PSEUDO_BIDOMAIN_DATA->vec_vm), N, the_ode_solver->sv, BLAS_SIZE);
+
 #elif defined(COMPILE_CUDA)
     check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(PSEUDO_BIDOMAIN_DATA->descr)));
     cusparseSetMatType(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -383,10 +389,12 @@ CALC_ECG(pseudo_bidomain_gpu) {
     // VM is correct
     real alpha = 1.0;
     real beta = 0.0;
-#if CUSPARSE_VER_MAJOR >= 11
-    check_cublas_error(cusparseSpMV(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
-                                    PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
-                                    PSEUDO_BIDOMAIN_DATA->buffer));
+#if CUSPARSE_VER_MAJOR >= 11 || defined(COMPILE_SYCL)
+    sparse_spmv(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha,
+                PSEUDO_BIDOMAIN_DATA->matA, PSEUDO_BIDOMAIN_DATA->vec_vm, &beta,
+                PSEUDO_BIDOMAIN_DATA->vec_beta_im, BLAS_SIZE,
+                PSEUDO_BIDOMAIN_DATA->buffer);
+
 #else
 
 #ifdef CELL_MODEL_REAL_DOUBLE
@@ -672,9 +680,9 @@ INIT_CALC_ECG(init_pseudo_bidomain_with_diffusive_current_gpu) {
 
 #if CUBLAS_VER_MAJOR >= 11
     check_cuda_error(cusparseCreateCsr(&(PSEUDO_BIDOMAIN_DATA->matA), N, N, nz, PSEUDO_BIDOMAIN_DATA->d_row, PSEUDO_BIDOMAIN_DATA->d_col,
-                                       PSEUDO_BIDOMAIN_DATA->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUBLAS_SIZE));
-    check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_beta_im), N, PSEUDO_BIDOMAIN_DATA->beta_im, CUBLAS_SIZE));
-    check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_vm), N, the_ode_solver->sv, CUBLAS_SIZE));
+                                       PSEUDO_BIDOMAIN_DATA->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, BLAS_SIZE));
+    check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_beta_im), N, PSEUDO_BIDOMAIN_DATA->beta_im, BLAS_SIZE));
+    check_cuda_error(cusparseCreateDnVec(&(PSEUDO_BIDOMAIN_DATA->vec_vm), N, the_ode_solver->sv, BLAS_SIZE));
 #else
     check_cuda_error((cudaError_t)cusparseCreateMatDescr(&(PSEUDO_BIDOMAIN_DATA->descr)));
     cusparseSetMatType(PSEUDO_BIDOMAIN_DATA->descr, CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -704,7 +712,7 @@ INIT_CALC_ECG(init_pseudo_bidomain_with_diffusive_current_gpu) {
     real beta = 0.0;
 
     check_cuda_error(cusparseSpMV_bufferSize(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
-                                             PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
+                                             PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, BLAS_SIZE, CUSPARSE_ALG,
                                              &(PSEUDO_BIDOMAIN_DATA->bufferSize)));
 
     malloc_device(&(PSEUDO_BIDOMAIN_DATA->buffer), PSEUDO_BIDOMAIN_DATA->bufferSize);
@@ -728,7 +736,7 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_gpu) {
     real beta = 0.0;
 #if CUSPARSE_VER_MAJOR >= 11
     check_cublas_error(cusparseSpMV(PSEUDO_BIDOMAIN_DATA->sparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, PSEUDO_BIDOMAIN_DATA->matA,
-                                    PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, CUBLAS_SIZE, CUSPARSE_ALG,
+                                    PSEUDO_BIDOMAIN_DATA->vec_vm, &beta, PSEUDO_BIDOMAIN_DATA->vec_beta_im, BLAS_SIZE, CUSPARSE_ALG,
                                     PSEUDO_BIDOMAIN_DATA->buffer));
 #else
 
@@ -766,13 +774,7 @@ CALC_ECG(pseudo_bidomain_with_diffusive_current_gpu) {
         gpu_vec_div_vec(PSEUDO_BIDOMAIN_DATA->beta_im, PSEUDO_BIDOMAIN_DATA->d_distances + n_active * i, PSEUDO_BIDOMAIN_DATA->tmp_data, n_active);
         real local_sum;
 
-#ifdef CELL_MODEL_REAL_DOUBLE
-        check_cublas_error(
-            cublasDdot(PSEUDO_BIDOMAIN_DATA->blasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
-#else
-        check_cublas_error(
-            cublasSdot(PSEUDO_BIDOMAIN_DATA->blasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum));
-#endif
+        blas_dot(PSEUDO_BIDOMAIN_DATA->blasHandle, n_active, PSEUDO_BIDOMAIN_DATA->tmp_data, 1, PSEUDO_BIDOMAIN_DATA->d_volumes, 1, &local_sum);
 
         fprintf(PSEUDO_BIDOMAIN_DATA->output_file, "%lf ", -PSEUDO_BIDOMAIN_DATA->scale_factor * local_sum);
     }

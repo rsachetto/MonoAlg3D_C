@@ -1,0 +1,12 @@
+#ifndef MONOALG3D_MODEL_COURTEMANCHE_RAMIREZ_NATTEL_1998_H
+#define MONOALG3D_MODEL_COURTEMANCHE_RAMIREZ_NATTEL_1998_H
+
+#include "../model_common.h"
+
+#define NEQ 21
+#define INITIAL_V (-81.180000f)
+
+#include "../default_solvers.h"
+
+#endif //MONOALG3D_MODEL_COURTEMANCHE_RAMIREZ_NATTEL_1998_H
+

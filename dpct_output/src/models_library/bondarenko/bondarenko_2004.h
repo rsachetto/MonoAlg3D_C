@@ -1,0 +1,9 @@
+#ifndef MONOALG3D_MODEL_BONDARENKO_2004_H
+#define MONOALG3D_MODEL_BONDARENKO_2004_H
+
+#define NEQ 41
+#define INITIAL_V (-82.4202f)
+
+#include "../default_solvers.h"
+
+#endif //MONOALG3D_MODEL_BONDARENKO_2004_H

@@ -7,8 +7,8 @@ ERROR='\033[0;31m'
 NC='\033[0m' # No Color
 
 #MAIN BUILD VARIABLES
-C_COMPILER="gcc"
-CXX_COMPILER="g++"
+C_COMPILER="gcc-13"
+CXX_COMPILER="g++-13"
 AR_COMMAND="ar"
 RANLIB="ranlib"
 C_FLAGS=
@@ -372,7 +372,7 @@ COMPILE_OBJECT () {
 
 	if [ -n "$FORCE_COMPILATION" ] || [ "$(RECOMPILE_OR_NOT "$OBJ_FILE" "$SRC_FILE")" -gt "0" ]; then
 		if [[ "$COMPILER" == "$NVCC" ]]; then
-			local X_COMPILER_FLAGS=()
+            local X_COMPILER_FLAGS=()
 			for xflag in $MY_C_FLAGS; do
 				if [ "$xflag" != "-std=gnu99" ] && [ "$xflag" != "-Werror=implicit-function-declaration" ]; then
 					X_COMPILER_FLAGS+=("\\\"${xflag}\\\",")

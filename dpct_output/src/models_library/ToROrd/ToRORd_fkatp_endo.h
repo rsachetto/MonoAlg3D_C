@@ -1,0 +1,10 @@
+#ifndef MONOALG3D_MODEL_TORORD_FKATP_ENDO_H
+#define MONOALG3D_MODEL_TORORD_FKATP_ENDO_H
+
+#define NEQ 43
+#define INITIAL_V (-88.763800f)
+
+#include "../default_solvers.h"
+
+#endif //MONOALG3D_MODEL_TORORD_FKATP_ENDO_H
+

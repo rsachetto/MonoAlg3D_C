@@ -40,9 +40,7 @@ struct pseudo_bidomain_persistent_data {
     cusparseSpMatDescr_t matA;
     cusparseDnVecDescr_t vec_vm;
     cusparseDnVecDescr_t vec_beta_im;
-#endif
-
-#ifdef COMPILE_SYCL
+#elif defined(COMPILE_SYCL)
     dpct::sparse::sparse_matrix_desc_t matA;
     std::shared_ptr<dpct::sparse::dense_vector_desc> vec_vm;
     std::shared_ptr<dpct::sparse::dense_vector_desc> vec_beta_im;

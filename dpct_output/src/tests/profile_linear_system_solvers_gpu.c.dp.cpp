@@ -1,0 +1,182 @@
+//
+// Created by sachetto on 07/04/2020.
+//
+
+#include <sycl/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include "../alg/grid/grid.h"
+#include "../config/domain_config.h"
+#include "../config/save_mesh_config.h"
+#include "../3dparty/ini_parser/ini.h"
+
+#include "../3dparty/stb_ds.h"
+#include "../utils/stop_watch.h"
+
+#include "../gpu_utils/gpu_utils.h"
+
+#include <gdbm.h>
+
+struct elapsed_times {
+    double init_time;
+    double run_time;
+    double end_time;
+    double total_time;
+
+} __attribute__((packed));
+
+#include "profile_solvers_common.c"
+
+int main(int argc, char **argv) {
+
+    const long long nruns = 100;
+
+    struct elapsed_times times;
+    struct elapsed_times average_times = { 0 };
+
+    if(argc != 2) {
+        printf("Usage: ./%s hardware_key", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    sds hash_key_with_size = sdsnew(argv[1]);
+    sds nruns_string = sdsfromlonglong(nruns);
+    hash_key_with_size = sdscat(hash_key_with_size, nruns_string);
+    sdsfree(nruns_string);
+
+    datum hash_key;
+    hash_key.dptr = (char*)hash_key_with_size;
+    hash_key.dsize = (int)strlen(hash_key.dptr);
+
+    FILE *A = NULL;
+    FILE *B = NULL;
+    FILE *X = NULL;
+
+    A = fopen("tests_bin/A4.txt", "r");
+    B = fopen("tests_bin/B4.txt", "r");
+    X = fopen("tests_bin/X4.txt", "r");
+
+    assert(A);
+    assert(B);
+    assert(X);
+
+    struct grid *grid = new_grid();
+    assert (grid);
+
+    construct_grid_from_file(grid, A, B);
+
+    printf("Get cuda Device info\n");
+
+    int device_count;
+    int device = 0;
+    check_cuda_error(DPCT_CHECK_ERROR(device_count = dpct::device_count()));
+
+    if(device_count > 0) {
+        if(device >= device_count) {
+            log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
+        }
+
+        dpct::device_info prop;
+        check_cuda_error(DPCT_CHECK_ERROR(dpct::get_device(device).get_device_info(prop)));
+        log_info("%d devices available, running on Device %d: %s\n", device_count, device, prop.name);
+
+        /*
+        DPCT1093:0: The "device" device may be not the one intended for use. Adjust the selected device if needed.
+        */
+        check_cuda_error(DPCT_CHECK_ERROR(dpct::select_device(device)));
+    }
+
+    for(int i = 0; i < nruns; i++) {
+
+        profile_solver(false, "gpu_conjugate_gradient", "init_gpu_conjugate_gradient", "end_gpu_conjugate_gradient", grid, 1, &times);
+
+        average_times.init_time += times.init_time;
+        average_times.run_time  += times.run_time;
+        average_times.end_time  += times.end_time;
+
+    }
+
+    clean_and_free_grid(grid);
+    fclose(A);
+    fclose(B);
+    fclose(X);
+
+    average_times.init_time /= nruns;
+    average_times.run_time  /= nruns;
+    average_times.end_time  /= nruns;
+
+    average_times.total_time = average_times.init_time + average_times.run_time + average_times.end_time;
+
+    GDBM_FILE f;
+
+    f = gdbm_open( "./tests_bin/profile_solver_times_gpu.gdbm", 4096, GDBM_WRCREAT, 0644, NULL );
+
+    datum content = gdbm_fetch (f, hash_key);
+
+    datum data;
+    data.dptr = (char*)(&average_times);
+    data.dsize = sizeof(average_times);
+
+    printf("CURRENT RUN\n");
+    printf("Avg Init function time: %lf us\n", average_times.init_time);
+    printf("Avg Run function time: %lf us\n", average_times.run_time);
+    printf("Avg End function time: %lf us\n", average_times.end_time);
+    printf("Avg Total time: %lf us\n", average_times.total_time);
+
+    printf("---------------------------------------------------\n");
+
+    if (content.dptr == NULL) {
+        printf("\nFirst run in this hardware with nruns = %lld\n", nruns);
+        printf("---------------------------------------------------\n");
+        gdbm_store(f, hash_key, data, GDBM_INSERT);
+    }
+    else {
+        struct elapsed_times *best_run = (struct elapsed_times *)content.dptr;
+
+        double speedup = (double)best_run->total_time/(double)average_times.total_time;
+
+        if(speedup > 1.0) {
+            printf("Current run is %lf x faster than best run. Replacing record.\n", speedup);
+            gdbm_store(f, hash_key, data, GDBM_REPLACE);
+        }
+        else if(speedup < 1.0) {
+            printf("Current run is %lf x slower than best run.\n", 1.0/speedup);
+        }
+
+        free(best_run);
+    }
+
+    printf("BEST RUN IN ALL MACHINES\n");
+    printf("---------------------------------------------------\n");
+
+    datum value;
+    datum key = gdbm_firstkey (f);
+
+    while (key.dptr != NULL) {
+
+        datum nextkey;
+        value = gdbm_fetch(f, key);
+
+        // Process the key and value
+        if(strncmp(key.dptr, hash_key.dptr, key.dsize) == 0) {
+            printf("THIS MACHINE (%.*s):\n", key.dsize, key.dptr);
+        }
+        else {
+            printf("MACHINE: %.*s\n", key.dsize, key.dptr);
+        }
+
+        struct elapsed_times *best_run = (struct elapsed_times *)value.dptr;
+        printf("Avg Init function time: %lf us\n", best_run->init_time);
+        printf("Avg Run function time: %lf us\n", best_run->run_time);
+        printf("Avg End function time: %lf us\n", best_run->end_time);
+        printf("Avg Total time: %lf us\n", best_run->total_time);
+
+        printf("---------------------------------------------------\n");
+
+        nextkey = gdbm_nextkey (f, key);
+        free (key.dptr);
+        key = nextkey;
+    }
+
+    sdsfree(hash_key_with_size);
+    gdbm_close(f);
+}
