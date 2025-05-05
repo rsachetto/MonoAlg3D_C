@@ -2,15 +2,19 @@ COMPILE_MODEL_LIB () {
     local LIB_NAME=$1
     local MODEL_FILE_CPU=$2
     local MODEL_FILE_GPU=$3
-    local COMMON_HEADERS="../model_common.h ../default_solvers.c $4"
-    local EXTRA_C_FLAGS=$5
-    local EXTRA_STATIC_LIBS=$6
+    local MODEL_FILE_SYCL=$4
+    local COMMON_HEADERS="../model_common.h ../default_solvers.c $5"
+    local EXTRA_C_FLAGS=$6
+    local EXTRA_STATIC_LIBS=$7
 
     local MODEL_SOURCES="$MODEL_FILE_CPU"    
 
 	local MODELS_STATIC_DEPS="config_helpers utils tinyexpr $EXTRA_STATIC_LIBS"
- 
-    if [ -n "$CUDA_FOUND" ]; then
+
+    if [ -n "$USE_SYCL" ] && [ -n "$MODEL_FILE_SYCL" ]; then
+      MODEL_SOURCES="$MODEL_FILE_SYCL"
+      EXTRA_C_FLAGS="$EXTRA_C_FLAGS -fsycl"
+    elif [ -n "$CUDA_FOUND" ]; then
         MODELS_EXTRA_LIB_PATH=$CUDA_LIBRARY_PATH
         MODELS_DYNAMIC_LIBS="c cudart"
 

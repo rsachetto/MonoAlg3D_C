@@ -235,10 +235,14 @@ HDR_FILES=""
 
 STATIC_DEPS="monodomain ode_solver ini_parser config tinyexpr ${OPT_DEPS_GUI} config_helpers ensight_utils vtk_utils yxml alg graph utils sds miniz"
 
-DYNAMIC_DEPS="dl m stdc++ ${OPT_DEPS_GPU} $CUDA_LIBRARIES"
+DYNAMIC_DEPS="dl m ${OPT_DEPS_GPU} $CUDA_LIBRARIES"
 
 if [ -n "$AMGX_FOUND" ]; then
     DYNAMIC_DEPS="$DYNAMIC_DEPS $AMGX_LIBRARIES"
+fi
+
+if [ -n "$USE_SYCL" ]; then
+    DYNAMIC_DEPS="$DYNAMIC_DEPS sycl"
 fi
 
 

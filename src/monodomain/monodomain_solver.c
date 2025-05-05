@@ -6,8 +6,12 @@
 #include "../gui/gui.h"
 #endif
 
-#ifdef COMPILE_CUDA
-#include "../gpu_utils/gpu_utils.h"
+#if defined(COMPILE_CUDA) || defined(COMPILE_SYCL)
+#define COMPILE_GPU
+#endif
+
+#ifdef COMPILE_GPU
+#include "../gpu_utils/accel_utils.h"
 #endif
 
 #include "../3dparty/stb_ds.h"
@@ -311,15 +315,17 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
     }
 #endif
 
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
     bool linear_solver_on_gpu = false;
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(linear_solver_on_gpu, linear_system_solver_config, "use_gpu");
 
     bool init_gpu = linear_solver_on_gpu || the_ode_solver->gpu;
 
     if(init_gpu) {
+#ifdef COMPILE_CUDA
         int device_count;
         int device = the_ode_solver->gpu_id;
+
         check_cuda_error(cudaGetDeviceCount(&device_count));
 
         if(device_count > 0) {
@@ -344,6 +350,9 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
             check_cuda_error(cudaSetDevice(device));
         }
+#elif defined(COMPILE_SYCL)
+
+#endif
     }
 #endif
 

@@ -8,8 +8,12 @@
 #include <dlfcn.h>
 #include <string.h>
 
-#ifdef COMPILE_CUDA
-#include "../gpu_utils/gpu_utils.h"
+#if defined(COMPILE_CUDA) || defined(COMPILE_SYCL)
+#define COMPILE_GPU
+#endif
+
+#ifdef COMPILE_GPU
+#include "../gpu_utils/accel_utils.h"
 #endif
 
 #include "../3dparty/sds/sds.h"
@@ -44,8 +48,8 @@ struct ode_solver *new_ode_solver() {
 void free_ode_solver(struct ode_solver *solver) {
     if(solver->sv) {
         if(solver->gpu) {
-#ifdef COMPILE_CUDA
-            cudaFree(solver->sv);
+#ifdef COMPILE_GPU
+            free_device(solver->sv);
 #endif
         } else {
             free(solver->sv);
@@ -110,7 +114,7 @@ void init_ode_solver_with_cell_model(struct ode_solver *solver) {
         exit(1);
     }
 
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
     solver->set_ode_initial_conditions_gpu = dlsym(solver->handle, "set_model_initial_conditions_gpu");
     if((error = dlerror()) != NULL) {
         fputs(error, stderr);
@@ -135,7 +139,7 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
     (*(solver->get_cell_model_data))(&(solver->model_data), get_initial_v, get_neq);
 
     if(solver->gpu) {
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
 
         set_ode_initial_conditions_gpu_fn *soicg_fn_pt = solver->set_ode_initial_conditions_gpu;
 
@@ -149,7 +153,8 @@ void set_ode_initial_conditions_for_all_volumes(struct ode_solver *solver, struc
         }
 
         if(solver->sv != NULL) {
-            check_cuda_error(cudaFree(solver->sv));
+            free_device(solver->sv);
+            solver->sv = NULL;
         }
 
         solver->pitch = soicg_fn_pt(solver, ode_extra_config);
@@ -235,7 +240,7 @@ void solve_all_volumes_odes(struct ode_solver *the_ode_solver, real_cpu cur_time
     }
 
     if(the_ode_solver->gpu) {
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
         solve_model_ode_gpu_fn *solve_odes_fn = the_ode_solver->solve_model_ode_gpu;
         solve_odes_fn(the_ode_solver, ode_extra_config, cur_time, merged_stims);
 #endif
@@ -267,7 +272,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
     const size_t max_index = 8;
 
     if(ode_solver->gpu) {
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
         size_t pitch_h = ode_solver->pitch;
 
         for(i = 0; i < num_refined_cells; i++) {
@@ -280,7 +285,7 @@ void update_state_vectors_after_refinement(struct ode_solver *ode_solver, const 
             for(int j = 1; j < max_index; j++) {
                 index = refined_this_step[index_id + j];
                 sv_dst = &sv[index];
-                check_cuda_error(cudaMemcpy2D(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t)neq, cudaMemcpyDeviceToDevice));
+                memcpy2d_device(sv_dst, pitch_h, sv_src, pitch_h, sizeof(real), (size_t)neq, DEVICE_TO_DEVICE);
             }
         }
 #endif
