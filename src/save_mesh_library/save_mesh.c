@@ -176,13 +176,13 @@ SAVE_MESH(save_one_cell_state_variables) {
         //fprintf(params->file, "%g %g %g\n", time_info->current_t, cell_sv[0], cell_sv[5]);
 
         // Only transmembrane potential
-        //fprintf(params->file, "%g\n", cell_sv[0]);
+        fprintf(params->file, "%g\n", cell_sv[0]);
 
         // All state variables
-        for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-            fprintf(params->file, "%g, ", cell_sv[i]);
-        }
-        fprintf(params->file, "\n");
+        //for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+        //    fprintf(params->file, "%g, ", cell_sv[i]);
+        //}
+        //fprintf(params->file, "\n");
 
         // Time, Cai and Vm at certain timestep
         //if (time_info->current_t >= 15200) {
