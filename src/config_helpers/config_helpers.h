@@ -12,6 +12,10 @@
 
 #include "../3dparty/stb_ds.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void report_parameter_error_on_function(int line, const char *file, const char *parameter);
 void report_error_on_function(int line, const char *file, const char *error);
 void report_error_on_function_and_continue(int line, const char *file, const char *parameter);
@@ -19,6 +23,10 @@ char *get_string_parameter(struct string_hash_entry *config, const char *paramet
 bool get_vector_parameter(real_cpu **v, const char *parameter, int n);
 bool get_vector3_parameter(real_cpu v[3], const char *parameter);
 bool get_matrix_parameter(real_cpu **v, const char *parameter, int nlin, int ncol);
+
+#ifdef __cplusplus
+}
+#endif
 
 #define STRINGS_EQUAL(str1, str2) (strcmp((str1), (str2)) == 0)
 

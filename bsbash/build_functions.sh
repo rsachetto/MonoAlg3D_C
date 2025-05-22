@@ -339,8 +339,9 @@ COMPILE_EXECUTABLE () {
 
 		local COMPILER_COMMAND="$C_COMPILER $MY_C_FLAGS $SOURCES ${STATIC_DEPS[*]}  -o $BUILD_DIR/${EXECUTABLE_NAME} ${EXTRA_LIBRARY_PATH[*]} ${DYNAMIC_DEPS[*]} -Wl,-rpath=$LIBRARY_OUTPUT_DIRECTORY"
 
-		ECHO_AND_EXEC_COMMAND "${COMPILER_COMMAND}"
-		touch "$TIME_FILE"
+        ECHO_AND_EXEC_COMMAND "${COMPILER_COMMAND}"
+
+        touch "$TIME_FILE"
 
 		if [ -n "$WRITE_COMPILE_COMMANDS" ] ; then
 			ADD_COMPILE_COMMAND "$COMPILER_COMMAND"  "$PWD/${SOURCES}"
@@ -477,6 +478,7 @@ COMPILE_SHARED_LIB () {
 	local EXTRA_LIB_PATH_LIST=$6
 	local EXTRA_C_FLAGS=$7
 	local IS_CUDA=$8
+	local IS_SYCL=$9
 
 	local STATIC_DEPS=()
 
@@ -531,7 +533,7 @@ COMPILE_SHARED_LIB () {
 		fi
 	done
 
-	if [ -n "$IS_CUDA" ]; then
+	if [ -n "$IS_CUDA" ] || [ -n "$IS_SYCL" ]; then
 		LINKER=$CXX_COMPILER
 	else
 		LINKER=$C_COMPILER
@@ -540,7 +542,11 @@ COMPILE_SHARED_LIB () {
 	if [ -n "$ANY_COMPILED_LOCAL" ]; then
 		PRINT_INFO "LINKING SHARED LIB $LIB_NAME"
 
+	if [ -n "$IS_SYCL" ]; then
+		ALL_FLAGS="-fPIC -fsycl -fsycl-targets=nvptx64-nvidia-cuda,x86_64,spir64 $C_FLAGS -shared -o $LIB_PATH ${OBJECTS[*]} ${STATIC_DEPS[*]} ${EXTRA_LIBRARY_PATH[*]} ${DYNAMIC_DEPS[*]}"
+	else
 		ALL_FLAGS="-fPIC $C_FLAGS -shared -o $LIB_PATH ${OBJECTS[*]} ${STATIC_DEPS[*]} ${EXTRA_LIBRARY_PATH[*]} ${DYNAMIC_DEPS[*]}"
+	fi
 
 		ECHO_AND_EXEC_COMMAND "$LINKER $ALL_FLAGS"
 

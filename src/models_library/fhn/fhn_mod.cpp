@@ -6,8 +6,17 @@
 
 void RHS_sycl(real *Y, real stim_current, real *dY, int sv_id, int num_cells);
 
-extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_sycl) {
+extern "C" GET_CELL_MODEL_DATA(init_cell_model_data) {
+
+    if(get_initial_v)
+        cell_model->initial_v = INITIAL_V;
+    if(get_neq)
+        cell_model->number_of_ode_equations = NEQ;
+}
+
+extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_gpu) {
     printf("Using FitzHugh-Nagumo 1961 SYCL model\n");
+
     dpct::device_ext &dev_ct1 = dpct::get_current_device();
     sycl::queue &q_ct1 = dev_ct1.default_queue();
     printf("Running on '%s'\n", q_ct1.get_device().get_info<sycl::info::device::name>().c_str());
@@ -42,7 +51,11 @@ extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_sycl) {
     }
 }
 
-extern "C" SOLVE_MODEL_ODES(solve_model_odes_sycl) {
+extern "C" SET_ODE_INITIAL_CONDITIONS_GPU(set_model_initial_conditions_cpu) {
+    set_model_initial_conditions_gpu(solver, ode_extra_config);
+}
+
+extern "C" SOLVE_MODEL_ODES(solve_model_odes_gpu) {
 
     size_t num_cells_to_solve = ode_solver->num_cells_to_solve;
     uint32_t *cells_to_solve = ode_solver->cells_to_solve;
@@ -86,8 +99,6 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_sycl) {
                                       for(int n = 0; n < num_steps; ++n) {
                                           RHS_sycl(sv, d_stim[i], rDY, sv_id, num_cells_to_solve);
 
-// Update state variables
-#pragma unroll
                                           for(int j = 0; j < NEQ; j++) {
                                               sv[j * num_cells_to_solve + i] += dt * rDY[j];
                                           }
@@ -104,6 +115,10 @@ extern "C" SOLVE_MODEL_ODES(solve_model_odes_sycl) {
     } catch(sycl::exception &e) {
         printf("SYCL exception: %s\n", e.what());
     }
+}
+
+extern "C" SOLVE_MODEL_ODES(solve_model_odes_cpu) {
+    solve_model_odes_gpu(ode_solver, ode_extra_config, current_t, stim_currents);
 }
 
 inline void RHS_sycl(real *Y, real stim_current, real *dY, int sv_id, int num_cells) {

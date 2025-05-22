@@ -3,10 +3,10 @@
 
 #include "../3dparty/ini_parser/ini_file_sections.h"
 #include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
 #include "../3dparty/tinyexpr/tinyexpr.h"
 #include "../utils/file_utils.h"
 #include "config_parser.h"
-#include "../3dparty/stb_ds.h"
 #include "postprocessor_config.h"
 
 static const char *batch_opt_string = "c:h?";
@@ -16,15 +16,12 @@ static const struct option long_batch_options[] = {{"config_file", required_argu
 #define long_eikonal_options long_batch_options
 
 static const char *conversion_opt_string = "i:o:c:h?";
-static const struct option long_conversion_options[] = {{"input", required_argument, NULL, 'i'},
-                                                        {"output", required_argument, NULL, 'o'},
-                                                        {"config_file", required_argument, NULL, 'c'}};
+static const struct option long_conversion_options[] = {
+    {"input", required_argument, NULL, 'i'}, {"output", required_argument, NULL, 'o'}, {"config_file", required_argument, NULL, 'c'}};
 
 static const char *fiber_conversion_opt_string = "f:e:n:a:h?";
-static const struct option long_fiber_conversion_options[] = {{"fib", required_argument, NULL, 'f'},
-                                                              {"ele", required_argument, NULL, 'e'},
-                                                              {"nod", required_argument, NULL, 'n'},
-                                                              {"alg", required_argument, NULL, 'a'}};
+static const struct option long_fiber_conversion_options[] = {
+    {"fib", required_argument, NULL, 'f'}, {"ele", required_argument, NULL, 'e'}, {"nod", required_argument, NULL, 'n'}, {"alg", required_argument, NULL, 'a'}};
 
 static const char *visualization_opt_string = "x:m:d:p:v:a:cs:t:u:h?";
 static const struct option long_visualization_options[] = {{"visualization_max_v", required_argument, NULL, 'x'},
@@ -75,7 +72,7 @@ static const struct option long_options[] = {
     {"restore_state", required_argument, NULL, RESTORE_STATE_OPT},                // Complex option
     {"linear_system_solver", required_argument, NULL, LINEAR_SYSTEM_SOLVER_OPT},  // Complex option
     {"update_monodomain", required_argument, NULL, UPDATE_MONODOMAIN_SOLVER_OPT}, // Complex option
-    {"calc_ecg", required_argument, NULL, CALC_ECG_OPT}, // Complex option
+    {"calc_ecg", required_argument, NULL, CALC_ECG_OPT},                          // Complex option
     {"visualize", no_argument, NULL, DRAW_OPT},
     {"visualization_max_v", required_argument, NULL, MAX_V_OPT},
     {"visualization_min_v", required_argument, NULL, MIN_V_OPT},
@@ -300,7 +297,6 @@ struct user_options *new_user_options() {
     user_args->auto_dt_ode = false;
     user_args->auto_dt_ode_was_set = false;
 
-
     user_args->ode_adaptive = false;
     user_args->ode_adaptive_was_set = false;
 
@@ -460,7 +456,7 @@ void set_common_data(struct config *config, const char *key, const char *value) 
         config->end_function_name_was_set = true;
     } else if(IS_IN_LIBRARY_FILE(key)) {
         config->library_file_path = strdup(value);
-    } else if (IS_IN_EXTRA_FUNCTION(key)) {
+    } else if(IS_IN_EXTRA_FUNCTION(key)) {
         arrput(config->extra_function_names, strdup(value));
     } else {
         shput_dup_value(config->config_data, key, value);
@@ -684,7 +680,7 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
         if(memcmp(key, "dt", 2) == 0) {
             real dt_ode = (real)strtod(value, NULL);
             if(dt_ode != user_args->dt_ode) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->dt_ode);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->dt_ode);
                 maybe_issue_overwrite_warning("dt", "ode_solver", old_value, value, config_file);
             }
 
@@ -694,7 +690,7 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
             bool auto_dt_ode = IS_TRUE(value);
 
             if(auto_dt_ode != user_args->auto_dt_ode) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->auto_dt_ode);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->auto_dt_ode);
                 maybe_issue_overwrite_warning("auto_dt", "ode_solver", old_value, value, config_file);
             }
 
@@ -705,7 +701,7 @@ void set_ode_solver_config(const char *args, struct user_options *user_args, con
             bool use_gpu = IS_TRUE(value);
 
             if(use_gpu != user_args->gpu) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->gpu);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->gpu);
                 maybe_issue_overwrite_warning("use_gpu", "ode_solver", old_value, value, config_file);
             }
 
@@ -760,7 +756,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
             GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dx, dc, key, start_dx_was_set);
 
             if(start_dx_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", start_dx);
+                snprintf(old_value, sizeof(old_value), "%lf", start_dx);
                 maybe_issue_overwrite_warning("start_dx", "domain", old_value, value, config_file);
             }
             shput_dup_value(dc->config_data, key, value);
@@ -773,7 +769,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
 
             if(max_dx_was_set) {
 
-                snprintf(old_value, sizeof(old_value),  "%lf", max_dx);
+                snprintf(old_value, sizeof(old_value), "%lf", max_dx);
                 maybe_issue_overwrite_warning("maximum_dx", "domain", old_value, value, config_file);
             }
             shput_dup_value(dc->config_data, key, value);
@@ -784,7 +780,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
             GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dy, dc, key, start_dy_was_set);
 
             if(start_dy_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", start_dy);
+                snprintf(old_value, sizeof(old_value), "%lf", start_dy);
                 maybe_issue_overwrite_warning("start_dy", "domain", old_value, value, config_file);
             }
             shput_dup_value(dc->config_data, key, value);
@@ -795,7 +791,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
             GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dy, dc, key, max_dy_was_set);
 
             if(max_dy_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", max_dy);
+                snprintf(old_value, sizeof(old_value), "%lf", max_dy);
                 maybe_issue_overwrite_warning("maximum_dy", "domain", old_value, value, config_file);
             }
             shput_dup_value(dc->config_data, key, value);
@@ -806,7 +802,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
             GET_PARAMETER_NUMERIC_VALUE(real_cpu, start_dz, dc, key, start_dz_was_set);
 
             if(start_dz_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", start_dz);
+                snprintf(old_value, sizeof(old_value), "%lf", start_dz);
                 maybe_issue_overwrite_warning("start_dz", "domain", old_value, value, config_file);
             }
             shput_dup_value(dc->config_data, key, value);
@@ -818,7 +814,7 @@ void set_domain_config(const char *args, struct config *dc, const char *config_f
             GET_PARAMETER_NUMERIC_VALUE(real_cpu, max_dz, dc, "maximum_dz", max_dz_was_set);
 
             if(max_dz_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", max_dz);
+                snprintf(old_value, sizeof(old_value), "%lf", max_dz);
                 maybe_issue_overwrite_warning("maximum_dz", "domain", old_value, value, config_file);
             }
             shput_dup_value(dc->config_data, key, value);
@@ -866,7 +862,7 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
             GET_PARAMETER_NUMERIC_VALUE(int, print_rate, sm, key, print_rate_was_set);
 
             if(print_rate_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", print_rate);
+                snprintf(old_value, sizeof(old_value), "%d", print_rate);
                 maybe_issue_overwrite_warning(key, "save_mesh", old_value, value, config_file);
             }
             shput_dup_value(sm->config_data, key, value);
@@ -890,9 +886,9 @@ void set_save_mesh_config(const char *args, struct config *sm, const char *confi
             if(remove_older_simulation_was_set) {
 
                 if(remove_older_simulation) {
-                    snprintf(old_value, sizeof(old_value),  "yes");
+                    snprintf(old_value, sizeof(old_value), "yes");
                 } else {
-                    snprintf(old_value, sizeof(old_value),  "no");
+                    snprintf(old_value, sizeof(old_value), "no");
                 }
 
                 maybe_issue_overwrite_warning(key, "save_mesh", old_value, optarg, config_file);
@@ -950,7 +946,7 @@ void set_calc_ecg_config(const char *args, struct config *sm, const char *config
             GET_PARAMETER_NUMERIC_VALUE(int, calc_rate, sm, key, calc_rate_was_set);
 
             if(calc_rate_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", calc_rate);
+                snprintf(old_value, sizeof(old_value), "%d", calc_rate);
                 maybe_issue_overwrite_warning(key, "calc_ecg", old_value, value, config_file);
             }
             shput_dup_value(sm->config_data, key, value);
@@ -998,7 +994,7 @@ void set_config(const char *args, struct config *config, const char *config_file
         key_value[0] = sdstrim(key_value[0], " ");
         key_value[1] = sdstrim(key_value[1], " ");
 
-        char *key   = key_value[0];
+        char *key = key_value[0];
         char *value = key_value[1];
 
         if(IS_IN_MAIN_FUNCTION(key)) {
@@ -1152,7 +1148,7 @@ void parse_visualization_options(int argc, char **argv, struct visualization_opt
             user_args->save_activation_only = true;
             break;
         case 's':
-            user_args->start_file = (int) strtol(optarg, NULL, 10);
+            user_args->start_file = (int)strtol(optarg, NULL, 10);
             break;
         case 't':
             user_args->step = (int)strtol(optarg, NULL, 10);
@@ -1185,24 +1181,24 @@ void parse_fibers_conversion_options(int argc, char **argv, struct fibers_conver
 
     while(opt != -1) {
         switch(opt) {
-            case 'f':
-                user_args->fibers_file = strdup(optarg);
-                break;
-            case 'e':
-                user_args->ele_file = strdup(optarg);
-                break;
-            case 'n':
-                user_args->nodes_file = strdup(optarg);
-                break;
-            case 'a':
-                user_args->alg_file = strdup(optarg);
-                break;
-            case 'h': /* fall-through is intentional */
-            case '?':
-                display_fibers_conversion_usage(argv);
-                break;
-            default:
-                break;
+        case 'f':
+            user_args->fibers_file = strdup(optarg);
+            break;
+        case 'e':
+            user_args->ele_file = strdup(optarg);
+            break;
+        case 'n':
+            user_args->nodes_file = strdup(optarg);
+            break;
+        case 'a':
+            user_args->alg_file = strdup(optarg);
+            break;
+        case 'h': /* fall-through is intentional */
+        case '?':
+            display_fibers_conversion_usage(argv);
+            break;
+        default:
+            break;
         }
 
         opt = getopt_long(argc, argv, fiber_conversion_opt_string, long_fiber_conversion_options, &option_index);
@@ -1247,7 +1243,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
         switch(opt) {
         case 'R':
             if(user_args->refine_each_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->refine_each);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->refine_each);
                 maybe_issue_overwrite_warning("refine_each", "alg", old_value, optarg, user_args->config_file);
             }
             user_args->refine_each = (int)strtol(optarg, NULL, 10);
@@ -1255,7 +1251,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case 'D':
             if(user_args->derefine_each_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->derefine_each);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->derefine_each);
                 maybe_issue_overwrite_warning("derefine_each", "alg", old_value, optarg, user_args->config_file);
             }
             user_args->derefine_each = (int)strtol(optarg, NULL, 10);
@@ -1263,7 +1259,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case 'e':
             if(user_args->dt_ode_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->dt_ode);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->dt_ode);
                 maybe_issue_overwrite_warning("dt", "ode_solver", old_value, optarg, user_args->config_file);
             }
             user_args->dt_ode = strtof(optarg, NULL);
@@ -1282,7 +1278,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case 'f':
             if(user_args->final_time_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->final_time);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->final_time);
                 maybe_issue_overwrite_warning("simulation_time", "main", old_value, optarg, user_args->config_file);
             }
             user_args->final_time = strtof(optarg, NULL);
@@ -1290,21 +1286,21 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case 'r':
             if(user_args->ref_bound_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->ref_bound);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->ref_bound);
                 maybe_issue_overwrite_warning("refinement_bound", "alg", old_value, optarg, user_args->config_file);
             }
             user_args->ref_bound = strtof(optarg, NULL);
             break;
         case 'd':
             if(user_args->deref_bound_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->deref_bound);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->deref_bound);
                 maybe_issue_overwrite_warning("derefinement_bound", "alg", old_value, optarg, user_args->config_file);
             }
             user_args->deref_bound = strtof(optarg, NULL);
             break;
         case 'a':
             if(user_args->adaptive_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->adaptive);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->adaptive);
                 maybe_issue_overwrite_warning("use_adaptivity", "main", old_value, optarg, user_args->config_file);
             }
             user_args->adaptive = true;
@@ -1312,7 +1308,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
         case 'n':
             if(((int)strtol(optarg, NULL, 10)) > 0) {
                 if(user_args->num_threads_was_set) {
-                    snprintf(old_value, sizeof(old_value),  "%d", user_args->num_threads);
+                    snprintf(old_value, sizeof(old_value), "%d", user_args->num_threads);
                     maybe_issue_overwrite_warning("n"
                                                   "main",
                                                   "num_threads", old_value, optarg, user_args->config_file);
@@ -1324,9 +1320,9 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             if(user_args->gpu_was_set) {
 
                 if(user_args->gpu) {
-                    snprintf(old_value, sizeof(old_value),  "yes");
+                    snprintf(old_value, sizeof(old_value), "yes");
                 } else {
-                    snprintf(old_value, sizeof(old_value),  "no");
+                    snprintf(old_value, sizeof(old_value), "no");
                 }
 
                 maybe_issue_overwrite_warning("use_gpu", "ode_solver", old_value, optarg, user_args->config_file);
@@ -1345,49 +1341,49 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case 'z':
             if(user_args->dt_pde_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->dt_pde);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->dt_pde);
                 maybe_issue_overwrite_warning("dt_pde", "main", old_value, optarg, user_args->config_file);
             }
             user_args->dt_pde = strtof(optarg, NULL);
             break;
         case BETA:
             if(user_args->beta_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->beta);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->beta);
                 maybe_issue_overwrite_warning("beta", "main", old_value, optarg, user_args->config_file);
             }
             user_args->beta = strtof(optarg, NULL);
             break;
         case CM:
             if(user_args->cm) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->cm);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->cm);
                 maybe_issue_overwrite_warning("cm", "main", old_value, optarg, user_args->config_file);
             }
             user_args->cm = strtof(optarg, NULL);
             break;
         case START_REFINING:
             if(user_args->start_adapting_at_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->start_adapting_at);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->start_adapting_at);
                 maybe_issue_overwrite_warning("start_adapting_at", "main", old_value, optarg, user_args->config_file);
             }
             user_args->start_adapting_at = strtof(optarg, NULL);
             break;
         case 'G':
             if(user_args->gpu_id_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->gpu_id);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->gpu_id);
                 maybe_issue_overwrite_warning("gpu_id", "ode_solver", old_value, optarg, user_args->config_file);
             }
             user_args->gpu_id = (int)strtol(optarg, NULL, 10);
             break;
         case 'b':
             if(user_args->abort_no_activity_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->abort_no_activity);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->abort_no_activity);
                 maybe_issue_overwrite_warning("abort_on_no_activity", "main", old_value, optarg, user_args->config_file);
             }
             user_args->abort_no_activity = true;
             break;
         case 'v':
             if(user_args->vm_threshold_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%lf", user_args->vm_threshold);
+                snprintf(old_value, sizeof(old_value), "%lf", user_args->vm_threshold);
                 maybe_issue_overwrite_warning("vm_threshold", "main", old_value, optarg, user_args->config_file);
             }
             user_args->vm_threshold = strtof(optarg, NULL);
@@ -1493,7 +1489,7 @@ void parse_options(int argc, char **argv, struct user_options *user_args) {
             break;
         case 'q':
             if(user_args->quiet_was_set) {
-                snprintf(old_value, sizeof(old_value),  "%d", user_args->quiet);
+                snprintf(old_value, sizeof(old_value), "%d", user_args->quiet);
                 maybe_issue_overwrite_warning("quiet", "main", old_value, optarg, user_args->config_file);
             }
             user_args->quiet = true;
@@ -1552,13 +1548,13 @@ int parse_converter_config_file(void *user, const char *section, const char *nam
 
     struct conversion_options *pconfig = (struct conversion_options *)user;
 
-    struct string_hash_entry *section_entry = shget(pconfig->extra_data_config, section);
+    struct string_hash_entry *section_entry = (struct string_hash_entry *)shget(pconfig->extra_data_config, section);
 
-    if( section_entry == NULL) {
+    if(section_entry == NULL) {
         sh_new_arena(section_entry);
         shdefault(section_entry, NULL);
     }
-    
+
     shput(section_entry, name, strdup(value));
     shput(pconfig->extra_data_config, section, section_entry);
 
@@ -1630,11 +1626,9 @@ int parse_config_file(void *user, const char *section, const char *name, const c
         } else {
             pconfig->quiet = false;
         }
-    } 
-    else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "gpu_id")) {
+    } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "gpu_id")) {
         parse_expr_and_set_int_value(pconfig->config_file, value, &pconfig->gpu_id, &pconfig->gpu_id_was_set);
-    }
-    else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
+    } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "refinement_bound")) {
         parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->ref_bound, &pconfig->ref_bound_was_set);
     } else if(MATCH_SECTION_AND_NAME(ALG_SECTION, "derefinement_bound")) {
         parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->deref_bound, &pconfig->deref_bound_was_set);
@@ -1858,13 +1852,13 @@ int parse_eikonal_config_file(void *options, const char *section, const char *na
     struct eikonal_options *pconfig = (struct eikonal_options *)options;
 
     if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "simulation_time")) {
-    
+
         parse_expr_and_set_real_value(pconfig->config_file, value, &pconfig->final_time, &pconfig->final_time_was_set);
-    
+
     } else if(MATCH_SECTION_AND_NAME(MAIN_SECTION, "dt")) {
-    
+
         parse_expr_and_set_real_cpu_value(pconfig->config_file, value, &pconfig->dt, &pconfig->dt_was_set);
-    
+
     } else if(SECTION_STARTS_WITH(STIM_SECTION)) {
 
         struct config *tmp = (struct config *)shget(pconfig->stim_configs, section);
@@ -1923,7 +1917,7 @@ int parse_preprocessor_config(void *user, const char *section, const char *name,
         create_new_function = true;
     }
 
-    postprocess_list *function_list = (postprocess_list*) user;
+    postprocess_list *function_list = (postprocess_list *)user;
 
     struct postprocess_function *function;
 
@@ -1940,8 +1934,6 @@ int parse_preprocessor_config(void *user, const char *section, const char *name,
 
     return 1;
 }
-
-
 
 #define WRITE_INI_SECTION(SECTION) fprintf(ini_file, "[%s]\n", SECTION)
 
@@ -2126,7 +2118,7 @@ void free_user_options(struct user_options *s) {
 
     if(s->extra_data_config)
         free_config_data(s->extra_data_config);
-    
+
     if(s->purkinje_extra_data_config)
         free_config_data(s->purkinje_extra_data_config);
 

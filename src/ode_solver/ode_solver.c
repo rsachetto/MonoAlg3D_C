@@ -90,7 +90,7 @@ void init_ode_solver_with_cell_model(struct ode_solver *solver) {
         exit(1);
     }
 
-    solver->get_cell_model_data = dlsym(solver->handle, "init_cell_model_data");
+    solver->get_cell_model_data = (get_cell_model_data_fn *)dlsym(solver->handle, "init_cell_model_data");
     if((error = dlerror()) != NULL) {
         fprintf(stderr, "%s\n", error);
         fprintf(stderr, "init_cell_model_data function not found in the provided model library\n");
@@ -100,14 +100,14 @@ void init_ode_solver_with_cell_model(struct ode_solver *solver) {
         }
     }
 
-    solver->set_ode_initial_conditions_cpu = dlsym(solver->handle, "set_model_initial_conditions_cpu");
+    solver->set_ode_initial_conditions_cpu = (set_ode_initial_conditions_cpu_fn *)dlsym(solver->handle, "set_model_initial_conditions_cpu");
     if((error = dlerror()) != NULL) {
         fprintf(stderr, "%s\n", error);
         fprintf(stderr, "set_model_initial_conditions function not found in the provided model library\n");
         exit(1);
     }
 
-    solver->solve_model_ode_cpu = dlsym(solver->handle, "solve_model_odes_cpu");
+    solver->solve_model_ode_cpu = (solve_model_ode_cpu_fn *)dlsym(solver->handle, "solve_model_odes_cpu");
     if((error = dlerror()) != NULL) {
         fprintf(stderr, "%s\n", error);
         fprintf(stderr, "solve_model_odes_cpu function not found in the provided model library\n");
@@ -115,14 +115,14 @@ void init_ode_solver_with_cell_model(struct ode_solver *solver) {
     }
 
 #ifdef COMPILE_GPU
-    solver->set_ode_initial_conditions_gpu = dlsym(solver->handle, "set_model_initial_conditions_gpu");
+    solver->set_ode_initial_conditions_gpu = (set_ode_initial_conditions_gpu_fn *)dlsym(solver->handle, "set_model_initial_conditions_gpu");
     if((error = dlerror()) != NULL) {
         fputs(error, stderr);
         fprintf(stderr, "set_model_initial_conditions_gpu function not found in the provided model library\n");
         exit(1);
     }
 
-    solver->solve_model_ode_gpu = dlsym(solver->handle, "solve_model_odes_gpu");
+    solver->solve_model_ode_gpu = (solve_model_ode_gpu_fn *)dlsym(solver->handle, "solve_model_odes_gpu");
     if((error = dlerror()) != NULL) {
         fputs(error, stderr);
         fprintf(stderr, "\nsolve_model_odes_gpu function not found in the provided model library\n");

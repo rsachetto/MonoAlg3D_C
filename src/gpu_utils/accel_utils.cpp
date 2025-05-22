@@ -14,9 +14,10 @@
 
 #include "../ode_solver/ode_solver.h"
 
-extern "C" char *get_device_info(struct ode_solver *the_ode_solver, bool linear_solver_on_gpu) {
+char *get_device_info(struct ode_solver *the_ode_solver, bool linear_solver_on_gpu) {
 
     assert(the_ode_solver);
+    char *device_info = (char *)calloc(sizeof(char), 1024);
 
 #ifdef COMPILE_CUDA
     int device_count;
@@ -26,7 +27,7 @@ extern "C" char *get_device_info(struct ode_solver *the_ode_solver, bool linear_
 
     if(device_count > 0) {
         if(device >= device_count) {
-            log_warn("Invalid gpu_id %d. Using gpu_id 0!\n", device);
+            sprintf(device_info, "Invalid gpu_id %d. Using gpu_id 0!\n", device);
             the_ode_solver->gpu_id = device = 0;
         }
 
@@ -34,14 +35,11 @@ extern "C" char *get_device_info(struct ode_solver *the_ode_solver, bool linear_
         check_cuda_error(cudaGetDeviceProperties(&prop, the_ode_solver->gpu_id));
 
         if(the_ode_solver->gpu && linear_solver_on_gpu) {
-            log_info("%d devices available, running both ODE and linear system solvers on GPU (device %d -> %s)\n", device_count, device, prop.name);
-            uuid_print(prop.uuid);
+            sprintf(device_info, "%d devices available, running both ODE and linear system solvers on GPU (device %d -> %s)", device_count, device, prop.name);
         } else if(the_ode_solver->gpu) {
-            log_info("%d devices available, running only the ODE solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
-            uuid_print(prop.uuid);
+            sprintf(device_info, "%d devices available, running only the ODE solver on GPU (device %d -> %s)", device_count, device, prop.name);
         } else {
-            log_info("%d devices available, running only the linear system solver on GPU (device %d -> %s)\n", device_count, device, prop.name);
-            uuid_print(prop.uuid);
+            sprintf(device_info, "%d devices available, running only the linear system solver on GPU (device %d -> %s)", device_count, device, prop.name);
         }
 
         check_cuda_error(cudaSetDevice(device));
@@ -49,19 +47,19 @@ extern "C" char *get_device_info(struct ode_solver *the_ode_solver, bool linear_
 #elif defined(COMPILE_SYCL)
     dpct::device_ext &dev_ct1 = dpct::get_current_device();
     sycl::queue &q_ct1 = dev_ct1.default_queue();
-    if(the_ode_solver->gpu && linear_solver_on_gpu) {
-        log_info("Running both ODE and linear system solvers on GPU (%s)\n", q_ct1.get_device().get_info<sycl::info::device::name>().c_str());
-    } else if(the_ode_solver->gpu) {
-        log_info("Running only the ODE solver on GPU (%s)\n", );
-    } else {
-        log_info("Running only the linear system solver on GPU (%s)\n", q_ct1.get_device().get_info<sycl::info::device::name>().c_str());
-    }
 
-    printf("Running on '%s'\n", q_ct1.get_device().get_info<sycl::info::device::name>().c_str());
+    if(the_ode_solver->gpu && linear_solver_on_gpu) {
+        sprintf(device_info, "Running both ODE and linear system solvers on GPU (%s)", q_ct1.get_device().get_info<sycl::info::device::name>().c_str());
+    } else if(the_ode_solver->gpu) {
+        sprintf(device_info, "Running only the ODE solver on GPU (%s)", q_ct1.get_device().get_info<sycl::info::device::name>().c_str());
+    } else {
+        sprintf(device_info, "Running only the linear system solver on GPU (%s)", q_ct1.get_device().get_info<sycl::info::device::name>().c_str());
+    }
 #endif
+    return device_info;
 }
 
-extern "C" void malloc_device(void **ptr, size_t n) {
+void malloc_device(void **ptr, size_t n) {
 
 #ifdef COMPILE_CUDA
     check_cuda_error(cudaMalloc(ptr, n));
@@ -73,7 +71,7 @@ extern "C" void malloc_device(void **ptr, size_t n) {
 #endif
 }
 
-extern "C" void free_device(void *ptr) {
+void free_device(void *ptr) {
 #ifdef COMPILE_CUDA
     check_cuda_error(cudaFree(ptr));
 #elif defined(COMPILE_SYCL)
@@ -83,10 +81,10 @@ extern "C" void free_device(void *ptr) {
 #endif
 }
 
-extern "C" void memcpy_device(void *dest, const void *src, size_t n, enum copy_direction kind) {
+void memcpy_device(void *dest, const void *src, size_t n, enum copy_direction kind) {
 
 #ifdef COMPILE_CUDA
-    int dir;
+    enum cudaMemcpyKind dir;
     if(kind == HOST_TO_DEVICE) {
         dir = cudaMemcpyHostToDevice;
     } else if(kind == DEVICE_TO_HOST) {
@@ -106,10 +104,10 @@ extern "C" void memcpy_device(void *dest, const void *src, size_t n, enum copy_d
 #endif
 }
 
-extern "C" void memcpy2d_device(void *dest, size_t pitch_dest, const void *src, size_t pitch_src, size_t w, size_t h, enum copy_direction kind) {
+void memcpy2d_device(void *dest, size_t pitch_dest, const void *src, size_t pitch_src, size_t w, size_t h, enum copy_direction kind) {
 
 #ifdef COMPILE_CUDA
-    int dir;
+    enum cudaMemcpyKind dir;
     if(kind == HOST_TO_DEVICE) {
         dir = cudaMemcpyHostToDevice;
     } else if(kind == DEVICE_TO_HOST) {
