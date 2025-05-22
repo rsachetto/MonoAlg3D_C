@@ -117,8 +117,8 @@ void display_usage(char **argv) {
            " Example: --ode_solver \"use_gpu='no'\"\n");
     printf("--visualize, Draw a iterative 3D output of the simulation. Not recommended for big meshes. Default: "
            "not draw\n");
-    printf("--visualization_max_v, maximum value for V. This is only used to configure the color map in the visualization window. Default: -86.0\n");
-    printf("--visualization_min_v, minimum value for V. This is only used to configure the color map in the visualization window. Default: 40.0\n");
+    printf("--visualization_max_v, maximum value for V. This is only used to configure the color map in the visualization window. Default: -40.0\n");
+    printf("--visualization_min_v, minimum value for V. This is only used to configure the color map in the visualization window. Default: -86.0\n");
     printf("--start_simulation_unpaused. When visualizing, starts the simulation unpaused. Default: true (starts paused)\n");
 
     printf("--help | -h. Shows this help and exit \n");
@@ -164,8 +164,8 @@ void display_visualization_usage(char **argv) {
 
     printf("Usage: %s [options] input_folder \n\n", argv[0]);
     printf("Options:\n");
-    printf("--visualization_max_v | -x, maximum value for V. Default: -86.0\n");
-    printf("--visualization_min_v | -m, minimum value for V. Default: 40.0\n");
+    printf("--visualization_max_v | -x, maximum value for V. Default: 40.0\n");
+    printf("--visualization_min_v | -m, minimum value for V. Default: -86.0\n");
     printf("--value_index | -i [variable_index]. The column (counting from 0) of the value in the text file to be visualized. Default 6.\n");
     printf("--dt | -d, dt for the simulation. Default: 0\n");
     printf("--prefix | -p, simulation output files prefix . Default: V_it\n");

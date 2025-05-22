@@ -470,7 +470,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
                 gui_config->current_file_index++;
                 CHECK_FILE_INDEX(gui_config)
-                omp_unset_lock(&gui_config->sleep_lock);
+                omp_unset_nest_lock(&gui_config->sleep_lock);
                 return;
             }
 
@@ -481,7 +481,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                         return;
                     gui_config->current_file_index--;
                     CHECK_FILE_INDEX(gui_config)
-                    omp_unset_lock(&gui_config->sleep_lock);
+                    omp_unset_nest_lock(&gui_config->sleep_lock);
                     return;
                 }
             }
@@ -751,7 +751,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     const int slice_help_box_lines = SIZEOF(slice_help_box_strings);
     const int edit_help_box_lines = SIZEOF(edit_help_box_strings);
 
-    omp_set_lock(&gui_config->sleep_lock);
+    omp_set_nest_lock(&gui_config->sleep_lock);
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     char window_title[4096];
@@ -889,7 +889,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
         if(gui_config->grid_info.loaded) {
 
-            omp_set_lock(&gui_config->draw_lock);
+            omp_set_nest_lock(&gui_config->draw_lock);
 
             uint32_t n_active;
 
@@ -995,7 +995,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             // We finished drawing everything that depends on the mesh being loaded
-            omp_unset_lock(&gui_config->draw_lock);
+            omp_unset_nest_lock(&gui_config->draw_lock);
 
             if(gui_state->controls_window.show) {
                 draw_control_window(gui_state, gui_config);
@@ -1060,7 +1060,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             if(!gui_config->paused) {
-                omp_unset_lock(&gui_config->sleep_lock);
+                omp_unset_nest_lock(&gui_config->sleep_lock);
             }
 
             if(gui_state->search_window.show) {
@@ -1185,8 +1185,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     free(gui_state->ap_graph_config);
     free(gui_state);
 
-    omp_unset_lock(&gui_config->draw_lock);
-    omp_unset_lock(&gui_config->sleep_lock);
+    omp_unset_nest_lock(&gui_config->draw_lock);
+    omp_unset_nest_lock(&gui_config->sleep_lock);
 
     free(draw_context.translations);
     free(draw_context.colors);

@@ -135,8 +135,8 @@ struct gui_shared_info {
     int draw_type;
 
     // If we are compiling this file, openmp is available.
-    omp_lock_t draw_lock;
-    omp_lock_t sleep_lock;
+    omp_nest_lock_t draw_lock;
+    omp_nest_lock_t sleep_lock;
 
     struct grid_info {
         union {

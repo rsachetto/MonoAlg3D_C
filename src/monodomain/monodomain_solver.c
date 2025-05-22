@@ -604,7 +604,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 #ifdef COMPILE_GUI
         if(show_gui) {
-            omp_set_lock(&gui_config->sleep_lock);
+            omp_set_nest_lock(&gui_config->sleep_lock);
             if(gui_config->restart) {
 
                 gui_config->time = 0.0f;
@@ -713,7 +713,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 #ifdef COMPILE_GUI
             if(show_gui) {
-                omp_set_lock(&gui_config->draw_lock);
+                omp_set_nest_lock(&gui_config->draw_lock);
             }
 #endif
 
@@ -729,7 +729,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
                 log_error("\nSimulation stopped due to NaN on time %lf. This is probably a problem with the cellular model solver.\n.", cur_time);
 #ifdef COMPILE_GUI
                 if(show_gui) {
-                    omp_unset_lock(&gui_config->draw_lock);
+                    omp_unset_nest_lock(&gui_config->draw_lock);
                 }
 #endif
                 return SIMULATION_FINISHED;
@@ -882,7 +882,7 @@ int solve_monodomain(struct monodomain_solver *the_monodomain_solver, struct ode
 
 #ifdef COMPILE_GUI
         if(configs->show_gui) {
-            omp_unset_lock(&gui_config->draw_lock);
+            omp_unset_nest_lock(&gui_config->draw_lock);
             gui_config->time = (float)cur_time;
         }
 #endif

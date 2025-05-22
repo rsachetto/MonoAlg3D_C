@@ -36,10 +36,8 @@ void draw_ap_graph(struct gui_state *gui_state, struct gui_shared_info *gui_conf
     const float graph_x = gui_state->ap_graph_config->graph.bounds.x;
     const float graph_y = gui_state->ap_graph_config->graph.bounds.y;
 
-    static const Color colors[] = {DARKGRAY, GOLD, ORANGE, PINK, RED, MAROON,
-                                   GREEN, LIME, DARKGREEN, BLUE, DARKBLUE,
-                                   PURPLE, VIOLET, DARKPURPLE, BROWN, DARKBROWN,
-                                   BLACK, MAGENTA};
+    static const Color colors[] = {DARKGRAY, GOLD,     ORANGE, PINK,   RED,        MAROON, GREEN,     LIME,  DARKGREEN,
+                                   BLUE,     DARKBLUE, PURPLE, VIOLET, DARKPURPLE, BROWN,  DARKBROWN, BLACK, MAGENTA};
 
     int num_colors = SIZEOF(colors);
 
@@ -459,7 +457,7 @@ void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool
 
     gui_state->ray.position = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->ray.direction = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
-    omp_unset_lock(&gui_config->sleep_lock);
+    omp_unset_nest_lock(&gui_config->sleep_lock);
     gui_state->current_selected_volume.position_draw = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
     gui_state->current_mouse_over_volume.position_draw = (Vector3){-1, -1, -1};
     gui_state->ap_graph_config->selected_point_for_apd1 = (Vector2){FLT_MAX, FLT_MAX};
@@ -488,11 +486,11 @@ void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool
         gui_state->slicing_mesh = false;
         gui_state->current_mode = VISUALIZING;
 
-        gui_state->plane_roll  = 0.0f;
+        gui_state->plane_roll = 0.0f;
         gui_state->plane_pitch = 0.0f;
-        gui_state->plane_tx    = 0.0f;
-        gui_state->plane_ty    = 0.0f;
-        gui_state->plane_tz    = 0.0f;
+        gui_state->plane_tx = 0.0f;
+        gui_state->plane_ty = 0.0f;
+        gui_state->plane_tz = 0.0f;
     }
 }
 
@@ -525,8 +523,8 @@ void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gu
         update_main = true;
     }
 
-    //DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
-    // return button
+    // DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
+    //  return button
     {
         button_pos.x += button_pos.width + 4.0f;
 
@@ -569,7 +567,7 @@ void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gu
     button_pos.x += button_pos.width + 4.0f;
     if(GuiButton(button_pos, "#134#")) {
         update_main = true;
-        gui_config->current_file_index = (float) gui_config->final_file_index;
+        gui_config->current_file_index = (float)gui_config->final_file_index;
     }
 
     button_pos.x += button_pos.width + 4.0f;
@@ -577,10 +575,10 @@ void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gu
     ENABLE;
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW
     DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
-    //Calc bounds button
+    // Calc bounds button
     if(GuiButton(button_pos, "#94#")) {
         gui_config->calc_bounds = true;
-        omp_unset_lock(&gui_config->sleep_lock);
+        omp_unset_nest_lock(&gui_config->sleep_lock);
     }
 
     button_pos.x += button_pos.width + 4.0f;
@@ -590,15 +588,15 @@ void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gu
     DISABLE_IF_NOT_PAUSED_OR_NOT_IN_DRAW
     DISABLE_IF_IN_DRAW_AND_SINGLE_FILE
 
-    int old_index = (int) gui_config->current_file_index;
+    int old_index = (int)gui_config->current_file_index;
 
     if(NOT_IN_DRAW) {
         GuiSpinner(button_pos, NULL, &gui_config->time, 0, gui_config->final_time, false, spinner_edit);
-    } else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, (float) gui_config->final_file_index, true, spinner_edit)) {
+    } else if(GuiSpinner(button_pos, NULL, &gui_config->current_file_index, 0, (float)gui_config->final_file_index, true, spinner_edit)) {
         spinner_edit = !spinner_edit;
     }
 
-    if(old_index != (int) gui_config->current_file_index) {
+    if(old_index != (int)gui_config->current_file_index) {
         update_main = true;
     }
     gui_state->handle_keyboard_input = !spinner_edit;
@@ -616,8 +614,6 @@ void draw_control_window(struct gui_state *gui_state, struct gui_shared_info *gu
             }
         }
 
-        omp_unset_lock(&gui_config->sleep_lock);
+        omp_unset_nest_lock(&gui_config->sleep_lock);
     }
 }
-
-

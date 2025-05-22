@@ -123,8 +123,8 @@ void free_current_simulation_resources(struct user_options *options, struct mono
 static void init_gui_config_for_simulation(const struct user_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
     if(!only_restart) {
-        omp_init_lock(&gui_config->draw_lock);
-        omp_init_lock(&gui_config->sleep_lock);
+        omp_init_nest_lock(&gui_config->draw_lock);
+        omp_init_nest_lock(&gui_config->sleep_lock);
     }
 
     gui_config->config_name = strdup(options->config_file);

@@ -141,15 +141,15 @@ FIND_AMGX() {
 # SYCL_LIBRARY_PATH="/opt/aurora/24.180.3/updates/oneapi/compiler/eng-20240629/lib"
 FIND_SYCL() {
   # SYCL related variables
-  SYCL_SETVARS_PATH="/home/sachetto/intel/oneapi/setvars.sh"
+  SYCL_SETVARS_PATH="/opt/intel/oneapi/setvars.sh"
   if [ ! -f "$SYCL_SETVARS_PATH" ]; then
 	PRINT_WARN "SYCL_SETVARS_PATH variable is empty. SYCL code will not be compiled!"
   else
 	echo "Configuring SYCL enviroment ..."
 	. ${SYCL_SETVARS_PATH} --include-intel-llvm --force
 	SYCL_FOUND="y"
-	SYCL_INCLUDE_PATH="/home/sachetto/intel/oneapi/compiler/2025.0/include"
-	SYCL_LIBRARY_PATH="/home/sachetto/intel/oneapi/compiler/2025.0/lib"
+	SYCL_INCLUDE_PATH="/opt/oneapi/compiler/2025.0/include"
+	SYCL_LIBRARY_PATH="/opt/oneapi/compiler/2025.0/lib"
 	ICPX=$(which icpx)
 	export SYCL_FOUND
 	export SYCL_INCLUDE_PATH
