@@ -28,25 +28,26 @@ struct gpu_persistent_data {
     float *d_valsILU0;
     float *d_zm1, *d_zm2, *d_rm2;
     float *d_y;
-    
-    int                 bufferSizeLU;
-    size_t              bufferSizeMV, bufferSizeL, bufferSizeU;
-    void*               d_bufferLU, *d_bufferMV,  *d_bufferL, *d_bufferU;
+
+    int bufferSizeLU;
+    size_t bufferSizeMV, bufferSizeL, bufferSizeU;
+    void *d_bufferLU, *d_bufferMV, *d_bufferL, *d_bufferU;
     cusparseSpSVDescr_t spsvDescrL, spsvDescrU;
-    cusparseMatDescr_t   matLU;
-    csrilu02Info_t      infoILU;
+    cusparseMatDescr_t matLU;
+    csrilu02Info_t infoILU;
 
-    cusparseSpMatDescr_t matM_lower, matM_upper;  
-
+    cusparseSpMatDescr_t matM_lower, matM_upper;
 };
 
 const float floatone = 1.0f;
 const float floatzero = 0.0f;
+static bool first_call = true;
 
 INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
-    if(the_grid->adaptive) {
-        log_error_and_exit("The gpu conjugate gradient does not support mesh adaptivity. Aborting!\n");
+    if(the_grid->adaptive && first_call) {
+        log_warn("Mesh adaptivity is usually not recomended with the linear system GPU solver!\n");
+        first_call = false;
     }
 
     struct gpu_persistent_data *persistent_data = CALLOC_ONE_TYPE(struct gpu_persistent_data);
@@ -62,7 +63,7 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     uint32_t num_active_cells;
     struct cell_node **active_cells = NULL;
 
-    if (is_purkinje) {
+    if(is_purkinje) {
         grid_to_csr(the_grid, &val, &I, &J, true);
         num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
         active_cells = the_grid->purkinje->purkinje_cells;
@@ -87,9 +88,10 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
     check_cuda_error(cudaMalloc((void **)&(persistent_data->d_Ax), N * sizeof(float)));
 
     /* Wrap raw data into cuSPARSE generic API objects */
-    check_cuda_error(cusparseCreateCsr(&(persistent_data->matA), N, N, nz, persistent_data->d_row, persistent_data->d_col, persistent_data->d_val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
-    check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecx), N,  persistent_data->d_x, CUDA_R_32F));
-    check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecp), N,  persistent_data->d_p, CUDA_R_32F));
+    check_cuda_error(cusparseCreateCsr(&(persistent_data->matA), N, N, nz, persistent_data->d_row, persistent_data->d_col, persistent_data->d_val,
+                                       CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
+    check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecx), N, persistent_data->d_x, CUDA_R_32F));
+    check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecp), N, persistent_data->d_p, CUDA_R_32F));
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecAx), N, persistent_data->d_Ax, CUDA_R_32F));
 
     cudaMemcpy(persistent_data->d_col, J, nz * sizeof(int), cudaMemcpyHostToDevice);      // JA
@@ -106,9 +108,10 @@ INIT_LINEAR_SYSTEM(init_gpu_conjugate_gradient) {
 
     float alpha = 1.0f;
     float beta = 0.0f;
-    
-    check_cuda_error(cusparseSpMV_bufferSize(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, persistent_data->matA, persistent_data->vecx, &beta, persistent_data->vecAx,
-                     CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, &(persistent_data->bufferSizeMV)));
+
+    check_cuda_error(cusparseSpMV_bufferSize(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, persistent_data->matA,
+                                             persistent_data->vecx, &beta, persistent_data->vecAx, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT,
+                                             &(persistent_data->bufferSizeMV)));
     check_cuda_error(cudaMalloc(&(persistent_data->d_bufferMV), persistent_data->bufferSizeMV));
 
     config->persistent_data = persistent_data;
@@ -122,15 +125,24 @@ END_LINEAR_SYSTEM(end_gpu_conjugate_gradient) {
 
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
 
-    if(!persistent_data) return;
+    if(!persistent_data)
+        return;
 
     check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->cusparseHandle));
     check_cuda_error((cudaError_t)cublasDestroy(persistent_data->cublasHandle));
 
-    if (persistent_data->matA)  { check_cuda_error(cusparseDestroySpMat(persistent_data->matA)); }
-    if (persistent_data->vecx)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecx)); }
-    if (persistent_data->vecAx) { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecAx)); }
-    if (persistent_data->vecp)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecp)); }
+    if(persistent_data->matA) {
+        check_cuda_error(cusparseDestroySpMat(persistent_data->matA));
+    }
+    if(persistent_data->vecx) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecx));
+    }
+    if(persistent_data->vecAx) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecAx));
+    }
+    if(persistent_data->vecp) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecp));
+    }
 
     check_cuda_error(cudaFree(persistent_data->d_col));
     check_cuda_error(cudaFree(persistent_data->d_row));
@@ -153,7 +165,8 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
 
     if(!persistent_data) {
-        log_error_and_exit("The gpu_conjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file!\n");
+        log_error_and_exit("The gpu_conjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] "
+                           "section of the .ini file!\n");
     }
 
     float dot;
@@ -171,17 +184,17 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
         rhs[i] = active_cells[i]->b;
     }
 
-    int N = persistent_data->N;    
+    int N = persistent_data->N;
 
     cudaMemcpy(persistent_data->d_r, rhs, N * sizeof(float), cudaMemcpyHostToDevice); // B
 
     alpha = 1.0f;
     alpham1 = -1.0f;
     beta = 0.0f;
-    r0 = 0.0f;    
+    r0 = 0.0f;
 
-    check_cuda_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, persistent_data->matA, persistent_data->vecx, &beta, persistent_data->vecAx, CUDA_R_32F,
-                                  CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
+    check_cuda_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, persistent_data->matA, persistent_data->vecx,
+                                  &beta, persistent_data->vecAx, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
 
     cublasSaxpy(persistent_data->cublasHandle, N, &alpham1, persistent_data->d_Ax, 1, persistent_data->d_r, 1);
     cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_r, 1, persistent_data->d_r, 1, &r1);
@@ -194,14 +207,14 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
             b = r1 / r0;
             cublasSscal(persistent_data->cublasHandle, N, &b, persistent_data->d_p, 1);
             cublasSaxpy(persistent_data->cublasHandle, N, &alpha, persistent_data->d_r, 1, persistent_data->d_p, 1);
- 
+
         } else {
             cublasScopy(persistent_data->cublasHandle, N, persistent_data->d_r, 1, persistent_data->d_p, 1);
         }
 
-        check_cuda_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, persistent_data->matA, persistent_data->vecp, &beta, persistent_data->vecAx, CUDA_R_32F,
-                                      CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
-        
+        check_cuda_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, persistent_data->matA, persistent_data->vecp,
+                                      &beta, persistent_data->vecAx, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
+
         cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_p, 1, persistent_data->d_Ax, 1, &dot);
 
         a = r1 / dot;
@@ -212,7 +225,6 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
 
         r0 = r1;
         cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_r, 1, persistent_data->d_r, 1, &r1);
-
 
         cudaDeviceSynchronize();
         k++;
@@ -230,7 +242,6 @@ SOLVE_LINEAR_SYSTEM(gpu_conjugate_gradient) {
 
     free(rhs);
 }
-
 
 INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
 
@@ -271,7 +282,7 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
     cudaMemcpy(persistent_data->d_val, val, nz * sizeof(float), cudaMemcpyHostToDevice);  // A
 
     check_cuda_error(cudaMemset(persistent_data->d_r, 0, N * sizeof(float)));
-    check_cuda_error(cudaMemset(persistent_data->d_rw,0, N * sizeof(float)));
+    check_cuda_error(cudaMemset(persistent_data->d_rw, 0, N * sizeof(float)));
     check_cuda_error(cudaMemset(persistent_data->d_p, 0, N * sizeof(float)));
     check_cuda_error(cudaMemset(persistent_data->d_t, 0, N * sizeof(float)));
     check_cuda_error(cudaMemset(persistent_data->d_v, 0, N * sizeof(float)));
@@ -290,7 +301,7 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
 
     check_cuda_error(cusparseCreateCsr(&(persistent_data->matA), N, N, nz, persistent_data->d_row, persistent_data->d_col, persistent_data->d_val,
                                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
-    
+
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecx), N, persistent_data->d_x, CUDA_R_32F));
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecp), N, persistent_data->d_p, CUDA_R_32F));
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecv), N, persistent_data->d_v, CUDA_R_32F));
@@ -298,10 +309,10 @@ INIT_LINEAR_SYSTEM(init_gpu_biconjugate_gradient) {
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vect), N, persistent_data->d_t, CUDA_R_32F));
     check_cuda_error(cusparseCreateDnVec(&(persistent_data->vecAx), N, persistent_data->d_Ax, CUDA_R_32F));
 
-    check_cuda_error(cusparseSpMV_bufferSize(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha,
-                                             persistent_data->matA, persistent_data->vecx, &beta, persistent_data->vecAx,
-                                             CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, &(persistent_data->bufferSizeMV)));
-    
+    check_cuda_error(cusparseSpMV_bufferSize(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, persistent_data->matA,
+                                             persistent_data->vecx, &beta, persistent_data->vecAx, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT,
+                                             &(persistent_data->bufferSizeMV)));
+
     check_cuda_error(cudaMalloc(&(persistent_data->d_bufferMV), persistent_data->bufferSizeMV));
 
     free(rhs);
@@ -316,7 +327,8 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
 
     if(!persistent_data) {
-        log_error_and_exit("The gpu_biconjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
+        log_error_and_exit("The gpu_biconjugate_gradient solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] "
+                           "section of the .ini file\n");
     }
 
     float rho, rhop, beta, alpha, negalpha, omega, negomega, temp, temp2;
@@ -339,9 +351,8 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
     check_cuda_error(cudaMemcpy(persistent_data->d_r, rhs, N * sizeof(float), cudaMemcpyHostToDevice)); // B
 
     // compute initial residual r0=b-Ax0 (using initial guess in x)
-    check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA,
-                                    persistent_data->vecx, &zero, persistent_data->vecAx, CUDA_R_32F,
-                                    CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
+    check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecx,
+                                    &zero, persistent_data->vecAx, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
 
     check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &mone, persistent_data->d_Ax, 1, persistent_data->d_r, 1));
 
@@ -358,16 +369,15 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
         if(i > 0) {
             beta = (rho / rhop) * (alpha / omega);
             negomega = -omega;
-            check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &negomega, persistent_data->d_v, 1,persistent_data-> d_p, 1));
+            check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &negomega, persistent_data->d_v, 1, persistent_data->d_p, 1));
             check_cublas_error(cublasSscal(persistent_data->cublasHandle, N, &beta, persistent_data->d_p, 1));
             check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &one, persistent_data->d_r, 1, persistent_data->d_p, 1));
         }
 
         // matrix-vector multiplication
-        check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one,
-                                        persistent_data->matA, persistent_data->vecp, &zero, persistent_data->vecv,
-                                        CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
-        
+        check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecp,
+                                        &zero, persistent_data->vecv, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
+
         check_cublas_error(cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_rw, 1, persistent_data->d_v, 1, &temp));
         alpha = rho / temp;
         negalpha = -(alpha);
@@ -380,15 +390,14 @@ SOLVE_LINEAR_SYSTEM(gpu_biconjugate_gradient) {
         }
 
         // matrix-vector multiplication
-        check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA,
-                                        persistent_data->vecr, &zero, persistent_data->vect, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT,
-                                        persistent_data->d_bufferMV));
+        check_cublas_error(cusparseSpMV(persistent_data->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &one, persistent_data->matA, persistent_data->vecr,
+                                        &zero, persistent_data->vect, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, persistent_data->d_bufferMV));
 
         check_cublas_error(cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_t, 1, persistent_data->d_r, 1, &temp));
         check_cublas_error(cublasSdot(persistent_data->cublasHandle, N, persistent_data->d_t, 1, persistent_data->d_t, 1, &temp2));
         omega = temp / temp2;
         negomega = -(omega);
-        check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &omega,    persistent_data->d_r, 1, persistent_data->d_x, 1));
+        check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &omega, persistent_data->d_r, 1, persistent_data->d_x, 1));
         check_cublas_error(cublasSaxpy(persistent_data->cublasHandle, N, &negomega, persistent_data->d_t, 1, persistent_data->d_r, 1));
 
         check_cublas_error(cublasSnrm2(persistent_data->cublasHandle, N, persistent_data->d_r, 1, &nrmr));
@@ -417,18 +426,33 @@ END_LINEAR_SYSTEM(end_gpu_biconjugate_gradient) {
 
     struct gpu_persistent_data *persistent_data = (struct gpu_persistent_data *)config->persistent_data;
 
-    if(!persistent_data) return;
+    if(!persistent_data)
+        return;
 
     check_cuda_error((cudaError_t)cusparseDestroy(persistent_data->cusparseHandle));
     check_cuda_error((cudaError_t)cublasDestroy(persistent_data->cublasHandle));
 
-    if (persistent_data->matA)  { check_cuda_error(cusparseDestroySpMat(persistent_data->matA)); }
-    if (persistent_data->vecx)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecx)); }
-    if (persistent_data->vecAx) { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecAx)); }
-    if (persistent_data->vecp)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecp)); }
-    if (persistent_data->vecv)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecv)); }
-    if (persistent_data->vecr)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vecr)); }
-    if (persistent_data->vect)  { check_cuda_error(cusparseDestroyDnVec(persistent_data->vect)); }
+    if(persistent_data->matA) {
+        check_cuda_error(cusparseDestroySpMat(persistent_data->matA));
+    }
+    if(persistent_data->vecx) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecx));
+    }
+    if(persistent_data->vecAx) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecAx));
+    }
+    if(persistent_data->vecp) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecp));
+    }
+    if(persistent_data->vecv) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecv));
+    }
+    if(persistent_data->vecr) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vecr));
+    }
+    if(persistent_data->vect) {
+        check_cuda_error(cusparseDestroyDnVec(persistent_data->vect));
+    }
 
     check_cuda_error(cudaFree(persistent_data->d_col));
     check_cuda_error(cudaFree(persistent_data->d_row));

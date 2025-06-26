@@ -12,7 +12,6 @@
 #include <time.h>
 #include <unistd.h>
 
-
 SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
 
     real_cpu start_dx = 0.0;
@@ -34,7 +33,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_z, config, "side_length_z");
 
     return set_cuboid_domain_mesh(the_grid, start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z);
-
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_spherical_mesh) {
@@ -99,7 +97,6 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cable_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, cable_length, config, "cable_length");
 
     return set_cuboid_domain_mesh(the_grid, start_dx, start_dy, start_dz, cable_length, start_dy, start_dz);
-
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_rabbit_mesh) {
@@ -142,13 +139,13 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_benchmark_mesh) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, max_h, config, "maximum_discretization");
 
     real_cpu side_length_x = 20000.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_x, config, "side_length_x");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, side_length_x, config, "side_length_x");
 
     real_cpu side_length_y = 7000.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_y, config, "side_length_y");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, side_length_y, config, "side_length_y");
 
     real_cpu side_length_z = 3000.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_z, config, "side_length_z");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, side_length_z, config, "side_length_z");
 
     log_info("Loading N-Version benchmark mesh using dx %lf um, dy %lf um, dz %lf um\n", start_h, start_h, start_h);
 
@@ -268,12 +265,11 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_and_sphere_fibrotic_mesh) {
     real_cpu phi = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, phi, config, "phi");
 
-    real_cpu sphere_center[3] = {0,0,0};
+    real_cpu sphere_center[3] = {0, 0, 0};
     GET_PARAMETER_VECTOR3_VALUE_OR_USE_DEFAULT(sphere_center, config, "sphere_center");
 
     real_cpu sphere_radius = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, sphere_radius, config, "sphere_radius");
-
 
     unsigned seed = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config, "seed");
@@ -335,10 +331,10 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_fibrotic_region) {
 }
 
 SET_CUSTOM_DATA_FOR_MESH(generic_custom_data) {
-     size_t size = num_fields*sizeof(real);
-     cell->mesh_extra_info = malloc (size);
-     cell->mesh_extra_info_size = size;
-     memcpy(cell->mesh_extra_info, custom_data, size);
+    size_t size = num_fields * sizeof(real);
+    cell->mesh_extra_info = malloc(size);
+    cell->mesh_extra_info_size = size;
+    memcpy(cell->mesh_extra_info, custom_data, size);
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
@@ -364,15 +360,14 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_custom_mesh) {
     int ret;
 
     if(num_extra_fields == 0) {
-        ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
+        ret = (int)set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, 0, NULL);
     } else {
-        ret = (int) set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, num_extra_fields, generic_custom_data);
+        ret = (int)set_custom_mesh_from_file(the_grid, mesh_file, total_number_mesh_points, start_h, num_extra_fields, generic_custom_data);
     }
 
     free(mesh_file);
 
     return ret;
-
 }
 
 SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_source_sink_fibrotic_region) {
@@ -417,7 +412,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_square_mesh_and_source_sink_fibrotic_reg
     return 1;
 }
 
-SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_and_sphere_fibrotic_mesh_with_conic_path){
+SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_and_sphere_fibrotic_mesh_with_conic_path) {
     real_cpu side_length_x = 0.0;
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, side_length_x, config, "side_length_x");
 
@@ -457,7 +452,7 @@ SET_SPATIAL_DOMAIN(initialize_grid_with_cuboid_and_sphere_fibrotic_mesh_with_con
     unsigned seed = 0;
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(unsigned, seed, config, "seed");
 
-    //set_square_mesh(config, the_grid);
+    // set_square_mesh(config, the_grid);
     set_cuboid_domain_mesh(the_grid, start_dx, start_dy, start_dz, side_length_x, side_length_y, side_length_z);
     set_cuboid_sphere_fibrosis_with_conic_path(the_grid, phi, plain_center, sphere_radius, border_zone_size, border_zone_radius, seed, conic_slope);
 
