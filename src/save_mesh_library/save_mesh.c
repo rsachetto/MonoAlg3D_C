@@ -127,6 +127,15 @@ INIT_SAVE_MESH(init_save_one_cell_state_variables) {
                                                 config, "cell_center_y");
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real_cpu, ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->cell_center_z,
                                                 config, "cell_center_z");
+    uint16_t sv_var_id = 0; // By default we save the "vm"
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(uint16_t, sv_var_id, config, "sv_var_id");
+    ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->sv_var_id = sv_var_id;
+    real_cpu save_after_time = 0.0;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, save_after_time, config, "save_after_time");
+    ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->save_after_time = save_after_time;
+    bool save_steady_state = false;
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(bool, save_steady_state, config, "save_steady_state");
+    ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->save_steady_state = save_steady_state;
 
     ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file =
         fopen(((struct save_one_cell_state_variables_persistent_data *)config->persistent_data)->file_name, "w");
@@ -136,6 +145,10 @@ INIT_SAVE_MESH(init_save_one_cell_state_variables) {
 SAVE_MESH(save_one_cell_state_variables) {
 
     struct save_one_cell_state_variables_persistent_data *params = ((struct save_one_cell_state_variables_persistent_data *)config->persistent_data);
+    uint32_t sv_var_id = params->sv_var_id;
+    real_cpu save_after_time = params->save_after_time;
+    bool save_steady_state = params->save_steady_state;
+    uint32_t total_iterations = nearbyint(time_info->final_t/time_info->dt);
 
     if(params->cell_sv_position == -1) {
         if(!the_grid->adaptive) {
@@ -157,11 +170,35 @@ SAVE_MESH(save_one_cell_state_variables) {
         check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
                                       ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
 
-        // All state variables
-        for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-            fprintf(params->file, "%g, ", cell_sv[i]);
+        // Input state variable index is within the limits
+        if (sv_var_id >= 0 && sv_var_id <= ode_solver->model_data.number_of_ode_equations) {
+            if (time_info->current_t >= save_after_time) {
+                // Save time and the specified state variable index
+                fprintf(params->file, "%g %g\n", time_info->current_t-save_after_time, cell_sv[sv_var_id]);
+            }
         }
-        fprintf(params->file, "\n");
+        else {
+            if (time_info->current_t >= save_after_time) {
+                // Save time and all state variables
+                fprintf(params->file, "%g ", time_info->current_t-save_after_time);
+                for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                    fprintf(params->file, "%g ", cell_sv[i]);
+                }
+                fprintf(params->file, "\n");
+            }
+        }
+
+        // Save the last iteration solution as steady-state
+        if (save_steady_state && time_info->iteration == total_iterations) {
+            printf("\n[cpu] t=%.10lf\n", time_info->current_t);
+            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                printf("sv[%u]=%.10lf;\n", i, cell_sv[i]);
+            }
+            printf("\n[gpu] t=%.10lf\n", time_info->current_t);
+            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                printf("*((real *) ((char *) sv + pitch * %u) + threadID)=%.10lf;\n", i, cell_sv[i]);
+            }
+        }
 
         free(cell_sv);
 #endif
@@ -169,33 +206,35 @@ SAVE_MESH(save_one_cell_state_variables) {
 
         real *cell_sv = &ode_solver->sv[params->cell_sv_position * ode_solver->model_data.number_of_ode_equations];
 
-        // Time and transmembrane potential
-        //fprintf(params->file, "%g %g\n", time_info->current_t, cell_sv[0]);
-        
-        // Time, Cai and Vm
-        //fprintf(params->file, "%g %g %g\n", time_info->current_t, cell_sv[0], cell_sv[5]);
-
-        // Only transmembrane potential
-        //fprintf(params->file, "%g\n", cell_sv[0]);
-
-        // All state variables
-        for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-            fprintf(params->file, "%g, ", cell_sv[i]);
+        // Input state variable index is within the limits
+        if (sv_var_id >= 0 && sv_var_id <= ode_solver->model_data.number_of_ode_equations) {
+            if (time_info->current_t >= save_after_time) {
+                // Save time and the specified state variable index
+                fprintf(params->file, "%g %g\n", time_info->current_t-save_after_time, cell_sv[sv_var_id]);
+            }
         }
-        fprintf(params->file, "\n");
+        else {
+            if (time_info->current_t >= save_after_time) {
+                // Save time and all state variables
+                fprintf(params->file, "%g ", time_info->current_t-save_after_time);
+                for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                    fprintf(params->file, "%g ", cell_sv[i]);
+                }
+                fprintf(params->file, "\n");
+            }
+        }
 
-        // Time, Cai and Vm at certain timestep
-        //if (time_info->current_t >= 15200) {
-        //    fprintf(params->file, "%.3lf %g %g\n", time_info->current_t, cell_sv[0], cell_sv[5]);
-        //}
-
-        // All state-variables at certain timestep
-        //if (time_info->current_t >= 15200) {
-        //    for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
-        //        fprintf(params->file, "%g, ", cell_sv[i]);
-        //    }
-        //    fprintf(params->file, "\n");
-        //}
+        // Save the last iteration solution as steady-state
+        if (save_steady_state && time_info->iteration == total_iterations) {
+            printf("\n[cpu] t=%.10lf\n", time_info->current_t);
+            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                printf("sv[%u]=%.10lf;\n", i, cell_sv[i]);
+            }
+            printf("\n[gpu] t=%.10lf\n", time_info->current_t);
+            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                printf("*((real *) ((char *) sv + pitch * %u) + threadID)=%.10lf;\n", i, cell_sv[i]);
+            }
+        }
     }
 }
 

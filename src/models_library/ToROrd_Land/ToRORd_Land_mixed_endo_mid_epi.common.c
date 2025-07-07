@@ -757,8 +757,8 @@ real kmcsqn=0.8;
 real dnai=-(ICaNa_i+INa+INaL+3.0*INaCa_i+3.0*INaK+INab)*Acap/(F*vmyo)+JdiffNa*vss/vmyo;     // Euler
 real dnass=-(ICaNa_ss+3.0*INaCa_ss)*Acap/(F*vss)-JdiffNa;                                   // Euler
 
-real dki=-(ICaK_i+Ito+IKr+IKs+IK1+IKb+Istim-2.0*INaK)*Acap/(F*vmyo)+JdiffK*vss/vmyo;        // Euler
-real dkss=-(ICaK_ss)*Acap/(F*vss)-JdiffK;                                                   // Euler
+real dki=-(ICaK_i+Ito+IKr+IKs+IK1+IKb+Istim-2.0*INaK+IKCa_i)*Acap/(F*vmyo)+JdiffK*vss/vmyo;        // Euler
+real dkss=-(ICaK_ss+IKCa_ss)*Acap/(F*vss)-JdiffK;                                                   // Euler
 
 //real Bcai=1.0/(1.0+cmdnmax*kmcmdn/pow((kmcmdn+cai),2.0)+trpnmax*kmtrpn/pow((kmtrpn+cai),2.0)); // dynCl
 real Bcai=1.0/(1.0+cmdnmax*kmcmdn/pow((kmcmdn+cai),2.0));
@@ -828,4 +828,3 @@ rDY_[45] = dCa_TRPN;
 rDY_[46] = dTmBlocked;
 rDY_[47] = dZETAS;
 rDY_[48] = dZETAW;
-rDY_[49] = Ta;

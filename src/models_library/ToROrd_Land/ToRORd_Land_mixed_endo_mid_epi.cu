@@ -6,64 +6,61 @@ __global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, s
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (threadID < num_volumes) {
-        for (int i = 0; i < NEQ; i++) {
-            // Default initial conditions for ENDO cell (from original Matlab script)
-            *((real * )((char *) sv + pitch * 0) + threadID) = -8.863699e+01;
-            *((real * )((char *) sv + pitch * 1) + threadID) = 1.189734e+01;
-            *((real * )((char *) sv + pitch * 2) + threadID) = 1.189766e+01;
-            *((real * )((char *) sv + pitch * 3) + threadID) = 1.412345e+02;
-            *((real * )((char *) sv + pitch * 4) + threadID) = 1.412344e+02;
-            *((real * )((char *) sv + pitch * 5) + threadID) = 7.267473e-05;
-            *((real * )((char *) sv + pitch * 6) + threadID) = 6.337870e-05;
-            *((real * )((char *) sv + pitch * 7) + threadID) = 1.532653e+00;
-            *((real * )((char *) sv + pitch * 8) + threadID) = 1.533946e+00;
-            *((real * )((char *) sv + pitch * 9) + threadID) = 8.280078e-04;
-            *((real * )((char *) sv + pitch * 10) + threadID) = 6.665272e-01;
-            *((real * )((char *) sv + pitch * 11) + threadID) = 8.260208e-01;
-            *((real * )((char *) sv + pitch * 12) + threadID) = 8.260560e-01;
-            *((real * )((char *) sv + pitch * 13) + threadID) = 8.258509e-01;
-            *((real * )((char *) sv + pitch * 14) + threadID) = 1.668686e-04;
-            *((real * )((char *) sv + pitch * 15) + threadID) = 5.228306e-01;
-            *((real * )((char *) sv + pitch * 16) + threadID) = 2.859696e-01;
-            *((real * )((char *) sv + pitch * 17) + threadID) = 9.591370e-04;
-            *((real * )((char *) sv + pitch * 18) + threadID) = 9.996012e-01;
-            *((real * )((char *) sv + pitch * 19) + threadID) = 5.934016e-01;
-            *((real * )((char *) sv + pitch * 20) + threadID) = 4.886961e-04;
-            *((real * )((char *) sv + pitch * 21) + threadID) = 9.996011e-01;
-            *((real * )((char *) sv + pitch * 22) + threadID) = 6.546687e-01;
-            *((real * )((char *) sv + pitch * 23) + threadID) = 9.500075e-32;
-            *((real * )((char *) sv + pitch * 24) + threadID) = 1.000000e+00;
-            *((real * )((char *) sv + pitch * 25) + threadID) = 9.392580e-01;
-            *((real * )((char *) sv + pitch * 26) + threadID) = 1.000000e+00;
-            *((real * )((char *) sv + pitch * 27) + threadID) = 9.998984e-01;
-            *((real * )((char *) sv + pitch * 28) + threadID) = 9.999783e-01;
-            *((real * )((char *) sv + pitch * 29) + threadID) = 4.448162e-04;
-            *((real * )((char *) sv + pitch * 30) + threadID) = 7.550725e-04;
-            *((real * )((char *) sv + pitch * 31) + threadID) = 1.000000e+00;
-            *((real * )((char *) sv + pitch * 32) + threadID) = 1.000000e+00;
-            *((real * )((char *) sv + pitch * 33) + threadID) = 2.424047e-01;
-            *((real * )((char *) sv + pitch * 34) + threadID) = 1.795377e-04;
-            *((real * )((char *) sv + pitch * 35) + threadID) = -6.883086e-25;
-            *((real * )((char *) sv + pitch * 36) + threadID) = 1.117498e-02;
-            *((real * )((char *) sv + pitch * 37) + threadID) = 9.980366e-01;
-            *((real * )((char *) sv + pitch * 38) + threadID) = 8.588018e-04;
-            *((real * )((char *) sv + pitch * 39) + threadID) = 7.097447e-04;
-            *((real * )((char *) sv + pitch * 40) + threadID) = 3.812617e-04;
-            *((real * )((char *) sv + pitch * 41) + threadID) = 1.357116e-05;
-            *((real * )((char *) sv + pitch * 42) + threadID) = 2.302525e-23;
-            *((real * )((char *) sv + pitch * 43) + threadID) = 1.561941e-04;
-            *((real * )((char *) sv + pitch * 44) + threadID) = 2.351289e-04;
-            *((real * )((char *) sv + pitch * 45) + threadID) = 8.077631e-03;
-            *((real * )((char *) sv + pitch * 46) + threadID) = 9.993734e-01;
-            *((real * )((char *) sv + pitch * 47) + threadID) = 0.000000e+00;
-            *((real * )((char *) sv + pitch * 48) + threadID) = 0.000000e+00;
-	        *((real * )((char *) sv + pitch * 49) + threadID) = 0.000000e+00;
-        }
+        // Default initial conditions for ENDO cell (from original Matlab script)
+        *((real * )((char *) sv + pitch * 0) + threadID) = -8.863699e+01;
+        *((real * )((char *) sv + pitch * 1) + threadID) = 1.189734e+01;
+        *((real * )((char *) sv + pitch * 2) + threadID) = 1.189766e+01;
+        *((real * )((char *) sv + pitch * 3) + threadID) = 1.412345e+02;
+        *((real * )((char *) sv + pitch * 4) + threadID) = 1.412344e+02;
+        *((real * )((char *) sv + pitch * 5) + threadID) = 7.267473e-05;
+        *((real * )((char *) sv + pitch * 6) + threadID) = 6.337870e-05;
+        *((real * )((char *) sv + pitch * 7) + threadID) = 1.532653e+00;
+        *((real * )((char *) sv + pitch * 8) + threadID) = 1.533946e+00;
+        *((real * )((char *) sv + pitch * 9) + threadID) = 8.280078e-04;
+        *((real * )((char *) sv + pitch * 10) + threadID) = 6.665272e-01;
+        *((real * )((char *) sv + pitch * 11) + threadID) = 8.260208e-01;
+        *((real * )((char *) sv + pitch * 12) + threadID) = 8.260560e-01;
+        *((real * )((char *) sv + pitch * 13) + threadID) = 8.258509e-01;
+        *((real * )((char *) sv + pitch * 14) + threadID) = 1.668686e-04;
+        *((real * )((char *) sv + pitch * 15) + threadID) = 5.228306e-01;
+        *((real * )((char *) sv + pitch * 16) + threadID) = 2.859696e-01;
+        *((real * )((char *) sv + pitch * 17) + threadID) = 9.591370e-04;
+        *((real * )((char *) sv + pitch * 18) + threadID) = 9.996012e-01;
+        *((real * )((char *) sv + pitch * 19) + threadID) = 5.934016e-01;
+        *((real * )((char *) sv + pitch * 20) + threadID) = 4.886961e-04;
+        *((real * )((char *) sv + pitch * 21) + threadID) = 9.996011e-01;
+        *((real * )((char *) sv + pitch * 22) + threadID) = 6.546687e-01;
+        *((real * )((char *) sv + pitch * 23) + threadID) = 9.500075e-32;
+        *((real * )((char *) sv + pitch * 24) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 25) + threadID) = 9.392580e-01;
+        *((real * )((char *) sv + pitch * 26) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 27) + threadID) = 9.998984e-01;
+        *((real * )((char *) sv + pitch * 28) + threadID) = 9.999783e-01;
+        *((real * )((char *) sv + pitch * 29) + threadID) = 4.448162e-04;
+        *((real * )((char *) sv + pitch * 30) + threadID) = 7.550725e-04;
+        *((real * )((char *) sv + pitch * 31) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 32) + threadID) = 1.000000e+00;
+        *((real * )((char *) sv + pitch * 33) + threadID) = 2.424047e-01;
+        *((real * )((char *) sv + pitch * 34) + threadID) = 1.795377e-04;
+        *((real * )((char *) sv + pitch * 35) + threadID) = -6.883086e-25;
+        *((real * )((char *) sv + pitch * 36) + threadID) = 1.117498e-02;
+        *((real * )((char *) sv + pitch * 37) + threadID) = 9.980366e-01;
+        *((real * )((char *) sv + pitch * 38) + threadID) = 8.588018e-04;
+        *((real * )((char *) sv + pitch * 39) + threadID) = 7.097447e-04;
+        *((real * )((char *) sv + pitch * 40) + threadID) = 3.812617e-04;
+        *((real * )((char *) sv + pitch * 41) + threadID) = 1.357116e-05;
+        *((real * )((char *) sv + pitch * 42) + threadID) = 2.302525e-23;
+        *((real * )((char *) sv + pitch * 43) + threadID) = 1.561941e-04;
+        *((real * )((char *) sv + pitch * 44) + threadID) = 2.351289e-04;
+        *((real * )((char *) sv + pitch * 45) + threadID) = 8.077631e-03;
+        *((real * )((char *) sv + pitch * 46) + threadID) = 9.993734e-01;
+        *((real * )((char *) sv + pitch * 47) + threadID) = 0.000000e+00;
+        *((real * )((char *) sv + pitch * 48) + threadID) = 0.000000e+00;
             
         if(use_adpt_dt) {
-            *((real *)((char *)sv + pitch * 50) + threadID) = min_dt; // dt
-            *((real *)((char *)sv + pitch * 51) + threadID) = 0.0;    // time_new
-            *((real *)((char *)sv + pitch * 52) + threadID) = 0.0;    // previous dt
+            *((real *)((char *)sv + pitch * 49) + threadID) = min_dt; // dt
+            *((real *)((char *)sv + pitch * 50) + threadID) = 0.0;    // time_new
+            *((real *)((char *)sv + pitch * 51) + threadID) = 0.0;    // previous dt
         }
     }
 }
@@ -335,7 +332,6 @@ __global__ void solve_gpu(real cur_time, real dt, real *sv, real *stim_currents,
                 SOLVE_EQUATION_EULER_GPU(46);       // TmBlocked
                 SOLVE_EQUATION_EULER_GPU(47);       // ZETAS
                 SOLVE_EQUATION_EULER_GPU(48);       // ZETAW
-		        SOLVE_EQUATION_CONSTANT_GPU(49);    // Ta
             }
         } else {
             solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], 0.0, extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
@@ -418,7 +414,6 @@ __global__ void solve_endo_mid_epi_gpu(real cur_time, real dt, real *sv, real *s
                 SOLVE_EQUATION_EULER_GPU(46);       // TmBlocked
                 SOLVE_EQUATION_EULER_GPU(47);       // ZETAS
                 SOLVE_EQUATION_EULER_GPU(48);       // ZETAW
-		        SOLVE_EQUATION_CONSTANT_GPU(49);    // Ta
             }
         } else {
             solve_forward_euler_gpu_adpt(sv, stim_currents[threadID], transmurality[threadID], extra_params, cur_time + max_dt, sv_id, pitch, abstol,  reltol,  dt,  max_dt);
@@ -649,123 +644,63 @@ inline __device__ void RHS_gpu(real *sv, real *rDY_, real stim_current, \
     real ZETAW;
 
     real TA;
-    if (use_adpt_dt) {
-        v = sv[0];
-        nai = sv[1];
-        nass = sv[2];
-        ki = sv[3];
-        kss = sv[4];
-        cai = sv[5];
-        cass = sv[6];
-        cansr = sv[7];
-        cajsr = sv[8];
-        m = sv[9];
-        hp = sv[10];
-        h = sv[11];
-        j = sv[12];
-        jp = sv[13];
-        mL = sv[14];
-        hL = sv[15];
-        hLp = sv[16];
-        a = sv[17];
-        iF = sv[18];
-        iS = sv[19];
-        ap = sv[20];
-        iFp = sv[21];
-        iSp = sv[22];
 
-        // ical
-        d = sv[23];
-        ff = sv[24];
-        fs = sv[25];
-        fcaf = sv[26];
-        fcas = sv[27];
-        jca = sv[28];
-        nca = sv[29];
-        nca_i = sv[30];
-        ffp = sv[31];
-        fcafp = sv[32];
+    v = *((real *)((char *)sv + pitch * 0) + threadID_);
+    nai = *((real *)((char *)sv + pitch * 1) + threadID_);
+    nass = *((real *)((char *)sv + pitch * 2) + threadID_);
+    ki = *((real *)((char *)sv + pitch * 3) + threadID_);
+    kss = *((real *)((char *)sv + pitch * 4) + threadID_);
+    cai = *((real *)((char *)sv + pitch * 5) + threadID_);
+    cass = *((real *)((char *)sv + pitch * 6) + threadID_);
+    cansr = *((real *)((char *)sv + pitch * 7) + threadID_);
+    cajsr = *((real *)((char *)sv + pitch * 8) + threadID_);
+    m = *((real *)((char *)sv + pitch * 9) + threadID_);
+    hp = *((real *)((char *)sv + pitch * 10) + threadID_);
+    h = *((real *)((char *)sv + pitch * 11) + threadID_);
+    j = *((real *)((char *)sv + pitch * 12) + threadID_);
+    jp = *((real *)((char *)sv + pitch * 13) + threadID_);
+    mL = *((real *)((char *)sv + pitch * 14) + threadID_);
+    hL = *((real *)((char *)sv + pitch * 15) + threadID_);
+    hLp = *((real *)((char *)sv + pitch * 16) + threadID_);
+    a = *((real *)((char *)sv + pitch * 17) + threadID_);
+    iF = *((real *)((char *)sv + pitch * 18) + threadID_);
+    iS = *((real *)((char *)sv + pitch * 19) + threadID_);
+    ap = *((real *)((char *)sv + pitch * 20) + threadID_);
+    iFp = *((real *)((char *)sv + pitch * 21) + threadID_);
+    iSp = *((real *)((char *)sv + pitch * 22) + threadID_);
 
-        xs1 = sv[33];
-        xs2 = sv[34];
-        Jrel_np = sv[35];
-        CaMKt = sv[36];
+    // ical
+    d = *((real *)((char *)sv + pitch * 23) + threadID_);
+    ff = *((real *)((char *)sv + pitch * 24) + threadID_);
+    fs = *((real *)((char *)sv + pitch * 25) + threadID_);
+    fcaf = *((real *)((char *)sv + pitch * 26) + threadID_);
+    fcas = *((real *)((char *)sv + pitch * 27) + threadID_);
+    jca = *((real *)((char *)sv + pitch * 28) + threadID_);
+    nca = *((real *)((char *)sv + pitch * 29) + threadID_);
+    nca_i = *((real *)((char *)sv + pitch * 30) + threadID_);
+    ffp = *((real *)((char *)sv + pitch * 31) + threadID_);
+    fcafp = *((real *)((char *)sv + pitch * 32) + threadID_);
 
-        // new MM ICaL states
-        ikr_c0 = sv[37];
-        ikr_c1 = sv[38];
-        ikr_c2 = sv[39];
-        ikr_o = sv[40];
-        ikr_i = sv[41];
-        Jrel_p = sv[42];
+    xs1 = *((real *)((char *)sv + pitch * 33) + threadID_);
+    xs2 = *((real *)((char *)sv + pitch * 34) + threadID_);
+    Jrel_np = *((real *)((char *)sv + pitch * 35) + threadID_);
+    CaMKt = *((real *)((char *)sv + pitch * 36) + threadID_);
 
-        XS = (sv[43] > 0.0) ? sv[43] : 0.0;
-        XW = (sv[44] > 0.0) ? sv[44] : 0.0;
-        Ca_TRPN = (sv[45] > 0.0) ? sv[45] : 0.0;
-        TmBlocked = sv[46];
-        ZETAS = sv[47];
-        ZETAW = sv[48];
-        TA = sv[49];
-    } else {
-        v = *((real *)((char *)sv + pitch * 0) + threadID_);
-        nai = *((real *)((char *)sv + pitch * 1) + threadID_);
-        nass = *((real *)((char *)sv + pitch * 2) + threadID_);
-        ki = *((real *)((char *)sv + pitch * 3) + threadID_);
-        kss = *((real *)((char *)sv + pitch * 4) + threadID_);
-        cai = *((real *)((char *)sv + pitch * 5) + threadID_);
-        cass = *((real *)((char *)sv + pitch * 6) + threadID_);
-        cansr = *((real *)((char *)sv + pitch * 7) + threadID_);
-        cajsr = *((real *)((char *)sv + pitch * 8) + threadID_);
-        m = *((real *)((char *)sv + pitch * 9) + threadID_);
-        hp = *((real *)((char *)sv + pitch * 10) + threadID_);
-        h = *((real *)((char *)sv + pitch * 11) + threadID_);
-        j = *((real *)((char *)sv + pitch * 12) + threadID_);
-        jp = *((real *)((char *)sv + pitch * 13) + threadID_);
-        mL = *((real *)((char *)sv + pitch * 14) + threadID_);
-        hL = *((real *)((char *)sv + pitch * 15) + threadID_);
-        hLp = *((real *)((char *)sv + pitch * 16) + threadID_);
-        a = *((real *)((char *)sv + pitch * 17) + threadID_);
-        iF = *((real *)((char *)sv + pitch * 18) + threadID_);
-        iS = *((real *)((char *)sv + pitch * 19) + threadID_);
-        ap = *((real *)((char *)sv + pitch * 20) + threadID_);
-        iFp = *((real *)((char *)sv + pitch * 21) + threadID_);
-        iSp = *((real *)((char *)sv + pitch * 22) + threadID_);
+    // new MM ICaL states
+    ikr_c0 = *((real *)((char *)sv + pitch * 37) + threadID_);
+    ikr_c1 = *((real *)((char *)sv + pitch * 38) + threadID_);
+    ikr_c2 = *((real *)((char *)sv + pitch * 39) + threadID_);
+    ikr_o = *((real *)((char *)sv + pitch * 40) + threadID_);
+    ikr_i = *((real *)((char *)sv + pitch * 41) + threadID_);
+    Jrel_p = *((real *)((char *)sv + pitch * 42) + threadID_);
 
-        // ical
-        d = *((real *)((char *)sv + pitch * 23) + threadID_);
-        ff = *((real *)((char *)sv + pitch * 24) + threadID_);
-        fs = *((real *)((char *)sv + pitch * 25) + threadID_);
-        fcaf = *((real *)((char *)sv + pitch * 26) + threadID_);
-        fcas = *((real *)((char *)sv + pitch * 27) + threadID_);
-        jca = *((real *)((char *)sv + pitch * 28) + threadID_);
-        nca = *((real *)((char *)sv + pitch * 29) + threadID_);
-        nca_i = *((real *)((char *)sv + pitch * 30) + threadID_);
-        ffp = *((real *)((char *)sv + pitch * 31) + threadID_);
-        fcafp = *((real *)((char *)sv + pitch * 32) + threadID_);
-
-        xs1 = *((real *)((char *)sv + pitch * 33) + threadID_);
-        xs2 = *((real *)((char *)sv + pitch * 34) + threadID_);
-        Jrel_np = *((real *)((char *)sv + pitch * 35) + threadID_);
-        CaMKt = *((real *)((char *)sv + pitch * 36) + threadID_);
-
-        // new MM ICaL states
-        ikr_c0 = *((real *)((char *)sv + pitch * 37) + threadID_);
-        ikr_c1 = *((real *)((char *)sv + pitch * 38) + threadID_);
-        ikr_c2 = *((real *)((char *)sv + pitch * 39) + threadID_);
-        ikr_o = *((real *)((char *)sv + pitch * 40) + threadID_);
-        ikr_i = *((real *)((char *)sv + pitch * 41) + threadID_);
-        Jrel_p = *((real *)((char *)sv + pitch * 42) + threadID_);
-
-        // Land-Niederer model
-        XS = fmaxf(0,(*((real *)((char *)sv + pitch * 43) + threadID_)));
-        XW = fmaxf(0,(*((real *)((char *)sv + pitch * 44) + threadID_)));
-        Ca_TRPN = fmaxf(0,(*((real *)((char *)sv + pitch * 45) + threadID_)));
-        TmBlocked = (*((real *)((char *)sv + pitch * 46) + threadID_));
-        ZETAS = (*((real *)((char *)sv + pitch * 47) + threadID_));
-        ZETAW = (*((real *)((char *)sv + pitch * 48) + threadID_));
-
-	TA = (*((real *)((char *)sv + pitch * 49) + threadID_));
-    }
+    // Land-Niederer model
+    XS = fmaxf(0,(*((real *)((char *)sv + pitch * 43) + threadID_)));
+    XW = fmaxf(0,(*((real *)((char *)sv + pitch * 44) + threadID_)));
+    Ca_TRPN = fmaxf(0,(*((real *)((char *)sv + pitch * 45) + threadID_)));
+    TmBlocked = (*((real *)((char *)sv + pitch * 46) + threadID_));
+    ZETAS = (*((real *)((char *)sv + pitch * 47) + threadID_));
+    ZETAW = (*((real *)((char *)sv + pitch * 48) + threadID_));
 
     #include "ToRORd_Land_mixed_endo_mid_epi.common.c"
 }
@@ -864,122 +799,62 @@ inline __device__ void RHS_RL_gpu(real *a_, real *b_, real *sv, real *rDY_, real
 
     real TA;
 
-    if (use_adpt_dt) {
-        v = sv[0];
-        nai = sv[1];
-        nass = sv[2];
-        ki = sv[3];
-        kss = sv[4];
-        cai = sv[5];
-        cass = sv[6];
-        cansr = sv[7];
-        cajsr = sv[8];
-        m = sv[9];
-        hp = sv[10];
-        h = sv[11];
-        j = sv[12];
-        jp = sv[13];
-        mL = sv[14];
-        hL = sv[15];
-        hLp = sv[16];
-        a = sv[17];
-        iF = sv[18];
-        iS = sv[19];
-        ap = sv[20];
-        iFp = sv[21];
-        iSp = sv[22];
+    v = *((real *)((char *)sv + pitch * 0) + threadID_);
+    nai = *((real *)((char *)sv + pitch * 1) + threadID_);
+    nass = *((real *)((char *)sv + pitch * 2) + threadID_);
+    ki = *((real *)((char *)sv + pitch * 3) + threadID_);
+    kss = *((real *)((char *)sv + pitch * 4) + threadID_);
+    cai = *((real *)((char *)sv + pitch * 5) + threadID_);
+    cass = *((real *)((char *)sv + pitch * 6) + threadID_);
+    cansr = *((real *)((char *)sv + pitch * 7) + threadID_);
+    cajsr = *((real *)((char *)sv + pitch * 8) + threadID_);
+    m = *((real *)((char *)sv + pitch * 9) + threadID_);
+    hp = *((real *)((char *)sv + pitch * 10) + threadID_);
+    h = *((real *)((char *)sv + pitch * 11) + threadID_);
+    j = *((real *)((char *)sv + pitch * 12) + threadID_);
+    jp = *((real *)((char *)sv + pitch * 13) + threadID_);
+    mL = *((real *)((char *)sv + pitch * 14) + threadID_);
+    hL = *((real *)((char *)sv + pitch * 15) + threadID_);
+    hLp = *((real *)((char *)sv + pitch * 16) + threadID_);
+    a = *((real *)((char *)sv + pitch * 17) + threadID_);
+    iF = *((real *)((char *)sv + pitch * 18) + threadID_);
+    iS = *((real *)((char *)sv + pitch * 19) + threadID_);
+    ap = *((real *)((char *)sv + pitch * 20) + threadID_);
+    iFp = *((real *)((char *)sv + pitch * 21) + threadID_);
+    iSp = *((real *)((char *)sv + pitch * 22) + threadID_);
 
-        // ical
-        d = sv[23];
-        ff = sv[24];
-        fs = sv[25];
-        fcaf = sv[26];
-        fcas = sv[27];
-        jca = sv[28];
-        nca = sv[29];
-        nca_i = sv[30];
-        ffp = sv[31];
-        fcafp = sv[32];
+    // ical
+    d = *((real *)((char *)sv + pitch * 23) + threadID_);
+    ff = *((real *)((char *)sv + pitch * 24) + threadID_);
+    fs = *((real *)((char *)sv + pitch * 25) + threadID_);
+    fcaf = *((real *)((char *)sv + pitch * 26) + threadID_);
+    fcas = *((real *)((char *)sv + pitch * 27) + threadID_);
+    jca = *((real *)((char *)sv + pitch * 28) + threadID_);
+    nca = *((real *)((char *)sv + pitch * 29) + threadID_);
+    nca_i = *((real *)((char *)sv + pitch * 30) + threadID_);
+    ffp = *((real *)((char *)sv + pitch * 31) + threadID_);
+    fcafp = *((real *)((char *)sv + pitch * 32) + threadID_);
 
-        xs1 = sv[33];
-        xs2 = sv[34];
-        Jrel_np = sv[35];
-        CaMKt = sv[36];
+    xs1 = *((real *)((char *)sv + pitch * 33) + threadID_);
+    xs2 = *((real *)((char *)sv + pitch * 34) + threadID_);
+    Jrel_np = *((real *)((char *)sv + pitch * 35) + threadID_);
+    CaMKt = *((real *)((char *)sv + pitch * 36) + threadID_);
 
-        // new MM ICaL states
-        ikr_c0 = sv[37];
-        ikr_c1 = sv[38];
-        ikr_c2 = sv[39];
-        ikr_o = sv[40];
-        ikr_i = sv[41];
-        Jrel_p = sv[42];
+    // new MM ICaL states
+    ikr_c0 = *((real *)((char *)sv + pitch * 37) + threadID_);
+    ikr_c1 = *((real *)((char *)sv + pitch * 38) + threadID_);
+    ikr_c2 = *((real *)((char *)sv + pitch * 39) + threadID_);
+    ikr_o = *((real *)((char *)sv + pitch * 40) + threadID_);
+    ikr_i = *((real *)((char *)sv + pitch * 41) + threadID_);
+    Jrel_p = *((real *)((char *)sv + pitch * 42) + threadID_);
 
-        XS = (sv[43] > 0.0) ? sv[43] : 0.0;
-        XW = (sv[44] > 0.0) ? sv[44] : 0.0;
-        Ca_TRPN = (sv[45] > 0.0) ? sv[45] : 0.0;
-        TmBlocked = sv[46];
-        ZETAS = sv[47];
-        ZETAW = sv[48];
-	    TA = sv[49];
-    } else {
-        v = *((real *)((char *)sv + pitch * 0) + threadID_);
-        nai = *((real *)((char *)sv + pitch * 1) + threadID_);
-        nass = *((real *)((char *)sv + pitch * 2) + threadID_);
-        ki = *((real *)((char *)sv + pitch * 3) + threadID_);
-        kss = *((real *)((char *)sv + pitch * 4) + threadID_);
-        cai = *((real *)((char *)sv + pitch * 5) + threadID_);
-        cass = *((real *)((char *)sv + pitch * 6) + threadID_);
-        cansr = *((real *)((char *)sv + pitch * 7) + threadID_);
-        cajsr = *((real *)((char *)sv + pitch * 8) + threadID_);
-        m = *((real *)((char *)sv + pitch * 9) + threadID_);
-        hp = *((real *)((char *)sv + pitch * 10) + threadID_);
-        h = *((real *)((char *)sv + pitch * 11) + threadID_);
-        j = *((real *)((char *)sv + pitch * 12) + threadID_);
-        jp = *((real *)((char *)sv + pitch * 13) + threadID_);
-        mL = *((real *)((char *)sv + pitch * 14) + threadID_);
-        hL = *((real *)((char *)sv + pitch * 15) + threadID_);
-        hLp = *((real *)((char *)sv + pitch * 16) + threadID_);
-        a = *((real *)((char *)sv + pitch * 17) + threadID_);
-        iF = *((real *)((char *)sv + pitch * 18) + threadID_);
-        iS = *((real *)((char *)sv + pitch * 19) + threadID_);
-        ap = *((real *)((char *)sv + pitch * 20) + threadID_);
-        iFp = *((real *)((char *)sv + pitch * 21) + threadID_);
-        iSp = *((real *)((char *)sv + pitch * 22) + threadID_);
-
-        // ical
-        d = *((real *)((char *)sv + pitch * 23) + threadID_);
-        ff = *((real *)((char *)sv + pitch * 24) + threadID_);
-        fs = *((real *)((char *)sv + pitch * 25) + threadID_);
-        fcaf = *((real *)((char *)sv + pitch * 26) + threadID_);
-        fcas = *((real *)((char *)sv + pitch * 27) + threadID_);
-        jca = *((real *)((char *)sv + pitch * 28) + threadID_);
-        nca = *((real *)((char *)sv + pitch * 29) + threadID_);
-        nca_i = *((real *)((char *)sv + pitch * 30) + threadID_);
-        ffp = *((real *)((char *)sv + pitch * 31) + threadID_);
-        fcafp = *((real *)((char *)sv + pitch * 32) + threadID_);
-
-        xs1 = *((real *)((char *)sv + pitch * 33) + threadID_);
-        xs2 = *((real *)((char *)sv + pitch * 34) + threadID_);
-        Jrel_np = *((real *)((char *)sv + pitch * 35) + threadID_);
-        CaMKt = *((real *)((char *)sv + pitch * 36) + threadID_);
-
-        // new MM ICaL states
-        ikr_c0 = *((real *)((char *)sv + pitch * 37) + threadID_);
-        ikr_c1 = *((real *)((char *)sv + pitch * 38) + threadID_);
-        ikr_c2 = *((real *)((char *)sv + pitch * 39) + threadID_);
-        ikr_o = *((real *)((char *)sv + pitch * 40) + threadID_);
-        ikr_i = *((real *)((char *)sv + pitch * 41) + threadID_);
-        Jrel_p = *((real *)((char *)sv + pitch * 42) + threadID_);
-
-        // Land-Niederer model
-        XS = fmaxf(0,(*((real *)((char *)sv + pitch * 43) + threadID_)));
-        XW = fmaxf(0,(*((real *)((char *)sv + pitch * 44) + threadID_)));
-        Ca_TRPN = fmaxf(0,(*((real *)((char *)sv + pitch * 45) + threadID_)));
-        TmBlocked = (*((real *)((char *)sv + pitch * 46) + threadID_));
-        ZETAS = (*((real *)((char *)sv + pitch * 47) + threadID_));
-        ZETAW = (*((real *)((char *)sv + pitch * 48) + threadID_));
-	    TA = (*((real *)((char *)sv + pitch * 49) + threadID_));
-    }
+    // Land-Niederer model
+    XS = fmaxf(0,(*((real *)((char *)sv + pitch * 43) + threadID_)));
+    XW = fmaxf(0,(*((real *)((char *)sv + pitch * 44) + threadID_)));
+    Ca_TRPN = fmaxf(0,(*((real *)((char *)sv + pitch * 45) + threadID_)));
+    TmBlocked = (*((real *)((char *)sv + pitch * 46) + threadID_));
+    ZETAS = (*((real *)((char *)sv + pitch * 47) + threadID_));
+    ZETAW = (*((real *)((char *)sv + pitch * 48) + threadID_));
 
     #include "ToRORd_Land_mixed_endo_mid_epi_RL.common.c"
 }
