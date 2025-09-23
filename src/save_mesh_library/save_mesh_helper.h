@@ -80,6 +80,9 @@ struct save_one_cell_state_variables_persistent_data {
     real_cpu cell_center_y;
     real_cpu cell_center_z;
     uint32_t cell_sv_position;
+    uint16_t sv_var_id;
+    real_cpu save_after_time;
+    bool save_steady_state;
 };
 
 struct save_multiple_cell_state_variables_persistent_data {
