@@ -1,5 +1,6 @@
 #include "3dparty/ini_parser/ini.h"
 #include "3dparty/sds/sds.h"
+#include "3dparty/stb_ds.h"
 #include "alg/grid/grid.h"
 #include "config_helpers/config_helpers.h"
 #include "logger/logger.h"
@@ -13,13 +14,17 @@
 #include "gui/gui.h"
 #endif
 
+#if defined(COMPILE_CUDA) || defined(COMPILE_SYCL)
+#define COMPILE_GPU
+#endif
+
 void configure_simulation(int argc, char **argv, struct user_options **options, struct monodomain_solver **monodomain_solver, struct ode_solver **ode_solver,
                           struct grid **the_grid) {
 
-    *options           = new_user_options();
-    *the_grid          = new_grid();
+    *options = new_user_options();
+    *the_grid = new_grid();
     *monodomain_solver = new_monodomain_solver();
-    *ode_solver        = new_ode_solver();
+    *ode_solver = new_ode_solver();
 
     // First we have to get the config file path
     get_config_file(argc, argv, *options);
@@ -118,8 +123,8 @@ void free_current_simulation_resources(struct user_options *options, struct mono
 static void init_gui_config_for_simulation(const struct user_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
     if(!only_restart) {
-        omp_init_lock(&gui_config->draw_lock);
-        omp_init_lock(&gui_config->sleep_lock);
+        omp_init_nest_lock(&gui_config->draw_lock);
+        omp_init_nest_lock(&gui_config->sleep_lock);
     }
 
     gui_config->config_name = strdup(options->config_file);
@@ -158,7 +163,7 @@ int main(int argc, char **argv) {
 
     configure_simulation(argc, argv, &options, &monodomain_solver, &ode_solver, &the_grid);
 
-#ifndef COMPILE_CUDA
+#ifndef COMPILE_GPU
     if(ode_solver->gpu) {
         log_warn("MonoAlg3D was not compiled with CUDA support. Falling back to CPU solver!!\n");
         ode_solver->gpu = false;

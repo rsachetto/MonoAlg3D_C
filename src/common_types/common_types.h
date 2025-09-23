@@ -187,7 +187,7 @@ struct simulation_files {
     do {                                                                                                                                                       \
         for(int64_t __i = 0; __i < hmlen(d); __i++) {                                                                                                          \
             struct string_voidp_hash_entry __e = (d)[__i];                                                                                                     \
-            fn(__e.value);                                                                                                                                     \
+            fn((struct config *)__e.value);                                                                                                                    \
         }                                                                                                                                                      \
     } while(0)
 
@@ -203,7 +203,7 @@ struct simulation_files {
     do {                                                                                                                                                       \
         for(int64_t i__ = 0; i__ < hmlen(d); i__++) {                                                                                                          \
             struct string_voidp_hash_entry e = (d)[i__];                                                                                                       \
-            init_config_functions(e.value, "./shared_libs/libdefault_stimuli.so", e.key);                                                                      \
+            init_config_functions((struct config *)e.value, "./shared_libs/libdefault_stimuli.so", e.key);                                                     \
         }                                                                                                                                                      \
     } while(0)
 
@@ -211,7 +211,7 @@ struct simulation_files {
     do {                                                                                                                                                       \
         for(int64_t __i = 0; __i < hmlen(d); __i++) {                                                                                                          \
             struct string_voidp_hash_entry e__ = (d)[__i];                                                                                                     \
-            init_config_functions(e__.value, "./shared_libs/libdefault_modify_domain.so", e__.key);                                                            \
+            init_config_functions((struct config *)e__.value, "./shared_libs/libdefault_modify_domain.so", e__.key);                                           \
         }                                                                                                                                                      \
     } while(0)
 

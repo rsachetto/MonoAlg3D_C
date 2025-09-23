@@ -18,7 +18,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-float * read_timesteps_from_case_file(sds case_file_path) {
+float *read_timesteps_from_case_file(sds case_file_path) {
     size_t case_file_size;
     float *timesteps = NULL;
 
@@ -57,9 +57,9 @@ float * read_timesteps_from_case_file(sds case_file_path) {
     return timesteps;
 }
 
-char* get_timestamped_dir_name(char* dir_name) {
+char *get_timestamped_dir_name(char *dir_name) {
 
-    char* rc = NULL;
+    char *rc = NULL;
 
     time_t rawtime = time(0);
     struct tm *now = localtime(&rawtime);
@@ -68,11 +68,10 @@ char* get_timestamped_dir_name(char* dir_name) {
         char timestamp[32];
         strftime(timestamp, 32, "%d_%m_%y_%H_%M_%S", now);
         size_t dir_name_size = strlen(dir_name);
-        rc = malloc(dir_name_size + strlen(timestamp) + 2);
-        if(dir_name[dir_name_size-1] == '/') {
-            sprintf(rc, "%.*s_%s", (int)dir_name_size-1, dir_name, timestamp);
-        }
-        else {
+        rc = (char *)malloc(dir_name_size + strlen(timestamp) + 2);
+        if(dir_name[dir_name_size - 1] == '/') {
+            sprintf(rc, "%.*s_%s", (int)dir_name_size - 1, dir_name, timestamp);
+        } else {
             sprintf(rc, "%s_%s", dir_name, timestamp);
         }
     }
@@ -115,7 +114,6 @@ char *get_current_directory() {
 
     buf = strcat(buf, "/");
     return buf;
-
 }
 
 const char *get_filename_ext(const char *filename) {
@@ -126,10 +124,9 @@ const char *get_filename_ext(const char *filename) {
 }
 
 char *get_dir_from_path(const char *path) {
-    char *last_slash = NULL;
+    const char *last_slash = NULL;
     char *parent = NULL;
     last_slash = strrchr(path, '/');
-
 
     if(last_slash == NULL)
         parent = strdup(".");
@@ -140,7 +137,7 @@ char *get_dir_from_path(const char *path) {
 }
 
 char *get_file_from_path(const char *path) {
-    char *last_slash = NULL;
+    const char *last_slash = NULL;
     char *file = NULL;
     last_slash = strrchr(path, '/');
 
@@ -153,7 +150,7 @@ char *get_file_from_path(const char *path) {
 }
 
 char *get_filename_without_ext(const char *filename) {
-    char *last_dot = NULL;
+    const char *last_dot = NULL;
     char *file = NULL;
     last_dot = strrchr(filename, '.');
 
@@ -372,7 +369,8 @@ string_array list_files_from_dir(const char *dir, const char *prefix, const char
                 }
             }
 
-            if(ignore) continue;
+            if(ignore)
+                continue;
         }
 
         if(extension) {
@@ -457,7 +455,6 @@ void get_path_information(const char *path, struct path_information *input_info)
     } else {
         input_info->dir_name = strdup(path);
     }
-
 }
 
 int remove_directory(const char *path) {
@@ -481,7 +478,7 @@ int remove_directory(const char *path) {
             }
 
             len = path_len + strlen(p->d_name) + 2;
-            buf = malloc(len);
+            buf = (char *)malloc(len);
 
             if(buf) {
                 struct stat statbuf;
@@ -538,7 +535,7 @@ void create_dir(char *out_dir) {
 
     while(slash) {
         size_t dirname_size = slash - new_dir;
-        char *dir_to_create = malloc(dirname_size + 1);
+        char *dir_to_create = (char *)malloc(dirname_size + 1);
         memcpy(dir_to_create, new_dir, dirname_size);
         dir_to_create[dirname_size] = '\0';
 
@@ -592,7 +589,7 @@ unsigned char *base64_encode(const unsigned char *src, size_t len, size_t *out_l
     olen++;                 /* nul termination */
     if(olen < len)
         return NULL; /* integer overflow */
-    out = malloc(olen);
+    out = (unsigned char *)malloc(olen);
     if(out == NULL)
         return NULL;
 

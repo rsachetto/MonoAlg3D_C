@@ -12,3 +12,4 @@ SpaceBeforeParens: Never
 SpaceInEmptyParentheses: false
 UseTab: Never
 TabWidth: 4
+SortIncludes: false
