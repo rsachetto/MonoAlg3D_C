@@ -5,6 +5,7 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../logger/logger.h"
 #include "sycl/usm.hpp"
+#include "../3dparty/stb_ds.h"
 
 using namespace sycl;
 using namespace oneapi;

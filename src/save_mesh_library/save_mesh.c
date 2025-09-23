@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
 #include "../alg/grid/grid.h"
 #include "../config/save_mesh_config.h"
 #include "../extra_data_library/helper_functions.h"

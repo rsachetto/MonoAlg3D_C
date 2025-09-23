@@ -1,5 +1,6 @@
 #include "gui_draw.h"
 #include "gui.h"
+#include "../3dparty/stb_ds.h"
 #include <float.h>
 
 void set_camera_params(Camera3D *camera, bool set_mode) {

@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../3dparty/stb_ds.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

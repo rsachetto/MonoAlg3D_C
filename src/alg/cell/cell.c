@@ -26,7 +26,7 @@ void init_cell_node(struct cell_node *cell_node) {
 
     cell_node->bunch_number = 0;
 
-    cell_node->neighbours = (void **)calloc(sizeof(void *), NUM_NEIGHBOURS);
+    cell_node->neighbours = calloc(sizeof(void*), NUM_NEIGHBOURS);
 
     cell_node->previous = NULL;
     cell_node->next = NULL;
@@ -134,10 +134,12 @@ enum transition_direction get_inverse_direction(enum transition_direction direct
         fprintf(stderr, "get_inverse_direction(). Invalid cell direction %d! Exiting...\n", direction);
         exit(10);
     }
+
 }
 
-void set_transition_node_data(struct transition_node *the_transition_node, uint16_t level, enum transition_direction direction, void *single_connector,
-                              void *quadruple_connector1, void *quadruple_connector2, void *quadruple_connector3, void *quadruple_connector4) {
+void set_transition_node_data(struct transition_node *the_transition_node, uint16_t level, enum transition_direction direction,
+                              void *single_connector, void *quadruple_connector1, void *quadruple_connector2,
+                              void *quadruple_connector3, void *quadruple_connector4) {
 
     the_transition_node->cell_data.level = level;
 
@@ -149,9 +151,11 @@ void set_transition_node_data(struct transition_node *the_transition_node, uint1
     the_transition_node->quadruple_connector2 = quadruple_connector2;
     the_transition_node->quadruple_connector3 = quadruple_connector3;
     the_transition_node->quadruple_connector4 = quadruple_connector4;
+
 }
 
-void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization, uint64_t bunch_number, void **neighbours, void *previous, void *next,
+void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretization,
+                        uint64_t bunch_number, void **neighbours, void *previous, void *next,
                         uint32_t grid_position, uint8_t hilbert_shape_number, struct point_3d center) {
 
     the_cell->discretization = discretization;
@@ -163,11 +167,12 @@ void set_cell_node_data(struct cell_node *the_cell, struct point_3d discretizati
         the_cell->neighbours = NULL;
     }
 
-    the_cell->previous = (struct cell_node *)previous;
-    the_cell->next = (struct cell_node *)next;
+    the_cell->previous = previous;
+    the_cell->next = next;
     the_cell->grid_position = grid_position;
     the_cell->hilbert_shape_number = hilbert_shape_number;
     the_cell->center = center;
+
 }
 
 void set_cell_flux(struct cell_node *the_cell, enum transition_direction direction) {
@@ -183,9 +188,9 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
         exit(10);
     }
 
-    real_cpu least_distance_x = the_cell->discretization.x / 2.0;
-    real_cpu least_distance_y = the_cell->discretization.y / 2.0;
-    real_cpu least_distance_z = the_cell->discretization.z / 2.0;
+    real_cpu least_distance_x = the_cell->discretization.x/2.0;
+    real_cpu least_distance_y = the_cell->discretization.y/2.0;
+    real_cpu least_distance_z = the_cell->discretization.z/2.0;
 
     bool has_found;
 
@@ -234,13 +239,13 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
 
         black_neighbor_cell = (struct cell_node *)(neighbour_grid_cell);
 
-        if(black_neighbor_cell->discretization.x / 2.0 < least_distance_x)
+        if(black_neighbor_cell->discretization.x/2.0 < least_distance_x)
             least_distance_x = black_neighbor_cell->discretization.x / 2.0;
 
-        if(black_neighbor_cell->discretization.y / 2.0 < least_distance_y)
+        if(black_neighbor_cell->discretization.y/2.0 < least_distance_y)
             least_distance_y = black_neighbor_cell->discretization.y / 2.0;
 
-        if(black_neighbor_cell->discretization.z / 2.0 < least_distance_z)
+        if(black_neighbor_cell->discretization.z/2.0 < least_distance_z)
             least_distance_z = black_neighbor_cell->discretization.z / 2.0;
 
         real_cpu local_flux_x = (the_cell->v - black_neighbor_cell->v) * (2.0 * least_distance_x);
@@ -250,38 +255,38 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
         lock_cell_node(the_cell);
 
         switch(direction) {
-        case BACK:
-            if(local_flux_y > the_cell->back_flux)
-                the_cell->back_flux += local_flux_y;
-            break;
+            case BACK:
+                if(local_flux_y > the_cell->back_flux)
+                    the_cell->back_flux += local_flux_y;
+                break;
 
-        case FRONT:
-            if(local_flux_y > the_cell->front_flux)
-                the_cell->front_flux += local_flux_y;
-            break;
+            case FRONT:
+                if(local_flux_y > the_cell->front_flux)
+                    the_cell->front_flux += local_flux_y;
+                break;
 
-        case TOP:
-            if(local_flux_x > the_cell->top_flux)
-                the_cell->top_flux += local_flux_x;
-            break;
+            case TOP:
+                if(local_flux_x > the_cell->top_flux)
+                    the_cell->top_flux += local_flux_x;
+                break;
 
-        case DOWN:
-            if(local_flux_x > the_cell->down_flux)
-                the_cell->down_flux += local_flux_x;
-            break;
+            case DOWN:
+                if(local_flux_x > the_cell->down_flux)
+                    the_cell->down_flux += local_flux_x;
+                break;
 
-        case RIGHT:
-            if(local_flux_z > the_cell->right_flux)
-                the_cell->right_flux += local_flux_z;
-            break;
+            case RIGHT:
+                if(local_flux_z > the_cell->right_flux)
+                    the_cell->right_flux += local_flux_z;
+                break;
 
-        case LEFT:
-            if(local_flux_z > the_cell->left_flux)
-                the_cell->left_flux += local_flux_z;
-            break;
+            case LEFT:
+                if(local_flux_z > the_cell->left_flux)
+                    the_cell->left_flux += local_flux_z;
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
 
         unlock_cell_node(the_cell);
@@ -289,38 +294,38 @@ void set_cell_flux(struct cell_node *the_cell, enum transition_direction directi
         lock_cell_node(black_neighbor_cell);
 
         switch(direction) {
-        case BACK:
-            if(local_flux_y > black_neighbor_cell->front_flux)
-                black_neighbor_cell->front_flux += local_flux_y;
-            break;
+            case BACK:
+                if(local_flux_y > black_neighbor_cell->front_flux)
+                    black_neighbor_cell->front_flux += local_flux_y;
+                break;
 
-        case FRONT:
-            if(local_flux_y > black_neighbor_cell->back_flux)
-                black_neighbor_cell->back_flux += local_flux_y;
-            break;
+            case FRONT:
+                if(local_flux_y > black_neighbor_cell->back_flux)
+                    black_neighbor_cell->back_flux += local_flux_y;
+                break;
 
-        case TOP:
-            if(local_flux_x > black_neighbor_cell->down_flux)
-                black_neighbor_cell->down_flux += local_flux_x;
-            break;
+            case TOP:
+                if(local_flux_x > black_neighbor_cell->down_flux)
+                    black_neighbor_cell->down_flux += local_flux_x;
+                break;
 
-        case DOWN:
-            if(local_flux_x > black_neighbor_cell->top_flux)
-                black_neighbor_cell->top_flux += local_flux_x;
-            break;
+            case DOWN:
+                if(local_flux_x > black_neighbor_cell->top_flux)
+                    black_neighbor_cell->top_flux += local_flux_x;
+                break;
 
-        case RIGHT:
-            if(local_flux_z > black_neighbor_cell->left_flux)
-                black_neighbor_cell->left_flux += local_flux_z;
-            break;
+            case RIGHT:
+                if(local_flux_z > black_neighbor_cell->left_flux)
+                    black_neighbor_cell->left_flux += local_flux_z;
+                break;
 
-        case LEFT:
-            if(local_flux_z > black_neighbor_cell->right_flux)
-                black_neighbor_cell->right_flux += local_flux_z;
-            break;
+            case LEFT:
+                if(local_flux_z > black_neighbor_cell->right_flux)
+                    black_neighbor_cell->right_flux += local_flux_z;
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
 
         unlock_cell_node(black_neighbor_cell);
@@ -393,6 +398,7 @@ struct cell_node *get_cell_neighbour(struct cell_node *grid_cell, void *neighbou
             return NULL;
         }
     }
+
 }
 
 bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) {
@@ -404,9 +410,10 @@ bool cell_has_neighbour(struct cell_node *grid_cell, void *neighbour_grid_cell) 
     } else {
         return false;
     }
+
 }
 
-struct cell_node *get_cell_neighbour_with_same_refinement_level(struct cell_node *grid_cell, enum transition_direction direction) {
+struct cell_node * get_cell_neighbour_with_same_refinement_level(struct cell_node *grid_cell, enum transition_direction direction) {
 
     struct basic_cell_data *cell_data = NULL;
 
@@ -427,7 +434,7 @@ struct cell_node *get_cell_neighbour_with_same_refinement_level(struct cell_node
             cell_data = (struct basic_cell_data *)grid_cell->neighbours[BACK];
         }
 
-        if(STARTS_WITH_TOP(direction)) {
+        if(STARTS_WITH_TOP(direction) ) {
             cell_data = (struct basic_cell_data *)grid_cell->neighbours[TOP];
         }
 
@@ -439,57 +446,58 @@ struct cell_node *get_cell_neighbour_with_same_refinement_level(struct cell_node
             return NULL;
         }
 
-        struct cell_node *node = (struct cell_node *)cell_data;
+        struct cell_node *node = (struct cell_node*) cell_data;
 
         switch(direction) {
-        case FRONT_TOP:
-        case BACK_TOP: {
-            cell_data = (struct basic_cell_data *)node->neighbours[TOP];
-            break;
-        }
-        case FRONT_DOWN:
-        case BACK_DOWN: {
-            cell_data = (struct basic_cell_data *)node->neighbours[DOWN];
-            break;
-        }
+            case FRONT_TOP:
+            case BACK_TOP: {
+                cell_data = (struct basic_cell_data *)node->neighbours[TOP];
+                break;
 
-        case FRONT_RIGHT:
-        case BACK_RIGHT:
-        case TOP_RIGHT:
-        case DOWN_RIGHT: {
-            cell_data = (struct basic_cell_data *)node->neighbours[RIGHT];
-            break;
-        }
+            }
+            case FRONT_DOWN:
+            case BACK_DOWN: {
+                cell_data = (struct basic_cell_data *)node->neighbours[DOWN];
+                break;
+            }
 
-        case FRONT_LEFT:
-        case BACK_LEFT:
-        case TOP_LEFT:
+            case FRONT_RIGHT:
+            case BACK_RIGHT:
+            case TOP_RIGHT:
+            case DOWN_RIGHT: {
+                cell_data = (struct basic_cell_data *)node->neighbours[RIGHT];
+                break;
+            }
 
-        case DOWN_LEFT: {
-            cell_data = (struct basic_cell_data *)node->neighbours[LEFT];
-            break;
-        }
+            case FRONT_LEFT:
+            case BACK_LEFT:
+            case TOP_LEFT:
 
-        case FRONT_TOP_RIGHT:
-        case BACK_TOP_RIGHT: {
-            cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, TOP_RIGHT);
-            break;
-        }
-        case FRONT_TOP_LEFT:
-        case BACK_TOP_LEFT: {
-            cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, TOP_LEFT);
-            break;
-        }
-        case FRONT_DOWN_RIGHT:
-        case BACK_DOWN_RIGHT: {
-            cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, DOWN_RIGHT);
-            break;
-        }
-        case FRONT_DOWN_LEFT:
-        case BACK_DOWN_LEFT: {
-            cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, DOWN_LEFT);
-            break;
-        }
+            case DOWN_LEFT: {
+                cell_data = (struct basic_cell_data *)node->neighbours[LEFT];
+                break;
+            }
+
+            case FRONT_TOP_RIGHT:
+            case BACK_TOP_RIGHT: {
+                cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, TOP_RIGHT);
+                break;
+            }
+            case FRONT_TOP_LEFT:
+            case BACK_TOP_LEFT: {
+                cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, TOP_LEFT);
+                break;
+            }
+            case FRONT_DOWN_RIGHT:
+            case BACK_DOWN_RIGHT: {
+                cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, DOWN_RIGHT);
+                break;
+            }
+            case FRONT_DOWN_LEFT:
+            case BACK_DOWN_LEFT: {
+                cell_data = (struct basic_cell_data *)get_cell_neighbour_with_same_refinement_level(node, DOWN_LEFT);
+                break;
+            }
         }
 
         if(!cell_data || cell_data->type == TRANSITION_NODE) {

@@ -3,6 +3,8 @@
 #include "../config_helpers/config_helpers.h"
 #include "../utils/file_utils.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
+#include "../3dparty/stb_ds.h"
+
 
 #include <stdio.h>
 

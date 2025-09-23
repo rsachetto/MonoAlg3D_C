@@ -8,6 +8,8 @@
 #include "../alg/grid/grid.h"
 #include "../config/save_state_config.h"
 #include "../save_mesh_library/save_mesh_helper.h"
+#include "../3dparty/stb_ds.h"
+
 
 #ifdef COMPILE_CUDA
 #include "../gpu_utils/gpu_utils.h"
