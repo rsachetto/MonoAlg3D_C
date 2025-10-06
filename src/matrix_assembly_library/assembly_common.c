@@ -1,3 +1,5 @@
+#include "../alg/cell/cell.h"
+
 static struct element fill_element(uint32_t position, enum transition_direction direction, real_cpu dx, real_cpu dy, real_cpu dz, real_cpu sigma_x,
                                    real_cpu sigma_y, real_cpu sigma_z, struct element *cell_elements, struct cell_node *cell);
 
@@ -75,376 +77,273 @@ static struct element fill_element(uint32_t position, enum transition_direction 
     return new_element;
 }
 
-static void calc_sigmas(struct cell_node *cell_node, struct cell_node *neighbours[26],
-                        enum transition_direction flux_direction, real_cpu *sigma_1,
-                        real_cpu *sigma_2, real_cpu *sigma_3, int *count_s1, int *count_s2, int *count_s3) {
-
-    *sigma_1 = 0.0;
-    *sigma_2 = 0.0;
-    *sigma_3 = 0.0;
-
-    // Initialize counts to 0
-    *count_s1 = 0;
-    *count_s2 = 0;
-    *count_s3 = 0;
-
-    switch(flux_direction) {
-    case RIGHT:
-        if(neighbours[RIGHT]) {
-            // Main conductivity (x-direction)
-            *sigma_1 = (neighbours[RIGHT]->sigma.x + cell_node->sigma.x) / 2.0;
-            *count_s1 = 1;
-
-            // xy cross-derivative at RIGHT face
-            *sigma_2 = (neighbours[RIGHT]->sigma.xy + cell_node->sigma.xy) / 2.0;
-            *count_s2 = 1;
-
-            // xz cross-derivative at RIGHT face
-            *sigma_3 = (neighbours[RIGHT]->sigma.xz + cell_node->sigma.xz) / 2.0;
-            *count_s3 = 1;
-        }
-        break;
-
-    case LEFT:
-        if(neighbours[LEFT]) {
-            *sigma_1 = (neighbours[LEFT]->sigma.x + cell_node->sigma.x) / 2.0;
-            *count_s1 = 1;
-
-            *sigma_2 = (neighbours[LEFT]->sigma.xy + cell_node->sigma.xy) / 2.0;
-            *count_s2 = 1;
-
-            *sigma_3 = (neighbours[LEFT]->sigma.xz + cell_node->sigma.xz) / 2.0;
-            *count_s3 = 1;
-        }
-        break;
-
-    case TOP:
-        if(neighbours[TOP]) {
-            *sigma_1 = (neighbours[TOP]->sigma.y + cell_node->sigma.y) / 2.0;
-            *count_s1 = 1;
-
-            *sigma_2 = (neighbours[TOP]->sigma.xy + cell_node->sigma.xy) / 2.0;
-            *count_s2 = 1;
-
-            *sigma_3 = (neighbours[TOP]->sigma.yz + cell_node->sigma.yz) / 2.0;
-            *count_s3 = 1;
-        }
-        break;
-
-    case DOWN:
-        if(neighbours[DOWN]) {
-            *sigma_1 = (neighbours[DOWN]->sigma.y + cell_node->sigma.y) / 2.0;
-            *count_s1 = 1;
-
-            *sigma_2 = (neighbours[DOWN]->sigma.xy + cell_node->sigma.xy) / 2.0;
-            *count_s2 = 1;
-
-            *sigma_3 = (neighbours[DOWN]->sigma.yz + cell_node->sigma.yz) / 2.0;
-            *count_s3 = 1;
-        }
-        break;
-
-    case FRONT:
-        if(neighbours[FRONT]) {
-            *sigma_1 = (neighbours[FRONT]->sigma.z + cell_node->sigma.z) / 2.0;
-            *count_s1 = 1;
-
-            *sigma_2 = (neighbours[FRONT]->sigma.xz + cell_node->sigma.xz) / 2.0;
-            *count_s2 = 1;
-
-            *sigma_3 = (neighbours[FRONT]->sigma.yz + cell_node->sigma.yz) / 2.0;
-            *count_s3 = 1;
-        }
-        break;
-
-    case BACK:
-        if(neighbours[BACK]) {
-            *sigma_1 = (neighbours[BACK]->sigma.z + cell_node->sigma.z) / 2.0;
-            *count_s1 = 1;
-
-            *sigma_2 = (neighbours[BACK]->sigma.xz + cell_node->sigma.xz) / 2.0;
-            *count_s2 = 1;
-
-            *sigma_3 = (neighbours[BACK]->sigma.yz + cell_node->sigma.yz) / 2.0;
-            *count_s3 = 1;
-        }
-        break;
-
-    default:
-        break;
+static void add_single_entry(struct cell_node *from, struct cell_node *to, real_cpu value) {
+    if (from == NULL || to == NULL || fabs(value) < 1e-16) {
+        return;
     }
+
+    // Check if entry already exists
+    struct element *elements = from->elements;
+    size_t num_elements = arrlen(elements);
+    bool found = false;
+
+    for(size_t i = 1; i < num_elements; i++) {  // Skip diagonal (i=0)
+        if(elements[i].column == to->grid_position) {
+            elements[i].value += value;  // Add to existing entry
+            found = true;
+            break;
+        }
+    }
+
+    // If not found, create new entry
+    if(!found) {
+        struct element new_element;
+        new_element.column = to->grid_position;
+        new_element.cell = to;
+        new_element.value = value;
+        arrput(from->elements, new_element);
+    }
+
+    // Always subtract from diagonal
+    from->elements[0].value -= value;
 }
 
-static void fill_elements_aniso(struct cell_node *grid_cell, struct cell_node *neighbours[26]) {
+// Helper function for harmonic mean of 4 values
+static real_cpu harmonic_mean_4(real_cpu a, real_cpu b, real_cpu c, real_cpu d) {
+    // Harmonic mean = 4 / (1/a + 1/b + 1/c + 1/d)
+    // Handle zero/small values to avoid division by zero
+    real_cpu eps = 1e-16;
+    if (fabs(a) < eps) a = eps;
+    if (fabs(b) < eps) b = eps;
+    if (fabs(c) < eps) c = eps;
+    if (fabs(d) < eps) d = eps;
 
-    struct element *elements = grid_cell->elements;
-
-    real_cpu dx = grid_cell->discretization.x;
-    real_cpu dy = grid_cell->discretization.y;
-    real_cpu dz = grid_cell->discretization.z;
-
-    real_cpu dy_times_dz_over_dx = (dy * dz) / dx;
-    real_cpu dx_times_dz_over_dy = (dx * dz) / dy;
-    real_cpu dx_times_dy_over_dz = (dx * dy) / dz;
-
-    // Calculate all sigma values first
-    real_cpu sigma_x_r = 0.0, sigma_xy_jx_r = 0.0, sigma_xz_jx_r = 0.0;
-    real_cpu sigma_x_l = 0.0, sigma_xy_jx_l = 0.0, sigma_xz_jx_l = 0.0;
-    real_cpu sigma_xy_jy_t = 0.0, sigma_y_t = 0.0, sigma_yz_jy_t = 0.0;
-    real_cpu sigma_xy_jy_d = 0.0, sigma_y_d = 0.0, sigma_yz_jy_d = 0.0;
-    real_cpu sigma_xz_jz_f = 0.0, sigma_yz_jz_f = 0.0, sigma_z_f = 0.0;
-    real_cpu sigma_xz_jz_b = 0.0, sigma_yz_jz_b = 0.0, sigma_z_b = 0.0;
-
-    int count_sigma_x_r = 0, count_sigma_xy_jx_r = 0, count_sigma_xz_jx_r = 0;
-    int count_sigma_x_l = 0, count_sigma_xy_jx_l = 0, count_sigma_xz_jx_l = 0;
-    int count_sigma_xy_jy_t = 0, count_sigma_y_t = 0, count_sigma_yz_jy_t = 0;
-    int count_sigma_xy_jy_d = 0, count_sigma_y_d = 0, count_sigma_yz_jy_d = 0;
-    int count_sigma_xz_jz_f = 0, count_sigma_yz_jz_f = 0, count_sigma_z_f = 0;
-    int count_sigma_xz_jz_b = 0, count_sigma_yz_jz_b = 0, count_sigma_z_b = 0;
-
-    calc_sigmas(grid_cell, neighbours, RIGHT, &sigma_x_r, &sigma_xy_jx_r, &sigma_xz_jx_r, &count_sigma_x_r, &count_sigma_xy_jx_r, &count_sigma_xz_jx_r);
-    calc_sigmas(grid_cell, neighbours, LEFT, &sigma_x_l, &sigma_xy_jx_l, &sigma_xz_jx_l, &count_sigma_x_l, &count_sigma_xy_jx_l, &count_sigma_xz_jx_l);
-    calc_sigmas(grid_cell, neighbours, TOP, &sigma_y_t, &sigma_xy_jy_t, &sigma_yz_jy_t, &count_sigma_y_t, &count_sigma_xy_jy_t, &count_sigma_yz_jy_t);
-    calc_sigmas(grid_cell, neighbours, DOWN, &sigma_y_d, &sigma_xy_jy_d, &sigma_yz_jy_d, &count_sigma_y_d, &count_sigma_xy_jy_d, &count_sigma_yz_jy_d);
-    calc_sigmas(grid_cell, neighbours, FRONT, &sigma_z_f, &sigma_xz_jz_f, &sigma_yz_jz_f, &count_sigma_z_f, &count_sigma_xz_jz_f, &count_sigma_yz_jz_f);
-    calc_sigmas(grid_cell, neighbours, BACK, &sigma_z_b, &sigma_xz_jz_b, &sigma_yz_jz_b, &count_sigma_z_b, &count_sigma_xz_jz_b, &count_sigma_yz_jz_b);
-
-    // MAIN DIAGONAL
-    elements[0].value += dy_times_dz_over_dx * sigma_x_r + dy_times_dz_over_dx * sigma_x_l +
-                         dx_times_dz_over_dy * sigma_y_t + dx_times_dz_over_dy * sigma_y_d +
-                         dx_times_dy_over_dz * sigma_z_f + dx_times_dy_over_dz * sigma_z_b;
-
-    // Helper function to safely divide and return 0 if count is 0
-    #define SAFE_DIVIDE(sigma, count) ((count) > 0 ? (sigma) / (count) : 0.0)
-
-    // Process face neighbors first
-    for(int direction = 0; direction < 6; direction++) { // Only face neighbors
-        if(neighbours[direction]) {
-            struct element new_element;
-            new_element.value = 0.0;
-            new_element.column = neighbours[direction]->grid_position;
-            new_element.cell = neighbours[direction];
-
-            switch(direction) {
-            case FRONT:
-                new_element.value = -sigma_z_f * dx_times_dy_over_dz;
-                break;
-            case BACK:
-                new_element.value = -sigma_z_b * dx_times_dy_over_dz;
-                break;
-            case TOP:
-                new_element.value = -sigma_y_t * dx_times_dz_over_dy;
-                break;
-            case DOWN:
-                new_element.value = -sigma_y_d * dx_times_dz_over_dy;
-                break;
-            case RIGHT:
-                new_element.value = -sigma_x_r * dy_times_dz_over_dx;
-                break;
-            case LEFT:
-                new_element.value = -sigma_x_l * dy_times_dz_over_dx;
-                break;
-            }
-
-            if(new_element.value != 0.0) {
-                arrput(grid_cell->elements, new_element);
-            }
-        }
-    }
-
-    for(int direction = 6; direction < 18; direction++) {
-        if(neighbours[direction]) {
-            struct element new_element;
-            new_element.value = 0.0;
-            new_element.column = neighbours[direction]->grid_position;
-            new_element.cell = neighbours[direction];
-
-            switch(direction) {
-            case FRONT_TOP:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx +
-                                   SAFE_DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz;
-                break;
-            case FRONT_DOWN:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) * dx +
-                                    SAFE_DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz;
-                break;
-            case BACK_TOP:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx +
-                                    SAFE_DIVIDE(sigma_xy_jy_t, count_sigma_xy_jy_t) * dz;
-                break;
-            case BACK_DOWN:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) * dx +
-                                   SAFE_DIVIDE(sigma_xy_jy_d, count_sigma_xy_jy_d) * dz;
-                break;
-            case FRONT_RIGHT:
-                new_element.value = SAFE_DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy +
-                                   SAFE_DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz;
-                break;
-            case FRONT_LEFT:
-                new_element.value = -SAFE_DIVIDE(sigma_xz_jz_f, count_sigma_xz_jz_f) * dy +
-                                    SAFE_DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz;
-                break;
-            case BACK_RIGHT:
-                new_element.value = -SAFE_DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy +
-                                    SAFE_DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) * dz;
-                break;
-            case BACK_LEFT:
-                new_element.value = SAFE_DIVIDE(sigma_xz_jz_b, count_sigma_xz_jz_b) * dy +
-                                   SAFE_DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) * dz;
-                break;
-            case TOP_RIGHT:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx +
-                                   SAFE_DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy;
-                break;
-            case TOP_LEFT:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jy_t, count_sigma_yz_jy_t) * dx +
-                                    SAFE_DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy;
-                break;
-            case DOWN_RIGHT:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx +
-                                    SAFE_DIVIDE(sigma_xz_jx_r, count_sigma_xz_jx_r) * dy;
-                break;
-            case DOWN_LEFT:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jy_d, count_sigma_yz_jy_d) * dx +
-                                   SAFE_DIVIDE(sigma_xz_jx_l, count_sigma_xz_jx_l) * dy;
-                break;
-            }
-
-            if(new_element.value != 0.0) {
-                arrput(grid_cell->elements, new_element);
-            }
-        }
-    }
-
-    for(int direction = 18; direction < 26; direction++) {
-        if(neighbours[direction]) {
-            struct element new_element;
-            new_element.value = 0.0;
-            new_element.column = neighbours[direction]->grid_position;
-            new_element.cell = neighbours[direction];
-
-            switch(direction) {
-            case FRONT_TOP_RIGHT:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) *
-                                   SAFE_DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) / 8.0;
-                break;
-            case FRONT_TOP_LEFT:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) *
-                                   SAFE_DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) / 8.0;
-                break;
-            case FRONT_DOWN_RIGHT:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) *
-                                    SAFE_DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) / 8.0;
-                break;
-            case FRONT_DOWN_LEFT:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jz_f, count_sigma_yz_jz_f) *
-                                    SAFE_DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) / 8.0;
-                break;
-            case BACK_TOP_RIGHT:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) *
-                                    SAFE_DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) / 8.0;
-                break;
-            case BACK_TOP_LEFT:
-                new_element.value = -SAFE_DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) *
-                                    SAFE_DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) / 8.0;
-                break;
-            case BACK_DOWN_RIGHT:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) *
-                                   SAFE_DIVIDE(sigma_xy_jx_r, count_sigma_xy_jx_r) / 8.0;
-                break;
-            case BACK_DOWN_LEFT:
-                new_element.value = SAFE_DIVIDE(sigma_yz_jz_b, count_sigma_yz_jz_b) *
-                                   SAFE_DIVIDE(sigma_xy_jx_l, count_sigma_xy_jx_l) / 8.0;
-                break;
-            }
-
-            if(new_element.value != 0.0) {
-                arrput(grid_cell->elements, new_element);
-            }
-        }
-    }
-
-    #undef SAFE_DIVIDE
+    return 4.0 / (1.0/a + 1.0/b + 1.0/c + 1.0/d);
 }
 
-static void debug_cell(struct cell_node *grid_cell, struct cell_node *neighbours[26]) {
-
-    printf("%lf, %lf, %lf - %d\n", grid_cell->center.x, grid_cell->center.y, grid_cell->center.z, grid_cell->grid_position + 1);
-    printf("Sigmas %lf, %lf, %lf\n", grid_cell->sigma.x, grid_cell->sigma.y, grid_cell->sigma.z);
-    printf("Main diag %.20lf\n", grid_cell->elements[0].value);
-
-    if(neighbours[TOP])
-        printf("TOP %d\n", neighbours[TOP]->grid_position + 1);
-    if(neighbours[DOWN])
-        printf("DOWN %d\n", neighbours[DOWN]->grid_position + 1);
-    if(neighbours[FRONT])
-        printf("FRONT %d\n", neighbours[FRONT]->grid_position + 1);
-    if(neighbours[BACK])
-        printf("BACK %d\n", neighbours[BACK]->grid_position + 1);
-    if(neighbours[LEFT])
-        printf("LEFT %d\n", neighbours[LEFT]->grid_position + 1);
-    if(neighbours[RIGHT])
-        printf("RIGHT %d\n", neighbours[RIGHT]->grid_position + 1);
-    if(neighbours[FRONT_RIGHT])
-        printf("FRONT_RIGHT %d\n", neighbours[FRONT_RIGHT]->grid_position + 1);
-    if(neighbours[FRONT_LEFT])
-        printf("FRONT_LEFT %d\n", neighbours[FRONT_LEFT]->grid_position + 1);
-    if(neighbours[BACK_RIGHT])
-        printf("BACK_RIGHT %d\n", neighbours[BACK_RIGHT]->grid_position + 1);
-    if(neighbours[BACK_LEFT])
-        printf("BACK_LEFT %d\n", neighbours[BACK_LEFT]->grid_position + 1);
-    if(neighbours[TOP_RIGHT])
-        printf("TOP_RIGHT %d\n", neighbours[TOP_RIGHT]->grid_position + 1);
-    if(neighbours[TOP_LEFT])
-        printf("TOP_LEFT %d\n", neighbours[TOP_LEFT]->grid_position + 1);
-    if(neighbours[DOWN_RIGHT])
-        printf("DOWN_RIGHT %d\n", neighbours[DOWN_RIGHT]->grid_position + 1);
-    if(neighbours[DOWN_LEFT])
-        printf("DOWN_LEFT %d\n", neighbours[DOWN_LEFT]->grid_position + 1);
-    if(neighbours[FRONT_TOP])
-        printf("FRONT_TOP %d\n", neighbours[FRONT_TOP]->grid_position + 1);
-    if(neighbours[FRONT_DOWN])
-        printf("FRONT_DOWN %d\n", neighbours[FRONT_DOWN]->grid_position + 1);
-    if(neighbours[FRONT_TOP_RIGHT])
-        printf("FRONT_TOP_RIGHT %d\n", neighbours[FRONT_TOP_RIGHT]->grid_position + 1);
-    if(neighbours[FRONT_TOP_LEFT])
-        printf("FRONT_TOP_LEFT %d\n", neighbours[FRONT_TOP_LEFT]->grid_position + 1);
-    if(neighbours[FRONT_DOWN_RIGHT])
-        printf("FRONT_DOWN_RIGHT %d\n", neighbours[FRONT_DOWN_RIGHT]->grid_position + 1);
-    if(neighbours[FRONT_DOWN_LEFT])
-        printf("FRONT_DOWN_LEFT %d\n", neighbours[FRONT_DOWN_LEFT]->grid_position + 1);
-    if(neighbours[BACK_TOP])
-        printf("BACK_TOP %d\n", neighbours[BACK_TOP]->grid_position + 1);
-    if(neighbours[BACK_DOWN])
-        printf("BACK_DOWN %d\n", neighbours[BACK_DOWN]->grid_position + 1);
-    if(neighbours[BACK_TOP_RIGHT])
-        printf("BACK_TOP_RIGHT %d\n", neighbours[BACK_TOP_RIGHT]->grid_position + 1);
-    if(neighbours[BACK_TOP_LEFT])
-        printf("BACK_TOP_LEFT %d\n", neighbours[BACK_TOP_LEFT]->grid_position + 1);
-    if(neighbours[BACK_DOWN_RIGHT])
-        printf("BACK_DOWN_RIGHT %d\n", neighbours[BACK_DOWN_RIGHT]->grid_position + 1);
-    if(neighbours[BACK_DOWN_LEFT])
-        printf("BACK_DOWN_LEFT %d\n", neighbours[BACK_DOWN_LEFT]->grid_position + 1);
+static real_cpu harmonic_mean_2(real_cpu a, real_cpu b) {
+    // Handle zero/small values to avoid division by zero
+    real_cpu eps = 1e-16;
+    if (fabs(a) < eps) a = eps;
+    if (fabs(b) < eps) b = eps;
+    return 2.0 / (1.0/a + 1.0/b);
 }
 
-static void fill_discretization_matrix_elements_aniso(struct cell_node *grid_cell) {
-
+static void fill_discretization_matrix_elements_aniso(struct cell_node *cell_i) {
     struct cell_node *neighbours[26];
-    struct cell_node *neighbour;
-    int n = 0;
+
+    // Get all neighbors
     for(int direction = 0; direction < NUM_DIRECTIONS; direction++) {
-        neighbour = get_cell_neighbour_with_same_refinement_level(grid_cell, direction);
+        struct cell_node *neighbour = get_cell_neighbour_with_same_refinement_level(cell_i, direction);
         if(neighbour && neighbour->active) {
             neighbours[direction] = neighbour;
-            n++;
-
         } else {
             neighbours[direction] = NULL;
         }
     }
 
-    fill_elements_aniso(grid_cell, neighbours);
+    real_cpu dx = cell_i->discretization.x;
+    real_cpu dy = cell_i->discretization.y;
+    real_cpu dz = cell_i->discretization.z;
+
+    // =================================================================
+    // FACE NEIGHBORS - Direct diffusion terms (∇·(σ∇u) main diagonal terms)
+    // =================================================================
+
+    if(neighbours[RIGHT]) {
+        real_cpu sigma_xx = harmonic_mean_2(cell_i->sigma.x, neighbours[RIGHT]->sigma.x);
+        add_single_entry(cell_i, neighbours[RIGHT], -sigma_xx * dy * dz / dx);
+    }
+
+    if(neighbours[LEFT]) {
+        real_cpu sigma_xx =harmonic_mean_2(cell_i->sigma.x, neighbours[LEFT]->sigma.x);
+        add_single_entry(cell_i, neighbours[LEFT], -sigma_xx * dy * dz / dx);
+    }
+
+    if(neighbours[TOP]) {
+        real_cpu sigma_yy = harmonic_mean_2(cell_i->sigma.y, neighbours[TOP]->sigma.y);
+        add_single_entry(cell_i, neighbours[TOP], -sigma_yy * dx * dz / dy);
+    }
+
+    if(neighbours[DOWN]) {
+        real_cpu sigma_yy = harmonic_mean_2(cell_i->sigma.y, neighbours[DOWN]->sigma.y);
+        add_single_entry(cell_i, neighbours[DOWN], -sigma_yy * dx * dz / dy);
+    }
+
+    if(neighbours[FRONT]) {
+        real_cpu sigma_zz = harmonic_mean_2(cell_i->sigma.z, neighbours[FRONT]->sigma.z);
+        add_single_entry(cell_i, neighbours[FRONT], -sigma_zz * dx * dy / dz);
+    }
+
+    if(neighbours[BACK]) {
+        real_cpu sigma_zz = harmonic_mean_2(cell_i->sigma.z, neighbours[BACK]->sigma.z);
+        add_single_entry(cell_i, neighbours[BACK], -sigma_zz * dx * dy / dz);
+    }
+
+    if(neighbours[TOP_RIGHT] && neighbours[TOP] && neighbours[RIGHT]) {
+        // Harmonic mean of σxy over the 4 corner points
+        real_cpu sigma_xy_avg = harmonic_mean_4(cell_i->sigma.xy,
+                                               neighbours[RIGHT]->sigma.xy,
+                                               neighbours[TOP]->sigma.xy,
+                                               neighbours[TOP_RIGHT]->sigma.xy);
+
+        // Correct coefficient for XY cross-derivative on structured mesh
+        real_cpu coeff = sigma_xy_avg * dz / (dx * dy);
+
+        // Apply the 4-point cross-derivative stencil
+        add_single_entry(cell_i, neighbours[TOP_RIGHT], coeff);
+        add_single_entry(cell_i, neighbours[TOP], -coeff);
+        add_single_entry(cell_i, neighbours[RIGHT], -coeff);
+        // The fourth point (cell_i itself) contributes to diagonal: +coeff
+        cell_i->elements[0].value += coeff;
+    }
+
+    if(neighbours[TOP_LEFT] && neighbours[TOP] && neighbours[LEFT]) {
+        real_cpu sigma_xy_avg = harmonic_mean_4(cell_i->sigma.xy,
+                                               neighbours[LEFT]->sigma.xy,
+                                               neighbours[TOP]->sigma.xy,
+                                               neighbours[TOP_LEFT]->sigma.xy);
+        real_cpu coeff = sigma_xy_avg * dz / (dx * dy);
+
+        add_single_entry(cell_i, neighbours[TOP_LEFT], -coeff);
+        add_single_entry(cell_i, neighbours[TOP], coeff);
+        add_single_entry(cell_i, neighbours[LEFT], coeff);
+        cell_i->elements[0].value -= coeff;
+    }
+
+    if(neighbours[DOWN_RIGHT] && neighbours[DOWN] && neighbours[RIGHT]) {
+        real_cpu sigma_xy_avg = harmonic_mean_4(cell_i->sigma.xy,
+                                               neighbours[RIGHT]->sigma.xy,
+                                               neighbours[DOWN]->sigma.xy,
+                                               neighbours[DOWN_RIGHT]->sigma.xy);
+        real_cpu coeff = sigma_xy_avg * dz / (dx * dy);
+
+        add_single_entry(cell_i, neighbours[DOWN_RIGHT], -coeff);
+        add_single_entry(cell_i, neighbours[DOWN], coeff);
+        add_single_entry(cell_i, neighbours[RIGHT], coeff);
+        cell_i->elements[0].value -= coeff;
+    }
+
+    if(neighbours[DOWN_LEFT] && neighbours[DOWN] && neighbours[LEFT]) {
+        real_cpu sigma_xy_avg = harmonic_mean_4(cell_i->sigma.xy,
+                                               neighbours[LEFT]->sigma.xy,
+                                               neighbours[DOWN]->sigma.xy,
+                                               neighbours[DOWN_LEFT]->sigma.xy);
+        real_cpu coeff = sigma_xy_avg * dz / (dx * dy);
+
+        add_single_entry(cell_i, neighbours[DOWN_LEFT], coeff);
+        add_single_entry(cell_i, neighbours[DOWN], -coeff);
+        add_single_entry(cell_i, neighbours[LEFT], -coeff);
+        cell_i->elements[0].value += coeff;
+    }
+
+    // XZ cross-derivative
+    if(neighbours[FRONT_RIGHT] && neighbours[FRONT] && neighbours[RIGHT]) {
+        real_cpu sigma_xz_avg = harmonic_mean_4(cell_i->sigma.xz,
+                                               neighbours[RIGHT]->sigma.xz,
+                                               neighbours[FRONT]->sigma.xz,
+                                               neighbours[FRONT_RIGHT]->sigma.xz);
+        real_cpu coeff = sigma_xz_avg * dy / (dx * dz);
+
+        add_single_entry(cell_i, neighbours[FRONT_RIGHT], coeff);
+        add_single_entry(cell_i, neighbours[FRONT], -coeff);
+        add_single_entry(cell_i, neighbours[RIGHT], -coeff);
+        cell_i->elements[0].value += coeff;
+    }
+
+    if(neighbours[FRONT_LEFT] && neighbours[FRONT] && neighbours[LEFT]) {
+        real_cpu sigma_xz_avg = harmonic_mean_4(cell_i->sigma.xz,
+                                               neighbours[LEFT]->sigma.xz,
+                                               neighbours[FRONT]->sigma.xz,
+                                               neighbours[FRONT_LEFT]->sigma.xz);
+        real_cpu coeff = sigma_xz_avg * dy / (dx * dz);
+
+        add_single_entry(cell_i, neighbours[FRONT_LEFT], -coeff);
+        add_single_entry(cell_i, neighbours[FRONT], coeff);
+        add_single_entry(cell_i, neighbours[LEFT], coeff);
+        cell_i->elements[0].value -= coeff;
+    }
+
+    if(neighbours[BACK_RIGHT] && neighbours[BACK] && neighbours[RIGHT]) {
+        real_cpu sigma_xz_avg = harmonic_mean_4(cell_i->sigma.xz,
+                                               neighbours[RIGHT]->sigma.xz,
+                                               neighbours[BACK]->sigma.xz,
+                                               neighbours[BACK_RIGHT]->sigma.xz);
+        real_cpu coeff = sigma_xz_avg * dy / (dx * dz);
+
+        add_single_entry(cell_i, neighbours[BACK_RIGHT], -coeff);
+        add_single_entry(cell_i, neighbours[BACK], coeff);
+        add_single_entry(cell_i, neighbours[RIGHT], coeff);
+        cell_i->elements[0].value -= coeff;
+    }
+
+    if(neighbours[BACK_LEFT] && neighbours[BACK] && neighbours[LEFT]) {
+        real_cpu sigma_xz_avg = harmonic_mean_4(cell_i->sigma.xz,
+                                               neighbours[LEFT]->sigma.xz,
+                                               neighbours[BACK]->sigma.xz,
+                                               neighbours[BACK_LEFT]->sigma.xz);
+        real_cpu coeff = sigma_xz_avg * dy / (dx * dz);
+
+        add_single_entry(cell_i, neighbours[BACK_LEFT], coeff);
+        add_single_entry(cell_i, neighbours[BACK], -coeff);
+        add_single_entry(cell_i, neighbours[LEFT], -coeff);
+        cell_i->elements[0].value += coeff;
+    }
+
+    // YZ cross-derivative
+    if(neighbours[FRONT_TOP] && neighbours[FRONT] && neighbours[TOP]) {
+        real_cpu sigma_yz_avg = harmonic_mean_4(cell_i->sigma.yz,
+                                               neighbours[TOP]->sigma.yz,
+                                               neighbours[FRONT]->sigma.yz,
+                                               neighbours[FRONT_TOP]->sigma.yz);
+        real_cpu coeff = sigma_yz_avg * dx / (dy * dz);
+
+        add_single_entry(cell_i, neighbours[FRONT_TOP], coeff);
+        add_single_entry(cell_i, neighbours[FRONT], -coeff);
+        add_single_entry(cell_i, neighbours[TOP], -coeff);
+        cell_i->elements[0].value += coeff;
+    }
+
+    if(neighbours[FRONT_DOWN] && neighbours[FRONT] && neighbours[DOWN]) {
+        real_cpu sigma_yz_avg = harmonic_mean_4(cell_i->sigma.yz,
+                                               neighbours[DOWN]->sigma.yz,
+                                               neighbours[FRONT]->sigma.yz,
+                                               neighbours[FRONT_DOWN]->sigma.yz);
+        real_cpu coeff = sigma_yz_avg * dx / (dy * dz);
+
+        add_single_entry(cell_i, neighbours[FRONT_DOWN], -coeff);
+        add_single_entry(cell_i, neighbours[FRONT], coeff);
+        add_single_entry(cell_i, neighbours[DOWN], coeff);
+        cell_i->elements[0].value -= coeff;
+    }
+
+    if(neighbours[BACK_TOP] && neighbours[BACK] && neighbours[TOP]) {
+        real_cpu sigma_yz_avg = harmonic_mean_4(cell_i->sigma.yz,
+                                               neighbours[TOP]->sigma.yz,
+                                               neighbours[BACK]->sigma.yz,
+                                               neighbours[BACK_TOP]->sigma.yz);
+        real_cpu coeff = sigma_yz_avg * dx / (dy * dz);
+
+        add_single_entry(cell_i, neighbours[BACK_TOP], -coeff);
+        add_single_entry(cell_i, neighbours[BACK], coeff);
+        add_single_entry(cell_i, neighbours[TOP], coeff);
+        cell_i->elements[0].value -= coeff;
+    }
+
+    if(neighbours[BACK_DOWN] && neighbours[BACK] && neighbours[DOWN]) {
+        real_cpu sigma_yz_avg = harmonic_mean_4(cell_i->sigma.yz,
+                                               neighbours[DOWN]->sigma.yz,
+                                               neighbours[BACK]->sigma.yz,
+                                               neighbours[BACK_DOWN]->sigma.yz);
+        real_cpu coeff = sigma_yz_avg * dx / (dy * dz);
+
+        add_single_entry(cell_i, neighbours[BACK_DOWN], coeff);
+        add_single_entry(cell_i, neighbours[BACK], -coeff);
+        add_single_entry(cell_i, neighbours[DOWN], -coeff);
+        cell_i->elements[0].value += coeff;
+    }
 }
+
 
 static void fill_discretization_matrix_elements(struct cell_node *grid_cell, void *neighbour_grid_cell, enum transition_direction direction) {
 

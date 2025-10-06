@@ -486,9 +486,23 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
         else {
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, f, sigma_l, sigma_t);
+                ac[i]->sigma.fibers.f[0] = f[0];
+                ac[i]->sigma.fibers.f[1] = f[1];
+                ac[i]->sigma.fibers.f[2] = f[2];
             }
             else {
                 calc_tensor(D, f, s, n, sigma_l, sigma_t, sigma_n);
+                ac[i]->sigma.fibers.f[0] = f[0];
+                ac[i]->sigma.fibers.f[1] = f[1];
+                ac[i]->sigma.fibers.f[2] = f[2];
+
+                ac[i]->sigma.fibers.s[0] = s[0];
+                ac[i]->sigma.fibers.s[1] = s[1];
+                ac[i]->sigma.fibers.s[2] = s[2];
+
+                ac[i]->sigma.fibers.n[0] = n[0];
+                ac[i]->sigma.fibers.n[1] = n[1];
+                ac[i]->sigma.fibers.n[2] = n[2];
             }
         }
 
@@ -501,8 +515,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
         ac[i]->sigma.yz = D[1][2];
 
     }
-
-    OMP(parallel for)
+    
     for(i = 0; i < num_active_cells; i++) {
         fill_discretization_matrix_elements_aniso(ac[i]);
     }
@@ -1180,10 +1193,25 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
         else {
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, f, sigma_l, sigma_t);
+                ac[i]->sigma.fibers.f[0] = f[0];
+                ac[i]->sigma.fibers.f[1] = f[1];
+                ac[i]->sigma.fibers.f[2] = f[2];
             }
             else {
                 calc_tensor(D, f, s, n, sigma_l, sigma_t, sigma_n);
+                ac[i]->sigma.fibers.f[0] = f[0];
+                ac[i]->sigma.fibers.f[1] = f[1];
+                ac[i]->sigma.fibers.f[2] = f[2];
+
+                ac[i]->sigma.fibers.s[0] = s[0];
+                ac[i]->sigma.fibers.s[1] = s[1];
+                ac[i]->sigma.fibers.s[2] = s[2];
+
+                ac[i]->sigma.fibers.n[0] = n[0];
+                ac[i]->sigma.fibers.n[1] = n[1];
+                ac[i]->sigma.fibers.n[2] = n[2];
             }
+
         }
 
         // Check if the current cell is tagged as FASTENDO
