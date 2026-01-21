@@ -9,7 +9,9 @@
 #include "../common_types/common_types.h"
 #include "../monodomain/constants.h"
 #include "../monodomain/monodomain_solver.h"
+#include "../ode_solver/ode_solver.h"
 #include "config_common.h"
+
 
 #define CALC_ECG(name) void name(struct time_info *time_info, struct config *config, struct grid *the_grid, char *output_dir)
 typedef CALC_ECG(calc_ecg_fn);

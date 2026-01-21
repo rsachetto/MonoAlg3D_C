@@ -8,13 +8,13 @@
 #include <omp.h>
 #include <sys/types.h>
 
-#include "../alg/grid/grid.h"
-#include "../alg/cell/cell.h"
-#include "../vtk_utils/vtk_unstructured_grid.h"
 #include "../3dparty/raylib/src/raylib.h"
-#include "../3dparty/raylib/src/raymath.h"
 #include "../3dparty/raylib/src/extras/rlights.h"
+#include "../3dparty/raylib/src/raymath.h"
+#include "../alg/cell/cell.h"
+#include "../alg/grid/grid.h"
 #include "../config/config_parser.h"
+#include "../vtk_utils/vtk_unstructured_grid.h"
 
 #include "gui_colors.h"
 
@@ -24,15 +24,18 @@
 #define MIN_HORIZONTAL_TICKS 4
 #define MAX_HORIZONTAL_TICKS 20
 
-#define SIZEOF(A) (sizeof(A)/sizeof(A[0]))
+#define SIZEOF(A) (sizeof(A) / sizeof(A[0]))
 #define WIDER_TEXT " - Alt + R to restart simulation and the box positions"
-#define DOUBLE_CLICK_DELAY 0.7  //seconds
+#define DOUBLE_CLICK_DELAY 0.7 // seconds
 
 #define TMP_SIZE 256
 
-#define V3_SAME(v) (Vector3){v, v, v}
+#define V3_SAME(v)                                                                                                                                             \
+    (Vector3) {                                                                                                                                                \
+        v, v, v                                                                                                                                                \
+    }
 
-#define WINDOW_STATUSBAR_HEIGHT        22
+#define WINDOW_STATUSBAR_HEIGHT 22
 
 #define CHECK_FILE_INDEX(gui_config)                                                                                                                           \
     if((gui_config)->current_file_index < 0)                                                                                                                   \
@@ -82,7 +85,7 @@ struct vector3_voidp_hash_entry {
     void *value;
 };
 
-typedef struct action_potential * action_potential_array;
+typedef struct action_potential *action_potential_array;
 
 struct voxel {
     Vector3 position_draw;
@@ -98,7 +101,7 @@ struct vector3_voxel_entry {
     struct voxel value;
 };
 
-//This struct is shared with the main thread
+// This struct is shared with the main thread
 struct gui_shared_info {
     float max_v;
     float min_v;
@@ -132,8 +135,8 @@ struct gui_shared_info {
     int draw_type;
 
     // If we are compiling this file, openmp is available.
-    omp_lock_t draw_lock;
-    omp_lock_t sleep_lock;
+    omp_nest_lock_t draw_lock;
+    omp_nest_lock_t sleep_lock;
 
     struct grid_info {
         union {
@@ -185,7 +188,6 @@ struct ap_graph_config {
     Vector2 selected_point_for_apd2;
     struct vector3_voidp_hash_entry *selected_aps;
     Rectangle drag_graph_button;
-
 };
 
 struct gui_state {
@@ -282,7 +284,6 @@ struct gui_state {
     bool get_cell_property;
     bool paste_cell_property;
     float copied_property_value;
-
 };
 
 struct mesh_info {
@@ -291,6 +292,14 @@ struct mesh_info {
     Vector3 min_size;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void init_and_open_gui_window(struct gui_shared_info *gui_config);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MONOALG3D_GUI_H

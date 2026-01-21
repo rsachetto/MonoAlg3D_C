@@ -12,17 +12,20 @@
 #include "../3dparty/stb_ds.h"
 #include "../alg/grid/grid.h"
 #include "../config/assembly_matrix_config.h"
+#include "../domains_library/mesh_info_data.h"
 #include "../libraries_common/common_data_structures.h"
 #include "../utils/file_utils.h"
 #include "../utils/utils.h"
-#include "../domains_library/mesh_info_data.h"
 
 #include "assembly_common.c"
 
-#ifdef COMPILE_CUDA
-#include "../gpu_utils/gpu_utils.h"
+#if defined(COMPILE_CUDA) || defined(COMPILE_SYCL)
+#define COMPILE_GPU
 #endif
 
+#ifdef COMPILE_GPU
+#include "../gpu_utils/accel_utils.h"
+#endif
 
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
 
@@ -43,7 +46,6 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_fvm) {
     }
 }
 
-
 INIT_ASSEMBLY_MATRIX(set_initial_conditions_from_odes) {
 
     real_cpu alpha;
@@ -58,34 +60,34 @@ INIT_ASSEMBLY_MATRIX(set_initial_conditions_from_odes) {
     int n_equations_cell_model = the_ode_solver->model_data.number_of_ode_equations;
     real *sv = the_ode_solver->sv;
 
-    #ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
     real *vms = NULL;
     size_t mem_size = the_ode_solver->original_num_cells * sizeof(real);
 
     if(the_ode_solver->gpu) {
         vms = MALLOC_BYTES(real, mem_size);
-        check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+        // check_cuda_error(cudaMemcpy(vms, sv, mem_size, cudaMemcpyDeviceToHost));
+        memcpy_device(vms, sv, mem_size, DEVICE_TO_HOST);
     }
-    #endif
+#endif
 
     OMP(parallel for private(alpha))
     for(uint32_t i = 0; i < active_cells; i++) {
         alpha = ALPHA(beta, cm, dt, active_volumes[i]->discretization.x, active_volumes[i]->discretization.y, active_volumes[i]->discretization.z);
 
         if(the_ode_solver->gpu) {
-            #ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
             active_volumes[i]->v = vms[active_volumes[i]->sv_position];
             active_volumes[i]->b = vms[active_volumes[i]->sv_position] * alpha;
-            #endif
+#endif
         } else {
             active_volumes[i]->v = sv[active_volumes[i]->sv_position * n_equations_cell_model];
             active_volumes[i]->b = sv[active_volumes[i]->sv_position * n_equations_cell_model] * alpha;
         }
     }
-    #ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
     free(vms);
-    #endif
-
+#endif
 }
 
 ASSEMBLY_MATRIX(random_sigma_discretization_matrix) {
@@ -383,7 +385,6 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix) {
         // Computes and designates the flux due to back cells.
         fill_discretization_matrix_elements(ac[i], ac[i]->neighbours[LEFT], LEFT);
     }
-
 }
 
 ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
@@ -427,33 +428,31 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
     if(fiber_file) {
         log_info("Loading mesh fibers\n");
         fibers = read_fibers(fiber_file, true);
-    }
-    else if(!fibers_in_mesh) {
+    } else if(!fibers_in_mesh) {
         GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config, "f", 3);
         GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(s, config, "s", 3);
         GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(n, config, "n", 3);
 
         if(!f) {
-            f = malloc(sizeof(real_cpu)*3);
+            f = malloc(sizeof(real_cpu) * 3);
             f[0] = 1.0;
             f[1] = 0.0;
             f[2] = 0.0;
         }
 
         if(!s) {
-            s = malloc(sizeof(real_cpu)*3);
+            s = malloc(sizeof(real_cpu) * 3);
             s[0] = 0.0;
             s[1] = 1.0;
             s[2] = 0.0;
         }
 
         if(!n) {
-            n = malloc(sizeof(real_cpu)*3);
+            n = malloc(sizeof(real_cpu) * 3);
             n[0] = 0.0;
             n[1] = 0.0;
             n[2] = 1.0;
         }
-
     }
 
     OMP(parallel for private(D))
@@ -463,31 +462,27 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
             int fiber_index = ac[i]->original_position_in_file;
 
             if(fiber_index == -1) {
-                log_error_and_exit("fiber_index should not be -1, but it is for cell in index %d - %lf, %lf, %lf\n", i, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+                log_error_and_exit("fiber_index should not be -1, but it is for cell in index %d - %lf, %lf, %lf\n", i, ac[i]->center.x, ac[i]->center.y,
+                                   ac[i]->center.z);
             }
 
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, fibers[fiber_index].f, sigma_l, sigma_t);
-            }
-            else {
+            } else {
                 calc_tensor(D, fibers[fiber_index].f, fibers[fiber_index].s, fibers[fiber_index].n, sigma_l, sigma_t, sigma_n);
             }
             ac[i]->sigma.fibers = fibers[fiber_index];
-        }
-        else if(fibers_in_mesh) {
+        } else if(fibers_in_mesh) {
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, ac[i]->sigma.fibers.f, sigma_l, sigma_t);
-            }
-            else {
+            } else {
                 calc_tensor(D, ac[i]->sigma.fibers.f, ac[i]->sigma.fibers.s, ac[i]->sigma.fibers.n, sigma_l, sigma_t, sigma_n);
             }
 
-        }
-        else {
+        } else {
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, f, sigma_l, sigma_t);
-            }
-            else {
+            } else {
                 calc_tensor(D, f, s, n, sigma_l, sigma_t, sigma_n);
             }
         }
@@ -499,7 +494,6 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
         ac[i]->sigma.xy = D[0][1];
         ac[i]->sigma.xz = D[0][2];
         ac[i]->sigma.yz = D[1][2];
-
     }
 
     OMP(parallel for)
@@ -510,7 +504,6 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
     free(f);
     free(s);
     free(n);
-
 }
 
 ASSEMBLY_MATRIX(homogeneous_sigma_with_a_factor_assembly_matrix) {
@@ -1033,17 +1026,17 @@ ASSEMBLY_MATRIX(homogeneous_sigma_assembly_matrix_with_fast_endocardium_layer) {
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(real, sigma_z, config, "sigma_z");
 
     real_cpu fast_endo_layer_scale = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu ,fast_endo_layer_scale, config, "fast_endo_layer_scale");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, fast_endo_layer_scale, config, "fast_endo_layer_scale");
 
     if(!sigma_initialized) {
         OMP(parallel for)
         for(i = 0; i < num_active_cells; i++) {
             // Check if the current cell is tagged as FASTENDO
             real_cpu tag = TISSUE_TYPE(ac[i]);
-            if (tag == 0) {
-                ac[i]->sigma.x = sigma_x*fast_endo_layer_scale;
-                ac[i]->sigma.y = sigma_y*fast_endo_layer_scale;
-                ac[i]->sigma.z = sigma_z*fast_endo_layer_scale;
+            if(tag == 0) {
+                ac[i]->sigma.x = sigma_x * fast_endo_layer_scale;
+                ac[i]->sigma.y = sigma_y * fast_endo_layer_scale;
+                ac[i]->sigma.z = sigma_z * fast_endo_layer_scale;
             }
             // Normal type of cell
             else {
@@ -1106,7 +1099,7 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
     GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(fibers_in_mesh, config, "fibers_in_mesh");
 
     real_cpu fast_endo_layer_scale = 1.0;
-    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu ,fast_endo_layer_scale, config, "fast_endo_layer_scale");
+    GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, fast_endo_layer_scale, config, "fast_endo_layer_scale");
 
     struct fiber_coords *fibers = NULL;
 
@@ -1121,33 +1114,31 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
     if(fiber_file) {
         log_info("Loading mesh fibers\n");
         fibers = read_fibers(fiber_file, false);
-    }
-    else if(!fibers_in_mesh) {
+    } else if(!fibers_in_mesh) {
         GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(f, config, "f", 3);
         GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(s, config, "s", 3);
         GET_PARAMETER_VECTOR_VALUE_OR_USE_DEFAULT(n, config, "n", 3);
 
         if(!f) {
-            f = malloc(sizeof(real_cpu)*3);
+            f = malloc(sizeof(real_cpu) * 3);
             f[0] = 1.0;
             f[1] = 0.0;
             f[2] = 0.0;
         }
 
         if(!s) {
-            s = malloc(sizeof(real_cpu)*3);
+            s = malloc(sizeof(real_cpu) * 3);
             s[0] = 0.0;
             s[1] = 1.0;
             s[2] = 0.0;
         }
 
         if(!n) {
-            n = malloc(sizeof(real_cpu)*3);
+            n = malloc(sizeof(real_cpu) * 3);
             n[0] = 0.0;
             n[1] = 0.0;
             n[2] = 1.0;
         }
-
     }
 
     OMP(parallel for private(D))
@@ -1157,31 +1148,27 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
             int fiber_index = ac[i]->original_position_in_file;
 
             if(fiber_index == -1) {
-                log_error_and_exit("fiber_index should not be -1, but it is for cell in index %d - %lf, %lf, %lf\n", i, ac[i]->center.x, ac[i]->center.y, ac[i]->center.z);
+                log_error_and_exit("fiber_index should not be -1, but it is for cell in index %d - %lf, %lf, %lf\n", i, ac[i]->center.x, ac[i]->center.y,
+                                   ac[i]->center.z);
             }
 
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, fibers[fiber_index].f, sigma_l, sigma_t);
-            }
-            else {
+            } else {
                 calc_tensor(D, fibers[fiber_index].f, fibers[fiber_index].s, fibers[fiber_index].n, sigma_l, sigma_t, sigma_n);
             }
             ac[i]->sigma.fibers = fibers[fiber_index];
-        }
-        else if(fibers_in_mesh) {
+        } else if(fibers_in_mesh) {
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, ac[i]->sigma.fibers.f, sigma_l, sigma_t);
-            }
-            else {
+            } else {
                 calc_tensor(D, ac[i]->sigma.fibers.f, ac[i]->sigma.fibers.s, ac[i]->sigma.fibers.n, sigma_l, sigma_t, sigma_n);
             }
 
-        }
-        else {
+        } else {
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, f, sigma_l, sigma_t);
-            }
-            else {
+            } else {
                 calc_tensor(D, f, s, n, sigma_l, sigma_t, sigma_n);
             }
         }
@@ -1190,14 +1177,14 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix_with_fast_endocardium_layer) {
         // TODO: Try to load the "extra_data" array and check if a cell is fast_endo or not
         real_cpu tag = DTI_MESH_TRANSMURALITY_LABELS(ac[i]);
 
-        if (tag == 3) {
-            ac[i]->sigma.x = D[0][0]*fast_endo_layer_scale;
-            ac[i]->sigma.y = D[1][1]*fast_endo_layer_scale;
-            ac[i]->sigma.z = D[2][2]*fast_endo_layer_scale;
+        if(tag == 3) {
+            ac[i]->sigma.x = D[0][0] * fast_endo_layer_scale;
+            ac[i]->sigma.y = D[1][1] * fast_endo_layer_scale;
+            ac[i]->sigma.z = D[2][2] * fast_endo_layer_scale;
 
-            ac[i]->sigma.xy = D[0][1]*fast_endo_layer_scale;
-            ac[i]->sigma.xz = D[0][2]*fast_endo_layer_scale;
-            ac[i]->sigma.yz = D[1][2]*fast_endo_layer_scale;
+            ac[i]->sigma.xy = D[0][1] * fast_endo_layer_scale;
+            ac[i]->sigma.xz = D[0][2] * fast_endo_layer_scale;
+            ac[i]->sigma.yz = D[1][2] * fast_endo_layer_scale;
         }
         // Normal type of cell
         else {

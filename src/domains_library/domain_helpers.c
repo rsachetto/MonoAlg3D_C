@@ -5,6 +5,7 @@
 #include "domain_helpers.h"
 #include "../config_helpers/config_helpers.h"
 #include "../libraries_common/common_data_structures.h"
+#include "../3dparty/stb_ds.h"
 #include "../logger/logger.h"
 #include "../utils/stop_watch.h"
 #include "../utils/utils.h"

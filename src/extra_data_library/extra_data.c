@@ -9,6 +9,7 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../domains_library/mesh_info_data.h"
 #include "helper_functions.h"
+#include "../3dparty/stb_ds.h"
 
 struct uv {
     real_cpu u;

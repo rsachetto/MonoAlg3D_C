@@ -16,6 +16,7 @@
 #include "../ensight_utils/ensight_grid.h"
 #include "../vtk_utils/vtk_polydata_grid.h"
 #include "../vtk_utils/vtk_unstructured_grid.h"
+#include "../3dparty/stb_ds.h"
 
 #include "save_mesh_helper.h"
 
