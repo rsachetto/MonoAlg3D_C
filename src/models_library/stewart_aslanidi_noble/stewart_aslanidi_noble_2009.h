@@ -10,5 +10,5 @@
 
 #include "../default_solvers.h"
 
-#endif //MONOALG3D_FHN_MOD_H
+#endif //MONOALG3D_MODEL_ARPF_2009_H
 

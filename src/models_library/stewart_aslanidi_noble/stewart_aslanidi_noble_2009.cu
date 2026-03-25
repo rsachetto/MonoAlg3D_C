@@ -3,7 +3,7 @@
 
 #include "stewart_aslanidi_noble_2009.h"
 
-__global__ void kernel_set_model_inital_conditions(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt) {
+__global__ void kernel_set_model_initial_conditions(real *sv, int num_volumes, size_t pitch, bool use_adpt_dt, real min_dt) {
     int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (threadID < num_volumes) {
