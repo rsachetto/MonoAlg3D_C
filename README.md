@@ -8,7 +8,7 @@ The MonoAlg3D is a program for solving the 3D monodomain equation by applying th
   - Nvidia Driver 
   - CUDA library
 
-### Setting the enviroment
+### Setting the environment
 
 Ubuntu: Refer to [the ubuntu guide](guide-monoalg3d-ubuntu.md)
 
@@ -50,7 +50,7 @@ Example file:
 850,950,850,50,50,50, -85
 ```
 
-This file represents 3 volumes with 100 micrometer of side. The first volume is centered at  at 850,850,950 and the calculated V is -85 mV.
+This file represents 3 volumes with 100 micrometers of side. The first volume is centered at 850,850,950 and the calculated V is -85 mV.
 
 # Contributors:
 
