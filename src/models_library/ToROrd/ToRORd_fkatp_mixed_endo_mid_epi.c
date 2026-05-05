@@ -189,11 +189,11 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         extra_par[7]  = extra_data->IKb_Multiplier; 
         extra_par[8]  = extra_data->INaCa_Multiplier;
         extra_par[9]  = extra_data->INaK_Multiplier;  
-        extra_par[9]  = extra_data->INab_Multiplier;  
-        extra_par[10] = extra_data->ICab_Multiplier;  
-        extra_par[11] = extra_data->IpCa_Multiplier;  
-        extra_par[12] = extra_data->ICaCl_Multiplier;
-        extra_par[13] = extra_data->IClb_Multiplier; 
+        extra_par[10]  = extra_data->INab_Multiplier;  
+        extra_par[11] = extra_data->ICab_Multiplier;  
+        extra_par[12] = extra_data->IpCa_Multiplier;  
+        extra_par[13] = extra_data->ICaCl_Multiplier;
+        extra_par[14] = extra_data->IClb_Multiplier; 
         extra_par[15] = extra_data->Jrel_Multiplier; 
         extra_par[16] = extra_data->Jup_Multiplier;
         transmurality = extra_data->transmurality;
@@ -209,11 +209,11 @@ SOLVE_MODEL_ODES(solve_model_odes_cpu) {
         extra_par[7]  = 1.0; 
         extra_par[8]  = 1.0;
         extra_par[9]  = 1.0;
-        extra_par[9]  = 1.0; 
         extra_par[10] = 1.0;  
         extra_par[11] = 1.0; 
         extra_par[12] = 1.0;
         extra_par[13] = 1.0;
+        extra_par[14] = 1.0;
         extra_par[15] = 1.0;
         extra_par[16] = 1.0;
     }
