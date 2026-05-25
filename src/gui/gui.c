@@ -7,20 +7,20 @@
 #include <string.h>
 #include <sys/types.h>
 
-//This need to be before RAYGUI_IMPLEMENTATION
+// This need to be before RAYGUI_IMPLEMENTATION
 #include "gui.h"
 #include "gui_colors.h"
+#include "gui_draw.h"
 #include "gui_mesh_helpers.h"
 #include "gui_window_helpers.h"
-#include "gui_draw.h"
 
 #include "../utils/file_utils.h"
 
+#include "../3dparty/raylib/src/external/glad.h"
+#include "../3dparty/raylib/src/rcamera.h"
+#include "../3dparty/raylib/src/rlgl.h"
 #include "../3dparty/stb_ds.h"
 #include "../3dparty/tinyfiledialogs/tinyfiledialogs.h"
-#include "../3dparty/raylib/src/rcamera.h"
-#include "../3dparty/raylib/src/external/glad.h"
-#include "../3dparty/raylib/src/rlgl.h"
 
 #define RAYGUI_IMPLEMENTATION
 #include "../3dparty/raylib/src/extras/raygui.h"
@@ -33,41 +33,38 @@
 
 #include "raylib_ext.h"
 
-static const char *help_box_strings[] = {
-    "  Mouse Wheel to Zoom in-out",
-    "  Mouse Wheel Pressed to Pan",
-    "  Alt + Mouse Wheel Pressed to Rotate",
-    "  Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
-    "  Ctrl + F to search a cell based on it's center",
-    "  Hold Ctrl and move the mouse over a cell to see it's position",
-    "  G to only draw the grid lines",
-    "  L to enable or disable the grid lines",
-    "  R to restart simulation (only works when paused)",
-    "  Alt + R to restart simulation and the box positions",
-    "  X to show/hide AP visualization",
-    "  Q to show/hide scale",
-    "  C to show/hide everything except grid",
-    "  F to open a simulation file",
-    "  O to open a simulation directory",
-    "  F12 to take a screenshot",
-    "  CTRL + F12 to start/stop recording the screen",
-    "  . or , to change color scales",
-    "  Right arrow to advance one dt when paused",
-    "  Hold up arrow to advance time when paused",
-    "  Double click on a volume to show the AP",
-    "  from 1 to 0 to show different file column (or PGUP/PGDOWN)",
-    "  S to enter mesh slice mode",
-    "  Space to start or pause simulation"
-};
+static const char *help_box_strings[] = {"  Mouse Wheel to Zoom in-out",
+                                         "  Mouse Wheel Pressed to Pan",
+                                         "  Alt + Mouse Wheel Pressed to Rotate",
+                                         "  Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom",
+                                         "  Ctrl + F to search a cell based on it's center",
+                                         "  Hold Ctrl and move the mouse over a cell to see it's position",
+                                         "  G to only draw the grid lines",
+                                         "  L to enable or disable the grid lines",
+                                         "  R to restart simulation (only works when paused)",
+                                         "  Alt + R to restart simulation and the box positions",
+                                         "  X to show/hide AP visualization",
+                                         "  Q to show/hide scale",
+                                         "  C to show/hide everything except grid",
+                                         "  F to open a simulation file",
+                                         "  O to open a simulation directory",
+                                         "  F12 to take a screenshot",
+                                         "  CTRL + F12 to start/stop recording the screen",
+                                         "  . or , to change color scales",
+                                         "  Right arrow to advance one dt when paused",
+                                         "  Hold up arrow to advance time when paused",
+                                         "  Double click on a volume to show the AP",
+                                         "  from 1 to 0 to show different file column (or PGUP/PGDOWN)",
+                                         "  S to enter mesh slice mode",
+                                         "  Space to start or pause simulation"};
 
 #define BOX_MARGIN 25.0f
 
 static const char *slice_help_box_strings[] = {" Press backspace to reset and exit slice mode", " Press enter to accept the sliced mesh",
-                                            " Move the slicing plane with arrow keys", " Rotate the slicing plane with ALT + arrow keys"};
+                                               " Move the slicing plane with arrow keys", " Rotate the slicing plane with ALT + arrow keys"};
 
 static const char *edit_help_box_strings[] = {" Press E to exit edit mode", " Press S to save the current file (overwrite)",
-                                            " Right click to copy a cell property", "  Left click to paste the copied property to another cell"};
-
+                                              " Right click to copy a cell property", "  Left click to paste the copied property to another cell"};
 
 static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, float font_size_big, float ui_scale) {
 
@@ -151,11 +148,11 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
     gui_state->old_cell_visibility = NULL;
     gui_state->exclude_from_mesh = NULL;
 
-    gui_state->plane_roll  = 0.0f;
+    gui_state->plane_roll = 0.0f;
     gui_state->plane_pitch = 0.0f;
-    gui_state->plane_tx    = 0.0f;
-    gui_state->plane_ty    = 0.0f;
-    gui_state->plane_tz    = 0.0f;
+    gui_state->plane_tx = 0.0f;
+    gui_state->plane_ty = 0.0f;
+    gui_state->plane_tz = 0.0f;
 
     gui_state->mesh_scale_factor = 1.0f;
     gui_state->mesh_offset = (Vector3){0, 0, 0};
@@ -254,7 +251,6 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
             snprintf(tmp, TMP_SIZE, "Average DZ: %f", gui_config->grid_info.vtk_grid->average_discretization.z);
             arrput((*(info_string)), strdup(tmp));
-
         }
     }
 
@@ -285,8 +281,7 @@ static inline bool configure_mesh_info_box_strings(struct gui_state *gui_state, 
 
         if(gui_config->final_file_index == 0) {
             snprintf(tmp, TMP_SIZE, "Visualizing single file.                      ");
-        }
-        else {
+        } else {
             if(gui_config->paused) {
                 if(gui_config->dt == 0) {
                     snprintf(tmp, TMP_SIZE, "Visualization paused: %d of %d steps", (int)gui_config->time, (int)gui_config->final_time);
@@ -326,14 +321,13 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     int kp = GetKeyPressed();
 
     if(gui_config->draw_type == DRAW_FILE && gui_config->final_file_index == 0) {
-        //Visualizing single file
+        // Visualizing single file
         if(kp == KEY_E) {
             if(gui_state->current_mode == VISUALIZING) {
                 gui_state->current_mode = EDITING;
             } else if(gui_state->current_mode == EDITING) {
                 gui_state->current_mode = VISUALIZING;
             }
-
         }
     }
 
@@ -412,8 +406,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                 if(gui_state->ctrl_pressed) {
                     char const *filter[1] = {"*.alg"};
                     save_path = tinyfd_saveFileDialog("Save ALG file", gui_config->input, 1, filter, "alg files");
-                }
-                else {
+                } else {
                     save_path = gui_config->grid_info.file_name;
                 }
 
@@ -477,7 +470,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
                 gui_config->current_file_index++;
                 CHECK_FILE_INDEX(gui_config)
-                omp_unset_lock(&gui_config->sleep_lock);
+                omp_unset_nest_lock(&gui_config->sleep_lock);
                 return;
             }
 
@@ -488,7 +481,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
                         return;
                     gui_config->current_file_index--;
                     CHECK_FILE_INDEX(gui_config)
-                    omp_unset_lock(&gui_config->sleep_lock);
+                    omp_unset_nest_lock(&gui_config->sleep_lock);
                     return;
                 }
             }
@@ -538,7 +531,7 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
         return;
     }
 
-    if(kp  == KEY_SPACE) {
+    if(kp == KEY_SPACE) {
         if(gui_state->current_mode == VISUALIZING) {
             if(gui_config->draw_type == DRAW_FILE) {
                 if(gui_config->final_file_index != 0) {
@@ -582,7 +575,8 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
     if(kp == KEY_H) {
         if(gui_state->current_mode == VISUALIZING) {
             gui_state->help_box.window.show = !gui_state->help_box.window.show;
-        } if(gui_state->current_mode == SLICING) {
+        }
+        if(gui_state->current_mode == SLICING) {
             gui_state->slice_help_box.window.show = !gui_state->slice_help_box.window.show;
         } else if(gui_state->current_mode == EDITING) {
             gui_state->edit_help_box.window.show = !gui_state->edit_help_box.window.show;
@@ -687,7 +681,8 @@ static void handle_input(struct gui_shared_info *gui_config, struct gui_state *g
                         gui_state->ap_graph_config->selected_point_for_apd1.x = gui_state->mouse_pos.x;
                         gui_state->ap_graph_config->selected_point_for_apd1.y = gui_state->mouse_pos.y;
                     } else {
-                        if(gui_state->ap_graph_config->selected_point_for_apd2.x == FLT_MAX && gui_state->ap_graph_config->selected_point_for_apd2.y == FLT_MAX) {
+                        if(gui_state->ap_graph_config->selected_point_for_apd2.x == FLT_MAX &&
+                           gui_state->ap_graph_config->selected_point_for_apd2.y == FLT_MAX) {
                             gui_state->ap_graph_config->selected_point_for_apd2.x = gui_state->mouse_pos.x;
                             gui_state->ap_graph_config->selected_point_for_apd2.y = gui_state->ap_graph_config->selected_point_for_apd1.y;
                         } else {
@@ -719,7 +714,7 @@ static void handle_input(struct gui_shared_info *gui_config, struct gui_state *g
 }
 
 static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box_lines, int slice_help_box_lines, int edit_help_box_lines,
-                                       int end_info_box_lines, float box_w,float text_offset) {
+                                       int end_info_box_lines, float box_w, float text_offset) {
 
     gui_state->help_box.window.bounds.width = box_w;
     gui_state->help_box.window.bounds.height = (text_offset * (float)help_box_lines) + BOX_MARGIN + 10.0f;
@@ -732,7 +727,6 @@ static void configure_info_boxes_sizes(struct gui_state *gui_state, int help_box
     gui_state->edit_help_box.window.bounds.width = box_w - 60;
     gui_state->edit_help_box.window.bounds.height = (text_offset * (float)edit_help_box_lines) + BOX_MARGIN + 10.0f;
     gui_state->edit_help_box.num_lines = edit_help_box_lines;
-
 
     box_w = box_w - 100;
     gui_state->mesh_info_box.window.bounds.width = box_w;
@@ -757,7 +751,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     const int slice_help_box_lines = SIZEOF(slice_help_box_strings);
     const int edit_help_box_lines = SIZEOF(edit_help_box_strings);
 
-    omp_set_lock(&gui_config->sleep_lock);
+    omp_set_nest_lock(&gui_config->sleep_lock);
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     char window_title[4096];
@@ -800,7 +794,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     gui_state->edit_help_box.lines = (char **)edit_help_box_strings;
     gui_state->edit_help_box.title = "Mesh slicing help";
 
-
     float wider_text_w = 0;
     float wider_text_h = 0;
 
@@ -834,7 +827,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
         gui_config->progress = 100;
     }
 
-    void (*draw_grid_function)(struct gui_shared_info *, struct gui_state *, int , struct draw_context *);
+    void (*draw_grid_function)(struct gui_shared_info *, struct gui_state *, int, struct draw_context *);
     void (*draw_purkinje_function)(struct gui_shared_info *, struct gui_state *);
 
     draw_purkinje_function = NULL;
@@ -842,8 +835,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     if(draw_type == DRAW_SIMULATION) {
         draw_grid_function = &draw_alg_mesh;
         draw_purkinje_function = &draw_alg_purkinje_network;
-    }
-    else {
+    } else {
         draw_grid_function = &draw_vtk_unstructured_grid;
         draw_purkinje_function = &draw_vtk_purkinje_network;
     }
@@ -851,10 +843,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     struct draw_context draw_context = {0};
 
     draw_context.shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
-    draw_context.shader.locs[SHADER_LOC_MATRIX_MVP  ] = GetShaderLocation(draw_context.shader, "mvp");
+    draw_context.shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(draw_context.shader, "mvp");
     draw_context.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(draw_context.shader, "instanceTransform");
     draw_context.shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(draw_context.shader, "color");
-    draw_context.shader.locs[SHADER_LOC_VECTOR_VIEW ] = GetShaderLocation(draw_context.shader, "viewPos");
+    draw_context.shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(draw_context.shader, "viewPos");
     draw_context.mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
 
     // Lights
@@ -897,7 +889,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
         if(gui_config->grid_info.loaded) {
 
-            omp_set_lock(&gui_config->draw_lock);
+            omp_set_nest_lock(&gui_config->draw_lock);
 
             uint32_t n_active;
 
@@ -954,18 +946,18 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(!gui_state->slicing_mesh) {
 
-                if( gui_config->grid_info.loaded && realloc_matrices ) {
+                if(gui_config->grid_info.loaded && realloc_matrices) {
 
                     free(draw_context.translations);
                     free(draw_context.colors);
                     free(draw_context.instance_transforms);
                     free(draw_context.colors_transforms);
 
-                    draw_context.colors       = malloc(n_active * sizeof(Color));
+                    draw_context.colors = malloc(n_active * sizeof(Color));
                     draw_context.translations = malloc(n_active * sizeof(Matrix)); // Locations of instances
 
                     draw_context.instance_transforms = (float16 *)malloc(n_active * sizeof(float16));
-                    draw_context.colors_transforms   = (float4 *)malloc(n_active * sizeof(float4));
+                    draw_context.colors_transforms = (float4 *)malloc(n_active * sizeof(float4));
 
                     gui_state->handle_keyboard_input = true;
                 }
@@ -999,12 +991,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 DrawRectangle(posx, posy, rec_width, rec_height, c);
 
                 DrawTextEx(gui_state->font, "Slicing Mesh...", (Vector2){(float)posx + ((float)rec_width - message_width.x) / 2, (float)posy},
-                        gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
-
+                           gui_state->font_size_big, gui_state->font_spacing_big, BLACK);
             }
 
             // We finished drawing everything that depends on the mesh being loaded
-            omp_unset_lock(&gui_config->draw_lock);
+            omp_unset_nest_lock(&gui_config->draw_lock);
 
             if(gui_state->controls_window.show) {
                 draw_control_window(gui_state, gui_config);
@@ -1012,11 +1003,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
             if(gui_state->show_coordinates) {
                 DrawText("x", (int)gui_state->coordinates_label_x_position.x, (int)gui_state->coordinates_label_x_position.y, (int)gui_state->font_size_big,
-                        RED);
+                         RED);
                 DrawText("y", (int)gui_state->coordinates_label_y_position.x, (int)gui_state->coordinates_label_y_position.y, (int)gui_state->font_size_big,
-                        GREEN);
+                         GREEN);
                 DrawText("z", (int)gui_state->coordinates_label_z_position.x, (int)gui_state->coordinates_label_z_position.y, (int)gui_state->font_size_big,
-                        DARKBLUE);
+                         DARKBLUE);
             }
 
             if(gui_state->mesh_info_box.window.show) {
@@ -1040,7 +1031,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 draw_scale(gui_config->min_v, gui_config->max_v, gui_state, gui_config->int_scale);
             }
 
-            if( gui_state->ap_graph_config->graph.show && hmlen(gui_state->ap_graph_config->selected_aps)) {
+            if(gui_state->ap_graph_config->graph.show && hmlen(gui_state->ap_graph_config->selected_aps)) {
                 draw_ap_graph(gui_state, gui_config);
             }
 
@@ -1056,7 +1047,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 draw_text_window(&gui_state->edit_help_box, gui_state, text_offset);
             }
 
-
             if(!gui_config->simulating) {
                 if(draw_type == DRAW_SIMULATION) {
                     if(gui_state->end_info_box.window.show) {
@@ -1070,7 +1060,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
 
             if(!gui_config->paused) {
-                omp_unset_lock(&gui_config->sleep_lock);
+                omp_unset_nest_lock(&gui_config->sleep_lock);
             }
 
             if(gui_state->search_window.show) {
@@ -1097,7 +1087,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             int rec_width = (int)(message_width.x) + 50;
             int rec_height = (int)(message_width.y) + 2;
 
-            int rec_bar_w = (int)Remap((float) gui_config->progress, 0, (float) gui_config->file_size, 0, (float) rec_width);
+            int rec_bar_w = (int)Remap((float)gui_config->progress, 0, (float)gui_config->file_size, 0, (float)rec_width);
 
             DrawRectangle(posx, posy, rec_bar_w, rec_height, c);
             DrawRectangleLines(posx, posy, rec_width, rec_height, BLACK);
@@ -1109,7 +1099,6 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
                 gui_state->handle_keyboard_input = true;
             }
-
         }
 
         // Draw FPS
@@ -1137,11 +1126,11 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                            (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 35.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
             } else if(gui_state->current_mode == EDITING) {
-                DrawTextEx(gui_state->font, "Editing mode - Press H to show/hide the help box.\nPress E exit edit mode or S to save the changes to the mesh file.",
+                DrawTextEx(gui_state->font,
+                           "Editing mode - Press H to show/hide the help box.\nPress E exit edit mode or S to save the changes to the mesh file.",
                            (Vector2){10.0f, ((float)gui_state->current_window_height - text_size.y - 35.0f)}, gui_state->font_size_big,
                            gui_state->font_spacing_big, BLACK);
             }
-
         }
 
         float upper_y = text_size.y + 30;
@@ -1151,15 +1140,16 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             Vector2 info_pos;
 
             if(gui_config->draw_type == DRAW_SIMULATION) {
-                text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i and value %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
-                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
-                        gui_state->current_mouse_over_volume.matrix_position + gui_state->current_mouse_over_volume.v);
+                text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with grid position %i and value %.2lf",
+                                  gui_state->current_mouse_over_volume.position_draw.x, gui_state->current_mouse_over_volume.position_draw.y,
+                                  gui_state->current_mouse_over_volume.position_draw.z,
+                                  gui_state->current_mouse_over_volume.matrix_position + gui_state->current_mouse_over_volume.v);
 
             } else {
 
                 text = TextFormat("Mouse is on Volume: %.2lf, %.2lf, %.2lf with value %.2lf", gui_state->current_mouse_over_volume.position_draw.x,
-                        gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z, 
-                        gui_state->current_mouse_over_volume.v);
+                                  gui_state->current_mouse_over_volume.position_draw.y, gui_state->current_mouse_over_volume.position_draw.z,
+                                  gui_state->current_mouse_over_volume.v);
             }
 
             text_size = MeasureTextEx(gui_state->font, text, gui_state->font_size_big, gui_state->font_spacing_big);
@@ -1172,7 +1162,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
         EndDrawing();
 
-        //TODO: this should go to a separate thread (maybe??)
+        // TODO: this should go to a separate thread (maybe??)
         if(gui_state->slicing_mesh) {
             set_visibility_after_split(gui_config, gui_state);
             gui_state->slicing_mesh = false;
@@ -1195,8 +1185,8 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     free(gui_state->ap_graph_config);
     free(gui_state);
 
-    omp_unset_lock(&gui_config->draw_lock);
-    omp_unset_lock(&gui_config->sleep_lock);
+    omp_unset_nest_lock(&gui_config->draw_lock);
+    omp_unset_nest_lock(&gui_config->sleep_lock);
 
     free(draw_context.translations);
     free(draw_context.colors);

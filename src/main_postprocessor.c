@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "3dparty/ini_parser/ini.h"
+#include "3dparty/stb_ds.h"
 #include "config/config_parser.h"
 #include "config/postprocessor_config.h"
 

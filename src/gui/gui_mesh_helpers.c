@@ -2,6 +2,7 @@
 #include "gui.h"
 #include "gui_colors.h"
 #include "raylib_ext.h"
+#include "../3dparty/stb_ds.h"
 #include <float.h>
 
 struct mesh_info *new_mesh_info() {

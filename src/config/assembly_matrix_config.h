@@ -8,6 +8,7 @@
 #include "config_common.h"
 #include "../monodomain/constants.h"
 #include "../monodomain/monodomain_solver.h"
+#include "../ode_solver/ode_solver.h"
 
 struct monodomain_solver;
 

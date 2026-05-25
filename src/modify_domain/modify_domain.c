@@ -5,6 +5,8 @@
 #include "../config/modify_current_domain_config.h"
 #include "../config_helpers/config_helpers.h"
 #include "../domains_library/mesh_info_data.h"
+#include "../3dparty/stb_ds.h"
+
 #include <time.h>
 #include <unistd.h>
 

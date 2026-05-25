@@ -7,7 +7,7 @@
 #include "../libraries_common/common_data_structures.h"
 #include "../logger/logger.h"
 
-//TODO: remove these global variables
+// TODO: remove these global variables
 bool jacobi_initialized = false;
 bool bcg_initialized = false;
 static bool use_preconditioner = false;
@@ -15,25 +15,29 @@ static int max_its = 200;
 static real_cpu tol = 1e-16;
 
 #ifdef COMPILE_CUDA
-    #include "../gpu_utils/gpu_utils.h"
-    #include <cublas_v2.h>
-    #include <cusparse_v2.h>
+#include "../gpu_utils/gpu_utils.h"
+#include <cublas_v2.h>
+#include <cusparse_v2.h>
 
-    #if CUBLAS_VER_MAJOR < 11
-        #pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_10.c" )
-        #include "gpu_solvers_cublas_10.c"
-    #elif CUBLAS_VER_MAJOR == 11
-        #pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_11.c" )
-        #include "gpu_solvers_cublas_11.c"
-    #else
-        #pragma message ("gpu linear system solver in is using file gpu_solvers_cublas_12.c" )
-        #include "gpu_solvers_cublas_12.c"
-    #endif
+#if CUBLAS_VER_MAJOR < 11
+#pragma message("gpu linear system solver in is using file gpu_solvers_cublas_10.c")
+#include "gpu_solvers_cublas_10.c"
+#elif CUBLAS_VER_MAJOR == 11
+#pragma message("gpu linear system solver in is using file gpu_solvers_cublas_11.c")
+#include "gpu_solvers_cublas_11.c"
+#else
+#pragma message("gpu linear system solver in is using file gpu_solvers_cublas_12.c")
+#include "gpu_solvers_cublas_12.c"
+#endif
 
-    #ifdef AMGX
-    #include "amgx_c.h"
-    #endif
-#endif //COMPILE_CUDA
+#ifdef AMGX
+#include "amgx_c.h"
+#endif
+
+#elif defined(COMPILE_SYCL)
+#pragma message("gpu linear system solver in is using file gpu_solvers_sycl.c")
+// #include "gpu_solvers_sycl.c"
+#endif // COMPILE_CUDA
 
 INIT_LINEAR_SYSTEM(init_cpu_conjugate_gradient) {
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
@@ -500,54 +504,109 @@ SOLVE_LINEAR_SYSTEM(biconjugate_gradient) {
 
 /* print callback (could be customized) */
 void print_callback(const char *msg, int length) {
-    //printf("%s", msg);
+    // printf("%s", msg);
 }
 
-char* get_amgx_config(const char *config_name, int max_iters, float tol) {
+char *get_amgx_config(const char *config_name, int max_iters, float tol) {
 
     char cfg[2048];
 
-    #define STR_EQUALS(a,b) strcmp(a,b) == 0
+#define STR_EQUALS(a, b) strcmp(a, b) == 0
 
     // Generate JSON string based on the configName using if-else statements
-    if (STR_EQUALS(config_name,  "AMG_CLASSICAL_PMIS")) {
-        sprintf(cfg, "{\"config_version\":2,\"determinism_flag\":1,\"solver\":{\"print_grid_stats\":0,\"obtain_timings\":0,\"solver\":\"GMRES\",\"print_solve_stats\":0,\"preconditioner\":{\"interpolator\":\"D2\",\"solver\":\"AMG\",\"cycle\":\"V\",\"smoother\":{\"relaxation_factor\":1,\"scope\":\"jacobi\",\"solver\":\"JACOBI_L1\"},\"presweeps\":2,\"postsweeps\":2,\"selector\":\"PMIS\",\"coarsest_sweeps\":2,\"coarse_solver\":\"NOSOLVER\",\"max_iters\":1,\"max_row_sum\":0.9,\"min_coarse_rows\":2,\"scope\":\"amg_solver\",\"max_levels\":24,\"print_grid_stats\":1,\"aggressive_levels\":1,\"interp_max_elements\":4},\"max_iters\":%d,\"store_res_history\":1,\"monitor_residual\":1,\"gmres_n_restart\":10,\"convergence\":\"RELATIVE_INI_CORE\",\"tolerance\":%g,\"norm\":\"L2\"}}", max_iters, tol);
+    if(STR_EQUALS(config_name, "AMG_CLASSICAL_PMIS")) {
+        sprintf(cfg,
+                "{\"config_version\":2,\"determinism_flag\":1,\"solver\":{\"print_grid_stats\":0,\"obtain_timings\":0,\"solver\":\"GMRES\",\"print_solve_"
+                "stats\":0,\"preconditioner\":{\"interpolator\":\"D2\",\"solver\":\"AMG\",\"cycle\":\"V\",\"smoother\":{\"relaxation_factor\":1,\"scope\":"
+                "\"jacobi\",\"solver\":\"JACOBI_L1\"},\"presweeps\":2,\"postsweeps\":2,\"selector\":\"PMIS\",\"coarsest_sweeps\":2,\"coarse_solver\":"
+                "\"NOSOLVER\",\"max_iters\":1,\"max_row_sum\":0.9,\"min_coarse_rows\":2,\"scope\":\"amg_solver\",\"max_levels\":24,\"print_grid_stats\":1,"
+                "\"aggressive_levels\":1,\"interp_max_elements\":4},\"max_iters\":%d,\"store_res_history\":1,\"monitor_residual\":1,\"gmres_n_restart\":10,"
+                "\"convergence\":\"RELATIVE_INI_CORE\",\"tolerance\":%g,\"norm\":\"L2\"}}",
+                max_iters, tol);
 
-    } else if (STR_EQUALS(config_name,  "GMRES_AMG_D2")) {
-        sprintf(cfg, "{\"config_version\":2,\"determinism_flag\":1,\"exception_handling\":1,\"solver\":{\"print_grid_stats\":0,\"solver\":\"GMRES\",\"print_solve_stats\":0,\"obtain_timings\":0,\"preconditioner\":{\"interpolator\":\"D2\",\"print_grid_stats\":0,\"solver\":\"AMG\",\"smoother\":\"JACOBI_L1\",\"presweeps\":2,\"selector\":\"PMIS\",\"coarsest_sweeps\":2,\"coarse_solver\":\"NOSOLVER\",\"max_iters\":1,\"interp_max_elements\":4,\"min_coarse_rows\":2,\"scope\":\"amg_solver\",\"max_levels\":24,\"cycle\":\"V\",\"postsweeps\":2},\"max_iters\":%d,\"store_res_history\":1,\"monitor_residual\":1,\"gmres_n_restart\":10,\"convergence\":\"ABSOLUTE\",\"tolerance\":%g,\"norm\":\"L2\"}}", max_iters, tol);
+    } else if(STR_EQUALS(config_name, "GMRES_AMG_D2")) {
+        sprintf(cfg,
+                "{\"config_version\":2,\"determinism_flag\":1,\"exception_handling\":1,\"solver\":{\"print_grid_stats\":0,\"solver\":\"GMRES\",\"print_solve_"
+                "stats\":0,\"obtain_timings\":0,\"preconditioner\":{\"interpolator\":\"D2\",\"print_grid_stats\":0,\"solver\":\"AMG\",\"smoother\":\"JACOBI_"
+                "L1\",\"presweeps\":2,\"selector\":\"PMIS\",\"coarsest_sweeps\":2,\"coarse_solver\":\"NOSOLVER\",\"max_iters\":1,\"interp_max_elements\":4,"
+                "\"min_coarse_rows\":2,\"scope\":\"amg_solver\",\"max_levels\":24,\"cycle\":\"V\",\"postsweeps\":2},\"max_iters\":%d,\"store_res_history\":1,"
+                "\"monitor_residual\":1,\"gmres_n_restart\":10,\"convergence\":\"ABSOLUTE\",\"tolerance\":%g,\"norm\":\"L2\"}}",
+                max_iters, tol);
 
-    } else if (STR_EQUALS(config_name,  "PBICGSTAB_NOPREC")) { 
-        sprintf(cfg, "{\"config_version\":2,\"solver\":{\"preconditioner\":{\"scope\":\"amg_solver\",\"solver\":\"NOSOLVER\"},\"use_scalar_norm\":1,\"store_res_history\":1,\"solver\":\"PBICGSTAB\",\"print_solve_stats\":0,\"obtain_timings\":0,\"max_iters\":%d,\"monitor_residual\":1,\"convergence\":\"ABSOLUTE\",\"scope\":\"main\",\"tolerance\":%g,\"norm\":\"L2\"}}", max_iters, tol);
+    } else if(STR_EQUALS(config_name, "PBICGSTAB_NOPREC")) {
+        sprintf(cfg,
+                "{\"config_version\":2,\"solver\":{\"preconditioner\":{\"scope\":\"amg_solver\",\"solver\":\"NOSOLVER\"},\"use_scalar_norm\":1,\"store_res_"
+                "history\":1,\"solver\":\"PBICGSTAB\",\"print_solve_stats\":0,\"obtain_timings\":0,\"max_iters\":%d,\"monitor_residual\":1,\"convergence\":"
+                "\"ABSOLUTE\",\"scope\":\"main\",\"tolerance\":%g,\"norm\":\"L2\"}}",
+                max_iters, tol);
 
-    } else if (STR_EQUALS(config_name,  "AMG_CLASSICAL_AGGRESSIVE_CHEB_L1_TRUNC")) {   
-        sprintf(cfg, "{\"config_version\": 2, \"determinism_flag\": 1, \"solver\": {\"scope\": \"main\", \"solver\": \"PCG\", \"store_res_history\": 1, \"print_solve_stats\": 0, \"obtain_timings\": 0, \"preconditioner\": {\"print_grid_stats\": 0, \"scope\": \"amg_solver\", \"interpolator\": \"D2\", \"solver\": \"AMG\", \"max_levels\": 24, \"selector\": \"PMIS\", \"cycle\": \"V\", \"presweeps\": 0, \"postsweeps\": 3, \"coarsest_sweeps\": 2, \"min_coarse_rows\": 2, \"coarse_solver\": \"NOSOLVER\", \"max_iters\": 1, \"max_row_sum\": 0.9, \"strength_threshold\": 0.25, \"error_scaling\": 3, \"print_grid_stats\": 1, \"aggressive_levels\": 1, \"interp_max_elements\": 4, \"smoother\": {\"relaxation_factor\": 0.91, \"scope\": \"jacobi\", \"solver\": \"CHEBYSHEV\", \"max_iters\": 1, \"preconditioner\": {\"solver\": \"JACOBI_L1\", \"max_iters\": 1}, \"chebyshev_polynomial_order\": 2, \"chebyshev_lambda_estimate_mode\": 2}}, \"max_iters\": %d, \"monitor_residual\": 1, \"convergence\": \"ABSOLUTE\", \"tolerance\": %g, \"norm\": \"L2\"}}", max_iters, tol);
-    } else if (STR_EQUALS(config_name,  "FGMRES_CLASSICAL_AGGRESSIVE_HMIS")) {
-        sprintf(cfg, "{\"config_version\": 2, \"solver\": {\"print_grid_stats\": 0, \"solver\": \"FGMRES\", \"print_solve_stats\": 0, \"obtain_timings\": 0, \"preconditioner\": {\"interpolator\": \"D2\", \"solver\": \"AMG\", \"print_grid_stats\": 1, \"aggressive_levels\": 1, \"interp_max_elements\": 4, \"smoother\": {\"relaxation_factor\": 1, \"scope\": \"jacobi\", \"solver\": \"JACOBI_L1\"}, \"presweeps\": 2, \"selector\": \"HMIS\", \"coarsest_sweeps\": 2, \"coarse_solver\": \"NOSOLVER\", \"max_iters\": 1, \"max_row_sum\": 0.9, \"strength_threshold\": 0.25, \"min_coarse_rows\": 2, \"scope\": \"amg_solver\", \"max_levels\": 24, \"cycle\": \"V\", \"postsweeps\": 2}, \"max_iters\": %d, \"store_res_history\": 1, \"monitor_residual\": 1, \"gmres_n_restart\": 100, \"convergence\": \"ABSOLUTE\", \"tolerance\": %g, \"norm\": \"L2\"}}", max_iters, tol);
-    } else if (STR_EQUALS(config_name,  "FGMRES_AGGREGATION")) {
-        sprintf(cfg, "{\"config_version\": 2, \"solver\": {\"preconditioner\": {\"error_scaling\": 0, \"print_grid_stats\": 0, \"max_uncolored_percentage\": 0.05, \"algorithm\": \"AGGREGATION\", \"solver\": \"AMG\", \"smoother\": \"MULTICOLOR_DILU\", \"presweeps\": 0, \"selector\": \"SIZE_2\", \"coarse_solver\": \"DENSE_LU_SOLVER\", \"max_iters\": 1, \"postsweeps\": 3, \"min_coarse_rows\": 32, \"relaxation_factor\": 0.75, \"scope\": \"amg\", \"max_levels\": 100, \"matrix_coloring_scheme\": \"PARALLEL_GREEDY\", \"cycle\": \"V\"}, \"use_scalar_norm\": 1, \"solver\": \"FGMRES\", \"print_solve_stats\": 0, \"obtain_timings\": 0, \"max_iters\": %d, \"monitor_residual\": 0, \"gmres_n_restart\": 10, \"convergence\": \"ABSOLUTE\", \"scope\": \"main\", \"store_res_history\": 1, \"monitor_residual\": 1, \"tolerance\": %g, \"norm\": \"L2\"}}", max_iters, tol);
-    } else if (STR_EQUALS(config_name, "PCG_NOPREC")) {
-        sprintf(cfg, "{\"config_version\":2,\"solver\":{\"store_res_history\": 1, \"preconditioner\":{\"scope\":\"amg\",\"solver\":\"NOSOLVER\"},\"use_scalar_norm\":1,\"solver\":\"PCG\",\"print_solve_stats\":0,\"obtain_timings\":0,\"monitor_residual\":1,\"convergence\":\"RELATIVE_INI_CORE\",\"scope\":\"main\",\"max_iters\":%d, \"tolerance\":%e,\"norm\":\"L2\"}}", max_iters, tol);
+    } else if(STR_EQUALS(config_name, "AMG_CLASSICAL_AGGRESSIVE_CHEB_L1_TRUNC")) {
+        sprintf(cfg,
+                "{\"config_version\": 2, \"determinism_flag\": 1, \"solver\": {\"scope\": \"main\", \"solver\": \"PCG\", \"store_res_history\": 1, "
+                "\"print_solve_stats\": 0, \"obtain_timings\": 0, \"preconditioner\": {\"print_grid_stats\": 0, \"scope\": \"amg_solver\", \"interpolator\": "
+                "\"D2\", \"solver\": \"AMG\", \"max_levels\": 24, \"selector\": \"PMIS\", \"cycle\": \"V\", \"presweeps\": 0, \"postsweeps\": 3, "
+                "\"coarsest_sweeps\": 2, \"min_coarse_rows\": 2, \"coarse_solver\": \"NOSOLVER\", \"max_iters\": 1, \"max_row_sum\": 0.9, "
+                "\"strength_threshold\": 0.25, \"error_scaling\": 3, \"print_grid_stats\": 1, \"aggressive_levels\": 1, \"interp_max_elements\": 4, "
+                "\"smoother\": {\"relaxation_factor\": 0.91, \"scope\": \"jacobi\", \"solver\": \"CHEBYSHEV\", \"max_iters\": 1, \"preconditioner\": "
+                "{\"solver\": \"JACOBI_L1\", \"max_iters\": 1}, \"chebyshev_polynomial_order\": 2, \"chebyshev_lambda_estimate_mode\": 2}}, \"max_iters\": %d, "
+                "\"monitor_residual\": 1, \"convergence\": \"ABSOLUTE\", \"tolerance\": %g, \"norm\": \"L2\"}}",
+                max_iters, tol);
+    } else if(STR_EQUALS(config_name, "FGMRES_CLASSICAL_AGGRESSIVE_HMIS")) {
+        sprintf(
+            cfg,
+            "{\"config_version\": 2, \"solver\": {\"print_grid_stats\": 0, \"solver\": \"FGMRES\", \"print_solve_stats\": 0, \"obtain_timings\": 0, "
+            "\"preconditioner\": {\"interpolator\": \"D2\", \"solver\": \"AMG\", \"print_grid_stats\": 1, \"aggressive_levels\": 1, \"interp_max_elements\": "
+            "4, \"smoother\": {\"relaxation_factor\": 1, \"scope\": \"jacobi\", \"solver\": \"JACOBI_L1\"}, \"presweeps\": 2, \"selector\": \"HMIS\", "
+            "\"coarsest_sweeps\": 2, \"coarse_solver\": \"NOSOLVER\", \"max_iters\": 1, \"max_row_sum\": 0.9, \"strength_threshold\": 0.25, "
+            "\"min_coarse_rows\": 2, \"scope\": \"amg_solver\", \"max_levels\": 24, \"cycle\": \"V\", \"postsweeps\": 2}, \"max_iters\": %d, "
+            "\"store_res_history\": 1, \"monitor_residual\": 1, \"gmres_n_restart\": 100, \"convergence\": \"ABSOLUTE\", \"tolerance\": %g, \"norm\": \"L2\"}}",
+            max_iters, tol);
+    } else if(STR_EQUALS(config_name, "FGMRES_AGGREGATION")) {
+        sprintf(cfg,
+                "{\"config_version\": 2, \"solver\": {\"preconditioner\": {\"error_scaling\": 0, \"print_grid_stats\": 0, \"max_uncolored_percentage\": 0.05, "
+                "\"algorithm\": \"AGGREGATION\", \"solver\": \"AMG\", \"smoother\": \"MULTICOLOR_DILU\", \"presweeps\": 0, \"selector\": \"SIZE_2\", "
+                "\"coarse_solver\": \"DENSE_LU_SOLVER\", \"max_iters\": 1, \"postsweeps\": 3, \"min_coarse_rows\": 32, \"relaxation_factor\": 0.75, \"scope\": "
+                "\"amg\", \"max_levels\": 100, \"matrix_coloring_scheme\": \"PARALLEL_GREEDY\", \"cycle\": \"V\"}, \"use_scalar_norm\": 1, \"solver\": "
+                "\"FGMRES\", \"print_solve_stats\": 0, \"obtain_timings\": 0, \"max_iters\": %d, \"monitor_residual\": 0, \"gmres_n_restart\": 10, "
+                "\"convergence\": \"ABSOLUTE\", \"scope\": \"main\", \"store_res_history\": 1, \"monitor_residual\": 1, \"tolerance\": %g, \"norm\": \"L2\"}}",
+                max_iters, tol);
+    } else if(STR_EQUALS(config_name, "PCG_NOPREC")) {
+        sprintf(
+            cfg,
+            "{\"config_version\":2,\"solver\":{\"store_res_history\": 1, "
+            "\"preconditioner\":{\"scope\":\"amg\",\"solver\":\"NOSOLVER\"},\"use_scalar_norm\":1,\"solver\":\"PCG\",\"print_solve_stats\":0,\"obtain_"
+            "timings\":0,\"monitor_residual\":1,\"convergence\":\"RELATIVE_INI_CORE\",\"scope\":\"main\",\"max_iters\":%d, \"tolerance\":%e,\"norm\":\"L2\"}}",
+            max_iters, tol);
     } else if(STR_EQUALS(config_name, "PCG_CLASSICAL_F_JACOBI")) {
-        sprintf(cfg, "{\"config_version\":2,\"solver\":{\"preconditioner\":{\"print_grid_stats\":0,\"print_vis_data\":0,\"solver\":\"AMG\",\"smoother\":{\"scope\":\"jacobi\",\"solver\":\"BLOCK_JACOBI\",\"monitor_residual\":0,\"print_solve_stats\":0},\"print_solve_stats\":0,\"presweeps\":1,\"max_iters\":1,\"interpolator\":\"D2\",\"monitor_residual\":0,\"store_res_history\":0,\"scope\":\"amg\",\"max_levels\":100,\"cycle\":\"F\",\"postsweeps\":1},\"solver\":\"PCG\",\"print_solve_stats\":0,\"obtain_timings\":0,\"max_iters\":%d,\"store_res_history\": 1,\"monitor_residual\":1,\"convergence\":\"ABSOLUTE\",\"scope\":\"main\",\"tolerance\":%e,\"norm\":\"L2\"}}", max_iters, tol);
+        sprintf(cfg,
+                "{\"config_version\":2,\"solver\":{\"preconditioner\":{\"print_grid_stats\":0,\"print_vis_data\":0,\"solver\":\"AMG\",\"smoother\":{\"scope\":"
+                "\"jacobi\",\"solver\":\"BLOCK_JACOBI\",\"monitor_residual\":0,\"print_solve_stats\":0},\"print_solve_stats\":0,\"presweeps\":1,\"max_iters\":"
+                "1,\"interpolator\":\"D2\",\"monitor_residual\":0,\"store_res_history\":0,\"scope\":\"amg\",\"max_levels\":100,\"cycle\":\"F\",\"postsweeps\":"
+                "1},\"solver\":\"PCG\",\"print_solve_stats\":0,\"obtain_timings\":0,\"max_iters\":%d,\"store_res_history\": "
+                "1,\"monitor_residual\":1,\"convergence\":\"ABSOLUTE\",\"scope\":\"main\",\"tolerance\":%e,\"norm\":\"L2\"}}",
+                max_iters, tol);
     } else if(STR_EQUALS(config_name, "PCG_DILU")) {
-        sprintf(cfg, "{\"config_version\":2,\"solver\":{\"preconditioner\":{\"scope\":\"precond\",\"solver\":\"MULTICOLOR_DILU\"},\"solver\":\"CG\",\"print_solve_stats\":0,\"obtain_timings\":0,\"max_iters\":%d,\"store_res_history\":1, \"monitor_residual\":1,\"scope\":\"main\",\"tolerance\":%e,\"norm\":\"L2\"}}", max_iters, tol);
+        sprintf(cfg,
+                "{\"config_version\":2,\"solver\":{\"preconditioner\":{\"scope\":\"precond\",\"solver\":\"MULTICOLOR_DILU\"},\"solver\":\"CG\",\"print_solve_"
+                "stats\":0,\"obtain_timings\":0,\"max_iters\":%d,\"store_res_history\":1, "
+                "\"monitor_residual\":1,\"scope\":\"main\",\"tolerance\":%e,\"norm\":\"L2\"}}",
+                max_iters, tol);
     } else {
         log_error("Error: Unknown configuration name.\n");
     }
 
     return strdup(cfg);
-
 }
 
 struct amgx_persistent_data {
     int N, nz;
-    //library handles
+    // library handles
     AMGX_config_handle cfg;
     AMGX_resources_handle rsrc;
     AMGX_matrix_handle A;
     AMGX_vector_handle b, x;
     AMGX_solver_handle solver;
-    //status handling
+    // status handling
     AMGX_SOLVE_STATUS status;
 };
 
@@ -557,10 +616,9 @@ INIT_LINEAR_SYSTEM(init_amgx) {
 
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(real_cpu, tol, config, "tolerance");
     GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, max_its, config, "max_iterations");
-    
+
     char *amgx_config = strdup("AMG_CLASSICAL_PMIS");
     GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(amgx_config, config, "amgx_config");
-
 
     /* init */
     AMGX_SAFE_CALL(AMGX_initialize());
@@ -581,14 +639,13 @@ INIT_LINEAR_SYSTEM(init_amgx) {
     AMGX_vector_create(&(persistent_data->b), persistent_data->rsrc, mode);
     AMGX_solver_create(&(persistent_data->solver), persistent_data->rsrc, mode, persistent_data->cfg);
 
-
     int_array I = NULL, J = NULL;
     f32_array val = NULL;
 
     uint32_t num_active_cells;
     struct cell_node **active_cells = NULL;
 
-    if (is_purkinje) {
+    if(is_purkinje) {
         grid_to_csr(the_grid, &val, &I, &J, true);
         num_active_cells = the_grid->purkinje->num_active_purkinje_cells;
         active_cells = the_grid->purkinje->purkinje_cells;
@@ -631,7 +688,8 @@ SOLVE_LINEAR_SYSTEM(amgx) {
     struct amgx_persistent_data *persistent_data = (struct amgx_persistent_data *)config->persistent_data;
 
     if(!persistent_data) {
-        log_error_and_exit("The amgx solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
+        log_error_and_exit(
+            "The amgx solver needs to be initialized before being called. Add a init_function in the [linear_system_solver] section of the .ini file\n");
     }
 
     float *rhs; // Vector B
@@ -642,9 +700,9 @@ SOLVE_LINEAR_SYSTEM(amgx) {
         rhs[i] = active_cells[i]->b;
     }
 
-    int N = persistent_data->N;    
+    int N = persistent_data->N;
     AMGX_SAFE_CALL(AMGX_vector_upload(persistent_data->b, N, 1, rhs));
-    
+
     // Solve the system using AMGX
     AMGX_SAFE_CALL(AMGX_solver_solve(persistent_data->solver, persistent_data->b, persistent_data->x));
 
@@ -653,7 +711,8 @@ SOLVE_LINEAR_SYSTEM(amgx) {
     int its;
     double e = 0;
     AMGX_SAFE_CALL(AMGX_solver_get_iterations_number(persistent_data->solver, &its)); // alt: AMGX_solver_get_iterations_number(AMGX_solver_handle obj, int *n)
-    AMGX_SAFE_CALL(AMGX_solver_get_iteration_residual(persistent_data->solver, its - 1, 0, &e)); // AMGX_solver_get_iteration_residual(AMGX_solver_handle obj, int iter,int idx, double *res);
+    AMGX_SAFE_CALL(AMGX_solver_get_iteration_residual(persistent_data->solver, its - 1, 0,
+                                                      &e)); // AMGX_solver_get_iteration_residual(AMGX_solver_handle obj, int iter,int idx, double *res);
 
     *error = e;
     *number_of_iterations = (uint32_t)its;
@@ -664,12 +723,11 @@ SOLVE_LINEAR_SYSTEM(amgx) {
     }
 
     free(rhs);
-
 }
 
 END_LINEAR_SYSTEM(end_amgx) {
     struct amgx_persistent_data *persistent_data = (struct amgx_persistent_data *)config->persistent_data;
-    
+
     // Cleanup and finalize AMGX
     AMGX_SAFE_CALL(AMGX_solver_destroy(persistent_data->solver));
     AMGX_SAFE_CALL(AMGX_vector_destroy(persistent_data->x));

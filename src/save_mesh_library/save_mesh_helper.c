@@ -1,5 +1,6 @@
 #include "save_mesh_helper.h"
 #include "../domains_library/mesh_info_data.h"
+#include "../3dparty/stb_ds.h"
 
 static void write_pvd_header(FILE *pvd_file) {
     fprintf(pvd_file, "<VTKFile type=\"Collection\" version=\"0.1\" compressor=\"vtkZLibDataCompressor\">\n");

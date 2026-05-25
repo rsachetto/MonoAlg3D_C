@@ -19,7 +19,7 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
 
     gui_config->grid_info.file_name = NULL;
 
-    omp_set_lock(&gui_config->draw_lock);
+    omp_set_nest_lock(&gui_config->draw_lock);
     gui_config->grid_info.vtk_grid = new_vtk_unstructured_grid_from_file(input_file, true);
     gui_config->grid_info.loaded = true;
     gui_config->int_scale = true;
@@ -30,7 +30,7 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
             free(gui_config->message);
         }
         gui_config->message = strdup(error);
-        omp_unset_lock(&gui_config->draw_lock);
+        omp_unset_nest_lock(&gui_config->draw_lock);
         return;
     }
 
@@ -38,10 +38,10 @@ static void read_and_render_activation_map(struct gui_shared_info *gui_config, c
     gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
     gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
 
-    omp_unset_lock(&gui_config->draw_lock);
+    omp_unset_nest_lock(&gui_config->draw_lock);
 }
 
-static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simulation_files *simulation_files,  const sds geometry_file, const bool ensight) {
+static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simulation_files *simulation_files, const sds geometry_file, const bool ensight) {
 
     char path[2048];
     gui_config->grid_info.loaded = false;
@@ -75,8 +75,7 @@ static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simu
             }
 
             set_vtk_grid_values_from_ensight_file(tmp_grid, path);
-        }
-        else {
+        } else {
             tmp_grid = new_vtk_unstructured_grid_from_file(path, true);
         }
 
@@ -101,7 +100,6 @@ static void calc_vm_bounds(struct gui_shared_info *gui_config, const struct simu
 
     gui_config->grid_info.loaded = true;
     gui_config->calc_bounds = false;
-
 }
 
 static int read_and_render_files(struct visualization_options *options, struct gui_shared_info *gui_config) {
@@ -114,7 +112,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
     const char *input = options->input;
     const char *prefix = options->files_prefix;
-    gui_config->current_file_index = (float) options->start_file;
+    gui_config->current_file_index = (float)options->start_file;
     int v_step = options->step;
 
     bool ensight = false;
@@ -161,9 +159,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
         } else if(FILE_HAS_EXTENSION(input_info, "acm")) {
             read_and_render_activation_map(gui_config, (char *)input, error);
             return SIMULATION_FINISHED;
-        } else if(FILE_HAS_EXTENSION(input_info, "vtk") || FILE_HAS_EXTENSION(input_info, "vtu") ||
-                  FILE_HAS_EXTENSION(input_info, "txt") || FILE_HAS_EXTENSION(input_info, "bin") ||
-                  FILE_HAS_EXTENSION(input_info, "alg") || FILE_HAS_EXTENSION(input_info, "geo") ||
+        } else if(FILE_HAS_EXTENSION(input_info, "vtk") || FILE_HAS_EXTENSION(input_info, "vtu") || FILE_HAS_EXTENSION(input_info, "txt") ||
+                  FILE_HAS_EXTENSION(input_info, "bin") || FILE_HAS_EXTENSION(input_info, "alg") || FILE_HAS_EXTENSION(input_info, "geo") ||
                   FILE_HAS_EXTENSION_PREFIX(input_info, "Esca")) {
             simulation_files = (struct simulation_files *)malloc(sizeof(struct simulation_files));
             simulation_files->files_list = NULL;
@@ -231,7 +228,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
     }
 
-    if(gui_config->current_file_index > (float) num_files) {
+    if(gui_config->current_file_index > (float)num_files) {
         fprintf(stderr, "[WARN] start_at value (%d) is greater than the number of files (%u). Setting start_at to %u\n", (int)gui_config->current_file_index,
                 num_files, num_files);
         gui_config->current_file_index = (float)(num_files - 1);
@@ -244,8 +241,8 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
             gui_config->dt = -1;
             gui_config->step = 1;
-            gui_config->final_file_index = (int) num_files - 1;
-            gui_config->final_time = (float) gui_config->final_file_index;
+            gui_config->final_file_index = (int)num_files - 1;
+            gui_config->final_time = (float)gui_config->final_file_index;
 
         } else if(ensight) {
 
@@ -266,7 +263,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             }
 
             gui_config->dt = -1;
-            gui_config->final_file_index = (int) num_files - 1;
+            gui_config->final_file_index = (int)num_files - 1;
             gui_config->final_time = simulation_files->timesteps[num_files - 1];
 
         } else {
@@ -300,7 +297,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             }
         }
     } else {
-        gui_config->final_file_index = (int) num_files - 1;
+        gui_config->final_file_index = (int)num_files - 1;
         gui_config->final_time = simulation_files->timesteps[num_files - 1];
         gui_config->dt = -1;
     }
@@ -342,7 +339,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
             sprintf(full_path, "%s/%s", simulation_files->base_dir, current_file_name);
         }
 
-        omp_set_lock(&gui_config->draw_lock);
+        omp_set_nest_lock(&gui_config->draw_lock);
 
         if(ensight) {
             if(!ensigth_grid_loaded) {
@@ -392,10 +389,10 @@ static int read_and_render_files(struct visualization_options *options, struct g
             gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
         }
 
-        omp_unset_lock(&gui_config->draw_lock);
+        omp_unset_nest_lock(&gui_config->draw_lock);
 
         // here we wait until the mesh was rendered
-        omp_set_lock(&gui_config->sleep_lock);
+        omp_set_nest_lock(&gui_config->sleep_lock);
 
         if(gui_config->restart) {
             gui_config->time = 0.0f;
@@ -415,9 +412,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
         }
 
         if(!gui_config->paused) {
-            gui_config->current_file_index += (float) v_step;
-            if(gui_config->current_file_index >= (float) num_files) {
-                gui_config->current_file_index -= (float) v_step;
+            gui_config->current_file_index += (float)v_step;
+            if(gui_config->current_file_index >= (float)num_files) {
+                gui_config->current_file_index -= (float)v_step;
                 gui_config->paused = true;
             }
         }
@@ -426,7 +423,7 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
 static void init_gui_config_for_visualization(const struct visualization_options *options, struct gui_shared_info *gui_config, bool only_restart) {
 
-    //TODO: set this from command line
+    // TODO: set this from command line
     gui_config->adaptive = false;
 
     gui_config->grid_info.vtk_grid = NULL;
@@ -444,8 +441,8 @@ static void init_gui_config_for_visualization(const struct visualization_options
 
     if(!only_restart) {
         gui_config->input = NULL;
-        omp_init_lock(&gui_config->draw_lock);
-        omp_init_lock(&gui_config->sleep_lock);
+        omp_init_nest_lock(&gui_config->draw_lock);
+        omp_init_nest_lock(&gui_config->sleep_lock);
         gui_config->max_v = options->max_v;
         gui_config->min_v = options->min_v;
 

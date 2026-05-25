@@ -6,10 +6,11 @@
 #include <stdlib.h>
 
 #include "../3dparty/sds/sds.h"
+#include "../3dparty/stb_ds.h"
 #include "../alg/grid/grid.h"
 #include "../config/save_mesh_config.h"
-#include "../utils/utils.h"
 #include "../extra_data_library/helper_functions.h"
+#include "../utils/utils.h"
 
 #include "../domains_library/mesh_info_data.h"
 #include "../ensight_utils/ensight_grid.h"
@@ -17,8 +18,12 @@
 
 #include "save_mesh_helper.h"
 
-#ifdef COMPILE_CUDA
-#include "../gpu_utils/gpu_utils.h"
+#if defined(COMPILE_CUDA) || defined(COMPILE_SYCL)
+#define COMPILE_GPU
+#endif
+
+#ifdef COMPILE_GPU
+#include "../gpu_utils/accel_utils.h"
 #endif
 
 static char *file_prefix;
@@ -148,7 +153,7 @@ SAVE_MESH(save_one_cell_state_variables) {
     uint32_t sv_var_id = params->sv_var_id;
     real_cpu save_after_time = params->save_after_time;
     bool save_steady_state = params->save_steady_state;
-    uint32_t total_iterations = nearbyint(time_info->final_t/time_info->dt);
+    uint32_t total_iterations = nearbyint(time_info->final_t / time_info->dt);
 
     if(params->cell_sv_position == -1) {
         if(!the_grid->adaptive) {
@@ -162,26 +167,28 @@ SAVE_MESH(save_one_cell_state_variables) {
     }
 
     if(ode_solver->gpu) {
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
         real *cell_sv;
 
         cell_sv = MALLOC_ARRAY_OF_TYPE(real, ode_solver->model_data.number_of_ode_equations);
 
-        check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
-                                      ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+        //        check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
+        //                                     ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+        memcpy2d_device(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_position, ode_solver->pitch, sizeof(real),
+                        ode_solver->model_data.number_of_ode_equations, DEVICE_TO_HOST);
 
         // Input state variable index is within the limits
-        if (sv_var_id >= 0 && sv_var_id <= ode_solver->model_data.number_of_ode_equations) {
-            if (time_info->current_t >= save_after_time) {
+        if(sv_var_id >= 0 && sv_var_id <= ode_solver->model_data.number_of_ode_equations) {
+            if(time_info->current_t >= save_after_time) {
                 // Save time and the specified state variable index
-                fprintf(params->file, "%g %g\n", time_info->current_t-save_after_time, cell_sv[sv_var_id]);
+                fprintf(params->file, "%g %g\n", time_info->current_t - save_after_time, cell_sv[sv_var_id]);
             }
-        }
-        else {
-            if (time_info->current_t >= save_after_time) {
+        } else {
+            if(time_info->current_t >= save_after_time) {
                 // Save time and all state variables
-                fprintf(params->file, "%g ", time_info->current_t-save_after_time);
-                for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->file, "%g ", time_info->current_t - save_after_time);
+                for(uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
                     fprintf(params->file, "%g ", cell_sv[i]);
                 }
                 fprintf(params->file, "\n");
@@ -189,13 +196,13 @@ SAVE_MESH(save_one_cell_state_variables) {
         }
 
         // Save the last iteration solution as steady-state
-        if (save_steady_state && time_info->iteration == total_iterations) {
+        if(save_steady_state && time_info->iteration == total_iterations) {
             printf("\n[cpu] t=%.10lf\n", time_info->current_t);
-            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            for(uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
                 printf("sv[%u]=%.10lf;\n", i, cell_sv[i]);
             }
             printf("\n[gpu] t=%.10lf\n", time_info->current_t);
-            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            for(uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
                 printf("*((real *) ((char *) sv + pitch * %u) + threadID)=%.10lf;\n", i, cell_sv[i]);
             }
         }
@@ -207,17 +214,16 @@ SAVE_MESH(save_one_cell_state_variables) {
         real *cell_sv = &ode_solver->sv[params->cell_sv_position * ode_solver->model_data.number_of_ode_equations];
 
         // Input state variable index is within the limits
-        if (sv_var_id >= 0 && sv_var_id <= ode_solver->model_data.number_of_ode_equations) {
-            if (time_info->current_t >= save_after_time) {
+        if(sv_var_id >= 0 && sv_var_id <= ode_solver->model_data.number_of_ode_equations) {
+            if(time_info->current_t >= save_after_time) {
                 // Save time and the specified state variable index
-                fprintf(params->file, "%g %g\n", time_info->current_t-save_after_time, cell_sv[sv_var_id]);
+                fprintf(params->file, "%g %g\n", time_info->current_t - save_after_time, cell_sv[sv_var_id]);
             }
-        }
-        else {
-            if (time_info->current_t >= save_after_time) {
+        } else {
+            if(time_info->current_t >= save_after_time) {
                 // Save time and all state variables
-                fprintf(params->file, "%g ", time_info->current_t-save_after_time);
-                for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+                fprintf(params->file, "%g ", time_info->current_t - save_after_time);
+                for(uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
                     fprintf(params->file, "%g ", cell_sv[i]);
                 }
                 fprintf(params->file, "\n");
@@ -225,13 +231,13 @@ SAVE_MESH(save_one_cell_state_variables) {
         }
 
         // Save the last iteration solution as steady-state
-        if (save_steady_state && time_info->iteration == total_iterations) {
+        if(save_steady_state && time_info->iteration == total_iterations) {
             printf("\n[cpu] t=%.10lf\n", time_info->current_t);
-            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            for(uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
                 printf("sv[%u]=%.10lf;\n", i, cell_sv[i]);
             }
             printf("\n[gpu] t=%.10lf\n", time_info->current_t);
-            for (uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
+            for(uint32_t i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
                 printf("*((real *) ((char *) sv + pitch * %u) + threadID)=%.10lf;\n", i, cell_sv[i]);
             }
         }
@@ -259,36 +265,36 @@ SAVE_MESH(save_as_text_or_binary) {
     float p0[3] = {1, 1, 1};
     float n[3] = {1, 1, 1};
 
-//    if(!initialized) {
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
-        GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_inactive, config, "save_inactive_cells");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
-        GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
+    //    if(!initialized) {
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(output_dir, config, "output_dir");
+    GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(file_prefix, config, "file_prefix");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(binary, config, "binary");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_plain, config, "clip_with_plain");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(clip_with_bounds, config, "clip_with_bounds");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_inactive, config, "save_inactive_cells");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_visible_mask, config, "save_visible_mask");
+    GET_PARAMETER_BOOLEAN_VALUE_OR_USE_DEFAULT(save_ode_state_variables, config, "save_ode_state_variables");
 
-        if(clip_with_plain) {
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[0], config, "normal_x");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[1], config, "normal_y");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[2], config, "normal_z");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[0], config, "origin_x");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[1], config, "origin_y");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[2], config, "origin_z");
-        }
+    if(clip_with_plain) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[0], config, "normal_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[1], config, "normal_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, n[2], config, "normal_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[0], config, "origin_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[1], config, "origin_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, p0[2], config, "origin_z");
+    }
 
-        if(clip_with_bounds) {
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_x, config, "min_x");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_y, config, "min_y");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_z, config, "min_z");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_x, config, "max_x");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_y, config, "max_y");
-            GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_z, config, "max_z");
-        }
+    if(clip_with_bounds) {
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_x, config, "min_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_y, config, "min_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, min_z, config, "min_z");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_x, config, "max_x");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_y, config, "max_y");
+        GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(float, max_z, config, "max_z");
+    }
 
-        initialized = true;
- //   }
+    initialized = true;
+    //   }
 
     real_cpu l = sqrtf(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
     real_cpu A = n[0] / l;
@@ -368,10 +374,12 @@ SAVE_MESH(save_as_text_or_binary) {
 
                     if(ode_solver->gpu) {
 
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
                         sv_cpu = MALLOC_ARRAY_OF_TYPE(real, ode_solver->original_num_cells * num_sv_entries);
-                        check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
-                                    ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
+                        // check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
+                        //                              ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
+                        memcpy2d_device(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
+                                        ode_solver->original_num_cells * sizeof(real), num_sv_entries, DEVICE_TO_HOST);
 #endif
                     } else {
                         sv_cpu = ode_solver->sv;
@@ -382,9 +390,8 @@ SAVE_MESH(save_as_text_or_binary) {
                     for(int i = 1; i <= n_state_vars; i++) {
                         float value;
                         if(ode_solver->gpu) {
-                            value = (float) sv_cpu[i*ode_solver->original_num_cells];
-                        }
-                        else {
+                            value = (float)sv_cpu[i * ode_solver->original_num_cells];
+                        } else {
                             value = sv_cpu[i];
                         }
 
@@ -396,8 +403,7 @@ SAVE_MESH(save_as_text_or_binary) {
                     }
 
                     fprintf(output_file, "\n");
-                }
-                else {
+                } else {
                     fprintf(output_file, "%g,%g,%g,%g,%g,%g,%g\n", center_x, center_y, center_z, dx, dy, dz, v);
                 }
             }
@@ -416,7 +422,6 @@ SAVE_MESH(save_as_text_or_binary) {
     fclose(output_file);
 
     CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
-
 }
 
 INIT_SAVE_MESH(init_save_as_vtk_or_vtu) {
@@ -481,11 +486,10 @@ SAVE_MESH(save_as_vtk) {
 
     bool read_only_data = ((struct common_persistent_data *)config->persistent_data)->grid != NULL;
 
-    new_vtk_unstructured_grid_from_alg_grid(&(((struct common_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
-                                            plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, NULL);
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct common_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords,
+                                            clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, NULL);
 
-    save_vtk_unstructured_grid_as_legacy_vtk(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary,
-                                             save_f, NULL);
+    save_vtk_unstructured_grid_as_legacy_vtk(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary, save_f, NULL);
 
     if(save_visible_mask) {
         save_visibility_mask(output_dir_with_file, (((struct common_persistent_data *)config->persistent_data)->grid)->cell_visibility);
@@ -561,12 +565,11 @@ SAVE_MESH(save_as_vtu) {
     }
 
     bool read_only_data = ((struct common_persistent_data *)config->persistent_data)->grid != NULL;
-    new_vtk_unstructured_grid_from_alg_grid(&((struct common_persistent_data *)config->persistent_data)->grid, the_grid, clip_with_plain,
-                                            plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, NULL);
+    new_vtk_unstructured_grid_from_alg_grid(&((struct common_persistent_data *)config->persistent_data)->grid, the_grid, clip_with_plain, plain_coords,
+                                            clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, NULL);
 
     if(compress) {
-        save_vtk_unstructured_grid_as_vtu_compressed(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file,
-                                                     compression_level);
+        save_vtk_unstructured_grid_as_vtu_compressed(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, compression_level);
     } else {
         save_vtk_unstructured_grid_as_vtu(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary);
     }
@@ -585,7 +588,6 @@ SAVE_MESH(save_as_vtu) {
     }
 
     CALL_EXTRA_FUNCTIONS(save_mesh_fn, time_info, config, the_grid, ode_solver, purkinje_ode_solver);
-
 }
 
 INIT_SAVE_MESH(init_save_as_ensight) {
@@ -596,7 +598,7 @@ INIT_SAVE_MESH(init_save_as_ensight) {
 
 SAVE_MESH(save_as_ensight) {
 
-    struct common_persistent_data *persistent_data = (struct common_persistent_data*) config->persistent_data;
+    struct common_persistent_data *persistent_data = (struct common_persistent_data *)config->persistent_data;
 
     if(the_grid == NULL) {
         log_error_and_exit("Error in save_as_ensight. No grid defined\n");
@@ -610,7 +612,6 @@ SAVE_MESH(save_as_ensight) {
         log_error_and_exit("save_as_ensight function does not support adaptive meshes yet! Aborting\n");
     }
 
-    
     if(!persistent_data->geometry_saved) {
 
         int print_rate = 1;
@@ -618,11 +619,10 @@ SAVE_MESH(save_as_ensight) {
         char *mesh_format = NULL;
         GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_format, config, "mesh_format");
 
-        //We are getting called from save_with_activation_times
+        // We are getting called from save_with_activation_times
         if(mesh_format != NULL) {
             GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "mesh_print_rate");
-        }
-        else { //We are being directly called
+        } else { // We are being directly called
             GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, print_rate, config, "print_rate");
         }
 
@@ -665,7 +665,7 @@ SAVE_MESH(save_as_ensight) {
     output_dir_with_file = sdscat(output_dir_with_file, "/");
 
     if(persistent_data->n_digits == 0) {
-        persistent_data->n_digits = log10(persistent_data->num_files*500) + 1;
+        persistent_data->n_digits = log10(persistent_data->num_files * 500) + 1;
     }
 
     sds base_name = sdscatprintf(sdsempty(), "Vm.Esca%%0%dd", persistent_data->n_digits);
@@ -687,10 +687,13 @@ SAVE_MESH(save_as_ensight) {
 
         if(ode_solver->gpu) {
 
-#ifdef COMPILE_CUDA
+#ifdef COMPILE_GPU
             sv_cpu = MALLOC_ARRAY_OF_TYPE(real, ode_solver->original_num_cells * num_sv_entries);
-            check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
-                                          ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
+            // check_cuda_error(cudaMemcpy2D(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
+            //                              ode_solver->original_num_cells * sizeof(real), num_sv_entries, cudaMemcpyDeviceToHost));
+
+            memcpy2d_device(sv_cpu, ode_solver->original_num_cells * sizeof(real), ode_solver->sv, ode_solver->pitch,
+                            ode_solver->original_num_cells * sizeof(real), num_sv_entries, DEVICE_TO_HOST);
 #endif
         } else {
             sv_cpu = ode_solver->sv;
@@ -732,7 +735,7 @@ INIT_SAVE_MESH(init_save_with_activation_times) {
     if(config->persistent_data == NULL) {
         config->persistent_data = calloc(1, sizeof(struct common_persistent_data));
 
-        struct common_persistent_data *cpd = (struct common_persistent_data *) config->persistent_data;
+        struct common_persistent_data *cpd = (struct common_persistent_data *)config->persistent_data;
 
         hmdefault(cpd->cell_was_active, 0.0);
         hmdefault(cpd->last_time_v, -100.0);
@@ -742,7 +745,7 @@ INIT_SAVE_MESH(init_save_with_activation_times) {
         cpd->first_save_call = true;
 
         GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, cpd->print_rate, config, "print_rate");
-        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int,cpd->mesh_print_rate, config, "mesh_print_rate");
+        GET_PARAMETER_NUMERIC_VALUE_OR_USE_DEFAULT(int, cpd->mesh_print_rate, config, "mesh_print_rate");
     }
 }
 
@@ -754,7 +757,7 @@ END_SAVE_MESH(end_save_with_activation_times) {
 SAVE_MESH(save_with_activation_times) {
 
     int iteration_count = time_info->iteration;
-    struct common_persistent_data *cpd = (struct common_persistent_data *) config->persistent_data;
+    struct common_persistent_data *cpd = (struct common_persistent_data *)config->persistent_data;
 
     char *mesh_format = NULL;
     GET_PARAMETER_STRING_VALUE_OR_USE_DEFAULT(mesh_format, config, "mesh_format");
@@ -943,7 +946,6 @@ SAVE_MESH(save_vm_matrix) {
     if(time_info->current_t >= time_info->final_t) {
         fclose(f);
     }
-
 }
 
 SAVE_MESH(no_save) {
@@ -954,18 +956,19 @@ INIT_SAVE_MESH(init_save_multiple_cell_state_variables) {
     config->persistent_data = malloc(sizeof(struct save_multiple_cell_state_variables_persistent_data));
     GET_PARAMETER_NUMERIC_VALUE_OR_REPORT_ERROR(uint32_t, ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells,
                                                 config, "num_cells");
-    GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_centers,
-                                                config, "cell_centers", ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells, 3);
+    GET_PARAMETER_MATRIX_VALUE_OR_USE_DEFAULT(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_centers, config,
+                                              "cell_centers", ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells,
+                                              3);
     GET_PARAMETER_STRING_VALUE_OR_REPORT_ERROR(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->file_name_prefix, config,
                                                "file_name_prefix");
 
     uint32_t num_cells = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->num_cells;
     char *file_name_prefix = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->file_name_prefix;
 
-    ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files = MALLOC_ARRAY_OF_TYPE(FILE*, num_cells);
+    ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files = MALLOC_ARRAY_OF_TYPE(FILE *, num_cells);
     ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions = MALLOC_ARRAY_OF_TYPE(uint32_t, num_cells);
 
-    for (int i = 0; i < num_cells; i++) {
+    for(int i = 0; i < num_cells; i++) {
 
         sds base_name = NULL;
         base_name = create_base_name(file_name_prefix, i, "dat");
@@ -978,11 +981,12 @@ INIT_SAVE_MESH(init_save_multiple_cell_state_variables) {
 SAVE_MESH(save_multiple_cell_state_variables) {
     struct save_multiple_cell_state_variables_persistent_data *params = ((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data);
 
-    for (uint32_t i = 0; i < params->num_cells; i++) {
+    for(uint32_t i = 0; i < params->num_cells; i++) {
         if(params->cell_sv_positions[i] == -1) {
             if(!the_grid->adaptive) {
                 FOR_EACH_CELL(the_grid) {
-                    if(cell->center.x == params->cell_centers[i*3] && cell->center.y == params->cell_centers[i*3+1] && cell->center.z == params->cell_centers[i*3+2]) {
+                    if(cell->center.x == params->cell_centers[i * 3] && cell->center.y == params->cell_centers[i * 3 + 1] &&
+                       cell->center.z == params->cell_centers[i * 3 + 2]) {
                         params->cell_sv_positions[i] = cell->sv_position;
                         break;
                     }
@@ -992,14 +996,17 @@ SAVE_MESH(save_multiple_cell_state_variables) {
     }
 
     if(ode_solver->gpu) {
-#ifdef COMPILE_CUDA
-        for (uint32_t k = 0; k < params->num_cells; k++) {
+#ifdef COMPILE_GPU
+        for(uint32_t k = 0; k < params->num_cells; k++) {
             real *cell_sv;
 
             cell_sv = MALLOC_ARRAY_OF_TYPE(real, ode_solver->model_data.number_of_ode_equations);
 
-            check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_positions[k], ode_solver->pitch, sizeof(real),
-                                        ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+            // check_cuda_error(cudaMemcpy2D(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_positions[k], ode_solver->pitch, sizeof(real),
+            //                                        ode_solver->model_data.number_of_ode_equations, cudaMemcpyDeviceToHost));
+
+            memcpy2d_device(cell_sv, sizeof(real), ode_solver->sv + params->cell_sv_positions[k], ode_solver->pitch, sizeof(real),
+                            ode_solver->model_data.number_of_ode_equations, DEVICE_TO_HOST);
 
             fprintf(params->files[k], "%lf ", time_info->current_t);
             for(int i = 0; i < ode_solver->model_data.number_of_ode_equations; i++) {
@@ -1012,7 +1019,7 @@ SAVE_MESH(save_multiple_cell_state_variables) {
 
 #endif
     } else {
-        for (uint32_t k = 0; k < params->num_cells; k++) {
+        for(uint32_t k = 0; k < params->num_cells; k++) {
             real *cell_sv = &ode_solver->sv[params->cell_sv_positions[k] * ode_solver->model_data.number_of_ode_equations];
 
             fprintf(params->files[k], "%lf ", time_info->current_t);
@@ -1029,7 +1036,7 @@ END_SAVE_MESH(end_save_multiple_cell_state_variables) {
     free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->file_name_prefix);
     free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_sv_positions);
     free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->cell_centers);
-    for (uint32_t i = 0; i < num_cells; i++) {
+    for(uint32_t i = 0; i < num_cells; i++) {
         fclose(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files[i]);
     }
     free(((struct save_multiple_cell_state_variables_persistent_data *)config->persistent_data)->files);
@@ -1039,7 +1046,7 @@ END_SAVE_MESH(end_save_multiple_cell_state_variables) {
 
 SAVE_MESH(save_transmurality_as_vtk) {
 
-    struct extra_data_for_torord *extra_data = (struct extra_data_for_torord*)ode_solver->ode_extra_data;
+    struct extra_data_for_torord *extra_data = (struct extra_data_for_torord *)ode_solver->ode_extra_data;
     real *transmurality = extra_data->transmurality;
 
     int iteration_count = time_info->iteration;
@@ -1088,8 +1095,8 @@ SAVE_MESH(save_transmurality_as_vtk) {
 
     bool read_only_data = ((struct common_persistent_data *)config->persistent_data)->grid != NULL;
 
-    new_vtk_unstructured_grid_from_alg_grid(&(((struct common_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain,
-                                            plain_coords, clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, transmurality);
+    new_vtk_unstructured_grid_from_alg_grid(&(((struct common_persistent_data *)config->persistent_data)->grid), the_grid, clip_with_plain, plain_coords,
+                                            clip_with_bounds, bounds, read_only_data, save_f, save_scar_cells, transmurality);
 
     save_vtk_unstructured_grid_as_legacy_vtk(((struct common_persistent_data *)config->persistent_data)->grid, output_dir_with_file, binary, save_f, NULL);
 

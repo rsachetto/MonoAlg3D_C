@@ -39,6 +39,7 @@ COMPILE_SIMULATOR=''
 COMPILE_POSTPROCESSOR=''
 COMPILE_WITH_DDM=''
 DISABLE_CUDA=''
+USE_SYCL=''
 
 GET_BUILD_OPTIONS "$@"
 
@@ -101,8 +102,16 @@ for i in "${BUILD_ARGS[@]}"; do
         converter)
             COMPILE_CONVERTER='y'
             ;;
-        disable_cuda)
+        only_cpu)
+            COMPILE_SIMULATOR='y'
             DISABLE_CUDA='y'
+            ;;
+        sycl)
+            COMPILE_SIMULATOR='y'
+            COMPILE_GUI='y'
+    	    COMPILE_MPI='y'
+            DISABLE_CUDA='y'
+            USE_SYCL='y'
             ;;
         *)
             echo "Invalid option $i. Aborting!"
@@ -112,6 +121,14 @@ for i in "${BUILD_ARGS[@]}"; do
 done
 
 DEFAULT_C_FLAGS="-fopenmp -std=gnu99 -fno-strict-aliasing  -Wall -Wno-stringop-truncation -Wno-unused-function -Wno-char-subscripts -Wno-unused-result -Wno-switch -Werror=implicit-function-declaration"
+
+# Update the SYCL compiler and Intel flags
+if [ -n "$USE_SYCL" ]; then
+    C_COMPILER="icx"
+    CXX_COMPILER="icpx"
+    DEFAULT_C_FLAGS="-qopenmp -fno-strict-aliasing  -Wall -Wno-unused-function -Wno-unused-result -Wno-switch -Werror=implicit-function-declaration -Wno-incompatible-pointer-types"
+fi
+
 RUNTIME_OUTPUT_DIRECTORY="$ROOT_DIR/bin"
 LIBRARY_OUTPUT_DIRECTORY="$ROOT_DIR/shared_libs"
 
@@ -127,6 +144,10 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_MPI" ]; then
        FIND_CUDA
     fi
 
+    if [ -n "$USE_SYCL" ]; then
+       FIND_SYCL
+    fi
+
     echo -e "${INFO}C compiler:${NC} $C_COMPILER"
     echo -e "${INFO}C++ compiler:${NC} $CXX_COMPILER"
 
@@ -137,6 +158,13 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_MPI" ]; then
 
 
         C_FLAGS="${C_FLAGS} -DCOMPILE_CUDA -I${CUDA_INCLUDE_PATH}"
+
+    fi
+
+    if [ -n "$SYCL_FOUND" ]; then
+        echo -e "${INFO}SYCL compiler:${NC} ${ICPX}"
+
+        C_FLAGS="${C_FLAGS} -DCOMPILE_SYCL -I${SYCL_INCLUDE_PATH}"
 
     fi
 fi
@@ -198,7 +226,7 @@ if [ -n "$COMPILE_GUI" ]; then
     OPT_DEPS_GUI="gui raylib tinyfiledialogs"
 fi
 
-if [ -n "$CUDA_FOUND" ]; then
+if [ -n "$CUDA_FOUND" ] || [ -n "$SYCL_FOUND" ]; then
     ADD_SUBDIRECTORY "src/gpu_utils"
     OPT_DEPS_GPU=gpu_utils
 fi
@@ -212,6 +240,10 @@ DYNAMIC_DEPS="dl m ${OPT_DEPS_GPU} $CUDA_LIBRARIES"
 
 if [ -n "$AMGX_FOUND" ]; then
     DYNAMIC_DEPS="$DYNAMIC_DEPS $AMGX_LIBRARIES"
+fi
+
+if [ -n "$USE_SYCL" ]; then
+    DYNAMIC_DEPS="$DYNAMIC_DEPS mkl_sycl_blas mkl_sycl_lapack mkl_sycl_dft mkl_sycl_sparse mkl_sycl_vm mkl_sycl_rng mkl_sycl_stats mkl_sycl_data_fitting mkl_intel_ilp64 mkl_tbb_thread mkl_core sycl"
 fi
 
 
@@ -238,7 +270,7 @@ if [ -n "$COMPILE_SIMULATOR" ] || [ -n "$COMPILE_BATCH" ]; then
 fi
 
 #COMPILE THE EXECUTABLES NOW
-EXECUTABLES_LIBRARY_PATH="$CUDA_LIBRARY_PATH $CUDA_MATH_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY" 
+EXECUTABLES_LIBRARY_PATH="$CUDA_LIBRARY_PATH $CUDA_MATH_LIBRARY_PATH $LIBRARY_OUTPUT_DIRECTORY"
 
 if [ -n "$AMGX_FOUND" ]; then
 	EXECUTABLES_LIBRARY_PATH="$EXECUTABLES_LIBRARY_PATH $AMGX_LIBRARY_PATH"
@@ -247,7 +279,7 @@ fi
 
 
 if [ -n "$COMPILE_SIMULATOR" ]; then
-    COMPILE_EXECUTABLE "MonoAlg3D" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH"
+    COMPILE_EXECUTABLE "MonoAlg3D" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH" ""
 fi
 
 if [ -n "$COMPILE_MPI" ]; then
@@ -259,11 +291,15 @@ if [ -n "$COMPILE_MPI" ]; then
       HDR_FILES=""
       DYNAMIC_DEPS="$DYNAMIC_DEPS $MPI_LIBRARIES"
       EXTRA_LIB_PATH="$EXTRA_LIB_PATH $MPI_LIBRARY_PATH"
-    
+
+      if [ -n "$USE_SYCL" ]; then
+        DYNAMIC_DEPS="$DYNAMIC_DEPS fabric"
+      fi
+
       if [ -z "$MPI_INCLUDE_PATH" ]; then
-	 COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH" "$INCLUDE_P"
+	    COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH" "$INCLUDE_P"
       else
-	 COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH" "$INCLUDE_P -I$MPI_INCLUDE_PATH"
+    	 COMPILE_EXECUTABLE "MonoAlg3D_batch" "$SRC_FILES" "$HDR_FILES" "$STATIC_DEPS" "$DYNAMIC_DEPS" "$EXECUTABLES_LIBRARY_PATH $EXTRA_LIB_PATH" "$INCLUDE_P -I$MPI_INCLUDE_PATH"
       fi
 
   fi

@@ -10,23 +10,23 @@
 
 #include <getopt.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <math.h>
 #include "../alg/grid/grid.h"
+#include <math.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "domain_config.h"
-#include "purkinje_config.h"
-#include "extra_data_config.h"
-#include "assembly_matrix_config.h"
-#include "save_mesh_config.h"
-#include "linear_system_solver_config.h"
 #include "../common_types/common_types.h"
-#include "save_state_config.h"
-#include "restore_state_config.h"
-#include "update_monodomain_config.h"
+#include "assembly_matrix_config.h"
+#include "domain_config.h"
 #include "ecg_config.h"
+#include "extra_data_config.h"
+#include "linear_system_solver_config.h"
+#include "purkinje_config.h"
+#include "restore_state_config.h"
+#include "save_mesh_config.h"
+#include "save_state_config.h"
+#include "update_monodomain_config.h"
 
 #define START_REFINING 1700
 #define DOMAIN_OPT 1800
@@ -49,23 +49,23 @@
 #define CM 5000
 #define VISUALIZATION_PAUSED_OPT 5100
 
-#define IS_IN_MAIN_FUNCTION(key)  memcmp((key), "main_function" , 13) == 0
-#define IS_IN_INIT_FUNCTION(key)  memcmp((key), "init_function" , 13) == 0
-#define IS_IN_END_FUNCTION(key)   memcmp((key), "end_function"  , 12) == 0
+#define IS_IN_MAIN_FUNCTION(key) memcmp((key), "main_function", 13) == 0
+#define IS_IN_INIT_FUNCTION(key) memcmp((key), "init_function", 13) == 0
+#define IS_IN_END_FUNCTION(key) memcmp((key), "end_function", 12) == 0
 #define IS_IN_EXTRA_FUNCTION(key) memcmp((key), "extra_function", 14) == 0
-#define IS_IN_LIBRARY_FILE(key)   memcmp((key), "library_file"  , 12) == 0
+#define IS_IN_LIBRARY_FILE(key) memcmp((key), "library_file", 12) == 0
 
 struct user_options {
-    real_cpu final_time;                /*-f option */
+    real_cpu final_time; /*-f option */
     bool final_time_was_set;
-    bool adaptive;                      /*-a option */
+    bool adaptive; /*-a option */
     bool adaptive_was_set;
 
-    real_cpu ref_bound;                 /*-r option*/
+    real_cpu ref_bound; /*-r option*/
     bool ref_bound_was_set;
-    real_cpu deref_bound;               /*-d option*/
+    real_cpu deref_bound; /*-d option*/
     bool deref_bound_was_set;
-    real_cpu dt_pde;                    /*-z option*/
+    real_cpu dt_pde; /*-z option*/
     bool dt_pde_was_set;
 
     real_cpu dt_ode;
@@ -73,7 +73,6 @@ struct user_options {
 
     bool auto_dt_ode;
     bool auto_dt_ode_was_set;
-
 
     bool ode_adaptive;
     bool ode_adaptive_was_set;
@@ -84,23 +83,23 @@ struct user_options {
     real ode_abstol;
     bool ode_abstol_was_set;
 
-    int num_threads;                /*-n option*/
+    int num_threads; /*-n option*/
     bool num_threads_was_set;
-    bool gpu;                       /*-g option*/
+    bool gpu; /*-g option*/
     bool gpu_was_set;
-    int refine_each;                /*-R option*/
+    int refine_each; /*-R option*/
     bool refine_each_was_set;
-    int derefine_each;              /*-D option*/
+    int derefine_each; /*-D option*/
     bool derefine_each_was_set;
-    int gpu_id;                     /*-G option*/
+    int gpu_id; /*-G option*/
     bool gpu_id_was_set;
-    bool abort_no_activity;         /*-b option*/
+    bool abort_no_activity; /*-b option*/
     bool abort_no_activity_was_set;
 
     real_cpu only_abort_after_dt;
     bool only_abort_after_dt_was_set;
 
-    real_cpu vm_threshold;            /*-v option*/
+    real_cpu vm_threshold; /*-v option*/
     bool vm_threshold_was_set;
 
     real_cpu purkinje_dt_ode;
@@ -118,7 +117,7 @@ struct user_options {
     char *purkinje_model_file_path;
     bool purkinje_model_file_path_was_set;
 
-    char *model_file_path;          /*-k option*/
+    char *model_file_path; /*-k option*/
     bool model_file_path_was_set;
 
     bool show_gui;
@@ -131,7 +130,7 @@ struct user_options {
 
     real_cpu start_adapting_at;
     bool start_adapting_at_was_set;
-    char *config_file;              /*-c option*/
+    char *config_file; /*-c option*/
 
     bool quiet; /*-q option*/
     bool quiet_was_set;
@@ -159,7 +158,6 @@ struct user_options {
     struct string_hash_entry *purkinje_ode_extra_config;
 
     real_cpu max_v, min_v;
-
 };
 
 struct batch_options {
@@ -190,7 +188,7 @@ struct visualization_options {
     int step;
     float max_v, min_v, dt;
     float ui_scale;
-    //TODO: set this option
+    // TODO: set this option
     bool adaptive;
 };
 
@@ -209,6 +207,10 @@ struct fibers_conversion_options {
     char *output_file;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void display_usage(char **argv);
 void display_batch_usage(char **argv);
 void display_eikonal_usage(char **argv);
@@ -216,39 +218,42 @@ void display_conversion_usage(char **argv);
 void display_fibers_conversion_usage(char **argv);
 void display_visualization_usage(char **argv);
 
-struct user_options * new_user_options();
-struct batch_options * new_batch_options();
-struct eikonal_options * new_eikonal_options();
-struct visualization_options * new_visualization_options();
-struct conversion_options * new_conversion_options();
-struct fibers_conversion_options * new_fibers_conversion_options();
+struct user_options *new_user_options();
+struct batch_options *new_batch_options();
+struct eikonal_options *new_eikonal_options();
+struct visualization_options *new_visualization_options();
+struct conversion_options *new_conversion_options();
+struct fibers_conversion_options *new_fibers_conversion_options();
 
-void parse_options(int argc, char**argv, struct user_options *user_args);
-void parse_batch_options(int argc, char**argv, struct batch_options *user_args);
-void parse_eikonal_options(int argc, char**argv, struct eikonal_options *user_args);
-void parse_visualization_options(int argc, char**argv, struct visualization_options *user_args);
+void parse_options(int argc, char **argv, struct user_options *user_args);
+void parse_batch_options(int argc, char **argv, struct batch_options *user_args);
+void parse_eikonal_options(int argc, char **argv, struct eikonal_options *user_args);
+void parse_visualization_options(int argc, char **argv, struct visualization_options *user_args);
 void parse_conversion_options(int argc, char **argv, struct conversion_options *user_args);
 void parse_fibers_conversion_options(int argc, char **argv, struct fibers_conversion_options *user_args);
-void get_config_file(int argc, char**argv, struct user_options *user_args);
+void get_config_file(int argc, char **argv, struct user_options *user_args);
 
-int parse_config_file(void* user, const char* section, const char* name, const char* value);
+int parse_config_file(void *user, const char *section, const char *name, const char *value);
 int parse_batch_config_file(void *user, const char *section, const char *name, const char *value);
 int parse_eikonal_config_file(void *user, const char *section, const char *name, const char *value);
-int parse_preprocessor_config(void* user, const char* section, const char* name, const char* value);
+int parse_preprocessor_config(void *user, const char *section, const char *name, const char *value);
 int parse_converter_config_file(void *user, const char *section, const char *name, const char *value);
 
 void options_to_ini_file(struct user_options *config, char *ini_file_path);
 
-void configure_grid_from_options(struct grid* grid, struct user_options *options);
+void configure_grid_from_options(struct grid *grid, struct user_options *options);
 
 void free_user_options(struct user_options *s);
-void free_batch_options(struct batch_options * options);
-void free_visualization_options(struct visualization_options * options);
+void free_batch_options(struct batch_options *options);
+void free_visualization_options(struct visualization_options *options);
 void free_conversion_options(struct conversion_options *options);
 void free_fibers_conversion_options(struct fibers_conversion_options *options);
 void free_eikonal_options(struct eikonal_options *options);
 
-void set_or_overwrite_common_data(struct config* config, const char *key, const char *value, const char *section, const char *config_file);
+void set_or_overwrite_common_data(struct config *config, const char *key, const char *value, const char *section, const char *config_file);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MONOALG3D_CONFIG_PARSER_H */
