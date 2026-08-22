@@ -363,6 +363,16 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
 
     enum mode current_mode = gui_state->current_mode;
 
+    bool rebuild_transforms = !draw_context->geometry_valid || draw_context->geometry_source != grid_to_draw ||
+                              draw_context->geometry_grid_mask != grid_mask || current_mode == SLICING;
+
+    if(rebuild_transforms) {
+        draw_context->geometry_source = grid_to_draw;
+        draw_context->geometry_grid_mask = grid_mask;
+        draw_context->geometry_valid = current_mode != SLICING;
+        draw_context->transforms_dirty = true;
+    }
+
     int count = 0;
     for(uint32_t i = 0; i < n_active * num_points; i += num_points) {
 
@@ -424,8 +434,10 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         voxel.size.z = dz / scale;
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
-        draw_context->translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
-        draw_context->translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), draw_context->translations[count]);
+        if(rebuild_transforms) {
+            draw_context->translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
+            draw_context->translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), draw_context->translations[count]);
+        }
 
         draw_context->colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
         voxel.draw_index = count;
@@ -576,6 +588,16 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
 
         bool collision = false;
 
+        bool rebuild_transforms = gui_config->adaptive || !draw_context->geometry_valid ||
+                                  draw_context->geometry_source != grid_to_draw || draw_context->geometry_grid_mask != grid_mask;
+
+        if(rebuild_transforms) {
+            draw_context->geometry_source = grid_to_draw;
+            draw_context->geometry_grid_mask = grid_mask;
+            draw_context->geometry_valid = !gui_config->adaptive;
+            draw_context->transforms_dirty = true;
+        }
+
         /*
         Vector3 n = gui_state->plane_normal;
         Vector3 p = gui_state->plane_point;
@@ -615,8 +637,10 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
             voxel.v = (float)grid_cell->v;
             voxel.matrix_position = grid_cell->grid_position;
 
-            draw_context->translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
-            draw_context->translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), draw_context->translations[count]);
+            if(rebuild_transforms) {
+                draw_context->translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
+                draw_context->translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), draw_context->translations[count]);
+            }
 
             draw_context->colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 

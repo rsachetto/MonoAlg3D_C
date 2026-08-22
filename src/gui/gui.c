@@ -855,6 +855,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     draw_context.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(draw_context.shader, "instanceTransform");
     draw_context.shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(draw_context.shader, "color");
     draw_context.shader.locs[SHADER_LOC_VECTOR_VIEW ] = GetShaderLocation(draw_context.shader, "viewPos");
+    draw_context.grid_mask_location = GetShaderLocation(draw_context.shader, "dgrid");
     draw_context.mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
 
     // Lights
@@ -966,6 +967,7 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
                     draw_context.instance_transforms = (float16 *)malloc(n_active * sizeof(float16));
                     draw_context.colors_transforms   = (float4 *)malloc(n_active * sizeof(float4));
+                    draw_context.geometry_valid = false;
 
                     gui_state->handle_keyboard_input = true;
                 }
@@ -1202,6 +1204,10 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     free(draw_context.colors);
     free(draw_context.instance_transforms);
     free(draw_context.colors_transforms);
+
+    UnloadDrawContextBuffers(&draw_context);
+    UnloadMesh(draw_context.mesh);
+    UnloadShader(draw_context.shader);
 
     CloseWindow();
 }
