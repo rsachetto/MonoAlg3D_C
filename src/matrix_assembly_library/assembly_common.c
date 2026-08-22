@@ -142,8 +142,6 @@ static inline real_cpu arithmetic_mean_4(real_cpu a, real_cpu b, real_cpu c, rea
     return 0.25 * (a + b + c + d);
 }
 
-
-
 // -----------------------------------------------------------------------------
 // Anisotropic diffusion on regular cubes (finite volume, Neumann/no-flux)
 // -----------------------------------------------------------------------------
@@ -184,6 +182,25 @@ static inline struct cell_node *diffusive_neighbour(struct cell_node *c, enum tr
 }
 
 // Add a stencil contribution into ROW.
+//
+// IMPORTANT BUGFIX:
+// In one-sided fallback derivatives (used near boundaries/obstacles), the stencil
+// contains a self term, e.g. (u_R - u_C)/dx or (u_C - u_L)/dx. When col == row,
+// this is a TRUE diagonal contribution and must be added explicitly.
+//
+// We still use add_single_entry() for off-diagonals so the diagonal remains
+// consistent automatically there (diag -= offdiag contribution).
+// static inline void add_term(struct cell_node *row, struct cell_node *col, real_cpu value) {
+//     if(!row || !col || fabs(value) < 1e-16) return;
+
+//     if(col == row) {
+//         row->elements[0].value += value;
+//         return;
+//     }
+
+//     add_single_entry(row, col, value);
+// }
+
 static inline void add_term(struct cell_node *row, struct cell_node *col, real_cpu value) {
     if(!row || !col || fabs(value) < 1e-16) return;
     if(col == row) return;          // diagonal is implied by add_single_entry's diag -= a_ij
@@ -643,9 +660,11 @@ static void calc_tensor2(real_cpu D[3][3], real_cpu f[3], real_cpu sigma_l, real
 
 static inline void normalize(real_cpu v[3]) {
     real_cpu m = sqrt((v[0] * v[0]) + (v[1] * v[1]) + (v[2] * v[2]));
-    v[0] = v[0] / m;
-    v[1] = v[1] / m;
-    v[2] = v[2] / m;
+    if(m > 0.0) {
+        v[0] = v[0] / m;
+        v[1] = v[1] / m;
+        v[2] = v[2] / m;
+    }
 }
 
 static struct fiber_coords *read_fibers(char *fiber_file_path, bool normalize_vector) {

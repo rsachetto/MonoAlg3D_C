@@ -147,8 +147,8 @@ fi
 
 if [ -n "$CUDA_FOUND" ]; then
     if [ "$OS" == "Manjaro Linux" ]; then
-        C_COMPILER=/opt/cuda/bin/gcc
-        CXX_COMPILER=/opt/cuda/bin/g++
+        C_COMPILER=gcc-14
+        CXX_COMPILER=g++-14
     elif [ "$OS" == "Ubuntu" ]; then
         if [ "$VER" == "20.10" ]; then
             C_COMPILER=gcc-9

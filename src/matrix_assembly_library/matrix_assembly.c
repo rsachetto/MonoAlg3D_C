@@ -475,6 +475,9 @@ ASSEMBLY_MATRIX(anisotropic_sigma_assembly_matrix) {
             ac[i]->sigma.fibers = fibers[fiber_index];
         }
         else if(fibers_in_mesh) {
+            normalize(ac[i]->sigma.fibers.f);
+            normalize(ac[i]->sigma.fibers.s);
+            normalize(ac[i]->sigma.fibers.n);
             if(sigma_t == sigma_n) {
                 calc_tensor2(D, ac[i]->sigma.fibers.f, sigma_l, sigma_t);
             }
