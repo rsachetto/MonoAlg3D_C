@@ -9,18 +9,18 @@
 #include "../3dparty/raylib/src/raymath.h"
 #include <stdint.h>
 
-typedef struct float4 {
-    float v[4];
-} float4;
-
 struct draw_context {
     Shader shader;
     Mesh mesh;
-    Matrix *translations;
     Color *colors;
     float16 *instance_transforms;
-    float4 *colors_transforms;
+    unsigned int instances_vbo;
+    unsigned int colors_vbo;
+    int instance_capacity;
+    int grid_mask_location;
 };
+
+void UnloadMeshInstanceBuffers(struct draw_context *draw_context);
 
 void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mask, int instances);
 

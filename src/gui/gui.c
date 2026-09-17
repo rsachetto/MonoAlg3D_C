@@ -13,6 +13,7 @@
 #include "gui_mesh_helpers.h"
 #include "gui_window_helpers.h"
 #include "gui_draw.h"
+#include "gui_shaders.h"
 
 #include "../utils/file_utils.h"
 
@@ -850,11 +851,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
     struct draw_context draw_context = {0};
 
-    draw_context.shader = LoadShader("res/instanced_vertex_shader.vs", "res/fragment_shader.fs");
+    draw_context.shader = LoadShaderFromMemory(gui_instanced_vertex_shader, gui_fragment_shader);
     draw_context.shader.locs[SHADER_LOC_MATRIX_MVP  ] = GetShaderLocation(draw_context.shader, "mvp");
     draw_context.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(draw_context.shader, "instanceTransform");
     draw_context.shader.locs[SHADER_LOC_VERTEX_COLOR] = GetShaderLocationAttrib(draw_context.shader, "color");
     draw_context.shader.locs[SHADER_LOC_VECTOR_VIEW ] = GetShaderLocation(draw_context.shader, "viewPos");
+    draw_context.grid_mask_location = GetShaderLocation(draw_context.shader, "dgrid");
     draw_context.mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
 
     // Lights
@@ -956,16 +958,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
 
                 if( gui_config->grid_info.loaded && realloc_matrices ) {
 
-                    free(draw_context.translations);
                     free(draw_context.colors);
                     free(draw_context.instance_transforms);
-                    free(draw_context.colors_transforms);
 
                     draw_context.colors       = malloc(n_active * sizeof(Color));
-                    draw_context.translations = malloc(n_active * sizeof(Matrix)); // Locations of instances
 
                     draw_context.instance_transforms = (float16 *)malloc(n_active * sizeof(float16));
-                    draw_context.colors_transforms   = (float4 *)malloc(n_active * sizeof(float4));
 
                     gui_state->handle_keyboard_input = true;
                 }
@@ -1198,10 +1196,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     omp_unset_lock(&gui_config->draw_lock);
     omp_unset_lock(&gui_config->sleep_lock);
 
-    free(draw_context.translations);
     free(draw_context.colors);
     free(draw_context.instance_transforms);
-    free(draw_context.colors_transforms);
+
+    UnloadMeshInstanceBuffers(&draw_context);
+    UnloadMesh(draw_context.mesh);
+    UnloadShader(draw_context.shader);
 
     CloseWindow();
 }

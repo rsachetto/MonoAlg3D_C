@@ -1,13 +1,34 @@
 #include "raylib_ext.h"
 #include "../3dparty/raylib/src/rlgl.h"
-#include "../alg/cell/cell.h"
+#include <limits.h>
+#include <stddef.h>
+
+void UnloadMeshInstanceBuffers(struct draw_context *draw_context) {
+    if(draw_context->instances_vbo) rlUnloadVertexBuffer(draw_context->instances_vbo);
+    if(draw_context->colors_vbo) rlUnloadVertexBuffer(draw_context->colors_vbo);
+    draw_context->instances_vbo = 0;
+    draw_context->colors_vbo = 0;
+    draw_context->instance_capacity = 0;
+}
 
 // Draw multiple mesh instances with different transforms and colors
 void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mask, int instances) {
 
-    // Instancing required variables
-    unsigned int instancesVboId;
-    unsigned int colorsVboId;
+    if(instances <= 0) return;
+    // rlgl uses signed int byte counts for buffer allocation and updates.
+    if(instances > INT_MAX / (int)sizeof(float16)) return;
+
+    if(instances > draw_context->instance_capacity) {
+        UnloadMeshInstanceBuffers(draw_context);
+        draw_context->instances_vbo = rlLoadVertexBuffer(NULL, instances * sizeof(float16), true);
+        draw_context->colors_vbo = rlLoadVertexBuffer(NULL, instances * sizeof(Color), true);
+        if(!draw_context->instances_vbo || !draw_context->colors_vbo) {
+            UnloadMeshInstanceBuffers(draw_context);
+            rlDisableVertexBuffer();
+            return;
+        }
+        draw_context->instance_capacity = instances;
+    }
 
     // Bind shader program
     rlEnableShader(draw_context->shader.id);
@@ -29,23 +50,11 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
     rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_VIEW], matView);
     rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_PROJECTION], matProjection);
 
-    // Fill buffer with instances transformations as float16 arrays
-    for(int i = 0; i < instances; i++) {
-        draw_context->instance_transforms[i] = MatrixToFloatV(draw_context->translations[i]);
-        draw_context->colors_transforms[i].v[0] = (float)draw_context->colors[i].r / 255.0f;
-        draw_context->colors_transforms[i].v[1] = (float)draw_context->colors[i].g / 255.0f;
-        draw_context->colors_transforms[i].v[2] = (float)draw_context->colors[i].b / 255.0f;
-        draw_context->colors_transforms[i].v[3] = (float)draw_context->colors[i].a / 255.0f;
-    }
-
     // Enable mesh VAO to attach new buffer
     rlEnableVertexArray(draw_context->mesh.vaoId);
 
-    // This could alternatively use a static VBO and either glMapBuffer() or glBufferSubData().
-    // It isn't clear which would be reliably faster in all cases and on all platforms,
-    // anecdotally glMapBuffer() seems very slow (syncs) while glBufferSubData() seems
-    // no faster, since we're transferring all the transform matrices anyway
-    instancesVboId = rlLoadVertexBuffer(draw_context->instance_transforms, (int)(instances * sizeof(float16)), false);
+    rlUpdateVertexBuffer(draw_context->instances_vbo, draw_context->instance_transforms,
+                         instances * sizeof(float16), 0);
 
     // Instances transformation matrices are send to shader attribute location: SHADER_LOC_MATRIX_MODEL
     for(unsigned int i = 0; i < 4; i++) {
@@ -59,11 +68,11 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
 
     // Enable mesh VAO to attach new buffer
     rlEnableVertexArray(draw_context->mesh.vaoId);
-    colorsVboId = rlLoadVertexBuffer(draw_context->colors_transforms, (int)(instances * sizeof(float4)), true);
+    rlUpdateVertexBuffer(draw_context->colors_vbo, draw_context->colors, instances * sizeof(Color), 0);
 
     // Colors are send to shader attribute location: SHADER_LOC_VERTEX_COLOR
     rlEnableVertexAttribute(draw_context->shader.locs[SHADER_LOC_VERTEX_COLOR]);
-    rlSetVertexAttribute(draw_context->shader.locs[SHADER_LOC_VERTEX_COLOR], 4, RL_FLOAT, 0, sizeof(float4), 0);
+    rlSetVertexAttribute(draw_context->shader.locs[SHADER_LOC_VERTEX_COLOR], 4, RL_UNSIGNED_BYTE, true, sizeof(Color), 0);
     rlSetVertexAttributeDivisor(draw_context->shader.locs[SHADER_LOC_VERTEX_COLOR], 1);
 
     rlDisableVertexBuffer();
@@ -74,8 +83,7 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
     matModelView = MatrixMultiply(rlGetMatrixTransform(), matView);
     rlSetUniformMatrix(draw_context->shader.locs[SHADER_LOC_MATRIX_NORMAL], matModel);
 
-    int dgrid_loc = GetShaderLocation(draw_context->shader, "dgrid");
-    rlSetUniform(dgrid_loc, (void *)&grid_mask, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(draw_context->grid_mask_location, (void *)&grid_mask, RL_SHADER_UNIFORM_INT, 1);
 
     rlEnableVertexArray(draw_context->mesh.vaoId);
     rlEnableVertexBufferElement(draw_context->mesh.vboId[6]);
@@ -96,8 +104,5 @@ void DrawMeshInstancedWithColors(struct draw_context *draw_context, int grid_mas
     // Disable shader program
     rlDisableShader();
 
-    // Remove instance transforms buffer
-    rlUnloadVertexBuffer(instancesVboId);
-    rlUnloadVertexBuffer(colorsVboId);
 
 }

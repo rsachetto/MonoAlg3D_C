@@ -424,8 +424,12 @@ void draw_vtk_unstructured_grid(struct gui_shared_info *gui_config, struct gui_s
         voxel.size.z = dz / scale;
         voxel.position_mesh = (Vector3){mesh_center_x, mesh_center_y, mesh_center_z};
 
-        draw_context->translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
-        draw_context->translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), draw_context->translations[count]);
+        draw_context->instance_transforms[count] = (float16){{
+                voxel.size.x, 0.0f, 0.0f, 0.0f,
+                0.0f, voxel.size.y, 0.0f, 0.0f,
+                0.0f, 0.0f, voxel.size.z, 0.0f,
+                voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z, 1.0f
+            }};
 
         draw_context->colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
         voxel.draw_index = count;
@@ -615,8 +619,12 @@ void draw_alg_mesh(struct gui_shared_info *gui_config, struct gui_state *gui_sta
             voxel.v = (float)grid_cell->v;
             voxel.matrix_position = grid_cell->grid_position;
 
-            draw_context->translations[count] = MatrixTranslate(voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z);
-            draw_context->translations[count] = MatrixMultiply(MatrixScale(voxel.size.x, voxel.size.y, voxel.size.z), draw_context->translations[count]);
+            draw_context->instance_transforms[count] = (float16){{
+                voxel.size.x, 0.0f, 0.0f, 0.0f,
+                0.0f, voxel.size.y, 0.0f, 0.0f,
+                0.0f, 0.0f, voxel.size.z, 0.0f,
+                voxel.position_draw.x, voxel.position_draw.y, voxel.position_draw.z, 1.0f
+            }};
 
             draw_context->colors[count] = get_color((voxel.v - min_v) / (max_v - min_v), gui_state->voxel_alpha, gui_state->current_scale);
 

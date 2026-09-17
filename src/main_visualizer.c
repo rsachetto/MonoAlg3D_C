@@ -8,6 +8,7 @@
 #include "3dparty/stb_ds.h"
 #include "config/config_parser.h"
 #include "gui/gui.h"
+#include "logger/logger.h"
 #include "utils/file_utils.h"
 #include "vtk_utils/pvd_utils.h"
 #include "vtk_utils/vtk_unstructured_grid.h"
@@ -191,7 +192,9 @@ static int read_and_render_files(struct visualization_options *options, struct g
     uint32_t num_files = arrlen(simulation_files->files_list);
 
     if(!num_files) {
-        snprintf(error, MAX_ERROR_SIZE, "No simulations file found in %s", simulation_files->base_dir);
+        char *error_msg = "No simulations file found in %s. Check the prefix of the simulations results and try with --prefix myprefix_";
+        snprintf(error, MAX_ERROR_SIZE, error_msg, simulation_files->base_dir);
+        log_warn(error_msg, simulation_files->base_dir);
 
         if(gui_config->message)
             free(gui_config->message);
