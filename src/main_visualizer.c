@@ -392,11 +392,13 @@ static int read_and_render_files(struct visualization_options *options, struct g
             // TODO: for ensigth, maybe we should put the data name here.
             gui_config->grid_info.file_name = full_path;
             gui_config->grid_info.loaded = true;
-        }
 
-        if(single_file) {
-            gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
-            gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
+            // Only this branch has a grid to read from. Outside of it we segfault
+            // on every file the decoder rejects, instead of showing the error above
+            if(single_file) {
+                gui_config->max_v = gui_config->grid_info.vtk_grid->max_v;
+                gui_config->min_v = gui_config->grid_info.vtk_grid->min_v;
+            }
         }
 
         omp_unset_lock(&gui_config->draw_lock);

@@ -160,6 +160,8 @@ static struct gui_state *new_gui_state_with_font_sizes(float font_size_small, fl
 
     gui_state->mesh_scale_factor = 1.0f;
     gui_state->mesh_offset = (Vector3){0, 0, 0};
+    gui_state->recalculate_mesh_info = true;
+    gui_state->plane_loaded = false;
 
     gui_state->show_coordinates = true;
     gui_state->double_clicked = false;
@@ -620,9 +622,9 @@ static void handle_keyboard_input(struct gui_shared_info *gui_config, struct gui
 
             char *buf = get_current_directory();
 
-            char const *filter[] = {"*.geo", "*.Esca", "*.pvd", "*.acm", "*.vtk", "*.vtu"};
+            char const *filter[] = {"*.geo", "*.Esca", "*.pvd", "*.acm", "*.vtk", "*.vtu", "*.alg"};
 
-            char const *tmp = tinyfd_openFileDialog("Select a simulation file", buf, 4, filter, "simulation result (pvd, vtk, vtu or acm)", 0);
+            char const *tmp = tinyfd_openFileDialog("Select a simulation file", buf, 7, filter, "simulation result (geo, Esca, pvd, acm, vtk, vtu or alg)", 0);
 
             if(tmp) {
                 gui_config->input = strdup(tmp);
@@ -920,7 +922,9 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
             }
             ClearBackground(GRAY);
 
-            if(!mesh_info->center_calculated) {
+            // The offset and the scale factor below normalize the mesh to the fixed camera, so
+            // they have to be recalculated for every mesh we load, not only for the first one
+            if(gui_state->recalculate_mesh_info) {
                 if(draw_type == DRAW_SIMULATION) {
                     gui_state->mesh_offset = find_mesh_center(gui_config->grid_info.alg_grid, mesh_info);
                     gui_state->max_data_index = 0;
@@ -938,7 +942,16 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
                 pos.y = (mesh_info->max_size.z - mesh_info->min_size.z) / scale;
 
                 const float mult = 1.2f;
+
+                // The slicing plane is sized for the mesh, so it has to be rebuilt as well
+                if(gui_state->plane_loaded) {
+                    UnloadModel(plane);
+                }
+
                 plane = LoadModelFromMesh(GenMeshCube(pos.x * mult, 0.1f / scale, pos.y * mult));
+                gui_state->plane_loaded = true;
+
+                gui_state->recalculate_mesh_info = false;
             }
 
             BeginMode3D(gui_state->camera);
@@ -1189,6 +1202,12 @@ void init_and_open_gui_window(struct gui_shared_info *gui_config) {
     free(gui_state->end_info_box.lines);
 
     hmfree(gui_state->ap_graph_config->selected_aps);
+
+    if(gui_state->plane_loaded) {
+        UnloadModel(plane);
+    }
+
+    arrfree(gui_state->old_cell_visibility);
 
     free(gui_state->ap_graph_config);
     free(gui_state);

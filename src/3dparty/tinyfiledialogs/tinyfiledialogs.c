@@ -318,6 +318,29 @@ static void RGB2Hex( unsigned char const aRGB [3] ,
 }
 
 
+/* collapse runs of spaces down to one and drop the leading and trailing
+ones, in place. zenity splits --file-filter patterns on spaces, so any
+empty pattern reaching it makes zenity >= 4 hang without ever showing
+the dialog, which in turn hangs the caller blocked on its output. */
+static void squeezeSpaces ( char * const aString )
+{
+	char * lRead = aString ;
+	char * lWrite = aString ;
+
+	while ( * lRead )
+	{
+		if ( * lRead == ' ' && ( lWrite == aString || * ( lWrite - 1 ) == ' ' ) )
+		{
+			lRead ++ ;
+			continue ;
+		}
+		* lWrite ++ = * lRead ++ ;
+	}
+	while ( lWrite > aString && * ( lWrite - 1 ) == ' ' ) lWrite -- ;
+	* lWrite = '\0' ;
+}
+
+
 static void replaceSubStr ( char const * const aSource ,
 						    char const * const aOldSubStr ,
 						    char const * const aNewSubStr ,
@@ -4751,17 +4774,20 @@ char const * tinyfd_saveFileDialog (
 		}
 		if ( aNumOfFilterPatterns > 0 )
 		{
+			char * lPatterns ;
 			strcat ( lDialogString , " --file-filter='" ) ;
 			if ( aSingleFilterDescription && strlen(aSingleFilterDescription) )
 			{
 				strcat ( lDialogString , aSingleFilterDescription ) ;
 				strcat ( lDialogString , " | " ) ;
 			}
+			lPatterns = lDialogString + strlen ( lDialogString ) ;
 			for ( i = 0 ; i < aNumOfFilterPatterns ; i ++ )
 			{
 				strcat ( lDialogString , aFilterPatterns [i] ) ;
 				strcat ( lDialogString , " " ) ;
 			}
+			squeezeSpaces ( lPatterns ) ;
 			strcat ( lDialogString , "' --file-filter='All files | *'" ) ;
 		}
   }
@@ -5109,17 +5135,20 @@ char const * tinyfd_openFileDialog (
 		}
     if ( aNumOfFilterPatterns > 0 )
     {
+      char * lPatterns ;
       strcat ( lDialogString , " --file-filter='" ) ;
 			if ( aSingleFilterDescription && strlen(aSingleFilterDescription) )
 			{
 				strcat ( lDialogString , aSingleFilterDescription ) ;
 				strcat ( lDialogString , " | " ) ;
 			}
+      lPatterns = lDialogString + strlen ( lDialogString ) ;
       for ( i = 0 ; i < aNumOfFilterPatterns ; i ++ )
       {
           strcat ( lDialogString , aFilterPatterns [i] ) ;
           strcat ( lDialogString , " " ) ;
       }
+      squeezeSpaces ( lPatterns ) ;
 		  strcat ( lDialogString , "' --file-filter='All files | *'" ) ;
 		}
 	}

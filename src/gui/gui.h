@@ -263,6 +263,7 @@ struct gui_state {
     bool recalculating_visibility;
 
     bool plane_loaded;
+    bool recalculate_mesh_info;
     bool visibility_recalculated;
     ui8_array old_cell_visibility;
     bool *exclude_from_mesh;
@@ -286,7 +287,6 @@ struct gui_state {
 };
 
 struct mesh_info {
-    bool center_calculated;
     Vector3 max_size;
     Vector3 min_size;
 };

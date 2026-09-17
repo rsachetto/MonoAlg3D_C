@@ -478,7 +478,17 @@ void reset(struct gui_shared_info *gui_config, struct gui_state *gui_state, bool
         hmfree(gui_state->current_selected_volumes);
         gui_state->current_selected_volumes = NULL;
 
-        set_camera_params(&(gui_state->camera), false);
+        // The visibility snapshot belongs to the mesh we are leaving behind
+        arrfree(gui_state->old_cell_visibility);
+        gui_state->old_cell_visibility = NULL;
+
+        // A new mesh needs its own center, scale factor and slicing plane
+        gui_state->recalculate_mesh_info = true;
+
+        // set_mode has to be true here: in CAMERA_FREE, UpdateCamera() overwrites
+        // camera->position from raylib's global angle/targetDistance every frame, so
+        // resetting the position alone is undone unless SetCameraMode recomputes them
+        set_camera_params(&(gui_state->camera), true);
 
         gui_state->scale_alpha = 255;
 

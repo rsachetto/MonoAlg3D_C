@@ -5,8 +5,7 @@
 #include <float.h>
 
 struct mesh_info *new_mesh_info() {
-    struct mesh_info *mesh_info = (struct mesh_info *)malloc(sizeof(struct mesh_info));
-    mesh_info->center_calculated = false;
+    struct mesh_info *mesh_info = (struct mesh_info *)calloc(1, sizeof(struct mesh_info));
     return mesh_info;
 }
 
@@ -31,8 +30,6 @@ static inline Vector3 get_max_min(Vector3 mesh_max, Vector3 mesh_min, Vector3 me
     SET_MAX(x);
     SET_MAX(y);
     SET_MAX(z);
-
-    mesh_info->center_calculated = true;
 
     SET_MESH_MIN_MAX(max_size, mesh_max, mesh_max_d);
     SET_MESH_MIN_MAX(min_size, mesh_min, mesh_min_d);
