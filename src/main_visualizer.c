@@ -290,7 +290,11 @@ static int read_and_render_files(struct visualization_options *options, struct g
 
             gui_config->step = step;
 
-            gui_config->final_file_index = final_step / step;
+            if (step == 0) {
+                gui_config->final_file_index = 0;
+            } else {
+                gui_config->final_file_index = final_step / step;
+            }
 
             if(dt == 0.0) {
                 gui_config->final_time = (float)final_step;
