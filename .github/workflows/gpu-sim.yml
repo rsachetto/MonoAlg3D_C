@@ -1,0 +1,74 @@
+name: GPU tests (simulated H100)
+
+# The CUDA jobs in build.yml only build, because the hosted runners have no
+# GPU. This builds the simulator with CUDA and runs the Criterion tests,
+# including the COMPILE_CUDA ones, on a simulated NVIDIA H100
+# (https://github.com/pantheongpu/pantheonsim).
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/**"
+      - "bsbash/**"
+      - "build.sh"
+      - "tests_bin/**"
+      - "example_configs/**"
+      - "networks/**"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Criterion tests (CUDA 13.0 and simulated H100)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      # Installs nvcc 13.0 and puts the simulator's nvcc drop-in (which adds
+      # -cudart shared) first on PATH, where FIND_CUDA finds it.
+      - name: Set up the simulated H100 and CUDA toolkit
+        uses: pantheongpu/setup-pantheonsim@68edfd58c091361dd6baf060b63de412e544d858 # v0.1.7
+        with:
+          gpu: nvidia/h100
+          cuda-toolkit: "13.0"
+          # The solver library links the toolkit's cuBLAS and cuSPARSE.
+          library-path: 'false'
+
+      - name: Install Criterion
+        run: source ./scripts/actions/install_criterion.sh
+
+      # nvcc is called without -arch. The simulator runs PTX, so
+      # -arch=compute_90 (PTX only) is appended to every nvcc call through
+      # nvcc's NVCC_APPEND_FLAGS variable.
+      - name: Build with CUDA
+        env:
+          NVCC_APPEND_FLAGS: -arch=compute_90
+        run: |
+          ./build.sh -r simulator
+          # The CUDA tests are compiled out when CUDA is not found.
+          ./tests_bin/TestSolvers --list | grep -q gpu_cg_no_preconditioner_1t
+
+      # libdefault_linear_system_solver.so calls cuda_assert from
+      # libgpu_utils.so but does not link it, so the GPU solver tests fail with
+      # "undefined symbol: cuda_assert" unless it is preloaded.
+      # Left out: amgx_6t_2 (AMGX is not built) and the two
+      # run_gold_simulation mesh tests (over an hour each on the simulator).
+      - name: Run the tests
+        env:
+          LD_PRELOAD: ${{ github.workspace }}/shared_libs/libgpu_utils.so
+        run: |
+          vgpu run ./tests_bin/TestLibs --jobs 1
+          vgpu run ./tests_bin/TestMesh --jobs 1
+          vgpu run ./tests_bin/TestSolvers --jobs 1 --filter 'solvers/!(amgx_6t_2)'
+          vgpu run ./tests_bin/TestSimulations --jobs 1 --filter 'run_circle_simulation/*'
+          vgpu run ./tests_bin/TestSimulations --jobs 1 --filter 'run_gold_simulation/purkinje_simulation'
